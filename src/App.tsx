@@ -34,7 +34,6 @@ import {
   useActiveRunScreenValue,
   useAutosaveAllowed,
   useBondedCompanions,
-  useHomesteadEffects,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
@@ -94,7 +93,7 @@ function AppMainContent({
 
   const dev = useDevShortcuts(run);
 
-  const homesteadEffects = useHomesteadEffects();
+  const homesteadEffects = run.homesteadEffects;
   const talentEffects = useTalentEffects();
   const homesteadBondedCompanions = useBondedCompanions();
   const cardDescriptionContext = useMemo(

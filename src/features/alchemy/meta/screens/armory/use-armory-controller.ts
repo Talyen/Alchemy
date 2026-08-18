@@ -13,43 +13,26 @@ import {
   resolveActiveRunForSave,
   flushSaveAfterGearMutation,
 } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   dispatchGearMutationWithRunHealthSync,
   dispatchGearSalvageWithMaterialGrant,
 } from "@/features/alchemy/shared/stores/gear-session-command";
-import {
-  useActiveRunCharacterId,
-  useHasActiveBattle,
-  useHasActiveRun,
-} from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { useActiveRunCharacterId, useHasActiveRun } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useGearArmorySlice } from "@/features/alchemy/shared/stores/gear-store";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
-function whenArmoryEditable(hasActiveBattle: boolean, run: () => void): void;
-function whenArmoryEditable<T>(hasActiveBattle: boolean, run: () => T, fallback: T): T;
-function whenArmoryEditable<T>(hasActiveBattle: boolean, run: () => T, fallback?: T): T | void {
-  if (hasActiveBattle) return fallback;
-  return run();
-}
-
+/** HP-sync uses the active-run hero; `mutate` may edit another character's loadout. */
 function mutateGearWithFlush<T>(
-  characterId: CharacterId,
+  runHealthCharacterId: CharacterId,
   flush: () => void,
   mutate: (state: GearStore) => T,
   options?: { flushOnSuccessOnly?: boolean },
 ): T {
-  const result = dispatchGearMutationWithRunHealthSync({ characterId, mutate });
+  const result = dispatchGearMutationWithRunHealthSync({ characterId: runHealthCharacterId, mutate });
   if (options?.flushOnSuccessOnly ? result : true) flush();
-  return result;
-}
-
-function runSessionWithFlush<T>(flush: () => void, command: () => T): T {
-  const result = dispatchRunSessionCommand(command);
-  flush();
   return result;
 }
 
@@ -71,7 +54,6 @@ export function useArmoryController(): ArmoryController {
   const { returnToRunScreen } = useAppScreenChrome();
   const gear = useGearArmorySlice();
   const finishedRunCharacters = useFinishedRunCharacters();
-  const hasActiveBattle = useHasActiveBattle();
   const hasActiveRun = useHasActiveRun();
   const activeRunCharacterId = useActiveRunCharacterId();
   const rngRef = useRef<() => number>(() => Math.random());
@@ -82,64 +64,52 @@ export function useArmoryController(): ArmoryController {
 
   const onEquip = useCallback<ArmoryController["onEquip"]>(
     (characterId, slot, instance) => {
-      whenArmoryEditable(hasActiveBattle, () => {
-        mutateGearWithFlush(activeRunCharacterId, flush, (state) => {
-          state.equip(characterId, slot, instance);
-        });
+      mutateGearWithFlush(activeRunCharacterId, flush, (state) => {
+        state.equip(characterId, slot, instance);
       });
     },
-    [activeRunCharacterId, hasActiveBattle, flush],
+    [activeRunCharacterId, flush],
   );
 
   const onUnequip = useCallback<ArmoryController["onUnequip"]>(
     (characterId, slot) => {
-      whenArmoryEditable(hasActiveBattle, () => {
-        mutateGearWithFlush(activeRunCharacterId, flush, (state) => {
-          state.unequip(characterId, slot);
-        });
+      mutateGearWithFlush(activeRunCharacterId, flush, (state) => {
+        state.unequip(characterId, slot);
       });
     },
-    [activeRunCharacterId, hasActiveBattle, flush],
+    [activeRunCharacterId, flush],
   );
 
   const onSalvage = useCallback<ArmoryController["onSalvage"]>(
-    (instanceId, salvageYield) =>
-      whenArmoryEditable(
-        hasActiveBattle,
-        () => {
-          const result = dispatchGearSalvageWithMaterialGrant(activeRunCharacterId, (state) =>
-            state.salvage(instanceId, { yield: salvageYield }),
-          );
-          if (result) flush();
-          return Boolean(result);
-        },
-        false,
-      ),
-    [activeRunCharacterId, flush, hasActiveBattle],
+    (instanceId, salvageYield) => {
+      const result = dispatchGearSalvageWithMaterialGrant(activeRunCharacterId, (state) =>
+        state.salvage(instanceId, { yield: salvageYield }),
+      );
+      if (result) flush();
+      return Boolean(result);
+    },
+    [activeRunCharacterId, flush],
   );
 
   const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
     (currencyId, instanceId) =>
-      whenArmoryEditable(
-        hasActiveBattle,
-        () =>
-          mutateGearWithFlush(
-            activeRunCharacterId,
-            flush,
-            (state) => state.applyCurrency(currencyId, instanceId, { rng: rngRef.current }),
-            { flushOnSuccessOnly: true },
-          ),
-        false,
+      mutateGearWithFlush(
+        activeRunCharacterId,
+        flush,
+        (state) => state.applyCurrency(currencyId, instanceId, { rng: rngRef.current }),
+        { flushOnSuccessOnly: true },
       ),
-    [activeRunCharacterId, flush, hasActiveBattle],
+    [activeRunCharacterId, flush],
   );
 
   const onSpawnDevGear = useCallback<NonNullable<ArmoryController["onSpawnDevGear"]>>(
     (characterId) => {
       if (!isAlchemyDevBuild()) return;
-      runSessionWithFlush(flush, () => gear.addInstance(generateDevRandomGearInstance(rngRef.current), characterId));
+      mutateGearWithFlush(characterId, flush, (state) => {
+        state.addInstance(generateDevRandomGearInstance(rngRef.current), characterId);
+      });
     },
-    [flush, gear],
+    [flush],
   );
 
   const controller: ArmoryController = {
@@ -147,7 +117,7 @@ export function useArmoryController(): ArmoryController {
     loadouts: gear.loadouts,
     craftingCurrencies: gear.craftingCurrencies,
     finishedRunCharacters,
-    browseOnly: hasActiveBattle,
+    browseOnly: false,
     hasActiveRun,
     onEquip,
     onUnequip,

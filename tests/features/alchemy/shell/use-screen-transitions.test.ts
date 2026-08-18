@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
+import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 import { resetRunNavigationSlice } from "../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
@@ -68,7 +69,7 @@ describe("useScreenTransitions navigation", () => {
 
     act(() => {
       result.current.navigateTo(ROUTE_SCREENS.GAME_MODE_SELECT);
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(NAVIGATION_DELAY_MS);
     });
 
     expect(setScreen).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_MODE_SELECT);
@@ -81,7 +82,7 @@ describe("useScreenTransitions navigation", () => {
 
     act(() => {
       result.current.navigateTo(ROUTE_SCREENS.MENU, onCommit);
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(NAVIGATION_DELAY_MS);
     });
 
     expect(setScreen).not.toHaveBeenCalled();
@@ -96,5 +97,63 @@ describe("useScreenTransitions navigation", () => {
       "Disallowed screen transition: menu -> battle",
     );
     expect(setScreen).not.toHaveBeenCalled();
+  });
+
+  it("uses the latest screen at fire time for same-screen commits", () => {
+    const setScreen = vi.fn();
+    const onCommit = vi.fn();
+    const { result, rerender } = renderHook(({ screen }) => useScreenTransitions(screen, setScreen), {
+      initialProps: { screen: ROUTE_SCREENS.MENU },
+    });
+
+    act(() => {
+      result.current.navigateTo(ROUTE_SCREENS.GAME_MODE_SELECT, onCommit);
+    });
+    rerender({ screen: ROUTE_SCREENS.GAME_MODE_SELECT });
+    act(() => {
+      vi.advanceTimersByTime(NAVIGATION_DELAY_MS);
+    });
+
+    expect(setScreen).not.toHaveBeenCalled();
+    expect(onCommit).toHaveBeenCalledOnce();
+  });
+
+  it("clears a pending navigateTo commit when a delayed transition starts", () => {
+    const setScreen = vi.fn();
+    const leftoverCommit = vi.fn();
+    const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
+
+    act(() => {
+      result.current.navigateTo(ROUTE_SCREENS.REWARDS, leftoverCommit);
+      result.current.transition(ROUTE_SCREENS.GAME_OVER, { delayMs: 250 });
+      vi.advanceTimersByTime(NAVIGATION_DELAY_MS);
+    });
+
+    expect(setScreen).not.toHaveBeenCalled();
+    expect(leftoverCommit).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+
+    expect(setScreen).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER);
+    result.current.commitPendingTransition();
+    expect(leftoverCommit).not.toHaveBeenCalled();
+  });
+
+  it("clears a pending navigateTo when an immediate transition starts", () => {
+    const setScreen = vi.fn();
+    const leftoverCommit = vi.fn();
+    const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
+
+    act(() => {
+      result.current.navigateTo(ROUTE_SCREENS.REWARDS, leftoverCommit);
+      result.current.transition(ROUTE_SCREENS.GAME_OVER, { immediate: true });
+      vi.advanceTimersByTime(NAVIGATION_DELAY_MS);
+    });
+
+    expect(setScreen).toHaveBeenCalledOnce();
+    expect(setScreen).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER);
+    expect(leftoverCommit).not.toHaveBeenCalled();
   });
 });

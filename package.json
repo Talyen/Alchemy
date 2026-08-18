@@ -61,8 +61,6 @@
     "test:e2e:prepush": "cross-env PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_PREPUSH=1 playwright test --project chromium --grep @prepush",
     "test:e2e:prepush:full": "cross-env PLAYWRIGHT_VITE_MODE=preview CI=true npm run test:e2e:critical",
     "test:e2e:full": "cross-env PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_E2E_FULL=1 CI=true playwright test --project chromium",
-    "test:e2e:main-gate": "npm run test:e2e:full --",
-    "test:e2e:preview": "npm run test:e2e:full --",
     "test:e2e:nightly": "cross-env PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_E2E_FULL=1 PLAYWRIGHT_NIGHTLY=1 CI=true playwright test --project chromium",
     "test:e2e:electron": "cross-env PLAYWRIGHT_ELECTRON_PREVIEW_PORT=4175 node scripts/ensure-electron.mjs && playwright test --config playwright.electron.config.ts",
     "test:e2e:electron:run": "cross-env PLAYWRIGHT_ELECTRON_PREVIEW_PORT=4175 playwright test --config playwright.electron.config.ts",

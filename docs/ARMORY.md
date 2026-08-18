@@ -31,28 +31,27 @@ Hero identity is the Collection-style tab ring. There is no hero portrait and no
 | Pure rules  | `src/lib/gear/` — types, definitions, affixes, crafting, generation                                                                    |
 | Aggregate   | `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper) |
 | Screen      | Armory route → `use-armory-controller.ts` → `armory-screen.tsx`                                                                        |
-| Battle      | `computeGearManifest` → immutable `BattleState.gearEffects`; battle code never reads the Gear aggregate mid-fight                      |
+| Battle      | `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation                                                       |
 | Persistence | `subscribeAlchemyPersistence` / `encodeAlchemyPersistenceFields`                                                                       |
 
 ### Read paths
 
-- **`Armory lock`** — computed from gear ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store.
+- **`Armory lock`** — computed from gear ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat does not lock the Armory.
 - **`ArmoryScreen`** — reads `inventories`, `loadouts`, and `craftingCurrencies` via `useGearArmorySlice`.
 - **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.
-- **Battle** — `computeGearManifest(characterId, inventory, loadouts)` is called in `battle-init.ts` and produces a flat `GearEffectManifest` copied into `BattleState.gearEffects` at battle start.
+- **Battle** — `computeGearManifest` is applied at battle start and rebound onto the live `BattleState` whenever gear, talents, or homestead change.
 - **Run start** — `content-system-run-init.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
 
 ### Write paths
 
 There is no external `useGearStore` hook. Gear mutations run against a `GearStore` view of the aggregate state and commit through session commands:
 
-- `dispatchGearMutationWithRunHealthSync({ characterId, mutate })` — for HP-affecting ops (`equip`, `unequip`, `salvage`, `applyCurrency`). `mutate` is called with a `GearStore` handle (e.g. `(state) => state.equip(characterId, slot, instance)`) and run max-health is re-synced from before/after gear snapshots.
-- `dispatchRunSessionCommand(() => gear.<method>(...))` — for `addInstance` (dev spawn / rewards).
+- `dispatchGearMutationWithRunHealthSync({ characterId, mutate })` — for HP-affecting ops (`equip`, `unequip`, `salvage`, `applyCurrency`, `addInstance`) when the caller is **not** already inside `dispatchRunSessionCommand`. Inside an existing command (shop buy, rewards, mystery), call `mutateGearWithRunHealthSync(draft, { characterId, mutate })` instead. `characterId` is the **active-run hero** whose max HP is re-synced from before/after gear snapshots. `mutate` may edit a different loadout (for example Armory browsing another hero while a run is in progress): `mutate` is called with a `GearStore` handle such as `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
 1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ characterId, mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
 2. **Salvage** — preview rolls `computeSalvageYield` (definition `salvageValue` homestead materials + `rollSalvageYield` crafting currencies). Confirm passes that frozen yield into `(state) => state.salvage(instanceId, { yield })`, which removes the item from inventory + loadouts and adds crafting currencies. Homestead materials are granted in the same session command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta).
 3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`.
-4. **Add new instance (rewards / shop / dev spawn)** — `dispatchRunSessionCommand(() => gear.addInstance(instance, characterId))`.
+4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ characterId, mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { characterId, mutate: (gear) => gear.addInstance(instance, characterId) })`.
 
 ### `useArmoryController` facade
 
@@ -62,7 +61,7 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear
 - Routes `equip`/`unequip` through `dispatchGearMutationWithRunHealthSync` (HP-sync side effect).
 - Routes `applyCurrency` through `dispatchGearMutationWithRunHealthSync` and flushes the save on success.
 - Routes `salvage` through one session command (`mutateGearWithRunHealthSync` plus homestead material grant) and flushes the save on success.
-- Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` + `addInstance` and flushes the save.
+- Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` through `dispatchGearMutationWithRunHealthSync` and flushes the save.
 - Reports `browseOnly = hasActiveBattle` and `finishedRunCharacters` for the screen.
 
 ## Battle integration

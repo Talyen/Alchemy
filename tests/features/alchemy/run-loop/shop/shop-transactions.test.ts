@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { refreshCardShopOfferings, refreshShopOfferings } from "@/features/alchemy/run-loop/shop/shop-transactions";
+import {
+  mapRefreshedShopOfferings,
+  purchaseShopOffering,
+  refreshCardShopOfferings,
+  refreshShopOfferings,
+} from "@/features/alchemy/run-loop/shop/shop-transactions";
 import { createInitialShopState } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
   createRunSessionCommand,
@@ -10,14 +15,14 @@ import { setShopState as mutateShopState } from "@/features/alchemy/shared/store
 const setShopState = createRunSessionCommand(mutateShopState);
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { selectRewardCards, type BattleCard } from "@/lib/game-data";
-import type { ShopState } from "@/lib/active-run-session";
-import { makeEffect, makeTestCardWithId } from "../../../fixtures/battle";
+import { emptyShopState, type ShopState } from "@/lib/active-run-session";
+import { makeEffect, makeTestCardWithId } from "../../../../fixtures/battle";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
   resetRunProgressSlice,
   setRunProgress,
-} from "../../../helpers/run-domain-store-test";
+} from "../../../../helpers/run-domain-store-test";
 
 vi.mock("@/lib/game-data", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/game-data")>();
@@ -48,11 +53,7 @@ describe("refreshShopOfferings", () => {
         refreshesLeft: draft.session.shopState.refreshesLeft,
         setState: mutateShopState,
         resample: () => newItems,
-        mapState: (previous, items) => ({
-          ...previous,
-          cards: items,
-          refreshesLeft: previous.refreshesLeft - 1,
-        }),
+        mapState: (previous, items) => mapRefreshedShopOfferings(previous, "cards", items),
       }),
     );
     unsubscribe();
@@ -62,6 +63,7 @@ describe("refreshShopOfferings", () => {
     expect(getRunProgressStoreView().runGold).toBe(5);
     expect(getRunSessionStoreView().shopState.cards).toEqual(newItems);
     expect(getRunSessionStoreView().shopState.refreshesLeft).toBe(0);
+    expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toEqual([]);
   });
 
   it.each([
@@ -127,5 +129,33 @@ describe("refreshCardShopOfferings", () => {
     expect(refreshed).toMatchObject({ committed: true, price: 5, value: newItems });
     expect(selectRewardCards).toHaveBeenCalledOnce();
     expect(getRunSessionStoreView().shopState.cards).toEqual(newItems);
+  });
+});
+
+describe("purchaseShopOffering", () => {
+  it("does not spend gold when the payload is not the live offering", () => {
+    setRunProgress({ runGold: 10 });
+    setShopState({ ...emptyShopState(), purchasedSlotKeys: [] });
+    const commits: number[] = [];
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+
+    const result = dispatchRunSessionCommand((draft) =>
+      purchaseShopOffering({
+        draft,
+        price: 5,
+        state: draft.session.shopState,
+        setState: mutateShopState,
+        slotKey: "missing-0",
+        offeringMatches: false,
+        acquire: () => {
+          throw new Error("should not acquire");
+        },
+      }),
+    );
+    unsubscribe();
+
+    expect(result).toMatchObject({ committed: false, price: 5 });
+    expect(commits).toHaveLength(0);
+    expect(getRunProgressStoreView().runGold).toBe(10);
   });
 });

@@ -2,6 +2,7 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FadeSlot } from "@/features/alchemy/shared/ui/fade-slot";
+import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 
 describe("FadeSlot", () => {
@@ -33,7 +34,7 @@ describe("FadeSlot", () => {
     expect(screen.getByTestId("fade-slot").className).not.toContain("grid-cols-3");
 
     act(() => {
-      vi.advanceTimersByTime(MOTION_FADE_MS);
+      vi.advanceTimersByTime(resolveGameDelay(MOTION_FADE_MS));
     });
 
     expect(screen.getByText("Bestiary")).toBeTruthy();

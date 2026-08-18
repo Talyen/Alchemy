@@ -3,6 +3,7 @@ export {
   ALLOWED_SCREEN_TRANSITIONS,
   assertScreenTransitionAllowed,
   isScreenTransitionAllowed,
+  type ScreenTransitionOptions,
 } from "./screen-transition-policy";
 export {
   DESTINATIONS,
@@ -20,6 +21,7 @@ export {
   isRunLoopScreen,
   isRunEndScreen,
   requiresActiveRun,
+  SCREEN_PHASE,
   type RunPhase,
 } from "./run-screen-router";
 export { getSteamRichPresenceLabel } from "./run-phase-presence";

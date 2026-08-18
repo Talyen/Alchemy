@@ -1,5 +1,7 @@
 import { isPlayerDefeated, processCompanionTurnStart, type BattleState, type CombatTextEvent } from "@/lib/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { clearBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { createBattleSession } from "./battle-session";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
 import type { BattlePresentationPort } from "./battle-presentation-port";
@@ -16,6 +18,7 @@ export interface TurnOrchestration {
   logBattleError: (context: string, err: unknown) => void;
   resetHandTransferUi: () => void;
   scheduleCompanionFollowUp: (resultState: BattleState, sessionNum: number) => void;
+  scheduleAutoEndTurn: (resultState: BattleState) => void;
   getPresentation: () => BattlePresentationPort;
 }
 
@@ -32,6 +35,25 @@ export function getBattleContinuation(
 ): PersistedBattleTransition | null {
   if (!playerTurnSkipped || state.enemyHealth <= 0 || isPlayerDefeated(state)) return null;
   return { kind: "continue-end-turn" };
+}
+
+/** Shared tail after draw/resume: battle-end check, skip-turn chain, or companion + auto-end. */
+export function finalizePlayerTurnResume(
+  state: BattleState,
+  playerTurnSkipped: boolean,
+  sessionNum: number,
+  battleSession: BattleTurnSession,
+  orch: TurnOrchestration,
+  resolveEndTurn: ResolveEndTurn,
+): void {
+  if (battleSession.checkBattleEnd(state, sessionNum)) return;
+  if (playerTurnSkipped) {
+    dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
+    resolveEndTurn(state, sessionNum, battleSession, orch);
+    return;
+  }
+  orch.scheduleCompanionFollowUp(state, sessionNum);
+  orch.scheduleAutoEndTurn(state);
 }
 
 export function triggerCompanionEffects(

@@ -244,6 +244,7 @@ export const ActiveRunDataSchema = z
     runGold: z.number().int().nonnegative().catch(0),
     runPlayerHealth: z.number().int().nonnegative().catch(0),
     runMaxHealth: z.number().int().positive().catch(30),
+    runMetaMaxHealth: z.number().int().nonnegative().catch(0).default(0),
     roomsEncountered: z.number().int().nonnegative().catch(0),
     currentAct: z.number().int().min(1).max(ACTS_PER_RUN).catch(1),
     destinationIndexInAct: z.number().int().nonnegative().catch(0),

@@ -27,14 +27,6 @@ export interface RunOrchestrationPort extends ActiveRunCorePort {
   destinationRoundsSinceOffered: Partial<Record<Destination, number>>;
 }
 
-/** Active-run fields used by run-flow orchestration handlers. */
-export type RunFlowRunPort = ActiveRunCorePort & Pick<RunOrchestrationPort, "currentAct">;
-
-/** Talent effects used by run-flow handlers (currently campfire healing). */
-export interface RunFlowTalentPort {
-  talentEffects: Pick<TalentEffectManifest, "campfireHealBonus">;
-}
-
 /** Destination availability reads; the resolver stays pure and receives this port. */
 export type DestinationRunPort = Pick<
   RunOrchestrationPort,

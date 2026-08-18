@@ -2,6 +2,7 @@
 import type { GearInstance } from "@/lib/gear";
 
 import { PurchasableGearItem } from "../../shared/ui/purchasable-gear-item";
+import { shopOfferingsSwapKey } from "../shop/shop-slot-keys";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
 export function EquipmentShopScreen({
@@ -30,7 +31,10 @@ export function EquipmentShopScreen({
   return (
     <ShopBrowseShell title="Equipment Shop" gold={gold} onOpenMenu={onOpenMenu}>
       <ShopBrowseOfferings
-        swapKey={gear.map((g) => g.instanceId).join("-")}
+        swapKey={shopOfferingsSwapKey(
+          gear.map((g) => g.instanceId),
+          refreshesLeft,
+        )}
         onLeave={onContinue}
         services={
           <RefreshShopServiceButton

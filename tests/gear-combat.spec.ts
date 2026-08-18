@@ -19,16 +19,12 @@ test.describe("Gear combat", { ...armory, ...critical }, () => {
     });
   });
 
-  test("keeps Armory editing disabled while a battle is active", async ({ page, fastBattle }) => {
+  test("keeps Armory editable while a battle is active", async ({ page, fastBattle }) => {
     void fastBattle;
     const gearInventories = createEmptyGearInventories();
     gearInventories.knight = [bodyGear];
     const menu = new MenuPage(page);
 
-    // Inject the meta gear first (its init script must run before the battle
-    // save's), then an in-battle screen so the Armory-lock gate is reachable
-    // without booting a full battle. injectSaveState preserves existing
-    // localStorage (gear) and adds the active run + combat snapshot.
     await menu.gotoWithUnlockedMeta({
       gearInventories,
       gearLoadouts: createEmptyGearLoadouts(),
@@ -45,11 +41,11 @@ test.describe("Gear combat", { ...armory, ...critical }, () => {
 
     await page.getByRole("button", { name: "Open battle menu" }).click();
     await page.getByRole("button", { name: "Armory" }).click();
-    await expect(page.getByText("Equipment can be changed after combat.")).toBeVisible();
+    await expect(page.getByText("Equipment can be changed after combat.")).toHaveCount(0);
     await page.getByLabel("Armor equipment slot").click();
     const bodyItem = gearItemLocator(page, "Leather Armor");
     await expect(bodyItem).toBeVisible();
     await bodyItem.dblclick();
-    await expect(page.locator('[data-testid="armory-equipment-slot"][data-slot="body"] img')).toHaveCount(1);
+    await expect(page.locator('[data-testid="armory-equipment-slot"][data-slot="body"] img')).toHaveCount(2);
   });
 });

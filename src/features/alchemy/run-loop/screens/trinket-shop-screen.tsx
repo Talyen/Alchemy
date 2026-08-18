@@ -2,6 +2,7 @@
 import type { TrinketEntry } from "@/lib/game-data";
 
 import { PurchasableTrinketItem } from "../../shared/ui/purchasable-trinket-item";
+import { shopItemSlotKey, shopOfferingsSwapKey } from "../shop/shop-slot-keys";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
 export function TrinketShopScreen({
@@ -30,7 +31,10 @@ export function TrinketShopScreen({
   return (
     <ShopBrowseShell title="Trinket Shop" gold={gold} onOpenMenu={onOpenMenu}>
       <ShopBrowseOfferings
-        swapKey={trinkets.map((t) => t.id).join("-")}
+        swapKey={shopOfferingsSwapKey(
+          trinkets.map((t, i) => shopItemSlotKey(t.id, i)),
+          refreshesLeft,
+        )}
         onLeave={onContinue}
         services={
           <RefreshShopServiceButton
@@ -42,7 +46,7 @@ export function TrinketShopScreen({
         }
       >
         {trinkets.map((trinket, i) => {
-          const slotKey = `${trinket.id}-${i}`;
+          const slotKey = shopItemSlotKey(trinket.id, i);
           return (
             <PurchasableTrinketItem
               key={slotKey}

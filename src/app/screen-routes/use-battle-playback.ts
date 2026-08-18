@@ -1,14 +1,14 @@
 // Route-local battle playback: autoplay ticks and auto-end-turn.
 // Lives next to battle display so combat ticks do not re-render the shell controller.
 // Session autoplay on/off is owned by the battle controller so it survives route unmount.
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useBattleAutoEndTurn, useBattleAutoplay } from "@/features/alchemy/run-loop/battle";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
+import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/use-battle-presentation-gate";
 
 interface UseBattlePlaybackProps {
   screen: Screen;
@@ -34,8 +34,16 @@ export function useBattlePlayback({
   isCardPlayInProgress,
 }: UseBattlePlaybackProps) {
   const autoEndTurn = useSettingsStore((s) => s.autoEndTurn);
-  const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);
-  const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);
+  const scheduleAutoEndTurnRef = useRef<(state?: BattleState) => void>(() => {});
+  const wakeAutoplayRef = useRef<(() => void) | null>(null);
+  const onPlaybackGateChangeRef = useRef<() => void>(() => {});
+  // Combined wakeup: auto-end reschedules immediately; autoplay interrupts its retry wait.
+  // eslint-disable-next-line react-hooks/refs -- latest playback callbacks; not a render input
+  onPlaybackGateChangeRef.current = () => {
+    scheduleAutoEndTurnRef.current();
+    wakeAutoplayRef.current?.();
+  };
+  const presentationGateRef = useBattlePresentationGateRef(onPlaybackGateChangeRef);
 
   const toggleAutoplay = useCallback(() => {
     setAutoplayEnabled(!isAutoplayEnabled);
@@ -46,10 +54,10 @@ export function useBattlePlayback({
     screen,
     battleState,
     hasActiveBattle,
-    cardTransferInProgress,
-    hiddenHandCardKeys,
     isCardPlayInProgress,
     onEndTurn: handleEndTurn,
+    presentationGateRef,
+    scheduleAutoEndTurnRef,
   });
 
   useBattleAutoplay({
@@ -57,11 +65,11 @@ export function useBattlePlayback({
     screen,
     battleState,
     hasActiveBattle,
-    cardTransferInProgress,
-    hiddenHandCardKeys,
     isCardPlayInProgress,
     gameMenuOpen,
     playCard: handleAutoplayCard,
+    presentationGateRef,
+    wakeRef: wakeAutoplayRef,
   });
 
   const bind = useMemo(

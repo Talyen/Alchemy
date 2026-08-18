@@ -2,9 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   driveAutoplay,
   findFirstPlayableHandCard,
+  isBattlePlayInputBusy,
   isBattlePlaybackBlocked,
 } from "@/features/alchemy/run-loop/battle/autoplay-driver";
 import { makeTestBattleState, makeTestCard } from "../../../../fixtures/battle";
+import { makeEmptyHandBattle, makeOpenBattle, playableCard } from "./open-battle-fixture";
 
 function cheapCard(uid: number) {
   return {
@@ -17,32 +19,32 @@ function cheapCard(uid: number) {
   };
 }
 
-describe("isBattlePlaybackBlocked", () => {
-  const playableCard = makeTestCard({
-    id: "slash",
-    cost: 1,
-    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+describe("isBattlePlayInputBusy", () => {
+  it("is busy during a play commit or a card transfer", () => {
+    expect(isBattlePlayInputBusy({ cardPlayInProgress: false, cardTransferInProgress: false })).toBe(false);
+    expect(isBattlePlayInputBusy({ cardPlayInProgress: true, cardTransferInProgress: false })).toBe(true);
+    expect(isBattlePlayInputBusy({ cardPlayInProgress: false, cardTransferInProgress: true })).toBe(true);
   });
-  const openBattle = {
-    screen: "battle" as const,
-    hasActiveBattle: true,
-    cardTransferInProgress: false,
-    hiddenHandCardKeys: new Set<string>(),
-    cardPlayInProgress: false,
-    battleState: makeTestBattleState({
-      hand: [{ ...playableCard, uid: 1 }],
-      mana: 3,
-      turnPhase: "player" as const,
-      enemyHealth: 20,
-    }),
-  };
+});
+
+describe("isBattlePlaybackBlocked", () => {
+  const openBattle = makeOpenBattle();
 
   it("allows an open player turn", () => {
     expect(isBattlePlaybackBlocked(openBattle)).toBe(false);
   });
 
-  it("blocks while hand cards are hidden", () => {
-    expect(isBattlePlaybackBlocked({ ...openBattle, hiddenHandCardKeys: new Set(["slash-1"]) })).toBe(true);
+  it("blocks while a matching hand card is hidden", () => {
+    expect(isBattlePlaybackBlocked({ ...openBattle, hiddenHandCardKeys: ["slash-1"] })).toBe(true);
+  });
+
+  it("does not block on hidden keys that are not in the current hand", () => {
+    expect(
+      isBattlePlaybackBlocked({
+        ...makeEmptyHandBattle(),
+        hiddenHandCardKeys: ["slash-1"],
+      }),
+    ).toBe(false);
   });
 
   it("blocks while a card transfer is in progress", () => {
@@ -168,6 +170,41 @@ describe("driveAutoplay", () => {
     expect(played).toEqual([1, 2]);
 
     await vi.advanceTimersByTimeAsync(1000);
+    await done;
+  });
+
+  it("short-circuits a retry wait when wakeRef fires", async () => {
+    vi.useFakeTimers();
+    const wakeRef: { current: (() => void) | null } = { current: null };
+    let blocked = true;
+    const played: number[] = [];
+    const controller = new AbortController();
+
+    const done = driveAutoplay({
+      signal: controller.signal,
+      delayMs: 1000,
+      postPlayDelayMs: 0,
+      wakeRef,
+      isEnabled: () => played.length < 1,
+      isBlocked: () => blocked,
+      findPlayableCard: () => ({ card: cheapCard(1), index: 0 }),
+      playCard: (card) => {
+        played.push(card.uid ?? 0);
+        return true;
+      },
+    });
+
+    await vi.advanceTimersByTimeAsync(0);
+    expect(played).toEqual([]);
+    expect(wakeRef.current).toEqual(expect.any(Function));
+
+    blocked = false;
+    await Promise.resolve();
+    wakeRef.current?.();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(played).toEqual([1]);
+    controller.abort();
     await done;
   });
 });

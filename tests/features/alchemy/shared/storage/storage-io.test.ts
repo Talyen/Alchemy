@@ -128,17 +128,19 @@ describe("storage io", () => {
     expect(loaded.data.discoveredCardIds).toEqual(["slash", "block", "bash"]);
     expect(loaded.data.activeRun).toMatchObject({
       characterId: "knight",
-      runGold: 42,
+      runGold: 0,
       runPlayerHealth: 18,
       contentSystemType: "campaign",
     });
+    expect(loaded.data.gold).toBe(42);
     expect(loaded.data.materialInventory).toEqual({ wood: 4, iron: 2, herbs: 0, food: 0, crystal: 0 });
 
     await saveAlchemySaveData(loaded.data);
     const reloaded = JSON.parse(mockStorage[SAVE_KEY]);
     expect(reloaded.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(reloaded.discoveredCardIds).toEqual(["slash", "block", "bash"]);
-    expect(reloaded.activeRun.runGold).toBe(42);
+    expect(reloaded.activeRun.runGold).toBe(0);
+    expect(reloaded.gold).toBe(42);
   });
 
   it("does not report warnings for harmless save defaults", async () => {

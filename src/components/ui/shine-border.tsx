@@ -40,7 +40,10 @@ export function ShineBorder({
           ...style,
         } as CSSProperties
       }
-      className={cn("shine-border pointer-events-none absolute animate-shine rounded-[inherit]", className)}
+      className={cn(
+        "shine-border pointer-events-none absolute animate-shine overflow-hidden rounded-[inherit]",
+        className,
+      )}
       {...props}
     />
   );

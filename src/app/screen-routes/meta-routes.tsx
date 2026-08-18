@@ -14,9 +14,8 @@ import { useProfileCollectionSlice, useProfileDiscoverySlice } from "@/features/
 import { useCollectionActions, useHomesteadActions } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useBondedCompanions,
-  useContentSystemType,
-  useHasActiveRun,
   useHomesteadProgressSlice,
+  useResumableGameModes,
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { MetaCommands, MetaRouteCtx } from "./route-ctx";
@@ -70,12 +69,10 @@ function GameModeSelectScreenRoute({
   commands: MetaCommands;
   onOpenBattleMenu: MetaRouteCtx["onOpenBattleMenu"];
 }) {
-  const hasActiveRun = useHasActiveRun();
-  const activeContentSystemType = useContentSystemType();
+  const resumableModes = useResumableGameModes();
   return (
     <GameModeSelectScreen
-      hasActiveRun={hasActiveRun}
-      activeContentSystemType={activeContentSystemType}
+      resumableModes={resumableModes}
       onSelectCampaign={commands.beginCampaign}
       onSelectLabyrinth={commands.beginLabyrinth}
       onSelectWildwood={commands.beginWildwood}

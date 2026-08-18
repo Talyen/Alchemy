@@ -1,21 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   restoreRun,
+  snapshotRun,
   syncRunMaxHealthFromGearMutation as mutateRunMaxHealthFromGearMutation,
-} from "@/features/alchemy/shared/stores/run-transitions";
+} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
+  addRunGold,
   applyRunStartSnapshot as mutateRunStartSnapshot,
   finalizeRunXP as mutateFinalizeRunXP,
   unlockAllTalents as mutateUnlockAllTalents,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { useRunProfileStore } from "../../../../helpers/gameplay-store-test";
-import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { useGearStore, useRunProfileStore } from "../../../../helpers/gameplay-store-test";
+import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
+import {
+  createRunSessionCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/run-session-command";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
-import type { ActiveRunData } from "@/lib/active-run-session";
-import { createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
-import { createRunRngState } from "@/lib/run-rng";
-import { createCompleteActiveRunData } from "./active-run-data-fixture";
+
+import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
 
 const syncRunMaxHealthFromGearMutation = createRunSessionCommand(mutateRunMaxHealthFromGearMutation);
 const applyRunStartSnapshot = createRunSessionCommand(mutateRunStartSnapshot);
@@ -37,6 +40,7 @@ import {
   getRunSessionStoreView,
   resetRunDomainStore,
   setRunProgress,
+  setRunSession,
 } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
@@ -77,7 +81,7 @@ describe("run-domain progress: initial state", () => {
 
 describe("initialize", () => {
   it("restores active run data", () => {
-    const activeRun: ActiveRunData = {
+    const activeRun = makeActiveRunData({
       characterId: "rogue",
       runDeck: [
         {
@@ -94,75 +98,29 @@ describe("initialize", () => {
       runPlayerHealth: 25,
       runMaxHealth: 30,
       roomsEncountered: 3,
-      currentAct: 1,
       destinationIndexInAct: 2,
       completedDestinations: ["combat"],
-      runTrinkets: [],
-      encounteredRunEnemyIds: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
       rng: getRunProgressStoreView().rng,
-      labyrinthMap: null,
-      labyrinthPendingNode: null,
-      activeCombat: null,
-      runTalentXP: {},
-      lastOfferedDestinations: [],
-      destinationRoundsSinceOffered: {},
-      wildwoodDraft: null,
-      starterDraftChoices: null,
-      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-      shopState: null,
-      alchemistState: null,
-      trinketShopState: null,
-      equipmentShopState: null,
-      mysteryVisit: null,
-      corruptionResult: null,
-      currentScreen: null,
-      interruptedFlow: { kind: "none" },
-    };
+    });
     getRunProgressStoreView().initialize(activeRun);
     useRunProfileStore.getState().applyTalentState({ physical: 100 }, { physical: ["talent-1"] });
     expect(getRunProgressStoreView().characterId).toBe("rogue");
-    expect(getRunProgressStoreView().runGold).toBe(50);
+    expect(getRunProgressStoreView().runGold).toBe(0);
     expect(getRunProgressStoreView().runPlayerHealth).toBe(25);
     expect(getRunProgressStoreView().talentXP.physical).toBe(100);
     expect(getRunProgressStoreView().unlockedTalents.physical).toEqual(["talent-1"]);
   });
 
   it("restores valid completed destination labels", () => {
-    const activeRun: ActiveRunData = {
+    const activeRun = makeActiveRunData({
       characterId: "rogue",
-      runDeck: [],
       runGold: 50,
       runPlayerHealth: 25,
       runMaxHealth: 30,
       roomsEncountered: 3,
-      currentAct: 1,
       destinationIndexInAct: 2,
       completedDestinations: ["Normal Combat", "Corruption"],
-      runTrinkets: [],
-      encounteredRunEnemyIds: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      rng: createRunRngState(() => 0.5),
-      labyrinthMap: null,
-      labyrinthPendingNode: null,
-      activeCombat: null,
-      runTalentXP: {},
-      lastOfferedDestinations: [],
-      destinationRoundsSinceOffered: {},
-      wildwoodDraft: null,
-      starterDraftChoices: null,
-      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-      shopState: null,
-      alchemistState: null,
-      trinketShopState: null,
-      equipmentShopState: null,
-      mysteryVisit: null,
-      corruptionResult: null,
-      currentScreen: null,
-      interruptedFlow: { kind: "none" },
-    };
+    });
 
     getRunProgressStoreView().initialize(activeRun);
 
@@ -180,39 +138,7 @@ describe("initialize", () => {
   });
 
   it("restores navigation screen via restoreRun", () => {
-    const activeRun: ActiveRunData = {
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 20,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      encounteredRunEnemyIds: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      rng: createRunRngState(() => 0.5),
-      labyrinthMap: null,
-      labyrinthPendingNode: null,
-      activeCombat: null,
-      runTalentXP: {},
-      lastOfferedDestinations: [],
-      destinationRoundsSinceOffered: {},
-      wildwoodDraft: null,
-      starterDraftChoices: null,
-      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-      shopState: null,
-      alchemistState: null,
-      trinketShopState: null,
-      equipmentShopState: null,
-      mysteryVisit: null,
-      corruptionResult: null,
-      currentScreen: "shop",
-      interruptedFlow: { kind: "none" },
-    };
+    const activeRun = makeActiveRunData({ currentScreen: "shop" });
     restoreRun(activeRun, {}, {});
     expect(getNavigationStoreView().screen).toBe("shop");
   });
@@ -227,9 +153,8 @@ describe("initialize", () => {
     expect(snapshot).toMatchObject({
       characterId: activeRun.characterId,
       runDeck: activeRun.runDeck,
-      runGold: activeRun.runGold,
+      runGold: 0,
       runPlayerHealth: activeRun.runPlayerHealth,
-      runMaxHealth: activeRun.runMaxHealth,
       roomsEncountered: activeRun.roomsEncountered,
       currentAct: activeRun.currentAct,
       destinationIndexInAct: activeRun.destinationIndexInAct,
@@ -274,30 +199,37 @@ describe("gear max health sync", () => {
     affixes: [{ id: "max-health", value: 7 }],
   };
 
-  it("applies max-health deltas when equipped gear inventory mutates", () => {
+  it("rebinds max health from currently equipped gear", () => {
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [maxHealthArmor];
     const loadouts = createEmptyGearLoadouts();
     loadouts.knight.body = maxHealthArmor.instanceId;
-    setRunProgress({ characterId: "knight", runMaxHealth: 37, runPlayerHealth: 37, initialized: true });
+    useGearStore.getState().initialize(inventories, loadouts);
+    setRunProgress({
+      characterId: "knight",
+      runMaxHealth: 30,
+      runPlayerHealth: 30,
+      runMetaMaxHealth: 30,
+    });
+    setRunSession({ hasActiveRun: true });
 
-    syncRunMaxHealthFromGearMutation(
-      "knight",
-      [maxHealthArmor],
-      loadouts,
-      [{ ...maxHealthArmor, affixes: [] }],
-      loadouts,
-    );
+    syncRunMaxHealthFromGearMutation();
 
-    expect(getRunProgressStoreView().runMaxHealth).toBe(30);
+    expect(getRunProgressStoreView().runMaxHealth).toBe(37);
     expect(getRunProgressStoreView().runPlayerHealth).toBe(30);
   });
 
-  it("applies max-health deltas when equipped gear is removed", () => {
-    const loadoutsBefore = createEmptyGearLoadouts();
-    loadoutsBefore.knight.body = maxHealthArmor.instanceId;
-    const loadoutsAfter = createEmptyGearLoadouts();
-    setRunProgress({ characterId: "knight", runMaxHealth: 37, runPlayerHealth: 35, initialized: true });
+  it("rebinds max health when equipped gear is removed", () => {
+    useGearStore.getState().initialize(createEmptyGearInventories(), createEmptyGearLoadouts());
+    setRunProgress({
+      characterId: "knight",
+      runMaxHealth: 37,
+      runPlayerHealth: 35,
+      runMetaMaxHealth: 37,
+    });
+    setRunSession({ hasActiveRun: true });
 
-    syncRunMaxHealthFromGearMutation("knight", [maxHealthArmor], loadoutsBefore, [], loadoutsAfter);
+    syncRunMaxHealthFromGearMutation();
 
     expect(getRunProgressStoreView().runMaxHealth).toBe(30);
     expect(getRunProgressStoreView().runPlayerHealth).toBe(30);
@@ -381,7 +313,7 @@ describe("awardMysteryXP", () => {
 describe("addRunGold", () => {
   it("adds gold with multiplier applied", () => {
     setRunProgress({ runGold: 10 });
-    getRunProgressStoreView().addRunGold(5);
+    dispatchRunSessionCommand((draft) => addRunGold(draft, 5));
     const mult = 1; // knight, difficulty-1
     expect(getRunProgressStoreView().runGold).toBe(10 + Math.floor(5 * mult));
   });
@@ -479,7 +411,7 @@ describe("reset", () => {
     expect(getRunProgressStoreView().talentXP.burn).toBe(50);
     expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
     expect(getRunProgressStoreView().runTalentXP).toEqual({});
-    expect(getRunProgressStoreView().runGold).toBe(0);
+    expect(getRunProgressStoreView().runGold).toBe(100);
     expect(getRunProgressStoreView().runPlayerHealth).toBeGreaterThan(0);
   });
 });

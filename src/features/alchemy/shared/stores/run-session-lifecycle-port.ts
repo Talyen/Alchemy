@@ -16,3 +16,4 @@ export {
   onRunTeardown,
   onClearBattlePresentation,
 } from "./run-transitions";
+export { hydrateModeRunInDraft } from "./run-park-restore";

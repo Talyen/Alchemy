@@ -44,7 +44,7 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: Game
   subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };
 
-export type GearArmorySlice = Pick<GearStore, "inventories" | "loadouts" | "craftingCurrencies" | "addInstance">;
+export type GearArmorySlice = Pick<GearStore, "inventories" | "loadouts" | "craftingCurrencies">;
 
 /** Canonical gear read/command slice for feature controllers. */
 export function useGearArmorySlice(): GearArmorySlice {
@@ -53,7 +53,6 @@ export function useGearArmorySlice(): GearArmorySlice {
       inventories: state.gear.inventories,
       loadouts: state.gear.loadouts,
       craftingCurrencies: state.gear.craftingCurrencies,
-      addInstance: state.gearActions.gearAddInstance,
     })),
   );
 }

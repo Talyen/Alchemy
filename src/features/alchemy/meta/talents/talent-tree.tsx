@@ -103,7 +103,7 @@ function TalentCard({
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
       onKeyDown={handleKeyDown}
       className={cn(
-        "talent-node relative h-[10.5rem] w-[20.5rem] shrink-0 rounded-lg",
+        "talent-node relative h-[10.5rem] w-[20.5rem] shrink-0 rounded-lg bg-stone-900",
         showShine && "talent-card-available",
         !isPlaceholder && cardInteractiveGlowClass,
         !isPlaceholder && cardShineFrameClass,
@@ -141,7 +141,7 @@ function TalentCard({
             </span>
           </div>
           {isPlaceholder ? null : (
-            <p className="mt-1 text-base leading-snug text-foreground/90 sm:text-lg">
+            <p className="mt-1 text-base leading-snug text-balance text-foreground/90 sm:text-lg">
               <TalentDescription description={talent.description} />
             </p>
           )}

@@ -2,7 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
-import { useRunDomainStore, useRunTransientStore } from "../../../helpers/gameplay-store-test";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { useRunTransientStore } from "../../../helpers/gameplay-store-test";
 
 const mockStorage: Record<string, string> = {};
 
@@ -42,7 +44,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
     act(() => {
-      useRunDomainStore.getState().setRunGold(77);
+      dispatchRunSessionCommand((draft) => setRunGold(draft, 77));
     });
 
     await act(async () => {
@@ -60,12 +62,12 @@ describe("useAlchemyAutosaveFromStores", () => {
 
     act(() => {
       useRunTransientStore.getState().setHasActiveRun(true);
-      useRunDomainStore.getState().setRunGold(91);
+      dispatchRunSessionCommand((draft) => setRunGold(draft, 91));
       window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
 
     const keys = Object.keys(mockStorage);
     expect(keys).toHaveLength(1);
-    expect(JSON.parse(mockStorage[keys[0]!]!).activeRun?.runGold).toBe(91);
+    expect(JSON.parse(mockStorage[keys[0]!]!).gold).toBe(91);
   });
 });

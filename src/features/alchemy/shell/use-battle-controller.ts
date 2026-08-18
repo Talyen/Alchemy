@@ -47,7 +47,7 @@ export function useBattleController({
 }: UseBattleControllerProps) {
   const { hasActiveBattle, pendingTransitionResumeRequired } = useBattleLifetimeFields();
 
-  const scheduleAutoEndTurnRef = useRef<((state: BattleState) => void) | null>(null);
+  const scheduleAutoEndTurnRef = useRef<((state?: BattleState) => void) | null>(null);
   const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
   const onBattleSessionPreparedRef = useRef<(() => void) | null>(null);
   const pendingTransitionResumeAttemptedRef = useRef(false);

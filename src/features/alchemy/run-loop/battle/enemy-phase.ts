@@ -4,15 +4,12 @@ import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-const
 import { delay } from "@/lib/animation/game-timer";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  beginBattleTransition,
-  clearBattleTransition,
-  commitBattleTransition,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { beginBattleTransition, commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { applyCombatTextPortraitFeedback, shouldHurtEnemyFromCombatTexts } from "./battle-feedback";
 import { playCombatTextSounds } from "./controller-utils";
 import { runHandDrawSequence } from "./draw-sequence";
 import {
+  finalizePlayerTurnResume,
   getBattleContinuation,
   type BattleTurnSession,
   type ResolveEndTurn,
@@ -144,12 +141,6 @@ async function continueAfterEnemyDraw(
     if (!committedDuringDraw) {
       dispatchRunSessionCommand((draft) => commitBattleTransition(draft, resultState, continuation));
     }
-    if (battleSession.checkBattleEnd(resultState, sessionNum)) return;
-    if (playerTurnSkipped) {
-      dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
-      resolveEndTurn(resultState, sessionNum, battleSession, orch);
-      return;
-    }
-    orch.scheduleCompanionFollowUp(resultState, sessionNum);
+    finalizePlayerTurnResume(resultState, playerTurnSkipped, sessionNum, battleSession, orch, resolveEndTurn);
   });
 }

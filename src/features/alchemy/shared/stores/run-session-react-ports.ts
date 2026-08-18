@@ -16,20 +16,18 @@ import type { Screen } from "@/lib/routing";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { DisplayOverrides } from "./run-domain-types";
 import { pickActiveRunFields } from "./run-state-init";
+import { mostRecentResumableMode } from "./parked-runs";
 import { useGameplayStateStore } from "./gameplay-state-store";
-import { setScreen } from "./run-session-write-port";
 import type {
   BattleRunPort,
   BattleTalentPort,
   ContentNavigationTalentPort,
-  RunFlowTalentPort,
   RunOrchestrationPort,
 } from "./run-port-types";
 import { createRunSessionCommand } from "./run-session-command";
 import { selectAutosaveAllowed } from "./select-autosave-allowed";
 import { setHasActiveBattle as setHasActiveBattleCommand } from "./run-session-write-port";
 
-const commandSetScreen = createRunSessionCommand(setScreen);
 const commandSetHasActiveBattle = createRunSessionCommand(setHasActiveBattleCommand);
 
 export function useTalentEffects(): TalentEffectManifest {
@@ -39,7 +37,12 @@ export function useTalentEffects(): TalentEffectManifest {
 
 /** Single orchestration subscription for run-flow, content-nav, destinations, and wildwood. */
 export function useRunOrchestrationPort(): RunOrchestrationPort {
-  return useGameplayStateStore(useShallow((state) => pickActiveRunFields(state.run.activeRun)));
+  return useGameplayStateStore(
+    useShallow((state) => ({
+      ...pickActiveRunFields(state.run.activeRun),
+      runGold: state.runProfile.gold,
+    })),
+  );
 }
 
 export function useBattleRunPort(): BattleRunPort {
@@ -53,7 +56,7 @@ export function useBattleRunPort(): BattleRunPort {
       contentSystemType: state.run.activeRun.contentSystemType,
       encounteredRunEnemyIds: state.run.activeRun.encounteredRunEnemyIds,
       runDeck: state.run.activeRun.runDeck,
-      runGold: state.run.activeRun.runGold,
+      runGold: state.runProfile.gold,
     })),
   );
 }
@@ -63,10 +66,6 @@ export function useBattleTalentPort(): BattleTalentPort {
   return useMemo(() => ({ talentEffects }), [talentEffects]);
 }
 
-export function useRunFlowTalentPort(talentEffects: TalentEffectManifest): RunFlowTalentPort {
-  return useMemo(() => ({ talentEffects: { campfireHealBonus: talentEffects.campfireHealBonus } }), [talentEffects]);
-}
-
 export function useContentNavigationTalentPort(
   talentEffects: TalentEffectManifest,
   talentXP: TalentXP,
@@ -74,15 +73,6 @@ export function useContentNavigationTalentPort(
   return useMemo(
     () => ({ talentXP, talentEffects: { startGold: talentEffects.startGold } }),
     [talentEffects, talentXP],
-  );
-}
-
-export function useActiveRunScreen() {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      screen: state.run.navigation.screen,
-      setScreen: commandSetScreen,
-    })),
   );
 }
 
@@ -109,6 +99,36 @@ export function useHasActiveBattle(): boolean {
 
 export function useHasActiveRun(): boolean {
   return useGameplayStateStore((state) => state.session.hasActiveRun);
+}
+
+export function useForegroundResumeKind(): "battle" | "run" | null {
+  return useGameplayStateStore((state) => {
+    const liveMode = state.session.hasActiveRun ? state.run.activeRun.contentSystemType : null;
+    const mode = mostRecentResumableMode(
+      state.run.runRecency,
+      liveMode,
+      state.run.parkedRuns,
+      state.session.hasActiveRun,
+    );
+    if (!mode) return null;
+    if (state.session.hasActiveRun && liveMode === mode) {
+      return state.battle.hasActiveBattle ? "battle" : "run";
+    }
+    return state.run.parkedRuns[mode]?.activeCombat ? "battle" : "run";
+  });
+}
+
+export function useResumableGameModes(): Record<ContentSystemId, boolean> {
+  return useGameplayStateStore(
+    useShallow((state) => {
+      const live = state.session.hasActiveRun ? state.run.activeRun.contentSystemType : null;
+      return {
+        campaign: live === "campaign" || Boolean(state.run.parkedRuns.campaign),
+        labyrinth: live === "labyrinth" || Boolean(state.run.parkedRuns.labyrinth),
+        wildwood: live === "wildwood" || Boolean(state.run.parkedRuns.wildwood),
+      };
+    }),
+  );
 }
 
 export function useDisplayOverrides(): DisplayOverrides {

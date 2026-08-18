@@ -1,7 +1,7 @@
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { spendRunGold } from "@/features/alchemy/run-loop/run-gold";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readShopFirstPurchaseUsed } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readDraftGold } from "@/features/alchemy/shared/stores/gold-purse";
 import {
   createDraftRunRandomSource,
   setRunDeck,
@@ -13,11 +13,13 @@ import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { computeMerchantCardBuyPrice, computeMerchantRefreshPrice, computeRemoveCardPrice } from "./shop-pricing";
 import {
-  playShopSpendFeedback,
+  commitShopInitialize,
+  mapRefreshedShopOfferings,
+  runShopTransaction,
   purchaseShopOffering,
   refreshCardShopOfferings,
-  type ShopTransactionResult,
 } from "./shop-transactions";
+import { shopArrayOfferingMatches } from "./shop-slot-keys";
 import type { MerchantShopCommands } from "./shop-action-types";
 import { createInitialShopState, type ShopState } from "./shop-state-init";
 
@@ -30,22 +32,19 @@ export function createMerchantShopCommands({
     computeMerchantCardBuyPrice(card, {
       talentEffects,
       runTrinkets: readActiveRun().runTrinkets,
-      firstPurchaseUsed: readRunSession().shopState.firstPurchaseUsed,
+      firstPurchaseUsed: readShopFirstPurchaseUsed("shopState"),
     });
   const getRemoveCardPrice = () => computeRemoveCardPrice(talentEffects);
   const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
 
   function initialize(): void {
-    dispatchRunSessionCommand((draft) =>
-      setShopState(
-        draft,
-        createInitialShopState(draft.run.activeRun.runDeck, createDraftRunRandomSource(draft, "shops")),
-      ),
+    commitShopInitialize(setShopState, (draft) =>
+      createInitialShopState(draft.run.activeRun.runDeck, createDraftRunRandomSource(draft, "shops")),
     );
   }
 
   function buyCard(card: BattleCard, slotKey: string): boolean {
-    const result = dispatchRunSessionCommand((draft) => {
+    return runShopTransaction((draft) => {
       const state = draft.session.shopState;
       const price = computeMerchantCardBuyPrice(card, {
         talentEffects,
@@ -58,32 +57,29 @@ export function createMerchantShopCommands({
         state,
         setState: setShopState,
         slotKey,
+        offeringMatches: shopArrayOfferingMatches(state.cards, slotKey, card.id, (offered) => offered.id),
         acquire: () => appendCardToRunWithDiscovery(draft, card),
       });
-    });
-    playShopSpendFeedback(result);
-    return result.committed;
+    }).committed;
   }
 
   function removeCard(index: number): boolean {
     const price = getRemoveCardPrice();
-    const result = dispatchRunSessionCommand((draft): ShopTransactionResult => {
+    return runShopTransaction((draft) => {
       const state = draft.session.shopState;
       const run = draft.run.activeRun;
-      if (state.removeUsed || index < 0 || index >= run.runDeck.length || run.runGold < price) {
+      if (state.removeUsed || index < 0 || index >= run.runDeck.length || readDraftGold(draft) < price) {
         return { committed: false, price, value: undefined };
       }
       spendRunGold(price, (update) => setRunGold(draft, update));
       setRunDeck(draft, (previous) => previous.filter((_, cardIndex) => cardIndex !== index));
       setShopState(draft, (previous) => ({ ...previous, removeUsed: true }));
       return { committed: true, price, value: undefined };
-    });
-    playShopSpendFeedback(result);
-    return result.committed;
+    }).committed;
   }
 
   function refresh(): boolean {
-    const result = dispatchRunSessionCommand((draft) => {
+    return runShopTransaction((draft) => {
       const state = draft.session.shopState;
       return refreshCardShopOfferings<ShopState>({
         draft,
@@ -94,16 +90,9 @@ export function createMerchantShopCommands({
         count: SHOP_CARDS_OFFERED,
         setState: setShopState,
         rng: createDraftRunRandomSource(draft, "shops"),
-        mapState: (previous, cards) => ({
-          ...previous,
-          cards,
-          refreshesLeft: previous.refreshesLeft - 1,
-          purchasedSlotKeys: [],
-        }),
+        mapState: (previous, cards) => mapRefreshedShopOfferings(previous, "cards", cards),
       });
-    });
-    playShopSpendFeedback(result);
-    return result.committed;
+    }).committed;
   }
 
   return { initialize, buyCard, removeCard, refresh, getCardBuyPrice, getRemoveCardPrice, getRefreshPrice };

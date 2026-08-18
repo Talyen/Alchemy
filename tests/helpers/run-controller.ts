@@ -5,71 +5,31 @@ import type {
   BattleTalentPort,
   ContentNavigationRunPort,
   ContentNavigationTalentPort,
-  RunFlowRunPort,
-  RunFlowTalentPort,
 } from "@/features/alchemy/shared/stores/run-port-types";
 import { computeTalentEffects } from "@/lib/game-data/talents";
-import type { KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
-import type { Destination } from "@/lib/routing";
 import { getRunProgressStoreView } from "./run-domain-store-test";
-import { setContentSystemType } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
-type TestRunPort = RunFlowRunPort &
-  ContentNavigationRunPort &
-  BattleRunPort & {
-    destinationIndexInAct: number;
-    completedDestinations: Destination[];
-  };
-
-type TestTalentPort = RunFlowTalentPort &
-  ContentNavigationTalentPort &
-  BattleTalentPort & {
-    runTalentXP: TalentXP;
-    unlockedTalents: UnlockedTalents;
-    awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
-    resetRunXP: () => void;
-    unlockTalent: (keywordId: KeywordId, talentId: string) => void;
-    resetUnlockedTalents: () => void;
-  };
-
-export function makeRunController() {
+export function makeRunController(): BattleRunPort & ContentNavigationRunPort {
   const state = getRunDomainStore();
-  const port = {
-    contentSystemType: state.activeRun.contentSystemType,
-    currentAct: state.activeRun.currentAct,
-    selectedDifficulty: state.activeRun.selectedDifficulty,
+  return {
     characterId: state.activeRun.characterId,
+    selectedDifficulty: state.activeRun.selectedDifficulty,
     runMaxHealth: state.activeRun.runMaxHealth,
-    destinationIndexInAct: state.activeRun.destinationIndexInAct,
-    completedDestinations: state.activeRun.completedDestinations,
-    runPlayerHealth: state.activeRun.runPlayerHealth,
-    runGold: state.activeRun.runGold,
-    runDeck: state.activeRun.runDeck,
-    runTrinkets: state.activeRun.runTrinkets,
+    contentSystemType: state.activeRun.contentSystemType,
     roomsEncountered: state.activeRun.roomsEncountered,
+    runTrinkets: state.activeRun.runTrinkets,
     encounteredRunEnemyIds: state.activeRun.encounteredRunEnemyIds,
+    runDeck: state.activeRun.runDeck,
+    runGold: getRunProgressStoreView().runGold,
     lastOfferedDestinations: state.activeRun.lastOfferedDestinations,
     destinationRoundsSinceOffered: state.activeRun.destinationRoundsSinceOffered,
-    setContentSystemType: createRunSessionCommand(setContentSystemType),
-    setCharacter: state.setCharacter,
-    addRunGold: state.addRunGold,
   };
-  return port as TestRunPort;
 }
 
-export function makeTalentController() {
+export function makeTalentController(): BattleTalentPort & ContentNavigationTalentPort {
   const base = getRunProgressStoreView();
-  const talentEffects = computeTalentEffects(base.unlockedTalents);
-  const port = {
+  return {
     talentXP: base.talentXP,
-    runTalentXP: base.runTalentXP,
-    unlockedTalents: base.unlockedTalents,
-    talentEffects,
-    awardMysteryXP: base.awardMysteryXP,
-    resetRunXP: base.resetRunXP,
-    unlockTalent: base.unlockTalent,
-    resetUnlockedTalents: base.resetUnlockedTalents,
+    talentEffects: computeTalentEffects(base.unlockedTalents),
   };
-  return port as TestTalentPort;
 }

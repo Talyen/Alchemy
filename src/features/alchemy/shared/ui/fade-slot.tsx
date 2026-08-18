@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
+import { useRef, type HTMLAttributes, type ReactNode } from "react";
 
-import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
-import { fadePhaseClass, type FadePhase } from "./fade-presence";
+import { fadePhaseClass } from "./fade-presence";
+import { useSequentialFadeSwap } from "./use-sequential-fade-swap";
 
 export function FadeSlot({
   swapKey,
@@ -15,8 +15,10 @@ export function FadeSlot({
   swapKey: string | number;
   children: ReactNode;
 } & HTMLAttributes<HTMLDivElement>) {
-  const [phase, setPhase] = useState<FadePhase>("idle");
-  const [shownKey, setShownKey] = useState(swapKey);
+  const { shown: shownKey, phase } = useSequentialFadeSwap({
+    target: swapKey,
+    durationMs: MOTION_FADE_MS,
+  });
   const heldRef = useRef(children);
   const heldClassNameRef = useRef(className);
   if (shownKey === swapKey) {
@@ -25,17 +27,6 @@ export function FadeSlot({
     // eslint-disable-next-line react-hooks/refs -- snapshot wrapper layout with the outgoing view
     heldClassNameRef.current = className;
   }
-
-  useEffect(() => {
-    if (swapKey === shownKey) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sequential fade-out before swapping slot identity
-    setPhase("exit");
-    const timeout = window.setTimeout(() => {
-      setShownKey(swapKey);
-      setPhase("enter");
-    }, resolveGameDelay(MOTION_FADE_MS));
-    return () => window.clearTimeout(timeout);
-  }, [swapKey, shownKey]);
 
   return (
     <div

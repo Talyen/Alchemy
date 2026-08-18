@@ -3,6 +3,7 @@ import { defaultBattleState } from "@/lib/battle";
 import {
   getPlayableHandCardKeys,
   getPlayableHandCardKeysExcludingHidden,
+  handHasHiddenCard,
 } from "@/features/alchemy/run-loop/battle/playable-hand";
 import type { BattleCard } from "@/lib/game-data";
 
@@ -113,8 +114,38 @@ describe("getPlayableHandCardKeysExcludingHidden", () => {
       hand: [affordableCard, drawingCard],
     };
 
-    const playable = getPlayableHandCardKeysExcludingHidden(state, new Set(["draw-3"]));
+    const playable = getPlayableHandCardKeysExcludingHidden(state, ["draw-3"]);
     expect(playable.has("slash-1")).toBe(true);
     expect(playable.has("draw-3")).toBe(false);
+  });
+
+  it("returns empty while a card transfer is in progress", () => {
+    const state = {
+      ...defaultBattleState(),
+      turnPhase: "player" as const,
+      mana: 2,
+      wishOptions: null,
+      hand: [affordableCard],
+    };
+
+    expect(getPlayableHandCardKeysExcludingHidden(state, [], true).size).toBe(0);
+  });
+});
+
+describe("handHasHiddenCard", () => {
+  it("is true when a current hand card key is hidden", () => {
+    const state = {
+      ...defaultBattleState(),
+      hand: [affordableCard],
+    };
+    expect(handHasHiddenCard(state, ["slash-1"])).toBe(true);
+  });
+
+  it("is false for hidden keys that are not in the current hand", () => {
+    const state = {
+      ...defaultBattleState(),
+      hand: [affordableCard],
+    };
+    expect(handHasHiddenCard(state, ["meteor-2"])).toBe(false);
   });
 });

@@ -17,7 +17,7 @@ describe("createRunStartSnapshot", () => {
       characterId: "knight",
       contentSystemType: "campaign",
       selectedDifficulty: "difficulty-2",
-      runGold: 10,
+      startGoldGrant: 10,
       runPlayerHealth: MAX_PLAYER_HEALTH,
       runMaxHealth: MAX_PLAYER_HEALTH,
       roomsEncountered: 0,
@@ -41,7 +41,7 @@ describe("createRunStartSnapshot", () => {
 
     expect(result.contentSystemType).toBe("labyrinth");
     expect(result.selectedDifficulty).toBeNull();
-    expect(result.runGold).toBe(8);
+    expect(result.startGoldGrant).toBe(8);
     expect(result.runPlayerHealth).toBe(MAX_PLAYER_HEALTH);
     expect(result.hasActiveRun).toBe(true);
     expect(result.freshDeck.map((card) => card.id)).toEqual(getStartingDeck("ranger").map((card) => card.id));
@@ -57,7 +57,7 @@ describe("createRunStartSnapshot", () => {
 
     expect(result.contentSystemType).toBe("wildwood");
     expect(result.selectedDifficulty).toBeNull();
-    expect(result.runGold).toBe(0);
+    expect(result.startGoldGrant).toBe(99);
     expect(result.runTrinkets).toEqual([]);
     expect(result.roomsEncountered).toBe(0);
     expect(result.completedDestinations).toEqual([]);

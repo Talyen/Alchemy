@@ -3,6 +3,7 @@ import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { type createBattleSession } from "./battle-session";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
+import { isBattlePlayInputBusy } from "./autoplay-driver";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import {
@@ -56,7 +57,10 @@ export function createBattleEndTurnUi(
       ctx.screen !== "battle" ||
       currentState.turnPhase !== "player" ||
       currentState.wishOptions ||
-      ctx.cardPlayInProgressRef.current
+      isBattlePlayInputBusy({
+        cardPlayInProgress: ctx.cardPlayInProgressRef.current,
+        cardTransferInProgress: ctx.getPresentation().cardTransferInProgress,
+      })
     )
       return;
     // Claim single-flight before any await so empty-hand / missing-rect early returns

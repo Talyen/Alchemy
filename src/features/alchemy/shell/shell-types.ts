@@ -1,7 +1,6 @@
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
-import type { Screen } from "@/lib/routing";
-import type { ScreenTransitionOptions } from "./use-screen-transitions";
+import type { Screen, ScreenTransitionOptions } from "@/lib/routing";
 import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-types";
 
 interface BattleLauncherDeps {

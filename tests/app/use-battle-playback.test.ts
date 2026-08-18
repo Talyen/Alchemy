@@ -4,8 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { useBattlePlayback } from "@/app/screen-routes/use-battle-playback";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { resetBattlePresentationAndRun } from "../features/alchemy/run-loop/battle/battle-test-reset";
+import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 import { makeTestBattleState } from "../fixtures/battle";
+import { makeEmptyHandBattle } from "../features/alchemy/run-loop/battle/open-battle-fixture";
 
 function renderPlayback(
   overrides: Partial<Parameters<typeof useBattlePlayback>[0]> = {},
@@ -34,7 +36,7 @@ function renderPlayback(
 describe("useBattlePlayback", () => {
   beforeEach(() => {
     useSettingsStore.setState(useSettingsStore.getInitialState(), true);
-    useBattlePresentationStore.setState(useBattlePresentationStore.getInitialState());
+    resetBattlePresentationAndRun();
   });
 
   it("starts with preferred autoplay off when remember is off", () => {
@@ -94,5 +96,47 @@ describe("useBattlePlayback", () => {
       }),
     );
     expect(remounted.result.current.isAutoplayEnabled).toBe(true);
+  });
+
+  it("schedules auto-end when autoplay is toggled on with an empty hand", () => {
+    vi.useFakeTimers();
+    const handleEndTurn = vi.fn();
+    const { result } = renderPlayback({
+      handleEndTurn,
+      battleState: makeEmptyHandBattle().battleState,
+    });
+
+    act(() => {
+      result.current.toggleAutoplay();
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+    });
+
+    expect(handleEndTurn).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it("schedules auto-end when the settings toggle turns on mid-turn", () => {
+    vi.useFakeTimers();
+    useSettingsStore.setState({ autoEndTurn: false });
+    const handleEndTurn = vi.fn();
+    renderPlayback({
+      handleEndTurn,
+      battleState: makeEmptyHandBattle().battleState,
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+    });
+    expect(handleEndTurn).not.toHaveBeenCalled();
+
+    act(() => {
+      useSettingsStore.setState({ autoEndTurn: true });
+    });
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+    });
+
+    expect(handleEndTurn).toHaveBeenCalledOnce();
+    vi.useRealTimers();
   });
 });

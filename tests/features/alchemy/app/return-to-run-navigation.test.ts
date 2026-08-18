@@ -12,7 +12,7 @@ describe("return-to-run navigation", () => {
   });
 
   it("returns null when there is no return target", () => {
-    expect(resolveReturnToRunTarget(null, false)).toBeNull();
+    expect(resolveReturnToRunTarget(null, false, true)).toBe("destination");
   });
 
   it("keeps the prior screen while Options is showing so Back can leave Options", () => {

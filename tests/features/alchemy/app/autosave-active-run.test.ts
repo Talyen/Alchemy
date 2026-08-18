@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
-import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
+import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   getNavigationStoreView,
@@ -42,9 +42,11 @@ describe("resolveActiveRunForSave", () => {
     getNavigationStoreView().setScreen(ROUTE_SCREENS.DESTINATION);
 
     const activeRun = resolveActiveRunForSave(getRunSessionStoreView().hasActiveRun);
+    const save = buildAlchemySaveDataFromStores(activeRun);
 
     expect(activeRun).not.toBeNull();
-    expect(activeRun?.runGold).toBe(15);
+    expect(activeRun?.runGold).toBe(0);
+    expect(save.gold).toBe(15);
     expect(activeRun?.currentScreen).toBe(ROUTE_SCREENS.DESTINATION);
   });
 

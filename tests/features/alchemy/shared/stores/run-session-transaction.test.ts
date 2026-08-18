@@ -11,7 +11,7 @@ import {
   resetRunDomainStore,
 } from "../../../../helpers/gameplay-store-test";
 import { useGearStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-transitions";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
   beginBattleTransition,
@@ -56,12 +56,12 @@ describe("run-session transaction coordinator", () => {
 
   it("executes the public command boundary and runs its effect after commit", () => {
     const effect = vi.fn((gold: number) => {
-      expect(readGameplayState().run.activeRun.runGold).toBe(gold);
+      expect(readGameplayState().runProfile.gold).toBe(gold);
     });
 
     const result = dispatchRunSessionCommand(
       (draft) => {
-        createGameplayDraftActions(draft).runActions.setRunGold(17);
+        setRunGold(draft, 17);
         return 17;
       },
       { afterCommit: effect },
@@ -77,15 +77,14 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => {
       commits.push({
         revision,
-        gold: getRunDomainStore().activeRun.runGold,
+        gold: getRunProfileStore().gold,
         hasActiveRun: getRunTransientStore().hasActiveRun,
       });
     });
 
     dispatchRunSessionCommand((draft) => {
-      const actions = createGameplayDraftActions(draft);
-      actions.runActions.setRunGold(125);
-      actions.sessionActions.setHasActiveRun(true);
+      setRunGold(draft, 125);
+      createGameplayDraftActions(draft).sessionActions.setHasActiveRun(true);
     });
 
     unsubscribe();
@@ -188,31 +187,30 @@ describe("run-session transaction coordinator", () => {
     const before = useGameplayStateStore.getState();
 
     dispatchRunSessionCommand((draft) => {
-      const actions = createGameplayDraftActions(draft);
-      actions.runActions.setRunGold(125);
-      actions.sessionActions.setHasActiveRun(true);
+      setRunGold(draft, 125);
+      createGameplayDraftActions(draft).sessionActions.setHasActiveRun(true);
 
-      expect(draft.run.activeRun.runGold).toBe(125);
+      expect(draft.runProfile.gold).toBe(125);
       expect(useGameplayStateStore.getState()).toBe(before);
-      expect(useGameplayStateStore.getState().run.activeRun.runGold).toBe(0);
+      expect(useGameplayStateStore.getState().runProfile.gold).toBe(0);
       expect(useGameplayStateStore.getState().session.hasActiveRun).toBe(false);
     });
 
     const after = useGameplayStateStore.getState();
     expect(after).not.toBe(before);
-    expect(after.run.activeRun.runGold).toBe(125);
+    expect(after.runProfile.gold).toBe(125);
     expect(after.session.hasActiveRun).toBe(true);
   });
 
   it("runs post-commit effects only after the committed snapshot is published", () => {
     const effect = vi.fn((result: number) => {
       expect(result).toBe(42);
-      expect(readGameplayState().run.activeRun.runGold).toBe(42);
+      expect(readGameplayState().runProfile.gold).toBe(42);
     });
 
     dispatchRunSessionCommand(
       (draft) => {
-        createGameplayDraftActions(draft).runActions.setRunGold(42);
+        setRunGold(draft, 42);
         return 42;
       },
       { afterCommit: effect },
@@ -227,7 +225,7 @@ describe("run-session transaction coordinator", () => {
     expect(() =>
       dispatchRunSessionCommand(
         (draft) => {
-          createGameplayDraftActions(draft).runActions.setRunGold(42);
+          setRunGold(draft, 42);
           throw new Error("transaction failed");
         },
         { afterCommit: effect },
@@ -251,7 +249,7 @@ describe("run-session transaction coordinator", () => {
 
     expect(commits).toHaveLength(1);
     expect(getRunSessionRevision()).toBeGreaterThanOrEqual(commits[0]);
-    expect(getRunDomainStore().activeRun.runGold).toBe(20);
+    expect(getRunProfileStore().gold).toBe(20);
   });
 
   it("publishes a direct store mutation as one commit", () => {
@@ -276,7 +274,7 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
-    expect(getRunDomainStore().activeRun.runGold).toBe(7);
+    expect(getRunProfileStore().gold).toBe(7);
     expect(getRunDomainStore().activeRun.rng.counters.rewards).toBe(1);
   });
 
@@ -294,7 +292,7 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(0);
-    expect(getRunDomainStore().activeRun.runGold).toBe(0);
+    expect(getRunProfileStore().gold).toBe(0);
     expect(getRunDomainStore().activeRun.rng.counters.rewards).toBe(0);
   });
 
@@ -316,8 +314,8 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
     dispatchRunSessionCommand((draft) => {
+      setRunGold(draft, 125);
       const actions = createGameplayDraftActions(draft);
-      actions.runActions.setRunGold(125);
       actions.sessionActions.setHasActiveRun(true);
       actions.runProfileActions.setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
       actions.profileActions.setDiscoveredCardIds(["slash"]);
@@ -327,7 +325,7 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
-    expect(getRunDomainStore().activeRun.runGold).toBe(125);
+    expect(getRunProfileStore().gold).toBe(125);
     expect(getRunTransientStore().hasActiveRun).toBe(true);
     expect(getRunProfileStore().materialInventory.wood).toBe(1);
     expect(useProfileStore.getState().discoveredCardIds).toEqual(["slash"]);
@@ -370,8 +368,8 @@ describe("run-session transaction coordinator", () => {
 
     expect(() =>
       dispatchRunSessionCommand((draft) => {
+        setRunGold(draft, 999);
         const actions = createGameplayDraftActions(draft);
-        actions.runActions.setRunGold(999);
         actions.sessionActions.setHasActiveRun(true);
         actions.runProfileActions.setMaterials({ wood: 9, iron: 0, herbs: 0, food: 0, crystal: 0 });
         actions.profileActions.setDiscoveredCardIds(["burn"]);
@@ -383,24 +381,24 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(0);
-    expect(getRunDomainStore().activeRun.runGold).toBe(0);
+    expect(getRunProfileStore().gold).toBe(0);
     expect(getRunTransientStore().hasActiveRun).toBe(false);
     expect(getRunProfileStore().materialInventory.wood).toBe(0);
     expect(useProfileStore.getState().discoveredCardIds).toEqual([]);
     expect(useGearStore.getState().craftingCurrencies.voidstone).toBe(initialVoidstone);
-    expect(readGameplayState().run.activeRun.runGold).toBe(0);
+    expect(readGameplayState().runProfile.gold).toBe(0);
     expect(readGameplayState().session.hasActiveRun).toBe(false);
   });
 
   it("hydrates the complete active run before publishing its commit", () => {
-    getRunDomainStore().setRunGold(125);
+    dispatchRunSessionCommand((draft) => setRunGold(draft, 125));
     const savedRun = snapshotRun("shop");
     resetRunDomainStore();
 
     const commits: Array<{ gold: number; hasActiveRun: boolean; screen: string }> = [];
     const unsubscribe = subscribeRunSessionCommits(() => {
       commits.push({
-        gold: getRunDomainStore().activeRun.runGold,
+        gold: getRunProfileStore().gold,
         hasActiveRun: getRunTransientStore().hasActiveRun,
         screen: getRunDomainStore().navigation.screen,
       });
@@ -409,6 +407,6 @@ describe("run-session transaction coordinator", () => {
     restoreRun(savedRun, {}, {});
     unsubscribe();
 
-    expect(commits).toEqual([{ gold: 125, hasActiveRun: true, screen: "shop" }]);
+    expect(commits).toEqual([{ gold: 0, hasActiveRun: true, screen: "shop" }]);
   });
 });

@@ -1,11 +1,13 @@
-import { getDifficultyXPMultiplier } from "@/lib/game-data";
-import type { MaterialInventory } from "@/lib/homestead/types";
+import { getDifficultyXPMultiplier, type KeywordId } from "@/lib/game-data";
+import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
+import type { CompanionId } from "@/lib/game-data";
 import { bindDraftAction, type GameplayDraft } from "./run-session-command";
 import {
   createGameplayDraftRunActions,
   createGameplayDraftRunProfileActions,
   createGameplayDraftSessionActions,
 } from "./gameplay-state-store";
+import { rebindLiveRunMeta } from "./run-meta-rebind";
 
 const runActions = (state: GameplayDraft) => createGameplayDraftRunActions(state);
 const sessionActions = (state: GameplayDraft) => createGameplayDraftSessionActions(state);
@@ -19,17 +21,38 @@ export function awardMaterialsDuringRun(draft: GameplayDraft, materials: Materia
 
 export const setMaterials = bindDraftAction((s) => runProfileActions(s).setMaterials);
 export const addMaterials = bindDraftAction((s) => runProfileActions(s).addMaterials);
-export const constructBuilding = bindDraftAction((s) => runProfileActions(s).constructBuilding);
-export const plantFarm = bindDraftAction((s) => runProfileActions(s).plantFarm);
-export const completeResearch = bindDraftAction((s) => runProfileActions(s).completeResearch);
-export const bondCompanion = bindDraftAction((s) => runProfileActions(s).bondCompanion);
-export const unlockTalent = bindDraftAction((s) => runProfileActions(s).unlockTalent);
+
+export function constructBuilding(draft: GameplayDraft, id: BuildingId): boolean {
+  const ok = runProfileActions(draft).constructBuilding(id);
+  if (ok) rebindLiveRunMeta(draft);
+  return ok;
+}
+export function plantFarm(draft: GameplayDraft, id: FarmId): boolean {
+  const ok = runProfileActions(draft).plantFarm(id);
+  if (ok) rebindLiveRunMeta(draft);
+  return ok;
+}
+export function completeResearch(draft: GameplayDraft, id: ResearchId): boolean {
+  const ok = runProfileActions(draft).completeResearch(id);
+  if (ok) rebindLiveRunMeta(draft);
+  return ok;
+}
+export function bondCompanion(draft: GameplayDraft, id: CompanionId): boolean {
+  const ok = runProfileActions(draft).bondCompanion(id);
+  if (ok) rebindLiveRunMeta(draft);
+  return ok;
+}
+export function unlockTalent(draft: GameplayDraft, keywordId: KeywordId, talentId: string): void {
+  runProfileActions(draft).unlockTalent(keywordId, talentId);
+  rebindLiveRunMeta(draft);
+}
 export const resetUnlockedTalents = bindDraftAction((s) => runProfileActions(s).resetUnlockedTalents);
 
 /** Dev unlock-all: max every talent and drop pending run XP so run-end cannot merge on top. */
 export function unlockAllTalents(draft: GameplayDraft): void {
   runProfileActions(draft).unlockAllTalents();
   runActions(draft).resetRunXP();
+  rebindLiveRunMeta(draft);
 }
 
 /**
@@ -49,4 +72,5 @@ export function finalizeRunXP(draft: GameplayDraft): void {
   const multiplier = getDifficultyXPMultiplier(draft.run.activeRun.selectedDifficulty);
   session.setRunEndTalentXP(runProfile.mergeRunTalentXPIntoProfile(runTalentXP, multiplier));
   run.resetRunXP();
+  rebindLiveRunMeta(draft);
 }

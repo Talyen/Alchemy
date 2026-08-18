@@ -1,17 +1,19 @@
 // Shared typography role classes for screen chrome, body copy, and tooltips.
 // Keep sizes consistent across screens; bump roles here instead of per-screen one-offs.
+// `text-balance` belongs on short, width-constrained copy (tooltips, screen blurbs).
+// Do not add it to every className — chips, nowrap titles, and long documents skip it.
 
 /** Screen title (ScreenHeader). */
 export const screenTitleClass = "text-2xl font-black tracking-[0.15em] text-amber-100/75 uppercase sm:text-3xl";
 
 /** Screen supporting description (ScreenDescription). */
-export const screenDescriptionClass = "text-lg leading-relaxed";
+export const screenDescriptionClass = "text-lg leading-relaxed text-balance";
 
 /** Section / mode / panel subheaders. */
 export const sectionTitleClass = "text-xl font-bold text-amber-100/75";
 
 /** Body / narrative copy. */
-export const bodyTextClass = "text-lg leading-relaxed text-muted-foreground";
+export const bodyTextClass = "text-lg leading-relaxed text-muted-foreground text-balance";
 
 /** Settings / options control labels (slider, toggle, select). */
 export const controlLabelClass = "text-lg font-semibold text-foreground";

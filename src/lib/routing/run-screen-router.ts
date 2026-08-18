@@ -1,11 +1,12 @@
 // Run screen taxonomy and transition helpers.
 // Screen *state* lives in navigation.screen on the run domain store; stores hold run/battle/session data.
-// Navigation handlers (use-run-flow-engine, run-flow-handlers) call navigateTo/goToScreen or createScreenTransition.
+// Navigation handlers (`use-run-flow-engine`, `run-flow-handlers`) call `navigateTo` / `transition`
+// from `shell/use-screen-transitions.ts`.
 //
-// Screen transition modes (see shell/screen-transition.ts):
+// Screen transition modes:
 // - navigateTo: default run-loop path — NAVIGATION_DELAY_MS delay + optional deferred store commit after PAGE_EXIT_MS.
-// - transitionScreen({ delayMs }): victory → rewards; uses setScreen after delay (no navigateTo commit callback).
-// - transitionScreen({ immediate: true }): defeat/game-over and labyrinth abandon — instant setScreen.
+// - transition({ delayMs }): victory → rewards; uses setScreen after delay (no navigateTo commit callback).
+// - transition({ immediate: true }): defeat/game-over and labyrinth abandon — instant setScreen (cancels pending navigateTo).
 // - restoreRun: boot resume — immediate setScreen from persisted currentScreen.
 import type { Screen } from "./screens";
 import { ROUTE_SCREENS } from "./screens";

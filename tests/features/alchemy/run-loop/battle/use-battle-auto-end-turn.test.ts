@@ -1,46 +1,52 @@
 // @vitest-environment jsdom
+import { useRef } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
-import { makeTestBattleState } from "../../../../fixtures/battle";
-import { makeTestCard } from "../../../../fixtures/battle";
+import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/use-battle-presentation-gate";
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { resetBattlePresentationAndRun } from "./battle-test-reset";
+import type { BattleState } from "@/lib/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
+import { ANIMATION_DISABLED_DURATION } from "@/lib/animation/animation-prefs";
+import * as animationPrefs from "@/lib/animation/animation-prefs";
+import { makeEmptyHandBattle, makeOpenBattle, makeUnplayableBattle } from "./open-battle-fixture";
 
 const baseOptions = {
   autoEndTurn: true,
   screen: "battle" as const,
   hasActiveBattle: true,
-  cardTransferInProgress: false,
-  hiddenHandCardKeys: new Set<string>(),
 };
+
+function useAutoEndTurnUnderTest(
+  options: Omit<Parameters<typeof useBattleAutoEndTurn>[0], "presentationGateRef" | "scheduleAutoEndTurnRef">,
+) {
+  const scheduleAutoEndTurnRef = useRef<(state?: BattleState) => void>(() => {});
+  const presentationGateRef = useBattlePresentationGateRef(scheduleAutoEndTurnRef);
+  return useBattleAutoEndTurn({
+    ...options,
+    presentationGateRef,
+    scheduleAutoEndTurnRef,
+  });
+}
 
 describe("useBattleAutoEndTurn", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    resetBattlePresentationAndRun();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("schedules end turn when no card is playable", () => {
     const onEndTurn = vi.fn();
-    const expensive = makeTestCard({
-      id: "meteor",
-      cost: 9,
-      effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
-    });
-    const battleState = makeTestBattleState({
-      hand: [{ ...expensive, uid: 1 }],
-      mana: 1,
-      turnPhase: "player",
-      enemyHealth: 20,
-    });
-
     renderHook(() =>
-      useBattleAutoEndTurn({
+      useAutoEndTurnUnderTest({
         ...baseOptions,
-        battleState,
+        battleState: makeUnplayableBattle().battleState,
         onEndTurn,
       }),
     );
@@ -52,83 +58,12 @@ describe("useBattleAutoEndTurn", () => {
     expect(onEndTurn).toHaveBeenCalledOnce();
   });
 
-  it("does not schedule when auto-end-turn is off", () => {
-    const onEndTurn = vi.fn();
-    const expensive = makeTestCard({
-      id: "meteor",
-      cost: 9,
-      effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
-    });
-    const battleState = makeTestBattleState({
-      hand: [{ ...expensive, uid: 1 }],
-      mana: 1,
-      turnPhase: "player",
-      enemyHealth: 20,
-    });
-
-    renderHook(() =>
-      useBattleAutoEndTurn({
-        ...baseOptions,
-        autoEndTurn: false,
-        battleState,
-        onEndTurn,
-      }),
-    );
-
-    act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
-    });
-
-    expect(onEndTurn).not.toHaveBeenCalled();
-  });
-
-  it("does not schedule end turn when a card is playable", () => {
-    const onEndTurn = vi.fn();
-    const slash = makeTestCard({
-      id: "slash",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    });
-    const battleState = makeTestBattleState({
-      hand: [{ ...slash, uid: 2 }],
-      mana: 3,
-      turnPhase: "player",
-      enemyHealth: 20,
-    });
-
-    renderHook(() =>
-      useBattleAutoEndTurn({
-        ...baseOptions,
-        battleState,
-        onEndTurn,
-      }),
-    );
-
-    act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
-    });
-
-    expect(onEndTurn).not.toHaveBeenCalled();
-  });
-
   it("clearAutoEndTurn cancels a pending auto-end timer", () => {
     const onEndTurn = vi.fn();
-    const expensive = makeTestCard({
-      id: "meteor",
-      cost: 9,
-      effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
-    });
-    const battleState = makeTestBattleState({
-      hand: [{ ...expensive, uid: 1 }],
-      mana: 1,
-      turnPhase: "player",
-      enemyHealth: 20,
-    });
-
     const { result } = renderHook(() =>
-      useBattleAutoEndTurn({
+      useAutoEndTurnUnderTest({
         ...baseOptions,
-        battleState,
+        battleState: makeUnplayableBattle().battleState,
         onEndTurn,
       }),
     );
@@ -141,20 +76,33 @@ describe("useBattleAutoEndTurn", () => {
     expect(onEndTurn).not.toHaveBeenCalled();
   });
 
-  it("does not schedule while a hand transfer is in progress", () => {
+  it("scheduleAutoEndTurn fires after an unplayable player turn resumes", () => {
     const onEndTurn = vi.fn();
-    const battleState = makeTestBattleState({
-      hand: [],
-      mana: 3,
-      turnPhase: "player",
-      enemyHealth: 20,
+    const battleState = makeEmptyHandBattle().battleState;
+    const { result } = renderHook(() =>
+      useAutoEndTurnUnderTest({
+        ...baseOptions,
+        battleState,
+        onEndTurn,
+      }),
+    );
+
+    act(() => {
+      result.current.clearAutoEndTurn();
+      result.current.scheduleAutoEndTurn(battleState);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
     });
 
+    expect(onEndTurn).toHaveBeenCalledOnce();
+  });
+
+  it("schedules end turn after a hand transfer completes", () => {
+    const onEndTurn = vi.fn();
+    useBattlePresentationStore.setState({ cardTransferInProgress: true });
     renderHook(() =>
-      useBattleAutoEndTurn({
+      useAutoEndTurnUnderTest({
         ...baseOptions,
-        cardTransferInProgress: true,
-        battleState,
+        battleState: makeEmptyHandBattle().battleState,
         onEndTurn,
       }),
     );
@@ -162,24 +110,23 @@ describe("useBattleAutoEndTurn", () => {
     act(() => {
       vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
     });
-
     expect(onEndTurn).not.toHaveBeenCalled();
-  });
 
-  it("does not schedule while hand cards are still hidden from draw", () => {
-    const onEndTurn = vi.fn();
-    const battleState = makeTestBattleState({
-      hand: [],
-      mana: 3,
-      turnPhase: "player",
-      enemyHealth: 20,
+    act(() => {
+      useBattlePresentationStore.setState({ cardTransferInProgress: false });
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
     });
 
+    expect(onEndTurn).toHaveBeenCalledOnce();
+  });
+
+  it("reschedules when hidden-hand membership is replaced", () => {
+    const onEndTurn = vi.fn();
+    useBattlePresentationStore.getState().setHiddenHandCardKeys(() => ["meteor-1"]);
     renderHook(() =>
-      useBattleAutoEndTurn({
+      useAutoEndTurnUnderTest({
         ...baseOptions,
-        hiddenHandCardKeys: new Set(["slash-1"]),
-        battleState,
+        battleState: makeUnplayableBattle().battleState,
         onEndTurn,
       }),
     );
@@ -187,78 +134,49 @@ describe("useBattleAutoEndTurn", () => {
     act(() => {
       vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
     });
-
     expect(onEndTurn).not.toHaveBeenCalled();
-  });
 
-  it("does not schedule while a card play is in progress", () => {
-    const onEndTurn = vi.fn();
-    const battleState = makeTestBattleState({
-      hand: [],
-      mana: 3,
-      turnPhase: "player",
-      enemyHealth: 20,
+    act(() => {
+      useBattlePresentationStore.getState().setHiddenHandCardKeys(() => []);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
     });
 
-    renderHook(() =>
-      useBattleAutoEndTurn({
-        ...baseOptions,
-        isCardPlayInProgress: () => true,
-        battleState,
-        onEndTurn,
-      }),
+    expect(onEndTurn).toHaveBeenCalledOnce();
+  });
+
+  it("schedules end turn when auto-end-turn is toggled on mid-turn", () => {
+    const onEndTurn = vi.fn();
+    const { rerender } = renderHook(
+      ({ autoEndTurn }: { autoEndTurn: boolean }) =>
+        useAutoEndTurnUnderTest({
+          ...baseOptions,
+          autoEndTurn,
+          battleState: makeEmptyHandBattle().battleState,
+          onEndTurn,
+        }),
+      { initialProps: { autoEndTurn: false } },
     );
 
     act(() => {
       vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
     });
-
     expect(onEndTurn).not.toHaveBeenCalled();
-  });
 
-  it("does not schedule when there is no active battle", () => {
-    const onEndTurn = vi.fn();
-    const battleState = makeTestBattleState({
-      hand: [],
-      mana: 3,
-      turnPhase: "player",
-      enemyHealth: 20,
-    });
-
-    renderHook(() =>
-      useBattleAutoEndTurn({
-        ...baseOptions,
-        hasActiveBattle: false,
-        battleState,
-        onEndTurn,
-      }),
-    );
-
+    rerender({ autoEndTurn: true });
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
     });
 
-    expect(onEndTurn).not.toHaveBeenCalled();
+    expect(onEndTurn).toHaveBeenCalledOnce();
   });
 
-  it("schedules end turn when the hand only has cleanse cards with nothing to cleanse", () => {
+  it("schedules end turn despite orphaned hidden-hand keys", () => {
     const onEndTurn = vi.fn();
-    const cleanse = makeTestCard({
-      id: "cleanse",
-      cost: 1,
-      effects: [{ kind: "remove-harmful-status", amount: 1 }],
-    });
-    const battleState = makeTestBattleState({
-      hand: [{ ...cleanse, uid: 3 }],
-      mana: 5,
-      turnPhase: "player",
-      enemyHealth: 20,
-    });
-
+    useBattlePresentationStore.setState({ hiddenHandCardKeys: ["slash-1"] });
     renderHook(() =>
-      useBattleAutoEndTurn({
+      useAutoEndTurnUnderTest({
         ...baseOptions,
-        battleState,
+        battleState: makeEmptyHandBattle().battleState,
         onEndTurn,
       }),
     );
@@ -267,6 +185,54 @@ describe("useBattleAutoEndTurn", () => {
       vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
     });
 
+    expect(onEndTurn).toHaveBeenCalledOnce();
+  });
+
+  it("collapses the auto-end delay when animations are disabled", () => {
+    vi.spyOn(animationPrefs, "isAnimationDisabled").mockReturnValue(true);
+    const onEndTurn = vi.fn();
+    renderHook(() =>
+      useAutoEndTurnUnderTest({
+        ...baseOptions,
+        battleState: makeUnplayableBattle().battleState,
+        onEndTurn,
+      }),
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(ANIMATION_DISABLED_DURATION);
+    });
+
+    expect(onEndTurn).toHaveBeenCalledOnce();
+  });
+
+  it("does not reschedule from a battleState rerender without an explicit schedule call", () => {
+    const onEndTurn = vi.fn();
+    const { rerender, result } = renderHook(
+      ({ battleState }: { battleState: BattleState }) =>
+        useAutoEndTurnUnderTest({
+          ...baseOptions,
+          battleState,
+          onEndTurn,
+        }),
+      { initialProps: { battleState: makeOpenBattle().battleState } },
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+    });
+    expect(onEndTurn).not.toHaveBeenCalled();
+
+    rerender({ battleState: makeEmptyHandBattle().battleState });
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+    });
+    expect(onEndTurn).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.scheduleAutoEndTurn(makeEmptyHandBattle().battleState);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+    });
     expect(onEndTurn).toHaveBeenCalledOnce();
   });
 });

@@ -91,6 +91,8 @@ export interface ActiveRunData {
   runGold: number;
   runPlayerHealth: number;
   runMaxHealth: number;
+  /** Derived max HP from current meta when this snapshot was written; combat bonuses are runMaxHealth minus this. */
+  runMetaMaxHealth: number;
   roomsEncountered: number;
   currentAct: number;
   destinationIndexInAct: number;
@@ -119,3 +121,5 @@ export interface ActiveRunData {
   mysteryVisit: PersistedMysteryVisit | null;
   corruptionResult: CorruptionResult | null;
 }
+
+export type ParkedRunsMap = Partial<Record<ContentSystemId, ActiveRunData>>;

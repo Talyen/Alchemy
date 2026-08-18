@@ -1,5 +1,6 @@
 export type {
   ActiveRunData,
+  ParkedRunsMap,
   InterruptedFlow,
   LabyrinthNodePosition,
   PersistedPendingReward,

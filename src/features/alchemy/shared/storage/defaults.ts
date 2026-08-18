@@ -15,5 +15,7 @@ export const defaultSaveData: SaveData = {
   ...gearPersistenceCodec.createDefault(),
   ...runProfilePersistenceCodec.createDefault(),
   activeRun: null,
+  parkedRuns: {},
+  runRecency: [],
   lastSavedAt: 0,
 };

@@ -16,9 +16,14 @@ import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store"
 import {
   readActiveRun,
   readHasActiveRun,
+  readParkedRuns,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  hydrateModeRunInDraft,
+  parkAndDeactivateForegroundRunInDraft,
+} from "@/features/alchemy/shared/stores/run-park-restore";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
 import { restoreOrCreateDestinationRewardState } from "@/features/alchemy/shared/run-flow/destination-flow";
 import {
@@ -67,7 +72,12 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
           const active = draft.run.activeRun;
           setRewardState(draft, (prev) =>
             restoreOrCreateDestinationRewardState(prev, {
-              availableDestinations: deps.getAvailableDestinations(),
+              availableDestinations: deps.getAvailableDestinations({
+                currentHealth: active.runPlayerHealth,
+                currentGold: draft.runProfile.gold,
+                destinationIndexInAct: active.destinationIndexInAct,
+                maxHealth: active.runMaxHealth,
+              }),
               offerState: {
                 lastOfferedDestinations: active.lastOfferedDestinations,
                 roundsSinceOffered: active.destinationRoundsSinceOffered,
@@ -85,15 +95,28 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function beginContentSystem(systemId: ContentSystemId) {
-    if (deps.hasActiveBattle && deps.run.contentSystemType === systemId) {
-      deps.returnToBattle();
-      return;
-    }
     if (deps.hasActiveRun && deps.run.contentSystemType === systemId) {
+      if (deps.hasActiveBattle) {
+        deps.returnToBattle();
+        return;
+      }
       resumeActiveContentSystem(systemId);
       return;
     }
-    dispatchRunSessionCommand((draft) => setPendingContentSystemType(draft, systemId));
+    const parked = readParkedRuns()[systemId];
+    if (parked) {
+      dispatchRunSessionCommand((draft) => {
+        hydrateModeRunInDraft(draft, systemId);
+      });
+      resumeActiveContentSystem(systemId);
+      return;
+    }
+    dispatchRunSessionCommand((draft) => {
+      if (draft.session.hasActiveRun && draft.run.activeRun.contentSystemType !== systemId) {
+        parkAndDeactivateForegroundRunInDraft(draft);
+      }
+      setPendingContentSystemType(draft, systemId);
+    });
     deps.navigateTo(CONSTANTS.SCREENS.CHARACTER_SELECT);
   }
 

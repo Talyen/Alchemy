@@ -5,11 +5,10 @@ import { createEmptyRewardState } from "@/lib/active-run-session";
 import {
   applyRunDefeatTeardown,
   finalizeRunEndSession,
-  flushSaveAfterRunEnd,
   syncBattleToRun as mutateBattleToRun,
   syncRunToBattleStart as mutateRunToBattleStart,
   teardownRun,
-} from "@/features/alchemy/shared/stores/run-transitions";
+} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
   createRunSessionCommand,
   subscribeRunSessionCommits,
@@ -130,20 +129,16 @@ describe("run transitions", () => {
     expect(getNavigationStoreView().screen).toBe(ROUTE_SCREENS.MENU);
   });
 
-  it("flushSaveAfterRunEnd persists with no active run", async () => {
-    flushSaveAfterRunEnd();
-    await vi.waitFor(() => {
-      expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
-    });
-  });
-
-  it("finalizeRunEndSession clears hasActiveRun", () => {
+  it("finalizeRunEndSession clears hasActiveRun", async () => {
     getRunSessionStoreView().setHasActiveRun(true);
     finalizeRunEndSession({
       awardRunEndMaterials: vi.fn(() => emptyInventory()),
       finalizeRunXP: vi.fn(),
     });
     expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    await vi.waitFor(() => {
+      expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
+    });
   });
 
   it("finalizeRunEndSession ignores a second call after hasActiveRun is cleared", () => {

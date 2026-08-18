@@ -16,6 +16,7 @@ export const setPendingCharacterId = bindDraftAction((s) => sessionActions(s).se
 export const setPendingContentSystemType = bindDraftAction((s) => sessionActions(s).setPendingContentSystemType);
 export const setWildwoodDraft = bindDraftAction((s) => sessionActions(s).setWildwoodDraft);
 export const setStarterDraftChoices = bindDraftAction((s) => sessionActions(s).setStarterDraftChoices);
+export const clearTransientSession = bindDraftAction((s) => sessionActions(s).clearTransientSession);
 
 /** Start a fresh run: seed active-run progress, drop the previous run-end XP snapshot, flag the run active. */
 export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {

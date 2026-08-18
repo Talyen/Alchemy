@@ -19,6 +19,7 @@ const at = (...segments) => join(root, "..", ...segments);
 const SUITES = [
   "tests/features/alchemy/shared/storage",
   "tests/features/alchemy/app/autosave-hook.test.ts",
+  "tests/features/alchemy/app/autosave-active-run.test.ts",
   "tests/lib/validation",
   "tests/architecture",
   "tests/scripts",

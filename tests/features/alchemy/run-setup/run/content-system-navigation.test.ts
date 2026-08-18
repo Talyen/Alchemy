@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { useProfileStore } from "../../../../helpers/gameplay-store-test";
+import { getNavigationStoreView, getRunDomainStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { makeRunController, makeTalentController } from "../../../../helpers/run-controller";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
@@ -247,5 +247,71 @@ describe("createContentSystemNavigation", () => {
     expect(getRunProgressStoreView().contentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
     expect(getRunProgressStoreView().runDeck).toEqual(draftedCards);
     expect(deps.onStartBattle).toHaveBeenCalledOnce();
+  });
+
+  it("parks the live campaign when beginning another mode", () => {
+    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN, characterId: "knight" });
+    setRunSession({ hasActiveRun: true });
+    getNavigationStoreView().setScreen(CONSTANTS.SCREENS.DESTINATION);
+    const deps = makeDeps({
+      hasActiveRun: true,
+      pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH,
+    });
+    const nav = createContentSystemNavigation(deps);
+    nav.beginLabyrinth();
+    expect(deps.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.CHARACTER_SELECT);
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(getRunDomainStore().parkedRuns.campaign?.contentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
+  });
+
+  it("resumes a parked campaign instead of opening character select", () => {
+    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN, characterId: "knight" });
+    setRunSession({ hasActiveRun: true });
+    getNavigationStoreView().setScreen(CONSTANTS.SCREENS.DESTINATION);
+    const deps = makeDeps({
+      hasActiveRun: true,
+      pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH,
+    });
+    createContentSystemNavigation(deps).beginLabyrinth();
+
+    const resume = makeDeps({ hasActiveRun: false });
+    const nav = createContentSystemNavigation(resume);
+    nav.beginCampaign();
+    expect(resume.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DESTINATION, expect.any(Function));
+    expect(getRunSessionStoreView().hasActiveRun).toBe(true);
+    expect(getRunProgressStoreView().contentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
+  });
+
+  it("samples resumed campaign destinations from the hydrated run", () => {
+    setRunProgress({
+      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+      characterId: "knight",
+      destinationIndexInAct: 2,
+      completedDestinations: [CONSTANTS.DESTINATIONS.NORMAL_COMBAT, CONSTANTS.DESTINATIONS.CAMPFIRE],
+      runPlayerHealth: 12,
+      runMaxHealth: 30,
+    });
+    setRunSession({ hasActiveRun: true });
+    getNavigationStoreView().setScreen(CONSTANTS.SCREENS.DESTINATION);
+    createContentSystemNavigation(
+      makeDeps({ hasActiveRun: true, pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH }),
+    ).beginLabyrinth();
+    createContentSystemNavigation(
+      makeDeps({ hasActiveRun: false, pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH }),
+    ).handleCharacterSelect("knight");
+
+    const getAvailableDestinations = vi.fn(() => [CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
+    const resume = makeDeps({ hasActiveRun: true, getAvailableDestinations });
+    createContentSystemNavigation(resume).beginCampaign();
+
+    const onCommit = resume.navigateTo.mock.calls[0]?.[1] as (() => void) | undefined;
+    expect(onCommit).toEqual(expect.any(Function));
+    onCommit?.();
+    expect(getAvailableDestinations).toHaveBeenCalledWith({
+      currentHealth: 12,
+      currentGold: expect.any(Number),
+      destinationIndexInAct: 2,
+      maxHealth: 30,
+    });
   });
 });

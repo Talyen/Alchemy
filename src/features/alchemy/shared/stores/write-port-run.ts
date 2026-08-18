@@ -1,12 +1,17 @@
 import type { RunRngStream } from "@/lib/run-rng";
 import { bindDraftAction, type GameplayDraft } from "./run-session-command";
 import { createGameplayDraftRunActions, readGameplayState } from "./gameplay-state-store";
+import { addProfileGold, setProfileGold } from "./gold-purse";
 
 const runActions = (state: GameplayDraft) => createGameplayDraftRunActions(state);
 
 export const setRunDeck = bindDraftAction((s) => runActions(s).setRunDeck);
-export const setRunGold = bindDraftAction((s) => runActions(s).setRunGold);
-export const addRunGold = bindDraftAction((s) => runActions(s).addRunGold);
+export function setRunGold(draft: GameplayDraft, action: number | ((prev: number) => number)): void {
+  setProfileGold(draft, action);
+}
+export function addRunGold(draft: GameplayDraft, amount: number): void {
+  addProfileGold(draft, amount);
+}
 export const setRunPlayerHealth = bindDraftAction((s) => runActions(s).setRunPlayerHealth);
 export const setRunMaxHealth = bindDraftAction((s) => runActions(s).setRunMaxHealth);
 export const setRoomsEncountered = bindDraftAction((s) => runActions(s).setRoomsEncountered);

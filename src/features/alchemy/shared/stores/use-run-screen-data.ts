@@ -22,7 +22,7 @@ export function useCampfireScreenData(): ScreenData<"campfire"> {
 export function useShopScreenData(): ScreenData<"shop"> {
   return useGameplayStateStore(
     useShallow((state) => ({
-      runGold: state.run.activeRun.runGold,
+      runGold: state.runProfile.gold,
       runDeck: state.run.activeRun.runDeck,
       shopState: state.session.shopState,
     })),
@@ -32,7 +32,7 @@ export function useShopScreenData(): ScreenData<"shop"> {
 export function useAlchemistScreenData(): ScreenData<"alchemist"> {
   return useGameplayStateStore(
     useShallow((state) => ({
-      runGold: state.run.activeRun.runGold,
+      runGold: state.runProfile.gold,
       runDeck: state.run.activeRun.runDeck,
       alchemistState: state.session.alchemistState,
     })),
@@ -42,7 +42,7 @@ export function useAlchemistScreenData(): ScreenData<"alchemist"> {
 export function useTrinketShopScreenData(): ScreenData<"trinket-shop"> {
   return useGameplayStateStore(
     useShallow((state) => ({
-      runGold: state.run.activeRun.runGold,
+      runGold: state.runProfile.gold,
       trinketShopState: state.session.trinketShopState,
     })),
   );
@@ -51,7 +51,7 @@ export function useTrinketShopScreenData(): ScreenData<"trinket-shop"> {
 export function useEquipmentShopScreenData(): ScreenData<"equipment-shop"> {
   return useGameplayStateStore(
     useShallow((state) => ({
-      runGold: state.run.activeRun.runGold,
+      runGold: state.runProfile.gold,
       equipmentShopState: state.session.equipmentShopState,
     })),
   );

@@ -17,7 +17,7 @@ export interface RunStartSnapshot {
   contentSystemType: ContentSystemId;
   freshDeck: BattleCard[];
   selectedDifficulty: DifficultyId | null;
-  runGold: number;
+  startGoldGrant: number;
   runPlayerHealth: number;
   runMaxHealth: number;
   roomsEncountered: number;
@@ -32,7 +32,6 @@ export interface RunStartInput {
   characterId: CharacterId;
   contentSystemType: ContentSystemId;
   difficultyId?: DifficultyId | null | undefined;
-  persistentGold?: number;
   talentStartGold: number;
   talentXP: TalentXP;
   draftedDeck?: BattleCard[] | undefined;
@@ -45,7 +44,6 @@ export function createRunStartSnapshot({
   characterId,
   contentSystemType,
   difficultyId = null,
-  persistentGold = 0,
   talentStartGold,
   talentXP,
   draftedDeck,
@@ -53,14 +51,13 @@ export function createRunStartSnapshot({
   homesteadMaxHealthBonus = 0,
 }: RunStartInput): RunStartSnapshot {
   const runMaxHealth = computeStartingMaxHealth(talentXP) + gearMaxHealthBonus + homesteadMaxHealthBonus;
-  const runGold = contentSystemType === "wildwood" ? 0 : persistentGold + talentStartGold;
 
   return {
     characterId,
     contentSystemType,
     freshDeck: draftedDeck ?? getStartingDeck(characterId),
     selectedDifficulty: contentSystemType === "campaign" ? difficultyId : null,
-    runGold,
+    startGoldGrant: talentStartGold,
     runPlayerHealth: runMaxHealth,
     runMaxHealth,
     roomsEncountered: 0,

@@ -5,7 +5,8 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
 import { makeTestBattleState } from "../../../../fixtures/battle";
-import { getBattleStoreView, resetRunBattleSlice } from "../../../../helpers/run-domain-store-test";
+import { getBattleStoreView } from "../../../../helpers/run-domain-store-test";
+import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 
 const { resolveEndTurnMock } = vi.hoisted(() => ({
@@ -28,8 +29,7 @@ vi.mock("@/lib/animation/animation-prefs", () => ({
 
 describe("createBattleEndTurnUi handleEndTurn", () => {
   beforeEach(() => {
-    resetRunBattleSlice();
-    useBattlePresentationStore.setState(useBattlePresentationStore.getInitialState());
+    resetBattlePresentationAndRun();
     resolveEndTurnMock.mockClear();
     resolveEndTurnMock.mockReturnValue(false);
   });
@@ -51,6 +51,7 @@ describe("createBattleEndTurnUi handleEndTurn", () => {
       battleSessionRef,
       cardPlayInProgressRef,
       clearAutoEndTurnRef: { current: clearAutoEndTurn },
+      getPresentation: () => useBattlePresentationStore.getState(),
     } as unknown as BattleControllerContext;
 
     const session = {
@@ -88,5 +89,16 @@ describe("createBattleEndTurnUi handleEndTurn", () => {
       expect(resolveEndTurnMock).toHaveBeenCalledOnce();
     });
     expect(cardPlayInProgressRef.current).toBe(false);
+  });
+
+  it("does not start end turn while a card transfer is in progress", () => {
+    useBattlePresentationStore.setState({ cardTransferInProgress: true });
+    const { ui, cardPlayInProgressRef, clearAutoEndTurn } = makeUi();
+
+    ui.handleEndTurn();
+
+    expect(clearAutoEndTurn).not.toHaveBeenCalled();
+    expect(cardPlayInProgressRef.current).toBe(false);
+    expect(resolveEndTurnMock).not.toHaveBeenCalled();
   });
 });

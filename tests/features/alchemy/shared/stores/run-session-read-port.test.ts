@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   readActiveRun,
   readBattle,
@@ -13,14 +15,14 @@ beforeEach(() => {
 
 describe("aggregate read ports", () => {
   it("reads every gameplay lifetime from the authoritative aggregate", () => {
+    dispatchRunSessionCommand((draft) => setRunGold(draft, 23));
     const root = readGameplayState();
-    root.runActions.setRunGold(23);
     root.sessionActions.setHasActiveRun(true);
     root.battleActions.setHasActiveBattle(true);
     root.runProfileActions.setMaterials({ wood: 4, iron: 0, herbs: 0, food: 0, crystal: 0 });
     root.profileActions.setFinishedRunCharacters(["knight"]);
 
-    expect(readActiveRun().runGold).toBe(23);
+    expect(readRunProfile().gold).toBe(23);
     expect(readRunSession().hasActiveRun).toBe(true);
     expect(readBattle().hasActiveBattle).toBe(true);
     expect(readRunProfile().materialInventory.wood).toBe(4);

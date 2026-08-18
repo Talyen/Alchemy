@@ -3,6 +3,8 @@
 
 export type ContentSystemId = "campaign" | "labyrinth" | "wildwood";
 
+export const CONTENT_SYSTEM_IDS: readonly ContentSystemId[] = ["campaign", "labyrinth", "wildwood"];
+
 // ============ Labyrinth ============
 
 export type LabyrinthNodeType =

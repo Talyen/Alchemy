@@ -28,6 +28,7 @@ import {
   EMPTY_COMPLETED_DIFFICULTIES,
 } from "./core";
 import { ActiveRunDataSchema } from "./active-run";
+import { ParkedRunsSchema, RunRecencySchema } from "./parked-runs";
 import { GearInstanceArraySchema } from "./gear-schemas";
 import {
   createEmptyGearInventories,
@@ -101,6 +102,8 @@ export const SaveDataSchema = z.preprocess(
       rememberAutoplayPreference: z.boolean().catch(false),
       autoplayEnabled: z.boolean().catch(false),
       activeRun: ActiveRunDataSchema.nullable().catch(null),
+      parkedRuns: ParkedRunsSchema,
+      runRecency: RunRecencySchema,
       gold: z.number().int().nonnegative().catch(0),
       materialInventory: MaterialInventorySchema.catch(MATERIAL_ZERO_INVENTORY),
       craftingCurrencies: CraftingCurrencyInventorySchema.catch(CRAFTING_CURRENCY_ZERO_INVENTORY),
@@ -120,8 +123,18 @@ export const SaveDataSchema = z.preprocess(
     })
     .transform((save) => {
       const flatInventory = flattenGearInventories(save.gearInventories);
+      const liveCombatGold = save.activeRun?.activeCombat?.battleState.gold;
+      const liveRunGold = save.activeRun?.runGold ?? 0;
+      let migratedGold = save.gold;
+      if (typeof liveCombatGold === "number") {
+        migratedGold = liveCombatGold;
+      } else if (liveRunGold > 0) {
+        migratedGold = liveRunGold;
+      }
       return {
         ...save,
+        gold: migratedGold,
+        activeRun: save.activeRun ? { ...save.activeRun, runGold: 0 } : null,
         autoplayEnabled: save.rememberAutoplayPreference && save.autoplayEnabled,
         gearLoadouts: pruneOrphanGearLoadouts(flatInventory, save.gearLoadouts),
       };

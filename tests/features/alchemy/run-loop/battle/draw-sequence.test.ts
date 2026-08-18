@@ -1,32 +1,12 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { runHandDrawSequence, type HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
+import { describe, expect, it, vi } from "vitest";
+import { runHandDrawSequence } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import { defaultBattleState } from "@/lib/battle";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
-
-function makeDeps(overrides: Partial<HandDrawSequenceDeps> = {}): HandDrawSequenceDeps {
-  return {
-    isSessionActive: () => true,
-    animateDrawnHand: vi.fn(async () => {}),
-    setTransferInProgress: vi.fn(),
-    setHiddenHandCardKeys: vi.fn(),
-    runIfSessionActive: (_session, action) => action(),
-    ...overrides,
-  };
-}
+import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
+import { installImmediateRafForTests } from "./battle-test-reset";
 
 describe("runHandDrawSequence", () => {
-  const raf = globalThis.requestAnimationFrame;
-
-  beforeEach(() => {
-    globalThis.requestAnimationFrame = (cb: FrameRequestCallback) => {
-      cb(0);
-      return 0;
-    };
-  });
-
-  afterEach(() => {
-    globalThis.requestAnimationFrame = raf;
-  });
+  installImmediateRafForTests();
 
   it("returns false when the session is inactive", async () => {
     const applyState = vi.fn();
@@ -35,7 +15,7 @@ describe("runHandDrawSequence", () => {
       { ...defaultBattleState(), hand: [makeTestCardWithId("slash", { uid: 1 })] },
       applyState,
       1,
-      makeDeps({ isSessionActive: () => false }),
+      makeDrawSequenceDeps({ isSessionActive: () => false }),
     );
     expect(result).toBe(false);
     expect(applyState).not.toHaveBeenCalled();
@@ -44,13 +24,15 @@ describe("runHandDrawSequence", () => {
   it("applies state without animation when no new cards are drawn", async () => {
     const card = makeTestCardWithId("slash", { uid: 1 });
     const applyState = vi.fn();
-    const deps = makeDeps();
+    const deps = makeDrawSequenceDeps();
     const result = await runHandDrawSequence([card], { ...defaultBattleState(), hand: [card] }, applyState, 1, deps);
 
     expect(result).toBe(false);
     expect(applyState).toHaveBeenCalledOnce();
     expect(deps.setTransferInProgress).toHaveBeenCalledWith(false);
-    expect(deps.setHiddenHandCardKeys).toHaveBeenCalledWith(new Set());
+    expect(deps.setHiddenHandCardKeys).toHaveBeenCalledOnce();
+    const clearHidden = vi.mocked(deps.setHiddenHandCardKeys).mock.calls[0]![0];
+    expect([...clearHidden([])]).toEqual([]);
     expect(deps.animateDrawnHand).not.toHaveBeenCalled();
   });
 
@@ -59,9 +41,9 @@ describe("runHandDrawSequence", () => {
     const newHand = [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })];
     const applyState = vi.fn();
     const hiddenKeys: unknown[] = [];
-    const deps = makeDeps({
+    const deps = makeDrawSequenceDeps({
       setHiddenHandCardKeys: (update) => {
-        hiddenKeys.push(typeof update === "function" ? update(new Set()) : update);
+        hiddenKeys.push([...update([])]);
       },
     });
 
@@ -81,7 +63,7 @@ describe("runHandDrawSequence", () => {
     const applyState = vi.fn();
     const hiddenKeys: unknown[] = [];
     let sessionActive = true;
-    const deps = makeDeps({
+    const deps = makeDrawSequenceDeps({
       isSessionActive: () => sessionActive,
       runIfSessionActive: (_session, action) => {
         if (sessionActive) action();
@@ -90,7 +72,7 @@ describe("runHandDrawSequence", () => {
         sessionActive = false;
       }),
       setHiddenHandCardKeys: (update) => {
-        hiddenKeys.push(typeof update === "function" ? update(new Set(["slash-1", "block-2"])) : update);
+        hiddenKeys.push([...update(["slash-1", "block-2"])]);
       },
     });
 
@@ -98,7 +80,7 @@ describe("runHandDrawSequence", () => {
 
     expect(result).toBe(false);
     expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(false);
-    const lastHidden = hiddenKeys[hiddenKeys.length - 1] as Set<string>;
-    expect(lastHidden.has("block-2")).toBe(false);
+    const lastHidden = hiddenKeys[hiddenKeys.length - 1] as string[];
+    expect(lastHidden.includes("block-2")).toBe(false);
   });
 });

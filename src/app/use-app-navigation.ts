@@ -1,13 +1,18 @@
 // Root-level app navigation: menu state, screen transitions, return-to-run routing,
 // keyboard Escape stack handling, and dev mode shortcuts.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Screen } from "@/lib/routing";
 import { isRunLoopScreen } from "@/lib/routing";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
-import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import {
+  useHasActiveBattle,
+  useHasActiveRun,
+  useForegroundResumeKind,
+} from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
+import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-sequential-fade-swap";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 import {
@@ -43,23 +48,13 @@ export function useGameMenuState() {
 // ── Screen Transitions ──
 
 export function useRenderedScreenTransition(controllerScreen: Screen, commitPendingTransition: () => void) {
-  const [renderedScreen, setRenderedScreen] = useState(controllerScreen);
-  const [pagePhase, setPagePhase] = useState<"enter" | "exit">("enter");
+  const { shown: renderedScreen, phase: fadePhase } = useSequentialFadeSwap({
+    target: controllerScreen,
+    durationMs: PAGE_EXIT_MS,
+    initialPhase: "enter",
+    onSwap: commitPendingTransition,
+  });
   const [tooltipBlocked, setTooltipBlocked] = useState(true);
-  const pendingScreenRef = useRef(renderedScreen);
-
-  useEffect(() => {
-    if (controllerScreen === renderedScreen) return;
-    pendingScreenRef.current = controllerScreen;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- starts the exit animation when controller routing changes
-    setPagePhase("exit");
-    const timeout = window.setTimeout(() => {
-      commitPendingTransition();
-      setRenderedScreen(pendingScreenRef.current);
-      setPagePhase("enter");
-    }, resolveGameDelay(PAGE_EXIT_MS));
-    return () => window.clearTimeout(timeout);
-  }, [controllerScreen, renderedScreen, commitPendingTransition]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- resets transient tooltip suppression after screen changes
@@ -68,13 +63,21 @@ export function useRenderedScreenTransition(controllerScreen: Screen, commitPend
     return () => window.clearTimeout(timer);
   }, [renderedScreen]);
 
+  const pagePhase: "enter" | "exit" = fadePhase === "exit" ? "exit" : "enter";
   return { renderedScreen, pagePhase, tooltipBlocked };
 }
 
 // ── Return To Run Navigation ──
 
-export function resolveReturnToRunTarget(returnToRunScreen: Screen | null, hasActiveBattle: boolean): Screen | null {
-  return returnToRunScreen ?? (hasActiveBattle ? "battle" : null);
+export function resolveReturnToRunTarget(
+  returnToRunScreen: Screen | null,
+  hasActiveBattle: boolean,
+  hasResumableRun = false,
+): Screen | null {
+  if (returnToRunScreen) return returnToRunScreen;
+  if (hasActiveBattle) return "battle";
+  if (hasResumableRun) return "destination";
+  return null;
 }
 
 /** Last screen to restore when leaving Options. Ignore Options itself so Back cannot no-op. */
@@ -103,7 +106,13 @@ export function useReturnToRunNavigation({
   const [returnToRunScreen, setReturnToRunScreen] = useState<Screen | null>(null);
   const [optionsReturnScreen, setOptionsReturnScreen] = useState<Screen>("menu");
   const hasActiveBattle = useHasActiveBattle();
-  const returnToRunTarget = resolveReturnToRunTarget(returnToRunScreen, hasActiveBattle);
+  const hasActiveRun = useHasActiveRun();
+  const resumeKind = useForegroundResumeKind();
+  const returnToRunTarget = resolveReturnToRunTarget(
+    returnToRunScreen,
+    hasActiveBattle || resumeKind === "battle",
+    resumeKind != null,
+  );
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- track the screen Options should restore
@@ -122,17 +131,22 @@ export function useReturnToRunNavigation({
   }
 
   function returnToRun() {
-    const target = resolveReturnToRunTarget(returnToRunScreen, hasActiveBattle);
+    const target = resolveReturnToRunTarget(
+      returnToRunScreen,
+      hasActiveBattle || resumeKind === "battle",
+      resumeKind != null,
+    );
     if (!target) return;
-    if (target === "battle") run.returnToBattle();
-    else run.goToScreen(target);
+    if (hasActiveRun && returnToRunScreen && returnToRunScreen !== "battle") {
+      run.goToScreen(returnToRunScreen);
+    } else {
+      run.returnToBattle();
+    }
     setReturnToRunScreen(null);
   }
 
   function handleMainMenu() {
-    if (!hasActiveBattle) {
-      setReturnToRunScreen(null);
-    }
+    if (isRunLoopScreen(renderedScreen)) setReturnToRunScreen(renderedScreen);
     run.goToScreen("menu");
   }
 

@@ -39,8 +39,9 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
   }
 
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
-    const alreadyActive = readHasActiveRun();
     const startSnapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN, difficultyId);
+    const playStartGold =
+      !readHasActiveRun() || readActiveRun().contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN;
     return dispatchRunSessionCommand(
       (draft) => {
         applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true, resetEncounteredEnemies: true });
@@ -49,7 +50,7 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
         const initialDestinations = createInitialDestinationResult({
           availableDestinations: deps.getAvailableDestinations({
             currentHealth: startSnapshot.runMaxHealth,
-            currentGold: startSnapshot.runGold,
+            currentGold: draft.runProfile.gold,
             destinationIndexInAct: 0,
             maxHealth: startSnapshot.runMaxHealth,
           }),
@@ -62,11 +63,11 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
         });
         setDestinationOfferState(draft, initialDestinations.offerState);
         setRewardState(draft, initialDestinations.rewardState);
-        return { freshDeck: startSnapshot.freshDeck, totalStartGold: startSnapshot.runGold };
+        return { freshDeck: startSnapshot.freshDeck, totalStartGold: draft.runProfile.gold };
       },
       {
         afterCommit: () => {
-          if (!alreadyActive && startSnapshot.runGold > 0) playGoldGain();
+          if (playStartGold && startSnapshot.startGoldGrant > 0) playGoldGain();
           deps.clearCardHover();
         },
       },
@@ -74,8 +75,9 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
   }
 
   function initializeLabyrinthRun(characterId: CharacterId) {
-    const alreadyActive = readHasActiveRun();
     const snapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
+    const playStartGold =
+      !readHasActiveRun() || readActiveRun().contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.LABYRINTH;
     dispatchRunSessionCommand(
       (draft) => {
         applyRunStartToDraft(draft, snapshot, { discoverDeck: true });
@@ -83,7 +85,7 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
       },
       {
         afterCommit: () => {
-          if (!alreadyActive && snapshot.runGold > 0) playGoldGain();
+          if (playStartGold && snapshot.startGoldGrant > 0) playGoldGain();
           deps.clearCardHover();
           deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
         },
@@ -93,6 +95,8 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
 
   function initializeWildwoodRun(characterId: CharacterId) {
     const startSnapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, null, []);
+    const playStartGold =
+      !readHasActiveRun() || readActiveRun().contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
     dispatchRunSessionCommand(
       (draft) => {
         applyRunStartToDraft(draft, startSnapshot);
@@ -105,6 +109,7 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
       },
       {
         afterCommit: () => {
+          if (playStartGold && startSnapshot.startGoldGrant > 0) playGoldGain();
           deps.clearCardHover();
           deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
         },
@@ -122,7 +127,7 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
       },
       {
         afterCommit: () => {
-          if (startSnapshot.runGold > 0) playGoldGain();
+          if (startSnapshot.startGoldGrant > 0) playGoldGain();
           deps.clearCardHover();
           deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
         },

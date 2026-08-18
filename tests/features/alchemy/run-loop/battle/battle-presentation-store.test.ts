@@ -1,22 +1,14 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { COMBAT_TEXT_LANE_DELAY_MS, SHAKE_DURATION } from "@/lib/game-constants";
+import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
+import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { clearCombatPresentation } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
-import {
-  getBattleStoreView,
-  getNavigationStoreView,
-  resetRunBattleSlice,
-} from "../../../../helpers/run-domain-store-test";
-
-function freshStore() {
-  useBattlePresentationStore.setState(useBattlePresentationStore.getInitialState());
-  resetRunBattleSlice();
-}
+import { resetBattlePresentationAndRun } from "./battle-test-reset";
+import { getBattleStoreView, getNavigationStoreView } from "../../../../helpers/run-domain-store-test";
 
 describe("battle-presentation-store", () => {
-  beforeEach(freshStore);
+  beforeEach(resetBattlePresentationAndRun);
   afterEach(() => {
     useBattlePresentationStore.getState().resetPresentation();
     vi.useRealTimers();
@@ -120,7 +112,7 @@ describe("battle-presentation-store", () => {
       .getState()
       .showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
     useBattlePresentationStore.getState().clearFloatingCombatTexts();
-    await vi.advanceTimersByTimeAsync(4000);
+    await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS);
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
     vi.useRealTimers();
   });

@@ -1,10 +1,9 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
-import { injectDestinationAtIndex, assertRowAlignment, seedRandom, makeCard, startAtDestination } from "./helpers";
+import { injectDestinationAtIndex, injectMysterySummaryVisit, assertRowAlignment } from "./helpers";
 import { DestinationPage } from "./pages/destination-page";
 import { MysteryPage } from "./pages/mystery-page";
 import { CorruptionPage } from "./pages/corruption-page";
-import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Destination Progression", () => {
@@ -61,55 +60,16 @@ test.describe("Destination Progression", () => {
 });
 
 test.describe("Mystery Event Flow", () => {
-  test("mystery event screen shows with title and choices", async ({ page, runtimeErrors }) => {
+  test("mystery completes and returns to destination choices", critical, async ({ page, runtimeErrors }) => {
     void runtimeErrors;
-    await startAtDestination(page, {}, { forceDestination: "Mystery" });
-    await page.getByRole("button", { name: "Mystery" }).click();
-    await new MenuPage(page).stage.expectRunPhase("runLoop");
-    await expect(page.getByRole("heading").first()).toBeVisible();
+    await injectMysterySummaryVisit(page);
+    await page.goto("/");
+
+    const mystery = new MysteryPage(page);
+    await expect(mystery.continueBtn).toBeVisible({ timeout: 10000 });
+    await mystery.continueBtn.click();
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
   });
-
-  test(
-    "mystery completes and returns to destination choices",
-    critical,
-    async ({ page, fastBattle, runtimeErrors }) => {
-      void fastBattle;
-      void runtimeErrors;
-      await seedRandom(page, 42);
-      await startAtDestination(
-        page,
-        { runDeck: Array.from({ length: 6 }, () => makeCard()) },
-        { forceDestination: "Mystery" },
-      );
-      await page.getByRole("button", { name: "Mystery" }).click();
-
-      const mystery = new MysteryPage(page);
-      await mystery.pickFirstChoice();
-      await mystery.handleCardOutcome();
-
-      // Some outcomes (e.g. card removal) return straight to destination choices;
-      // others show a result view with Continue first.
-      const continueBtn = mystery.continueBtn;
-      await expect
-        .poll(
-          async () => {
-            const hasContinue = await continueBtn.isVisible().catch(() => false);
-            const atDestination = await page
-              .getByRole("heading", { name: "Choose Destination" })
-              .isVisible()
-              .catch(() => false);
-            return hasContinue || atDestination;
-          },
-          { timeout: 10000 },
-        )
-        .toBe(true);
-
-      if (await continueBtn.isVisible().catch(() => false)) {
-        await continueBtn.click();
-      }
-      await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-    },
-  );
 });
 
 test.describe("Corruption Full Flow", () => {

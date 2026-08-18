@@ -464,7 +464,7 @@ describe("commitVictoryRewards", () => {
       testRng,
     );
     const goldGained = commit(result, commitDeps({ battleState, contentSystemType: "wildwood" }));
-    expect(readGameplayState().run.activeRun.runGold).toBe(15);
+    expect(readGameplayState().runProfile.gold).toBe(15);
     expect(goldGained).toBe(true);
   });
 

@@ -22,6 +22,7 @@ import {
   type BattleSceneLocalRect,
 } from "./controller-utils";
 import { waitForStableHandCardRect, type StableHandCardRectDeps } from "./hand-card-layout";
+import type { HiddenHandCardKeys } from "./playable-hand";
 
 type CardTransferRunner = (transfer: Omit<CardTransfer, "id">, onComplete?: () => void) => Promise<void>;
 
@@ -32,7 +33,7 @@ export interface CardTransferAnimationDeps {
   measureHandCard: (cardKey: string) => CardRect | null;
   runCardTransfer: CardTransferRunner;
   playTransferSound: (delay?: number) => void;
-  setHiddenHandCardKeys: (update: (current: Set<string>) => Set<string>) => void;
+  setHiddenHandCardKeys: (update: (current: HiddenHandCardKeys) => Iterable<string>) => void;
   setCardPlayInProgress: (active: boolean) => void;
   setTransferInProgress: (active: boolean) => void;
   stableHandCardDeps: StableHandCardRectDeps;
@@ -65,7 +66,7 @@ export async function animateDiscardedHand(cards: BattleCard[], session: number,
     const sourceRect = deps.measureHandCard(cardKey);
     if (!sourceRect) continue;
     const targetRect = centeredRectForSize(discardPileRect, sourceRect.width, sourceRect.height);
-    deps.setHiddenHandCardKeys((current) => new Set(current).add(cardKey));
+    deps.setHiddenHandCardKeys((current) => (current.includes(cardKey) ? current : [...current, cardKey]));
     await deps.runCardTransfer({
       card,
       from: sourceRect,
@@ -119,11 +120,7 @@ export async function animateDrawnHand(
         duration: CARD_TRANSFER_CONFIG.drawDurationSeconds / speedMul,
       },
       () => {
-        deps.setHiddenHandCardKeys((current) => {
-          const next = new Set(current);
-          next.delete(cardKey);
-          return next;
-        });
+        deps.setHiddenHandCardKeys((current) => current.filter((key) => key !== cardKey));
       },
     );
   }

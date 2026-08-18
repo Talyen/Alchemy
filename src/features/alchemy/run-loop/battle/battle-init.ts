@@ -73,7 +73,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
         let nextBattleState = createBattleForEnemy(
           battleEnemy,
           deck ?? run.runDeck,
-          gold ?? run.runGold,
+          gold ?? draft.runProfile.gold,
           startingHealth,
           nextRoomsEncountered,
           createDraftRunRandomSource(draft, "world"),

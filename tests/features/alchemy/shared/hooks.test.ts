@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   getVirtualResolutionLayout,
   resolveAutoAspectRatio,
+  useLatestRef,
   useVirtualResolution,
 } from "@/features/alchemy/shared/hooks";
 
@@ -148,5 +149,17 @@ describe("useVirtualResolution", () => {
     addListener.mockClear();
     renderHook(() => useVirtualResolution("16:9", true));
     expect(addListener).not.toHaveBeenCalledWith("resize", expect.any(Function));
+  });
+});
+
+describe("useLatestRef", () => {
+  it("exposes the latest value immediately after render", () => {
+    const { result, rerender } = renderHook(({ value }) => useLatestRef(value), {
+      initialProps: { value: 1 },
+    });
+
+    expect(result.current.current).toBe(1);
+    rerender({ value: 2 });
+    expect(result.current.current).toBe(2);
   });
 });

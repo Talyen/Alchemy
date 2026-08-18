@@ -28,6 +28,7 @@ export interface ActiveRunProgressFields {
   runGold: number;
   runPlayerHealth: number;
   runMaxHealth: number;
+  runMetaMaxHealth: number;
   roomsEncountered: number;
   currentAct: number;
   destinationIndexInAct: number;
@@ -99,6 +100,7 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
     runGold: 0,
     runPlayerHealth: MAX_PLAYER_HEALTH,
     runMaxHealth: MAX_PLAYER_HEALTH,
+    runMetaMaxHealth: MAX_PLAYER_HEALTH,
     roomsEncountered: 0,
     currentAct: 1,
     destinationIndexInAct: 0,
@@ -120,9 +122,10 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
   return {
     characterId: activeRun.characterId,
     runDeck: [...activeRun.runDeck],
-    runGold: activeRun.runGold,
+    runGold: 0,
     runPlayerHealth: activeRun.runPlayerHealth,
     runMaxHealth: activeRun.runMaxHealth,
+    runMetaMaxHealth: activeRun.runMetaMaxHealth || activeRun.runMaxHealth,
     roomsEncountered: activeRun.roomsEncountered,
     currentAct: activeRun.currentAct,
     destinationIndexInAct: activeRun.destinationIndexInAct,
@@ -173,6 +176,7 @@ export function runFieldsFromSnapshot(
   | "runGold"
   | "runPlayerHealth"
   | "runMaxHealth"
+  | "runMetaMaxHealth"
   | "roomsEncountered"
   | "currentAct"
   | "destinationIndexInAct"
@@ -187,9 +191,10 @@ export function runFieldsFromSnapshot(
     contentSystemType: snapshot.contentSystemType,
     runDeck: snapshot.freshDeck,
     selectedDifficulty: snapshot.selectedDifficulty,
-    runGold: snapshot.runGold,
+    runGold: 0,
     runPlayerHealth: snapshot.runPlayerHealth,
     runMaxHealth: snapshot.runMaxHealth,
+    runMetaMaxHealth: snapshot.runMaxHealth,
     roomsEncountered: snapshot.roomsEncountered,
     currentAct: snapshot.currentAct,
     destinationIndexInAct: snapshot.destinationIndexInAct,

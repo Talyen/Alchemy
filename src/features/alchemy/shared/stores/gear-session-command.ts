@@ -2,13 +2,12 @@
 // Keeping the invariant here prevents Armory, shops, and reward flows from
 // each implementing their own partial Gear → run-health synchronization.
 import type { CharacterId } from "@/lib/game-data";
-import { flattenGearInventories, type GearInstance, type GearLoadouts } from "@/lib/gear";
+import type { GearInstance, GearLoadouts } from "@/lib/gear";
 import type { GearStore } from "./gear-store-types";
-import { createGameplayDraftGearActions, readGameplayState } from "./gameplay-state-store";
-import { dispatchRunSessionCommand } from "./run-session-command";
+import { createGameplayDraftGearActions } from "./gameplay-state-store";
+import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
 import { addMaterials, awardMaterialsDuringRun } from "./run-session-write-port";
 import { syncRunMaxHealthFromGearMutation } from "./run-session-lifecycle-port";
-import type { GameplayDraft } from "./run-session-command";
 
 export interface GearHealthSnapshot {
   inventories: GearInstance[];
@@ -30,19 +29,6 @@ function gearCommandView(state: GameplayDraft): GearStore {
   };
 }
 
-function snapshotGearHealth(
-  state: Pick<GearStore, "inventories" | "loadouts"> = readGameplayState().gear,
-): GearHealthSnapshot {
-  return {
-    // Flattening creates a stable array before the command starts. Gear
-    // mutations replace inventory arrays/items rather than mutating instances.
-    inventories: flattenGearInventories(state.inventories),
-    loadouts: Object.fromEntries(
-      Object.entries(state.loadouts).map(([characterId, loadout]) => [characterId, { ...loadout }]),
-    ) as GearLoadouts,
-  };
-}
-
 export function dispatchGearMutationWithRunHealthSync<T>(options: {
   characterId: CharacterId;
   mutate: (gear: GearStore) => T;
@@ -61,18 +47,10 @@ export function mutateGearWithRunHealthSync<T>(
     syncRunHealth?: boolean;
   },
 ): T {
-  const before = options.before ?? snapshotGearHealth(draft.gear);
+  void options.before;
   const result = options.mutate(gearCommandView(draft));
   if (options.syncRunHealth ?? draft.session.hasActiveRun) {
-    const after = snapshotGearHealth(draft.gear);
-    syncRunMaxHealthFromGearMutation(
-      draft,
-      options.characterId,
-      before.inventories,
-      before.loadouts,
-      after.inventories,
-      after.loadouts,
-    );
+    syncRunMaxHealthFromGearMutation(draft);
   }
   return result;
 }

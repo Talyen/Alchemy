@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
+import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
 import { createEmptyTalentEffectManifest, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import {
   getRunProgressStoreView,
@@ -11,7 +12,7 @@ import {
   createRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { useGearStore } from "../../../../helpers/gameplay-store-test";
+import { useGearStore, getRunTransientStore } from "../../../../helpers/gameplay-store-test";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   setShopState as mutateShopState,
@@ -110,13 +111,14 @@ describe("createShopActions", () => {
       vi.mocked(playGoldSpend).mockImplementationOnce(() => {
         expect(getRunProgressStoreView().runGold).toBe(999 - SHOP_CARD_PRICE);
       });
-      const result = actions.merchant.buyCard(card, "slot-0");
+      const slotKey = shopItemSlotKey(card.id, 0);
+      const result = actions.merchant.buyCard(card, slotKey);
 
       expect(result).toBe(true);
       expect(getRunProgressStoreView().runGold).toBe(999 - SHOP_CARD_PRICE);
       expect(getRunProgressStoreView().runDeck.length).toBe(deckBefore + 1);
       expect(getRunSessionStoreView().shopState.firstPurchaseUsed).toBe(true);
-      expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toContain("slot-0");
+      expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toContain(slotKey);
       expect(playGoldSpend).toHaveBeenCalledOnce();
     });
 
@@ -127,7 +129,7 @@ describe("createShopActions", () => {
       const card = requiredItem(getRunSessionStoreView().shopState.cards[0], "merchant card");
 
       const deckBefore = getRunProgressStoreView().runDeck.length;
-      const result = actions.merchant.buyCard(card, "slot-0");
+      const result = actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0));
 
       expect(result).toBe(false);
       expect(getRunProgressStoreView().runGold).toBe(0);
@@ -142,16 +144,17 @@ describe("createShopActions", () => {
       const card = requiredItem(getRunSessionStoreView().shopState.cards[0], "merchant card");
 
       const deckBefore = getRunProgressStoreView().runDeck.length;
-      expect(actions.merchant.buyCard(card, "slot-0")).toBe(true);
+      const slotKey = shopItemSlotKey(card.id, 0);
+      expect(actions.merchant.buyCard(card, slotKey)).toBe(true);
       vi.mocked(playGoldSpend).mockClear();
       const commits: number[] = [];
       const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
-      expect(actions.merchant.buyCard(card, "slot-0")).toBe(false);
+      expect(actions.merchant.buyCard(card, slotKey)).toBe(false);
       unsubscribe();
 
       expect(getRunProgressStoreView().runGold).toBe(999 - SHOP_CARD_PRICE);
       expect(getRunProgressStoreView().runDeck.length).toBe(deckBefore + 1);
-      expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toEqual(["slot-0"]);
+      expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toEqual([slotKey]);
       expect(commits).toHaveLength(0);
       expect(playGoldSpend).not.toHaveBeenCalled();
     });
@@ -193,25 +196,62 @@ describe("createShopActions", () => {
     });
   });
 
-  describe("merchant refresh", () => {
-    it("deducts gold and decrements refreshesLeft", () => {
+  describe.each([
+    {
+      name: "merchant",
+      seed: () => setShopState({ ...createInitialShopState(), refreshesLeft: 1 }),
+      refresh: (actions: ReturnType<typeof buildActions>) => actions.merchant.refresh(),
+      read: () => getRunSessionStoreView().shopState,
+      price: SHOP_REFRESH_PRICE,
+    },
+    {
+      name: "trinket",
+      seed: () => {
+        const initial = createInitialTrinketShopState(() => 0);
+        setTrinketShopState({
+          ...initial,
+          purchasedSlotKeys: [`${initial.trinkets[0]?.id}-0`],
+          refreshesLeft: 1,
+        });
+      },
+      refresh: (actions: ReturnType<typeof buildActions>) => actions.trinket.refresh(),
+      read: () => getRunSessionStoreView().trinketShopState,
+      price: SHOP_REFRESH_PRICE,
+    },
+    {
+      name: "equipment",
+      seed: () => {
+        const initial = createInitialEquipmentShopState();
+        setEquipmentShopState({
+          ...initial,
+          purchasedSlotKeys: [initial.gear[0]?.instanceId ?? "missing"],
+          refreshesLeft: 1,
+        });
+      },
+      refresh: (actions: ReturnType<typeof buildActions>) => actions.equipment.refresh(),
+      read: () => getRunSessionStoreView().equipmentShopState,
+      price: SHOP_REFRESH_PRICE,
+    },
+  ])("$name refresh", ({ seed, refresh, read, price }) => {
+    it("deducts gold, decrements refreshesLeft, and clears purchased slots", () => {
       setRunProgress({ runGold: 999 });
-      setShopState(createInitialShopState());
+      seed();
       const actions = buildActions();
-      const beforeRefreshes = getRunSessionStoreView().shopState.refreshesLeft;
       const commits: number[] = [];
       const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-      expect(actions.merchant.refresh()).toBe(true);
+      expect(refresh(actions)).toBe(true);
       unsubscribe();
 
-      expect(getRunSessionStoreView().shopState.refreshesLeft).toBe(beforeRefreshes - 1);
-      expect(getRunProgressStoreView().runGold).toBe(999 - SHOP_REFRESH_PRICE);
-      expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toHaveLength(0);
+      expect(read().refreshesLeft).toBe(0);
+      expect(getRunProgressStoreView().runGold).toBe(999 - price);
+      expect(read().purchasedSlotKeys).toEqual([]);
       expect(commits).toHaveLength(1);
       expect(playGoldSpend).toHaveBeenCalledOnce();
     });
+  });
 
+  describe("merchant refresh reject", () => {
     it("returns false without a commit or sound when no refresh remains", () => {
       setRunProgress({ runGold: 999 });
       setShopState({ ...createInitialShopState(), refreshesLeft: 0 });
@@ -235,7 +275,7 @@ describe("createShopActions", () => {
       const card = requiredItem(getRunSessionStoreView().shopState.cards[0], "merchant card");
 
       const discountedPrice = SHOP_CARD_PRICE - 7;
-      actions.merchant.buyCard(card, "slot-0");
+      actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0));
 
       expect(getRunProgressStoreView().runGold).toBe(999 - discountedPrice);
     });
@@ -249,12 +289,12 @@ describe("createShopActions", () => {
       const firstCard = requiredItem(cards[0], "first merchant card");
       const secondCard = requiredItem(cards[1], "second merchant card");
 
-      firstActions.merchant.buyCard(firstCard, "slot-0");
+      firstActions.merchant.buyCard(firstCard, shopItemSlotKey(firstCard.id, 0));
       const discountPrice = SHOP_CARD_PRICE - 7;
       const goldAfterFirst = 999 - discountPrice;
 
       // Imperative store reads pick up firstPurchaseUsed without rebuilding actions
-      const result = firstActions.merchant.buyCard(secondCard, "slot-1");
+      const result = firstActions.merchant.buyCard(secondCard, shopItemSlotKey(secondCard.id, 1));
       expect(result).toBe(true);
       expect(getRunProgressStoreView().runGold).toBe(goldAfterFirst - SHOP_CARD_PRICE);
     });
@@ -289,7 +329,7 @@ describe("createShopActions", () => {
       const actions = buildActions();
       const card = requiredItem(getRunSessionStoreView().shopState.cards[0], "merchant card");
 
-      actions.merchant.buyCard(card, "slot-0");
+      actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0));
 
       expect(getRunSessionStoreView().alchemistState.firstPurchaseUsed).toBe(false);
     });
@@ -371,24 +411,27 @@ describe("createShopActions", () => {
       expect(first).not.toBeNull();
       expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
 
-      // Fresh snapshot picks up mixUsed: true in the new closure
-      const secondActions = buildActions({ talentEffects: { potionMixPotency: 0 } });
-      const second = secondActions.alchemist.mixPotions(0, 1);
+      // mixUsed is read from the draft on the next command, not from a command closure
+      const second = firstActions.alchemist.mixPotions(0, 1);
       expect(second).toBeNull();
       expect(getRunProgressStoreView().runGold).toBe(999 - ALCHEMIST_MIX_PRICE);
     });
 
-    it("no-ops a second mix on the same actions instance (stale mixUsed closure)", () => {
+    it("no-ops a second mix on the same actions instance without double-spending gold", () => {
       setRunProgress({
         runGold: 999,
-        runDeck: [makeCard({ id: "a", title: "Potion A" }), makeCard({ id: "b", title: "Potion B" })],
+        runDeck: [
+          makeCard({ id: "a", title: "Potion A" }),
+          makeCard({ id: "b", title: "Potion B" }),
+          makeCard({ id: "c", title: "Potion C" }),
+          makeCard({ id: "d", title: "Potion D" }),
+        ],
       });
       setAlchemistState(createInitialAlchemistState());
-      // Stale closure still sees mixUsed: false after the first call mutates the store.
       const actions = buildActions({ talentEffects: { potionMixPotency: 0 } });
 
       expect(actions.alchemist.mixPotions(0, 1)).not.toBeNull();
-      expect(actions.alchemist.mixPotions(0, 1)).toBeNull();
+      expect(actions.alchemist.mixPotions(2, 3)).toBeNull();
       expect(getRunProgressStoreView().runGold).toBe(999 - ALCHEMIST_MIX_PRICE);
       expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
     });
@@ -401,12 +444,39 @@ describe("createShopActions", () => {
       const actions = buildActions();
       const trinket = requiredItem(getRunSessionStoreView().trinketShopState.trinkets[0], "trinket offering");
 
-      const result = actions.trinket.buy(trinket, "slot-0");
+      const result = actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0));
 
       expect(result).toBe(true);
       expect(getRunProgressStoreView().runGold).toBe(999 - TRINKET_SHOP_TRINKET_PRICE);
       expect(getRunProgressStoreView().runTrinkets).toContain(trinket.id);
       expect(getRunSessionStoreView().trinketShopState.firstPurchaseUsed).toBe(true);
+    });
+
+    it("does not charge gold when the trinket is already owned", () => {
+      setTrinketShopState(createInitialTrinketShopState(() => 0));
+      const trinket = requiredItem(getRunSessionStoreView().trinketShopState.trinkets[0], "trinket offering");
+      setRunProgress({ runGold: 999, runTrinkets: [trinket.id] });
+      const actions = buildActions();
+
+      const result = actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0));
+
+      expect(result).toBe(false);
+      expect(getRunProgressStoreView().runGold).toBe(999);
+      expect(getRunProgressStoreView().runTrinkets).toEqual([trinket.id]);
+    });
+
+    it("rejects a buy when the payload is not the live slot offering", () => {
+      setRunProgress({ runGold: 999 });
+      setTrinketShopState(createInitialTrinketShopState(() => 0));
+      const actions = buildActions();
+      const offered = requiredItem(getRunSessionStoreView().trinketShopState.trinkets[0], "trinket offering");
+      const other = requiredItem(getRunSessionStoreView().trinketShopState.trinkets[1], "other trinket");
+
+      const result = actions.trinket.buy(other, shopItemSlotKey(offered.id, 0));
+
+      expect(result).toBe(false);
+      expect(getRunProgressStoreView().runGold).toBe(999);
+      expect(getRunProgressStoreView().runTrinkets).not.toContain(other.id);
     });
   });
 
@@ -415,9 +485,10 @@ describe("createShopActions", () => {
       const instance: GearInstance = {
         instanceId: "shop-armor",
         definitionId: "leather-armor-basic",
-        affixes: [],
+        affixes: [{ id: "max-health", value: 7 }],
       };
-      setRunProgress({ runGold: 999, characterId: "knight" });
+      setRunProgress({ runGold: 999, characterId: "knight", runMaxHealth: 30, runPlayerHealth: 30 });
+      getRunTransientStore().setHasActiveRun(true);
       setEquipmentShopState({
         ...createInitialEquipmentShopState(),
         gear: [instance],
@@ -435,6 +506,33 @@ describe("createShopActions", () => {
       expect(getRunProgressStoreView().runGold).toBe(999 - actions.equipment.getBuyPrice(instance));
       expect(getRunSessionStoreView().equipmentShopState.purchasedSlotKeys).toEqual([instance.instanceId]);
       expect(useGearStore.getState().inventories.knight).toContainEqual(instance);
+      // Shop buy adds to inventory without equipping, so max-health affixes do not apply yet.
+      // mutateGearWithRunHealthSync still runs in the same commit (delta 0).
+      expect(getRunProgressStoreView().runMaxHealth).toBe(30);
+      expect(getRunProgressStoreView().runPlayerHealth).toBe(30);
+    });
+
+    it("rejects a buy for gear that is not on the shelf", () => {
+      const onShelf: GearInstance = {
+        instanceId: "shop-armor",
+        definitionId: "leather-armor-basic",
+        affixes: [],
+      };
+      const offMenu: GearInstance = {
+        instanceId: "off-menu",
+        definitionId: "leather-armor-basic",
+        affixes: [],
+      };
+      setRunProgress({ runGold: 999, characterId: "knight" });
+      setEquipmentShopState({
+        ...createInitialEquipmentShopState(),
+        gear: [onShelf],
+      });
+      const actions = buildActions();
+
+      expect(actions.equipment.buy(offMenu)).toBe(false);
+      expect(getRunProgressStoreView().runGold).toBe(999);
+      expect(useGearStore.getState().inventories.knight ?? []).not.toContainEqual(offMenu);
     });
   });
 
@@ -483,7 +581,7 @@ describe("createShopActions", () => {
       const card = requiredItem(getRunSessionStoreView().shopState.cards[0], "merchant card");
 
       // Buy once to flip firstPurchaseUsed
-      buildActions().merchant.buyCard(card, "slot-0");
+      buildActions().merchant.buyCard(card, shopItemSlotKey(card.id, 0));
 
       // Fresh snapshot after purchase
       const postBuyActions = buildActions();
@@ -501,6 +599,21 @@ describe("createShopActions", () => {
       actions.alchemist.refresh();
 
       const afterIds = getRunSessionStoreView().alchemistState.potions.map((p) => p.id);
+      const overlap = beforeIds.filter((id) => afterIds.includes(id));
+      expect(overlap.length).toBeLessThan(beforeIds.length);
+    });
+  });
+
+  describe("merchant refresh dedup", () => {
+    it("does not restock the same card id on refresh", () => {
+      setRunProgress({ runGold: 999 });
+      setShopState(createInitialShopState());
+      const actions = buildActions();
+      const beforeIds = getRunSessionStoreView().shopState.cards.map((card) => card.id);
+
+      actions.merchant.refresh();
+
+      const afterIds = getRunSessionStoreView().shopState.cards.map((card) => card.id);
       const overlap = beforeIds.filter((id) => afterIds.includes(id));
       expect(overlap.length).toBeLessThan(beforeIds.length);
     });

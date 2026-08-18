@@ -120,15 +120,13 @@ function GameModeTile({
 }
 
 export function GameModeSelectScreen({
-  hasActiveRun,
-  activeContentSystemType,
+  resumableModes,
   onSelectCampaign,
   onSelectLabyrinth,
   onSelectWildwood,
   onOpenMenu,
 }: {
-  hasActiveRun: boolean;
-  activeContentSystemType?: string | null;
+  resumableModes: Record<GameModeId, boolean>;
   onSelectCampaign: () => void;
   onSelectLabyrinth: () => void;
   onSelectWildwood: () => void;
@@ -140,11 +138,6 @@ export function GameModeSelectScreen({
     campaign: onSelectCampaign,
     labyrinth: onSelectLabyrinth,
     wildwood: onSelectWildwood,
-  };
-  const hasResume: Record<GameModeId, boolean> = {
-    campaign: hasActiveRun && activeContentSystemType === "campaign",
-    labyrinth: hasActiveRun && activeContentSystemType === "labyrinth",
-    wildwood: hasActiveRun && activeContentSystemType === "wildwood",
   };
 
   return (
@@ -168,7 +161,7 @@ export function GameModeSelectScreen({
                 modeId={modeId}
                 meta={meta}
                 isLocked={isLocked}
-                canResume={hasResume[modeId]}
+                canResume={resumableModes[modeId]}
                 onSelect={handlers[modeId]}
               />
             );

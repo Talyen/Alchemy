@@ -37,7 +37,13 @@ export function useAlchemyBootstrap(): SaveLoadState | null {
       if (cancelled) return;
       applySaveDataToStores(result.data);
       if (!readRunInitialized()) {
-        restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
+        restoreRun(
+          result.data.activeRun,
+          result.data.talentXP,
+          result.data.unlockedTalents,
+          result.data.parkedRuns,
+          result.data.runRecency,
+        );
       }
       setBootstrapResult(result);
     })();

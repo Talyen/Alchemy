@@ -32,10 +32,13 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
   const contentSystemType = data.contentSystemType as ContentSystemId;
   const runMaxHealth = data.runMaxHealth as number;
   const runPlayerHealth = Math.min(data.runPlayerHealth as number, runMaxHealth);
+  const runMetaMaxHealth =
+    typeof data.runMetaMaxHealth === "number" && data.runMetaMaxHealth > 0 ? data.runMetaMaxHealth : runMaxHealth;
 
   return {
     ...data,
     runPlayerHealth,
+    runMetaMaxHealth,
     labyrinthMap: contentSystemType === "labyrinth" ? data.labyrinthMap : null,
     labyrinthPendingNode: contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
     wildwoodDraft: contentSystemType === "wildwood" ? data.wildwoodDraft : null,

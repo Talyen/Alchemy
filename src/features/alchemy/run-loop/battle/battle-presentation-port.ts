@@ -4,9 +4,11 @@ import type { CombatTextEvent } from "@/lib/battle";
 import type { CardGhost, CardTransfer } from "../../shared/types";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 import type { PortraitFeedback } from "./battle-feedback";
+import type { HiddenHandCardKeys } from "./playable-hand";
 
 export interface BattlePresentationPort extends PortraitFeedback {
-  hiddenHandCardKeys: Set<string>;
+  hiddenHandCardKeys: HiddenHandCardKeys;
+  cardTransferInProgress: boolean;
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
   shakeCompanion: () => void;
@@ -16,7 +18,7 @@ export interface BattlePresentationPort extends PortraitFeedback {
   resetPortraitHurtTokens: () => void;
   clearFloatingCombatTexts: () => void;
   setCardTransfers: (transfers: CardTransfer[] | ((prev: CardTransfer[]) => CardTransfer[])) => void;
-  setHiddenHandCardKeys: (keys: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+  setHiddenHandCardKeys: (update: (prev: HiddenHandCardKeys) => Iterable<string>) => void;
   setCardTransferInProgress: (inProgress: boolean | ((prev: boolean) => boolean)) => void;
 }
 

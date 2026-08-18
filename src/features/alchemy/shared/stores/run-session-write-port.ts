@@ -80,4 +80,5 @@ export {
   setStarterDraftChoices,
   setTrinketShopState,
   setWildwoodDraft,
+  clearTransientSession,
 } from "./write-port-session";

@@ -67,9 +67,3 @@ export function boxesOverlap(
 ): boolean {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
-
-export function boxesOverlapHorizontally(a: { x: number; width: number }, b: { x: number; width: number }): boolean {
-  const aRight = a.x + a.width;
-  const bRight = b.x + b.width;
-  return a.x < bRight && b.x < aRight;
-}

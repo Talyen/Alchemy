@@ -51,9 +51,10 @@ describe("encodeRunResumeSnapshot", () => {
     expect(result).toEqual({
       characterId: "knight",
       runDeck,
-      runGold: 42,
+      runGold: 0,
       runPlayerHealth: 18,
       runMaxHealth: 32,
+      runMetaMaxHealth: getRunProgressStoreView().runMetaMaxHealth,
       roomsEncountered: 4,
       currentAct: 2,
       destinationIndexInAct: 1,

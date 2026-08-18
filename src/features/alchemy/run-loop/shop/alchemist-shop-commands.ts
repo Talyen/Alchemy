@@ -1,7 +1,7 @@
 import { appendCardToRunWithDiscovery, discoverCardIds } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { spendRunGold } from "@/features/alchemy/run-loop/run-gold";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readShopFirstPurchaseUsed } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readDraftGold } from "@/features/alchemy/shared/stores/gold-purse";
 import {
   createDraftRunRandomSource,
   setAlchemistState,
@@ -15,11 +15,14 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { computeAlchemistPotionBuyPrice, computeAlchemistRefreshPrice, computeMixPotionPrice } from "./shop-pricing";
 import {
-  playShopSpendFeedback,
+  commitShopInitialize,
+  mapRefreshedShopOfferings,
+  runShopTransaction,
   purchaseShopOffering,
   refreshCardShopOfferings,
   type ShopTransactionResult,
 } from "./shop-transactions";
+import { shopArrayOfferingMatches } from "./shop-slot-keys";
 import type { AlchemistShopCommands } from "./shop-action-types";
 import { createInitialAlchemistState, type AlchemistState } from "./shop-state-init";
 
@@ -34,22 +37,19 @@ export function createAlchemistShopCommands({
     computeAlchemistPotionBuyPrice(card, {
       talentEffects,
       runTrinkets: readActiveRun().runTrinkets,
-      firstPurchaseUsed: readRunSession().alchemistState.firstPurchaseUsed,
+      firstPurchaseUsed: readShopFirstPurchaseUsed("alchemistState"),
     });
   const getMixPrice = () => computeMixPotionPrice(talentEffects);
   const getRefreshPrice = (refreshesLeft: number) => computeAlchemistRefreshPrice(talentEffects, refreshesLeft);
 
   function initialize(): void {
-    dispatchRunSessionCommand((draft) =>
-      setAlchemistState(
-        draft,
-        createInitialAlchemistState(draft.run.activeRun.runDeck, createDraftRunRandomSource(draft, "shops")),
-      ),
+    commitShopInitialize(setAlchemistState, (draft) =>
+      createInitialAlchemistState(draft.run.activeRun.runDeck, createDraftRunRandomSource(draft, "shops")),
     );
   }
 
   function buyPotion(card: BattleCard, slotKey: string): boolean {
-    const result = dispatchRunSessionCommand((draft) => {
+    return runShopTransaction((draft) => {
       const state = draft.session.alchemistState;
       const price = computeAlchemistPotionBuyPrice(card, {
         talentEffects,
@@ -62,20 +62,19 @@ export function createAlchemistShopCommands({
         state,
         setState: setAlchemistState,
         slotKey,
+        offeringMatches: shopArrayOfferingMatches(state.potions, slotKey, card.id, (offered) => offered.id),
         acquire: () => appendCardToRunWithDiscovery(draft, card),
       });
-    });
-    playShopSpendFeedback(result);
-    return result.committed;
+    }).committed;
   }
 
   function mixPotions(indexA: number, indexB: number): BattleCard | null {
     const price = getMixPrice();
-    const result = dispatchRunSessionCommand((draft): ShopTransactionResult<BattleCard | null> => {
+    return runShopTransaction((draft): ShopTransactionResult<BattleCard | null> => {
       const run = draft.run.activeRun;
       const state = draft.session.alchemistState;
       if (
-        run.runGold < price ||
+        readDraftGold(draft) < price ||
         state.mixUsed ||
         indexA < 0 ||
         indexB < 0 ||
@@ -104,13 +103,11 @@ export function createAlchemistShopCommands({
       setRunDeck(draft, (previous) => applyMixToDeck(previous, indexA, indexB, mixed));
       discoverCardIds(draft, [MIXED_POTION_CARD_ID]);
       return { committed: true, price, value: mixed };
-    });
-    playShopSpendFeedback(result);
-    return result.value;
+    }).value;
   }
 
   function refresh(): boolean {
-    const result = dispatchRunSessionCommand((draft) => {
+    return runShopTransaction((draft) => {
       const state = draft.session.alchemistState;
       return refreshCardShopOfferings<AlchemistState>({
         draft,
@@ -121,16 +118,9 @@ export function createAlchemistShopCommands({
         count: ALCHEMIST_POTIONS_OFFERED,
         setState: setAlchemistState,
         rng: createDraftRunRandomSource(draft, "shops"),
-        mapState: (previous, potions) => ({
-          ...previous,
-          potions,
-          refreshesLeft: previous.refreshesLeft - 1,
-          purchasedSlotKeys: [],
-        }),
+        mapState: (previous, potions) => mapRefreshedShopOfferings(previous, "potions", potions),
       });
-    });
-    playShopSpendFeedback(result);
-    return result.committed;
+    }).committed;
   }
 
   return { initialize, buyPotion, mixPotions, refresh, getPotionBuyPrice, getMixPrice, getRefreshPrice };

@@ -116,6 +116,7 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
 
   return {
     ...progress,
+    runGold: 0,
     destinationRoundsSinceOffered: { ...progress.destinationRoundsSinceOffered },
     rng: { seed: progress.rng.seed, counters: { ...progress.rng.counters } },
     labyrinthMap: progress.contentSystemType === "labyrinth" ? session.labyrinthMap : null,

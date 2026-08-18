@@ -1,8 +1,7 @@
 // Shell side effects that run-flow handlers call directly (navigate, shops, battles, content hooks).
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
-import type { ScreenTransitionOptions } from "@/features/alchemy/shell/use-screen-transitions";
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
-import type { Screen } from "@/lib/routing";
+import type { Screen, ScreenTransitionOptions } from "@/lib/routing";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-types";
 

@@ -140,10 +140,11 @@ describe("SaveDataSchema", () => {
     expect(result.talentXP).toMatchObject({ physical: 18, block: 7 });
     expect(result.activeRun).toMatchObject({
       characterId: "knight",
-      runGold: 42,
+      runGold: 0,
       roomsEncountered: 3,
       contentSystemType: "campaign",
     });
+    expect(result.gold).toBe(42);
     expect(result.activeRun?.runDeck[0].art).toBe(cardLibrary.find((card) => card.id === "slash")?.art);
     expect(result.materialInventory).toEqual({ wood: 4, iron: 2, herbs: 0, food: 0, crystal: 0 });
     expect(result.constructedBuildings["blacksmiths-forge"]).toBe(1);

@@ -15,6 +15,7 @@ import { ScreenDescription, ServiceButton } from "../../shared/ui/shared-ui";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-capture-escape-cancel";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 import { FadeSlot } from "../../shared/ui/fade-slot";
+import { shopItemSlotKey, shopOfferingsSwapKey } from "../shop/shop-slot-keys";
 
 export function AlchemistShopScreen({
   gold,
@@ -147,7 +148,10 @@ export function AlchemistShopScreen({
           </div>
         ) : !mixMode ? (
           <ShopBrowseOfferings
-            swapKey={potionCards.map((card) => card.id).join("-")}
+            swapKey={shopOfferingsSwapKey(
+              potionCards.map((card, i) => shopItemSlotKey(card.id, i)),
+              refreshesLeft,
+            )}
             onLeave={onContinue}
             serviceClassName="gap-4"
             services={
@@ -173,7 +177,7 @@ export function AlchemistShopScreen({
             }
           >
             {potionCards.map((card, i) => {
-              const slotKey = `${card.id}-${i}`;
+              const slotKey = shopItemSlotKey(card.id, i);
               return (
                 <PurchasableCardItem
                   key={slotKey}

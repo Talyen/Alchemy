@@ -18,9 +18,9 @@ import { useLabyrinthController } from "./use-labyrinth-controller";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
-import { useActiveRunScreen } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import {
   useActiveRunCharacterId,
+  useActiveRunScreenValue,
   useBattleRunPort,
   useBattleTalentPort,
   useContentSystemType,
@@ -43,8 +43,8 @@ export function useAlchemyRunController() {
   const battleTalents = useBattleTalentPort();
   const contentSystemType = useContentSystemType();
   const characterId = useActiveRunCharacterId();
-  const { screen, setScreen } = useActiveRunScreen();
-  const { navigateTo, transition, commitPendingTransition, cancelPending } = useScreenTransitions(screen, setScreen);
+  const screen = useActiveRunScreenValue();
+  const { navigateTo, transition, commitPendingTransition, cancelPending } = useScreenTransitions(screen);
 
   const setHoveredCardId = useCallback((id: string | null | ((prev: string | null) => string | null)) => {
     const store = useUiStore.getState();
@@ -268,6 +268,7 @@ export function useAlchemyRunController() {
 
   return {
     screen,
+    homesteadEffects,
     commitPendingTransition,
     routeCommands,
     unlockAllTalents: commandUnlockAllTalents,

@@ -66,6 +66,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
 
   function clearAllBattleTimeouts() {
     ctx.battleTimerGroupRef.current.clearAll();
+    ctx.companionTimerGroupRef.current.clearAll();
     ctx.companionScheduledRef.current = false;
   }
 
@@ -87,12 +88,11 @@ export function createBattleSession(ctx: BattleControllerContext) {
     ctx.battleAbortControllerRef.current.abort();
     ctx.battleAbortControllerRef.current = new AbortController();
     ctx.battleSessionRef.current += 1;
-    ctx.battleTimerGroupRef.current.clearAll();
+    clearAllBattleTimeouts();
     clearTransferHandles();
     stopBattleFeedback();
     ctx.cardPlayInProgressRef.current = false;
     ctx.victoryDefeatHandledRef.current = false;
-    ctx.companionScheduledRef.current = false;
     ctx.onBattleSessionPreparedRef.current?.();
     getPresentationStore().resetPortraitHurtTokens();
     getPresentationStore().clearFloatingCombatTexts();
@@ -103,8 +103,8 @@ export function createBattleSession(ctx: BattleControllerContext) {
     state: BattleState,
     onComplete: (session: number, state: BattleState) => void,
   ) {
+    ctx.cardPlayInProgressRef.current = false;
     runIfSessionActive(session, () => {
-      ctx.cardPlayInProgressRef.current = false;
       onComplete(session, state);
     });
   }

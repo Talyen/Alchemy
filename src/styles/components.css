@@ -299,6 +299,8 @@
    border-box (and outer radius) as the CSS frame. 0 when shine replaces it. */
 .shine-border {
   inset: calc(-1 * var(--tilt-frame-border-width, 0px));
+  /* Mask frames are rectangular; clip to inherited radius so corners do not square off. */
+  overflow: hidden;
 }
 
 .tilt-surface-clip img {

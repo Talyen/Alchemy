@@ -2,13 +2,12 @@
 // Pass session + transfer helpers; write-port and session-store are imported directly (no re-bundle).
 import { COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
 import { endPlayerTurn, isPlayerDefeated, type BattleState, type CombatTextEvent } from "@/lib/battle";
-import { logError } from "@/lib/error-logger";
 import { setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { applyCombatTextPortraitFeedback } from "./battle-feedback";
-import { playCombatTextSounds } from "./controller-utils";
+import { logBattleError, playCombatTextSounds } from "./controller-utils";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
@@ -28,15 +27,12 @@ export function createTurnOrchestration(
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ): TurnOrchestration {
   const getPresentation = () => ctx.getPresentation();
-  const logBattleError = (context: string, err: unknown) => {
-    logError(`Failed to ${context}`, "battle", { error: String(err) }, err instanceof Error ? err.stack : undefined);
-  };
 
   const scheduleCompanionFollowUp = (resultState: BattleState, sessionNum: number) => {
     if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
     if (ctx.companionScheduledRef.current) return;
     ctx.companionScheduledRef.current = true;
-    ctx.battleTimerGroupRef.current.setTimeout(() => {
+    ctx.companionTimerGroupRef.current.setTimeout(() => {
       session.runIfSessionActive(sessionNum, () => {
         ctx.companionScheduledRef.current = false;
         const texts = resolveCompanionFollowUpTexts(session, sessionNum, getPresentation);
@@ -55,6 +51,9 @@ export function createTurnOrchestration(
     logBattleError,
     resetHandTransferUi: () => getPresentation().resetHandTransferUi(),
     scheduleCompanionFollowUp,
+    scheduleAutoEndTurn: (resultState) => {
+      ctx.scheduleAutoEndTurnRef.current?.(resultState);
+    },
     getPresentation,
   };
 }

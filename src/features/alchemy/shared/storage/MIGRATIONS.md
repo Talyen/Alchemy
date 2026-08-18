@@ -108,3 +108,9 @@ Discriminated union (`kind: none | primary-reward | companion-reward | destinati
 ## Battle transition continuation
 
 `activeCombat.pendingBattleTransition` is an additive field with a `null` default. New saves use it to carry a computed enemy-turn result across presentation delays. Enemy-phase battle state without pending transition metadata is recovered on decode as `{ kind: "legacy-enemy-turn" }`; boot resume runs `recoverLegacyEnemyPhase` to force a playable player turn. Persisted `{ kind: "legacy-enemy-turn" }` markers are still accepted by Zod.
+
+## Parked runs and shared gold
+
+`parkedRuns` (`Partial<Record<ContentSystemId, ActiveRunData>>`) and `runRecency` are additive save fields with empty defaults. Load migrates a singular `activeRun` in place and does not hydrate parked slots until that mode is resumed. A corrupt parked slot is dropped; it does not wipe the save.
+
+Gold is the profile purse (`gold`). On load, in-combat `activeCombat.battleState.gold` or a positive legacy `activeRun.runGold` is copied into `gold` when that is the live run's money; persisted `runGold` is then stored as 0. `runMetaMaxHealth` is additive (default 0, treated as `runMaxHealth` when missing) so combat HP bonuses survive a meta rebind.

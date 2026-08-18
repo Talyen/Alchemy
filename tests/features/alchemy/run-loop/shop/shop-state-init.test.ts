@@ -8,6 +8,7 @@ import {
   hydrateTrinketShopState,
   serializeEquipmentShopState,
   hydrateEquipmentShopState,
+  resampleTrinketShopOfferings,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
   SHOP_CARDS_OFFERED,
@@ -15,6 +16,7 @@ import {
   TRINKET_SHOP_OFFERED,
   EQUIPMENT_SHOP_OFFERED,
 } from "@/lib/game-constants";
+import { trinketLibrary } from "@/lib/game-data";
 
 const testRng = () => 0.5;
 const createInitialShopState = () => createInitialShopStateImpl([], testRng);
@@ -48,6 +50,22 @@ describe("shop-state-init", () => {
 
   it("createInitialTrinketShopState samples three trinkets", () => {
     expect(createInitialTrinketShopState().trinkets.length).toBe(TRINKET_SHOP_OFFERED);
+  });
+
+  it("restocks around owned trinkets instead of offering them", () => {
+    const owned = trinketLibrary[0];
+    expect(owned).toBeDefined();
+    const ownedId = owned!.id;
+    const offerings = resampleTrinketShopOfferings(() => 0, [ownedId]);
+    expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
+    expect(offerings.map((entry) => entry.id)).not.toContain(ownedId);
+  });
+
+  it("shortens the shelf when fewer unowned trinkets remain than slots", () => {
+    const keep = trinketLibrary.slice(0, 2).map((entry) => entry.id);
+    const owned = trinketLibrary.filter((entry) => !keep.includes(entry.id)).map((entry) => entry.id);
+    const offerings = resampleTrinketShopOfferings(() => 0, owned);
+    expect(offerings.map((entry) => entry.id).sort()).toEqual([...keep].sort());
   });
 
   it("createInitialEquipmentShopState samples three gear pieces", () => {

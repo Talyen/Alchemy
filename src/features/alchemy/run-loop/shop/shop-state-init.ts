@@ -29,14 +29,20 @@ export {
   hydrateEquipmentShopState,
 } from "@/lib/active-run-session";
 
-export function resampleTrinketShopOfferings(rng: () => number): TrinketEntry[] {
-  return sampleItems(trinketLibrary, TRINKET_SHOP_OFFERED, rng);
+export function resampleTrinketShopOfferings(rng: () => number, ownedIds: readonly string[] = []): TrinketEntry[] {
+  const owned = new Set(ownedIds);
+  return sampleItems(
+    trinketLibrary.filter((entry) => !owned.has(entry.id)),
+    TRINKET_SHOP_OFFERED,
+    rng,
+  );
 }
 
 export function resampleEquipmentShopOfferings(rng: () => number, gearAstralChanceBonus = 0): GearInstance[] {
   return generateGearRewardChoices(EQUIPMENT_SHOP_OFFERED, rng, gearAstralChanceBonus);
 }
 
+/** `firstPurchaseUsed` resets per visit (`empty*State`); Merchant's Favor is first purchase at each shop. */
 export function createInitialShopState(deck: BattleCard[], rng: () => number): ShopState {
   return {
     ...emptyShopState(),
@@ -51,10 +57,10 @@ export function createInitialAlchemistState(deck: BattleCard[], rng: () => numbe
   };
 }
 
-export function createInitialTrinketShopState(rng: () => number): TrinketShopState {
+export function createInitialTrinketShopState(rng: () => number, ownedIds: readonly string[] = []): TrinketShopState {
   return {
     ...emptyTrinketShopState(),
-    trinkets: resampleTrinketShopOfferings(rng),
+    trinkets: resampleTrinketShopOfferings(rng, ownedIds),
   };
 }
 

@@ -26,6 +26,7 @@ import {
 } from "@/features/alchemy/shared/config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
+import { getHandCardKey } from "../../battle/playable-hand";
 import { useHiddenHandCardKeys, usePlayableHandCardKeys } from "../../battle/presentation/use-hand-presentation";
 import type { BattleState } from "@/lib/battle";
 
@@ -52,11 +53,8 @@ const HandCardItem = memo(function HandCardItem({
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   descriptionContext: CardDescriptionContext;
 }) {
-  const cardKey = `${card.id}-${card.uid}`;
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    "hand",
-    `${card.id}-${card.uid}`,
-  );
+  const cardKey = getHandCardKey(card);
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("hand", cardKey);
   const offset = index - (handLength - 1) / 2;
 
   const elementRef = useRef<HTMLButtonElement | null>(null);
@@ -135,7 +133,7 @@ export function BattleHand({
   return (
     <div className={battleHandContainerClass} aria-label="Player hand">
       {battleState.hand.map((card, index) => {
-        const cardKey = `${card.id}-${card.uid}`;
+        const cardKey = getHandCardKey(card);
         return (
           <HandCardItem
             key={cardKey}
@@ -146,7 +144,7 @@ export function BattleHand({
             stagePixelRatio={stagePixelRatio}
             handCardRefs={handCardRefs}
             canPlay={playableHandCardKeys.has(cardKey)}
-            isHidden={hiddenHandCardKeys.has(cardKey)}
+            isHidden={hiddenHandCardKeys.includes(cardKey)}
             onCardClick={onCardClick}
             descriptionContext={descriptionContext}
           />

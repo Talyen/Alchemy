@@ -6,6 +6,7 @@ import {
   setRunPlayerHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { computeTalentEffects } from "@/lib/game-data";
 import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/game-constants";
 import type { Destination } from "@/lib/routing";
 import { CONSTANTS } from "../../shared/types";
@@ -50,7 +51,9 @@ export function createDestinationScreenHandlers(
   function handleCampfireContinue() {
     dispatchRunSessionCommand(
       (draft) => {
-        const healFraction = getCampfireHealFraction(deps.talents.talentEffects.campfireHealBonus);
+        const healFraction = getCampfireHealFraction(
+          computeTalentEffects(draft.runProfile.unlockedTalents).campfireHealBonus,
+        );
         setRunPlayerHealth(draft, (prev) =>
           getCampfireRestHealth(prev, draft.run.activeRun.runMaxHealth, healFraction),
         );

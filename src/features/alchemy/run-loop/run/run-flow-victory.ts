@@ -2,6 +2,7 @@ import { readRunSession } from "@/features/alchemy/shared/stores/run-session-rea
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
+import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards } from "../navigation/victory-flow";
@@ -72,7 +73,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
         contentSystemType: runState.contentSystemType,
         activeLabyrinthRewardModifiers: rewardTraits,
         battleState,
-        runGold: runState.runGold,
+        runGold: draft.runProfile.gold,
         runPlayerHealth: runState.runPlayerHealth,
         runMaxHealth: runState.runMaxHealth,
         destinationIndexInAct: runState.destinationIndexInAct,
@@ -130,7 +131,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
     if (readRunSession().hasActiveRun) {
       const nextScreen = CONSTANTS.SCREENS.REWARDS;
       deps.actions.transition(nextScreen, {
-        delayMs: VICTORY_TRANSITION_DELAY,
+        delayMs: resolveGameDelay(VICTORY_TRANSITION_DELAY),
         guard: () => readRunSession().hasActiveRun,
       });
     }

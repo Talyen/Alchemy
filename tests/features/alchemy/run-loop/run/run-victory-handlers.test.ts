@@ -16,7 +16,6 @@ import {
 } from "../../../../helpers/run-domain-store-test";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
-import { makeRunController } from "../../../../helpers/run-controller";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { isDraft } from "immer";
 
@@ -27,15 +26,15 @@ vi.mock("@/lib/audio", () => ({
   playGoldGain: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/shared/stores/run-transitions", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-transitions")>();
+vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-lifecycle-port")>();
   return {
     ...actual,
     applyRunDefeatTeardown: vi.fn(),
   };
 });
 
-import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-transitions";
+import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { playGoldGain } from "@/lib/audio";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 
@@ -173,7 +172,6 @@ describe("createRunFlowHandlers victory paths", () => {
     const handlers = createRunFlowHandlers(
       makeFlowHandlerDeps({
         transition,
-        run: { ...makeRunController(), contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN },
       }),
     );
     setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });

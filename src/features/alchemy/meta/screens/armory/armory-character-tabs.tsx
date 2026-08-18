@@ -52,23 +52,22 @@ export function ArmoryCharacterTabs({
   onSelectTab: (id: CharacterId) => void;
 }) {
   return (
-    <div data-testid="armory-character-selector" className="mt-4 w-full [scrollbar-width:none] overflow-x-auto py-2">
-      <div className="mx-auto w-max min-w-full px-1">
-        <TabBar
-          tabs={(Object.keys(characters) as CharacterId[]).map((id) => {
-            const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
-            return {
-              id,
-              label: characters[id].name,
-              icon: isLocked ? Lock : CHARACTER_ICONS[id],
-              disabled: isLocked,
-              ...(isLocked ? {} : { iconClassName: keywordDefinitions[CHARACTER_KEYWORDS[id]].colorClass }),
-            };
-          })}
-          activeTab={activeTab}
-          onSelectTab={onSelectTab}
-        />
-      </div>
+    <div data-testid="armory-character-selector" className="mt-4 w-full py-2">
+      <TabBar
+        className="flex-nowrap gap-2"
+        tabs={(Object.keys(characters) as CharacterId[]).map((id) => {
+          const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
+          return {
+            id,
+            label: characters[id].name,
+            icon: isLocked ? Lock : CHARACTER_ICONS[id],
+            disabled: isLocked,
+            ...(isLocked ? {} : { iconClassName: keywordDefinitions[CHARACTER_KEYWORDS[id]].colorClass }),
+          };
+        })}
+        activeTab={activeTab}
+        onSelectTab={onSelectTab}
+      />
     </div>
   );
 }

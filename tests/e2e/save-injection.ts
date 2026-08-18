@@ -39,6 +39,26 @@ export async function injectDestinationAtIndex(
   });
 }
 
+/** Resume on the mystery summary so Continue is the only remaining UI path. */
+export async function injectMysterySummaryVisit(page: Page) {
+  await injectSaveState(page, {
+    runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
+    currentScreen: "mystery",
+    interruptedFlow: { kind: "none" },
+    lastOfferedDestinations: ["Mystery", "Campfire", "Normal Combat"],
+    mysteryVisit: {
+      eventId: "ancient-altar",
+      chosenChoice: { label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
+      pendingRemoval: false,
+      cardChoices: null,
+      grantedTrinketIds: [],
+      grantedGear: [],
+      chosenCardId: null,
+      resolvedTrinketIds: [],
+    },
+  });
+}
+
 /** Persisted primary-reward claim surface for E2E save injection. */
 function primaryRewardInterruptedFlow(pending: Record<string, unknown>) {
   return { kind: "primary-reward" as const, pending };

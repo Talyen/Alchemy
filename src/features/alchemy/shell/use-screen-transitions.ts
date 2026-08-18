@@ -8,15 +8,12 @@
 import { useCallback, useRef } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
-import { assertScreenTransitionAllowed, type Screen } from "@/lib/routing";
+import { assertScreenTransitionAllowed, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
+import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setScreen as setScreenMutator } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { useLatestRef } from "@/features/alchemy/shared/hooks";
 
-export interface ScreenTransitionOptions {
-  delayMs?: number;
-  immediate?: boolean;
-  onCommit?: () => void;
-  /** When provided, transition is skipped if this returns false (checked at apply time, including after delay). */
-  guard?: () => boolean;
-}
+const commandSetScreen = createRunSessionCommand(setScreenMutator);
 
 interface ScreenTransitions {
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
@@ -25,9 +22,13 @@ interface ScreenTransitions {
   cancelPending: () => void;
 }
 
-export function useScreenTransitions(currentScreen: Screen, setScreen: (screen: Screen) => void): ScreenTransitions {
+export function useScreenTransitions(
+  currentScreen: Screen,
+  setScreen: (screen: Screen) => void = commandSetScreen,
+): ScreenTransitions {
   const timerRef = useRef(new TimerGroup());
   const pendingTransitionCommitRef = useRef<(() => void) | null>(null);
+  const currentScreenRef = useLatestRef(currentScreen);
 
   const commitPendingTransition = useCallback(() => {
     const commit = pendingTransitionCommitRef.current;
@@ -42,24 +43,24 @@ export function useScreenTransitions(currentScreen: Screen, setScreen: (screen: 
 
   const navigateTo = useCallback(
     (nextScreen: Screen, onRenderedScreenCommit?: () => void) => {
-      assertScreenTransitionAllowed(currentScreen, nextScreen);
-      timerRef.current.clearAll();
+      assertScreenTransitionAllowed(currentScreenRef.current, nextScreen);
+      cancelPending();
       pendingTransitionCommitRef.current = onRenderedScreenCommit ?? null;
       timerRef.current.setTimeout(() => {
-        if (nextScreen === currentScreen) {
+        if (nextScreen === currentScreenRef.current) {
           commitPendingTransition();
           return;
         }
         setScreen(nextScreen);
       }, NAVIGATION_DELAY_MS);
     },
-    [currentScreen, setScreen, commitPendingTransition],
+    [cancelPending, commitPendingTransition, currentScreenRef, setScreen],
   );
 
   const transition = useCallback(
     (nextScreen: Screen, options: ScreenTransitionOptions = {}) => {
       const { delayMs, immediate, onCommit, guard } = options;
-      assertScreenTransitionAllowed(currentScreen, nextScreen);
+      assertScreenTransitionAllowed(currentScreenRef.current, nextScreen);
 
       const applyImmediate = () => {
         if (guard && !guard()) return;
@@ -68,19 +69,20 @@ export function useScreenTransitions(currentScreen: Screen, setScreen: (screen: 
       };
 
       if (immediate) {
+        cancelPending();
         applyImmediate();
         return;
       }
 
       if (delayMs != null) {
-        timerRef.current.clearAll();
+        cancelPending();
         timerRef.current.setTimeout(applyImmediate, delayMs);
         return;
       }
 
       navigateTo(nextScreen, onCommit);
     },
-    [currentScreen, navigateTo, setScreen],
+    [cancelPending, currentScreenRef, navigateTo, setScreen],
   );
 
   return { navigateTo, transition, commitPendingTransition, cancelPending };

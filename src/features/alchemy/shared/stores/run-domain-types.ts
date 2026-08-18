@@ -27,6 +27,7 @@ import type {
   EncounterRewardTraitId,
   LabyrinthMap,
 } from "@/lib/content-systems/types";
+import { emptyParkedRuns, type ParkedRunsMap } from "./parked-runs";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { CorruptionResult } from "@/lib/corruption";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -57,6 +58,8 @@ export interface RunDomainBattleState {
 /** Active-run region of the authoritative gameplay aggregate. */
 export interface RunDomainDataState {
   activeRun: ActiveRunProgressFields;
+  parkedRuns: ParkedRunsMap;
+  runRecency: ContentSystemId[];
   initialized: boolean;
   navigation: { screen: Screen };
 }
@@ -112,6 +115,8 @@ export function createInitialBattleFields(): RunDomainBattleState {
 export function createInitialRunDomainData(): RunDomainDataState {
   return {
     activeRun: createInitialActiveRunFields(null),
+    parkedRuns: emptyParkedRuns(),
+    runRecency: [],
     initialized: false,
     navigation: { screen: "menu" },
   };

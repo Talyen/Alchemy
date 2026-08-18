@@ -1,7 +1,6 @@
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow-handler-deps";
 import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow-shell-actions";
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
-import { makeRunController, makeTalentController } from "./run-controller";
 
 export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> &
   Partial<RunFlowShellActions> & {
@@ -29,8 +28,6 @@ export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> &
  */
 export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}): RunFlowHandlerDeps {
   const {
-    run = makeRunController(),
-    talents = makeTalentController(),
     getAvailableDestinations = () => [],
     actions: actionsOverride,
     navigateTo = () => {},
@@ -89,8 +86,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
   };
 
   return {
-    run,
-    talents,
     actions,
     getAvailableDestinations,
   };

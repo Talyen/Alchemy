@@ -6,6 +6,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { getCardKey } from "./controller-utils";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
+import { EMPTY_HIDDEN_HAND_KEYS, type HiddenHandCardKeys } from "./playable-hand";
 
 function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {
   const oldUidSet = new Set(oldHand.map((c) => c.uid));
@@ -16,7 +17,7 @@ export interface HandDrawSequenceDeps {
   isSessionActive: (session: number) => boolean;
   animateDrawnHand: (cards: BattleCard[], allHandCards: BattleCard[], session: number) => Promise<void>;
   setTransferInProgress: (active: boolean) => void;
-  setHiddenHandCardKeys: (update: Set<string> | ((current: Set<string>) => Set<string>)) => void;
+  setHiddenHandCardKeys: (update: (current: HiddenHandCardKeys) => Iterable<string>) => void;
   runIfSessionActive: (session: number, action: () => void) => void;
 }
 
@@ -33,7 +34,7 @@ export async function runHandDrawSequence(
     deps.runIfSessionActive(session, () => {
       applyState();
       deps.setTransferInProgress(false);
-      deps.setHiddenHandCardKeys(new Set());
+      deps.setHiddenHandCardKeys(() => EMPTY_HIDDEN_HAND_KEYS);
     });
     return false;
   }
@@ -41,7 +42,7 @@ export async function runHandDrawSequence(
   deps.setTransferInProgress(true);
   markBattleStage("draw-start");
   deps.runIfSessionActive(session, () => {
-    deps.setHiddenHandCardKeys(hiddenDrawKeys);
+    deps.setHiddenHandCardKeys(() => hiddenDrawKeys);
     applyState();
   });
   await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -53,13 +54,7 @@ export async function runHandDrawSequence(
     markBattleStage("draw-end");
     const clearHidden = () => {
       deps.setTransferInProgress(false);
-      deps.setHiddenHandCardKeys((current) => {
-        const next = new Set(current);
-        for (const key of hiddenDrawKeys) {
-          next.delete(key);
-        }
-        return next;
-      });
+      deps.setHiddenHandCardKeys((current) => current.filter((key) => !hiddenDrawKeys.has(key)));
     };
     // Always clear opacity-0 hand cards even if the battle session ended mid-draw.
     if (deps.isSessionActive(session)) {

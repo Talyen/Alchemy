@@ -14,6 +14,7 @@ export interface TabBarProps<T extends string> {
   activeTab: T;
   onSelectTab: (tab: T) => void;
   activeClassName?: string;
+  className?: string;
 }
 
 export function TabBar<T extends string>({
@@ -21,9 +22,10 @@ export function TabBar<T extends string>({
   activeTab,
   onSelectTab,
   activeClassName = "ring-2 ring-primary/70 ring-offset-1 ring-offset-background",
+  className,
 }: TabBarProps<T>) {
   return (
-    <div className="flex flex-wrap justify-center gap-3">
+    <div className={cn("flex flex-wrap justify-center gap-3", className)}>
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isDisabled = tab.disabled ?? false;

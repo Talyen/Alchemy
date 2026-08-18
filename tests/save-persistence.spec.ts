@@ -33,6 +33,13 @@ function getSavedBattleTurn(page: import("@playwright/test").Page): Promise<numb
   }, SAVE_KEY);
 }
 
+/** Purse gold: flushed saves store it on `gold` with `runGold` 0; unflushed injects may still have legacy `runGold`. */
+function persistedPurseGold(save: { gold?: unknown; activeRun?: { runGold?: unknown } | null }): number {
+  const runGold = typeof save.activeRun?.runGold === "number" ? save.activeRun.runGold : 0;
+  const gold = typeof save.gold === "number" ? save.gold : 0;
+  return runGold > 0 ? runGold : gold;
+}
+
 test.describe("Save Persistence & Resume", () => {
   test.beforeEach(async ({ runtimeErrors }) => {
     void runtimeErrors;
@@ -56,7 +63,6 @@ test.describe("Save Persistence & Resume", () => {
       const s = JSON.parse(localStorage.getItem(saveKey) || "{}");
       return s.activeRun;
     }, SAVE_KEY);
-    expect(savedBefore.runGold).toBe(42);
     expect(savedBefore.runPlayerHealth).toBe(18);
     expect(savedBefore.runMaxHealth).toBe(30);
     expect(savedBefore.currentAct).toBe(1);
@@ -67,10 +73,10 @@ test.describe("Save Persistence & Resume", () => {
 
     const savedAfter = await page.evaluate((saveKey) => {
       const s = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return s.activeRun;
+      return s;
     }, SAVE_KEY);
-    expect(savedAfter.runGold).toBe(42);
-    expect(savedAfter.runPlayerHealth).toBe(18);
+    expect(persistedPurseGold(savedAfter)).toBe(42);
+    expect(savedAfter.activeRun.runPlayerHealth).toBe(18);
   });
 
   test("resume restores saved destination choices", async ({ page }) => {
@@ -218,7 +224,7 @@ test.describe("Save Persistence & Resume", () => {
       return JSON.parse(localStorage.getItem(saveKey) || "{}");
     }, SAVE_KEY);
     expect(upgraded.saveSchemaVersion).toBeDefined();
-    expect(upgraded.activeRun.runGold).toBe(42);
+    expect(persistedPurseGold(upgraded)).toBe(42);
     expect(upgraded.activeRun.runPlayerHealth).toBe(18);
   });
 });
@@ -259,19 +265,17 @@ test.describe("Autosave Cadence", () => {
     await startAtDestination(page, { runGold: 42, runPlayerHealth: 22 }, { forceDestination: "Campfire" });
 
     const goldBefore = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.runGold;
+      return JSON.parse(localStorage.getItem(saveKey) || "{}");
     }, SAVE_KEY);
-    expect(goldBefore).toBe(42);
+    expect(persistedPurseGold(goldBefore)).toBe(42);
 
     await page.goto("/");
     await resumeCampaignRun(page);
 
     const goldAfter = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.runGold;
+      return JSON.parse(localStorage.getItem(saveKey) || "{}");
     }, SAVE_KEY);
-    expect(goldAfter).toBe(42);
+    expect(persistedPurseGold(goldAfter)).toBe(42);
   });
 
   test("forge status persists across end turn", async ({ page, fastBattle, runtimeErrors }) => {

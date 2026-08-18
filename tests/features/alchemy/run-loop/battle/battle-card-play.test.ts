@@ -5,7 +5,8 @@ import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
-import { getBattleStoreView, resetRunBattleSlice } from "../../../../helpers/run-domain-store-test";
+import { getBattleStoreView } from "../../../../helpers/run-domain-store-test";
+import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
 import { playBattleEvent, playUISound } from "@/lib/audio";
@@ -112,11 +113,11 @@ function clickCard(
 
 beforeEach(() => {
   vi.clearAllMocks();
-  resetRunBattleSlice();
+  resetBattlePresentationAndRun();
 });
 
 describe("createBattleCardPlay", () => {
-  it("plays a legal card and syncs battle state", () => {
+  it("plays a legal card and syncs battle state", async () => {
     const slash = makeTestCard({
       id: "slash",
       cost: 1,
@@ -135,7 +136,9 @@ describe("createBattleCardPlay", () => {
 
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
     expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
-    expect(ctx.scheduleAutoEndTurnRef.current).toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(ctx.scheduleAutoEndTurnRef.current).toHaveBeenCalled();
+    });
     expectAwardedCard(awardCardXP, "slash");
     expect(playBattleEvent).toHaveBeenCalledWith("enemyHit");
     expect(playUISound).not.toHaveBeenCalled();
@@ -186,7 +189,7 @@ describe("createBattleCardPlay", () => {
     expect(playUISound).toHaveBeenCalledWith("error");
   });
 
-  it("plays a revealed card while another draw transfer is still in progress", () => {
+  it("rejects plays while a card transfer is in progress", () => {
     const slash = makeTestCard({
       id: "slash",
       cost: 1,
@@ -198,15 +201,15 @@ describe("createBattleCardPlay", () => {
       enemyHealth: 30,
     });
     getBattleStoreView().setSyncedBattleState(state);
+    useBattlePresentationStore.getState().setCardTransferInProgress(true);
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
 
-    expect(getBattleStoreView().battleState.hand.length).toBe(0);
-    expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
-    expectAwardedCard(awardCardXP, "slash");
-    expect(logError).not.toHaveBeenCalled();
+    expect(getBattleStoreView().battleState).toEqual(state);
+    expect(awardCardXP).not.toHaveBeenCalled();
+    expect(playUISound).toHaveBeenCalledWith("error");
   });
 
   it("rejects plays for cards still animating into the hand", () => {
@@ -222,7 +225,7 @@ describe("createBattleCardPlay", () => {
     });
     getBattleStoreView().setSyncedBattleState(state);
     useBattlePresentationStore.getState().setCardTransferInProgress(true);
-    useBattlePresentationStore.getState().setHiddenHandCardKeys(new Set(["slash-6"]));
+    useBattlePresentationStore.getState().setHiddenHandCardKeys(() => ["slash-6"]);
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);

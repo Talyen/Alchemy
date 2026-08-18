@@ -6,8 +6,6 @@ import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flo
 import type {
   BattleRunPort,
   BattleTalentPort,
-  RunFlowRunPort,
-  RunFlowTalentPort,
   RunOrchestrationPort,
 } from "@/features/alchemy/shared/stores/run-port-types";
 import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
@@ -36,8 +34,7 @@ describe("run architecture type contracts", () => {
 
     expectTypeOf<BattleProps["run"]>().toEqualTypeOf<BattleRunPort>();
     expectTypeOf<BattleProps["talents"]>().toEqualTypeOf<BattleTalentPort>();
-    expectTypeOf<RunFlowHandlerDeps["run"]>().toEqualTypeOf<RunFlowRunPort>();
-    expectTypeOf<RunFlowHandlerDeps["talents"]>().toEqualTypeOf<RunFlowTalentPort>();
+    expectTypeOf<keyof RunFlowHandlerDeps>().toEqualTypeOf<"actions" | "getAvailableDestinations">();
     expectTypeOf<ReturnType<typeof useRunOrchestrationPort>>().toEqualTypeOf<RunOrchestrationPort>();
   });
 

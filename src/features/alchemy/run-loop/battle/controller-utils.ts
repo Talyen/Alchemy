@@ -1,9 +1,15 @@
 // Extracted utility functions for battle controller card measurement, transfer timing, scene rects, and companion audio.
 import { playBattleEvent, playCardSound } from "@/lib/audio";
+import { logError } from "@/lib/error-logger";
 import type { CombatTextEvent } from "@/lib/battle";
 import { CARD_TRANSFER_CONFIG, COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
-import type { BattleCard } from "@/lib/game-data";
 import type { CardRect } from "../../shared/types";
+
+export { getHandCardKey as getCardKey } from "./playable-hand";
+
+export function logBattleError(context: string, err: unknown): void {
+  logError(`Failed to ${context}`, "battle", { error: String(err) }, err instanceof Error ? err.stack : undefined);
+}
 
 export interface BattleSceneLocalRect {
   left: number;
@@ -79,10 +85,6 @@ export function defaultMeasureElementRect(
     { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
     sceneRect,
   );
-}
-
-export function getCardKey(card: BattleCard) {
-  return `${card.id}-${card.uid}`;
 }
 
 export function centeredRectForSize(centerSource: CardRect, width: number, height: number): CardRect {

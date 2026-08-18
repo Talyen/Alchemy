@@ -4,10 +4,14 @@ import { bindDraftAction, type GameplayDraft } from "./run-session-command";
 import { createGameplayDraftBattleActions } from "./gameplay-state-store";
 import type { DisplayOverrides } from "./run-domain-types";
 import { createRunRandomSource } from "./write-port-run";
+import { syncPurseFromBattleGold } from "./gold-purse";
 
 const battleActions = (state: GameplayDraft) => createGameplayDraftBattleActions(state);
 
-export const setBattleState = bindDraftAction((s) => battleActions(s).setSyncedBattleState);
+export function setBattleState(draft: GameplayDraft, action: BattleState | ((prev: BattleState) => BattleState)): void {
+  battleActions(draft).setSyncedBattleState(action);
+  syncPurseFromBattleGold(draft);
+}
 export const setBattleStartState = bindDraftAction((s) => battleActions(s).setBattleStartState);
 export const setHasActiveBattle = bindDraftAction((s) => battleActions(s).setHasActiveBattle);
 
@@ -51,6 +55,7 @@ export function commitBattleTransition(
   battle.setSyncedBattleState(battleState);
   battle.setPendingBattleTransition(pendingBattleTransition);
   battle.clearPendingTransitionResumeRequired();
+  syncPurseFromBattleGold(draft);
 }
 
 /** Start a visible async transition while keeping its continuation in the save. */
@@ -64,6 +69,7 @@ export function beginBattleTransition(
   battle.setSyncedBattleState(battleState);
   battle.setPendingBattleTransition(pendingBattleTransition);
   battle.setDisplayOverrides(displayOverrides);
+  syncPurseFromBattleGold(draft);
 }
 
 export function clearBattleTransition(draft: GameplayDraft): void {

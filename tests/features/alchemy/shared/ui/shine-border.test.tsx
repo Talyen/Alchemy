@@ -14,6 +14,8 @@ describe("ShineBorder", () => {
     const shine = container.querySelector(".shine-border") as HTMLElement;
 
     expect(shine.className).not.toMatch(/\binset-0\b/);
+    expect(shine.className).toMatch(/\boverflow-hidden\b/);
+    expect(shine.className).toMatch(/rounded-\[inherit\]/);
     expect(shine.style.backgroundImage).toContain("rgb(255, 0, 0)");
     expect(shine.style.backgroundImage).toContain("rgb(0, 255, 0)");
     expect(shine.style.backgroundColor).toBe("rgb(255, 0, 0)");

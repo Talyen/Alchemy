@@ -3,6 +3,7 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { clearBattleTransition, commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
+  finalizePlayerTurnResume,
   getBattleContinuation,
   type BattleTurnSession,
   type ResolveEndTurn,
@@ -37,11 +38,5 @@ export function resumePendingBattleTransition(
   const state = pending.resultState;
   const continuation = getBattleContinuation(state, pending.playerTurnSkipped);
   dispatchRunSessionCommand((draft) => commitBattleTransition(draft, state, continuation));
-  if (battleSession.checkBattleEnd(state, sessionNum)) return;
-  if (pending.playerTurnSkipped) {
-    dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
-    resolveEndTurn(state, sessionNum, battleSession, orch);
-    return;
-  }
-  orch.scheduleCompanionFollowUp(state, sessionNum);
+  finalizePlayerTurnResume(state, pending.playerTurnSkipped, sessionNum, battleSession, orch, resolveEndTurn);
 }

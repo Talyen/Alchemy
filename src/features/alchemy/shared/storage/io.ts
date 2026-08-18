@@ -37,6 +37,14 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
   if (raw.activeRun && !normalized.activeRun) {
     warnings.push("active run could not be restored");
   }
+  const rawParked =
+    raw && typeof raw === "object" && "parkedRuns" in raw && raw.parkedRuns && typeof raw.parkedRuns === "object"
+      ? Object.keys(raw.parkedRuns as object).length
+      : 0;
+  const keptParked = Object.keys(normalized.parkedRuns ?? {}).length;
+  if (rawParked > keptParked) {
+    warnings.push("a parked run could not be restored");
+  }
   return warnings;
 }
 
@@ -68,6 +76,16 @@ function hydrateActiveRunDeck(activeRun: ParsedSaveData["activeRun"]): SaveData[
       : null,
     starterDraftChoices: activeRun.starterDraftChoices?.filter(keepCard) ?? null,
   });
+}
+
+function hydrateParkedRuns(parked: ParsedSaveData["parkedRuns"]): SaveData["parkedRuns"] {
+  const next: SaveData["parkedRuns"] = {};
+  for (const [mode, run] of Object.entries(parked)) {
+    if (!run) continue;
+    const hydrated = hydrateActiveRunDeck(run as ParsedSaveData["activeRun"]);
+    if (hydrated) next[mode as keyof SaveData["parkedRuns"]] = hydrated;
+  }
+  return next;
 }
 
 async function collectSaveCandidates(): Promise<string[]> {
@@ -126,7 +144,11 @@ function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     for (const ve of result.errors) {
       warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
     }
-    const hydrated: SaveData = { ...data, activeRun: hydrateActiveRunDeck(data.activeRun) };
+    const hydrated: SaveData = {
+      ...data,
+      activeRun: hydrateActiveRunDeck(data.activeRun),
+      parkedRuns: hydrateParkedRuns(data.parkedRuns),
+    };
     if (warnings.length > 0) console.warn("Save data was normalized during load", warnings);
     return { data: hydrated, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
   }

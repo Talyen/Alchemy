@@ -115,10 +115,14 @@ function toRunSession(state: GameplayState, screen?: Screen): RunSession {
   return {
     screen: resolvedScreen,
     phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
-    run: { ...pickActiveRunView(state.run), talentXP, unlockedTalents },
+    run: { ...pickActiveRunView(state.run), talentXP, unlockedTalents, runGold: state.runProfile.gold },
     session: { ...state.session },
     battle,
   };
+}
+
+export function getRunSessionFromState(state: GameplayState, screen?: Screen): RunSession {
+  return toRunSession(state, screen);
 }
 
 /** Imperative snapshot of run + session + battle for the current screen. */

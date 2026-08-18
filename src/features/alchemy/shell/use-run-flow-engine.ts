@@ -2,7 +2,6 @@
 import { useMemo, useCallback } from "react";
 import {
   useRunOrchestrationPort,
-  useRunFlowTalentPort,
   useContentNavigationTalentPort,
   useTalentEffects,
   useTalentProgressSlice,
@@ -36,7 +35,6 @@ export function useRunFlowEngine({
   const orchestration = useRunOrchestrationPort();
   const talentEffects = useTalentEffects();
   const { talentXP } = useTalentProgressSlice();
-  const flowTalents = useRunFlowTalentPort(talentEffects);
   const contentTalents = useContentNavigationTalentPort(talentEffects, talentXP);
   const setHasActiveBattle = useSetHasActiveBattle();
   const completedDifficulties = useCompletedDifficulties();
@@ -117,12 +115,10 @@ export function useRunFlowEngine({
   const flowHandlers = useMemo(
     () =>
       createRunFlowHandlers({
-        run: orchestration,
-        talents: flowTalents,
         actions,
         getAvailableDestinations: destinations.getAvailableDestinations,
       }),
-    [orchestration, flowTalents, actions, destinations.getAvailableDestinations],
+    [actions, destinations.getAvailableDestinations],
   );
 
   const corruption = useMemo(

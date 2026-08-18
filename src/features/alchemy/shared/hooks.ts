@@ -164,8 +164,8 @@ export function useVirtualResolution(selectedAspectRatio: AspectRatioOption, byp
 /** Keeps the latest value available to stable event handlers without changing their identity. */
 export function useLatestRef<T>(value: T): RefObject<T> {
   const valueRef = useRef(value);
-  useEffect(() => {
-    valueRef.current = value;
-  }, [value]);
+  // Sync store/event callbacks in the same commit must not see the previous render.
+  // eslint-disable-next-line react-hooks/refs -- latest-ref contract; not a render input
+  valueRef.current = value;
   return valueRef;
 }

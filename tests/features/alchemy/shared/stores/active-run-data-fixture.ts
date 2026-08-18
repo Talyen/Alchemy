@@ -16,6 +16,44 @@ export const ANCIENT_ALTAR_MYSTERY_VISIT: PersistedMysteryVisit = {
   resolvedTrinketIds: [],
 };
 
+export function makeActiveRunData(overrides: Partial<ActiveRunData> = {}): ActiveRunData {
+  return {
+    characterId: "knight",
+    runDeck: [],
+    runGold: 0,
+    runPlayerHealth: 20,
+    runMaxHealth: 30,
+    runMetaMaxHealth: 30,
+    roomsEncountered: 0,
+    currentAct: 1,
+    destinationIndexInAct: 0,
+    completedDestinations: [],
+    lastOfferedDestinations: [],
+    destinationRoundsSinceOffered: {},
+    runTrinkets: [],
+    encounteredRunEnemyIds: [],
+    selectedDifficulty: null,
+    contentSystemType: "campaign",
+    rng: createRunRngState(() => 0.5),
+    labyrinthMap: null,
+    labyrinthPendingNode: null,
+    wildwoodDraft: null,
+    starterDraftChoices: null,
+    activeCombat: null,
+    runTalentXP: {},
+    runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+    currentScreen: null,
+    interruptedFlow: { kind: "none" },
+    shopState: null,
+    alchemistState: null,
+    trinketShopState: null,
+    equipmentShopState: null,
+    mysteryVisit: null,
+    corruptionResult: null,
+    ...overrides,
+  } satisfies ActiveRunData;
+}
+
 /**
  * Complete, non-default active-run fixture. `satisfies` makes persistence field
  * additions fail typecheck until this fixture and its round-trip assertions move
@@ -39,6 +77,7 @@ export function createCompleteActiveRunData(): ActiveRunData {
     runGold: 87,
     runPlayerHealth: 19,
     runMaxHealth: 34,
+    runMetaMaxHealth: 34,
     roomsEncountered: 8,
     currentAct: 2,
     destinationIndexInAct: 3,

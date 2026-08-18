@@ -90,7 +90,14 @@ function createFacade<S extends object>(
 }
 
 export const useRunDomainStore = createFacade(runDomainView, (state, next) => {
-  state.run = { ...state.run, activeRun: next.activeRun, initialized: next.initialized, navigation: next.navigation };
+  state.run = {
+    ...state.run,
+    activeRun: next.activeRun,
+    initialized: next.initialized,
+    navigation: next.navigation,
+    parkedRuns: next.parkedRuns,
+    runRecency: next.runRecency,
+  };
 });
 
 export const useRunProfileStore = createFacade(runProfileView, (state, next) => {

@@ -14,6 +14,7 @@ import { GEAR_EFFECT_KEYS } from "@/lib/gear";
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap, withCurrentNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { baseHomesteadSave } from "../../fixtures/saves";
+import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
 
 describe("SaveDataSchema", () => {
   it("parses a full homestead save fixture", () => {
@@ -29,6 +30,25 @@ describe("SaveDataSchema", () => {
     if (result.success) {
       expect(result.data.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
       expect(result.data.activeRun).toBeNull();
+    }
+  });
+
+  it("keeps a spent purse at 0 when a parked combat snapshot still has gold", () => {
+    const result = SaveDataSchema.safeParse({
+      gold: 0,
+      activeRun: null,
+      parkedRuns: {
+        campaign: makeMinimalActiveRunInput({
+          contentSystemType: "campaign",
+          runGold: 0,
+          activeCombat: { battleState: { ...defaultBattleState(), gold: 80 } },
+        }),
+      },
+    });
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (result.success) {
+      expect(result.data.gold).toBe(0);
+      expect(result.data.parkedRuns.campaign?.activeCombat?.battleState.gold).toBe(80);
     }
   });
 

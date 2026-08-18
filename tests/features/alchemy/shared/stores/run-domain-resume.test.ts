@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { createEmptyRewardState, type ActiveRunData } from "@/lib/active-run-session";
-import { restoreRun, teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
+import { restoreRun, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { getCombinedRunGold, getCurrentRunPhase } from "../../../../helpers/run-session-assertions";
 import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
@@ -50,8 +50,8 @@ describe("session facade API", () => {
     expect(session.phase).toBe("meta");
   });
 
-  it("getCombinedRunGold sums map and combat gold", () => {
-    expect(getCombinedRunGold()).toBe(47);
+  it("getCombinedRunGold reads the shared purse", () => {
+    expect(getCombinedRunGold()).toBe(40);
   });
 
   it("getCurrentRunPhase reflects battle screen and hasActiveBattle", () => {
@@ -75,7 +75,7 @@ describe("session facade API", () => {
     expect(snapshot).toMatchObject({
       characterId: "knight",
       runDeck: [],
-      runGold: 12,
+      runGold: 0,
       runPlayerHealth: 18,
       runMaxHealth: 24,
       contentSystemType: "campaign",

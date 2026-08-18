@@ -28,7 +28,9 @@ export {
 };
 
 export function getRunProgressStoreView() {
-  return { ...getActiveRunStoreView(), ...getRunProfileStoreView() };
+  const active = getActiveRunStoreView();
+  const profile = getRunProfileStoreView();
+  return { ...active, ...profile, runGold: profile.gold };
 }
 
 type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
@@ -39,6 +41,7 @@ const ACTIVE_RUN_PROGRESS_KEYS = [
   "runGold",
   "runPlayerHealth",
   "runMaxHealth",
+  "runMetaMaxHealth",
   "roomsEncountered",
   "currentAct",
   "destinationIndexInAct",
@@ -87,6 +90,10 @@ export function setRunProgress(partial: Partial<RunStateFields>, replace = false
       if (key in partial && partial[key] !== undefined) {
         (state.run.activeRun as unknown as Record<string, unknown>)[key] = partial[key];
       }
+    }
+    if (partial.runGold !== undefined) {
+      state.runProfile.gold = partial.runGold;
+      state.run.activeRun.runGold = 0;
     }
     for (const key of PERMANENT_PROGRESS_KEYS) {
       if (key in partial && partial[key] !== undefined) {

@@ -1,7 +1,8 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { animateDiscardedHand, animateDrawnHand } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 import type { CardTransferAnimationDeps } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
+import { installImmediateRafForTests } from "./battle-test-reset";
 
 const pileRect = { x: 0, y: 0, width: 40, height: 60 };
 const handRect = { x: 100, y: 200, width: 80, height: 120 };
@@ -27,18 +28,8 @@ function makeDeps(overrides: Partial<CardTransferAnimationDeps> = {}): CardTrans
 }
 
 describe("animateDiscardedHand", () => {
-  const raf = globalThis.requestAnimationFrame;
+  installImmediateRafForTests();
 
-  beforeEach(() => {
-    globalThis.requestAnimationFrame = (cb: FrameRequestCallback) => {
-      cb(0);
-      return 0;
-    };
-  });
-
-  afterEach(() => {
-    globalThis.requestAnimationFrame = raf;
-  });
   it("returns early when discard pile is missing", async () => {
     const deps = makeDeps({ measureDiscardPile: () => null });
     await animateDiscardedHand(
@@ -84,18 +75,7 @@ describe("animateDiscardedHand", () => {
 });
 
 describe("animateDrawnHand", () => {
-  const raf = globalThis.requestAnimationFrame;
-
-  beforeEach(() => {
-    globalThis.requestAnimationFrame = (cb: FrameRequestCallback) => {
-      cb(0);
-      return 0;
-    };
-  });
-
-  afterEach(() => {
-    globalThis.requestAnimationFrame = raf;
-  });
+  installImmediateRafForTests();
 
   it("unhides each drawn card after transfer completes", async () => {
     const deps = makeDeps({

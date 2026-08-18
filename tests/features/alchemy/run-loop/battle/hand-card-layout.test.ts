@@ -1,22 +1,12 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { waitForStableHandCardRect } from "@/features/alchemy/run-loop/battle/hand-card-layout";
+import { installImmediateRafForTests } from "./battle-test-reset";
 
 const fallback = { x: 0, y: 0, width: 80, height: 120 };
 const stable = { x: 10, y: 20, width: 80, height: 120 };
 
 describe("waitForStableHandCardRect", () => {
-  const raf = globalThis.requestAnimationFrame;
-
-  beforeEach(() => {
-    globalThis.requestAnimationFrame = (cb: FrameRequestCallback) => {
-      cb(0);
-      return 0;
-    };
-  });
-
-  afterEach(() => {
-    globalThis.requestAnimationFrame = raf;
-  });
+  installImmediateRafForTests();
 
   it("resolves after enough stable frames", async () => {
     const result = await waitForStableHandCardRect("slash-1", fallback, {

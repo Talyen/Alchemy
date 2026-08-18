@@ -11,7 +11,7 @@ import { resolveBattlePresentation } from "./battle-presentation-port";
 
 /** Playback callbacks the battle route binds into shell-owned refs. */
 export interface BattlePlaybackBind {
-  scheduleAutoEndTurn: (state: BattleState) => void;
+  scheduleAutoEndTurn: (state?: BattleState) => void;
   clearAutoEndTurn: () => void;
 }
 
@@ -25,7 +25,7 @@ export interface BattleControllerContextProps {
   onBattleDefeat?: (() => void) | undefined;
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
-  scheduleAutoEndTurnRef: RefObject<((state: BattleState) => void) | null>;
+  scheduleAutoEndTurnRef: RefObject<((state?: BattleState) => void) | null>;
   clearAutoEndTurnRef: RefObject<(() => void) | null>;
   onBattleSessionPreparedRef: RefObject<(() => void) | null>;
   getPresentation?: () => BattlePresentationPort;
@@ -35,6 +35,7 @@ export interface BattleControllerContext extends Omit<BattleControllerContextPro
   cardPlayInProgressRef: RefObject<boolean>;
   companionScheduledRef: RefObject<boolean>;
   battleTimerGroupRef: RefObject<TimerGroup>;
+  companionTimerGroupRef: RefObject<TimerGroup>;
   battleSessionRef: RefObject<number>;
   battleAbortControllerRef: RefObject<AbortController>;
   victoryDefeatHandledRef: RefObject<boolean>;
@@ -54,6 +55,7 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
   const cardPlayInProgressRef = useRef(false);
   const companionScheduledRef = useRef(false);
   const battleTimerGroupRef = useRef(new TimerGroup());
+  const companionTimerGroupRef = useRef(new TimerGroup());
   const battleSessionRef = useRef(0);
   const battleAbortControllerRef = useRef(new AbortController());
   const victoryDefeatHandledRef = useRef(false);
@@ -77,6 +79,7 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       cardPlayInProgressRef,
       companionScheduledRef,
       battleTimerGroupRef,
+      companionTimerGroupRef,
       battleSessionRef,
       battleAbortControllerRef,
       victoryDefeatHandledRef,
