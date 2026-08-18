@@ -1,7 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import {
-  enableFastMode,
   injectBossState,
   assertDefeatFromEndRun,
   makeGoblinBattleState,
@@ -15,12 +14,16 @@ import { RewardPage } from "./pages/reward-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Run Outcomes", () => {
+  test.beforeEach(async ({ runtimeErrors }) => {
+    void runtimeErrors;
+  });
+
   test.describe("Victory Flow", () => {
     test(
       "beating Act I boss completes victory flow and displays Act II destination choices",
       critical,
-      async ({ page }) => {
-        await enableFastMode(page);
+      async ({ page, fastBattle }) => {
+        void fastBattle;
         await injectBossState(page, 1);
         await page.goto("/");
 
@@ -44,8 +47,8 @@ test.describe("Run Outcomes", () => {
       },
     );
 
-    test("defeating Act III boss shows run victory screen", async ({ page }) => {
-      await enableFastMode(page);
+    test("defeating Act III boss shows run victory screen", async ({ page, fastBattle }) => {
+      void fastBattle;
       await injectBossState(page, 3);
       await page.goto("/");
 

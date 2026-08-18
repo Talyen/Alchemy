@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { cardLibrary } from "@/lib/game-data";
 import { characters, getStartingDeck, allStartingDeckCardIds } from "@/lib/game-data/characters";
 import type { CharacterId } from "@/lib/game-data/characters";
 
@@ -19,11 +20,25 @@ describe("characters data integrity", () => {
     }
   });
 
+  it("all characters have unique IDs", () => {
+    const ids = Object.values(characters).map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it("each character has a non-empty name and role", () => {
     for (const char of Object.values(characters)) {
       expect(char.name).toBeTruthy();
       expect(char.role).toBeTruthy();
       expect(char.description).toBeTruthy();
+    }
+  });
+
+  it("each character has a valid starting deck referencing cardLibrary IDs", () => {
+    const cardIds = new Set(cardLibrary.map((c) => c.id));
+    for (const char of Object.values(characters)) {
+      for (const card of char.startingDeck) {
+        expect(cardIds.has(card.id)).toBe(true);
+      }
     }
   });
 

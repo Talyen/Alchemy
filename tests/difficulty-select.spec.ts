@@ -18,7 +18,8 @@ async function unlockDifficulties(page: import("@playwright/test").Page, difficu
 }
 
 test.describe("Difficulty Select", critical, () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, runtimeErrors }) => {
+    void runtimeErrors;
     await unlockDifficulties(page, ["difficulty-1"]);
   });
 
@@ -70,7 +71,8 @@ test.describe("Difficulty Select", critical, () => {
 });
 
 test.describe("Difficulty Skip (first-time player)", critical, () => {
-  test("selecting a character with no completed difficulties skips to battle", async ({ page }) => {
+  test("selecting a character with no completed difficulties skips to battle", async ({ page, runtimeErrors }) => {
+    void runtimeErrors;
     await page.addInitScript((saveKey) => {
       localStorage.setItem(saveKey, JSON.stringify({ finishedRunCharacters: [] }));
     }, SAVE_KEY);

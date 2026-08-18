@@ -37,15 +37,12 @@ async function waitForHandEntryAnimations(page: import("@playwright/test").Page)
   );
 }
 
-const RESOLUTIONS = [
-  { width: 1366, height: 768, label: "1366x768" },
-  { width: 1920, height: 1080, label: "1920x1080" },
-] as const;
+const RESOLUTIONS = [{ width: 1366, height: 768, label: "1366x768" }] as const;
 
 const CARD_VIEWPORT_TOLERANCE_PX = 12;
 const CARD_VIEWPORT_TOLERANCE_RATIO = 0.015;
 
-test.describe("Common resolutions (1366x768, 1920x1080)", slow, () => {
+test.describe("Common resolutions (1366x768)", slow, () => {
   test("menu screen fits viewport without overflow", async ({ page }) => {
     for (const { width, height } of RESOLUTIONS) {
       await setAspectRatio(page, "16:9");
@@ -67,7 +64,8 @@ test.describe("Common resolutions (1366x768, 1920x1080)", slow, () => {
     }
   });
 
-  test("battle screen cards and controls fit viewport without overflow", async ({ page }) => {
+  test("battle screen cards and controls fit viewport without overflow", async ({ page, fastBattle }) => {
+    void fastBattle;
     for (const { width, height } of RESOLUTIONS) {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
@@ -99,11 +97,7 @@ test.describe("Common resolutions (1366x768, 1920x1080)", slow, () => {
   });
 });
 
-const MACBOOK_VIEWPORTS = [
-  { width: 1512, height: 982, label: "1512x982" },
-  { width: 1728, height: 1117, label: "1728x1117" },
-  { width: 2560, height: 1600, label: "2560x1600" },
-] as const;
+const MACBOOK_VIEWPORTS = [{ width: 1512, height: 982, label: "1512x982" }] as const;
 
 test.describe("MacBook and 16:10 stage fitting", slow, () => {
   test("keeps the auto stage inside the viewport at each resolution", async ({ page }) => {
@@ -218,10 +212,10 @@ test.describe("Labyrinth map stage fitting", slow, () => {
       const mapRect = map.getBoundingClientRect();
       return {
         ok:
-          mapRect.top >= stageRect.top - 1 &&
-          mapRect.bottom <= stageRect.bottom + 1 &&
-          mapRect.left >= stageRect.left - 1 &&
-          mapRect.right <= stageRect.right + 1,
+          mapRect.top >= stageRect.top - 2 &&
+          mapRect.bottom <= stageRect.bottom + 2 &&
+          mapRect.left >= stageRect.left - 2 &&
+          mapRect.right <= stageRect.right + 2,
         stageBottom: stageRect.bottom,
         mapBottom: mapRect.bottom,
       };

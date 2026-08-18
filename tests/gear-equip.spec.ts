@@ -12,6 +12,10 @@ import { test } from "./fixtures/e2e";
 import { armory } from "./playwright-tags";
 
 test.describe("Gear equip", armory, () => {
+  test.beforeEach(async ({ runtimeErrors }) => {
+    void runtimeErrors;
+  });
+
   test("click-equips, unequips, and switches characters", async ({ page }) => {
     await openArmory(page);
 

@@ -16,6 +16,29 @@ export function destinationInterruptedFlow(destinations: string[]) {
   };
 }
 
+export async function injectDestinationAtIndex(
+  page: Page,
+  options: {
+    destinations: string[];
+    destinationIndexInAct?: number;
+    completedDestinations?: string[];
+    roomsEncountered?: number;
+    runPlayerHealth?: number;
+    runMaxHealth?: number;
+  },
+) {
+  const destinationIndexInAct = options.destinationIndexInAct ?? 0;
+  await injectSaveState(page, {
+    runPlayerHealth: options.runPlayerHealth ?? 30,
+    runMaxHealth: options.runMaxHealth ?? 30,
+    roomsEncountered: options.roomsEncountered ?? destinationIndexInAct,
+    destinationIndexInAct,
+    completedDestinations: options.completedDestinations ?? [],
+    currentScreen: "destination",
+    interruptedFlow: destinationInterruptedFlow(options.destinations),
+  });
+}
+
 /** Persisted primary-reward claim surface for E2E save injection. */
 function primaryRewardInterruptedFlow(pending: Record<string, unknown>) {
   return { kind: "primary-reward" as const, pending };

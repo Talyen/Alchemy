@@ -47,31 +47,6 @@ function wildwoodBossState(overrides: Record<string, unknown> = {}) {
   };
 }
 
-async function wildwoodWinCombat(page: import("@playwright/test").Page, battle: BattlePage, maxTurns = 6) {
-  for (let turn = 0; turn < maxTurns; turn++) {
-    if (await battle.isBattleOver()) break;
-    await battle.playAllCards();
-    if (await battle.isVictoryVisible()) break;
-    if (
-      await page
-        .getByRole("heading", { name: "Victory" })
-        .isVisible()
-        .catch(() => false)
-    )
-      break;
-    if (await battle.isBattleOver()) break;
-    await battle.endTurn();
-    if (await battle.isVictoryVisible()) break;
-    if (
-      await page
-        .getByRole("heading", { name: "Victory" })
-        .isVisible()
-        .catch(() => false)
-    )
-      break;
-  }
-}
-
 test.describe("Wildwood Draft", () => {
   test("drafts six cards and starts a modified boss battle", slow, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
@@ -129,7 +104,7 @@ test.describe("Wildwood Draft", () => {
 
       const battle = new BattlePage(page);
       await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
-      await wildwoodWinCombat(page, battle);
+      await battle.winViaCombat();
 
       await expect(async () => {
         const hasVictory = await battle.isVictoryVisible();

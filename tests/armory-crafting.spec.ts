@@ -32,6 +32,10 @@ const emptyCraftingCurrencies = {
 };
 
 test.describe("Armory crafting", { ...armory }, () => {
+  test.beforeEach(async ({ runtimeErrors }) => {
+    void runtimeErrors;
+  });
+
   test("salvages gear and grants crafting materials", critical, async ({ page }) => {
     await seedRandom(page, 0);
     const sword = {

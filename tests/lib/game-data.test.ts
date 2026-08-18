@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { cardLibrary, characters, companionLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
+import { cardLibrary, companionLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 
 describe("cardLibrary data integrity", () => {
@@ -51,22 +51,6 @@ describe("getOfferableCardPool", () => {
         expect(poolIds.has(card.id)).toBe(true);
       }
     }
-  });
-});
-
-describe("characters data integrity", () => {
-  it("each character has a valid starting deck referencing cardLibrary IDs", () => {
-    const cardIds = new Set(cardLibrary.map((c) => c.id));
-    for (const char of Object.values(characters)) {
-      for (const card of char.startingDeck) {
-        expect(cardIds.has(card.id)).toBe(true);
-      }
-    }
-  });
-
-  it("all characters have unique IDs", () => {
-    const ids = Object.values(characters).map((c) => c.id);
-    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 

@@ -30,13 +30,44 @@ import {
 } from "@/lib/battle/effect-handlers/utility-handlers";
 import { makeTestBattleState } from "../../fixtures/battle";
 
-describe("applySummonCompanionEffect", () => {
-  it("returns state when kind is not summon-companion", () => {
-    const state = makeTestBattleState();
-    const result = applySummonCompanionEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
+type EffectHandler = (
+  state: ReturnType<typeof makeTestBattleState>,
+  card: never,
+  effect: never,
+  multiplier: number,
+  texts: CombatTextEvent[],
+) => unknown;
 
+describe("effect handlers ignore mismatched kinds", () => {
+  it.each([
+    { name: "applySummonCompanionEffect", apply: applySummonCompanionEffect },
+    { name: "applyBuffCompanionEffect", apply: applyBuffCompanionEffect },
+    { name: "applyDamageEffect", apply: applyDamageEffect },
+    { name: "applySelfDamageEffect", apply: applySelfDamageEffect },
+    { name: "applyRandomDamageEffect", apply: applyRandomDamageEffect },
+    { name: "applyRemoveEnemyArmorEffect", apply: applyRemoveEnemyArmorEffect },
+    { name: "applyRestoreManaEffect", apply: applyRestoreManaEffect },
+    { name: "applyLoseManaEffect", apply: applyLoseManaEffect },
+    { name: "applyGainMaxManaEffect", apply: applyGainMaxManaEffect },
+    { name: "applyLoseMaxManaEffect", apply: applyLoseMaxManaEffect },
+    { name: "applyHealEffect", apply: applyHealEffect },
+    { name: "applyLoseHealthEffect", apply: applyLoseHealthEffect },
+    { name: "applyPlayerStatusEffectHandler", apply: applyPlayerStatusEffectHandler },
+    { name: "applyEnemyStatusEffect", apply: applyEnemyStatusEffect },
+    { name: "applyRemoveHarmfulStatusEffect", apply: applyRemoveHarmfulStatusEffect },
+    { name: "applyRemovePlayerStatusEffect", apply: applyRemovePlayerStatusEffect },
+    { name: "applyMultiplyEnemyStatusEffect", apply: applyMultiplyEnemyStatusEffect },
+    { name: "applyCleansePlayerStatusToDamageEffect", apply: applyCleansePlayerStatusToDamageEffect },
+    { name: "applyGainGoldEffect", apply: applyGainGoldEffect },
+    { name: "applyWishEffectHandler", apply: applyWishEffectHandler },
+    { name: "applyDrawCardsEffect", apply: applyDrawCardsEffect },
+  ] as const)("$name is a no-op for a mismatched kind", ({ apply }) => {
+    const state = makeTestBattleState();
+    expect((apply as EffectHandler)(state, {} as never, { kind: "__never__" } as never, 1, [])).toBe(state);
+  });
+});
+
+describe("applySummonCompanionEffect", () => {
   it("summons companion and draws cards when drawOnCompanionCard talent is active", () => {
     const state = makeTestBattleState({
       talentEffects: { ...makeTestBattleState().talentEffects, drawOnCompanionCard: 2 },
@@ -68,12 +99,6 @@ describe("applySummonCompanionEffect", () => {
 });
 
 describe("applyBuffCompanionEffect", () => {
-  it("returns state when kind is not buff-companion", () => {
-    const state = makeTestBattleState();
-    const result = applyBuffCompanionEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("adds to companionDamageBuff", () => {
     const state = makeTestBattleState({ companionDamageBuff: 3 });
     const result = applyBuffCompanionEffect(state, {} as never, { kind: "buff-companion", amount: 2 } as never, 1, []);
@@ -82,12 +107,6 @@ describe("applyBuffCompanionEffect", () => {
 });
 
 describe("applyDamageEffect", () => {
-  it("returns state when kind is not damage", () => {
-    const state = makeTestBattleState();
-    const result = applyDamageEffect(state, {} as never, { kind: "heal" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("applies potion multiplier when potionMult is not 1", () => {
     const state = makeTestBattleState();
     const result = applyDamageEffect(
@@ -102,12 +121,6 @@ describe("applyDamageEffect", () => {
 });
 
 describe("applySelfDamageEffect", () => {
-  it("returns state when kind is not self-damage", () => {
-    const state = makeTestBattleState();
-    const result = applySelfDamageEffect(state, {} as never, { kind: "heal" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("applies rider status from actual health lost, not the raw amount", () => {
     const state = makeTestBattleState({
       playerHealth: 20,
@@ -148,12 +161,6 @@ describe("applySelfDamageEffect", () => {
 });
 
 describe("applyRandomDamageEffect", () => {
-  it("returns state when kind is not random-damage", () => {
-    const state = makeTestBattleState();
-    const result = applyRandomDamageEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("deals random damage type with random amount in range", () => {
     const state = makeTestBattleState({ rng: () => 0.5 });
     const result = applyRandomDamageEffect(
@@ -168,12 +175,6 @@ describe("applyRandomDamageEffect", () => {
 });
 
 describe("applyRemoveEnemyArmorEffect", () => {
-  it("returns state when kind is not remove-enemy-armor", () => {
-    const state = makeTestBattleState();
-    const result = applyRemoveEnemyArmorEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("removes armor from enemy mitigation", () => {
     const state = makeTestBattleState({
       enemyMitigation: { forge: 0, armor: 5, block: 0 },
@@ -190,12 +191,6 @@ describe("applyRemoveEnemyArmorEffect", () => {
 });
 
 describe("applyRestoreManaEffect", () => {
-  it("returns state when kind is not restore-mana", () => {
-    const state = makeTestBattleState();
-    const result = applyRestoreManaEffect(state, {} as never, { kind: "heal" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("restores mana with potion multiplier", () => {
     const texts: any[] = [];
     const state = makeTestBattleState({ mana: 0 });
@@ -205,12 +200,6 @@ describe("applyRestoreManaEffect", () => {
 });
 
 describe("applyLoseManaEffect", () => {
-  it("returns state when kind is not lose-mana", () => {
-    const state = makeTestBattleState();
-    const result = applyLoseManaEffect(state, {} as never, { kind: "heal" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("loses mana without going below 0", () => {
     const state = makeTestBattleState({ mana: 2 });
     const result = applyLoseManaEffect(state, {} as never, { kind: "lose-mana", amount: 5 } as never, 1, []);
@@ -219,12 +208,6 @@ describe("applyLoseManaEffect", () => {
 });
 
 describe("applyGainMaxManaEffect", () => {
-  it("returns state when kind is not gain-max-mana", () => {
-    const state = makeTestBattleState({ maxMana: 4, mana: 2 });
-    const result = applyGainMaxManaEffect(state, {} as never, { kind: "heal" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("increases maxMana and current mana", () => {
     const state = makeTestBattleState({ maxMana: 4, mana: 2 });
     const result = applyGainMaxManaEffect(state, {} as never, { kind: "gain-max-mana", amount: 2 } as never, 1, []);
@@ -234,12 +217,6 @@ describe("applyGainMaxManaEffect", () => {
 });
 
 describe("applyLoseMaxManaEffect", () => {
-  it("returns state when kind is not lose-max-mana", () => {
-    const state = makeTestBattleState();
-    const result = applyLoseMaxManaEffect(state, {} as never, { kind: "heal" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("deals burn damage on mana crystal loss when talent is active", () => {
     const state = makeTestBattleState({
       maxMana: 4,
@@ -262,12 +239,6 @@ describe("applyLoseMaxManaEffect", () => {
 });
 
 describe("applyHealEffect", () => {
-  it("returns state when kind is not heal", () => {
-    const state = makeTestBattleState();
-    const result = applyHealEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("applies consume heal multiplier and card-specific bonus", () => {
     const state = makeTestBattleState({
       playerHealth: 15,
@@ -292,12 +263,6 @@ describe("applyHealEffect", () => {
 });
 
 describe("applyLoseHealthEffect", () => {
-  it("returns state when kind is not lose-health", () => {
-    const state = makeTestBattleState();
-    const result = applyLoseHealthEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("reduces player health", () => {
     const texts: any[] = [];
     const state = makeTestBattleState({ playerHealth: 20 });
@@ -308,12 +273,6 @@ describe("applyLoseHealthEffect", () => {
 });
 
 describe("applyPlayerStatusEffectHandler", () => {
-  it("returns state when kind is not player-status", () => {
-    const state = makeTestBattleState();
-    const result = applyPlayerStatusEffectHandler(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("applies perManaCrystal scaling", () => {
     const state = makeTestBattleState({ maxMana: 5 });
     const result = applyPlayerStatusEffectHandler(
@@ -341,12 +300,6 @@ describe("applyPlayerStatusEffectHandler", () => {
 });
 
 describe("applyEnemyStatusEffect", () => {
-  it("returns state when kind is not enemy-status", () => {
-    const state = makeTestBattleState();
-    const result = applyEnemyStatusEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("applies freeze and triggers freeze resolution", () => {
     const texts: any[] = [];
     const state = makeTestBattleState({
@@ -377,21 +330,7 @@ describe("applyEnemyStatusEffect", () => {
   });
 });
 
-describe("applyRemoveHarmfulStatusEffect", () => {
-  it("returns state when kind is not remove-harmful-status", () => {
-    const state = makeTestBattleState();
-    const result = applyRemoveHarmfulStatusEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-});
-
 describe("applyRemovePlayerStatusEffect", () => {
-  it("returns state when kind is not remove-player-status", () => {
-    const state = makeTestBattleState();
-    const result = applyRemovePlayerStatusEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("removes player status and applies heals from trinkets and talents", () => {
     const state = makeTestBattleState({
       playerHealth: 10,
@@ -427,12 +366,6 @@ describe("applyRemovePlayerStatusEffect", () => {
 });
 
 describe("applyMultiplyEnemyStatusEffect", () => {
-  it("returns state when kind is not multiply-enemy-status", () => {
-    const state = makeTestBattleState();
-    const result = applyMultiplyEnemyStatusEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("no-ops when current status is 0", () => {
     const state = makeTestBattleState({
       enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 0 },
@@ -464,12 +397,6 @@ describe("applyMultiplyEnemyStatusEffect", () => {
 });
 
 describe("applyCleansePlayerStatusToDamageEffect", () => {
-  it("returns state when kind is not cleanse-player-status-to-damage", () => {
-    const state = makeTestBattleState();
-    const result = applyCleansePlayerStatusToDamageEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("no-ops when player has 0 stacks", () => {
     const state = makeTestBattleState();
     const result = applyCleansePlayerStatusToDamageEffect(
@@ -500,12 +427,6 @@ describe("applyCleansePlayerStatusToDamageEffect", () => {
 });
 
 describe("applyGainGoldEffect", () => {
-  it("returns state when kind is not gain-gold", () => {
-    const state = makeTestBattleState();
-    const result = applyGainGoldEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("applies potion multiplier to gold", () => {
     const texts: any[] = [];
     const state = makeTestBattleState({ gold: 5 });
@@ -514,21 +435,7 @@ describe("applyGainGoldEffect", () => {
   });
 });
 
-describe("applyWishEffectHandler", () => {
-  it("returns state when kind is not wish", () => {
-    const state = makeTestBattleState();
-    const result = applyWishEffectHandler(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-});
-
 describe("applyDrawCardsEffect", () => {
-  it("returns state when kind is not draw-cards", () => {
-    const state = makeTestBattleState();
-    const result = applyDrawCardsEffect(state, {} as never, { kind: "damage" } as never, 1, []);
-    expect(result).toBe(state);
-  });
-
   it("draws cards from deck", () => {
     const cards = [{ id: "a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }];
     const state = makeTestBattleState({ deck: cards });

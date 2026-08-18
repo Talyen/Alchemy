@@ -1,8 +1,13 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures/e2e";
 import { HomesteadPage } from "./pages/homestead-page";
+import { assertRowAlignment } from "./helpers";
 
 test.describe("Homestead Flow", () => {
+  test.beforeEach(async ({ runtimeErrors }) => {
+    void runtimeErrors;
+  });
+
   test.describe("with custom materials", () => {
     test.beforeEach(async ({ page }) => {
       await new HomesteadPage(page).goto({
@@ -22,12 +27,7 @@ test.describe("Homestead Flow", () => {
       for (const pill of pills) {
         await expect(pill).toBeVisible({ timeout: 3000 });
       }
-      const boxes = await Promise.all(pills.map((pill) => pill.boundingBox()));
-      const ys = boxes.map((box) => {
-        expect(box).not.toBeNull();
-        return box!.y;
-      });
-      expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(8);
+      await assertRowAlignment(pills);
     });
   });
 

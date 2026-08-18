@@ -51,3 +51,25 @@ export async function assertHorizontalNeighborGap(
   const gap = second!.x - (first!.x + first!.width);
   expect(gap).toBeGreaterThanOrEqual(minGap);
 }
+
+export async function assertRowAlignment(locators: Locator[], maxDelta = 8) {
+  const boxes = await Promise.all(locators.map((locator) => locator.boundingBox()));
+  const ys = boxes.map((box) => {
+    expect(box).not.toBeNull();
+    return box!.y;
+  });
+  expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(maxDelta);
+}
+
+export function boxesOverlap(
+  a: { x: number; y: number; width: number; height: number },
+  b: { x: number; y: number; width: number; height: number },
+): boolean {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
+
+export function boxesOverlapHorizontally(a: { x: number; width: number }, b: { x: number; width: number }): boolean {
+  const aRight = a.x + a.width;
+  const bRight = b.x + b.width;
+  return a.x < bRight && b.x < aRight;
+}

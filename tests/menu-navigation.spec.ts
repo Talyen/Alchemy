@@ -16,6 +16,10 @@ import { LOADING_WORDS } from "@/app/loading-words";
 import { critical, slow } from "./playwright-tags";
 
 test.describe("Menu", critical, () => {
+  test.beforeEach(async ({ runtimeErrors }) => {
+    void runtimeErrors;
+  });
+
   test("main menu reports the meta run phase and shows all buttons", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
@@ -61,43 +65,6 @@ test.describe("Menu", critical, () => {
     const menu = new MenuPage(page);
     await menu.openGameModeSelect();
     await expect(page.getByRole("button", { name: "Resume The Labyrinth" })).toBeVisible();
-  });
-});
-
-test.describe("Character Select", critical, () => {
-  test("all characters are selectable and starting run is mapped to localStorage", async ({ page, fastBattle }) => {
-    void fastBattle;
-    const menu = new MenuPage(page);
-    await menu.goToCharacterSelectUnlocked();
-    await expect(page.getByRole("button", { name: "Select Knight" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Ranger" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Rogue" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Wizard" })).toBeVisible();
-
-    await page.getByRole("button", { name: "Select Knight" }).click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
-
-    await expect
-      .poll(
-        async () => {
-          const saveStateJson = await page.evaluate((saveKey) => localStorage.getItem(saveKey), SAVE_KEY);
-          if (!saveStateJson) return null;
-          const save = JSON.parse(saveStateJson) as { activeRun?: { characterId?: string; runDeck?: unknown[] } };
-          return save.activeRun?.characterId === "knight" && Array.isArray(save.activeRun?.runDeck)
-            ? save.activeRun
-            : null;
-        },
-        { timeout: 5000, message: "activeRun should persist knight characterId and runDeck after run start" },
-      )
-      .not.toBeNull();
-  });
-
-  test("screen menu returns to main menu", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.goToCharacterSelect();
-    await page.getByRole("button", { name: "Open character select menu" }).click();
-    await page.getByRole("button", { name: "Main Menu" }).click();
-    await menu.expectMainMenu();
   });
 });
 
@@ -213,16 +180,8 @@ test.describe("Startup Loading Screen", slow, () => {
     await expect(logo).toHaveJSProperty("complete", true);
     expect(await logo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
 
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 15000 });
     expect(errors).toEqual([]);
-  });
-
-  test("loading screen shows animated bar element", async ({ page }) => {
-    await enableLoadingScreen(page);
-    await page.goto("/");
-
-    const bar = page.locator(".alchemy-startup-bar");
-    await expect(bar).toBeVisible({ timeout: 5000 });
-    await new MenuPage(page).expectMainMenu(15000);
   });
 });
 

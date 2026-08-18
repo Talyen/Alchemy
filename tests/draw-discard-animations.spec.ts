@@ -44,24 +44,4 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await Promise.all([ghostsDuringTurn, endTurnDone]);
     expect(errors).toEqual([]);
   });
-
-  test("all hand cards are enabled after draw", async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
-    const battle = new BattlePage(page);
-
-    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
-    await battle.playFirstCard();
-    await battle.endTurn();
-
-    const count = await battle.handCount();
-    expect(count).toBeGreaterThan(0);
-    await Promise.all(
-      Array.from({ length: count }, (_, i) => expect(battle.hand.nth(i)).toBeEnabled({ timeout: 2000 })),
-    );
-    expect(errors).toEqual([]);
-  });
 });

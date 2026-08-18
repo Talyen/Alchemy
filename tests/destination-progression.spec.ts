@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
-import { injectSaveState, destinationInterruptedFlow, seedRandom, makeCard, startAtDestination } from "./helpers";
+import { injectDestinationAtIndex, assertRowAlignment, seedRandom, makeCard, startAtDestination } from "./helpers";
 import { DestinationPage } from "./pages/destination-page";
 import { MysteryPage } from "./pages/mystery-page";
 import { CorruptionPage } from "./pages/corruption-page";
@@ -8,15 +8,13 @@ import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Destination Progression", () => {
+  test.beforeEach(async ({ runtimeErrors }) => {
+    void runtimeErrors;
+  });
+
   test("destination screen shows available choices from the pool", critical, async ({ page }) => {
-    await injectSaveState(page, {
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      currentScreen: "destination",
-      interruptedFlow: destinationInterruptedFlow(["Normal Combat", "Campfire", "Mystery"]),
+    await injectDestinationAtIndex(page, {
+      destinations: ["Normal Combat", "Campfire", "Mystery"],
     });
     await page.goto("/");
 
@@ -30,23 +28,15 @@ test.describe("Destination Progression", () => {
     for (const choice of choices) {
       await expect(choice).toBeVisible();
     }
-    const boxes = await Promise.all(choices.map((choice) => choice.boundingBox()));
-    const ys = boxes.map((box) => {
-      expect(box).not.toBeNull();
-      return box!.y;
-    });
-    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(8);
+    await assertRowAlignment(choices);
   });
 
   test("completed destinations do not appear in subsequent choices", critical, async ({ page }) => {
-    await injectSaveState(page, {
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 1,
+    await injectDestinationAtIndex(page, {
+      destinations: ["Campfire", "Mystery", "Merchant's Shop"],
       destinationIndexInAct: 1,
+      roomsEncountered: 1,
       completedDestinations: ["Normal Combat"],
-      currentScreen: "destination",
-      interruptedFlow: destinationInterruptedFlow(["Campfire", "Mystery", "Merchant's Shop"]),
     });
     await page.goto("/");
 
@@ -57,14 +47,11 @@ test.describe("Destination Progression", () => {
   });
 
   test("boss destination appears at end of act when all choices are exhausted", async ({ page }) => {
-    await injectSaveState(page, {
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 4,
+    await injectDestinationAtIndex(page, {
+      destinations: ["Boss Combat"],
       destinationIndexInAct: 4,
+      roomsEncountered: 4,
       completedDestinations: ["Normal Combat", "Normal Combat", "Normal Combat", "Campfire"],
-      currentScreen: "destination",
-      interruptedFlow: destinationInterruptedFlow(["Boss Combat"]),
     });
     await page.goto("/");
 

@@ -4,6 +4,10 @@ import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Collection", critical, () => {
+  test.beforeEach(async ({ runtimeErrors }) => {
+    void runtimeErrors;
+  });
+
   test.describe("with a discovered card", () => {
     test.beforeEach(async ({ page }) => {
       await new MenuPage(page).gotoCollection({ discoveredCardIds: ["anvil"] });

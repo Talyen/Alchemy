@@ -6,6 +6,7 @@ import {
   injectTalentUnlocks,
   makeCard,
   seedRandom,
+  boxesOverlap,
 } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
@@ -88,13 +89,6 @@ test.describe("Companion Battle Behavior", () => {
     }).toPass();
   });
 });
-
-function boxesOverlap(
-  a: { x: number; y: number; width: number; height: number },
-  b: { x: number; y: number; width: number; height: number },
-): boolean {
-  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
-}
 
 interface TalentCase {
   id: string;

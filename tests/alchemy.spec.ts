@@ -14,8 +14,9 @@ baseTest.describe("App Boot", { tag: [smoke.tag, prepush.tag] }, () => {
 });
 
 test.describe("Block Mechanics", critical, () => {
-  test("blessed aegis deals holy damage equal to current block", async ({ page, fastBattle }) => {
+  test("blessed aegis deals holy damage equal to current block", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
+    void runtimeErrors;
 
     await startBattleWithDeck(page, [BLOCK_CARD, AEGIS_CARD, BLOCK_CARD, AEGIS_CARD, BLOCK_CARD, AEGIS_CARD]);
     const battle = new BattlePage(page);

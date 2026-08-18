@@ -2,13 +2,14 @@ import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import {
   injectSaveState,
-  destinationInterruptedFlow,
+  injectDestinationAtIndex,
   resumeCampaignRun,
   SAVE_KEY,
   seedRandom,
   makeHighDamageCard,
   startAtDestination,
   startBattleWithDeck,
+  enterPrimaryRewardScreen,
   ANVIL_CARD,
 } from "./helpers";
 import { injectMidCombatSave } from "./e2e/mid-combat-save";
@@ -33,6 +34,10 @@ function getSavedBattleTurn(page: import("@playwright/test").Page): Promise<numb
 }
 
 test.describe("Save Persistence & Resume", () => {
+  test.beforeEach(async ({ runtimeErrors }) => {
+    void runtimeErrors;
+  });
+
   test("resume run restores exact state after reload", critical, async ({ page }) => {
     await seedRandom(page, 42);
     await injectSaveState(page, {
@@ -70,14 +75,12 @@ test.describe("Save Persistence & Resume", () => {
 
   test("resume restores saved destination choices", async ({ page }) => {
     await seedRandom(page, 42);
-    await injectSaveState(page, {
-      runPlayerHealth: 22,
-      runMaxHealth: 30,
-      roomsEncountered: 2,
+    await injectDestinationAtIndex(page, {
+      destinations: ["Campfire", "Mystery", "Merchant's Shop"],
       destinationIndexInAct: 1,
+      roomsEncountered: 2,
       completedDestinations: ["Normal Combat"],
-      currentScreen: "destination",
-      interruptedFlow: destinationInterruptedFlow(["Campfire", "Mystery", "Merchant's Shop"]),
+      runPlayerHealth: 22,
     });
     await page.goto("/");
 
@@ -238,16 +241,9 @@ test.describe("Autosave Cadence", () => {
     await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBefore);
   });
 
-  test("save is written after claiming a reward", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
+  test("save is written after claiming a reward", async ({ page, runtimeErrors }) => {
     void runtimeErrors;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeHighDamageCard()),
-    );
-
-    const battle = new BattlePage(page);
-    await battle.winViaCombat(3);
+    await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
 
     const savedAtBeforeReward = await getSavedLastSavedAt(page);
     const reward = new RewardPage(page);

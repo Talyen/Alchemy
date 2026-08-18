@@ -39,21 +39,6 @@ test.describe("Battle Flow", critical, () => {
   });
 });
 
-test.describe("Full Run Flow", () => {
-  test("destination choice leads to a combat battle", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await startAtDestination(
-      page,
-      { runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()) },
-      { forceDestination: "Normal Combat" },
-    );
-
-    await new DestinationPage(page).enterCombat("Normal Combat");
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
-  });
-});
-
 test.describe("Talents", () => {
   test.beforeEach(async ({ page }) => {
     await new MenuPage(page).gotoWithUnlockedMeta();

@@ -1,10 +1,11 @@
 import { expect, test } from "./fixtures/e2e";
-import { enableFastMode, injectHomestead } from "./helpers";
+import { injectHomestead } from "./helpers";
 import { critical } from "./playwright-tags";
 
 test.describe("Progression Locks", () => {
-  test.beforeEach(async ({ page }) => {
-    await enableFastMode(page);
+  test.beforeEach(async ({ fastBattle, runtimeErrors }) => {
+    void runtimeErrors;
+    void fastBattle;
   });
 
   test(
