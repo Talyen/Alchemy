@@ -1,0 +1,47 @@
+import { recoverLegacyEnemyPhase } from "@/lib/battle";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { clearBattleTransition, commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import {
+  getBattleContinuation,
+  type BattleTurnSession,
+  type ResolveEndTurn,
+  type TurnOrchestration,
+} from "./turn-orchestration-shared";
+
+/** Consume a persisted transition without replaying presentation delays. */
+export function resumePendingBattleTransition(
+  sessionNum: number,
+  battleSession: BattleTurnSession,
+  orch: TurnOrchestration,
+  resolveEndTurn: ResolveEndTurn,
+): void {
+  if (!battleSession.isCurrentBattleSession(sessionNum)) return;
+  const pending = readBattle().pendingBattleTransition;
+  if (!pending) return;
+
+  if (pending.kind === "legacy-enemy-turn") {
+    const recovered = recoverLegacyEnemyPhase(readBattle().battleState);
+    dispatchRunSessionCommand((draft) => commitBattleTransition(draft, recovered, null));
+    battleSession.checkBattleEnd(recovered, sessionNum);
+    return;
+  }
+
+  if (pending.kind === "continue-end-turn") {
+    const state = readBattle().battleState;
+    dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
+    resolveEndTurn(state, sessionNum, battleSession, orch);
+    return;
+  }
+
+  const state = pending.resultState;
+  const continuation = getBattleContinuation(state, pending.playerTurnSkipped);
+  dispatchRunSessionCommand((draft) => commitBattleTransition(draft, state, continuation));
+  if (battleSession.checkBattleEnd(state, sessionNum)) return;
+  if (pending.playerTurnSkipped) {
+    dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
+    resolveEndTurn(state, sessionNum, battleSession, orch);
+    return;
+  }
+  orch.scheduleCompanionFollowUp(state, sessionNum);
+}

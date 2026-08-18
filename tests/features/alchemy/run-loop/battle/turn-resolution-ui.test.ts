@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   executeEnemyPhase,
+  resolveEndTurn,
   resolveHasteSkipTurn,
   resolveNormalEnemyTurn,
   resumePendingBattleTransition,
@@ -122,7 +123,7 @@ describe("resolveHasteSkipTurn", () => {
     const result = endPlayerTurn({ ...state, playerStatuses: { ...state.playerStatuses, haste: 1 } });
     const orch = makeOrch();
 
-    resolveHasteSkipTurn(result, state, 1, makeSession(), orch);
+    resolveHasteSkipTurn(result, state, 1, makeSession(), orch, resolveEndTurn);
 
     await vi.waitFor(() => {
       expect(orch.scheduleCompanionFollowUp).toHaveBeenCalled();
@@ -141,7 +142,7 @@ describe("resolveNormalEnemyTurn", () => {
     if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
     const orch = makeOrch();
 
-    resolveNormalEnemyTurn(result, state, 1, makeSession(), orch);
+    resolveNormalEnemyTurn(result, state, 1, makeSession(), orch, resolveEndTurn);
 
     expect(beginBattleTransition).toHaveBeenCalledWith(
       expect.objectContaining({ turnPhase: "enemy" }),
@@ -167,7 +168,7 @@ describe("resolveNormalEnemyTurn", () => {
     const orch = makeOrch();
     const battleSession = makeSession();
 
-    resolveNormalEnemyTurn(deadResult, state, 1, battleSession, orch);
+    resolveNormalEnemyTurn(deadResult, state, 1, battleSession, orch, resolveEndTurn);
 
     expect(battleSession.handleVictoryDefeat).toHaveBeenCalledWith("victory");
     expect(commitBattleTransition).toHaveBeenCalled();
@@ -188,6 +189,7 @@ describe("executeEnemyPhase", () => {
       true,
       makeSession(),
       makeOrch(),
+      resolveEndTurn,
     );
 
     expect(presentation.shakePlayer).toHaveBeenCalledOnce();
@@ -208,6 +210,7 @@ describe("executeEnemyPhase", () => {
       true,
       makeSession(),
       makeOrch(),
+      resolveEndTurn,
     );
 
     expect(presentation.hurtPlayer).not.toHaveBeenCalled();
@@ -219,7 +222,7 @@ describe("executeEnemyPhase", () => {
     const result = { ...current, turn: 2, hand: current.hand };
     const orch = makeOrch();
 
-    await executeEnemyPhase(result, current, [], 1, false, false, makeSession(), orch);
+    await executeEnemyPhase(result, current, [], 1, false, false, makeSession(), orch, resolveEndTurn);
 
     expect(runHandDrawSequence).toHaveBeenCalledOnce();
     const applyState = vi.mocked(runHandDrawSequence).mock.calls[0]![2];
