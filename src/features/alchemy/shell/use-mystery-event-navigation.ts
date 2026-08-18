@@ -1,5 +1,5 @@
 // Mystery event navigation: begin + choice handlers with screen transition + sound.
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { cardLibrary } from "@/lib/game-data";
 import { pickMysteryEvent, resolveMysteryEventTrinkets, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
@@ -138,11 +138,14 @@ export function useMysteryEventNavigation({
     dispatchRunSessionCommand((draft) => setMysteryCardChoices(draft, null));
   }, []);
 
-  return {
-    beginMysteryEvent,
-    handleMysteryChoice,
-    handleMysteryChooseCard,
-    handleMysteryRemoveCard,
-    clearCardChoices,
-  };
+  return useMemo(
+    () => ({
+      beginMysteryEvent,
+      handleMysteryChoice,
+      handleMysteryChooseCard,
+      handleMysteryRemoveCard,
+      clearCardChoices,
+    }),
+    [beginMysteryEvent, handleMysteryChoice, handleMysteryChooseCard, handleMysteryRemoveCard, clearCardChoices],
+  );
 }

@@ -44,5 +44,8 @@ export function useRunDestinationWiring({
     [clearCardHover, navigateTo],
   );
 
-  return { getAvailableDestinations, returnToBattle, goToScreen };
+  return useMemo(
+    () => ({ getAvailableDestinations, returnToBattle, goToScreen }),
+    [getAvailableDestinations, returnToBattle, goToScreen],
+  );
 }
