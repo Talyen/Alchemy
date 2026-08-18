@@ -80,16 +80,16 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 ### Session capability ports
 
-| Kind                         | Module                                                    | Role                                                                                             |
-| ---------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Reads (imperative)           | `run-session-read-port.ts`                                | Data-only `readActiveRun()`, `readRunProfile()`, `readRunSession()`, `readBattle()`              |
-| Reads (React, screen)        | `use-run-screen-data.ts`                                  | Exact route display contracts (`useShopScreenData`, `useRewardsScreenData`, …)                   |
-| Reads (React, orchestration) | `run-session-model.ts`                                    | `useRunSessionNavigationSlice`, `useRunSessionBattleContext` — not screen display fields         |
-| Reads (React, meta/setup)    | `run-session-react-ports.ts`                              | Homestead/talent/draft slices, `useRunOrchestrationPort`, `useBattleRunPort`                     |
-| Writes                       | `run-session-write-port.ts` + `dispatchRunSessionCommand` | Draft mutators; first argument is `GameplayDraft`. `update*` = functional, `set*` = value        |
-| Battle writes                | `run-session-write-port.ts`                               | `setBattleState`, `beginBattleTransition`, `commitBattleTransition`; `readBattle()` is data-only |
-| Lifecycle                    | `run-session-lifecycle-port.ts`                           | Public seam over `run-transitions.ts`                                                            |
-| Commit                       | `run-session-command.ts`                                  | One Immer draft, one published revision; no second read store                                    |
+| Kind                         | Module                                                                         | Role                                                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Reads (imperative)           | `run-session-read-port.ts`                                                     | Data-only `readActiveRun()`, `readRunProfile()`, `readRunSession()`, `readBattle()`              |
+| Reads (React, screen)        | `use-run-screen-data.ts` + `app/screen-routes/use-battle-screen-route-data.ts` | Exact route display contracts; battle display is `useBattleScreenRouteData`                      |
+| Reads (React, orchestration) | `run-session-model.ts`                                                         | `useRunSessionNavigationSlice`, `useRunSessionBattleContext` — not screen display fields         |
+| Reads (React, meta/setup)    | `run-session-react-ports.ts`                                                   | Homestead/talent/draft slices, `useRunOrchestrationPort`, `useBattleRunPort`                     |
+| Writes                       | `run-session-write-port.ts` + `dispatchRunSessionCommand`                      | Draft mutators; first argument is `GameplayDraft`. `update*` = functional, `set*` = value        |
+| Battle writes                | `run-session-write-port.ts`                                                    | `setBattleState`, `beginBattleTransition`, `commitBattleTransition`; `readBattle()` is data-only |
+| Lifecycle                    | `run-session-lifecycle-port.ts`                                                | Public seam over `run-transitions.ts`                                                            |
+| Commit                       | `run-session-command.ts`                                                       | One Immer draft, one published revision; no second read store                                    |
 
 Controllers own **commands**; `use-alchemy-run-controller.ts` assembles the phase-scoped `routeCommands` tree at the shell composition root. Screen routes own **display data** via their specific hooks. App chrome / autosave / particles read via capability hooks, not controller display re-exports. Imperative handlers read lifetime-specific ports at call time. Battle refs and handlers travel through `routeCommands.battle`; battle display is read locally by the battle route. Battle and run-flow controllers take narrow `BattleRunPort` / `BattleTalentPort` and `RunFlowRunPort` / `RunFlowTalentPort` inputs. Run-flow handlers call shell side effects through `RunFlowShellActions` (assembled once in `use-run-flow-engine.ts`). Pure destination routers take a `Pick` of those actions (`DestinationRouteDeps`); post-reward screen transitions live in `run-flow-rewards.ts` (`RewardRouteDeps`). Active-run core fields shared by committed session reads come from `pickActiveRunView` in `run-state-init.ts`.
 
@@ -136,7 +136,7 @@ Battle glue writes VFX through `BattlePresentationPort` (`resolveBattlePresentat
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Run lifecycle           | `shell/use-alchemy-run-controller.ts`, `run-session-lifecycle-port.ts`                                                                                                                                                                                   |
 | Route command maps      | `shell/use-alchemy-run-controller.ts` composition root                                                                                                                                                                                                   |
-| Navigation / rewards    | `shell/use-run-flow-engine.ts` (destination/content hooks + inlined flow factories) + `shell/use-mystery-event-navigation.ts` + `run-loop/navigation/*` (pure) / `run-loop/run/*`                                                                        |
+| Navigation / rewards    | `shell/use-run-flow-engine.ts` (React wiring) + `createRunFlowHandlers` / `run-loop/run/run-flow-*.ts` + `shell/use-mystery-event-navigation.ts` + `run-loop/navigation/*`                                                                               |
 | Content-system entry    | `run-setup/run/content-system-navigation.ts` + `content-system-run-init.ts` → `run-start-command.ts`; campaign/labyrinth Wildcard draft uses `shared/run-flow/starter-draft.ts`; Wildwood post-entry flow stays in `shell/use-wildwood-gauntlet-flow.ts` |
 | Run-flow shell actions  | `run-loop/run/run-flow-shell-actions.ts` (assembled in `shell/use-run-flow-engine.ts`); destination routers use `DestinationRouteDeps`; reward routing uses `RewardRouteDeps` in `run-flow-rewards.ts`                                                   |
 | Run-flow / battle ports | `shared/stores/run-port-types.ts` (`RunFlowRunPort`, `BattleRunPort`, …)                                                                                                                                                                                 |
@@ -166,16 +166,16 @@ Run-loop / run-setup / shell read gear through `gear-store.ts` (`readGearManifes
 
 ## Types
 
-| Concern                    | Module                                                                   |
-| -------------------------- | ------------------------------------------------------------------------ |
-| Aggregate fields + actions | `gameplay-state-store.ts`                                                |
-| Imperative reads           | `run-session-read-port.ts`                                               |
-| Draft mutators             | `run-session-write-port.ts`                                              |
-| React ports                | `run-session-react-ports.ts`, `run-port-types.ts`                        |
-| Screen display contracts   | `run-screen-data.ts` (`RunScreenDataByScreen`), `use-run-screen-data.ts` |
-| Atomic commit              | `run-session-command.ts` (`dispatchRunSessionCommand`)                   |
-| Active-run view helpers    | `run-state-init.ts` (`pickActiveRunView`)                                |
-| Fresh-run snapshots        | `shared/run-flow/run-start.ts`                                           |
+| Concern                    | Module                                                                                                                                 |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Aggregate fields + actions | `gameplay-state-store.ts`                                                                                                              |
+| Imperative reads           | `run-session-read-port.ts`                                                                                                             |
+| Draft mutators             | `run-session-write-port.ts` (re-exports `write-port-run.ts`, `write-port-session.ts`, `write-port-battle.ts`, `write-port-profile.ts`) |
+| React ports                | `run-session-react-ports.ts`, `run-port-types.ts`                                                                                      |
+| Screen display contracts   | `run-screen-data.ts`, `use-run-screen-data.ts`; battle: `app/screen-routes/use-battle-screen-route-data.ts`                            |
+| Atomic commit              | `run-session-command.ts` (`dispatchRunSessionCommand`)                                                                                 |
+| Active-run view helpers    | `run-state-init.ts` (`pickActiveRunView`)                                                                                              |
+| Fresh-run snapshots        | `shared/run-flow/run-start.ts`                                                                                                         |
 
 Gameplay mutations use the command boundary; persistence codecs receive a draft from the coordinator for hydration. Feature code imports narrow ports, commands, reads, writes, and lifecycle directly from their owning modules.
 

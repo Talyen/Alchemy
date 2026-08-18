@@ -27,20 +27,21 @@ npm run dev
 
 ## Key Scripts
 
-| Command                 | Action                                                |
-| ----------------------- | ----------------------------------------------------- |
-| `npm run dev`           | Start Vite dev server                                 |
-| `npm run build`         | Production build (Vite; typecheck is a separate gate) |
-| `npm run preview`       | Preview the production build locally                  |
-| `npm test`              | Run Vitest unit tests                                 |
-| `npm run test:coverage` | Run Vitest with coverage                              |
-| `npm run test:e2e`      | Run Playwright end-to-end tests                       |
-| `npm run lint`          | Lint all source files                                 |
-| `npm run format`        | Format with Prettier                                  |
-| `npm run release`       | Bump version + generate changelog + create git tag    |
-| `npm run balance:sim`   | Run headless balance simulation report                |
-| `npm run clean`         | Remove local test/report/.vite artifacts              |
-| `npm run clean:all`     | clean + builds + stop stale E2E preview ports         |
+| Command                 | Action                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `npm run dev`           | Start Vite dev server                                                          |
+| `npm run build`         | Production build (Vite; typecheck is a separate gate)                          |
+| `npm run preview`       | Preview the production build locally                                           |
+| `npm test`              | Run Vitest unit tests                                                          |
+| `npm run test:coverage` | Run Vitest with coverage                                                       |
+| `npm run test:e2e`      | Run Playwright end-to-end tests                                                |
+| `npm run perf`          | Battle/layout FPS harness — see [`docs/PERFORMANCE.md`](./docs/PERFORMANCE.md) |
+| `npm run lint`          | Lint all source files                                                          |
+| `npm run format`        | Format with Prettier                                                           |
+| `npm run release`       | Bump version + generate changelog + create git tag                             |
+| `npm run balance:sim`   | Run headless balance simulation report                                         |
+| `npm run clean`         | Remove local test/report/.vite artifacts                                       |
+| `npm run clean:all`     | clean + builds + stop stale E2E preview ports                                  |
 
 > Full command reference: [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Agent/coding rules: [`AGENTS.md`](./AGENTS.md).
 
@@ -85,7 +86,7 @@ Headless balance simulation (`npm run balance:sim`) runs the real battle engine 
 
 - `desktop/` — Electron main/preload
 - `scripts/` — build, assets, release
-- `public/` — static sounds, music, card art
+- `public/` — static sounds and music
 - `src/app/` — boot, screen routes, save-state
 - `src/lib/` — React-free game logic (battle, game-data, homestead, validation)
 - `src/features/alchemy/` — React UI (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
