@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { driveAutoplay, findFirstPlayableHandCard } from "@/features/alchemy/run-loop/battle/autoplay-driver";
+import {
+  driveAutoplay,
+  findFirstPlayableHandCard,
+  isBattlePlaybackBlocked,
+} from "@/features/alchemy/run-loop/battle/autoplay-driver";
 import { makeTestBattleState, makeTestCard } from "../../../../fixtures/battle";
 
 function cheapCard(uid: number) {
@@ -12,6 +16,48 @@ function cheapCard(uid: number) {
     uid,
   };
 }
+
+describe("isBattlePlaybackBlocked", () => {
+  const playableCard = makeTestCard({
+    id: "slash",
+    cost: 1,
+    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+  });
+  const openBattle = {
+    screen: "battle" as const,
+    hasActiveBattle: true,
+    cardTransferInProgress: false,
+    hiddenHandCardKeys: new Set<string>(),
+    cardPlayInProgress: false,
+    battleState: makeTestBattleState({
+      hand: [{ ...playableCard, uid: 1 }],
+      mana: 3,
+      turnPhase: "player" as const,
+      enemyHealth: 20,
+    }),
+  };
+
+  it("allows an open player turn", () => {
+    expect(isBattlePlaybackBlocked(openBattle)).toBe(false);
+  });
+
+  it("blocks while hand cards are hidden", () => {
+    expect(isBattlePlaybackBlocked({ ...openBattle, hiddenHandCardKeys: new Set(["slash-1"]) })).toBe(true);
+  });
+
+  it("blocks while a card transfer is in progress", () => {
+    expect(isBattlePlaybackBlocked({ ...openBattle, cardTransferInProgress: true })).toBe(true);
+  });
+
+  it("blocks when wish options are showing", () => {
+    expect(
+      isBattlePlaybackBlocked({
+        ...openBattle,
+        battleState: { ...openBattle.battleState, wishOptions: [{ ...playableCard, uid: 2 }] },
+      }),
+    ).toBe(true);
+  });
+});
 
 describe("findFirstPlayableHandCard", () => {
   it("returns the first affordable card in hand order", () => {

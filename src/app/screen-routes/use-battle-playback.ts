@@ -69,7 +69,6 @@ export function useBattlePlayback({
       ({
         scheduleAutoEndTurn,
         clearAutoEndTurn,
-        onBattleSessionPrepared: () => undefined,
       }) satisfies BattlePlaybackBind,
     [scheduleAutoEndTurn, clearAutoEndTurn],
   );

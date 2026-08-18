@@ -1,6 +1,25 @@
 import { canPlayCard, type BattleState, type CardPlayOptions } from "@/lib/battle";
+import type { BattleCard } from "@/lib/game-data";
 
-const PLAYABLE_HAND_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
+export const PLAYABLE_HAND_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
+
+export function findFirstPlayableHandCard(
+  state: BattleState,
+  options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
+): { card: BattleCard; index: number } | null {
+  for (let index = 0; index < state.hand.length; index++) {
+    const card = state.hand[index];
+    if (!card) continue;
+    if (canPlayCard(state, card, index, options)) {
+      return { card, index };
+    }
+  }
+  return null;
+}
+
+export function handHasPlayableCard(state: BattleState, options: CardPlayOptions = PLAYABLE_HAND_OPTIONS): boolean {
+  return findFirstPlayableHandCard(state, options) !== null;
+}
 
 export function getPlayableHandCardKeys(battleState: BattleState): Set<string> {
   return new Set(

@@ -36,22 +36,27 @@ vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", () => ({
   }),
 }));
 
+vi.mock("@/features/alchemy/shared/stores/run-session-write-port", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-write-port")>()),
+  awardCardXP: vi.fn(),
+}));
+
+import { awardCardXP } from "@/features/alchemy/shared/stores/run-session-write-port";
+
 function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
   const battleSessionRef = { current: 1 };
   const cardPlayInProgressRef = { current: false };
   const scheduleAutoEndTurnMock = vi.fn();
-  const awardCardXP = vi.fn();
   const ctx = {
     screen: "battle" as const,
     battleSessionRef,
     cardPlayInProgressRef,
+    handCardRefs: { current: {} },
     playerPanelRef: { current: null },
     enemyPanelRef: { current: null },
     battleSceneRef: { current: null },
     setHoveredCardId: vi.fn(),
-    talents: {
-      awardCardXP: (...[, card]: Parameters<BattleControllerContext["talents"]["awardCardXP"]>) => awardCardXP(card),
-    },
+    talents: { talentEffects: {} },
     scheduleAutoEndTurnRef: { current: scheduleAutoEndTurnMock },
     scheduleAutoEndTurn: scheduleAutoEndTurnMock,
     logBattleError: vi.fn(),
@@ -75,7 +80,12 @@ function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
     })),
   } as unknown as ReturnType<typeof createBattleTransferDeps>;
 
-  return { ctx, session, transferDeps, awardCardXP };
+  return { ctx, session, transferDeps, awardCardXP: vi.mocked(awardCardXP) };
+}
+
+function expectAwardedCard(awardCardXP: ReturnType<typeof vi.mocked<typeof awardCardXP>>, cardId: string) {
+  expect(awardCardXP).toHaveBeenCalled();
+  expect(awardCardXP.mock.calls[0]?.[1]).toEqual(expect.objectContaining({ id: cardId }));
 }
 
 function clickCard(
@@ -126,7 +136,7 @@ describe("createBattleCardPlay", () => {
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
     expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
     expect(ctx.scheduleAutoEndTurnRef.current).toHaveBeenCalled();
-    expect(awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+    expectAwardedCard(awardCardXP, "slash");
     expect(playBattleEvent).toHaveBeenCalledWith("enemyHit");
     expect(playUISound).not.toHaveBeenCalled();
     expect(logError).not.toHaveBeenCalled();
@@ -195,7 +205,7 @@ describe("createBattleCardPlay", () => {
 
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
     expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
-    expect(awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+    expectAwardedCard(awardCardXP, "slash");
     expect(logError).not.toHaveBeenCalled();
   });
 
@@ -243,7 +253,30 @@ describe("createBattleCardPlay", () => {
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
     expect(getBattleStoreView().battleState.discard).toHaveLength(1);
     expect(getBattleStoreView().battleState.mana).toBe(2);
-    expect(awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+    expectAwardedCard(awardCardXP, "slash");
     expect(logError).not.toHaveBeenCalled();
+  });
+
+  it("autoplays a legal card when the hand DOM ref is missing", () => {
+    const slash = makeTestCard({
+      id: "slash",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+    });
+    const state = makeTestBattleState({
+      hand: [{ ...slash, uid: 7 }],
+      mana: 3,
+      enemyHealth: 30,
+    });
+    getBattleStoreView().setSyncedBattleState(state);
+
+    const { ctx, session, transferDeps, awardCardXP } = makeDeps();
+    const { handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
+    const played = handleAutoplayCard({ ...slash, uid: 7 }, 0);
+
+    expect(played).toBe(true);
+    expect(getBattleStoreView().battleState.hand.length).toBe(0);
+    expectAwardedCard(awardCardXP, "slash");
+    expect(playUISound).not.toHaveBeenCalled();
   });
 });

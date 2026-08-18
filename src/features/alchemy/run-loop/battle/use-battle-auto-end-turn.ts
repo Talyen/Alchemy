@@ -1,12 +1,14 @@
 // Auto-end-turn scheduler for battle when the player has no playable actions.
 // Depends on battle cost prediction, React timers, and screen/turn state.
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
-import { canPlayCard, type BattleState } from "@/lib/battle";
+import { type BattleState } from "@/lib/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 
 import { useLatestRef } from "../../shared/hooks";
 import type { Screen } from "@/lib/routing";
+import { isBattlePlaybackBlocked } from "./autoplay-driver";
+import { handHasPlayableCard } from "./playable-hand";
 
 interface AutoEndTurnOptions {
   autoEndTurn: boolean;
@@ -17,27 +19,6 @@ interface AutoEndTurnOptions {
   hiddenHandCardKeys: Set<string>;
   isCardPlayInProgress?: () => boolean;
   onEndTurn: () => void;
-}
-
-/** The battle fields that decide whether any hand card is playable right now. */
-type PlayabilityInput = Pick<
-  BattleState,
-  | "hand"
-  | "mana"
-  | "turnPhase"
-  | "wishOptions"
-  | "enemyHealth"
-  | "playerHealth"
-  | "deathsDoorActive"
-  | "playerStatuses"
-  | "flags"
-  | "talentEffects"
-  | "trinketEffects"
->;
-
-function handHasPlayableCard(input: PlayabilityInput): boolean {
-  // canPlayCard only reads the fields captured by PlayabilityInput.
-  return input.hand.some((card, index) => canPlayCard(input as BattleState, card, index));
 }
 
 // Schedules end turn only after the battle reaches a stable no-actions state.
@@ -53,6 +34,7 @@ export function useBattleAutoEndTurn({
 }: AutoEndTurnOptions) {
   const onEndTurnRef = useLatestRef(onEndTurn);
   const isCardPlayInProgressRef = useLatestRef(isCardPlayInProgress);
+  const battleStateRef = useLatestRef(battleState);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearAutoEndTurn = useCallback(() => {
@@ -60,62 +42,31 @@ export function useBattleAutoEndTurn({
     autoEndTimerRef.current = null;
   }, []);
 
-  // Memoized on the playability-relevant battle fields so battle commits that
-  // leave the hand/mana/status unchanged (e.g. enemy-phase ticks) don't rescan.
-  const hasPlayableCard = useMemo(
-    () =>
-      handHasPlayableCard({
-        hand: battleState.hand,
-        mana: battleState.mana,
-        turnPhase: battleState.turnPhase,
-        wishOptions: battleState.wishOptions,
-        enemyHealth: battleState.enemyHealth,
-        playerHealth: battleState.playerHealth,
-        deathsDoorActive: battleState.deathsDoorActive,
-        playerStatuses: battleState.playerStatuses,
-        flags: battleState.flags,
-        talentEffects: battleState.talentEffects,
-        trinketEffects: battleState.trinketEffects,
-      }),
-    [
-      battleState.hand,
-      battleState.mana,
-      battleState.turnPhase,
-      battleState.wishOptions,
-      battleState.enemyHealth,
-      battleState.playerHealth,
-      battleState.deathsDoorActive,
-      battleState.playerStatuses,
-      battleState.flags,
-      battleState.talentEffects,
-      battleState.trinketEffects,
-    ],
-  );
+  const hasPlayableCard = handHasPlayableCard(battleState);
 
   const scheduleAutoEndTurnRaw = useCallback(
-    (state: BattleState = battleState) => {
+    (state?: BattleState) => {
+      const current = state ?? battleStateRef.current;
       clearAutoEndTurn();
       if (
         !autoEndTurn ||
-        !hasActiveBattle ||
-        cardTransferInProgress ||
-        hiddenHandCardKeys.size > 0 ||
-        isCardPlayInProgressRef.current?.() ||
-        screen !== "battle" ||
-        state.turnPhase !== "player" ||
-        state.enemyHealth <= 0 ||
-        (state.playerHealth <= 0 && !state.deathsDoorActive) ||
-        state.wishOptions
+        isBattlePlaybackBlocked({
+          screen,
+          battleState: current,
+          hasActiveBattle,
+          cardTransferInProgress,
+          hiddenHandCardKeys,
+          cardPlayInProgress: Boolean(isCardPlayInProgressRef.current?.()),
+        })
       )
         return;
-      const canPlay =
-        state === battleState ? hasPlayableCard : state.hand.some((card, index) => canPlayCard(state, card, index));
+      const canPlay = state === undefined ? hasPlayableCard : handHasPlayableCard(current);
       if (canPlay) return;
       autoEndTimerRef.current = setTimeout(() => onEndTurnRef.current(), AUTO_END_TURN_DELAY);
     },
     [
       autoEndTurn,
-      battleState,
+      battleStateRef,
       cardTransferInProgress,
       clearAutoEndTurn,
       hasActiveBattle,

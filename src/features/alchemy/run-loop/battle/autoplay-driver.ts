@@ -1,23 +1,31 @@
 // Headless autoplay loop: play the first playable hand card, wait, retry on reject.
 import { resolveGameDelay } from "@/lib/animation/game-timer";
-import { canPlayCard, isPlayerDefeated, type BattleState, type CardPlayOptions } from "@/lib/battle";
+import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
+import type { Screen } from "@/lib/routing";
 
-const AUTOPLAY_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
+export { findFirstPlayableHandCard } from "./playable-hand";
 
-export function findFirstPlayableHandCard(state: BattleState): { card: BattleCard; index: number } | null {
-  for (let index = 0; index < state.hand.length; index++) {
-    const card = state.hand[index];
-    if (!card) continue;
-    if (canPlayCard(state, card, index, AUTOPLAY_CARD_PLAY_OPTIONS)) {
-      return { card, index };
-    }
-  }
-  return null;
+function isAutoplayBattleOver(state: BattleState): boolean {
+  return state.enemyHealth <= 0 || isPlayerDefeated(state);
 }
 
-export function isAutoplayBattleOver(state: BattleState): boolean {
-  return state.enemyHealth <= 0 || isPlayerDefeated(state);
+/** Shared idle gate for autoplay and auto-end-turn (menu is autoplay-only). */
+export function isBattlePlaybackBlocked(options: {
+  screen: Screen;
+  battleState: BattleState;
+  hasActiveBattle: boolean;
+  cardTransferInProgress: boolean;
+  hiddenHandCardKeys: Set<string>;
+  cardPlayInProgress: boolean;
+}): boolean {
+  if (!options.hasActiveBattle || options.screen !== "battle") return true;
+  if (options.cardPlayInProgress || options.cardTransferInProgress) return true;
+  if (options.hiddenHandCardKeys.size > 0) return true;
+  if (options.battleState.turnPhase !== "player") return true;
+  if (options.battleState.wishOptions) return true;
+  if (isAutoplayBattleOver(options.battleState)) return true;
+  return false;
 }
 
 export interface DriveAutoplayDeps {

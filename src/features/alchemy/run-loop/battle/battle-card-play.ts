@@ -21,7 +21,7 @@ import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import { logError } from "@/lib/error-logger";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { awardCardXP, setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { discoverCardIds } from "../run/deck-mutations";
 
@@ -131,7 +131,7 @@ export function createBattleCardPlay(
         dispatchRunSessionCommand(
           (draft) => {
             setBattleState(draft, resolution.state);
-            ctx.talents.awardCardXP(draft, card);
+            awardCardXP(draft, card);
           },
           {
             afterCommit: () => {
@@ -156,8 +156,8 @@ export function createBattleCardPlay(
 
   function handleAutoplayCard(card: BattleCard, index: number): boolean {
     const element = ctx.handCardRefs.current[getCardKey(card)];
-    if (!element) return false;
-    return handlePlayCard(card, index, getCardRect(element.getBoundingClientRect()), { silentReject: true });
+    const sourceRect = element ? getCardRect(element.getBoundingClientRect()) : { x: 0, y: 0, width: 0, height: 0 };
+    return handlePlayCard(card, index, sourceRect, { silentReject: true });
   }
 
   function handleWishChoice(cardOrNull: BattleCard | null) {

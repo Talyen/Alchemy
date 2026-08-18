@@ -34,23 +34,6 @@ describe("isAutoplayBlocked", () => {
   it("blocks when the game menu is open", () => {
     expect(isAutoplayBlocked({ ...openBattle, gameMenuOpen: true })).toBe(true);
   });
-
-  it("blocks while hand cards are hidden", () => {
-    expect(isAutoplayBlocked({ ...openBattle, hiddenHandCardKeys: new Set(["slash-1"]) })).toBe(true);
-  });
-
-  it("blocks while a card transfer is in progress", () => {
-    expect(isAutoplayBlocked({ ...openBattle, cardTransferInProgress: true })).toBe(true);
-  });
-
-  it("blocks when wish options are showing", () => {
-    expect(
-      isAutoplayBlocked({
-        ...openBattle,
-        battleState: { ...openBattle.battleState, wishOptions: [{ ...playableCard, uid: 2 }] },
-      }),
-    ).toBe(true);
-  });
 });
 
 describe("useBattleAutoplay", () => {

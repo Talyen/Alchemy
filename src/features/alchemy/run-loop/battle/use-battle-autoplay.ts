@@ -7,7 +7,7 @@ import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 
 import { useLatestRef } from "../../shared/hooks";
-import { driveAutoplay, findFirstPlayableHandCard, isAutoplayBattleOver } from "./autoplay-driver";
+import { driveAutoplay, findFirstPlayableHandCard, isBattlePlaybackBlocked } from "./autoplay-driver";
 
 interface UseBattleAutoplayOptions {
   enabled: boolean;
@@ -30,14 +30,8 @@ export function isAutoplayBlocked(options: {
   cardPlayInProgress: boolean;
   gameMenuOpen: boolean;
 }): boolean {
-  if (!options.hasActiveBattle || options.screen !== "battle") return true;
   if (options.gameMenuOpen) return true;
-  if (options.cardPlayInProgress || options.cardTransferInProgress) return true;
-  if (options.hiddenHandCardKeys.size > 0) return true;
-  if (options.battleState.turnPhase !== "player") return true;
-  if (options.battleState.wishOptions) return true;
-  if (isAutoplayBattleOver(options.battleState)) return true;
-  return false;
+  return isBattlePlaybackBlocked(options);
 }
 
 export function useBattleAutoplay({

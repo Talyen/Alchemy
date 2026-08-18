@@ -13,7 +13,6 @@ import { resolveBattlePresentation } from "./battle-presentation-port";
 export interface BattlePlaybackBind {
   scheduleAutoEndTurn: (state: BattleState) => void;
   clearAutoEndTurn: () => void;
-  onBattleSessionPrepared: () => void;
 }
 
 export interface BattleControllerContextProps {
