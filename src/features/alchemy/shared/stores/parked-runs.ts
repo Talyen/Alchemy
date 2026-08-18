@@ -3,7 +3,6 @@ import { CONTENT_SYSTEM_IDS } from "@/lib/content-systems/types";
 import type { ParkedRunsMap } from "@/lib/active-run-session";
 
 export type { ParkedRunsMap };
-export { CONTENT_SYSTEM_IDS };
 
 export function emptyParkedRuns(): ParkedRunsMap {
   return {};

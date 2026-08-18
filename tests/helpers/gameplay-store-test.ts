@@ -89,7 +89,7 @@ function createFacade<S extends object>(
   return facade;
 }
 
-export const useRunDomainStore = createFacade(runDomainView, (state, next) => {
+const useRunDomainStore = createFacade(runDomainView, (state, next) => {
   state.run = {
     ...state.run,
     activeRun: next.activeRun,

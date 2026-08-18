@@ -65,4 +65,4 @@ export function makeEmptyHandBattle<T extends object>(overrides: T = {} as T): O
   });
 }
 
-export { playableCard, unplayableCard };
+export { playableCard };

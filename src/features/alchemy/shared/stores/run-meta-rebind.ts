@@ -5,7 +5,7 @@ import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import type { GameplayDraft } from "./run-session-command";
 import { syncBattleGoldFromPurse } from "./gold-purse";
 
-export function computeDerivedRunMaxHealth(draft: GameplayDraft): number {
+function computeDerivedRunMaxHealth(draft: GameplayDraft): number {
   const characterId = draft.run.activeRun.characterId;
   const gearBonus = computeGearManifest(
     characterId,

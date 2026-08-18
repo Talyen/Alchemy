@@ -16,7 +16,7 @@ export interface ShopTransactionResult<T = undefined> {
   value: T;
 }
 
-export function playShopSpendFeedback(result: Pick<ShopTransactionResult<unknown>, "committed" | "price">): void {
+function playShopSpendFeedback(result: Pick<ShopTransactionResult<unknown>, "committed" | "price">): void {
   if (result.committed && result.price > 0) playGoldSpend();
 }
 

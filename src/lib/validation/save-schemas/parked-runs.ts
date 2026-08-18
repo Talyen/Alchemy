@@ -12,7 +12,7 @@ function parseParkedSlot(mode: ContentSystemId, raw: unknown): ParkedRunsMap[Con
   return { ...parsed.data, runGold: 0 } as ParkedRunsMap[ContentSystemId];
 }
 
-export function parseParkedRuns(raw: unknown): ParkedRunsMap {
+function parseParkedRuns(raw: unknown): ParkedRunsMap {
   if (!raw || typeof raw !== "object") return {};
   const source = raw as Record<string, unknown>;
   const parked: ParkedRunsMap = {};

@@ -51,9 +51,8 @@ export function createDestinationScreenHandlers(
   function handleCampfireContinue() {
     dispatchRunSessionCommand(
       (draft) => {
-        const healFraction = getCampfireHealFraction(
-          computeTalentEffects(draft.runProfile.unlockedTalents).campfireHealBonus,
-        );
+        const talentEffects = computeTalentEffects(draft.runProfile.unlockedTalents);
+        const healFraction = getCampfireHealFraction(talentEffects.campfireHealBonus);
         setRunPlayerHealth(draft, (prev) =>
           getCampfireRestHealth(prev, draft.run.activeRun.runMaxHealth, healFraction),
         );
