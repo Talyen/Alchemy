@@ -150,7 +150,7 @@ describe("fight pacing in combat pipelines", () => {
       enemyHealth: 40,
       enemyMaxHealth: 40,
       enemyMitigation: { armor: 0, forge: 0, block: 0 },
-      enemyStatuses: { burn: 10, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyStatuses: { ...makeTestBattleState().enemyStatuses, burn: 10 },
     });
     const pacedTick = paceCombatMagnitude(state, 10, "player");
     expect(pacedTick).toBeGreaterThan(10);
