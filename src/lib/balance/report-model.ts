@@ -11,7 +11,7 @@ export interface TierRateRow {
   late: RateCell;
 }
 
-export interface ClassTypeSplitRow {
+interface ClassTypeSplitRow {
   id: CharacterId;
   early: RateCell;
   mid: RateCell;

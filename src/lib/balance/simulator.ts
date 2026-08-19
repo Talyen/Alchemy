@@ -34,13 +34,7 @@ import type {
   BattleSimulationOutcome,
   BattleSimulationResult,
 } from "./simulator-types";
-export type {
-  BalanceBatchResult,
-  BalancePlayPolicy,
-  BattleSimulationConfig,
-  BattleSimulationResult,
-  TalentPreset,
-} from "./simulator-types";
+export type { BalancePlayPolicy, BattleSimulationConfig, BattleSimulationResult } from "./simulator-types";
 import { buildPresetManifest } from "./talent-preset";
 
 const DEFAULT_MAX_TURNS = 30;

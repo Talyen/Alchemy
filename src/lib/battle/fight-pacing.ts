@@ -14,14 +14,14 @@ export interface FightPacingPoolMetrics {
   actualBurnFraction: number;
 }
 
-export interface FightPacingClockConfig {
+interface FightPacingClockConfig {
   targetDuration: number;
   maxRounds: number;
 }
 
 const SPAN_EPSILON = 0.0001;
 
-export function fightPacingClockConfig(enemyType: EnemyType): FightPacingClockConfig {
+function fightPacingClockConfig(enemyType: EnemyType): FightPacingClockConfig {
   return FIGHT_PACING.clockByEnemyType[enemyType];
 }
 
@@ -62,7 +62,7 @@ export function fightPacingComebackMultiplier(side: FightPacingSide, metrics: Fi
   return 1 + bandedBonus(severity, FIGHT_PACING.comebackMin, FIGHT_PACING.comebackMax);
 }
 
-export function fightPacingScheduleClockBonus(
+function fightPacingScheduleClockBonus(
   metrics: FightPacingPoolMetrics,
   turn: number,
   config: FightPacingClockConfig,
@@ -77,7 +77,7 @@ export function fightPacingScheduleClockBonus(
   return bandedBonus(severity, FIGHT_PACING.clockMin, FIGHT_PACING.clockMax);
 }
 
-export function fightPacingTurnBackstopBonus(turn: number, config: FightPacingClockConfig): number {
+function fightPacingTurnBackstopBonus(turn: number, config: FightPacingClockConfig): number {
   const turnOverrun = Math.max(0, turn - config.maxRounds);
   if (turnOverrun <= 0) return 0;
   const severity = smoothstep(Math.min(1, turnOverrun / FIGHT_PACING.backstopSpan));

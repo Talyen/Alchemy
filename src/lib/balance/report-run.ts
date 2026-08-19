@@ -58,7 +58,7 @@ const LEGEND_MODIFIERS: DifficultyModifier[] = [
   { kind: "enemy-damage-multiplier", amount: 1.6 },
 ];
 
-export const REPORT_TIERS: Array<{
+const REPORT_TIERS: Array<{
   label: "Early" | "Mid" | "Late";
   preset: TalentPreset;
   depthOffset: number;
@@ -69,7 +69,7 @@ export const REPORT_TIERS: Array<{
   { label: "Late", preset: "late", depthOffset: 16, difficultyModifiers: LEGEND_MODIFIERS },
 ];
 
-export const BOON_GAUNTLET = [
+const BOON_GAUNTLET = [
   { enemyId: "skeleton", depthDelta: 1 },
   { enemyId: "goblin", depthDelta: 3 },
   { enemyId: "mimic", depthDelta: 5 },

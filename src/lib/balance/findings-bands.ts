@@ -39,7 +39,7 @@ export function isWinRateOutsideTypeBand(winRate: number, enemyType: EnemyTypeBa
   return winRate < band.min || winRate > band.max;
 }
 
-export function formatPercentBand(min: number, max: number): string {
+function formatPercentBand(min: number, max: number): string {
   return `${(min * 100).toFixed(0)}–${(max * 100).toFixed(1)}%`;
 }
 

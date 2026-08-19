@@ -39,7 +39,7 @@ export interface SimLoadout {
   vitalityHealth: number;
 }
 
-export function talentPointHealthForCharacter(characterId: CharacterId, preset: TalentPreset): number {
+function talentPointHealthForCharacter(characterId: CharacterId, preset: TalentPreset): number {
   return countAffinityCombatTalents(characters[characterId].keywords, preset) * MAX_HEALTH_PER_TALENT_POINT;
 }
 

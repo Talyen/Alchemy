@@ -20,8 +20,8 @@ import type { BalanceReportModel, ClassMatchupRow, PairedTierRow, TierRateRow } 
 import type { RateCell } from "./report-rankings";
 import { TITLE_LOOKUPS } from "./report-run";
 
-export type FindingSeverity = "critical" | "serious" | "watch";
-export type FindingScope = "enemy" | "class" | "matchup" | "card" | "talent" | "companion" | "boon" | "anomaly";
+type FindingSeverity = "critical" | "serious" | "watch";
+type FindingScope = "enemy" | "class" | "matchup" | "card" | "talent" | "companion" | "boon" | "anomaly";
 export type FindingMetric = "winRate" | "averageTurns" | "timeoutRate" | "delta" | "anomaly";
 export type FindingBucket = "timeout" | "floorCeiling" | "typeWinRate" | "length" | "equity" | "paired" | "anomaly";
 

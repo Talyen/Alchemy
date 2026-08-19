@@ -37,7 +37,7 @@ export function buildSimCompanionBondLevels(
 }
 
 /** Mid = 1★ every building/farm/research; late = 2★. Early stays unupgraded. */
-export const TYPICAL_HOMESTEAD_STARS: Record<TalentPreset, number> = {
+const TYPICAL_HOMESTEAD_STARS: Record<TalentPreset, number> = {
   early: 0,
   mid: 1,
   late: 2,

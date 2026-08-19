@@ -8,7 +8,6 @@ import type { TalentPreset } from "./types";
 export type BalancePlayPolicy = "random-playable" | "greedy-damage" | "defensive-random" | "greedy-effective-damage";
 export type BattleSimulationOutcome = "win" | "loss" | "timeout";
 
-export type { TalentPreset };
 export interface BattleSimulationConfig {
   characterId: CharacterId;
   enemyId: string;
@@ -28,8 +27,6 @@ export interface BattleSimulationConfig {
   gold?: number;
   appliesFightPacing?: boolean;
 }
-
-export { ANOMALY_THRESHOLD_BY_PRESET, ANOMALY_METRICS, getAnomalyThreshold } from "./anomalies";
 
 export interface BattleSimulationResult {
   characterId: CharacterId;
