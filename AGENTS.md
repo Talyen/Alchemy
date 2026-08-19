@@ -14,6 +14,15 @@ Alchemy is a fantasy roguelite deckbuilder.
 - Choose your own discovery and fix strategy. Do not invent work to fill a quota.
 - When a change alters an invariant, workflow, or command documented in `docs/`, `CONTRIBUTING.md`, or this file, update that doc in the same change.
 
+## Communication
+
+Write as if explaining the work to a collaborator who knows Alchemy as a game, not the file tree. They did not see your tool calls or this document.
+
+- **Lead with meaning.** First sentence: what is true now, or what you did, in game or workflow terms. Then files, commands, and type names if the reader needs them to act.
+- **Name things once.** On first use, say what a term is (`FadeSlot` is the wrapper that fades one screen into another). After that, the short name is fine. Do not invent extra nicknames.
+- **Match the question.** If they asked why a fight feels long, answer in pacing and numbers. If they asked which function, use the symbol. Do not default to architecture-review voice.
+- **Do not echo this file into chat.** Keep ports, RNG, and test gates for doing the work. When talking about the work, do not dump tables of internals unless they asked.
+
 ## Docs
 
 For non-trivial work, find and read only the docs that match the task; prefer specific subsystem docs over broad assumptions.
@@ -81,4 +90,5 @@ Each document owns the concern named below. When another document needs the same
 
 ## Reporting
 
-- Report what changed, what verification ran, and anything intentionally left untouched.
+- Report what changed, what verification ran, and anything intentionally left untouched. Write that in the same voice as Communication: readable without opening the diff.
+- Example: “Enemies now pick a new target if the current one dies mid-turn. That logic lives in `enemy-turn-utils.ts`. Ran the enemy-turn unit tests.” Not: “Refactored `enemy-turn-utils` targeting resolution.”

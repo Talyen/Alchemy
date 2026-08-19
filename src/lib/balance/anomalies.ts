@@ -24,6 +24,8 @@ export interface BattleAnomalies {
   maxSingleHeal: number;
   maxSingleHitDamageToEnemyStat: string;
   maxSingleHitDamageToPlayerStat: string;
+  maxSingleHitDamageToEnemyCardId: string;
+  maxSingleHitDamageToPlayerCardId: string;
 }
 
 type NumericAnomalyKey = {
@@ -80,10 +82,17 @@ export function createEmptyAnomalies(): BattleAnomalies {
     ...Object.fromEntries(ANOMALY_METRICS.map(({ key }) => [key, 0])),
     maxSingleHitDamageToEnemyStat: "",
     maxSingleHitDamageToPlayerStat: "",
+    maxSingleHitDamageToEnemyCardId: "",
+    maxSingleHitDamageToPlayerCardId: "",
   } as BattleAnomalies;
 }
 
-export function sampleAnomalies(state: BattleState, combatTexts: CombatTextEvent[], anomalies: BattleAnomalies): void {
+export function sampleAnomalies(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  anomalies: BattleAnomalies,
+  sourceCardId?: string,
+): void {
   for (const metric of STATUS_ANOMALY_METRICS) {
     anomalies[metric.key] = Math.max(anomalies[metric.key], metric.read(state));
   }
@@ -95,10 +104,12 @@ export function sampleAnomalies(state: BattleState, combatTexts: CombatTextEvent
         if (ct.amount > anomalies.maxSingleHitDamageToEnemy) {
           anomalies.maxSingleHitDamageToEnemy = ct.amount;
           anomalies.maxSingleHitDamageToEnemyStat = ct.stat;
+          anomalies.maxSingleHitDamageToEnemyCardId = sourceCardId ?? "";
         }
       } else if (ct.amount > anomalies.maxSingleHitDamageToPlayer) {
         anomalies.maxSingleHitDamageToPlayer = ct.amount;
         anomalies.maxSingleHitDamageToPlayerStat = ct.stat;
+        anomalies.maxSingleHitDamageToPlayerCardId = sourceCardId ?? "";
       }
     } else {
       anomalies.maxSingleHeal = Math.max(anomalies.maxSingleHeal, ct.amount);

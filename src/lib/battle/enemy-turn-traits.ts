@@ -12,7 +12,8 @@ import {
   TRAIT_FORGE_PER_TURN,
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
-import { ENEMY_TURN_CONSTANTS, isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-utils";
+import { ENEMY_TURN_CONSTANTS, isEveryOtherTurnScalingTurn, isFreezeActiveForAspect } from "./enemy-turn-utils";
+import { paceCombatMagnitude } from "./fight-pacing";
 
 export function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyRegeneration <= 0) return state;
@@ -25,9 +26,12 @@ export function processEnemyRegeneration(state: BattleState, combatTexts: Combat
     healAmount = Math.round(healAmount / HALF_DIVISOR);
   }
   if (healAmount <= 0) return state;
-  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: healAmount });
-  return { ...state, enemyHealth: clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth) };
+  const pacedHeal = paceCombatMagnitude(state, healAmount, "enemy");
+  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: pacedHeal });
+  return { ...state, enemyHealth: clampHealth(state.enemyHealth, pacedHeal, state.enemyMaxHealth) };
 }
+
+const EVERY_OTHER_TURN_TRAITS = new Set(["rusting-carapace", "iron-hide", "glacial-shell"]);
 
 type EnemyTurnStartHandler = (
   state: BattleState,
@@ -37,45 +41,39 @@ type EnemyTurnStartHandler = (
 
 const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
   "rusting-carapace": (state, combatTexts) => {
-    const scaledForge = scaleByRoomMultiplier(state, TRAIT_FORGE_PER_TURN);
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: scaledForge });
-    return addEnemyMitigation(state, "forge", scaledForge);
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: TRAIT_FORGE_PER_TURN });
+    return addEnemyMitigation(state, "forge", TRAIT_FORGE_PER_TURN);
   },
   "iron-hide": (state, combatTexts, options) => {
-    const scaledArmor = scaleByRoomMultiplier(state, IRON_HIDE_ARMOR_PER_TURN);
-    const scaledForge = scaleByRoomMultiplier(state, TRAIT_FORGE_PER_TURN);
-    const scaledBurn = scaleByRoomMultiplier(state, IRON_HIDE_BURN_BONUS_PER_TURN);
-    const roll = options?.traitRoll ?? state.rng();
-    const choice = Math.trunc(roll * ENEMY_TURN_CONSTANTS.IRON_HIDE_OPTIONS_COUNT);
+    const choice = Math.trunc((options?.traitRoll ?? state.rng()) * ENEMY_TURN_CONSTANTS.IRON_HIDE_OPTIONS_COUNT);
     if (choice === 0) {
       mergeCombatText(combatTexts, {
         target: "enemy",
         kind: "status",
         stat: "armor",
-        amount: scaledArmor,
+        amount: IRON_HIDE_ARMOR_PER_TURN,
       });
-      return addEnemyMitigation(state, "armor", scaledArmor);
+      return addEnemyMitigation(state, "armor", IRON_HIDE_ARMOR_PER_TURN);
     } else if (choice === 1) {
-      mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: scaledForge });
-      return addEnemyMitigation(state, "forge", scaledForge);
+      mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: TRAIT_FORGE_PER_TURN });
+      return addEnemyMitigation(state, "forge", TRAIT_FORGE_PER_TURN);
     }
     mergeCombatText(combatTexts, {
       target: "enemy",
       kind: "status",
       stat: "burnBonus",
-      amount: scaledBurn,
+      amount: IRON_HIDE_BURN_BONUS_PER_TURN,
     });
-    return addEnemyStatus(state, "burnBonus", scaledBurn);
+    return addEnemyStatus(state, "burnBonus", IRON_HIDE_BURN_BONUS_PER_TURN);
   },
   "glacial-shell": (state, combatTexts) => {
-    const scaledFreeze = scaleByRoomMultiplier(state, TRAIT_FREEZE_BONUS_PER_TURN);
     mergeCombatText(combatTexts, {
       target: "enemy",
       kind: "status",
       stat: "freezeBonus",
-      amount: scaledFreeze,
+      amount: TRAIT_FREEZE_BONUS_PER_TURN,
     });
-    return addEnemyStatus(state, "freezeBonus", scaledFreeze);
+    return addEnemyStatus(state, "freezeBonus", TRAIT_FREEZE_BONUS_PER_TURN);
   },
 };
 
@@ -176,7 +174,10 @@ function processTraitHandler(
   traitRoll: number,
 ): BattleState {
   const handler = enemyTraitTurnStartHandlers[trait.id];
-  if (handler) return handler(state, combatTexts, { traitRoll });
+  if (handler) {
+    if (EVERY_OTHER_TURN_TRAITS.has(trait.id) && !isEveryOtherTurnScalingTurn(state)) return state;
+    return handler(state, combatTexts, { traitRoll });
+  }
   if (!PASSIVE_ONLY_TRAITS.has(trait.id)) {
     console.warn(`[Enemy Turn] No turn-start handler for trait: ${trait.id}`);
     logError(`No turn-start handler for trait: ${trait.id}`, "battle", { state });

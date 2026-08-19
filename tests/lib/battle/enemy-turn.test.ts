@@ -102,6 +102,7 @@ describe("endPlayerTurn - CC skip branch", () => {
 
   it("still applies enemy traits during CC skip", () => {
     const state = battleState({
+      turn: 2,
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
       currentEnemy: baseEnemy("rusting-carapace"),
     });
@@ -266,7 +267,7 @@ describe("endPlayerTurn — Death's Door", () => {
     expect(result.state.deathsDoorActive).toBe(true);
   });
 
-  it("burn DoT kills player on grace turn when Death's Door expires", () => {
+  it("burn DoT does not kill on the enemy phase that expires Death's Door", () => {
     const state = battleState({
       playerHealth: 1,
       playerStatuses: { ...emptyPlayerStatuses, burn: 4 },
@@ -275,14 +276,19 @@ describe("endPlayerTurn — Death's Door", () => {
       deathsDoorTriggeredTurn: 1,
       deathsDoorGraceTurnsRemaining: 0,
       turn: 1,
+      deck: [makeTestCard(), makeTestCard(), makeTestCard(), makeTestCard()],
     });
-    const result = endPlayerTurn(state);
+    const expiryTurn = endPlayerTurn(state);
+    expect(expiryTurn.state.playerHealth).toBe(1);
+    expect(expiryTurn.state.deathsDoorActive).toBe(false);
+    expect(expiryTurn.state.playerStatuses.burn).toBe(2);
+
+    const result = endPlayerTurn(expiryTurn.state);
     expect(result.state.playerHealth).toBe(0);
-    expect(result.state.deathsDoorActive).toBe(false);
-    expect(result.state.playerStatuses.burn).toBe(2);
+    expect(isPlayerDefeated(result.state)).toBe(true);
   });
 
-  it("poison DoT kills player on grace turn when Death's Door expires", () => {
+  it("poison DoT does not kill on the enemy phase that expires Death's Door", () => {
     const state = battleState({
       playerHealth: 2,
       playerStatuses: { ...emptyPlayerStatuses, poison: 3 },
@@ -291,13 +297,18 @@ describe("endPlayerTurn — Death's Door", () => {
       deathsDoorTriggeredTurn: 1,
       deathsDoorGraceTurnsRemaining: 0,
       turn: 1,
+      enemyAttackEffects: [],
+      deck: [makeTestCard(), makeTestCard(), makeTestCard(), makeTestCard()],
     });
-    const result = endPlayerTurn(state);
+    const expiryTurn = endPlayerTurn(state);
+    expect(expiryTurn.state.playerHealth).toBe(1);
+    expect(expiryTurn.state.deathsDoorActive).toBe(false);
+
+    const result = endPlayerTurn(expiryTurn.state);
     expect(result.state.playerHealth).toBe(0);
-    expect(result.state.deathsDoorActive).toBe(false);
   });
 
-  it("bleed DoT kills player on grace turn when Death's Door expires", () => {
+  it("bleed DoT does not kill on the enemy phase that expires Death's Door", () => {
     const state = battleState({
       playerHealth: 2,
       playerStatuses: { ...emptyPlayerStatuses, bleed: 5 },
@@ -306,10 +317,14 @@ describe("endPlayerTurn — Death's Door", () => {
       deathsDoorTriggeredTurn: 1,
       deathsDoorGraceTurnsRemaining: 0,
       turn: 1,
+      deck: [makeTestCard(), makeTestCard(), makeTestCard(), makeTestCard()],
     });
-    const result = endPlayerTurn(state);
+    const expiryTurn = endPlayerTurn(state);
+    expect(expiryTurn.state.playerHealth).toBe(1);
+    expect(expiryTurn.state.deathsDoorActive).toBe(false);
+
+    const result = endPlayerTurn(expiryTurn.state);
     expect(result.state.playerHealth).toBe(0);
-    expect(result.state.deathsDoorActive).toBe(false);
   });
 
   it("Death's Door does not re-trigger when already consumed", () => {
@@ -371,7 +386,7 @@ describe("endPlayerTurn — Death's Door", () => {
     expect(result.state.playerStatuses.burn).toBe(2);
   });
 
-  it("lethal hit after grace expires kills the player", () => {
+  it("lethal hit after grace expires kills on a later enemy phase", () => {
     const state = battleState({
       playerHealth: 1,
       deathsDoorUsed: true,
@@ -379,11 +394,16 @@ describe("endPlayerTurn — Death's Door", () => {
       deathsDoorTriggeredTurn: 1,
       deathsDoorGraceTurnsRemaining: 0,
       turn: 1,
+      deck: [makeTestCard(), makeTestCard(), makeTestCard(), makeTestCard()],
     });
-    const result = endPlayerTurn(state);
+    const expiryTurn = endPlayerTurn(state);
+    expect(expiryTurn.state.playerHealth).toBe(1);
+    expect(expiryTurn.state.deathsDoorActive).toBe(false);
+    expect(expiryTurn.state.deathsDoorUsed).toBe(true);
+
+    const result = endPlayerTurn(expiryTurn.state);
     expect(result.state.playerHealth).toBe(0);
-    expect(result.state.deathsDoorActive).toBe(false);
-    expect(result.state.deathsDoorUsed).toBe(true);
+    expect(isPlayerDefeated(result.state)).toBe(true);
   });
 });
 

@@ -55,11 +55,11 @@ const GLOBAL_DIFFICULTIES: DifficultyDefinition[] = [
   {
     id: "difficulty-3",
     name: "Legend",
-    description: "+60% Enemy Health and Damage",
+    description: "+180% Enemy Health, +60% Enemy Damage",
     order: 3,
     xpMultiplier: 1.6,
     modifiers: [
-      { kind: "enemy-health-multiplier", amount: 1.6 },
+      { kind: "enemy-health-multiplier", amount: 2.8 },
       { kind: "enemy-damage-multiplier", amount: 1.6 },
     ],
   },

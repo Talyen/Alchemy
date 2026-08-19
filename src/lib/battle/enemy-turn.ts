@@ -47,12 +47,11 @@ function processHasteEarlyTurn(state: BattleState): BattleState {
 
 function beginEnemyPhase(state: BattleState): BattleState {
   const resetState = resetEnemyTurnState(state);
-  const expiryCheckedState = resolveDeathsDoorGraceExpiry(resetState);
   return {
-    ...expiryCheckedState,
+    ...resetState,
     turnPhase: "enemy",
     hand: [],
-    discard: [...expiryCheckedState.discard, ...expiryCheckedState.hand],
+    discard: [...resetState.discard, ...resetState.hand],
   };
 }
 
@@ -79,7 +78,7 @@ function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: num
   if (enemyTurnStartState.enemyHealth <= 0) {
     return {
       kind: "skipped" as const,
-      ...finalizePlayerTurn(enemyTurnStartState, enemyTurnStartCombatTexts),
+      ...finalizePlayerTurn(resolveDeathsDoorGraceExpiry(enemyTurnStartState), enemyTurnStartCombatTexts),
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
       enemyResolutionCombatTexts: [],
@@ -90,6 +89,7 @@ function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: num
   nextState = processEnemyTraits(nextState, enemyResolutionCombatTexts, options);
   nextState = reduceSkipTurns(nextState);
   nextState = tickPlayerStatuses(nextState, enemyResolutionCombatTexts);
+  nextState = resolveDeathsDoorGraceExpiry(nextState);
   nextState = processEnemyRegeneration(nextState, enemyResolutionCombatTexts);
 
   const combatTexts = [...enemyTurnStartCombatTexts, ...enemyResolutionCombatTexts];
@@ -121,6 +121,7 @@ function resolveEnemyAction(
   const afterAttackState = nextState;
   nextState = tickPlayerStatuses(nextState, texts);
   nextState = processEncounterTraitActionDamage(nextState, texts);
+  nextState = resolveDeathsDoorGraceExpiry(nextState);
   nextState = processEnemyRegeneration(nextState, texts);
   return { state: nextState, texts, afterAttackState };
 }
@@ -133,7 +134,7 @@ function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?
   if (enemyTurnStartState.enemyHealth <= 0) {
     return {
       kind: "standard" as const,
-      ...finalizePlayerTurn(enemyTurnStartState, []),
+      ...finalizePlayerTurn(resolveDeathsDoorGraceExpiry(enemyTurnStartState), []),
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
       enemyResolutionCombatTexts: [],

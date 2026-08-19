@@ -51,9 +51,6 @@ export function applyPoisonTalentRiders(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   let nextState = state;
-  if (damage > 0 && rollPercent(nextState.talentEffects.poisonStunChance, nextState.rng)) {
-    nextState = resolveStunTrigger(addEnemyStatus(nextState, "stun", damage), combatTexts);
-  }
   if (nextState.talentEffects.poisonStripArmor) {
     nextState = reduceEnemyArmor(nextState, 1);
   }
@@ -70,6 +67,7 @@ export function applyPoisonTalentRiders(
         nextState,
         scaledGearLeechHeal(computeLeechHeal(damage), nextState.gearEffects),
         combatTexts,
+        { skipFightPacing: true },
       );
     }
   }
@@ -122,8 +120,13 @@ function applyBleedStatusRider(
   return awardCutpurseGold(nextState, bleedAmount, combatTexts);
 }
 
-function applyStunStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
-  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts);
+function applyStunStatusRider(
+  state: BattleState,
+  actualDamage: number,
+  combatTexts: CombatTextEvent[],
+  preHitHealth: number,
+): BattleState {
+  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth);
 }
 
 function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -145,10 +148,11 @@ export function tryTriggerEnemyFreeze(
   preHitState: BattleState,
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
+  preHitHealth = preHitState.enemyHealth,
 ): BattleState {
   const freezeThreshold = FREEZE_THRESHOLD_FRACTION - preHitState.talentEffects.freezeThresholdReduction;
   const triggered = tryTriggerEnemyCc({
-    preHitHealth: preHitState.enemyHealth,
+    preHitHealth,
     nextState,
     stat: "freeze",
     stackValue: nextState.enemyStatuses.freeze,
@@ -175,20 +179,14 @@ export function tryTriggerEnemyFreeze(
   return result;
 }
 
-function applyFreezeStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
-  const nextState = addEnemyStatus(state, "freeze", actualDamage);
-  return tryTriggerEnemyFreeze(state, nextState, combatTexts);
-}
-
-// Intentional: bleed chance + detonation talents can self-combo on one hit.
-function applyPhysicalStunChance(
+function applyFreezeStatusRider(
   state: BattleState,
   actualDamage: number,
   combatTexts: CombatTextEvent[],
+  preHitHealth: number,
 ): BattleState {
-  const stunChance = state.talentEffects.physicalStunChance + state.gearEffects.physicalStunChance;
-  if (actualDamage <= 0 || !rollPercent(stunChance, state.rng)) return state;
-  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts);
+  const nextState = addEnemyStatus(state, "freeze", actualDamage);
+  return tryTriggerEnemyFreeze(state, nextState, combatTexts, preHitHealth);
 }
 
 function applyPhysicalBleedChance(state: BattleState, actualDamage: number): BattleState {
@@ -217,8 +215,7 @@ function applyPhysicalStatusRider(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  let nextState = applyPhysicalStunChance(state, actualDamage, combatTexts);
-  nextState = applyPhysicalBleedChance(nextState, actualDamage);
+  let nextState = applyPhysicalBleedChance(state, actualDamage);
   nextState = applyPhysicalBleedDetonate(nextState, combatTexts);
   return nextState;
 }
@@ -228,6 +225,7 @@ interface DamageStatusContext {
   effect: Extract<BattleCardEffect, { kind: "damage" }>;
   actualDamage: number;
   combatTexts: CombatTextEvent[];
+  preHitHealth: number;
 }
 
 type DamageStatusHandler = (ctx: DamageStatusContext) => BattleState;
@@ -237,8 +235,10 @@ const DAMAGE_STATUS_HANDLERS: Partial<Record<DamageType, DamageStatusHandler>> =
   poison: ({ state, actualDamage, combatTexts }) => applyPoisonStatusRider(state, actualDamage, combatTexts),
   bleed: ({ state, effect, actualDamage, combatTexts }) =>
     applyBleedStatusRider(state, effect, actualDamage, combatTexts),
-  stun: ({ state, actualDamage, combatTexts }) => applyStunStatusRider(state, actualDamage, combatTexts),
-  freeze: ({ state, actualDamage, combatTexts }) => applyFreezeStatusRider(state, actualDamage, combatTexts),
+  stun: ({ state, actualDamage, combatTexts, preHitHealth }) =>
+    applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth),
+  freeze: ({ state, actualDamage, combatTexts, preHitHealth }) =>
+    applyFreezeStatusRider(state, actualDamage, combatTexts, preHitHealth),
   physical: ({ state, actualDamage, combatTexts }) => applyPhysicalStatusRider(state, actualDamage, combatTexts),
   holy: ({ state }) => state,
   nature: ({ state }) => state,
@@ -249,8 +249,9 @@ export function applyDamageStatuses(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   actualDamage: number,
   combatTexts: CombatTextEvent[],
+  preHitHealth = state.enemyHealth,
 ) {
   const handler = DAMAGE_STATUS_HANDLERS[effect.damageType];
   if (!handler) return state;
-  return handler({ state, effect, actualDamage, combatTexts });
+  return handler({ state, effect, actualDamage, combatTexts, preHitHealth });
 }

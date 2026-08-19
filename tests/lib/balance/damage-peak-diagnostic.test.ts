@@ -3,7 +3,7 @@ import { buildClassSimDeck, simulateBattle } from "@/lib/balance";
 import type { DifficultyModifier } from "@/lib/game-data";
 
 const LEGEND_MODIFIERS: DifficultyModifier[] = [
-  { kind: "enemy-health-multiplier", amount: 1.6 },
+  { kind: "enemy-health-multiplier", amount: 2.8 },
   { kind: "enemy-damage-multiplier", amount: 1.6 },
 ];
 

@@ -22,6 +22,7 @@ import { decayArmorAfterDamage, decayHalvedStatus, decayPoisonStacks, rollPercen
 import { computeLeechHeal, HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 import { applyEnemyLeechHealing } from "./enemy-turn-attack";
+import { dealPlayerTypedHit } from "./player-typed-hit";
 
 /** Shared enemy DoT tail: clamp health, apply next stacks, optional riders, armor decay, trait threshold. */
 function dealEnemyDotTick(
@@ -67,7 +68,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, state.rng)) return state;
-  return applyHealingWithCombatText(state, computeLeechHeal(damage), combatTexts);
+  return applyHealingWithCombatText(state, computeLeechHeal(damage), combatTexts, { skipFightPacing: true });
 }
 
 function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -90,9 +91,17 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
       nextPoison = decayPoisonStacks(nextPoison);
     }
   }
-  return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState) =>
-    applyPoisonTalentRiders(applyParasiticBloomLeech(nextState, finalDamage, combatTexts), finalDamage, combatTexts),
-  );
+  return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState) => {
+    let afterRiders = applyPoisonTalentRiders(
+      applyParasiticBloomLeech(nextState, finalDamage, combatTexts),
+      finalDamage,
+      combatTexts,
+    );
+    if (finalDamage > 0 && rollPercent(afterRiders.talentEffects.poisonStunChance, afterRiders.rng)) {
+      afterRiders = dealPlayerTypedHit(afterRiders, "stun", finalDamage, combatTexts);
+    }
+    return afterRiders;
+  });
 }
 
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -107,7 +116,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   return dealEnemyDotTick(state, "bleed", finalDamage, 0, combatTexts, (nextState) => {
     let next = { ...nextState, pendingBleedLeechHealing: 0 };
     if (leechAmount > 0) {
-      next = applyHealingWithCombatText(next, computeLeechHeal(leechAmount), combatTexts);
+      next = applyHealingWithCombatText(next, computeLeechHeal(leechAmount), combatTexts, { skipFightPacing: true });
     }
     mergeCombatText(combatTexts, {
       target: "enemy",

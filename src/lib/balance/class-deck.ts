@@ -7,6 +7,7 @@ import {
   getStartingDeck,
   type BattleCard,
   type CharacterId,
+  type CompanionId,
   type KeywordId,
 } from "@/lib/game-data";
 import { createSeededRng, sampleItems, shuffle } from "@/lib/utils";
@@ -26,7 +27,7 @@ export const WILDCARD_SIM_DECK_SIZE: Record<TalentPreset, number> = {
   late: 13,
 };
 
-function cardMatchesAffinity(card: BattleCard, affinityKeywords: readonly KeywordId[]): boolean {
+export function cardMatchesAffinity(card: BattleCard, affinityKeywords: readonly KeywordId[]): boolean {
   if (affinityKeywords.length === 0) return true;
   const cardKeywords = getCardKeywords(card);
   return affinityKeywords.some((keyword) => cardKeywords.includes(keyword));
@@ -66,4 +67,19 @@ export function buildClassSimDeck(characterId: CharacterId, preset: TalentPreset
   }
 
   return deck;
+}
+
+export function insertCardIntoDeck(deck: readonly BattleCard[], card: BattleCard): BattleCard[] {
+  if (deck.some((entry) => entry.id === card.id)) return [...deck];
+  return [...deck, card];
+}
+
+export function removeCardIdFromDeck(deck: readonly BattleCard[], cardId: string): BattleCard[] {
+  return deck.filter((card) => card.id !== cardId);
+}
+
+export function removeCompanionSummonFromDeck(deck: readonly BattleCard[], companionId: CompanionId): BattleCard[] {
+  return deck.filter(
+    (card) => !card.effects.some((effect) => effect.kind === "summon-companion" && effect.companionId === companionId),
+  );
 }

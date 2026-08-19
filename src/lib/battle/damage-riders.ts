@@ -3,7 +3,6 @@
  */
 import { forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
-import { resolveStunTrigger } from "./status-stun-resolve";
 import { mergeCombatText } from "./combat-text";
 import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
 import { addGoldWithCombatText } from "./combat-text";
@@ -22,6 +21,7 @@ import { addEnemyStatus, addPlayerStatus, clampHealth, type BattleState, type Co
 import { BATTLE_CONFIG, HALF_DIVISOR } from "../game-constants";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 import { decayArmorAfterDamage, rollPercent } from "./status-helpers";
+import { dealPlayerTypedHit } from "./player-typed-hit";
 
 function applyBurnDamageRiders(
   state: BattleState,
@@ -36,7 +36,7 @@ function applyBurnDamageRiders(
     nextState = addPlayerStatus(nextState, "forge", state.gearEffects.forgeOnBurnDealt);
   }
   if (rollTalentChance(state.talentEffects.burnStunChance, state)) {
-    nextState = resolveStunTrigger(addEnemyStatus(nextState, "stun", modifiedDamage), combatTexts);
+    nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
   }
   return nextState;
 }
@@ -58,7 +58,7 @@ function applyNatureDamageRiders(
     nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);
   }
   if (rollTalentChance(state.talentEffects.natureStunChance, state)) {
-    nextState = resolveStunTrigger(addEnemyStatus(nextState, "stun", modifiedDamage), combatTexts);
+    nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
   }
   return nextState;
 }
@@ -75,14 +75,7 @@ function applyForgeStunRider(
   )
     return state;
 
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "status",
-    stat: "stun",
-    amount: state.trinketEffects.forgeStunAmount,
-  });
-
-  return resolveStunTrigger(addEnemyStatus(state, "stun", state.trinketEffects.forgeStunAmount), combatTexts);
+  return dealPlayerTypedHit(state, "stun", state.trinketEffects.forgeStunAmount, combatTexts);
 }
 
 /**
@@ -154,8 +147,19 @@ export function applyDamageRiders(
   ) {
     nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnArcheryKill, combatTexts);
   }
-  nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);
+  nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts, previousHealth);
   nextState = applyForgeStunRider(nextState, effect, combatTexts);
+  if (effect.damageType === "physical" && modifiedDamage > 0) {
+    const stunChance = nextState.talentEffects.physicalStunChance + nextState.gearEffects.physicalStunChance;
+    if (rollTalentChance(stunChance, nextState)) {
+      nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
+    }
+  }
+  if (effect.damageType === "poison" && modifiedDamage > 0) {
+    if (rollPercent(nextState.talentEffects.poisonStunChance, nextState.rng)) {
+      nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
+    }
+  }
 
   if (effect.damageType === "burn" && modifiedDamage > 0) {
     nextState = applyBurnDamageRiders(nextState, modifiedDamage, combatTexts);

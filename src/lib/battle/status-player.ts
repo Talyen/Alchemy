@@ -9,6 +9,7 @@ import { addPlayerStatus, setFlag, type BattleState, type CombatTextEvent } from
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { addForgeToPlayer } from "./status-forge";
 import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
+import { paceCombatMagnitude } from "./fight-pacing";
 
 export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playerStatuses"]): number {
   return harmfulPlayerStatusIds.filter((statusId) => playerStatuses[statusId] > 0).length;
@@ -69,7 +70,11 @@ function procArmorBlockThreshold(state: BattleState, newArmor: number, combatTex
   ) {
     return state;
   }
-  const nextState = addPlayerStatus(state, "block", state.talentEffects.armorBlockAmount);
+  const nextState = addPlayerStatus(
+    state,
+    "block",
+    paceCombatMagnitude(state, state.talentEffects.armorBlockAmount, "player"),
+  );
   mergeCombatText(combatTexts, {
     target: "player",
     kind: "status",
@@ -112,6 +117,9 @@ export function applyPlayerStatusEffect(
   }
   if (effect.status === "block" && state.talentEffects.forgeToBlock) {
     amount += state.playerStatuses.forge;
+  }
+  if (effect.status === "block") {
+    amount = paceCombatMagnitude(state, amount, "player");
   }
   if (effect.status === "forge") {
     return addForgeToPlayer(state, amount, combatTexts);

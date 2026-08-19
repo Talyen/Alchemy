@@ -1,5 +1,10 @@
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
-import { CAMPFIRE_HEAL_FRACTION, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../../game-constants";
+import {
+  CAMPFIRE_HEAL_FRACTION,
+  DEATHS_DOOR_GRACE_TURNS,
+  HALF_DIVISOR,
+  PERCENT_DENOMINATOR,
+} from "../../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import type { BattleState, CombatFlags, EnemyMitigation, FirstTimeFlagKey } from "./state-types";
 
@@ -162,9 +167,13 @@ export function scaleReceivedPlayerDamage(
   return receiveHalf ? Math.round(damage / HALF_DIVISOR) : damage;
 }
 
+export function deathsDoorGraceTurns(extension: number): number {
+  return DEATHS_DOOR_GRACE_TURNS + Math.max(0, extension);
+}
+
 // Death's Door triggers once per battle. During the grace window (deathsDoorActive)
-// lethal hits floor the player at 1 HP — you always get a full turn to save yourself.
-// Once grace expires the next lethal hit kills outright.
+// lethal hits floor the player at 1 HP. Healing does not dismiss the window.
+// Once grace expires, the next lethal hit after that enemy phase can kill.
 // damageReduction subtracts flat damage (e.g., from talents) before applying to health.
 export function applyPlayerCombatDamage(state: BattleState, damage: number, damageType?: string): BattleState {
   if (damage <= 0) return state;
@@ -195,7 +204,7 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
       deathsDoorUsed: true,
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: state.turn,
-      deathsDoorGraceTurnsRemaining: 1 + Math.max(0, state.talentEffects.deathsDoorExtension),
+      deathsDoorGraceTurnsRemaining: deathsDoorGraceTurns(state.talentEffects.deathsDoorExtension),
     };
   }
   if (state.deathsDoorActive) {
@@ -204,17 +213,12 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
   return { ...state, playerHealth: 0, deathsDoorActive: false };
 }
 
-// Healing with Death's Door active removes protection — healing saves you but costs the grace window.
 export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
   const overheal = state.playerHealth + amount - playerHealth;
-  const healedOnDeathsDoor = state.deathsDoorActive && amount > 0;
   let nextState = {
     ...state,
     playerHealth,
-    deathsDoorActive: healedOnDeathsDoor ? false : state.deathsDoorActive,
-    deathsDoorTriggeredTurn: healedOnDeathsDoor ? null : state.deathsDoorTriggeredTurn,
-    deathsDoorGraceTurnsRemaining: healedOnDeathsDoor ? null : state.deathsDoorGraceTurnsRemaining,
   };
   if (overheal > 0 && nextState.talentEffects.overhealToBlockRatio > 0) {
     const blockGain = Math.round(overheal * nextState.talentEffects.overhealToBlockRatio);

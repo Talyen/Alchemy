@@ -43,7 +43,7 @@ export const physicalTalents: TalentDefinition[] = [
     id: "physical-heavy-blows",
     keywordId: "physical",
     name: "Heavy Blows",
-    description: "Physical damage has a 10% chance to Stun",
+    description: "Physical damage has a 10% chance to deal Stun damage",
     icon: Hammer,
     effects: [setEffect("physicalStunChance", 10)],
   },

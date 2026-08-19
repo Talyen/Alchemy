@@ -8,6 +8,7 @@ import { mergeCombatText } from "./combat-text";
 import { addPlayerStatus, setFlag, stripEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 import { addForgeToPlayer } from "./status-forge";
 import { FREE_CARD_SENTINEL } from "../game-constants";
+import { paceCombatMagnitude } from "./fight-pacing";
 
 export interface CrowdControlTriggerBonuses {
   block?: number;
@@ -41,7 +42,7 @@ export function applyCrowdControlTriggerBonuses(
   const block = bonuses.block ?? 0;
   if (block > 0) {
     const before = nextState.playerStatuses.block;
-    nextState = addPlayerStatus(nextState, "block", block);
+    nextState = addPlayerStatus(nextState, "block", paceCombatMagnitude(nextState, block, "player"));
     if (combatTexts) {
       mergeCombatText(combatTexts, {
         target: "player",
@@ -60,13 +61,14 @@ export function applyCrowdControlTriggerBonuses(
   }
   const mana = bonuses.mana ?? 0;
   if (mana > 0) {
-    nextState = { ...nextState, mana: nextState.mana + mana };
+    const grantedMana = paceCombatMagnitude(nextState, mana, "player");
+    nextState = { ...nextState, mana: nextState.mana + grantedMana };
     if (combatTexts) {
       mergeCombatText(combatTexts, {
         target: "player",
         kind: "status",
         stat: "mana",
-        amount: mana,
+        amount: grantedMana,
       });
     }
   }

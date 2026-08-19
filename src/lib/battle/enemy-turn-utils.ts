@@ -2,7 +2,7 @@
 import { drawCards } from "./draw";
 import { applyHealingWithCombatText } from "./combat-text";
 import { decayHalvedStatus } from "./status-helpers";
-import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
+import { deathsDoorGraceTurns, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import { CARDS_PER_TURN, PERCENT_DENOMINATOR } from "../game-constants";
 import { applyCardEffects } from "./effect-handlers";
 import { applyPlayerStatusEffect } from "./status-player";
@@ -12,15 +12,20 @@ export const ENEMY_TURN_CONSTANTS = {
   IRON_HIDE_OPTIONS_COUNT: 3,
 };
 
+/** Boss stacking traits (Iron Hide, Rusting Carapace, Glacial Shell) fire on even turns (2, 4, …). */
+export function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
+  return state.turn % 2 === 0;
+}
+
 type FreezeAspect = "regen" | "scaling";
 
 function computeDeathsDoorGraceRemaining(state: BattleState): number {
   if (state.deathsDoorGraceTurnsRemaining !== null) return state.deathsDoorGraceTurnsRemaining;
   if (state.deathsDoorTriggeredTurn !== null) {
-    const graceTurns = 1 + Math.max(0, state.talentEffects.deathsDoorExtension);
+    const graceTurns = deathsDoorGraceTurns(state.talentEffects.deathsDoorExtension);
     return graceTurns - (state.turn - state.deathsDoorTriggeredTurn);
   }
-  return 1 + Math.max(0, state.talentEffects.deathsDoorExtension);
+  return deathsDoorGraceTurns(state.talentEffects.deathsDoorExtension);
 }
 
 export function isFreezeActiveForAspect(state: BattleState, aspect: FreezeAspect): boolean {

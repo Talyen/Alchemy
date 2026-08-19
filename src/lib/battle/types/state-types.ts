@@ -138,7 +138,7 @@ export interface BattleState {
   playerHealth: number;
   playerMaxHealth: number; // current max health (can increase from talents)
   deathsDoorUsed: boolean; // one-shot combat survival trigger for this battle
-  deathsDoorActive: boolean; // true while the player has one turn to heal from 0 Health
+  deathsDoorActive: boolean; // true while lethal hits floor the player at 1 HP (grace turns remaining)
   deathsDoorTriggeredTurn: number | null; // stores player turn when Death's Door first triggered
   deathsDoorGraceTurnsRemaining: number | null; // stores grace turns remaining when Death's Door triggers
   enemyHealth: number;
@@ -168,6 +168,7 @@ export interface BattleState {
   cardsPlayedThisTurn: number;
   nextCardUid: number; // battle-owned source for unique rendered card keys
   difficultyModifiers: DifficultyModifier[];
+  appliesFightPacing: boolean;
   rng: () => number;
   pendingMaterials: MaterialInventory;
   contentSystemType: ContentSystemId;

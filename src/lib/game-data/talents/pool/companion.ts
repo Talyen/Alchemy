@@ -72,7 +72,7 @@ export const companionTalents: TalentDefinition[] = [
     id: "companion-takedown",
     keywordId: "companion",
     name: "Takedown",
-    description: "Companions have a 10% chance to Stun",
+    description: "Companion damage has a 10% chance to deal Stun damage",
     icon: Ban,
     effects: [setEffect("companionStunChance", 10)],
   },

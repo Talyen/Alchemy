@@ -106,19 +106,19 @@ describe("enemyBestiary attack lines integration", () => {
   });
 
   it("Necromancer — pure Bleed", () => {
-    expect(getAttackLines("necromancer")).toEqual(["Deals 4 Bleed damage"]);
+    expect(getAttackLines("necromancer")).toEqual(["Deals 3 Bleed damage"]);
   });
 
   it("Plague Doctor — Bleed + Poison", () => {
-    expect(getAttackLines("plague-doctor")).toEqual(["Deals 2 Bleed and 1 Poison"]);
+    expect(getAttackLines("plague-doctor")).toEqual(["Deals 1 Bleed and 1 Poison"]);
   });
 
   it("The Forge Golem — physical + stun combined", () => {
-    expect(getAttackLines("forge-golem")).toEqual(["Deals 4 Physical and 1 Stun"]);
+    expect(getAttackLines("forge-golem")).toEqual(["Deals 3 Physical and 1 Stun"]);
   });
 
   it("The Frostwarden — physical + freeze combined", () => {
-    expect(getAttackLines("frostwarden")).toEqual(["Deals 6 Physical and 1 Freeze"]);
+    expect(getAttackLines("frostwarden")).toEqual(["Deals 4 Physical and 1 Freeze"]);
   });
 
   it("The Blight Treant — nature + poison combined", () => {

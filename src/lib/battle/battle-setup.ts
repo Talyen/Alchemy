@@ -21,6 +21,7 @@ import { shuffle } from "../utils";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
 import { placeholderRng } from "./rng";
+import { dealPlayerTypedHit } from "./player-typed-hit";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 
 export { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
@@ -52,6 +53,7 @@ export interface CreateBattleStateOptions {
   difficultyModifiers?: DifficultyModifier[];
   rng?: () => number;
   contentSystemType?: ContentSystemId;
+  appliesFightPacing?: boolean;
 }
 
 function initializePlayerHealthAndBlock(
@@ -97,6 +99,7 @@ function buildInitialBattleState(
     difficultyModifiers: DifficultyModifier[];
     rng: () => number;
     contentSystemType: ContentSystemId;
+    appliesFightPacing: boolean;
   },
 ): BattleState {
   return {
@@ -128,7 +131,6 @@ function buildInitialBattleState(
     },
     enemyStatuses: {
       ...baseState.enemyStatuses,
-      freeze: setup.talentEffects.startFreeze + setup.gearEffects.startFreeze,
     },
     activeCompanion: setup.activeCompanion,
     currentEnemy: setup.currentEnemy,
@@ -141,6 +143,7 @@ function buildInitialBattleState(
     difficultyModifiers: setup.difficultyModifiers,
     rng: setup.rng,
     contentSystemType: setup.contentSystemType,
+    appliesFightPacing: setup.appliesFightPacing,
   };
 }
 
@@ -157,6 +160,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     difficultyModifiers: battleDiffs = [],
     rng: optionsRng,
     contentSystemType: battleContentSystem = "campaign",
+    appliesFightPacing: battleAppliesFightPacing = true,
   } = options;
 
   if (!battleEnemy) {
@@ -186,7 +190,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     startingArmor: playerStartingArmor,
   } = initializePlayerHealthAndBlock(options, battleTalents, startBlock, battleGearEffects);
 
-  return buildInitialBattleState(defaultBattleState(), {
+  const state = buildInitialBattleState(defaultBattleState(), {
     deck,
     hand,
     discard,
@@ -212,5 +216,9 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     difficultyModifiers: battleDiffs,
     rng: activeRng,
     contentSystemType: battleContentSystem,
+    appliesFightPacing: battleAppliesFightPacing,
   });
+  const startFreeze = battleTalents.startFreeze + battleGearEffects.startFreeze;
+  if (startFreeze <= 0) return state;
+  return dealPlayerTypedHit(state, "freeze", startFreeze, []);
 }

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
-import { makeCombatTexts as makeTexts, makeTestBattleState, seededRng } from "../../fixtures/battle";
+import { applyDamageRiders } from "@/lib/battle/damage-riders";
+import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
+import { makeCombatTexts as makeTexts, makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";
 import {
   defaultEnemyStatusValues,
   defaultEnemyMitigation,
@@ -290,17 +292,21 @@ describe("zero-duration status edge cases", () => {
   });
 });
 
-describe("applyPoisonTalentRiders", () => {
-  it("stuns enemy when poisonStunChance procs", () => {
+describe("poison and physical stun chance", () => {
+  it("stuns enemy when poisonStunChance procs on a poison tick", () => {
     const state = makeTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, stun: 16 }),
+      enemyStatuses: defaultEnemyStatusValues({
+        ...makeTestBattleState().enemyStatuses,
+        poison: 4,
+        stun: 16,
+      }),
       talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, poisonStunChance: 100 },
       rng: () => 0,
     });
     const texts = makeTexts();
-    const result = applyPoisonTalentRiders(state, 4, texts);
+    const result = tickEnemyStatuses(state, texts);
     expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
   });
 
@@ -358,7 +364,8 @@ describe("applyDamageStatuses — physical riders", () => {
       rng: () => 0,
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 4 };
-    const result = applyDamageStatuses(state, effect, 4, []);
+    const card = makeTestCard({ effects: [effect] });
+    const result = applyDamageRiders(state, card, effect, 4, []);
     expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
   });
 });

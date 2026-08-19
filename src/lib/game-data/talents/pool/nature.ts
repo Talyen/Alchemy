@@ -56,7 +56,7 @@ export const natureTalents: TalentDefinition[] = [
     id: "nature-entangle",
     keywordId: "nature",
     name: "Entangle",
-    description: "Nature damage has a 10% chance to Stun",
+    description: "Nature damage has a 10% chance to deal Stun damage",
     icon: Link,
     effects: [setEffect("natureStunChance", 10)],
   },

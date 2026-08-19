@@ -6,7 +6,6 @@ import {
   shouldBlockPreventStunBuildup,
   type DirectPlayerStatusAttackEffect,
 } from "./status-player";
-import { resolveStunTrigger } from "./status-stun-resolve";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { logError } from "../error-logger";
@@ -17,11 +16,12 @@ import {
   type BattleState,
   type CombatTextEvent,
   type CombatTextStat,
-  addEnemyStatus,
 } from "./types";
 import { BATTLE_CONFIG, computeLeechHeal, PERCENT_DENOMINATOR } from "../game-constants";
 import { checkHealthThresholds, isFreezeActiveForAspect } from "./enemy-turn-utils";
 import { decayArmorAfterDamage } from "./status-helpers";
+import { paceCombatMagnitude } from "./fight-pacing";
+import { dealPlayerTypedHit } from "./player-typed-hit";
 
 function isDirectPlayerStatusAttack(
   effect: Extract<EnemyAttackEffect, { kind: "player-status" }>,
@@ -73,6 +73,7 @@ function calculateBlockAndArmorMitigation(
   if (effect.damageType === "freeze") {
     remainingDamage += state.enemyStatuses.freezeBonus;
   }
+  remainingDamage = paceCombatMagnitude(state, remainingDamage, "enemy");
   const effectiveBlock = computeEffectiveBlock(state, effect);
   const blockAbsorb = Math.min(remainingDamage, effectiveBlock);
   remainingDamage -= blockAbsorb;
@@ -177,15 +178,7 @@ function applyBlockDepletedHeal(
   }
 
   if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {
-    const stunAmount = prevState.gearEffects.stunOnBlockDepleted;
-    finalState = addEnemyStatus(finalState, "stun", stunAmount);
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "status",
-      stat: "stun",
-      amount: stunAmount,
-    });
-    finalState = resolveStunTrigger(finalState, combatTexts);
+    finalState = dealPlayerTypedHit(finalState, "stun", prevState.gearEffects.stunOnBlockDepleted, combatTexts);
   }
 
   return finalState;

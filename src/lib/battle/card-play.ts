@@ -21,6 +21,7 @@ import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { rollPercent } from "./status-helpers";
 
 import { cardHasDamageType, computeEffectiveCost } from "./card-cost-rules";
+import { paceCombatMagnitude } from "./fight-pacing";
 
 /**
  * Resolves the final state and cost for a played card, modifying flags if discounts were used.
@@ -127,7 +128,8 @@ function executeCardPlayState(
 
   if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {
     if (rollPercent(state.gearEffects.manaOnNatureDamageChance, state.rng)) {
-      const nextMana = Math.min(nextState.maxMana, nextState.mana + 1);
+      const granted = paceCombatMagnitude(nextState, 1, "player");
+      const nextMana = Math.min(nextState.maxMana, nextState.mana + granted);
       const gained = nextMana - nextState.mana;
       if (gained > 0) {
         mergeCombatText(combatTexts, {
@@ -156,15 +158,16 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
     !state.flags.resonantChimeUsedThisTurn &&
     state.cardsPlayedThisTurn >= resonantChimeCardsRequired
   ) {
+    const grantedMana = paceCombatMagnitude(state, resonantChimeMana, "player");
     mergeCombatText(combatTexts, {
       target: "player",
       kind: "status",
       stat: "mana",
-      amount: resonantChimeMana,
+      amount: grantedMana,
     });
     return {
       ...state,
-      mana: state.mana + resonantChimeMana,
+      mana: state.mana + grantedMana,
       flags: { ...state.flags, resonantChimeUsedThisTurn: true },
     };
   }
@@ -176,7 +179,11 @@ function applyNatureCardPlayTalents(state: BattleState, card: BattleCard, combat
   let nextState = state;
   if (nextState.talentEffects.blockOnNatureCard > 0) {
     const before = nextState.playerStatuses.block;
-    nextState = addPlayerStatus(nextState, "block", nextState.talentEffects.blockOnNatureCard);
+    nextState = addPlayerStatus(
+      nextState,
+      "block",
+      paceCombatMagnitude(nextState, nextState.talentEffects.blockOnNatureCard, "player"),
+    );
     mergeCombatText(combatTexts, {
       target: "player",
       kind: "status",
@@ -229,7 +236,7 @@ function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTe
   }
   if (talents.blockOnConsume > 0) {
     const before = nextState.playerStatuses.block;
-    nextState = addPlayerStatus(nextState, "block", talents.blockOnConsume);
+    nextState = addPlayerStatus(nextState, "block", paceCombatMagnitude(nextState, talents.blockOnConsume, "player"));
     if (combatTexts) {
       mergeCombatText(combatTexts, {
         target: "player",

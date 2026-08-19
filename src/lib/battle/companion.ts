@@ -5,7 +5,7 @@
  */
 import { applyCardEffects } from "./effect-handlers";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
-import { addEnemyStatus, addPlayerStatus, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
+import { addPlayerStatus, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import {
   COMPANION_LOW_HEALTH_THRESHOLD_PERCENT,
   computeLeechHeal,
@@ -15,8 +15,9 @@ import {
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { rollPercent, getBattleRng } from "./status-helpers";
-import { resolveStunTrigger } from "./status-stun-resolve";
 import { rollTalentChance } from "./damage-rider-leech";
+import { paceCombatMagnitude } from "./fight-pacing";
+import { dealPlayerTypedHit } from "./player-typed-hit";
 
 function companionDamageBonusForEffect(
   effect: Extract<BattleCard["effects"][number], { kind: "damage" }>,
@@ -169,7 +170,11 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
 
     if (damageDealt > 0 && state.talentEffects.blockOnCompanionDamage > 0) {
       const before = afterEffects.playerStatuses.block;
-      afterEffects = addPlayerStatus(afterEffects, "block", state.talentEffects.blockOnCompanionDamage);
+      afterEffects = addPlayerStatus(
+        afterEffects,
+        "block",
+        paceCombatMagnitude(afterEffects, state.talentEffects.blockOnCompanionDamage, "player"),
+      );
       mergeCombatText(combatTexts, {
         target: "player",
         kind: "status",
@@ -180,7 +185,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
 
     if (damageDealt > 0 && state.talentEffects.companionStunChance > 0) {
       if (rollTalentChance(state.talentEffects.companionStunChance, state)) {
-        afterEffects = resolveStunTrigger(addEnemyStatus(afterEffects, "stun", damageDealt), combatTexts);
+        afterEffects = dealPlayerTypedHit(afterEffects, "stun", damageDealt, combatTexts);
       }
     }
 
@@ -188,7 +193,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
       if (rollPercent(state.talentEffects.companionLeechChance, getBattleRng(state))) {
         const leechHeal = computeLeechHeal(damageDealt);
         if (leechHeal > 0) {
-          afterEffects = applyHealingWithCombatText(afterEffects, leechHeal, combatTexts);
+          afterEffects = applyHealingWithCombatText(afterEffects, leechHeal, combatTexts, { skipFightPacing: true });
         }
       }
     }

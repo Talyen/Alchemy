@@ -13,6 +13,7 @@ import {
   type CombatTextEvent,
   type NumericCombatTextEvent,
 } from "./types";
+import { paceCombatMagnitude } from "./fight-pacing";
 
 // Narrows label-style combat text so numeric merging never assumes an amount exists.
 function isNoticeCombatText(event: CombatTextEvent) {
@@ -81,10 +82,12 @@ export function applyHealingWithCombatText(
   state: BattleState,
   amount: number,
   combatTexts?: CombatTextEvent[],
+  options?: { skipFightPacing?: boolean },
 ): BattleState {
   if (amount <= 0) return state;
+  const healAmount = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
   const prevState = state;
-  const nextState = applyPlayerHealing(state, amount);
+  const nextState = applyPlayerHealing(state, healAmount);
   if (combatTexts) {
     const actualHeal = nextState.playerHealth - prevState.playerHealth;
     if (actualHeal > 0) {

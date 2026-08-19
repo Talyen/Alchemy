@@ -7,7 +7,7 @@ export function trait(id: string, title: string, description: string): BestiaryE
   return { id, title, description };
 }
 
-export const poisonResistance = trait("poison-resistance", "Poison Resistance", "Receives half Poison damage");
+export const poisonResistance = trait("poison-resistance", "Poison Resistance", "Receives 25% less Poison damage");
 
 export function regeneration(title: string): BestiaryEntry["traits"][number] {
   return trait("regeneration", title, "Restores Health each turn");

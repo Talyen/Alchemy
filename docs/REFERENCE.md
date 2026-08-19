@@ -20,7 +20,7 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 - **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`.
 - **Git hooks / local gates:** [CONTRIBUTING.md](../CONTRIBUTING.md). Changelog updates happen at release only ([RELEASE.md](./RELEASE.md)).
 - **Steam / ship gates:** [RELEASE.md](./RELEASE.md).
-- **Balance sim env vars:** `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
+- **Balance sim env vars:** `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`, `greedy-effective-damage`), `ALCHEMY_BALANCE_LOADOUT` (`typical`, `bare`), `ALCHEMY_BALANCE_DECK_SEEDS`, `ALCHEMY_BALANCE_PACING` (`on` default, `off`/`0`/`false` disables hidden fight pacing).
 
 ### Script Command Reference
 
@@ -53,7 +53,7 @@ npm run test:e2e:prepush:full  # @critical|@prepush on preview (CI e2e job)
 npm run test:e2e:full         # Full suite on preview (broader CI/release tier)
 npm run test:e2e:nightly      # Full suite + nightly-only coverage
 npm run test:e2e:electron     # Electron Playwright suite
-npm run balance:sim         # Balance simulator report (opens via scripts/open-report.mjs)
+npm run balance:sim         # Balance findings summary (opens reports/balance-findings.html)
 npm run clean               # Remove local test/report/.vite artifacts
 npm run clean:all           # clean + dist/release-desktop + stop stale E2E preview ports (4173/4175)
 ```
@@ -83,7 +83,7 @@ Full script list: `package.json` / [README.md](../README.md).
 
 ## Balance simulation
 
-Headless battle simulator for overpowered or underpowered cards, classes, enemies, and trinkets. It runs thousands of battles through the real battle engine (no browser, no React) using simple play policies. Skipped during normal `npm test` runs.
+Headless battle simulator for overpowered or underpowered cards, classes, enemies, talents, companions, and trinkets. It runs isolated fights through the real battle engine (no browser, no React) using simple play policies. It is a **skill-floor** tool (dump-hand, random wishes, no holds), not a full run/map/shop simulator. Skipped during normal `npm test` runs.
 
 ```sh
 npm run balance:sim
@@ -91,28 +91,40 @@ npm run balance:sim
 # Increase iterations per scenario (default: 100)
 ALCHEMY_BALANCE_ITERATIONS=500 npm run balance:sim
 
-# Change the play policy (random-playable, greedy-damage, defensive-random)
-ALCHEMY_BALANCE_POLICY=greedy-damage npm run balance:sim
+# Change the play policy (random-playable, greedy-damage, defensive-random, greedy-effective-damage)
+ALCHEMY_BALANCE_POLICY=greedy-effective-damage npm run balance:sim
+
+# Kit + combat talents + talent-point HP only (no homestead / gear / Vitality / core trinkets)
+ALCHEMY_BALANCE_LOADOUT=bare npm run balance:sim
+
+# Measure raw kit without hidden fight pacing
+ALCHEMY_BALANCE_PACING=off npm run balance:sim
 ```
 
 Windows PowerShell:
 
 ```powershell
 $env:ALCHEMY_BALANCE_ITERATIONS="500"; npm run balance:sim
-$env:ALCHEMY_BALANCE_POLICY="greedy-damage"; npm run balance:sim
+$env:ALCHEMY_BALANCE_POLICY="greedy-effective-damage"; npm run balance:sim
 ```
 
-Scenarios run at three talent-progression tiers:
+Scenarios run at three talent-progression tiers. Talent presets use **combat-eligible** talents in tree/pool order (shop and post-combat economy talents are excluded). Gold is seeded per tier so in-combat gold scaling can fire.
 
-| Tier      | Act | Talents                     |
-| --------- | --- | --------------------------- |
-| **Early** | 1   | None                        |
-| **Mid**   | 2   | First 3 talents per keyword |
-| **Late**  | 3   | All talents per keyword     |
+| Tier      | Act | Combat talents                         | Gold | Loadout (`typical`)                                                                                                   |
+| --------- | --- | -------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------- |
+| **Early** | 1   | None                                   | 0    | Base 30 HP; companion bonds only                                                                                      |
+| **Mid**   | 2   | 5 per affinity keyword + 2 per other   | 40   | +1 HP per affinity talent (≈15); Vitality +8; 1★ homestead; seeded affinity gear (weapon + body); Grove's Favor       |
+| **Late**  | 3   | Up to 7 per affinity keyword + 5 other | 80   | +1 HP per affinity talent (≈21); Vitality +18; 2★ homestead; seeded affinity full set; Grove's Favor / Tattered Pages |
 
-Console tables show the top/bottom 3 entries per tier. An HTML report is written to `reports/balance-report.html`. On Windows, the report opens automatically after the simulation finishes.
+Max HP in the sim is `30 + affinity combat-talent points + Vitality (typical only) + homestead Chicken Coop + gear maxHealth affixes`. Talent-point HP counts **affinity** unlocks only (Wildcard uses a 3-keyword equivalent), not the off-tree combat grants the sim also unlocks. `ALCHEMY_BALANCE_LOADOUT=bare` keeps tier gold, combat talents, and talent-point HP, but omits Vitality, homestead, gear, and core trinkets. Gear rolls from a salted RNG stream derived from the fight seed so paired isolation sweeps stay matched.
 
-Categories: weakest/strongest enemies, class rankings, weakest/strongest cards (random 10-card decks vs baseline), trinket win-rate deltas vs a no-trinket baseline. All simulations use deterministic seeding.
+After the run, the opener launches **`reports/balance-findings.html`** (JSON: `reports/balance-findings.json`). That is the default agent/human surface. The full matrix is written under **`reports/balance-full/`** (drill-down only; do not read it unless a finding needs extra context).
+
+The summary groups by issue type (timeouts, 0/100, type win-rate, length, equity, paired deltas, anomalies). Class matchups collapse to the **worst class per enemy / tier / metric**, then the cap round-robins those buckets so one boss-WR cluster cannot fill all 25 slots.
+
+Target bands (source: `src/lib/balance/findings-bands.ts`): never 0% or 100% win/lose; Mid/Late type win rates Normal ~90–99%, Elite ~80–95%, Boss ≥70% and &lt;100%; fight length Normal 3–5 / Elite 5–7 / Boss 7–10 turns; ≥2% timeout rate is a stall; within-pool equity ~15pp from median; anomaly spikes Early 100 / Mid 200 / Late 300. Paired deltas with \|delta\| &lt; 2 SE are skipped. Do not apply tunings from findings until they are reviewed.
+
+Console prints the findings list. Isolation sweeps do not use the typical core trinket pair. All simulations use deterministic seeding.
 
 ---
 
@@ -126,7 +138,8 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Companions** — invulnerable; act at player turn start; persist indefinitely.
 - **Draw / deck** — draw 4 per turn, max hand 7 (overflow skipped); hand cleared before draw; discard reshuffles when draw pile empties; only `consume` cards leave permanently.
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
-- **Death's Door** — prevents fatal damage once per battle, leaving player at 1 HP with grace turn(s); during grace, lethal damage floors the player at 1 HP until they heal or grace expires; CC skip suppressed during grace.
+- **Death's Door** — prevents fatal damage once per battle, leaving the player at 1 HP with 2 grace turns (talent can extend); healing does not dismiss the window; during grace, lethal damage floors at 1 HP; the enemy phase that spends the last grace still floors, then the window ends; CC skip suppressed during grace.
+- **Fight pacing** — hidden combat scaler, not a player-facing status or rule. Balance simulator: `ALCHEMY_BALANCE_PACING=off` measures raw kit.
 - **Battle RNG** — use `state.rng`, not `Math.random()` (`createBattleState` may pass explicit RNG in tests).
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types.ts`; `braced` enemy trait halves incoming stun.
 - **Static enemy actions** — `enemyAttackEffects` resolve sequentially every turn; no randomized intents.
@@ -138,32 +151,33 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 
 Definitions of common terms used in the Alchemy codebase.
 
-| Term                       | Definition                                                                                                                                                                                                                                                          |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Block**                  | Damage absorption on player/enemy; halves at the start of the owner's next turn after one opposing attack window.                                                                                                                                                   |
-| **Burn**                   | DoT status; deals its stack as damage, then normally decays by half.                                                                                                                                                                                                |
-| **Death's Door**           | Prevents fatal damage once per battle, leaving player at 1 HP with grace turn(s); while grace is active lethal hits floor the player at 1 HP (multi-hit and DoT ticks included), and damage becomes lethal once grace expires.                                      |
-| **Homestead**              | Between-run hub; spend **Materials** on permanent upgrades.                                                                                                                                                                                                         |
-| **Mana**                   | Resource to play cards; resets to `maxMana` each turn (unspent lost unless Wellspring).                                                                                                                                                                             |
-| **Materials**              | Meta currency for homestead upgrades; in-run earnings via `awardMaterialsDuringRun()`.                                                                                                                                                                              |
-| **Screen**                 | Route union (`menu`, `battle`, `rewards`, …) on `navigation.screen` — not a map node.                                                                                                                                                                               |
-| **Combat Text**            | Floating numbers merged per `(target, kind, stat)`.                                                                                                                                                                                                                 |
-| **Companion Bond**         | Per-companion talent level; boosts companion damage each turn.                                                                                                                                                                                                      |
-| **Content System**         | `campaign`, `labyrinth`, or `wildwood` — map generation and encounter rules.                                                                                                                                                                                        |
-| **Corruption**             | Altar event that mutates a card with a random harmful effect/tag. Leave without corrupting returns to the same Choose Destination picker and does not consume the destination.                                                                                      |
-| **Damage type**            | `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature` — enemies may resist or be vulnerable per type.                                                                                                                                           |
-| **Potion**                 | Consumable with temporary effect from the Alchemist shop.                                                                                                                                                                                                           |
-| **Regen / Regeneration**   | Enemy trait: heal each turn at end of enemy phase.                                                                                                                                                                                                                  |
-| **Reward route**           | Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen` — see **Screen** above. Combat rewards: normal → card, elite → trinket, boss → gear; Wildwood rolls 1/3 card/trinket/gear.                                                                      |
-| **Run materials earned**   | `activeRun.runMaterialsEarned` — materials collected during the current run (combat, mysteries); persisted in `ActiveRunData`; cleared after run end. Shown on game-over / run-victory via `session.runEndMaterials` (includes homestead `endRun*PerRoom` bonuses). |
-| **FadeSlot / screen fade** | Sequential opacity enter/exit (`src/features/alchemy/shared/ui/fade-slot.tsx`); route wrapper `page-enter` / `page-exit`. See [WORKFLOWS § Screen fade](./WORKFLOWS.md#screen-fade-motion).                                                                         |
-| **Status**                 | Temporary player/enemy effect with tick/expiry (Burn, Freeze, Poison, Stun, …).                                                                                                                                                                                     |
-| **TiltSurface**            | Card/tile wrapper with tilt-on-hover, optional shimmer, and button/div modes (`src/features/alchemy/shared/ui/tilt-surface.tsx`).                                                                                                                                   |
-| **Summon**                 | Brings a companion into battle.                                                                                                                                                                                                                                     |
-| **Talent Effect Manifest** | Active talent bonuses on `BattleState.talentEffects`.                                                                                                                                                                                                               |
-| **Trinket Manifest**       | Run-scoped Trinket bonuses on `BattleState.trinketEffects`.                                                                                                                                                                                                         |
-| **Gear**                   | Permanent unique items stored in the Armory and equipped per character. Gear effects are snapshotted when battle begins.                                                                                                                                            |
-| **Wish**                   | Card choices from full library; `wishQueue`.                                                                                                                                                                                                                        |
+| Term                       | Definition                                                                                                                                                                                                                                                                                                     |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Block**                  | Damage absorption on player/enemy; halves at the start of the owner's next turn after one opposing attack window.                                                                                                                                                                                              |
+| **Burn**                   | DoT status; deals its stack as damage, then normally decays by half.                                                                                                                                                                                                                                           |
+| **Death's Door**           | Prevents fatal damage once per battle, leaving the player at 1 HP with 2 grace turns (extendable). Healing does not end the window. While active, lethal hits floor at 1 HP (multi-hit and DoT ticks included). The enemy phase that spends the last grace still floors; damage becomes lethal on a later hit. |
+| **Fight pacing**           | Hidden combat scaler (not a player-facing rule). Live default on; `ALCHEMY_BALANCE_PACING=off` measures raw kit.                                                                                                                                                                                               |
+| **Homestead**              | Between-run hub; spend **Materials** on permanent upgrades.                                                                                                                                                                                                                                                    |
+| **Mana**                   | Resource to play cards; resets to `maxMana` each turn (unspent lost unless Wellspring).                                                                                                                                                                                                                        |
+| **Materials**              | Meta currency for homestead upgrades; in-run earnings via `awardMaterialsDuringRun()`.                                                                                                                                                                                                                         |
+| **Screen**                 | Route union (`menu`, `battle`, `rewards`, …) on `navigation.screen` — not a map node.                                                                                                                                                                                                                          |
+| **Combat Text**            | Floating numbers merged per `(target, kind, stat)`.                                                                                                                                                                                                                                                            |
+| **Companion Bond**         | Per-companion talent level; boosts companion damage each turn.                                                                                                                                                                                                                                                 |
+| **Content System**         | `campaign`, `labyrinth`, or `wildwood` — map generation and encounter rules.                                                                                                                                                                                                                                   |
+| **Corruption**             | Altar event that mutates a card with a random harmful effect/tag. Leave without corrupting returns to the same Choose Destination picker and does not consume the destination.                                                                                                                                 |
+| **Damage type**            | `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature` — enemies may resist or be vulnerable per type.                                                                                                                                                                                      |
+| **Potion**                 | Consumable with temporary effect from the Alchemist shop.                                                                                                                                                                                                                                                      |
+| **Regen / Regeneration**   | Enemy trait: heal each turn at end of enemy phase.                                                                                                                                                                                                                                                             |
+| **Reward route**           | Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen` — see **Screen** above. Combat rewards: normal → card, elite → trinket, boss → gear; Wildwood rolls 1/3 card/trinket/gear.                                                                                                                 |
+| **Run materials earned**   | `activeRun.runMaterialsEarned` — materials collected during the current run (combat, mysteries); persisted in `ActiveRunData`; cleared after run end. Shown on game-over / run-victory via `session.runEndMaterials` (includes homestead `endRun*PerRoom` bonuses).                                            |
+| **FadeSlot / screen fade** | Sequential opacity enter/exit (`src/features/alchemy/shared/ui/fade-slot.tsx`); route wrapper `page-enter` / `page-exit`. See [WORKFLOWS § Screen fade](./WORKFLOWS.md#screen-fade-motion).                                                                                                                    |
+| **Status**                 | Temporary player/enemy effect with tick/expiry (Burn, Freeze, Poison, Stun, …).                                                                                                                                                                                                                                |
+| **TiltSurface**            | Card/tile wrapper with tilt-on-hover, optional shimmer, and button/div modes (`src/features/alchemy/shared/ui/tilt-surface.tsx`).                                                                                                                                                                              |
+| **Summon**                 | Brings a companion into battle.                                                                                                                                                                                                                                                                                |
+| **Talent Effect Manifest** | Active talent bonuses on `BattleState.talentEffects`.                                                                                                                                                                                                                                                          |
+| **Trinket Manifest**       | Run-scoped Trinket bonuses on `BattleState.trinketEffects`.                                                                                                                                                                                                                                                    |
+| **Gear**                   | Permanent unique items stored in the Armory and equipped per character. Gear effects are snapshotted when battle begins.                                                                                                                                                                                       |
+| **Wish**                   | Card choices from full library; `wishQueue`.                                                                                                                                                                                                                                                                   |
 
 ---
 

@@ -56,12 +56,16 @@ test.describe("Death's Door", () => {
       await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
       await expect.poll(() => battle.playerHealth()).toBe(1);
 
-      // Grace floors the first lethal hit at 1 HP, so the player survives the
-      // enemy turn after the trigger with the icon persisting; the second enemy
-      // turn (after grace expires) is lethal.
+      // Remaining 1: first enemy turn still floors. Remaining 0: second enemy
+      // turn still floors, then the window ends. The following enemy turn is lethal.
       await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
       await battle.endTurn();
       await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+      await expect.poll(() => battle.playerHealth()).toBe(1);
+
+      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+      await battle.endTurn();
+      await expect(battle.deathsDoorIcon).toBeHidden({ timeout: 5000 });
       await expect.poll(() => battle.playerHealth()).toBe(1);
 
       await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });

@@ -56,7 +56,7 @@ export const poisonTalents: TalentDefinition[] = [
     id: "poison-stun-chance",
     keywordId: "poison",
     name: "Paralytic Venom",
-    description: "Poison has a 10% chance to also Stun",
+    description: "Poison damage and ticks have a 10% chance to deal Stun damage",
     icon: Lock,
     effects: [setEffect("poisonStunChance", 10)],
   },

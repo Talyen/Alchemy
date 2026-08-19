@@ -12,6 +12,7 @@ import {
 import { mergeCombatText } from "./combat-text";
 import { placeholderRng } from "./rng";
 import { addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
+import { paceCombatMagnitude } from "./fight-pacing";
 
 const CONSTANTS = {
   DECAY_THRESHOLD: 1,
@@ -115,7 +116,11 @@ function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): 
 
   if (armorBroke && hasArmorBreakTalent) {
     const beforeBlock = nextState.playerStatuses.block;
-    nextState = addPlayerStatus(nextState, "block", nextState.talentEffects.armorBreakBlock);
+    nextState = addPlayerStatus(
+      nextState,
+      "block",
+      paceCombatMagnitude(nextState, nextState.talentEffects.armorBreakBlock, "player"),
+    );
     if (combatTexts) {
       mergeCombatText(combatTexts, {
         target: CONSTANTS.COMBAT_TEXT.TARGET_PLAYER,

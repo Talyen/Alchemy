@@ -38,6 +38,8 @@ export function makeTestBattleState(overrides: Partial<BattleState> = {}): Battl
     mana: 4,
     maxMana: 4,
     rng: seededRng(42),
+    // Authored-magnitude unit tests; fight-pacing.test.ts opts back in.
+    appliesFightPacing: false,
   };
   return {
     ...merged,

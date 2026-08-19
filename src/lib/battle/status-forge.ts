@@ -5,6 +5,7 @@
 import { addEnemyStatus, addPlayerStatus, stripEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";
 import { HALF_DIVISOR } from "../game-constants";
+import { paceCombatMagnitude } from "./fight-pacing";
 
 function computeForgeBurnAmount(state: BattleState): number {
   return state.talentEffects.forgeBurnDamage;
@@ -59,6 +60,7 @@ function applyForgeBlockBurst(
     if (s.talentEffects.forgeToBlock) {
       amount += newForge;
     }
+    amount = paceCombatMagnitude(s, amount, "player");
     if (combatTexts) {
       mergeCombatText(combatTexts, {
         target: "player",

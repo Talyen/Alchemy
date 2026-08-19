@@ -348,7 +348,7 @@ const affixRows = [
     id: "start-freeze",
     aspect: "defensive",
     keywordId: "freeze",
-    descriptionTemplate: "Apply {value} Freeze at the start of combat",
+    descriptionTemplate: "Deal {value} Freeze damage at the start of combat",
     effectKey: "startFreeze",
     basic: { min: 4, max: 5 },
     astral: { min: 6, max: 7 },

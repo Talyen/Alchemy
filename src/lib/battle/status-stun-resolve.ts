@@ -51,10 +51,14 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
 }
 
 /** Enemy stun threshold — runs immediately when stun stacks are added from damage. */
-export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextEvent[]) {
+export function resolveStunTrigger(
+  state: BattleState,
+  combatTexts?: CombatTextEvent[],
+  preHitHealth = state.enemyHealth,
+) {
   const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
   const triggered = tryTriggerEnemyCc({
-    preHitHealth: state.enemyHealth,
+    preHitHealth,
     nextState: state,
     stat: "stun",
     stackValue: state.enemyStatuses.stun,

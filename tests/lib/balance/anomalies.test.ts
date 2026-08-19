@@ -53,9 +53,10 @@ describe("sampleAnomalies", () => {
       { target: "enemy", kind: "damage", stat: "physical", amount: 99 },
       { target: "player", kind: "heal", stat: "health", amount: 12 },
     ];
-    sampleAnomalies(state, texts, anomalies);
+    sampleAnomalies(state, texts, anomalies, "bash");
     expect(anomalies.maxSingleHitDamageToEnemy).toBe(99);
     expect(anomalies.maxSingleHitDamageToEnemyStat).toBe("physical");
+    expect(anomalies.maxSingleHitDamageToEnemyCardId).toBe("bash");
     expect(anomalies.maxSingleHeal).toBe(12);
   });
 

@@ -7,6 +7,7 @@ import type { BattleState, CombatTextEvent } from "../types";
 import type { EffectHandler } from "./handler-types";
 import { processEncounterTraitHealthThreshold } from "../encounter-trait-events";
 import { dealEnemyScaledDamage } from "../gear-effects";
+import { paceCombatMagnitude } from "../fight-pacing";
 
 function restoreMana(
   state: BattleState,
@@ -14,7 +15,7 @@ function restoreMana(
   potionMult: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const adjustedMana = Math.round(amount * potionMult);
+  const adjustedMana = paceCombatMagnitude(state, Math.round(amount * potionMult), "player");
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: adjustedMana });
   let nextState: BattleState = { ...state, mana: state.mana + adjustedMana };
   nextState = applyHealOnManaGain(nextState, adjustedMana, combatTexts);

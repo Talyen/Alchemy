@@ -160,6 +160,7 @@ describe("New Gear Affixes Integration Tests", () => {
     const texts: any[] = [];
     const nextState = processEnemyDamageEffect(state, effect, texts);
     expect(nextState.playerStatuses.block).toBe(0);
+    expect(nextState.enemyHealth).toBe(state.enemyHealth - 6);
     expect(nextState.enemyStatuses.stun).toBe(6);
   });
 

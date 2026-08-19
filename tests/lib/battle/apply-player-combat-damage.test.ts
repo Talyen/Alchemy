@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { applyPlayerCombatDamage } from "@/lib/battle/types";
 import type { BattleState } from "@/lib/battle/types";
+import { DEATHS_DOOR_GRACE_TURNS } from "@/lib/game-constants";
 
 function talents(partial: Partial<BattleState["talentEffects"]>): BattleState["talentEffects"] {
   return partial as BattleState["talentEffects"];
@@ -91,6 +92,7 @@ describe("applyPlayerCombatDamage", () => {
     expect(result.deathsDoorUsed).toBe(true);
     expect(result.deathsDoorActive).toBe(true);
     expect(result.deathsDoorTriggeredTurn).toBe(3);
+    expect(result.deathsDoorGraceTurnsRemaining).toBe(DEATHS_DOOR_GRACE_TURNS);
   });
 
   it("does not reactivate deaths door if already used", () => {

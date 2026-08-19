@@ -36,18 +36,41 @@ export const MANABURN_DAMAGE_PERCENT = 35;
  * Hydrate rewrites only this sentinel onto MANABURN_DAMAGE_PERCENT.
  */
 export const LEGACY_MANABURN_PER_CRYSTAL_ENABLED = 1;
-/** Flaming Shield / Impact Guard: bonus damage from block as a percent of current block. */
+/** Impact Guard / similar: bonus stun (or shared) damage from block as a percent of current block. */
 export const BLOCK_SCALED_DAMAGE_PERCENT = 30;
+/** Flaming Shield: Burn bonus from block. Lower than stun/physical so late Burn builds cannot one-tick bosses. */
+export const BURN_BLOCK_SCALED_DAMAGE_PERCENT = 10;
 export const GOLD_TROVE_REWARD_MULTIPLIER = 2;
 
 // ============ Battle Tuning ============
 export const CARDS_PER_TURN = 4; // Drawn each turn after hand is discarded; overflow draws are skipped (not discarded).
+/** Death's Door recovery player turns after the first lethal save. Talent extension adds on top. */
+export const DEATHS_DOOR_GRACE_TURNS = 2;
 export const MAX_HAND_SIZE = 7;
 export const MAX_PLAYER_HEALTH = 30;
 export const MAX_HEALTH_PER_TALENT_POINT = 1;
 export const BASE_ENEMY_HEALTH = 30;
 export const BASE_PLAYER_MANA = 4;
 export const DEFAULT_BATTLE_ENEMY_TYPE = "normal";
+
+/** Hidden fight pacing: comeback (behind side) × clock (both sides). Live battles default on. */
+export const FIGHT_PACING = {
+  evenThreshold: 0.1,
+  maxDelta: 0.5,
+  comebackMin: 0.1,
+  comebackMax: 0.2,
+  scheduleThreshold: 0.03,
+  gapFullScale: 0.1,
+  clockMin: 0.1,
+  clockMax: 0.2,
+  burnFractionAtTarget: 0.5,
+  backstopSpan: 4,
+  clockByEnemyType: {
+    normal: { targetDuration: 3.75, maxRounds: 5 },
+    elite: { targetDuration: 5.25, maxRounds: 7 },
+    boss: { targetDuration: 7.5, maxRounds: 10 },
+  },
+} as const;
 
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220;

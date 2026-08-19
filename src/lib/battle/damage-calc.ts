@@ -9,6 +9,7 @@ import { getBattleRng } from "./status-helpers";
 import { computeBaseDamage } from "./damage-calc/damage-type-modifiers";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
+import { paceCombatMagnitude } from "./fight-pacing";
 import {
   ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT,
   COMPANION_LOW_HEALTH_THRESHOLD_PERCENT,
@@ -131,7 +132,8 @@ export function computeCardDamageToEnemy(
 ) {
   const baseDamage = computeBaseDamage(state, effect, card);
   const { state: stateAfterFirstMods, rawDamage } = applyFirstDamageModifiers(state, effect, baseDamage);
-  let finalDamage = applyCrit(rawDamage, stateAfterFirstMods);
+  const pacedDamage = paceCombatMagnitude(stateAfterFirstMods, rawDamage, "player");
+  let finalDamage = applyCrit(pacedDamage, stateAfterFirstMods);
   if (card?.tags?.includes("archery")) finalDamage = applyArcheryMultiplier(finalDamage, stateAfterFirstMods);
 
   const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(

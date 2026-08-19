@@ -39,7 +39,7 @@ npm run dev
 | `npm run lint`          | Lint all source files                                                          |
 | `npm run format`        | Format with Prettier                                                           |
 | `npm run release`       | Bump version + generate changelog + create git tag                             |
-| `npm run balance:sim`   | Run headless balance simulation report                                         |
+| `npm run balance:sim`   | Headless balance sim; opens findings summary (`reports/balance-findings.html`) |
 | `npm run clean`         | Remove local test/report/.vite artifacts                                       |
 | `npm run clean:all`     | clean + builds + stop stale E2E preview ports                                  |
 

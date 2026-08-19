@@ -9,10 +9,10 @@ export const enemyBestiary = [
     art: assetRefs.theForgeGolem,
     enemyType: "boss",
     traits: [
-      trait("rusting-carapace", "Rusting Carapace", "Gains Forge each turn"),
+      trait("rusting-carapace", "Rusting Carapace", "Gains Forge every other turn"),
       trait("starting-block", "Sturdy Plating", "Starts with 4 Block"),
     ],
-    attackEffects: [phys(4), { kind: "damage", damageType: "stun", amount: 1 }],
+    attackEffects: [phys(3), { kind: "damage", damageType: "stun", amount: 1 }],
   }),
   defineEnemy({
     id: "frostwarden",
@@ -23,10 +23,10 @@ export const enemyBestiary = [
       trait(
         "glacial-shell",
         "Glacial Shell",
-        "Receives half Freeze damage\nReceives double Burn damage\nGains Freeze damage each turn",
+        "Receives half Freeze damage\nReceives 50% more Burn damage\nGains Freeze damage every other turn",
       ),
     ],
-    attackEffects: [phys(6), { kind: "damage", damageType: "freeze", amount: 1 }],
+    attackEffects: [phys(4), { kind: "damage", damageType: "freeze", amount: 1 }],
   }),
   defineEnemy({
     id: "blight-treant",
@@ -35,7 +35,7 @@ export const enemyBestiary = [
     enemyType: "boss",
     traits: [
       regeneration("Rotting Regrowth"),
-      trait("burn-vulnerability", "Burn Vulnerability", "Receives double Burn damage"),
+      trait("burn-vulnerability", "Burn Vulnerability", "Receives 50% more Burn damage"),
     ],
     attackEffects: [{ kind: "damage", damageType: "nature", amount: 3 }, playerStatus("poison", 1)],
   }),
@@ -52,7 +52,7 @@ export const enemyBestiary = [
     title: "Goblin",
     art: assetRefs.goblin,
     enemyType: "normal",
-    traits: [trait("trinket-hoarder", "Trinket Hoarder", "Receives double Burn damage")],
+    traits: [trait("trinket-hoarder", "Trinket Hoarder", "Receives 50% more Burn damage")],
     attackEffects: [phys(7)],
   }),
   defineEnemy({
@@ -77,7 +77,7 @@ export const enemyBestiary = [
     art: assetRefs.necromancer,
     enemyType: "elite",
     traits: [trait("holy-vulnerability", "Holy Vulnerability", "Receives double Holy damage")],
-    attackEffects: [playerStatus("bleed", 4)],
+    attackEffects: [playerStatus("bleed", 3)],
   }),
   defineEnemy({
     id: "plague-doctor",
@@ -85,14 +85,14 @@ export const enemyBestiary = [
     art: assetRefs.plagueDoctor,
     enemyType: "elite",
     traits: [poisonResistance],
-    attackEffects: [playerStatus("bleed", 2), playerStatus("poison", 1)],
+    attackEffects: [playerStatus("bleed", 1), playerStatus("poison", 1)],
   }),
   defineEnemy({
     id: "living-armor",
     title: "Living Armor",
     art: assetRefs.livingArmor,
     enemyType: "elite",
-    traits: [trait("living-armor", "Living Armor", "Starts combat with Armor\nReceives half Bleed damage")],
+    traits: [trait("living-armor", "Living Armor", "Starts combat with Armor\nReceives 25% less Bleed damage")],
     attackEffects: [phys(3), { kind: "damage", damageType: "nature", amount: 3 }],
   }),
   defineEnemy({
@@ -100,7 +100,7 @@ export const enemyBestiary = [
     title: "The Iron Bear",
     art: assetRefs.ironBear,
     enemyType: "boss",
-    traits: [trait("iron-hide", "Iron Hide", "Gains Armor, Forge, or Burn damage each turn")],
+    traits: [trait("iron-hide", "Iron Hide", "Gains Armor, Forge, or Burn damage every other turn")],
     attackEffects: [phys(3), { kind: "damage", damageType: "burn", amount: 1 }],
   }),
   defineEnemy({
@@ -112,14 +112,14 @@ export const enemyBestiary = [
       trait("cinder-skin", "Cinder Skin", "Deals 1 Burn damage when attacked"),
       trait("freeze-vulnerability", "Freeze Vulnerability", "Receives double Freeze damage"),
     ],
-    attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+    attackEffects: [{ kind: "damage", damageType: "burn", amount: 2 }],
   }),
   defineEnemy({
     id: "frost-elemental",
     title: "Frost Elemental",
     art: assetRefs.frostElemental,
     enemyType: "elite",
-    traits: [trait("burn-vulnerability", "Burn Vulnerability", "Receives double Burn damage")],
+    traits: [trait("burn-vulnerability", "Burn Vulnerability", "Receives 50% more Burn damage")],
     attackEffects: [{ kind: "damage", damageType: "freeze", amount: 3 }],
   }),
   defineEnemy({
@@ -127,7 +127,7 @@ export const enemyBestiary = [
     title: "Slime",
     art: assetRefs.slime,
     enemyType: "normal",
-    traits: [trait("amorphous", "Amorphous", "Receives half Physical damage\nReceives half Poison damage")],
+    traits: [trait("amorphous", "Amorphous", "Receives 10% less Physical damage\nReceives 10% less Poison damage")],
     attackEffects: [{ kind: "damage", damageType: "poison", amount: 2 }],
   }),
 ];

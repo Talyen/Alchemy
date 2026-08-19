@@ -118,6 +118,7 @@ export function defaultBattleState(): BattleState {
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
     difficultyModifiers: [],
+    appliesFightPacing: true,
     rng: placeholderRng,
     pendingMaterials: emptyInventory(),
     contentSystemType: "campaign",

@@ -17,24 +17,22 @@ import {
   characters,
   enemyBestiary,
   getStartingDeck,
-  talentPool,
-  computeTalentEffects,
   type BattleCard,
   type BestiaryEntry,
-  type KeywordId,
-  type UnlockedTalents,
 } from "@/lib/game-data";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { createSeededRng } from "@/lib/utils";
 import { MAX_PLAYER_HEALTH } from "../game-constants";
 import { createEmptyAnomalies, sampleAnomalies, type BattleAnomalies } from "./anomalies";
+import { buildSimCompanionBondLevels } from "./homestead-preset";
+import { resolveSimLoadout, type BalanceLoadoutMode } from "./loadout-preset";
+import { getEffectiveDamageScore, getImmediateDamage, getImmediateDefense, pickHighestScoring } from "./play-policy";
 import type {
   BalancePlayPolicy,
   BattleSimulationConfig,
   BattleSimulationOutcome,
   BattleSimulationResult,
-  TalentPreset,
 } from "./simulator-types";
 export type {
   BalanceBatchResult,
@@ -43,36 +41,11 @@ export type {
   BattleSimulationResult,
   TalentPreset,
 } from "./simulator-types";
-import { buildSimCompanionBondLevels } from "./homestead-preset";
-
-const LATE_AFFINITY_TALENT_CAP = 7;
-
-function buildPresetManifest(keywords: KeywordId[], preset: TalentPreset): TalentEffectManifest {
-  if (preset === "early") return defaultTalentEffects;
-
-  const allKeywordIds = [...new Set(talentPool.map((t) => t.keywordId))];
-  const affinitySet = new Set(keywords);
-  const unlockedTalents: UnlockedTalents = {};
-
-  for (const keywordId of allKeywordIds) {
-    const keywordTalents = talentPool.filter((t) => t.keywordId === keywordId && (t.effects ?? []).length > 0);
-    const isAffinity = affinitySet.has(keywordId);
-    const count =
-      preset === "mid"
-        ? isAffinity
-          ? 5
-          : 2
-        : isAffinity
-          ? Math.min(keywordTalents.length, LATE_AFFINITY_TALENT_CAP)
-          : 5;
-    unlockedTalents[keywordId] = keywordTalents.slice(0, count).map((t) => t.id);
-  }
-
-  return computeTalentEffects(unlockedTalents);
-}
+import { buildPresetManifest } from "./talent-preset";
 
 const DEFAULT_MAX_TURNS = 30;
 const DEFAULT_POLICY: BalancePlayPolicy = "random-playable";
+const DEFAULT_LOADOUT: BalanceLoadoutMode = "typical";
 export const DEFAULT_SEED = 1;
 
 function randomIndex(rng: () => number, length: number): number {
@@ -85,46 +58,13 @@ function getPlayableCards(state: BattleState): Array<{ card: BattleCard; index: 
     .filter(({ card, index }) => canPlayCard(state, card, index));
 }
 
-function getImmediateDamage(card: BattleCard): number {
-  return card.effects.reduce((total, effect) => {
-    if (effect.kind !== "damage") return total;
-    return total + effect.amount;
-  }, 0);
-}
-
-function getImmediateDefense(card: BattleCard): number {
-  return card.effects.reduce((total, effect) => {
-    if (effect.kind === "heal") return total + effect.amount;
-    if (effect.kind === "player-status" && (effect.status === "block" || effect.status === "armor"))
-      return total + effect.amount;
-    if (effect.kind === "remove-harmful-status") return total + effect.amount * 3;
-    return total;
-  }, 0);
-}
-
-function pickGreedyDamage(
-  playable: Array<{ card: BattleCard; index: number }>,
-): { card: BattleCard; index: number } | null {
-  const first = playable[0];
-  if (!first) return null;
-  let best = first;
-  let bestDamage = getImmediateDamage(best.card);
-  for (let i = 1; i < playable.length; i += 1) {
-    const candidate = playable[i];
-    if (!candidate) continue;
-    const damage = getImmediateDamage(candidate.card);
-    if (damage > bestDamage) {
-      best = candidate;
-      bestDamage = damage;
-    }
-  }
-  return { card: best.card, index: best.index };
-}
-
 function chooseCardToPlay(state: BattleState, policy: BalancePlayPolicy): { card: BattleCard; index: number } | null {
   const playable = getPlayableCards(state);
   if (playable.length === 0) return null;
-  if (policy === "greedy-damage") return pickGreedyDamage(playable);
+  if (policy === "greedy-damage") return pickHighestScoring(playable, getImmediateDamage);
+  if (policy === "greedy-effective-damage") {
+    return pickHighestScoring(playable, (card) => getEffectiveDamageScore(card, state));
+  }
   if (policy === "defensive-random" && state.playerHealth <= state.playerMaxHealth / 2) {
     const defensive = playable.filter(({ card }) => getImmediateDefense(card) > 0);
     if (defensive.length > 0) return defensive[randomIndex(state.rng, defensive.length)] ?? null;
@@ -146,6 +86,7 @@ function playAutomatedTurn(
   state: BattleState,
   policy: BalancePlayPolicy,
   cardsPlayed: Record<string, number>,
+  anomalies: BattleAnomalies,
 ): { state: BattleState; combatTexts: CombatTextEvent[] } {
   let nextState = choosePendingWishCards(state);
   const allCombatTexts: CombatTextEvent[] = [];
@@ -159,19 +100,26 @@ function playAutomatedTurn(
 
     allCombatTexts.push(...result.combatTexts);
     cardsPlayed[selection.card.id] = (cardsPlayed[selection.card.id] ?? 0) + 1;
+    sampleAnomalies(result.state, result.combatTexts, anomalies, selection.card.id);
     nextState = choosePendingWishCards(result.state);
   }
 
   return { state: nextState, combatTexts: allCombatTexts };
 }
 
-function resolveTalentEffects(config: BattleSimulationConfig, playerDeck: BattleCard[]): TalentEffectManifest {
-  if (config.talentEffects) return config.talentEffects;
-  if (!config.talentPreset) return defaultTalentEffects;
-  const base = buildPresetManifest(characters[config.characterId].keywords, config.talentPreset);
+function resolveTalentEffects(
+  config: BattleSimulationConfig,
+  playerDeck: BattleCard[],
+  homesteadCombat: ReturnType<typeof resolveSimLoadout>["homesteadCombat"],
+): TalentEffectManifest {
+  const preset = config.talentPreset;
+  const base =
+    config.talentEffects ??
+    (preset ? buildPresetManifest(characters[config.characterId].keywords, preset) : defaultTalentEffects);
   const homestead = {
     ...defaultHomesteadEffects,
-    companionBondLevels: buildSimCompanionBondLevels(playerDeck, config.talentPreset),
+    ...homesteadCombat,
+    companionBondLevels: buildSimCompanionBondLevels(playerDeck, preset ?? "early"),
   };
   return mergeIntoManifest(base, homestead);
 }
@@ -184,12 +132,12 @@ function runSimTurn(
 ): BattleState {
   const turnCombatTexts: CombatTextEvent[] = [];
   state = processCompanionTurnStart(state, turnCombatTexts);
+  sampleAnomalies(state, turnCombatTexts, anomalies);
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
 
-  const turnResult = playAutomatedTurn(state, policy, cardsPlayed);
+  const turnResult = playAutomatedTurn(state, policy, cardsPlayed, anomalies);
   state = turnResult.state;
-  turnCombatTexts.push(...turnResult.combatTexts);
-  sampleAnomalies(state, turnCombatTexts, anomalies);
+  sampleAnomalies(state, [], anomalies);
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
 
   const resolution = endPlayerTurn(state);
@@ -203,26 +151,47 @@ function orFallback<T>(val: T | null | undefined, fallback: T): T {
   return val ?? fallback;
 }
 
-function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number, enemy: BestiaryEntry) {
-  const playerMaxHealth = orFallback(config.playerMaxHealth, MAX_PLAYER_HEALTH);
+function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number, enemy: BestiaryEntry, seed: number) {
   const playerDeck = orFallback(config.deck, getStartingDeck(config.characterId));
-  const talentEffects = resolveTalentEffects(config, playerDeck);
+  const preset = config.talentPreset ?? "early";
+  const loadout = resolveSimLoadout({
+    preset,
+    characterId: config.characterId,
+    mode: config.loadoutMode ?? DEFAULT_LOADOUT,
+    seed,
+  });
+  const talentEffects = resolveTalentEffects(config, playerDeck, loadout.homesteadCombat);
+  const gold = config.gold ?? loadout.gold + talentEffects.startGold;
+  const gearEffects = config.gearEffects ?? loadout.gearEffects;
+  const trinketIds = config.trinketIds ?? loadout.coreTrinketIds;
+  const baseMaxHealth = orFallback(config.playerMaxHealth, MAX_PLAYER_HEALTH);
+  const playerMaxHealth =
+    config.playerMaxHealth === undefined
+      ? baseMaxHealth +
+        loadout.talentPointHealth +
+        loadout.vitalityHealth +
+        talentEffects.runMaxHealthBonus +
+        gearEffects.maxHealth
+      : baseMaxHealth;
 
   return {
     state: createBattleState({
       runDeck: playerDeck,
-      gold: orFallback(config.gold, 0),
+      gold,
       totalRooms: orFallback(config.depth, 0),
       currentEnemy: enemy,
       playerHealth: orFallback(config.playerHealth, playerMaxHealth),
       talentEffects,
       maxHealth: playerMaxHealth,
-      trinketIds: orFallback(config.trinketIds, []),
+      trinketIds,
+      gearEffects,
       difficultyModifiers: orFallback(config.difficultyModifiers, []),
       rng,
+      ...(config.appliesFightPacing === undefined ? {} : { appliesFightPacing: config.appliesFightPacing }),
     }),
     playerDeck,
     playerMaxHealth,
+    trinketIds,
   };
 }
 
@@ -232,7 +201,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   const enemy = enemyBestiary.find((entry) => entry.id === config.enemyId);
   if (!enemy) throw new Error(`Unknown enemy id: ${config.enemyId}`);
 
-  const { state: initialState, playerMaxHealth } = buildSimBattleConfig(config, rng, enemy);
+  const { state: initialState, playerMaxHealth, trinketIds } = buildSimBattleConfig(config, rng, enemy, seed);
   const maxTurns = orFallback(config.maxTurns, DEFAULT_MAX_TURNS);
   const cardsPlayed: Record<string, number> = {};
   const anomalies = createEmptyAnomalies();
@@ -258,7 +227,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     enemyMaxHealth: state.enemyMaxHealth,
     cardsPlayed,
     totalCardsPlayed: Object.values(cardsPlayed).reduce((total, count) => total + count, 0),
-    trinketIds: orFallback(config.trinketIds, []),
+    trinketIds,
     policy: orFallback(config.policy, DEFAULT_POLICY),
     seed,
     anomalies,

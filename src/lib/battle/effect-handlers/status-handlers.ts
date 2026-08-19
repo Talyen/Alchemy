@@ -7,6 +7,7 @@ import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
 import type { EnemyStatusId } from "@/lib/game-data";
+import { dealPlayerTypedHit } from "../player-typed-hit";
 
 function resolveEnemyStatusCcTrigger(
   preHitState: BattleState,
@@ -33,6 +34,9 @@ export const applyPlayerStatusEffectHandler: EffectHandler = (state, _card, effe
 
 export const applyEnemyStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
   if (effect.kind !== "enemy-status") return state;
+  if (effect.status === "stun" || effect.status === "freeze") {
+    return dealPlayerTypedHit(state, effect.status, effect.amount, combatTexts);
+  }
   const nextState = addEnemyStatus(state, effect.status, effect.amount);
   const appliedAmount = nextState.enemyStatuses[effect.status] - state.enemyStatuses[effect.status];
   mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: effect.status, amount: appliedAmount });

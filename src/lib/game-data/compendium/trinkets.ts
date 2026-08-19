@@ -10,7 +10,7 @@ export const trinketLibrary = [
   trinket(
     "obsidian-hammer",
     "Obsidian Hammer",
-    "When you have 4 or more Forge, your Physical damage also applies 1 Stun.",
+    "When you have 4 or more Forge, your Physical damage also deals 1 Stun damage.",
     assetRefs.obsidianHammer,
   ),
   trinket("icy-heart", "Icy Heart", "When you Freeze an enemy, deal 6 Physical damage.", assetRefs.icyHeart),

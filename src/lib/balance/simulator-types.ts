@@ -1,9 +1,11 @@
 import type { BattleCard, BestiaryEntry, CharacterId, TalentEffectManifest } from "@/lib/game-data";
 import type { DifficultyModifier } from "@/lib/game-data";
+import type { GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
 import type { BattleAnomalies } from "./anomalies";
+import type { BalanceLoadoutMode } from "./loadout-preset";
 import type { TalentPreset } from "./types";
 
-export type BalancePlayPolicy = "random-playable" | "greedy-damage" | "defensive-random";
+export type BalancePlayPolicy = "random-playable" | "greedy-damage" | "defensive-random" | "greedy-effective-damage";
 export type BattleSimulationOutcome = "win" | "loss" | "timeout";
 
 export type { TalentPreset };
@@ -15,6 +17,8 @@ export interface BattleSimulationConfig {
   trinketIds?: string[];
   talentEffects?: TalentEffectManifest;
   talentPreset?: TalentPreset;
+  loadoutMode?: BalanceLoadoutMode;
+  gearEffects?: GearEffectManifest;
   difficultyModifiers?: DifficultyModifier[];
   seed?: number;
   maxTurns?: number;
@@ -22,6 +26,7 @@ export interface BattleSimulationConfig {
   playerHealth?: number;
   playerMaxHealth?: number;
   gold?: number;
+  appliesFightPacing?: boolean;
 }
 
 export { ANOMALY_THRESHOLD_BY_PRESET, ANOMALY_METRICS, getAnomalyThreshold } from "./anomalies";

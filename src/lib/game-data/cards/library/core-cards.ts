@@ -23,7 +23,7 @@ export const coreCards = [
     effects: [{ kind: "player-status", status: "haste", amount: 1 }],
   },
   cardBuilders.damageCard({ id: "poison-dagger", art: assetRefs.poisonDagger, damageType: "poison", amount: 2 }),
-  cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 3 }),
+  cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 2 }),
   cardBuilders.damageCard({ id: "fangs", art: assetRefs.fangs, damageType: "physical", amount: 3, lifesteal: true }),
   cardBuilders.damageCard({ id: "frostbolt", art: assetRefs.frostbolt, damageType: "freeze", amount: 3 }),
   cardBuilders.consumableCard({
@@ -86,12 +86,12 @@ export const coreCards = [
   {
     id: "meteor",
     title: "Meteor",
-    descriptionLines: ["Deal 7 Burn damage", "Lose 1 Mana Crystal", "Consume"],
+    descriptionLines: ["Deal 5 Burn damage", "Lose 1 Mana Crystal", "Consume"],
     art: assetRefs.meteor,
     cost: 1,
     consume: true,
     effects: [
-      { kind: "damage", damageType: "burn", amount: 7 },
+      { kind: "damage", damageType: "burn", amount: 5 },
       { kind: "lose-max-mana", amount: 1 },
     ],
   },

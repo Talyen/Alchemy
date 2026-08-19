@@ -143,19 +143,31 @@ describe("processEnemyTraits", () => {
   const frostwarden = enemyBestiary.find((e) => e.id === "frostwarden")!;
   const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
 
-  it("applies rusting-carapace forge scaled by room multiplier", () => {
+  it("applies rusting-carapace forge every other turn (not room-scaled)", () => {
     const state = makeTestBattleState({
       currentEnemy: forgeGolem,
+      turn: 2,
       roomScalingMultiplier: 2,
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
     });
     const result = processEnemyTraits(state, [], { traitRoll: 0 });
-    expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN * 2);
+    expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN);
+  });
+
+  it("does not apply rusting-carapace on odd turns", () => {
+    const state = makeTestBattleState({
+      currentEnemy: forgeGolem,
+      turn: 1,
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
+    });
+    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    expect(result.enemyMitigation.forge).toBe(0);
   });
 
   it("iron-hide chooses armor when traitRoll is 0", () => {
     const state = makeTestBattleState({
       currentEnemy: ironBear,
+      turn: 2,
       roomScalingMultiplier: 1,
     });
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
@@ -170,7 +182,7 @@ describe("processEnemyTraits", () => {
   });
 
   it("iron-hide chooses forge when traitRoll is in the middle third", () => {
-    const state = makeTestBattleState({ currentEnemy: ironBear, roomScalingMultiplier: 1 });
+    const state = makeTestBattleState({ currentEnemy: ironBear, turn: 2, roomScalingMultiplier: 1 });
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
     const result = processEnemyTraits(state, texts, { traitRoll: 0.4 });
     expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN);
@@ -183,7 +195,7 @@ describe("processEnemyTraits", () => {
   });
 
   it("iron-hide chooses burn bonus when traitRoll is in the upper third", () => {
-    const state = makeTestBattleState({ currentEnemy: ironBear, roomScalingMultiplier: 1 });
+    const state = makeTestBattleState({ currentEnemy: ironBear, turn: 2, roomScalingMultiplier: 1 });
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
     const result = processEnemyTraits(state, texts, { traitRoll: 0.9 });
     expect(result.enemyStatuses.burnBonus).toBe(IRON_HIDE_BURN_BONUS_PER_TURN);
@@ -196,7 +208,7 @@ describe("processEnemyTraits", () => {
   });
 
   it("applies glacial-shell freeze bonus", () => {
-    const state = makeTestBattleState({ currentEnemy: frostwarden, roomScalingMultiplier: 1 });
+    const state = makeTestBattleState({ currentEnemy: frostwarden, turn: 2, roomScalingMultiplier: 1 });
     const result = processEnemyTraits(state, [], { traitRoll: 0 });
     expect(result.enemyStatuses.freezeBonus).toBe(TRAIT_FREEZE_BONUS_PER_TURN);
   });
@@ -220,6 +232,7 @@ describe("processEnemyTraits", () => {
   it("skips scaling traits when freeze prevents enemy scaling", () => {
     const state = makeTestBattleState({
       currentEnemy: forgeGolem,
+      turn: 2,
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, freezePreventsEnemyScaling: true },
@@ -241,6 +254,7 @@ describe("processEnemyTraits", () => {
   it("applies trait and difficulty handlers in one pass", () => {
     const state = makeTestBattleState({
       currentEnemy: forgeGolem,
+      turn: 2,
       roomScalingMultiplier: 1,
       difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }],
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },

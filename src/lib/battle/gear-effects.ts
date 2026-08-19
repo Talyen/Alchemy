@@ -4,6 +4,7 @@ import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } fr
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyLuckyCloverGold } from "./trinket-effects";
 import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import { paceCombatMagnitude } from "./fight-pacing";
 
 export function applyGearKillRewards(
   state: BattleState,
@@ -59,7 +60,8 @@ export function dealEnemyScaledDamage(
   options: DealEnemyScaledDamageOptions = {},
 ): BattleState {
   if (baseDamage <= 0) return state;
-  const finalDamage = Math.round(baseDamage * (options.multiplier ?? 1));
+  const pacedDamage = paceCombatMagnitude(state, baseDamage, "player");
+  const finalDamage = Math.round(pacedDamage * (options.multiplier ?? 1));
   if (finalDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });
   }

@@ -1,6 +1,11 @@
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
 import type { BattleState } from "../types";
-import { BLOCK_SCALED_DAMAGE_PERCENT, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../../game-constants";
+import {
+  BLOCK_SCALED_DAMAGE_PERCENT,
+  BURN_BLOCK_SCALED_DAMAGE_PERCENT,
+  HALF_DIVISOR,
+  PERCENT_DENOMINATOR,
+} from "../../game-constants";
 
 const DAMAGE_CONSTANTS = {
   DOUBLE_MULTIPLIER: 2,
@@ -137,8 +142,8 @@ function applyBleedDamageModifiers(state: BattleState, rawAmount: number): numbe
   return nextAmount;
 }
 
-function getBlockScaledDamageBonus(state: BattleState): number {
-  return Math.round((state.playerStatuses.block * BLOCK_SCALED_DAMAGE_PERCENT) / PERCENT_DENOMINATOR);
+function getBlockScaledDamageBonus(state: BattleState, percent = BLOCK_SCALED_DAMAGE_PERCENT): number {
+  return Math.round((state.playerStatuses.block * percent) / PERCENT_DENOMINATOR);
 }
 
 function applyStunDamageModifiers(state: BattleState, rawAmount: number): number {
@@ -158,7 +163,7 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: 
     nextAmount += Math.round((state.maxMana * state.gearEffects.burnDamagePerManaPercent) / PERCENT_DENOMINATOR);
   }
   if (state.talentEffects.blockToBurnDamage) {
-    nextAmount += getBlockScaledDamageBonus(state);
+    nextAmount += getBlockScaledDamageBonus(state, BURN_BLOCK_SCALED_DAMAGE_PERCENT);
   }
   if (card?.consume && state.talentEffects.consumeBurnDamageBonusPercent > 0) {
     nextAmount = Math.round(nextAmount * (1 + state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR));

@@ -3,7 +3,14 @@ import { defaultGearEffects } from "@/lib/gear";
 import { createBattleState } from "@/lib/battle/battle-setup";
 import { enemyBestiary, computeTalentEffects } from "@/lib/game-data";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
-import { BASE_PLAYER_MANA, BOSS_HEALTH_MULTIPLIER, ELITE_HP_MULTIPLIER, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
+import {
+  BASE_ENEMY_HEALTH,
+  BASE_PLAYER_MANA,
+  BOSS_HEALTH_MULTIPLIER,
+  ELITE_HP_MULTIPLIER,
+  MAX_PLAYER_HEALTH,
+  ROOM_SCALING_INCREMENT,
+} from "@/lib/game-constants";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 import { makeTestCard, seededRng } from "../../fixtures/battle";
 
@@ -19,7 +26,7 @@ describe("createBattleState", () => {
     });
     expect(result.turn).toBe(1);
     expect(result.playerHealth).toBe(MAX_PLAYER_HEALTH);
-    expect(result.enemyHealth).toBe(30);
+    expect(result.enemyHealth).toBe(BASE_ENEMY_HEALTH);
     expect(result.hand.length).toBeGreaterThanOrEqual(1);
     expect(result.mana).toBe(BASE_PLAYER_MANA);
     expect(result.activeCompanion).toBeNull();
@@ -38,7 +45,7 @@ describe("createBattleState", () => {
       currentEnemy: skeleton,
       rng: seededRng(42),
     });
-    expect(result.enemyHealth).toBe(38);
+    expect(result.enemyHealth).toBe(Math.round(BASE_ENEMY_HEALTH * (1 + 4 * ROOM_SCALING_INCREMENT)));
     expect(result.enemyAttackEffects[0].amount).toBe(9);
   });
 
@@ -49,7 +56,7 @@ describe("createBattleState", () => {
       currentEnemy: elite,
       rng: seededRng(42),
     });
-    expect(result.enemyMaxHealth).toBe(Math.round(30 * ELITE_HP_MULTIPLIER));
+    expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * ELITE_HP_MULTIPLIER));
     expect(result.enemyHealth).toBe(result.enemyMaxHealth);
   });
 
@@ -60,7 +67,7 @@ describe("createBattleState", () => {
       currentEnemy: boss,
       rng: seededRng(42),
     });
-    expect(result.enemyMaxHealth).toBe(Math.round(30 * BOSS_HEALTH_MULTIPLIER));
+    expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * BOSS_HEALTH_MULTIPLIER));
     expect(result.enemyHealth).toBe(result.enemyMaxHealth);
   });
 
@@ -122,6 +129,7 @@ describe("createBattleState", () => {
     expect(result.playerHealth).toBe(27);
     expect(result.playerStatuses.block).toBe(5);
     expect(result.playerStatuses.forge).toBeGreaterThanOrEqual(1);
+    expect(result.enemyHealth).toBeLessThan(result.enemyMaxHealth);
     expect(result.enemyStatuses.freeze).toBeGreaterThanOrEqual(1);
   });
 

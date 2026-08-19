@@ -186,14 +186,16 @@ describe("tickEnemyStatuses", () => {
         descriptionLines: [""],
         art: "",
         enemyType: "boss",
-        traits: [{ id: "burn-vulnerability", title: "Burn Vulnerability", description: "Receives double Burn damage" }],
+        traits: [
+          { id: "burn-vulnerability", title: "Burn Vulnerability", description: "Receives 50% more Burn damage" },
+        ],
         attackEffects: [],
       },
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
-    // 10 burn damage * 2 (weakness multiplier) = 20 damage. Health: 50 -> 30.
-    expect(next.enemyHealth).toBe(30);
+    // 10 burn damage * 1.5 (vulnerability multiplier) = 15 damage. Health: 50 -> 35.
+    expect(next.enemyHealth).toBe(35);
   });
 
   it("applies resistance multiplier for bleed against living-armor", () => {
@@ -208,15 +210,15 @@ describe("tickEnemyStatuses", () => {
         descriptionLines: [""],
         art: "",
         enemyType: "elite",
-        traits: [{ id: "living-armor", title: "Living Armor", description: "Receives half Bleed damage" }],
+        traits: [{ id: "living-armor", title: "Living Armor", description: "Receives 25% less Bleed damage" }],
         attackEffects: [],
       },
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
-    // 10 bleed damage * 0.5 (resistance multiplier) = 5 damage. Health: 50 -> 45.
-    expect(next.enemyHealth).toBe(45);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 5 });
+    // 10 bleed damage * 0.75 (resistance multiplier) = 8 damage. Health: 50 -> 42.
+    expect(next.enemyHealth).toBe(42);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 8 });
   });
 });
 

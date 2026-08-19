@@ -15,4 +15,12 @@ export { processCompanionTurnStart } from "./companion";
 export { endPlayerTurn, recoverLegacyEnemyPhase, type EndPlayerTurnResolution } from "./enemy-turn";
 export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
 export { getBattleStartPlayerHealth } from "./start-health";
+export {
+  fightPacingClockMultiplier,
+  fightPacingComebackMultiplier,
+  fightPacingMultiplier,
+  fightPacingPoolMetrics,
+  paceCombatMagnitude,
+  type FightPacingSide,
+} from "./fight-pacing";
 export { repairPersistedBattleTrinketManifest } from "./repair-persisted-trinket-manifest";

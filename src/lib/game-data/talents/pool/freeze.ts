@@ -35,7 +35,7 @@ export const freezeTalents: TalentDefinition[] = [
     id: "freeze-start-amount",
     keywordId: "freeze",
     name: "Winter's Grasp",
-    description: "Start each combat by applying 4 Freeze to the enemy",
+    description: "Start each combat by dealing 4 Freeze damage",
     icon: MountainSnow,
     effects: [setEffect("startFreeze", 4)],
   },

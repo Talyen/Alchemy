@@ -5,6 +5,7 @@ import { mergeCombatText } from "./combat-text";
 import { applyEnemyLeechHealing, processEnemyDamageEffect } from "./enemy-turn-attack";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-utils";
 import { addEnemyMitigation, clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import { paceCombatMagnitude } from "./fight-pacing";
 
 function hasTrait(state: BattleState, id: string): boolean {
   return state.currentEnemy.traits.some((trait) => trait.id === id);
@@ -16,8 +17,9 @@ function addEnemyStatusText(
   amount: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: field, amount });
-  return addEnemyMitigation(state, field, amount);
+  const applied = field === "block" ? paceCombatMagnitude(state, amount, "enemy") : amount;
+  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: field, amount: applied });
+  return addEnemyMitigation(state, field, applied);
 }
 
 export function processEncounterTraitActionStart(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -40,6 +42,7 @@ export function processEncounterTraitActionStart(state: BattleState, combatTexts
     if (nextState.enemyStatuses.bleed > 0 && nextState.talentEffects.bleedHalvesEnemyHealing) {
       amount = Math.round(amount / HALF_DIVISOR);
     }
+    amount = paceCombatMagnitude(nextState, amount, "enemy");
     const before = nextState.enemyHealth;
     nextState = { ...nextState, enemyHealth: clampHealth(nextState.enemyHealth, amount, nextState.enemyMaxHealth) };
     const healed = nextState.enemyHealth - before;
