@@ -6,6 +6,7 @@ import { makeCard } from "./cards";
 import { seedRandom } from "./rng";
 import { BattlePage } from "../pages/battle-page";
 import { MenuPage } from "../pages/menu-page";
+import { openingPacedDamage } from "./fight-pacing-expect";
 
 interface GearSlotSetup {
   instanceId: string;
@@ -52,7 +53,8 @@ export async function assertGearFlatDamageBoostsPhysicalDamage(page: Page, gear:
   await battle.playCardNamed("Test Slash");
 
   const flatBonus = gear.affixes.find((a) => a.id === "flat-physical")?.value ?? 0;
+  const expectedDamage = openingPacedDamage(5 + flatBonus);
   await expect(async () => {
-    expect(await battle.enemyHealth()).toBe(enemyHpBefore - (5 + flatBonus));
+    expect(await battle.enemyHealth()).toBe(enemyHpBefore - expectedDamage);
   }).toPass({ timeout: 5000 });
 }
