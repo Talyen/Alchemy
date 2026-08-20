@@ -12,7 +12,7 @@ const defaultProps = {
   onHomestead: vi.fn(),
   onArmory: vi.fn(),
   logoSrc: "logo-front.png",
-  finishedRunCharacters: [] as const,
+  finishedRunCharacters: [],
 };
 
 describe("MenuScreen logo variants", () => {
