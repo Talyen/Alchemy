@@ -17,11 +17,12 @@ import {
   beginBattleTransition,
   initializeActiveBattle,
   commitBattleTransition,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
   createDraftRunRandomSource,
+  setBattleState,
   setHasActiveBattle,
   setRunGold,
+  withDraftWorldBattleRng,
+  withRestingWorldBattleRng,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   createGameplayDraftActions,
@@ -112,10 +113,13 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
-    expect(readGameplayState().battle.battleState).toEqual(intermediate);
+    expect(readGameplayState().battle.battleState).toEqual({
+      ...intermediate,
+      rng: expect.any(Function),
+    });
     expect(readGameplayState().battle.pendingBattleTransition).toEqual({
       kind: "enemy-turn",
-      resultState,
+      resultState: { ...resultState, rng: expect.any(Function) },
       playerTurnSkipped: false,
     });
     expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(false);
@@ -171,16 +175,36 @@ describe("run-session transaction coordinator", () => {
 
     const battle = readGameplayState().battle;
     expect(battle.battleState.rng).not.toBe(placeholderRng);
-    battle.battleState.rng();
+    expect(() => battle.battleState.rng()).toThrow(/withDraftWorldBattleRng/);
+
+    dispatchRunSessionCommand((draft) => {
+      createDraftRunRandomSource(draft, "world")();
+    });
     expect(readGameplayState().run.activeRun.rng.counters.world).toBe(worldBefore + 1);
 
     const pending = battle.pendingBattleTransition;
     expect(pending?.kind).toBe("enemy-turn");
     if (pending?.kind === "enemy-turn") {
       expect(pending.resultState.rng).not.toBe(placeholderRng);
-      pending.resultState.rng();
+      expect(() => pending.resultState.rng()).toThrow(/withDraftWorldBattleRng/);
+      dispatchRunSessionCommand((draft) => {
+        createDraftRunRandomSource(draft, "world")();
+      });
       expect(readGameplayState().run.activeRun.rng.counters.world).toBe(worldBefore + 2);
     }
+  });
+
+  it("returns resting rng from battle states written inside a command", () => {
+    setRunProgress({ rng: createRunRngState(() => 42 / 0x1_0000_0000) });
+    const returned = dispatchRunSessionCommand((draft) => {
+      const bound = withDraftWorldBattleRng(draft, draft.battle.battleState);
+      const next = { ...bound, playerHealth: Math.max(1, bound.playerHealth - 1) };
+      setBattleState(draft, next);
+      return withRestingWorldBattleRng(draft, next);
+    });
+
+    expect(() => returned.rng()).toThrow(/withDraftWorldBattleRng/);
+    expect(() => readGameplayState().battle.battleState.rng()).toThrow(/withDraftWorldBattleRng/);
   });
 
   it("keeps the committed root unchanged until the outer commit", () => {
@@ -268,6 +292,7 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
     dispatchRunSessionCommand((draft) => {
       createDraftRunRandomSource(draft, "rewards")();
+      expect(draft.run.activeRun.rng.counters.rewards).toBe(1);
       setRunGold(draft, 7);
     });
 

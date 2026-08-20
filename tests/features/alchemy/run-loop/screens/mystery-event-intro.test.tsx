@@ -48,6 +48,6 @@ describe("MysteryEventIntro", () => {
     const art = screen.getByTestId("mystery-event-art");
     expect(art.getAttribute("src")).toBe("sacred-grove-art");
     expect(art.getAttribute("alt")).toBe("Sacred Grove");
-    expect(screen.getByText(sampleEvent.narrative)).toBeTruthy();
+    expect(screen.getByLabelText(sampleEvent.narrative)).toBeTruthy();
   });
 });

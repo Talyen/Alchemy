@@ -12,13 +12,13 @@ import {
 import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
-import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
 import { TooltipBody, TooltipHeader } from "../../shared/ui/tooltip-panel";
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
 import {
   getGameModeUnlockMessage,
   isGameModeUnlocked,
+  type CharacterId,
   type GameModeId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 
@@ -121,19 +121,19 @@ function GameModeTile({
 
 export function GameModeSelectScreen({
   resumableModes,
+  finishedRunCharacters,
   onSelectCampaign,
   onSelectLabyrinth,
   onSelectWildwood,
   onOpenMenu,
 }: {
   resumableModes: Record<GameModeId, boolean>;
+  finishedRunCharacters: CharacterId[];
   onSelectCampaign: () => void;
   onSelectLabyrinth: () => void;
   onSelectWildwood: () => void;
   onOpenMenu: (rect?: DOMRect) => void;
 }) {
-  const finishedRunCharacters = useFinishedRunCharacters();
-
   const handlers: Record<GameModeId, () => void> = {
     campaign: onSelectCampaign,
     labyrinth: onSelectLabyrinth,

@@ -1,5 +1,3 @@
-// Animated shine-border overlay for highlighting interactive elements (corruption, heroes).
-// Depends on tailwind-merge for class composition. Used by destination choices and hero cards.
 import type { CSSProperties, HTMLAttributes } from "react";
 
 import { keywordDefinitions } from "@/lib/game-data";

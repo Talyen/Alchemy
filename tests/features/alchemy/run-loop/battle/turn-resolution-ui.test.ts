@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   executeEnemyPhase,
+  persistEnemyTurnTransition,
   resolveEndTurn,
   resolveHasteSkipTurn,
   resolveNormalEnemyTurn,
@@ -22,19 +23,27 @@ const commitBattleTransition = vi.fn();
 const clearBattleTransition = vi.fn();
 const setBattleState = vi.fn();
 
-vi.mock("@/features/alchemy/shared/stores/run-session-write-port", () => ({
-  beginBattleTransition: (_draft: unknown, ...args: unknown[]) => beginBattleTransition(...args),
-  commitBattleTransition: (_draft: unknown, ...args: unknown[]) => commitBattleTransition(...args),
-  clearBattleTransition: (_draft: unknown, ...args: unknown[]) => clearBattleTransition(...args),
-  setBattleState: (_draft: unknown, ...args: unknown[]) => setBattleState(...args),
-}));
+vi.mock("@/features/alchemy/shared/stores/run-session-write-port", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-write-port")>();
+  return {
+    ...actual,
+    beginBattleTransition: (_draft: unknown, ...args: unknown[]) => beginBattleTransition(...args),
+    commitBattleTransition: (_draft: unknown, ...args: unknown[]) => commitBattleTransition(...args),
+    clearBattleTransition: (_draft: unknown, ...args: unknown[]) => clearBattleTransition(...args),
+    setBattleState: (_draft: unknown, ...args: unknown[]) => setBattleState(...args),
+  };
+});
 
-vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", () => ({
-  runHandDrawSequence: vi.fn(async (_oldHand, _newState, applyState) => {
-    applyState();
-    return true;
-  }),
-}));
+vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/run-loop/battle/draw-sequence")>();
+  return {
+    ...actual,
+    runHandDrawSequence: vi.fn(async (_oldHand, _newState, applyState) => {
+      applyState();
+      return true;
+    }),
+  };
+});
 
 vi.mock("@/lib/animation/game-timer", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/animation/game-timer")>()),
@@ -80,26 +89,26 @@ beforeEach(() => {
 });
 
 describe("resolveEndTurn", () => {
-  it("commits haste state inside the draw applyState callback after hiding cards", () => {
+  it("commits haste state in the end-turn command before draw applyState", () => {
     const order: string[] = [];
     commitBattleTransition.mockImplementation(() => {
       order.push("commit");
     });
-    vi.mocked(runHandDrawSequence).mockImplementationOnce(async (_oldHand, _newState, applyState, session, deps) => {
-      deps.setTransferInProgress(true);
-      deps.runIfSessionActive(session, () => {
-        order.push("hide");
-        deps.setHiddenHandCardKeys(() => ["drawn"]);
-        applyState();
-      });
-      return true;
-    });
+    vi.mocked(runHandDrawSequence).mockImplementationOnce(
+      async (_oldHand, _newState, applyState, session, drawDeps) => {
+        drawDeps.runIfSessionActive(session, () => {
+          applyState();
+          order.push("apply");
+        });
+        return true;
+      },
+    );
     const state = defaultBattleState();
     state.playerStatuses.haste = 1;
 
     resolveEndTurn(state, 1, makeBattleTurnSession(), makeOrch());
 
-    expect(order).toEqual(["hide", "commit"]);
+    expect(order).toEqual(["commit", "apply"]);
     expect(commitBattleTransition).toHaveBeenCalledOnce();
   });
 
@@ -177,6 +186,7 @@ describe("resolveNormalEnemyTurn", () => {
     if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
     const orch = makeOrch();
 
+    persistEnemyTurnTransition({} as never, result, state);
     resolveNormalEnemyTurn(result, state, 1, makeBattleTurnSession(), orch, resolveEndTurn);
 
     expect(beginBattleTransition).toHaveBeenCalledWith(
@@ -203,6 +213,7 @@ describe("resolveNormalEnemyTurn", () => {
     const orch = makeOrch();
     const battleSession = makeBattleTurnSession();
 
+    persistEnemyTurnTransition({} as never, deadResult, state);
     resolveNormalEnemyTurn(deadResult, state, 1, battleSession, orch, resolveEndTurn);
 
     expect(battleSession.handleVictoryDefeat).toHaveBeenCalledWith("victory");

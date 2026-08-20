@@ -1,6 +1,3 @@
-// Styled button primitive with variant/size class composition and optional Radix Slot rendering.
-// Depends on class-variance-authority, Radix Slot, React, and cn utilities.
-// Used across game screens as the base clickable control.
 import { type ComponentProps } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -57,7 +54,7 @@ const buttonVariants = cva(
   },
 );
 
-const positioningPrefixes = [
+const POSITIONING_PREFIXES = [
   "absolute",
   "relative",
   "fixed",
@@ -69,12 +66,11 @@ const positioningPrefixes = [
   "inset-",
   "z-",
 ];
-
-const sizingPrefixes = [
+const SIZING_PREFIXES = [
   "basis-",
   "col-",
   "flex-",
-  "grow",
+  "grow-",
   "h-",
   "max-h-",
   "max-w-",
@@ -82,32 +78,36 @@ const sizingPrefixes = [
   "min-w-",
   "order-",
   "row-",
-  "shrink",
+  "shrink-",
   "w-",
 ];
 
-const wrapperLayoutClassPrefixes = [...positioningPrefixes, ...sizingPrefixes];
+function createPrefixRegex(prefixes: readonly string[]): RegExp {
+  const patterns = prefixes.map((p) => (p.endsWith("-") ? `${p.slice(0, -1)}(?:-.*)?` : p));
+  return new RegExp(`^(?:${patterns.join("|")})$`);
+}
 
-function getWrapperLayoutClassName(className: string | undefined) {
+const POSITIONING_REGEX = createPrefixRegex(POSITIONING_PREFIXES);
+const WRAPPER_LAYOUT_REGEX = createPrefixRegex([...POSITIONING_PREFIXES, ...SIZING_PREFIXES]);
+
+function getWrapperLayoutClassName(className: string | undefined): string | undefined {
   if (!className) return undefined;
   return className
     .split(/\s+/)
     .filter((token) => {
       const baseToken = token.slice(token.lastIndexOf(":") + 1);
-      return wrapperLayoutClassPrefixes.some(
-        (prefix) => baseToken === prefix.slice(0, -1) || baseToken.startsWith(prefix),
-      );
+      return WRAPPER_LAYOUT_REGEX.test(baseToken);
     })
     .join(" ");
 }
 
-function getVisualClassName(className: string | undefined) {
+function getVisualClassName(className: string | undefined): string | undefined {
   if (!className) return undefined;
   return className
     .split(/\s+/)
     .filter((token) => {
       const baseToken = token.slice(token.lastIndexOf(":") + 1);
-      return !positioningPrefixes.some((prefix) => baseToken === prefix.slice(0, -1) || baseToken.startsWith(prefix));
+      return !POSITIONING_REGEX.test(baseToken);
     })
     .join(" ");
 }
@@ -116,7 +116,7 @@ interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof butt
   asChild?: boolean;
 }
 
-const Button = ({ className, variant, size, asChild = false, ref, ...props }: ButtonProps) => {
+function Button({ className, variant, size, asChild = false, ref, ...props }: ButtonProps) {
   const wrapperClassName = getWrapperLayoutClassName(className);
   const visualClassName = getVisualClassName(className);
   const button = (
@@ -132,6 +132,6 @@ const Button = ({ className, variant, size, asChild = false, ref, ...props }: Bu
   }
 
   return <span className={cn("inline-flex", wrapperClassName)}>{button}</span>;
-};
+}
 
 export { Button };

@@ -1,4 +1,3 @@
-// Main menu screen with logo and navigation buttons. Entry point for all other screens.
 import { useCallback, useState, type ReactNode } from "react";
 import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,9 +6,12 @@ import { BUTTON_WIDTH_MENU } from "@/features/alchemy/shared/config";
 import { CardFlip } from "../../shared/ui/card-flip";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cn } from "@/lib/utils";
-import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
-import { isProgressionFeatureUnlocked, KNIGHT_UNLOCK_MESSAGE } from "../../shared/config/game-data-catalog";
+import {
+  isProgressionFeatureUnlocked,
+  KNIGHT_UNLOCK_MESSAGE,
+  type CharacterId,
+} from "../../shared/config/game-data-catalog";
 
 function MenuNavButton({ children }: { children: ReactNode }) {
   return <div className="menu-nav-button">{children}</div>;
@@ -28,6 +30,7 @@ export function MenuScreen({
   hasUnspentTalents = false,
   hasAffordableHomestead = false,
   isArmoryLocked = false,
+  finishedRunCharacters,
 }: {
   onPlay: () => void;
   onCollection: () => void;
@@ -41,12 +44,12 @@ export function MenuScreen({
   hasUnspentTalents?: boolean;
   hasAffordableHomestead?: boolean;
   isArmoryLocked?: boolean;
+  finishedRunCharacters: CharacterId[];
 }) {
   const variants = logoSrcVariants?.length ? logoSrcVariants : [logoSrc];
   const [variantIdx, setVariantIdx] = useState(() => Math.min(1, variants.length - 1));
   const [flipped, setFlipped] = useState(false);
 
-  const finishedRunCharacters = useFinishedRunCharacters();
   const isKnightGatedLocked = !isProgressionFeatureUnlocked("talents", finishedRunCharacters);
 
   const handleLogoClick = useCallback(() => {

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createRunRngState, nextRunRngValue } from "@/lib/run-rng";
-import { createRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { createRunRngState, createRunStreamRng, nextRunRngValue } from "@/lib/run-rng";
+import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { resetRunDomainStore } from "../helpers/gameplay-store-test";
 import { setRunProgress } from "../helpers/run-domain-store-test";
@@ -44,13 +45,26 @@ describe("run RNG", () => {
 
   it("continues the exact sequence after snapshot and restore", () => {
     setRunProgress({ rng: createRunRngState(() => 42 / 0x1_0000_0000) });
-    const rewards = createRunRandomSource("rewards");
-    rewards();
+    const first = dispatchRunSessionCommand((draft) => createDraftRunRandomSource(draft, "rewards")());
     const snapshot = snapshotRun("destination");
-    const expectedNext = rewards();
+    const expectedNext = dispatchRunSessionCommand((draft) => createDraftRunRandomSource(draft, "rewards")());
 
     restoreRun(snapshot, {}, {});
 
-    expect(createRunRandomSource("rewards")()).toBe(expectedNext);
+    expect(dispatchRunSessionCommand((draft) => createDraftRunRandomSource(draft, "rewards")())).toBe(expectedNext);
+    expect(first).not.toBe(expectedNext);
+  });
+
+  it("createRunStreamRng matches nextRunRngValue for the same seed and stream", () => {
+    const stream = createRunStreamRng(123456, "world");
+    const state = createRunRngState(() => 123456 / 0x1_0000_0000);
+    state.seed = 123456 >>> 0;
+    const expected: number[] = [];
+    for (let index = 0; index < 5; index += 1) {
+      const draw = nextRunRngValue(state, "world");
+      state.counters.world = draw.nextCounter;
+      expected.push(draw.value);
+    }
+    expect([stream(), stream(), stream(), stream(), stream()]).toEqual(expected);
   });
 });

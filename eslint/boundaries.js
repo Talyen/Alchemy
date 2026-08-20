@@ -59,7 +59,7 @@ export const BOUNDARY_CONFIGS = [
   },
 
   // Battle engine — no React, Zustand, features, Math.random, or Math.floor.
-  // rng.ts is the sole allowed Math.random binding site (unsafeNonSeededRng).
+  // placeholderRng in rng.ts is the only allowed constant RNG in setup/defaults.
   {
     files: ["src/lib/battle/**/*.{ts,tsx}"],
     ignores: ["src/lib/battle/rng.ts"],

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { runHandDrawSequence } from "@/features/alchemy/run-loop/battle/draw-sequence";
+import { runHandDrawSequence, hideNewlyDrawnHandCards } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import { defaultBattleState } from "@/lib/battle";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
@@ -82,5 +82,18 @@ describe("runHandDrawSequence", () => {
     expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(false);
     const lastHidden = hiddenKeys[hiddenKeys.length - 1] as string[];
     expect(lastHidden.includes("block-2")).toBe(false);
+  });
+
+  it("hides newly drawn cards before any later applyState", () => {
+    const oldHand = [makeTestCardWithId("slash", { uid: 1 })];
+    const newHand = [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })];
+    const deps = makeDrawSequenceDeps();
+
+    hideNewlyDrawnHandCards(oldHand, newHand, deps);
+
+    expect(deps.setTransferInProgress).toHaveBeenCalledWith(true);
+    const hidden = [...vi.mocked(deps.setHiddenHandCardKeys).mock.calls[0]![0]([])];
+    expect(hidden).toContain("block-2");
+    expect(hidden).not.toContain("slash-1");
   });
 });

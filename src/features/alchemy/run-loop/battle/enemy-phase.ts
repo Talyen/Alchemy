@@ -3,7 +3,7 @@ import { playBattleEvent, playEnemyAttack } from "@/lib/audio";
 import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { beginBattleTransition, commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { applyCombatTextPortraitFeedback, shouldHurtEnemyFromCombatTexts } from "./battle-feedback";
 import { playCombatTextSounds } from "./controller-utils";
@@ -15,6 +15,32 @@ import {
   type ResolveEndTurn,
   type TurnOrchestration,
 } from "./turn-orchestration-shared";
+
+export function persistEnemyTurnTransition(
+  draft: GameplayDraft,
+  result: Extract<EndPlayerTurnResolution, { kind: "skipped" | "standard" }>,
+  currentState: BattleState,
+): void {
+  if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
+    commitBattleTransition(draft, { ...result.state, turnPhase: "enemy", hand: [] }, null);
+    return;
+  }
+  beginBattleTransition(
+    draft,
+    { ...result.enemyTurnStartState, turnPhase: "enemy" },
+    {
+      kind: "enemy-turn",
+      resultState: result.state,
+      playerTurnSkipped: result.playerTurnSkipped,
+    },
+    {
+      hand: [],
+      playerHealth: currentState.playerHealth,
+      playerStatuses: currentState.playerStatuses,
+      turnPhase: "enemy",
+    },
+  );
+}
 
 export function resolveNormalEnemyTurn(
   result: Extract<EndPlayerTurnResolution, { kind: "skipped" | "standard" }>,
@@ -33,30 +59,9 @@ export function resolveNormalEnemyTurn(
   if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
     if (dotTexts.length > 0) vfx.showCombatTexts(dotTexts);
     if (shouldHurtEnemyFromCombatTexts(dotTexts)) vfx.hurtEnemy();
-    dispatchRunSessionCommand((draft) =>
-      commitBattleTransition(draft, { ...result.state, turnPhase: "enemy", hand: [] }, null),
-    );
     battleSession.handleVictoryDefeat(result.state.enemyHealth <= 0 ? "victory" : "defeat");
     return;
   }
-
-  dispatchRunSessionCommand((draft) =>
-    beginBattleTransition(
-      draft,
-      { ...result.enemyTurnStartState, turnPhase: "enemy" },
-      {
-        kind: "enemy-turn",
-        resultState: result.state,
-        playerTurnSkipped: result.playerTurnSkipped,
-      },
-      {
-        hand: [],
-        playerHealth: currentState.playerHealth,
-        playerStatuses: currentState.playerStatuses,
-        turnPhase: "enemy",
-      },
-    ),
-  );
 
   if (dotTexts.length > 0) vfx.showCombatTexts(dotTexts);
   if (shouldHurtEnemyFromCombatTexts(dotTexts)) vfx.hurtEnemy();

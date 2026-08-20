@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Lock } from "lucide-react";
 import { Dices } from "lucide-react";
 import {
@@ -38,10 +38,6 @@ import { EQUIP_SLOTS, SLOT_LABELS } from "./armory/parts/slot-labels";
 import { ItemPickerGrid } from "./armory/item-picker-grid";
 import "./armory/armory-screen.css";
 
-function nextSalvageRandom(): number {
-  return Math.random();
-}
-
 function itemsMatchingSlot(inventory: GearInstance[], slot: GearSlot): GearInstance[] {
   return inventory.filter((item) => {
     const definition = gearDefinitions[item.definitionId];
@@ -61,10 +57,10 @@ export function ArmoryScreen({
   onSalvage,
   onApplyCurrency = () => false,
   onSpawnDevGear,
+  rng,
 }: ArmoryScreenProps) {
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const [selectedSlot, setSelectedSlot] = useState<GearSlot>("main-hand");
-  const rngRef = useRef(nextSalvageRandom);
   const [salvageMode, setSalvageMode] = useState(false);
   const [salvagePending, setSalvagePending] = useState<ArmorySalvagePending | null>(null);
   const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
@@ -132,7 +128,7 @@ export function ArmoryScreen({
   }
 
   function beginSalvage(instance: GearInstance) {
-    setSalvagePending({ instance, yield: computeSalvageYield(instance, rngRef.current) });
+    setSalvagePending({ instance, yield: computeSalvageYield(instance, rng) });
   }
 
   return (

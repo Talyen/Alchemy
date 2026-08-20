@@ -10,7 +10,11 @@ import {
   TalentsScreen,
   ArmoryScreen,
 } from "@/features/alchemy/meta/screens";
-import { useProfileCollectionSlice, useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/profile-store";
+import {
+  useFinishedRunCharacters,
+  useProfileCollectionSlice,
+  useProfileDiscoverySlice,
+} from "@/features/alchemy/shared/stores/profile-store";
 import { useCollectionActions, useHomesteadActions } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useBondedCompanions,
@@ -25,6 +29,7 @@ import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-
 function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
   const isArmoryLocked = useIsArmoryLocked();
+  const finishedRunCharacters = useFinishedRunCharacters();
   return (
     <MenuScreen
       onPlay={() => commands.goToScreen("game-mode-select")}
@@ -39,6 +44,7 @@ function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
       hasUnspentTalents={hasUnspentTalents}
       hasAffordableHomestead={hasAffordableHomestead}
       isArmoryLocked={isArmoryLocked}
+      finishedRunCharacters={finishedRunCharacters}
     />
   );
 }
@@ -57,6 +63,7 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattl
       onEquip={controller.onEquip}
       onUnequip={controller.onUnequip}
       onSalvage={controller.onSalvage}
+      rng={controller.rng}
       {...(controller.onSpawnDevGear ? { onSpawnDevGear: controller.onSpawnDevGear } : {})}
     />
   );
@@ -70,9 +77,11 @@ function GameModeSelectScreenRoute({
   onOpenBattleMenu: MetaRouteCtx["onOpenBattleMenu"];
 }) {
   const resumableModes = useResumableGameModes();
+  const finishedRunCharacters = useFinishedRunCharacters();
   return (
     <GameModeSelectScreen
       resumableModes={resumableModes}
+      finishedRunCharacters={finishedRunCharacters}
       onSelectCampaign={commands.beginCampaign}
       onSelectLabyrinth={commands.beginLabyrinth}
       onSelectWildwood={commands.beginWildwood}

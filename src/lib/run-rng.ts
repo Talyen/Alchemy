@@ -44,3 +44,23 @@ export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { val
   const value = mixUint32(state.seed ^ STREAM_SALTS[stream] ^ Math.imul(counter + 1, 0x85eb_ca6b)) / UINT32_RANGE;
   return { value, nextCounter: counter + 1 };
 }
+
+/** Pure `() => number` over one named stream. No store I/O — for tests, the simulator, and local draws. */
+export function createRunStreamRng(seed: number, stream: RunRngStream = "world", startCounter = 0): () => number {
+  const state: RunRngState = {
+    seed: toUint32(seed),
+    counters: {
+      rewards: 0,
+      destinations: 0,
+      events: 0,
+      shops: 0,
+      world: 0,
+      [stream]: startCounter,
+    },
+  };
+  return () => {
+    const draw = nextRunRngValue(state, stream);
+    state.counters[stream] = draw.nextCounter;
+    return draw.value;
+  };
+}

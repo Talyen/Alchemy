@@ -1,6 +1,3 @@
-// Styled progress bar primitive with size and color variants.
-// Depends only on React and class-name utilities.
-// Used by health, XP, and other meter displays.
 import { type CSSProperties, type HTMLAttributes, type Ref } from "react";
 
 import { clamp, cn } from "@/lib/utils";
@@ -13,10 +10,12 @@ interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
   ref?: Ref<HTMLDivElement>;
 }
 
-const Progress = ({ className, value, size = "md", color, fillStyle, ref, ...props }: ProgressProps) => {
+function Progress({ className, value, size = "md", color, fillStyle, ref, ...props }: ProgressProps) {
   const height = size === "sm" ? "h-1" : "h-4";
   const trackColor = size === "sm" ? "bg-muted" : "bg-secondary";
   const fillColor = color ?? "bg-primary";
+
+  const progressPercent = clamp(Number.isFinite(value) ? (value as number) : 0, 0, 100);
 
   return (
     <div
@@ -26,10 +25,10 @@ const Progress = ({ className, value, size = "md", color, fillStyle, ref, ...pro
     >
       <div
         className={cn("h-full w-full flex-1 rounded-full transition-all duration-300 ease-out", fillColor)}
-        style={{ width: `${clamp(Number.isNaN(value) ? 0 : (value ?? 0), 0, 100)}%`, ...fillStyle }}
+        style={{ width: `${progressPercent}%`, ...fillStyle }}
       />
     </div>
   );
-};
+}
 
 export { Progress };

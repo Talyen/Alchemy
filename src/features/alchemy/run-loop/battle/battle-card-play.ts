@@ -16,12 +16,17 @@ import { applyCombatTextPortraitFeedback, shouldPlayCardGoldGain } from "./battl
 import { playCombatTextSounds, logBattleError } from "./controller-utils";
 import { PLAYABLE_HAND_OPTIONS, getHandCardKey } from "./playable-hand";
 import { isBattlePlayInputBusy } from "./autoplay-driver";
-import { runHandDrawSequence } from "./draw-sequence";
+import { hideNewlyDrawnHandCards, runHandDrawSequence } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { awardCardXP, setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  awardCardXP,
+  setBattleState,
+  withDraftWorldBattleRng,
+  withRestingWorldBattleRng,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { discoverCardIds } from "../run/deck-mutations";
 
@@ -41,15 +46,6 @@ export function createBattleCardPlay(
     });
   }
 
-  function handleDrawSequence(
-    oldHand: BattleCard[],
-    newState: BattleState,
-    applyState: () => void,
-    sessionNum = ctx.battleSessionRef.current,
-  ): Promise<boolean> {
-    return runHandDrawSequence(oldHand, newState, applyState, sessionNum, transferDeps.getDrawSequenceDeps());
-  }
-
   function runDrawSequenceAndFinalize(
     oldHand: BattleCard[],
     newState: BattleState,
@@ -57,7 +53,9 @@ export function createBattleCardPlay(
     sessionNum: number,
     errorContext: string,
   ) {
-    void handleDrawSequence(oldHand, newState, onCommitState, sessionNum)
+    const drawDeps = transferDeps.getDrawSequenceDeps();
+    hideNewlyDrawnHandCards(oldHand, newState.hand, drawDeps);
+    void runHandDrawSequence(oldHand, newState, onCommitState, sessionNum, drawDeps)
       .catch((err: unknown) => logBattleError(`handle ${errorContext} draw sequence`, err))
       .finally(() => finishDrawSequence(sessionNum, newState));
   }
@@ -79,8 +77,9 @@ export function createBattleCardPlay(
     card: BattleCard,
     index: number,
     sourceRect: { x: number; y: number; width: number; height: number },
+    handLength: number,
   ) {
-    const centerOffset = index - (getBattle().battleState.hand.length - 1) / 2;
+    const centerOffset = index - (handLength - 1) / 2;
     animateCardActivation(
       card,
       sourceRect,
@@ -115,28 +114,31 @@ export function createBattleCardPlay(
       return false;
     }
     const sessionNum = ctx.battleSessionRef.current;
+    const played = dispatchRunSessionCommand((draft) => {
+      const bound = withDraftWorldBattleRng(draft, currentState);
+      if (!canPlayCard(card, index, bound)) return null;
+      const resolution = playBattleCardResolved(bound, card.id, index, PLAYABLE_HAND_OPTIONS);
+      setBattleState(draft, resolution.state);
+      awardCardXP(draft, card);
+      return { ...resolution, state: withRestingWorldBattleRng(draft, resolution.state) };
+    });
+    if (!played) {
+      if (!options?.silentReject) playUISound("error");
+      return false;
+    }
     ctx.cardPlayInProgressRef.current = true;
-    animatePlayedCard(card, index, sourceRect);
+    animatePlayedCard(card, index, sourceRect, currentState.hand.length);
     playCardSound(card.id);
-    const resolution = playBattleCardResolved(currentState, card.id, index, PLAYABLE_HAND_OPTIONS);
     ctx.setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
 
     runDrawSequenceAndFinalize(
       currentState.hand,
-      resolution.state,
+      played.state,
       () => {
-        dispatchRunSessionCommand(
-          (draft) => {
-            setBattleState(draft, resolution.state);
-            awardCardXP(draft, card);
-          },
-          {
-            afterCommit: () => {
-              playCardResolutionFeedback(card, currentState, resolution.state, resolution.combatTexts);
-              if (resolution.combatTexts.length > 0) getPresentation().showCombatTexts(resolution.combatTexts);
-            },
-          },
-        );
+        playCardResolutionFeedback(card, currentState, played.state, played.combatTexts);
+        if (played.combatTexts.length > 0) {
+          getPresentation().showCombatTexts(played.combatTexts);
+        }
       },
       sessionNum,
       "play card",
@@ -157,20 +159,17 @@ export function createBattleCardPlay(
   function handleWishChoice(cardOrNull: BattleCard | null) {
     const currentState = getBattle().battleState;
     if (!currentState.wishOptions) return;
-    const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
+    const newState = dispatchRunSessionCommand((draft) => {
+      const bound = withDraftWorldBattleRng(draft, currentState);
+      if (!bound.wishOptions) return null;
+      const next = chooseWishCard(bound, cardOrNull?.id ?? null);
+      setBattleState(draft, next);
+      if (cardOrNull) discoverCardIds(draft, [cardOrNull.id]);
+      return withRestingWorldBattleRng(draft, next);
+    });
+    if (!newState) return;
     const sessionNum = ctx.battleSessionRef.current;
-    runDrawSequenceAndFinalize(
-      currentState.hand,
-      newState,
-      () => {
-        dispatchRunSessionCommand((draft) => {
-          setBattleState(draft, newState);
-          if (cardOrNull) discoverCardIds(draft, [cardOrNull.id]);
-        });
-      },
-      sessionNum,
-      "wish choice",
-    );
+    runDrawSequenceAndFinalize(currentState.hand, newState, () => {}, sessionNum, "wish choice");
   }
 
   return { handleCardClick, handleWishChoice, handleAutoplayCard };

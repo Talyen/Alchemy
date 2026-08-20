@@ -9,7 +9,7 @@ export {
   awardMysteryXP,
   clearRunMaterialsEarned,
   createDraftRunRandomSource,
-  createRunRandomSource,
+  withDraftWorldBattleRng,
   setCompletedDestinations,
   setContentSystemType,
   setCurrentAct,
@@ -45,6 +45,8 @@ export {
   setBattleStartState,
   setBattleState,
   setHasActiveBattle,
+  withRestingEndPlayerTurnResolution,
+  withRestingWorldBattleRng,
 } from "./write-port-battle";
 export {
   abandonCorruptionDestinationVisit,

@@ -8,17 +8,30 @@ import { getCardKey } from "./controller-utils";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { EMPTY_HIDDEN_HAND_KEYS, type HiddenHandCardKeys } from "./playable-hand";
 
-function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {
-  const oldUidSet = new Set(oldHand.map((c) => c.uid));
-  return newHand.filter((c) => !oldUidSet.has(c.uid));
-}
-
 export interface HandDrawSequenceDeps {
   isSessionActive: (session: number) => boolean;
   animateDrawnHand: (cards: BattleCard[], allHandCards: BattleCard[], session: number) => Promise<void>;
   setTransferInProgress: (active: boolean) => void;
   setHiddenHandCardKeys: (update: (current: HiddenHandCardKeys) => Iterable<string>) => void;
   runIfSessionActive: (session: number, action: () => void) => void;
+}
+
+function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {
+  const oldUidSet = new Set(oldHand.map((c) => c.uid));
+  return newHand.filter((c) => !oldUidSet.has(c.uid));
+}
+
+/** Hide newly drawn cards in the same tick as a store commit so they do not paint before the deal animation. */
+export function hideNewlyDrawnHandCards(
+  oldHand: BattleCard[],
+  newHand: BattleCard[],
+  deps: Pick<HandDrawSequenceDeps, "setTransferInProgress" | "setHiddenHandCardKeys">,
+): void {
+  const drawnCards = detectNewHandCards(oldHand, newHand);
+  if (drawnCards.length === 0) return;
+  deps.setTransferInProgress(true);
+  const hiddenDrawKeys = new Set(drawnCards.map(getCardKey));
+  deps.setHiddenHandCardKeys(() => hiddenDrawKeys);
 }
 
 export async function runHandDrawSequence(

@@ -47,7 +47,7 @@ Battle reads are data-only. Battle writes use focused draft-first mutators from 
 
 ### Run randomness
 
-Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Command recipes obtain their generator through `createDraftRunRandomSource(draft, stream)` so counter advancement commits or rolls back with the resulting gameplay state. `createRunRandomSource(stream)` is reserved for the callback stored on `BattleState` and rebound during battle hydration. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw. Battle randomness remains owned by immutable `BattleState.rng`.
+Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Command recipes obtain their generator through `createDraftRunRandomSource(draft, stream)` so counter advancement commits or rolls back with the resulting gameplay state. Battle outcomes use the `world` stream: command bodies bind `BattleState.rng` with `withDraftWorldBattleRng(draft, state)` for the duration of the recipe. Stored battle snapshots and values returned from the command keep a resting callback (`withRestingWorldBattleRng`) that always throws if drawn. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
 
 `Math.random()` is allowed only to create a fresh run seed or for cosmetic/meta-only effects.
 

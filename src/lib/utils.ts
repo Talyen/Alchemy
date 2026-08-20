@@ -1,15 +1,10 @@
-// Shared low-level helpers for class names, numeric bounds, random selection, and immutable lists.
-// Depends on clsx and tailwind-merge.
-// Used across UI and controller modules to avoid repeating tiny utility patterns.
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-// Keeps conditional Tailwind classes deterministic by resolving conflicts after clsx flattens input.
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Centralizes numeric bounds so volume and percentage-style controls clamp consistently.
 export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }

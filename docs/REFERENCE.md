@@ -140,7 +140,7 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
 - **Death's Door** — prevents fatal damage once per battle, leaving the player at 1 HP with 2 grace turns (talent can extend); healing does not dismiss the window; during grace, lethal damage floors at 1 HP; the enemy phase that spends the last grace still floors, then the window ends; CC skip suppressed during grace.
 - **Fight pacing** — hidden combat scaler, not a player-facing status or rule. Balance simulator: `ALCHEMY_BALANCE_PACING=off` measures raw kit.
-- **Battle RNG** — use `state.rng`, not `Math.random()` (`createBattleState` may pass explicit RNG in tests).
+- **Battle RNG** — live combat draws the persisted `world` run stream (`withDraftWorldBattleRng` inside a command). Pure engine code uses `state.rng` / `getBattleRng(state)`, never `Math.random()`. Tests and the balance simulator use `createRunStreamRng` (same mixer as `nextRunRngValue`). `createBattleState` may pass explicit RNG in unit tests.
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types.ts`; `braced` enemy trait halves incoming stun.
 - **Static enemy actions** — `enemyAttackEffects` resolve sequentially every turn; no randomized intents.
 - **Run materials** — player loot via `awardMaterialsDuringRun()` only; not progress `addMaterials()` from run-loop code ([WORKFLOWS § Grant materials](./WORKFLOWS.md#grant-materials-during-a-run)).

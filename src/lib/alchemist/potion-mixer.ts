@@ -32,13 +32,12 @@ function scaleCardDescriptionLines(card: BattleCard, multiplier: number, potency
   return linesWithoutConsume.map((line) =>
     line.replace(/\b\d+\b/g, (match) => {
       const num = Number(match);
-      return scaleMap.has(num) ? String(scaleMap.get(num)) : match;
+      const scaled = scaleMap.get(num);
+      return scaled !== undefined ? String(scaled) : match;
     }),
   );
 }
 
-/** Pure logic for combining two potion cards into a Mixed Potion.
- * Used by the Alchemist's Shop controller so the mixing logic is independently testable. */
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
   // Existing Mixed Potions are rejected to avoid recursively combining generated effects.
   if (cardA.id === MIXED_POTION_CARD_ID || cardB.id === MIXED_POTION_CARD_ID) {

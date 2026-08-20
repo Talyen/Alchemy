@@ -1,6 +1,3 @@
-// Keyword label/icon renderer shared by cards, talents, characters, and status popups.
-// Depends on keyword metadata, icon config, and class-name utilities.
-// Keep this small so keyword visual language stays consistent across the game UI.
 import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
@@ -10,19 +7,21 @@ import { PortaledTooltip } from "./portaled-tooltip";
 import { TooltipBody } from "./tooltip-panel";
 import { useHoverVisible } from "./use-hover-visible";
 
+export interface KeywordTagProps {
+  keywordId: KeywordId;
+  pill?: boolean;
+  showIcon?: boolean;
+  className?: string;
+  showTooltip?: boolean;
+}
+
 export function KeywordTag({
   keywordId,
   pill = false,
   showIcon = true,
   className,
   showTooltip = false,
-}: {
-  keywordId: KeywordId;
-  pill?: boolean;
-  showIcon?: boolean;
-  className?: string;
-  showTooltip?: boolean;
-}) {
+}: KeywordTagProps) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLSpanElement>();
 

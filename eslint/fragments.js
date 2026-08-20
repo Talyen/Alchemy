@@ -250,7 +250,7 @@ export const BATTLE_NO_MATH_RANDOM = [
   {
     selector: 'MemberExpression[object.name="Math"][property.name="random"]',
     message:
-      "Reference to Math.random is not allowed in the battle engine. Use state.rng for seeded RNG during combat, or unsafeNonSeededRng from ./rng only in setup/defaults paths.",
+      "Reference to Math.random is not allowed in the battle engine. Use state.rng or getBattleRng(state) for seeded combat RNG; placeholderRng from ./rng is only for UI-default battle snapshots.",
   },
 ];
 

@@ -12,10 +12,7 @@ import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run
 import type { useRunOrchestrationPort } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
-type WritePort = Omit<
-  typeof import("@/features/alchemy/shared/stores/run-session-write-port"),
-  "createRunRandomSource"
->;
+type WritePort = typeof import("@/features/alchemy/shared/stores/run-session-write-port");
 type NonDraftFirstWrite = {
   [Key in keyof WritePort]: WritePort[Key] extends (...args: infer Args) => unknown
     ? Args extends [GameplayDraft, ...unknown[]]

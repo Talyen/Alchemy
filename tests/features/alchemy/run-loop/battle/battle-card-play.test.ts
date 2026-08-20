@@ -30,12 +30,16 @@ vi.mock("@/features/alchemy/run-loop/battle/card-transfer-animations", () => ({
   animateCardActivation: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", () => ({
-  runHandDrawSequence: vi.fn(async (_oldHand, _newState, applyState) => {
-    applyState();
-    return false;
-  }),
-}));
+vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/run-loop/battle/draw-sequence")>();
+  return {
+    ...actual,
+    runHandDrawSequence: vi.fn(async (_oldHand, _newState, applyState) => {
+      applyState();
+      return false;
+    }),
+  };
+});
 
 vi.mock("@/features/alchemy/shared/stores/run-session-write-port", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-write-port")>()),
@@ -281,5 +285,35 @@ describe("createBattleCardPlay", () => {
     expect(getBattleStoreView().battleState.hand.length).toBe(0);
     expectAwardedCard(awardCardXP, "slash");
     expect(playUISound).not.toHaveBeenCalled();
+  });
+
+  it("hides newly drawn cards in the same tick as the play commit", () => {
+    const draw = makeTestCard({
+      id: "quick-study",
+      cost: 1,
+      effects: [{ kind: "draw-cards", amount: 1 }],
+    });
+    const incoming = makeTestCard({ id: "slash", uid: 99 });
+    const state = makeTestBattleState({
+      hand: [{ ...draw, uid: 1 }],
+      deck: [incoming],
+      mana: 3,
+      enemyHealth: 30,
+    });
+    getBattleStoreView().setSyncedBattleState(state);
+
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
+    clickCard(handleCardClick, { ...draw, uid: 1 }, 0);
+
+    expect(transferDeps.getDrawSequenceDeps).toHaveBeenCalledOnce();
+    const deps = vi.mocked(transferDeps.getDrawSequenceDeps).mock.results[0]?.value as {
+      setHiddenHandCardKeys: Mock;
+    };
+    expect(deps.setHiddenHandCardKeys).toHaveBeenCalled();
+    const hidden = [...deps.setHiddenHandCardKeys.mock.calls[0]![0]([])];
+    const drawn = getBattleStoreView().battleState.hand.find((card) => card.id === "slash");
+    expect(drawn).toBeDefined();
+    expect(hidden).toContain(`${drawn!.id}-${drawn!.uid}`);
   });
 });

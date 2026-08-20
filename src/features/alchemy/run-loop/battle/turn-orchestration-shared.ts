@@ -1,11 +1,10 @@
-import { isPlayerDefeated, processCompanionTurnStart, type BattleState, type CombatTextEvent } from "@/lib/battle";
+import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { clearBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { createBattleSession } from "./battle-session";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
 import type { BattlePresentationPort } from "./battle-presentation-port";
-import { playCompanionSound } from "./controller-utils";
 
 export type BattleTurnSession = Pick<
   ReturnType<typeof createBattleSession>,
@@ -54,15 +53,4 @@ export function finalizePlayerTurnResume(
   }
   orch.scheduleCompanionFollowUp(state, sessionNum);
   orch.scheduleAutoEndTurn(state);
-}
-
-export function triggerCompanionEffects(
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-  vfx: BattlePresentationPort,
-): BattleState {
-  if (!state.activeCompanion) return state;
-  playCompanionSound(state.activeCompanion.id);
-  vfx.shakeCompanion();
-  return processCompanionTurnStart(state, combatTexts);
 }

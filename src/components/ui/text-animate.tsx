@@ -74,7 +74,6 @@ export function TextAnimate({
       viewport={{ once }}
       aria-label={accessible ? children : undefined}
     >
-      {accessible && <span className="sr-only">{children}</span>}
       {segments.map((segment, i) => (
         <motion.span
           key={`word-${segment}-${i}`}

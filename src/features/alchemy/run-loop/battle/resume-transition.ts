@@ -1,6 +1,11 @@
 import { recoverLegacyEnemyPhase } from "@/lib/battle";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { clearBattleTransition, commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  clearBattleTransition,
+  commitBattleTransition,
+  withDraftWorldBattleRng,
+  withRestingWorldBattleRng,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
   finalizePlayerTurnResume,
@@ -22,8 +27,14 @@ export function resumePendingBattleTransition(
   if (!pending) return;
 
   if (pending.kind === "legacy-enemy-turn") {
-    const recovered = recoverLegacyEnemyPhase(readBattle().battleState);
-    dispatchRunSessionCommand((draft) => commitBattleTransition(draft, recovered, null));
+    const recovered = dispatchRunSessionCommand((draft) => {
+      const next = withRestingWorldBattleRng(
+        draft,
+        recoverLegacyEnemyPhase(withDraftWorldBattleRng(draft, draft.battle.battleState)),
+      );
+      commitBattleTransition(draft, next, null);
+      return next;
+    });
     battleSession.checkBattleEnd(recovered, sessionNum);
     return;
   }

@@ -12,7 +12,7 @@ import {
   type CompanionId,
   type DifficultyModifier,
 } from "@/lib/game-data";
-import { createSeededRng } from "@/lib/utils";
+import { createRunStreamRng } from "@/lib/run-rng";
 import { ANOMALY_METRICS, ANOMALY_THRESHOLD_BY_PRESET, getAnomalyThreshold } from "./anomalies";
 import {
   buildClassSimDeck,
@@ -103,7 +103,7 @@ function cellFromBatch(batch: BalanceBatchResult): RateCell {
 }
 
 function buildRandomDeck(seed: number, size = 10): BattleCard[] {
-  const rng = createSeededRng(seed);
+  const rng = createRunStreamRng(seed, "world");
   const shuffled = [...cardLibrary];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));

@@ -22,7 +22,7 @@ import {
 } from "@/lib/game-data";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
-import { createSeededRng } from "@/lib/utils";
+import { createRunStreamRng } from "@/lib/run-rng";
 import { MAX_PLAYER_HEALTH } from "../game-constants";
 import { createEmptyAnomalies, sampleAnomalies, type BattleAnomalies } from "./anomalies";
 import { buildSimCompanionBondLevels } from "./homestead-preset";
@@ -191,7 +191,7 @@ function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number,
 
 export function simulateBattle(config: BattleSimulationConfig): BattleSimulationResult {
   const seed = orFallback(config.seed, DEFAULT_SEED);
-  const rng = createSeededRng(seed);
+  const rng = createRunStreamRng(seed, "world");
   const enemy = enemyBestiary.find((entry) => entry.id === config.enemyId);
   if (!enemy) throw new Error(`Unknown enemy id: ${config.enemyId}`);
 

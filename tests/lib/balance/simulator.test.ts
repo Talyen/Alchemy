@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createSeededRng } from "@/lib/utils";
+import { createRunStreamRng } from "@/lib/run-rng";
 import { simulateBatch, simulateBattle } from "@/lib/balance";
 
 describe("balance simulator", () => {
-  it("creates repeatable seeded random sequences", () => {
-    const first = createSeededRng(42);
-    const second = createSeededRng(42);
+  it("creates repeatable world-stream sequences", () => {
+    const first = createRunStreamRng(42, "world");
+    const second = createRunStreamRng(42, "world");
     expect([first(), first(), first()]).toEqual([second(), second(), second()]);
   });
 

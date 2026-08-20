@@ -44,7 +44,7 @@ Each document owns the concern named below. When another document needs the same
 ## Verification
 
 - Prefer an E2E-verifiable user flow when possible, with focused tests for implementation detail.
-- Verify with the path-scoped gates for the touched area in [CONTRIBUTING.md § What to run when you change…](./CONTRIBUTING.md#what-to-run-when-you-change). Full pre-push and main-gate rules live in [CONTRIBUTING.md § Before you push](./CONTRIBUTING.md#before-you-push).
+- Verify with the path-scoped gates for the touched area in [CONTRIBUTING.md § What to run when you change…](./CONTRIBUTING.md#what-to-run-when-you-change). Automated skills (`architect` for port/store specs, `blast-radius` for port/store boundaries, `unslop` for change discipline/comment pruning, `why` for intent recovery, `verifier` for localized test routing and pre-push gates) auto-trigger based on touched paths. Full pre-push and main-gate rules live in [CONTRIBUTING.md § Before you push](./CONTRIBUTING.md#before-you-push).
 - Treat lint failures, test failures, flaky tests, and React Compiler ESLint errors (`react-compiler/react-compiler`) as real quality problems, not noise.
 - Animation and canary specs use raw `@playwright/test`; never `enableFastMode` / `fastBattle`. See [CONTRIBUTING.md § E2E helpers](./CONTRIBUTING.md#e2e-helpers).
 

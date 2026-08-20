@@ -29,8 +29,6 @@ import {
   WILDCARD_KEYWORD_SHINE_COLORS,
   WILDCARD_SHINE_CYCLE_MS,
 } from "@/features/alchemy/shared/config";
-import { useUiStore } from "../../shared/stores/ui-store";
-import { useFinishedRunCharacters } from "../../shared/stores/profile-store";
 import { playUISound } from "@/lib/audio";
 
 const HERO_SHINE_CLASS =
@@ -171,14 +169,16 @@ function CharacterCard({
 export function CharacterSelectScreen({
   onSelect,
   onOpenMenu,
+  finishedRunCharacters,
+  shimmerState,
+  onHoverShimmer,
 }: {
   onSelect: (characterId: CharacterId) => void;
   onOpenMenu: (rect?: DOMRect) => void;
+  finishedRunCharacters: CharacterId[];
+  shimmerState?: { cardId?: string; token?: number } | null;
+  onHoverShimmer: (cardId: CharacterId) => void;
 }) {
-  const shimmerState = useUiStore((s) => s.shimmerState);
-  const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
-  const finishedRunCharacters = useFinishedRunCharacters();
-
   const charIds = Object.keys(characters) as CharacterId[];
 
   return (
@@ -200,7 +200,7 @@ export function CharacterSelectScreen({
               isShimmer={shimmerState?.cardId === id}
               shimmerToken={shimmerState?.token}
               onSelect={onSelect}
-              onHoverShimmer={maybeTriggerShimmer}
+              onHoverShimmer={onHoverShimmer}
               isLocked={isLocked}
               unlockRequirementText={unlockRequirementText}
             />

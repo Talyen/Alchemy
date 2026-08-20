@@ -30,4 +30,5 @@ export interface ArmoryScreenProps {
   onSpawnDevGear?: (characterId: CharacterId) => void;
   craftingCurrencies?: Record<CraftingCurrencyId, number>;
   onApplyCurrency?: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
+  rng: () => number;
 }

@@ -1,25 +1,35 @@
 // End-turn orchestration: enemy turn UI sequencing, haste/skipped/standard dispatch.
 // Pass session + transfer helpers; write-port and session-store are imported directly (no re-bundle).
 import { COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
-import { endPlayerTurn, isPlayerDefeated, type BattleState, type CombatTextEvent } from "@/lib/battle";
-import { setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  endPlayerTurn,
+  isPlayerDefeated,
+  processCompanionTurnStart,
+  type BattleState,
+  type CombatTextEvent,
+} from "@/lib/battle";
+import {
+  commitBattleTransition,
+  setBattleState,
+  withDraftWorldBattleRng,
+  withRestingEndPlayerTurnResolution,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { applyCombatTextPortraitFeedback } from "./battle-feedback";
-import { logBattleError, playCombatTextSounds } from "./controller-utils";
+import { logBattleError, playCombatTextSounds, playCompanionSound } from "./controller-utils";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import type { BattlePresentationPort } from "./battle-presentation-port";
+import { persistEnemyTurnTransition, resolveNormalEnemyTurn } from "./enemy-phase";
 import { resolveHasteSkipTurn } from "./haste-turn";
-import { resolveNormalEnemyTurn } from "./enemy-phase";
 import { resumePendingBattleTransition as resumePendingBattleTransitionImpl } from "./resume-transition";
-import { triggerCompanionEffects, type BattleTurnSession, type TurnOrchestration } from "./turn-orchestration-shared";
+import { getBattleContinuation, type BattleTurnSession, type TurnOrchestration } from "./turn-orchestration-shared";
 
 export type { BattleTurnSession, TurnOrchestration } from "./turn-orchestration-shared";
 export { resolveHasteSkipTurn } from "./haste-turn";
-export { resolveNormalEnemyTurn, executeEnemyPhase } from "./enemy-phase";
+export { resolveNormalEnemyTurn, executeEnemyPhase, persistEnemyTurnTransition } from "./enemy-phase";
 
 export function createTurnOrchestration(
   ctx: BattleControllerContext,
@@ -77,7 +87,16 @@ export function resolveEndTurn(
       return false;
     }
 
-    const result = endPlayerTurn(currentState);
+    const result = dispatchRunSessionCommand((draft) => {
+      const bound = withDraftWorldBattleRng(draft, currentState);
+      const next = endPlayerTurn(bound);
+      if (next.kind === "haste") {
+        commitBattleTransition(draft, next.state, getBattleContinuation(next.state, next.playerTurnSkipped));
+      } else {
+        persistEnemyTurnTransition(draft, next, currentState);
+      }
+      return withRestingEndPlayerTurnResolution(draft, next);
+    });
 
     switch (result.kind) {
       case "haste":
@@ -108,8 +127,21 @@ function resolveCompanionFollowUpTexts(
 ): CombatTextEvent[] {
   return session.runIfSessionActive(sessionNum, () => {
     const texts: CombatTextEvent[] = [];
-    const newState = triggerCompanionEffects(readBattle().battleState, texts, getPresentation());
-    dispatchRunSessionCommand((draft) => setBattleState(draft, newState));
+    dispatchRunSessionCommand(
+      (draft) => {
+        const bound = withDraftWorldBattleRng(draft, draft.battle.battleState);
+        if (!bound.activeCompanion) return null;
+        setBattleState(draft, processCompanionTurnStart(bound, texts));
+        return bound.activeCompanion.id;
+      },
+      {
+        afterCommit: (companionId) => {
+          if (!companionId) return;
+          playCompanionSound(companionId);
+          getPresentation().shakeCompanion();
+        },
+      },
+    );
     return texts;
   }, []);
 }

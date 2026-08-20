@@ -48,6 +48,7 @@ export interface ArmoryController {
   onSalvage: (instanceId: string, salvageYield: SalvageYield) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
+  rng: () => number;
 }
 
 export function useArmoryController(): ArmoryController {
@@ -123,6 +124,7 @@ export function useArmoryController(): ArmoryController {
     onUnequip,
     onSalvage,
     onApplyCurrency,
+    rng: rngRef.current,
   };
   if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
   return controller;

@@ -10,7 +10,6 @@ import {
   TRAIT_DAMAGE_WEAKNESS,
 } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
-import { placeholderRng } from "./rng";
 import { addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
 
@@ -67,9 +66,12 @@ export function rollPercent(chance: number, rng: () => number) {
   return chance > 0 && rng() * PERCENT_DENOMINATOR < chance;
 }
 
-/** Extracts rng from battle state, falling back to a deterministic placeholder when absent. */
+/** Extracts rng from battle state. Missing rng is a programming error. */
 export function getBattleRng(state: { rng?: () => number }): () => number {
-  return state.rng ?? placeholderRng;
+  if (!state.rng) {
+    throw new Error("BattleState.rng is required for outcome rolls");
+  }
+  return state.rng;
 }
 
 export type ArmorDecayTarget = "player" | "enemy";

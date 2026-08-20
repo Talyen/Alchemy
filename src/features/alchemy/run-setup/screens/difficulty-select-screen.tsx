@@ -36,7 +36,6 @@ import {
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
 import { TooltipBody } from "../../shared/ui/tooltip-panel";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
-import { useUiStore } from "../../shared/stores/ui-store";
 
 const DIFFICULTY_CONFIG = {
   XP_BONUSES: {
@@ -165,6 +164,8 @@ export function DifficultySelectScreen({
   onSelect,
   onBack,
   onOpenMenu,
+  shimmerState,
+  onHoverShimmer,
 }: {
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
@@ -172,13 +173,13 @@ export function DifficultySelectScreen({
   onSelect: (difficultyId: DifficultyId) => void;
   onBack: () => void;
   onOpenMenu: (rect?: DOMRect) => void;
+  shimmerState?: { cardId?: string; token?: number } | null;
+  onHoverShimmer: (cardId: string) => void;
 }) {
   const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficulty);
   const config = difficultyConfigs[characterId];
   const char = characters[characterId];
   const art = characterArt[char.id];
-  const shimmerState = useUiStore((s) => s.shimmerState);
-  const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
 
   const canPlay = selectedDifficultyId !== null && isDifficultyUnlocked(selectedDifficultyId, completedDifficulties);
 
@@ -211,7 +212,7 @@ export function DifficultySelectScreen({
             shimmerActive={shimmerState?.cardId === "character"}
             shimmerToken={shimmerState?.token}
             shimmerRounded="rounded-shell-panel"
-            onMouseEnter={() => maybeTriggerShimmer("character")}
+            onMouseEnter={() => onHoverShimmer("character")}
           >
             <img
               src={art}
@@ -244,7 +245,7 @@ export function DifficultySelectScreen({
             isSelected={selectedDifficultyId === d.id}
             isShimmer={shimmerState?.cardId === d.id}
             shimmerToken={shimmerState?.token}
-            onHoverShimmer={maybeTriggerShimmer}
+            onHoverShimmer={onHoverShimmer}
             onSelect={handleSelectDifficulty}
           />
         ))}

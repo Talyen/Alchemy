@@ -1,8 +1,31 @@
 import type { ReactNode } from "react";
 import { CharacterSelectScreen, DifficultySelectScreen, DraftDeckScreen } from "@/features/alchemy/run-setup/screens";
-import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
+import { useCompletedDifficulties, useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useDifficultySelectSlice, useDraftDeckSlice } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { RunSetupCommands, RunSetupRouteCtx } from "./route-ctx";
+
+function CharacterSelectScreenRoute({
+  commands,
+  onOpenBattleMenu,
+}: {
+  commands: RunSetupCommands;
+  onOpenBattleMenu: RunSetupRouteCtx["onOpenBattleMenu"];
+}) {
+  const finishedRunCharacters = useFinishedRunCharacters();
+  const shimmerState = useUiStore((s) => s.shimmerState);
+  const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
+
+  return (
+    <CharacterSelectScreen
+      onSelect={commands.handleCharacterSelect}
+      onOpenMenu={onOpenBattleMenu}
+      finishedRunCharacters={finishedRunCharacters}
+      shimmerState={shimmerState}
+      onHoverShimmer={maybeTriggerShimmer}
+    />
+  );
+}
 
 function DifficultySelectScreenRoute({
   commands,
@@ -13,12 +36,16 @@ function DifficultySelectScreenRoute({
 }) {
   const { characterId, selectedDifficulty } = useDifficultySelectSlice();
   const completedDifficulties = useCompletedDifficulties()[characterId];
+  const shimmerState = useUiStore((s) => s.shimmerState);
+  const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
 
   return (
     <DifficultySelectScreen
       characterId={characterId}
       selectedDifficulty={selectedDifficulty}
       completedDifficulties={completedDifficulties}
+      shimmerState={shimmerState}
+      onHoverShimmer={maybeTriggerShimmer}
       onSelect={commands.handleDifficultySelect}
       onBack={commands.handleBackFromDifficultySelect}
       onOpenMenu={onOpenBattleMenu}
@@ -53,7 +80,7 @@ export const runSetupScreenRoutes: {
   "difficulty-select": (ctx: RunSetupRouteCtx) => ReactNode;
 } = {
   "character-select": ({ routeCommands, onOpenBattleMenu }) => (
-    <CharacterSelectScreen onSelect={routeCommands.runSetup.handleCharacterSelect} onOpenMenu={onOpenBattleMenu} />
+    <CharacterSelectScreenRoute commands={routeCommands.runSetup} onOpenBattleMenu={onOpenBattleMenu} />
   ),
   "draft-deck": ({ routeCommands, onOpenBattleMenu }) => (
     <DraftDeckScreenRoute commands={routeCommands.runSetup} onOpenBattleMenu={onOpenBattleMenu} />

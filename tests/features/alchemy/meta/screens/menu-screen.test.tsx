@@ -12,6 +12,7 @@ const defaultProps = {
   onHomestead: vi.fn(),
   onArmory: vi.fn(),
   logoSrc: "logo-front.png",
+  finishedRunCharacters: [] as const,
 };
 
 describe("MenuScreen logo variants", () => {
@@ -57,5 +58,13 @@ describe("MenuScreen logo variants", () => {
     await user.click(screen.getByRole("button", { name: "Flip Alchemy logo" }));
 
     expect(screen.getAllByAltText("Alchemy logo")[1]?.getAttribute("src")).toBe("logo-back.png");
+  });
+
+  it("respects finishedRunCharacters prop for knight-gated unlocks", () => {
+    const { rerender } = render(<MenuScreen {...defaultProps} finishedRunCharacters={[]} />);
+    expect(screen.getByRole("button", { name: /talents/i }).getAttribute("aria-disabled")).toBe("true");
+
+    rerender(<MenuScreen {...defaultProps} finishedRunCharacters={["knight"]} />);
+    expect(screen.getByRole("button", { name: /talents/i }).getAttribute("aria-disabled")).toBe("false");
   });
 });

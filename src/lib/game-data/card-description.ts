@@ -1,4 +1,3 @@
-// Player-facing card text after talents, homestead, and battle bonuses — shared by UI and tests.
 import { capitalizeWord } from "@/lib/utils";
 import { POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
 import { formatCompanionTurnStartLine } from "./cards/companion-turn-description";
@@ -42,15 +41,11 @@ function getSummonedCompanionId(card: Pick<BattleCard, "effects">): CompanionId 
   return effect?.companionId ?? null;
 }
 
+const COMPANION_TURN_LINE_REGEX =
+  /^(?:Deals \d+|Restores \d+|Cleanses \d+|Steals \d+|Gains? \d+ Block each turn|Draws \d+)/;
+
 function isCompanionTurnLine(line: string): boolean {
-  return (
-    /^Deals \d+/.test(line) ||
-    /^Restores \d+/.test(line) ||
-    /^Cleanses \d+/.test(line) ||
-    /^Steals \d+/.test(line) ||
-    /^Gains? \d+ Block each turn/.test(line) ||
-    /^Draws \d+/.test(line)
-  );
+  return COMPANION_TURN_LINE_REGEX.test(line);
 }
 
 function getCompanionLine(card: Pick<BattleCard, "effects">, context: CardDescriptionContext): string | null {

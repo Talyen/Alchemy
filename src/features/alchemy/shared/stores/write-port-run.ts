@@ -1,6 +1,8 @@
+import type { BattleState } from "@/lib/battle";
 import type { RunRngStream } from "@/lib/run-rng";
+import { current, isDraft } from "immer";
 import { bindDraftAction, type GameplayDraft } from "./run-session-command";
-import { createGameplayDraftRunActions, readGameplayState } from "./gameplay-state-store";
+import { createGameplayDraftRunActions } from "./gameplay-state-store";
 import { addProfileGold, setProfileGold } from "./gold-purse";
 
 const runActions = (state: GameplayDraft) => createGameplayDraftRunActions(state);
@@ -28,12 +30,13 @@ export const awardMysteryXP = bindDraftAction((s) => runActions(s).awardMysteryX
 export const addRunMaterialsEarned = bindDraftAction((s) => runActions(s).addRunMaterialsEarned);
 export const clearRunMaterialsEarned = bindDraftAction((s) => runActions(s).clearRunMaterialsEarned);
 
-/** Draw from a persisted run stream without exposing the aggregate action. */
-export function createRunRandomSource(stream: RunRngStream): () => number {
-  return () => readGameplayState().runActions.nextRunRandom(stream);
-}
-
 export function createDraftRunRandomSource(draft: GameplayDraft, stream: RunRngStream): () => number {
   const nextRunRandom = runActions(draft).nextRunRandom;
   return () => nextRunRandom(stream);
+}
+
+/** Bind a battle snapshot to the draft `world` stream for one command body. */
+export function withDraftWorldBattleRng(draft: GameplayDraft, battleState: BattleState): BattleState {
+  const snapshot = isDraft(battleState) ? current(battleState) : battleState;
+  return { ...snapshot, rng: createDraftRunRandomSource(draft, "world") };
 }

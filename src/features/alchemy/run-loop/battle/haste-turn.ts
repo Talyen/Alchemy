@@ -1,7 +1,7 @@
 import { type BattleState, type EndPlayerTurnResolution } from "@/lib/battle";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { clearBattleTransition, commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { runHandDrawSequence } from "./draw-sequence";
+import { clearBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { hideNewlyDrawnHandCards, runHandDrawSequence } from "./draw-sequence";
 import {
   finalizePlayerTurnResume,
   getBattleContinuation,
@@ -18,25 +18,12 @@ export function resolveHasteSkipTurn(
   orch: TurnOrchestration,
   resolveEndTurn: ResolveEndTurn,
 ) {
-  const continuation = getBattleContinuation(result.state, result.playerTurnSkipped);
   if (result.combatTexts.length > 0) orch.getPresentation().showCombatTexts(result.combatTexts);
-  let committedDuringDraw = false;
-  void Promise.resolve(
-    runHandDrawSequence(
-      companionState.hand,
-      result.state,
-      () => {
-        dispatchRunSessionCommand((draft) => commitBattleTransition(draft, result.state, continuation));
-        committedDuringDraw = true;
-      },
-      sessionNum,
-      orch.getDrawSequenceDeps(),
-    ),
-  )
+  const drawDeps = orch.getDrawSequenceDeps();
+  hideNewlyDrawnHandCards(companionState.hand, result.state.hand, drawDeps);
+  void Promise.resolve(runHandDrawSequence(companionState.hand, result.state, () => {}, sessionNum, drawDeps))
     .catch((err: unknown) => orch.logBattleError("handle end turn draw sequence", err))
-    .finally(() =>
-      continueAfterHasteDraw(result, sessionNum, battleSession, orch, resolveEndTurn, committedDuringDraw),
-    );
+    .finally(() => continueAfterHasteDraw(result, sessionNum, battleSession, orch, resolveEndTurn));
 }
 
 function continueAfterHasteDraw(
@@ -45,14 +32,10 @@ function continueAfterHasteDraw(
   battleSession: BattleTurnSession,
   orch: TurnOrchestration,
   resolveEndTurn: ResolveEndTurn,
-  committedDuringDraw: boolean,
 ) {
   battleSession.runIfSessionActive(sessionNum, () => {
     orch.resetHandTransferUi();
     const continuation = getBattleContinuation(result.state, result.playerTurnSkipped);
-    if (!committedDuringDraw) {
-      dispatchRunSessionCommand((draft) => commitBattleTransition(draft, result.state, continuation));
-    }
     if (!continuation) dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
     finalizePlayerTurnResume(result.state, result.playerTurnSkipped, sessionNum, battleSession, orch, resolveEndTurn);
   });

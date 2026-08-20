@@ -1,23 +1,60 @@
-import type { BattleState } from "@/lib/battle";
+import type { BattleState, EndPlayerTurnResolution } from "@/lib/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { bindDraftAction, type GameplayDraft } from "./run-session-command";
 import { createGameplayDraftBattleActions } from "./gameplay-state-store";
 import type { DisplayOverrides } from "./run-domain-types";
-import { createRunRandomSource } from "./write-port-run";
 import { syncPurseFromBattleGold } from "./gold-purse";
 
 const battleActions = (state: GameplayDraft) => createGameplayDraftBattleActions(state);
 
+function restingWorldRng(): () => number {
+  return () => {
+    throw new Error("Battle world RNG must be drawn inside dispatchRunSessionCommand via withDraftWorldBattleRng");
+  };
+}
+
+function rebindBattleWorldRng(battleState: BattleState): BattleState {
+  return { ...battleState, rng: restingWorldRng() };
+}
+
+/** Replace a recipe-local world rng with the throwing resting callback before returning from a command. */
+export function withRestingWorldBattleRng(_draft: GameplayDraft, battleState: BattleState): BattleState {
+  return rebindBattleWorldRng(battleState);
+}
+
+export function withRestingEndPlayerTurnResolution(
+  draft: GameplayDraft,
+  result: EndPlayerTurnResolution,
+): EndPlayerTurnResolution {
+  const state = withRestingWorldBattleRng(draft, result.state);
+  const afterAttack = result.afterAttackState
+    ? { afterAttackState: withRestingWorldBattleRng(draft, result.afterAttackState) }
+    : {};
+  if (result.kind === "haste") {
+    return { ...result, state, ...afterAttack };
+  }
+  return {
+    ...result,
+    state,
+    enemyTurnStartState: withRestingWorldBattleRng(draft, result.enemyTurnStartState),
+    ...afterAttack,
+  };
+}
+
+function applyBattleSnapshot(
+  action: BattleState | ((prev: BattleState) => BattleState),
+  prev: BattleState,
+): BattleState {
+  const next = typeof action === "function" ? action(prev) : action;
+  return rebindBattleWorldRng(next);
+}
+
 export function setBattleState(draft: GameplayDraft, action: BattleState | ((prev: BattleState) => BattleState)): void {
-  battleActions(draft).setSyncedBattleState(action);
+  battleActions(draft).setSyncedBattleState((prev) => applyBattleSnapshot(action, prev));
   syncPurseFromBattleGold(draft);
 }
 export const setBattleStartState = bindDraftAction((s) => battleActions(s).setBattleStartState);
 export const setHasActiveBattle = bindDraftAction((s) => battleActions(s).setHasActiveBattle);
-
-function rebindBattleWorldRng(battleState: BattleState): BattleState {
-  return { ...battleState, rng: createRunRandomSource("world") };
-}
 
 function rebindPendingTransitionWorldRng(
   pendingBattleTransition: PersistedBattleTransition | null,
@@ -52,8 +89,8 @@ export function commitBattleTransition(
   pendingBattleTransition: PersistedBattleTransition | null,
 ): void {
   const battle = battleActions(draft);
-  battle.setSyncedBattleState(battleState);
-  battle.setPendingBattleTransition(pendingBattleTransition);
+  battle.setSyncedBattleState(rebindBattleWorldRng(battleState));
+  battle.setPendingBattleTransition(rebindPendingTransitionWorldRng(pendingBattleTransition));
   battle.clearPendingTransitionResumeRequired();
   syncPurseFromBattleGold(draft);
 }
@@ -66,8 +103,8 @@ export function beginBattleTransition(
   displayOverrides: DisplayOverrides,
 ): void {
   const battle = battleActions(draft);
-  battle.setSyncedBattleState(battleState);
-  battle.setPendingBattleTransition(pendingBattleTransition);
+  battle.setSyncedBattleState(rebindBattleWorldRng(battleState));
+  battle.setPendingBattleTransition(rebindPendingTransitionWorldRng(pendingBattleTransition));
   battle.setDisplayOverrides(displayOverrides);
   syncPurseFromBattleGold(draft);
 }
