@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import type { CharacterId } from "@/lib/game-data";
 import {
   generateDevRandomGearInstance,
@@ -57,7 +57,6 @@ export function useArmoryController(): ArmoryController {
   const finishedRunCharacters = useFinishedRunCharacters();
   const hasActiveRun = useHasActiveRun();
   const activeRunCharacterId = useActiveRunCharacterId();
-  const rngRef = useRef<() => number>(() => Math.random());
 
   const flush = useCallback(() => {
     flushSaveAfterGearMutation(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
@@ -97,7 +96,7 @@ export function useArmoryController(): ArmoryController {
       mutateGearWithFlush(
         activeRunCharacterId,
         flush,
-        (state) => state.applyCurrency(currencyId, instanceId, { rng: rngRef.current }),
+        (state) => state.applyCurrency(currencyId, instanceId, { rng: Math.random }),
         { flushOnSuccessOnly: true },
       ),
     [activeRunCharacterId, flush],
@@ -107,7 +106,7 @@ export function useArmoryController(): ArmoryController {
     (characterId) => {
       if (!isAlchemyDevBuild()) return;
       mutateGearWithFlush(characterId, flush, (state) => {
-        state.addInstance(generateDevRandomGearInstance(rngRef.current), characterId);
+        state.addInstance(generateDevRandomGearInstance(Math.random), characterId);
       });
     },
     [flush],
@@ -124,7 +123,7 @@ export function useArmoryController(): ArmoryController {
     onUnequip,
     onSalvage,
     onApplyCurrency,
-    rng: rngRef.current,
+    rng: Math.random,
   };
   if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
   return controller;
