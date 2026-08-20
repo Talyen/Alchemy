@@ -42,7 +42,7 @@ File length alone is a candidate signal, never a finding. Historical churn (`git
 
 ## Hard stops
 
-- Do not collapse intentional seams: battle RNG injection, persistence write coalescing, design-system tokens, asset/codegen boundaries, or ESLint import rules.
+- Do not collapse [intentional seams](README.md#intentional-seams-do-not-collapse).
 - Do not rewrite battle pipeline math “for clarity” without tests proving equivalence.
 - Do not turn this into a style-only rename sweep, docs rewrite, or mass delete of tests that encode real invariants.
 - Prefer the owning audit when the hit is primarily dead code, reachable dual paths / shims (`08-DualPathRetentionAudit.md`), boundaries, async races, type-safety escapes, duplicate feature surfaces, or state-ownership drift.
@@ -55,8 +55,6 @@ File length alone is a candidate signal, never a finding. Historical churn (`git
 Prefer delete unused ceremony, then inline single-use wrappers, then collapse duplicates in-module. Extract only when a name removes nesting and has ≥2 call sites or clear domain meaning. Move shared chrome into `shared/ui` / `src/components/ui`, or rules into `src/lib` — never a new layer for one call site. Judge structural fixes by simplified ownership and reading/editing cost, not LOC alone.
 
 ## Known signals
-
-Optional discovery aids — choose your own probes.
 
 - **Complexity & length:** ESLint `complexity` / `max-lines-per-function` (also via `npm run audit:all`); do not split clean ≤10 functions.
 - **Outlier file size:** authored `.ts` / `.tsx` files large relative to peers in the same owner class (candidate only — confirm mixed jobs and an existing home).

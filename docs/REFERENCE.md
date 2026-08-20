@@ -5,6 +5,7 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 ## Quick Reference
 
 - [Environment & Commands](#environment--commands)
+- [Failure-first triage](#failure-first-triage)
 - [Balance simulation](#balance-simulation)
 - [Battle Implementation Rules](#battle-implementation-rules)
 - [Domain Glossary](#domain-glossary)
@@ -20,7 +21,6 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 - **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`.
 - **Git hooks / local gates:** [CONTRIBUTING.md](../CONTRIBUTING.md). Changelog updates happen at release only ([RELEASE.md](./RELEASE.md)).
 - **Steam / ship gates:** [RELEASE.md](./RELEASE.md).
-- **Balance sim env vars:** `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`, `greedy-effective-damage`), `ALCHEMY_BALANCE_LOADOUT` (`typical`, `bare`), `ALCHEMY_BALANCE_DECK_SEEDS`, `ALCHEMY_BALANCE_PACING` (`on` default, `off`/`0`/`false` disables hidden fight pacing).
 
 ### Script Command Reference
 
@@ -34,7 +34,17 @@ npm run smoke:preview       # start vite preview; assert HTML plus emitted JS/CS
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci and pre-commit)
 npm test                    # Vitest
 npm test -- <path>          # Single test file
-npm run lint:ci             # format:check + typecheck:all + lint + boundaries + architecture-smoke + deadcode
+npm run verify:changed -- --diff  # Changed-path unit/boundary/E2E route
+npm run verify:changed -- --plan --diff  # Print the route without running it
+npm run verify:changed -- --diff --e2e shop  # Add one route-specific E2E flow
+npm run verify:changed -- --diff --plan --verbose-plan  # Show full argv deliberately
+npm run measure:agent-context -- --path src/lib/battle/damage.ts  # Stable context/route proxy
+npm run new:plan -- TokenEfficiencyPlan  # Scaffold a short-lived docs/Plans execution plan
+npm run docs:check                    # Validate plan metadata and expiry
+npm run docs:check:final              # Final handoff check; active plans must be removed
+npm run prune:transient               # Remove local diagnostics older than one day (dry-run with -- --dry-run)
+npm run ci:routing           # Check high-cost CI path filters against their local ownership contract
+npm run lint:ci             # docs:check + ci:routing + format:check + typecheck:all + lint + boundaries + architecture-smoke + deadcode
 npm run lint:boundaries     # dependency-cruiser phase / lib edges
 npm run lint:architecture-smoke  # Cold ESLint smoke over representative screens; included in lint:ci
 npm run deadcode            # knip (lint:ci / CI; not default pre-push; in check:push:full via check)
@@ -79,7 +89,25 @@ CI's `desktop_renderer` path filter covers Electron integration plus app boot, r
 
 `npm run clean` never stops the main Vite dev server (`5173` / `ALCHEMY_DEV_PORT`). Use `npm run clean -- --processes --include-dev-port` for that, or rely on `predev` which already calls `scripts/stop-dev-server.mjs`. Playwright keeps only failed-run output under `test-results/` (`preserveOutput: "failures-only"`). Shared `~/Library/Caches/ms-playwright` may be used by other projects — do not prune it from Alchemy alone.
 
-Full script list: `package.json` / [README.md](../README.md).
+This section is the documented catalog. [README.md](../README.md) is a short onboarding subset. `package.json` is exhaustive.
+
+## Failure-first triage
+
+Verification and audit commands keep full artifacts on disk but print a bounded digest. Start with the digest and open the referenced artifact only when it names the next useful seam.
+
+- Unit failures: rerun the exact path from the report, then inspect the first assertion and its nearest fixture. `reports/vitest-timings.json` is timing data, not default context.
+- Playwright failures: read the compact failure summary and `test-results/failures/<name>.md` first. Open a trace ZIP only when the DOM/console artifact cannot explain the failure; use `npx playwright show-trace` for that one test.
+- E2E audit: `npm run test:e2e:audit` writes `reports/e2e-audit-report.md` and keeps the full JSON report. Use `--verbose` only when the child runner's complete stream is needed.
+- Measurable audits: `npm run audit:all` reports one line per passing probe and a bounded failure tail. Full step output is under `reports/audit-all/` after a failure; pass `--verbose` to stream it deliberately.
+- Balance: read `reports/balance-findings.html` or its JSON summary first. The full matrix under `reports/balance-full/` is drill-down evidence only.
+- Report pointer: report-producing summaries overwrite `reports/current-run.md` and `reports/current-run.json`; start there instead of recursively listing `reports/`.
+- Do not paste complete logs, traces, snapshots, generated bundles, or report directories into agent context when the digest identifies a narrower file or test.
+- Local transient artifacts are pruned automatically at common dev/build/test/performance boundaries after a one-day grace period. Copy a failure artifact elsewhere only when an investigation genuinely needs to outlive that grace period; use `npm run prune:transient -- --dry-run` to inspect candidates.
+- CI retains failure-only diagnostic artifacts for seven days and retains no successful-run report history.
+
+### Context-efficiency measurements
+
+Use `npm run measure:agent-context -- --path <changed-path>` for a stable, section-aware proxy: selected owner-section bytes, route count, deduplicated test paths, and explicitly named artifact/output bytes. Add `--doc`, `--artifact`, or `--output-file` when a walkthrough intentionally includes those files. This is observational only; it does not enforce a token budget or enumerate ignored directories.
 
 ## Balance simulation
 
@@ -138,8 +166,8 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Companions** — invulnerable; act at player turn start; persist indefinitely.
 - **Draw / deck** — draw 4 per turn, max hand 7 (overflow skipped); hand cleared before draw; discard reshuffles when draw pile empties; only `consume` cards leave permanently.
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
-- **Death's Door** — prevents fatal damage once per battle, leaving the player at 1 HP with 2 grace turns (talent can extend); healing does not dismiss the window; during grace, lethal damage floors at 1 HP; the enemy phase that spends the last grace still floors, then the window ends; CC skip suppressed during grace.
-- **Fight pacing** — hidden combat scaler, not a player-facing status or rule. Balance simulator: `ALCHEMY_BALANCE_PACING=off` measures raw kit.
+- **Death's Door** — [Domain Glossary](#domain-glossary).
+- **Fight pacing** — hidden combat scaler, not a player-facing status. [Domain Glossary](#domain-glossary). Balance simulator: `ALCHEMY_BALANCE_PACING=off` measures raw kit.
 - **Battle RNG** — live combat draws the persisted `world` run stream (`withDraftWorldBattleRng` inside a command). Pure engine code uses `state.rng` / `getBattleRng(state)`, never `Math.random()`. Tests and the balance simulator use `createRunStreamRng` (same mixer as `nextRunRngValue`). `createBattleState` may pass explicit RNG in unit tests.
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types.ts`; `braced` enemy trait halves incoming stun.
 - **Static enemy actions** — `enemyAttackEffects` resolve sequentially every turn; no randomized intents.
@@ -189,7 +217,7 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | App boot / screen registry             | `src/app/screen-routes/`                                                                                                                             |
 | Audio (cache / music / SFX / volume)   | `src/lib/audio-*.ts`, `src/lib/audio.ts`                                                                                                             |
-| Cold-start loading gate                | `use-app-effects.ts`, `allGameArt` in `assets.ts` — see [ARCHITECTURE § Boot](./ARCHITECTURE.md#boot-and-loading)                                    |
+| Cold-start loading gate                | [ARCHITECTURE.md § Boot](./ARCHITECTURE.md#boot-and-loading)                                                                                         |
 | Balance simulation                     | `src/lib/balance/`                                                                                                                                   |
 | Card corruption                        | `src/lib/corruption/`                                                                                                                                |
 | Card library barrel                    | `src/lib/game-data/cards.ts` → `cards/library/{core-cards,specialty-cards,advanced-cards}.ts`                                                        |
@@ -198,13 +226,13 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | Feature config barrel                  | `src/features/alchemy/shared/config/`                                                                                                                |
 | Game-data types                        | `src/lib/game-data/types.ts`                                                                                                                         |
 | Homestead data                         | `src/lib/homestead/` — **Detect Magic** (`detect-magic` research) shifts gear reward/shop Basic↔Astral rolls (+3% / +6% / +10% Astral at tiers 1–3). |
-| In-run material grants                 | `awardMaterialsDuringRun()` in `shared/stores/run-session-write-port.ts`                                                                             |
-| Motion UI (`FadeSlot`, `TiltSurface`)  | `src/features/alchemy/shared/ui/` — fade tokens in `src/styles/theme.css` / `src/styles/components.css`                                              |
+| In-run material grants                 | [WORKFLOWS § Grant materials](./WORKFLOWS.md#grant-materials-during-a-run)                                                                           |
+| Motion UI (`FadeSlot`, `TiltSurface`)  | [WORKFLOWS § Screen fade](./WORKFLOWS.md#screen-fade-motion); files in `src/features/alchemy/shared/ui/`                                             |
 | Image preload helper                   | `src/lib/image-preload.ts`                                                                                                                           |
 | Potion mixing                          | `src/lib/alchemist/potion-mixer.ts`                                                                                                                  |
 | Platform / Steam                       | `src/lib/platform.ts`, `src/lib/platform-save-backend.ts`, `desktop/`                                                                                |
 | Reward card sampling                   | `run-loop/navigation/reward-flow.ts`                                                                                                                 |
-| Run lifecycle / capability ports       | `shared/stores/run-session-lifecycle-port.ts`, `run-session-read-port.ts`, `run-session-write-port.ts`                                               |
+| Run lifecycle / capability ports       | [ARCHITECTURE.md](./ARCHITECTURE.md)                                                                                                                 |
 | Run screen taxonomy                    | `src/lib/routing/run-screen-router.ts`                                                                                                               |
 | Save migrations doc                    | `shared/storage/MIGRATIONS.md`                                                                                                                       |
 | Sound ↔ card registry                  | `src/lib/sound-registry.ts`                                                                                                                          |

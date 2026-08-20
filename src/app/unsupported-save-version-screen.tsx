@@ -15,11 +15,11 @@ export function UnsupportedSaveVersionScreen({ canQuit, onQuit, onDeleteSaveAndC
       <section className="alchemy-shell relative max-w-2xl rounded-shell-dialog border border-border/80 px-8 py-10">
         <div className="space-y-5">
           <p className="text-xs font-semibold tracking-[0.32em] text-muted-foreground uppercase">Save Protected</p>
-          <h1 className="text-3xl font-bold text-amber-100/75">Newer Save Data Detected</h1>
-          <p className="text-base leading-relaxed text-foreground">
+          <h1 className="text-3xl font-bold text-balance text-amber-100/75">Newer Save Data Detected</h1>
+          <p className="text-base leading-relaxed text-balance text-foreground">
             This save was created with a newer version of Alchemy or newer game content than this build can read.
           </p>
-          <p className="text-sm leading-relaxed text-muted-foreground">
+          <p className="text-sm leading-relaxed text-balance text-muted-foreground">
             Your progress is safe and has not been changed. Please update the game to continue.
           </p>
           <div className="flex flex-col items-center gap-3 pt-1">

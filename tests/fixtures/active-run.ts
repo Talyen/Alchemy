@@ -3,7 +3,6 @@
 const BASE_RUN_TEMPLATE = {
   characterId: "knight",
   runDeck: [],
-  runGold: 0,
   runPlayerHealth: 30,
   runMaxHealth: 30,
   roomsEncountered: 0,
@@ -39,7 +38,6 @@ export function makeRunCandidate(overrides: Record<string, unknown> = {}): Recor
         uid: 1,
       },
     ],
-    runGold: 10,
     runPlayerHealth: 25,
     roomsEncountered: 2,
     destinationIndexInAct: 1,

@@ -41,8 +41,10 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex h-screen items-center justify-center bg-background text-foreground">
           <div className="text-center">
-            <h1 className="mb-4 text-2xl font-bold">Something went wrong</h1>
-            <p className="mb-6 text-muted-foreground">An unexpected error occurred. Please reload the page.</p>
+            <h1 className="mb-4 text-2xl font-bold text-balance">Something went wrong</h1>
+            <p className="mb-6 text-balance text-muted-foreground">
+              An unexpected error occurred. Please reload the page.
+            </p>
             <Button
               type="button"
               size="lg"

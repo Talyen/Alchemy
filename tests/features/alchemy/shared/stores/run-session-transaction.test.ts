@@ -280,7 +280,7 @@ describe("run-session transaction coordinator", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-    getRunDomainStore().setRunGold(7);
+    dispatchRunSessionCommand((draft) => setRunGold(draft, 7));
 
     unsubscribe();
 

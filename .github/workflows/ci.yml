@@ -114,6 +114,10 @@ jobs:
       - uses: ./.github/actions/setup
 
       # Split lint:ci so the failed step name identifies the failure class.
+      - name: Documentation and plan checks
+        run: npm run docs:check
+      - name: CI routing contract
+        run: npm run ci:routing
       - name: Format check
         run: npm run format:check
       - name: Typecheck
@@ -147,10 +151,13 @@ jobs:
         run: node scripts/ci-summarize-vitest.mjs
 
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: failure()
         with:
           name: vitest-timings
-          path: reports/vitest-timings.json
+          path: |
+            reports/vitest-timings.json
+            reports/current-run.*
+          retention-days: 7
           if-no-files-found: ignore
 
   build:
@@ -221,7 +228,8 @@ jobs:
             playwright-report/
             test-results/
             reports/playwright-results.json
-          retention-days: 3
+            reports/current-run.*
+          retention-days: 7
 
   ship-gate:
     needs: [changes, test]
@@ -317,7 +325,8 @@ jobs:
             playwright-report/
             test-results/
             reports/playwright-results.json
-          retention-days: 3
+            reports/current-run.*
+          retention-days: 7
 
   desktop-build:
     needs: changes
@@ -392,3 +401,15 @@ jobs:
       - name: Summarize Electron e2e
         if: always()
         run: node scripts/ci-summarize-playwright.mjs
+
+      - name: Upload Electron Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-electron
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+            reports/current-run.*
+          retention-days: 7

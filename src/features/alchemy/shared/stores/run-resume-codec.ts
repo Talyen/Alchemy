@@ -97,11 +97,13 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
     initialized: _initialized,
     talentXP: _talentXP,
     unlockedTalents: _unlockedTalents,
+    runGold: _runGold,
     ...activeRunProgress
   } = run;
   void _initialized;
   void _talentXP;
   void _unlockedTalents;
+  void _runGold;
   const progress = pickActiveRunFields(activeRunProgress);
   const activeCombat =
     battle.hasActiveBattle && battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)
@@ -116,7 +118,6 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
 
   return {
     ...progress,
-    runGold: 0,
     destinationRoundsSinceOffered: { ...progress.destinationRoundsSinceOffered },
     rng: { seed: progress.rng.seed, counters: { ...progress.rng.counters } },
     labyrinthMap: progress.contentSystemType === "labyrinth" ? session.labyrinthMap : null,

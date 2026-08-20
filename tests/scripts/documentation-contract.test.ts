@@ -123,4 +123,14 @@ describe("documentation contracts", () => {
     }
     expect(broken).toEqual([]);
   });
+
+  it("keeps CONTRIBUTING backtick E2E spec paths existent", () => {
+    const source = readFileSync(join(root, "CONTRIBUTING.md"), "utf8");
+    const missing: string[] = [];
+    for (const match of source.matchAll(/`tests\/[a-zA-Z0-9._/-]+\.spec\.ts`/gu)) {
+      const rel = match[0].slice(1, -1);
+      if (!existsSync(join(root, rel))) missing.push(rel);
+    }
+    expect(missing).toEqual([]);
+  });
 });

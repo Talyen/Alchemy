@@ -29,11 +29,11 @@ Auto-triggers when:
      ```
 
 3. **Trace Symbol Dependents**:
-   - Perform scoped symbol searches across `src/` to identify dependent screens, controllers, and hooks:
+   - Search the touched subsystem first, then expand to known consumers only when the symbol is public. Avoid a repository-wide scan for private helpers:
      ```bash
-     rg "SymbolName" src/
+     rg -l "SymbolName" <touched-directory> src/app src/features/alchemy/shell
      ```
 
 4. **Map Blast Radius & Test Matrix**:
-   - Identify affected subsystem test suites per `CONTRIBUTING.md § What to run when you change…`.
+   - Identify affected subsystem test suites with `npm run verify:changed -- --plan <paths>`; the executable route catalog owns the command list.
    - List potential save-compatibility, UI transition, or run-state side effects before writing edits.

@@ -12,14 +12,18 @@ import {
   withFailedNode,
   generateLabyrinthMap,
 } from "@/lib/content-systems/labyrinth/map-generation";
-import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthNode } from "@/lib/content-systems/types";
+import type {
+  EncounterCombatTraitId,
+  EncounterRewardTraitId,
+  LabyrinthNode,
+  LabyrinthNodeType,
+} from "@/lib/content-systems/types";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
   setActiveLabyrinthPendingNode,
   setLabyrinthMap,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { Screen } from "@/lib/routing";
 
 export interface LabyrinthController {
   enterNode: (row: number, col: number, handlers: LabyrinthNodeHandlers) => boolean;
@@ -48,7 +52,7 @@ export interface LabyrinthNodeHandlers {
 
 type NodeAction = (node: LabyrinthNode, handlers: LabyrinthNodeHandlers) => void;
 
-const NODE_ACTIONS: Partial<Record<LabyrinthNode["type"], NodeAction>> = {
+const NODE_ACTIONS: Record<LabyrinthNodeType, NodeAction> = {
   combat: (node, handlers) => handlers.onStartBattleWithModifiers("normal", node.modifiers, node.rewardModifiers),
   elite: (node, handlers) => handlers.onStartBattleWithModifiers("elite", node.modifiers, node.rewardModifiers),
   boss: (node, handlers) => handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers),
@@ -61,15 +65,12 @@ const NODE_ACTIONS: Partial<Record<LabyrinthNode["type"], NodeAction>> = {
   "equipment-shop": (_, handlers) => handlers.onStartEquipmentShop(),
 };
 
-/**
- * Handles navigation routing logic based on the type of entered node.
- */
 function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandlers): void {
-  NODE_ACTIONS[node.type]?.(node, handlers);
+  NODE_ACTIONS[node.type](node, handlers);
 }
 
 /** Pending node is owned by the session store — no local ref twin that can diverge after teardown. */
-export function useLabyrinthController(_screen: Screen): LabyrinthController {
+export function useLabyrinthController(): LabyrinthController {
   const resetMap = useCallback(() => {
     dispatchRunSessionCommand((draft) => {
       setActiveLabyrinthPendingNode(draft, null);

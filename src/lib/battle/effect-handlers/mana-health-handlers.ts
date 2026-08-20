@@ -57,8 +57,14 @@ function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatText
   return nextState;
 }
 
-export const applyRestoreManaEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
+export const applyRestoreManaEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts, context) => {
   if (effect.kind !== "restore-mana") return state;
+  if (
+    effect.ifEnemyFrozen &&
+    state.enemyCC.freezeSkipTurns <= (context?.enemyFreezeSkipTurnsAtStart ?? state.enemyCC.freezeSkipTurns)
+  ) {
+    return state;
+  }
   return restoreMana(state, effect.amount, potionMult, combatTexts);
 };
 

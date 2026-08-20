@@ -84,9 +84,9 @@ function renderAddCardBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNo
   const e = effect as { cardId: string };
   const title = ctx.findCard?.(e.cardId)?.title ?? "a card";
   return ctx.tooltip ? (
-    <span className="text-xs text-muted-foreground">Add {title} card to your deck</span>
+    <span className="text-xs text-balance text-muted-foreground">Add {title} card to your deck</span>
   ) : (
-    <span className="text-sm text-muted-foreground">Add {title}</span>
+    <span className="text-sm text-balance text-muted-foreground">Add {title}</span>
   );
 }
 
@@ -97,9 +97,9 @@ function renderChooseCardBadge(effect: MysteryEffect, ctx: BadgeCtx): React.Reac
     ? `Choose 1 of ${MYSTERY_CARD_CHOICES} ${tagLabel} cards`
     : `Choose 1 of ${MYSTERY_CARD_CHOICES} cards`;
   return ctx.tooltip ? (
-    <span className="text-xs text-muted-foreground">{chooseLabel} to add to your deck</span>
+    <span className="text-xs text-balance text-muted-foreground">{chooseLabel} to add to your deck</span>
   ) : (
-    <span className="text-sm text-muted-foreground">{chooseLabel}</span>
+    <span className="text-sm text-balance text-muted-foreground">{chooseLabel}</span>
   );
 }
 
@@ -107,13 +107,15 @@ function renderTrinketBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNo
   const e = effect as { trinketId: string };
   const title = ctx.findTrinket?.(e.trinketId)?.title ?? "a trinket";
   return (
-    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-muted-foreground")}>Add {title} for this run</span>
+    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-balance text-muted-foreground")}>
+      Add {title} for this run
+    </span>
   );
 }
 
 function renderRandomTrinketBadge(_effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode {
   return (
-    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-muted-foreground")}>
+    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-balance text-muted-foreground")}>
       Gain a random trinket for this run
     </span>
   );
@@ -123,16 +125,17 @@ function renderGeneratedGearBadge(effect: MysteryEffect, ctx: BadgeCtx): React.R
   const e = effect as { baseItemId: string };
   const title = e.baseItemId in gearBaseItems ? gearBaseItems[e.baseItemId as GearBaseItemId].displayName : "Gear";
   return (
-    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-muted-foreground")}>Add {title} to your Armory</span>
+    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-balance text-muted-foreground")}>
+      Add {title} to your Armory
+    </span>
   );
 }
 
-function renderRemoveCardBadge(effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode {
-  const e = effect as { mode: string };
-  return e.mode === "random" ? (
-    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-muted-foreground")}>Remove a random card</span>
-  ) : (
-    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-muted-foreground")}>Choose a card to remove</span>
+function renderRemoveCardBadge(_effect: MysteryEffect, ctx: BadgeCtx): React.ReactNode {
+  return (
+    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-balance text-muted-foreground")}>
+      Remove a random card
+    </span>
   );
 }
 

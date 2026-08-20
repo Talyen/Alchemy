@@ -3,9 +3,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeCurrentRun } from "./lib/current-run.mjs";
 
 const DEFAULT_REPORT = "reports/vitest-timings.json";
-const MAX_FAILURES = 20;
+const MAX_FAILURES = 5;
 const MESSAGE_CHARS = 240;
 
 /**
@@ -120,7 +121,18 @@ function appendSummary(markdown) {
 
 function main() {
   const reportPath = path.resolve(process.argv[2] ?? DEFAULT_REPORT);
-  appendSummary(summarizeVitestFile(reportPath));
+  const markdown = summarizeVitestFile(reportPath);
+  const summary = fs.existsSync(reportPath)
+    ? summarizeVitestReport(JSON.parse(fs.readFileSync(reportPath, "utf8")))
+    : null;
+  writeCurrentRun({
+    rootDir: process.cwd(),
+    status: summary ? (summary.numFailedTests > 0 ? "failed" : "passed") : "missing-report",
+    command: process.env.GITHUB_JOB ? `vitest (${process.env.GITHUB_JOB})` : "vitest",
+    artifacts: [path.relative(process.cwd(), reportPath)],
+    summary: summary ? `Vitest: ${summary.numPassedTests}/${summary.numTotalTests} passed.` : "Vitest report missing.",
+  });
+  appendSummary(`${markdown}\n_Current run: \`reports/current-run.md\`_\n`);
 }
 
 const entry = process.argv[1] ? path.resolve(process.argv[1]) : "";

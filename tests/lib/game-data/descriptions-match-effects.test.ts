@@ -24,6 +24,24 @@ describe("card descriptions vs effects", () => {
     expect(card?.descriptionLines).toContain("Deal 1–6 Random damage");
   });
 
+  it("rejects a repeated damage line when the second hit has a different amount", () => {
+    const issues = validateCardDescriptionParity({
+      id: "mismatched-repeat",
+      title: "Mismatched Repeat",
+      descriptionLines: ["Deal 1 Freeze damage, twice"],
+      art: "",
+      cost: 1,
+      effects: [
+        { kind: "damage", damageType: "freeze", amount: 1 },
+        { kind: "damage", damageType: "freeze", amount: 2 },
+      ],
+    });
+
+    expect(issues.map((issue) => issue.message)).toContain(
+      '"Deal 1 Freeze damage, twice" does not match authored amount 2',
+    );
+  });
+
   it.each(cardLibrary.map((c) => [c.id, c.title] as const))("%s — descriptions match effects", (_id, title) => {
     const card = cardLibrary.find((c) => c.title === title)!;
     const issues = validateCardDescriptionParity(card);

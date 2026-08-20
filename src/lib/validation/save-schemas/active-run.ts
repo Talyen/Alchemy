@@ -34,7 +34,7 @@ const MysteryEffectSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("gainGold"), amount: z.number() }),
   z.object({ kind: z.literal("loseGold"), amount: z.number() }),
   z.object({ kind: z.literal("gainXP"), keyword: z.string(), amount: z.number() }),
-  z.object({ kind: z.literal("removeCard"), mode: z.enum(["random", "choose"]) }),
+  z.object({ kind: z.literal("removeCard") }),
   z.object({ kind: z.literal("gainTrinket"), trinketId: z.string() }),
   z.object({ kind: z.literal("gainRandomTrinket"), fromIds: z.array(z.string()).optional() }),
   z.object({ kind: z.literal("gainGeneratedGear"), baseItemId: z.string() }),
@@ -241,7 +241,6 @@ export const ActiveRunDataSchema = z
   .object({
     characterId: CharacterIdSchema,
     runDeck: z.array(BattleCardSchema),
-    runGold: z.number().int().nonnegative().catch(0),
     runPlayerHealth: z.number().int().nonnegative().catch(0),
     runMaxHealth: z.number().int().positive().catch(30),
     runMetaMaxHealth: z.number().int().nonnegative().catch(0).default(0),

@@ -31,6 +31,7 @@ import {
   applyDrawCardsEffect,
   applyNextHitCritEffect,
   applyPlayNextCardTwiceEffect,
+  applyNextHitPoisonEffect,
 } from "./utility-handlers";
 import type { EffectHandler } from "./handler-types";
 
@@ -62,6 +63,7 @@ export const EFFECT_APPLY_BY_KIND = {
   "random-damage": applyRandomDamageEffect,
   "next-hit-crit": applyNextHitCritEffect,
   "play-next-card-twice": applyPlayNextCardTwiceEffect,
+  "next-hit-poison": applyNextHitPoisonEffect,
 } satisfies Record<RegisteredEffectKind, EffectHandler>;
 
 export function hasEffectApplyHandler(kind: BattleCardEffectKind): kind is RegisteredEffectKind {

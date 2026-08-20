@@ -37,3 +37,8 @@ export const applyPlayNextCardTwiceEffect: EffectHandler = (state, _card, effect
   if (effect.kind !== "play-next-card-twice") return state;
   return { ...state, flags: { ...state.flags, playNextCardTwice: true } };
 };
+
+export const applyNextHitPoisonEffect: EffectHandler = (state, _card, effect) => {
+  if (effect.kind !== "next-hit-poison") return state;
+  return { ...state, flags: { ...state.flags, nextHitPoison: true } };
+};

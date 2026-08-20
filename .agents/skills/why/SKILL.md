@@ -19,22 +19,18 @@ Auto-triggers when:
 ## Execution Steps
 
 1. **Search Subsystem Documentation**:
-   - Check matching docs in `docs/`:
-     - Architecture & ports: `docs/ARCHITECTURE.md`
-     - Workflows (saves, cards, materials, motion): `docs/WORKFLOWS.md`
-     - Battle glossary & constants: `docs/REFERENCE.md`
-     - Persistence contracts: `src/features/alchemy/shared/storage/MIGRATIONS.md`
-     - Audits: `docs/Audits/README.md`
+   - Open the matching heading or checklist section first; expand only when the contract crosses a boundary:
+     - Use the ownership table in `AGENTS.md` to select one owner (`ARCHITECTURE.md`, `WORKFLOWS.md`, `REFERENCE.md`, `MIGRATIONS.md`, or a cited audit), not all five.
 
 2. **Inspect Unit Test Assertions**:
-   - Search Vitest unit tests for assertions that document expected behavior:
+   - Search the nearest subsystem tests for assertions that document expected behavior; cap the first pass to matching symbols and filenames:
      ```bash
      rg "describe|it\(" tests/lib/battle/
      rg "describe|it\(" tests/features/alchemy/
      ```
 
-3. **Query Git Commit Rationale**:
-   - Inspect commit history for target lines to recover rationale:
+3. **Query Git Commit Rationale (only when ambiguous)**:
+   - If current docs and assertions do not answer the question, inspect at most the latest five relevant commits or a bounded line history:
      ```bash
      git log -n 5 -L <start>,<end>:<filepath>
      ```

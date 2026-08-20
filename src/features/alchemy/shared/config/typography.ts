@@ -4,13 +4,14 @@
 // Do not add it to every className — chips, nowrap titles, and long documents skip it.
 
 /** Screen title (ScreenHeader). */
-export const screenTitleClass = "text-2xl font-black tracking-[0.15em] text-amber-100/75 uppercase sm:text-3xl";
+export const screenTitleClass =
+  "text-2xl font-black tracking-[0.15em] text-amber-100/75 uppercase text-balance sm:text-3xl";
 
 /** Screen supporting description (ScreenDescription). */
 export const screenDescriptionClass = "text-lg leading-relaxed text-balance";
 
 /** Section / mode / panel subheaders. */
-export const sectionTitleClass = "text-xl font-bold text-amber-100/75";
+export const sectionTitleClass = "text-xl font-bold text-amber-100/75 text-balance";
 
 /** Body / narrative copy. */
 export const bodyTextClass = "text-lg leading-relaxed text-muted-foreground text-balance";
@@ -19,7 +20,7 @@ export const bodyTextClass = "text-lg leading-relaxed text-muted-foreground text
 export const controlLabelClass = "text-lg font-semibold text-foreground";
 
 /** Settings / options helper copy under a control label. */
-export const controlDescriptionClass = "mt-1 text-lg text-muted-foreground";
+export const controlDescriptionClass = "mt-1 text-lg text-muted-foreground text-balance";
 
 /** Tooltip title. */
 export const tooltipHeaderClass = "mb-1 font-sans text-sm font-bold text-foreground text-balance sm:text-base";

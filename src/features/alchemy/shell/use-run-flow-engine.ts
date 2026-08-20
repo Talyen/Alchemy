@@ -48,8 +48,6 @@ export function useRunFlowEngine({
   const pendingContentSystemType = nav.pendingContentSystemType;
 
   const destinations = useRunDestinationWiring({
-    run: orchestration,
-    hasActiveBattle,
     navigateTo,
     clearCardHover,
   });
@@ -94,7 +92,6 @@ export function useRunFlowEngine({
       },
       commitWildwoodVictory: wildwood.commitWildwoodVictory,
       beginMysteryEvent: mystery.beginMysteryEvent,
-      clearMysteryCardChoices: mystery.clearCardChoices,
       wildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
       clearCardHover,
     };
@@ -108,7 +105,6 @@ export function useRunFlowEngine({
     wildwood.commitWildwoodVictory,
     wildwood.handleWildwoodRewardComplete,
     mystery.beginMysteryEvent,
-    mystery.clearCardChoices,
     clearCardHover,
   ]);
 

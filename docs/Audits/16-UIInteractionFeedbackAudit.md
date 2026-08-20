@@ -33,8 +33,6 @@ This audit checks interactive clarity for a desktop web/Electron game, including
 
 ## Known signals
 
-Optional discovery aids — choose your own probes.
-
 - **Pointer capture pairs:** `setPointerCapture` / `releasePointerCapture` / drag / modal / portal surfaces.
 - **Missing release / cleanup:** `setPointerCapture` without matching release on cancel/unmount paths.
 - **Mode conflicts:** overlapping drag + tooltip + modal handlers on the same surface.

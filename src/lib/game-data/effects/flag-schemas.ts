@@ -15,3 +15,10 @@ export const playNextCardTwiceEffectDefinition = {
     kind: z.literal("play-next-card-twice"),
   }),
 } satisfies EffectKindDefinition<"play-next-card-twice">;
+
+export const nextHitPoisonEffectDefinition = {
+  kind: "next-hit-poison",
+  schema: z.object({
+    kind: z.literal("next-hit-poison"),
+  }),
+} satisfies EffectKindDefinition<"next-hit-poison">;

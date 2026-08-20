@@ -39,4 +39,18 @@ describe("effect dispatch registry", () => {
       }).success,
     ).toBe(true);
   });
+
+  it("preserves conditional effect fields used by saved cards", () => {
+    expect(
+      BattleCardEffectSchema.parse({
+        kind: "damage",
+        damageType: "burn",
+        amount: 2,
+        doubleIfEnemyBurning: true,
+      }),
+    ).toMatchObject({ doubleIfEnemyBurning: true });
+    expect(BattleCardEffectSchema.parse({ kind: "restore-mana", amount: 1, ifEnemyFrozen: true })).toMatchObject({
+      ifEnemyFrozen: true,
+    });
+  });
 });

@@ -9,6 +9,7 @@ import {
   summarizePlaywrightFile,
   summarizePlaywrightReport,
 } from "../../scripts/ci-summarize-playwright.mjs";
+import { writeCurrentRun } from "../../scripts/lib/current-run.mjs";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -48,6 +49,21 @@ describe("ci-summarize-vitest", () => {
 
   it("reports missing files without throwing", () => {
     expect(summarizeVitestFile(path.join(os.tmpdir(), "missing-vitest.json"))).toContain("No report");
+  });
+
+  it("caps the default Vitest failure list", () => {
+    const testResults = Array.from({ length: 6 }, (_, index) => ({
+      name: `tests/failure-${index}.test.ts`,
+      assertionResults: [{ fullName: `failure ${index}`, status: "failed", failureMessages: ["Error: failure"] }],
+    }));
+    const summary = summarizeVitestReport({
+      numTotalTests: 6,
+      numPassedTests: 0,
+      numFailedTests: 6,
+      numPendingTests: 0,
+      testResults,
+    });
+    expect(summary.failures).toHaveLength(5);
   });
 });
 
@@ -100,5 +116,54 @@ describe("ci-summarize-playwright", () => {
       }),
     );
     expect(summarizePlaywrightFile(reportPath)).toContain("Passed: 1");
+  });
+
+  it("caps failure details while retaining the total count", () => {
+    const suites = Array.from({ length: 4 }, (_, index) => ({
+      specs: [
+        {
+          title: `failure ${index}`,
+          file: `tests/failure-${index}.spec.ts`,
+          tests: [{ status: "unexpected", results: [{ errors: [{ message: "TimeoutError: click\nstack" }] }] }],
+        },
+      ],
+    }));
+    const summary = summarizePlaywrightReport(
+      { stats: { expected: 0, unexpected: 4, flaky: 0, skipped: 0 }, suites },
+      { maxFailures: 2 },
+    );
+
+    expect(summary.unexpected).toBe(4);
+    expect(summary.failures).toHaveLength(2);
+    expect(formatPlaywrightSummaryMarkdown(summary)).toContain("and 2 more");
+  });
+});
+
+describe("current-run pointer", () => {
+  it("writes a compact machine-readable and markdown pointer", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "current-run-"));
+    try {
+      const paths = writeCurrentRun({
+        rootDir: root,
+        commit: "abc123",
+        status: "failed",
+        command: "vitest",
+        artifacts: ["reports/vitest-timings.json"],
+        summary: "First failure is in the save route.",
+      });
+      const json = JSON.parse(fs.readFileSync(paths.jsonPath, "utf8"));
+      const markdown = fs.readFileSync(paths.markdownPath, "utf8");
+
+      expect(json).toMatchObject({
+        commit: "abc123",
+        status: "failed",
+        command: "vitest",
+        artifacts: ["reports/vitest-timings.json"],
+      });
+      expect(markdown).toContain("reports/vitest-timings.json");
+      expect(markdown).toContain("First failure is in the save route.");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 });

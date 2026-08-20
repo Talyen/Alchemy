@@ -105,7 +105,8 @@ jobs:
             playwright-report/
             test-results/
             reports/playwright-results.json
-          retention-days: 3
+            reports/current-run.*
+          retention-days: 7
 
   ship-gate-full:
     name: Ship gate (full)

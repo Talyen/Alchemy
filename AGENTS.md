@@ -40,11 +40,24 @@ Each document owns the concern named below. When another document needs the same
 | FPS / hitch profiling (on-demand)                 | [docs/PERFORMANCE.md](./docs/PERFORMANCE.md)                         |
 | Steam release process                             | [docs/RELEASE.md](./docs/RELEASE.md)                                 |
 | Audits                                            | [docs/Audits/README.md](./docs/Audits/README.md)                     |
+| In-flight execution plans                         | [docs/Plans/README.md](./docs/Plans/README.md)                       |
+| UI folder placement (`ui-store` exception)        | [shared/ui/README.md](./src/features/alchemy/shared/ui/README.md)    |
+| Card effect handler layout                        | [BATTLE_HANDLERS.md](./src/lib/game-data/effects/BATTLE_HANDLERS.md) |
+
+### Read scope
+
+- Read the owner heading first (`rg -n '^## ' <doc>`); expand only across a documented ownership boundary.
+- Search the touched path or named symbol. Whole-tree enumeration is for explicitly repository-wide audits only.
+- Keep evidence opt-in: `Raw Assets/**`, `public/Music/**`, `public/sounds/**`, `src/assets/optimized/**`, `reports/**`, `dist/**`, `release-desktop/**`, `playwright-report/**`, `test-results/**`, `coverage/**`, `**/node_modules/**`, lockfiles, generated files, and release notes.
+- Establish `git status --short` before diffs; dirty work is in-flight and unrelated paths stay out of context.
+- This is the portable repo policy for Codex, Antigravity, OpenCode, and other harnesses; do not depend on harness-specific ignore files.
 
 ## Verification
 
 - Prefer an E2E-verifiable user flow when possible, with focused tests for implementation detail.
-- Verify with the path-scoped gates for the touched area in [CONTRIBUTING.md § What to run when you change…](./CONTRIBUTING.md#what-to-run-when-you-change). Automated skills (`architect` for port/store specs, `blast-radius` for port/store boundaries, `unslop` for change discipline/comment pruning, `why` for intent recovery, `verifier` for localized test routing and pre-push gates) auto-trigger based on touched paths. Full pre-push and main-gate rules live in [CONTRIBUTING.md § Before you push](./CONTRIBUTING.md#before-you-push).
+- Verification uses `npm run verify:changed -- --diff` (explicit paths and `--plan` narrow or preview it); the router owns commands, deduplication, and required static/unit/E2E checks. Escalate one flow with `--e2e <route>` or use `--full`; `--verbose-plan` is opt-in for full argv. Full gates: [CONTRIBUTING.md § Before you push](./CONTRIBUTING.md#before-you-push).
+- Phases: pre-edit public contract and owner docs; post-edit route plus focused tests; handoff static gates and exact verification report. Skills are optional accelerators; cited audits use `run-audits` and are not ordinary prerequisites.
+- Active execution plans live only under `docs/Plans/`; scaffold with `npm run new:plan -- <PlanName>`, validate with `npm run docs:check`, and delete the plan at completion. Final handoff uses `npm run docs:check:final` (or `--keep-plan` only when the unfinished work is intentionally passed forward).
 - Treat lint failures, test failures, flaky tests, and React Compiler ESLint errors (`react-compiler/react-compiler`) as real quality problems, not noise.
 - Animation and canary specs use raw `@playwright/test`; never `enableFastMode` / `fastBattle`. See [CONTRIBUTING.md § E2E helpers](./CONTRIBUTING.md#e2e-helpers).
 
@@ -80,6 +93,7 @@ Each document owns the concern named below. When another document needs the same
 - Node + npm versions: see `package.json` `engines`; install via `npm ci`. First-time Playwright setup: `npx playwright install chromium`.
 - Run the game with `npm run dev` (Vite, port 5173 with `strictPort`; override via `ALCHEMY_DEV_PORT`). Commands: [REFERENCE](./docs/REFERENCE.md#environment--commands).
 - `predev` and `prebuild` run `scripts/prepare-assets.mjs` (and version sync on prebuild); the first build is slow. Escape hatch: `ALCHEMY_SKIP_ASSETS=1` (CI/Vercel/release skip because optimized outputs are committed; see [REFERENCE § Build commands](./docs/REFERENCE.md#build-commands-decision-tree)).
+- Standard test, timing-test, build, dev, and performance boundaries prune local diagnostics older than one day. Keep only the current failure context by default; use `npm run prune:transient -- --dry-run` to inspect candidates before an explicit cleanup.
 - Don't chain `cd` into commands — set your tool's working-directory option instead.
 - Windows / PowerShell 7 shell details: [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push).
 
@@ -87,6 +101,7 @@ Each document owns the concern named below. When another document needs the same
 
 - Battle warnings use the `[Enemy Turn]` prefix.
 - On E2E failure, diagnostic markdown lives under `test-results/failures/` (console/runtime logs + DOM snapshot). Flakiness analysis: `npm run test:e2e:audit`.
+- Start with [failure-first triage](./docs/REFERENCE.md#failure-first-triage) and `reports/current-run.md`; open raw logs, traces, or snapshots only after the digest names the artifact.
 
 ## Reporting
 

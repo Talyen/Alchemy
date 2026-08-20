@@ -65,7 +65,7 @@ const mysteryApplyHandlers: {
     context.awardMysteryXP(context.draft, effect.keyword, effect.amount);
     return { followUp: null };
   },
-  removeCard: (effect, context) => removeMysteryCard(effect.mode, context),
+  removeCard: (_effect, context) => removeMysteryCard(context),
   gainTrinket: (effect, context) => gainMysteryTrinket(effect.trinketId, context),
   gainRandomTrinket: (effect, context) => gainRandomMysteryTrinket(effect, context),
   gainGeneratedGear: (effect, context) => gainMysteryGeneratedGear(effect.baseItemId, context),
@@ -145,9 +145,7 @@ function loseMysteryGold(amount: number, context: MysteryEffectContext) {
   return { followUp: null };
 }
 
-function removeMysteryCard(mode: "random" | "choose", context: MysteryEffectContext) {
-  // Choice-based removal is handled by the screen picker; this helper only mutates immediately.
-  if (mode !== "random") return { followUp: null };
+function removeMysteryCard(context: MysteryEffectContext) {
   mutate(context.setRunDeck, context.draft, (p) => {
     if (p.length === 0) return p;
     const idx = Math.floor(context.rng() * p.length);

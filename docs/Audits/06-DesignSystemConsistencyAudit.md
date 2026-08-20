@@ -40,8 +40,6 @@ Prefer existing shadcn/Radix wrappers, CVA variants, and Tailwind theme variable
 
 ## Known signals
 
-Optional discovery aids — choose your own probes.
-
 - **Hardcoded dimensions:** arbitrary Tailwind size literals (`w-[…]`, `h-[…]`, `p-[…]`, `m-[…]`, `text-[…]`) beside existing tokens.
 - **Raw colors (TS/TSX):** hex / `rgb(` / `hsl(` bypassing CSS variables.
 - **Raw colors (CSS):** same patterns under `src/styles` / `src/index.css`.

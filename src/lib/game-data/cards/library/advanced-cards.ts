@@ -43,10 +43,10 @@ export const advancedCards = [
   {
     id: "mana-shield",
     title: "Mana Shield",
-    descriptionLines: ["Gain 1 Block per Mana Crystal"],
+    descriptionLines: ["Convert each of your Mana into 5 Block"],
     art: assetRefs.manaShield,
     cost: 1,
-    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 }],
+    effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 }],
   },
   {
     id: "prayer",
@@ -176,5 +176,13 @@ export const advancedCards = [
     art: assetRefs.crystalBulwark,
     cost: 1,
     effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 }],
+  },
+  {
+    id: "combustion",
+    title: "Combustion",
+    descriptionLines: ["Deal 2 Burn damage", "Doubled if the enemy was already Burning"],
+    art: assetRefs.combustion,
+    cost: 1,
+    effects: [{ kind: "damage", damageType: "burn", amount: 2, doubleIfEnemyBurning: true }],
   },
 ] satisfies BattleCard[];

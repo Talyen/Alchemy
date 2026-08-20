@@ -38,7 +38,7 @@ export default defineConfig({
     ? "line"
     : isCi
       ? [["github"], ["line"], ["html"], ["json", { outputFile: playwrightJsonOut }]]
-      : "html",
+      : [["line"], ["html", { open: "never" }]],
   use: {
     baseURL: "http://127.0.0.1:4173",
     trace: isPrepush ? "off" : "retain-on-failure",

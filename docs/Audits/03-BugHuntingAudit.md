@@ -35,8 +35,6 @@ This is an **opportunistic defect hunt**. When a hit is clearly classified by a 
 
 ## Known signals
 
-Optional discovery aids — choose your own probes.
-
 - **Collection bounds:** array index access in `src/lib/battle`, `src/lib/gear`, and stores without length/empty guards.
 - **Rapid tap & double-trigger:** `onClick` / pointer handlers for reward claim, shop buy, craft, start battle that lack disable/`isProcessing` guards during async work — if the gap is pure idempotency of grants, prefer `02-BehaviorHardeningAudit.md`.
 - **Leaked timers & listeners:** `setInterval` / `setTimeout` / `addEventListener` without matching clear/remove on unmount (`useEffect` cleanup) — route lifetime issues to `01-AsyncRaceAudit.md` when that is the bulk of the win.

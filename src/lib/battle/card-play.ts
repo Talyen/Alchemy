@@ -120,7 +120,10 @@ function executeCardPlayState(
     mana: Math.max(0, state.mana - effectiveCost),
   };
 
-  nextState = applyCardEffects(nextState, card, combatTexts);
+  nextState = applyCardEffects(nextState, card, combatTexts, {
+    manaAtStart: state.mana,
+    enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
+  });
   if (playTwice) nextState = applyCardEffects(nextState, card, combatTexts);
   if (consumeCrit) nextState = { ...nextState, flags: { ...nextState.flags, nextHitCrit: false } };
 

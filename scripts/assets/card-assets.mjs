@@ -137,5 +137,7 @@ export const cardAssets = [
   { source: "Cards/Shadowstep.jpeg", target: "shadowstep.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Sniff Out.jpeg", target: "sniff-out.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Stargaze.jpeg", target: "stargaze.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Combustion.jpeg", target: "combustion.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Ray of Frost.jpeg", target: "ray-of-frost.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Placeholder Card.png", target: "placeholder-card.webp", width: cardWidth, quality: 60 },
 ];

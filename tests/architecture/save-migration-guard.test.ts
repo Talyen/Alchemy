@@ -54,7 +54,7 @@ describe("save migration guard", () => {
   it("preserves campaign progress fields in current-schema fixtures", () => {
     const campaign = normalizeSaveData(currentSchemaCampaignSave());
     expect(campaign.gold).toBe(42);
-    expect(campaign.activeRun?.runGold).toBe(0);
+    expect(campaign.activeRun).not.toHaveProperty("runGold");
     expect(campaign.talentXP.physical).toBe(18);
 
     const midCombat = normalizeSaveData(currentSchemaMidCombatTrinketSave());

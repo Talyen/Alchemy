@@ -27,9 +27,12 @@ function checkDamageParity(card: BattleCard): ContentValidationIssue | null {
       };
     }
   } else {
-    const dealLines = descriptionLines.filter(
-      (line) => line.startsWith("Deal ") && !line.includes("equal to") && !line.toLowerCase().includes("random"),
-    ).length;
+    const dealLines = descriptionLines.reduce((count, line) => {
+      if (!line.startsWith("Deal ") || line.includes("equal to") || line.toLowerCase().includes("random")) {
+        return count;
+      }
+      return count + (line.includes("twice") ? 2 : 1);
+    }, 0);
     const damageEffects = countByKind(effects, "damage") + countByKind(effects, "random-damage");
     if (dealLines !== damageEffects) {
       return {

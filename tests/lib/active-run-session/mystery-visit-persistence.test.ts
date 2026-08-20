@@ -70,11 +70,16 @@ describe("hydrateMysteryVisit", () => {
     expect(hydrated.mysteryChosenChoice).toEqual({ label: "Browse", effects: [{ kind: "chooseCard" }] });
   });
 
+  it("hydrates a pending legacy card removal", () => {
+    const hydrated = hydrateMysteryVisit({ ...ANCIENT_ALTAR_MYSTERY_VISIT, pendingRemoval: true });
+
+    expect(hydrated.mysteryPendingRemoval).toBe(true);
+  });
+
   it("applies persisted trinket substitutions onto the pool event", () => {
     const hydrated = hydrateMysteryVisit({
       eventId: "enchanted-spring",
       chosenChoice: null,
-      pendingRemoval: false,
       cardChoices: null,
       grantedTrinketIds: [],
       grantedGear: [],
@@ -93,7 +98,6 @@ describe("hydrateMysteryVisit", () => {
       {
         eventId: "overgrown-temple",
         chosenChoice: null,
-        pendingRemoval: false,
         cardChoices: null,
         grantedTrinketIds: [],
         grantedGear: [],

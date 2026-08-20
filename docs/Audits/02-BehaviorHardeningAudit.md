@@ -38,8 +38,6 @@ Prioritize P0–P1 by impact.
 
 ## Known signals
 
-Optional discovery aids — choose your own probes.
-
 - **Swallowed async errors:** empty `catch` / no-op `.catch` on save, hydrate, resume, or battle outcome paths.
 - **Persistence & hydrate seams:** `persist` / `hydrate` / `resume` / `localStorage` / `parseActiveRun` / `snapshotRun` / `restoreRun` call sites.
 - **Schema & session owners:** `src/lib/validation/save-schemas/`, `src/lib/active-run-session/`, `shared/storage/`

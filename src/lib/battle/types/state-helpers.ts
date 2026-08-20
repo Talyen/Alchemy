@@ -31,6 +31,7 @@ const FIRST_TIME_FLAG_USED_VALUES: { [K in FirstTimeFlagKey]: CombatFlags[K] } =
 const NON_CARD_INACTIVE_FLAGS = {
   nextHitCrit: false,
   playNextCardTwice: false,
+  nextHitPoison: false,
 } as const satisfies Partial<CombatFlags>;
 
 const PRESERVED_NON_CARD_FLAG_VALUES = {

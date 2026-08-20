@@ -26,7 +26,7 @@ This audit owns two distinct concerns; a run may scope to either.
 | A local path forces unrelated docs/scripts into the working set                          | Routine work pays avoidable reading or execution cost  |
 | Routine successful commands emit repetitive output, or failures require opening raw logs | Useful signal is buried in avoidable tool output       |
 
-**Not this audit:** import legality → ESLint boundaries; wrong semantic ownership → `14-StateGravityOwnershipAudit.md`; local ceremony or file/folder mass without recurring co-touch → `11-InelegantSlopAudit.md`; duplicate UI → `09-DuplicateFeatureSurfaceAudit.md`; unit/E2E portfolio → `17-UnitTestAudit.md` / `10-E2ETestQualityAudit.md`; reachable dual paths / shims → `08-DualPathRetentionAudit.md`. Single-use export cleanup without fan-out evidence → `05-DeadCodeAudit.md`.
+**Not this audit:** sibling routing — [README.md § Ownership](README.md#ownership). Single-use export cleanup without fan-out evidence → `05-DeadCodeAudit.md`.
 
 ## Hard stops
 
@@ -39,7 +39,7 @@ This audit owns two distinct concerns; a run may scope to either.
 
 ## Remedy preference
 
-Prefer delete duplicated policy or commands and link consumers to the existing source of truth. Narrow verification routing or docs preread using evidence from representative paths. Restore repeated configuration or behavior to its existing semantic owner and remove old copies. A bounded move or split may ship when it restores an established owner, removes the old surface, and makes the selected concern independently reviewable; uncertain ownership or new architecture remains a proposal per [README.md](README.md). Parameterize or add a seam only for at least three current uses, two demonstrated drifting implementations, or an enforced boundary.
+Prefer delete duplicated policy or commands and link consumers to the existing source of truth. Narrow verification routing or docs preread using evidence from representative paths. Restore repeated configuration or behavior to its existing semantic owner and remove old copies. A bounded move or split may ship when it restores an established owner, removes the old surface, and makes the selected concern independently reviewable. Remedy size and abstraction bar: [README.md](README.md).
 
 ## Domain rules
 
@@ -55,7 +55,7 @@ When madge (via `npm run audit:all`) reports a cycle, legal remedies include inv
 
 ## Known signals
 
-Optional discovery aids — choose your own probes. See also the [measurable sweep map](README.md#measurable-sweep-map-npm-run-auditall).
+See also the [measurable sweep map](README.md#measurable-sweep-map-npm-run-auditall).
 
 - **Change amplification:** `node scripts/audit-change-amplification.mjs` (defaults `--since=3 months ago`, subjects matching `^feat|^fix|^balance`). Empty stats usually mean the since-window or subject filters matched nothing. On repeat runs, prefer `--since` the last dispositioned audit pass over the fixed default, and skip clusters already recorded in [decisions.md](decisions.md).
 - **Authored co-change clusters:** capped history samples excluding `dist/`, assets, and generated files; confirm in diffs.

@@ -6,7 +6,7 @@ import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
-import type { EnemyStatusId } from "@/lib/game-data";
+import { harmfulPlayerStatusIds, type EnemyStatusId } from "@/lib/game-data";
 import { dealPlayerTypedHit } from "../player-typed-hit";
 
 function resolveEnemyStatusCcTrigger(
@@ -20,16 +20,27 @@ function resolveEnemyStatusCcTrigger(
   return nextState;
 }
 
-export const applyPlayerStatusEffectHandler: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
+export const applyPlayerStatusEffectHandler: EffectHandler = (
+  state,
+  _card,
+  effect,
+  potionMult,
+  combatTexts,
+  context,
+) => {
   if (effect.kind !== "player-status") return state;
   let adjustedAmount = effect.amount;
-  if (effect.perManaCrystal) {
+  let nextState = state;
+  if (effect.convertCurrentMana) {
+    adjustedAmount = (context?.manaAtStart ?? state.mana) * effect.convertCurrentMana;
+    nextState = { ...state, mana: 0 };
+  } else if (effect.perManaCrystal) {
     adjustedAmount = effect.perManaCrystal * state.maxMana;
   }
   if (potionMult !== 1) {
     adjustedAmount = Math.round(adjustedAmount * potionMult);
   }
-  return applyPlayerStatusEffect(state, { ...effect, amount: adjustedAmount }, combatTexts);
+  return applyPlayerStatusEffect(nextState, { ...effect, amount: adjustedAmount }, combatTexts);
 };
 
 export const applyEnemyStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
@@ -46,7 +57,7 @@ export const applyEnemyStatusEffect: EffectHandler = (state, _card, effect, _pot
 
 export const applyRemoveHarmfulStatusEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "remove-harmful-status") return state;
-  const adjustedRemove = Math.round(effect.amount * potionMult);
+  const adjustedRemove = effect.removeAll ? harmfulPlayerStatusIds.length : Math.round(effect.amount * potionMult);
   return removeHarmfulPlayerStatuses(state, adjustedRemove, combatTexts);
 };
 

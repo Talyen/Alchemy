@@ -167,13 +167,13 @@ interface VitestSummary {
 declare module "*/ci-summarize-vitest.mjs" {
   export function summarizeVitestReport(report: unknown, options?: { maxFailures?: number }): VitestSummary;
   export function formatVitestSummaryMarkdown(summary: VitestSummary): string;
-  export function summarizeVitestFile(reportPath: string): VitestSummary;
+  export function summarizeVitestFile(reportPath: string): string;
 }
 
 declare module "../../scripts/ci-summarize-vitest.mjs" {
   export function summarizeVitestReport(report: unknown, options?: { maxFailures?: number }): VitestSummary;
   export function formatVitestSummaryMarkdown(summary: VitestSummary): string;
-  export function summarizeVitestFile(reportPath: string): VitestSummary;
+  export function summarizeVitestFile(reportPath: string): string;
 }
 
 interface PlaywrightFailure {
@@ -194,11 +194,175 @@ interface PlaywrightSummary {
 declare module "*/ci-summarize-playwright.mjs" {
   export function summarizePlaywrightReport(report: unknown, options?: { maxFailures?: number }): PlaywrightSummary;
   export function formatPlaywrightSummaryMarkdown(summary: PlaywrightSummary): string;
-  export function summarizePlaywrightFile(reportPath: string): PlaywrightSummary;
+  export function summarizePlaywrightFile(reportPath: string): string;
 }
 
 declare module "../../scripts/ci-summarize-playwright.mjs" {
   export function summarizePlaywrightReport(report: unknown, options?: { maxFailures?: number }): PlaywrightSummary;
   export function formatPlaywrightSummaryMarkdown(summary: PlaywrightSummary): string;
-  export function summarizePlaywrightFile(reportPath: string): PlaywrightSummary;
+  export function summarizePlaywrightFile(reportPath: string): string;
+}
+
+interface PlanMetadataResult {
+  metadata: Record<string, string>;
+  errors: string[];
+  dates?: Record<string, Date>;
+}
+
+declare module "../../scripts/check-docs.mjs" {
+  export function parsePlanMetadata(source: string): PlanMetadataResult;
+  export function checkPlans(options?: { final?: boolean; keepPlan?: boolean; today?: Date }): {
+    failures: string[];
+    warnings: string[];
+    activePlans: number;
+  };
+}
+
+declare module "../../scripts/new-plan.mjs" {
+  export function safePlanName(value: string): string;
+  export function planTemplate(name: string, created: string, expires: string): string;
+}
+
+declare module "../../scripts/prune-transient-artifacts.mjs" {
+  export function parsePruneArgs(argv: string[]): { days: number; dryRun: boolean };
+  export function pruneTransientArtifacts(options?: {
+    days?: number;
+    dryRun?: boolean;
+    now?: number;
+    rootDir?: string;
+    transientDirs?: readonly string[];
+  }): { removed: Array<{ path: string; bytes: number }>; bytes: number };
+}
+
+declare module "../../scripts/lib/compact-output.mjs" {
+  export function firstOutputLine(output: string): string;
+  export function tailOutput(output: string, maxChars?: number): string;
+}
+
+interface ContextMeasurement {
+  docs: Array<{ path: string; section: string | null; bytes: number }>;
+  contextBytes: number;
+  changedPaths: string[];
+  routes: string[];
+  verificationCommands: number;
+  deduplicatedTestPaths: number;
+  artifacts: Array<{ path: string; bytes: number }>;
+  outputChars: number;
+}
+
+declare module "../../scripts/measure-agent-context.mjs" {
+  export function measureContext(options?: {
+    paths?: string[];
+    docs?: string[];
+    artifacts?: string[];
+    outputFiles?: string[];
+  }): ContextMeasurement;
+}
+
+interface VerificationRoute {
+  id: string;
+  patterns: string[];
+  commands: string[];
+}
+
+interface VerificationCommand {
+  key: string;
+  label: string;
+  command: string;
+  args: string[];
+}
+
+declare module "../../scripts/verify-changed.mjs" {
+  export function resolveRoutes(paths: string[]): VerificationRoute[];
+  export function resolvePlan(
+    paths: string[],
+    options?: { e2e?: boolean | string; includeE2E?: boolean; full?: boolean },
+  ): { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] };
+  export function formatPlan(
+    plan: { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] },
+    options?: { verbosePlan?: boolean },
+  ): string;
+}
+
+declare module "../../scripts/lib/current-run.mjs" {
+  export function writeCurrentRun(options: {
+    rootDir: string;
+    status: string;
+    command: string;
+    artifacts?: string[];
+    summary?: string;
+    commit?: string | null;
+  }): { jsonPath: string; markdownPath: string };
+}
+
+declare module "../../scripts/check-ci-routing.mjs" {
+  export function checkCiRouting(source: string): string[];
+  export function checkDiagnosticRetention(sources: Record<string, string>): string[];
+}
+
+declare module "*/check-docs.mjs" {
+  export function parsePlanMetadata(source: string): PlanMetadataResult;
+  export function checkPlans(options?: { final?: boolean; keepPlan?: boolean; today?: Date }): {
+    failures: string[];
+    warnings: string[];
+    activePlans: number;
+  };
+}
+
+declare module "*/new-plan.mjs" {
+  export function safePlanName(value: string): string;
+  export function planTemplate(name: string, created: string, expires: string): string;
+}
+
+declare module "*/prune-transient-artifacts.mjs" {
+  export function parsePruneArgs(argv: string[]): { days: number; dryRun: boolean };
+  export function pruneTransientArtifacts(options?: {
+    days?: number;
+    dryRun?: boolean;
+    now?: number;
+    rootDir?: string;
+    transientDirs?: readonly string[];
+  }): { removed: Array<{ path: string; bytes: number }>; bytes: number };
+}
+
+declare module "*/compact-output.mjs" {
+  export function firstOutputLine(output: string): string;
+  export function tailOutput(output: string, maxChars?: number): string;
+}
+
+declare module "*/measure-agent-context.mjs" {
+  export function measureContext(options?: {
+    paths?: string[];
+    docs?: string[];
+    artifacts?: string[];
+    outputFiles?: string[];
+  }): ContextMeasurement;
+}
+
+declare module "*/verify-changed.mjs" {
+  export function resolveRoutes(paths: string[]): VerificationRoute[];
+  export function resolvePlan(
+    paths: string[],
+    options?: { e2e?: boolean | string; includeE2E?: boolean; full?: boolean },
+  ): { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] };
+  export function formatPlan(
+    plan: { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] },
+    options?: { verbosePlan?: boolean },
+  ): string;
+}
+
+declare module "*/current-run.mjs" {
+  export function writeCurrentRun(options: {
+    rootDir: string;
+    status: string;
+    command: string;
+    artifacts?: string[];
+    summary?: string;
+    commit?: string | null;
+  }): { jsonPath: string; markdownPath: string };
+}
+
+declare module "*/check-ci-routing.mjs" {
+  export function checkCiRouting(source: string): string[];
+  export function checkDiagnosticRetention(sources: Record<string, string>): string[];
 }

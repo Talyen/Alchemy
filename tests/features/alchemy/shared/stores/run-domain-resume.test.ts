@@ -3,7 +3,7 @@ import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { createEmptyRewardState, type ActiveRunData } from "@/lib/active-run-session";
 import { restoreRun, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { getCombinedRunGold, getCurrentRunPhase } from "../../../../helpers/run-session-assertions";
+import { getCurrentRunPhase } from "../../../../helpers/run-session-assertions";
 import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { cardLibrary, getStartingDeck } from "@/lib/game-data";
@@ -50,8 +50,8 @@ describe("session facade API", () => {
     expect(session.phase).toBe("meta");
   });
 
-  it("getCombinedRunGold reads the shared purse", () => {
-    expect(getCombinedRunGold()).toBe(40);
+  it("reads gold from the shared purse", () => {
+    expect(getRunSession(ROUTE_SCREENS.MENU).run.runGold).toBe(40);
   });
 
   it("getCurrentRunPhase reflects battle screen and hasActiveBattle", () => {
@@ -75,7 +75,6 @@ describe("session facade API", () => {
     expect(snapshot).toMatchObject({
       characterId: "knight",
       runDeck: [],
-      runGold: 0,
       runPlayerHealth: 18,
       runMaxHealth: 24,
       contentSystemType: "campaign",
@@ -340,7 +339,6 @@ describe("session facade API", () => {
     expect(getNavigationStoreView().screen).toBe("mystery");
     expect(getRunSessionStoreView().mysteryEvent?.id).toBe("ancient-altar");
     expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Take the Offering");
-    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
   });
 
   it("restores a mid-visit mystery card picker", () => {
@@ -353,7 +351,6 @@ describe("session facade API", () => {
       mysteryVisit: {
         eventId: "ancient-altar",
         chosenChoice: { label: "Browse", effects: [{ kind: "chooseCard" }] },
-        pendingRemoval: true,
         cardChoices: [slash],
         grantedTrinketIds: ["bone-charm"],
         grantedGear: [],
@@ -366,11 +363,33 @@ describe("session facade API", () => {
 
     expect(getNavigationStoreView().screen).toBe("mystery");
     expect(getRunSessionStoreView().mysteryEvent?.id).toBe("ancient-altar");
-    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(true);
     expect(getRunSessionStoreView().mysteryCardChoices).toEqual([slash]);
     expect(getRunSessionStoreView().mysteryGrantedTrinketIds).toEqual(["bone-charm"]);
     expect(getRunSessionStoreView().mysteryGrantedGearInstances).toEqual([]);
     expect(getRunSessionStoreView().mysteryChosenCardId).toBe("slash");
+  });
+
+  it("restores a pending legacy mystery card removal", () => {
+    const activeRun: ActiveRunData = {
+      ...snapshotRun(),
+      currentScreen: "mystery",
+      interruptedFlow: { kind: "none" },
+      mysteryVisit: {
+        eventId: "ancient-altar",
+        chosenChoice: { label: "Offer", effects: [{ kind: "removeCard" }] },
+        pendingRemoval: true,
+        cardChoices: null,
+        grantedTrinketIds: [],
+        grantedGear: [],
+        chosenCardId: null,
+        resolvedTrinketIds: [],
+      },
+    };
+
+    restoreRun(activeRun, {}, {});
+
+    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(true);
+    expect(snapshotRun().mysteryVisit?.pendingRemoval).toBe(true);
   });
 
   it("rolls a mystery event for a legacy mystery screen with no visit", () => {

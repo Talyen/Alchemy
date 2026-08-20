@@ -23,7 +23,11 @@ import {
 } from "./mana-health-schemas";
 import { summonCompanionEffectDefinition, buffCompanionEffectDefinition } from "./companion-schemas";
 import { gainGoldEffectDefinition, wishEffectDefinition, drawCardsEffectDefinition } from "./utility-schemas";
-import { nextHitCritEffectDefinition, playNextCardTwiceEffectDefinition } from "./flag-schemas";
+import {
+  nextHitCritEffectDefinition,
+  playNextCardTwiceEffectDefinition,
+  nextHitPoisonEffectDefinition,
+} from "./flag-schemas";
 
 /** Registry entries with Zod schemas (all kinds except chance, which is lazy). */
 export const TEMPLATE_EFFECT_DEFINITIONS = [
@@ -50,4 +54,5 @@ export const TEMPLATE_EFFECT_DEFINITIONS = [
   randomDamageEffectDefinition,
   nextHitCritEffectDefinition,
   playNextCardTwiceEffectDefinition,
+  nextHitPoisonEffectDefinition,
 ] as const;

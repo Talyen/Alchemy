@@ -7,6 +7,7 @@ export const restoreManaEffectDefinition = {
   schema: z.object({
     kind: z.literal("restore-mana"),
     amount: z.number(),
+    ifEnemyFrozen: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"restore-mana">;
 

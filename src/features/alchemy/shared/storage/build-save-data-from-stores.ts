@@ -11,7 +11,7 @@ export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null):
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,
     ...encodeAlchemyPersistenceFields(),
-    activeRun: activeRun ? { ...activeRun, runGold: 0 } : null,
+    activeRun,
     parkedRuns: readParkedRuns(),
     runRecency: readRunRecency(),
     lastSavedAt: Date.now(),

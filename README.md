@@ -27,23 +27,15 @@ npm run dev
 
 ## Key Scripts
 
-| Command                 | Action                                                                         |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| `npm run dev`           | Start Vite dev server                                                          |
-| `npm run build`         | Production build (Vite; typecheck is a separate gate)                          |
-| `npm run preview`       | Preview the production build locally                                           |
-| `npm test`              | Run Vitest unit tests                                                          |
-| `npm run test:coverage` | Run Vitest with coverage                                                       |
-| `npm run test:e2e`      | Run Playwright end-to-end tests                                                |
-| `npm run perf`          | Battle/layout FPS harness — see [`docs/PERFORMANCE.md`](./docs/PERFORMANCE.md) |
-| `npm run lint`          | Lint all source files                                                          |
-| `npm run format`        | Format with Prettier                                                           |
-| `npm run release`       | Bump version + generate changelog + create git tag                             |
-| `npm run balance:sim`   | Headless balance sim; opens findings summary (`reports/balance-findings.html`) |
-| `npm run clean`         | Remove local test/report/.vite artifacts                                       |
-| `npm run clean:all`     | clean + builds + stop stale E2E preview ports                                  |
+| Command            | Action                               |
+| ------------------ | ------------------------------------ |
+| `npm run dev`      | Start Vite dev server                |
+| `npm test`         | Run Vitest unit tests                |
+| `npm run test:e2e` | Run Playwright end-to-end tests      |
+| `npm run lint`     | Lint all source files                |
+| `npm run release`  | Bump version, changelog, and git tag |
 
-> Full command reference: [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Agent/coding rules: [`AGENTS.md`](./AGENTS.md).
+Full command catalog (build, desktop, gates, balance sim, perf, clean): [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Agent/coding rules: [`AGENTS.md`](./AGENTS.md).
 
 ## Desktop Build
 

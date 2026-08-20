@@ -8,17 +8,6 @@ import {
 import { makeTestBattleState, makeTestCard } from "../../../../fixtures/battle";
 import { makeEmptyHandBattle, makeOpenBattle, playableCard } from "./open-battle-fixture";
 
-function cheapCard(uid: number) {
-  return {
-    ...makeTestCard({
-      id: "slash",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    }),
-    uid,
-  };
-}
-
 describe("isBattlePlayInputBusy", () => {
   it("is busy during a play commit or a card transfer", () => {
     expect(isBattlePlayInputBusy({ cardPlayInProgress: false, cardTransferInProgress: false })).toBe(false);
@@ -71,7 +60,7 @@ describe("findFirstPlayableHandCard", () => {
       }),
       uid: 1,
     };
-    const cheap = cheapCard(2);
+    const cheap = { ...playableCard, uid: 2 };
     const state = makeTestBattleState({
       hand: [expensive, cheap],
       mana: 1,
@@ -88,7 +77,10 @@ describe("driveAutoplay", () => {
   });
 
   it("plays cards in hand order until disabled", async () => {
-    const playable = [cheapCard(1), cheapCard(2)];
+    const playable = [
+      { ...playableCard, uid: 1 },
+      { ...playableCard, uid: 2 },
+    ];
     const played: number[] = [];
     const controller = new AbortController();
 
@@ -113,7 +105,7 @@ describe("driveAutoplay", () => {
   });
 
   it("retries after a rejected play instead of stopping", async () => {
-    const playable = cheapCard(1);
+    const playable = { ...playableCard, uid: 1 };
     let attempts = 0;
     const played: number[] = [];
     const controller = new AbortController();
@@ -139,7 +131,10 @@ describe("driveAutoplay", () => {
 
   it("waits the post-play delay before playing the next card", async () => {
     vi.useFakeTimers();
-    const playable = [cheapCard(1), cheapCard(2)];
+    const playable = [
+      { ...playableCard, uid: 1 },
+      { ...playableCard, uid: 2 },
+    ];
     const played: number[] = [];
     const controller = new AbortController();
 
@@ -187,7 +182,7 @@ describe("driveAutoplay", () => {
       wakeRef,
       isEnabled: () => played.length < 1,
       isBlocked: () => blocked,
-      findPlayableCard: () => ({ card: cheapCard(1), index: 0 }),
+      findPlayableCard: () => ({ card: { ...playableCard, uid: 1 }, index: 0 }),
       playCard: (card) => {
         played.push(card.uid ?? 0);
         return true;

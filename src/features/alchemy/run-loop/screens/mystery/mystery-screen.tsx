@@ -1,26 +1,21 @@
-// Renders the mystery event UI, supporting narrative introduction, option picking,
-// card choice/removal overlays, and the final reward summary.
-// Depends on global run and screen Zustand stores, audio jingles, and sub-views in parts.tsx.
-// Consumed by the screen routing system to display the Mystery event node.
 import type { ReactNode } from "react";
 import { playUISound } from "@/lib/audio";
 import type { BattleCard, TalentXP, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
+import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 
 import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/shared-ui";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { RemoveCardPanel } from "../../../shared/ui/remove-card-panel";
 
+import { CardChoicePicker } from "./mystery-deck-pickers";
+import { MysteryRewardSummary } from "./mystery-reward-summary";
+import { MysteryEventIntro } from "./mystery-event-intro";
 import {
-  CardChoicePicker,
-  MysteryRewardSummary,
-  MysteryEventIntro,
-  choiceOffersCardSelection,
-  choiceRequiresCardRemoval,
   choiceHasDisplayableSummary,
+  choiceOffersCardSelection,
   hasPositiveMysteryEffect,
-} from "./parts";
-import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
+} from "./mystery-choice-utils";
 
 export function MysteryScreen({
   event,
@@ -61,13 +56,14 @@ export function MysteryScreen({
 }) {
   function handlePick(choice: MysteryChoice) {
     onChoose(choice);
-    if (
-      !choiceOffersCardSelection(choice) &&
-      !choiceRequiresCardRemoval(choice) &&
-      hasPositiveMysteryEffect(choice.effects)
-    ) {
+    if (!choiceOffersCardSelection(choice) && hasPositiveMysteryEffect(choice.effects)) {
       playUISound("talentUnlock");
     }
+  }
+
+  function handleCardChoiceConfirm(cardId: string) {
+    onChooseCard(cardId);
+    playUISound("talentUnlock");
   }
 
   function handleRemoveConfirm(index: number) {
@@ -77,11 +73,6 @@ export function MysteryScreen({
     } else {
       onContinue();
     }
-  }
-
-  function handleCardChoiceConfirm(cardId: string) {
-    onChooseCard(cardId);
-    playUISound("talentUnlock");
   }
 
   const phase = mysteryCardChoices

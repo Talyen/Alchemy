@@ -2,7 +2,6 @@ import {
   addTalentXP,
   filterKeywordsForTalentXP,
   getCardKeywords,
-  getGoldMultiplier,
   type BattleCard,
   type CharacterId,
   type KeywordId,
@@ -23,7 +22,6 @@ import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-st
 /** Active-run scoped progression actions. Permanent progression lives on the aggregate's runProfile region. */
 export interface ProgressActions {
   setRunDeck: (action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])) => void;
-  setRunGold: (action: number | ((prev: number) => number)) => void;
   setRunPlayerHealth: (action: number | ((prev: number) => number)) => void;
   setRunMaxHealth: (action: number | ((prev: number) => number)) => void;
   setRoomsEncountered: (action: number | ((prev: number) => number)) => void;
@@ -52,7 +50,6 @@ export interface ProgressActions {
   ) => void;
   setCharacter: (selectedId: CharacterId) => void;
   resetProgress: () => void;
-  addRunGold: (amount: number) => void;
   nextRunRandom: (stream: RunRngStream) => number;
   resetRunXP: () => void;
   awardCardXP: (card: BattleCard) => void;
@@ -64,13 +61,12 @@ export interface ProgressActions {
   hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void;
 }
 
-/** Active-run progression actions (deck, gold, HP, acts, run tallies, RNG). */
+/** Active-run progression actions (deck, HP, acts, run tallies, RNG). */
 export function defineProgressActions(set: ImmerSet<RunDomainDataState>): ProgressActions {
   const setRunField = defineFieldSetter(set, (state) => state.activeRun);
 
   return {
     setRunDeck: setRunField("runDeck"),
-    setRunGold: setRunField("runGold"),
     setRunPlayerHealth: setRunField("runPlayerHealth"),
     setRunMaxHealth: setRunField("runMaxHealth"),
     setRoomsEncountered: setRunField("roomsEncountered"),
@@ -99,12 +95,6 @@ export function defineProgressActions(set: ImmerSet<RunDomainDataState>): Progre
           runTalentXP: {},
         };
         state.initialized = true;
-      }),
-
-    addRunGold: (amount) =>
-      set((state) => {
-        const mult = getGoldMultiplier(state.activeRun.characterId, state.activeRun.selectedDifficulty);
-        state.activeRun.runGold += Math.floor(amount * mult);
       }),
 
     nextRunRandom: (stream) => {

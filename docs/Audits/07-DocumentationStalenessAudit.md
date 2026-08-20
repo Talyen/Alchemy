@@ -33,8 +33,6 @@ A missing step or invariant is Critical/Moderate only when the document claims t
 
 ## Known signals
 
-Optional discovery aids — choose your own probes.
-
 - **Code snippet drift:** fenced `ts`/`tsx` blocks in `docs/`, `AGENTS.md`, `CONTRIBUTING.md`, READMEs whose type names and APIs no longer exist.
 - **Script/link contract:** `tests/scripts/documentation-contract.test.ts` continuously checks local Markdown targets, heading anchors, and documented `npm run` names; inspect flags and factual meaning manually.
 - **Architecture & directory mismatches:** claims in `ARCHITECTURE.md` vs on-disk `src/lib`, `src/features/alchemy`, `desktop/`, `tests/`.

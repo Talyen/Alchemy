@@ -1,4 +1,4 @@
-// Shared heal chrome used by campfire and wildwood recovery.
+// Shared heal chrome used by campfire rest.
 import { Progress } from "@/components/ui/progress";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { CAMPFIRE_ANIMATION_MS } from "@/lib/game-constants";

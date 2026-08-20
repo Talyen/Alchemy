@@ -39,7 +39,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     startBoss,
     commitWildwoodVictory,
     beginMysteryEvent = () => {},
-    clearMysteryCardChoices = () => {},
     wildwoodRewardComplete,
     onLabyrinthFailNode = () => {},
     onLabyrinthClearNode = () => {},
@@ -80,7 +79,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
       }),
     commitWildwoodVictory: commitWildwoodVictory ?? onCommitWildwoodVictory,
     beginMysteryEvent,
-    clearMysteryCardChoices,
     wildwoodRewardComplete: wildwoodRewardComplete ?? onWildwoodRewardComplete,
     clearCardHover: overrides.clearCardHover ?? (() => {}),
   };

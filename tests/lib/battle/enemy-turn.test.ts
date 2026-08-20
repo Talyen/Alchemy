@@ -5,7 +5,11 @@ import { isPlayerDefeated } from "@/lib/battle/types";
 import { defaultTalentEffects } from "@/lib/battle";
 import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 import type { BestiaryEntry } from "@/lib/game-data";
-import { defaultCcState, defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
+import {
+  defaultCcState,
+  defaultEnemyStatusValues,
+  defaultPlayerStatusValues,
+} from "../../fixtures/default-battle-state";
 import { companionLibrary } from "@/lib/game-data";
 
 function baseEnemy(enemyId: string): BestiaryEntry {
@@ -21,15 +25,7 @@ function baseEnemy(enemyId: string): BestiaryEntry {
   };
 }
 
-const emptyStatuses: EnemyStatusValues = {
-  burn: 0,
-  poison: 0,
-  bleed: 0,
-  freeze: 0,
-  stun: 0,
-  burnBonus: 0,
-  freezeBonus: 0,
-};
+const emptyStatuses: EnemyStatusValues = defaultEnemyStatusValues();
 const emptyPlayerStatuses = defaultPlayerStatusValues();
 
 function battleState(overrides: Partial<BattleState> = {}): BattleState {
@@ -232,6 +228,23 @@ describe("endPlayerTurn — tick order", () => {
     const result = endPlayerTurn(state);
     expect(result.enemyPerformedAttack).toBe(false);
     expect(result.state.enemyHealth).toBeLessThanOrEqual(0);
+  });
+
+  it("resolves on-attack Bleed after the attack and ends the action when it defeats the enemy", () => {
+    const state = battleState({
+      enemyHealth: 2,
+      enemyStatuses: { ...emptyStatuses, onAttackBleed: 2 },
+      enemyRegeneration: 10,
+      playerHealth: 30,
+      playerStatuses: { ...emptyPlayerStatuses, burn: 5 },
+    });
+
+    const result = endPlayerTurn(state);
+
+    expect(result.enemyPerformedAttack).toBe(true);
+    expect(result.state.playerHealth).toBe(20);
+    expect(result.state.enemyHealth).toBe(0);
+    expect(result.state.enemyStatuses.onAttackBleed).toBe(0);
   });
 
   it("applies player DoT only after enemy attack", () => {

@@ -42,7 +42,7 @@ export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
       ? {
           eventId: parsed.mysteryVisit.eventId,
           chosenChoice: hydratePersistedMysteryChoice(parsed.mysteryVisit.chosenChoice as MysteryChoice | null),
-          pendingRemoval: parsed.mysteryVisit.pendingRemoval,
+          ...(parsed.mysteryVisit.pendingRemoval ? { pendingRemoval: true } : {}),
           cardChoices: parsed.mysteryVisit.cardChoices?.map(hydrateParsedCard) ?? null,
           grantedTrinketIds: parsed.mysteryVisit.grantedTrinketIds,
           grantedGear: parsed.mysteryVisit.grantedGear,

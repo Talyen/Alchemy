@@ -73,6 +73,90 @@ describe("playBattleCardResolved", () => {
     expect(result.state.mana).toBe(4);
   });
 
+  it("converts only available Mana when Mana Shield is discounted", () => {
+    const card = makeTestCard({
+      id: "mana-shield",
+      cost: 1,
+      effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 }],
+    });
+    const base = makeState({ mana: 3, hand: [card] });
+    const state = {
+      ...base,
+      flags: { ...base.flags, nextCardCostReduction: 1 },
+    };
+
+    const result = playBattleCardResolved(state, card.id, 0);
+
+    expect(result.state.mana).toBe(0);
+    expect(result.state.playerStatuses.block).toBe(15);
+  });
+
+  it("restores Mana only when Ray of Frost causes a new Freeze", () => {
+    const card = makeTestCard({
+      id: "ray-of-frost",
+      cost: 1,
+      effects: [
+        { kind: "damage", damageType: "freeze", amount: 1 },
+        { kind: "damage", damageType: "freeze", amount: 1 },
+        { kind: "restore-mana", amount: 1, ifEnemyFrozen: true },
+      ],
+    });
+    const freshTarget = makeState({ mana: 1, enemyHealth: 4, enemyMaxHealth: 4, hand: [card] });
+    const alreadyFrozen = makeState({
+      mana: 1,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0, cooldown: 2 },
+      hand: [card],
+    });
+
+    expect(playBattleCardResolved(freshTarget, card.id, 0).state.mana).toBe(1);
+    expect(playBattleCardResolved(alreadyFrozen, card.id, 0).state.mana).toBe(0);
+  });
+
+  it("converts only the next actual damage effect to Poison", () => {
+    const card = makeTestCard({
+      id: "two-hits",
+      cost: 1,
+      effects: [
+        { kind: "damage", damageType: "physical", amount: 2 },
+        { kind: "damage", damageType: "physical", amount: 2 },
+      ],
+    });
+    const base = makeState({ hand: [card] });
+    const state = { ...base, flags: { ...base.flags, nextHitPoison: true } };
+
+    const result = playBattleCardResolved(state, card.id, 0);
+
+    expect(result.state.enemyStatuses.poison).toBe(2);
+    expect(result.state.flags.nextHitPoison).toBe(false);
+    expect(result.combatTexts.filter((text) => text.kind === "damage").map((text) => text.stat)).toEqual([
+      "poison",
+      "physical",
+    ]);
+  });
+
+  it("keeps next-hit Poison armed when a chance card deals no damage", () => {
+    const card = makeTestCard({
+      id: "uncertain-hit",
+      cost: 1,
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
+          failureEffects: [{ kind: "heal", amount: 1 }],
+        },
+      ],
+    });
+    const base = makeState({ hand: [card], rng: () => 0.9 });
+    const state = { ...base, flags: { ...base.flags, nextHitPoison: true } };
+
+    const result = playBattleCardResolved(state, card.id, 0);
+
+    expect(result.state.flags.nextHitPoison).toBe(true);
+  });
+
   it("uses corrupted card effect values mechanically", () => {
     const card = makeTestCard({
       id: "slash",

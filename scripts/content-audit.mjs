@@ -3,6 +3,7 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
+import { writeCurrentRun } from "./lib/current-run.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const reportsDir = path.join(rootDir, "reports");
@@ -46,6 +47,14 @@ try {
   await mkdir(reportsDir, { recursive: true });
   await writeFile(jsonPath, `${JSON.stringify(result, null, 2)}\n`);
   await writeFile(markdownPath, renderMarkdown(result));
+
+  writeCurrentRun({
+    rootDir,
+    status: result.errors.length > 0 ? "failed" : "passed",
+    command: "npm run content:audit",
+    artifacts: ["reports/content-audit-report.md", "reports/content-audit-report.json"],
+    summary: `Content audit: ${result.errors.length} error(s), ${result.warnings.length} warning(s).`,
+  });
 
   console.log(`Content audit: ${result.errors.length} error(s), ${result.warnings.length} warning(s)`);
   console.log(`Wrote ${path.relative(rootDir, markdownPath)} and ${path.relative(rootDir, jsonPath)}`);

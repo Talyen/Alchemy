@@ -45,7 +45,7 @@ For a schema bump from `N` to `N + 1`:
 4. Update Zod schemas in `src/lib/validation/save-schemas/` and `defaults.ts`.
 5. Add a fixture to `CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION` in `tests/fixtures/legacy-saves.ts` (CI fails if any source version `LAUNCH … N-1` is missing).
 6. If the change touches `activeRun` nested state, add or extend a scenario in `MIGRATION_SCENARIO_FIXTURES` and assert gameplay outcomes in `save-migration-guard.test.ts`.
-7. Run `npm run check:ship` — tests use `normalizeSaveData` → `SaveDataSchema.parse` (production path).
+7. Run `npm run check:ship` — tests use `normalizeSaveData` → `SaveDataSchema.parse` (test wrapper around the same Zod schema). Production load uses `safeParseWithErrors(SaveDataSchema, …)` in `io.ts`.
 
 ## `saveSchemaVersion` vs `contentVersion`
 
@@ -101,6 +101,10 @@ Active runs persist a seed and counters for named run-outcome streams. This is a
 
 Shop inventories (`shopState`, `alchemistState`, `trinketShopState`, `equipmentShopState`) persist only while `currentScreen` is that shop. Leaving a shop clears in-memory offerings in the same command as destination advance, so autosave and session state agree. No schema bump: absent shop fields already default to empty.
 
+## Mystery visit (`activeRun.mysteryVisit`)
+
+Mystery visit blobs persist only while `currentScreen` is mystery. New choices use random card removal and do not set `pendingRemoval`. A loaded visit with legacy `pendingRemoval: true` keeps that flag until the player finishes the already-open picker; encode writes it only while unresolved so repeated saves cannot bypass the removal.
+
 ## Interrupted flow (`activeRun.interruptedFlow`)
 
 Discriminated union (`kind: none | primary-reward | companion-reward | destination`) that records which claim surface the run should resume on. Encode maps live session reward/companion/claim state into one arm; decode switches on `kind` with no legacy inference. Reward payloads live under `pending` on the reward arms; destination-only resume carries destinations and victory metadata on the destination arm. Pre-launch floor raise to schema 11 dropped the prior `resumePhase` + `destinationChoices` + top-level `pendingReward` triad.
@@ -113,4 +117,4 @@ Discriminated union (`kind: none | primary-reward | companion-reward | destinati
 
 `parkedRuns` (`Partial<Record<ContentSystemId, ActiveRunData>>`) and `runRecency` are additive save fields with empty defaults. Load migrates a singular `activeRun` in place and does not hydrate parked slots until that mode is resumed. A corrupt parked slot is dropped; it does not wipe the save.
 
-Gold is the profile purse (`gold`). On load, in-combat `activeCombat.battleState.gold` or a positive legacy `activeRun.runGold` is copied into `gold` when that is the live run's money; persisted `runGold` is then stored as 0. `runMetaMaxHealth` is additive (default 0, treated as `runMaxHealth` when missing) so combat HP bonuses survive a meta rebind.
+Gold is the profile purse (`gold`). On load, in-combat `activeCombat.battleState.gold` wins; otherwise a positive leftover `activeRun.runGold` is copied into `gold`. The current wire shape does not persist `activeRun.runGold`. `runMetaMaxHealth` is additive (default 0, treated as `runMaxHealth` when missing) so combat HP bonuses survive a meta rebind.

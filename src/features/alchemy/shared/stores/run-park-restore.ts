@@ -21,8 +21,7 @@ import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { omitParkedMode, removeRunRecency, touchRunRecency } from "./parked-runs";
 
 function encodeParkedSnapshot(draft: GameplayDraft): ActiveRunData {
-  const snapshot = encodeRunResumeSnapshot(getRunSessionFromState(draft, draft.run.navigation.screen));
-  return { ...snapshot, runGold: 0 };
+  return encodeRunResumeSnapshot(getRunSessionFromState(draft, draft.run.navigation.screen));
 }
 
 export function parkForegroundRunInDraft(draft: GameplayDraft): void {

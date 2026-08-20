@@ -5,54 +5,19 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { AlchemistShopScreen } from "@/features/alchemy/run-loop/screens/alchemist-shop-screen";
 import type { BattleCard } from "@/lib/game-data";
-import type { ReactNode } from "react";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
+import { installShopScreenIntersectionObserver } from "../../../../helpers/shop-screen-ui-mocks";
 
 beforeAll(() => {
-  class IntersectionObserverStub {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  }
-  vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
+  installShopScreenIntersectionObserver();
 });
 
-vi.mock("@/features/alchemy/shared/ui/shop-card-item", () => ({
-  PurchasableCardItem: () => <div>Potion offer</div>,
-  SelectableShopCard: ({ onSelect }: { onSelect: () => void }) => (
-    <button type="button" onClick={onSelect}>
-      Select potion
-    </button>
-  ),
-}));
-
-vi.mock("@/features/alchemy/shared/ui/card-selection-grid", () => ({
-  CardSelectionGrid: ({
-    items,
-    renderItem,
-  }: {
-    items: Array<{ card: BattleCard; index: number }>;
-    renderItem: (item: { card: BattleCard; index: number }) => ReactNode;
-  }) => (
-    <div>
-      {items.map((item) => (
-        <div key={item.index}>{renderItem(item)}</div>
-      ))}
-    </div>
-  ),
-}));
-
-vi.mock("@/features/alchemy/run-loop/screens/shop-browse-shell", () => ({
-  ShopBrowseShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  RefreshShopServiceButton: ({ label = "Refresh" }: { label?: string }) => <button type="button">{label}</button>,
-  ShopBrowseOfferings: ({ children, services }: { children: ReactNode; services: ReactNode }) => (
-    <div>
-      {services}
-      {children}
-    </div>
-  ),
-}));
-
+vi.mock("@/features/alchemy/shared/ui/shop-card-item", () => import("../../../../helpers/shop-screen-ui-mocks"));
+vi.mock("@/features/alchemy/shared/ui/card-selection-grid", () => import("../../../../helpers/shop-screen-ui-mocks"));
+vi.mock(
+  "@/features/alchemy/run-loop/screens/shop-browse-shell",
+  () => import("../../../../helpers/shop-screen-ui-mocks"),
+);
 vi.mock("@/lib/game-data/cards/card-pools", () => ({
   isStandardPotionCard: () => true,
 }));

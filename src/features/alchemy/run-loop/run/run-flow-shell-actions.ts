@@ -17,7 +17,6 @@ export interface RunFlowShellActions {
   /** Update the Wildwood reward handoff in the active command draft. */
   commitWildwoodVictory: (draft: GameplayDraft, result: VictoryRewardsResult) => void;
   beginMysteryEvent: (onRenderedScreenCommit?: () => void) => void;
-  clearMysteryCardChoices: () => void;
   wildwoodRewardComplete: (onRenderedScreenCommit?: () => void) => void;
   clearCardHover: () => void;
 }

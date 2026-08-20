@@ -28,11 +28,6 @@ describe("parseActiveRun", () => {
     expect(parseActiveRun(makeRunCandidate({ characterId: "invalid-char" }))).toBeNull();
   });
 
-  it("rejects retired characterId aliases", () => {
-    expect(parseActiveRun(makeRunCandidate({ characterId: "sorcerer" }))).toBeNull();
-    expect(parseActiveRun(makeRunCandidate({ characterId: "warden" }))).toBeNull();
-  });
-
   it("returns null when run shape is missing required fields", () => {
     const data = makeRunCandidate();
     delete data.runDeck;
@@ -43,7 +38,6 @@ describe("parseActiveRun", () => {
     const result = parseActiveRun(makeRunCandidate());
     expect(result).not.toBeNull();
     expect(result!.characterId).toBe("knight");
-    expect(result!.runGold).toBe(10);
     expect(result!.runPlayerHealth).toBe(25);
     expect(result!.runMaxHealth).toBe(30);
     expect(result!.roomsEncountered).toBe(2);

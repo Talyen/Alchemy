@@ -5,24 +5,19 @@ description: Change Discipline & Token Hygiene Auditor. Auto-triggers post-edit 
 
 # Change Discipline & Unslop Audit (Alchemy)
 
-Audit and clean up code diffs against Alchemy's Change Discipline, token hygiene, and React/TypeScript standards. Ensure diffs are minimal, maintainable, token-efficient, and free of speculative AI boilerplate.
+Audit and clean up code diffs against Alchemy's change discipline, token hygiene, and React/TypeScript standards. Ensure diffs are minimal, maintainable, token-efficient, and free of speculative AI boilerplate.
 
 ## Trigger Scenarios
 
 Auto-triggers when:
 
-- Authoring or modifying `.ts` or `.tsx` files.
-- Code edits or new React components/hooks have been generated or written.
-- Reviewing diffs prior to localized test verification or handoff gates.
+- Authoring or modifying React components/hooks, shared stores/ports, persistence contracts, or other public TypeScript boundaries.
+- Reviewing a bounded diff prior to localized test verification or handoff gates. Do not inspect unrelated dirty work.
 
 ## Execution Steps
 
 1. **Inspect Diff for AI Anti-Patterns**:
-   - Review active diff (`git diff HEAD`) and enforce Alchemy UI & architectural rules:
-     - **Tailwind Class Concatenation**: Ensure conditional styles use `cn(...)` from `@/lib/utils`. No string template literals in `className`.
-     - **Component Props & Functions**: Use plain function components with explicit `Props` types (`function MyComponent(props: Props)`), **never** `React.FC`.
-     - **State & Memoization Discipline**: Initialize cosmetic randomness lazily via `useState(() => ...)`. Avoid speculative `useMemo` for cheap calculations.
-     - **Pure / Impure Separation**: Keep pure logic out of screens/components and side effects out of pure modules.
+   - Review only changed paths (`git diff -- <path>`, plus explicit untracked files). Enforce [AGENTS.md § UI](../../../AGENTS.md#ui) and [AGENTS.md § Architectural invariants](../../../AGENTS.md#architectural-invariants) on that bounded diff (including `cn()`, no `React.FC`, lazy `useState(() => …)` for cosmetic RNG, and pure/impure separation).
 
 2. **Audit TSDoc Comments & Eliminate Comment Chatter**:
    - Strip TSDoc comments that restate self-documenting TypeScript signatures (e.g. `/** @param name - The name */`).
@@ -34,9 +29,10 @@ Auto-triggers when:
 3. **Verify Linting & Compiler Rules**:
    - Run ESLint and React Compiler checks:
      ```bash
-     npm run lint
+     npx eslint <changed-paths> --max-warnings=0
      ```
+   - Leave full-repository linting to the handoff verifier; do not spend an iteration scanning untouched files.
    - Address any React Compiler lint errors (`react-compiler/react-compiler`) as real quality problems.
 
 4. **Apply Minimal Diff Hierarchy**:
-   - Prefer smallest surface area: `delete → reuse → simplify locally → parameterize duplicate → add abstraction`.
+   - Prefer smallest surface area: `delete → reuse → simplify locally → parameterize duplicate → add abstraction` ([docs/Audits/README.md](../../../docs/Audits/README.md) right-size policy).

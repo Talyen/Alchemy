@@ -10,13 +10,9 @@ import {
   defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
 
-function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
-  return makeTestBattleState(overrides);
-}
-
 describe("applyDamageRiders", () => {
   it("applies enemy damage and forge decay on physical hit", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ forge: 3 }),
@@ -31,7 +27,7 @@ describe("applyDamageRiders", () => {
   });
 
   it("triggers forge stun rider when forge exceeds threshold", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ forge: 8 }),
@@ -49,7 +45,7 @@ describe("applyDamageRiders", () => {
 
 describe("damage riders via applyCardEffects", () => {
   it("armorToPhysicalDamage adds armor to physical damage", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ armor: 6 }),
@@ -67,7 +63,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("applies the full multiplied status gain", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyStatuses: defaultEnemyStatusValues({ poison: 4 }),
     });
     const card = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "poison", factor: 2 }] });
@@ -77,10 +73,10 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("applies forge on burn via talent forgeOnBurnDealt", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      talentEffects: { ...makeState().talentEffects, forgeOnBurnDealt: 3 },
+      talentEffects: { ...makeTestBattleState().talentEffects, forgeOnBurnDealt: 3 },
       rng: () => 0.5,
       deck: [],
       hand: [],
@@ -94,10 +90,10 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("applies forge on burn via gear forgeOnBurnDealt", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      gearEffects: { ...makeState().gearEffects, forgeOnBurnDealt: 2 },
+      gearEffects: { ...makeTestBattleState().gearEffects, forgeOnBurnDealt: 2 },
       rng: () => 0.5,
       deck: [],
       hand: [],
@@ -111,7 +107,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("archery play-twice ent ers the archery branch without recursion when chance is 0", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ forge: 0 }),
@@ -131,7 +127,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("nature leech heals player when natureLeechChance procs", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerHealth: 10,
@@ -150,11 +146,11 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("holy tithe combat text shows scaled gold when goldGainPercent gear is active", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       talentEffects: { ...defaultTalentEffects, holyGoldChance: 100 },
-      gearEffects: { ...makeState().gearEffects, goldGainPercent: 50 },
+      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
       rng: () => 0.5,
       deck: [],
       hand: [],
@@ -169,7 +165,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("burn stun rider applies stun when talent procs on burn damage", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       talentEffects: { ...defaultTalentEffects, burnStunChance: 100 },
@@ -186,7 +182,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("nature stun rider applies stun when Entangle procs", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       talentEffects: { ...defaultTalentEffects, natureStunChance: 100 },
@@ -203,7 +199,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("armorToNatureDamage adds armor to nature damage", () => {
-    const state = makeState({
+    const state = makeTestBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ armor: 4 }),

@@ -119,6 +119,7 @@ function resolveEnemyAction(
   nextState = processEnemyTraits(nextState, texts, options);
   nextState = processEnemyAttack(nextState, texts);
   const afterAttackState = nextState;
+  if (nextState.enemyHealth <= 0) return { state: nextState, texts, afterAttackState };
   nextState = tickPlayerStatuses(nextState, texts);
   nextState = processEncounterTraitActionDamage(nextState, texts);
   nextState = resolveDeathsDoorGraceExpiry(nextState);

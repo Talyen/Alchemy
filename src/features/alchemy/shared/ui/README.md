@@ -1,9 +1,7 @@
-# Game Feature UI Components
+# UI placement
 
-This directory contains game-specific, domain-aware UI components and reusable game widgets (e.g. cards, choice buttons, status icons, actor panels).
+Game-domain widgets live in `src/features/alchemy/shared/ui/`. Generic design-system primitives live in `src/components/ui/`.
 
-### Guidelines
-
-- **Game Domain Components**: Keep components in this folder dedicated to visual representations of game concepts (combats, map nodes, shop slots, decks, homestead upgrades).
-- **Zustand / State Boundaries**: Respect `eslint.config.js` boundaries. Reusable feature widgets here must receive their domain data via props rather than subscribing directly to run/battle/session stores (ui-store is allowed).
-- **Generic Styling**: Visual primitives (e.g., standard layout buttons, progress bars, switch inputs) should be used from `src/components/ui/` instead of recreating them here.
+- **`shared/ui`:** cards, choice buttons, status icons, actor panels, shop slots, map nodes. Receive run/battle/session data via **props**. Do not subscribe to those stores. **`ui-store` is allowed** (hover/shimmer and other presentation-only chrome).
+- **`src/components/ui`:** Tailwind/Radix primitives with no game logic. Must not import `@/features` or know run, battle, homestead, or alchemist stores. Pass domain state via props.
+- Shared chrome first; do not recreate `Button`, progress bars, or switches inside `shared/ui`.

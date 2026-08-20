@@ -15,7 +15,15 @@ export const COUNT_PARITY_RULES: CountParityRule[] = [
   },
   {
     label: "restore-mana",
-    countLines: (lines) => lines.filter((line) => line.startsWith("Restore ") && !line.includes("Health")).length,
+    countLines: (lines) =>
+      lines.filter(
+        (line) =>
+          (line.includes("Restore ") || line.includes("Gain ")) &&
+          line.includes("Mana") &&
+          !line.includes("Health") &&
+          !line.includes("Mana Crystal") &&
+          !line.includes("Maximum Mana"),
+      ).length,
     countEffects: (effects) => countByKind(effects, "restore-mana"),
   },
   {
@@ -87,7 +95,20 @@ export const COUNT_PARITY_RULES: CountParityRule[] = [
       ).length,
     countEffects: (effects) =>
       effects.filter(
-        (effect) => effect.kind === "player-status" && effect.status === "block" && effect.perManaCrystal === undefined,
+        (effect) =>
+          effect.kind === "player-status" &&
+          effect.status === "block" &&
+          effect.perManaCrystal === undefined &&
+          effect.convertCurrentMana === undefined,
+      ).length,
+  },
+  {
+    label: "convert-mana block",
+    countLines: (lines) => lines.filter((line) => line.includes("Convert each of your Mana into")).length,
+    countEffects: (effects) =>
+      effects.filter(
+        (effect) =>
+          effect.kind === "player-status" && effect.status === "block" && effect.convertCurrentMana !== undefined,
       ).length,
   },
   {

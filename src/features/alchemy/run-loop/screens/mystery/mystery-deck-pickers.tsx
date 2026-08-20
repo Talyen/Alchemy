@@ -1,51 +1,11 @@
-// Deck and library card pickers for mystery choose/remove effects.
-import { useState, type ReactNode } from "react";
+// Library card picker for mystery chooseCard follow-up.
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";
 
-import { CardSelectionGrid, type CardSelectionGridItem } from "../../../shared/ui/card-selection-grid";
+import { CardSelectionGrid } from "../../../shared/ui/card-selection-grid";
 import { SelectableShopCard } from "../../../shared/ui/shop-card-item";
 import { bodyTextClass } from "@/features/alchemy/shared/config";
-
-function DeckCardSelectionFlow({
-  intro,
-  items,
-  page,
-  onPageChange,
-  pageSize,
-  renderItem,
-  confirmLabel,
-  confirmDisabled,
-  onConfirm,
-}: {
-  intro: ReactNode;
-  items: CardSelectionGridItem[];
-  page: number;
-  onPageChange: (page: number) => void;
-  pageSize: number;
-  renderItem: (item: CardSelectionGridItem, visualIndex: number) => ReactNode;
-  confirmLabel: string;
-  confirmDisabled: boolean;
-  onConfirm: () => void;
-}) {
-  return (
-    <div className="space-y-6 text-center">
-      {intro}
-      <CardSelectionGrid
-        items={items}
-        page={page}
-        onPageChange={onPageChange}
-        pageSize={pageSize}
-        renderItem={renderItem}
-      />
-      <div className="flex justify-center gap-4">
-        <Button size="lg" disabled={confirmDisabled} onClick={onConfirm}>
-          {confirmLabel}
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[]; onSelect: (cardId: string) => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -53,28 +13,30 @@ export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[];
   const items = choices.map((card, index) => ({ card, index }));
 
   return (
-    <DeckCardSelectionFlow
-      intro={<p className={bodyTextClass}>Select one of the scrolls to add to your deck</p>}
-      items={items}
-      page={0}
-      onPageChange={() => {}}
-      pageSize={choices.length}
-      renderItem={({ card }, _visualIndex) => (
-        <SelectableShopCard
-          card={card}
-          chrome="deck"
-          isSelected={selectedId === card.id}
-          isHovered={hoveredId === card.id}
-          onHoverStart={() => setHoveredId(card.id)}
-          onHoverEnd={() => setHoveredId(null)}
-          onSelect={() => setSelectedId(card.id)}
-        />
-      )}
-      confirmLabel="Add Card"
-      confirmDisabled={selectedId === null}
-      onConfirm={() => {
-        if (selectedId !== null) onSelect(selectedId);
-      }}
-    />
+    <div className="space-y-6 text-center">
+      <p className={bodyTextClass}>Select one of the scrolls to add to your deck</p>
+      <CardSelectionGrid
+        items={items}
+        page={0}
+        onPageChange={() => {}}
+        pageSize={choices.length}
+        renderItem={({ card }) => (
+          <SelectableShopCard
+            card={card}
+            chrome="deck"
+            isSelected={selectedId === card.id}
+            isHovered={hoveredId === card.id}
+            onHoverStart={() => setHoveredId(card.id)}
+            onHoverEnd={() => setHoveredId(null)}
+            onSelect={() => setSelectedId(card.id)}
+          />
+        )}
+      />
+      <div className="flex justify-center gap-4">
+        <Button size="lg" disabled={selectedId === null} onClick={() => selectedId !== null && onSelect(selectedId)}>
+          Add Card
+        </Button>
+      </div>
+    </div>
   );
 }

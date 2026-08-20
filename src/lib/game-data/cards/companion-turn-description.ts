@@ -49,6 +49,7 @@ const COMPANION_TURN_LINE_FORMATTERS: {
   "repeat-over-turns": () => null,
   "next-hit-crit": () => null,
   "play-next-card-twice": () => null,
+  "next-hit-poison": () => null,
 };
 
 function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): string | null {

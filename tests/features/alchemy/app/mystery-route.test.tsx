@@ -8,7 +8,6 @@ const continueSpy = vi.fn();
 
 const mysteryScreenData = vi.hoisted(() => ({
   current: {
-    runDeck: [] as unknown[],
     mysteryEvent: null as MysteryEvent | null,
     mysteryCardChoices: null as unknown,
     mysteryGrantedTrinketIds: [] as string[],
@@ -16,6 +15,7 @@ const mysteryScreenData = vi.hoisted(() => ({
     mysteryChosenCardId: null as string | null,
     mysteryChosenChoice: null as unknown,
     mysteryPendingRemoval: false,
+    runDeck: [],
     runTalentXP: {},
     talentXP: {},
   },
@@ -71,7 +71,6 @@ afterEach(() => {
   cleanup();
   continueSpy.mockClear();
   mysteryScreenData.current = {
-    runDeck: [],
     mysteryEvent: null,
     mysteryCardChoices: null,
     mysteryGrantedTrinketIds: [],
@@ -79,6 +78,7 @@ afterEach(() => {
     mysteryChosenCardId: null,
     mysteryChosenChoice: null,
     mysteryPendingRemoval: false,
+    runDeck: [],
     runTalentXP: {},
     talentXP: {},
   };

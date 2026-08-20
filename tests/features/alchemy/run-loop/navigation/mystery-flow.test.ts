@@ -78,7 +78,7 @@ describe("applyMysteryEffect", () => {
     expect(gainXpContext.awardMysteryXP).toHaveBeenCalledWith(gainXpContext.draft, "physical", 1);
 
     const removeContext = minimalContext({ runDeck: [slash] });
-    applyMysteryEffect({ kind: "removeCard", mode: "random" }, removeContext);
+    applyMysteryEffect({ kind: "removeCard" }, removeContext);
     expect(removeContext.setRunDeck).toHaveBeenCalledOnce();
 
     const trinketContext = minimalContext();

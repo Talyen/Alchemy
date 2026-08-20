@@ -15,6 +15,7 @@ import { readGameplayState, useGameplayStateStore, type GameplayState } from "./
 type RunSessionRunSlice = ActiveRunReadView & {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
+  runGold: number;
 };
 
 type RunSessionTransientSlice = RunSessionFields;

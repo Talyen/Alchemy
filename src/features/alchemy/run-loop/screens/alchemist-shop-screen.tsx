@@ -117,7 +117,7 @@ export function AlchemistShopScreen({
         {mixedCard ? (
           <div className="flex flex-col items-center gap-6">
             <div>
-              <p className="text-lg font-semibold text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
+              <p className="text-lg font-semibold text-balance text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
             </div>
             <div className="flex flex-col items-center gap-3">
               <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>

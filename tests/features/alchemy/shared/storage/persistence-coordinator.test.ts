@@ -10,6 +10,8 @@ import { useGearStore, useProfileStore } from "../../../../helpers/gameplay-stor
 import { getRunProfileStore, useRunProfileStore } from "../../../../helpers/gameplay-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { createGameplayDraftActions } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
@@ -74,12 +76,13 @@ describe("persistence coordinator", () => {
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
     dispatchRunSessionCommand((draft) => {
+      setRunGold(draft, 42);
       const actions = createGameplayDraftActions(draft);
-      actions.runActions.setRunGold(42);
       actions.sessionActions.setHasActiveRun(true);
     });
 
     expect(listener).toHaveBeenCalledOnce();
+    expect(readRunProfile().gold).toBe(42);
     unsubscribe();
   });
 
@@ -88,8 +91,8 @@ describe("persistence coordinator", () => {
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
     dispatchRunSessionCommand((draft) => {
+      setRunGold(draft, 42);
       const actions = createGameplayDraftActions(draft);
-      actions.runActions.setRunGold(42);
       actions.sessionActions.setHasActiveRun(true);
       actions.profileActions.setDiscoveredCardIds(["slash"]);
       actions.gearActions.gearAddCurrencies({ voidstone: 1 });

@@ -119,12 +119,18 @@ function useTooltipContent(
     if (currentTier) {
       if (currentTier.benefitDescription) {
         for (const line of currentTier.benefitDescription.split("\n")) {
-          nodes.push(<div key={`b-${nodes.length}`}>{renderTextWithMaterials(line)}</div>);
+          nodes.push(
+            <div key={`b-${nodes.length}`} className="text-balance">
+              {renderTextWithMaterials(line)}
+            </div>,
+          );
         }
       }
       if (currentTier.nonCombatBenefitDescription) {
         nodes.push(
-          <div key={`b-${nodes.length}`}>{renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}</div>,
+          <div key={`b-${nodes.length}`} className="text-balance">
+            {renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}
+          </div>,
         );
       }
     }

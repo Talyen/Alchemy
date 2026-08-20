@@ -7,6 +7,8 @@ import {
   failNode,
   setCurrentNode,
   withCurrentNode,
+  canEnterLabyrinthNode,
+  withFailedNode as failPendingLabyrinthNode,
 } from "@/lib/content-systems/labyrinth/map-generation";
 
 const ROWS = 8;
@@ -330,3 +332,42 @@ function shortestBossPathNodeCount(map: ReturnType<typeof generateLabyrinthMap>)
   }
   return 0;
 }
+
+describe("canEnterLabyrinthNode on generated maps", () => {
+  it("rejects the opening entrance because it is the origin, not a chosen node", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    expect(map.grid[0][START_COL]!.type).toBe("entrance");
+    expect(canEnterLabyrinthNode(map, 0, START_COL)).toBe(false);
+  });
+
+  it("allows visible connected nodes", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const target = map.grid[0][START_COL]!.connections[0];
+    expect(canEnterLabyrinthNode(map, target.row, target.col)).toBe(true);
+  });
+
+  it("rejects later current nodes to avoid replaying an entered node", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const target = map.grid[0][START_COL]!.connections[0];
+    setCurrentNode(map, target.row, target.col);
+    expect(canEnterLabyrinthNode(map, target.row, target.col)).toBe(false);
+  });
+});
+
+describe("failPendingLabyrinthNode", () => {
+  it("marks the pending node failed and leaves only the entrance current", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const first = map.grid[0][START_COL]!.connections[0];
+    setCurrentNode(map, first.row, first.col);
+    const second = map.grid[first.row][first.col]!.connections.find((connection) => connection.row !== 0);
+    expect(second).toBeDefined();
+
+    const next = failPendingLabyrinthNode(map, second!);
+    const currentNodes = next.grid.flat().filter((node) => node?.state === "current");
+
+    expect(next.grid[second!.row][second!.col]!.state).toBe("failed");
+    expect(next.currentNode).toEqual({ row: 0, col: START_COL });
+    expect(currentNodes).toHaveLength(1);
+    expect(next.grid[0][START_COL]!.state).toBe("current");
+  });
+});

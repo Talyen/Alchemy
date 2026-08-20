@@ -13,6 +13,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { writeCurrentRun } from "./lib/current-run.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const METRIC_SCENARIOS = [
@@ -220,6 +221,13 @@ function runCompare(beforeDir, afterDir) {
     path.join(outDir, "results.json"),
     JSON.stringify({ before: beforePath, after: afterPath, generated: new Date().toISOString() }, null, 2),
   );
+  writeCurrentRun({
+    rootDir: root,
+    status: "passed",
+    command: "npm run perf:compare",
+    artifacts: [path.relative(root, outDir), path.relative(root, summaryPath)],
+    summary: "Performance comparison completed.",
+  });
   console.log(`Compare report written to ${summaryPath}`);
 }
 
@@ -299,6 +307,14 @@ function main() {
   if (fs.existsSync(summaryPath)) {
     console.log(`\nReport: ${summaryPath}`);
   }
+
+  writeCurrentRun({
+    rootDir: root,
+    status: result.status === 0 ? "passed" : "failed",
+    command: "npm run perf",
+    artifacts: [path.relative(root, outDir), path.relative(root, summaryPath)],
+    summary: result.status === 0 ? "Performance profiling completed." : "Performance profiling failed.",
+  });
 
   process.exit(result.status ?? 1);
 }

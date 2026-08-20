@@ -38,7 +38,7 @@ interface LookupProps {
 
 function renderFoundOrLost(effect: MysteryEffect, prefix: string) {
   return (
-    <div className="flex items-center justify-center gap-2 text-lg font-medium text-muted-foreground">
+    <div className="flex items-center justify-center gap-2 text-lg font-medium text-balance text-muted-foreground">
       {prefix}
       <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
     </div>
@@ -146,11 +146,11 @@ function MysteryRewardEffectItem({
     },
     gainRandomTrinket: () => {
       const boon = grantedTrinketId ? findTrinket(grantedTrinketId) : undefined;
-      if (!boon) return <p className={controlLabelClass}>Gained a random trinket for this run</p>;
+      if (!boon) return <p className={cn(controlLabelClass, "text-balance")}>Gained a random trinket for this run</p>;
       return <MysteryTrinketRewardItem boon={boon} />;
     },
     gainGeneratedGear: () => {
-      if (!grantedGear) return <p className={controlLabelClass}>Added Gear to your Armory</p>;
+      if (!grantedGear) return <p className={cn(controlLabelClass, "text-balance")}>Added Gear to your Armory</p>;
       return <MysteryGearRewardItem instance={grantedGear} />;
     },
     gainGold: () => renderFoundOrLost(effect, "Found"),

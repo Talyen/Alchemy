@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { MysteryChoice } from "@/lib/mystery";
 import {
   choiceOffersCardSelection,
-  choiceRequiresCardRemoval,
   hasPositiveMysteryEffect,
 } from "@/features/alchemy/run-loop/screens/mystery/mystery-choice-utils";
 
@@ -34,23 +33,5 @@ describe("choiceOffersCardSelection", () => {
       effects: [{ kind: "healHealth", amount: 5 }],
     };
     expect(choiceOffersCardSelection(choice)).toBe(false);
-  });
-});
-
-describe("choiceRequiresCardRemoval", () => {
-  it("returns true for choose-mode removeCard", () => {
-    const choice: MysteryChoice = {
-      label: "Remove",
-      effects: [{ kind: "removeCard", mode: "choose" }],
-    };
-    expect(choiceRequiresCardRemoval(choice)).toBe(true);
-  });
-
-  it("returns false for automatic removal", () => {
-    const choice: MysteryChoice = {
-      label: "Curse",
-      effects: [{ kind: "removeCard", mode: "random" }],
-    };
-    expect(choiceRequiresCardRemoval(choice)).toBe(false);
   });
 });

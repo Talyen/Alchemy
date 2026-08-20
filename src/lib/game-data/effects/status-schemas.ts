@@ -10,6 +10,7 @@ export const playerStatusEffectDefinition = {
     status: z.enum(["block", "armor", "forge", "haste", "phoenixFeather"]),
     amount: z.number(),
     perManaCrystal: z.number().optional(),
+    convertCurrentMana: z.number().optional(),
   }),
 } satisfies EffectKindDefinition<"player-status">;
 
@@ -27,6 +28,7 @@ export const removeHarmfulStatusEffectDefinition = {
   schema: z.object({
     kind: z.literal("remove-harmful-status"),
     amount: z.number(),
+    removeAll: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"remove-harmful-status">;
 

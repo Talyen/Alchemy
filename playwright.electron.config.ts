@@ -13,7 +13,9 @@ export default defineConfig({
   timeout: 90_000,
   retries: isCi ? 1 : 0,
   forbidOnly: isCi,
-  reporter: isCi ? [["github"], ["line"], ["html"], ["json", { outputFile: playwrightJsonOut }]] : "html",
+  reporter: isCi
+    ? [["github"], ["line"], ["html"], ["json", { outputFile: playwrightJsonOut }]]
+    : [["line"], ["html", { open: "never" }]],
   webServer: {
     command: `npx vite preview --host 127.0.0.1 --port ${previewPort} --strictPort`,
     port: previewPort,

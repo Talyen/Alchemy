@@ -33,12 +33,11 @@ export function getRunProgressStoreView() {
   return { ...active, ...profile, runGold: profile.gold };
 }
 
-type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
+type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean; runGold?: number };
 
 const ACTIVE_RUN_PROGRESS_KEYS = [
   "characterId",
   "runDeck",
-  "runGold",
   "runPlayerHealth",
   "runMaxHealth",
   "runMetaMaxHealth",
@@ -93,7 +92,6 @@ export function setRunProgress(partial: Partial<RunStateFields>, replace = false
     }
     if (partial.runGold !== undefined) {
       state.runProfile.gold = partial.runGold;
-      state.run.activeRun.runGold = 0;
     }
     for (const key of PERMANENT_PROGRESS_KEYS) {
       if (key in partial && partial[key] !== undefined) {

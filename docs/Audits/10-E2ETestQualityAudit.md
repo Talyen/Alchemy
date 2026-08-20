@@ -21,16 +21,7 @@ Prefer CI run history and `npm run test:e2e:audit` timing/flake reports as prima
 
 ## Tier rules
 
-Tier meaning and commands live in [CONTRIBUTING.md](../../CONTRIBUTING.md). Intent here:
-
-| Tier        | Belongs here                                         |
-| ----------- | ---------------------------------------------------- |
-| Pre-push    | Fast shell/entry canaries + one animation canary     |
-| Critical    | State-changing journeys required before main         |
-| Broader E2E | Longer journeys; do not duplicate prepush assertions |
-| Unit        | Rules/state — not full-app spins                     |
-
-`@smoke` is **not** the pre-push gate — prefer `@prepush` / `@critical` for shipping canaries. Do not re-add layout/chrome, copy catalogs, or prepush+critical duplicates. Prefer bootstrap helpers over brittle menu navigation when a helper already exists.
+Tag meaning and commands: [CONTRIBUTING.md § Tags](../../CONTRIBUTING.md#tags-testsplaywright-tagsts). Keep P0–P2 scoring and the hard stops above. `@smoke` is **not** the pre-push gate. Do not re-add layout/chrome, copy catalogs, or prepush+critical duplicates. Prefer bootstrap helpers over brittle menu navigation when a helper already exists.
 
 ## Scoring
 
@@ -49,8 +40,6 @@ Reuse existing page objects under `tests/pages/` and helpers under `tests/e2e/` 
 **Allowed fixes:** delete duplicate journeys/assertions; add a missing shipping-critical journey; shorten excessive waits after deterministic bootstrap; move multi-step assertions from `@prepush` → `@critical` without retaining the prepush copy; replace text/index hunts with stable roles/test ids; repair cross-test isolation and fixture realism; improve failure diagnostics; reuse page objects consistently; remove QA-shortcut selectors.
 
 ## Known signals
-
-Optional discovery aids — choose your own probes.
 
 - **Hardcoded wall-clock delays:** `waitForTimeout` / `setTimeout` / `sleep(` in `tests`.
 - **Brittle selectors:** index-based `.nth(n)` chains or localized-text-only queries where a role/test id exists.

@@ -59,7 +59,7 @@ describe("save JSON round trips", () => {
     const deserialized = JSON.parse(serialized);
     const reParsed = parseSave(deserialized);
     expect(reParsed).toEqual(original);
-    expect(reParsed.activeRun?.runGold).toBe(0);
+    expect(reParsed.activeRun).not.toHaveProperty("runGold");
     expect(reParsed.gold).toBe(27);
     expect(reParsed.activeRun?.runPlayerHealth).toBe(18);
     expect(reParsed.activeRun?.runTalentXP).toEqual({ burn: 12, poison: 8 });

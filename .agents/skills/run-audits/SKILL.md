@@ -20,10 +20,11 @@ Do not run an uncited sibling audit, broaden an audit into a standing cleanup ef
 ## Investigate once
 
 - Check `docs/Audits/decisions.md` before confirming candidates; skip dispositioned items unless evidence changed.
-- On a repeat run, follow the README “Repeat runs” policy: scope discovery to paths touched since the last audit pass, with a periodic full sweep.
+- On a repeat run, follow the README “Repeat runs” policy: start discovery with paths changed since the prior pass, then follow confirmed candidates through their causal neighborhood. A user-requested full audit still covers the audit's complete ownership area.
 - Read only the subsystem documents from the `AGENTS.md` Docs table that match confirmed candidate paths or ownership areas.
 - For multi-audit or all-audit runs, use `npm run audit:all` once as optional shared instrumentation when it will materially reduce duplicate discovery. It is not a required first step, and `npm run content:audit` is outside this code-quality audit pack.
 - Prefer scoped `rg` searches with explicit paths, compiler/linter diagnostics, existing gates, and targeted source reads.
+- Keep audit command output compact by default (`npm run audit:all`); inspect the bounded failure tail first and open the per-step log under `reports/audit-all/` only when needed. Use `--verbose` deliberately when the complete probe stream is evidence.
 
 For multiple findings, publish a concise implementation plan before edits. Assign disjoint file or symbol ownership and identify the cheapest matching verification for each slice.
 

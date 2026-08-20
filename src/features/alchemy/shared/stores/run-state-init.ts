@@ -21,11 +21,10 @@ import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffect
 import { createRunRngState, type RunRngState } from "@/lib/run-rng";
 import { filterValidDestinations, filterValidDestinationRounds } from "@/lib/routing";
 
-/** Active-run lifetime fields (deck, gold, HP, acts, run tallies). */
+/** Active-run lifetime fields (deck, HP, acts, run tallies). */
 export interface ActiveRunProgressFields {
   characterId: CharacterId;
   runDeck: BattleCard[];
-  runGold: number;
   runPlayerHealth: number;
   runMaxHealth: number;
   runMetaMaxHealth: number;
@@ -97,7 +96,6 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
   return {
     characterId,
     runDeck: getStartingDeck(characterId).map((c) => ({ ...c })),
-    runGold: 0,
     runPlayerHealth: MAX_PLAYER_HEALTH,
     runMaxHealth: MAX_PLAYER_HEALTH,
     runMetaMaxHealth: MAX_PLAYER_HEALTH,
@@ -122,7 +120,6 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
   return {
     characterId: activeRun.characterId,
     runDeck: [...activeRun.runDeck],
-    runGold: 0,
     runPlayerHealth: activeRun.runPlayerHealth,
     runMaxHealth: activeRun.runMaxHealth,
     runMetaMaxHealth: activeRun.runMetaMaxHealth || activeRun.runMaxHealth,
@@ -173,7 +170,6 @@ export function runFieldsFromSnapshot(
   | "contentSystemType"
   | "runDeck"
   | "selectedDifficulty"
-  | "runGold"
   | "runPlayerHealth"
   | "runMaxHealth"
   | "runMetaMaxHealth"
@@ -191,7 +187,6 @@ export function runFieldsFromSnapshot(
     contentSystemType: snapshot.contentSystemType,
     runDeck: snapshot.freshDeck,
     selectedDifficulty: snapshot.selectedDifficulty,
-    runGold: 0,
     runPlayerHealth: snapshot.runPlayerHealth,
     runMaxHealth: snapshot.runMaxHealth,
     runMetaMaxHealth: snapshot.runMaxHealth,

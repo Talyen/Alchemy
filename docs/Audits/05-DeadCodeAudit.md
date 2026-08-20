@@ -30,7 +30,7 @@ Delete confirmed obsolete surface and its dependent callers, barrels, routes, st
 
 ## Known signals
 
-Optional discovery aids — choose your own probes. See also the [measurable sweep map](README.md#measurable-sweep-map-npm-run-auditall).
+See also the [measurable sweep map](README.md#measurable-sweep-map-npm-run-auditall).
 
 - **Strict deadcode:** `npm run deadcode:strict`
 - **Single-use exports:** inspect concrete call sites after dead-code discovery; one consumer alone does not make an export obsolete.

@@ -8,7 +8,6 @@ import { createSeededRng } from "@/lib/utils";
 export const ANCIENT_ALTAR_MYSTERY_VISIT: PersistedMysteryVisit = {
   eventId: "ancient-altar",
   chosenChoice: { label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
-  pendingRemoval: false,
   cardChoices: null,
   grantedTrinketIds: [],
   grantedGear: [],
@@ -20,7 +19,6 @@ export function makeActiveRunData(overrides: Partial<ActiveRunData> = {}): Activ
   return {
     characterId: "knight",
     runDeck: [],
-    runGold: 0,
     runPlayerHealth: 20,
     runMaxHealth: 30,
     runMetaMaxHealth: 30,
@@ -74,7 +72,6 @@ export function createCompleteActiveRunData(): ActiveRunData {
   return {
     characterId: "knight",
     runDeck: [slash, block],
-    runGold: 87,
     runPlayerHealth: 19,
     runMaxHealth: 34,
     runMetaMaxHealth: 34,

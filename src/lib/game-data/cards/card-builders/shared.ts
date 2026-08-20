@@ -61,6 +61,7 @@ const EFFECT_DESCRIPTION_FORMATTERS: {
   "repeat-over-turns": () => unsupportedEffectKind("repeat-over-turns"),
   "next-hit-crit": () => "Your next damaging card is a critical strike",
   "play-next-card-twice": () => "Your next card is played twice",
+  "next-hit-poison": () => "Your next attack is converted to Poison damage",
 };
 
 function unsupportedEffectKind(kind: string): never {

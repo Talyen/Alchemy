@@ -29,8 +29,6 @@ Require a profiler trace, compiler diagnostic, build-size result, reproducible l
 
 ## Known signals
 
-Optional discovery aids — choose your own probes.
-
 - **React Compiler bailouts:** `react-compiler/react-compiler` ESLint errors on hot-path components.
 - **Whole-store subscriptions:** `useXStore()` without a selector inside battle/grid components.
 - **Wide effects:** `useEffect` bodies doing expensive work with broad or unstable dependency arrays.

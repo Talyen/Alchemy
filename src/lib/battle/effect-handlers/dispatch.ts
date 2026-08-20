@@ -6,6 +6,7 @@ import type { BattleState, CombatTextEvent } from "../types";
 import { POTION_CARD_ID_SUFFIX } from "../../game-constants";
 import { getBattleRng } from "../status-helpers";
 import { applyEffectByKind } from "./registry";
+import type { CardEffectResolutionContext } from "./handler-types";
 
 function applySingleEffect(
   state: BattleState,
@@ -13,11 +14,15 @@ function applySingleEffect(
   effect: BattleCardEffect,
   potionMult: number,
   combatTexts: CombatTextEvent[],
+  context: CardEffectResolutionContext,
 ): BattleState {
   if (effect.kind === "chance") {
     const rng = getBattleRng(state);
     const branch = rng() < effect.probability ? effect.successEffects : effect.failureEffects;
-    return branch.reduce((s, nested) => applyCardEffects(s, { ...card, effects: [nested] }, combatTexts), state);
+    return branch.reduce(
+      (s, nested) => applyCardEffects(s, { ...card, effects: [nested] }, combatTexts, context),
+      state,
+    );
   }
 
   if (effect.kind === "repeat-over-turns") {
@@ -30,13 +35,21 @@ function applySingleEffect(
     };
   }
 
-  return applyEffectByKind(effect.kind, state, card, effect, potionMult, combatTexts);
+  return applyEffectByKind(effect.kind, state, card, effect, potionMult, combatTexts, context);
 }
 
-export function applyCardEffects(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
+export function applyCardEffects(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+  context: CardEffectResolutionContext = {
+    manaAtStart: state.mana,
+    enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
+  },
+): BattleState {
   const potionMult = card.id.endsWith(POTION_CARD_ID_SUFFIX) ? state.talentEffects.potionPotency : 1;
   return card.effects.reduce(
-    (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, combatTexts),
+    (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, combatTexts, context),
     state,
   );
 }

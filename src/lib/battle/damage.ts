@@ -12,6 +12,9 @@ export function dealDamageToEnemy(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   combatTexts: CombatTextEvent[],
 ) {
-  const { nextState, modifiedDamage } = computeCardDamageToEnemy(state, effect, card);
-  return applyDamageRiders(nextState, card, effect, modifiedDamage, combatTexts);
+  const convertToPoison = state.flags.nextHitPoison;
+  const activeEffect = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
+  const damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;
+  const { nextState, modifiedDamage } = computeCardDamageToEnemy(damageState, activeEffect, card);
+  return applyDamageRiders(nextState, card, activeEffect, modifiedDamage, combatTexts);
 }

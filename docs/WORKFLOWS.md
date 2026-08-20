@@ -4,15 +4,17 @@ Step-by-step checklists for adding or changing game content and wiring.
 
 For refactors and simplification passes on attached paths, use [docs/Audits](./Audits/README.md) when the user cites an audit.
 
-**Docs:** [AGENTS.md](../AGENTS.md) (rules) · [ARCHITECTURE.md](./ARCHITECTURE.md) (run state) · [REFERENCE.md](./REFERENCE.md) (commands, glossary, battle) · [CONTRIBUTING.md](../CONTRIBUTING.md) (hooks & tests) · [Audits](./Audits/README.md) (code-quality audits)
+**Docs:** the table in [AGENTS.md](../AGENTS.md#docs) is the map for which document to read.
 
 **Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** capability paths under `src/features/alchemy/` (for example `@/features/alchemy/shared/stores/run-session-read-port`) — not legacy alias paths that skip `shared/`.
+
+**Read scope:** use the task index and a bounded heading search (`rg -n '^## ' docs/WORKFLOWS*.md`) to open one workflow section at a time. Expand to adjacent sections only when a checklist explicitly crosses that boundary. Generated asset barrels are outputs; edit the manifest or source script named by the [asset workflow](./WORKFLOWS-ASSETS.md), then regenerate.
 
 ## Task index
 
 | Task                                          | Section                                                                                                                                                                                        |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Raw asset / art                               | [Assets](#assets)                                                                                                                                                                              |
+| Raw asset / art                               | [Asset workflow](./WORKFLOWS-ASSETS.md)                                                                                                                                                        |
 | Save schema / migration                       | [Persisted save data](#change-persisted-save-data)                                                                                                                                             |
 | Mid-run resume                                | [Active run data](#change-mid-run-resume-activerundata)                                                                                                                                        |
 | Post-victory routing                          | [REWARD_ROUTES](#add-or-change-post-victory-routing-reward_routes)                                                                                                                             |
@@ -22,18 +24,15 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 | Character, enemy, trinket, companion, keyword | [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Trinket](#add-a-new-trinket) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword)                              |
 | Talent / homestead upgrade                    | [Talent](#add-a-new-talent) · [Homestead upgrade](#add-a-homestead-upgrade)                                                                                                                    |
 | Permanent gear                                | [Gear](#add-permanent-gear)                                                                                                                                                                    |
+| Shop                                          | [Change a shop](#change-a-shop)                                                                                                                                                                |
+| Content system / starter draft                | [Content system behavior](#content-system-behavior)                                                                                                                                            |
+| Battle playback                               | [Change battle playback](#change-battle-playback)                                                                                                                                              |
 | Screen, destination, mystery, corruption      | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind) · [Corruption](#adding--changing-corruption-flow) |
 | In-run materials, screen fade                 | [Grant materials during a run](#grant-materials-during-a-run) · [Screen fade motion](#screen-fade-motion) · [Interactive buttons](#interactive-button-conventions)                             |
 | Tooltips                                      | [Hover tooltips](#hover-tooltips)                                                                                                                                                              |
 | Gameplay session mutation                     | [Gameplay command boundary](#gameplay-command-boundary)                                                                                                                                        |
 
 ---
-
-## Assets
-
-**Add a new raw asset:** register it in `scripts/assets/` (core/content/card/talent manifests) → `npm run assets:optimize` (or `node scripts/prepare-assets.mjs`) → import from `@/assets/optimized/` in `src/lib/game-data/assets.ts`. `sync:assets` regenerates `assets.generated.ts` from the art manifest targets. Talent portraits go in `scripts/assets/talent-assets.mjs` and `talentArt` in `src/lib/game-data/assets.ts`.
-
-**Gear art:** place files in `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` → `npm run assets:optimize` → `npm run sync:gear-art` (regenerates `src/lib/game-data/gear-art.ts`). `predev` / `prebuild` run the full pipeline via `scripts/prepare-assets.mjs`: the art, sound, and music optimizers run concurrently (disjoint output dirs), then `sync:assets` + `sync:gear-art` regenerate the barrels from the art manifest. Sound optimization writes OGG plus MP3 fallbacks (Safari cannot play Vorbis). Set `ALCHEMY_SKIP_ASSETS=1` to skip that prep (CI/Vercel/release use this; commit regenerated outputs when you change sources).
 
 ---
 
@@ -43,7 +42,7 @@ Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`
 
 1. Decide bump vs safe additive default using that contract — do not add a `migrateVNToVNPlus1` step for stamp-only or defaulted additive fields.
 2. Follow the Required pattern in `MIGRATIONS.md` (version stamp, transform step only when needed, Zod/defaults/fixtures, CI guards).
-3. Verify with the save-migration tests named there (`npm run check:ship` covers the production parse path).
+3. Verify with the save-migration tests named there. `npm run check:ship` covers the production parse path; `npm run test:ship:unit` is the inner unit slice of that gate.
 
 ---
 
@@ -51,7 +50,7 @@ Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`
 
 1. Extend `ActiveRunData` in `src/lib/active-run-session/types.ts` and Zod schema in `src/lib/validation/save-schemas/active-run.ts` (optional fields with defaults in `normalize-active-run-data.ts` often avoid a schema bump). Mid-combat wire shape goes through `PersistedBattleStateSchema` in `save-schemas/persisted-battle-state.ts`.
 2. Add the field to `ActiveRunProgressFields` / hydration in `src/features/alchemy/shared/stores/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern) when it is active-run progression. Transient resume fields belong in the codec projection instead of the run-domain types. The flat `RunStateFields` patch type is test-only now — if a test needs it, add the key to `tests/helpers/run-domain-store-test.ts`.
-3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `src/features/alchemy/shared/stores/run-resume-codec.ts` — the codec is the sole `RunSession` → `ActiveRunData` translator. Shop encode lives in `shared/stores/encode-shops.ts`; interrupted-flow encode/decode lives in `shared/stores/encode-interrupted-flow.ts`. Progress fields spread from the aggregate via `pickActiveRunFields`; do not re-list them. `normalize-active-run-data.ts` keeps the decode-time content-system guards in sync. Transient resume fields such as shops, mystery visits, Wildwood draft, and campaign/labyrinth `starterDraftChoices` live on the session region and are projected by the codec.
+3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `src/features/alchemy/shared/stores/run-resume-codec.ts` — the codec is the sole `RunSession` → `ActiveRunData` translator. Shop encode lives in `shared/stores/encode-shops.ts`; interrupted-flow encode/decode lives in `shared/stores/encode-interrupted-flow.ts`. Progress fields spread from the aggregate via `pickActiveRunFields`; do not re-list them. `normalize-active-run-data.ts` keeps the decode-time content-system guards in sync. Transient resume fields such as shops, mystery visits, Wildwood draft, and campaign/labyrinth `starterDraftChoices` live on the session region and are projected by the codec. Domain notes: [MIGRATIONS.md](../src/features/alchemy/shared/storage/MIGRATIONS.md) § [Interrupted flow](../src/features/alchemy/shared/storage/MIGRATIONS.md#interrupted-flow-activeruninterruptedflow), [Shop offerings](../src/features/alchemy/shared/storage/MIGRATIONS.md#shop-offerings-activerun-shop-fields), [Battle transition continuation](../src/features/alchemy/shared/storage/MIGRATIONS.md#battle-transition-continuation), [Active-run RNG streams](../src/features/alchemy/shared/storage/MIGRATIONS.md#active-run-rng-streams-activerunrng).
 4. Keep `snapshotRun()` and `restoreRun()` as thin lifecycle wrappers around `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()`. `restore-active-run-session.ts` should only apply the decoded session fields. Default trinket-manifest repair for mid-combat resume runs in `restoreRun` via `repairPersistedBattleTrinketManifest` (not Zod). Keep the operation inside `dispatchRunSessionCommand()` so boot/resume is published as one aggregate commit; defer navigation, audio, and presentation work with `afterCommit` or after the command returns.
 5. Run `tests/features/alchemy/shared/storage/active-run.test.ts`, `tests/features/alchemy/shared/stores/run-domain-*.test.ts` (snapshot parity), the codec / pending-reward tests, plus storage/migration tests.
 
@@ -82,13 +81,13 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 
 ## Screen fade motion
 
-| Step                  | Guidance                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Route change       | `useRenderedScreenTransition` in `src/app/use-app-navigation.ts` (re-exported via `src/app/app-shell.ts`) fades the page wrapper out, swaps the screen at opacity 0, then fades in. Opacity only — no translate. Tokens: `--motion-fade-duration` / `MOTION_FADE_MS` / `PAGE_EXIT_MS`. Store `setScreen` plus `assertScreenTransitionAllowed` live in `src/features/alchemy/shell/use-screen-transitions.ts`. The App fade lags the **committed** screen: autosave, audio, battle playback, and presentation teardown follow store `screen`, not `renderedScreen`, during the exit window. Sequential exit→swap→enter (and revert-to-enter) is `useSequentialFadeSwap` in `src/features/alchemy/shared/ui/use-sequential-fade-swap.ts`. |
-| 2. In-screen identity | `<FadeSlot swapKey={...}>` for any in-screen identity swap (tabs, shop modes, offerings, keyword trees). First mount is idle so it does not stack on the route fade.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| 3. Overlays           | Dialogs, wish, and game menu use `useFadePresence` so they fade out before unmount.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| 4. Copy               | `ScreenDescription` is static. Word-by-word `TextAnimate` is mystery narrative only.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| 5. Anti-flash         | Swap layout only while opacity is 0. `FadeSlot` holds wrapper `className` until then. Identity swaps that change subtree shape (tabs, shop modes, mystery phases, talent keywords) use `FadeSlot` plus reserved min-height. Collection uses inner `grid-rows-2` + aspect fillers + slot `min-h`. Routes must not `return null` for a missing payload — hold the last view or keep screen chrome. Do not stagger items.                                                                                                                                                                                                                                                                                                                  |
+| Step                  | Guidance                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Route change       | Opacity-only page fade in `useRenderedScreenTransition` (`src/app/use-app-navigation.ts`). Tokens: `--motion-fade-duration` / `MOTION_FADE_MS` / `PAGE_EXIT_MS`. Autosave, audio, battle playback, and presentation teardown follow **committed** `screen`, not `renderedScreen`. Sequential swap: `useSequentialFadeSwap`. `setScreen` / `assertScreenTransitionAllowed`: `use-screen-transitions.ts`.                |
+| 2. In-screen identity | `<FadeSlot swapKey={...}>` for any in-screen identity swap (tabs, shop modes, offerings, keyword trees). First mount is idle so it does not stack on the route fade.                                                                                                                                                                                                                                                   |
+| 3. Overlays           | Dialogs, wish, and game menu use `useFadePresence` so they fade out before unmount.                                                                                                                                                                                                                                                                                                                                    |
+| 4. Copy               | `ScreenDescription` is static. Word-by-word `TextAnimate` is mystery narrative only.                                                                                                                                                                                                                                                                                                                                   |
+| 5. Anti-flash         | Swap layout only while opacity is 0. `FadeSlot` holds wrapper `className` until then. Identity swaps that change subtree shape (tabs, shop modes, mystery phases, talent keywords) use `FadeSlot` plus reserved min-height. Collection uses inner `grid-rows-2` + aspect fillers + slot `min-h`. Routes must not `return null` for a missing payload — hold the last view or keep screen chrome. Do not stagger items. |
 
 Motion tokens live in `src/styles/theme.css` and `src/styles/components.css`. Hover/tap rules: [Interactive button conventions](#interactive-button-conventions).
 
@@ -98,19 +97,18 @@ Motion tokens live in `src/styles/theme.css` and `src/styles/components.css`. Ho
 
 Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared components before hand-rolling styles.
 
-| Concern         | Standard                                                                                                                                                                                                                |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shape           | `rounded-xl` rectangles (`BUTTON_SHAPE`)                                                                                                                                                                                |
-| Primary CTA     | `Button variant="primary"` (gold fill) — Play, Continue, Confirm                                                                                                                                                        |
-| Secondary CTA   | `Button variant="outline"` — Back, Cancel, Skip, alternate menu nav                                                                                                                                                     |
-| Neutral surface | `bg-background` + `border-border/80` — outline, `TabBar`, talent filters (`BUTTON_SURFACE_NEUTRAL`)                                                                                                                     |
-| Accent CTA      | `ShineAccentButton` — corruption forward actions with shine border                                                                                                                                                      |
-| Paired footers  | `ActionButtonRow` — secondary left, primary right                                                                                                                                                                       |
-| Equal choices   | Destination art tiles (`DestinationChoices` + `TiltSurface`) with a label under the art                                                                                                                                 |
-| Tabs            | `TabBar` — `h-11`, `rounded-xl`                                                                                                                                                                                         |
-| Hover           | `Button`: CSS brightness/background lift (`src/lib/ui/button-hover.ts`). Tiles/menu rows: CSS scale 1.035 + glow (`.card-interactive-glow` / `.menu-nav-button` in `src/styles/components.css`). No Framer hover scale. |
-| Press           | `Button`: CSS `active:` from `button-hover.ts`. Tiles/menu rows: CSS `active` scale 0.98.                                                                                                                               |
-| Width tiers     | `menu` → `w-56`, `dialog` → `w-40`, `action` → `min-w-40`, `full` → `w-full`                                                                                                                                            |
+| Concern         | Standard                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| Shape           | `rounded-xl` rectangles (`BUTTON_SHAPE`)                                                            |
+| Primary CTA     | `Button variant="primary"` (gold fill) — Play, Continue, Confirm                                    |
+| Secondary CTA   | `Button variant="outline"` — Back, Cancel, Skip, alternate menu nav                                 |
+| Neutral surface | `bg-background` + `border-border/80` — outline, `TabBar`, talent filters (`BUTTON_SURFACE_NEUTRAL`) |
+| Accent CTA      | `ShineAccentButton` — corruption forward actions with shine border                                  |
+| Paired footers  | `ActionButtonRow` — secondary left, primary right                                                   |
+| Equal choices   | Destination art tiles (`DestinationChoices` + `TiltSurface`) with a label under the art             |
+| Tabs            | `TabBar` — `h-11`, `rounded-xl`                                                                     |
+| Hover / press   | [AGENTS.md § UI](../AGENTS.md#ui)                                                                   |
+| Width tiers     | `menu` → `w-56`, `dialog` → `w-40`, `action` → `min-w-40`, `full` → `w-full`                        |
 
 | Step               | Guidance                                                                                 |
 | ------------------ | ---------------------------------------------------------------------------------------- |
@@ -180,23 +178,19 @@ Feature code uses [`run-session-lifecycle-port.ts`](../src/features/alchemy/shar
 
 ## Gameplay command boundary
 
-Gameplay code mutates run state through `dispatchRunSessionCommand()` from `run-session-command.ts`. Ownership and anti-patterns: [ARCHITECTURE.md](./ARCHITECTURE.md).
+Ownership and anti-patterns: [ARCHITECTURE.md § Run state](./ARCHITECTURE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator. Use the two-argument form when a result is needed by the post-commit effect:
 
-1. Keep the command synchronous; do not cross an `await` while mutating run state.
-2. Put audio, navigation, timers, and presentation cleanup in `afterCommit` so failed commands cannot leak non-rollbackable effects.
-3. Pass the draft to every gameplay mutator. Use the two-argument form when a result is needed by the post-commit effect:
+```ts
+dispatchRunSessionCommand(
+  (draft) => {
+    setRunGold(draft, (gold) => gold + price);
+    return price;
+  },
+  { afterCommit: (paid) => playPurchaseSound(paid) },
+);
+```
 
-   ```ts
-   dispatchRunSessionCommand(
-     (draft) => {
-       setRunGold(draft, (gold) => gold + price);
-       return price;
-     },
-     { afterCommit: (paid) => playPurchaseSound(paid) },
-   );
-   ```
-
-4. If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
+If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
 
 ---
 
@@ -284,7 +278,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 7. Battle applies aggregated `gearEffects` from `computeGearManifest()` during battle creation.
 8. Keep each affix's `keywordId` aligned with affinity weighting and its `effectKey` aligned with `GEAR_EFFECT_KEYS`; architecture tests enforce registry coverage.
 9. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change.
-10. Cover pure operations, generation, persistence, reward selection, Armory interaction, and battle snapshot behavior.
+10. Cover pure operations, generation, persistence, reward selection, Armory interaction, and battle snapshot behavior. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths).
 
 ---
 
@@ -345,6 +339,38 @@ New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
 
 ---
 
+## Change a shop
+
+Ownership: [ARCHITECTURE.md § Shop commands](./ARCHITECTURE.md#shop-commands).
+
+1. Keep `create-shop-actions.ts` as composition only. Put initialization, purchases, services, refreshes, and live price selectors in the matching `run-loop/shop/*-shop-commands.ts` module.
+2. Draft recipes (`purchaseShopOffering`, `refreshShopOfferings`, `refreshCardShopOfferings`) live in `shop-transactions.ts` and return `ShopTransactionResult`. Dispatch through `runShopTransaction` / `commitShopInitialize` so spend SFX runs after a successful paid commit.
+3. Slot identity helpers live in `shop-slot-keys.ts` so screens do not import the command/audio module.
+4. Merchant's Favor (`firstPurchaseUsed`) applies to the first purchase of each shop **visit**; `initialize` resets that flag with `empty*State()`.
+5. Equipment acquisition must use `mutateGearWithRunHealthSync` **inside** the open shop command draft. Use `dispatchGearMutationWithRunHealthSync()` only when not already inside a command ([ARMORY.md § Write paths](./ARMORY.md#write-paths)).
+6. Tests: `tests/features/alchemy/run-loop/shop` plus shop-screen Playwright when changing screens ([CONTRIBUTING.md](../CONTRIBUTING.md#what-to-run-when-you-change)).
+
+## Content system behavior
+
+Campaign, labyrinth, and Wildwood differ at setup and resume. Ownership: [ARCHITECTURE.md § Run setup](./ARCHITECTURE.md#run-setup-ownership).
+
+- `run-setup/run/content-system-navigation.ts` owns content-system selection, character/difficulty routing, and resume. Run-start snapshots live in `content-system-run-init.ts` / `run-start-command.ts`.
+- Campaign and labyrinth Wildcard drafting is a persisted run phase: the first three-card offer is rolled from the `rewards` stream, `hasActiveRun` is true, and `session.starterDraftChoices` plus `runDeck` resume the same pack.
+- Wildwood setup ends once its persisted draft is created. From the first draft pick onward, `shell/use-wildwood-gauntlet-flow.ts` is the sole owner of Wildwood draft completion, boss progression, rewards, and resume routing.
+
+## Change battle playback
+
+Layout: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-path).
+
+- Autoplay **ticks** live in `useBattlePlayback` on `BattleScreenRoute` so combat ticks do not re-render the shell. Session autoplay on/off lives in `useBattleController` so it survives route unmount. Enabling autoplay also turns on auto-end-turn (`autoEndTurn || isAutoplayEnabled`), even when the settings toggle is off.
+- Playback reads transfer / hidden-hand flags through `use-battle-presentation-gate.ts` (`subscribe` / `getState`). `useBattlePlayback` owns one gate subscription. Gate changes wake auto-end immediately and interrupt autoplay's retry wait.
+- After enemy/haste draw (and mid-turn resume), end-turn orchestration calls `scheduleAutoEndTurn` explicitly — auto-end does not reschedule from `battleState` React ticks alone.
+- `hiddenHandCardKeys` is an immutable sorted string list. Hidden-hand blocking is an intersection with the current hand so orphaned keys cannot soft-lock playback. Haste empty-draw clears leftover discard hides.
+- Manual card play, End Turn, and hand playability use the same idle gate (`isBattlePlayInputBusy`) as playback.
+- `bindPlayback` copies callbacks into controller refs. First combat entry remounts the route so preferred-autoplay `useState` init covers the session-prepared callback that `startBattle` fires before navigate.
+- Victory delays `setScreen` until after the death animation (`VICTORY_TRANSITION_DELAY`, collapsed by `resolveGameDelay` in fast mode). Auto-end and autoplay retry delays also use `resolveGameDelay`; `NAVIGATION_DELAY_MS` does not. See `src/lib/animation/animation-prefs.ts`.
+- Battle glue writes VFX through `BattlePresentationPort`. Global card hover/shimmer uses `ui-store`. Mid-enemy-turn reload still skips draw/discard replay.
+
 ## Adding a new screen
 
 | Step                                                                                                                      | File(s)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -375,10 +401,12 @@ Boot restore/hydration sets a validated saved screen directly and intentionally 
 
 ## Adding a new mystery effect kind
 
+Live pool events in `src/lib/mystery/pool.ts` currently use `addCard`, `gainGold`, `gainXP`, `gainTrinket`, `gainRandomTrinket`, `gainGeneratedGear`, and `gainMaterial`. Other `MysteryEffect` kinds (`chooseCard`, `healHealth`, `damageHealth`, `loseGold`, `removeCard`) stay on the union and handlers for authoring; they are not in the live pool.
+
 | Step                                                          | File(s)                                                                                                                             |
 | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | 1. Add `kind` string to `MysteryEffect` union                 | `src/lib/mystery/types.ts`                                                                                                          |
-| 2. Add `case` in `applyMysteryEffect()` switch                | `src/features/alchemy/run-loop/navigation/mystery-flow.ts` (import `@/features/alchemy/run-loop/navigation/mystery-flow`)           |
+| 2. Add a `mysteryApplyHandlers` entry                         | `src/features/alchemy/run-loop/navigation/mystery-flow.ts`                                                                          |
 | 3. Add fields to `MysteryEffectContext` if needed             | `mystery-flow.ts`                                                                                                                   |
 | 4. Wire React hook if needed                                  | `shell/use-mystery-event-navigation.ts`                                                                                             |
 | 5. Wire follow-up UI in mystery screen                        | `run-loop/screens/mystery/mystery-screen.tsx` (exported via screens barrel)                                                         |

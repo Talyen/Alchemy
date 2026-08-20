@@ -11,9 +11,9 @@ Draft minimal, robust TypeScript interfaces, store schemas, and capability port 
 
 Auto-triggers when:
 
-- Creating new TypeScript files or modules under `src/`.
-- Defining or modifying capability ports (`run-session-read-port`, `run-session-write-port`, `run-session-lifecycle-port`), Zustand domain stores, or persistence schemas.
-- Designing new screen routes or state-machine pipelines before implementation.
+- Defining or modifying a public capability port (`run-session-react-ports`, `run-session-read-port`, `run-session-write-port`, `run-session-lifecycle-port`), Zustand domain store schema, persistence contract, or screen/controller route.
+- Adding a new public TypeScript contract that will be imported across a feature boundary.
+- Do not trigger for a private helper, test-only module, or ordinary implementation file; use the normal changed-path verifier for those.
 
 ## Execution Steps
 

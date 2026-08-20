@@ -48,7 +48,7 @@ export function resolveActiveRunForSave(hasActiveRun: boolean, screen?: Screen):
 
 /** Serialize the run-lifetime stores into persisted ActiveRunData. */
 export function snapshotRun(screen?: Screen): ActiveRunData {
-  return { ...encodeRunResumeSnapshot(getRunSession(screen), screen), runGold: 0 };
+  return encodeRunResumeSnapshot(getRunSession(screen), screen);
 }
 
 /** Rebind max HP and battle manifests after Armory mutations. */

@@ -5,17 +5,13 @@ import {
   syncRunMaxHealthFromGearMutation as mutateRunMaxHealthFromGearMutation,
 } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
-  addRunGold,
   applyRunStartSnapshot as mutateRunStartSnapshot,
   finalizeRunXP as mutateFinalizeRunXP,
   unlockAllTalents as mutateUnlockAllTalents,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useGearStore, useRunProfileStore } from "../../../../helpers/gameplay-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
-import {
-  createRunSessionCommand,
-  dispatchRunSessionCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
+import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
@@ -94,7 +90,6 @@ describe("initialize", () => {
           uid: 1,
         },
       ],
-      runGold: 50,
       runPlayerHealth: 25,
       runMaxHealth: 30,
       roomsEncountered: 3,
@@ -114,7 +109,6 @@ describe("initialize", () => {
   it("restores valid completed destination labels", () => {
     const activeRun = makeActiveRunData({
       characterId: "rogue",
-      runGold: 50,
       runPlayerHealth: 25,
       runMaxHealth: 30,
       roomsEncountered: 3,
@@ -153,7 +147,6 @@ describe("initialize", () => {
     expect(snapshot).toMatchObject({
       characterId: activeRun.characterId,
       runDeck: activeRun.runDeck,
-      runGold: 0,
       runPlayerHealth: activeRun.runPlayerHealth,
       roomsEncountered: activeRun.roomsEncountered,
       currentAct: activeRun.currentAct,
@@ -307,15 +300,6 @@ describe("awardMysteryXP", () => {
   it("awards XP to all visible keywords", () => {
     getRunProgressStoreView().awardMysteryXP("consume", 50);
     expect(getRunProgressStoreView().runTalentXP.consume).toBe(50);
-  });
-});
-
-describe("addRunGold", () => {
-  it("adds gold with multiplier applied", () => {
-    setRunProgress({ runGold: 10 });
-    dispatchRunSessionCommand((draft) => addRunGold(draft, 5));
-    const mult = 1; // knight, difficulty-1
-    expect(getRunProgressStoreView().runGold).toBe(10 + Math.floor(5 * mult));
   });
 });
 

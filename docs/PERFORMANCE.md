@@ -2,6 +2,8 @@
 
 On-demand FPS / hitch profiling for Alchemy. **Not** part of CI, pre-push, or ordinary E2E discovery.
 
+For harness failures, use the [failure-first triage guide](./REFERENCE.md#failure-first-triage) before opening a trace or per-run artifact.
+
 Use this when you are actively optimizing frame pacing and need repeatable numbers plus optional deep Chrome traces.
 
 **Goal:** smooth locked **60 FPS** on a 60 Hz panel. Advisory bands and hitch/stall cutoffs are written for that; this harness does not measure sustained 120–144 FPS headroom (rAF is vsync-capped to the display).
@@ -43,6 +45,12 @@ Reports land under `reports/performance/<timestamp>-<runtime>/` (gitignored):
 - `environment.json` — OS, commit, dirty tree, viewport, DPR, refresh estimate
 - `runs/<scenario>-<n>.json` — per-repetition metrics
 - `traces/` — Chrome DevTools Performance JSON (trace mode only)
+
+`reports/current-run.md` and `reports/current-run.json` point to the latest
+report-producing command. Open that pointer first; it is overwritten on the next
+run and is not a historical index.
+
+Agent read order: open `summary.md` first, then `results.json` for a machine-readable value, and only then the relevant per-run JSON or trace. Traces are opt-in evidence and should not be loaded into context for an ordinary FPS question.
 
 Headed Chromium uses a **1440×900** viewport (MacBook Air 13" logical / 16:10) so the window fits on-laptop. Battle scenarios inject `selectedAspectRatio: "16:10"`. The battle scene is a definite-size `[container-type:size]` container (`absolute inset-0`) so `cqh` card widths resolve; a flex-only scene made Chromium treat CQ block size as indefinite (`width: 0`) and portraits painted blank. Art readiness asserts painted rect size (not only `naturalWidth`, which passes for the transparent GIF fallback).
 
@@ -112,11 +120,9 @@ Ideal frame budget at 60 Hz is **~16.7 ms**. Instantaneous FPS for one gap ≈ `
 
 A hitch/stall count is **how many individual gaps** crossed that threshold, not “the game ran at 20 FPS for a while.” We do **not** green-gate on exactly 16.67 ms (OS/rAF jitter is too noisy); the 20 / 33.3 / 50 / 100 ms ladder is the intentional smooth-60 signal.
 
-On a 60 Hz MacBook you cannot measure sustained 120–144 FPS — rAF tops out near the panel refresh. You can still catch every jank path that breaks smooth 60.
-
 ## Advisory targets
 
-Classification bands only — never CI gates. Compare only on the same machine, display, and runtime. Written for **smooth locked 60**, not high-refresh headroom.
+Classification bands only — never CI gates. Compare only on the same machine, display, and runtime.
 
 ### Continuous motion (scroll / drag / sustained battle FX)
 

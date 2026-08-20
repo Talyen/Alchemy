@@ -25,6 +25,7 @@ export const BATTLE_CARD_EFFECT_KINDS = [
   "repeat-over-turns",
   "next-hit-crit",
   "play-next-card-twice",
+  "next-hit-poison",
 ] as const;
 
 export const RECURSIVE_BATTLE_CARD_EFFECT_KINDS = ["chance", "repeat-over-turns"] as const;

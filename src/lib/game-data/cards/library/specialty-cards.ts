@@ -61,22 +61,29 @@ export const specialtyCards = [
   {
     id: "wishing-well",
     title: "Wishing Well",
-    descriptionLines: ["Wish 1", "Gain 1 Gold"],
+    descriptionLines: ["Wish 1 or Gain 1 Gold"],
     art: assetRefs.wishingWell,
     cost: 1,
     effects: [
-      { kind: "wish", amount: 1 },
-      { kind: "gain-gold", amount: 1 },
+      {
+        kind: "chance",
+        probability: 0.5,
+        successEffects: [{ kind: "wish", amount: 1 }],
+        failureEffects: [{ kind: "gain-gold", amount: 1 }],
+      },
     ],
   },
-  cardBuilders.dualDamageCard({
+  {
     id: "hemorrhage",
+    title: "Hemorrhage",
+    descriptionLines: ["Deal 1 Bleed damage", "The next time the enemy attacks, they take 2 Bleed damage"],
     art: assetRefs.hemorrhage,
-    hits: [
-      { damageType: "physical", amount: 2 },
-      { damageType: "bleed", amount: 1 },
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "bleed", amount: 1 },
+      { kind: "enemy-status", status: "onAttackBleed", amount: 2 },
     ],
-  }),
+  },
   {
     id: "bounty-shot",
     title: "Bounty Shot",
@@ -217,7 +224,7 @@ export const specialtyCards = [
     id: "bloodthorn",
     art: assetRefs.bloodthorn,
     damageType: "nature",
-    amount: 4,
+    amount: 3,
     lifesteal: true,
   }),
   cardBuilders.dualDamageCard({

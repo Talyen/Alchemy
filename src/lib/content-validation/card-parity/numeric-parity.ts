@@ -1,6 +1,6 @@
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
-import { parseLeadingNumber, pushMissingEffect, pushValueMismatch } from "./helpers";
+import { flattenEffects, parseLeadingNumber, pushMissingEffect, pushValueMismatch } from "./helpers";
 
 function checkSimpleValueLine(
   line: string,
@@ -63,18 +63,22 @@ function checkDealLine(
   cardId: string,
 ): boolean {
   if (!line.startsWith("Deal ")) return false;
-  const effect = nextDamage();
-  if (
-    !effect ||
-    effect.equalToBlock ||
-    effect.equalToArmor ||
-    effect.equalToGoldPercent ||
-    line.includes("equal to") ||
-    line.toLowerCase().includes("random")
-  ) {
-    return true;
+  const describedAmount = parseLeadingNumber(line, "Deal ");
+  const hitCount = line.includes("twice") ? 2 : 1;
+  for (let hit = 0; hit < hitCount; hit += 1) {
+    const effect = nextDamage();
+    if (
+      !effect ||
+      effect.equalToBlock ||
+      effect.equalToArmor ||
+      effect.equalToGoldPercent ||
+      line.includes("equal to") ||
+      line.toLowerCase().includes("random")
+    ) {
+      continue;
+    }
+    if (describedAmount !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
   }
-  if (parseLeadingNumber(line, "Deal ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
   return true;
 }
 
@@ -121,6 +125,7 @@ function checkStatusLine(
     effect &&
     effect.status !== "haste" &&
     effect.perManaCrystal === undefined &&
+    effect.convertCurrentMana === undefined &&
     parseLeadingNumber(line, "Gain ") !== effect.amount
   ) {
     pushValueMismatch(issues, cardId, line, effect.amount);
@@ -130,7 +135,7 @@ function checkStatusLine(
 
 function checkRemoveHarmfulLine(
   line: string,
-  nextRemoveHarmful: NextSimpleFn<{ amount: number }>,
+  nextRemoveHarmful: NextSimpleFn<{ amount: number; removeAll?: boolean }>,
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
@@ -141,6 +146,7 @@ function checkRemoveHarmfulLine(
     pushMissingEffect(issues, cardId, line);
     return true;
   }
+  if (effect.removeAll || line.includes("all harmful")) return true;
   if (parseLeadingNumber(line, prefix) !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
   return true;
 }
@@ -166,7 +172,9 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
   const { effects, descriptionLines } = card;
 
   const getNext = <T extends BattleCardEffect["kind"]>(kind: T) => {
-    const filtered = effects.filter((e) => e.kind === kind) as Array<Extract<BattleCardEffect, { kind: T }>>;
+    const filtered = flattenEffects(effects).filter((e) => e.kind === kind) as Array<
+      Extract<BattleCardEffect, { kind: T }>
+    >;
     let index = 0;
     return () => filtered[index++];
   };

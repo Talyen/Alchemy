@@ -9,7 +9,7 @@ function parseParkedSlot(mode: ContentSystemId, raw: unknown): ParkedRunsMap[Con
   const parsed = ActiveRunDataSchema.safeParse(raw);
   if (!parsed.success) return undefined;
   if (parsed.data.contentSystemType !== mode) return undefined;
-  return { ...parsed.data, runGold: 0 } as ParkedRunsMap[ContentSystemId];
+  return parsed.data as ParkedRunsMap[ContentSystemId];
 }
 
 function parseParkedRuns(raw: unknown): ParkedRunsMap {

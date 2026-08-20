@@ -22,6 +22,7 @@ import { checkHealthThresholds, isFreezeActiveForAspect } from "./enemy-turn-uti
 import { decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealPlayerTypedHit } from "./player-typed-hit";
+import { setEnemyStatus } from "./types/state-helpers";
 
 function isDirectPlayerStatusAttack(
   effect: Extract<EnemyAttackEffect, { kind: "player-status" }>,
@@ -253,6 +254,12 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
       logError(`Enemy attack effect failed: ${message}`, "battle", { effect });
       if (import.meta.env.DEV) throw err;
     }
+  }
+
+  if (nextState.enemyStatuses.onAttackBleed > 0) {
+    const bleedAmount = nextState.enemyStatuses.onAttackBleed;
+    nextState = setEnemyStatus(nextState, "onAttackBleed", 0);
+    nextState = dealPlayerTypedHit(nextState, "bleed", bleedAmount, combatTexts);
   }
 
   return nextState;

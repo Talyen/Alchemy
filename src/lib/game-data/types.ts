@@ -40,9 +40,17 @@ export type PlayerStatusId =
   | "freeze"
   | "stun";
 
-export type EnemyStatusId = "burn" | "poison" | "bleed" | "freeze" | "stun" | "burnBonus" | "freezeBonus";
+export type EnemyStatusId =
+  | "burn"
+  | "poison"
+  | "bleed"
+  | "freeze"
+  | "stun"
+  | "burnBonus"
+  | "freezeBonus"
+  | "onAttackBleed";
 /** Enemy status IDs that represent actual damage types (excludes augments like burnBonus). */
-export type EnemyStatusDamageId = Exclude<EnemyStatusId, "burnBonus" | "freezeBonus">;
+export type EnemyStatusDamageId = Exclude<EnemyStatusId, "burnBonus" | "freezeBonus" | "onAttackBleed">;
 
 export type CompanionId =
   | "wolf"
@@ -79,23 +87,25 @@ export type BattleCardEffect =
       equalToBlock?: boolean;
       equalToArmor?: boolean;
       equalToGoldPercent?: number;
+      doubleIfEnemyBurning?: boolean;
     }
   | {
       kind: "player-status";
       status: Extract<PlayerStatusId, "block" | "armor" | "forge" | "haste" | "phoenixFeather">;
       amount: number;
       perManaCrystal?: number;
+      convertCurrentMana?: number;
     }
-  | { kind: "enemy-status"; status: EnemyStatusDamageId; amount: number }
+  | { kind: "enemy-status"; status: EnemyStatusId; amount: number }
   | { kind: "heal"; amount: number }
-  | { kind: "restore-mana"; amount: number }
+  | { kind: "restore-mana"; amount: number; ifEnemyFrozen?: boolean }
   | { kind: "lose-mana"; amount: number }
   | { kind: "lose-max-mana"; amount: number }
   | { kind: "gain-max-mana"; amount: number }
   | { kind: "gain-gold"; amount: number }
   | { kind: "wish"; amount: number }
   | { kind: "summon-companion"; companionId: CompanionId }
-  | { kind: "remove-harmful-status"; amount: number }
+  | { kind: "remove-harmful-status"; amount: number; removeAll?: boolean }
   | { kind: "remove-player-status"; status: EnemyStatusDamageId }
   | { kind: "self-damage"; damageType: EnemyStatusDamageId; amount: number }
   | { kind: "buff-companion"; amount: number }
@@ -122,7 +132,8 @@ export type BattleCardEffect =
       effects: BattleCardEffect[];
     }
   | { kind: "next-hit-crit" }
-  | { kind: "play-next-card-twice" };
+  | { kind: "play-next-card-twice" }
+  | { kind: "next-hit-poison" };
 
 export interface CompanionDefinition {
   id: CompanionId;

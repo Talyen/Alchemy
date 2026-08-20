@@ -15,7 +15,6 @@ import { findMysteryEvent, type MysteryEffect } from "@/lib/mystery";
 import * as mystery from "@/lib/mystery";
 import { gearDefinitions } from "@/lib/gear";
 import { useGearStore } from "../../../helpers/gameplay-store-test";
-import { makeTestCard } from "../../../fixtures/cards";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 
@@ -54,7 +53,6 @@ describe("useMysteryEventNavigation", () => {
     expect(getRunSessionStoreView().mysteryGrantedGearInstances).toEqual([]);
     expect(getRunSessionStoreView().mysteryChosenCardId).toBeNull();
     expect(getRunSessionStoreView().mysteryChosenChoice).toBeNull();
-    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
     expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.MYSTERY, undefined);
     expect(playUISound).toHaveBeenCalledWith("musicBoxMystery");
   });
@@ -89,21 +87,46 @@ describe("useMysteryEventNavigation", () => {
 
     expect(getRunSessionStoreView().mysteryCardChoices).not.toBeNull();
     expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Browse");
-    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
   });
 
-  it("handleMysteryChoice marks choose-mode removal as pending", () => {
+  it("handleMysteryChoice applies removeCard without opening a picker", () => {
+    const slash = {
+      id: "slash",
+      title: "Slash",
+      descriptionLines: [""],
+      art: "",
+      cost: 1,
+      effects: [],
+    };
+    setRunProgress({ runDeck: [slash] });
     const { result } = renderMysteryNav();
 
     act(() => {
       result.current.handleMysteryChoice({
         label: "Offer",
-        effects: [{ kind: "removeCard", mode: "choose" }],
+        effects: [{ kind: "removeCard" }],
       });
     });
 
     expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Offer");
-    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(true);
+    expect(getRunSessionStoreView().mysteryCardChoices).toBeNull();
+    expect(getRunProgressStoreView().runDeck).toEqual([]);
+  });
+
+  it("resolves a restored legacy remove-card picker only once", () => {
+    const slash = { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const block = { id: "block", title: "Block", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    setRunProgress({ runDeck: [slash, block] });
+    getRunSessionStoreView().setMysteryPendingRemoval(true);
+    const { result } = renderMysteryNav();
+
+    act(() => {
+      result.current.handleMysteryRemoveCard(0);
+      result.current.handleMysteryRemoveCard(0);
+    });
+
+    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual(["block"]);
+    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
   });
 
   it("handleMysteryChooseCard stores the picked card id for the summary", () => {
@@ -173,25 +196,6 @@ describe("useMysteryEventNavigation", () => {
     });
 
     expect(getRunSessionStoreView().mysteryChosenCardId).toBe("slash");
-  });
-
-  it("handleMysteryRemoveCard ignores a second removal", () => {
-    setRunProgress({
-      runDeck: [makeTestCard({ id: "slash" }), makeTestCard({ id: "block" })],
-    });
-    const { result } = renderMysteryNav();
-
-    act(() => {
-      result.current.handleMysteryChoice({
-        label: "Offer",
-        effects: [{ kind: "removeCard", mode: "choose" }],
-      });
-      result.current.handleMysteryRemoveCard(0);
-      result.current.handleMysteryRemoveCard(0);
-    });
-
-    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual(["block"]);
-    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
   });
 
   it("rolls back state and skips gold sounds when a later effect throws", () => {

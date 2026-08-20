@@ -33,8 +33,6 @@ Presence of `async` / `Promise` / IPC is not itself a defect — confirm lifetim
 
 ## Known signals
 
-Optional discovery aids — choose your own probes.
-
 - **Effects without cleanup:** `useEffect` that registers `addEventListener`, `setInterval`, or subscriptions without a teardown return.
 - **Zustand subscribe leaks:** `.subscribe(` without matching unsubscribe.
 - **Double-submit:** click handlers that kick async work without a re-entrancy guard (`isProcessing`, disabled button, in-flight ref).

@@ -8,19 +8,19 @@ import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 /** Schema-only parse for ActiveRunDataSchema coercion/default tests (no runtime guards). */
 const parseActiveRunSchema = (value: unknown) => ActiveRunDataSchema.nullable().catch(null).parse(value);
 
+const seededLabyrinthMap = generateLabyrinthMap(createSeededRng(42));
+function cloneSeededLabyrinthMap() {
+  return structuredClone(seededLabyrinthMap);
+}
+
 describe("active run field parsing and normalization", () => {
   it.each(["ranger", "rogue", "wizard"] as const)("passes through valid %s characterId", (characterId) => {
     const result = parseActiveRun(makeMinimalActiveRunInput({ characterId }));
     expect(result?.characterId).toBe(characterId);
   });
 
-  it.each(["bard", "sorcerer"])("returns null for unknown or retired characterId %s", (characterId) => {
+  it.each(["bard", "sorcerer", "warden"])("returns null for unknown or retired characterId %s", (characterId) => {
     const result = parseActiveRunSchema(makeMinimalActiveRunInput({ characterId }));
-    expect(result).toBeNull();
-  });
-
-  it("returns null for character-only fragments", () => {
-    const result = parseActiveRun({ characterId: "knight" });
     expect(result).toBeNull();
   });
 
@@ -41,7 +41,6 @@ describe("active run field parsing and normalization", () => {
   it("recovers from corrupt numeric run fields with defaults", () => {
     // Zod recovers individual corrupt fields with catch()/defaults instead of discarding the whole run.
     // runPlayerHealth > maxHealth is clamped.
-    expect(parseActiveRunSchema(makeMinimalActiveRunInput({ runGold: Number.NaN }))?.runGold).toBe(0);
     expect(parseActiveRunSchema(makeMinimalActiveRunInput({ runPlayerHealth: 31 }))?.runPlayerHealth).toBe(30);
     expect(parseActiveRunSchema(makeMinimalActiveRunInput({ runMaxHealth: 0 }))?.runMaxHealth).toBe(30);
     expect(parseActiveRunSchema(makeMinimalActiveRunInput({ roomsEncountered: -1 }))?.roomsEncountered).toBe(0);
@@ -57,19 +56,14 @@ describe("active run field parsing and normalization", () => {
   });
 
   it("preserves contentSystemType labyrinth when set with a valid map", () => {
-    const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
+    const labyrinthMap = cloneSeededLabyrinthMap();
     const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap }));
     expect(result?.contentSystemType).toBe("labyrinth");
     expect(result?.labyrinthMap).toEqual(labyrinthMap);
   });
 
-  it("drops labyrinth runs without a valid map", () => {
-    const result = parseActiveRunSchema(makeMinimalActiveRunInput({ contentSystemType: "labyrinth" }));
-    expect(result).toBeNull();
-  });
-
   it("drops unknown labyrinth modifiers from persisted maps", () => {
-    const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
+    const labyrinthMap = cloneSeededLabyrinthMap();
     const firstCombat = labyrinthMap.grid.flat().find((node) => node?.type === "combat");
     expect(firstCombat).not.toBeUndefined();
     firstCombat!.modifiers = ["tempered", "missing-modifier" as never];
@@ -83,10 +77,10 @@ describe("active run field parsing and normalization", () => {
   });
 
   it("drops runs with malformed labyrinth maps", () => {
-    const mismatchedRows = generateLabyrinthMap(createSeededRng(42));
+    const mismatchedRows = cloneSeededLabyrinthMap();
     mismatchedRows.rows += 1;
 
-    const invalidConnection = generateLabyrinthMap(createSeededRng(42));
+    const invalidConnection = cloneSeededLabyrinthMap();
     const firstNode = invalidConnection.grid.flat().find(Boolean);
     firstNode!.connections = [{ row: 999, col: 999 }];
 
@@ -99,17 +93,17 @@ describe("active run field parsing and normalization", () => {
   });
 
   it("drops runs with labyrinth maps that have impossible current or endpoint state", () => {
-    const multipleCurrent = generateLabyrinthMap(createSeededRng(42));
+    const multipleCurrent = cloneSeededLabyrinthMap();
     const firstVisible = multipleCurrent.grid.flat().find((node) => node?.state === "visible");
     firstVisible!.state = "current";
 
-    const mismatchedCurrent = generateLabyrinthMap(createSeededRng(42));
+    const mismatchedCurrent = cloneSeededLabyrinthMap();
     mismatchedCurrent.currentNode = { row: 1, col: 4 };
 
-    const missingEntrance = generateLabyrinthMap(createSeededRng(42));
+    const missingEntrance = cloneSeededLabyrinthMap();
     missingEntrance.grid[0][4]!.type = "combat";
 
-    const missingBoss = generateLabyrinthMap(createSeededRng(42));
+    const missingBoss = cloneSeededLabyrinthMap();
     const boss = missingBoss.grid.flat().find((node) => node?.type === "boss");
     boss!.type = "combat";
 
@@ -128,8 +122,9 @@ describe("active run field parsing and normalization", () => {
   });
 
   it("drops labyrinth map state for campaign runs", () => {
-    const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
-    const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "campaign", labyrinthMap }));
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({ contentSystemType: "campaign", labyrinthMap: cloneSeededLabyrinthMap() }),
+    );
     expect(result?.labyrinthMap).toBeNull();
   });
 
@@ -146,5 +141,53 @@ describe("active run field parsing and normalization", () => {
   it("rejects invalid runTalentXP values and falls back to empty object", () => {
     const result = parseActiveRunSchema(makeMinimalActiveRunInput({ runTalentXP: "invalid" }));
     expect(result?.runTalentXP).toEqual({});
+  });
+
+  it("preserves a pending legacy mystery removal until the player resolves it", () => {
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({
+        currentScreen: "mystery",
+        mysteryVisit: {
+          eventId: "ancient-altar",
+          chosenChoice: null,
+          pendingRemoval: true,
+          cardChoices: null,
+          grantedTrinketIds: [],
+          grantedGear: [],
+          chosenCardId: null,
+          resolvedTrinketIds: [],
+        },
+      }),
+    );
+    expect(result?.mysteryVisit?.pendingRemoval).toBe(true);
+    expect(result?.mysteryVisit?.eventId).toBe("ancient-altar");
+  });
+
+  it("preserves conditional card effects across active-run parsing", () => {
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({
+        runDeck: [
+          {
+            id: "combustion",
+            title: "Combustion",
+            descriptionLines: ["Deal 2 Burn damage", "Doubled if the enemy was already Burning"],
+            art: "",
+            cost: 1,
+            effects: [{ kind: "damage", damageType: "burn", amount: 2, doubleIfEnemyBurning: true }],
+          },
+          {
+            id: "ray-of-frost",
+            title: "Ray of Frost",
+            descriptionLines: ["Deal 1 Freeze damage, twice", "If this Freezes the enemy, Gain 1 Mana"],
+            art: "",
+            cost: 1,
+            effects: [{ kind: "restore-mana", amount: 1, ifEnemyFrozen: true }],
+          },
+        ],
+      }),
+    );
+
+    expect(result?.runDeck[0]?.effects[0]).toMatchObject({ doubleIfEnemyBurning: true });
+    expect(result?.runDeck[1]?.effects[0]).toMatchObject({ ifEnemyFrozen: true });
   });
 });

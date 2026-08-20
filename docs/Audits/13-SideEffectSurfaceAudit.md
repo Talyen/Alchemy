@@ -40,8 +40,6 @@ Fix confirmed ownership or quality defects across the complete rule → controll
 
 ## Known signals
 
-Optional discovery aids — choose your own probes.
-
 - **Unseeded entropy outside seams:** `Math.random` / `Date.now` / `new Date(` / `fetch(` / `localStorage` / `sessionStorage` outside allowlisted owners.
 - **Battle entropy leaks:** unseeded entropy under `src/lib/battle` — target 0.
 - **Direct storage from screens:** `localStorage` / persist calls outside `shared/storage` and boot/hydrate.

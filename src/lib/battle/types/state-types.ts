@@ -102,6 +102,7 @@ export interface CombatFlags {
   divineAegisTriggered: boolean;
   nextHitCrit: boolean;
   playNextCardTwice: boolean;
+  nextHitPoison: boolean;
 }
 
 // Subset of CombatFlags consumed by card play — companion actions must not consume these.

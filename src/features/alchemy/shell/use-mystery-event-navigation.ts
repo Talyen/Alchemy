@@ -63,11 +63,6 @@ export function useMysteryEventNavigation({
       (draft) => {
         if (draft.session.mysteryChosenChoice !== null) return [];
         setMysteryChosenChoice(draft, choice);
-        setMysteryPendingRemoval(
-          draft,
-          choice.effects.some((effect) => effect.kind === "removeCard" && effect.mode === "choose") &&
-            !choice.effects.some((effect) => effect.kind === "chooseCard"),
-        );
         const runStore = draft.run.activeRun;
         const goldSounds: Array<"gain" | "spend"> = [];
 
@@ -129,13 +124,9 @@ export function useMysteryEventNavigation({
   const handleMysteryRemoveCard = useCallback((index: number) => {
     dispatchRunSessionCommand((draft) => {
       if (!draft.session.mysteryPendingRemoval) return;
-      setRunDeck(draft, (p) => p.filter((_, i) => i !== index));
+      setRunDeck(draft, (deck) => deck.filter((_, cardIndex) => cardIndex !== index));
       setMysteryPendingRemoval(draft, false);
     });
-  }, []);
-
-  const clearCardChoices = useCallback(() => {
-    dispatchRunSessionCommand((draft) => setMysteryCardChoices(draft, null));
   }, []);
 
   return useMemo(
@@ -144,8 +135,7 @@ export function useMysteryEventNavigation({
       handleMysteryChoice,
       handleMysteryChooseCard,
       handleMysteryRemoveCard,
-      clearCardChoices,
     }),
-    [beginMysteryEvent, handleMysteryChoice, handleMysteryChooseCard, handleMysteryRemoveCard, clearCardChoices],
+    [beginMysteryEvent, handleMysteryChoice, handleMysteryChooseCard, handleMysteryRemoveCard],
   );
 }

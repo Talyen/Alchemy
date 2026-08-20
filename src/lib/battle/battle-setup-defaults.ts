@@ -45,7 +45,16 @@ function createEmptyPlayerStatuses(): PlayerStatusValues {
 }
 
 function createEmptyEnemyStatuses(): EnemyStatusValues {
-  return { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0, burnBonus: 0, freezeBonus: 0 } satisfies EnemyStatusValues;
+  return {
+    burn: 0,
+    poison: 0,
+    bleed: 0,
+    freeze: 0,
+    stun: 0,
+    burnBonus: 0,
+    freezeBonus: 0,
+    onAttackBleed: 0,
+  } satisfies EnemyStatusValues;
 }
 
 function createInitialFlags(): CombatFlags {
@@ -71,6 +80,7 @@ function createInitialFlags(): CombatFlags {
     divineAegisTriggered: false,
     nextHitCrit: false,
     playNextCardTwice: false,
+    nextHitPoison: false,
   };
 }
 

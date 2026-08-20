@@ -57,13 +57,21 @@ jobs:
 
       - uses: ./.github/actions/setup
       - run: mkdir -p reports
-      - run: npx vitest run --reporter=default --reporter=json --outputFile=reports/vitest-timings.json
+      - name: Unit tests
+        run: npx vitest run --reporter=dot --reporter=json --outputFile=reports/vitest-timings.json
+
+      - name: Summarize unit tests
+        if: always()
+        run: node scripts/ci-summarize-vitest.mjs
 
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: failure()
         with:
           name: vitest-timings
-          path: reports/vitest-timings.json
+          path: |
+            reports/vitest-timings.json
+            reports/current-run.*
+          retention-days: 7
           if-no-files-found: ignore
 
   build:
@@ -116,6 +124,8 @@ jobs:
           name: dist
           path: dist/
 
+      - run: mkdir -p reports
+
       - name: Cache Playwright browsers
         uses: actions/cache@v6
         id: playwright-cache
@@ -140,6 +150,10 @@ jobs:
         env:
           CI: true
 
+      - name: Summarize e2e tests
+        if: always()
+        run: node scripts/ci-summarize-playwright.mjs
+
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v7
@@ -148,7 +162,9 @@ jobs:
           path: |
             playwright-report/
             test-results/
-          retention-days: 3
+            reports/playwright-results.json
+            reports/current-run.*
+          retention-days: 7
 
   release:
     needs: [lint, test, e2e-full]

@@ -51,7 +51,8 @@ export interface PersistedEquipmentShopState {
 export interface PersistedMysteryVisit {
   eventId: string;
   chosenChoice: MysteryChoice | null;
-  pendingRemoval: boolean;
+  /** Legacy choose-removal visit; omitted after the pending choice is resolved. */
+  pendingRemoval?: boolean;
   cardChoices: BattleCard[] | null;
   grantedTrinketIds: string[];
   grantedGear: GearInstance[];
@@ -88,7 +89,6 @@ interface ActiveCombatData {
 export interface ActiveRunData {
   characterId: CharacterId;
   runDeck: BattleCard[];
-  runGold: number;
   runPlayerHealth: number;
   runMaxHealth: number;
   /** Derived max HP from current meta when this snapshot was written; combat bonuses are runMaxHealth minus this. */

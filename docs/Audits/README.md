@@ -19,7 +19,7 @@ A probe hit is not a finding. **Zero findings is a successful audit result.** Ne
 
 Unless the cited audit explicitly owns the behavior, do not change player-facing balance/copy/layout, accessibility test ids, generated output, deterministic battle seeds, or architectural boundaries. Do not add a package/framework or weaken a test/gate to make a finding disappear.
 
-**Agents choose their own discovery and fix strategy.** Each audit’s Known signals and the measurable sweep map below are optional instrumentation — interpret hits through the owning audit; they are not a required runbook. Do not dump or read a directory wholesale or run unrelated full-repo sweeps.
+**Agents choose their own discovery and fix strategy.** Each audit’s Known signals and the measurable sweep map below are optional instrumentation — interpret hits through the owning audit; they are not a required runbook. Per-guide `## Known signals` lists omit the shared opener; do not dump or read a directory wholesale or run unrelated full-repo sweeps.
 
 ### Discovery breadth
 
@@ -62,6 +62,21 @@ For multiple audits or delegated implementation, one root owns deduplication, th
 Verify with the path-scoped gates for the touched area in [CONTRIBUTING.md](../../CONTRIBUTING.md). Prefer existing gates over aspirational absolute metrics. The only absolute-zero target is a failing enforced boundary gate; elsewhere use evidence, explicit allowlists, runtime history, and per-change ratchets. When toolchain pieces are absent, state exactly which checks were skipped and why.
 
 Each audit holds only its distinct scope, confirmation rules, and domain allowlists. Shared agent policy lives in [AGENTS.md](../../AGENTS.md); architecture and testing facts live in [ARCHITECTURE.md](../ARCHITECTURE.md) and [CONTRIBUTING.md](../../CONTRIBUTING.md).
+
+### Intentional seams (do not collapse)
+
+Leave these alone unless the owning architecture doc changes: battle RNG injection; persistence write coalescing; options/display prefs vs the versioned player-save envelope; authored catalogs vs `assets.generated.ts` / `metadata.generated.ts`; Vite web vs Electron desktop entries; facade-only feature access to run domain; design-system tokens; ESLint `lib` vs `features` import rules; asset/codegen boundaries.
+
+### Cross-cutting signals → owner
+
+Interpret hits through the owning audit. A probe hit is not a finding.
+
+| Signal                                                                                 | Owner                                                                                 |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Double-submit / overlapping in-flight writes (`isProcessing`, unguarded rapid confirm) | `01-AsyncRaceAudit.md` (lifetime) and/or `02-BehaviorHardeningAudit.md` (idempotency) |
+| Swallowed save / persistence errors                                                    | `02-BehaviorHardeningAudit.md`                                                        |
+| Rapid-tap UI / missing press feedback                                                  | `16-UIInteractionFeedbackAudit.md`                                                    |
+| Await after unmount / stale subscription                                               | `01-AsyncRaceAudit.md`                                                                |
 
 ## Ownership
 

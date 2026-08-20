@@ -48,8 +48,6 @@ Directional coverage interest: branch coverage on `src/lib/battle`, `src/lib/gea
 
 ## Known signals
 
-Optional discovery aids — choose your own probes.
-
 - **Assertion density outliers:** unusually sparse or dense `expect`/`assert` counts across test files.
 - **Trivial / empty tests:** files with zero meaningful assertions or commented-out bodies.
 - **Wall-clock sleeps in unit tests:** `setTimeout` / `waitForTimeout` / `sleep(` in `*.test.ts(x)`.

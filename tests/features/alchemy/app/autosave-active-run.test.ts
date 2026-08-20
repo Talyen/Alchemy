@@ -45,7 +45,7 @@ describe("resolveActiveRunForSave", () => {
     const save = buildAlchemySaveDataFromStores(activeRun);
 
     expect(activeRun).not.toBeNull();
-    expect(activeRun?.runGold).toBe(0);
+    expect(activeRun).not.toHaveProperty("runGold");
     expect(save.gold).toBe(15);
     expect(activeRun?.currentScreen).toBe(ROUTE_SCREENS.DESTINATION);
   });

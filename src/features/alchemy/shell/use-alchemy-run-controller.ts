@@ -85,7 +85,7 @@ export function useAlchemyRunController() {
     homesteadEffects,
   });
 
-  const labyrinth = useLabyrinthController(screen);
+  const labyrinth = useLabyrinthController();
 
   const battleLauncher = useMemo(
     () => ({

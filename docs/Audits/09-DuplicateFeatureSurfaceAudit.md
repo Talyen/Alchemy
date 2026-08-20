@@ -18,7 +18,7 @@ Duplicate surfaces look like parallel product screens that differ mainly by labe
 | Same modal / overlay scaffolding in 3+ files                 | Layout ownership belongs in one helper, not N call sites     |
 | Diverged twins that used to match                            | Copy-paste drift — bugs get fixed in one sibling only        |
 
-**Not this audit:** single-file ceremony or single-path authored mass → `11-InelegantSlopAudit.md`; raw spacing/color literals → `06-DesignSystemConsistencyAudit.md`; unused symbols → `05-DeadCodeAudit.md`; logic living in the wrong layer → `14-StateGravityOwnershipAudit.md`; retained parallel live implementations outside product UI → `08-DualPathRetentionAudit.md`.
+**Not this audit:** sibling routing — [README.md § Ownership](README.md#ownership).
 
 ## Hard stops
 
@@ -49,8 +49,6 @@ Ownership follows [ARCHITECTURE.md](../ARCHITECTURE.md):
 Keep intentional product differences (mystery vs shop rules, labyrinth vs destination progression; battle hand vs Armory/collection card grids). Collapse only the **view scaffolding** and repeated presentation — do not force battle hand and collection grids into one component just because both show cards.
 
 ## Known signals
-
-Optional discovery aids — choose your own probes.
 
 - **Parallel screen shells:** screens under `meta/`, `run-setup/`, and `run-loop/` with identical layout chrome and different data bindings.
 - **Empty-state duplication:** repeated empty collection/inventory/shop placeholders.

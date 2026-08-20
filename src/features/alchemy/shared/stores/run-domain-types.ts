@@ -145,6 +145,7 @@ export interface RunSessionFields {
   equipmentShopState: EquipmentShopState;
   mysteryEvent: MysteryEvent | null;
   mysteryChosenChoice: MysteryChoice | null;
+  /** Legacy choose-removal state loaded from an in-progress mystery visit. */
   mysteryPendingRemoval: boolean;
   mysteryCardChoices: BattleCard[] | null;
   /** Trinket ids actually granted by gainRandomTrinket effects in the current mystery event, in effect order. */

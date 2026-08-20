@@ -19,13 +19,13 @@ Confirm two reachable paths for one behavior, or a live shim that only forwards,
 | Permanent feature-flag or build-time switch that still ships both implementations of one behavior indefinitely    | Loser path has no remaining distinct consumer — temporary rollout flags with an open window are not findings |
 | Parallel configuration, command, event, adapter, selector, or test-harness paths select the same product behavior | The alternate route keeps implementation and verification policy duplicated                                  |
 
-**Not this audit:** zero live consumers → `05-DeadCodeAudit.md`; single intentional entry that is noun theater / ceremony with no second product path → `11-InelegantSlopAudit.md`; wrong owner (with or without a twin) → `14-StateGravityOwnershipAudit.md` (move, then delete the old path); duplicate product screens / shells → `09-DuplicateFeatureSurfaceAudit.md`; twin kept reachable only by test scaffolding → `17-UnitTestAudit.md` / `10-E2ETestQualityAudit.md` (this audit still owns product-reachable twins; retarget tests after delete); live mass / mixed jobs on a single path → `11-InelegantSlopAudit.md`; async races / effect lifetime → `01-AsyncRaceAudit.md`. Intentional dual seams are listed under Hard stops — leave them alone.
+**Not this audit:** sibling routing — [README.md § Ownership](README.md#ownership). This audit still owns product-reachable twins (retarget tests after delete). Intentional dual seams: [README.md § Intentional seams](README.md#intentional-seams-do-not-collapse).
 
 **Shim vs Slop:** this audit owns a reachable twin or reachable no-op shim where callers can retarget to the real owner and delete the shim/name. `11-InelegantSlopAudit.md` owns a single intentional entry that is ceremony without a second product path to collapse.
 
 ## Hard stops
 
-- Do not collapse intentional dual seams listed in [ARCHITECTURE.md](../ARCHITECTURE.md) or sibling audits (battle RNG injection, persistence write coalescing, options/display prefs vs the versioned player-save envelope, authored catalogs vs `assets.generated.ts` / `metadata.generated.ts`, Vite web vs Electron desktop entries, facade-only feature access to run domain).
+- Do not collapse [intentional dual seams](README.md#intentional-seams-do-not-collapse). Vite web vs Electron desktop entries are this audit’s extra seam to leave alone.
 - Do not delete a migration path while save, resume, or legacy-fixture clients still require the old shape — confirm the consumer window is closed first (`MIGRATIONS.md`, `tests/fixtures/legacy-saves.ts`, migration contract/guard tests). Deprecation comments or “enough time has passed” alone do not close a window.
 - Do not rewrite battle pipeline math or save wire format under this audit; prove equivalence via existing `src/lib` / storage owners when a dual rule path is confirmed.
 - Do not demote or delete barrel / knip-allowlisted exports that are intentional cross-folder contracts without the same consumer inventory `05-DeadCodeAudit.md` requires.
@@ -61,8 +61,6 @@ Correct owner with leftover twin / shim → this audit; wrong owner with leftove
 Successful fixes leave a single owner for the behavior and a net surface reduction.
 
 ## Known signals
-
-Optional discovery aids — choose your own probes.
 
 - **Deprecated / compat names:** `legacy`, `compat`, `deprecated`, `shim`, `bridge`, `v1`/`old` suffixes still imported beside a newer owner.
 - **Barrel dual-exports:** old and new names re-exported side by side after callers moved to one owner.

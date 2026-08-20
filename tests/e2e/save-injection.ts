@@ -49,7 +49,6 @@ export async function injectMysterySummaryVisit(page: Page) {
     mysteryVisit: {
       eventId: "ancient-altar",
       chosenChoice: { label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
-      pendingRemoval: false,
       cardChoices: null,
       grantedTrinketIds: [],
       grantedGear: [],

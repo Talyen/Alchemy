@@ -4,11 +4,26 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LABYRINTH_COLS } from "@/lib/content-systems/labyrinth/data";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createSeededRng } from "@/lib/utils";
-import { useLabyrinthController } from "@/features/alchemy/shell/use-labyrinth-controller";
+import { useLabyrinthController, type LabyrinthNodeHandlers } from "@/features/alchemy/shell/use-labyrinth-controller";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { getRunSessionStoreView } from "../../../helpers/run-domain-store-test";
 
 const START_COL = Math.floor(LABYRINTH_COLS / 2);
+
+function stubNodeHandlers(overrides: Partial<LabyrinthNodeHandlers> = {}): LabyrinthNodeHandlers {
+  return {
+    onStartBattleWithModifiers: vi.fn(),
+    onStartBossBattleWithModifiers: vi.fn(),
+    onStartRest: vi.fn(),
+    onStartMystery: vi.fn(),
+    onStartShop: vi.fn(),
+    onStartAlchemist: vi.fn(),
+    onStartTrinketShop: vi.fn(),
+    onStartEquipmentShop: vi.fn(),
+    ...overrides,
+  };
+}
+
 beforeEach(() => {
   resetTransientRunUi();
   getRunSessionStoreView().setLabyrinthMap(generateLabyrinthMap(createSeededRng(42)));
@@ -17,20 +32,17 @@ beforeEach(() => {
 describe("useLabyrinthController hook", () => {
   it("enterNode records a pending node and routes combat nodes", () => {
     const onStartBattle = vi.fn();
-    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
+    const { result } = renderHook(() => useLabyrinthController());
     const map = getRunSessionStoreView().labyrinthMap;
     const target = map.grid[0][START_COL]!.connections[0];
 
     let entered = false;
     act(() => {
-      entered = result.current.enterNode(target.row, target.col, {
-        onStartBattleWithModifiers: onStartBattle,
-        onStartBossBattleWithModifiers: vi.fn(),
-        onStartRest: vi.fn(),
-        onStartMystery: vi.fn(),
-        onStartShop: vi.fn(),
-        onStartAlchemist: vi.fn(),
-      } as any);
+      entered = result.current.enterNode(
+        target.row,
+        target.col,
+        stubNodeHandlers({ onStartBattleWithModifiers: onStartBattle }),
+      );
     });
 
     expect(entered).toBe(true);
@@ -39,19 +51,12 @@ describe("useLabyrinthController hook", () => {
   });
 
   it("onNodeCleared advances the map to the pending node", () => {
-    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
+    const { result } = renderHook(() => useLabyrinthController());
     const map = getRunSessionStoreView().labyrinthMap;
     const target = map.grid[0][START_COL]!.connections[0];
 
     act(() => {
-      result.current.enterNode(target.row, target.col, {
-        onStartBattleWithModifiers: vi.fn(),
-        onStartBossBattleWithModifiers: vi.fn(),
-        onStartRest: vi.fn(),
-        onStartMystery: vi.fn(),
-        onStartShop: vi.fn(),
-        onStartAlchemist: vi.fn(),
-      } as any);
+      result.current.enterNode(target.row, target.col, stubNodeHandlers());
       result.current.onNodeCleared();
     });
 
@@ -62,17 +67,10 @@ describe("useLabyrinthController hook", () => {
 
   it("enterNode rejects a second enter while a node is pending", () => {
     const onStartBattle = vi.fn();
-    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
+    const { result } = renderHook(() => useLabyrinthController());
     const map = getRunSessionStoreView().labyrinthMap;
     const target = map.grid[0][START_COL]!.connections[0];
-    const handlers = {
-      onStartBattleWithModifiers: onStartBattle,
-      onStartBossBattleWithModifiers: vi.fn(),
-      onStartRest: vi.fn(),
-      onStartMystery: vi.fn(),
-      onStartShop: vi.fn(),
-      onStartAlchemist: vi.fn(),
-    } as any;
+    const handlers = stubNodeHandlers({ onStartBattleWithModifiers: onStartBattle });
 
     let first = false;
     let second = true;
@@ -88,17 +86,10 @@ describe("useLabyrinthController hook", () => {
 
   it("enterNode trusts store pending after a store-only clear (e.g. teardown)", () => {
     const onStartBattle = vi.fn();
-    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
+    const { result } = renderHook(() => useLabyrinthController());
     const map = getRunSessionStoreView().labyrinthMap;
     const firstTarget = map.grid[0][START_COL]!.connections[0];
-    const handlers = {
-      onStartBattleWithModifiers: onStartBattle,
-      onStartBossBattleWithModifiers: vi.fn(),
-      onStartRest: vi.fn(),
-      onStartMystery: vi.fn(),
-      onStartShop: vi.fn(),
-      onStartAlchemist: vi.fn(),
-    } as any;
+    const handlers = stubNodeHandlers({ onStartBattleWithModifiers: onStartBattle });
 
     act(() => {
       result.current.enterNode(firstTarget.row, firstTarget.col, handlers);
@@ -119,7 +110,7 @@ describe("useLabyrinthController hook", () => {
   });
 
   it("resetMap clears pending state and regenerates the labyrinth", () => {
-    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
+    const { result } = renderHook(() => useLabyrinthController());
     const before = getRunSessionStoreView().labyrinthMap;
 
     act(() => {

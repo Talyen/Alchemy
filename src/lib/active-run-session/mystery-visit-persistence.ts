@@ -48,7 +48,7 @@ export function serializeMysteryVisit(visit: {
   return {
     eventId: event.id,
     chosenChoice: visit.mysteryChosenChoice,
-    pendingRemoval: visit.mysteryPendingRemoval,
+    ...(visit.mysteryPendingRemoval ? { pendingRemoval: true } : {}),
     cardChoices: visit.mysteryCardChoices,
     grantedTrinketIds: visit.mysteryGrantedTrinketIds,
     grantedGear: visit.mysteryGrantedGearInstances,
@@ -71,7 +71,7 @@ export function hydrateMysteryVisit(
   return {
     mysteryEvent: event,
     mysteryChosenChoice: hydratePersistedMysteryChoice(data.chosenChoice),
-    mysteryPendingRemoval: data.pendingRemoval,
+    mysteryPendingRemoval: data.pendingRemoval === true,
     mysteryCardChoices: data.cardChoices,
     mysteryGrantedTrinketIds: data.grantedTrinketIds,
     mysteryGrantedGearInstances: data.grantedGear ?? [],

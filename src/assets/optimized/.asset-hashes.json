@@ -204,6 +204,11 @@
     "mtimeMs": 1785148534000,
     "size": 1006296
   },
+  "combustion.webp": {
+    "hash": "8b439b469a22b03f",
+    "mtimeMs": 1786580076666.1287,
+    "size": 791142
+  },
   "companion-sanctuary.webp": {
     "hash": "76ed71542b00690e",
     "mtimeMs": 1782421241990.5637,
@@ -1169,6 +1174,11 @@
     "mtimeMs": 1785148534000,
     "size": 800266
   },
+  "ray-of-frost.webp": {
+    "hash": "bb90b6d95e08fe83",
+    "mtimeMs": 1786580076749.114,
+    "size": 732924
+  },
   "rend.webp": {
     "hash": "73eba6a5a928b882",
     "mtimeMs": 1786569711909.1494,
@@ -1331,7 +1341,7 @@
   },
   "stargaze.webp": {
     "hash": "4bdffd64418ec296",
-    "mtimeMs": 1786569711915.813,
+    "mtimeMs": 1786580076783.4543,
     "size": 841111
   },
   "steal.webp": {

@@ -19,14 +19,14 @@ Agentic coding often drops the next method on the nearest large module. Gravity 
 | Mega-screen that orchestrates rewards, catalog lookups, and mutations                        | Screen owns too many jobs; extract controller/facade or shared UI                                         |
 | New `*Manager` / parallel store beside existing owners for one flow                          | Invented gravity well instead of an extension on the real owner                                           |
 
-**Not this audit:** import-gate failures alone → fix via ESLint; unused APIs → `05-DeadCodeAudit.md`; verbose ceremony or live mass with correct ownership → `11-InelegantSlopAudit.md`; correct owner with leftover twin / shim → `08-DualPathRetentionAudit.md`; duplicate screens with correct owners → `09-DuplicateFeatureSurfaceAudit.md`; silent save bugs without ownership drift → `02-BehaviorHardeningAudit.md`.
+**Not this audit:** sibling routing — [README.md § Ownership](README.md#ownership).
 
 ## Hard stops
 
 - Do not move feature-specific logic out of its feature folder into `shared/ui` or root `src/lib` unless it is genuinely shared across ≥2 feature domains.
 - Do not create new Zustand stores for state that belongs in local React component state (`useState`) or is derived on render.
 - Do not add React context for run/battle data flow — pass domain data via controller props per [ARCHITECTURE.md](../ARCHITECTURE.md).
-- Do not collapse intentional seams: battle RNG injection, persistence write coalescing, asset/codegen boundaries, `lib` vs `features` split.
+- Do not collapse [intentional seams](README.md#intentional-seams-do-not-collapse).
 - Do not move presentation into `src/lib` (must stay React-free).
 - Repair an obvious one-file ESLint boundary violation directly rather than expanding it into an ownership audit.
 - Feature code outside `shared/stores/` must not import `gameplay-state-store` or low-level ports directly — use capability ports (`run-session-*-port`). See [ARCHITECTURE.md](../ARCHITECTURE.md).
@@ -50,8 +50,6 @@ Ownership is defined by [ARCHITECTURE.md](../ARCHITECTURE.md) (aggregate layout,
 - **Presentation split:** product screens stay in `meta/` / `run-setup/` / `run-loop/`; shared chrome belongs in `shared/ui` / `src/components/ui`; nothing React lands in `src/lib`.
 
 ## Known signals
-
-Optional discovery aids — choose your own probes.
 
 - **Deep prop drilling:** battle/run props passed through ≥3 levels because controller props or view composition are shaped too broadly; preserve the documented shell-controller binding rather than bypassing it with direct store/facade access.
 - **Direct aggregate or port bypasses from screens:** `gameplay-state-store` or low-level port imports under `src/features/alchemy` outside `**/stores/**` instead of capability ports.

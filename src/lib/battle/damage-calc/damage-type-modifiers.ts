@@ -56,6 +56,9 @@ function computeBaseRawAmount(
     return goldDamage + forgeBonus;
   }
   let amount = effect.amount + forgeBonus;
+  if (effect.doubleIfEnemyBurning && state.enemyStatuses.burn > 0) {
+    amount *= DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
+  }
   if (card?.tags?.includes("archery")) {
     amount += state.talentEffects.flatArrowDamage + state.gearEffects.flatArrowDamage;
   }

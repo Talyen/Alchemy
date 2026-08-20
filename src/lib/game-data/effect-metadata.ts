@@ -11,7 +11,14 @@ const FORMATTERS: { [K in BattleCardEffect["kind"]]: KeywordFormatter<K> } = {
   "random-damage": () => [],
   chance: (effect) => collectKeywordsFromChance(effect),
   "player-status": (effect) => (effect.status !== "haste" ? [effect.status] : []),
-  "enemy-status": (effect) => [effect.status],
+  "enemy-status": (effect) =>
+    effect.status === "burn" ||
+    effect.status === "poison" ||
+    effect.status === "bleed" ||
+    effect.status === "freeze" ||
+    effect.status === "stun"
+      ? [effect.status]
+      : [],
   heal: () => ["health"],
   "restore-mana": () => ["mana"],
   "lose-mana": () => ["mana"],
@@ -31,6 +38,7 @@ const FORMATTERS: { [K in BattleCardEffect["kind"]]: KeywordFormatter<K> } = {
   "repeat-over-turns": (effect) => effect.effects.flatMap(collectKeywordsFromBattleEffect),
   "next-hit-crit": () => [],
   "play-next-card-twice": () => [],
+  "next-hit-poison": () => [],
 };
 
 function dedupeKeywords(...iterables: readonly KeywordId[][]): KeywordId[] {

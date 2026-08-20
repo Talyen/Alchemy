@@ -13,6 +13,7 @@ export const damageEffectDefinition = {
     equalToBlock: z.boolean().optional(),
     equalToArmor: z.boolean().optional(),
     equalToGoldPercent: z.number().optional(),
+    doubleIfEnemyBurning: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"damage">;
 

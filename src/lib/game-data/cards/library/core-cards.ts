@@ -5,7 +5,21 @@ import * as cardBuilders from "../card-builders";
 
 export const coreCards = [
   cardBuilders.damageCard({ id: "slash", art: assetRefs.slash, damageType: "physical", amount: 6 }),
-  cardBuilders.damageCard({ id: "stab", art: assetRefs.stab, damageType: "bleed", amount: 2 }),
+  {
+    id: "stab",
+    title: "Stab",
+    descriptionLines: ["Deal 3 Physical or Bleed damage"],
+    art: assetRefs.stab,
+    cost: 1,
+    effects: [
+      {
+        kind: "chance",
+        probability: 0.5,
+        successEffects: [{ kind: "damage", damageType: "physical", amount: 3 }],
+        failureEffects: [{ kind: "damage", damageType: "bleed", amount: 3 }],
+      },
+    ],
+  },
   cardBuilders.singleEffectCard({
     id: "cleanse",
     art: assetRefs.cleanse,
@@ -22,8 +36,15 @@ export const coreCards = [
     consume: true,
     effects: [{ kind: "player-status", status: "haste", amount: 1 }],
   },
-  cardBuilders.damageCard({ id: "poison-dagger", art: assetRefs.poisonDagger, damageType: "poison", amount: 2 }),
-  cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 2 }),
+  {
+    id: "poison-dagger",
+    title: "Poison Dagger",
+    descriptionLines: ["Deal 2 Poison damage", "Your next attack is converted to Poison damage"],
+    art: assetRefs.poisonDagger,
+    cost: 1,
+    effects: [{ kind: "damage", damageType: "poison", amount: 2 }, { kind: "next-hit-poison" }],
+  },
+  cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 3 }),
   cardBuilders.damageCard({ id: "fangs", art: assetRefs.fangs, damageType: "physical", amount: 3, lifesteal: true }),
   cardBuilders.damageCard({ id: "frostbolt", art: assetRefs.frostbolt, damageType: "freeze", amount: 3 }),
   cardBuilders.consumableCard({
@@ -46,11 +67,15 @@ export const coreCards = [
     art: assetRefs.manaPotion,
     effect: { kind: "restore-mana", amount: 2 },
   }),
-  cardBuilders.consumableCard({
+  {
     id: "panacea-potion",
+    title: "Panacea Potion",
+    descriptionLines: ["Remove all harmful status effects", "Consume"],
     art: assetRefs.panaceaPotion,
-    effect: { kind: "remove-harmful-status", amount: 1 },
-  }),
+    cost: 1,
+    consume: true,
+    effects: [{ kind: "remove-harmful-status", amount: 5, removeAll: true }],
+  },
   cardBuilders.consumableCard({
     id: "stoneskin-potion",
     art: assetRefs.stoneskinPotion,
@@ -62,10 +87,10 @@ export const coreCards = [
     effect: { kind: "damage", damageType: "poison", amount: 3 },
   }),
   cardBuilders.playerStatusCard({ id: "anvil", art: assetRefs.anvil, status: "forge", amount: 1 }),
-  cardBuilders.consumableCard({ id: "apple", art: assetRefs.apple, effect: { kind: "heal", amount: 5 } }),
+  cardBuilders.consumableCard({ id: "apple", art: assetRefs.apple, effect: { kind: "heal", amount: 8 } }),
   cardBuilders.damageCard({ id: "bash", art: assetRefs.bash, damageType: "stun", amount: 3 }),
   cardBuilders.playerStatusCard({ id: "block", art: assetRefs.block, status: "block", amount: 5 }),
-  cardBuilders.consumableCard({ id: "bread", art: assetRefs.bread, effect: { kind: "heal", amount: 5 } }),
+  cardBuilders.consumableCard({ id: "bread", art: assetRefs.bread, effect: { kind: "heal", amount: 8 } }),
   cardBuilders.playerStatThenScaledDamageCard({
     id: "blessed-aegis",
     art: assetRefs.blessedAegis,
@@ -135,4 +160,16 @@ export const coreCards = [
     damageType: "bleed",
     amount: 2,
   }),
+  {
+    id: "ray-of-frost",
+    title: "Ray of Frost",
+    descriptionLines: ["Deal 1 Freeze damage, twice", "If this Freezes the enemy, Gain 1 Mana"],
+    art: assetRefs.rayOfFrost,
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "freeze", amount: 1 },
+      { kind: "damage", damageType: "freeze", amount: 1 },
+      { kind: "restore-mana", amount: 1, ifEnemyFrozen: true },
+    ],
+  },
 ] satisfies BattleCard[];

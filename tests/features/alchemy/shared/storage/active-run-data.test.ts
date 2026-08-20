@@ -51,7 +51,6 @@ describe("encodeRunResumeSnapshot", () => {
     expect(result).toEqual({
       characterId: "knight",
       runDeck,
-      runGold: 0,
       runPlayerHealth: 18,
       runMaxHealth: 32,
       runMetaMaxHealth: getRunProgressStoreView().runMetaMaxHealth,
@@ -280,7 +279,6 @@ describe("encodeRunResumeSnapshot", () => {
         choices: [{ label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] }],
       },
       mysteryChosenChoice: { label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
-      mysteryPendingRemoval: false,
       mysteryCardChoices: null,
       mysteryGrantedTrinketIds: [],
       mysteryGrantedGearInstances: [],
