@@ -52,7 +52,10 @@ try {
     rootDir,
     status: result.errors.length > 0 ? "failed" : "passed",
     command: "npm run content:audit",
-    artifacts: ["reports/content-audit-report.md", "reports/content-audit-report.json"],
+    artifacts: [
+      { path: "reports/content-audit-report.md", role: "primary" },
+      { path: "reports/content-audit-report.json", role: "secondary" },
+    ],
     summary: `Content audit: ${result.errors.length} error(s), ${result.warnings.length} warning(s).`,
   });
 

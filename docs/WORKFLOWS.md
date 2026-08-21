@@ -4,7 +4,7 @@ Step-by-step checklists for adding or changing game content and wiring.
 
 For refactors and simplification passes on attached paths, use [docs/Audits](./Audits/README.md) when the user cites an audit.
 
-**Docs:** the table in [AGENTS.md](../AGENTS.md#docs) is the map for which document to read.
+**Docs:** the table in [AGENTS.md](../AGENTS.md#documentation-owners) is the map for which document to read.
 
 **Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** capability paths under `src/features/alchemy/` (for example `@/features/alchemy/shared/stores/run-session-read-port`) — not legacy alias paths that skip `shared/`.
 
@@ -31,8 +31,6 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 | In-run materials, screen fade                 | [Grant materials during a run](#grant-materials-during-a-run) · [Screen fade motion](#screen-fade-motion) · [Interactive buttons](#interactive-button-conventions)                             |
 | Tooltips                                      | [Hover tooltips](#hover-tooltips)                                                                                                                                                              |
 | Gameplay session mutation                     | [Gameplay command boundary](#gameplay-command-boundary)                                                                                                                                        |
-
----
 
 ---
 

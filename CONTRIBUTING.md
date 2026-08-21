@@ -2,81 +2,18 @@
 
 ## What to run when you change…
 
-The executable route catalog in `scripts/verify-changed.mjs` owns path-to-command mapping. It preserves the focused unit, boundary, and E2E gates without making agents copy a long command table into context.
+The executable catalog in `scripts/lib/change-routes.mjs` owns path-to-command and path-to-document selection; `scripts/verify-changed.mjs` executes its deduplicated plan.
 
 - During development: `npm run verify:changed -- --diff` (or pass explicit paths).
-- Inspect without running: add `--plan`; include only the matching screen flow with `--e2e shop`, `--e2e gear`, `--e2e audio`, `--e2e mystery`, or `--e2e save`. Use `--verbose-plan` only when full argv is needed.
-- Unknown paths receive a safe TypeScript check. Use `--full` for the explicit pre-push escalation.
-- Route names cover active run, save/persistence, battle/cards, balance, shop, audio, routing, gear, mystery, integration, UI flows, and E2E helpers. Their source paths and commands are tested in `tests/scripts/verify-changed.test.ts`.
+- Inspect without running: add `--plan`; use `--verbose-plan` only when full argv is needed.
+- Save, gear, audio, and mystery routes include their focused E2E flow by default. `--e2e <route>` explicitly adds another supported screen flow; `--full` adds the full local handoff gate.
+- Unknown paths are labeled `unknown` and receive a TypeScript fallback with a warning that non-TypeScript behavior may not be exercised.
+- Canonical route fixtures and selected commands are tested in `tests/scripts/verify-changed.test.ts`.
 - On any push to `main`, use the fast pre-push hook (`check:push`); CI runs after push. Optional fuller local static+unit is `check:push:full`, and CI E2E parity is `test:e2e:prepush:full`.
 
-## E2E helpers
+## E2E policy
 
-When a command or E2E test fails, follow the [failure-first triage guide](docs/REFERENCE.md#failure-first-triage) before opening raw traces or report directories.
-
-Layout: helpers in [`tests/e2e/`](tests/e2e/), re-exported from [`tests/helpers.ts`](tests/helpers.ts); overflow, neighbor-gap, and stage-fit assertions live in [`tests/e2e/layout-assertions.ts`](tests/e2e/layout-assertions.ts); page objects in [`tests/pages/`](tests/pages/); Playwright fixtures in [`tests/fixtures/e2e.ts`](tests/fixtures/e2e.ts).
-
-### When to use which test import
-
-| Import                                    | Use for                                                                                                                                                      |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `import { test } from "./fixtures/e2e"`   | Most battle/flow specs — opt-in `fastBattle` + `runtimeErrors` fixtures                                                                                      |
-| `import { test } from "@playwright/test"` | Animation specs (`draw-discard-animations.spec.ts`, `battle-end-turn-canary.spec.ts`) — **no** fast mode; also boot-only smoke (`alchemy.spec.ts` uses both) |
-
-**Decision tree:**
-
-1. **Animation canary or animation-focused spec** → raw `@playwright/test`, never `enableFastMode` / `fastBattle`.
-2. **Combat or turn cycling** → `fixtures/e2e` and declare `{ page, fastBattle, runtimeErrors }` with `void fastBattle; void runtimeErrors;`.
-3. **Visibility-only battle checks** (no `endTurn` / card play) → `fastBattle` recommended but optional (`accessibility.spec.ts`, `save-persistence.spec.ts` via `injectMidCombatSave`).
-
-### Navigation and bootstrap
-
-- **`openGameModeSelect`** — retries Play if the menu unmounts during bootstrap.
-- **`selectGameMode`** — clicks the mode art card (immediate begin or resume); there is no Play/Resume footer.
-- **`selectCharacterAndContinue`** — clicks a hero portrait to begin; there is no Back/Continue footer. Leave via the screen menu.
-- **`resumeCampaignRun`** — use for campaign resume; waits for destination when `currentScreen` was saved as `destination` instead of clicking Play during hydrate.
-- **`startBattleWithDeck`**, **`startAtDestination`**, **`skipBattleAndClaimReward`**, **`startCampaignBattle`** — battle bootstrap (`tests/e2e/battle-setup.ts`).
-- **`assertDefeatFromEndRun`** — end run from battle menu and assert defeat screen (`tests/e2e/run-end.ts`).
-- **`injectMidCombatSave`** — inject a save mid-combat for resume tests (`tests/e2e/mid-combat-save.ts`).
-- **`injectDestinationAtIndex`** — inject a campaign save paused at a destination index (`tests/e2e/save-injection.ts`).
-- **`injectMysterySummaryVisit`** — inject a campaign save paused on the mystery Continue summary (`tests/e2e/save-injection.ts`).
-- **`failOnRuntimeErrors`** — manual console/pageerror collection when not using the fixture (e.g. boot smoke in `alchemy.spec.ts`).
-
-### Card factories (`tests/e2e/cards.ts`)
-
-- **`makeCard`**, **`makeHighDamageCard`**, **`makeStatusCard`** — deck builders for E2E.
-- Preset cards: **`ANVIL_CARD`**, **`MANA_BERRIES_CARD`**, etc.
-
-### Battle page object
-
-- **`enableFastMode`** — disables animations via `localStorage`; safe for most battle tests. Do **not** use in `battle-end-turn-canary.spec.ts`, `draw-discard-animations.spec.ts`, or other animation-focused specs. ESLint blocks `fixtures/e2e` and `enableFastMode` in those files.
-- **`BattlePage.endTurn`** — must work with animations off (fast tests) and on (canary + full suite). Changing it requires the prepush canary to pass.
-- **`winViaCombat(maxTurns?)`** — play all cards and end turns until victory; use for preview-safe wins.
-- **`playCardNamed(title)`** — click a named card in hand (`Play ${title}` button); use when the deck defines explicit titles.
-- **`playFirstCard()`** — play the first card in hand; use for generic `makeCard()` decks.
-- **`playAllCards()`** — used internally by `winViaCombat`; rarely needed directly.
-- **Do not** use `skipCombatToVictory()`, `skipCombatBtn`, or target Skip Combat / Unlock All strings in e2e specs — hidden in preview/production. ESLint enforces this in `eslint.config.js` for `tests/**/*.spec.ts`.
-- In-game **Skip** buttons (e.g. Wildwood reward skip) are legitimate UI, not dev QA shortcuts.
-
-### Fixtures (`tests/fixtures/e2e.ts`)
-
-- **`fastBattle`** — opt-in fixture dep; calls `enableFastMode` before the test when listed in the callback params and referenced (`void fastBattle;`).
-- **`runtimeErrors`** — collects page errors and asserts `[]` after each test.
-- **`autoDiagnostic`** — runs automatically on every test. If a test fails, it automatically dumps browser console logs, page errors, and a 10KB DOM snapshot to `test-results/failures/<test-title>.md` to allow agents and developers to quickly inspect the failures in text format.
-
-### Page objects (`tests/pages/`)
-
-`BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPage`, `MysteryPage`, `CorruptionPage`, `HomesteadPage`, `GameStage`.
-
-### Tags (`tests/playwright-tags.ts`)
-
-- **`@prepush`** — fast subset selected into the CI `@critical` command and run by the pre-push hook (`npm run test:e2e:prepush`). App boot + battle canary.
-- **`@critical`** — CI gate on every push (`npm run test:e2e:prepush:full` greps `@critical|@prepush`). Keep representative fast coverage for core gameplay, save integrity, progression locks, difficulty select, combat mechanics, armory in battle, keyboard navigation, and cheap adjacent flows. Treat the live Playwright report—not a documented count or duration—as the source of truth for suite size and timing.
-- **`@smoke`** — quick boot/menu checks (alchemy boot + Electron boot).
-- **`@slow`** — intentionally slow specs (animation canaries, viewport loops). Runs in full E2E on release; can be run manually with `npm run test:e2e:slow`.
-- **`@armory`** — armory screen / gear interaction specs. Overlaps with `critical` and `slow` on a per-test basis.
-
-The `save-gate` job (`test:ship:e2e`, path-filtered) re-runs the full `save-persistence`/`save-error-paths` specs, including their `@critical` tests; that overlap with the always-on e2e gate is intentional redundancy for save-touching pushes.
+E2E fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Animation-focused specs use raw `@playwright/test` without fast mode. When a test fails, follow [failure-first triage](./docs/REFERENCE.md#failure-first-triage) before opening raw traces or report directories.
 
 ## Before you push
 
@@ -132,4 +69,4 @@ Path-filtered jobs (`assets`, `save-gate`, `desktop-build`, `electron-e2e`) are 
 
 When explicitly asked to commit or push, agents work directly on `main`; there is no required PR merge step. **Do not edit `CHANGELOG.md`.** Conventional commit messages are the day-to-day source of truth. Release-time changelog promotion, patch notes, and `sync:changelog`: [RELEASE.md](./docs/RELEASE.md).
 
-**Docs:** the table in [AGENTS.md](./AGENTS.md#docs) is the map for which document to read.
+**Docs:** the table in [AGENTS.md](./AGENTS.md#documentation-owners) is the map for which document to read.

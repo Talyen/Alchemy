@@ -39,6 +39,7 @@ npm run verify:changed -- --plan --diff  # Print the route without running it
 npm run verify:changed -- --diff --e2e shop  # Add one route-specific E2E flow
 npm run verify:changed -- --diff --plan --verbose-plan  # Show full argv deliberately
 npm run measure:agent-context -- --path src/lib/battle/damage.ts  # Stable context/route proxy
+npm run measure:agent-context -- --all-routes  # Compare canonical route prereads
 npm run new:plan -- TokenEfficiencyPlan  # Scaffold a short-lived docs/Plans execution plan
 npm run docs:check                    # Validate plan metadata and expiry
 npm run docs:check:final              # Final handoff check; active plans must be removed
@@ -107,7 +108,9 @@ Verification and audit commands keep full artifacts on disk but print a bounded 
 
 ### Context-efficiency measurements
 
-Use `npm run measure:agent-context -- --path <changed-path>` for a stable, section-aware proxy: selected owner-section bytes, route count, deduplicated test paths, and explicitly named artifact/output bytes. Add `--doc`, `--artifact`, or `--output-file` when a walkthrough intentionally includes those files. This is observational only; it does not enforce a token budget or enumerate ignored directories.
+Use `npm run measure:agent-context -- --path <changed-path>` for a stable preread proxy. It reports always-loaded instruction bytes, exact route-selected owner sections, changed-file bytes, verification/test-path counts, and explicitly named artifact/output bytes as separate values. `selectedBytes` is only instructions plus owner docs; it is not a tokenizer count or the agent's complete context.
+
+Use `--all-routes` to compare one canonical fixture per route. Add `--doc`, `--artifact`, or `--output-file` only for an intentional walkthrough. Missing mapped documents/headings fail visibly; unknown paths select no generic owner document.
 
 ## Balance simulation
 
@@ -150,7 +153,7 @@ After the run, the opener launches **`reports/balance-findings.html`** (JSON: `r
 
 The summary groups by issue type (timeouts, 0/100, type win-rate, length, equity, paired deltas, anomalies). Class matchups collapse to the **worst class per enemy / tier / metric**, then the cap round-robins those buckets so one boss-WR cluster cannot fill all 25 slots.
 
-Target bands (source: `src/lib/balance/findings-bands.ts`): never 0% or 100% win/lose; Mid/Late type win rates Normal ~90–99%, Elite ~80–95%, Boss ≥70% and &lt;100%; fight length Normal 3–5 / Elite 5–7 / Boss 7–10 turns; ≥2% timeout rate is a stall; within-pool equity ~15pp from median; anomaly spikes Early 100 / Mid 200 / Late 300. Paired deltas with \|delta\| &lt; 2 SE are skipped. Do not apply tunings from findings until they are reviewed.
+Target bands (source: `src/lib/balance/findings-bands.ts`): never 0% or 100% win/lose; Mid/Late type win rates Normal ~90–99%, Elite ~80–95%, Boss ≥70% and &lt;100%; fight length Normal 5–10 / Elite 10–15 / Boss 15–30 turns; ≥2% timeout rate is a stall; within-pool equity ~15pp from median; anomaly spikes Early 100 / Mid 200 / Late 300. Paired deltas with \|delta\| &lt; 2 SE are skipped. Do not apply tunings from findings until they are reviewed.
 
 Console prints the findings list. Isolation sweeps do not use the typical core trinket pair. All simulations use deterministic seeding.
 

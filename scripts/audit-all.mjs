@@ -79,7 +79,7 @@ writeCurrentRun({
   rootDir: ROOT,
   status: failed > 0 ? "failed" : "passed",
   command: "npm run audit:all",
-  artifacts: ["reports/audit-all"],
+  artifacts: [{ path: "reports/audit-all", role: "secondary" }],
   summary: `${STEPS.length - failed}/${STEPS.length} audit probes passed.`,
 });
 if (failed > 0) {

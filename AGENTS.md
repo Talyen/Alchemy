@@ -2,108 +2,83 @@
 
 Alchemy is a fantasy roguelite deckbuilder.
 
-## Working Style
+## Working style
 
-- Treat an existing dirty tree as in-flight work: understand it before editing, preserve user intent, and improve it when it intersects with the task.
-- Choose the simplest implementation that fully meets the current requirements, then optimize for robustness and maintainability.
-- Do not preserve backward compatibility unless there is a concrete need, such as persisted data, shipped behavior, or external consumers.
-- Prefer established, well-maintained libraries over custom implementations when they are a good fit.
-- Prefer honest judgment over compliance. Challenge weak ideas, including user requests, and recommend the strongest architecture or product direction you see.
-- If the same approach fails three times, stop, reassess with the relevant docs or audits, and ask rather than continuing speculative fixes.
-- Run a code-quality audit only when the user cites one under [docs/Audits](./docs/Audits/README.md). Uncited audits are not backlog.
-- Choose your own discovery and fix strategy. Do not invent work to fill a quota.
-- When a change alters an invariant, workflow, or command documented in `docs/`, `CONTRIBUTING.md`, or this file, update that doc in the same change.
+- Treat a dirty tree as in-flight user work: inspect it before editing, preserve intent, and keep unrelated paths out of the task.
+- Choose the smallest complete implementation, then optimize for robustness and maintenance. Prefer established libraries when they fit.
+- Preserve compatibility only for a concrete consumer such as persisted saves, shipped behavior, or an external contract.
+- Challenge weak requirements with evidence. If one approach fails three times, reassess with the owning docs/tests and ask rather than continue speculatively.
+- Run a guide under [docs/Audits](./docs/Audits/README.md) only when the user cites it. Uncited audits are not backlog, and zero findings is valid.
+- When a change alters a documented invariant, workflow, or command, update its canonical owner in the same change.
 
 ## Communication
 
-Write as if explaining the work to a collaborator who knows Alchemy as a game, not the file tree. They did not see your tool calls or this document.
+Write for a collaborator who knows Alchemy as a game, not its file tree. Lead with what is now true in the game or workflow, then name files/symbols only as needed. Match the question’s level, name a term once, and do not echo repository rules or raw tool output into chat.
 
-- **Lead with meaning.** First sentence: what is true now, or what you did, in game or workflow terms. Then files, commands, and type names if the reader needs them to act.
-- **Name things once.** On first use, say what a term is (`FadeSlot` is the wrapper that fades one screen into another). After that, the short name is fine. Do not invent extra nicknames.
-- **Match the question.** If they asked why a fight feels long, answer in pacing and numbers. If they asked which function, use the symbol. Do not default to architecture-review voice.
-- **Do not echo this file into chat.** Keep ports, RNG, and test gates for doing the work. When talking about the work, do not dump tables of internals unless they asked.
+## Documentation owners
 
-## Docs
+For non-trivial work, select only the owner that matches the task. Other documents should link to that owner instead of copying volatile commands, versions, counts, or inventories.
 
-For non-trivial work, find and read only the docs that match the task; prefer specific subsystem docs over broad assumptions.
+| Need                                            | Read                                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------------- |
+| Run state, controllers, import boundaries, boot | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)                       |
+| Saves, cards, screens, materials, motion        | [docs/WORKFLOWS.md](./docs/WORKFLOWS.md)                             |
+| Commands, battle rules, glossary                | [docs/REFERENCE.md](./docs/REFERENCE.md)                             |
+| Hooks, changed-path verification, E2E policy    | [CONTRIBUTING.md](./CONTRIBUTING.md)                                 |
+| Save compatibility                              | [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md) |
+| Armory / gear                                   | [docs/ARMORY.md](./docs/ARMORY.md)                                   |
+| FPS / hitch profiling                           | [docs/PERFORMANCE.md](./docs/PERFORMANCE.md)                         |
+| Steam release                                   | [docs/RELEASE.md](./docs/RELEASE.md)                                 |
+| Cited audits                                    | [docs/Audits/README.md](./docs/Audits/README.md)                     |
+| Active plans                                    | [docs/Plans/README.md](./docs/Plans/README.md)                       |
+| UI folder placement                             | [shared/ui/README.md](./src/features/alchemy/shared/ui/README.md)    |
+| Card effect handlers                            | [BATTLE_HANDLERS.md](./src/lib/game-data/effects/BATTLE_HANDLERS.md) |
 
-Each document owns the concern named below. When another document needs the same policy, link to the owner instead of restating volatile commands, versions, counts, or file inventories.
+### Bounded discovery
 
-| Need                                              | Read                                                                 |
-| ------------------------------------------------- | -------------------------------------------------------------------- |
-| Run state, controllers, import boundaries, boot   | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)                       |
-| How-to (saves, cards, screens, materials, motion) | [docs/WORKFLOWS.md](./docs/WORKFLOWS.md)                             |
-| Commands, battle rules glossary                   | [docs/REFERENCE.md](./docs/REFERENCE.md)                             |
-| Hooks, area → test commands, E2E helpers          | [CONTRIBUTING.md](./CONTRIBUTING.md)                                 |
-| Save-compat contract                              | [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md) |
-| Armory / gear                                     | [docs/ARMORY.md](./docs/ARMORY.md)                                   |
-| FPS / hitch profiling (on-demand)                 | [docs/PERFORMANCE.md](./docs/PERFORMANCE.md)                         |
-| Steam release process                             | [docs/RELEASE.md](./docs/RELEASE.md)                                 |
-| Audits                                            | [docs/Audits/README.md](./docs/Audits/README.md)                     |
-| In-flight execution plans                         | [docs/Plans/README.md](./docs/Plans/README.md)                       |
-| UI folder placement (`ui-store` exception)        | [shared/ui/README.md](./src/features/alchemy/shared/ui/README.md)    |
-| Card effect handler layout                        | [BATTLE_HANDLERS.md](./src/lib/game-data/effects/BATTLE_HANDLERS.md) |
-
-### Read scope
-
-- Read the owner heading first (`rg -n '^## ' <doc>`); expand only across a documented ownership boundary.
-- Search the touched path or named symbol. Whole-tree enumeration is for explicitly repository-wide audits only.
-- Keep evidence opt-in: `Raw Assets/**`, `public/Music/**`, `public/sounds/**`, `src/assets/optimized/**`, `reports/**`, `dist/**`, `release-desktop/**`, `playwright-report/**`, `test-results/**`, `coverage/**`, `**/node_modules/**`, lockfiles, generated files, and release notes.
-- Establish `git status --short` before diffs; dirty work is in-flight and unrelated paths stay out of context.
-- This is the portable repo policy for Codex, Antigravity, OpenCode, and other harnesses; do not depend on harness-specific ignore files.
+- Read headings first, then the one matching H2/H3 section; expand only across a demonstrated ownership boundary.
+- Search the touched path or named symbol first. For repository-wide work, list/count matches before printing content, cap the first pass, and inspect symbol/heading ranges before whole files.
+- Inspect `git status --short` before diffs and `git diff --stat` before a large diff.
+- Keep evidence opt-in: raw/optimized assets, generated files, lockfiles, release notes, `reports/`, `dist/`, `release-desktop/`, `playwright-report/`, `test-results/`, `coverage/`, and `node_modules/` are not default context.
+- This policy is portable across agent harnesses; do not rely on harness-specific ignore files.
 
 ## Verification
 
-- Prefer an E2E-verifiable user flow when possible, with focused tests for implementation detail.
-- Verification uses `npm run verify:changed -- --diff` (explicit paths and `--plan` narrow or preview it); the router owns commands, deduplication, and required static/unit/E2E checks. Escalate one flow with `--e2e <route>` or use `--full`; `--verbose-plan` is opt-in for full argv. Full gates: [CONTRIBUTING.md § Before you push](./CONTRIBUTING.md#before-you-push).
-- Phases: pre-edit public contract and owner docs; post-edit route plus focused tests; handoff static gates and exact verification report. Skills are optional accelerators; cited audits use `run-audits` and are not ordinary prerequisites.
-- Active execution plans live only under `docs/Plans/`; scaffold with `npm run new:plan -- <PlanName>`, validate with `npm run docs:check`, and delete the plan at completion. Final handoff uses `npm run docs:check:final` (or `--keep-plan` only when the unfinished work is intentionally passed forward).
-- Treat lint failures, test failures, flaky tests, and React Compiler ESLint errors (`react-compiler/react-compiler`) as real quality problems, not noise.
-- Animation and canary specs use raw `@playwright/test`; never `enableFastMode` / `fastBattle`. See [CONTRIBUTING.md § E2E helpers](./CONTRIBUTING.md#e2e-helpers).
+- Use `npm run verify:changed -- --diff` or explicit paths. Preview with `--plan`; full argv is opt-in with `--verbose-plan`. The executable route catalog owns path-to-command and path-to-document selection.
+- Current risk routes may include focused E2E by default. Add `--e2e <route>` only when explicitly escalating another supported flow; use `--full` for an explicit full local gate. Details: [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change).
+- During implementation, run the changed-path route and focused tests. At handoff, report exact checks; treat lint, test, flake, and React Compiler failures as real problems.
+- Active plans live only under `docs/Plans/`. Scaffold with `npm run new:plan -- <Name>`, validate with `npm run docs:check`, delete completed plans, and run `npm run docs:check:final` (`--keep-plan` only for intentionally unfinished work).
+- Animation/canary specs use raw `@playwright/test`, never `enableFastMode` or `fastBattle`. E2E mechanics live in [tests/e2e/README.md](./tests/e2e/README.md).
 
-## Branch and commit policy
+## Branch and commits
 
-- Trunk-based. When the user explicitly asks for a commit, commit directly to `main`; do not create PR or feature branches unless asked.
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): description`.
-- Type → audience mapping: player-facing patch notes get `feat`, `fix`, `balance`, `perf`. Dev-only entries get `refactor`, `test`, `chore`, `ci`, `build`, `docs`, `style`.
-- **Do not edit `CHANGELOG.md`.** It is updated only at release from git history. See [CONTRIBUTING.md § Changelog and patch notes](./CONTRIBUTING.md#changelog-and-patch-notes).
-- Hooks, commitlint, and patch-note rules: [CONTRIBUTING.md § Changelog and patch notes](./CONTRIBUTING.md#changelog-and-patch-notes) and [Before you push](./CONTRIBUTING.md#before-you-push).
+- Trunk-based: when the user explicitly requests a commit, commit directly to `main`; create a branch/PR only when asked.
+- Use Conventional Commits. Player-facing patch-note types are `feat`, `fix`, `balance`, and `perf`; dev-only types include `refactor`, `test`, `chore`, `ci`, `build`, `docs`, and `style`.
+- **Do not edit `CHANGELOG.md`.** Release derives it from git history; see [RELEASE](./docs/RELEASE.md) and [CONTRIBUTING](./CONTRIBUTING.md#changelog-and-patch-notes).
 
-## Architectural invariants
+## High-risk invariants
 
-- **Run state:** feature code outside `shared/stores/` accesses run state through capability-specific ports (`run-session-react-ports`, `run-session-read-port`, `run-session-write-port`, `run-session-lifecycle-port`) and domain modules (`profile-store`, `gear-store`) — not `run-transitions` directly. Gameplay writes live in `run-session-write-port.ts`; commits go through `dispatchRunSessionCommand()` in `run-session-command.ts`. See [ARCHITECTURE](./docs/ARCHITECTURE.md).
-- **Controllers:** screens receive run/battle data via controller props from `screen-routes/` / shell controllers — no React context for those bindings.
-- **Battle:** treat `BattleState` as immutable; use `state.rng` and `Math.round()` (never `Math.random()` / `Math.floor()`); keep tuning in `src/lib/game-constants/` (barrel at `game-constants.ts`; edit the topical file under that folder).
-- **Content:** card `descriptionLines` must match effects. Run-earned materials flow through `awardMaterialsDuringRun()` — do not call progress `addMaterials()` directly for run-loop loot. See [WORKFLOWS § Grant materials](./docs/WORKFLOWS.md#grant-materials-during-a-run).
-- **Persistence:** update schemas, migrations or normalization, defaults, hydration/snapshots, and legacy fixtures together as applicable. Checklist: [WORKFLOWS § Change persisted save data](./docs/WORKFLOWS.md#change-persisted-save-data). Contract: [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md).
-- **Routes:** route screens are statically imported through `screen-routes/`; no `React.lazy()`. Game art is eagerly loaded at boot.
-- **Imports:** import-boundary rules are enforced by `eslint.config.js` — it wins if this summary disagrees. Highest-cost layers: [ARCHITECTURE § Import boundaries](./docs/ARCHITECTURE.md#import-boundaries).
-- **Purity:** keep pure logic out of screens and side effects out of pure modules. Push I/O, storage, clocks, RNG, and shared mutation to the owning seam.
+- **Run state:** feature code outside `shared/stores/` uses capability ports and domain stores, never `run-transitions` directly. Gameplay writes go through `run-session-write-port.ts` and commit through `dispatchRunSessionCommand()`. See [ARCHITECTURE](./docs/ARCHITECTURE.md#run-state).
+- **Controllers:** screens receive run/battle bindings through route or shell controller props, not React context.
+- **Battle:** treat `BattleState` as immutable; use `state.rng` and `Math.round()`, never `Math.random()`/`Math.floor()`. Tuning belongs in topical files under `src/lib/game-constants/`.
+- **Content:** `descriptionLines` must match effects. Run-earned materials use `awardMaterialsDuringRun()`, not progress `addMaterials()`.
+- **Persistence:** change schemas, normalization/migrations, defaults, hydration/snapshots, and legacy fixtures together as applicable. Follow [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md).
+- **Routes/assets:** route screens are statically imported through `screen-routes/`; game art loads eagerly. Generated asset barrels are outputs—edit their manifest/source and regenerate.
+- **Imports/purity:** `eslint.config.js` owns import boundaries. Keep pure logic out of screens and I/O, clocks, RNG, storage, and shared mutation at the owning seam.
 
 ## UI
 
-- Be exacting about UI/UX polish: native feel, smooth motion, visual balance, spacing, alignment, and responsive behavior. If something looks off, fix it before calling the work done.
-- Use plain function components with explicit `Props` types, not `React.FC`. Build conditional Tailwind classes with `cn()` from `@/lib/utils`; no template literals in `className`.
-- Use CSS `active:` for press feedback. Do not use Framer hover scale. `Button` hover is background lift from `src/lib/ui/button-hover.ts`. Interactive art tiles and menu rows use CSS scale (1.035) plus glow via `.card-interactive-glow` / `.menu-nav-button` in `src/styles/components.css`, with `active` scale 0.98.
-- Use `FadeSlot` for in-screen identity swaps per [the motion workflow](./docs/WORKFLOWS.md#screen-fade-motion). Do not stagger items or slide page chrome.
-- Initialize cosmetic randomness lazily with `useState(() => ...)`, not `useMemo` plus `Math.random()` during render.
+- Use plain function components with explicit `Props`, not `React.FC`; use `cn()` for conditional Tailwind classes.
+- Use CSS `active:` feedback. Shared hover/press, button, tooltip, and fade rules live in [WORKFLOWS](./docs/WORKFLOWS.md#interactive-button-conventions); do not invent parallel motion.
+- Use `FadeSlot` for in-screen identity swaps. Do not stagger page chrome or use Framer hover scale.
+- Initialize cosmetic randomness lazily with `useState(() => ...)`, never `useMemo` plus render-time `Math.random()`.
 
-## Environment
+## Environment and failures
 
-- Node + npm versions: see `package.json` `engines`; install via `npm ci`. First-time Playwright setup: `npx playwright install chromium`.
-- Run the game with `npm run dev` (Vite, port 5173 with `strictPort`; override via `ALCHEMY_DEV_PORT`). Commands: [REFERENCE](./docs/REFERENCE.md#environment--commands).
-- `predev` and `prebuild` run `scripts/prepare-assets.mjs` (and version sync on prebuild); the first build is slow. Escape hatch: `ALCHEMY_SKIP_ASSETS=1` (CI/Vercel/release skip because optimized outputs are committed; see [REFERENCE § Build commands](./docs/REFERENCE.md#build-commands-decision-tree)).
-- Standard test, timing-test, build, dev, and performance boundaries prune local diagnostics older than one day. Keep only the current failure context by default; use `npm run prune:transient -- --dry-run` to inspect candidates before an explicit cleanup.
-- Don't chain `cd` into commands — set your tool's working-directory option instead.
-- Windows / PowerShell 7 shell details: [CONTRIBUTING.md](./CONTRIBUTING.md#before-you-push).
+- Node/npm versions are authoritative in `package.json`; commands and build flags live in [REFERENCE](./docs/REFERENCE.md#environment--commands). Set the tool working directory instead of chaining `cd`.
+- Start failure work from the command’s bounded digest or `reports/current-run.md`. Open the exact named failure file next; raw logs, JSON, HTML, traces, snapshots, and report directories are drill-down evidence only.
+- E2E text diagnostics live under `test-results/failures/`; flakiness analysis is `npm run test:e2e:audit`. Battle warnings use the `[Enemy Turn]` prefix.
 
-## Debugging
+## Handoff
 
-- Battle warnings use the `[Enemy Turn]` prefix.
-- On E2E failure, diagnostic markdown lives under `test-results/failures/` (console/runtime logs + DOM snapshot). Flakiness analysis: `npm run test:e2e:audit`.
-- Start with [failure-first triage](./docs/REFERENCE.md#failure-first-triage) and `reports/current-run.md`; open raw logs, traces, or snapshots only after the digest names the artifact.
-
-## Reporting
-
-- Report what changed, what verification ran, and anything intentionally left untouched. Write that in the same voice as Communication: readable without opening the diff.
-- Example: “Enemies now pick a new target if the current one dies mid-turn. That logic lives in `enemy-turn-utils.ts`. Ran the enemy-turn unit tests.” Not: “Refactored `enemy-turn-utils` targeting resolution.”
+Report what changed in game/workflow terms, exact verification and status, and anything intentionally untouched. Do not paste logs or diff dumps.

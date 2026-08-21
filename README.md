@@ -111,7 +111,7 @@ React • TypeScript • Vite • Tailwind CSS • Zustand • Electron • Vite
 
 ## Development Guide
 
-**Docs:** the table in [`AGENTS.md`](./AGENTS.md#docs) is the map for which document to read.
+**Docs:** the table in [`AGENTS.md`](./AGENTS.md#documentation-owners) is the map for which document to read.
 
 ## License
 

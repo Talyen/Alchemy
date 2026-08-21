@@ -21,7 +21,7 @@ Prefer CI run history and `npm run test:e2e:audit` timing/flake reports as prima
 
 ## Tier rules
 
-Tag meaning and commands: [CONTRIBUTING.md § Tags](../../CONTRIBUTING.md#tags-testsplaywright-tagsts). Keep P0–P2 scoring and the hard stops above. `@smoke` is **not** the pre-push gate. Do not re-add layout/chrome, copy catalogs, or prepush+critical duplicates. Prefer bootstrap helpers over brittle menu navigation when a helper already exists.
+Tag meaning and commands: [E2E README § Tags](../../tests/e2e/README.md#tags). Keep P0–P2 scoring and the hard stops above. `@smoke` is **not** the pre-push gate. Do not re-add layout/chrome, copy catalogs, or prepush+critical duplicates. Prefer bootstrap helpers over brittle menu navigation when a helper already exists.
 
 ## Scoring
 

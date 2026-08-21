@@ -225,7 +225,10 @@ function runCompare(beforeDir, afterDir) {
     rootDir: root,
     status: "passed",
     command: "npm run perf:compare",
-    artifacts: [path.relative(root, outDir), path.relative(root, summaryPath)],
+    artifacts: [
+      { path: path.relative(root, summaryPath), role: "primary" },
+      { path: path.relative(root, outDir), role: "secondary" },
+    ],
     summary: "Performance comparison completed.",
   });
   console.log(`Compare report written to ${summaryPath}`);
@@ -312,7 +315,10 @@ function main() {
     rootDir: root,
     status: result.status === 0 ? "passed" : "failed",
     command: "npm run perf",
-    artifacts: [path.relative(root, outDir), path.relative(root, summaryPath)],
+    artifacts: [
+      { path: path.relative(root, summaryPath), role: "primary" },
+      { path: path.relative(root, outDir), role: "secondary" },
+    ],
     summary: result.status === 0 ? "Performance profiling completed." : "Performance profiling failed.",
   });
 

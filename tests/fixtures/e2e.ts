@@ -1,8 +1,6 @@
-// Playwright test fixture: fast battle mode + runtime error collection with auto-assert.
-import fs from "node:fs/promises";
-import path from "node:path";
-import { test as base, expect } from "@playwright/test";
+import { test as base, expect, type ConsoleMessage } from "@playwright/test";
 export { expect } from "@playwright/test";
+import { buildFailureDiagnostic, writeFailureDiagnostic } from "../../scripts/lib/playwright-diagnostics.mjs";
 import { enableFastMode } from "../e2e/battle-setup";
 import { failOnRuntimeErrors } from "../e2e/errors";
 
@@ -25,15 +23,21 @@ export const test = base.extend<E2EFixtures>({
   autoDiagnostic: [
     async ({ page }, run, testInfo) => {
       const consoleLogs: string[] = [];
-      const handleConsole = (msg: any) => {
+      let droppedLogs = 0;
+      const recordLog = (message: string) => {
+        if (consoleLogs.length >= 200) {
+          consoleLogs.shift();
+          droppedLogs += 1;
+        }
+        consoleLogs.push(message);
+      };
+      const handleConsole = (msg: ConsoleMessage) => {
         const type = msg.type();
         const text = msg.text();
-        if (type === "error" || type === "warning") {
-          consoleLogs.push(`[Console ${type}] ${text}`);
-        }
+        if (type === "error" || type === "warning") recordLog(`[Console ${type}] ${text}`);
       };
       const handlePageError = (err: Error) => {
-        consoleLogs.push(`[Runtime Error] ${err.stack ?? err.message}`);
+        recordLog(`[Runtime Error] ${err.stack ?? err.message}`);
       };
 
       page.on("console", handleConsole);
@@ -47,29 +51,26 @@ export const test = base.extend<E2EFixtures>({
 
         if (testInfo.status !== testInfo.expectedStatus) {
           try {
-            const cleanTitle = testInfo.title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-            const dir = path.join(process.cwd(), "test-results", "failures");
-            await fs.mkdir(dir, { recursive: true });
-
             const url = page.url();
             const htmlContent = await page.content().catch(() => "Unable to fetch page HTML");
-
-            const report = [
-              `# E2E Test Failure Diagnostic: ${testInfo.title}`,
-              `- **Status:** ${testInfo.status}`,
-              `- **Duration:** ${testInfo.duration}ms`,
-              `- **URL:** [${url}](${url})`,
-              `- **File:** [${path.basename(testInfo.file)}](file:///${testInfo.file.replace(/\\/g, "/")})`,
-              `\n## Captured Console & Page Errors`,
-              consoleLogs.length
-                ? consoleLogs.map((l) => `- ${l}`).join("\n")
-                : "No console/page errors or warnings captured.",
-              `\n## Active HTML Dump (first 10,000 characters)`,
-              `\`\`\`html\n${htmlContent.slice(0, 10000)}\n\`\`\``,
-            ].join("\n");
-
-            await fs.writeFile(path.join(dir, `${cleanTitle}.md`), report, "utf-8");
-            console.log(`\n[Diagnostic] Saved E2E failure digest to test-results/failures/${cleanTitle}.md\n`);
+            const diagnostic = buildFailureDiagnostic({
+              rootDir: process.cwd(),
+              title: testInfo.title,
+              file: testInfo.file,
+              line: testInfo.line,
+              project: testInfo.project.name,
+              status: testInfo.status,
+              duration: testInfo.duration,
+              url,
+              errorMessage: testInfo.error?.message,
+              logs: [
+                ...(droppedLogs > 0 ? [`[Diagnostic] ${droppedLogs} earlier console entries dropped in memory`] : []),
+                ...consoleLogs,
+              ],
+              html: htmlContent,
+            });
+            const { digestPath } = writeFailureDiagnostic(process.cwd(), diagnostic);
+            console.log(`\n[Diagnostic] Saved E2E failure digest to ${digestPath}\n`);
           } catch (err) {
             console.error("Failed to write E2E test failure diagnostics:", err);
           }

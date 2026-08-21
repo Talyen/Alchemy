@@ -1,34 +1,58 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 
-function currentCommit(rootDir) {
-  const result = spawnSync("git", ["rev-parse", "HEAD"], {
+function gitOutput(rootDir, args) {
+  const result = spawnSync("git", args, {
     cwd: rootDir,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
   });
-  return result.status === 0 ? result.stdout.trim() : null;
+  return result.status === 0 ? result.stdout : "";
+}
+
+function sourceState(rootDir, commit) {
+  const rawPaths = gitOutput(rootDir, ["status", "--short", "--untracked-files=all", "-z"])
+    .split("\0")
+    .filter((entry) => entry.trim())
+    .map((entry) => (entry.length >= 3 && entry[2] === " " ? entry.slice(3) : entry).trim());
+  return {
+    commit: commit === undefined ? gitOutput(rootDir, ["rev-parse", "HEAD"]).trim() || null : commit,
+    dirtyPaths: rawPaths.slice(0, 20),
+    omittedDirtyPaths: Math.max(0, rawPaths.length - 20),
+  };
 }
 
 function normalizeArtifact(rootDir, artifact) {
-  return path.relative(rootDir, path.resolve(rootDir, artifact)).replaceAll(path.sep, "/");
+  const value = typeof artifact === "string" ? { path: artifact, role: "primary" } : artifact;
+  const relativePath = path.relative(rootDir, path.resolve(rootDir, value.path)).replaceAll(path.sep, "/");
+  return {
+    path: relativePath,
+    role: value.role === "secondary" ? "secondary" : "primary",
+    existsAtWrite: fs.existsSync(path.resolve(rootDir, value.path)),
+  };
 }
 
-/**
- * Write one compact pointer to the latest report-producing command.
- * @param {{ rootDir: string, status: string, command: string, artifacts?: string[], summary?: string, commit?: string|null }} options
- * @returns {{ jsonPath: string, markdownPath: string }}
- */
+function artifactLines(artifacts, role) {
+  const selected = artifacts.filter((artifact) => artifact.role === role);
+  return selected.length > 0
+    ? selected.map(
+        (artifact) => `- \`${artifact.path}\`${artifact.existsAtWrite ? "" : " _(missing when pointer was written)_"}`,
+      )
+    : ["- None"];
+}
+
+/** Write one compact, source-state-aware pointer to the latest report-producing command. */
 export function writeCurrentRun({ rootDir, status, command, artifacts = [], summary = "", commit } = {}) {
   if (!rootDir) throw new Error("writeCurrentRun requires rootDir");
   const reportsDir = path.join(rootDir, "reports");
   fs.mkdirSync(reportsDir, { recursive: true });
   const generatedAt = new Date().toISOString();
+  const state = sourceState(rootDir, commit);
   const normalizedArtifacts = artifacts.map((artifact) => normalizeArtifact(rootDir, artifact));
   const payload = {
     generatedAt,
-    commit: commit === undefined ? currentCommit(rootDir) : commit,
+    ...state,
     status: status ?? "unknown",
     command: command ?? "unknown",
     artifacts: normalizedArtifacts,
@@ -44,10 +68,17 @@ export function writeCurrentRun({ rootDir, status, command, artifacts = [], summ
     `- Command: \`${payload.command}\``,
     `- Generated: ${payload.generatedAt}`,
     ...(payload.commit ? [`- Commit: \`${payload.commit}\``] : []),
+    `- Dirty paths at generation: ${payload.dirtyPaths.length + payload.omittedDirtyPaths}`,
+    ...payload.dirtyPaths.map((dirtyPath) => `  - \`${dirtyPath}\``),
+    ...(payload.omittedDirtyPaths > 0 ? [`  - _…and ${payload.omittedDirtyPaths} more_`] : []),
     "",
-    "## Drill-down artifacts",
+    "## Primary evidence",
     "",
-    ...(payload.artifacts.length > 0 ? payload.artifacts.map((artifact) => `- \`${artifact}\``) : ["- None"]),
+    ...artifactLines(payload.artifacts, "primary"),
+    "",
+    "## Secondary drill-down",
+    "",
+    ...artifactLines(payload.artifacts, "secondary"),
     ...(payload.summary ? ["", payload.summary] : []),
     "",
   ];

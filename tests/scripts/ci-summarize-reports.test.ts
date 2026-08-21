@@ -10,6 +10,12 @@ import {
   summarizePlaywrightReport,
 } from "../../scripts/ci-summarize-playwright.mjs";
 import { writeCurrentRun } from "../../scripts/lib/current-run.mjs";
+import {
+  buildFailureDiagnostic,
+  diagnosticIdentity,
+  MAX_DIAGNOSTIC_BYTES,
+  writeFailureDiagnostic,
+} from "../../scripts/lib/playwright-diagnostics.mjs";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -137,6 +143,35 @@ describe("ci-summarize-playwright", () => {
     expect(summary.failures).toHaveLength(2);
     expect(formatPlaywrightSummaryMarkdown(summary)).toContain("and 2 more");
   });
+
+  it("does not advertise a missing fixture diagnostic", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "pw-summary-no-digest-"));
+    try {
+      const summary = summarizePlaywrightReport(
+        {
+          stats: { expected: 0, unexpected: 1, flaky: 0, skipped: 0 },
+          suites: [
+            {
+              specs: [
+                {
+                  title: "raw animation canary",
+                  file: "tests/draw-discard-animations.spec.ts",
+                  line: 10,
+                  tests: [{ status: "unexpected", projectName: "chromium", results: [{ errors: [] }] }],
+                },
+              ],
+            },
+          ],
+        },
+        { rootDir: root },
+      );
+
+      expect(summary.failures[0]?.digestPath).toBeNull();
+      expect(formatPlaywrightSummaryMarkdown(summary)).not.toContain("Diagnostic:");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("current-run pointer", () => {
@@ -148,7 +183,10 @@ describe("current-run pointer", () => {
         commit: "abc123",
         status: "failed",
         command: "vitest",
-        artifacts: ["reports/vitest-timings.json"],
+        artifacts: [
+          { path: "reports/summary.md", role: "primary" },
+          { path: "reports/raw", role: "secondary" },
+        ],
         summary: "First failure is in the save route.",
       });
       const json = JSON.parse(fs.readFileSync(paths.jsonPath, "utf8"));
@@ -158,10 +196,68 @@ describe("current-run pointer", () => {
         commit: "abc123",
         status: "failed",
         command: "vitest",
-        artifacts: ["reports/vitest-timings.json"],
+        artifacts: [
+          { path: "reports/summary.md", role: "primary", existsAtWrite: false },
+          { path: "reports/raw", role: "secondary", existsAtWrite: false },
+        ],
       });
-      expect(markdown).toContain("reports/vitest-timings.json");
+      expect(json.dirtyPaths).toEqual([]);
+      expect(markdown).toContain("## Primary evidence");
+      expect(markdown).toContain("## Secondary drill-down");
+      expect(markdown).toContain("missing when pointer was written");
       expect(markdown).toContain("First failure is in the save route.");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("Playwright failure diagnostics", () => {
+  it("bounds warning floods and DOM output", () => {
+    const diagnostic = buildFailureDiagnostic({
+      rootDir: process.cwd(),
+      title: "fails with a warning flood",
+      file: "tests/example.spec.ts",
+      line: 17,
+      project: "chromium",
+      status: "failed",
+      duration: 123,
+      url: "http://127.0.0.1:4173",
+      errorMessage: "TimeoutError: expected button to be visible",
+      logs: Array.from({ length: 200 }, (_, index) => `${index} ${"warning ".repeat(300)}`),
+      html: "<main>" + "🧪".repeat(20_000) + "</main>",
+    });
+
+    expect(Buffer.byteLength(diagnostic.markdown, "utf8")).toBeLessThanOrEqual(MAX_DIAGNOSTIC_BYTES);
+    expect(diagnostic.omittedLogs).toBeGreaterThan(0);
+    expect(diagnostic.omittedDomBytes).toBeGreaterThan(0);
+    expect(diagnostic.markdown).toContain("entries omitted");
+  });
+
+  it("uses file, line, and project to avoid duplicate-title collisions", () => {
+    const first = diagnosticIdentity({ file: "tests/a.spec.ts", line: 1, project: "chromium", title: "same" });
+    const second = diagnosticIdentity({ file: "tests/b.spec.ts", line: 1, project: "chromium", title: "same" });
+    expect(first.id).not.toBe(second.id);
+  });
+
+  it("writes an exact digest and failure index", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "pw-diagnostic-"));
+    try {
+      const diagnostic = buildFailureDiagnostic({
+        rootDir: root,
+        title: "writes a digest",
+        file: "tests/example.spec.ts",
+        line: 9,
+        project: "chromium",
+        status: "failed",
+        duration: 20,
+        logs: [],
+        html: "<main>failed</main>",
+      });
+      const result = writeFailureDiagnostic(root, diagnostic);
+      const index = JSON.parse(fs.readFileSync(path.join(root, "test-results/failures/index.json"), "utf8"));
+      expect(fs.existsSync(result.digestPath)).toBe(true);
+      expect(index.failures[0]).toMatchObject({ id: diagnostic.identity.id });
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

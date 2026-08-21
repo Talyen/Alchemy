@@ -1,6 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
 
+const ANSI_PATTERN = new RegExp(String.raw`\u001B(?:[@-_][0-?]*[ -/]*[@-~]|\][^\u0007]*(?:\u0007|\u001B\\))`, "gu");
+
+export function sanitizeOutput(output) {
+  return output
+    .replace(ANSI_PATTERN, "")
+    .split("")
+    .filter((character) => {
+      const code = character.charCodeAt(0);
+      return character === "\n" || character === "\r" || character === "\t" || (code >= 32 && code !== 127);
+    })
+    .join("");
+}
+
 /**
  * Return the first useful line from a child-process stream.
  * @param {string} output
@@ -8,7 +21,7 @@ import path from "node:path";
  */
 export function firstOutputLine(output) {
   return (
-    output
+    sanitizeOutput(output)
       .split(/\r?\n/u)
       .map((line) => line.trim())
       .find(Boolean) ?? "(no diagnostic output)"
@@ -23,7 +36,7 @@ export function firstOutputLine(output) {
  * @returns {string}
  */
 export function tailOutput(output, maxChars = 4_000) {
-  const normalized = output.trim();
+  const normalized = sanitizeOutput(output).trim();
   if (normalized.length <= maxChars) return normalized;
   return `[...${normalized.length - maxChars} chars omitted...]\n${normalized.slice(-maxChars)}`;
 }

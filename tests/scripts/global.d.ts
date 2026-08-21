@@ -178,9 +178,11 @@ declare module "../../scripts/ci-summarize-vitest.mjs" {
 
 interface PlaywrightFailure {
   file: string;
+  line: number;
   title: string;
   message: string;
   status: string;
+  digestPath: string | null;
 }
 interface PlaywrightSummary {
   total: number;
@@ -192,13 +194,19 @@ interface PlaywrightSummary {
 }
 
 declare module "*/ci-summarize-playwright.mjs" {
-  export function summarizePlaywrightReport(report: unknown, options?: { maxFailures?: number }): PlaywrightSummary;
+  export function summarizePlaywrightReport(
+    report: unknown,
+    options?: { maxFailures?: number; rootDir?: string },
+  ): PlaywrightSummary;
   export function formatPlaywrightSummaryMarkdown(summary: PlaywrightSummary): string;
   export function summarizePlaywrightFile(reportPath: string): string;
 }
 
 declare module "../../scripts/ci-summarize-playwright.mjs" {
-  export function summarizePlaywrightReport(report: unknown, options?: { maxFailures?: number }): PlaywrightSummary;
+  export function summarizePlaywrightReport(
+    report: unknown,
+    options?: { maxFailures?: number; rootDir?: string },
+  ): PlaywrightSummary;
   export function formatPlaywrightSummaryMarkdown(summary: PlaywrightSummary): string;
   export function summarizePlaywrightFile(reportPath: string): string;
 }
@@ -235,19 +243,27 @@ declare module "../../scripts/prune-transient-artifacts.mjs" {
 }
 
 declare module "../../scripts/lib/compact-output.mjs" {
+  export function sanitizeOutput(output: string): string;
   export function firstOutputLine(output: string): string;
   export function tailOutput(output: string, maxChars?: number): string;
 }
 
 interface ContextMeasurement {
-  docs: Array<{ path: string; section: string | null; bytes: number }>;
-  contextBytes: number;
   changedPaths: string[];
   routes: string[];
+  instructions: Array<{ path: string; heading: string | null; reason: string; kind: string; bytes: number }>;
+  ownerDocs: Array<{ path: string; heading: string | null; reason: string; kind: string; bytes: number }>;
+  docs: Array<{ path: string; heading: string | null; reason: string; kind: string; bytes: number }>;
+  instructionBytes: number;
+  ownerDocBytes: number;
+  selectedBytes: number;
+  changedFileBytes: number;
   verificationCommands: number;
   deduplicatedTestPaths: number;
   artifacts: Array<{ path: string; bytes: number }>;
-  outputChars: number;
+  artifactBytes: number;
+  outputs: Array<{ path: string; bytes: number }>;
+  namedOutputBytes: number;
 }
 
 declare module "../../scripts/measure-agent-context.mjs" {
@@ -257,17 +273,20 @@ declare module "../../scripts/measure-agent-context.mjs" {
     artifacts?: string[];
     outputFiles?: string[];
   }): ContextMeasurement;
+  export function measureAllRoutes(): ContextMeasurement[];
 }
 
 interface VerificationRoute {
   id: string;
   patterns: string[];
   commands: string[];
+  unknown?: boolean;
 }
 
 interface VerificationCommand {
   key: string;
   label: string;
+  reason: string;
   command: string;
   args: string[];
 }
@@ -289,10 +308,77 @@ declare module "../../scripts/lib/current-run.mjs" {
     rootDir: string;
     status: string;
     command: string;
-    artifacts?: string[];
+    artifacts?: Array<string | { path: string; role?: "primary" | "secondary" }>;
     summary?: string;
     commit?: string | null;
   }): { jsonPath: string; markdownPath: string };
+}
+
+interface PlaywrightDiagnosticInput {
+  rootDir?: string;
+  title: string;
+  file: string;
+  line?: number;
+  project?: string;
+  status: string | undefined;
+  duration: number;
+  url?: string;
+  errorMessage?: string;
+  logs?: string[];
+  html?: string;
+}
+
+interface PlaywrightDiagnostic {
+  identity: { id: string; file: string; line: number; project: string; title: string };
+  markdown: string;
+  omittedLogs: number;
+  omittedDomBytes: number;
+}
+
+declare module "../../scripts/lib/playwright-diagnostics.mjs" {
+  export const MAX_DIAGNOSTIC_BYTES: number;
+  export function diagnosticIdentity(input: {
+    rootDir?: string;
+    file: string;
+    line?: number;
+    project?: string;
+    title: string;
+  }): PlaywrightDiagnostic["identity"];
+  export function buildFailureDiagnostic(
+    input: PlaywrightDiagnosticInput,
+    options?: { maxBytes?: number },
+  ): PlaywrightDiagnostic;
+  export function writeFailureDiagnostic(
+    rootDir: string,
+    diagnostic: PlaywrightDiagnostic,
+  ): { digestPath: string; recordPath: string };
+  export function writeFailureIndex(rootDir: string): {
+    indexPath: string;
+    failures: Array<{ id: string; digestPath: string; bytes: number }>;
+  };
+}
+
+declare module "*/playwright-diagnostics.mjs" {
+  export const MAX_DIAGNOSTIC_BYTES: number;
+  export function diagnosticIdentity(input: {
+    rootDir?: string;
+    file: string;
+    line?: number;
+    project?: string;
+    title: string;
+  }): PlaywrightDiagnostic["identity"];
+  export function buildFailureDiagnostic(
+    input: PlaywrightDiagnosticInput,
+    options?: { maxBytes?: number },
+  ): PlaywrightDiagnostic;
+  export function writeFailureDiagnostic(
+    rootDir: string,
+    diagnostic: PlaywrightDiagnostic,
+  ): { digestPath: string; recordPath: string };
+  export function writeFailureIndex(rootDir: string): {
+    indexPath: string;
+    failures: Array<{ id: string; digestPath: string; bytes: number }>;
+  };
 }
 
 declare module "../../scripts/check-ci-routing.mjs" {
@@ -326,6 +412,7 @@ declare module "*/prune-transient-artifacts.mjs" {
 }
 
 declare module "*/compact-output.mjs" {
+  export function sanitizeOutput(output: string): string;
   export function firstOutputLine(output: string): string;
   export function tailOutput(output: string, maxChars?: number): string;
 }
@@ -337,6 +424,7 @@ declare module "*/measure-agent-context.mjs" {
     artifacts?: string[];
     outputFiles?: string[];
   }): ContextMeasurement;
+  export function measureAllRoutes(): ContextMeasurement[];
 }
 
 declare module "*/verify-changed.mjs" {
@@ -356,7 +444,7 @@ declare module "*/current-run.mjs" {
     rootDir: string;
     status: string;
     command: string;
-    artifacts?: string[];
+    artifacts?: Array<string | { path: string; role?: "primary" | "secondary" }>;
     summary?: string;
     commit?: string | null;
   }): { jsonPath: string; markdownPath: string };

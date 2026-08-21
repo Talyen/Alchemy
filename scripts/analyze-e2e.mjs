@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { writeCurrentRun } from "./lib/current-run.mjs";
 import { tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
+import { diagnosticIdentity, writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
 import { formatPlaywrightSummaryMarkdown, summarizePlaywrightReport } from "./lib/playwright-summary.mjs";
 
 console.log("=========================================");
@@ -121,6 +122,7 @@ try {
         expectedStatus: test.expectedStatus,
         errorMessage,
         retries: test.results.length - 1,
+        project: test.projectName ?? "chromium",
       };
 
       allTests.push(testInfo);
@@ -164,13 +166,23 @@ try {
   if (failedTests.length > 0) {
     mdReport.push(`\n## ❌ Failed Tests (${failedTests.length})`);
     for (const test of failedTests.slice(0, 5)) {
-      const cleanTitle = test.title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+      const identity = diagnosticIdentity({
+        rootDir: process.cwd(),
+        title: test.title,
+        file: test.file,
+        line: test.line,
+        project: test.project,
+      });
+      const digestPath = `test-results/failures/${identity.id}.md`;
+      const diagnosticLine = fs.existsSync(path.resolve(digestPath))
+        ? `- **Failure Diagnostics:** [${digestPath}](file:///${path.resolve(digestPath).replace(/\\/g, "/")})`
+        : "- **Failure Diagnostics:** No bounded digest was produced for this test; use the error below.";
       mdReport.push(
         [
           `### 🛑 ${test.title}`,
           `- **File:** [${test.file}:${test.line}](file:///${path.resolve(test.file).replace(/\\/g, "/")})`,
           `- **Duration:** ${(test.duration / 1000).toFixed(2)}s`,
-          `- **Failure Diagnostics:** Check [test-results/failures/${cleanTitle}.md](file:///${path.resolve("test-results/failures/" + cleanTitle + ".md").replace(/\\/g, "/")}) for DOM & console logs.`,
+          diagnosticLine,
           `\n\`\`\`text\n${test.errorMessage || "No explicit error message captured by Playwright."}\n\`\`\``,
         ].join("\n"),
       );
@@ -214,16 +226,7 @@ try {
     );
   }
 
-  // 4. Optimization Recommendations
-  mdReport.push(
-    [
-      `\n## 💡 Best Practice Recommendations`,
-      `1. **Leverage Fast Battle Mode:** If the test is in a combat cycle, ensure it uses the \`fastBattle\` fixture from \`tests/fixtures/e2e.ts\` to disable time-consuming card and turn animations.`,
-      `2. **Use State Injection:** Instead of playing through early stages of combat, utilize state injection hooks like \`injectMidCombatSave\` or seed the character storage states to jump directly to the target node.`,
-      `3. **Eliminate Hard Wait Hooks:** Never use manual timeouts or \`page.waitForTimeout()\`. Instead, rely on Playwright's locator assertions (e.g. \`expect(locator).toBeVisible()\`) which leverage auto-retry capability.`,
-      `4. **Trace Files:** Open the trace ZIPs in Playwright's trace viewer (\`npx playwright show-trace test-results/.../trace.zip\`) to step through actions, network calls, and console error timestamps.`,
-    ].join("\n"),
-  );
+  mdReport.push(`\nE2E conventions and next-step guidance: [tests/e2e/README.md](../tests/e2e/README.md).`);
 
   const auditReportPath = path.join(reportsDir, "e2e-audit-report.md");
   fs.writeFileSync(auditReportPath, mdReport.join("\n"), "utf-8");
@@ -233,11 +236,23 @@ try {
   console.error("❌ Failed to process playwright JSON and generate audit report:", err);
 }
 
+const failureIndex = writeFailureIndex(process.cwd());
 writeCurrentRun({
   rootDir: process.cwd(),
   status: result.status === 0 ? "passed" : "failed",
   command: "npm run test:e2e:audit",
-  artifacts: ["reports/e2e-results.json", "reports/e2e-audit-report.md", "playwright-report", "test-results"],
+  artifacts: [
+    { path: "reports/e2e-audit-report.md", role: "primary" },
+    ...(failureIndex.failures.length > 0
+      ? [
+          { path: path.relative(process.cwd(), failureIndex.indexPath), role: "primary" },
+          ...failureIndex.failures.slice(0, 5).map((failure) => ({ path: failure.digestPath, role: "primary" })),
+        ]
+      : []),
+    { path: "reports/e2e-results.json", role: "secondary" },
+    { path: "playwright-report", role: "secondary" },
+    { path: "test-results", role: "secondary" },
+  ],
   summary: result.status === 0 ? "E2E audit completed." : "E2E audit failed; inspect the first failure digest.",
 });
 

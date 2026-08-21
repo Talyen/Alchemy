@@ -10,9 +10,9 @@ export const PAIRED_DELTA_FROM_MEDIAN = 0.15;
 export const MATERIAL_TIMEOUT_RATE = 0.02;
 
 export const LENGTH_BAND_BY_TYPE: Record<EnemyTypeBand, { min: number; max: number }> = {
-  normal: { min: 3, max: 5 },
-  elite: { min: 5, max: 7 },
-  boss: { min: 7, max: 10 },
+  normal: { min: 5, max: 10 },
+  elite: { min: 10, max: 15 },
+  boss: { min: 15, max: 30 },
 };
 
 /** Inclusive min, exclusive of 1.0 (100% is a separate never-floor rule). */
