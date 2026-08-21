@@ -11,48 +11,21 @@ Use this when you are actively optimizing frame pacing and need repeatable numbe
 ## Quick start
 
 ```bash
-# Production build + battle-effects (1 warm-up + 1 measured)
 npm run perf
-
-# Other scenarios (each defaults to 1 warm-up + 1 measured run)
-npm run perf -- --scenario battle-end-turn
-npm run perf -- --scenario collection-tabs
 npm run perf -- --all
-
-# Opt-in art diagnostics (no metrics aggregate)
-npm run perf -- --scenario battle-art-diag
-
-# Deep CDP trace (targets not authoritative — tracing adds overhead)
 npm run perf:trace -- --scenario battle-effects
-
-# Confirm on Electron (keep separate from Chromium numbers)
 npm run perf -- --electron --scenario battle-end-turn
-
-# Measure first-use latency in a fresh shipping runtime (no warm-up)
-npm run perf -- --electron --cold --scenario battle-effects
-
-# Long navigation soak with before/after runtime snapshots (diagnostic)
-npm run perf -- --scenario memory-soak
-
-# Compare two prior report directories
 npm run perf:compare -- reports/performance/<before> reports/performance/<after>
+npm run perf -- --help
 ```
-
-Reports land under `reports/performance/<timestamp>-<runtime>/` (gitignored):
-
-- `summary.md` — targets, aggregates, worst gaps, long tasks, input timing, and runtime deltas
-- `results.json` — machine-readable aggregates
-- `environment.json` — OS, commit, dirty tree, viewport, DPR, refresh estimate
-- `runs/<scenario>-<n>.json` — per-repetition metrics
-- `traces/` — Chrome DevTools Performance JSON (trace mode only)
 
 `reports/current-run.md` and `reports/current-run.json` point to the latest
 report-producing command. Open that pointer first; it is overwritten on the next
 run and is not a historical index.
 
-Agent read order: open `summary.md` first, then `results.json` for a machine-readable value, and only then the relevant per-run JSON or trace. Traces are opt-in evidence and should not be loaded into context for an ordinary FPS question.
-
-Headed Chromium uses a **1440×900** viewport (MacBook Air 13" logical / 16:10) so the window fits on-laptop. Battle scenarios inject `selectedAspectRatio: "16:10"`. The battle scene is a definite-size `[container-type:size]` container (`absolute inset-0`) so `cqh` card widths resolve; a flex-only scene made Chromium treat CQ block size as indefinite (`width: 0`) and portraits painted blank. Art readiness asserts painted rect size (not only `naturalWidth`, which passes for the transparent GIF fallback).
+Agent read order: open the summary first, then the machine-readable result, and
+only then a relevant per-run file or trace. Traces are opt-in evidence and
+should not be loaded for an ordinary FPS question.
 
 Open a deep trace in Chrome: DevTools → Performance → Load profile → select the `.json` file.
 
@@ -71,19 +44,10 @@ Short smoke / harness iteration (not for baselines):
 PERF_MEASURE_MS=8000 PERF_MIN_FRAMES=50 npm run perf -- --scenario battle-end-turn --skip-build
 ```
 
-## Scenarios
-
-| Id                   | Profile    | What it exercises                                                                                                                                                   |
-| -------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `battle-effects`     | continuous | Dense multi-type hand (dual-hit / heal+damage / statuses), play several cards per turn so combat texts overlap, then end turn (**default** for bare `npm run perf`) |
-| `battle-end-turn`    | transition | One play → wait for play FX to finish → end turn → draw (isolates discard / enemy / redraw)                                                                         |
-| `talents-effects`    | continuous | Switch talent trees and hover unlockable nodes while particles and animated effects remain active                                                                   |
-| `collection-tabs`    | transition | Switch among populated bestiary, trinket, and card grids and exercise hover rendering                                                                               |
-| `options-brightness` | continuous | Alternate dim and bright display settings while ambient animation remains active                                                                                    |
-| `memory-soak`        | (diag)     | Repeated collection/talent navigation for runtime and DOM growth diagnosis; excluded from `--all`                                                                   |
-| `battle-art-diag`    | (diag)     | Art readiness diagnostics only; excluded from `--all`                                                                                                               |
-
-`--all` runs the five metric scenarios above. All scenarios keep **real animations** (no `enableFastMode` / `fastBattle`). Setup and navigation are excluded from the measured window. Every ordinary loop includes one warm-up iteration before measured runs (including `--trace`); `--cold` skips it. Battle decks use real `cardLibrary` ids so `hydrateCard` attaches production art — do not use E2E `placeholder` stubs here. `battle-effects` uses cost-0 multi-effect cards so a full hand can fire in one turn without mana gating; damage stays low so the fight lasts.
+Scenario IDs, defaults, and diagnostic-only modes are maintained by the
+performance CLI; use `npm run perf -- --help` instead of copying that list here.
+All scenarios keep real animations, exclude setup/navigation from the measured
+window, and use production card-library art rather than E2E placeholders.
 
 ## Metrics
 
@@ -172,11 +136,11 @@ Measure → identify failing scenario/phase → perf:trace that scenario → opt
 
 ## Layout
 
-| Path                                | Role                                                   |
-| ----------------------------------- | ------------------------------------------------------ |
-| `playwright.performance.config.ts`  | Headed Chromium (or Electron), port **4176**, 1 worker |
-| `performance/`                      | Sampler, metrics, report, scenarios                    |
-| `scripts/run-performance.mjs`       | CLI entry (`npm run perf`)                             |
-| `tests/performance/metrics.test.ts` | Unit tests for metrics/compare/report math             |
+| Path                                | Role                                   |
+| ----------------------------------- | -------------------------------------- |
+| `playwright.performance.config.ts`  | Performance test runtime configuration |
+| `performance/`                      | Sampler, metrics, reports, scenarios   |
+| `scripts/run-performance.mjs`       | CLI entry (`npm run perf`)             |
+| `tests/performance/metrics.test.ts` | Metrics/compare/report unit tests      |
 
 Related: [12-PerformanceAudit.md](./Audits/12-PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).

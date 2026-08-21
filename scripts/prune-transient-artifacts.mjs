@@ -3,15 +3,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TRANSIENT_ARTIFACT_DIRS, formatBytes, measurePath } from "./lib/clean-dev-artifacts.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-export const TRANSIENT_DIRS = Object.freeze([
-  "reports",
-  "playwright-report",
-  "test-results",
-  "coverage",
-  "blob-report",
-]);
+export const TRANSIENT_DIRS = TRANSIENT_ARTIFACT_DIRS;
 const DEFAULT_DAYS = 1;
 
 function parseDays(value) {
@@ -29,19 +24,6 @@ export function parsePruneArgs(argv) {
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return { days, dryRun };
-}
-
-function bytesFor(pathname) {
-  try {
-    const stats = fs.lstatSync(pathname);
-    if (stats.isFile() || stats.isSymbolicLink()) return stats.size;
-  } catch {
-    return 0;
-  }
-  let total = 0;
-  for (const entry of fs.readdirSync(pathname, { withFileTypes: true }))
-    total += bytesFor(path.join(pathname, entry.name));
-  return total;
 }
 
 function stale(pathname, cutoff) {
@@ -72,12 +54,12 @@ function pruneDirectory(pathname, cutoff, dryRun, removed, rootDir) {
       // Empty directories contain no evidence, so remove them regardless of
       // mtime; the transient root itself is never passed through this branch.
       if (isEmpty) {
-        const bytes = bytesFor(child);
+        const bytes = measurePath(child).bytes;
         removed.push({ path: path.relative(rootDir, child), bytes });
         if (!dryRun) fs.rmSync(child, { recursive: true, force: true });
       }
     } else if (stale(child, cutoff)) {
-      const bytes = bytesFor(child);
+      const bytes = measurePath(child).bytes;
       removed.push({ path: path.relative(rootDir, child), bytes });
       if (!dryRun) fs.rmSync(child, { force: true });
     }
@@ -98,12 +80,6 @@ export function pruneTransientArtifacts({
     if (fs.existsSync(target)) pruneDirectory(target, cutoff, dryRun, removed, rootDir);
   }
   return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0) };
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return `${bytes}B`;
-  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)}KiB`;
-  return `${(bytes / 1024 ** 2).toFixed(1)}MiB`;
 }
 
 function main(argv = process.argv.slice(2)) {

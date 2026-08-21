@@ -1,10 +1,8 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { dealDamageToEnemy } from "@/lib/battle/damage";
-import type { BattleCardEffect } from "@/lib/game-data";
 import { defaultGearEffects } from "@/lib/gear";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
+import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -14,12 +12,7 @@ describe("dealDamageToEnemy — basic physical damage", () => {
   it("deals base damage to enemy health", () => {
     const state = patchBattleState({ enemyHealth: 30 });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      makeCombatTexts(),
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(25);
   });
 
@@ -30,12 +23,7 @@ describe("dealDamageToEnemy — basic physical damage", () => {
       talentEffects: { ...patchBattleState().talentEffects, flatPhysicalDamage: 0 },
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      makeCombatTexts(),
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(22);
   });
 
@@ -58,12 +46,7 @@ describe("dealDamageToEnemy — basic physical damage", () => {
         talentEffects: { ...patchBattleState().talentEffects },
       });
       const card = makeTestCard({ effects: [makeEffect(damageType, 5)] });
-      const result = dealDamageToEnemy(
-        state,
-        card,
-        card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-        makeCombatTexts(),
-      );
+      const result = dealDamage(state, card);
       expect(result.enemyHealth).toBe(24);
     }
   });
@@ -72,7 +55,7 @@ describe("dealDamageToEnemy — basic physical damage", () => {
     const state = patchBattleState({ enemyHealth: 30 });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeCombatTexts();
-    dealDamageToEnemy(state, card, card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>, texts);
+    dealDamage(state, card, texts);
     expect(texts.length).toBeGreaterThan(0);
     expect(texts.some((t) => t.target === "enemy" && t.kind === "damage")).toBe(true);
   });
@@ -82,26 +65,14 @@ describe("computeBaseDamage — equalToBlock / equalToArmor", () => {
   it("damage equals block plus forge when equalToBlock", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ block: 7 }) });
     const card = makeTestCard({ effects: [makeEffect("physical", 0, { equalToBlock: true })] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBeLessThanOrEqual(30 - 7);
   });
 
   it("damage equals armor plus forge when equalToArmor", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ armor: 4 }) });
     const card = makeTestCard({ effects: [makeEffect("physical", 0, { equalToArmor: true })] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBeLessThanOrEqual(30 - 4);
   });
 });
@@ -110,13 +81,7 @@ describe("dealDamageToEnemy — edge cases", () => {
   it("does not decrease health below 0", () => {
     const state = patchBattleState({ enemyHealth: 3 });
     const card = makeTestCard({ effects: [makeEffect("physical", 100)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(0);
   });
 
@@ -126,13 +91,7 @@ describe("dealDamageToEnemy — edge cases", () => {
       enemyMitigation: { armor: 0, forge: 0, block: 0 },
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 0)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(30);
     expect(result.playerStatuses.forge).toBe(0);
   });

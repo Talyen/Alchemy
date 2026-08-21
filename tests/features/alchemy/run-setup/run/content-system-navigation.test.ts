@@ -1,7 +1,12 @@
+import "../../../../helpers/mock-audio";
 import { describe, expect, it, beforeEach, vi, type Mock } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { getNavigationStoreView, getRunDomainStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
+import {
+  getNavigationStoreView,
+  getRunDomainStore,
+  useProfileStore,
+  resetAllTestStores,
+} from "../../../../helpers/gameplay-store-test";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { makeRunController, makeTalentController } from "../../../../helpers/run-controller";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
@@ -10,15 +15,10 @@ import { makeTestCard } from "../../../../fixtures/battle";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
-  resetRunProgressSlice,
   setRunProgress,
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
-
-vi.mock("@/lib/audio", () => ({
-  playGoldGain: vi.fn(),
-}));
 
 vi.mock("@/features/alchemy/shared/run-flow/campaign-start", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/run-flow/campaign-start")>();
@@ -29,8 +29,7 @@ vi.mock("@/features/alchemy/shared/run-flow/campaign-start", async (importOrigin
 });
 
 beforeEach(() => {
-  resetTransientRunUi();
-  resetRunProgressSlice();
+  resetAllTestStores();
   useProfileStore.setState({ discoveredCardIds: [], discoveredTrinketIds: [] });
 });
 

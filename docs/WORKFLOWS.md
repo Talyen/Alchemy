@@ -4,11 +4,14 @@ Step-by-step checklists for adding or changing game content and wiring.
 
 For refactors and simplification passes on attached paths, use [docs/Audits](./Audits/README.md) when the user cites an audit.
 
-**Docs:** the table in [AGENTS.md](../AGENTS.md#documentation-owners) is the map for which document to read.
-
 **Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** capability paths under `src/features/alchemy/` (for example `@/features/alchemy/shared/stores/run-session-read-port`) — not legacy alias paths that skip `shared/`.
 
-**Read scope:** use the task index and a bounded heading search (`rg -n '^## ' docs/WORKFLOWS*.md`) to open one workflow section at a time. Expand to adjacent sections only when a checklist explicitly crosses that boundary. Generated asset barrels are outputs; edit the manifest or source script named by the [asset workflow](./WORKFLOWS-ASSETS.md), then regenerate.
+**Read scope:** use the task index and open one workflow section at a time. Expand
+only when a checklist crosses that boundary. Generated asset barrels are
+outputs; use the [asset workflow](./WORKFLOWS-ASSETS.md) for their sources and
+regeneration. Each checklist's tests are selected by the changed-path route
+([CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change)); only
+catalog-external tests are named inline.
 
 ## Task index
 
@@ -46,19 +49,11 @@ Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`
 
 ## Change mid-run resume (`ActiveRunData`)
 
-1. Extend `ActiveRunData` in `src/lib/active-run-session/types.ts` and Zod schema in `src/lib/validation/save-schemas/active-run.ts` (optional fields with defaults in `normalize-active-run-data.ts` often avoid a schema bump). Mid-combat wire shape goes through `PersistedBattleStateSchema` in `save-schemas/persisted-battle-state.ts`.
-2. Add the field to `ActiveRunProgressFields` / hydration in `src/features/alchemy/shared/stores/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern) when it is active-run progression. Transient resume fields belong in the codec projection instead of the run-domain types. The flat `RunStateFields` patch type is test-only now — if a test needs it, add the key to `tests/helpers/run-domain-store-test.ts`.
-3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `src/features/alchemy/shared/stores/run-resume-codec.ts` — the codec is the sole `RunSession` → `ActiveRunData` translator. Shop encode lives in `shared/stores/encode-shops.ts`; interrupted-flow encode/decode lives in `shared/stores/encode-interrupted-flow.ts`. Progress fields spread from the aggregate via `pickActiveRunFields`; do not re-list them. `normalize-active-run-data.ts` keeps the decode-time content-system guards in sync. Transient resume fields such as shops, mystery visits, Wildwood draft, and campaign/labyrinth `starterDraftChoices` live on the session region and are projected by the codec. Domain notes: [MIGRATIONS.md](../src/features/alchemy/shared/storage/MIGRATIONS.md) § [Interrupted flow](../src/features/alchemy/shared/storage/MIGRATIONS.md#interrupted-flow-activeruninterruptedflow), [Shop offerings](../src/features/alchemy/shared/storage/MIGRATIONS.md#shop-offerings-activerun-shop-fields), [Battle transition continuation](../src/features/alchemy/shared/storage/MIGRATIONS.md#battle-transition-continuation), [Active-run RNG streams](../src/features/alchemy/shared/storage/MIGRATIONS.md#active-run-rng-streams-activerunrng).
-4. Keep `snapshotRun()` and `restoreRun()` as thin lifecycle wrappers around `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()`. `restore-active-run-session.ts` should only apply the decoded session fields. Default trinket-manifest repair for mid-combat resume runs in `restoreRun` via `repairPersistedBattleTrinketManifest` (not Zod). Keep the operation inside `dispatchRunSessionCommand()` so boot/resume is published as one aggregate commit; defer navigation, audio, and presentation work with `afterCommit` or after the command returns.
-5. Run `tests/features/alchemy/shared/storage/active-run.test.ts`, `tests/features/alchemy/shared/stores/run-domain-*.test.ts` (snapshot parity), the codec / pending-reward tests, plus storage/migration tests.
-
-**Active-run helpers (do not confuse):**
-
-| Function                 | Module                                  | When                                                         |
-| ------------------------ | --------------------------------------- | ------------------------------------------------------------ |
-| `normalizeActiveRunData` | `@/lib/validation`                      | Zod transform: health clamp + content-system field isolation |
-| `parseActiveRun`         | `@/lib/active-run-session`              | Runtime validation before hydration                          |
-| `toActiveRunData`        | `@/lib/active-run-session` (`parse.ts`) | Card hydrate after Zod parse (also used by save IO)          |
+1. Classify the field as active-run progression or transient resume state. Keep the aggregate shape and the wire shape owned by their existing modules; mid-combat fields still use `PersistedBattleStateSchema`.
+2. Update the active-run type/schema and, for progression fields, `ActiveRunProgressFields` / hydration in `run-state-init.ts`. Use defaults and normalization before adding a migration step; the save contract is in [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `run-resume-codec.ts`. This codec is the sole `RunSession` ↔ `ActiveRunData` translation boundary; shops and interrupted flow keep their focused codec helpers.
+4. Keep `snapshotRun()` / `restoreRun()` as thin lifecycle wrappers and publish boot/resume through one `dispatchRunSessionCommand()`. Defer navigation, audio, and presentation work until after commit.
+5. Run the active-run snapshot/codec tests plus the storage/migration tests named by the save contract. Use the changed-path route for the final selection.
 
 ---
 
@@ -79,13 +74,13 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 
 ## Screen fade motion
 
-| Step                  | Guidance                                                                                                                                                                                                                                                                                                                                                                                                               |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Route change       | Opacity-only page fade in `useRenderedScreenTransition` (`src/app/use-app-navigation.ts`). Tokens: `--motion-fade-duration` / `MOTION_FADE_MS` / `PAGE_EXIT_MS`. Autosave, audio, battle playback, and presentation teardown follow **committed** `screen`, not `renderedScreen`. Sequential swap: `useSequentialFadeSwap`. `setScreen` / `assertScreenTransitionAllowed`: `use-screen-transitions.ts`.                |
-| 2. In-screen identity | `<FadeSlot swapKey={...}>` for any in-screen identity swap (tabs, shop modes, offerings, keyword trees). First mount is idle so it does not stack on the route fade.                                                                                                                                                                                                                                                   |
-| 3. Overlays           | Dialogs, wish, and game menu use `useFadePresence` so they fade out before unmount.                                                                                                                                                                                                                                                                                                                                    |
-| 4. Copy               | `ScreenDescription` is static. Word-by-word `TextAnimate` is mystery narrative only.                                                                                                                                                                                                                                                                                                                                   |
-| 5. Anti-flash         | Swap layout only while opacity is 0. `FadeSlot` holds wrapper `className` until then. Identity swaps that change subtree shape (tabs, shop modes, mystery phases, talent keywords) use `FadeSlot` plus reserved min-height. Collection uses inner `grid-rows-2` + aspect fillers + slot `min-h`. Routes must not `return null` for a missing payload — hold the last view or keep screen chrome. Do not stagger items. |
+| Step                  | Guidance                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Route change       | Opacity-only page fade in `useRenderedScreenTransition` (`src/app/use-app-navigation.ts`). Tokens: `--motion-fade-duration` / `MOTION_FADE_MS` / `PAGE_EXIT_MS`. Autosave, audio, battle playback, and presentation teardown follow **committed** `screen`, not `renderedScreen`. Sequential swap: `useSequentialFadeSwap`. `setScreen` / `assertScreenTransitionAllowed`: `use-screen-transitions.ts`. |
+| 2. In-screen identity | `<FadeSlot swapKey={...}>` for any in-screen identity swap (tabs, shop modes, offerings, keyword trees). First mount is idle so it does not stack on the route fade.                                                                                                                                                                                                                                    |
+| 3. Overlays           | Dialogs, wish, and game menu use `useFadePresence` so they fade out before unmount.                                                                                                                                                                                                                                                                                                                     |
+| 4. Copy               | `ScreenDescription` is static. Word-by-word `TextAnimate` is mystery narrative only.                                                                                                                                                                                                                                                                                                                    |
+| 5. Anti-flash         | Swap layout only while opacity is 0; `FadeSlot` holds wrapper `className` until then. Shape-changing swaps (tabs, shop modes, mystery phases, talent keywords) add reserved min-height; collection uses inner `grid-rows-2` + aspect fillers + slot `min-h`. Routes must not `return null` for a missing payload — hold the last view or keep screen chrome. Do not stagger items.                      |
 
 Motion tokens live in `src/styles/theme.css` and `src/styles/components.css`. Hover/tap rules: [Interactive button conventions](#interactive-button-conventions).
 
@@ -106,7 +101,7 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 | Equal choices   | Destination art tiles (`DestinationChoices` + `TiltSurface`) with a label under the art             |
 | Tabs            | `TabBar` — `h-11`, `rounded-xl`                                                                     |
 | Hover / press   | [AGENTS.md § UI](../AGENTS.md#ui)                                                                   |
-| Width tiers     | `menu` → `w-56`, `dialog` → `w-40`, `action` → `min-w-40`, `full` → `w-full`                        |
+| Width tiers     | `BUTTON_WIDTH_*` in `src/features/alchemy/shared/config/button-tokens.ts`                           |
 
 | Step               | Guidance                                                                                 |
 | ------------------ | ---------------------------------------------------------------------------------------- |
@@ -199,21 +194,18 @@ If an async battle flow persists an intermediate state, commit `activeCombat.pen
 3. Add player-side application logic in `src/lib/battle/status-player.ts`; add damage-type status riders in `src/lib/battle/damage-status-riders.ts`
 4. Add CC threshold logic in `src/lib/battle/status-cc.ts`
 5. Add matching keyword in `src/lib/game-data/keywords.ts`
-6. Cover through `tests/lib/battle/status-*.test.ts` tests
 
 ---
 
 ## Add a new card
 
-| Step                                                                      | File(s)                                                                                                                                                                                                                                                 |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Define card in the appropriate library array                           | `src/lib/game-data/cards/library/{core-cards,specialty-cards,advanced-cards}.ts`                                                                                                                                                                        |
-| 2. Add effects (discriminated union on `kind`)                            | same card entry, `effects: [...]`                                                                                                                                                                                                                       |
-| 3. Add art reference                                                      | `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)                                                                                                                                                                                          |
-| 4. (Optional) Register card sound                                         | `src/lib/sound-registry.ts` (`cardSounds` record)                                                                                                                                                                                                       |
-| 5. Update `descriptionLines` to match effects                             | same card entry                                                                                                                                                                                                                                         |
-| 6. Cover through `tests/lib/game-data/descriptions-match-effects.test.ts` |                                                                                                                                                                                                                                                         |
-| 6b. Context-aware description lines                                       | Pure text: `src/lib/game-data/card-description.ts`. UI tokens: `shared/ui/card-description-ui.tsx`. Homestead/talent context: `shared/context/card-description-context.tsx` (wired in `App.tsx`). Tests: `tests/lib/game-data/card-description.test.ts` |
+| Step                                                              | File(s)                                                                                                                                                                                                   |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Define card in the card library                                | `src/lib/game-data/cards/library/cards.ts`                                                                                                                                                                |
+| 2. Add effects (discriminated union on `kind`)                    | same card entry, `effects: [...]`                                                                                                                                                                         |
+| 3. Add art reference                                              | `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)                                                                                                                                            |
+| 4. (Optional) Register card sound                                 | `src/lib/sound-registry.ts` (`cardSounds` record)                                                                                                                                                         |
+| 5. Update `descriptionLines` to match effects; context-aware text | same entry; pure text `src/lib/game-data/card-description.ts`, UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`) |
 
 Cards in `cardLibrary` are automatically included in merchant shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
 
@@ -221,15 +213,15 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 ## Add a new card effect `kind`
 
-| Step                                                                         | File(s)                                                                                   |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| 1. Add to `BattleCardEffect` union                                           | `src/lib/game-data/types.ts`                                                              |
-| 2. Add an `EffectKindDefinition` to the matching grouped `*-schemas.ts` file | `src/lib/game-data/effects/`                                                              |
-| 3. Register non-recursive kinds in `TEMPLATE_EFFECT_DEFINITIONS`             | `src/lib/game-data/effects/template-definitions.ts`                                       |
-| 4. Add `kind` to `BATTLE_CARD_EFFECT_KINDS`                                  | `src/lib/game-data/effects/kinds.ts`                                                      |
-| 5. Register the runtime handler in `EFFECT_APPLY_BY_KIND`                    | `src/lib/battle/effect-handlers/` — see `src/lib/game-data/effects/BATTLE_HANDLERS.md`    |
-| 6. Update effect metadata used for descriptions/keywords                     | `src/lib/game-data/effect-metadata.ts`                                                    |
-| 7. Tests                                                                     | `tests/lib/battle/apply-effects*.test.ts`, `tests/lib/game-data/effects-registry.test.ts` |
+| Step                                                                         | File(s)                                                                                |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| 1. Add to `BattleCardEffect` union                                           | `src/lib/game-data/types.ts`                                                           |
+| 2. Add an `EffectKindDefinition` to the matching grouped `*-schemas.ts` file | `src/lib/game-data/effects/`                                                           |
+| 3. Register non-recursive kinds in `TEMPLATE_EFFECT_DEFINITIONS`             | `src/lib/game-data/effects/template-definitions.ts`                                    |
+| 4. Add `kind` to `BATTLE_CARD_EFFECT_KINDS`                                  | `src/lib/game-data/effects/kinds.ts`                                                   |
+| 5. Register the runtime handler in `EFFECT_APPLY_BY_KIND`                    | `src/lib/battle/effect-handlers/` — see `src/lib/game-data/effects/BATTLE_HANDLERS.md` |
+| 6. Update effect metadata used for descriptions/keywords                     | `src/lib/game-data/effect-metadata.ts`                                                 |
+| 7. Schema-registry guard                                                     | `tests/lib/game-data/effects-registry.test.ts`                                         |
 
 `chance` and `repeat-over-turns` are the recursive exceptions: their schema factories live in `recursive-definition.ts` and dispatch handles them before the non-recursive registry.
 
@@ -292,7 +284,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 | 6. (Optional) Register card sound                                                              | `src/lib/sound-registry.ts`                                                                               |
 | 7. Add bond level to talent defaults (`companionBondLevels`)                                   | `src/lib/game-data/talents/manifest-defaults.ts`                                                          |
 | 8. Add bond level to homestead defaults                                                        | `src/lib/homestead/defaults.ts`                                                                           |
-| 9. Update description lines + tests                                                            | `tests/lib/game-data/companions.test.ts` + `tests/lib/game-data/descriptions-match-effects.test.ts`       |
+| 9. Update description lines                                                                    | `tests/lib/game-data/companions.test.ts` guards companion copy                                            |
 
 ---
 
@@ -306,13 +298,12 @@ Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so 
 
 Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/lib/battle/types/state-helpers.ts`. Enemy attacks scale once in `computeMitigatedDamage`; player DoTs scale once in `status-ticks.ts`. Do not also scale in `applyPlayerCombatDamage`.
 
-| Step                                                                 | File(s)                                                                                           |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| 1. Add effect field if the talent needs a new battle bonus           | `src/lib/game-data/talent-effect-manifest.ts` + default in `talents/manifest-defaults.ts`         |
-| 2. Define the talent (`id`, `keywordId`, name, description, effects) | matching `src/lib/game-data/talents/pool/{keyword}.ts` — already spread into `talentPool`         |
-| 3. Keyword portrait art (new keyword or replacement art)             | `scripts/assets/talent-assets.mjs` + `talentArt` in `src/lib/game-data/assets.ts`                 |
-| 4. XP is keyword-based                                               | `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new      |
-| 5. Tests                                                             | `tests/lib/game-data/talent-pool.test.ts`, `tests/lib/game-data/talent-effect-invariants.test.ts` |
+| Step                                                                 | File(s)                                                                                      |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 1. Add effect field if the talent needs a new battle bonus           | `src/lib/game-data/talent-effect-manifest.ts` + default in `talents/manifest-defaults.ts`    |
+| 2. Define the talent (`id`, `keywordId`, name, description, effects) | matching `src/lib/game-data/talents/pool/{keyword}.ts` — already spread into `talentPool`    |
+| 3. Keyword portrait art (new keyword or replacement art)             | `scripts/assets/talent-assets.mjs` + `talentArt` in `src/lib/game-data/assets.ts`            |
+| 4. XP is keyword-based                                               | `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new |
 
 `talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays.
 
@@ -341,47 +332,39 @@ New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
 
 Ownership: [ARCHITECTURE.md § Shop commands](./ARCHITECTURE.md#shop-commands).
 
-1. Keep `create-shop-actions.ts` as composition only. Put initialization, purchases, services, refreshes, and live price selectors in the matching `run-loop/shop/*-shop-commands.ts` module.
-2. Draft recipes (`purchaseShopOffering`, `refreshShopOfferings`, `refreshCardShopOfferings`) live in `shop-transactions.ts` and return `ShopTransactionResult`. Dispatch through `runShopTransaction` / `commitShopInitialize` so spend SFX runs after a successful paid commit.
-3. Slot identity helpers live in `shop-slot-keys.ts` so screens do not import the command/audio module.
-4. Merchant's Favor (`firstPurchaseUsed`) applies to the first purchase of each shop **visit**; `initialize` resets that flag with `empty*State()`.
-5. Equipment acquisition must use `mutateGearWithRunHealthSync` **inside** the open shop command draft. Use `dispatchGearMutationWithRunHealthSync()` only when not already inside a command ([ARMORY.md § Write paths](./ARMORY.md#write-paths)).
-6. Tests: `tests/features/alchemy/run-loop/shop` plus shop-screen Playwright when changing screens ([CONTRIBUTING.md](../CONTRIBUTING.md#what-to-run-when-you-change)).
+1. Keep `create-shop-actions.ts` as composition; put shop behavior in the matching `*-shop-commands.ts` module and draft recipes in `shop-transactions.ts`.
+2. Dispatch purchases/refreshes through the existing shop command seam so paid effects and SFX run after a successful commit. Keep slot identity helpers separate from command/audio modules.
+3. Preserve the per-visit `firstPurchaseUsed` reset and use `mutateGearWithRunHealthSync` inside an open command draft; use the dispatching gear wrapper only at the outer boundary ([ARMORY.md § Write paths](./ARMORY.md#write-paths)).
 
 ## Content system behavior
 
-Campaign, labyrinth, and Wildwood differ at setup and resume. Ownership: [ARCHITECTURE.md § Run setup](./ARCHITECTURE.md#run-setup-ownership).
-
-- `run-setup/run/content-system-navigation.ts` owns content-system selection, character/difficulty routing, and resume. Run-start snapshots live in `content-system-run-init.ts` / `run-start-command.ts`.
-- Campaign and labyrinth Wildcard drafting is a persisted run phase: the first three-card offer is rolled from the `rewards` stream, `hasActiveRun` is true, and `session.starterDraftChoices` plus `runDeck` resume the same pack.
-- Wildwood setup ends once its persisted draft is created. From the first draft pick onward, `shell/use-wildwood-gauntlet-flow.ts` is the sole owner of Wildwood draft completion, boss progression, rewards, and resume routing.
+Campaign, labyrinth, and Wildwood differ at setup and resume. Read the
+[run-setup ownership](./ARCHITECTURE.md#run-setup-ownership) section before
+changing the navigation seam. Keep each content system’s persisted draft and
+resume path in its existing owner, then cover the changed setup/resume route
+with the focused tests selected by `verify:changed`.
 
 ## Change battle playback
 
-Layout: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-path).
+Layout and ownership: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-path).
 
-- Autoplay **ticks** live in `useBattlePlayback` on `BattleScreenRoute` so combat ticks do not re-render the shell. Session autoplay on/off lives in `useBattleController` so it survives route unmount. Enabling autoplay also turns on auto-end-turn (`autoEndTurn || isAutoplayEnabled`), even when the settings toggle is off.
-- Playback reads transfer / hidden-hand flags through `use-battle-presentation-gate.ts` (`subscribe` / `getState`). `useBattlePlayback` owns one gate subscription. Gate changes wake auto-end immediately and interrupt autoplay's retry wait.
-- After enemy/haste draw (and mid-turn resume), end-turn orchestration calls `scheduleAutoEndTurn` explicitly — auto-end does not reschedule from `battleState` React ticks alone.
-- `hiddenHandCardKeys` is an immutable sorted string list. Hidden-hand blocking is an intersection with the current hand so orphaned keys cannot soft-lock playback. Haste empty-draw clears leftover discard hides.
-- Manual card play, End Turn, and hand playability use the same idle gate (`isBattlePlayInputBusy`) as playback.
-- `bindPlayback` copies callbacks into controller refs. First combat entry remounts the route so preferred-autoplay `useState` init covers the session-prepared callback that `startBattle` fires before navigate.
-- Victory delays `setScreen` until after the death animation (`VICTORY_TRANSITION_DELAY`, collapsed by `resolveGameDelay` in fast mode). Auto-end and autoplay retry delays also use `resolveGameDelay`; `NAVIGATION_DELAY_MS` does not. See `src/lib/animation/animation-prefs.ts`.
-- Battle glue writes VFX through `BattlePresentationPort`. Global card hover/shimmer uses `ui-store`. Mid-enemy-turn reload still skips draw/discard replay.
+- Keep playback ticks on the battle route and session autoplay preferences in the controller so route remounts do not lose the setting.
+- Reuse the presentation gate and idle-input predicate for autoplay, auto-end-turn, manual card play, and End Turn. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks.
+- Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
+- Run the focused battle playback tests and the route selected by `verify:changed`; use the raw Playwright path for animation coverage.
 
 ## Adding a new screen
 
-| Step                                                                                                                      | File(s)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Add string to `Screen` union and `ROUTE_SCREENS`                                                                       | `src/lib/routing/screens.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| 2. Classify the screen and add every legal interactive edge                                                               | `src/lib/routing/run-screen-router.ts` (`SCREEN_PHASE`), `src/lib/routing/screen-transition-policy.ts` (allowed edges; run-loop lists are derived from `SCREEN_PHASE`). Do not put taxonomy in `use-screen-transitions.ts` — that hook only owns delay / immediate / commit timing.                                                                                                                                                                                                                                                                      |
-| 3. Create component in `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/` + barrel export                      | `index.ts` (local screen index under that subdirectory)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| 4. Wrap in `TitledScreenShell` (`PageLayout` + `ScreenShell` + header-row hamburger) and pass `onOpenMenu` from the route | `src/features/alchemy/shared/ui/layout-components.tsx`; exceptions: Main Menu (unshelled) and Battle (existing combat shell). Art-heavy 3-up landscape chooser rows pass `chooserRowShellWidthClass` / `chooserArtWidthClass` from `src/features/alchemy/shared/config/layout.ts`; unpadded 4-up portrait choosers pass `chooserHeroRowShellWidthClass` / `chooserHeroArtWidthClass`; padded 4-up portrait rows (difficulty select) pass `chooserHeroPaddedRowShellWidthClass` / `chooserHeroPaddedTileClass` so the shell ceiling fits intrinsic tiles. |
-| 5. Wire route handler in the matching phase table (`meta-routes`, `run-setup-routes`, `run-loop-routes`, …)               | `src/app/screen-routes/`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| 5b. Resumable / anti-flash screens                                                                                        | Add a thin route wrapper (see `app/screen-routes/mystery-screen-route.tsx`) that holds visit state with `useHeldWhile` and falls back to a shell while data is clearing                                                                                                                                                                                                                                                                                                                                                                                  |
-| 6. Extend phase route ctx / `RenderAlchemyScreenProps` if new props are needed                                            | `src/app/screen-routes/route-ctx.ts`, `src/app/screen-routes/index.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| 7. Wire navigation trigger                                                                                                | caller of `goToScreen("<name>")`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| 8. Cover taxonomy, allowed/rejected transitions, and route rendering                                                      | `tests/lib/routing/`, `tests/features/alchemy/shell/`, route component tests                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Step                                                                                                                      | File(s)                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Add string to `Screen` union and `ROUTE_SCREENS`                                                                       | `src/lib/routing/screens.ts`                                                                                                                                                                                                                                                        |
+| 2. Classify the screen and add every legal interactive edge                                                               | `src/lib/routing/run-screen-router.ts` (`SCREEN_PHASE`), `src/lib/routing/screen-transition-policy.ts` (allowed edges; run-loop lists are derived from `SCREEN_PHASE`). Do not put taxonomy in `use-screen-transitions.ts` — that hook only owns delay / immediate / commit timing. |
+| 3. Create component in `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/` + barrel export                      | `index.ts` (local screen index under that subdirectory)                                                                                                                                                                                                                             |
+| 4. Wrap in `TitledScreenShell` (`PageLayout` + `ScreenShell` + header-row hamburger) and pass `onOpenMenu` from the route | `src/features/alchemy/shared/ui/layout-components.tsx`; exceptions: Main Menu (unshelled) and Battle (combat shell). Art-heavy chooser rows pass width classes from `src/features/alchemy/shared/config/layout.ts`.                                                                 |
+| 5. Wire route handler in the matching phase table (`meta-routes`, `run-setup-routes`, `run-loop-routes`, …)               | `src/app/screen-routes/`                                                                                                                                                                                                                                                            |
+| 5b. Resumable / anti-flash screens                                                                                        | Add a thin route wrapper (see `app/screen-routes/mystery-screen-route.tsx`) that holds visit state with `useHeldWhile` and falls back to a shell while data is clearing                                                                                                             |
+| 6. Extend phase route ctx / `RenderAlchemyScreenProps` if new props are needed                                            | `src/app/screen-routes/route-ctx.ts`, `src/app/screen-routes/index.tsx`                                                                                                                                                                                                             |
+| 7. Wire navigation trigger                                                                                                | caller of `goToScreen("<name>")`                                                                                                                                                                                                                                                    |
 
 Boot restore/hydration sets a validated saved screen directly and intentionally bypasses the interactive transition table.
 
@@ -399,7 +382,7 @@ Boot restore/hydration sets a validated saved screen directly and intentionally 
 
 ## Adding a new mystery effect kind
 
-Live pool events in `src/lib/mystery/pool.ts` currently use `addCard`, `gainGold`, `gainXP`, `gainTrinket`, `gainRandomTrinket`, `gainGeneratedGear`, and `gainMaterial`. Other `MysteryEffect` kinds (`chooseCard`, `healHealth`, `damageHealth`, `loseGold`, `removeCard`) stay on the union and handlers for authoring; they are not in the live pool.
+Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect` kinds stay on the union and handlers for authoring even when no live event uses them.
 
 | Step                                                          | File(s)                                                                                                                             |
 | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |

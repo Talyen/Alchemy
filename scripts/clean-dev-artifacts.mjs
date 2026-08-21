@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Removes local Alchemy build/test artifacts and optionally stops stale E2E preview servers.
 // Depends on scripts/lib/clean-dev-artifacts.mjs and scripts/stop-dev-server.mjs ownership guards.
-import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { stopDevServer } from "./stop-dev-server.mjs";
 import {
   BUILD_ARTIFACT_DIRS,
   DEFAULT_ARTIFACT_DIRS,
@@ -17,8 +17,6 @@ import {
 
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
-const stopDevServerPath = path.join(rootDir, "scripts", "stop-dev-server.mjs");
-
 /**
  * @param {string[]} argv
  */
@@ -67,33 +65,19 @@ Default targets:
  * @param {number} port
  * @param {{ dryRun: boolean }} options
  */
-function stopPort(port, options) {
+async function stopPort(port, options) {
   if (options.dryRun) {
     console.log(`[dry-run] Would stop Alchemy-owned process on port ${port} (if any).`);
     return;
   }
 
-  const result = spawnSync(process.execPath, [stopDevServerPath], {
-    cwd: rootDir,
-    env: { ...process.env, ALCHEMY_DEV_PORT: String(port) },
-    encoding: "utf8",
-  });
-
-  if (result.stdout?.trim()) {
-    process.stdout.write(result.stdout.endsWith("\n") ? result.stdout : `${result.stdout}\n`);
-  }
-  if (result.stderr?.trim()) {
-    process.stderr.write(result.stderr.endsWith("\n") ? result.stderr : `${result.stderr}\n`);
-  }
-  if (result.status !== 0) {
-    throw new Error(`stop-dev-server failed for port ${port} (exit ${result.status ?? "unknown"})`);
-  }
+  await stopDevServer({ port, projectRoot: rootDir });
 }
 
 /**
  * @param {{ builds?: boolean, processes?: boolean, includeDevPort?: boolean, dryRun?: boolean }} options
  */
-export function runClean(options = {}) {
+export async function runClean(options = {}) {
   const builds = options.builds === true;
   const processes = options.processes === true;
   const includeDevPort = options.includeDevPort === true;
@@ -127,7 +111,7 @@ export function runClean(options = {}) {
       }
     }
     for (const port of ports) {
-      stopPort(port, { dryRun });
+      await stopPort(port, { dryRun });
     }
   }
 
@@ -138,20 +122,18 @@ export function runClean(options = {}) {
   return { removed: targets, freedBytes };
 }
 
-function main() {
+async function main() {
   const options = parseCleanArgs(process.argv.slice(2));
   if (options.help) {
     printHelp();
     return;
   }
-  runClean(options);
+  await runClean(options);
 }
 
 if (isMainModule(import.meta.url)) {
-  try {
-    main();
-  } catch (error) {
+  main().catch((error) => {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;
-  }
+  });
 }

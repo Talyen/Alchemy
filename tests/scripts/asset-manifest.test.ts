@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { staticAssets, validateAssetRegistry } from "../../scripts/assets/asset-manifest.mjs";
 
 const repoRoot = path.resolve(__dirname, "..", "..");
 
@@ -21,5 +22,11 @@ describe("asset manifest", () => {
     );
     const { total, unique } = JSON.parse(output) as { total: number; unique: number };
     expect(unique).toBe(total);
+  });
+
+  it("keeps registered sources, targets, and generated export names valid", async () => {
+    await expect(
+      validateAssetRegistry(staticAssets, { sourceDir: path.join(repoRoot, "Raw Assets") }),
+    ).resolves.toEqual(staticAssets);
   });
 });

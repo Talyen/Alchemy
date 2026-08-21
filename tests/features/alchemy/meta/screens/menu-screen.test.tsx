@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { installRafStub } from "../../../../helpers/animation-test";
 import { MenuScreen } from "@/features/alchemy/meta/screens/menu-screen";
 
 const defaultProps = {
@@ -24,12 +25,7 @@ describe("MenuScreen logo variants", () => {
   });
 
   it("tilts the logo toward the pointer", () => {
-    const frames: FrameRequestCallback[] = [];
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-      frames.push(callback);
-      return frames.length;
-    });
-    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    const frames = installRafStub();
 
     render(<MenuScreen {...defaultProps} />);
     const logo = screen.getByRole("button", { name: "Flip Alchemy logo" });

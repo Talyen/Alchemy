@@ -57,6 +57,19 @@ function headingSlugs(source: string): Set<string> {
   return slugs;
 }
 
+const REPO_PATH_PREFIX = /^(?:\.github\/|(?:src|tests|scripts|docs|desktop|public)\/)/u;
+const PATH_TEMPLATE_CHARS = /[*?{}$<>"'`]/u;
+
+function stripFencedBlocks(source: string): string {
+  const kept: string[] = [];
+  let inFence = false;
+  for (const line of source.split("\n")) {
+    if (/^\s{0,3}(?:```|~~~)/u.test(line)) inFence = !inFence;
+    else if (!inFence) kept.push(line);
+  }
+  return kept.join("\n");
+}
+
 describe("documentation contracts", () => {
   it("keeps local Markdown link targets valid", () => {
     const broken: string[] = [];
@@ -74,6 +87,24 @@ describe("documentation contracts", () => {
       }
     }
     expect(broken).toEqual([]);
+  });
+
+  it("keeps inline backtick repository paths valid", () => {
+    const missing: string[] = [];
+    for (const file of markdownFiles()) {
+      if (file.endsWith("CHANGELOG.md")) continue;
+      const source = stripFencedBlocks(readFileSync(file, "utf8"));
+      for (const match of source.matchAll(/`([^`\n]+)`/gu)) {
+        const candidate = match[1].trim();
+        if (!REPO_PATH_PREFIX.test(candidate) || PATH_TEMPLATE_CHARS.test(candidate)) continue;
+        const target = candidate.split("#")[0];
+        if (!target || !REPO_PATH_PREFIX.test(target)) continue;
+        if (!existsSync(resolve(root, target))) {
+          missing.push(`${file.slice(root.length + 1)} -> ${candidate}`);
+        }
+      }
+    }
+    expect(missing).toEqual([]);
   });
 
   it("documents only existing npm run scripts", () => {

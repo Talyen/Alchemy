@@ -40,10 +40,6 @@ Battle reads are data-only. Battle writes use focused draft-first mutators from 
 ### Anti-patterns
 
 - No all-screens display bag or second flattening read model. Each route owns its exact screen-specific hook (`RunScreenDataByScreen` in `run-screen-data.ts`).
-- No command-in-command. Compose draft mutators inside one `dispatchRunSessionCommand`.
-- No `Math.random()` for run or battle outcomes. Named run streams or `BattleState.rng` only.
-- No React context for run/battle bindings. Controllers own **commands**; screen routes own **display data**.
-- No mutable sibling-handler bag or hidden continuation dispatcher. Run-flow handlers take explicit callbacks via `RunFlowShellActions`.
 
 ### Run randomness
 
@@ -103,9 +99,16 @@ Boot: [`use-alchemy-bootstrap.ts`](../src/app/use-alchemy-bootstrap.ts) applies 
 
 ### Run setup ownership
 
-`run-setup/run/content-system-navigation.ts` owns content-system selection, character/difficulty routing, and resume. Run-start snapshots live in `content-system-run-init.ts` and use the draft-only helper in `run-start-command.ts`; event handlers own the surrounding command and post-commit effects. Campaign and labyrinth Wildcard drafting is a persisted run phase: the first three-card offer is rolled from the `rewards` stream, `hasActiveRun` is true, and `session.starterDraftChoices` plus `runDeck` resume the same pack. Wildwood setup ends once its persisted draft is created. From the first draft pick onward, `shell/use-wildwood-gauntlet-flow.ts` is the sole owner of Wildwood draft completion, boss progression, rewards, and resume routing.
+`run-setup/run/content-system-navigation.ts` owns content-system selection,
+character/difficulty routing, and resume. Run-start snapshots belong to
+`content-system-run-init.ts` / `run-start-command.ts`; Wildwood post-entry
+progression belongs to `shell/use-wildwood-gauntlet-flow.ts`. The persisted
+draft/resume differences between Campaign, Labyrinth, and Wildwood are covered
+by the [content-system workflow](./WORKFLOWS.md#content-system-behavior).
 
-Destination offer construction is pure in `shared/run-flow/destination-flow.ts`. Campaign start and run-loop progression supply explicit offer history, boss ID, and command-bound RNG; destination generation is not exposed through the content-system navigation API.
+Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
+Callers supply offer history, boss ID, and command-bound RNG; destination
+generation is not exposed through the content-system navigation API.
 
 ## Battle path
 

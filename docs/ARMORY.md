@@ -6,14 +6,17 @@ The Armory is the permanent meta-progression screen for managing **Gear** (per-c
 
 ## Layout
 
-The screen implementation lives under `src/features/alchemy/meta/screens/armory/`. Start from these owners:
+The screen implementation lives under
+`src/features/alchemy/meta/screens/armory/`. Start from these owners:
 
 - `use-armory-controller.ts` — read facade and mutation/HP-sync/save-flush boundary consumed by the route.
-- `armory-screen.tsx` — hero tabs, equal Equipment / Inventory columns, 3×2 equipment slots, Crafting strip, and slot-filtered item picker.
-- `item-picker-grid.tsx` — Collection-style click-to-equip grid for the selected slot, paginated 2×3 (6 items per page) with aspect fillers so short or empty pages keep the same footprint.
+- `armory-screen.tsx` — screen composition and interaction wiring.
+- `item-picker-grid.tsx` — slot-filtered inventory presentation.
 - Panels, parts, and overlays — presentation only; they receive domain state and commands through props.
 
-Hero identity is the Collection-style tab ring. There is no hero portrait and no packed inventory board. Equipment and Inventory panels share equal column width. Selecting an equipment slot shows matching unequipped items on the right (2 rows × 3 items per page); the item in that slot appears only there. Clicking a picker item equips it. Clicking the already-selected filled slot unequips it. Items equipped in other compatible slots still appear in the picker (with an Equipped badge) so they can be moved. Salvage and currency apply are mutually exclusive targeting modes from the Crafting strip.
+Visual layout, copy, pagination, and targeting details belong to the screen
+implementation and its focused tests; keep this document centered on the gear
+contract and controller seams.
 
 ## Data model
 
@@ -90,10 +93,9 @@ Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/featur
 
 ## Tests
 
-Use the path-scoped Gear gate in [`CONTRIBUTING.md`](../CONTRIBUTING.md#what-to-run-when-you-change) rather than maintaining a second exhaustive command here. Test ownership is intentionally split:
-
-- `tests/lib/gear/` — pure definitions, operations, generation, crafting, and manifests.
-- `tests/features/alchemy/shared/stores/gear-*.test.ts` and `shared/storage/gear-save.test.ts` — aggregate mutation and persistence.
-- `tests/features/alchemy/meta/screens/armory*/` — controller, rendering, targeting, and click-to-equip.
-- `tests/architecture/affix-catalog-guard.test.ts`, `tests/architecture/gear-*.test.ts`, and save-migration guards — registry and persistence contracts.
-- `tests/*gear*.spec.ts`, `tests/armory-*.spec.ts`, and `tests/e2e/armory.ts` — player flows and Playwright helpers.
+Use the path-scoped Gear gate in
+[`CONTRIBUTING.md`](../CONTRIBUTING.md#what-to-run-when-you-change) rather than
+maintaining a second exhaustive command here. Test ownership is split between
+pure Gear rules, aggregate/persistence contracts, Armory screen behavior,
+architecture guards, and player flows; the changed-path route selects the
+current files for each layer.

@@ -15,13 +15,10 @@ export function safePlanName(value) {
   return value;
 }
 
-export function planTemplate(name, created, expires) {
+export function planTemplate(name, updated) {
   return `---
-type: execution-plan
 status: active
-created: ${created}
-updated: ${created}
-expires: ${expires}
+updated: ${updated}
 ---
 
 # ${name}
@@ -36,11 +33,11 @@ Describe the user-visible outcome and the bounded implementation scope.
 - [ ] Implement the smallest complete change.
 - [ ] Add or extend only consequential coverage.
 - [ ] Run path-scoped verification.
-- [ ] Mark the work complete, delete this file, and report verification.
+- [ ] Delete this plan file when the work ends and report verification.
 
 ## Notes
 
-Keep durable policy in its canonical documentation owner. Delete this plan when the work is complete.
+Keep durable policy in its canonical documentation owner. Delete the plan at handoff; git history retains it.
 `;
 }
 
@@ -55,9 +52,7 @@ export function createPlan(name, now = utcDate()) {
   const target = path.join(PLANS_DIR, `${safeName}.md`);
   if (fs.existsSync(target)) throw new Error(`Plan already exists: docs/Plans/${safeName}.md`);
   fs.mkdirSync(PLANS_DIR, { recursive: true });
-  const expires = new Date(`${now}T00:00:00Z`);
-  expires.setUTCDate(expires.getUTCDate() + 14);
-  fs.writeFileSync(target, planTemplate(safeName, now, expires.toISOString().slice(0, 10)), "utf8");
+  fs.writeFileSync(target, planTemplate(safeName, now), "utf8");
   return path.relative(ROOT, target);
 }
 

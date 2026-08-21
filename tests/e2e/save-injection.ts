@@ -1,8 +1,10 @@
 // localStorage save injection for fast E2E bootstrap.
 // Desktop (Electron) boots from the native save bridge — write there and reload instead.
 import { expect, type Page } from "@playwright/test";
+import type { BattleCard } from "@/lib/game-data";
 import { SAVE_KEY } from "@/lib/game-constants";
-import { baseHomesteadSave } from "../fixtures/saves";
+import { baseHomesteadSave, ALL_PLAYABLE_CHARACTERS, DEFAULT_DISCOVERED_CARD_IDS } from "../fixtures/saves";
+import type { InjectedBattleState } from "../fixtures/battle-state";
 import { makeHighDamageCard } from "./cards";
 
 /** Persisted destination claim surface for E2E / performance save injection. */
@@ -152,6 +154,12 @@ async function writeDesktopSaveAndReload(page: Page, save: unknown): Promise<voi
   await page.reload({ waitUntil: "domcontentloaded" });
 }
 
+/**
+ * Single save-payload builder for both transports (desktop bridge and browser
+ * localStorage). The browser init script shallow-merges this payload into any
+ * pre-existing save so earlier init scripts (e.g. aspect-ratio overrides)
+ * survive.
+ */
 function buildActiveRunSave(overrides: Record<string, unknown>) {
   const {
     discoveredCardIds,
@@ -179,10 +187,8 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
       runTrinkets: [],
       ...activeRunData,
     },
-    finishedRunCharacters: ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"],
-    discoveredCardIds: Array.isArray(discoveredCardIds)
-      ? discoveredCardIds
-      : ["slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis"],
+    finishedRunCharacters: [...ALL_PLAYABLE_CHARACTERS],
+    discoveredCardIds: Array.isArray(discoveredCardIds) ? discoveredCardIds : [...DEFAULT_DISCOVERED_CARD_IDS],
   };
   if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
   if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
@@ -190,8 +196,9 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
 }
 
 export async function injectSaveState(page: Page, overrides: Record<string, unknown> = {}) {
+  const save = buildActiveRunSave(overrides);
   if (await isDesktopPage(page)) {
-    await writeDesktopSaveAndReload(page, buildActiveRunSave(overrides));
+    await writeDesktopSaveAndReload(page, save);
     return;
   }
 
@@ -202,44 +209,29 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
         return;
       }
       sessionStorage.setItem("alchemy-injected-id", data.injectionId);
-      const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
-      const {
-        discoveredCardIds,
-        encounteredEnemyIds,
-        discoveredTrinketIds,
-        autoEndTurn,
-        selectedAspectRatio,
-        ...activeRunData
-      } = data.payload;
-      save.activeRun = {
-        characterId: "knight",
-        runDeck: [],
-        runGold: 0,
-        runPlayerHealth: 30,
-        runMaxHealth: 30,
-        roomsEncountered: 0,
-        currentAct: 1,
-        destinationIndexInAct: 0,
-        completedDestinations: [],
-        runTrinkets: [],
-        ...activeRunData,
-      };
-      // E2E battles assert on a stable opening hand; auto-end races empty/mid-draw states.
-      save.autoEndTurn = autoEndTurn === true;
-      if (typeof selectedAspectRatio === "string") save.selectedAspectRatio = selectedAspectRatio;
-      if (Array.isArray(discoveredCardIds)) save.discoveredCardIds = discoveredCardIds;
-      if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
-      if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
-      if (!Array.isArray(save.finishedRunCharacters)) {
-        save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
-      }
-      if (!Array.isArray(save.discoveredCardIds) || save.discoveredCardIds.length === 0) {
-        save.discoveredCardIds = ["slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis"];
-      }
-      localStorage.setItem(data.saveKey, JSON.stringify(save));
+      const existing = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
+      localStorage.setItem(data.saveKey, JSON.stringify({ ...existing, ...data.save }));
     },
-    { saveKey: SAVE_KEY, payload: overrides, injectionId },
+    { saveKey: SAVE_KEY, save, injectionId },
   );
+}
+
+/** Inject a persisted mid-battle snapshot and boot straight into the battle screen. */
+export async function injectActiveBattle(
+  page: Page,
+  battleState: InjectedBattleState,
+  overrides: Record<string, unknown> = {},
+) {
+  await injectSaveState(page, {
+    currentScreen: "battle",
+    ...overrides,
+    activeCombat: {
+      battleState,
+      activeLabyrinthModifiers: [],
+      activeLabyrinthRewardModifiers: [],
+    },
+  });
+  await page.goto("/");
 }
 
 /** Inject a mid-claim primary reward screen and navigate to it. */
@@ -304,7 +296,7 @@ export async function injectLabyrinthRun(
   page: Page,
   options: {
     runOverrides?: Record<string, unknown>;
-    deck?: Array<Record<string, unknown>>;
+    deck?: BattleCard[];
     discoveredCardIds?: string[];
     resume?: boolean;
   } = {},
@@ -335,7 +327,7 @@ export async function injectLabyrinthRun(
       }
       save.discoveredCardIds = data.discoveredCardIds || ["slash"];
       if (!Array.isArray(save.finishedRunCharacters)) {
-        save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
+        save.finishedRunCharacters = data.playableCharacters;
       }
       localStorage.setItem(data.saveKey, JSON.stringify(save));
     },
@@ -345,6 +337,7 @@ export async function injectLabyrinthRun(
       deck: options.deck ?? null,
       discoveredCardIds: options.discoveredCardIds ?? null,
       runOverrides: options.runOverrides ?? null,
+      playableCharacters: ALL_PLAYABLE_CHARACTERS,
     },
   );
   await page.goto("/");

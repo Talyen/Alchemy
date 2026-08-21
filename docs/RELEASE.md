@@ -29,14 +29,23 @@ Ship, desktop, and installer scripts (`check:ship`, `check:ship:full`, `build:de
 1. Ensure your working tree is clean and you're on `main`.
 2. Run **`npm run release`** — runs `check:ship:full`, bumps version (inferred from commits via `commit-and-tag-version`), creates the release commit + `vX.Y.Z` tag, pushes both to origin, and watches the release workflow (matched by the tag name, not `main`).
 3. For urgent hotfixes: **`npm run release:hotfix`** — lighter gate (`check:ship` + `prepush` E2E), forces a patch bump.
-4. [`.github/workflows/release.yml`](../.github/workflows/release.yml) runs `lint`, `test`, and `build` → `e2e-full` (3-shard full E2E matrix) → `release` (builds installers once via `dist:desktop`, generates patch notes, uploads Steam depots, creates a GitHub Release). **The release job is blocked until lint, unit tests, and the full E2E suite all pass.** It does not re-run `check:ship` (that would rebuild desktop); `dist:desktop` with `CI_RELEASE=true` is the sole desktop compile. If Steam secrets are missing, the release fails unless the repository variable `ALLOW_STEAM_DRY_RUN=true` explicitly permits a dry-run.
+4. [`.github/workflows/release.yml`](../.github/workflows/release.yml) is the
+   source of truth for release job ordering, gates, packaging, patch notes, and
+   Steam publishing. The release job must not introduce a second desktop build
+   when the workflow already produced the release artifact.
 5. After a successful Steam upload, **manually promote** the new build to the live branch in Steamworks (`setlive` is empty so uploads do not auto-publish).
 
 ## Steam depot and App ID
 
-- **Depot contentroot** is `release-desktop/win-unpacked` (the unpacked app), not the whole `release-desktop/` tree. That keeps the NSIS installer, `.blockmap`, and `builder-debug.yml` out of the depot. `steam:upload` (including dry-run) asserts the contentroot exists, contains `Alchemy.exe`, and has no `*Setup*.exe` / `builder-debug.yml`.
-- **Runtime Steam App ID** is baked into packaged `package.json` via electron-builder `extraMetadata.steamAppId` when `CI_RELEASE=true` (same pattern as Sentry metadata). `desktop/main.cjs` resolves: packaged metadata → `STEAM_APP_ID` env (dev) → `480` (Spacewar / local). Canonical source for the ID file used by Steamworks locally is `STEAM_APP_ID` / `steam/platforms.json` `devAppId` via `npm run sync:steam-appid`. The package verifier fails CI release builds that bake `480` or omit the ID.
-- **SteamCMD** is installed in `release.yml` with `CyberAndrii/setup-steamcmd@v1.3.0` (pinned version tag). `scripts/steam-upload.mjs` fails fast if `steamcmd` is not on `PATH`, and passes credentials as argv with `shell: false` (never logged). Configure Steam Guard for the build account per [Valve's SteamCMD / CI guidance](https://partner.steamgames.com/doc/sdk/uploading).
+- **Depot contentroot** is the unpacked app under `release-desktop/`; the exact
+  path and safety assertions are owned by `scripts/steam-upload.mjs` and its
+  dry-run command.
+- **Runtime Steam App ID** is synchronized from `STEAM_APP_ID` and
+  `steam/platforms.json` by `npm run sync:steam-appid`; packaged resolution and
+  verification are owned by `desktop/main.cjs` and the desktop package verifier.
+- **SteamCMD** setup and credential handling belong to `release.yml` and
+  `scripts/steam-upload.mjs`. Configure Steam Guard for the build account per
+  [Valve's SteamCMD / CI guidance](https://partner.steamgames.com/doc/sdk/uploading).
 
 ## Desktop crash reporting (one-time setup)
 
@@ -97,12 +106,8 @@ Windows release job.
 
 ## CI jobs
 
-| Job                                         | Trigger                                                                           |
-| ------------------------------------------- | --------------------------------------------------------------------------------- |
-| `e2e` (`@critical`)                         | Every push                                                                        |
-| `ship-gate`                                 | Pushes matching the `desktop_renderer` filter (desktop renderer after unit tests) |
-| `assets`                                    | Push when Raw Assets / asset scripts change (prep + drift check)                  |
-| `save-gate`                                 | Push when save/migration/active-run paths change                                  |
-| `desktop-build`                             | Push when desktop paths change (`dist:desktop` Windows installer artifact)        |
-| `electron-e2e`                              | Pushes matching `desktop_renderer` (reuses ship-gate `dist/`)                     |
-| `release` (incl. `e2e-full` 3-shard matrix) | Tag `v*` push                                                                     |
+The current release workflow, job names, path filters, and artifact ownership
+are defined in [`.github/workflows/release.yml`](../.github/workflows/release.yml)
+and [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Keep this page
+focused on release decisions; update the workflow files when CI topology
+changes.

@@ -6,6 +6,7 @@ import {
   getCardRect,
   setTiltFromEvent,
 } from "@/features/alchemy/shared/utils/dom";
+import { installRafStub } from "../../../../helpers/animation-test";
 import { makeTestCard } from "../../../../fixtures/cards";
 
 describe("getBattleCardPlayTarget", () => {
@@ -80,12 +81,7 @@ describe("tilt geometry", () => {
   });
 
   it("refreshes the target rectangle for each animation frame", () => {
-    const frames: FrameRequestCallback[] = [];
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-      frames.push(callback);
-      return frames.length;
-    });
-    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    const frames = installRafStub();
 
     const target = document.createElement("div");
     const getBoundingClientRect = vi

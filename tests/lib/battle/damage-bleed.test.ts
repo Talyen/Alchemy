@@ -1,9 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { dealDamageToEnemy } from "@/lib/battle/damage";
-import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects } from "../../fixtures/default-battle-state";
-import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
+import { dealDamage, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -17,13 +15,7 @@ describe("computeBaseDamage — bleed damage", () => {
       talentEffects: { ...defaultTalentEffects, bleedDesperateMultiplier: 1.5 },
     });
     const card = makeTestCard({ effects: [makeEffect("bleed", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBeLessThan(30);
   });
 
@@ -34,13 +26,7 @@ describe("computeBaseDamage — bleed damage", () => {
       talentEffects: { ...defaultTalentEffects, bleedExecuteThreshold: 25, bleedExecuteMultiplier: 2 },
     });
     const card = makeTestCard({ effects: [makeEffect("bleed", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(0);
   });
 
@@ -51,13 +37,7 @@ describe("computeBaseDamage — bleed damage", () => {
       talentEffects: { ...defaultTalentEffects, bleedExecuteThreshold: 0 },
     });
     const card = makeTestCard({ effects: [makeEffect("bleed", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(0);
   });
 });

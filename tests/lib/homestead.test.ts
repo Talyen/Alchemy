@@ -354,25 +354,31 @@ describe("getEnemyMaterialLoot", () => {
     }
   });
 
-  it("goblin drops guaranteed wood and food for normal type", () => {
-    const loot = getEnemyMaterialLoot("goblin", "normal", stableRngZero());
-    expect(loot.wood).toBe(1);
-    expect(loot.food).toBe(1);
-  });
-
-  it("skeleton has no guaranteed materials", () => {
-    const loot = getEnemyMaterialLoot("skeleton", "normal", stableRngZero());
-    expect(loot.wood).toBe(0);
-    expect(loot.iron).toBe(0);
-    expect(loot.herbs).toBe(0);
-    expect(loot.food).toBe(0);
-    expect(loot.crystal).toBe(0);
-  });
-
-  it("necromancer drops guaranteed herbs and crystal", () => {
-    const loot = getEnemyMaterialLoot("necromancer", "normal", stableRngZero());
-    expect(loot.herbs).toBe(2);
-    expect(loot.crystal).toBe(1);
+  it.each<{
+    name: string;
+    enemyId: string;
+    expected: Record<string, number>;
+  }>([
+    {
+      name: "goblin drops guaranteed wood and food for normal type",
+      enemyId: "goblin",
+      expected: { wood: 1, food: 1 },
+    },
+    {
+      name: "skeleton has no guaranteed materials",
+      enemyId: "skeleton",
+      expected: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+    },
+    {
+      name: "necromancer drops guaranteed herbs and crystal",
+      enemyId: "necromancer",
+      expected: { herbs: 2, crystal: 1 },
+    },
+  ])("$name", ({ enemyId, expected }) => {
+    const loot = getEnemyMaterialLoot(enemyId, "normal", stableRngZero());
+    for (const [mat, value] of Object.entries(expected)) {
+      expect(loot[mat as keyof typeof loot]).toBe(value);
+    }
   });
 });
 

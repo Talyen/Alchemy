@@ -1,62 +1,34 @@
 // Injects a persisted mid-combat save for resume E2E coverage.
 import type { Page } from "@playwright/test";
-import { SAVE_KEY } from "@/lib/game-constants";
-import { baseHomesteadSave } from "../fixtures/saves";
+import { makeCard } from "./cards";
 import { makeGoblinBattleState } from "./battle-fixtures";
+import { injectSaveState } from "./save-injection";
 
 export async function injectMidCombatSave(page: Page) {
-  // Keep this fixture free of runtime battle imports so Playwright never loads game art during test discovery.
-  // Include a playable hand + mana and disable auto-end-turn so resume assertions are not racing the
-  // auto-end timer into Defeat (empty hand + autoEndTurn:true was flaky on CI).
-  const slash = {
-    id: "slash",
-    title: "Slash",
-    descriptionLines: ["Deal 6 Physical damage"],
-    art: "slash.webp",
-    cost: 1,
-    effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    uid: 1,
-  };
-  const battleState = makeGoblinBattleState({
-    hand: [slash],
-    playerHealth: 18,
-    trinketEffects: { extraDrawPerBattle: 1 },
-  });
-  const save = {
-    ...baseHomesteadSave,
+  // Playable hand + mana and autoEndTurn disabled so resume assertions do not
+  // race the auto-end timer into Defeat (empty hand + autoEndTurn:true was
+  // flaky on CI). Card art stays a string filename — no asset imports here.
+  const slash = makeCard({ art: "slash.webp", uid: 1 });
+  await injectSaveState(page, {
     autoEndTurn: false,
-    activeRun: {
-      characterId: "knight",
-      runDeck: [slash],
-      runGold: 15,
-      runPlayerHealth: 18,
-      runMaxHealth: 30,
-      roomsEncountered: 2,
-      currentAct: 1,
-      destinationIndexInAct: 1,
-      completedDestinations: ["Normal Combat"],
-      runTrinkets: ["tattered-pages"],
-      encounteredRunEnemyIds: ["goblin"],
-      selectedDifficulty: "difficulty-1",
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-      labyrinthPendingNode: null,
-      activeCombat: {
-        battleState,
-        activeLabyrinthModifiers: [],
-        activeLabyrinthRewardModifiers: [],
-      },
-      runTalentXP: {},
-      runMaterialsEarned: {},
-      currentScreen: "battle",
-      interruptedFlow: { kind: "none" },
+    runDeck: [slash],
+    runGold: 15,
+    runPlayerHealth: 18,
+    roomsEncountered: 2,
+    destinationIndexInAct: 1,
+    completedDestinations: ["Normal Combat"],
+    runTrinkets: ["tattered-pages"],
+    encounteredRunEnemyIds: ["goblin"],
+    selectedDifficulty: "difficulty-1",
+    currentScreen: "battle",
+    interruptedFlow: { kind: "none" },
+    activeCombat: {
+      battleState: makeGoblinBattleState({
+        hand: [slash],
+        trinketEffects: { extraDrawPerBattle: 1 },
+      }),
+      activeLabyrinthModifiers: [],
+      activeLabyrinthRewardModifiers: [],
     },
-  };
-
-  await page.addInitScript(
-    (data) => {
-      localStorage.setItem(data.saveKey, JSON.stringify(data.save));
-    },
-    { saveKey: SAVE_KEY, save },
-  );
+  });
 }

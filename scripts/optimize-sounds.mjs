@@ -31,6 +31,7 @@ const TRANSFORM_CONCURRENCY = 6;
 const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
 const VORBIS_QUALITY = "4";
 const MP3_FALLBACK_SETTINGS = { codec: "libmp3lame", quality: "4", stripVideo: true };
+const SOUND_ENTRY_OWNERS = Object.freeze({ generated: "generated", curated: "curated" });
 
 // Each entry maps a raw asset (relative to "Raw Assets/Sound Effects/") to an
 // output name in public/sounds/. The script converts WAV → OGG and copies OGG
@@ -53,8 +54,6 @@ const sounds = [
 
   // ── Enemy attacks ──
   { source: "Torch/Torch Attack Strike 1.ogg", target: "torch-attack-strike-1.ogg" },
-  // cough-double source no longer present in raw assets; existing output preserved in public/sounds.
-  // { source: "Human/cough_double.wav", target: "cough-double.ogg" },
 
   // ── Battle events ──
   {
@@ -178,16 +177,21 @@ export async function optimizeSounds() {
   });
 
   console.log(`Processed ${results.length} sounds.`);
-  const mp3Entries = await ensureMp3Fallbacks(previousManifest);
-  await writeManifestIfChanged(manifestPath, { ...nextManifest, ...mp3Entries });
+  const managedOggs = new Set(sounds.map(({ target }) => target));
+  const generatedEntries = Object.fromEntries(
+    Object.entries(nextManifest).map(([name, entry]) => [name, { ...entry, owner: SOUND_ENTRY_OWNERS.generated }]),
+  );
+  const { mp3Entries, curatedOggEntries } = await ensureMp3Fallbacks(previousManifest, managedOggs);
+  await writeManifestIfChanged(manifestPath, { ...generatedEntries, ...curatedOggEntries, ...mp3Entries });
   return { ok: !failed };
 }
 
-async function ensureMp3Fallbacks(previousManifest) {
+async function ensureMp3Fallbacks(previousManifest, managedOggs) {
   const files = await readdir(outputDir);
   const oggs = files.filter((file) => file.endsWith(".ogg"));
   /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
   const mp3Entries = {};
+  const curatedOggEntries = {};
   let converted = 0;
   for (const ogg of oggs) {
     const oggPath = path.join(outputDir, ogg);
@@ -199,7 +203,15 @@ async function ensureMp3Fallbacks(previousManifest) {
       stored && stored.hash === sourceEntry.hash && Number.isFinite(stored.mtimeMs) && Number.isFinite(stored.size)
         ? stored
         : sourceEntry;
-    mp3Entries[mp3Name] = fingerprint;
+    mp3Entries[mp3Name] = {
+      ...fingerprint,
+      owner: managedOggs.has(ogg) ? SOUND_ENTRY_OWNERS.generated : SOUND_ENTRY_OWNERS.curated,
+    };
+    if (!managedOggs.has(ogg)) {
+      const storedOgg = previousManifest[ogg];
+      const oggEntry = await resolveSourceHash(oggPath, { mode: "curated" }, SCHEMA_VERSION, storedOgg);
+      curatedOggEntries[ogg] = { ...oggEntry, owner: SOUND_ENTRY_OWNERS.curated };
+    }
 
     const mp3Exists = await stat(mp3Path)
       .then(() => true)
@@ -212,7 +224,7 @@ async function ensureMp3Fallbacks(previousManifest) {
     converted += 1;
   }
   if (converted > 0) console.log(`Wrote ${converted} MP3 SFX fallbacks for Safari.`);
-  return mp3Entries;
+  return { mp3Entries, curatedOggEntries };
 }
 
 if (isMainModule(import.meta.url)) {

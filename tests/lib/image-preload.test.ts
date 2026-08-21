@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { installRafStub } from "../helpers/animation-test";
 import { IMAGE_PRELOAD_TIMEOUT_MS } from "@/lib/game-constants";
 
 interface MockImage {
@@ -157,11 +158,7 @@ describe("preloadImages", () => {
 
 describe("preloadImagesInBatches", () => {
   it("waits for each bounded batch and yields before starting the next", async () => {
-    const frameCallbacks: FrameRequestCallback[] = [];
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-      frameCallbacks.push(callback);
-      return frameCallbacks.length;
-    });
+    const frameCallbacks = installRafStub();
     const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl()];
     const promise = preloadImagesInBatches(srcs, 2);
 

@@ -3,6 +3,7 @@ import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { steamContentRoot } from "./lib/desktop-artifact.mjs";
 import { writeSteamBuildVdfs } from "./lib/steam-vdf.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -28,7 +29,7 @@ function assertSteamContentRoot(directory) {
   if (!existsSync(directory)) {
     console.error(
       `Steam contentroot is missing: ${directory}\n` +
-        "Build the Windows unpacked app first (npm run dist:desktop) so release-desktop/win-unpacked exists.",
+        `Build the Windows unpacked app first (npm run dist:desktop) so ${steamContentRoot(root)} exists.`,
     );
     process.exit(1);
   }

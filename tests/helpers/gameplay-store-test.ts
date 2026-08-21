@@ -1,10 +1,12 @@
 // Test facades over the gameplay aggregate (`useRunTransientStore`, `useActiveRunStore`, etc.).
 // These names are not production APIs; production code uses capability ports on gameplay-state-store.
+import { vi } from "vitest";
 import {
   readGameplayState,
   useGameplayStateStore,
   type GameplayState,
 } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   createInitialBattleFields,
   createInitialRunDomainData,
@@ -183,6 +185,17 @@ export function resetRunNavigationSlice(): void {
 
 export function resetRunBattleSlice(): void {
   useRunBattleDomainStore.setState(createInitialBattleFields(), true);
+}
+
+/**
+ * One-line beforeEach reset for store-heavy suites: clears mock recordings and
+ * restores every gameplay slice (run, profile, session, battle, navigation)
+ * plus transient UI state to their initial values.
+ */
+export function resetAllTestStores(): void {
+  vi.clearAllMocks();
+  resetRunDomainStore();
+  resetTransientRunUi();
 }
 
 // ---------------------------------------------------------------------------

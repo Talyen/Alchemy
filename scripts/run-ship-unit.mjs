@@ -8,32 +8,24 @@
 // save-affecting change: storage/persistence, autosave, validation, the
 // architecture invariants, and the bespoke scripts.
 import { spawnSync } from "node:child_process";
-import { globSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateRouteCatalog } from "./lib/change-routes.mjs";
+import { TEST_SUITES, validateTestSuitePaths } from "./lib/test-suites.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 /** Resolve a dir/file path against the repo root. */
 const at = (...segments) => join(root, "..", ...segments);
 
-const SUITES = [
-  "tests/features/alchemy/shared/storage",
-  "tests/features/alchemy/app/autosave-hook.test.ts",
-  "tests/features/alchemy/app/autosave-active-run.test.ts",
-  "tests/lib/validation",
-  "tests/architecture",
-  "tests/scripts",
-];
+const SUITES = TEST_SUITES.shipUnit;
 
-/** @param {string} rootPath */
-function testFilesUnder(rootPath) {
-  if (rootPath.endsWith(".test.ts") || rootPath.endsWith(".test.tsx")) {
-    return globSync(rootPath, { cwd: at() }).length > 0 ? [rootPath] : [];
-  }
-  return globSync(`${rootPath}/**/*.test.{ts,tsx}`, { cwd: at() });
+const routeErrors = validateRouteCatalog({ rootDir: at() });
+if (routeErrors.length > 0) {
+  console.error(`Route catalog is stale:\n${routeErrors.map((error) => `  - ${error}`).join("\n")}`);
+  process.exit(1);
 }
 
-const missing = SUITES.filter((entry) => testFilesUnder(entry).length === 0);
+const missing = validateTestSuitePaths(at(), SUITES);
 
 if (missing.length > 0) {
   console.error(

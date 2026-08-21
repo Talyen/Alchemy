@@ -1,6 +1,13 @@
-const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-export const E2E_ESCALATIONS = Object.freeze({
+import { TEST_SUITES, testFilesUnder } from "./test-suites.mjs";
+
+const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
+const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+const E2E_ESCALATIONS = Object.freeze({
   save: "e2e-save",
   "shop-screen": "e2e-shop",
   audio: "e2e-audio",
@@ -10,7 +17,7 @@ export const E2E_ESCALATIONS = Object.freeze({
 
 export const E2E_NAMES = new Set(["save", "shop", "audio", "gear", "mystery"]);
 
-export const COMMANDS = Object.freeze({
+const COMMANDS = Object.freeze({
   "unit-active": {
     label: "active-run unit tests",
     reason: "run-session changes share aggregate, resume, shell, and fade contracts",
@@ -37,20 +44,13 @@ export const COMMANDS = Object.freeze({
       "tests/features/alchemy/shared/ui/fade-slot.test.tsx",
       "tests/features/alchemy/shared/ui/use-sequential-fade-swap.test.ts",
       "tests/features/alchemy/shell/",
-      "tests/types/run-architecture-contracts.test.ts",
     ],
   },
   "unit-save": {
     label: "save/persistence unit tests",
     reason: "save changes must preserve schema, storage, autosave, and hydration behavior",
     command: NPM,
-    args: [
-      "test",
-      "--",
-      "tests/features/alchemy/shared/storage",
-      "tests/features/alchemy/app/autosave-hook.test.ts",
-      "tests/features/alchemy/app/autosave-active-run.test.ts",
-    ],
+    args: ["test", "--", ...TEST_SUITES.save],
   },
   "unit-battle": {
     label: "battle/card unit tests",
@@ -171,7 +171,7 @@ export const COMMANDS = Object.freeze({
     label: "repository-tooling contract tests",
     reason: "scripts and root manifests are exercised by script and architecture guards",
     command: NPM,
-    args: ["test", "--", "tests/scripts", "tests/architecture"],
+    args: ["test", "--", ...TEST_SUITES.tooling],
   },
   "unit-changed": {
     label: "changed unit tests",
@@ -209,11 +209,29 @@ export const COMMANDS = Object.freeze({
     command: "npx",
     args: ["playwright", "test", "tests/audio-sfx.spec.ts", "--project", "chromium"],
   },
+  "e2e-electron": {
+    label: "Electron desktop Playwright flow",
+    reason: "desktop main-process changes require the packaged Electron specs",
+    command: NPM,
+    args: ["run", "test:e2e:electron"],
+  },
+  "unit-content": {
+    label: "content-systems unit tests",
+    reason: "labyrinth and wildwood content logic is one contract",
+    command: NPM,
+    args: ["test", "--", "tests/lib/content-systems"],
+  },
+  "unit-homestead": {
+    label: "homestead unit tests",
+    reason: "homestead progression data is one contract",
+    command: NPM,
+    args: ["test", "--", "tests/lib/homestead.test.ts", "tests/lib/homestead"],
+  },
   "e2e-gear": {
     label: "gear Playwright flows",
     reason: "Armory changes require crafting and equip journeys",
     command: "npx",
-    args: ["playwright", "test", "tests/armory-crafting.spec.ts", "tests/gear-equip.spec.ts", "--project", "chromium"],
+    args: ["playwright", "test", "tests/armory.spec.ts", "--project", "chromium"],
   },
   "e2e-mystery": {
     label: "mystery Playwright flow",
@@ -232,6 +250,12 @@ export const COMMANDS = Object.freeze({
     reason: "documentation and agent-policy changes must preserve the plan contract",
     command: NPM,
     args: ["run", "docs:check"],
+  },
+  "docs-contract": {
+    label: "documentation link and script contract",
+    reason: "documentation changes must keep local links, anchors, scripts, and required paths valid",
+    command: NPM,
+    args: ["test", "--", "tests/scripts/documentation-contract.test.ts"],
   },
   "ci-routing": {
     label: "CI path-filter contract",
@@ -289,6 +313,7 @@ export const ROUTES = Object.freeze([
     patterns: [
       "src/lib/battle/**",
       "src/lib/game-data/**",
+      "src/lib/trinkets.ts",
       "src/features/alchemy/run-loop/battle/**",
       "src/app/screen-routes/use-battle-playback.ts",
     ],
@@ -296,6 +321,20 @@ export const ROUTES = Object.freeze([
     commands: ["unit-battle"],
     docs: [doc("docs/REFERENCE.md", "Battle Implementation Rules", "battle-specific engine rules")],
     fixture: "src/lib/battle/damage.ts",
+  },
+  {
+    id: "content-systems",
+    patterns: ["src/lib/content-systems/**"],
+    commands: ["unit-content"],
+    docs: [doc("docs/REFERENCE.md", "Domain Glossary", "content systems")],
+    fixture: "src/lib/content-systems/encounter-traits.ts",
+  },
+  {
+    id: "homestead",
+    patterns: ["src/lib/homestead/**"],
+    commands: ["unit-homestead"],
+    docs: [doc("docs/WORKFLOWS.md", "Add a homestead upgrade", "homestead progression data")],
+    fixture: "src/lib/homestead/tiers.ts",
   },
   {
     id: "generated",
@@ -317,6 +356,7 @@ export const ROUTES = Object.freeze([
       "src/features/alchemy/run-loop/shop/**",
       "src/features/alchemy/run-loop/screens/*shop*",
       "src/features/alchemy/shell/use-shop-controller.ts",
+      "src/lib/alchemist/**",
     ],
     commands: ["unit-shop"],
     docs: [doc("docs/WORKFLOWS.md", "Change a shop", "shop command ownership")],
@@ -401,6 +441,27 @@ export const ROUTES = Object.freeze([
     fixture: "tests/fixtures/e2e.ts",
   },
   {
+    id: "root-specs",
+    patterns: ["tests/*.spec.ts"],
+    exclude: ["tests/electron-smoke.spec.ts", "tests/electron-security.spec.ts"],
+    commands: ["unit-changed", "e2e-prepush"],
+    docs: [doc("CONTRIBUTING.md", "E2E policy", "changed-path and CI tier policy")],
+    fixture: "tests/helpers.ts",
+  },
+  {
+    id: "desktop-shell",
+    patterns: [
+      "desktop/**",
+      "tests/electron-smoke.spec.ts",
+      "tests/electron-security.spec.ts",
+      "tests/electron-helpers.ts",
+      "tests/electron-global-setup.ts",
+    ],
+    commands: ["e2e-electron"],
+    docs: [doc("docs/RELEASE.md", "Steam depot and App ID", "desktop packaging")],
+    fixture: "desktop/main.cjs",
+  },
+  {
     id: "tooling",
     patterns: [
       "scripts/**",
@@ -458,7 +519,7 @@ export const ROUTES = Object.freeze([
       "scripts/check-docs.mjs",
       "scripts/new-plan.mjs",
     ],
-    commands: ["docs-check"],
+    commands: ["docs-check", "docs-contract"],
     docs: [doc("docs/Plans/README.md", null, "active plan contract")],
     fixture: "docs/WORKFLOWS.md",
   },
@@ -508,6 +569,56 @@ function routeMatchesPath(route, filePath) {
   );
 }
 
+function headingExists(source, heading) {
+  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  return new RegExp(`^#{1,6}\\s+${escaped}\\s*#*\\s*$`, "mu").test(source);
+}
+
+/**
+ * Validate the catalog's named files before a route can silently narrow.
+ * Glob patterns remain intentionally open-ended; only concrete command args,
+ * fixtures, and owner-document headings are checked here.
+ *
+ * @param {{ rootDir?: string }} [options]
+ * @returns {string[]}
+ */
+export function validateRouteCatalog({ rootDir = process.cwd() } = {}) {
+  const errors = [];
+  const concretePathArgs = new Set();
+
+  for (const command of Object.values(COMMANDS)) {
+    for (const arg of command.args) {
+      if (!/^(?:tests|src|scripts|docs)\//u.test(arg) || /[*?]/u.test(arg)) continue;
+      concretePathArgs.add(arg);
+    }
+  }
+
+  for (const relativePath of concretePathArgs) {
+    if (!existsSync(path.join(rootDir, relativePath))) {
+      errors.push(`command path does not exist: ${relativePath}`);
+    }
+  }
+
+  for (const route of ROUTES) {
+    if (route.fixture && !existsSync(path.join(rootDir, route.fixture))) {
+      errors.push(`${route.id} fixture does not exist: ${route.fixture}`);
+    }
+
+    for (const owner of route.docs ?? []) {
+      const docPath = path.join(rootDir, owner.path);
+      if (!existsSync(docPath)) {
+        errors.push(`${route.id} owner document does not exist: ${owner.path}`);
+        continue;
+      }
+      if (owner.heading && !headingExists(readFileSync(docPath, "utf8"), owner.heading)) {
+        errors.push(`${route.id} owner heading does not exist: ${owner.path}#${owner.heading}`);
+      }
+    }
+  }
+
+  return errors;
+}
+
 function normalizeChangedPath(filePath) {
   return filePath.replaceAll("\\", "/").replace(/^\.\//u, "");
 }
@@ -517,7 +628,6 @@ const UNKNOWN_ROUTE = Object.freeze({
   patterns: ["**"],
   commands: ["typecheck"],
   docs: [],
-  fixture: "unknown.file",
   unknown: true,
 });
 
@@ -536,6 +646,19 @@ export function resolveRoutePlan(paths, options = {}) {
   const changedUnitTests = paths
     .map(normalizeChangedPath)
     .filter((filePath) => /^tests\/.*\.test\.tsx?$/u.test(filePath));
+  // A changed test already executed by a matched route's focused unit command
+  // must not run twice (once via that command, once via unit-changed), so the
+  // unit-changed file list only carries tests no matched route covers.
+  const routeCoveredTests = new Set(
+    [...commandKeys]
+      .filter((key) => key.startsWith("unit-") && key !== "unit-changed")
+      .flatMap((key) => COMMANDS[key].args.slice(2))
+      .flatMap((entry) => testFilesUnder(ROOT_DIR, entry)),
+  );
+  const uncoveredUnitTests = changedUnitTests.filter((filePath) => !routeCoveredTests.has(filePath));
+  if (commandKeys.has("unit-changed") && uncoveredUnitTests.length === 0) {
+    commandKeys.delete("unit-changed");
+  }
   const e2eSelection = options.e2e ?? (options.includeE2E ? true : false);
   if (e2eSelection) {
     if (typeof e2eSelection === "string") {
@@ -556,7 +679,7 @@ export function resolveRoutePlan(paths, options = {}) {
     commands: [...commandKeys].map((key) => {
       const command = COMMANDS[key];
       return key === "unit-changed"
-        ? { key, ...command, args: [...command.args, ...changedUnitTests] }
+        ? { key, ...command, args: [...command.args, ...uncoveredUnitTests] }
         : { key, ...command };
     }),
   };

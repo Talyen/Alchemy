@@ -1,9 +1,6 @@
 ---
-type: execution-plan
 status: active
-created: 2026-08-21
 updated: 2026-08-21
-expires: 2026-09-04
 ---
 
 # Boss traits and HP scaling
@@ -88,7 +85,7 @@ The authored amount remains `1`; recurring action damage follows Alchemy’s exi
 - **Persistence:** content-version migration for active/parked/pending battle snapshots and idempotent normalization.
 - **Balance/docs:** updated cause hints, report methodology, and reference rules.
 
-Run focused unit/content/migration tests first, then `npm run verify:changed -- --diff` (or the plan-narrowed equivalent) and the relevant battle E2E route if the router selects one. Run `npm run docs:check` while this plan is active. Before implementation handoff is complete, delete this plan and run `npm run docs:check:final`.
+Run focused unit/content/migration tests first, then `npm run verify:changed -- --diff` (or the plan-narrowed equivalent) and the relevant battle E2E route if the router selects one. Run `npm run docs:check` while this plan is active. When implementation handoff is complete, delete this plan file and run `npm run docs:check:final`.
 
 ## Acceptance criteria
 

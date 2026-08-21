@@ -1,32 +1,23 @@
 // @vitest-environment jsdom
+import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { useRunFlowEngine } from "@/features/alchemy/shell/use-run-flow-engine";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { makeTestCard } from "../../../fixtures/battle";
 import {
   getBattleStoreView,
-  getNavigationStoreView,
   getRunProgressStoreView,
   getRunSessionStoreView,
-  resetRunBattleSlice,
-  resetRunProgressSlice,
+  resetAllTestStores,
   setRunProgress,
   setRunSession,
 } from "../../../helpers/run-domain-store-test";
 
-vi.mock("@/lib/audio", () => ({
-  playUISound: vi.fn(),
-}));
-
 beforeEach(() => {
-  resetRunProgressSlice();
-  resetRunBattleSlice();
-  resetTransientRunUi();
-  getNavigationStoreView().setScreen(ROUTE_SCREENS.MENU);
+  resetAllTestStores();
 });
 
 describe("useRunFlowEngine", () => {

@@ -1,31 +1,25 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 import { FuseState, FuseV1Options, getCurrentFuseWire } from "@electron/fuses";
+import {
+  executablePath,
+  resolveUnpackedDirectory,
+  targetFromUnpackedName,
+  targetPlatform,
+} from "./lib/desktop-artifact.mjs";
 
 const require = createRequire(import.meta.url);
 const asar = require("@electron/asar");
 
 const outputRoot = resolve("release-desktop");
-const unpackedDirectory = readdirSync(outputRoot, { withFileTypes: true }).find(
-  (entry) => entry.isDirectory() && entry.name.endsWith("-unpacked"),
-);
-if (!unpackedDirectory) throw new Error("No unpacked Electron application was found.");
-
-const appDirectory = join(outputRoot, unpackedDirectory.name);
-const artifactPlatform = unpackedDirectory.name.startsWith("win")
-  ? "win32"
-  : unpackedDirectory.name.startsWith("linux")
-    ? "linux"
-    : "darwin";
-const executable =
-  artifactPlatform === "win32"
-    ? join(appDirectory, "Alchemy.exe")
-    : artifactPlatform === "darwin"
-      ? join(appDirectory, "Alchemy.app", "Contents", "MacOS", "Alchemy")
-      : join(appDirectory, "alchemy");
+const requestedTarget = process.env.DESKTOP_TARGET;
+const appDirectory = resolveUnpackedDirectory(outputRoot, { target: requestedTarget });
+const target = requestedTarget ?? targetFromUnpackedName(basename(appDirectory));
+const artifactPlatform = targetPlatform(target);
+const executable = executablePath(appDirectory, target);
 if (!existsSync(executable)) throw new Error(`Packaged executable is missing: ${executable}`);
 
 const snapshotDirectories =

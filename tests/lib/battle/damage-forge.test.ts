@@ -1,6 +1,4 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { dealDamageToEnemy } from "@/lib/battle/damage";
-import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import {
   defaultPlayerStatusValues,
@@ -8,7 +6,7 @@ import {
   defaultTalentEffects,
   defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
-import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
+import { dealDamage, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -18,13 +16,7 @@ describe("computeBaseDamage — forge bonus", () => {
   it("adds forge bonus to physical damage", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(2);
   });
 
@@ -34,13 +26,7 @@ describe("computeBaseDamage — forge bonus", () => {
       talentEffects: { ...defaultTalentEffects, forgeToBurn: true },
     });
     const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(23);
     expect(result.playerStatuses.forge).toBe(1);
   });
@@ -51,13 +37,7 @@ describe("computeBaseDamage — forge bonus", () => {
       talentEffects: { ...defaultTalentEffects, forgeToHoly: true },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(23);
     expect(result.playerStatuses.forge).toBe(1);
   });
@@ -68,13 +48,7 @@ describe("computeBaseDamage — forge bonus", () => {
       talentEffects: { ...defaultTalentEffects, forgeToBleed: true },
     });
     const card = makeTestCard({ effects: [makeEffect("bleed", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(1);
   });
 });
@@ -87,13 +61,7 @@ describe("applyForgeStunRider", () => {
       enemyStatuses: defaultEnemyStatusValues({ stun: 15 }),
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
   });
 
@@ -103,13 +71,7 @@ describe("applyForgeStunRider", () => {
       trinketEffects: defaultTrinketManifest({ forgeStunThreshold: 4, forgeStunAmount: 2 }),
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyCC.stunSkipTurns).toBe(0);
   });
 });
@@ -118,26 +80,14 @@ describe("consumeForgeAfterDamage", () => {
   it("consumes 1 forge after physical damage", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(2);
   });
 
   it("consumes 1 forge after stun damage", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
     const card = makeTestCard({ effects: [makeEffect("stun", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(2);
   });
 
@@ -147,13 +97,7 @@ describe("consumeForgeAfterDamage", () => {
       talentEffects: { ...defaultTalentEffects, forgeToBurn: true },
     });
     const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(2);
   });
 
@@ -163,39 +107,21 @@ describe("consumeForgeAfterDamage", () => {
       talentEffects: { ...defaultTalentEffects, forgeToHoly: true },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(2);
   });
 
   it("does not consume forge for burn damage without talent", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
     const card = makeTestCard({ effects: [makeEffect("burn", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(3);
   });
 
   it("does not consume forge for holy damage without talent", () => {
     const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ forge: 3 }) });
     const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(3);
   });
 });

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getGearInstanceDescriptionLines, getGearInstanceTooltipEntries, type GearInstance } from "@/lib/gear";
+import {
+  getGearAffixDisplayName,
+  getGearAffixTooltipEntries,
+  getGearInstanceDescriptionLines,
+  getGearInstanceTooltipEntries,
+  type GearInstance,
+} from "@/lib/gear";
 
 describe("gear display", () => {
   const affixedArmor: GearInstance = {
@@ -52,5 +58,21 @@ describe("gear display", () => {
 
     expect(getGearInstanceTooltipEntries(unknown)).toEqual([]);
     expect(getGearInstanceDescriptionLines(unknown)).toEqual([]);
+  });
+
+  it("uses affix epithets for tooltip display names", () => {
+    expect(getGearAffixDisplayName("flat-physical")).toBe("Ironbound");
+    expect(getGearAffixDisplayName("gold-on-kill")).toBe("Greed");
+  });
+
+  it("builds structured affix tooltip entries with names", () => {
+    const entries = getGearAffixTooltipEntries([{ id: "flat-physical", value: 2 }]);
+    expect(entries).toEqual([
+      {
+        key: "flat-physical-0",
+        name: "Ironbound",
+        text: "Increases Physical damage by 2",
+      },
+    ]);
   });
 });

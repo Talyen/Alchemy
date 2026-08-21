@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import sharp from "sharp";
 
-import { staticAssets } from "./assets/asset-manifest.mjs";
+import { staticAssets, validateAssetRegistry } from "./assets/asset-manifest.mjs";
 import {
   isOutputFresh,
   processManifestEntries,
@@ -166,26 +166,13 @@ async function optimizeAsset(asset, storedEntry) {
   return { message: `${asset.target} optimized`, entry: sourceEntry, missing: false };
 }
 
-function validateAssetTargets(assetEntries) {
-  const seenTargets = new Map();
-  for (const asset of assetEntries) {
-    const previousSource = seenTargets.get(asset.target);
-    if (previousSource) {
-      throw new Error(
-        `Duplicate optimized asset target "${asset.target}" from "${previousSource}" and "${asset.source}".`,
-      );
-    }
-    seenTargets.set(asset.target, asset.source);
-  }
-}
-
 export async function optimizeAssets() {
   await mkdir(outputDir, { recursive: true });
 
   const gearAssets = await discoverGearAssets();
   const gearSlotBackgrounds = await discoverGearSlotBackgrounds();
   const allAssets = [...staticAssets, ...gearAssets, ...gearSlotBackgrounds];
-  validateAssetTargets(allAssets);
+  await validateAssetRegistry(allAssets, { sourceDir });
 
   const { results, nextManifest } = await processManifestEntries({
     entries: allAssets,

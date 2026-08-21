@@ -97,6 +97,9 @@ interface TalentCase {
   run: (page: import("@playwright/test").Page, battle: BattlePage) => Promise<void>;
 }
 
+// Damage-math talents are pinned in tests/lib/game-data/talent-effect-invariants.test.ts
+// (per-talent ops) and tests/lib/battle/damage-base.test.ts (flat physical); here we
+// keep only the presentation fact that an unlocked talent is active at battle start.
 const TALENT_CASES: TalentCase[] = [
   {
     id: "block-start",
@@ -106,24 +109,13 @@ const TALENT_CASES: TalentCase[] = [
       await expect(page.getByRole("button", { name: "Block 5" })).toBeVisible({ timeout: 3000 });
     },
   },
-  {
-    id: "physical-brute-force",
-    category: "physical",
-    description: "increases physical damage dealt",
-    run: async (_page, battle) => {
-      const enemyHpBefore = await battle.enemyHealth();
-      await battle.playCardNamed("Slash");
-      await expect(async () => {
-        expect(await battle.enemyHealth()).toBeLessThan(enemyHpBefore - 6);
-      }).toPass({ timeout: 5000 });
-    },
-  },
 ];
 
 test.describe("Talents in Battle", () => {
   for (const tc of TALENT_CASES) {
-    test(`${tc.id} ${tc.description}`, async ({ page, fastBattle }) => {
+    test(`${tc.id} ${tc.description}`, async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;
+      void runtimeErrors;
       await injectTalentUnlocks(page, { [tc.category]: [tc.id] });
       await startBattleWithDeck(
         page,
@@ -132,4 +124,33 @@ test.describe("Talents in Battle", () => {
       await tc.run(page, new BattlePage(page));
     });
   }
+});
+
+test.describe("Battle Autoplay", critical, () => {
+  test("plays a hand card without clicking it", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
+    const battle = new BattlePage(page);
+    await expect(battle.autoplayToggle).toBeVisible();
+    const manaBefore = await battle.mana();
+    const enemyBefore = await battle.enemyHealth();
+
+    await battle.autoplayToggle.click();
+    await expect(battle.autoplayToggle).toHaveAttribute("aria-pressed", "true");
+
+    await expect
+      .poll(async () => {
+        if (await battle.victoryHeading.isVisible()) return true;
+        if (!(await battle.manaPanel.isVisible()) || !(await battle.enemyHealthPanel.isVisible())) return false;
+        const mana = await battle.mana();
+        const enemy = await battle.enemyHealth();
+        return mana < manaBefore || enemy < enemyBefore;
+      })
+      .toBe(true);
+  });
 });

@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { waitForHttp } from "./lib/wait-for-http.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const viteCli = join(root, "node_modules", "vite", "bin", "vite.js");
@@ -16,19 +17,7 @@ const POLL_MS = 250;
  */
 async function waitForPreview(port) {
   const url = `http://127.0.0.1:${port}`;
-  const deadline = Date.now() + TIMEOUT_MS;
-
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(1_000) });
-      if (response.ok) return;
-    } catch {
-      // Preview not ready yet.
-    }
-    await delay(POLL_MS);
-  }
-
-  throw new Error(`Timed out after ${TIMEOUT_MS / 1000}s waiting for preview at ${url}`);
+  return waitForHttp(url, { timeoutMs: TIMEOUT_MS, pollMs: POLL_MS });
 }
 
 /**

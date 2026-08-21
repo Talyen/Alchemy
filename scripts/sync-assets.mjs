@@ -1,10 +1,9 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { loadManifest } from "./lib/asset-manifest-cache.mjs";
+import { syncGeneratedModule } from "./lib/generated-module.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { kebabToCamel } from "./lib/kebab-to-camel.mjs";
-import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
@@ -12,8 +11,7 @@ const optimizedDir = path.join(rootDir, "src", "assets", "optimized");
 const manifestPath = path.join(optimizedDir, ".asset-hashes.json");
 const outputFile = path.join(rootDir, "src", "lib", "game-data", "assets.generated.ts");
 
-export async function syncAssets() {
-  const manifest = await loadManifest(manifestPath);
+function buildAssetsContent(manifest) {
   const files = Object.keys(manifest)
     .filter((name) => name.endsWith(".webp"))
     .sort();
@@ -27,17 +25,27 @@ export async function syncAssets() {
   }
 
   lines.push("");
-  const content = `${lines.join("\n")}`;
-  const wrote = await writeTextIfChanged(outputFile, content);
+  return { files, content: `${lines.join("\n")}` };
+}
+
+export async function syncAssets({ check = false } = {}) {
+  const { files, wrote } = await syncGeneratedModule({
+    manifestPath,
+    outputFile,
+    check,
+    build: buildAssetsContent,
+  });
   console.log(
-    wrote
-      ? `Wrote ${files.length} asset exports to ${path.relative(rootDir, outputFile)}`
-      : `Asset exports unchanged (${files.length} entries)`,
+    check
+      ? `Asset exports are current (${files.length} entries)`
+      : wrote
+        ? `Wrote ${files.length} asset exports to ${path.relative(rootDir, outputFile)}`
+        : `Asset exports unchanged (${files.length} entries)`,
   );
 }
 
 if (isMainModule(import.meta.url)) {
-  syncAssets().catch((error) => {
+  syncAssets({ check: process.argv.includes("--check") }).catch((error) => {
     console.error("Failed to sync assets:", error);
     process.exitCode = 1;
   });

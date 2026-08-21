@@ -2,13 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import {
-  getNavigationStoreView,
-  getRunSessionStoreView,
-  resetRunProgressSlice,
-  setRunProgress,
-} from "../../../helpers/run-domain-store-test";
+import { resetAllTestStores } from "../../../helpers/gameplay-store-test";
+import { getNavigationStoreView, getRunSessionStoreView, setRunProgress } from "../../../helpers/run-domain-store-test";
 
 vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/storage")>();
@@ -19,8 +14,7 @@ vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
 });
 
 beforeEach(() => {
-  resetRunProgressSlice();
-  resetTransientRunUi();
+  resetAllTestStores();
 });
 
 describe("resolveActiveRunForSave", () => {

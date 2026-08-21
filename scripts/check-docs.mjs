@@ -3,19 +3,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isoDate, PLAN_STALE_DAYS, PLAN_STATUSES, REQUIRED_PLAN_KEYS } from "./lib/plan-contract.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PLANS_DIR = path.join(ROOT, "docs", "Plans");
-const REQUIRED_KEYS = ["type", "status", "created", "updated", "expires"];
-const PLAN_STATUSES = new Set(["active", "blocked", "complete", "cancelled"]);
-const PLAN_WARNING_DAYS = 3;
-
-function isoDate(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/u.test(value)) return null;
-  const date = new Date(`${value}T00:00:00Z`);
-  return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value ? null : date;
-}
-
 export function parsePlanMetadata(source) {
   const lines = source.split(/\r?\n/u);
   if (lines[0]?.trim() !== "---") return { metadata: {}, errors: ["missing front matter"] };
@@ -34,27 +25,18 @@ export function parsePlanMetadata(source) {
     metadata[match[1]] = match[2].trim();
   }
 
-  for (const key of REQUIRED_KEYS) if (!metadata[key]) errors.push(`missing ${key}`);
-  if (metadata.type && metadata.type !== "execution-plan") errors.push("type must be execution-plan");
-  if (metadata.status && !PLAN_STATUSES.has(metadata.status)) {
+  for (const key of REQUIRED_PLAN_KEYS) if (!metadata[key]) errors.push(`missing ${key}`);
+  if (metadata.status && !PLAN_STATUSES.includes(metadata.status)) {
     errors.push(`status must be one of ${[...PLAN_STATUSES].sort().join(", ")}`);
   }
   if (metadata.status === "blocked" && !metadata.reason) errors.push("blocked plans require reason");
 
-  const dates = {};
-  for (const key of ["created", "updated", "expires"]) {
-    if (!metadata[key]) continue;
-    const date = isoDate(metadata[key]);
-    if (!date) errors.push(`${key} must be an ISO date`);
-    else dates[key] = date;
+  let updated;
+  if (metadata.updated) {
+    updated = isoDate(metadata.updated);
+    if (!updated) errors.push("updated must be an ISO date");
   }
-  if (dates.created && dates.updated && dates.updated < dates.created) {
-    errors.push("updated must not precede created");
-  }
-  if (dates.updated && dates.expires && dates.expires <= dates.updated) {
-    errors.push("expires must be later than updated");
-  }
-  return { metadata, errors, dates };
+  return { metadata, errors, updated };
 }
 
 export function planFiles() {
@@ -66,13 +48,12 @@ export function planFiles() {
     .sort();
 }
 
-export function checkPlans({ final = false, keepPlan = false, today = new Date() } = {}) {
+export function checkPlans({ final = false, today = new Date() } = {}) {
   const failures = [];
   const warnings = [];
   const plans = planFiles();
   if (!fs.existsSync(path.join(PLANS_DIR, "README.md"))) failures.push("docs/Plans/README.md is missing");
 
-  let activePlans = 0;
   for (const planPath of plans) {
     const relative = path.relative(ROOT, planPath);
     const result = parsePlanMetadata(fs.readFileSync(planPath, "utf8"));
@@ -80,45 +61,40 @@ export function checkPlans({ final = false, keepPlan = false, today = new Date()
       failures.push(`${relative}: ${result.errors.join("; ")}`);
       continue;
     }
-    const { metadata, dates } = result;
+    const { metadata, updated } = result;
     if (metadata.status === "complete" || metadata.status === "cancelled") {
-      failures.push(`${relative}: ${metadata.status} plans must be deleted`);
+      failures.push(
+        `${relative}: ${metadata.status} plans are deleted at handoff — remove the file (git history keeps it)`,
+      );
       continue;
     }
-    if (dates.expires <= today) {
-      failures.push(`${relative}: ${metadata.status} plan expired on ${metadata.expires}; update or delete it`);
-    } else if (dates.expires <= new Date(today.getTime() + PLAN_WARNING_DAYS * 86_400_000)) {
-      warnings.push(`${relative}: ${metadata.status} plan expires on ${metadata.expires}; renew or close it`);
+    if (updated.getTime() <= today.getTime() - PLAN_STALE_DAYS * 86_400_000) {
+      warnings.push(`${relative}: not updated since ${metadata.updated}; finish and delete it or refresh \`updated\``);
     }
-    if (metadata.status === "active") {
-      activePlans += 1;
-      if (final && !keepPlan) {
-        failures.push(`${relative}: active plan remains at final handoff; delete it or pass --keep-plan`);
-      }
-    }
+    if (final) failures.push(`${relative}: plan remains at final handoff; delete it once its work is done`);
   }
-  if (activePlans > 3) warnings.push(`docs/Plans/: ${activePlans} active plans are present`);
-  return { failures, warnings, activePlans };
+  if (plans.length > 3) warnings.push(`docs/Plans/: ${plans.length} active plan files are present`);
+  return { failures, warnings, activePlans: plans.length };
 }
 
 function main(argv = process.argv.slice(2)) {
   const flags = new Set(argv);
   if (flags.has("--help") || flags.has("-h")) {
-    console.log("Usage: npm run docs:check [--final] [--keep-plan]");
+    console.log("Usage: npm run docs:check [--final]");
     return 0;
   }
-  const unknown = [...flags].filter((flag) => !["--final", "--keep-plan"].includes(flag));
+  const unknown = [...flags].filter((flag) => flag !== "--final");
   if (unknown.length > 0) {
     console.error(`Unknown argument(s): ${unknown.join(", ")}`);
     return 2;
   }
-  const result = checkPlans({ final: flags.has("--final"), keepPlan: flags.has("--keep-plan") });
+  const result = checkPlans({ final: flags.has("--final") });
   if (result.failures.length > 0) {
     console.error("Plan checks failed:");
     for (const failure of result.failures) console.error(`- ${failure}`);
     return 1;
   }
-  console.log(`Plan checks passed (${result.activePlans} active plan${result.activePlans === 1 ? "" : "s"}).`);
+  console.log(`Plan checks passed (${result.activePlans} plan file${result.activePlans === 1 ? "" : "s"}).`);
   for (const warning of result.warnings) console.error(`Warning: ${warning}`);
   return 0;
 }

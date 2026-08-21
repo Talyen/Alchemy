@@ -4,9 +4,13 @@ Checklist for a schema change: [WORKFLOWS.md § Change persisted save data](../.
 
 This file documents how to change persisted save data without breaking player progress. **CI is the source of truth** — `tests/architecture/save-migration-guard.test.ts` and `tests/architecture/save-migration-contract.test.ts` enforce the contract on every `npm run test:ship:unit`.
 
-## Supported baseline (pre-launch)
+## Supported baseline
 
-`LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the **minimum supported** save shape (currently **11**). There are no players yet, so older local schemas are intentionally unsupported. `migrateSaveDataToCurrent` only stamps `CURRENT_SAVE_SCHEMA_VERSION`; Zod defaults and `.catch()` repair the envelope.
+`LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the
+**minimum supported** save shape. Read the current value from that source; do
+not copy the number into documentation. `migrateSaveDataToCurrent` stamps
+`CURRENT_SAVE_SCHEMA_VERSION`, while Zod defaults and `.catch()` repair the
+envelope.
 
 After public launch, treat `LAUNCH_SAVE_SCHEMA_VERSION` as frozen and never remove steps that players can still hold.
 
@@ -35,12 +39,13 @@ Do **not** increment for purely additive fields that can safely use defaults in 
 
 ## Required pattern (automated)
 
-Today `LAUNCH_SAVE_SCHEMA_VERSION === CURRENT_SAVE_SCHEMA_VERSION` (stamp-only). Migration step modules are added when the first real post-floor bump lands.
+When the supported floor and current version are equal, loading is stamp-only;
+add step modules when a real post-floor transform is required.
 
 For a schema bump from `N` to `N + 1`:
 
 1. Increment `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
-2. Add `migrateVNToVNPlus1` in a new `src/lib/validation/migration/steps.ts` or topical `steps-*.ts` file (delegate nested work to `migration/` helpers when needed).
+2. Add `migrateVNToVNPlus1` to `src/lib/validation/migration/content-steps.ts` or a new topical `steps-*.ts` file (delegate nested work to `migration/` helpers when needed).
 3. Chain it from `migrateSaveDataToCurrent` in `src/lib/validation/migration/index.ts`.
 4. Update Zod schemas in `src/lib/validation/save-schemas/` and `defaults.ts`.
 5. Add a fixture to `CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION` in `tests/fixtures/legacy-saves.ts` (CI fails if any source version `LAUNCH … N-1` is missing).
@@ -50,7 +55,10 @@ For a schema bump from `N` to `N + 1`:
 ## `saveSchemaVersion` vs `contentVersion`
 
 - **`saveSchemaVersion`** — persisted **structure** (field renames, required nested shapes). Bump with a migration step.
-- **`contentVersion`** — reserved for **ID or meaning remaps** in game content (card/trinket id splits). Only bump when a migration handler exists for the remap. Current remap: v1→v2 renames persisted `sunder-armor` card ids to `sunder` (`migrateContentV1ToV2`).
+- **`contentVersion`** — reserved for **ID or meaning remaps** in game content
+  (card/trinket id splits). Only bump when a migration handler exists for the
+  remap; the migration steps and tests are the source of truth for current
+  remaps.
 
 ## Test expectations
 
@@ -69,7 +77,11 @@ Saves with a schema newer than the current build are intentionally not migrated 
 
 ## Public save contract
 
-Until launch, `LAUNCH_SAVE_SCHEMA_VERSION` may move forward when the team deliberately drops unsupported local schemas. **After launch it is frozen.** Every bump to `CURRENT_SAVE_SCHEMA_VERSION >= LAUNCH_SAVE_SCHEMA_VERSION` is a save-compat commitment for supported versions: a player who upgrades from any prior _supported_ build must be able to load and play their existing save.
+The supported floor may move only when the team deliberately drops an
+unsupported local shape. Once public saves exist, freeze that floor. Every bump
+to `CURRENT_SAVE_SCHEMA_VERSION >= LAUNCH_SAVE_SCHEMA_VERSION` is a
+save-compat commitment: a player upgrading from any supported build must be
+able to load and play the existing save.
 
 ### Policy: local is authoritative
 

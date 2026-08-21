@@ -103,6 +103,18 @@ describe("asset-manifest-cache", () => {
     expect(loaded).toEqual(entries);
   });
 
+  it("persists the transform settings signature used by the hash fast path", async () => {
+    const dir = await makeTempDir();
+    const manifestPath = path.join(dir, ".asset-hashes.json");
+    const entries = {
+      "a.webp": { hash: "abc", mtimeMs: 1, size: 2, settingsSig: "settings-v2" },
+    };
+
+    await writeManifestIfChanged(manifestPath, entries);
+
+    expect(await loadManifest(manifestPath)).toEqual(entries);
+  });
+
   it("reports output freshness from hash + existence", async () => {
     const dir = await makeTempDir();
     const outputPath = path.join(dir, "out.webp");
@@ -199,6 +211,15 @@ describe("writeTextIfChanged", () => {
     expect(await writeTextIfChanged(filePath, "a\n")).toBe(false);
     expect(await writeTextIfChanged(filePath, "b\n")).toBe(true);
     expect(await readFile(filePath, "utf8")).toBe("b\n");
+  });
+
+  it("fails check mode when a generated file would change", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "alchemy-write-if-changed-check-"));
+    const filePath = path.join(dir, "out.ts");
+    await writeFile(filePath, "a\n");
+
+    await expect(writeTextIfChanged(filePath, "b\n", { check: true })).rejects.toThrow("Generated file is stale");
+    expect(await readFile(filePath, "utf8")).toBe("a\n");
   });
 });
 

@@ -79,7 +79,7 @@ test.describe("Save Error Paths", () => {
     });
   }
 
-  test("fresh localStorage shows main menu without errors", async ({ page }) => {
+  test("fresh localStorage shows main menu without errors", critical, async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
 
     await page.addInitScript(() => {

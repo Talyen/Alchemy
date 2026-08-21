@@ -118,6 +118,8 @@ jobs:
         run: npm run docs:check
       - name: CI routing contract
         run: npm run ci:routing
+      - name: Generated outputs check
+        run: npm run check:generated
       - name: Format check
         run: npm run format:check
       - name: Typecheck

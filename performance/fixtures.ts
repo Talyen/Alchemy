@@ -25,6 +25,9 @@ import {
 } from "./report";
 import { PERF_VIEWPORT } from "./viewport";
 
+// Literal tuple, not a JSON spread: a spread of catalog.json arrays widens
+// ScenarioId to string. Parity with catalog.json is asserted in
+// tests/performance/metrics.test.ts.
 export const SCENARIO_IDS = [
   "battle-effects",
   "battle-end-turn",

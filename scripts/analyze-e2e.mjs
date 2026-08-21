@@ -1,10 +1,14 @@
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { writeCurrentRun } from "./lib/current-run.mjs";
 import { tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { diagnosticIdentity, writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
-import { formatPlaywrightSummaryMarkdown, summarizePlaywrightReport } from "./lib/playwright-summary.mjs";
+import { runCommand } from "./lib/run-command.mjs";
+import {
+  collectPlaywrightTests,
+  formatPlaywrightSummaryMarkdown,
+  summarizePlaywrightReport,
+} from "./lib/playwright-summary.mjs";
 
 console.log("=========================================");
 console.log("🚀 Starting E2E Test Suite Audit...");
@@ -16,18 +20,20 @@ if (!fs.existsSync(reportsDir)) {
   fs.mkdirSync(reportsDir, { recursive: true });
 }
 
+// Markdown links inside reports/e2e-audit-report.md must be relative to that file.
+function linkFromReport(targetPath) {
+  return path.relative(reportsDir, path.resolve(targetPath)).replaceAll("\\", "/");
+}
+
 // Run Playwright E2E tests with JSON reporter outputting to reports/e2e-results.json
 const verbose = process.argv.includes("--verbose");
 console.log("Running Playwright test suite; a compact summary will be shown when it finishes...");
 const extraArgs = process.argv.slice(2).filter((arg) => arg !== "--verbose");
-const result = spawnSync("npm", ["run", "test:e2e:timings", "--", ...extraArgs], {
-  encoding: "utf8",
+const result = runCommand("npm", ["run", "test:e2e:timings", "--", ...extraArgs], {
   stdio: ["inherit", "pipe", "pipe"],
   shell: true,
 });
-const commandOutput = [result.stdout ?? "", result.stderr ?? "", result.error?.message ?? ""]
-  .filter(Boolean)
-  .join("\n");
+const commandOutput = result.output;
 if (verbose && commandOutput) process.stdout.write(commandOutput.endsWith("\n") ? commandOutput : `${commandOutput}\n`);
 if (result.status !== 0) {
   const logPath = writeDiagnosticLog(reportsDir, "e2e-audit-command", commandOutput);
@@ -65,80 +71,7 @@ try {
   const rawData = fs.readFileSync(reportPath, "utf-8");
   const data = JSON.parse(rawData);
 
-  const allSpecs = [];
-  function traverseSuite(suite) {
-    if (suite.specs) {
-      for (const spec of suite.specs) {
-        allSpecs.push(spec);
-      }
-    }
-    if (suite.suites) {
-      for (const subSuite of suite.suites) {
-        traverseSuite(subSuite);
-      }
-    }
-  }
-
-  if (data.suites) {
-    for (const suite of data.suites) {
-      traverseSuite(suite);
-    }
-  }
-
-  let totalTests = 0;
-  let passedTests = 0;
-  let skippedTests = 0;
-  const failedTests = [];
-  const flakyTests = [];
-  const allTests = [];
-
-  for (const spec of allSpecs) {
-    const title = spec.title;
-    const file = spec.file;
-    const line = spec.line;
-
-    for (const test of spec.tests) {
-      totalTests++;
-      const duration = test.results.reduce((sum, r) => sum + r.duration, 0);
-      const isSkipped = test.status === "skipped";
-      const isFailed = test.status === "unexpected";
-      const isFlaky = test.status === "flaky";
-
-      // Find first error message if any
-      let errorMessage = null;
-      for (const res of test.results) {
-        if (res.errors && res.errors.length > 0) {
-          errorMessage = (res.errors[0].message ?? "").split("\n")[0].slice(0, 240);
-          break;
-        }
-      }
-
-      const testInfo = {
-        title,
-        file,
-        line,
-        duration,
-        status: test.status,
-        expectedStatus: test.expectedStatus,
-        errorMessage,
-        retries: test.results.length - 1,
-        project: test.projectName ?? "chromium",
-      };
-
-      allTests.push(testInfo);
-
-      if (isSkipped) {
-        skippedTests++;
-      } else if (isFailed) {
-        failedTests.push(testInfo);
-      } else if (isFlaky) {
-        flakyTests.push(testInfo);
-        passedTests++;
-      } else {
-        passedTests++;
-      }
-    }
-  }
+  const { allTests, totalTests, passedTests, skippedTests, failedTests, flakyTests } = collectPlaywrightTests(data);
 
   // Sort tests by duration (slowest first)
   const slowestTests = [...allTests]
@@ -175,12 +108,12 @@ try {
       });
       const digestPath = `test-results/failures/${identity.id}.md`;
       const diagnosticLine = fs.existsSync(path.resolve(digestPath))
-        ? `- **Failure Diagnostics:** [${digestPath}](file:///${path.resolve(digestPath).replace(/\\/g, "/")})`
+        ? `- **Failure Diagnostics:** [${digestPath}](${linkFromReport(digestPath)})`
         : "- **Failure Diagnostics:** No bounded digest was produced for this test; use the error below.";
       mdReport.push(
         [
           `### 🛑 ${test.title}`,
-          `- **File:** [${test.file}:${test.line}](file:///${path.resolve(test.file).replace(/\\/g, "/")})`,
+          `- **File:** [${test.file}:${test.line}](${linkFromReport(test.file)}#L${test.line})`,
           `- **Duration:** ${(test.duration / 1000).toFixed(2)}s`,
           diagnosticLine,
           `\n\`\`\`text\n${test.errorMessage || "No explicit error message captured by Playwright."}\n\`\`\``,
@@ -203,7 +136,7 @@ try {
       mdReport.push(
         [
           `### 🟨 ${test.title}`,
-          `- **File:** [${test.file}:${test.line}](file:///${path.resolve(test.file).replace(/\\/g, "/")})`,
+          `- **File:** [${test.file}:${test.line}](${linkFromReport(test.file)}#L${test.line})`,
           `- **Total Duration (including retries):** ${(test.duration / 1000).toFixed(2)}s`,
           `- **Retries:** ${test.retries}`,
           `\n**First Run Error Message:**`,
@@ -219,7 +152,7 @@ try {
   mdReport.push(`\n## ⏱️ Top 10 Slowest Tests`);
   mdReport.push(`| Test Case | File | Duration | Status |`, `| :--- | :--- | :--- | :--- |`);
   for (const test of slowestTests) {
-    const fileLink = `[${path.basename(test.file)}:${test.line}](file:///${path.resolve(test.file).replace(/\\/g, "/")})`;
+    const fileLink = `[${path.basename(test.file)}:${test.line}](${linkFromReport(test.file)}#L${test.line})`;
     const statusIcon = test.status === "passed" ? "🟢" : test.status === "failed" ? "🔴" : "🟨";
     mdReport.push(
       `| ${test.title} | ${fileLink} | ${(test.duration / 1000).toFixed(2)}s | ${statusIcon} ${test.status} |`,
@@ -231,7 +164,7 @@ try {
   const auditReportPath = path.join(reportsDir, "e2e-audit-report.md");
   fs.writeFileSync(auditReportPath, mdReport.join("\n"), "utf-8");
   console.log(`\n🎉 Audit report generated successfully at:`);
-  console.log(`👉 file:///${auditReportPath.replace(/\\/g, "/")}\n`);
+  console.log(`👉 ${path.relative(process.cwd(), auditReportPath)}\n`);
 } catch (err) {
   console.error("❌ Failed to process playwright JSON and generate audit report:", err);
 }

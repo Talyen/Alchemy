@@ -2,6 +2,14 @@ declare module "*/smoke-preview.mjs" {
   export function extractBuildResourceUrls(html: string, documentUrl: string): string[];
 }
 
+declare module "*/assets/asset-manifest.mjs" {
+  export const staticAssets: Array<{ source: string; target: string; width: number; quality: number }>;
+  export function validateAssetRegistry(
+    entries: Array<{ source: string; target: string }>,
+    options?: { sourceDir?: string },
+  ): Promise<Array<{ source: string; target: string }>>;
+}
+
 declare module "*/patch-notes-core.mjs" {
   export function buildChangelogUnreleased(commits: Array<{ subject: string; body: string }>): string;
   export function buildPatchNotesMarkdown(tag: string, commits: Array<{ subject: string; body: string }>): string;
@@ -56,6 +64,7 @@ declare module "../../scripts/prettier-paths.mjs" {
 }
 
 declare module "*/clean-dev-artifacts.mjs" {
+  export const TRANSIENT_ARTIFACT_DIRS: readonly string[];
   export const DEFAULT_ARTIFACT_DIRS: readonly string[];
   export const BUILD_ARTIFACT_DIRS: readonly string[];
   export const STALE_TEST_PORTS: readonly number[];
@@ -73,6 +82,7 @@ declare module "*/clean-dev-artifacts.mjs" {
 }
 
 declare module "../../scripts/lib/clean-dev-artifacts.mjs" {
+  export const TRANSIENT_ARTIFACT_DIRS: readonly string[];
   export const DEFAULT_ARTIFACT_DIRS: readonly string[];
   export const BUILD_ARTIFACT_DIRS: readonly string[];
   export const STALE_TEST_PORTS: readonly number[];
@@ -144,7 +154,11 @@ declare module "*/map-pool.mjs" {
 }
 
 declare module "*/write-text-if-changed.mjs" {
-  export function writeTextIfChanged(filePath: string, content: string): Promise<boolean>;
+  export function writeTextIfChanged(
+    filePath: string,
+    content: string,
+    options?: { check?: boolean },
+  ): Promise<boolean>;
 }
 
 declare module "*/kebab-to-camel.mjs" {
@@ -194,6 +208,14 @@ interface PlaywrightSummary {
 }
 
 declare module "*/ci-summarize-playwright.mjs" {
+  export function collectPlaywrightTests(report: unknown): {
+    allTests: Array<Record<string, unknown>>;
+    totalTests: number;
+    passedTests: number;
+    skippedTests: number;
+    failedTests: Array<Record<string, unknown>>;
+    flakyTests: Array<Record<string, unknown>>;
+  };
   export function summarizePlaywrightReport(
     report: unknown,
     options?: { maxFailures?: number; rootDir?: string },
@@ -203,6 +225,14 @@ declare module "*/ci-summarize-playwright.mjs" {
 }
 
 declare module "../../scripts/ci-summarize-playwright.mjs" {
+  export function collectPlaywrightTests(report: unknown): {
+    allTests: Array<Record<string, unknown>>;
+    totalTests: number;
+    passedTests: number;
+    skippedTests: number;
+    failedTests: Array<Record<string, unknown>>;
+    flakyTests: Array<Record<string, unknown>>;
+  };
   export function summarizePlaywrightReport(
     report: unknown,
     options?: { maxFailures?: number; rootDir?: string },
@@ -214,12 +244,12 @@ declare module "../../scripts/ci-summarize-playwright.mjs" {
 interface PlanMetadataResult {
   metadata: Record<string, string>;
   errors: string[];
-  dates?: Record<string, Date>;
+  updated?: Date;
 }
 
 declare module "../../scripts/check-docs.mjs" {
   export function parsePlanMetadata(source: string): PlanMetadataResult;
-  export function checkPlans(options?: { final?: boolean; keepPlan?: boolean; today?: Date }): {
+  export function checkPlans(options?: { final?: boolean; today?: Date }): {
     failures: string[];
     warnings: string[];
     activePlans: number;
@@ -228,7 +258,7 @@ declare module "../../scripts/check-docs.mjs" {
 
 declare module "../../scripts/new-plan.mjs" {
   export function safePlanName(value: string): string;
-  export function planTemplate(name: string, created: string, expires: string): string;
+  export function planTemplate(name: string, updated: string): string;
 }
 
 declare module "../../scripts/prune-transient-artifacts.mjs" {
@@ -301,6 +331,10 @@ declare module "../../scripts/verify-changed.mjs" {
     plan: { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] },
     options?: { verbosePlan?: boolean },
   ): string;
+}
+
+declare module "*/change-routes.mjs" {
+  export function validateRouteCatalog(options?: { rootDir?: string }): string[];
 }
 
 declare module "../../scripts/lib/current-run.mjs" {
@@ -383,12 +417,13 @@ declare module "*/playwright-diagnostics.mjs" {
 
 declare module "../../scripts/check-ci-routing.mjs" {
   export function checkCiRouting(source: string): string[];
+  export function checkJobBoundaries(source: string): string[];
   export function checkDiagnosticRetention(sources: Record<string, string>): string[];
 }
 
 declare module "*/check-docs.mjs" {
   export function parsePlanMetadata(source: string): PlanMetadataResult;
-  export function checkPlans(options?: { final?: boolean; keepPlan?: boolean; today?: Date }): {
+  export function checkPlans(options?: { final?: boolean; today?: Date }): {
     failures: string[];
     warnings: string[];
     activePlans: number;
@@ -397,7 +432,7 @@ declare module "*/check-docs.mjs" {
 
 declare module "*/new-plan.mjs" {
   export function safePlanName(value: string): string;
-  export function planTemplate(name: string, created: string, expires: string): string;
+  export function planTemplate(name: string, updated: string): string;
 }
 
 declare module "*/prune-transient-artifacts.mjs" {
@@ -409,6 +444,15 @@ declare module "*/prune-transient-artifacts.mjs" {
     rootDir?: string;
     transientDirs?: readonly string[];
   }): { removed: Array<{ path: string; bytes: number }>; bytes: number };
+}
+
+declare module "*/test-suites.mjs" {
+  export const TEST_SUITES: {
+    save: readonly string[];
+    tooling: readonly string[];
+    shipUnit: readonly string[];
+  };
+  export function validateTestSuitePaths(rootDir: string, suites?: readonly string[]): string[];
 }
 
 declare module "*/compact-output.mjs" {
@@ -452,5 +496,6 @@ declare module "*/current-run.mjs" {
 
 declare module "*/check-ci-routing.mjs" {
   export function checkCiRouting(source: string): string[];
+  export function checkJobBoundaries(source: string): string[];
   export function checkDiagnosticRetention(sources: Record<string, string>): string[];
 }

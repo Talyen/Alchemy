@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
@@ -13,17 +14,6 @@ import {
   resetRunProgressSlice,
   setRunProgress,
 } from "../../../helpers/run-domain-store-test";
-
-vi.mock("@/lib/audio", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/audio")>();
-  return {
-    ...actual,
-    playGoldGain: vi.fn(),
-    playGoldSpend: vi.fn(),
-    playUISound: vi.fn(),
-    stopAllSfx: vi.fn(),
-  };
-});
 
 vi.mock("@/lib/platform", () => ({
   setSteamRichPresence: vi.fn(),

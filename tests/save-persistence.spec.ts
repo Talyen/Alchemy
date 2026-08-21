@@ -260,7 +260,7 @@ test.describe("Autosave Cadence", () => {
     await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBeforeReward);
   });
 
-  test("save persists across page navigation", async ({ page }) => {
+  test("save persists across page navigation", critical, async ({ page }) => {
     test.setTimeout(30000);
     await startAtDestination(page, { runGold: 42, runPlayerHealth: 22 }, { forceDestination: "Campfire" });
 

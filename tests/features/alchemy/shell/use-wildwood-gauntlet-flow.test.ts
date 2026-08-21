@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import "../../../helpers/mock-audio";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
@@ -11,12 +12,6 @@ import {
   setRunSession,
 } from "../../../helpers/run-domain-store-test";
 import { makeFlowHandlerDeps } from "../../../helpers/run-flow-handler-deps";
-
-vi.mock("@/lib/audio", () => ({
-  playDefeat: vi.fn(),
-  stopAllSfx: vi.fn(),
-  playUISound: vi.fn(),
-}));
 
 describe("Wildwood reward selection", () => {
   beforeEach(() => {

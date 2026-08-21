@@ -4,6 +4,7 @@ import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations"
 import { defaultBattleState, repairPersistedBattleTrinketManifest } from "@/lib/battle";
 import { cardLibrary } from "@/lib/game-data";
 import { makeRunCandidate } from "../../../../fixtures/active-run";
+import { makeTestCard } from "../../../../fixtures/cards";
 
 describe("parseActiveRun", () => {
   it("returns null for null input", () => {
@@ -61,14 +62,14 @@ describe("parseActiveRun", () => {
       makeRunCandidate({
         characterId: "ranger",
         runDeck: [
-          { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
-          { id: "bash", title: "Bash", descriptionLines: [""], art: "", cost: 1, effects: [] },
-          { id: "block", title: "Block", descriptionLines: [""], art: "", cost: 1, effects: [] },
-          { id: "anvil", title: "Anvil", descriptionLines: [""], art: "", cost: 1, effects: [] },
-          { id: "plate-mail", title: "Plate Mail", descriptionLines: [""], art: "", cost: 1, effects: [] },
-          { id: "apple", title: "Apple", descriptionLines: [""], art: "", cost: 1, effects: [] },
-          { id: "meteor", title: "Meteor", descriptionLines: [""], art: "", cost: 1, effects: [] },
-          { id: "blessed-aegis", title: "Blessed Aegis", descriptionLines: [""], art: "", cost: 1, effects: [] },
+          makeTestCard({ id: "slash", title: "Slash" }),
+          makeTestCard({ id: "bash", title: "Bash" }),
+          makeTestCard({ id: "block", title: "Block" }),
+          makeTestCard({ id: "anvil", title: "Anvil" }),
+          makeTestCard({ id: "plate-mail", title: "Plate Mail" }),
+          makeTestCard({ id: "apple", title: "Apple" }),
+          makeTestCard({ id: "meteor", title: "Meteor" }),
+          makeTestCard({ id: "blessed-aegis", title: "Blessed Aegis" }),
         ],
         roomsEncountered: 0,
         currentAct: 1,

@@ -2,18 +2,16 @@ import { describe, expect, it } from "vitest";
 import { buildWishOptions, applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestBattleState } from "../../fixtures/battle";
+import { makeTestCard } from "../../fixtures/cards";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
 
 describe("buildWishOptions", () => {
   it("returns shuffled options excluding the triggering card", () => {
-    const card = {
+    const card = makeTestCard({
       id: "strike",
       title: "Strike",
-      descriptionLines: [""],
-      art: "",
-      cost: 1,
       effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 4 }],
-    };
+    });
     const state = makeTestBattleState();
     const options = buildWishOptions(state, card);
     expect(options).toHaveLength(3);
@@ -22,7 +20,7 @@ describe("buildWishOptions", () => {
   });
 
   it("returns only undiscovered cards when wishUndiscoveredCards is active", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       talentEffects: { ...makeTestBattleState().talentEffects, wishUndiscoveredCards: true },
       discoveredCardIds: ["strike", "bash", "block"],
@@ -34,7 +32,7 @@ describe("buildWishOptions", () => {
   });
 
   it("falls back to all cards when not enough undiscovered exist", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       talentEffects: { ...makeTestBattleState().talentEffects, wishUndiscoveredCards: true },
       discoveredCardIds: (() => {
@@ -51,7 +49,7 @@ describe("buildWishOptions", () => {
 describe("applyWishEffect", () => {
   it("returns same state when wish amount is 0", () => {
     const state = makeTestBattleState();
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const texts: CombatTextEvent[] = [];
     const result = applyWishEffect(state, card, 0, texts);
     expect(result).toBe(state);
@@ -59,7 +57,7 @@ describe("applyWishEffect", () => {
 
   it("returns same state when wish amount is negative", () => {
     const state = makeTestBattleState();
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const texts: CombatTextEvent[] = [];
     const result = applyWishEffect(state, card, -1, texts);
     expect(result).toBe(state);
@@ -67,7 +65,7 @@ describe("applyWishEffect", () => {
 
   it("sets wishOptions when no existing wish is active", () => {
     const state = makeTestBattleState({ wishOptions: null, wishQueue: [] });
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const texts: CombatTextEvent[] = [];
     const result = applyWishEffect(state, card, 1, texts);
     expect(result.wishOptions).not.toBeNull();
@@ -75,64 +73,89 @@ describe("applyWishEffect", () => {
   });
 
   it("queues extra wishes when an existing wish is active", () => {
-    const initialOptions = [{ id: "card-1", title: "Card 1", descriptionLines: [""], art: "", cost: 1, effects: [] }];
+    const initialOptions = [makeTestCard({ id: "card-1", title: "Card 1" })];
     const state = makeTestBattleState({ wishOptions: initialOptions, wishQueue: [] });
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const texts: CombatTextEvent[] = [];
     const result = applyWishEffect(state, card, 1, texts);
     expect(result.wishOptions).toBe(initialOptions);
     expect(result.wishQueue).toHaveLength(1);
   });
 
-  it("awards goldOnWish per wish count", () => {
-    const state = makeTestBattleState({
-      talentEffects: { ...makeTestBattleState().talentEffects, goldOnWish: 5 },
-    });
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
-    const texts: CombatTextEvent[] = [];
-    const result = applyWishEffect(state, card, 2, texts);
-    expect(result.gold).toBe(10);
-    expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 10 }]);
-  });
-
-  it("awards goldOnWish per wish", () => {
-    const state = makeTestBattleState({
-      talentEffects: { ...makeTestBattleState().talentEffects, goldOnWish: 3 },
-    });
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
-    const texts: CombatTextEvent[] = [];
-    const result = applyWishEffect(state, card, 1, texts);
-    expect(result.gold).toBe(3);
-  });
-
-  it("awards wishingWellGoldOnWish per wish", () => {
-    const state = makeTestBattleState({
-      trinketEffects: { ...makeTestBattleState().trinketEffects, wishingWellGoldOnWish: 7 },
-    });
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
-    const texts: CombatTextEvent[] = [];
-    const result = applyWishEffect(state, card, 1, texts);
-    expect(result.gold).toBe(7);
-  });
-
-  it("scales wishingWellGoldOnWish combat text with goldGainPercent", () => {
-    const state = makeTestBattleState({
-      trinketEffects: { ...makeTestBattleState().trinketEffects, wishingWellGoldOnWish: 7 },
-      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
-    });
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
-    const texts: CombatTextEvent[] = [];
-    const result = applyWishEffect(state, card, 1, texts);
-    expect(result.gold).toBe(11);
-    expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 11 }]);
-  });
+  it.each<{
+    name: string;
+    talentGoldOnWish?: number;
+    trinketWishingWellGoldOnWish?: number;
+    gearGoldGainPercent?: number;
+    wishes: number;
+    expectedGold: number;
+    expectedGoldTextAmount?: number;
+  }>([
+    {
+      name: "awards goldOnWish per wish count",
+      talentGoldOnWish: 5,
+      wishes: 2,
+      expectedGold: 10,
+      expectedGoldTextAmount: 10,
+    },
+    {
+      name: "awards goldOnWish per wish",
+      talentGoldOnWish: 3,
+      wishes: 1,
+      expectedGold: 3,
+    },
+    {
+      name: "awards wishingWellGoldOnWish per wish",
+      trinketWishingWellGoldOnWish: 7,
+      wishes: 1,
+      expectedGold: 7,
+    },
+    {
+      name: "scales wishingWellGoldOnWish combat text with goldGainPercent",
+      trinketWishingWellGoldOnWish: 7,
+      gearGoldGainPercent: 50,
+      wishes: 1,
+      expectedGold: 11,
+      expectedGoldTextAmount: 11,
+    },
+  ])(
+    "$name",
+    ({
+      talentGoldOnWish,
+      trinketWishingWellGoldOnWish,
+      gearGoldGainPercent,
+      wishes,
+      expectedGold,
+      expectedGoldTextAmount,
+    }) => {
+      const base = makeTestBattleState();
+      const state = makeTestBattleState({
+        ...(talentGoldOnWish !== undefined
+          ? { talentEffects: { ...base.talentEffects, goldOnWish: talentGoldOnWish } }
+          : {}),
+        ...(trinketWishingWellGoldOnWish !== undefined
+          ? { trinketEffects: { ...base.trinketEffects, wishingWellGoldOnWish: trinketWishingWellGoldOnWish } }
+          : {}),
+        ...(gearGoldGainPercent !== undefined
+          ? { gearEffects: { ...base.gearEffects, goldGainPercent: gearGoldGainPercent } }
+          : {}),
+      });
+      const card = makeTestCard({ id: "strike", title: "Strike" });
+      const texts: CombatTextEvent[] = [];
+      const result = applyWishEffect(state, card, wishes, texts);
+      expect(result.gold).toBe(expectedGold);
+      if (expectedGoldTextAmount !== undefined) {
+        expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: expectedGoldTextAmount }]);
+      }
+    },
+  );
 
   it("heals player with healthOnWish per wish", () => {
     const state = makeTestBattleState({
       playerHealth: 20,
       talentEffects: { ...makeTestBattleState().talentEffects, healthOnWish: 4 },
     });
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const texts: CombatTextEvent[] = [];
     const result = applyWishEffect(state, card, 1, texts);
     expect(result.playerHealth).toBe(24);
@@ -143,7 +166,7 @@ describe("applyWishEffect", () => {
       playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 5, poison: 3 },
       talentEffects: { ...makeTestBattleState().talentEffects, removeHarmfulStatusOnWish: true },
     });
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const texts: CombatTextEvent[] = [];
     const result = applyWishEffect(state, card, 1, texts);
     expect(result.playerStatuses.burn).toBe(0);
@@ -151,14 +174,11 @@ describe("applyWishEffect", () => {
   });
 
   it("draws card with wishDrawsCard", () => {
-    const card = {
+    const card = makeTestCard({
       id: "strike",
       title: "Strike",
-      descriptionLines: [""],
-      art: "",
-      cost: 1,
       effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 4 }],
-    };
+    });
     const state = makeTestBattleState({
       deck: [card],
       talentEffects: { ...makeTestBattleState().talentEffects, wishDrawsCard: true },
@@ -177,7 +197,7 @@ describe("applyWishEffect", () => {
       },
       trinketEffects: { ...makeTestBattleState().trinketEffects, wishingWellGoldOnWish: 2 },
     });
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const texts: CombatTextEvent[] = [];
     const result = applyWishEffect(state, card, 1, texts);
     expect(result.gold).toBe(10);
@@ -188,7 +208,7 @@ describe("applyWishEffect", () => {
       playerHealth: 20,
       talentEffects: { ...makeTestBattleState().talentEffects, healthOnWish: 3, goldOnWish: 2 },
     });
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const texts: CombatTextEvent[] = [];
     const result = applyWishEffect(state, card, 3, texts);
     expect(result.playerHealth).toBe(29);
@@ -198,7 +218,7 @@ describe("applyWishEffect", () => {
 
 describe("chooseWishCard", () => {
   it("assigns unique uid when card is added to hand", () => {
-    const card = { id: "chosen-card", title: "Chosen", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "chosen-card", title: "Chosen" });
     const state = makeTestBattleState({
       wishOptions: [card],
       wishQueue: [],
@@ -212,15 +232,10 @@ describe("chooseWishCard", () => {
   });
 
   it("assigns unique uid when card is added to discard due to full hand", () => {
-    const card = { id: "chosen-card", title: "Chosen", descriptionLines: [""], art: "", cost: 1, effects: [] };
-    const fullHand = Array.from({ length: MAX_HAND_SIZE }, (_, i) => ({
-      id: `c-${i}`,
-      title: `Card ${i}`,
-      descriptionLines: [""],
-      art: "",
-      cost: 1,
-      effects: [],
-    }));
+    const card = makeTestCard({ id: "chosen-card", title: "Chosen" });
+    const fullHand = Array.from({ length: MAX_HAND_SIZE }, (_, i) =>
+      makeTestCard({ id: `c-${i}`, title: `Card ${i}` }),
+    );
     const state = makeTestBattleState({
       wishOptions: [card],
       wishQueue: [],
@@ -236,8 +251,8 @@ describe("chooseWishCard", () => {
 
   it("passes through to next wish when cardId is null", () => {
     const state = makeTestBattleState({
-      wishOptions: [{ id: "card-a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }],
-      wishQueue: [[{ id: "card-b", title: "B", descriptionLines: [""], art: "", cost: 1, effects: [] }]],
+      wishOptions: [makeTestCard({ id: "card-a", title: "A" })],
+      wishQueue: [[makeTestCard({ id: "card-b", title: "B" })]],
     });
     const result = chooseWishCard(state, null);
     expect(result.wishOptions).toHaveLength(1);
@@ -247,7 +262,7 @@ describe("chooseWishCard", () => {
 
   it("returns state unchanged when chosen card is not in wishOptions", () => {
     const state = makeTestBattleState({
-      wishOptions: [{ id: "card-a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }],
+      wishOptions: [makeTestCard({ id: "card-a", title: "A" })],
       wishQueue: [],
       nextCardUid: 1,
     });
@@ -256,7 +271,7 @@ describe("chooseWishCard", () => {
   });
 
   it("sets wishOptions to null when no queue and card selected", () => {
-    const card = { id: "only-card", title: "Only", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "only-card", title: "Only" });
     const state = makeTestBattleState({
       wishOptions: [card],
       wishQueue: [],
@@ -270,7 +285,7 @@ describe("chooseWishCard", () => {
 
 describe("new wish talents", () => {
   it("wishTrinketChoice grants 1 forge or 1 armor depending on RNG", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const stateForge = makeTestBattleState({
       playerStatuses: { ...makeTestBattleState().playerStatuses, forge: 0, armor: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, wishTrinketChoice: true },
@@ -292,7 +307,7 @@ describe("new wish talents", () => {
   });
 
   it("wishBlockBelowHealthPct grants 6 block below 30% health threshold", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const stateBelow = makeTestBattleState({
       playerHealth: 8,
       playerMaxHealth: 30,
@@ -314,7 +329,7 @@ describe("new wish talents", () => {
   });
 
   it("wishCardsUpgraded upgrades card numeric values by 1", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       talentEffects: { ...makeTestBattleState().talentEffects, wishCardsUpgraded: true },
     });
@@ -336,7 +351,7 @@ describe("new wish talents", () => {
   });
 
   it("wishCrystalGold grants gold on success roll", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       talentEffects: { ...makeTestBattleState().talentEffects, wishCrystalGold: 5 },
       rng: () => 0.01,
@@ -346,7 +361,7 @@ describe("new wish talents", () => {
   });
 
   it("wishCrystalGold grants crystal on failed roll", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       talentEffects: { ...makeTestBattleState().talentEffects, wishCrystalGold: 5 },
       rng: () => 0.99,
@@ -356,7 +371,7 @@ describe("new wish talents", () => {
   });
 
   it("wishCrystalGold grants gold instead of crystal in wildwood (no silent drop)", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       talentEffects: { ...makeTestBattleState().talentEffects, wishCrystalGold: 5 },
       rng: () => 0.99,
@@ -368,7 +383,7 @@ describe("new wish talents", () => {
   });
 
   it("wishCrystalGold gold text matches the scaled run-gold delta in wildwood", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       talentEffects: { ...makeTestBattleState().talentEffects, wishCrystalGold: 5 },
       gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
@@ -382,7 +397,7 @@ describe("new wish talents", () => {
   });
 
   it("wishManaTrigger adds mana per wish", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       mana: 2,
       talentEffects: { ...makeTestBattleState().talentEffects, manaOnWish: 2 },
@@ -392,7 +407,7 @@ describe("new wish talents", () => {
   });
 
   it("wishBurnTrigger applies burn damage on wish", () => {
-    const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,

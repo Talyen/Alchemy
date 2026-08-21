@@ -17,15 +17,23 @@ export async function prepareAssets() {
     return;
   }
 
-  const [art, sounds, music] = await Promise.all([optimizeAssets(), optimizeSounds(), optimizeMusic()]);
-
+  const results = await Promise.allSettled([optimizeAssets(), optimizeSounds(), optimizeMusic()]);
+  const [artResult, soundsResult, musicResult] = results;
   const failures = [];
-  if (!art.ok) failures.push("Art optimization failed (see missing-source errors above).");
-  if (!sounds.ok) failures.push("Sound optimization failed.");
-  if (!music.ok) failures.push("Music optimization failed.");
+  const pipelineFailed = (result) => result.status === "rejected" || !result.value.ok;
 
-  await syncAssets();
-  await syncGearArt();
+  if (pipelineFailed(artResult)) {
+    failures.push("Art optimization failed (see missing-source errors above).");
+  }
+  if (pipelineFailed(soundsResult)) failures.push("Sound optimization failed.");
+  if (pipelineFailed(musicResult)) failures.push("Music optimization failed.");
+
+  if (artResult.status === "fulfilled" && artResult.value.ok) {
+    await syncAssets();
+    await syncGearArt();
+  } else {
+    console.warn("Skipping generated art barrels because art optimization did not complete successfully.");
+  }
 
   if (failures.length > 0) {
     throw new Error(failures.join(" "));

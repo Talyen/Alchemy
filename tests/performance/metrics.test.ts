@@ -1,3 +1,5 @@
+import { readdirSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   aggregateRawSamples,
@@ -12,6 +14,8 @@ import {
 } from "../../performance/metrics";
 import { compareMetrics, meetsOptimizationRule } from "../../performance/compare";
 import { renderSummaryMarkdown, type EnvironmentInfo, type ScenarioAggregate } from "../../performance/report";
+import performanceCatalog from "../../performance/catalog.json";
+import { SCENARIO_IDS } from "../../performance/fixtures";
 
 function sample(frameTimes: number[], extras: Partial<FrameSampleRaw> = {}): FrameSampleRaw {
   return {
@@ -22,6 +26,22 @@ function sample(frameTimes: number[], extras: Partial<FrameSampleRaw> = {}): Fra
     ...extras,
   };
 }
+
+describe("performance catalog", () => {
+  it("matches the scenario files and comparison metric keys", () => {
+    const scenarioFiles = readdirSync(path.resolve(__dirname, "../../performance/scenarios"))
+      .filter((file) => file.endsWith(".perf.ts"))
+      .map((file) => file.replace(/\.perf\.ts$/u, ""))
+      .sort();
+    const catalogScenarios = [...performanceCatalog.metricScenarios, ...performanceCatalog.diagnosticScenarios].sort();
+    expect(catalogScenarios).toEqual(scenarioFiles);
+    expect([...SCENARIO_IDS].sort()).toEqual(catalogScenarios);
+    const baseline = computeMetrics(sample([16]), { minFrames: 1 });
+    expect(compareMetrics(baseline, baseline).map(({ key }) => key)).toEqual(
+      performanceCatalog.metrics.map(({ key }) => key),
+    );
+  });
+});
 
 describe("percentile / lowFps", () => {
   it("computes linear percentiles", () => {

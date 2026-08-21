@@ -1,26 +1,17 @@
 # Plans
 
-Alchemy's documentation root is lowercase, so the canonical path is
-`docs/Plans/` (not a second `Docs/` tree).
+Keep active execution plans in this directory. Durable product, architecture,
+testing, and workflow rules belong in their canonical owner documents
+(`AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/WORKFLOWS.md`, `docs/REFERENCE.md`,
+or a subsystem README) — never only in a plan.
 
-Do not keep completed implementation plans or historical rollout records here.
-Durable product, architecture, testing, and workflow rules belong in their
-canonical owner documents (`AGENTS.md`, `docs/ARCHITECTURE.md`,
-`docs/WORKFLOWS.md`, `docs/REFERENCE.md`, or a subsystem README).
+Plans require minimal front matter:
 
-This folder holds design reference material and **active agent execution plans**
-while work is in flight. Plans require front matter with:
-
-- `type: execution-plan`
-- `status: active` or `status: blocked` (`blocked` also requires `reason`)
-- ISO dates for `created`, `updated`, and a future `expires`
+- `status: active` (or `blocked`, which also requires `reason`)
+- ISO date for `updated`
 
 Use `npm run new:plan -- <PlanName>` to scaffold valid metadata. Use
-`npm run docs:check` during work and `npm run docs:check:final` at handoff.
-Checks reject missing or malformed metadata, expired plans, and plans marked
-`complete` or `cancelled`; final checks reject remaining active plans unless
-the intentionally unfinished work is passed with `--keep-plan`.
-
-When a plan is finished, delete it or fold durable rules into the canonical
-documentation owner. Do not archive completed plans here: completed work lives
-in git history and the handoff/PR summary.
+`npm run docs:check` while working; it warns when a plan has not been updated
+recently. When the work ends, simply **delete the plan file** — git history
+retains it — then run `npm run docs:check:final`, which requires none to
+remain.

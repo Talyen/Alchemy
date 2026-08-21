@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import "../../../../helpers/mock-audio";
 import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
 import type { MouseEvent } from "react";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
@@ -12,14 +13,6 @@ import { makeTestCard } from "../../../../fixtures/battle";
 import { playBattleEvent, playUISound } from "@/lib/audio";
 import { logError } from "@/lib/error-logger";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-
-vi.mock("@/lib/audio", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/audio")>()),
-  playBattleEvent: vi.fn(),
-  playCardSound: vi.fn(),
-  playGoldGain: vi.fn(),
-  playUISound: vi.fn(),
-}));
 
 vi.mock("@/lib/error-logger", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/error-logger")>()),

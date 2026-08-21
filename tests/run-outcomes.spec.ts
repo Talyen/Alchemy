@@ -1,16 +1,18 @@
 import { expect } from "@playwright/test";
+import type { BattleCard } from "@/lib/game-data";
 import { test } from "./fixtures/e2e";
 import {
   injectBossState,
+  injectActiveBattle,
   assertDefeatFromEndRun,
+  winBattleAndClaimReward,
+  makeCard,
   makeGoblinBattleState,
   startAtDestination,
   SAVE_KEY,
-  injectSaveState,
 } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
-import { RewardPage } from "./pages/reward-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Run Outcomes", () => {
@@ -27,18 +29,12 @@ test.describe("Run Outcomes", () => {
         await injectBossState(page, 1);
         await page.goto("/");
 
-        const bossBtn = page.getByRole("button", { name: "Boss Combat" });
-        await expect(bossBtn).toBeVisible({ timeout: 5000 });
-
-        await bossBtn.click();
-        await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
-
-        await new BattlePage(page).winViaCombat();
-
-        await new RewardPage(page).claimFirstReward();
-
         const destination = new DestinationPage(page);
         await destination.expectVisible();
+        await destination.enterCombat("Boss Combat");
+
+        await winBattleAndClaimReward(page);
+
         const destinationBtns = page.getByRole("button", {
           name: /Combat|Campfire|Merchant|Alchemist|Mystery|Corruption|Trinket Shop|Equipment Shop/,
         });
@@ -47,19 +43,15 @@ test.describe("Run Outcomes", () => {
       },
     );
 
-    test("defeating Act III boss shows run victory screen", async ({ page, fastBattle }) => {
+    test("defeating Act III boss shows run victory screen", critical, async ({ page, fastBattle }) => {
       void fastBattle;
       await injectBossState(page, 3);
       await page.goto("/");
 
-      await expect(page.getByRole("button", { name: "Boss Combat" })).toBeVisible({ timeout: 5000 });
-      await page.getByRole("button", { name: "Boss Combat" }).click();
-      await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
-      await new BattlePage(page).winViaCombat();
-
-      const reward = new RewardPage(page);
-      await reward.selectFirstReward();
-      await reward.addRewardBtn.click();
+      const destination = new DestinationPage(page);
+      await destination.expectVisible();
+      await destination.enterCombat("Boss Combat");
+      await winBattleAndClaimReward(page);
 
       await expect(page.getByRole("heading", { name: /Victory|Triumph|Run Complete/i })).toBeVisible({ timeout: 5000 });
       await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
@@ -80,19 +72,10 @@ test.describe("Run Outcomes", () => {
       page,
       fastBattle,
     }) => {
-      test.setTimeout(60_000);
       void fastBattle;
 
       // End Run is reachable from an injected battle screen — no full boot needed.
-      await injectSaveState(page, {
-        currentScreen: "battle",
-        activeCombat: {
-          battleState: makeGoblinBattleState(),
-          activeLabyrinthModifiers: [],
-          activeLabyrinthRewardModifiers: [],
-        },
-      });
-      await page.goto("/");
+      await injectActiveBattle(page, makeGoblinBattleState());
       await assertDefeatFromEndRun(page, { returnToMenu: true });
 
       const activeRun = await page.evaluate((saveKey) => {
@@ -115,17 +98,10 @@ test.describe("Run Outcomes", () => {
         deathsDoorActive: false,
       });
 
-      await injectSaveState(page, {
-        currentScreen: "battle",
+      await injectActiveBattle(page, battleState, {
         runPlayerHealth: 1,
         runMaxHealth: 30,
-        activeCombat: {
-          battleState,
-          activeLabyrinthModifiers: [],
-          activeLabyrinthRewardModifiers: [],
-        },
       });
-      await page.goto("/");
 
       const battle = new BattlePage(page);
       await expect(battle.endTurnBtn).toBeVisible({ timeout: 10000 });
@@ -143,4 +119,69 @@ test.describe("Run Outcomes", () => {
       expect(activeRun).toBeNull();
     });
   });
+});
+
+// Death's Door triggers once per battle: the first lethal hit drops the player
+// to 1 HP with a grace window, and lethal damage stays floored at 1 HP while
+// grace is active (multi-hit and DoT ticks included). Only once grace expires
+// does a lethal hit kill outright. These tests inject a battle that is *already*
+// in Death's Door grace, which makes them fully deterministic and independent
+// of the random enemy.
+function deathsDoorGraceState(hand: BattleCard[]) {
+  return makeGoblinBattleState({
+    hand,
+    playerHealth: 1,
+    deathsDoorUsed: true,
+    deathsDoorActive: true,
+    deathsDoorTriggeredTurn: 2,
+    deathsDoorGraceTurnsRemaining: 1,
+  });
+}
+
+async function startInDeathsDoorGrace(page: import("@playwright/test").Page, hand: BattleCard[]) {
+  await injectActiveBattle(page, deathsDoorGraceState(hand), {
+    runPlayerHealth: 1,
+    runMaxHealth: 30,
+    runDeck: hand,
+  });
+}
+
+test.describe("Death's Door", () => {
+  test(
+    "grace floors damage at 1 HP and expiry ends the run with defeat",
+    critical,
+    async ({ page, fastBattle, runtimeErrors }) => {
+      void fastBattle;
+      void runtimeErrors;
+
+      await startInDeathsDoorGrace(
+        page,
+        Array.from({ length: 6 }, () => makeCard()),
+      );
+      const battle = new BattlePage(page);
+      await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+
+      // Playing a card while grace is active keeps the icon and floors health at 1.
+      await battle.playFirstCard();
+      await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+      await expect.poll(() => battle.playerHealth()).toBe(1);
+
+      // Remaining 1: first enemy turn still floors. Remaining 0: second enemy
+      // turn still floors, then the window ends. The following enemy turn is lethal.
+      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+      await battle.endTurn();
+      await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+      await expect.poll(() => battle.playerHealth()).toBe(1);
+
+      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+      await battle.endTurn();
+      await expect(battle.deathsDoorIcon).toBeHidden({ timeout: 5000 });
+      await expect.poll(() => battle.playerHealth()).toBe(1);
+
+      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+      await battle.endTurn();
+      await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
+    },
+  );
 });

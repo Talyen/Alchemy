@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { firstOutputLine, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { E2E_NAMES, resolveRoutePlan, resolveRoutes } from "./lib/change-routes.mjs";
 import { writeCurrentRun } from "./lib/current-run.mjs";
+import { runCommand } from "./lib/run-command.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REPORTS_DIR = path.join(ROOT, "reports", "verify-changed");
@@ -78,16 +79,14 @@ export function formatPlan(plan, { verbosePlan = false } = {}) {
   return `${lines.join("\n")}\n`;
 }
 
-function runCommand(command, index, verbose) {
-  const started = Date.now();
-  const result = spawnSync(command.command, command.args, {
+function runVerificationCommand(command, index, verbose) {
+  const result = runCommand(command.command, command.args, {
     cwd: ROOT,
-    encoding: "utf8",
     shell: process.platform === "win32",
     stdio: ["inherit", "pipe", "pipe"],
   });
-  const output = [result.stdout ?? "", result.stderr ?? "", result.error?.message ?? ""].filter(Boolean).join("\n");
-  const elapsed = ((Date.now() - started) / 1000).toFixed(1);
+  const { output } = result;
+  const elapsed = (result.elapsedMs / 1000).toFixed(1);
   if (verbose && output) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
   if (result.status === 0) {
     console.log(`✓ ${command.label} (${elapsed}s)`);
@@ -118,7 +117,7 @@ export function main(argv = process.argv.slice(2)) {
     if (flags.has("plan")) return 0;
     let failed = 0;
     for (const [index, command] of plan.commands.entries()) {
-      if (!runCommand(command, index, flags.has("verbose"))) failed += 1;
+      if (!runVerificationCommand(command, index, flags.has("verbose"))) failed += 1;
       if (failed > 0 && !flags.has("keep-going")) break;
     }
     return failed === 0 ? 0 : 1;

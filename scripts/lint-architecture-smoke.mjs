@@ -2,14 +2,23 @@
 // Slow ESLint smoke: lint representative files and verify their effective stacked rules.
 // Kept in the static-analysis tier because cold ESLint startup does not belong in Vitest.
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { ESLint } from "eslint";
 
-const FILES = [
+export const ARCHITECTURE_SMOKE_FILES = Object.freeze([
   "src/features/alchemy/meta/screens/menu-screen.tsx",
   "src/features/alchemy/meta/screens/armory/use-armory-controller.ts",
   "src/features/alchemy/run-loop/screens/destination-screen.tsx",
   "src/features/alchemy/run-loop/shop/create-shop-actions.ts",
-];
+]);
+
+export function assertArchitectureSmokeFiles(rootDir = process.cwd()) {
+  const missing = ARCHITECTURE_SMOKE_FILES.filter((file) => !existsSync(path.join(rootDir, file)));
+  if (missing.length > 0) throw new Error(`Architecture smoke fixtures are missing: ${missing.join(", ")}`);
+}
+
+assertArchitectureSmokeFiles();
 
 const eslint = new ESLint();
 
@@ -108,7 +117,7 @@ assert.ok(
   "screen-only run-loop/run restriction must not leak into shops",
 );
 
-const results = await eslint.lintFiles(FILES);
+const results = await eslint.lintFiles(ARCHITECTURE_SMOKE_FILES);
 const errors = results.flatMap((r) =>
   r.messages.filter((m) => m.severity === 2).map((m) => `${r.filePath}:${m.line}:${m.column} ${m.message}`),
 );
@@ -118,4 +127,6 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`Architecture ESLint smoke clean (${FILES.length} linted files plus effective-config checks).`);
+console.log(
+  `Architecture ESLint smoke clean (${ARCHITECTURE_SMOKE_FILES.length} linted files plus effective-config checks).`,
+);

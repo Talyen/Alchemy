@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import { injectDestinationAtIndex, injectMysterySummaryVisit, assertRowAlignment } from "./helpers";
+import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
 import { MysteryPage } from "./pages/mystery-page";
 import { CorruptionPage } from "./pages/corruption-page";
@@ -45,7 +46,7 @@ test.describe("Destination Progression", () => {
     await expect(page.getByRole("button", { name: "Normal Combat" })).toHaveCount(0);
   });
 
-  test("boss destination appears at end of act when all choices are exhausted", async ({ page }) => {
+  test("boss destination appears at end of act when all choices are exhausted", critical, async ({ page }) => {
     await injectDestinationAtIndex(page, {
       destinations: ["Boss Combat"],
       destinationIndexInAct: 4,
@@ -108,7 +109,7 @@ test.describe("Corruption Full Flow", () => {
     const destination = new DestinationPage(page);
     await destination.enterAnyCombat();
 
-    const playableCards = page.locator('[aria-label^="Play "]');
+    const playableCards = new BattlePage(page).hand;
     await expect(playableCards.first()).toBeVisible({ timeout: 5000 });
     expect(await playableCards.count()).toBeGreaterThan(0);
   });

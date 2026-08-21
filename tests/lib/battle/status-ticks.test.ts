@@ -257,81 +257,115 @@ describe("tickPlayerStatuses", () => {
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 4 });
   });
 
-  it("armorMitigatesBurn reduces burn damage by armor", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 8, armor: 3 }),
-      talentEffects: { ...defaultTalentEffects, armorMitigatesBurn: true },
-    });
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(25);
-    expect(next.playerStatuses.armor).toBe(2);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 5 });
-  });
+  it.each<{
+    name: string;
+    burn: number;
+    armor: number;
+    maxHealth?: number;
+    expectedHealth: number;
+    expectedArmor: number;
+    expectedBurnAfter?: number;
+    expectedDamageText?: number;
+  }>([
+    {
+      name: "reduces burn damage by armor",
+      burn: 8,
+      armor: 3,
+      expectedHealth: 25,
+      expectedArmor: 2,
+      expectedDamageText: 5,
+    },
+    {
+      name: "with high armor results in 0 damage",
+      burn: 3,
+      armor: 10,
+      maxHealth: 30,
+      expectedHealth: 30,
+      expectedArmor: 10,
+      expectedBurnAfter: 2,
+    },
+  ])(
+    "armorMitigatesBurn $name",
+    ({ burn, armor, maxHealth, expectedHealth, expectedArmor, expectedBurnAfter, expectedDamageText }) => {
+      const state = patchBattleState({
+        playerHealth: 30,
+        ...(maxHealth !== undefined ? { playerMaxHealth: maxHealth } : {}),
+        playerStatuses: defaultPlayerStatusValues({ burn, armor }),
+        talentEffects: { ...defaultTalentEffects, armorMitigatesBurn: true },
+      });
+      const texts = makeTexts();
+      const next = tickPlayerStatuses(state, texts);
+      expect(next.playerHealth).toBe(expectedHealth);
+      expect(next.playerStatuses.armor).toBe(expectedArmor);
+      if (expectedBurnAfter !== undefined) expect(next.playerStatuses.burn).toBe(expectedBurnAfter);
+      if (expectedDamageText !== undefined) {
+        expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: expectedDamageText });
+      }
+    },
+  );
 
-  it("armorMitigatesBurn with high armor results in 0 damage", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 3, armor: 10 }),
-      talentEffects: { ...defaultTalentEffects, armorMitigatesBurn: true },
-    });
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(30);
-    expect(next.playerStatuses.armor).toBe(10);
-    expect(next.playerStatuses.burn).toBe(2);
-  });
-
-  it("blockReduceBurnDamage reduces burn damage when block is active", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 8, block: 5 }),
-      talentEffects: { ...defaultTalentEffects, blockReduceBurnDamage: 1 },
-    });
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(23);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 7 });
-  });
-
-  it("blockReduceBurnDamage reduces burn to 0 when block is active and damage is 1", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 1, block: 5 }),
-      talentEffects: { ...defaultTalentEffects, blockReduceBurnDamage: 1 },
-    });
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(30);
-    expect(next.playerStatuses.burn).toBe(0);
-  });
-
-  it("blockReduceBurnDamage does nothing when block is 0", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 8, block: 0 }),
-      talentEffects: { ...defaultTalentEffects, blockReduceBurnDamage: 1 },
-    });
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-    expect(next.playerHealth).toBe(22);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 8 });
-  });
-
-  it("blockReduceBurnDamage stacks with armorMitigatesBurn", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ burn: 8, block: 5, armor: 3 }),
-      talentEffects: { ...defaultTalentEffects, blockReduceBurnDamage: 1, armorMitigatesBurn: true },
-    });
-    const texts = makeTexts();
-    const next = tickPlayerStatuses(state, texts);
-    // block reduces: 8 -> 7, armor reduces: 7 -> 4
-    expect(next.playerHealth).toBe(26);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 4 });
-  });
+  it.each<{
+    name: string;
+    burn: number;
+    block: number;
+    armor?: number;
+    withArmorMitigatesBurn?: boolean;
+    expectedHealth: number;
+    expectedBurnAfter?: number;
+    expectedDamageText?: number;
+  }>([
+    {
+      name: "reduces burn damage when block is active",
+      burn: 8,
+      block: 5,
+      expectedHealth: 23,
+      expectedDamageText: 7,
+    },
+    {
+      name: "reduces burn to 0 when block is active and damage is 1",
+      burn: 1,
+      block: 5,
+      expectedHealth: 30,
+      expectedBurnAfter: 0,
+    },
+    {
+      name: "does nothing when block is 0",
+      burn: 8,
+      block: 0,
+      expectedHealth: 22,
+      expectedDamageText: 8,
+    },
+    {
+      // block reduces: 8 -> 7, armor reduces: 7 -> 4
+      name: "stacks with armorMitigatesBurn",
+      burn: 8,
+      block: 5,
+      armor: 3,
+      withArmorMitigatesBurn: true,
+      expectedHealth: 26,
+      expectedDamageText: 4,
+    },
+  ])(
+    "blockReduceBurnDamage $name",
+    ({ burn, block, armor, withArmorMitigatesBurn, expectedHealth, expectedBurnAfter, expectedDamageText }) => {
+      const state = patchBattleState({
+        playerHealth: 30,
+        playerStatuses: defaultPlayerStatusValues({ burn, block, ...(armor !== undefined ? { armor } : {}) }),
+        talentEffects: {
+          ...defaultTalentEffects,
+          blockReduceBurnDamage: 1,
+          ...(withArmorMitigatesBurn ? { armorMitigatesBurn: true } : {}),
+        },
+      });
+      const texts = makeTexts();
+      const next = tickPlayerStatuses(state, texts);
+      expect(next.playerHealth).toBe(expectedHealth);
+      if (expectedBurnAfter !== undefined) expect(next.playerStatuses.burn).toBe(expectedBurnAfter);
+      if (expectedDamageText !== undefined) {
+        expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: expectedDamageText });
+      }
+    },
+  );
 
   it("deals poison damage to player and decays poison by 20% (minimum 1)", () => {
     const state = patchBattleState({

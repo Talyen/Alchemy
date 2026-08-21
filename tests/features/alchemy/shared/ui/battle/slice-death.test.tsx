@@ -1,23 +1,20 @@
 // @vitest-environment jsdom
+import "../../../../../helpers/mock-audio";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const playSliceDeath = vi.fn();
 const isAnimationDisabled = vi.fn(() => false);
-
-vi.mock("@/lib/audio", () => ({
-  playSliceDeath: (...args: unknown[]) => playSliceDeath(...args),
-}));
 
 vi.mock("@/lib/animation/animation-prefs", () => ({
   isAnimationDisabled: () => isAnimationDisabled(),
 }));
 
+import { playSliceDeath } from "@/lib/audio";
 import { SliceDeath } from "@/features/alchemy/shared/ui/battle/slice-death";
 
 describe("SliceDeath", () => {
   beforeEach(() => {
-    playSliceDeath.mockReset();
+    vi.mocked(playSliceDeath).mockReset();
     isAnimationDisabled.mockReturnValue(false);
   });
 

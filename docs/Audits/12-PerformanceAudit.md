@@ -11,14 +11,14 @@ Require a profiler trace, compiler diagnostic, build-size result, reproducible l
 - Eager game-art loading at boot is intentional policy ([AGENTS.md](../../AGENTS.md) routes/boot rules) — asset weight at boot is not itself a finding. Do not introduce `React.lazy()` for route screens.
 - Do not hand-add `useMemo` / `useCallback` / `React.memo` speculatively — the React Compiler owns memoization. Fix `react-compiler/react-compiler` ESLint errors instead; a compiler bailout on a hot component is a finding.
 - Do not degrade intentional juice (combat float text, card fan, Motion stagger, Armory drag tracking) to win frames without a measured dropped-frame or long-task trace on that surface.
-- Do not hand-edit optimized/generated asset outputs — asset optimization belongs to the `predev` / `prebuild` pipeline; fix sources.
+- Do not hand-edit optimized/generated asset outputs — fix the source described in [WORKFLOWS-ASSETS.md](../WORKFLOWS-ASSETS.md).
 - Do not move battle simulation into Workers unless Architecture already requires it (propose only).
 - Do not narrow a confirmed hot path to its React leaf when state selection, repeated computation, serialization, asset work, or upstream event frequency is the cause.
 
 ## Domain rules
 
 - **Render churn:** hot components (battle board, hand, large grids like compendium/armory) should not re-render wholesale on unrelated store writes. Prefer narrow Zustand selectors over whole-store subscriptions; confirm churn with the profiler, not by reading code alone.
-- **Effects:** expensive work re-firing from unstable effect dependencies is a finding when traced; pure lifetime/cancellation bugs → `01-AsyncRaceAudit.md`.
+- **Effects:** expensive work re-firing from unstable effect dependencies is a finding when traced; pure lifetime/cancellation bugs → the RuntimeCorrectness audit.
 - **Frame cost:** confirm dropped frames or long tasks in a Performance trace during battle/motion before optimizing; keep gesture-driven motion at 1:1 tracking.
 - **Payload:** compare `npm run build` output sizes against the previous run; investigate large regressions to their source (new dependency, unoptimized asset, accidental import of a heavy module into a light path).
 - **Startup and interaction latency:** profile boot/hydration, route entry, large-grid interaction, save/resume, and input-to-feedback latency when users wait or input is blocked.

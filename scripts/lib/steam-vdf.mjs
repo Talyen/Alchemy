@@ -1,9 +1,10 @@
 // Substitutes Steam VDF template placeholders and writes build artifacts for steamcmd.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { steamContentRoot } from "./desktop-artifact.mjs";
 
 export function resolveSteamContentRoot(root) {
-  return join(root, "release-desktop", "win-unpacked");
+  return steamContentRoot(root);
 }
 
 export function substituteSteamVdf(template, env) {

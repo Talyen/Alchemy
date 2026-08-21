@@ -5,6 +5,7 @@ import {
   summarizeVitestReport,
 } from "../../scripts/ci-summarize-vitest.mjs";
 import {
+  collectPlaywrightTests,
   formatPlaywrightSummaryMarkdown,
   summarizePlaywrightFile,
   summarizePlaywrightReport,
@@ -74,6 +75,26 @@ describe("ci-summarize-vitest", () => {
 });
 
 describe("ci-summarize-playwright", () => {
+  it("shares the flattened test model with the E2E audit", () => {
+    const model = collectPlaywrightTests({
+      suites: [
+        {
+          specs: [
+            {
+              title: "slow save",
+              file: "tests/save.spec.ts",
+              line: 12,
+              tests: [{ status: "expected", results: [{ duration: 42 }] }],
+            },
+          ],
+        },
+      ],
+    });
+    expect(model.totalTests).toBe(1);
+    expect(model.passedTests).toBe(1);
+    expect(model.allTests[0]).toMatchObject({ title: "slow save", duration: 42, status: "expected" });
+  });
+
   it("extracts unexpected and flaky specs", () => {
     const summary = summarizePlaywrightReport({
       stats: { expected: 10, unexpected: 1, flaky: 1, skipped: 2 },

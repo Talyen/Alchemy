@@ -8,9 +8,6 @@ import {
   effectsForInstance,
   equipGear,
   gearDefinitions,
-  getGearAffixDisplayName,
-  getGearAffixTooltipEntries,
-  getGearInstanceTooltipEntries,
   isGearCompatibleWithLoadoutSlot,
   isGearCompatibleWithSlot,
   isQuiver,
@@ -256,31 +253,6 @@ describe("gear domain", () => {
     };
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body]);
     expect(computeGearManifest("knight", [body], loadouts).maxHealth).toBeGreaterThan(0);
-  });
-
-  it("uses affix epithets for tooltip display names", () => {
-    expect(getGearAffixDisplayName("flat-physical")).toBe("Ironbound");
-    expect(getGearAffixDisplayName("gold-on-kill")).toBe("Greed");
-  });
-
-  it("builds structured affix tooltip entries with names", () => {
-    const entries = getGearAffixTooltipEntries([{ id: "flat-physical", value: 2 }]);
-    expect(entries).toEqual([
-      {
-        key: "flat-physical-0",
-        name: "Ironbound",
-        text: "Increases Physical damage by 2",
-      },
-    ]);
-  });
-
-  it("includes affix names in gear instance tooltip entries", () => {
-    const entries = getGearInstanceTooltipEntries({
-      instanceId: "armor-1",
-      definitionId: "leather-armor-basic",
-      affixes: [{ id: "flat-physical", value: 1 }],
-    });
-    expect(entries[0]?.name).toBe("Ironbound");
   });
 
   describe("ranged weapons and quivers", () => {

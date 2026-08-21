@@ -1,5 +1,6 @@
 import { expect, test } from "./fixtures/e2e";
 import { injectHomestead } from "./helpers";
+import { BattlePage } from "./pages/battle-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Progression Locks", () => {
@@ -92,7 +93,7 @@ test.describe("Progression Locks", () => {
 
       await knightCard.click();
       await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeHidden();
-      await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
+      await expect(new BattlePage(page).hand.first()).toBeVisible({ timeout: 5000 });
     },
   );
 
@@ -102,8 +103,8 @@ test.describe("Progression Locks", () => {
 
     const talentsBtn = page.getByRole("button", { name: "Talents" });
     const homesteadBtn = page.getByRole("button", { name: "Homestead" });
-    await expect(talentsBtn).not.toHaveClass(/(?<!\S)opacity-50(?!\S)/);
-    await expect(homesteadBtn).not.toHaveClass(/(?<!\S)opacity-50(?!\S)/);
+    await expect(talentsBtn).toHaveAttribute("aria-disabled", "false");
+    await expect(homesteadBtn).toHaveAttribute("aria-disabled", "false");
     await talentsBtn.click();
     await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
     await page.getByRole("button", { name: "Open talents menu" }).click();
@@ -117,8 +118,8 @@ test.describe("Progression Locks", () => {
     await page.getByRole("button", { name: "Play" }).click();
     const labyrinthCard = page.getByRole("button", { name: /The Labyrinth/ });
     const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
-    await expect(labyrinthCard).not.toHaveClass(/(?<!\S)opacity-50(?!\S)/);
-    await expect(wildwoodCard).not.toHaveClass(/(?<!\S)opacity-50(?!\S)/);
+    await expect(labyrinthCard).toHaveAttribute("aria-disabled", "false");
+    await expect(wildwoodCard).toHaveAttribute("aria-disabled", "false");
     await labyrinthCard.click();
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
 

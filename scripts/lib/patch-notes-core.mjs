@@ -1,46 +1,27 @@
 // Parses conventional commits into changelog and player-facing patch note sections.
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const PLAYER_TYPES = new Set(["feat", "fix", "balance", "perf"]);
-const HIDDEN_TYPES = new Set(["chore", "refactor", "test", "ci", "build", "style", "docs"]);
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const versionConfig = JSON.parse(readFileSync(path.join(root, ".versionrc.json"), "utf8"));
+const TYPE_METADATA = [
+  ...versionConfig.types,
+  { type: "style", section: "Style", hidden: true },
+  { type: "other", section: "Other", hidden: true },
+];
+const PLAYER_TYPES = new Set(TYPE_METADATA.filter(({ hidden }) => !hidden).map(({ type }) => type));
 const CHANGELOG_BODY_MAX_LINES = 6;
 const CHANGELOG_BODY_MAX_CHARS = 800;
 
-export const CHANGELOG_SECTION_ORDER = [
-  "Features",
-  "Bug Fixes",
-  "Balance",
-  "Performance",
-  "Refactors",
-  "Tests",
-  "CI",
-  "Build",
-  "Docs",
-  "Chores",
-  "Style",
-  "Other",
-];
-
-const TYPE_TO_CHANGELOG_SECTION = {
-  feat: "Features",
-  fix: "Bug Fixes",
-  balance: "Balance",
-  perf: "Performance",
-  refactor: "Refactors",
-  test: "Tests",
-  ci: "CI",
-  build: "Build",
-  docs: "Docs",
-  chore: "Chores",
-  style: "Style",
-  other: "Other",
-};
-
-const TYPE_TO_PATCH_SECTION = {
-  feat: "Features",
-  fix: "Fixes",
-  balance: "Balance",
-  perf: "Performance",
-};
+export const CHANGELOG_SECTION_ORDER = TYPE_METADATA.map(({ section }) => section);
+const TYPE_TO_CHANGELOG_SECTION = Object.fromEntries(TYPE_METADATA.map(({ type, section }) => [type, section]));
+const TYPE_TO_PATCH_SECTION = Object.fromEntries(
+  TYPE_METADATA.filter(({ type }) => PLAYER_TYPES.has(type)).map(({ type, section }) => [
+    type,
+    section === "Bug Fixes" ? "Fixes" : section,
+  ]),
+);
 
 export function parseConventionalCommit(subject) {
   const match = /^(?<type>\w+)(?:\((?<scope>[\w-]+)\))?(?<breaking>!)?:\s*(?<description>.+)$/u.exec(subject.trim());
@@ -49,12 +30,11 @@ export function parseConventionalCommit(subject) {
   }
   const type = match.groups.type;
   const include = PLAYER_TYPES.has(type);
-  const hidden = HIDDEN_TYPES.has(type);
   return {
     type,
     scope: match.groups.scope ?? null,
     description: match.groups.description,
-    include: include && !hidden,
+    include,
   };
 }
 

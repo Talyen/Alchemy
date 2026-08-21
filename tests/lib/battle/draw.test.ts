@@ -4,6 +4,7 @@ import { drawCards } from "@/lib/battle/draw";
 import { shuffle } from "@/lib/utils";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { makeTestCardWithId } from "../../fixtures/battle";
+import { makeTestCard } from "../../fixtures/cards";
 
 const makeCard = makeTestCardWithId;
 
@@ -81,21 +82,18 @@ describe("defaultBattleState", () => {
 
 describe("shuffle", () => {
   it("returns a new array (not the same reference)", () => {
-    const cards = [{ id: "a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }];
+    const cards = [makeTestCard({ id: "a", title: "A" })];
     const shuffled = shuffle(cards, Math.random);
     expect(shuffled).not.toBe(cards);
   });
 
   it("does not mutate the original array", () => {
     const cards = [
-      {
+      makeTestCard({
         id: "a",
         title: "A",
-        descriptionLines: [""],
-        art: "",
-        cost: 1,
         effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 5 }],
-      },
+      }),
     ];
     const original = [...cards];
     shuffle(cards, Math.random);
@@ -104,9 +102,9 @@ describe("shuffle", () => {
 
   it("preserves all cards", () => {
     const cards = [
-      { id: "a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [], uid: 1 },
-      { id: "b", title: "B", descriptionLines: [""], art: "", cost: 1, effects: [], uid: 2 },
-      { id: "c", title: "C", descriptionLines: [""], art: "", cost: 1, effects: [], uid: 3 },
+      makeTestCard({ id: "a", title: "A", uid: 1 }),
+      makeTestCard({ id: "b", title: "B", uid: 2 }),
+      makeTestCard({ id: "c", title: "C", uid: 3 }),
     ];
     const shuffled = shuffle(cards, Math.random);
     expect(shuffled).toHaveLength(3);
@@ -118,7 +116,7 @@ describe("shuffle", () => {
   });
 
   it("handles single-card array", () => {
-    const card = { id: "a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] };
+    const card = makeTestCard({ id: "a", title: "A" });
     expect(shuffle([card], Math.random)).toEqual([card]);
   });
 });

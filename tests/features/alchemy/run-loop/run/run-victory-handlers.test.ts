@@ -1,16 +1,14 @@
+import "../../../../helpers/mock-audio";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { addRunMaterialsEarned } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useRunProfileStore } from "../../../../helpers/gameplay-store-test";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { useRunProfileStore, resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import {
   getBattleStoreView,
   getRunProgressStoreView,
   getRunSessionStoreView,
-  resetRunBattleSlice,
-  resetRunProgressSlice,
   setRunSession,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
@@ -18,13 +16,6 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { isDraft } from "immer";
-
-vi.mock("@/lib/audio", () => ({
-  playVictory: vi.fn(),
-  stopAllSfx: vi.fn(),
-  playUISound: vi.fn(),
-  playGoldGain: vi.fn(),
-}));
 
 vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-lifecycle-port")>();
@@ -39,10 +30,7 @@ import { playGoldGain } from "@/lib/audio";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  resetRunBattleSlice();
-  resetRunProgressSlice();
-  resetTransientRunUi();
+  resetAllTestStores();
 });
 
 function makeHandlers() {

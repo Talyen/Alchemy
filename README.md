@@ -35,18 +35,13 @@ npm run dev
 | `npm run lint`     | Lint all source files                |
 | `npm run release`  | Bump version, changelog, and git tag |
 
-Full command catalog (build, desktop, gates, balance sim, perf, clean): [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Agent/coding rules: [`AGENTS.md`](./AGENTS.md).
+Full command catalog (build, desktop, gates, balance sim, perf, clean): [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands).
 
 ## Desktop Build
 
-The game also has an Electron shell for local desktop builds.
-
-| Command                 | Action                                           |
-| ----------------------- | ------------------------------------------------ |
-| `npm run dev:desktop`   | Run Vite and Electron together                   |
-| `npm run build:desktop` | Desktop production build (Vite `--mode desktop`) |
-| `npm run package:win`   | Unpacked Windows build via `dist-desktop.mjs`    |
-| `npm run dist:desktop`  | Desktop installers via `dist-desktop.mjs`        |
+The game also has an Electron shell for local desktop builds. Use
+`npm run dev:desktop` for local development; desktop builds and installers are
+listed in the [command reference](./docs/REFERENCE.md#script-command-reference).
 
 ## Testing
 
@@ -63,16 +58,10 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-| Tier            | Command                         | When to use                                                            |
-| --------------- | ------------------------------- | ---------------------------------------------------------------------- |
-| Unit            | `npm test`                      | Fast feedback on logic and stores                                      |
-| Local fast gate | `npm run check:push`            | Format, typecheck (src + tests), lint, build, and `@prepush` scenarios |
-| E2E critical    | `npm run test:e2e:prepush:full` | CI critical Playwright suite                                           |
-| E2E full        | `npm run test:e2e:full`         | Broader Playwright suite in CI/nightly/release                         |
+Path-specific tests, local gates, and CI parity live in
+[`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
-CI runs formatting, linting, unit tests, production build, and the critical Playwright suite. Path-specific tests and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
-
-Headless balance simulation (`npm run balance:sim`) runs the real battle engine without a browser. Usage, env vars, and report categories: [`docs/REFERENCE.md` § Balance simulation](./docs/REFERENCE.md#balance-simulation).
+Headless balance simulation (`npm run balance:sim`) runs the real battle engine without a browser. Usage and environment variables: [`docs/REFERENCE.md` § Balance simulation](./docs/REFERENCE.md#balance-simulation).
 
 ## Project Structure
 
@@ -89,29 +78,15 @@ Feature layout and run-state ownership: [`docs/ARCHITECTURE.md`](./docs/ARCHITEC
 
 ## Assets
 
-Asset preparation runs automatically before development and production builds via `scripts/prepare-assets.mjs` (`predev` / `prebuild`). Set `ALCHEMY_SKIP_ASSETS=1` to skip (CI/Vercel/release do this because optimized outputs are committed).
-
-| Command                   | Action                           |
-| ------------------------- | -------------------------------- |
-| `npm run assets:optimize` | Optimize image assets            |
-| `npm run sync:assets`     | Regenerate `assets.generated.ts` |
-| `npm run sync:gear-art`   | Regenerate `gear-art.ts`         |
-| `npm run sounds:optimize` | Optimize sound effects           |
-| `npm run music:optimize`  | Optimize music assets            |
-
-Optimized images are committed under `src/assets/optimized/`. Optimized sounds are output to `public/sounds/`.
+Asset preparation runs automatically before development and production builds.
+The authoring and regeneration checklist is
+[`docs/WORKFLOWS-ASSETS.md`](./docs/WORKFLOWS-ASSETS.md); generated outputs are
+not hand-edited.
 
 ## Deployment
 
-The web build targets Vercel. `vercel.json` buildCommand exports `ALCHEMY_SKIP_ASSETS=1` then runs typecheck + `vite build`, outputs `dist`, and rewrites routes to `index.html` for the single-page app.
-
-## Tech Stack
-
-React • TypeScript • Vite • Tailwind CSS • Zustand • Electron • Vitest • Playwright • Motion • Radix UI • Zod • ESLint • Prettier • commitlint • lefthook
-
-## Development Guide
-
-**Docs:** the table in [`AGENTS.md`](./AGENTS.md#documentation-owners) is the map for which document to read.
+The web build targets Vercel; its build command and rewrites are owned by
+[`vercel.json`](./vercel.json).
 
 ## License
 

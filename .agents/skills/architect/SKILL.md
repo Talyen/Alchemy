@@ -7,7 +7,7 @@ description: Public-contract design guard. Auto-triggers only when adding or str
 
 ## Trigger
 
-Use for a **new or structurally revised public contract** imported across a feature boundary. Do not trigger for ordinary implementation, a private helper, test-only types, or a change to an existing contract that does not redesign its shape; `blast-radius` owns those existing-boundary changes. Never run both skills for the same change.
+Use for a **new or structurally revised public contract** imported across a feature boundary. Do not trigger for ordinary implementation, a private helper, test-only types, or a change to an existing contract that does not redesign its shape; [AGENTS.md § Change guards](../../../AGENTS.md#change-guards) owns those existing-boundary changes.
 
 ## Steps
 

@@ -5,6 +5,21 @@ import {
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation/metadata";
 
+/** Roster used by finishedRunCharacters across unit fixtures and E2E save injection. */
+export const ALL_PLAYABLE_CHARACTERS = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
+
+/** Default discovery list injected when a save does not specify one. */
+export const DEFAULT_DISCOVERED_CARD_IDS = [
+  "slash",
+  "bash",
+  "block",
+  "anvil",
+  "plate-mail",
+  "apple",
+  "meteor",
+  "blessed-aegis",
+];
+
 export interface HomesteadSaveFixture {
   saveSchemaVersion: number;
   gameBuildVersion: string;
@@ -59,7 +74,7 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
     druid: [],
     wildcard: [],
   },
-  finishedRunCharacters: ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"],
+  finishedRunCharacters: [...ALL_PLAYABLE_CHARACTERS],
   activeRun: null,
   materialInventory: { wood: 999, iron: 999, herbs: 999, food: 999, crystal: 999 },
   constructedBuildings: {

@@ -9,39 +9,35 @@ import {
 } from "@/features/alchemy/run-loop/battle/battle-feedback";
 import { makeTestCard, patchBattleState } from "../../../../fixtures/battle";
 
-function makeState() {
-  return patchBattleState();
-}
-
 describe("shouldPlayCardGoldGain", () => {
   it("returns true when gold increased and card is not steal", () => {
-    const prev = makeState();
+    const prev = patchBattleState();
     prev.gold = 5;
-    const next = makeState();
+    const next = patchBattleState();
     next.gold = 8;
     expect(shouldPlayCardGoldGain(prev, next, makeTestCard({ id: "strike" }))).toBe(true);
   });
 
   it("returns false when gold unchanged", () => {
-    const prev = makeState();
+    const prev = patchBattleState();
     prev.gold = 5;
-    const next = makeState();
+    const next = patchBattleState();
     next.gold = 5;
     expect(shouldPlayCardGoldGain(prev, next, makeTestCard())).toBe(false);
   });
 
   it("returns false when gold decreased", () => {
-    const prev = makeState();
+    const prev = patchBattleState();
     prev.gold = 10;
-    const next = makeState();
+    const next = patchBattleState();
     next.gold = 5;
     expect(shouldPlayCardGoldGain(prev, next, makeTestCard())).toBe(false);
   });
 
   it("returns false for steal card even if gold increased", () => {
-    const prev = makeState();
+    const prev = patchBattleState();
     prev.gold = 0;
-    const next = makeState();
+    const next = patchBattleState();
     next.gold = 10;
     expect(shouldPlayCardGoldGain(prev, next, makeTestCard({ id: "steal" }))).toBe(false);
   });

@@ -516,59 +516,25 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
 });
 
 describe("BattleCardEffectSchema", () => {
-  it("parses damage effect", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "damage", damageType: "physical", amount: 6 });
-    expect(result.success).toBe(true);
-  });
-
-  it("parses player-status effect", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "player-status", status: "block", amount: 8 });
-    expect(result.success).toBe(true);
-  });
-
-  it("parses heal effect", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "heal", amount: 5 });
+  it.each([
+    ["damage effect", { kind: "damage", damageType: "physical", amount: 6 }],
+    ["player-status effect", { kind: "player-status", status: "block", amount: 8 }],
+    ["heal effect", { kind: "heal", amount: 5 }],
+    ["summon-companion", { kind: "summon-companion", companionId: "wolf" }],
+    ["self-damage with enemy status damage type", { kind: "self-damage", damageType: "burn", amount: 3 }],
+    ["remove-player-status", { kind: "remove-player-status", status: "poison" }],
+    ["lose-health", { kind: "lose-health", amount: 1 }],
+    ["draw-cards", { kind: "draw-cards", amount: 2 }],
+    ["remove-enemy-armor", { kind: "remove-enemy-armor", amount: 2 }],
+    ["multiply-enemy-status", { kind: "multiply-enemy-status", status: "freeze", factor: 2 }],
+  ])("parses %s", (_label, effect) => {
+    const result = BattleCardEffectSchema.safeParse(effect);
     expect(result.success).toBe(true);
   });
 
   it("rejects unknown kind", () => {
     const result = BattleCardEffectSchema.safeParse({ kind: "unknown", amount: 5 });
     expect(result.success).toBe(false);
-  });
-
-  it("parses summon-companion", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "summon-companion", companionId: "wolf" });
-    expect(result.success).toBe(true);
-  });
-
-  it("parses self-damage with enemy status damage type", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "self-damage", damageType: "burn", amount: 3 });
-    expect(result.success).toBe(true);
-  });
-
-  it("parses remove-player-status", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "remove-player-status", status: "poison" });
-    expect(result.success).toBe(true);
-  });
-
-  it("parses lose-health", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "lose-health", amount: 1 });
-    expect(result.success).toBe(true);
-  });
-
-  it("parses draw-cards", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "draw-cards", amount: 2 });
-    expect(result.success).toBe(true);
-  });
-
-  it("parses remove-enemy-armor", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "remove-enemy-armor", amount: 2 });
-    expect(result.success).toBe(true);
-  });
-
-  it("parses multiply-enemy-status", () => {
-    const result = BattleCardEffectSchema.safeParse({ kind: "multiply-enemy-status", status: "freeze", factor: 2 });
-    expect(result.success).toBe(true);
   });
 });
 

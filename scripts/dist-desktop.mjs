@@ -3,10 +3,12 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { assertSupportedTargets } from "./lib/desktop-artifact.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const config = JSON.parse(readFileSync(join(root, "steam/platforms.json"), "utf8"));
 const targets = config.targets ?? ["win"];
+assertSupportedTargets(targets);
 const sentryDsn = process.env.SENTRY_DSN?.trim() ?? "";
 const releaseVersion = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
 const sentryRelease = process.env.SENTRY_RELEASE?.trim() || `alchemy@${releaseVersion}`;
@@ -97,11 +99,13 @@ const result = spawnSync(process.execPath, [builderCli, ...builderArgs], {
 if (result.error) throw result.error;
 if ((result.status ?? 1) !== 0) process.exit(result.status ?? 1);
 
-const verifyResult = spawnSync(process.execPath, ["scripts/verify-desktop-package.mjs"], {
-  cwd: root,
-  env: process.env,
-  stdio: "inherit",
-  shell: false,
-});
-if (verifyResult.error) throw verifyResult.error;
-process.exit(verifyResult.status ?? 1);
+for (const target of targets) {
+  const verifyResult = spawnSync(process.execPath, ["scripts/verify-desktop-package.mjs"], {
+    cwd: root,
+    env: { ...process.env, DESKTOP_TARGET: target },
+    stdio: "inherit",
+    shell: false,
+  });
+  if (verifyResult.error) throw verifyResult.error;
+  if ((verifyResult.status ?? 1) !== 0) process.exit(verifyResult.status ?? 1);
+}

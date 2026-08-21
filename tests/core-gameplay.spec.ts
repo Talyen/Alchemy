@@ -1,10 +1,15 @@
 import { expect } from "@playwright/test";
-import { makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck } from "./helpers";
+import {
+  makeCard,
+  makeHighDamageCard,
+  startAtDestination,
+  startBattleWithDeck,
+  winBattleAndClaimReward,
+} from "./helpers";
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
 import { MenuPage } from "./pages/menu-page";
-import { RewardPage } from "./pages/reward-page";
 import { critical, slow } from "./playwright-tags";
 
 test.describe("Battle Flow", critical, () => {
@@ -89,7 +94,8 @@ test.describe("Card Interactions", slow, () => {
     await expect(async () => expect(await battle.handCount()).toBe(handBefore - 2)).toPass({ timeout: 3000 });
   });
 
-  test("campfire screen restores Health and continues to next battle", async ({ page }) => {
+  test("campfire screen restores Health and continues to next battle", async ({ page, runtimeErrors }) => {
+    void runtimeErrors;
     await startAtDestination(page, { runPlayerHealth: 10, runMaxHealth: 30 }, { forceDestination: "Campfire" });
 
     const destination = new DestinationPage(page);
@@ -114,8 +120,7 @@ test.describe("Elite Combat", critical, () => {
     );
 
     await new DestinationPage(page).enterCombat("Elite Combat");
-    await new BattlePage(page).winViaCombat(3);
-    await new RewardPage(page).claimFirstReward();
+    await winBattleAndClaimReward(page, 3);
     await new DestinationPage(page).expectVisible();
   });
 });

@@ -1,3 +1,4 @@
+import "../../../../helpers/mock-audio";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
@@ -5,15 +6,13 @@ import { createEmptyTalentEffectManifest, type BattleCard, type TalentEffectMani
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
-  resetRunProgressSlice,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
 import {
   createRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { useGearStore, getRunTransientStore } from "../../../../helpers/gameplay-store-test";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { useGearStore, getRunTransientStore, resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import {
   setShopState as mutateShopState,
   setAlchemistState as mutateAlchemistState,
@@ -47,16 +46,10 @@ import { createRunRngState } from "@/lib/run-rng";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { makeEffect } from "../../../../fixtures/battle";
 
-vi.mock("@/lib/audio", () => ({
-  playGoldSpend: vi.fn(),
-}));
-
 import { playGoldSpend } from "@/lib/audio";
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  resetRunProgressSlice();
-  resetTransientRunUi();
+  resetAllTestStores();
   useGearStore.getState().reset();
 });
 

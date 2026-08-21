@@ -14,7 +14,10 @@ baseTest.describe("App Boot", { tag: [smoke.tag, prepush.tag] }, () => {
 });
 
 test.describe("Block Mechanics", critical, () => {
-  test("blessed aegis deals holy damage equal to current block", async ({ page, fastBattle, runtimeErrors }) => {
+  // Damage math is pinned in tests/lib/battle/damage-holy.test.ts (holy
+  // equalToBlock) and tests/lib/battle/damage-base.test.ts (physical); this
+  // covers the UI-integration fact that both cards play off a live block value.
+  test("blessed aegis plays against a live block value", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
 
@@ -22,12 +25,11 @@ test.describe("Block Mechanics", critical, () => {
     const battle = new BattlePage(page);
 
     await battle.playCardNamed("Block");
-    const blockAfterBlock = await battle.block();
-    await battle.playCardNamed("Blessed Aegis");
+    await expect.poll(async () => battle.block(), { timeout: 5000 }).toBeGreaterThan(0);
+    const blockBeforeAegis = await battle.block();
 
-    const enemyHp = await battle.enemyHealth();
-    expect(enemyHp).toBeLessThan(30);
-    const blockAfter = await battle.block();
-    expect(blockAfter).toBe(blockAfterBlock);
+    await battle.playCardNamed("Blessed Aegis");
+    await expect.poll(async () => battle.enemyHealth(), { timeout: 5000 }).toBeLessThan(30);
+    expect(await battle.block()).toBe(blockBeforeAegis);
   });
 });

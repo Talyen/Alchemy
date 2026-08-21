@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { dealDamageToEnemy } from "@/lib/battle/damage";
-import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultEnemyStatusValues, defaultTalentEffects, defaultCcState } from "../../fixtures/default-battle-state";
-import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
+import { dealDamage, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 describe("computeBaseDamage — archery tag", () => {
   it("adds flatArrowDamage to cards with the archery tag", () => {
@@ -14,13 +12,7 @@ describe("computeBaseDamage — archery tag", () => {
       tags: ["archery"],
       effects: [makeEffect("physical", 5)],
     });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBeLessThan(25);
   });
 
@@ -35,13 +27,7 @@ describe("computeBaseDamage — archery tag", () => {
       tags: ["archery"],
       effects: [makeEffect("physical", 20)],
     });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     // Initial hit = 20 damage, extra hit = Math.round(20 / 2) = 10 damage. Total = 30 damage dealt.
     expect(result.enemyHealth).toBe(70);
   });
@@ -63,18 +49,8 @@ describe("computeBaseDamage — archery tag", () => {
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsHighHealth: true },
     });
-    expect(
-      dealDamageToEnemy(high, card, card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>, makeCombatTexts())
-        .enemyHealth,
-    ).toBe(56);
-    expect(
-      dealDamageToEnemy(
-        atThreshold,
-        card,
-        card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-        makeCombatTexts(),
-      ).enemyHealth,
-    ).toBe(65);
+    expect(dealDamage(high, card).enemyHealth).toBe(56);
+    expect(dealDamage(atThreshold, card).enemyHealth).toBe(65);
   });
 
   it("Kill Shot doubles archery damage at or below 30% Health", () => {
@@ -94,18 +70,8 @@ describe("computeBaseDamage — archery tag", () => {
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsLowHealth: true },
     });
-    expect(
-      dealDamageToEnemy(low, card, card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>, makeCombatTexts())
-        .enemyHealth,
-    ).toBe(10);
-    expect(
-      dealDamageToEnemy(
-        above,
-        card,
-        card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-        makeCombatTexts(),
-      ).enemyHealth,
-    ).toBe(21);
+    expect(dealDamage(low, card).enemyHealth).toBe(10);
+    expect(dealDamage(above, card).enemyHealth).toBe(21);
   });
 
   it("Trophy Shot grants gold when an Archery card defeats an enemy", () => {
@@ -120,12 +86,7 @@ describe("computeBaseDamage — archery tag", () => {
       gold: 0,
       talentEffects: { ...defaultTalentEffects, goldOnArcheryKill: 2 },
     });
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      makeCombatTexts(),
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(0);
     expect(result.gold).toBe(2);
   });
@@ -141,12 +102,7 @@ describe("computeBaseDamage — archery tag", () => {
       talentEffects: { ...defaultTalentEffects, archeryBleedChance: 100 },
       rng: () => 0.01,
     });
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      makeCombatTexts(),
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyStatuses.bleed).toBeGreaterThan(0);
   });
 });
@@ -158,13 +114,7 @@ describe("computeBaseDamage — stun damage", () => {
       talentEffects: { ...defaultTalentEffects, flatStunDamage: 2 },
     });
     const card = makeTestCard({ effects: [makeEffect("stun", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(23);
   });
 });
@@ -177,13 +127,7 @@ describe("computeBaseDamage — physical vs statuses", () => {
       talentEffects: { ...defaultTalentEffects, poisonPhysicalBonus: 3 },
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(22);
   });
 
@@ -194,13 +138,7 @@ describe("computeBaseDamage — physical vs statuses", () => {
       talentEffects: { ...defaultTalentEffects, bleedPhysicalBonus: 2 },
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(23);
   });
 
@@ -211,13 +149,7 @@ describe("computeBaseDamage — physical vs statuses", () => {
       talentEffects: { ...defaultTalentEffects, physicalDoubledVsStunned: true },
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(10);
   });
 
@@ -228,13 +160,7 @@ describe("computeBaseDamage — physical vs statuses", () => {
       talentEffects: { ...defaultTalentEffects, physicalDoubledVsFrozen: true },
     });
     const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(10);
   });
 });

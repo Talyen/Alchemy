@@ -2,16 +2,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { useRewardsScreenData, useShopScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import {
-  getRunSessionStoreView,
-  resetRunProgressSlice,
-  setRunProgress,
-} from "../../../../helpers/run-domain-store-test";
+import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import { getRunSessionStoreView, setRunProgress } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
-  resetRunProgressSlice();
-  resetTransientRunUi();
+  resetAllTestStores();
 });
 
 describe("screen-specific run data hooks", () => {

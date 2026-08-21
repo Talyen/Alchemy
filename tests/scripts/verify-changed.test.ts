@@ -1,10 +1,20 @@
 import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 import { firstOutputLine, sanitizeOutput, tailOutput } from "../../scripts/lib/compact-output.mjs";
+import { validateRouteCatalog } from "../../scripts/lib/change-routes.mjs";
+import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-suites.mjs";
 import { measureAllRoutes, measureContext } from "../../scripts/measure-agent-context.mjs";
 import { formatPlan, resolvePlan, resolveRoutes } from "../../scripts/verify-changed.mjs";
 
 describe("verify-changed route catalog", () => {
+  it("keeps concrete command paths, fixtures, and owner headings current", () => {
+    expect(validateRouteCatalog({ rootDir: process.cwd() })).toEqual([]);
+  });
+
+  it("keeps ship suites non-empty after path changes", () => {
+    expect(validateTestSuitePaths(process.cwd(), TEST_SUITES.shipUnit)).toEqual([]);
+  });
+
   it("covers the smallest complete active-run route and deduplicates commands", () => {
     const plan = resolvePlan([
       "src/features/alchemy/shared/stores/run-session-command.ts",
@@ -55,7 +65,10 @@ describe("verify-changed route catalog", () => {
 
   it("routes documentation changes to the documentation contract", () => {
     expect(resolveRoutes(["docs/new-guide.md"]).map((route) => route.id)).toEqual(["documentation"]);
-    expect(resolvePlan(["docs/new-guide.md"]).commands.map((command) => command.key)).toEqual(["docs-check"]);
+    expect(resolvePlan(["docs/new-guide.md"]).commands.map((command) => command.key)).toEqual([
+      "docs-check",
+      "docs-contract",
+    ]);
   });
 
   it("routes CI workflow changes to the CI path-filter contract", () => {
@@ -84,7 +97,7 @@ describe("verify-changed route catalog", () => {
   it("retains the unknown fallback when a mixed diff also has an owned path", () => {
     const plan = resolvePlan(["docs/REFERENCE.md", "src/new-subsystem/example.ts"]);
     expect(plan.routes.map((route) => route.id)).toEqual(["documentation", "unknown"]);
-    expect(plan.commands.map((command) => command.key)).toEqual(["docs-check", "typecheck"]);
+    expect(plan.commands.map((command) => command.key)).toEqual(["docs-check", "docs-contract", "typecheck"]);
     expect(formatPlan(plan)).toContain("route ownership is unknown");
   });
 
@@ -152,13 +165,13 @@ describe("verify-changed route catalog", () => {
     }
   });
 
-  it("keeps the routine persistence skill stack bounded", () => {
-    const bytes = [
-      ".agents/skills/blast-radius/SKILL.md",
-      ".agents/skills/unslop/SKILL.md",
-      ".agents/skills/verifier/SKILL.md",
-    ].reduce((total, filePath) => total + fs.statSync(filePath).size, 0);
-    expect(bytes).toBeLessThanOrEqual(6_304);
+  it("keeps the routine persistence guard stack bounded", () => {
+    const agents = fs.readFileSync("AGENTS.md", "utf8");
+    const start = agents.indexOf("## Change guards");
+    const end = agents.indexOf("\n## ", start + 1);
+    const guardsBytes = start < 0 || end < 0 ? Number.POSITIVE_INFINITY : Buffer.byteLength(agents.slice(start, end));
+    const bytes = guardsBytes + fs.statSync(".agents/skills/verifier/SKILL.md").size;
+    expect(bytes).toBeLessThanOrEqual(4_096);
   });
 
   it("marks generated TypeScript as non-authored output", () => {

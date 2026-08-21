@@ -1,10 +1,9 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { loadManifest } from "./lib/asset-manifest-cache.mjs";
+import { syncGeneratedModule } from "./lib/generated-module.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { kebabToCamel } from "./lib/kebab-to-camel.mjs";
-import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
@@ -20,8 +19,7 @@ function toDefinitionId(target) {
   return target.replace(/^gear-/, "").replace(/\.webp$/, "");
 }
 
-export async function syncGearArt() {
-  const manifest = await loadManifest(manifestPath);
+function buildGearArtContent(manifest) {
   const gearFiles = Object.keys(manifest)
     .filter((name) => name.startsWith("gear-") && name.endsWith(".webp"))
     .sort();
@@ -44,17 +42,27 @@ export async function syncGearArt() {
   lines.push("};");
   lines.push("");
 
-  const content = `${lines.join("\n")}`;
-  const wrote = await writeTextIfChanged(outputFile, content);
+  return { gearFiles, content: `${lines.join("\n")}` };
+}
+
+export async function syncGearArt({ check = false } = {}) {
+  const { gearFiles, wrote } = await syncGeneratedModule({
+    manifestPath,
+    outputFile,
+    check,
+    build: buildGearArtContent,
+  });
   console.log(
-    wrote
-      ? `Wrote ${gearFiles.length} gear art mappings to ${path.relative(rootDir, outputFile)}`
-      : `Gear art mappings unchanged (${gearFiles.length} entries)`,
+    check
+      ? `Gear art mappings are current (${gearFiles.length} entries)`
+      : wrote
+        ? `Wrote ${gearFiles.length} gear art mappings to ${path.relative(rootDir, outputFile)}`
+        : `Gear art mappings unchanged (${gearFiles.length} entries)`,
   );
 }
 
 if (isMainModule(import.meta.url)) {
-  syncGearArt().catch((error) => {
+  syncGearArt({ check: process.argv.includes("--check") }).catch((error) => {
     console.error("Gear art sync failed.");
     console.error(error);
     process.exitCode = 1;

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
@@ -7,29 +8,11 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { makeRunController, makeTalentController } from "../../../helpers/run-controller";
-import {
-  getBattleStoreView,
-  getNavigationStoreView,
-  resetRunBattleSlice,
-  resetRunProgressSlice,
-} from "../../../helpers/run-domain-store-test";
-
-vi.mock("@/lib/audio", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/audio")>();
-  return {
-    ...actual,
-    playGoldGain: vi.fn(),
-    playGoldSpend: vi.fn(),
-    stopAllSfx: vi.fn(),
-  };
-});
+import { getBattleStoreView, getNavigationStoreView, resetAllTestStores } from "../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
-  resetRunProgressSlice();
-  resetRunBattleSlice();
-  resetTransientRunUi();
+  resetAllTestStores();
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
 });
 

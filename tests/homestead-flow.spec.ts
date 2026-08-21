@@ -2,6 +2,7 @@ import type { Locator } from "@playwright/test";
 import { expect, test } from "./fixtures/e2e";
 import { HomesteadPage } from "./pages/homestead-page";
 import { assertRowAlignment } from "./helpers";
+import { critical } from "./playwright-tags";
 
 test.describe("Homestead Flow", () => {
   test.beforeEach(async ({ runtimeErrors }) => {
@@ -15,7 +16,7 @@ test.describe("Homestead Flow", () => {
       });
     });
 
-    test("homestead screen shows injected materials count", async ({ page }) => {
+    test("homestead screen shows injected materials count", critical, async ({ page }) => {
       const homestead = new HomesteadPage(page);
       const pills = [
         homestead.materialPill("Wood", 100),

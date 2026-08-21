@@ -1,5 +1,8 @@
 # E2E helpers
 
+Canonical E2E helper, fixture, tag, and diagnostic contract. Changed-path and
+CI tier policy lives in [CONTRIBUTING.md](../../CONTRIBUTING.md).
+
 When a command or E2E test fails, follow [failure-first triage](../../docs/REFERENCE.md#failure-first-triage) before opening a raw trace or report directory.
 
 Helpers live in this directory and are re-exported from [`tests/helpers.ts`](../helpers.ts). Layout assertions are in [`layout-assertions.ts`](./layout-assertions.ts), page objects in [`tests/pages/`](../pages/), and fixtures in [`tests/fixtures/e2e.ts`](../fixtures/e2e.ts).
@@ -23,7 +26,9 @@ Decision order:
 - `selectGameMode` clicks the mode art card; there is no Play/Resume footer.
 - `selectCharacterAndContinue` clicks a hero portrait; there is no Back/Continue footer.
 - `resumeCampaignRun` waits for the saved destination rather than clicking Play during hydrate.
-- `startBattleWithDeck`, `startAtDestination`, `skipBattleAndClaimReward`, and `startCampaignBattle` bootstrap battle.
+- `startBattleWithDeck` and `startAtDestination` bootstrap battle.
+- `injectActiveBattle` injects a mid-battle snapshot and boots straight into the battle screen.
+- `winBattleAndClaimReward` wins via combat and claims the first reward card.
 - `assertDefeatFromEndRun` ends a run and asserts defeat.
 - `injectMidCombatSave`, `injectDestinationAtIndex`, and `injectMysterySummaryVisit` inject exact persisted states.
 - `failOnRuntimeErrors` is the manual console/page-error collector for specs that do not use the fixture.
@@ -51,5 +56,10 @@ Page objects: `BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPa
 - `@smoke` — quick boot/menu coverage.
 - `@slow` — animation canaries and viewport loops; release/full-suite tier.
 - `@armory` — Armory/gear interaction coverage; may overlap other tags.
+
+Combine tags with the array form — `{ tag: [a.tag, b.tag] }` — never object
+spread, which silently drops every tag but the last. Tests with no tag run only
+in the nightly/full suite, not in the every-push `@critical|@prepush` gate;
+tag a test `@critical` when its journey must gate every push.
 
 The path-filtered `save-gate` intentionally reruns full save specs, including overlapping `@critical` tests, for save-touching pushes.

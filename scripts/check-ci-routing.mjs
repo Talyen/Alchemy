@@ -27,10 +27,41 @@ export const CI_ROUTE_CONTRACTS = Object.freeze([
   },
 ]);
 
+export const CI_JOB_CONTRACTS = Object.freeze([
+  { id: "changes", needs: [] },
+  { id: "assets", needs: ["changes"] },
+  { id: "save-gate", needs: ["changes"] },
+  { id: "desktop-build", needs: ["changes"] },
+  { id: "electron-e2e", needs: ["changes", "ship-gate"] },
+]);
+
 export function checkCiRouting(source) {
   return CI_ROUTE_CONTRACTS.flatMap((contract) =>
     contract.markers.filter((marker) => !source.includes(marker)).map((marker) => `${contract.id}: missing ${marker}`),
   );
+}
+
+export function checkJobBoundaries(source) {
+  const failures = [];
+  for (const contract of CI_JOB_CONTRACTS) {
+    const jobPattern = new RegExp(String.raw`^ {2}${contract.id}:\s*$`, "mu");
+    const match = jobPattern.exec(source);
+    if (!match) {
+      failures.push(`${contract.id}: missing job boundary`);
+      continue;
+    }
+    const start = match.index;
+    const nextJob = /^ {2}[A-Za-z0-9_-]+:\s*$/gmu;
+    nextJob.lastIndex = start + match[0].length;
+    const next = nextJob.exec(source);
+    const block = source.slice(start, next?.index ?? source.length);
+    for (const dependency of contract.needs) {
+      if (!new RegExp(String.raw`needs:\s*(?:\[[^\]]*\b${dependency}\b[^\]]*\]|${dependency})`, "u").test(block)) {
+        failures.push(`${contract.id}: missing needs dependency ${dependency}`);
+      }
+    }
+  }
+  return failures;
 }
 
 function uploadArtifactBlocks(source) {
@@ -59,14 +90,16 @@ function main() {
       fs.readFileSync(workflowPath, "utf8"),
     ]),
   );
-  const failures = [...checkCiRouting(source), ...checkDiagnosticRetention(sources)];
+  const failures = [...checkCiRouting(source), ...checkJobBoundaries(source), ...checkDiagnosticRetention(sources)];
   if (failures.length > 0) {
     console.error("CI routing checks failed:");
     for (const failure of failures) console.error(`- ${failure}`);
     process.exitCode = 1;
     return;
   }
-  console.log(`CI routing checks passed (${CI_ROUTE_CONTRACTS.length} high-cost filters).`);
+  console.log(
+    `CI routing checks passed (${CI_ROUTE_CONTRACTS.length} filters, ${CI_JOB_CONTRACTS.length} job boundaries).`,
+  );
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

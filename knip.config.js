@@ -9,7 +9,7 @@
  * Entries listed under `ignoreIssues` must be intentional seams, generated
  * catalogs, or compatibility re-exports — each with a short reason.
  *
- * `npm run deadcode` — CI / `lint:ci` / `check:push:full` (via `check`); not default pre-push.
+ * `npm run deadcode` — CI / `lint:ci`; not default pre-push.
  * Default mode traces dependencies through the Vite/Electron graph correctly,
  * so dependency checking lives here.
  * `npm run deadcode:strict` — nightly; entry exports + config hints. Dependency

@@ -44,6 +44,73 @@ function firstErrorMessage(spec) {
   return "";
 }
 
+function firstErrorMessageForTest(test) {
+  const results = Array.isArray(test?.results) ? test.results : [];
+  for (const result of results) {
+    if (!result || typeof result !== "object") continue;
+    const errors = Array.isArray(result.errors) ? result.errors : [];
+    for (const error of errors) {
+      if (!error || typeof error !== "object") continue;
+      const message = error.message;
+      if (typeof message === "string" && message.length > 0) {
+        return (message.split("\n")[0] ?? "").slice(0, MESSAGE_CHARS);
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Flatten Playwright's nested JSON report into the test-level model used by audits.
+ * @param {unknown} report
+ * @returns {{ allTests: Array<Record<string, unknown>>, totalTests: number, passedTests: number, skippedTests: number, failedTests: Array<Record<string, unknown>>, flakyTests: Array<Record<string, unknown>> }}
+ */
+export function collectPlaywrightTests(report) {
+  const root = report && typeof report === "object" ? /** @type {Record<string, unknown>} */ (report) : {};
+  const allTests = [];
+  const failedTests = [];
+  const flakyTests = [];
+  let totalTests = 0;
+  let passedTests = 0;
+  let skippedTests = 0;
+
+  if (Array.isArray(root.suites)) {
+    for (const suite of root.suites) {
+      traverseSuite(suite, (spec) => {
+        const tests = Array.isArray(spec.tests) ? spec.tests : [];
+        for (const test of tests) {
+          if (!test || typeof test !== "object") continue;
+          const status = typeof test.status === "string" ? test.status : "unknown";
+          const duration = Array.isArray(test.results)
+            ? test.results.reduce((sum, result) => sum + (Number(result?.duration) || 0), 0)
+            : 0;
+          const testInfo = {
+            title: typeof spec.title === "string" ? spec.title : "unknown test",
+            file: typeof spec.file === "string" ? spec.file : "unknown",
+            line: Number(spec.line) || 0,
+            duration,
+            status,
+            expectedStatus: test.expectedStatus,
+            errorMessage: firstErrorMessageForTest(test),
+            retries: Math.max(0, (Array.isArray(test.results) ? test.results.length : 0) - 1),
+            project: typeof test.projectName === "string" ? test.projectName : "chromium",
+          };
+          totalTests += 1;
+          allTests.push(testInfo);
+          if (status === "skipped") skippedTests += 1;
+          else if (status === "unexpected") failedTests.push(testInfo);
+          else if (status === "flaky") {
+            flakyTests.push(testInfo);
+            passedTests += 1;
+          } else passedTests += 1;
+        }
+      });
+    }
+  }
+
+  return { allTests, totalTests, passedTests, skippedTests, failedTests, flakyTests };
+}
+
 export function summarizePlaywrightReport(report, options = {}) {
   const maxFailures = options.maxFailures ?? MAX_FAILURES;
   const rootDir = options.rootDir ?? process.cwd();

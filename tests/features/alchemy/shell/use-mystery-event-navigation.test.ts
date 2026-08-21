@@ -1,13 +1,12 @@
 // @vitest-environment jsdom
+import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMysteryEventNavigation } from "@/features/alchemy/shell/use-mystery-event-navigation";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { useProfileStore } from "../../../helpers/gameplay-store-test";
+import { useProfileStore, resetAllTestStores } from "../../../helpers/gameplay-store-test";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
-  resetRunProgressSlice,
   setRunProgress,
 } from "../../../helpers/run-domain-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
@@ -18,12 +17,6 @@ import { useGearStore } from "../../../helpers/gameplay-store-test";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 
-vi.mock("@/lib/audio", () => ({
-  playGoldGain: vi.fn(),
-  playGoldSpend: vi.fn(),
-  playUISound: vi.fn(),
-}));
-
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
 
 function renderMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.())) {
@@ -33,9 +26,7 @@ function renderMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => 
 
 beforeEach(() => {
   vi.restoreAllMocks();
-  vi.clearAllMocks();
-  resetTransientRunUi();
-  resetRunProgressSlice();
+  resetAllTestStores();
   useProfileStore.setState(useProfileStore.getInitialState());
 });
 

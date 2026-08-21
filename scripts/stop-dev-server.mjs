@@ -6,11 +6,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
+import { isMainModule } from "./lib/is-main-module.mjs";
 
 const execFileAsync = promisify(execFile);
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
-const port = Number.parseInt(process.env.ALCHEMY_DEV_PORT ?? "5173", 10);
+const defaultPort = Number.parseInt(process.env.ALCHEMY_DEV_PORT ?? "5173", 10);
 const UNIX_STOP_GRACE_MS = 1_500;
 
 function normalizePathForMatch(value) {
@@ -25,7 +26,7 @@ async function runPowerShell(command) {
   return stdout.trim();
 }
 
-async function getWindowsListeningPids() {
+async function getWindowsListeningPids(port) {
   const output = await runPowerShell(
     `$connections = @(Get-NetTCPConnection -LocalPort ${port} -State Listen -ErrorAction SilentlyContinue); ` +
       `$connections | Select-Object -ExpandProperty OwningProcess -Unique | ConvertTo-Json; exit 0`,
@@ -46,11 +47,11 @@ async function stopWindowsPid(pid) {
   await execFileAsync("taskkill.exe", ["/PID", String(pid), "/T", "/F"], { windowsHide: true });
 }
 
-async function stopWindowsDevServer() {
-  const pids = await getWindowsListeningPids();
+async function stopWindowsDevServer(port, projectRoot) {
+  const pids = await getWindowsListeningPids(port);
   if (pids.length === 0) return;
 
-  const normalizedRoot = normalizePathForMatch(rootDir);
+  const normalizedRoot = normalizePathForMatch(projectRoot);
   let stoppedAny = false;
 
   for (const pid of pids) {
@@ -69,7 +70,7 @@ async function stopWindowsDevServer() {
   console.log(`No project-owned dev server found on port ${port}.`);
 }
 
-async function getUnixListeningPids() {
+async function getUnixListeningPids(port) {
   try {
     const { stdout } = await execFileAsync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"]);
     return stdout
@@ -128,14 +129,14 @@ async function stopUnixPid(pid) {
   }
 }
 
-async function stopUnixDevServer() {
-  const pids = await getUnixListeningPids();
+async function stopUnixDevServer(port, projectRoot) {
+  const pids = await getUnixListeningPids(port);
   if (pids.length === 0) {
     console.log(`No project-owned dev server found on port ${port}.`);
     return;
   }
 
-  const normalizedRoot = normalizePathForMatch(rootDir);
+  const normalizedRoot = normalizePathForMatch(projectRoot);
   let stoppedAny = false;
 
   for (const pid of pids) {
@@ -154,25 +155,27 @@ async function stopUnixDevServer() {
   console.log(`No project-owned dev server found on port ${port}.`);
 }
 
-async function main() {
+export async function stopDevServer({ port = defaultPort, projectRoot = rootDir } = {}) {
   if (!Number.isInteger(port) || port <= 0) {
-    throw new Error(`Invalid ALCHEMY_DEV_PORT: ${process.env.ALCHEMY_DEV_PORT}`);
+    throw new Error(`Invalid ALCHEMY_DEV_PORT: ${port}`);
   }
 
   if (process.platform === "win32") {
-    await stopWindowsDevServer();
+    await stopWindowsDevServer(port, projectRoot);
     return;
   }
 
   if (process.platform === "darwin" || process.platform === "linux") {
-    await stopUnixDevServer();
+    await stopUnixDevServer(port, projectRoot);
     return;
   }
 
   console.log(`Dev server auto-stop is not implemented for ${process.platform}; relying on Vite strictPort.`);
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+if (isMainModule(import.meta.url)) {
+  stopDevServer().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}

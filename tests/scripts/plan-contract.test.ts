@@ -7,29 +7,33 @@ import { planTemplate, safePlanName } from "../../scripts/new-plan.mjs";
 import { parsePruneArgs, pruneTransientArtifacts } from "../../scripts/prune-transient-artifacts.mjs";
 
 describe("execution-plan contract", () => {
-  it("accepts the scaffold metadata and rejects completed plans", () => {
-    const metadata = parsePlanMetadata(planTemplate("ExamplePlan", "2026-08-20", "2026-09-03"));
+  it("accepts scaffold metadata", () => {
+    const template = planTemplate("ExamplePlan", "2026-08-20");
+    const metadata = parsePlanMetadata(template);
     expect(metadata.errors).toEqual([]);
     expect(metadata.metadata.status).toBe("active");
-
-    const complete = parsePlanMetadata(
-      planTemplate("ExamplePlan", "2026-08-20", "2026-09-03").replace("status: active", "status: complete"),
-    );
-    expect(complete.errors).toEqual([]);
-    expect(complete.metadata.status).toBe("complete");
+    expect(metadata.updated?.toISOString().slice(0, 10)).toBe("2026-08-20");
   });
 
   it("requires a reason for blocked plans and rejects invalid names", () => {
     const blocked = parsePlanMetadata(
-      planTemplate("ExamplePlan", "2026-08-20", "2026-09-03").replace("status: active", "status: blocked"),
+      planTemplate("ExamplePlan", "2026-08-20").replace("status: active", "status: blocked"),
     );
     expect(blocked.errors).toContain("blocked plans require reason");
     expect(() => safePlanName("bad plan")).toThrow(/only letters/);
   });
 
   it("rejects calendar-invalid dates instead of letting JavaScript normalize them", () => {
-    const invalid = parsePlanMetadata(planTemplate("ExamplePlan", "2026-02-31", "2026-09-03"));
-    expect(invalid.errors).toContain("created must be an ISO date");
+    const invalid = parsePlanMetadata(planTemplate("ExamplePlan", "2026-02-31"));
+    expect(invalid.errors).toContain("updated must be an ISO date");
+  });
+
+  it("rejects terminal statuses in the active plans directory", () => {
+    const complete = parsePlanMetadata(
+      planTemplate("ExamplePlan", "2026-08-20").replace("status: active", "status: complete"),
+    );
+    expect(complete.errors).toEqual([]);
+    expect(complete.metadata.status).toBe("complete");
   });
 });
 

@@ -16,16 +16,11 @@ import { fileURLToPath } from "node:url";
 import { writeCurrentRun } from "./lib/current-run.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const METRIC_SCENARIOS = [
-  "battle-effects",
-  "battle-end-turn",
-  "talents-effects",
-  "collection-tabs",
-  "options-brightness",
-];
-const DIAG_SCENARIOS = ["memory-soak", "battle-art-diag"];
+const PERFORMANCE_CATALOG = JSON.parse(fs.readFileSync(path.join(root, "performance/catalog.json"), "utf8"));
+const METRIC_SCENARIOS = PERFORMANCE_CATALOG.metricScenarios;
+const DIAG_SCENARIOS = PERFORMANCE_CATALOG.diagnosticScenarios;
 const SCENARIOS = [...METRIC_SCENARIOS, ...DIAG_SCENARIOS];
-const DEFAULT_SCENARIO = "battle-effects";
+const DEFAULT_SCENARIO = PERFORMANCE_CATALOG.defaultScenario;
 
 function parseArgs(argv) {
   const args = {
@@ -108,23 +103,7 @@ function stampOutputDir(runtime = "chromium") {
 }
 
 function compareMetricsJson(before, after) {
-  // Keep in sync with performance/compare.ts COMPARE_KEYS / compareMetrics.
-  const keys = [
-    ["averageFps", "Average FPS", true],
-    ["p50FrameTime", "p50 frame time (ms)", false],
-    ["p95FrameTime", "p95 frame time (ms)", false],
-    ["p99FrameTime", "p99 frame time (ms)", false],
-    ["p999FrameTime", "p99.9 frame time (ms)", false],
-    ["onePercentLowFps", "1% low FPS", true],
-    ["pointOnePercentLowFps", "0.1% low FPS", true],
-    ["framesOver20msPct", "frames >20 ms (%)", false],
-    ["framesOver33msPct", "frames >33.3 ms (%)", false],
-    ["hitchesOver50ms", "≥50 ms hitches", false],
-    ["stallsOver100ms", "≥100 ms stalls", false],
-    ["longTasksOver50ms", "≥50 ms long tasks", false],
-    ["maxFrameGapMs", "Max frame gap (ms)", false],
-  ];
-  return keys.map(([key, label, higherIsBetter]) => {
+  return PERFORMANCE_CATALOG.metrics.map(({ key, label, higherIsBetter }) => {
     const b = before[key];
     const a = after[key];
     const delta = a - b;

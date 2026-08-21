@@ -3,15 +3,17 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/** Always-safe report / cache dirs relative to the project root. */
-export const DEFAULT_ARTIFACT_DIRS = Object.freeze([
+/** Report/diagnostic directories shared by age-pruning and explicit cleanup. */
+export const TRANSIENT_ARTIFACT_DIRS = Object.freeze([
   "playwright-report",
   "test-results",
   "blob-report",
   "coverage",
   "reports",
-  "node_modules/.vite",
 ]);
+
+/** Always-safe report / cache dirs relative to the project root. */
+export const DEFAULT_ARTIFACT_DIRS = Object.freeze([...TRANSIENT_ARTIFACT_DIRS, "node_modules/.vite"]);
 
 /** Heavier rebuildable outputs; only removed with `--builds` / `--all`. */
 export const BUILD_ARTIFACT_DIRS = Object.freeze(["dist", "release-desktop"]);

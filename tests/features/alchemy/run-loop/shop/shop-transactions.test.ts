@@ -13,14 +13,13 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { setShopState as mutateShopState } from "@/features/alchemy/shared/stores/run-session-write-port";
 const setShopState = createRunSessionCommand(mutateShopState);
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { emptyShopState, type ShopState } from "@/lib/active-run-session";
 import { makeEffect, makeTestCardWithId } from "../../../../fixtures/battle";
+import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
-  resetRunProgressSlice,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
 
@@ -32,9 +31,7 @@ vi.mock("@/lib/game-data", async (importOriginal) => {
 const makeCard = (id: string): BattleCard => makeTestCardWithId(id, { effects: [makeEffect("physical", 1)] });
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  resetRunProgressSlice();
-  resetTransientRunUi();
+  resetAllTestStores();
 });
 
 describe("refreshShopOfferings", () => {

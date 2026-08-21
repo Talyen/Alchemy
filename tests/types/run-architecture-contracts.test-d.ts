@@ -1,3 +1,6 @@
+// Compile-time contract suite: enforced by `tsc -p tsconfig.test.json` inside
+// `typecheck:all`, not by Vitest. The `.test-d.ts` suffix keeps it out of
+// `npm test` (these assertions have no runtime effect).
 import { describe, expectTypeOf, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
 import type { useBattleController } from "@/features/alchemy/shell/use-battle-controller";

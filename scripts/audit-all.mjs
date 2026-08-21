@@ -8,11 +8,11 @@
  * pre-push gate (nightly runs `deadcode:strict` only; use `npm run lint:ci`
  * for the static gate).
  */
-import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { writeCurrentRun } from "./lib/current-run.mjs";
+import { runCommand } from "./lib/run-command.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(currentFile), "..");
@@ -48,17 +48,15 @@ const started = Date.now();
 console.log("Running all measurable audits…\n");
 
 for (const step of STEPS) {
-  const t0 = Date.now();
   console.log(`── ${step.name} ──`);
-  const r = spawnSync(step.cmd, step.args, {
+  const r = runCommand(step.cmd, step.args, {
     cwd: ROOT,
-    encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
     shell: process.platform === "win32",
     timeout: step.timeout,
   });
-  const ms = Date.now() - t0;
-  const output = [r.stdout ?? "", r.stderr ?? "", r.error?.message ?? ""].filter(Boolean).join("\n");
+  const ms = r.elapsedMs;
+  const { output } = r;
   if (verbose && output) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
   if (r.status !== 0) {
     failed++;

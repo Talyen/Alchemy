@@ -1,3 +1,4 @@
+import "../../../../helpers/mock-audio";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   executeEnemyPhase,
@@ -48,11 +49,6 @@ vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", async (importOrigina
 vi.mock("@/lib/animation/game-timer", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/animation/game-timer")>()),
   delay: vi.fn(async () => {}),
-}));
-
-vi.mock("@/lib/audio", () => ({
-  playBattleEvent: vi.fn(),
-  playEnemyAttack: vi.fn(),
 }));
 
 const presentation = makePresentationPort();

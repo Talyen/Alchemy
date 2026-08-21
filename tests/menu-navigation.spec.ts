@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import {
   injectLabyrinthRun,
-  injectSaveState,
+  injectActiveBattle,
   makeCard,
   makeGoblinBattleState,
   SAVE_KEY,
@@ -36,15 +36,7 @@ test.describe("Menu", critical, () => {
   });
 
   test("menu shows Resume Run when a campaign battle is active", async ({ page }) => {
-    await injectSaveState(page, {
-      currentScreen: "battle",
-      activeCombat: {
-        battleState: makeGoblinBattleState(),
-        activeLabyrinthModifiers: [],
-        activeLabyrinthRewardModifiers: [],
-      },
-    });
-    await page.goto("/");
+    await injectActiveBattle(page, makeGoblinBattleState());
     const menu = new MenuPage(page);
     const battle = new BattlePage(page);
     await menu.stage.expectRunPhase("battle");
@@ -132,10 +124,7 @@ test.describe("Options Screen", () => {
     await page.getByRole("button", { name: "Sound" }).click();
     await expect(page.getByText("Music Volume")).toBeVisible();
 
-    const musicSlider = page
-      .locator("div")
-      .filter({ hasText: /^Music Volume/ })
-      .locator('input[type="range"]');
+    const musicSlider = page.getByLabel("Music Volume");
     await musicSlider.focus();
     await page.keyboard.press("ArrowLeft");
 

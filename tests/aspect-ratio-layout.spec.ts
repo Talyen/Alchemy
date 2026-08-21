@@ -22,21 +22,6 @@ async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio
   );
 }
 
-async function waitForHandEntryAnimations(page: import("@playwright/test").Page) {
-  await page.waitForFunction(
-    () => {
-      const cards = [...document.querySelectorAll('[data-hand-card="true"]')];
-      if (cards.length === 0) return false;
-      return cards.every((card) => {
-        const animations = card.getAnimations();
-        return animations.length === 0 || animations.every((a) => a.playState === "finished" || a.playState === "idle");
-      });
-    },
-    undefined,
-    { timeout: 5000 },
-  );
-}
-
 const RESOLUTIONS = [{ width: 1366, height: 768, label: "1366x768" }] as const;
 
 const CARD_VIEWPORT_TOLERANCE_PX = 12;
@@ -64,8 +49,13 @@ test.describe("Common resolutions (1366x768)", slow, () => {
     }
   });
 
-  test("battle screen cards and controls fit viewport without overflow", async ({ page, fastBattle }) => {
+  test("battle screen cards and controls fit viewport without overflow", async ({
+    page,
+    fastBattle,
+    runtimeErrors,
+  }) => {
     void fastBattle;
+    void runtimeErrors;
     for (const { width, height } of RESOLUTIONS) {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
@@ -76,7 +66,6 @@ test.describe("Common resolutions (1366x768)", slow, () => {
 
       await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible();
       expect(await page.locator('[aria-label^="Play "]').count()).toBeGreaterThanOrEqual(1);
-      await waitForHandEntryAnimations(page);
       await assertNoOverflow(page, `Battle ${width}x${height}`);
 
       const maxCardOverflow = await page.evaluate(() =>

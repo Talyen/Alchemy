@@ -7,7 +7,7 @@ const MAX_LOG_ENTRIES = 40;
 const MAX_LOG_BYTES = 5 * 1024;
 const MAX_MESSAGE_BYTES = 1_000;
 
-export function truncateUtf8(value, maxBytes) {
+function truncateUtf8(value, maxBytes) {
   if (Buffer.byteLength(value, "utf8") <= maxBytes) return value;
   let low = 0;
   let high = value.length;

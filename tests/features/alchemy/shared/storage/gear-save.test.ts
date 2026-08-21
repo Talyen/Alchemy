@@ -2,6 +2,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
 import { useGearStore } from "../../../../helpers/gameplay-store-test";
+
+function knightInventories(...items: GearInstance[]) {
+  const inventories = createEmptyGearInventories();
+  inventories.knight = items;
+  return inventories;
+}
 import {
   createEmptyGearInventories,
   createEmptyGearLoadouts,
@@ -14,12 +20,6 @@ import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 afterEach(() => {
   useGearStore.getState().reset();
 });
-
-function knightInventories(...items: GearInstance[]) {
-  const inventories = createEmptyGearInventories();
-  inventories.knight = items;
-  return inventories;
-}
 
 describe("gear save normalization", () => {
   it("defaults saves to empty per-character inventories and empty class loadouts", () => {

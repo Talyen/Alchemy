@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkCiRouting, checkDiagnosticRetention } from "../../scripts/check-ci-routing.mjs";
+import { checkCiRouting, checkDiagnosticRetention, checkJobBoundaries } from "../../scripts/check-ci-routing.mjs";
 
 const root = path.resolve(__dirname, "../..");
 
@@ -13,6 +13,14 @@ describe("CI routing contract", () => {
 
   it("identifies a removed filter marker", () => {
     expect(checkCiRouting("save:\n")).toContain('save-gate: missing "src/lib/validation/**"');
+  });
+
+  it("keeps gated job dependencies explicit", () => {
+    const source = fs.readFileSync(path.join(root, ".github/workflows/ci.yml"), "utf8");
+    expect(checkJobBoundaries(source)).toEqual([]);
+    expect(checkJobBoundaries("  save-gate:\n    runs-on: ubuntu-latest\n")).toContain(
+      "save-gate: missing needs dependency changes",
+    );
   });
 
   it("requires failure-only seven-day diagnostic uploads with the current-run pointer", () => {

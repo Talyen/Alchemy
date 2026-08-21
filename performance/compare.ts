@@ -1,4 +1,5 @@
 import type { FrameMetrics } from "./metrics";
+import performanceCatalog from "./catalog.json";
 
 export interface MetricDelta {
   key: keyof Pick<
@@ -29,25 +30,11 @@ export interface MetricDelta {
   improved: boolean | null;
 }
 
-const COMPARE_KEYS: Array<{
+const COMPARE_KEYS = performanceCatalog.metrics as Array<{
   key: MetricDelta["key"];
   label: string;
   higherIsBetter: boolean;
-}> = [
-  { key: "averageFps", label: "Average FPS", higherIsBetter: true },
-  { key: "p50FrameTime", label: "p50 frame time (ms)", higherIsBetter: false },
-  { key: "p95FrameTime", label: "p95 frame time (ms)", higherIsBetter: false },
-  { key: "p99FrameTime", label: "p99 frame time (ms)", higherIsBetter: false },
-  { key: "p999FrameTime", label: "p99.9 frame time (ms)", higherIsBetter: false },
-  { key: "onePercentLowFps", label: "1% low FPS", higherIsBetter: true },
-  { key: "pointOnePercentLowFps", label: "0.1% low FPS", higherIsBetter: true },
-  { key: "framesOver20msPct", label: "frames >20 ms (%)", higherIsBetter: false },
-  { key: "framesOver33msPct", label: "frames >33.3 ms (%)", higherIsBetter: false },
-  { key: "hitchesOver50ms", label: "≥50 ms hitches", higherIsBetter: false },
-  { key: "stallsOver100ms", label: "≥100 ms stalls", higherIsBetter: false },
-  { key: "longTasksOver50ms", label: "≥50 ms long tasks", higherIsBetter: false },
-  { key: "maxFrameGapMs", label: "Max frame gap (ms)", higherIsBetter: false },
-];
+}>;
 
 export function compareMetrics(before: FrameMetrics, after: FrameMetrics): MetricDelta[] {
   return COMPARE_KEYS.map(({ key, label, higherIsBetter }) => {

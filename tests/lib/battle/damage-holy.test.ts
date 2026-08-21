@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { dealDamageToEnemy } from "@/lib/battle/damage";
 import { applyDamageBlock } from "@/lib/battle/damage-rider-leech";
-import type { BattleCardEffect } from "@/lib/game-data";
 import { patchBattleState } from "../../fixtures/battle";
 import {
   defaultPlayerStatusValues,
   defaultEnemyStatusValues,
   defaultTalentEffects,
 } from "../../fixtures/default-battle-state";
-import { makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
+import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 
 describe("computeBaseDamage — holy damage", () => {
   it("scales holy damage with gold when holyGoldPercent is active", () => {
@@ -17,14 +15,15 @@ describe("computeBaseDamage — holy damage", () => {
       talentEffects: { ...defaultTalentEffects, holyGoldPercent: 10 },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBeLessThan(30);
+  });
+
+  it("deals exactly current block when equalToBlock is set", () => {
+    const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ block: 7 }) });
+    const card = makeTestCard({ effects: [makeEffect("holy", 0, { equalToBlock: true })] });
+    const result = dealDamage(state, card);
+    expect(result.enemyHealth).toBe(30 - 7);
   });
 
   it("scales holy damage with block when blockToHolyDamage is active", () => {
@@ -33,13 +32,7 @@ describe("computeBaseDamage — holy damage", () => {
       talentEffects: { ...defaultTalentEffects, blockToHolyDamage: true },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBeLessThan(30);
   });
 
@@ -49,13 +42,7 @@ describe("computeBaseDamage — holy damage", () => {
       talentEffects: { ...defaultTalentEffects, holyVsBurnMultiplier: 0.5 },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyHealth).toBeLessThan(30);
   });
 });
@@ -67,13 +54,7 @@ describe("applyHolyDamageRiders", () => {
       talentEffects: { ...defaultTalentEffects, holyLifestealPercent: 50 },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.playerHealth).toBeGreaterThan(20);
   });
 
@@ -84,13 +65,7 @@ describe("applyHolyDamageRiders", () => {
       rng: () => 0.5,
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.playerStatuses.block).toBe(5);
   });
 
@@ -114,13 +89,7 @@ describe("applyHolyDamageRiders", () => {
       talentEffects: { ...defaultTalentEffects, holyBurnChance: 50, holyLifestealPercent: 0, holyGoldPercent: 0 },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
-    const texts = makeCombatTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
+    const result = dealDamage(state, card);
     expect(result.enemyStatuses.burn).toBeGreaterThan(0);
   });
 });

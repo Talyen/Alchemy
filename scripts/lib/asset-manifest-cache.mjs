@@ -11,7 +11,7 @@ import { writeTextIfChanged } from "./write-text-if-changed.mjs";
 import { mapPool } from "./map-pool.mjs";
 
 /**
- * @typedef {{ hash: string, mtimeMs: number, size: number, settingsSig?: string }} ManifestEntry
+ * @typedef {{ hash: string, mtimeMs: number, size: number, settingsSig?: string, owner?: string }} ManifestEntry
  */
 
 /**
@@ -118,6 +118,7 @@ function parseManifestEntry(value) {
       mtimeMs: typeof record.mtimeMs === "number" ? record.mtimeMs : Number.NaN,
       size: typeof record.size === "number" ? record.size : Number.NaN,
       ...(typeof record.settingsSig === "string" ? { settingsSig: record.settingsSig } : {}),
+      ...(typeof record.owner === "string" ? { owner: record.owner } : {}),
     };
   }
   return null;
@@ -176,6 +177,8 @@ function sortManifest(entries) {
       hash: entry.hash,
       mtimeMs: entry.mtimeMs,
       size: entry.size,
+      ...(typeof entry.settingsSig === "string" ? { settingsSig: entry.settingsSig } : {}),
+      ...(typeof entry.owner === "string" ? { owner: entry.owner } : {}),
     };
   }
   return sorted;

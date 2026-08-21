@@ -2,6 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { installRafStub } from "../../../../helpers/animation-test";
 import { useEasedHealth } from "@/features/alchemy/shared/ui/use-eased-health";
 
 describe("useEasedHealth", () => {
@@ -11,12 +12,7 @@ describe("useEasedHealth", () => {
   });
 
   it("synchronizes an inactive health change before a no-op animation", () => {
-    const frames: FrameRequestCallback[] = [];
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-      frames.push(callback);
-      return frames.length;
-    });
-    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    const frames = installRafStub();
 
     const { result, rerender } = renderHook(
       ({ from, to, active }: { from: number; to: number; active: boolean }) => useEasedHealth({ from, to, active }),

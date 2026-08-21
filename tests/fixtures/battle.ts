@@ -1,6 +1,7 @@
 // Deterministic battle setup helpers for Vitest (mirrors tests/helpers.ts card shapes).
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
+import { dealDamageToEnemy } from "@/lib/battle/damage";
 import { defaultBattleState } from "@/lib/battle";
 import { makeTestCard } from "./cards";
 import { seededRng } from "./rng";
@@ -29,6 +30,18 @@ export function makeEffect(
 /** Shared battle state with a 10-mana default (matches the run-loop effect suites). */
 export function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
   return makeTestBattleState({ mana: 10, ...overrides });
+}
+
+type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
+
+/**
+ * dealDamageToEnemy with the card's first damage effect extracted internally,
+ * so damage suites do not repeat the per-test cast boilerplate.
+ */
+export function dealDamage(state: BattleState, card: BattleCard, texts: CombatTextEvent[] = makeCombatTexts()) {
+  const effect = card.effects.find((candidate): candidate is DamageEffect => candidate.kind === "damage");
+  if (!effect) throw new Error("dealDamage fixture: card has no damage effect");
+  return dealDamageToEnemy(state, card, effect, texts);
 }
 
 export function makeTestBattleState(overrides: Partial<BattleState> = {}): BattleState {

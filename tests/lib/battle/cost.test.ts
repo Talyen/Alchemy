@@ -4,6 +4,7 @@ import { FREE_CARD_SENTINEL } from "@/lib/game-constants";
 import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
 import type { BattleState, CombatFlags } from "@/lib/battle/types";
 import type { BattleCard } from "@/lib/game-data";
+import { makeTestCard } from "../../fixtures/cards";
 
 function makeState(flags: Partial<CombatFlags> = {}, talentOverrides: Record<string, unknown> = {}): BattleState {
   return {
@@ -16,48 +17,40 @@ function makeState(flags: Partial<CombatFlags> = {}, talentOverrides: Record<str
 }
 
 function physicalCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return {
+  return makeTestCard({
     id: "test",
     title: "Test",
-    descriptionLines: [""],
-    art: "",
     cost: 2,
     effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     ...overrides,
-  };
+  });
 }
 
 function holyCard(): BattleCard {
-  return {
+  return makeTestCard({
     id: "holy",
     title: "Holy",
-    descriptionLines: [""],
-    art: "",
     cost: 2,
     effects: [{ kind: "damage", damageType: "holy", amount: 5 }],
-  };
+  });
 }
 
 function poisonCard(): BattleCard {
-  return {
+  return makeTestCard({
     id: "poison",
     title: "Poison",
-    descriptionLines: [""],
-    art: "",
     cost: 2,
     effects: [{ kind: "damage", damageType: "poison", amount: 2 }],
-  };
+  });
 }
 
 function bleedCard(): BattleCard {
-  return {
+  return makeTestCard({
     id: "bleed",
     title: "Bleed",
-    descriptionLines: [""],
-    art: "",
     cost: 2,
     effects: [{ kind: "damage", damageType: "bleed", amount: 2 }],
-  };
+  });
 }
 
 function effectiveCost(
