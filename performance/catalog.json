@@ -1,0 +1,20 @@
+{
+  "defaultScenario": "battle-effects",
+  "metricScenarios": ["battle-effects", "battle-end-turn", "talents-effects", "collection-tabs", "options-brightness"],
+  "diagnosticScenarios": ["memory-soak", "battle-art-diag"],
+  "metrics": [
+    { "key": "averageFps", "label": "Average FPS", "higherIsBetter": true },
+    { "key": "p50FrameTime", "label": "p50 frame time (ms)", "higherIsBetter": false },
+    { "key": "p95FrameTime", "label": "p95 frame time (ms)", "higherIsBetter": false },
+    { "key": "p99FrameTime", "label": "p99 frame time (ms)", "higherIsBetter": false },
+    { "key": "p999FrameTime", "label": "p99.9 frame time (ms)", "higherIsBetter": false },
+    { "key": "onePercentLowFps", "label": "1% low FPS", "higherIsBetter": true },
+    { "key": "pointOnePercentLowFps", "label": "0.1% low FPS", "higherIsBetter": true },
+    { "key": "framesOver20msPct", "label": "frames >20 ms (%)", "higherIsBetter": false },
+    { "key": "framesOver33msPct", "label": "frames >33.3 ms (%)", "higherIsBetter": false },
+    { "key": "hitchesOver50ms", "label": "≥50 ms hitches", "higherIsBetter": false },
+    { "key": "stallsOver100ms", "label": "≥100 ms stalls", "higherIsBetter": false },
+    { "key": "longTasksOver50ms", "label": "≥50 ms long tasks", "higherIsBetter": false },
+    { "key": "maxFrameGapMs", "label": "Max frame gap (ms)", "higherIsBetter": false }
+  ]
+}

@@ -79,6 +79,7 @@ function SliderOption({
         max={max}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
+        aria-label={label}
         className="mt-3 w-full accent-primary"
       />
     </div>
