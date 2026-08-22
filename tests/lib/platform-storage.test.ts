@@ -24,7 +24,6 @@ describe("platform save backend", () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
     window.alchemyDesktop = undefined;
     Object.defineProperty(window, "localStorage", {
       value: originalLocalStorage,

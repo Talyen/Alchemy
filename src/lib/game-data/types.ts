@@ -117,7 +117,6 @@ export type BattleCardEffect =
       kind: "cleanse-player-status-to-damage";
       status: Extract<PlayerStatusId, "burn">;
       damageType: DamageType;
-      removeAll?: boolean;
     }
   | { kind: "random-damage"; minAmount: number; maxAmount: number }
   | {

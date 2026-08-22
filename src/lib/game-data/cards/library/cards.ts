@@ -200,7 +200,7 @@ export const cardLibrary: BattleCard[] = [
     descriptionLines: ["Cleanse all Burn on yourself", "Deal Holy damage equal to Burn removed"],
     art: assetRefs.exorcism,
     cost: 1,
-    effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy", removeAll: true }],
+    effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
   },
   cardBuilders.damageThenMultiplyEnemyStatusCard({
     id: "kindling",

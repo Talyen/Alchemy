@@ -2,7 +2,7 @@
 // Depends on focused audio implementation modules.
 // Used by controllers/App/screens so call sites do not need to know audio internals.
 export { preloadAllSounds, preloadBattleSounds } from "./audio-preload";
-export { playMusic, playMusicImmediate } from "./audio-music";
+export { getBossMusicKey, invalidateCacheForKey, isMusicPaused, playMusic, playMusicImmediate } from "./audio-music";
 export {
   playBattleEvent,
   playCardSound,

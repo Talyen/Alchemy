@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { parsePersistedErrorLog, useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
 
 const STORAGE_KEY = "alchemy-error-log";
@@ -8,7 +8,6 @@ describe("useErrorLogStore", () => {
   beforeEach(() => {
     localStorage.clear();
     useErrorLogStore.setState({ errors: [] });
-    vi.restoreAllMocks();
   });
 
   it("pushError appends an unreviewed entry with a unique id", () => {

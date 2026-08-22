@@ -69,7 +69,5 @@ describe("applyAlchemistPotion", () => {
     const deckUpdater = discoveryMocks.setRunDeck.mock.calls[0][1];
     expect(deckUpdater([])).toEqual([potion]);
     expect(discoveryMocks.discoverCardIds).toHaveBeenCalledWith(draft, ["mana-potion"]);
-
-    vi.restoreAllMocks();
   });
 });

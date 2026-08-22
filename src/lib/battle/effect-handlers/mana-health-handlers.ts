@@ -1,8 +1,8 @@
 // Mana and health-related card effect apply handlers.
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import { applyHealOnManaGain, mergeCombatText, applyHealingWithCombatText } from "../combat-text";
-import { applyPlayerCombatDamage, gainMana } from "../types";
-import { getEnemyDamageMultiplier } from "../status-helpers";
+import { gainMana } from "../types";
+import { dealSelfDamage, getEnemyDamageMultiplier } from "../status-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
 import type { EffectHandler } from "./handler-types";
 import { processEncounterTraitHealthThreshold } from "../encounter-trait-events";
@@ -99,15 +99,5 @@ export const applyHealEffect: EffectHandler = (state, card, effect, potionMult, 
 
 export const applyLoseHealthEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
   if (effect.kind !== "lose-health") return state;
-  const postDamage = applyPlayerCombatDamage(state, effect.amount);
-  const healthLost = state.playerHealth - postDamage.playerHealth;
-  if (healthLost > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: "health",
-      amount: healthLost,
-    });
-  }
-  return postDamage;
+  return dealSelfDamage(state, effect.amount, "health", combatTexts).state;
 };

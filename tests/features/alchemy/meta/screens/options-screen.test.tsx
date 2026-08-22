@@ -47,7 +47,6 @@ const defaultProps = {
 describe("OptionsScreen", () => {
   afterEach(() => {
     cleanup();
-    vi.clearAllMocks();
   });
 
   it("calls onBack when the Back button is clicked", async () => {

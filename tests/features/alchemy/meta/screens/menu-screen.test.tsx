@@ -19,8 +19,6 @@ const defaultProps = {
 describe("MenuScreen logo variants", () => {
   afterEach(() => {
     cleanup();
-    vi.clearAllMocks();
-    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 

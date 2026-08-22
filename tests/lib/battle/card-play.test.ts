@@ -3,10 +3,10 @@ import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { cardHasDamageType } from "@/lib/battle/card-cost-rules";
 import { defaultBattleState } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
-import { makeTestBattleState, makeTestCard, slashDeck } from "../../fixtures/battle";
+import { makeState as makeSharedState, makeTestCard, slashDeck } from "../../fixtures/battle";
 
-function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
-  return makeTestBattleState({ mana: 5, maxMana: 5, ...overrides });
+function makeState(overrides: Parameters<typeof makeSharedState>[0] = {}) {
+  return makeSharedState({ mana: 5, maxMana: 5, ...overrides });
 }
 
 describe("cardHasDamageType", () => {

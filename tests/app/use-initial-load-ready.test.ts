@@ -50,7 +50,6 @@ describe("useInitialLoadReady", () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.restoreAllMocks();
     Reflect.deleteProperty(document, "fonts");
   });
 

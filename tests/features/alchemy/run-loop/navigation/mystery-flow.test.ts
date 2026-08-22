@@ -1,143 +1,149 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MysteryEffect } from "@/lib/mystery";
-import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
-import { cardLibrary, getCardKeywords, type BattleCard } from "@/lib/game-data";
+import {
+  applyMysteryEffect,
+  type MysteryEffectContext,
+  type MysteryEffectResult,
+} from "@/features/alchemy/run-loop/navigation/mystery-flow";
+import { cardLibrary, getCardKeywords } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { resetAllTestStores, useGearStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
+import {
+  getRunProgressStoreView,
+  getRunSessionStoreView,
+  setRunProgress,
+} from "../../../../helpers/run-domain-store-test";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
-vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-store")>();
-  return {
-    ...actual,
-    setDiscoveredCardIds: vi.fn(),
-    setDiscoveredTrinketIds: vi.fn(),
-    discoverCardIds: vi.fn(),
-    discoverTrinketIds: vi.fn(),
-  };
-});
-
-function minimalContext(overrides: { runDeck?: BattleCard[] } = {}) {
-  return {
-    draft: {} as GameplayDraft,
-    runDeck: overrides.runDeck,
-    runMaxHealth: 30,
-    rng: vi.fn(() => 0.5),
-    ownedTrinketIds: [] as string[],
-    setRunDeck: vi.fn(),
-    setRunGold: vi.fn(),
-    setRunPlayerHealth: vi.fn(),
-    setRunTrinkets: vi.fn(),
-    setMysteryCardChoices: vi.fn(),
-    setMysteryGrantedTrinketIds: vi.fn(),
-    setMysteryGrantedGearInstances: vi.fn(),
-    awardMysteryXP: vi.fn(),
-    onAddMaterials: vi.fn(),
-    onAwardGold: vi.fn(),
-    onAddGear: vi.fn(),
-    gearAstralChanceBonus: 0,
-  };
+function makeContext(rng: () => number = () => 0.5): MysteryEffectContext {
+  let context!: MysteryEffectContext;
+  dispatchRunSessionCommand((draft) => {
+    context = { draft, rng };
+  });
+  return context;
 }
 
+function apply(effect: MysteryEffect, rng: () => number = () => 0.5): MysteryEffectResult {
+  let result!: MysteryEffectResult;
+  dispatchRunSessionCommand((draft) => {
+    result = applyMysteryEffect(effect, { draft, rng });
+  });
+  return result;
+}
+
+const slash = cardLibrary.find((card) => card.id === "slash")!;
+
+beforeEach(() => {
+  resetAllTestStores();
+  useProfileStore.setState(useProfileStore.getInitialState());
+});
+
 describe("applyMysteryEffect", () => {
-  it("dispatches each mystery effect kind to the expected run mutation", () => {
-    const slash = cardLibrary.find((card) => card.id === "slash")!;
+  it("addCard appends the library card and tracks discovery", () => {
+    apply({ kind: "addCard", cardId: "slash" });
+    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toContain("slash");
+  });
 
-    const addCardContext = minimalContext();
-    applyMysteryEffect({ kind: "addCard", cardId: "slash" }, addCardContext);
-    expect(addCardContext.setRunDeck).toHaveBeenCalledOnce();
+  it("chooseCard opens the picker and pauses evaluation", () => {
+    const result = apply({ kind: "chooseCard" });
+    expect(result.followUp).toBe("choose-card");
+    expect(getRunSessionStoreView().mysteryCardChoices).not.toBeNull();
+  });
 
-    const chooseContext = minimalContext();
-    const chooseResult = applyMysteryEffect({ kind: "chooseCard" }, chooseContext);
-    expect(chooseContext.setMysteryCardChoices).toHaveBeenCalledOnce();
-    expect(chooseResult.followUp).toBe("choose-card");
+  it("healHealth heals up to max health", () => {
+    setRunProgress({ runPlayerHealth: 20, runMaxHealth: 30 });
+    const result = apply({ kind: "healHealth", amount: 5 });
+    expect(result.followUp).toBeNull();
+    expect(getRunProgressStoreView().runPlayerHealth).toBe(25);
+  });
 
-    const healContext = minimalContext();
-    applyMysteryEffect({ kind: "healHealth", amount: 5 }, healContext);
-    const healUpdater = healContext.setRunPlayerHealth.mock.calls[0][1];
-    expect(healUpdater(20)).toBe(25);
+  it("damageHealth never drops health below zero", () => {
+    setRunProgress({ runPlayerHealth: 2 });
+    apply({ kind: "damageHealth", amount: 3 });
+    expect(getRunProgressStoreView().runPlayerHealth).toBe(0);
+  });
 
-    const damageContext = minimalContext();
-    applyMysteryEffect({ kind: "damageHealth", amount: 3 }, damageContext);
-    const damageUpdater = damageContext.setRunPlayerHealth.mock.calls[0][1];
-    expect(damageUpdater(20)).toBe(17);
+  it("gainGold credits gold with the gain sound", () => {
+    setRunProgress({ runGold: 20 });
+    const result = apply({ kind: "gainGold", amount: 10 });
+    expect(result.goldSound).toBe("gain");
+    expect(getRunProgressStoreView().runGold).toBe(30);
+  });
 
-    const gainGoldContext = minimalContext();
-    const gainGoldResult = applyMysteryEffect({ kind: "gainGold", amount: 10 }, gainGoldContext);
-    expect(gainGoldContext.onAwardGold).toHaveBeenCalledWith(10);
-    expect(gainGoldResult.goldSound).toBe("gain");
+  it("loseGold spends gold with the spend sound", () => {
+    setRunProgress({ runGold: 20 });
+    const result = apply({ kind: "loseGold", amount: 5 });
+    expect(result.goldSound).toBe("spend");
+    expect(getRunProgressStoreView().runGold).toBe(15);
+  });
 
-    const loseGoldContext = minimalContext();
-    const loseGoldResult = applyMysteryEffect({ kind: "loseGold", amount: 5 }, loseGoldContext);
-    const goldUpdater = loseGoldContext.setRunGold.mock.calls[0][1];
-    expect(goldUpdater(20)).toBe(15);
-    expect(loseGoldResult.goldSound).toBe("spend");
+  it("gainXP awards run talent XP for the keyword", () => {
+    apply({ kind: "gainXP", keyword: "nature", amount: 1 });
+    expect(getRunProgressStoreView().runTalentXP.nature).toBeGreaterThanOrEqual(1);
+  });
 
-    const gainXpContext = minimalContext();
-    applyMysteryEffect({ kind: "gainXP", keyword: "physical", amount: 1 }, gainXpContext);
-    expect(gainXpContext.awardMysteryXP).toHaveBeenCalledWith(gainXpContext.draft, "physical", 1);
+  it("removeCard removes one deck card at random without opening a picker", () => {
+    setRunProgress({ runDeck: [slash] });
+    const result = apply({ kind: "removeCard" });
+    expect(result.followUp).toBeNull();
+    expect(getRunProgressStoreView().runDeck).toEqual([]);
+  });
 
-    const removeContext = minimalContext({ runDeck: [slash] });
-    applyMysteryEffect({ kind: "removeCard" }, removeContext);
-    expect(removeContext.setRunDeck).toHaveBeenCalledOnce();
+  it("gainTrinket appends unowned trinkets exactly once", () => {
+    apply({ kind: "gainTrinket", trinketId: "bone-charm" });
+    apply({ kind: "gainTrinket", trinketId: "bone-charm" });
+    expect(getRunProgressStoreView().runTrinkets).toEqual(["bone-charm"]);
+  });
 
-    const trinketContext = minimalContext();
-    applyMysteryEffect({ kind: "gainTrinket", trinketId: "bone-charm" }, trinketContext);
-    expect(trinketContext.setRunTrinkets).toHaveBeenCalledOnce();
-    const existingTrinketUpdater = trinketContext.setRunTrinkets.mock.calls[0][1];
-    expect(existingTrinketUpdater(["bone-charm"])).toEqual(["bone-charm"]);
+  it("gainRandomTrinket grants an unowned pick and records it", () => {
+    const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }, () => 0.5);
+    expect(result.followUp).toBeNull();
+    const granted = getRunSessionStoreView().mysteryGrantedTrinketIds;
+    expect(granted).toHaveLength(1);
+    expect(["bone-charm", "sin-eaters-lantern"]).toContain(granted[0]);
+    expect(getRunProgressStoreView().runTrinkets).toEqual(granted);
+  });
 
-    const randomTrinketContext = minimalContext();
-    applyMysteryEffect({ kind: "gainRandomTrinket" }, randomTrinketContext);
-    expect(randomTrinketContext.setRunTrinkets).toHaveBeenCalledOnce();
-    expect(randomTrinketContext.setMysteryGrantedTrinketIds).toHaveBeenCalledOnce();
-    const trinketUpdater = randomTrinketContext.setRunTrinkets.mock.calls[0][1];
-    const grantedUpdater = randomTrinketContext.setMysteryGrantedTrinketIds.mock.calls[0][1];
-    const grantedIds = grantedUpdater([]) as string[];
-    expect(grantedIds).toHaveLength(1);
-    expect(trinketUpdater([])).toEqual(grantedIds);
+  it("gainRandomTrinket falls back outside fromIds when every candidate is owned", () => {
+    setRunProgress({ runTrinkets: ["bone-charm", "sin-eaters-lantern"] });
+    const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }, () => 0.5);
+    expect(result.followUp).toBeNull();
+    const granted = getRunSessionStoreView().mysteryGrantedTrinketIds;
+    expect(granted).toHaveLength(1);
+    expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(granted[0]);
+  });
 
-    const constrainedTrinketContext = minimalContext();
-    applyMysteryEffect(
-      { kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] },
-      constrainedTrinketContext,
+  it("gainGeneratedGear adds the instance to the armory and records it", () => {
+    setRunProgress({ characterId: "knight" });
+    getRunSessionStoreView().setHasActiveRun(true);
+
+    apply({ kind: "gainGeneratedGear", baseItemId: "emerald-ring" });
+
+    const granted = getRunSessionStoreView().mysteryGrantedGearInstances;
+    expect(granted).toHaveLength(1);
+    expect(granted[0]!.definitionId).toMatch(/^emerald-ring-(basic|astral)$/);
+    expect(useGearStore.getState().inventories.knight.some((item) => item.instanceId === granted[0]!.instanceId)).toBe(
+      true,
     );
-    const constrainedUpdater = constrainedTrinketContext.setRunTrinkets.mock.calls[0][1];
-    expect(["bone-charm", "sin-eaters-lantern"]).toContain(constrainedUpdater([])[0]);
+  });
 
-    const ownedRandomContext = minimalContext();
-    ownedRandomContext.ownedTrinketIds = ["bone-charm", "sin-eaters-lantern"];
-    applyMysteryEffect(
-      { kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] },
-      ownedRandomContext,
-    );
-    const unownedUpdater = ownedRandomContext.setRunTrinkets.mock.calls[0][1];
-    expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(unownedUpdater([])[0]);
-
-    const gearContext = minimalContext();
-    applyMysteryEffect({ kind: "gainGeneratedGear", baseItemId: "emerald-ring" }, gearContext);
-    expect(gearContext.onAddGear).toHaveBeenCalledOnce();
-    expect(gearContext.setMysteryGrantedGearInstances).toHaveBeenCalledOnce();
-    const grantedGear = gearContext.onAddGear.mock.calls[0][0];
-    expect(grantedGear.definitionId).toMatch(/^emerald-ring-(basic|astral)$/);
-
-    const materialContext = minimalContext();
-    applyMysteryEffect({ kind: "gainMaterial", material: "wood", amount: 1 }, materialContext);
-    expect(materialContext.onAddMaterials).toHaveBeenCalledWith(expect.objectContaining({ wood: 1 }));
+  it("gainMaterial awards the material during the run", () => {
+    apply({ kind: "gainMaterial", material: "wood", amount: 1 });
+    expect(getRunProgressStoreView().materialInventory.wood).toBeGreaterThanOrEqual(1);
   });
 
   it("throws for unknown effect kinds", () => {
-    expect(() => applyMysteryEffect({ kind: "unknown-kind" } as unknown as MysteryEffect, minimalContext())).toThrow(
+    expect(() => applyMysteryEffect({ kind: "unknown-kind" } as unknown as MysteryEffect, makeContext())).toThrow(
       /Unhandled mystery effect kind/,
     );
   });
+});
 
-  it("chooseCard with archery tag offers only archery-tagged cards", () => {
-    const context = minimalContext();
-    applyMysteryEffect({ kind: "chooseCard", tag: "archery" }, context);
-
-    expect(context.setMysteryCardChoices).toHaveBeenCalledTimes(1);
-    const offered = context.setMysteryCardChoices.mock.calls[0][1];
+describe("chooseCard tag filtering", () => {
+  it("offers only cards matching the tag", () => {
+    apply({ kind: "chooseCard", tag: "archery" });
+    const offered = getRunSessionStoreView().mysteryCardChoices!;
     expect(offered.length).toBeGreaterThan(0);
     for (const card of offered) {
       const libraryCard = cardLibrary.find((c) => c.id === card.id);
@@ -145,27 +151,23 @@ describe("applyMysteryEffect", () => {
     }
   });
 
-  it("chooseCard without tag can offer non-archery cards", () => {
-    const context = minimalContext();
-    applyMysteryEffect({ kind: "chooseCard" }, context);
-    const offered = context.setMysteryCardChoices.mock.calls[0][1];
-    expect(offered.some((card: BattleCard) => !getCardKeywords(card).includes("archery"))).toBe(true);
+  it("can offer non-tagged cards when no tag is given", () => {
+    apply({ kind: "chooseCard" });
+    const offered = getRunSessionStoreView().mysteryCardChoices!;
+    expect(offered.some((card) => !getCardKeywords(card).includes("archery"))).toBe(true);
   });
 
-  it("chooseCard with unmatched tag falls back to the full offerable pool", () => {
+  it("falls back to the full offerable pool when the tag matches nothing", () => {
     const slashOnly = getOfferableCardPool().filter((card) => card.id === "slash");
     expect(slashOnly).toHaveLength(1);
     expect(getCardKeywords(slashOnly[0])).not.toContain("archery");
 
     const poolSpy = vi.spyOn(cardPools, "getOfferableCardPool").mockReturnValue(slashOnly);
     try {
-      const context = minimalContext();
-      applyMysteryEffect({ kind: "chooseCard", tag: "archery" }, context);
-
-      expect(context.setMysteryCardChoices).toHaveBeenCalledTimes(1);
-      const offered = context.setMysteryCardChoices.mock.calls[0][1];
+      apply({ kind: "chooseCard", tag: "archery" });
+      const offered = getRunSessionStoreView().mysteryCardChoices!;
       expect(offered.length).toBeGreaterThan(0);
-      expect(offered.every((card: BattleCard) => card.id === "slash")).toBe(true);
+      expect(offered.every((card) => card.id === "slash")).toBe(true);
     } finally {
       poolSpy.mockRestore();
     }

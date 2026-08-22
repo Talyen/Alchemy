@@ -1,6 +1,8 @@
 import "../../../../helpers/mock-audio";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
+import { awardRunEndMaterials, clearCombatState } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { addRunMaterialsEarned } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useRunProfileStore, resetAllTestStores } from "../../../../helpers/gameplay-store-test";
@@ -45,7 +47,7 @@ describe("createRunFlowHandlers victory paths", () => {
     });
     const herbsBefore = useRunProfileStore.getState().materialInventory.herbs;
 
-    const mats = dispatchRunSessionCommand(makeHandlers().awardRunEndMaterials);
+    const mats = dispatchRunSessionCommand(awardRunEndMaterials);
 
     expect(mats.herbs).toBe(4);
     expect(useRunProfileStore.getState().materialInventory.herbs).toBe(herbsBefore + 4);
@@ -56,7 +58,7 @@ describe("createRunFlowHandlers victory paths", () => {
     setRunProgress({ roomsEncountered: 2, currentAct: 1 });
     dispatchRunSessionCommand((draft) => addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5, herbs: 2 }));
 
-    dispatchRunSessionCommand(makeHandlers().awardRunEndMaterials);
+    dispatchRunSessionCommand(awardRunEndMaterials);
 
     expect(getRunSessionStoreView().runEndMaterials.wood).toBe(5);
     expect(getRunSessionStoreView().runEndMaterials.herbs).toBe(2);
@@ -66,7 +68,7 @@ describe("createRunFlowHandlers victory paths", () => {
   it("awardRunEndMaterials adds no homestead bonus with default effects", () => {
     setRunProgress({ roomsEncountered: 6, currentAct: 2 });
 
-    const mats = dispatchRunSessionCommand(makeHandlers().awardRunEndMaterials);
+    const mats = dispatchRunSessionCommand(awardRunEndMaterials);
 
     expect(mats).toEqual(emptyInventory());
     expect(getRunSessionStoreView().runEndMaterials).toEqual(emptyInventory());
@@ -79,7 +81,7 @@ describe("createRunFlowHandlers victory paths", () => {
     });
     dispatchRunSessionCommand((draft) => addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 }));
 
-    const materials = dispatchRunSessionCommand(makeHandlers().awardRunEndMaterials);
+    const materials = dispatchRunSessionCommand(awardRunEndMaterials);
 
     expect(materials).toEqual(emptyInventory());
     expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
@@ -87,7 +89,7 @@ describe("createRunFlowHandlers victory paths", () => {
 
   it("clearCombatState clears battle flag", () => {
     getBattleStoreView().setHasActiveBattle(true);
-    dispatchRunSessionCommand(makeHandlers().clearCombatState);
+    dispatchRunSessionCommand(clearCombatState);
     expect(getBattleStoreView().hasActiveBattle).toBe(false);
   });
 
@@ -97,9 +99,9 @@ describe("createRunFlowHandlers victory paths", () => {
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
       expect.objectContaining({
-        awardRunEndMaterials: handlers.awardRunEndMaterials,
+        awardRunEndMaterials,
         finalizeRunXP: expect.any(Function),
-        clearCombatState: handlers.clearCombatState,
+        clearCombatState,
       }),
     );
   });
@@ -133,9 +135,9 @@ describe("createRunFlowHandlers victory paths", () => {
     handlers.handleAbandonRun();
     expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
       expect.objectContaining({
-        awardRunEndMaterials: handlers.awardRunEndMaterials,
+        awardRunEndMaterials,
         finalizeRunXP: expect.any(Function),
-        clearCombatState: handlers.clearCombatState,
+        clearCombatState,
       }),
     );
     expect(transition).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
@@ -243,7 +245,7 @@ describe("createRunFlowHandlers victory paths", () => {
     const commitWildwoodVictory = vi.fn((draftOrResult: unknown) => {
       receivedDraft = isDraft(draftOrResult);
     });
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ commitWildwoodVictory }));
+    const handlers = createVictoryHandlers(makeFlowHandlerDeps({ commitWildwoodVictory }));
 
     handlers.commitVictoryResult();
 
@@ -280,7 +282,7 @@ describe("createRunFlowHandlers victory paths", () => {
       },
     });
 
-    createRunFlowHandlers(makeFlowHandlerDeps()).commitVictoryResult();
+    createVictoryHandlers(makeFlowHandlerDeps()).commitVictoryResult();
 
     expect(playGoldGain).toHaveBeenCalledOnce();
   });

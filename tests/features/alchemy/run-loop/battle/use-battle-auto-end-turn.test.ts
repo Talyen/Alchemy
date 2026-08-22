@@ -38,7 +38,6 @@ describe("useBattleAutoEndTurn", () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.restoreAllMocks();
   });
 
   it("schedules end turn when no card is playable", () => {

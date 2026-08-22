@@ -19,7 +19,6 @@ interface VictoryGoldInput {
 }
 
 interface VictoryGoldResult {
-  unmultipliedTotal: number;
   earnedBeforeMultiplier: number;
   persistedRunGold: number;
 }
@@ -99,11 +98,12 @@ export function computeVictoryGold({
   talentGoldPerCombat,
   goldMultiplier,
 }: VictoryGoldInput): VictoryGoldResult {
-  const unmultipliedTotal =
-    battleState.gold + gold + sumGoldBonuses(eliteBonus + bossBonus, generousBonus, talentGoldPerCombat, runTrinkets);
-  const earnedBeforeMultiplier = unmultipliedTotal - runGold;
+  const earnedBeforeMultiplier =
+    battleState.gold +
+    gold +
+    sumGoldBonuses(eliteBonus + bossBonus, generousBonus, talentGoldPerCombat, runTrinkets) -
+    runGold;
   return {
-    unmultipliedTotal,
     earnedBeforeMultiplier,
     persistedRunGold: runGold + Math.floor(earnedBeforeMultiplier * goldMultiplier),
   };

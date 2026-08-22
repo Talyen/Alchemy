@@ -1,10 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { animateParticleLoop } from "@/lib/animation/particle-loop";
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 describe("animateParticleLoop", () => {
   it("cancels the pending frame and does not call onComplete after stop", () => {

@@ -2,14 +2,6 @@
 import { z } from "zod";
 import type { BattleCardEffect } from "../types";
 
-export const chanceEffectDefinition = {
-  kind: "chance" as const,
-};
-
-export const repeatOverTurnsEffectDefinition = {
-  kind: "repeat-over-turns" as const,
-};
-
 export function createChanceEffectSchema(getEffectSchema: () => z.ZodType<BattleCardEffect>) {
   return z.object({
     kind: z.literal("chance"),

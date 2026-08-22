@@ -1,11 +1,7 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects } from "../../fixtures/default-battle-state";
 import { dealDamage, makeEffect, makeTestCard } from "../../fixtures/battle";
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 describe("computeBaseDamage — bleed damage", () => {
   it("applies bleed desperate multiplier when player below half health", () => {

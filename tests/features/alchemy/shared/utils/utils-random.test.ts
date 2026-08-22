@@ -9,7 +9,6 @@ describe("sampleItems", () => {
     const items = [1, 2, 3, 4, 5];
     const result = sampleItems(items, 3, testRng);
     expect(result).toHaveLength(3);
-    vi.restoreAllMocks();
   });
 
   it("returns all items when count exceeds length", () => {

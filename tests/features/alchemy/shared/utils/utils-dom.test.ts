@@ -76,7 +76,6 @@ describe("getCardRect", () => {
 
 describe("tilt geometry", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 

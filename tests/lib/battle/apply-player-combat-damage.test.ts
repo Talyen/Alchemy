@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
+import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 import { applyPlayerCombatDamage } from "@/lib/battle/types";
 import type { BattleState } from "@/lib/battle/types";
 import { DEATHS_DOOR_GRACE_TURNS } from "@/lib/game-constants";
@@ -119,6 +120,19 @@ describe("applyPlayerCombatDamage", () => {
     });
     const result = applyPlayerCombatDamage(state, 5);
     expect(result.playerHealth).toBe(0);
+    expect(result.deathsDoorActive).toBe(false);
+  });
+
+  it("phoenix feather restores 30% max health and clears the feather instead of dying", () => {
+    const state = patchBattleState({
+      playerHealth: 5,
+      playerMaxHealth: 30,
+      playerStatuses: defaultPlayerStatusValues({ phoenixFeather: 1 }),
+    });
+    const result = applyPlayerCombatDamage(state, 20);
+    expect(result.playerHealth).toBe(9);
+    expect(result.playerStatuses.phoenixFeather).toBe(0);
+    expect(result.deathsDoorUsed).toBe(false);
     expect(result.deathsDoorActive).toBe(false);
   });
 });

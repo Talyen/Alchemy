@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
 import * as config from "@/features/alchemy/shared/config";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
@@ -18,10 +18,6 @@ import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 
 beforeEach(() => {
   resetTransientRunUi();
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
 });
 
 describe("run destination controller actions", () => {

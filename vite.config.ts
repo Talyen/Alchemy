@@ -131,6 +131,7 @@ export default defineConfig(({ mode, command }) => {
     test: {
       include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
       setupFiles: ["tests/setup.ts"],
+      restoreMocks: true,
       deps: {
         optimizer: {
           ssr: {

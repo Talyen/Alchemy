@@ -1,12 +1,8 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { defaultGearEffects } from "@/lib/gear";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 describe("dealDamageToEnemy — basic physical damage", () => {
   it("deals base damage to enemy health", () => {

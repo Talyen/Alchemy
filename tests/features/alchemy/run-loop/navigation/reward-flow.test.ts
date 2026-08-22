@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   applyLabyrinthRewardMaterialModifiers,
   computeVictoryGold,
@@ -51,8 +51,9 @@ describe("reward flow orchestration", () => {
   });
 
   describe("computeVictoryGold unmultiplied total", () => {
+    // Identity params (runGold 0, multiplier 1) make persistedRunGold equal the unmultiplied total.
     function unmultipliedTotal(input: Omit<Parameters<typeof computeVictoryGold>[0], "runGold" | "goldMultiplier">) {
-      return computeVictoryGold({ ...input, runGold: 0, goldMultiplier: 1 }).unmultipliedTotal;
+      return computeVictoryGold({ ...input, runGold: 0, goldMultiplier: 1 }).persistedRunGold;
     }
 
     it("sums all gold sources", () => {
@@ -364,7 +365,6 @@ describe("reward flow orchestration", () => {
         talentGoldPerCombat: 0,
         goldMultiplier: 2,
       });
-      expect(result.unmultipliedTotal).toBe(35);
       expect(result.earnedBeforeMultiplier).toBe(25);
       expect(result.persistedRunGold).toBe(10 + Math.floor(25 * 2));
     });
@@ -372,48 +372,45 @@ describe("reward flow orchestration", () => {
 
   describe("executeRewardRouteTransition", () => {
     const materials = emptyInventory();
-    const nextRewardState = createEmptyRewardState(["Campfire"]);
 
     function makeHandlers() {
       return makeRewardRouteDeps();
     }
 
-    it("routes companion rewards back to the rewards screen", () => {
+    it("routes companion rewards back to the rewards screen with the settle hook", () => {
       const handlers = makeHandlers();
-      executeRewardRouteTransition("companion-reward", materials, nextRewardState, true, handlers);
-      expect(handlers.setCompanionRewardCards).not.toHaveBeenCalled();
-      expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, expect.any(Function));
-      const onCommit = vi.mocked(handlers.navigateTo).mock.calls[0]![1] as () => void;
-      onCommit();
-      expect(handlers.setRewardState).toHaveBeenCalledWith(nextRewardState);
-      expect(handlers.setCompanionRewardCards).toHaveBeenCalledWith(null);
+      executeRewardRouteTransition("companion-reward", materials, handlers);
+      expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, handlers.settleClaimSurface);
     });
 
     it("routes labyrinth map rewards to the labyrinth screen", () => {
       const handlers = makeHandlers();
-      executeRewardRouteTransition("labyrinth-map", materials, nextRewardState, false, handlers);
+      executeRewardRouteTransition("labyrinth-map", materials, handlers);
       expect(handlers.labyrinthClearNode).toHaveBeenCalledOnce();
-      expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP, expect.any(Function));
+      expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP, handlers.settleClaimSurface);
     });
 
-    it("routes wildwood victory to completeRunVictory", () => {
-      const handlers = makeHandlers();
-      executeRewardRouteTransition("wildwood-victory", materials, nextRewardState, false, handlers);
-      expect(handlers.completeRunVictory).toHaveBeenCalledWith(materials, expect.any(Function));
-      expect(handlers.navigateTo).not.toHaveBeenCalled();
+    it("routes both victory routes through completeRunVictory", () => {
+      for (const route of ["labyrinth-victory", "wildwood-victory"] as const) {
+        const handlers = makeHandlers();
+        executeRewardRouteTransition(route, materials, handlers);
+        expect(handlers.completeRunVictory).toHaveBeenCalledWith(materials, handlers.settleClaimSurface);
+        expect(handlers.navigateTo).not.toHaveBeenCalled();
+      }
     });
 
-    it("routes act completion without navigation", () => {
+    it("routes act completion without navigation, releasing only the claim", () => {
       const handlers = makeHandlers();
-      executeRewardRouteTransition("act-complete", materials, nextRewardState, false, handlers);
-      expect(handlers.handleActComplete).toHaveBeenCalledWith(materials);
+      executeRewardRouteTransition("act-complete", materials, handlers);
+      expect(handlers.handleActComplete).toHaveBeenCalledWith(materials, handlers.releaseClaim);
+      expect(handlers.settleClaimSurface).not.toHaveBeenCalled();
       expect(handlers.navigateTo).not.toHaveBeenCalled();
     });
 
     it("routes campaign rewards to destination", () => {
       const handlers = makeHandlers();
-      executeRewardRouteTransition("destination", materials, nextRewardState, false, handlers);
-      expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DESTINATION, expect.any(Function));
+      executeRewardRouteTransition("destination", materials, handlers);
+      expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DESTINATION, handlers.settleClaimSurface);
     });
   });
 });

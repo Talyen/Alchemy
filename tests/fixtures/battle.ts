@@ -32,6 +32,13 @@ export function makeState(overrides: Parameters<typeof makeTestBattleState>[0] =
   return makeTestBattleState({ mana: 10, ...overrides });
 }
 
+const chanceFailRng = () => 0.99;
+
+/** makeState whose rng always rolls 0.99, so percent chances never trigger. */
+export function makeStateWithFailedRolls(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
+  return makeState({ rng: chanceFailRng, ...overrides });
+}
+
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
 
 /**

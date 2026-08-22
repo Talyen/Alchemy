@@ -16,7 +16,6 @@ import {
 } from "@/lib/game-constants";
 import { getGenerousGoldBonus } from "./reward-flow";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { emptyInventory } from "@/lib/homestead/inventory";
 import type { RewardState } from "@/lib/active-run-session";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import type { Destination } from "@/lib/routing";
@@ -44,7 +43,6 @@ interface VictoryGoldRoll {
   eliteBonus: number;
   bossBonus: number;
   generousBonus: number;
-  baseGold: number;
 }
 
 function rollVictoryGold(
@@ -73,9 +71,10 @@ function rollVictoryGold(
     battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
   const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
 
-  return { gold, eliteBonus, bossBonus, generousBonus, baseGold };
+  return { gold, eliteBonus, bossBonus, generousBonus };
 }
 
+/** Builds the RewardState handed to the rewards screen from rolled victory gold/materials. */
 export function computeVictoryRewardState(
   input: {
     characterId: CharacterId;
@@ -149,22 +148,15 @@ export function computeVictoryRewards(
   if (input.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
     const goldEarned = Math.max(0, input.battleState.gold - input.runGold);
     return {
-      newGold: input.runGold + goldEarned,
       rewardState: createWildwoodRewardState(input.runDeck, rng, input.homesteadEffects.gearAstralChanceBonus),
       labyrinthRewardModifiers,
-      destinations: [],
-      materials: emptyInventory(),
       goldEarned,
       playerHealth: input.battleState.playerHealth,
       maxHealthDelta: talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0,
-      baseGold: 0,
-      eliteBonus: 0,
-      bossBonus: 0,
-      generousBonus: 0,
       destinationOfferState: input.destinationOfferState,
     };
   }
-  const { gold, eliteBonus, bossBonus, generousBonus, baseGold } = rollVictoryGold(
+  const { gold, eliteBonus, bossBonus, generousBonus } = rollVictoryGold(
     input.battleState,
     talentEffects,
     labyrinthRewardModifiers,
@@ -231,18 +223,11 @@ export function computeVictoryRewards(
   );
 
   return {
-    newGold,
     rewardState,
     labyrinthRewardModifiers,
-    destinations,
-    materials,
     goldEarned: goldResult.earnedBeforeMultiplier,
     playerHealth,
     maxHealthDelta,
-    baseGold,
-    eliteBonus,
-    bossBonus,
-    generousBonus,
     destinationOfferState: sampled.offerState,
   };
 }

@@ -10,7 +10,7 @@ import {
   MUSIC_KEYS,
 } from "./game-constants";
 import { audioState } from "./audio-state";
-import { pickRandom } from "./utils";
+import { clamp, pickRandom } from "./utils";
 
 const musicBase = import.meta.env.BASE_URL + MUSIC_BASE_PATH;
 
@@ -81,6 +81,45 @@ function playElement(el: HTMLAudioElement) {
   });
 }
 
+const RAMP_TICK_MS = 30;
+
+/**
+ * Single volume-ramp pump shared by fade-in and crossfade. Runs a short interval
+ * so interpolation continues when animation frames are paused, aborts when a
+ * newer music transition takes precedence, and completes once t reaches 1.
+ */
+function rampVolume({
+  transitionToken,
+  delayMs = 0,
+  durationMs,
+  apply,
+  onComplete,
+}: {
+  transitionToken: number;
+  durationMs: number;
+  delayMs?: number;
+  apply: (t: number) => void;
+  onComplete?: () => void;
+}): void {
+  const startTime = performance.now();
+
+  const timer = setInterval(() => {
+    if (transitionToken !== musicTransitionToken) {
+      clearInterval(timer);
+      return;
+    }
+
+    const elapsed = performance.now() - startTime;
+    if (elapsed < delayMs) return;
+    const t = Math.min(1, (elapsed - delayMs) / durationMs);
+    apply(t);
+    if (t >= 1) {
+      clearInterval(timer);
+      onComplete?.();
+    }
+  }, RAMP_TICK_MS);
+}
+
 // Applies all active volume layers to a streaming music element.
 // Volume cascaded: state-music-volume * state-master-volume * constant-music-master-gain.
 export function applyMusicVolume(
@@ -89,7 +128,16 @@ export function applyMusicVolume(
   fadeProgress = 1,
 ) {
   const boost = key && BOSS_MUSIC_KEYS.has(key) ? BOSS_MUSIC_VOLUME_BOOST : 1;
-  el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * fadeProgress * boost;
+  el.volume = clamp(
+    audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * fadeProgress * boost,
+    MUSIC_CONFIG.VOLUME_MIN,
+    1,
+  );
+}
+
+// True when no music element is live or it is paused (autoplay gate).
+export function isMusicPaused(): boolean {
+  return !audioState.currentMusic || audioState.currentMusic.paused;
 }
 
 // Stops and clears the current HTML audio element, then returns an element for
@@ -128,29 +176,20 @@ function replaceCurrentTrack(key: string, fadeProgress: number): HTMLAudioElemen
 }
 
 // Starts a keyed track with the standard delayed fade-in used for scene transitions.
-// Uses a short interval so volume interpolation can continue when animation frames are paused.
 function startTrack(key: string, transitionToken: number) {
   const el = replaceCurrentTrack(key, MUSIC_CONFIG.VOLUME_MIN);
   if (!el) return;
-  const startTime = performance.now();
 
-  const timer = setInterval(() => {
-    // If a newer music transition has taken precedence, abort the current animation loop.
-    if (transitionToken !== musicTransitionToken) {
-      clearInterval(timer);
-      return;
-    }
-
-    const elapsed = performance.now() - startTime;
-    if (elapsed < FADE_IN_DELAY) return;
-    const t = Math.min(1, (elapsed - FADE_IN_DELAY) / FADE_IN_DURATION);
-    if (audioState.currentMusic === el) {
-      applyMusicVolume(el, key, t);
-    }
-    if (t >= 1) {
-      clearInterval(timer);
-    }
-  }, 30);
+  rampVolume({
+    transitionToken,
+    delayMs: FADE_IN_DELAY,
+    durationMs: FADE_IN_DURATION,
+    apply: (t) => {
+      if (audioState.currentMusic === el) {
+        applyMusicVolume(el, key, t);
+      }
+    },
+  });
 }
 
 // Starts a keyed music group immediately (no crossfade), choosing one registered track
@@ -162,31 +201,23 @@ export function playMusicImmediate(key: string) {
 }
 
 // Handles smooth fade-out of the old track, then starts (or resumes) the new keyed track.
-// Checks the musicTransitionToken to abort if a new transition has been scheduled.
 function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, transitionToken: number) {
   const oldVol = oldTrack.volume;
-  const startTime = performance.now();
 
-  const timer = setInterval(() => {
-    // If a newer music transition has taken precedence, abort the current animation loop.
-    if (transitionToken !== musicTransitionToken) {
-      clearInterval(timer);
-      return;
-    }
-
-    const elapsed = performance.now() - startTime;
-    const t = Math.min(1, elapsed / FADE_OUT_DURATION);
-    oldTrack.volume = Math.max(MUSIC_CONFIG.VOLUME_MIN, oldVol * (1 - t));
-
-    if (t >= 1) {
-      clearInterval(timer);
+  rampVolume({
+    transitionToken,
+    durationMs: FADE_OUT_DURATION,
+    apply: (t) => {
+      oldTrack.volume = Math.max(MUSIC_CONFIG.VOLUME_MIN, oldVol * (1 - t));
+    },
+    onComplete: () => {
       oldTrack.pause();
       if (audioState.currentMusic === oldTrack) {
         audioState.currentMusic = null;
       }
       startTrack(newKey, transitionToken);
-    }
-  }, 30);
+    },
+  });
 }
 
 export function playMusic(key: string) {

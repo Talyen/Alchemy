@@ -64,14 +64,12 @@ const futureSaveCases = [
 
 describe("storage io", () => {
   beforeEach(async () => {
-    vi.restoreAllMocks();
     await resetStorageIoForTests();
     Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
     setupMockWindowBrowser(mockLocalStorage);
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
     teardownMockWindow();
   });
 

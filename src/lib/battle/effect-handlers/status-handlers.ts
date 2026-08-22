@@ -6,7 +6,7 @@ import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
-import { harmfulPlayerStatusIds, type EnemyStatusId } from "@/lib/game-data";
+import { harmfulPlayerStatusIds, type EnemyStatusDamageId, type EnemyStatusId } from "@/lib/game-data";
 import { dealPlayerTypedHit } from "../player-typed-hit";
 
 function resolveEnemyStatusCcTrigger(
@@ -18,6 +18,11 @@ function resolveEnemyStatusCcTrigger(
   if (status === "freeze") return tryTriggerEnemyFreeze(preHitState, nextState, combatTexts);
   if (status === "stun") return resolveStunTrigger(nextState, combatTexts);
   return nextState;
+}
+
+/** Clears every stack of one player status, preserving the rest of the status sheet. */
+function zeroPlayerStatus(state: BattleState, status: EnemyStatusDamageId): BattleState {
+  return { ...state, playerStatuses: { ...state.playerStatuses, [status]: 0 } };
 }
 
 export const applyPlayerStatusEffectHandler: EffectHandler = (
@@ -64,11 +69,7 @@ export const applyRemoveHarmfulStatusEffect: EffectHandler = (state, _card, effe
 export const applyRemovePlayerStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
   if (effect.kind !== "remove-player-status") return state;
   if (state.playerStatuses[effect.status] <= 0) return state;
-  const nextState: BattleState = {
-    ...state,
-    playerStatuses: { ...state.playerStatuses, [effect.status]: 0 },
-  };
-  return applyCleanseHeals(nextState, combatTexts);
+  return applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
 };
 
 export const applyMultiplyEnemyStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
@@ -99,14 +100,10 @@ export const applyCleansePlayerStatusToDamageEffect: EffectHandler = (
   const stacks = state.playerStatuses[effect.status];
   if (stacks <= 0) return state;
 
-  let nextState: BattleState = {
-    ...state,
-    playerStatuses: { ...state.playerStatuses, [effect.status]: 0 },
-  };
-  nextState = applyCleanseHeals(nextState, combatTexts);
+  const cleansed = applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
 
   return dealDamageToEnemy(
-    nextState,
+    cleansed,
     card,
     { kind: "damage", damageType: effect.damageType, amount: stacks },
     combatTexts,

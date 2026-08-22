@@ -22,7 +22,6 @@ import type { createBattleSession } from "@/features/alchemy/run-loop/battle/bat
 beforeEach(() => {
   resetRunBattleSlice();
   resetRunProgressSlice();
-  vi.restoreAllMocks();
 });
 
 describe("createBattleInit", () => {

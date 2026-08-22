@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { applyPlayerCombatDamage, isPlayerDefeated } from "@/lib/battle/types";
+import { isPlayerDefeated } from "@/lib/battle/types";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { blockDeck, makeState, makeTestCard, statusDeck } from "../../fixtures/battle";
 import { defaultPlayerStatusValues, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
@@ -85,7 +85,7 @@ describe("applyCardEffects", () => {
   it("guarantees a crit on cleanse-player-status-to-damage and consumes the flag", () => {
     const card = makeTestCard({
       id: "exorcism",
-      effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy", removeAll: true }],
+      effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
     });
     const state = makeState({
       enemyHealth: 30,
@@ -97,21 +97,6 @@ describe("applyCardEffects", () => {
     expect(result.state.enemyHealth).toBe(22);
     expect(result.state.flags.nextHitCrit).toBe(false);
     expect(result.state.playerStatuses.burn).toBe(0);
-  });
-});
-
-describe("applyPlayerCombatDamage — phoenixFeather", () => {
-  it("restores 30% max health and clears feather instead of dying", () => {
-    const state = makeState({
-      playerHealth: 5,
-      playerMaxHealth: 30,
-      playerStatuses: defaultPlayerStatusValues({ phoenixFeather: 1 }),
-    });
-    const result = applyPlayerCombatDamage(state, 20);
-    expect(result.playerHealth).toBe(9);
-    expect(result.playerStatuses.phoenixFeather).toBe(0);
-    expect(result.deathsDoorUsed).toBe(false);
-    expect(result.deathsDoorActive).toBe(false);
   });
 });
 

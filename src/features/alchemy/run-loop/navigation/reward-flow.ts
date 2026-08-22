@@ -2,7 +2,6 @@
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { cardLibrary, selectRewardCards, trinketLibrary, type BattleCard } from "@/lib/game-data";
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
-import { emptyInventory } from "@/lib/homestead/inventory";
 import { pickRandom, sampleItems } from "@/lib/utils";
 import { CONSTANTS } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
@@ -81,15 +80,8 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
       selectedRewardType: rewardState.rewardType,
       materials: rewardState.materials,
       nextRewardState: {
+        ...createNextRewardState(rewardState),
         choices: companionRewardCards,
-        gold: 0,
-        materials: emptyInventory(),
-        selectedId: null,
-        destinations: rewardState.destinations,
-        rewardType: "card",
-        selectedBossId: rewardState.selectedBossId,
-        lastVictoryEnemyType: rewardState.lastVictoryEnemyType,
-        lastVictoryContentSystem: rewardState.lastVictoryContentSystem,
       },
       clearCompanionRewardCards: true,
       route: CONSTANTS.REWARD_ROUTES.COMPANION_REWARD,

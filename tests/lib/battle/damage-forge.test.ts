@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import {
   defaultPlayerStatusValues,
@@ -7,10 +7,6 @@ import {
   defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
 import { dealDamage, makeEffect, makeTestCard } from "../../fixtures/battle";
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 describe("computeBaseDamage — forge bonus", () => {
   it("adds forge bonus to physical damage", () => {

@@ -5,7 +5,6 @@ import { createDefeatHandlers } from "./run-flow-defeat";
 import { createProgressionHandlers } from "./run-flow-progression";
 import { createRewardHandlers } from "./run-flow-rewards";
 import { createDestinationScreenHandlers } from "./run-flow-destination-screen";
-import { awardRunEndMaterials, clearCombatState } from "./run-flow-session-helpers";
 
 export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   const victory = createVictoryHandlers(deps);
@@ -20,9 +19,6 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   });
 
   return {
-    clearCombatState,
-    awardRunEndMaterials,
-    commitVictoryResult: victory.commitVictoryResult,
     handleBattleVictory: victory.handleBattleVictory,
     handleBattleDefeat: defeat.handleBattleDefeat,
     handleAbandonRun: defeat.handleAbandonRun,
@@ -32,7 +28,6 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     handleDestinationChoice: destination.handleDestinationChoice,
     endLabyrinthRun: defeat.endLabyrinthRun,
     handleActComplete: progression.handleActComplete,
-    completeRunVictory: defeat.completeRunVictory,
     advanceToNextDestination: progression.advanceToNextDestination,
     returnToCurrentDestination: progression.returnToCurrentDestination,
     handleCampfireContinue: destination.handleCampfireContinue,

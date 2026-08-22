@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   computeVictoryRewardState,
   computeVictoryRewards,
@@ -69,10 +69,6 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
 // Base gold roll is inline in rollVictoryGold: floor(rng() * 21 + 10) over [10, 30].
 // 0.25 yields the deterministic 15 base gold the gold assertions below rely on.
 const testRng = () => 0.25;
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
 
 describe("computeVictoryRewardState", () => {
   it("creates a gear boss reward for boss enemies", () => {
@@ -198,9 +194,8 @@ describe("computeVictoryRewards", () => {
   it("awards no gold or materials for Wildwood Draft victories", () => {
     const result = computeVictoryRewards(baseInput({ contentSystemType: "wildwood", runGold: 7 }), () => 0.25);
 
-    expect(result.newGold).toBe(7);
     expect(result.goldEarned).toBe(0);
-    expect(result.materials).toEqual(emptyInventory());
+    expect(result.rewardState.materials).toEqual(emptyInventory());
     expect(result.rewardState.gold).toBe(0);
     expect(result.rewardState.choices).toHaveLength(3);
   });
@@ -216,9 +211,7 @@ describe("computeVictoryRewards", () => {
     );
 
     expect(result.goldEarned).toBe(5);
-    expect(result.newGold).toBe(15);
-    expect(result.baseGold).toBe(0);
-    expect(result.materials).toEqual(emptyInventory());
+    expect(result.rewardState.materials).toEqual(emptyInventory());
   });
 
   it("computes combat victory rewards for normal enemy", () => {
@@ -227,8 +220,6 @@ describe("computeVictoryRewards", () => {
     expect(result.rewardState.rewardType).toBe("card");
     expect(result.playerHealth).toBe(30);
     expect(result.maxHealthDelta).toBe(0);
-    expect(result.bossBonus).toBe(0);
-    expect(result.eliteBonus).toBe(0);
   });
 
   it("applies elite gold bonus for elite enemies", () => {
@@ -238,7 +229,7 @@ describe("computeVictoryRewards", () => {
       }),
       () => 0.25,
     );
-    expect(result.eliteBonus).toBe(4);
+    // Base roll 15 + elite bonus 4.
     expect(result.goldEarned).toBe(19);
   });
 
@@ -267,7 +258,6 @@ describe("computeVictoryRewards", () => {
       testRng,
     );
     expect(mimic.goldEarned).toBeGreaterThan(normal.goldEarned);
-    expect(mimic.eliteBonus).toBeGreaterThan(normal.eliteBonus);
     expect(mimic.goldEarned).toBeCloseTo(normal.goldEarned * 2, -1);
   });
 
@@ -278,7 +268,7 @@ describe("computeVictoryRewards", () => {
       }),
       testRng,
     );
-    expect(result.bossBonus).toBe(7);
+    // Base roll 15 + boss bonus 7.
     expect(result.goldEarned).toBe(22);
     expect(result.rewardState.rewardType).toBe("gear");
   });
@@ -291,7 +281,7 @@ describe("computeVictoryRewards", () => {
       }),
       testRng,
     );
-    expect(result.generousBonus).toBe(7);
+    // Base roll 15 + generous bonus 7.
     expect(result.goldEarned).toBe(22);
   });
 
@@ -303,7 +293,7 @@ describe("computeVictoryRewards", () => {
       }),
       testRng,
     );
-    expect(result.materials.wood).toBeGreaterThanOrEqual(1);
+    expect(result.rewardState.materials.wood).toBeGreaterThanOrEqual(1);
   });
 
   it("awards trinket rewards for elite combat victories", () => {
@@ -371,32 +361,25 @@ describe("computeVictoryRewards", () => {
   it("computes destinations via getAvailableDestinations", () => {
     const getAvailableDestinations = vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]);
     const result = computeVictoryRewards(baseInput({ getAvailableDestinations }), testRng);
+    // Persisted gold: runGold 5 + earned 15.
     expect(getAvailableDestinations).toHaveBeenCalledWith({
       currentHealth: 30,
-      currentGold: result.newGold,
+      currentGold: 20,
       destinationIndexInAct: 2,
       maxHealth: 30,
     });
-    expect(result.destinations).toEqual(["Normal Combat", "Campfire", "Mystery"]);
-    expect(result.newGold).toBeGreaterThan(5);
+    expect(result.rewardState.destinations).toEqual(["Normal Combat", "Campfire", "Mystery"]);
   });
 });
 
 describe("commitVictoryRewards", () => {
   function victoryResult(overrides: Partial<VictoryRewardsResult> = {}): VictoryRewardsResult {
     return {
-      newGold: 25,
       goldEarned: 20,
       rewardState: createEmptyRewardState(),
       labyrinthRewardModifiers: [],
-      destinations: ["Normal Combat"],
-      materials: emptyInventory(),
       playerHealth: 30,
       maxHealthDelta: 0,
-      baseGold: 10,
-      eliteBonus: 0,
-      bossBonus: 0,
-      generousBonus: 0,
       destinationOfferState: { lastOfferedDestinations: [], roundsSinceOffered: {} },
       ...overrides,
     };
@@ -419,13 +402,13 @@ describe("commitVictoryRewards", () => {
   });
 
   it("reports no gold gain when gold did not increase", () => {
-    expect(commit(victoryResult({ newGold: 5, goldEarned: 0 }))).toBe(false);
+    expect(commit(victoryResult({ goldEarned: 0 }))).toBe(false);
   });
 
   it("reports gold gain when earned gold matches battle gold", () => {
     expect(
       commit(
-        victoryResult({ newGold: 15, goldEarned: 5 }),
+        victoryResult({ goldEarned: 5 }),
         commitDeps({ battleState: baseBattleState({ gold: 15, pendingMaterials: emptyInventory() }) }),
       ),
     ).toBe(true);

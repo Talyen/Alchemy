@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import "../../../../helpers/mock-audio";
+import "../../../../helpers/mock-flush-save";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   restoreRun,
   snapshotRun,
@@ -20,15 +22,6 @@ const syncRunMaxHealthFromGearMutation = createRunSessionCommand(mutateRunMaxHea
 const applyRunStartSnapshot = createRunSessionCommand(mutateRunStartSnapshot);
 const finalizeRunXP = createRunSessionCommand(mutateFinalizeRunXP);
 const unlockAllTalents = createRunSessionCommand(mutateUnlockAllTalents);
-
-vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({
-  flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("@/lib/audio", () => ({
-  playDefeat: vi.fn(),
-  stopAllSfx: vi.fn(),
-}));
 
 import {
   getNavigationStoreView,

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { startBackgroundParticles } from "@/lib/animation/background-particles";
 
 let resizeObserverCallback: ResizeObserverCallback | null = null;
@@ -18,10 +18,6 @@ beforeEach(() => {
   vi.stubGlobal("ResizeObserver", MockResizeObserver);
   vi.stubGlobal("devicePixelRatio", 1);
   vi.spyOn(document, "hasFocus").mockReturnValue(true);
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
 });
 
 function makeMockCanvas(

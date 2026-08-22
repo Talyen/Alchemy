@@ -2,13 +2,12 @@
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { makeTestBattleState, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
+import { makeState as makeSharedState, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 
-function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
+function makeState(overrides: Parameters<typeof makeSharedState>[0] = {}) {
   const enemyHealth = overrides.enemyHealth ?? 30;
-  return makeTestBattleState({
-    mana: 10,
+  return makeSharedState({
     enemyHealth,
     enemyMaxHealth: overrides.enemyMaxHealth ?? enemyHealth,
     ...overrides,

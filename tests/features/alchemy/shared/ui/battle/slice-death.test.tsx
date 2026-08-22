@@ -20,7 +20,6 @@ describe("SliceDeath", () => {
 
   afterEach(() => {
     cleanup();
-    vi.restoreAllMocks();
   });
 
   it("does not play the slice cue when animation is disabled", () => {

@@ -86,8 +86,9 @@ export function serializePendingReward(
   return { ...shared, rewardType: "card", choiceIds: rewardState.choices.map((choice) => choice.id) };
 }
 
-export function restorePendingReward(persisted: PersistedPendingReward): RewardState | null {
-  const shared = {
+/** Empty reward state carrying the persisted shared fields (selection, gold, materials, victory context). */
+function restoreSharedRewardFields(persisted: PersistedPendingReward): RewardState {
+  return {
     ...createEmptyRewardState(filterValidDestinations(persisted.destinations)),
     selectedId: persisted.selectedId,
     gold: persisted.gold,
@@ -96,6 +97,10 @@ export function restorePendingReward(persisted: PersistedPendingReward): RewardS
     lastVictoryEnemyType: persisted.lastVictoryEnemyType,
     lastVictoryContentSystem: persisted.lastVictoryContentSystem,
   };
+}
+
+export function restorePendingReward(persisted: PersistedPendingReward): RewardState | null {
+  const shared = restoreSharedRewardFields(persisted);
 
   if (persisted.rewardType === "gear") {
     const choices = resolveGearChoices(persisted.gearChoices);
@@ -131,18 +136,8 @@ export function restorePendingRewardBundle(persisted: PersistedPendingReward): R
   // A save can be taken after the normal reward is claimed but before the
   // companion choices are promoted to rewardState. Preserve the shared reward
   // metadata so the companion claim remains valid after resume.
-  const destinations = filterValidDestinations(persisted.destinations);
   return {
-    rewardState: {
-      ...createEmptyRewardState(destinations),
-      selectedId: persisted.selectedId,
-      gold: persisted.gold,
-      materials: persisted.materials,
-      selectedBossId: persisted.selectedBossId,
-      lastVictoryEnemyType: persisted.lastVictoryEnemyType,
-      lastVictoryContentSystem: persisted.lastVictoryContentSystem,
-      rewardType: "card",
-    },
+    rewardState: restoreSharedRewardFields(persisted),
     companionRewardCards,
   };
 }

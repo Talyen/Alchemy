@@ -160,7 +160,6 @@ describe("selectRewardCards", () => {
     ];
     const result = selectRewardCards(deck, allCards, 2);
     expect(result).toHaveLength(2);
-    vi.restoreAllMocks();
   });
 
   it("handles all-random rolls correctly and returns unique cards", () => {
@@ -174,7 +173,6 @@ describe("selectRewardCards", () => {
     expect(ids).toContain("a");
     expect(ids).toContain("b");
     expect(ids).toContain("c");
-    vi.restoreAllMocks();
   });
 
   it("handles all-affinity rolls correctly and prioritizes deck keywords", () => {
@@ -189,7 +187,6 @@ describe("selectRewardCards", () => {
     const result = selectRewardCards(deck, allCards, 2);
     expect(result).toHaveLength(2);
     expect(result.some((c) => c.id === "a" || c.id === "b")).toBe(true);
-    vi.restoreAllMocks();
   });
 
   it("uses custom RNG if provided and respects deterministic choice", () => {
@@ -220,7 +217,6 @@ describe("sampleItems for boon rewards", () => {
     ];
     const result = sampleItems(boons, 2, () => 0.5);
     expect(result).toHaveLength(2);
-    vi.restoreAllMocks();
   });
 
   it("handles requesting more boons than available", () => {
@@ -228,7 +224,6 @@ describe("sampleItems for boon rewards", () => {
     const boons = [{ id: "bone-charm", title: "Bone Charm", description: "", art: "" }];
     const result = sampleItems(boons, 5, () => 0.5);
     expect(result).toHaveLength(1);
-    vi.restoreAllMocks();
   });
 
   it("returns empty array for empty library", () => {

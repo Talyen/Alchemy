@@ -1,9 +1,8 @@
 // Damage-related card effect apply handlers.
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import { dealDamageToEnemy } from "../damage";
-import { getBattleRng } from "../status-helpers";
-import { addPlayerStatus, applyPlayerCombatDamage } from "../types";
-import { mergeCombatText } from "../combat-text";
+import { dealSelfDamage, getBattleRng } from "../status-helpers";
+import { addPlayerStatus } from "../types";
 import type { EffectHandler } from "./handler-types";
 
 export const applyDamageEffect: EffectHandler = (state, card, effect, potionMult, combatTexts) => {
@@ -14,17 +13,8 @@ export const applyDamageEffect: EffectHandler = (state, card, effect, potionMult
 
 export const applySelfDamageEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
   if (effect.kind !== "self-damage") return state;
-  const postDamage = applyPlayerCombatDamage(state, effect.amount);
-  const healthLost = state.playerHealth - postDamage.playerHealth;
-  if (healthLost > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: effect.damageType,
-      amount: healthLost,
-    });
-  }
-  return addPlayerStatus(postDamage, effect.damageType, Math.max(0, healthLost));
+  const { state: postDamage, healthLost } = dealSelfDamage(state, effect.amount, effect.damageType, combatTexts);
+  return addPlayerStatus(postDamage, effect.damageType, healthLost);
 };
 
 export const applyRandomDamageEffect: EffectHandler = (state, card, effect, _potionMult, combatTexts) => {

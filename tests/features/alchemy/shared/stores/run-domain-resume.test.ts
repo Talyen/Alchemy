@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import "../../../../helpers/mock-audio";
+import "../../../../helpers/mock-flush-save";
+import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { createEmptyRewardState, type ActiveRunData } from "@/lib/active-run-session";
@@ -9,15 +11,6 @@ import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecy
 import { cardLibrary, getStartingDeck } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ANCIENT_ALTAR_MYSTERY_VISIT } from "./active-run-data-fixture";
-
-vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({
-  flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("@/lib/audio", () => ({
-  playDefeat: vi.fn(),
-  stopAllSfx: vi.fn(),
-}));
 
 import {
   getBattleStoreView,

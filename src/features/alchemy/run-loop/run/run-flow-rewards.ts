@@ -24,50 +24,44 @@ import type { FinalizeRewardResult } from "../navigation/reward-flow-types";
 import { applyAlchemistPotion, applyRewardSelection } from "./run-destination-handlers";
 import { CONSTANTS } from "../../shared/types";
 import type { CompleteRunVictory, HandleActComplete, RunFlowHandlerDeps } from "./run-flow-handler-deps";
-import type { BattleCard } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { CardRewardState, RewardState } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
 
 export interface RewardRouteDeps {
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
   completeRunVictory: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
-  handleActComplete: (materials: MaterialInventory) => void;
+  handleActComplete: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
   labyrinthClearNode: () => void;
-  setCompanionRewardCards: (cards: BattleCard[] | null) => void;
-  setRewardState: (state: RewardState) => void;
+  /** Commit hook for most routes: restores the settled reward surface and releases the claim. */
+  settleClaimSurface: () => void;
+  /** Claim-only release for ACT_COMPLETE, whose successor overwrites the reward surface anyway. */
+  releaseClaim: () => void;
 }
 
 export function executeRewardRouteTransition(
   route: FinalizeRewardResult["route"],
   materials: MaterialInventory,
-  nextRewardState: CardRewardState,
-  clearCompanion: boolean,
   deps: RewardRouteDeps,
 ) {
-  const setReward = () => {
-    deps.setRewardState(nextRewardState);
-    if (clearCompanion) deps.setCompanionRewardCards(null);
-  };
   switch (route) {
     case CONSTANTS.REWARD_ROUTES.COMPANION_REWARD:
-      deps.navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
+      deps.navigateTo(CONSTANTS.SCREENS.REWARDS, deps.settleClaimSurface);
       break;
     case CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY:
-      deps.completeRunVictory(materials, setReward);
-      break;
     case CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY:
-      deps.completeRunVictory(materials, setReward);
+      deps.completeRunVictory(materials, deps.settleClaimSurface);
       break;
     case CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP:
       deps.labyrinthClearNode();
-      deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, setReward);
+      deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, deps.settleClaimSurface);
       break;
     case CONSTANTS.REWARD_ROUTES.ACT_COMPLETE:
-      deps.handleActComplete(materials);
+      // prepareNextDestination / victory commit overwrite offer state;
+      // only the claim lock must be released here.
+      deps.handleActComplete(materials, deps.releaseClaim);
       break;
     case CONSTANTS.REWARD_ROUTES.DESTINATION:
-      deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, setReward);
+      deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, deps.settleClaimSurface);
       break;
   }
 }
@@ -143,6 +137,8 @@ export function createRewardHandlers(
           if (!commit) return;
           const { result, isWildwood } = commit;
 
+          // Single commit hook for every route: restores the settled reward
+          // surface (next state + companion handoff clear) and releases the claim.
           const settleClaimSurface = () => {
             commandSetRewardState(result.nextRewardState);
             if (result.clearCompanionRewardCards) commandSetCompanionRewardCards(null);
@@ -155,36 +151,14 @@ export function createRewardHandlers(
             deps.actions.wildwoodRewardComplete(settleClaimSurface);
             return;
           }
-          executeRewardRouteTransition(
-            result.route,
-            result.materials,
-            result.nextRewardState,
-            result.clearCompanionRewardCards,
-            {
-              navigateTo: (screen, onCommit) => {
-                deps.actions.navigateTo(screen, () => {
-                  onCommit?.();
-                  commandReleaseRewardClaim();
-                });
-              },
-              completeRunVictory: (materials, onCommit) => {
-                completeRunVictory(materials, () => {
-                  onCommit?.();
-                  commandReleaseRewardClaim();
-                });
-              },
-              handleActComplete: (materials) => {
-                handleActComplete(materials, () => {
-                  // prepareNextDestination / victory commit overwrite offer state;
-                  // only the claim lock must be released here.
-                  commandReleaseRewardClaim();
-                });
-              },
-              labyrinthClearNode: deps.actions.labyrinthClearNode,
-              setCompanionRewardCards: commandSetCompanionRewardCards,
-              setRewardState: commandSetRewardState,
-            },
-          );
+          executeRewardRouteTransition(result.route, result.materials, {
+            navigateTo: deps.actions.navigateTo,
+            completeRunVictory,
+            handleActComplete,
+            labyrinthClearNode: deps.actions.labyrinthClearNode,
+            settleClaimSurface,
+            releaseClaim: commandReleaseRewardClaim,
+          });
         },
       },
     );

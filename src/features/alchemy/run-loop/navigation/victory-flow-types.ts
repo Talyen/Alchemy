@@ -1,6 +1,5 @@
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
-import type { MaterialInventory } from "@/lib/homestead/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
@@ -34,18 +33,11 @@ export interface VictoryRewardsInput {
 }
 
 export interface VictoryRewardsResult {
-  newGold: number;
   rewardState: RewardState;
   labyrinthRewardModifiers: EncounterRewardTraitId[];
-  destinations: Destination[];
-  materials: MaterialInventory;
   goldEarned: number;
   playerHealth: number;
   maxHealthDelta: number;
-  baseGold: number;
-  eliteBonus: number;
-  bossBonus: number;
-  generousBonus: number;
   destinationOfferState: DestinationOfferState;
 }
 

@@ -1,3 +1,5 @@
+import "../../../../helpers/mock-audio";
+import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
@@ -18,15 +20,6 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 
 const syncBattleToRun = createRunSessionCommand(mutateBattleToRun);
 const syncRunToBattleStart = createRunSessionCommand(mutateRunToBattleStart);
-
-vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({
-  flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock("@/lib/audio", () => ({
-  playDefeat: vi.fn(),
-  stopAllSfx: vi.fn(),
-}));
 
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { playDefeat, stopAllSfx } from "@/lib/audio";

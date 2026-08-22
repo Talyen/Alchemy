@@ -10,6 +10,9 @@ import {
   STARTUP_BAR_REVEAL_THRESHOLD,
 } from "@/lib/game-constants";
 import {
+  getBossMusicKey,
+  invalidateCacheForKey,
+  isMusicPaused,
   playMusic,
   playMusicImmediate,
   preloadAllSounds,
@@ -18,8 +21,6 @@ import {
   setMuted,
   setSfxVolume,
 } from "@/lib/audio";
-import { audioState } from "@/lib/audio-state";
-import { getBossMusicKey, invalidateCacheForKey } from "@/lib/audio-music";
 import { logError } from "@/lib/error-logger";
 import { allGameArt } from "@/lib/game-data";
 import { preloadImagesInBatches } from "@/lib/image-preload";
@@ -113,7 +114,7 @@ export function useAppAudioEffects({
       if (!document.hidden) setMuted(false);
       if (gestureFiredRef.current) return;
       gestureFiredRef.current = true;
-      if (!audioState.currentMusic || audioState.currentMusic.paused) {
+      if (isMusicPaused()) {
         playMusicImmediate(pickMusicKey(screenRef.current));
       }
     }

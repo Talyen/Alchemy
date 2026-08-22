@@ -10,7 +10,13 @@ import {
   TRAIT_DAMAGE_WEAKNESS,
 } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
-import { addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
+import {
+  addPlayerStatus,
+  applyPlayerCombatDamage,
+  type BattleState,
+  type CombatTextEvent,
+  type CombatTextStat,
+} from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
 
 const DECAY_THRESHOLD = 1;
@@ -61,6 +67,30 @@ export function getBattleRng(state: { rng?: () => number }): () => number {
     throw new Error("BattleState.rng is required for outcome rolls");
   }
   return state.rng;
+}
+
+/**
+ * Deals self-inflicted health loss through the player combat damage pipeline,
+ * emitting combat text for the health actually lost (clamped at 0 — a
+ * phoenix-feather save can leave the player healthier than before).
+ */
+export function dealSelfDamage(
+  state: BattleState,
+  amount: number,
+  statLabel: CombatTextStat,
+  combatTexts: CombatTextEvent[],
+): { state: BattleState; healthLost: number } {
+  const postDamage = applyPlayerCombatDamage(state, amount);
+  const healthLost = Math.max(0, state.playerHealth - postDamage.playerHealth);
+  if (healthLost > 0) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "damage",
+      stat: statLabel,
+      amount: healthLost,
+    });
+  }
+  return { state: postDamage, healthLost };
 }
 
 /** Evaluates a talent/boon percent chance roll using state's RNG. */

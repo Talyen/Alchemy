@@ -25,7 +25,6 @@ function renderMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => 
 }
 
 beforeEach(() => {
-  vi.restoreAllMocks();
   resetAllTestStores();
   useProfileStore.setState(useProfileStore.getInitialState());
 });
