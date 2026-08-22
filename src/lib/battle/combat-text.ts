@@ -126,8 +126,9 @@ export function gainManaWithCombatText(
   return nextState;
 }
 
-// Paces the status amount and reports the applied delta as floating text so
-// clamped applications never display more than actually landed.
+// Paces the status amount and reports the applied delta as floating text only
+// when some actually landed, so clamped applications never display more than
+// happened (or a no-op "+0").
 export function addPlayerStatusWithCombatText(
   state: BattleState,
   stat: PlayerStatusId,
@@ -137,13 +138,9 @@ export function addPlayerStatusWithCombatText(
   if (amount <= 0) return state;
   const before = state.playerStatuses[stat];
   const nextState = addPlayerStatus(state, stat, paceCombatMagnitude(state, amount, "player"));
-  if (combatTexts) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat,
-      amount: nextState.playerStatuses[stat] - before,
-    });
+  const delta = nextState.playerStatuses[stat] - before;
+  if (delta > 0 && combatTexts) {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat, amount: delta });
   }
   return nextState;
 }
