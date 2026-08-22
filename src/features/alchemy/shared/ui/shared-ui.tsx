@@ -11,7 +11,7 @@ export {
   ScreenShell,
   TitledScreenShell,
 } from "./layout-components";
-export { GoldCost, GoldDisplay } from "./display-elements";
+export { GoldDisplay } from "./display-elements";
 export { GameMenu } from "./game-menu";
 export { HamburgerTrigger, PaginationControls } from "./navigation";
 export { DisabledTooltip, ServiceButton } from "./service-button";

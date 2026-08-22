@@ -5,7 +5,7 @@ import { discoverCardIds, discoverTrinketIds } from "../../shared/stores/profile
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { setRunDeck, setRunTrinkets } from "@/features/alchemy/shared/stores/run-session-write-port";
 
-export { discoverCardIds, discoverTrinketIds };
+export { discoverCardIds };
 
 export function appendCardToRunWithDiscovery(draft: GameplayDraft, card: BattleCard): void {
   setRunDeck(draft, (previous) => [...previous, card]);

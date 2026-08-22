@@ -39,7 +39,7 @@ export function PurchasableCardItem(props: PurchasableCardItemProps) {
   return <PurchasableShopTile media={media} purchased={purchased} />;
 }
 
-export type SelectableCardChrome = "shop" | "deck" | "corruption";
+type SelectableCardChrome = "shop" | "deck" | "corruption";
 
 type SelectableShopCardProps = {
   card: BattleCard;
