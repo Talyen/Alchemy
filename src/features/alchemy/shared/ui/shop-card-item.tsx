@@ -1,8 +1,6 @@
 // Shop card controls for purchasing and selecting cards.
 // Depends on card button/title rendering and shared gold/disabled controls.
 // Used by merchant, alchemist, corruption, mystery, and remove panels.
-import { useState } from "react";
-
 import { type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
@@ -43,47 +41,47 @@ export function PurchasableCardItem(props: PurchasableCardItemProps) {
 
 export type SelectableCardChrome = "shop" | "deck" | "corruption";
 
-export function SelectableShopCard({
-  card,
-  isSelected,
-  onSelect,
-  chrome = "shop",
-  widthClass,
-  isHovered,
-  onHoverStart,
-  onHoverEnd,
-}: {
+type SelectableShopCardProps = {
   card: BattleCard;
   isSelected: boolean;
   onSelect: () => void;
   chrome?: SelectableCardChrome;
   widthClass?: string;
-  isHovered?: boolean;
-  onHoverStart?: () => void;
-  onHoverEnd?: () => void;
-}) {
-  const [localHovered, setLocalHovered] = useState(false);
-  const resolvedWidth = widthClass ?? (chrome === "shop" ? collectionTileWidthClass : viewCardWidthClass);
-  const hovered = isHovered ?? (chrome === "deck" ? isSelected || localHovered : localHovered);
-  const handleHoverStart = onHoverStart ?? (() => setLocalHovered(true));
-  const handleHoverEnd = onHoverEnd ?? (() => setLocalHovered(false));
+} & (
+  | { isHovered?: undefined; onHoverStart?: undefined; onHoverEnd?: undefined }
+  | { isHovered: boolean; onHoverStart: () => void; onHoverEnd: () => void }
+);
 
-  return (
-    <BattleCardButton
-      card={card}
-      hovered={hovered}
-      onHoverStart={handleHoverStart}
-      onHoverEnd={handleHoverEnd}
-      onClick={onSelect}
-      ariaLabel={`Select ${getCardDisplayTitle(card)}`}
-      shimmerActive={false}
-      shimmerToken={undefined}
-      className={cn(
-        resolvedWidth,
-        cardInteractiveGlowClass,
-        chrome === "corruption" && isSelected && "card-interactive-selected-danger",
-      )}
-      selected={chrome === "corruption" ? false : isSelected}
-    />
-  );
+export function SelectableShopCard(props: SelectableShopCardProps) {
+  const { card, isSelected, onSelect, chrome = "shop", widthClass } = props;
+  const resolvedWidth = widthClass ?? (chrome === "shop" ? collectionTileWidthClass : viewCardWidthClass);
+
+  const buttonProps = {
+    card,
+    onClick: onSelect,
+    ariaLabel: `Select ${getCardDisplayTitle(card)}`,
+    shimmerActive: false,
+    shimmerToken: undefined,
+    className: cn(
+      resolvedWidth,
+      cardInteractiveGlowClass,
+      chrome === "corruption" && isSelected && "card-interactive-selected-danger",
+    ),
+    selected: chrome === "corruption" ? false : isSelected,
+  };
+
+  // Controlled callers (mystery deck pickers) bind the full hover trio so a
+  // selection can keep its detail popup open; everyone else gets the button's
+  // internal hover tracking.
+  if (props.onHoverStart !== undefined) {
+    return (
+      <BattleCardButton
+        {...buttonProps}
+        hovered={props.isHovered}
+        onHoverStart={props.onHoverStart}
+        onHoverEnd={props.onHoverEnd}
+      />
+    );
+  }
+  return <BattleCardButton {...buttonProps} />;
 }

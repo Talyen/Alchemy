@@ -25,12 +25,8 @@ import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
 import { DetailPopup } from "./card-popup";
 import { TiltSurface } from "./tilt-surface";
 
-interface BattleCardButtonProps {
+interface BattleCardButtonBaseProps {
   card: BattleCard;
-  /** Controlled hover state; omit all three hover props to let the button track hover itself. */
-  hovered?: boolean;
-  onHoverStart?: (() => void) | undefined;
-  onHoverEnd?: (() => void) | undefined;
   onClick?: ((event: MouseEvent<HTMLButtonElement>) => void) | undefined;
   onPointerDown?: ((event: ReactPointerEvent<HTMLButtonElement>) => void) | undefined;
   buttonRef?: Ref<HTMLButtonElement> | undefined;
@@ -54,6 +50,15 @@ interface BattleCardButtonProps {
   tooltipPadding?: number | undefined;
   children?: ReactNode | undefined;
 }
+
+// Hover control: pass all three props to drive hover externally (hand-style
+// handoff timing), or none to let the button track hover itself. Passing a
+// partial set is a compile error because either half would be silently ignored.
+export type BattleCardButtonProps = BattleCardButtonBaseProps &
+  (
+    | { hovered?: undefined; onHoverStart?: undefined; onHoverEnd?: undefined }
+    | { hovered: boolean; onHoverStart: () => void; onHoverEnd: () => void }
+  );
 
 export function BattleCardButton(props: BattleCardButtonProps) {
   const { wrapperClassName, wrapperStyle, wrapperDataCardKey, dragging = false } = props;
