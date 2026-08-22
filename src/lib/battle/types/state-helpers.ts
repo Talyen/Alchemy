@@ -133,11 +133,6 @@ export function reduceEnemyArmor(state: BattleState, delta: number): BattleState
   };
 }
 
-export function addGold(state: BattleState, delta: number): BattleState {
-  const adjusted = delta > 0 ? scaleGoldReward(delta, state.gearEffects) : delta;
-  return { ...state, gold: state.gold + adjusted };
-}
-
 export function setFlag<K extends keyof CombatFlags>(state: BattleState, flag: K, value: CombatFlags[K]): BattleState {
   return { ...state, flags: { ...state.flags, [flag]: value } };
 }

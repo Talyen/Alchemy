@@ -135,7 +135,7 @@ function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?
   if (enemyTurnStartState.enemyHealth <= 0) {
     return {
       kind: "standard" as const,
-      ...finalizePlayerTurn(resolveDeathsDoorGraceExpiry(enemyTurnStartState), []),
+      ...finalizePlayerTurn(resolveDeathsDoorGraceExpiry(enemyTurnStartState), enemyTurnStartCombatTexts),
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
       enemyResolutionCombatTexts: [],

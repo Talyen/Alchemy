@@ -3,7 +3,6 @@ import {
   addPlayerStatus,
   addEnemyStatus,
   setEnemyStatus,
-  addGold,
   setFlag,
   clampHealth,
   applyPlayerHealing,
@@ -77,26 +76,6 @@ describe("setEnemyStatus", () => {
     const state = makeTestBattleState();
     const next = setEnemyStatus(state, "bleed", 8);
     expect(next.enemyStatuses.bleed).toBe(8);
-  });
-});
-
-describe("addGold", () => {
-  it("adds delta to gold", () => {
-    const state = makeTestBattleState({ gold: 10 });
-    const next = addGold(state, 5);
-    expect(next.gold).toBe(15);
-  });
-
-  it("supports negative delta", () => {
-    const state = makeTestBattleState({ gold: 50 });
-    const next = addGold(state, -20);
-    expect(next.gold).toBe(30);
-  });
-
-  it("does not mutate the original state", () => {
-    const state = makeTestBattleState({ gold: 10 });
-    addGold(state, 5);
-    expect(state.gold).toBe(10);
   });
 });
 

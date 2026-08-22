@@ -6,7 +6,6 @@
  */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import {
-  addGold,
   applyPlayerHealing,
   scaleGoldReward,
   type BattleState,
@@ -113,8 +112,9 @@ export function addGoldWithCombatText(
   combatTexts?: CombatTextEvent[],
 ): BattleState {
   if (amount <= 0) return state;
+  // Scales once here so displayed and applied gold can never diverge.
   const scaledGold = scaleGoldReward(amount, state.gearEffects);
-  const nextState = addGold(state, amount);
+  const nextState = { ...state, gold: state.gold + scaledGold };
   if (combatTexts && scaledGold > 0) {
     mergeCombatText(combatTexts, {
       target: "player",
