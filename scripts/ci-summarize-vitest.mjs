@@ -2,8 +2,8 @@
 // Append a short Vitest failure digest to $GITHUB_STEP_SUMMARY (or stdout).
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { publishCiSummary } from "./lib/ci-summary.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
 
 const DEFAULT_REPORT = "reports/vitest-timings.json";
 const MAX_FAILURES = 5;
@@ -126,8 +126,7 @@ function main() {
   });
 }
 
-const entry = process.argv[1] ? path.resolve(process.argv[1]) : "";
-const isDirectRun = entry.length > 0 && fileURLToPath(import.meta.url) === entry;
+const isDirectRun = isMainModule(import.meta.url);
 
 if (isDirectRun) {
   main();

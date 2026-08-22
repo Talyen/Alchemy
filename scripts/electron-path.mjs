@@ -43,6 +43,17 @@ export function resolveElectronExecutablePath() {
   return getExecutablePath(relativePath);
 }
 
+/** Prefers the executable recorded by ensure-electron via writeExecutablePathMarker. */
+export function resolveElectronExecutablePathWithMarker() {
+  if (fs.existsSync(pathMarkerFile)) {
+    const fromMarker = fs.readFileSync(pathMarkerFile, "utf8").trim();
+    if (fromMarker && fs.existsSync(fromMarker)) {
+      return fromMarker;
+    }
+  }
+  return resolveElectronExecutablePath();
+}
+
 export function isElectronInstalled() {
   const executablePath = resolveElectronExecutablePath();
 

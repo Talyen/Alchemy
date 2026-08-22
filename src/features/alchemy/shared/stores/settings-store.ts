@@ -25,9 +25,9 @@ export interface SettingsStore {
   selectedAspectRatio: SettingsSaveFields["selectedAspectRatio"];
   displayMode: SettingsSaveFields["displayMode"];
   brightness: SettingsSaveFields["brightness"];
-  musicVol: SettingsSaveFields["musicVolume"];
-  sfxVol: SettingsSaveFields["sfxVolume"];
-  masterVol: SettingsSaveFields["masterVolume"];
+  musicVolume: SettingsSaveFields["musicVolume"];
+  sfxVolume: SettingsSaveFields["sfxVolume"];
+  masterVolume: SettingsSaveFields["masterVolume"];
   muteInBackground: SettingsSaveFields["muteInBackground"];
   autoEndTurn: SettingsSaveFields["autoEndTurn"];
   rememberAutoplayPreference: SettingsSaveFields["rememberAutoplayPreference"];
@@ -37,9 +37,9 @@ export interface SettingsStore {
   setSelectedAspectRatio: (value: AspectRatioOption) => void;
   setDisplayMode: (value: DisplayMode) => void;
   setBrightness: (value: number) => void;
-  setMusicVol: (value: number) => void;
-  setSfxVol: (value: number) => void;
-  setMasterVol: (value: number) => void;
+  setMusicVolume: (value: number) => void;
+  setSfxVolume: (value: number) => void;
+  setMasterVolume: (value: number) => void;
   setMuteInBackground: (value: boolean) => void;
   setAutoEndTurn: (value: boolean) => void;
   setRememberAutoplayPreference: (value: boolean) => void;
@@ -70,31 +70,26 @@ export function preferredAutoplayEnabled(fields: {
   return fields.rememberAutoplayPreference && fields.autoplayEnabled;
 }
 
-function settingsStoreFields(fields: SettingsSaveFields) {
-  return {
-    selectedAspectRatio: fields.selectedAspectRatio,
-    displayMode: fields.displayMode,
-    brightness: fields.brightness,
-    musicVol: fields.musicVolume,
-    sfxVol: fields.sfxVolume,
-    masterVol: fields.masterVolume,
-    muteInBackground: fields.muteInBackground,
-    autoEndTurn: fields.autoEndTurn,
-    rememberAutoplayPreference: fields.rememberAutoplayPreference,
-    autoplayEnabled: fields.rememberAutoplayPreference && fields.autoplayEnabled,
-  };
+/**
+ * Store fields now share the persisted names; the only translation left is the
+ * autoplay rule: autoplay never survives without the remembered preference.
+ */
+function withDerivedAutoplay<T extends { rememberAutoplayPreference: boolean; autoplayEnabled: boolean }>(
+  fields: T,
+): T {
+  return { ...fields, autoplayEnabled: fields.rememberAutoplayPreference && fields.autoplayEnabled };
 }
 
 export const useSettingsStore = create<SettingsStore>()((set) => ({
-  ...settingsStoreFields(createDefaultSettingsSaveFields()),
+  ...withDerivedAutoplay(createDefaultSettingsSaveFields()),
   showClearSaveConfirm: false,
 
   setSelectedAspectRatio: (selectedAspectRatio) => set({ selectedAspectRatio }),
   setDisplayMode: (displayMode) => set({ displayMode }),
   setBrightness: (brightness) => set({ brightness }),
-  setMusicVol: (musicVol) => set({ musicVol }),
-  setSfxVol: (sfxVol) => set({ sfxVol }),
-  setMasterVol: (masterVol) => set({ masterVol }),
+  setMusicVolume: (musicVolume) => set({ musicVolume }),
+  setSfxVolume: (sfxVolume) => set({ sfxVolume }),
+  setMasterVolume: (masterVolume) => set({ masterVolume }),
   setMuteInBackground: (muteInBackground) => set({ muteInBackground }),
   setAutoEndTurn: (autoEndTurn) => set({ autoEndTurn }),
   setRememberAutoplayPreference: (rememberAutoplayPreference) =>
@@ -105,28 +100,30 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
   setAutoplayEnabled: (autoplayEnabled) => set({ autoplayEnabled }),
   setShowClearSaveConfirm: (showClearSaveConfirm) => set({ showClearSaveConfirm }),
   resetToDefaults: () =>
-    set({ ...settingsStoreFields(createDefaultSettingsSaveFields()), showClearSaveConfirm: false }),
+    set({ ...withDerivedAutoplay(createDefaultSettingsSaveFields()), showClearSaveConfirm: false }),
 }));
+
+/** Whitelist copy so neither persistence direction can carry unknown keys into the store or save. */
+function toSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
+  return {
+    selectedAspectRatio: state.selectedAspectRatio,
+    displayMode: state.displayMode,
+    brightness: state.brightness,
+    musicVolume: state.musicVolume,
+    sfxVolume: state.sfxVolume,
+    masterVolume: state.masterVolume,
+    muteInBackground: state.muteInBackground,
+    autoEndTurn: state.autoEndTurn,
+    rememberAutoplayPreference: state.rememberAutoplayPreference,
+    autoplayEnabled: state.autoplayEnabled,
+  };
+}
 
 export const settingsPersistenceCodec: PersistenceCodec<SettingsSaveFields> = {
   createDefault: createDefaultSettingsSaveFields,
-  encode: () => {
-    const state = useSettingsStore.getState();
-    return {
-      selectedAspectRatio: state.selectedAspectRatio,
-      displayMode: state.displayMode,
-      brightness: state.brightness,
-      musicVolume: state.musicVol,
-      sfxVolume: state.sfxVol,
-      masterVolume: state.masterVol,
-      muteInBackground: state.muteInBackground,
-      autoEndTurn: state.autoEndTurn,
-      rememberAutoplayPreference: state.rememberAutoplayPreference,
-      autoplayEnabled: state.rememberAutoplayPreference && state.autoplayEnabled,
-    };
-  },
+  encode: () => withDerivedAutoplay(toSaveFields(useSettingsStore.getState())),
   hydrate: (fields) => {
-    useSettingsStore.setState(settingsStoreFields(fields));
+    useSettingsStore.setState(withDerivedAutoplay(toSaveFields(fields)));
   },
   subscribe: (listener) => useSettingsStore.subscribe(listener),
 };

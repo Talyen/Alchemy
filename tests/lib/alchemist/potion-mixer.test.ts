@@ -112,6 +112,52 @@ describe("createMixedPotion", () => {
     expect(mixed.descriptionLines).toEqual(["Deal 10 Fire damage", "Gain 20 Block", "Consume"]);
   });
 
+  it("keeps non-amount field numbers frozen even when they collide with scaled amounts", () => {
+    const manaShieldPotion = makePotion({
+      id: "mana-shield-potion",
+      title: "Mana Shield",
+      descriptionLines: ["Convert each of your Mana into 5 Block", "Consume"],
+      effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 }],
+    });
+    const firePotionFive = makePotion({
+      id: "fire-potion-five",
+      descriptionLines: ["Deal 5 Burn damage", "Consume"],
+      effects: [{ kind: "damage", damageType: "burn", amount: 5 }],
+    });
+    // Fire's 5 doubles to 10, but Mana Shield's "5" belongs to convertCurrentMana
+    // and must stay 5 — its effect is never rescaled.
+    const mixed = createMixedPotion(firePotionFive, manaShieldPotion, 0);
+
+    expect(mixed.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 });
+    expect(mixed.descriptionLines).toEqual(["Deal 5 Burn damage", "Convert each of your Mana into 5 Block", "Consume"]);
+
+    const doubledFire = createMixedPotion(firePotionFive, firePotionFive);
+    expect(doubledFire.descriptionLines).toContain("Deal 10 Burn damage");
+  });
+
+  it("prioritizes scaled amounts when one card's fields collide on the same value", () => {
+    const volatilePotion = makePotion({
+      id: "volatile-potion",
+      descriptionLines: ["Deal 5 Fire damage", "Convert each of your Mana into 5 Block", "Consume"],
+      effects: [
+        { kind: "damage", damageType: "burn", amount: 5 },
+        { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 },
+      ],
+    });
+    // Doubling: the damage amount 5 -> 10. The colliding convertCurrentMana 5 is
+    // untouched in effects, but its text occurrences display the scaled value —
+    // deliberate trade-off so real scaled numbers are never understated.
+    const mixed = createMixedPotion(volatilePotion, volatilePotion);
+
+    expect(mixed.effects[0]).toEqual({ kind: "damage", damageType: "burn", amount: 10 });
+    expect(mixed.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 });
+    expect(mixed.descriptionLines).toEqual([
+      "Deal 10 Fire damage",
+      "Convert each of your Mana into 10 Block",
+      "Consume",
+    ]);
+  });
+
   it("throws when mixing with an existing Mixed Potion", () => {
     const mixedPotion = makePotion({
       id: "mixed-potion",

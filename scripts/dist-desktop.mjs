@@ -4,13 +4,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { assertSupportedTargets } from "./lib/desktop-artifact.mjs";
+import { readRepoPackageJson } from "./lib/repo-package.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const config = JSON.parse(readFileSync(join(root, "steam/platforms.json"), "utf8"));
 const targets = config.targets ?? ["win"];
 assertSupportedTargets(targets);
 const sentryDsn = process.env.SENTRY_DSN?.trim() ?? "";
-const releaseVersion = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
+const releaseVersion = readRepoPackageJson().version;
 const sentryRelease = process.env.SENTRY_RELEASE?.trim() || `alchemy@${releaseVersion}`;
 const sentryUploadFields = [
   process.env.SENTRY_AUTH_TOKEN?.trim(),

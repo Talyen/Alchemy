@@ -119,18 +119,7 @@ export function equipGear(
   if (!inventory.some((item) => item.instanceId === instance.instanceId)) return loadouts;
   if (!isGearCompatibleWithLoadoutSlot(definition, slot, loadouts[characterId], inventory)) return loadouts;
 
-  const next: GearLoadouts = { ...loadouts };
-  for (const currentCharacterId of GEAR_CHARACTER_IDS) {
-    const loadout = loadouts[currentCharacterId];
-    const nextLoadout = { ...loadout };
-    for (const currentSlot of GEAR_SLOTS) {
-      if (loadout[currentSlot] === instance.instanceId) {
-        nextLoadout[currentSlot] = null;
-      }
-    }
-    next[currentCharacterId] = nextLoadout;
-  }
-
+  const next = removeGearFromLoadouts(loadouts, instance.instanceId);
   const characterLoadout = { ...next[characterId], [slot]: instance.instanceId };
   next[characterId] = resolveHandConflicts(characterLoadout, slot, definition, inventory);
   return next;

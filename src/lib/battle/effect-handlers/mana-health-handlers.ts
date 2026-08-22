@@ -1,7 +1,7 @@
 // Mana and health-related card effect apply handlers.
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import { applyHealOnManaGain, mergeCombatText, applyHealingWithCombatText } from "../combat-text";
-import { applyPlayerCombatDamage } from "../types";
+import { applyPlayerCombatDamage, gainMana } from "../types";
 import { getEnemyDamageMultiplier } from "../status-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
 import type { EffectHandler } from "./handler-types";
@@ -16,9 +16,12 @@ function restoreMana(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const adjustedMana = paceCombatMagnitude(state, Math.round(amount * potionMult), "player");
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: adjustedMana });
-  let nextState: BattleState = { ...state, mana: state.mana + adjustedMana };
-  nextState = applyHealOnManaGain(nextState, adjustedMana, combatTexts);
+  const nextState = gainMana(state, adjustedMana);
+  const gained = nextState.mana - state.mana;
+  if (gained > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
+    return applyHealOnManaGain(nextState, gained, combatTexts);
+  }
   return nextState;
 }
 

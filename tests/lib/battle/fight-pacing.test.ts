@@ -6,6 +6,7 @@ import {
   fightPacingComebackMultiplier,
   fightPacingMultiplier,
   fightPacingPoolMetrics,
+  openingPacedDamage,
   paceCombatMagnitude,
 } from "@/lib/battle/fight-pacing";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
@@ -102,6 +103,23 @@ describe("paceCombatMagnitude", () => {
     const state = pacedState({ playerHealth: 8, playerMaxHealth: 30, enemyHealth: 30, turn: 4 });
     const expected = Math.round(10 * fightPacingMultiplier(state, "player"));
     expect(paceCombatMagnitude(state, 10, "player")).toBe(expected);
+  });
+});
+
+describe("openingPacedDamage", () => {
+  it("matches a fresh full-health turn-1 battle through the live pipeline", () => {
+    const state = pacedState();
+    expect(openingPacedDamage(10)).toBe(paceCombatMagnitude(state, 10, "player"));
+  });
+
+  it("paces the normal-type opening clock but leaves boss openings ahead of schedule", () => {
+    expect(openingPacedDamage(10, "normal")).toBeGreaterThan(10);
+    expect(openingPacedDamage(10, "boss")).toBe(10);
+  });
+
+  it("passes non-positive amounts through untouched", () => {
+    expect(openingPacedDamage(0)).toBe(0);
+    expect(openingPacedDamage(-5)).toBe(-5);
   });
 });
 

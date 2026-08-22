@@ -1,5 +1,5 @@
 // Shared helpers for enemy turn phase transitions, Death's Door, and health thresholds.
-import { drawCards } from "./draw";
+import { drawCards, applyDrawResult } from "./draw";
 import { applyHealingWithCombatText } from "./combat-text";
 import { decayHalvedStatus } from "./status-helpers";
 import { deathsDoorGraceTurns, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
@@ -110,12 +110,8 @@ function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTur
   const wellspringBonus =
     hadUnspentMana && state.talentEffects.wellspringKeepMana > 0 ? state.talentEffects.wellspringKeepMana : 0;
   return {
-    ...nextState,
+    ...applyDrawResult(nextState, nextDraw),
     turnPhase: "player",
-    deck: nextDraw.deck,
-    hand: nextDraw.hand,
-    discard: nextDraw.discard,
-    nextCardUid: nextDraw.nextCardUid,
     mana: nextState.maxMana + wellspringBonus,
     playerCC: {
       ...nextState.playerCC,

@@ -60,7 +60,6 @@ export function createEquipmentShopCommands({
         acquire: () => {
           const characterId = draft.run.activeRun.characterId;
           mutateGearWithRunHealthSync(draft, {
-            characterId,
             mutate: (gear) => gear.addInstance(instance, characterId),
           });
         },

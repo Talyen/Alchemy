@@ -92,7 +92,7 @@ export function DescriptionLines({
               const offset = partOffsets[index] ?? 0;
               return splitCorruptedNumericParts(part.text, offset, corruptedOffsets).map((frag, fi) =>
                 frag.corrupted ? (
-                  <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`} className="text-red-400">
+                  <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`} className="text-shine-corruption">
                     {frag.text}
                   </span>
                 ) : (
@@ -114,7 +114,7 @@ export function getCardDisplayTitle(card: Pick<BattleCard, "title" | "corrupted"
 export function CardTitle({ card, className }: { card: Pick<BattleCard, "title" | "corrupted">; className?: string }) {
   return (
     <span className={cn("font-sans font-semibold", className)}>
-      {card.corrupted ? <span className="text-red-400">Corrupted </span> : null}
+      {card.corrupted ? <span className="text-shine-corruption">Corrupted </span> : null}
       {card.title}
     </span>
   );

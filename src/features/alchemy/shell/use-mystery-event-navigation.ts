@@ -86,7 +86,6 @@ export function useMysteryEventNavigation({
             onAddGear: (instance) => {
               const characterId = draft.run.activeRun.characterId;
               mutateGearWithRunHealthSync(draft, {
-                characterId,
                 mutate: (gear: GearStore) => gear.addInstance(instance, characterId),
               });
             },

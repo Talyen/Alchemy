@@ -1,27 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { installDesktopApi } from "../helpers/desktop-save-mock-helper";
 import { createPlatformSaveBackend } from "@/lib/platform-save-backend";
-
-type DesktopApi = NonNullable<Window["alchemyDesktop"]>;
-
-function installDesktopApi(overrides: Partial<DesktopApi> = {}): DesktopApi {
-  const api: DesktopApi = {
-    isDesktop: true,
-    setDisplayMode: vi.fn().mockResolvedValue(undefined),
-    quit: vi.fn().mockResolvedValue(undefined),
-    listSaveCandidates: vi.fn().mockResolvedValue([]),
-    writeSave: vi.fn().mockResolvedValue(true),
-    clearSave: vi.fn().mockResolvedValue(true),
-    steamGetName: vi.fn().mockResolvedValue(null),
-    steamSetRichPresence: vi.fn().mockResolvedValue(false),
-    steamCloudRead: vi.fn().mockResolvedValue(null),
-    steamCloudWrite: vi.fn().mockResolvedValue(false),
-    steamCloudDelete: vi.fn().mockResolvedValue(false),
-    ...overrides,
-  };
-  window.alchemyDesktop = api;
-  return api;
-}
 
 function createMockStorage() {
   const data = new Map<string, string>();
@@ -66,8 +46,8 @@ describe("platform save backend", () => {
 
   it("orders desktop primary, backups, then cloud and deduplicates payloads", async () => {
     installDesktopApi({
-      listSaveCandidates: vi.fn().mockResolvedValue(["primary", "backup", "primary"]),
-      steamCloudRead: vi.fn().mockResolvedValue("cloud"),
+      saveCandidates: ["primary", "backup", "primary"],
+      overrides: { steamCloudRead: vi.fn().mockResolvedValue("cloud") },
     });
 
     await expect(createPlatformSaveBackend().readCandidates("ignored")).resolves.toEqual({
@@ -79,14 +59,16 @@ describe("platform save backend", () => {
   it("writes desktop local before cloud and treats cloud failure as non-fatal", async () => {
     const order: string[] = [];
     installDesktopApi({
-      writeSave: vi.fn().mockImplementation(async () => {
-        order.push("local");
-        return true;
-      }),
-      steamCloudWrite: vi.fn().mockImplementation(async () => {
-        order.push("cloud");
-        return false;
-      }),
+      overrides: {
+        writeSave: vi.fn().mockImplementation(async () => {
+          order.push("local");
+          return true;
+        }),
+        steamCloudWrite: vi.fn().mockImplementation(async () => {
+          order.push("cloud");
+          return false;
+        }),
+      },
     });
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
@@ -99,8 +81,10 @@ describe("platform save backend", () => {
   it("fails closed without clearing local data when cloud deletion fails", async () => {
     const clearSave = vi.fn().mockResolvedValue(true);
     installDesktopApi({
-      clearSave,
-      steamCloudDelete: vi.fn().mockResolvedValue(false),
+      overrides: {
+        clearSave,
+        steamCloudDelete: vi.fn().mockResolvedValue(false),
+      },
     });
 
     const result = await createPlatformSaveBackend({ cloudSyncEnabled: true }).clear("ignored");
@@ -111,14 +95,16 @@ describe("platform save backend", () => {
   it("clears cloud before the desktop backup ring", async () => {
     const order: string[] = [];
     installDesktopApi({
-      steamCloudDelete: vi.fn().mockImplementation(async () => {
-        order.push("cloud");
-        return true;
-      }),
-      clearSave: vi.fn().mockImplementation(async () => {
-        order.push("local");
-        return true;
-      }),
+      overrides: {
+        steamCloudDelete: vi.fn().mockImplementation(async () => {
+          order.push("cloud");
+          return true;
+        }),
+        clearSave: vi.fn().mockImplementation(async () => {
+          order.push("local");
+          return true;
+        }),
+      },
     });
 
     await expect(createPlatformSaveBackend({ cloudSyncEnabled: true }).clear("ignored")).resolves.toEqual({ ok: true });

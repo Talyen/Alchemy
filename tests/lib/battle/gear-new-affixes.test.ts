@@ -5,8 +5,8 @@ import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-turn-attack";
 import { applyGearKillRewards } from "@/lib/battle/gear-effects";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
-import { addEnemyStatus } from "@/lib/battle/types";
-import { applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
+import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
+import { addEnemyStatus } from "@/lib/battle/types/state-helpers";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { resolvePlayerCrowdControlTrigger } from "@/lib/battle/status-cc";
@@ -87,25 +87,42 @@ describe("New Gear Affixes Integration Tests", () => {
     expect(nextState.mana).toBe(2);
   });
 
-  it("poison-reduces-armor: reduces enemy Armor on poison application and tick", () => {
-    // 1. Application
+  it("poison-reduces-armor: every poison application shreds exactly once, ticks never do", () => {
+    // 1. Application via a poison damage hit strips 1 Armor, never 2.
     const state1 = makeState({
       enemyMitigation: { ...makeState().enemyMitigation, armor: 5 },
       gearEffects: { ...makeState().gearEffects, poisonArmorShredChance: 100 },
       rng: () => 0.1,
     });
-    const resultState1 = addEnemyStatus(state1, "poison", 2);
+    const texts1: any[] = [];
+    const resultState1 = applyDamageStatuses(
+      state1,
+      { kind: "damage", damageType: "poison", amount: 4 } as any,
+      4,
+      texts1,
+    );
+    expect(resultState1.enemyStatuses.poison).toBe(4);
     expect(resultState1.enemyMitigation.armor).toBe(4);
 
-    // 2. Tick
+    // 2. Non-damage application (consume-poison, procs, direct effects) strips too.
     const state2 = makeState({
       enemyMitigation: { ...makeState().enemyMitigation, armor: 5 },
       gearEffects: { ...makeState().gearEffects, poisonArmorShredChance: 100 },
       rng: () => 0.1,
     });
-    const texts: any[] = [];
-    const resultState2 = applyPoisonTalentRiders(state2, 5, texts);
-    expect(resultState2.enemyMitigation.armor).toBe(4);
+    const applied = addEnemyStatus(state2, "poison", 4);
+    expect(applied.enemyStatuses.poison).toBe(4);
+    expect(applied.enemyMitigation.armor).toBe(4);
+
+    // 3. Poison ticks deal damage without re-rolling shred (not applications).
+    const state3 = makeState({
+      enemyMitigation: { ...makeState().enemyMitigation, armor: 5 },
+      gearEffects: { ...makeState().gearEffects, poisonArmorShredChance: 100 },
+      rng: () => 0.1,
+    });
+    const texts3: any[] = [];
+    const resultState3 = applyPoisonTalentRiders(state3, 5, texts3);
+    expect(resultState3.enemyMitigation.armor).toBe(5);
   });
 
   it("nature-mana-refund-chance: refunds 1 mana on Nature damage card play", () => {

@@ -18,6 +18,10 @@ function scaleCardDescriptionLines(card: BattleCard, multiplier: number, potency
     return linesWithoutConsume;
   }
 
+  // Only numbers backed by an effect's `amount` scale. Scaled amounts take
+  // priority: if another numeric field happens to share the value, its text
+  // occurrences also display the scaled number — the mix's primary promise is
+  // never understated, at the cost of a rare exotic-field mismatch.
   const scaleMap = new Map<number, number>();
   for (const effect of card.effects) {
     if ("amount" in effect && typeof effect.amount === "number") {
@@ -31,8 +35,7 @@ function scaleCardDescriptionLines(card: BattleCard, multiplier: number, potency
 
   return linesWithoutConsume.map((line) =>
     line.replace(/\b\d+\b/g, (match) => {
-      const num = Number(match);
-      const scaled = scaleMap.get(num);
+      const scaled = scaleMap.get(Number(match));
       return scaled !== undefined ? String(scaled) : match;
     }),
   );
@@ -85,11 +88,8 @@ export function tryCreateMixedPotion(
   potencyBonus: number = 0,
 ): BattleCard | null {
   if (!cardA || !cardB) return null;
-  try {
-    return createMixedPotion(cardA, cardB, potencyBonus);
-  } catch {
-    return null;
-  }
+  if (cardA.id === MIXED_POTION_CARD_ID || cardB.id === MIXED_POTION_CARD_ID) return null;
+  return createMixedPotion(cardA, cardB, potencyBonus);
 }
 
 /** Removes the two cards at the given indices from the deck and appends the mixed potion.

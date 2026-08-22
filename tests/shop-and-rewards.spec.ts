@@ -6,7 +6,7 @@ import { DestinationPage } from "./pages/destination-page";
 import { enterPrimaryRewardScreen, SAVE_KEY } from "./helpers";
 import { critical } from "./playwright-tags";
 
-test.describe("Merchant Shop", () => {
+test.describe("Merchant Shop", critical, () => {
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page, runtimeErrors }) => {
       void runtimeErrors;
@@ -26,7 +26,7 @@ test.describe("Merchant Shop", () => {
   });
 });
 
-test.describe("Reward Flow", () => {
+test.describe("Reward Flow", critical, () => {
   test(
     "card reward: requires confirmation and selecting and adding a card works",
     critical,

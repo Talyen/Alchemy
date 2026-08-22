@@ -45,11 +45,34 @@ function assertImportGroup(options, needle, file) {
   );
 }
 
-async function calculateImports(file) {
-  return restrictedImports(await eslint.calculateConfigForFile(file));
+const configCache = new Map();
+
+async function getConfig(file) {
+  if (!configCache.has(file)) {
+    configCache.set(file, eslint.calculateConfigForFile(file));
+  }
+  return configCache.get(file);
 }
 
-const battleConfig = await eslint.calculateConfigForFile("src/lib/battle/card-play.ts");
+async function calculateImports(file) {
+  return restrictedImports(await getConfig(file));
+}
+
+const filesToPreload = [
+  "src/lib/battle/card-play.ts",
+  "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
+  "src/features/alchemy/meta/screens/menu-screen.tsx",
+  "src/features/alchemy/meta/talents/talent-tree.tsx",
+  "src/features/alchemy/shared/ui/game-menu.tsx",
+  "src/app/screen-routes/index.tsx",
+  "src/features/alchemy/run-setup/run/content-system-navigation.ts",
+  "src/features/alchemy/run-loop/battle/battle-init.ts",
+  "src/features/alchemy/run-loop/screens/destination-screen.tsx",
+  "src/features/alchemy/run-loop/shop/create-shop-actions.ts",
+];
+await Promise.all(filesToPreload.map((f) => getConfig(f)));
+
+const battleConfig = await getConfig("src/lib/battle/card-play.ts");
 const battleImports = restrictedImports(battleConfig);
 const battleSyntax = restrictedSyntax(battleConfig);
 assert.ok(

@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";

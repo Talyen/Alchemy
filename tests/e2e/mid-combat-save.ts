@@ -1,7 +1,7 @@
 // Injects a persisted mid-combat save for resume E2E coverage.
 import type { Page } from "@playwright/test";
 import { makeCard } from "./cards";
-import { makeGoblinBattleState } from "./battle-fixtures";
+import { makeGoblinBattleState } from "../fixtures/battle-state";
 import { injectSaveState } from "./save-injection";
 
 export async function injectMidCombatSave(page: Page) {

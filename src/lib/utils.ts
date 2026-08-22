@@ -49,7 +49,7 @@ export function createSeededRng(seed: number): () => number {
 
 // Appends a value immutably only when it is not already present.
 export function appendUnique<T>(items: readonly T[], item: T): T[] {
-  return items.includes(item) ? [...items] : [...items, item];
+  return items.includes(item) ? (items as T[]) : [...items, item];
 }
 
 export function createInstanceId(): string {
@@ -64,5 +64,14 @@ export function createInstanceId(): string {
 
 // Merges newly discovered IDs while preserving the original encounter order.
 export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): T[] {
-  return Array.from(new Set([...items, ...additions]));
+  if (additions.length === 0) return items as T[];
+  const set = new Set(items);
+  let changed = false;
+  for (const add of additions) {
+    if (!set.has(add)) {
+      set.add(add);
+      changed = true;
+    }
+  }
+  return changed ? Array.from(set) : (items as T[]);
 }

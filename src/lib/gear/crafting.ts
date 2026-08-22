@@ -1,4 +1,12 @@
-import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
+import {
+  GEAR_AFFIX_COUNT,
+  SALVAGE_ADVANCED_MAW_CHANCE,
+  SALVAGE_ADVANCED_SEAL_CHANCE,
+  SALVAGE_ADVANCED_WHETSTONE_CHANCE,
+  SALVAGE_BASIC_SPRIG_CHANCE,
+  SALVAGE_BASIC_VOIDSTONE_CHANCE,
+  SALVAGE_DICE_HIGH_CHANCE,
+} from "@/lib/game-constants";
 import craftingAscensionSeal from "@/assets/optimized/crafting-ascension-seal.webp";
 import craftingDiscordantDice from "@/assets/optimized/crafting-discordant-dice.webp";
 import craftingSeveranceMaw from "@/assets/optimized/crafting-severance-maw.webp";
@@ -10,7 +18,7 @@ import { rollAffixValue } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { gearDefinitions, gearInstanceRarity } from "./definitions";
+import { gearDefinitionId, gearDefinitions, gearInstanceRarity } from "./definitions";
 import { type GearInstance, type GearAffixRoll, type GearRarity } from "./types";
 import { pickRandom } from "@/lib/utils";
 
@@ -170,26 +178,70 @@ function upgradeAffixValueToAstral(roll: GearAffixRoll): GearAffixRoll {
   };
 }
 
+function hasAnyAffix(item: GearInstance): boolean {
+  return item.affixes.length > 0;
+}
+
+interface CraftingCurrencyBehavior {
+  canApply(item: GearInstance): boolean;
+  apply(item: GearInstance, rng: () => number): GearInstance;
+}
+
+const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBehavior> = {
+  "discordant-dice": {
+    canApply: hasAnyAffix,
+    apply: (item, rng) => ({ ...item, affixes: rollDistinctAffixes(item, item.affixes.length, rng) }),
+  },
+  "sprig-of-growth": {
+    canApply: (item) =>
+      item.affixes.length < GEAR_AFFIX_COUNT[gearInstanceRarity(item)].max && availableAffixesForItem(item).length > 0,
+    apply: addRandomAffix,
+  },
+  voidstone: {
+    canApply: hasAnyAffix,
+    apply: (item) => ({ ...item, affixes: [] }),
+  },
+  "ascension-seal": {
+    canApply: (item) => {
+      if (gearInstanceRarity(item) !== "basic") return false;
+      const baseItemId = gearDefinitions[item.definitionId]?.baseItemId;
+      return baseItemId !== undefined && gearDefinitions[gearDefinitionId(baseItemId, "astral")] !== undefined;
+    },
+    apply: (item) => {
+      const baseItemId = gearDefinitions[item.definitionId]!.baseItemId;
+      const nextDefId = gearDefinitionId(baseItemId, "astral");
+      if (!gearDefinitions[nextDefId]) return item;
+      return { ...item, definitionId: nextDefId, affixes: item.affixes.map(upgradeAffixValueToAstral) };
+    },
+  },
+  "severance-maw": {
+    canApply: hasAnyAffix,
+    apply: (item, rng) => {
+      const index = Math.floor(rng() * item.affixes.length);
+      return { ...item, affixes: item.affixes.filter((_, affixIndex) => affixIndex !== index) };
+    },
+  },
+  "smiths-whetstone": {
+    canApply: (item) => hasAnyAffix(item) && hasUpgradeableAffix(item),
+    apply: (item, rng) => {
+      const rarity = gearInstanceRarity(item);
+      const upgradeableIndexes = item.affixes.flatMap((affix, index) =>
+        affix.value < affixMaxValue(affix, rarity) ? [index] : [],
+      );
+      const index = pickRandom(upgradeableIndexes, rng);
+      if (index === undefined) return item;
+      return {
+        ...item,
+        affixes: item.affixes.map((affix, affixIndex) =>
+          affixIndex === index ? { ...affix, value: affix.value + 1 } : affix,
+        ),
+      };
+    },
+  },
+};
+
 export function canApplyCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInstance): boolean {
-  const rarity = gearInstanceRarity(item);
-  switch (currencyId) {
-    case "discordant-dice":
-      return item.affixes.length > 0;
-    case "sprig-of-growth":
-      return item.affixes.length < GEAR_AFFIX_COUNT[rarity].max && availableAffixesForItem(item).length > 0;
-    case "voidstone":
-      return item.affixes.length > 0;
-    case "ascension-seal": {
-      const nextDefId = item.definitionId.replace("-basic", "-astral");
-      return rarity === "basic" && nextDefId !== item.definitionId && gearDefinitions[nextDefId] !== undefined;
-    }
-    case "severance-maw":
-      return item.affixes.length >= 1;
-    case "smiths-whetstone":
-      return item.affixes.length >= 1 && hasUpgradeableAffix(item);
-    default:
-      return false;
-  }
+  return CRAFTING_CURRENCY_BEHAVIORS[currencyId].canApply(item);
 }
 
 export function applyCraftingCurrency(
@@ -197,60 +249,22 @@ export function applyCraftingCurrency(
   item: GearInstance,
   rng: () => number,
 ): GearInstance {
-  if (!canApplyCraftingCurrency(currencyId, item)) return item;
-
-  switch (currencyId) {
-    case "discordant-dice":
-      return { ...item, affixes: rollDistinctAffixes(item, item.affixes.length, rng) };
-
-    case "sprig-of-growth":
-      return addRandomAffix(item, rng);
-
-    case "voidstone":
-      return { ...item, affixes: [] };
-
-    case "ascension-seal": {
-      const nextDefId = item.definitionId.replace("-basic", "-astral");
-      if (!gearDefinitions[nextDefId]) return item;
-      return { ...item, definitionId: nextDefId, affixes: item.affixes.map(upgradeAffixValueToAstral) };
-    }
-
-    case "severance-maw": {
-      const index = Math.floor(rng() * item.affixes.length);
-      const affixes = item.affixes.filter((_, affixIndex) => affixIndex !== index);
-      return { ...item, affixes };
-    }
-
-    case "smiths-whetstone": {
-      const rarity = gearInstanceRarity(item);
-      const upgradeableIndexes = item.affixes.flatMap((affix, index) =>
-        affix.value < affixMaxValue(affix, rarity) ? [index] : [],
-      );
-      const index = pickRandom(upgradeableIndexes, rng);
-      if (index === undefined) return item;
-      const affixes = item.affixes.map((affix, affixIndex) =>
-        affixIndex === index ? { ...affix, value: affix.value + 1 } : affix,
-      );
-      return { ...item, affixes };
-    }
-
-    default:
-      return item;
-  }
+  const behavior = CRAFTING_CURRENCY_BEHAVIORS[currencyId];
+  if (!behavior.canApply(item)) return item;
+  return behavior.apply(item, rng);
 }
 
 export function rollSalvageYield(rarity: GearRarity, rng: () => number): Record<CraftingCurrencyId, number> {
   const yieldRecord = { ...EMPTY_CRAFTING_CURRENCIES };
 
+  yieldRecord["discordant-dice"] = rng() < SALVAGE_DICE_HIGH_CHANCE ? 1 : 2;
   if (rarity === "basic") {
-    yieldRecord["discordant-dice"] = rng() < 0.5 ? 1 : 2;
-    if (rng() < 0.5) yieldRecord["sprig-of-growth"] = 1;
-    if (rng() < 0.25) yieldRecord.voidstone = 1;
+    if (rng() < SALVAGE_BASIC_SPRIG_CHANCE) yieldRecord["sprig-of-growth"] = 1;
+    if (rng() < SALVAGE_BASIC_VOIDSTONE_CHANCE) yieldRecord.voidstone = 1;
   } else {
-    yieldRecord["discordant-dice"] = rng() < 0.5 ? 1 : 2;
-    if (rng() < 0.35) yieldRecord["ascension-seal"] = 1;
-    if (rng() < 0.35) yieldRecord["severance-maw"] = 1;
-    if (rng() < 0.35) yieldRecord["smiths-whetstone"] = 1;
+    if (rng() < SALVAGE_ADVANCED_SEAL_CHANCE) yieldRecord["ascension-seal"] = 1;
+    if (rng() < SALVAGE_ADVANCED_MAW_CHANCE) yieldRecord["severance-maw"] = 1;
+    if (rng() < SALVAGE_ADVANCED_WHETSTONE_CHANCE) yieldRecord["smiths-whetstone"] = 1;
   }
 
   return yieldRecord;

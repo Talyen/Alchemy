@@ -35,13 +35,18 @@ export function gearInstanceRarity(instance: GearInstance): GearRarity {
   return gearDefinitions[instance.definitionId]?.rarity ?? "basic";
 }
 
+/** Single owner of the `<baseItemId>-<rarity>` definition-id format. */
+export function gearDefinitionId(baseItemId: GearBaseItemId | string, rarity: GearRarity): string {
+  return `${baseItemId}-${rarity}`;
+}
+
 function buildVariantDefinitions(): Record<string, GearDefinition> {
   const variants: Record<string, GearDefinition> = {};
 
   for (const baseItemId of Object.keys(gearBaseItems) as GearBaseItemId[]) {
     const baseItem: GearBaseItemDefinition = gearBaseItems[baseItemId];
     for (const rarity of baseItem.availableRarities) {
-      const id = `${baseItemId}-${rarity}`;
+      const id = gearDefinitionId(baseItemId, rarity);
       const art = gearArtByDefinitionId[id];
       if (!art) {
         throw new Error(`Missing gear art for ${id}`);

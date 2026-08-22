@@ -54,7 +54,7 @@ describe("applyEffectByKind (utility effects)", () => {
     const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 3 }] });
     const effect = { kind: "draw-cards" as const, amount: 3 };
     const result = applyEffectByKind(effect.kind, state, card, effect, 1, makeTexts());
-    expect(result.hand.map((c) => c.id).sort()).toEqual(["d1", "d2", "d3"]);
+    expect(result.hand.map((c: { id: string }) => c.id).sort()).toEqual(["d1", "d2", "d3"]);
     expect(result.deck).toHaveLength(0);
     expect(result.discard).toHaveLength(0);
   });

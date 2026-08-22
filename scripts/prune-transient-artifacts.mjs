@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { TRANSIENT_ARTIFACT_DIRS, formatBytes, measurePath } from "./lib/clean-dev-artifacts.mjs";
+import { TRANSIENT_ARTIFACT_DIRS, formatBytes, removePath } from "./lib/clean-dev-artifacts.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const TRANSIENT_DIRS = TRANSIENT_ARTIFACT_DIRS;
@@ -26,11 +26,12 @@ export function parsePruneArgs(argv) {
   return { days, dryRun };
 }
 
-function stale(pathname, cutoff) {
+function getFileStaleInfo(pathname, cutoff) {
   try {
-    return fs.lstatSync(pathname).mtimeMs < cutoff;
+    const stats = fs.lstatSync(pathname);
+    return { isStale: stats.mtimeMs < cutoff, bytes: stats.size };
   } catch {
-    return false;
+    return { isStale: false, bytes: 0 };
   }
 }
 
@@ -54,14 +55,15 @@ function pruneDirectory(pathname, cutoff, dryRun, removed, rootDir) {
       // Empty directories contain no evidence, so remove them regardless of
       // mtime; the transient root itself is never passed through this branch.
       if (isEmpty) {
-        const bytes = measurePath(child).bytes;
-        removed.push({ path: path.relative(rootDir, child), bytes });
-        if (!dryRun) fs.rmSync(child, { recursive: true, force: true });
+        removed.push({ path: path.relative(rootDir, child), bytes: 0 });
+        if (!dryRun) removePath(child);
       }
-    } else if (stale(child, cutoff)) {
-      const bytes = measurePath(child).bytes;
-      removed.push({ path: path.relative(rootDir, child), bytes });
-      if (!dryRun) fs.rmSync(child, { force: true });
+    } else {
+      const info = getFileStaleInfo(child, cutoff);
+      if (info.isStale) {
+        removed.push({ path: path.relative(rootDir, child), bytes: info.bytes });
+        if (!dryRun) removePath(child);
+      }
     }
   }
 }

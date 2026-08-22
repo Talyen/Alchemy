@@ -7,7 +7,7 @@ import {
   defaultCcState,
   defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
-import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
+import { makeCombatTexts as makeTexts, makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 
 describe("tickEnemyStatuses", () => {
   it("deals burn damage and halves burn stack", () => {
@@ -68,6 +68,22 @@ describe("tickEnemyStatuses", () => {
     expect(next.playerHealth).toBe(22);
     expect(next.pendingBleedLeechHealing).toBe(0);
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
+  });
+
+  it("scales pending bleed leech healing by leechHealBonusPercent", () => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      playerHealth: 20,
+      playerMaxHealth: 40,
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 6 }),
+      pendingBleedLeechHealing: 4,
+      gearEffects: { ...makeTestBattleState().gearEffects, leechHealBonusPercent: 50 },
+    });
+    const texts = makeTexts();
+    // computeLeechHeal(4) = 2, scaled by +50% -> 3.
+    const next = tickEnemyStatuses(state, texts);
+    expect(next.playerHealth).toBe(23);
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
   });
 
   it("skips tick when burn is 0", () => {
@@ -410,6 +426,23 @@ describe("tickPlayerStatuses", () => {
     expect(next.playerHealth).toBe(23);
     expect(next.playerStatuses.bleed).toBe(0);
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "bleed", amount: 7 });
+  });
+
+  it.each(["burn", "bleed"] as const)("receiveHalf%sDamage applies resists before armor", (status) => {
+    const state = patchBattleState({
+      playerHealth: 30,
+      playerStatuses: defaultPlayerStatusValues({ [status]: 10, armor: 3 }),
+      talentEffects: {
+        ...defaultTalentEffects,
+        [`receiveHalf${status === "burn" ? "Burn" : "Bleed"}Damage`]: true,
+        [`armorMitigates${status === "burn" ? "Burn" : "Bleed"}`]: true,
+      },
+    });
+    const texts = makeTexts();
+    // Canonical chain (scale -> armor): round(10/2) - 3 = 2. Armor-subtract-first would give round(7/2) = 4.
+    const next = tickPlayerStatuses(state, texts);
+    expect(next.playerHealth).toBe(28);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: status, amount: 2 });
   });
 
   it("clears stun and triggers turn skip when threshold exceeded", () => {

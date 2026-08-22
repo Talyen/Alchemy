@@ -2,7 +2,6 @@
 // Append a short Playwright failure digest to $GITHUB_STEP_SUMMARY (or stdout).
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { publishCiSummary } from "./lib/ci-summary.mjs";
 import { writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
 import {
@@ -11,6 +10,7 @@ import {
   summarizePlaywrightFile,
   summarizePlaywrightReport,
 } from "./lib/playwright-summary.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
 
 export { collectPlaywrightTests, formatPlaywrightSummaryMarkdown, summarizePlaywrightFile, summarizePlaywrightReport };
 
@@ -46,5 +46,4 @@ function main() {
   });
 }
 
-const entry = process.argv[1] ? path.resolve(process.argv[1]) : "";
-if (entry.length > 0 && fileURLToPath(import.meta.url) === entry) main();
+if (isMainModule(import.meta.url)) main();

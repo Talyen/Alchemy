@@ -31,16 +31,16 @@ When a class of finding is fully mechanical and has stayed clean for several pas
 
 ## Ownership
 
-| Concern                                                                         | Owner audit                         |
-| ------------------------------------------------------------------------------- | ----------------------------------- |
-| Async lifetime / races / persistence hardening / defect hunt                    | `RuntimeCorrectnessAudit.md`        |
-| Dead code, dual paths, duplication, slop/mass, ownership drift, change locality | `SimplificationAudit.md`            |
-| Unit + E2E portfolio trust, gaps, runtime, tiers                                | `TestQualityAudit.md`               |
-| Design tokens, semantic states, interaction/feedback defects                    | `UIConsistencyAudit.md`             |
-| Doc drift / harmful omissions / duplicated policy                               | `07-DocumentationStalenessAudit.md` |
-| RNG / I/O / environment seams and effect quality                                | `13-SideEffectSurfaceAudit.md`      |
-| Startup / latency / render / memory performance                                 | `12-PerformanceAudit.md`            |
-| Typing escapes / invalid-state models                                           | `15-TypeSafetyAudit.md`             |
+| Concern                                                                         | Owner audit                                                      |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Async lifetime / races / persistence hardening / defect hunt                    | [RuntimeCorrectnessAudit.md](RuntimeCorrectnessAudit.md)         |
+| Dead code, dual paths, duplication, slop/mass, ownership drift, change locality | [SimplificationAudit.md](SimplificationAudit.md)                 |
+| Unit + E2E portfolio trust, gaps, runtime, tiers                                | [TestQualityAudit.md](TestQualityAudit.md)                       |
+| Design tokens, semantic states, interaction/feedback defects                    | [UIConsistencyAudit.md](UIConsistencyAudit.md)                   |
+| Doc drift / harmful omissions / duplicated policy                               | [DocumentationStalenessAudit.md](DocumentationStalenessAudit.md) |
+| RNG / I/O / environment seams and effect quality                                | [SideEffectSurfaceAudit.md](SideEffectSurfaceAudit.md)           |
+| Startup / latency / render / memory performance                                 | [PerformanceAudit.md](PerformanceAudit.md)                       |
+| Typing escapes / invalid-state models                                           | [TypeSafetyAudit.md](TypeSafetyAudit.md)                         |
 
 Layer import boundaries (`src/lib` ↔ `src/features`, facade-only store access) are continuously enforced by ESLint — fix via `npm run lint`, not an audit.
 

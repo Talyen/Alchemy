@@ -70,4 +70,33 @@ describe("useAlchemyAutosaveFromStores", () => {
     expect(keys).toHaveLength(1);
     expect(JSON.parse(mockStorage[keys[0]!]!).gold).toBe(91);
   });
+
+  it("flushes within the max wait even when commits keep resetting the debounce", async () => {
+    renderHook(() => useAlchemyAutosaveFromStores(true));
+
+    // Commits every 250ms never leave a 500ms quiet gap, so only the max-wait
+    // can produce a write while play continues.
+    act(() => {
+      dispatchRunSessionCommand((draft) => setRunGold(draft, 1));
+    });
+    let lastGold = 1;
+    for (let i = 0; i < 39; i++) {
+      await act(async () => {
+        vi.advanceTimersByTime(250);
+        lastGold = 2 + i;
+        dispatchRunSessionCommand((draft) => setRunGold(draft, lastGold));
+      });
+    }
+    expect(Object.keys(mockStorage)).toHaveLength(0);
+
+    // AUTOSAVE_MAX_WAIT_MS (10s) after the first dirty commit elapses and the
+    // pending forced flush finally fires with the freshest committed value.
+    await act(async () => {
+      vi.advanceTimersByTime(250);
+      await Promise.resolve();
+    });
+    const keys = Object.keys(mockStorage);
+    expect(keys.length).toBeGreaterThan(0);
+    expect(JSON.parse(mockStorage[keys[0]!]!).gold).toBe(lastGold);
+  });
 });

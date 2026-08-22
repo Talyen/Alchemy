@@ -55,3 +55,14 @@ export function drawCards(
 export function drawFromState(state: BattleState, amount: number) {
   return drawCards(state.deck, state.discard, state.hand, amount, state.nextCardUid, state.rng);
 }
+
+/** Applies a draw result's deck/discard/hand/uid back onto BattleState. */
+export function applyDrawResult(state: BattleState, draw: ReturnType<typeof drawCards>): BattleState {
+  return {
+    ...state,
+    deck: draw.deck,
+    discard: draw.discard,
+    hand: draw.hand,
+    nextCardUid: draw.nextCardUid,
+  };
+}

@@ -4,7 +4,7 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 ## Commands
 
-Ship, desktop, and installer scripts (`check:ship`, `check:ship:full`, `build:desktop`, `package:win`, `dist:desktop`, `sync:version`): [REFERENCE.md § Script Command Reference](./REFERENCE.md#script-command-reference). `check:ship:full` is `check:ship` (lint:ci + ship unit + desktop renderer) plus save E2E and Electron E2E — used nightly and before tagging.
+Ship, desktop, and installer scripts (`check:ship`, `check:ship:full`, `build:desktop`, `package:win`, `dist:desktop`, `sync:version`): [REFERENCE.md § Script Command Reference](./REFERENCE.md#script-command-reference). `check:ship:full` adds save E2E on top of `check:ship`; the Electron desktop suite is CI-only (path-filtered `electron-e2e` job plus an unconditional nightly run), so releases rely on CI coverage rather than a local pre-tag desktop run. Gate composition and tiers are owned by [CONTRIBUTING.md](../CONTRIBUTING.md#before-you-push) — used nightly and before tagging.
 
 | Command                          | When it runs                                                                                                |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------- |

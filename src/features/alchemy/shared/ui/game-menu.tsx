@@ -4,8 +4,9 @@ import { Fragment } from "react";
 import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { Screen } from "@/lib/routing";
-import { fadePhaseClass, useFadePresence, useHeldWhile } from "./fade-presence";
+import { useHeldWhile } from "./fade-presence";
 import { LockedMenuItem } from "./locked-menu-item";
+import { ModalOverlayShell } from "./modal-overlay-shell";
 
 const GAME_MENU_CONFIG = {
   anchoredMenuOffsetPx: 8,
@@ -202,11 +203,7 @@ export function GameMenu({
   isHomesteadLocked = false,
   isArmoryLocked = false,
 }: GameMenuProps) {
-  const { mounted, phase } = useFadePresence(isOpen);
   const layoutAnchorRect = useHeldWhile(isOpen, anchorRect ?? null);
-  if (!mounted) return null;
-
-  const overlayFadeClass = fadePhaseClass(phase);
 
   const panel = (
     <GameMenuPanel
@@ -232,29 +229,24 @@ export function GameMenu({
     />
   );
 
-  if (layoutAnchorRect) {
-    return (
-      <div
-        className={cn("absolute inset-0 z-[120]", overlayFadeClass, !isOpen && "pointer-events-none")}
-        onClick={onClose}
-      >
+  return (
+    <ModalOverlayShell
+      open={isOpen}
+      escapeId="game-menu"
+      onClose={onClose}
+      dismissOnEscape={false}
+      dismissOnBackdrop
+      dim={false}
+      zIndex={120}
+      className={cn(!isOpen && "pointer-events-none", !layoutAnchorRect && "flex items-center justify-center px-6")}
+    >
+      {layoutAnchorRect ? (
         <div className="fixed z-[121]" style={anchoredMenuStyle(layoutAnchorRect)}>
           {panel}
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={cn(
-        "absolute inset-0 z-[120] flex items-center justify-center px-6",
-        overlayFadeClass,
-        !isOpen && "pointer-events-none",
+      ) : (
+        panel
       )}
-      onClick={onClose}
-    >
-      {panel}
-    </div>
+    </ModalOverlayShell>
   );
 }

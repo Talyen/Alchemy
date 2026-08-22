@@ -134,19 +134,10 @@ export const DIFFICULTY_TURN_START_MODIFIER_KINDS = Object.keys(difficultyTurnSt
 /** Passive difficulty modifiers with no turn-start handler — used by tests and startup validation. */
 export const PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS = [...PASSIVE_ONLY_MODIFIERS];
 
+/** Every difficulty modifier kind: turn-start handler kinds plus the passive-only set. */
 const ALL_DIFFICULTY_MODIFIER_KINDS: Array<DifficultyModifier["kind"]> = [
-  "enemy-starting-armor",
-  "enemy-gains-forge-each-turn",
-  "increase-enemy-physical-damage",
-  "increase-enemy-damage",
-  "increase-enemy-status",
-  "enemy-attacks-gain-leech",
-  "start-block",
-  "start-max-mana",
-  "gold-multiplier",
-  "start-companion",
-  "enemy-health-multiplier",
-  "enemy-damage-multiplier",
+  ...DIFFICULTY_TURN_START_MODIFIER_KINDS,
+  ...PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS,
 ];
 
 function isEnemyTraitTurnStartCovered(traitId: string): boolean {

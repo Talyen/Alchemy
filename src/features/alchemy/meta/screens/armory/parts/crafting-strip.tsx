@@ -1,9 +1,9 @@
-import { useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { CRAFTING_CURRENCY_LIST, type CraftingCurrencyDefinition, type CraftingCurrencyId } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { PortaledTooltip } from "../../../../shared/ui/portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltip-panel";
+import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { CURRENCY_COUNT_LABEL_CLASS } from "./currency-styles";
 import { sectionTitleClass, tiltSurfaceSelectedRingClass } from "../../../../shared/config";
 
@@ -20,12 +20,12 @@ function CurrencyChip({
   editable: boolean;
   onSelect: () => void;
 }) {
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
+    useHoverVisible<HTMLButtonElement>();
   const canUse = editable && count > 0;
   return (
     <>
-      <PortaledTooltip triggerRef={triggerRef} visible={showTooltip} className="armory-inventory-tooltip !shadow-none">
+      <PortaledTooltip triggerRef={triggerRef} visible={visible} className="armory-inventory-tooltip !shadow-none">
         <TooltipHeader>{currency.displayName}</TooltipHeader>
         <TooltipBody>{currency.tooltipEffect}</TooltipBody>
       </PortaledTooltip>
@@ -42,8 +42,10 @@ function CurrencyChip({
           armed && tiltSurfaceSelectedRingClass,
           !canUse && "cursor-default opacity-50",
         )}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onFocusCapture={onFocusCapture}
+        onBlurCapture={onBlurCapture}
         onClick={(event) => {
           event.stopPropagation();
           if (!canUse) return;

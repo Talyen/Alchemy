@@ -1,27 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { installDesktopApi } from "../helpers/desktop-save-mock-helper";
 import { initializeSteam, isDesktop, quitDesktopApp, setDisplayMode, setSteamRichPresence } from "@/lib/platform";
-
-type DesktopApi = NonNullable<Window["alchemyDesktop"]>;
-
-function installDesktopApi(overrides: Partial<DesktopApi> = {}): DesktopApi {
-  const api: DesktopApi = {
-    isDesktop: true,
-    setDisplayMode: vi.fn().mockResolvedValue(undefined),
-    quit: vi.fn().mockResolvedValue(undefined),
-    listSaveCandidates: vi.fn().mockResolvedValue([]),
-    writeSave: vi.fn().mockResolvedValue(true),
-    clearSave: vi.fn().mockResolvedValue(true),
-    steamGetName: vi.fn().mockResolvedValue(null),
-    steamSetRichPresence: vi.fn().mockResolvedValue(false),
-    steamCloudRead: vi.fn().mockResolvedValue(null),
-    steamCloudWrite: vi.fn().mockResolvedValue(false),
-    steamCloudDelete: vi.fn().mockResolvedValue(false),
-    ...overrides,
-  };
-  window.alchemyDesktop = api;
-  return api;
-}
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -39,8 +19,10 @@ describe("desktop runtime", () => {
     const setMode = vi.fn().mockResolvedValue(undefined);
     const quit = vi.fn().mockResolvedValue(undefined);
     installDesktopApi({
-      setDisplayMode: setMode,
-      quit,
+      overrides: {
+        setDisplayMode: setMode,
+        quit,
+      },
     });
 
     await setDisplayMode("fullscreen");
@@ -57,9 +39,7 @@ describe("desktop runtime", () => {
   });
 
   it("returns Steam capabilities instead of mutating shared state", async () => {
-    installDesktopApi({
-      steamGetName: vi.fn().mockResolvedValue("PlayerOne"),
-    });
+    installDesktopApi({ steamName: "PlayerOne" });
 
     await expect(initializeSteam()).resolves.toEqual({
       playerName: "PlayerOne",
@@ -68,9 +48,7 @@ describe("desktop runtime", () => {
   });
 
   it("keeps cloud sync disabled when Steam identity is unavailable", async () => {
-    installDesktopApi({
-      steamGetName: vi.fn().mockResolvedValue(null),
-    });
+    installDesktopApi();
 
     await expect(initializeSteam()).resolves.toEqual({
       playerName: null,
@@ -81,7 +59,7 @@ describe("desktop runtime", () => {
   it("delegates rich presence without requiring initialization state", async () => {
     const setRichPresence = vi.fn().mockResolvedValue(true);
     installDesktopApi({
-      steamSetRichPresence: setRichPresence,
+      overrides: { steamSetRichPresence: setRichPresence },
     });
 
     await expect(setSteamRichPresence("steam_display", "#Playing")).resolves.toBe(true);

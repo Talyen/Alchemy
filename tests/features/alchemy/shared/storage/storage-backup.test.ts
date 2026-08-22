@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { currentSchemaCampaignSave } from "../../../../fixtures/legacy-saves";
 import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";

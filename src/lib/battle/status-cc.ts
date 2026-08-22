@@ -10,21 +10,7 @@ import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
 import { setEnemyStatus, setPlayerStatus, addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
-const CONSTANTS = {
-  STATUS_NAMES: {
-    STUN: "stun" as const,
-    FREEZE: "freeze" as const,
-  },
-  TARGETS: {
-    PLAYER: "player" as const,
-    ENEMY: "enemy" as const,
-  },
-  COMBAT_TEXT_KINDS: {
-    NOTICE: "notice" as const,
-  },
-} as const;
-
-type CcStat = typeof CONSTANTS.STATUS_NAMES.STUN | typeof CONSTANTS.STATUS_NAMES.FREEZE;
+type CcStat = "stun" | "freeze";
 
 function clearPlayerCcStack(state: BattleState, stat: CcStat): BattleState {
   return setPlayerStatus(state, stat, 0);
@@ -53,16 +39,16 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     return clearPlayerCcStack(state, stat);
   }
   mergeCombatText(combatTexts, {
-    target: CONSTANTS.TARGETS.PLAYER,
-    kind: CONSTANTS.COMBAT_TEXT_KINDS.NOTICE,
+    target: "player",
+    kind: "notice",
     stat,
-    text: stat === CONSTANTS.STATUS_NAMES.STUN ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
+    text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
   });
   let nextState: BattleState = {
     ...clearPlayerCcStack(state, stat),
     playerCC: {
       ...state.playerCC,
-      ...(stat === CONSTANTS.STATUS_NAMES.STUN
+      ...(stat === "stun"
         ? { stunSkipTurns: state.playerCC.stunSkipTurns + BATTLE_CONFIG.BASE_CC_DURATION }
         : { freezeSkipTurns: state.playerCC.freezeSkipTurns + BATTLE_CONFIG.BASE_CC_DURATION }),
       cooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
@@ -73,7 +59,7 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     const armorAmount = state.gearEffects.armorOnStunOrFreeze;
     nextState = addPlayerStatus(nextState, "armor", armorAmount);
     mergeCombatText(combatTexts, {
-      target: CONSTANTS.TARGETS.PLAYER,
+      target: "player",
       kind: "status",
       stat: "armor",
       amount: armorAmount,
@@ -86,14 +72,14 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
 export function resolvePlayerCrowdControlTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = resolvePlayerCrowdControlTrigger({
     state,
-    stat: CONSTANTS.STATUS_NAMES.STUN,
+    stat: "stun",
     stackValue: state.playerStatuses.stun,
     thresholdFraction: STUN_THRESHOLD_FRACTION,
     combatTexts,
   });
   nextState = resolvePlayerCrowdControlTrigger({
     state: nextState,
-    stat: CONSTANTS.STATUS_NAMES.FREEZE,
+    stat: "freeze",
     stackValue: nextState.playerStatuses.freeze,
     thresholdFraction: FREEZE_THRESHOLD_FRACTION,
     combatTexts,
@@ -129,17 +115,17 @@ export function assignEnemyCrowdControlSkip(input: EnemyCcTriggerInput): BattleS
     ...clearEnemyCcStack(nextState, stat),
     enemyCC: {
       ...nextState.enemyCC,
-      ...(stat === CONSTANTS.STATUS_NAMES.STUN
+      ...(stat === "stun"
         ? { stunSkipTurns: nextState.enemyCC.stunSkipTurns + skipDuration }
         : { freezeSkipTurns: nextState.enemyCC.freezeSkipTurns + skipDuration }),
       cooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
     },
   };
   mergeCombatText(combatTexts, {
-    target: CONSTANTS.TARGETS.ENEMY,
-    kind: CONSTANTS.COMBAT_TEXT_KINDS.NOTICE,
+    target: "enemy",
+    kind: "notice",
     stat,
-    text: stat === CONSTANTS.STATUS_NAMES.STUN ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
+    text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
   });
   if (postTrigger) result = postTrigger(result);
   return result;

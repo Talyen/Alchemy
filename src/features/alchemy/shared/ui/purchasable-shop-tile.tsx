@@ -33,16 +33,7 @@ export function ShopPriceChip({ price, gold, purchased }: { price: number; gold:
   );
 }
 
-export function PurchasableShopTile({
-  media,
-  purchased,
-}: {
-  media: ReactNode;
-  price: number;
-  gold: number;
-  purchased: boolean;
-  onBuy?: () => void;
-}) {
+export function PurchasableShopTile({ media, purchased }: { media: ReactNode; purchased: boolean }) {
   return (
     <div className={cn("relative flex flex-col items-center text-center", purchased && "opacity-50")}>{media}</div>
   );

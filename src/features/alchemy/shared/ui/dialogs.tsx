@@ -1,13 +1,13 @@
 // Modal confirmation overlays for destructive or blocking game actions.
 // Depends on the shared Button primitive and Lucide icons.
 // Used by menus and screens that need explicit player confirmation.
-import { useEffect, useId, type ComponentType, type ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
-import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
+import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
 import { bodyTextClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
-import { fadePhaseClass, useFadePresence } from "./fade-presence";
+import { ModalOverlayShell } from "./modal-overlay-shell";
 
 const DIALOG_CONFIG = {
   dangerTone: "danger",
@@ -43,28 +43,18 @@ export function ConfirmationDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const escapeId = useId();
-  const { mounted, phase } = useFadePresence(open);
-
-  useEffect(() => {
-    if (!dismissOnEscape || !mounted || phase === "exit") return;
-    return pushEscapeHandler({
-      id: `confirmation-dialog:${escapeId}`,
-      priority: ESCAPE_PRIORITY.DIALOG,
-      onEscape: () => onCancel(),
-    });
-  }, [dismissOnEscape, escapeId, onCancel, mounted, phase]);
-
-  if (!mounted) return null;
-
   return (
-    <div
-      className={cn(
-        "motion-overlay fixed inset-0 z-[120] flex items-center justify-center px-6",
-        fadePhaseClass(phase),
-        dimBackground ? "bg-black/70" : "bg-transparent",
-      )}
-      onClick={dismissOnBackdrop ? onCancel : undefined}
+    <ModalOverlayShell
+      open={open}
+      escapeId="confirmation-dialog"
+      escapePriority={ESCAPE_PRIORITY.DIALOG}
+      onClose={onCancel}
+      dismissOnEscape={dismissOnEscape}
+      dismissOnBackdrop={dismissOnBackdrop}
+      position="fixed"
+      zIndex={120}
+      dim={dimBackground}
+      className="motion-overlay flex items-center justify-center px-6"
     >
       <div
         className="motion-panel alchemy-shell w-full max-w-[49.78cqh] rounded-shell-dialog border border-border/80 px-7 py-7 text-center"
@@ -85,6 +75,6 @@ export function ConfirmationDialog({
           </Button>
         </div>
       </div>
-    </div>
+    </ModalOverlayShell>
   );
 }

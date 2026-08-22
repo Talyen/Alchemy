@@ -141,6 +141,29 @@ jobs:
       - run: node scripts/sync-version-metadata.mjs
       - run: npm run check:ship:full
 
+      - run: mkdir -p reports
+
+      - name: Run Electron e2e
+        run: xvfb-run --auto-servernum -- npm run test:ship:desktop
+        env:
+          CI: true
+
+      - name: Summarize Electron e2e
+        if: always()
+        run: node scripts/ci-summarize-playwright.mjs
+
+      - name: Upload Electron Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-nightly-electron
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+            reports/current-run.*
+          retention-days: 7
+
   deadcode-strict:
     name: Knip strict
     runs-on: ubuntu-latest

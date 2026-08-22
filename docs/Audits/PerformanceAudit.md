@@ -25,7 +25,7 @@ Require a profiler trace, compiler diagnostic, build-size result, reproducible l
 - **Memory and allocation:** confirm retained listeners/data, unbounded collections, repeated large allocations, or asset/object churn with heap/allocation evidence.
 - **Synchronous work:** repeated parsing, sorting, cloning, validation, or storage access on render/input/transition paths is a finding when the scenario shows material blocking cost.
 - **Background work:** timers, observers, effects, or hidden views should not consume sustained CPU without user-visible purpose.
-- **Decorative randomness / cosmetic state:** re-rolls per render are owned by `13-SideEffectSurfaceAudit.md`; take them here only when the profiler shows real render cost.
+- **Decorative randomness / cosmetic state:** re-rolls per render are owned by `SideEffectSurfaceAudit.md`; take them here only when the profiler shows real render cost.
 
 ## Known signals
 

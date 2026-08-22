@@ -4,6 +4,19 @@ import type { GearRarity } from "./types-core";
 
 export type GearAffixAspect = "offensive" | "defensive";
 
+interface AffixRollRange {
+  basic: { min: number; max: number };
+  astral: { min: number; max: number };
+}
+
+/** [basicMin, basicMax, astralMin, astralMax] — keeps the 60+ catalog rows scannable. */
+function rollRange(basicMin: number, basicMax: number, astralMin: number, astralMax: number): AffixRollRange {
+  return {
+    basic: { min: basicMin, max: basicMax },
+    astral: { min: astralMin, max: astralMax },
+  };
+}
+
 interface AffixRow {
   id: string;
   aspect: GearAffixAspect;
@@ -11,8 +24,7 @@ interface AffixRow {
   secondaryKeywordId?: KeywordId;
   descriptionTemplate: string;
   effectKey: keyof GearEffectManifest;
-  basic: { min: number; max: number };
-  astral: { min: number; max: number };
+  roll: AffixRollRange;
 }
 
 const affixRows = [
@@ -22,8 +34,7 @@ const affixRows = [
     keywordId: "physical",
     descriptionTemplate: "Increases Physical damage by {value}",
     effectKey: "flatPhysicalDamage",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
   },
   {
     id: "flat-stun",
@@ -31,8 +42,7 @@ const affixRows = [
     keywordId: "stun",
     descriptionTemplate: "Increases Stun damage by {value}",
     effectKey: "flatStunDamage",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
   },
   {
     id: "flat-holy",
@@ -40,8 +50,7 @@ const affixRows = [
     keywordId: "holy",
     descriptionTemplate: "Increases Holy damage by {value}",
     effectKey: "flatHolyDamage",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
   },
   {
     id: "flat-burn",
@@ -49,8 +58,7 @@ const affixRows = [
     keywordId: "burn",
     descriptionTemplate: "Increases Burn damage by {value}",
     effectKey: "flatBurnDamage",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
   },
   {
     id: "flat-poison",
@@ -58,8 +66,7 @@ const affixRows = [
     keywordId: "poison",
     descriptionTemplate: "Increases Poison damage by {value}",
     effectKey: "flatPoisonDamage",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
   },
   {
     id: "flat-bleed",
@@ -67,8 +74,7 @@ const affixRows = [
     keywordId: "bleed",
     descriptionTemplate: "Increases Bleed damage by {value}",
     effectKey: "flatBleedDamage",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
   },
   {
     id: "flat-freeze",
@@ -76,8 +82,7 @@ const affixRows = [
     keywordId: "freeze",
     descriptionTemplate: "Increases Freeze damage by {value}",
     effectKey: "flatFreezeDamage",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
   },
   {
     id: "flat-nature",
@@ -85,8 +90,7 @@ const affixRows = [
     keywordId: "nature",
     descriptionTemplate: "Increases Nature damage by {value}",
     effectKey: "flatNatureDamage",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
   },
   {
     id: "start-block",
@@ -94,8 +98,7 @@ const affixRows = [
     keywordId: "block",
     descriptionTemplate: "Gain {value} Block at the start of combat",
     effectKey: "startBlock",
-    basic: { min: 4, max: 6 },
-    astral: { min: 7, max: 9 },
+    roll: rollRange(4, 6, 7, 9),
   },
   {
     id: "armor-pierce",
@@ -103,8 +106,7 @@ const affixRows = [
     keywordId: "physical",
     descriptionTemplate: "Ignore {value} enemy Armor",
     effectKey: "armorPiercing",
-    basic: { min: 1, max: 2 },
-    astral: { min: 2, max: 4 },
+    roll: rollRange(1, 2, 2, 4),
   },
   {
     id: "damage-on-stun",
@@ -112,8 +114,7 @@ const affixRows = [
     keywordId: "physical",
     descriptionTemplate: "On Stun: Deal {value} Physical damage",
     effectKey: "damageOnStunPhysical",
-    basic: { min: 3, max: 4 },
-    astral: { min: 5, max: 6 },
+    roll: rollRange(3, 4, 5, 6),
   },
   {
     id: "forge-on-stun",
@@ -121,8 +122,7 @@ const affixRows = [
     keywordId: "forge",
     descriptionTemplate: "On Stun: Gain {value} Forge",
     effectKey: "forgeOnStun",
-    basic: { min: 1, max: 2 },
-    astral: { min: 2, max: 4 },
+    roll: rollRange(1, 2, 2, 4),
   },
   {
     id: "poison-leech",
@@ -130,8 +130,7 @@ const affixRows = [
     keywordId: "leech",
     descriptionTemplate: "Poison has a {value}% chance to Leech",
     effectKey: "poisonLeechChance",
-    basic: { min: 5, max: 7 },
-    astral: { min: 8, max: 10 },
+    roll: rollRange(5, 7, 8, 10),
     secondaryKeywordId: "poison",
   },
   {
@@ -140,8 +139,7 @@ const affixRows = [
     keywordId: "companion",
     descriptionTemplate: "Increases Companion damage by {value}",
     effectKey: "companionDamageBonus",
-    basic: { min: 1, max: 2 },
-    astral: { min: 2, max: 4 },
+    roll: rollRange(1, 2, 2, 4),
   },
   {
     id: "start-heal",
@@ -149,8 +147,7 @@ const affixRows = [
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health at the start of combat",
     effectKey: "startHeal",
-    basic: { min: 3, max: 4 },
-    astral: { min: 5, max: 6 },
+    roll: rollRange(3, 4, 5, 6),
   },
   {
     id: "heal-on-kill",
@@ -158,8 +155,7 @@ const affixRows = [
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health on kill",
     effectKey: "healOnKill",
-    basic: { min: 3, max: 4 },
-    astral: { min: 5, max: 6 },
+    roll: rollRange(3, 4, 5, 6),
   },
   {
     id: "start-forge",
@@ -167,8 +163,7 @@ const affixRows = [
     keywordId: "forge",
     descriptionTemplate: "Gain {value} Forge at the start of combat",
     effectKey: "startForge",
-    basic: { min: 1, max: 2 },
-    astral: { min: 2, max: 4 },
+    roll: rollRange(1, 2, 2, 4),
   },
   {
     id: "start-armor",
@@ -176,8 +171,7 @@ const affixRows = [
     keywordId: "armor",
     descriptionTemplate: "Gain {value} Armor at the start of combat",
     effectKey: "startArmor",
-    basic: { min: 1, max: 2 },
-    astral: { min: 2, max: 4 },
+    roll: rollRange(1, 2, 2, 4),
   },
   {
     id: "block-on-stun",
@@ -185,8 +179,7 @@ const affixRows = [
     keywordId: "block",
     descriptionTemplate: "On Stun: Gain {value} Block",
     effectKey: "blockOnStun",
-    basic: { min: 3, max: 4 },
-    astral: { min: 5, max: 6 },
+    roll: rollRange(3, 4, 5, 6),
   },
   {
     id: "mana-on-stun",
@@ -194,8 +187,7 @@ const affixRows = [
     keywordId: "mana",
     descriptionTemplate: "On Stun: Gain {value} Mana",
     effectKey: "manaOnStun",
-    basic: { min: 1, max: 1 },
-    astral: { min: 2, max: 2 },
+    roll: rollRange(1, 1, 2, 2),
   },
   {
     id: "physical-bleed-chance",
@@ -203,8 +195,7 @@ const affixRows = [
     keywordId: "bleed",
     descriptionTemplate: "{value}% chance for Physical damage to Bleed",
     effectKey: "physicalBleedChance",
-    basic: { min: 7, max: 8 },
-    astral: { min: 9, max: 10 },
+    roll: rollRange(7, 8, 9, 10),
     secondaryKeywordId: "physical",
   },
   {
@@ -213,8 +204,7 @@ const affixRows = [
     keywordId: "burn",
     descriptionTemplate: "Increases Burn damage by {value}% per Mana Crystal",
     effectKey: "burnDamagePerManaPercent",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
     secondaryKeywordId: "mana",
   },
   {
@@ -223,8 +213,7 @@ const affixRows = [
     keywordId: "gold",
     descriptionTemplate: "Gain {value} Gold on Wish",
     effectKey: "goldOnWish",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
     secondaryKeywordId: "wish",
   },
   {
@@ -233,8 +222,7 @@ const affixRows = [
     keywordId: "burn",
     descriptionTemplate: "Deal {value} Burn damage on Wish",
     effectKey: "burnOnWish",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
     secondaryKeywordId: "wish",
   },
   {
@@ -243,8 +231,7 @@ const affixRows = [
     keywordId: "gold",
     descriptionTemplate: "Gain {value} Gold on kill",
     effectKey: "goldOnKill",
-    basic: { min: 4, max: 5 },
-    astral: { min: 6, max: 7 },
+    roll: rollRange(4, 5, 6, 7),
   },
   {
     id: "physical-stun-chance",
@@ -252,8 +239,7 @@ const affixRows = [
     keywordId: "stun",
     descriptionTemplate: "{value}% chance for Physical damage to Stun",
     effectKey: "physicalStunChance",
-    basic: { min: 5, max: 10 },
-    astral: { min: 10, max: 15 },
+    roll: rollRange(5, 10, 10, 15),
     secondaryKeywordId: "physical",
   },
   {
@@ -262,8 +248,7 @@ const affixRows = [
     keywordId: "leech",
     descriptionTemplate: "Nature damage has a {value}% chance to Leech",
     effectKey: "natureLeechChance",
-    basic: { min: 7, max: 8 },
-    astral: { min: 9, max: 10 },
+    roll: rollRange(7, 8, 9, 10),
     secondaryKeywordId: "nature",
   },
   {
@@ -272,8 +257,7 @@ const affixRows = [
     keywordId: "forge",
     descriptionTemplate: "Gain {value} Forge when you deal Burn damage",
     effectKey: "forgeOnBurnDealt",
-    basic: { min: 1, max: 2 },
-    astral: { min: 2, max: 4 },
+    roll: rollRange(1, 2, 2, 4),
     secondaryKeywordId: "burn",
   },
   {
@@ -282,8 +266,7 @@ const affixRows = [
     keywordId: "wish",
     descriptionTemplate: "Draw {value} Cards on Wish",
     effectKey: "drawOnWish",
-    basic: { min: 1, max: 1 },
-    astral: { min: 2, max: 2 },
+    roll: rollRange(1, 1, 2, 2),
   },
   {
     id: "consume-heal-bonus",
@@ -291,8 +274,7 @@ const affixRows = [
     keywordId: "consume",
     descriptionTemplate: "Increases Healing from Consumed cards by {value}%",
     effectKey: "consumeHealBonusPercent",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
     secondaryKeywordId: "health",
   },
   {
@@ -301,8 +283,7 @@ const affixRows = [
     keywordId: "archery",
     descriptionTemplate: "Increases Archery damage by {value}",
     effectKey: "flatArrowDamage",
-    basic: { min: 2, max: 3 },
-    astral: { min: 4, max: 5 },
+    roll: rollRange(2, 3, 4, 5),
   },
   {
     id: "damage-on-freeze",
@@ -310,8 +291,7 @@ const affixRows = [
     keywordId: "physical",
     descriptionTemplate: "On Freeze: Deal {value} Physical damage",
     effectKey: "damageOnFreezePhysical",
-    basic: { min: 3, max: 4 },
-    astral: { min: 5, max: 6 },
+    roll: rollRange(3, 4, 5, 6),
     secondaryKeywordId: "freeze",
   },
   {
@@ -320,8 +300,7 @@ const affixRows = [
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health when Block is depleted",
     effectKey: "blockDepletedHeal",
-    basic: { min: 2, max: 3 },
-    astral: { min: 4, max: 5 },
+    roll: rollRange(2, 3, 4, 5),
     secondaryKeywordId: "block",
   },
   {
@@ -330,8 +309,7 @@ const affixRows = [
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health on Wish",
     effectKey: "healthOnWish",
-    basic: { min: 2, max: 3 },
-    astral: { min: 4, max: 5 },
+    roll: rollRange(2, 3, 4, 5),
     secondaryKeywordId: "wish",
   },
   {
@@ -340,8 +318,7 @@ const affixRows = [
     keywordId: "mana",
     descriptionTemplate: "Gain {value} Mana on Wish",
     effectKey: "manaOnWish",
-    basic: { min: 1, max: 1 },
-    astral: { min: 2, max: 2 },
+    roll: rollRange(1, 1, 2, 2),
     secondaryKeywordId: "wish",
   },
   {
@@ -350,8 +327,7 @@ const affixRows = [
     keywordId: "freeze",
     descriptionTemplate: "Deal {value} Freeze damage at the start of combat",
     effectKey: "startFreeze",
-    basic: { min: 4, max: 5 },
-    astral: { min: 6, max: 7 },
+    roll: rollRange(4, 5, 6, 7),
   },
   {
     id: "holy-from-block",
@@ -359,8 +335,7 @@ const affixRows = [
     keywordId: "holy",
     descriptionTemplate: "Increases Holy damage by {value}% of your Block",
     effectKey: "holyDamageFromBlockPercent",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
     secondaryKeywordId: "block",
   },
   {
@@ -369,8 +344,7 @@ const affixRows = [
     keywordId: "leech",
     descriptionTemplate: "Leech restores {value}% more Health",
     effectKey: "leechHealBonusPercent",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "frozen-vulnerable",
@@ -378,8 +352,7 @@ const affixRows = [
     keywordId: "freeze",
     descriptionTemplate: "Frozen enemies take {value}% more damage",
     effectKey: "frozenEnemyDamageBonusPercent",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "companion-forge-power",
@@ -387,8 +360,7 @@ const affixRows = [
     keywordId: "companion",
     descriptionTemplate: "Companions benefit from Forge",
     effectKey: "companionBenefitsFromForge",
-    basic: { min: 1, max: 1 },
-    astral: { min: 1, max: 1 },
+    roll: rollRange(1, 1, 1, 1),
     secondaryKeywordId: "forge",
   },
   {
@@ -397,8 +369,7 @@ const affixRows = [
     keywordId: "holy",
     descriptionTemplate: "Increases Holy damage by {value}% of your Gold",
     effectKey: "holyDamageFromGoldPercent",
-    basic: { min: 2, max: 3 },
-    astral: { min: 4, max: 5 },
+    roll: rollRange(2, 3, 4, 5),
     secondaryKeywordId: "gold",
   },
   {
@@ -407,8 +378,7 @@ const affixRows = [
     keywordId: "physical",
     descriptionTemplate: "Reduce Physical damage taken by {value}%",
     effectKey: "resistPhysical",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "resist-stun",
@@ -416,8 +386,7 @@ const affixRows = [
     keywordId: "stun",
     descriptionTemplate: "Reduce Stun damage taken by {value}%",
     effectKey: "resistStun",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "resist-holy",
@@ -425,8 +394,7 @@ const affixRows = [
     keywordId: "holy",
     descriptionTemplate: "Reduce Holy damage taken by {value}%",
     effectKey: "resistHoly",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "resist-burn",
@@ -434,8 +402,7 @@ const affixRows = [
     keywordId: "burn",
     descriptionTemplate: "Reduce Burn damage taken by {value}%",
     effectKey: "resistBurn",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "resist-poison",
@@ -443,8 +410,7 @@ const affixRows = [
     keywordId: "poison",
     descriptionTemplate: "Reduce Poison damage taken by {value}%",
     effectKey: "resistPoison",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "resist-bleed",
@@ -452,8 +418,7 @@ const affixRows = [
     keywordId: "bleed",
     descriptionTemplate: "Reduce Bleed damage taken by {value}%",
     effectKey: "resistBleed",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "resist-freeze",
@@ -461,8 +426,7 @@ const affixRows = [
     keywordId: "freeze",
     descriptionTemplate: "Reduce Freeze damage taken by {value}%",
     effectKey: "resistFreeze",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "resist-nature",
@@ -470,8 +434,7 @@ const affixRows = [
     keywordId: "nature",
     descriptionTemplate: "Reduce Nature damage taken by {value}%",
     effectKey: "resistNature",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "health-per-turn",
@@ -479,8 +442,7 @@ const affixRows = [
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health each turn",
     effectKey: "healthPerTurn",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
   },
   {
     id: "block-gain",
@@ -488,8 +450,7 @@ const affixRows = [
     keywordId: "block",
     descriptionTemplate: "Increases Block gained by {value}",
     effectKey: "flatBlockGained",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
   },
   {
     id: "gold-gain",
@@ -497,8 +458,7 @@ const affixRows = [
     keywordId: "gold",
     descriptionTemplate: "Increases Gold gained by {value}%",
     effectKey: "goldGainPercent",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
   },
   {
     id: "max-health",
@@ -506,8 +466,7 @@ const affixRows = [
     keywordId: "health",
     descriptionTemplate: "Increases Health by {value}",
     effectKey: "maxHealth",
-    basic: { min: 7, max: 8 },
-    astral: { min: 9, max: 10 },
+    roll: rollRange(7, 8, 9, 10),
   },
   {
     id: "burn-on-consume",
@@ -515,8 +474,7 @@ const affixRows = [
     keywordId: "consume",
     descriptionTemplate: "Deal {value} Burn damage when you Consume",
     effectKey: "burnOnConsume",
-    basic: { min: 2, max: 3 },
-    astral: { min: 4, max: 6 },
+    roll: rollRange(2, 3, 4, 6),
     secondaryKeywordId: "burn",
   },
   {
@@ -525,8 +483,7 @@ const affixRows = [
     keywordId: "archery",
     descriptionTemplate: "Archery attacks ignore {value} Armor",
     effectKey: "archeryArmorPiercing",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
     secondaryKeywordId: "physical",
   },
   {
@@ -535,8 +492,7 @@ const affixRows = [
     keywordId: "mana",
     descriptionTemplate: "Reduce damage taken by {value} for each full Mana Crystal",
     effectKey: "damageReductionPerMana",
-    basic: { min: 2, max: 3 },
-    astral: { min: 4, max: 5 },
+    roll: rollRange(2, 3, 4, 5),
     secondaryKeywordId: "block",
   },
   {
@@ -545,8 +501,7 @@ const affixRows = [
     keywordId: "burn",
     descriptionTemplate: "Restore {value} Health when an enemy with Burn is defeated",
     effectKey: "healOnBurnEnemyDefeated",
-    basic: { min: 4, max: 5 },
-    astral: { min: 6, max: 7 },
+    roll: rollRange(4, 5, 6, 7),
     secondaryKeywordId: "health",
   },
   {
@@ -555,8 +510,7 @@ const affixRows = [
     keywordId: "leech",
     descriptionTemplate: "Leech has a {value}% chance to restore 1 Mana",
     effectKey: "manaOnLeechChance",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
     secondaryKeywordId: "mana",
   },
   {
@@ -565,8 +519,7 @@ const affixRows = [
     keywordId: "poison",
     descriptionTemplate: "Poison has a {value}% chance to remove 1 Armor",
     effectKey: "poisonArmorShredChance",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
     secondaryKeywordId: "armor",
   },
   {
@@ -575,8 +528,7 @@ const affixRows = [
     keywordId: "nature",
     descriptionTemplate: "Nature damage has a {value}% chance to restore 1 Mana",
     effectKey: "manaOnNatureDamageChance",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
     secondaryKeywordId: "mana",
   },
   {
@@ -585,8 +537,7 @@ const affixRows = [
     keywordId: "bleed",
     descriptionTemplate: "Burn deals {value}% more damage to Bleeding enemies",
     effectKey: "burnDamageBonusToBleedingPercent",
-    basic: { min: 10, max: 15 },
-    astral: { min: 15, max: 20 },
+    roll: rollRange(10, 15, 15, 20),
     secondaryKeywordId: "burn",
   },
   {
@@ -595,8 +546,7 @@ const affixRows = [
     keywordId: "block",
     descriptionTemplate: "Deal {value} Stun damage when your Block is depleted",
     effectKey: "stunOnBlockDepleted",
-    basic: { min: 2, max: 3 },
-    astral: { min: 4, max: 5 },
+    roll: rollRange(2, 3, 4, 5),
     secondaryKeywordId: "stun",
   },
   {
@@ -605,8 +555,7 @@ const affixRows = [
     keywordId: "companion",
     descriptionTemplate: "Restore {value} Health when your Companion attacks",
     effectKey: "healOnCompanionAttack",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
     secondaryKeywordId: "health",
   },
   {
@@ -615,8 +564,7 @@ const affixRows = [
     keywordId: "armor",
     descriptionTemplate: "Gain {value} Armor when you are Stunned or Frozen",
     effectKey: "armorOnStunOrFreeze",
-    basic: { min: 1, max: 2 },
-    astral: { min: 3, max: 4 },
+    roll: rollRange(1, 2, 3, 4),
     secondaryKeywordId: "stun",
   },
 ] as const satisfies readonly AffixRow[];
@@ -646,7 +594,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = Object
       ...("secondaryKeywordId" in row ? { secondaryKeywordId: row.secondaryKeywordId } : {}),
       descriptionTemplate: row.descriptionTemplate,
       effectKey: row.effectKey,
-      roll: { basic: row.basic, astral: row.astral },
+      roll: row.roll,
     },
   ]),
 ) as Record<GearAffixId, GearAffixDefinition>;

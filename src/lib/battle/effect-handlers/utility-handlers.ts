@@ -1,7 +1,7 @@
 // Utility card effect apply handlers.
 import { addGoldWithCombatText } from "../combat-text";
 import { applyWishEffect } from "../wish";
-import { drawCards } from "../draw";
+import { drawFromState, applyDrawResult } from "../draw";
 import type { EffectHandler } from "./handler-types";
 
 export const applyGainGoldEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
@@ -18,14 +18,7 @@ export const applyWishEffectHandler: EffectHandler = (state, card, effect, potio
 
 export const applyDrawCardsEffect: EffectHandler = (state, _card, effect) => {
   if (effect.kind !== "draw-cards") return state;
-  const draw = drawCards(state.deck, state.discard, state.hand, effect.amount, state.nextCardUid, state.rng);
-  return {
-    ...state,
-    deck: draw.deck,
-    discard: draw.discard,
-    hand: draw.hand,
-    nextCardUid: draw.nextCardUid,
-  };
+  return applyDrawResult(state, drawFromState(state, effect.amount));
 };
 
 export const applyNextHitCritEffect: EffectHandler = (state, _card, effect) => {

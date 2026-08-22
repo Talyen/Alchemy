@@ -1,5 +1,4 @@
 // ============ Audio ============
-export const MASTER_GAIN = 0.3;
 export const DEFAULT_MUSIC_VOLUME = 0.0875;
 export const MUSIC_BASE_PATH = "Music/";
 

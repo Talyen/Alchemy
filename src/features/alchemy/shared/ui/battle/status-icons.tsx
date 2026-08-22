@@ -101,15 +101,17 @@ function AugmentStatusIcon({
   const Icon = augment.icon;
   return (
     <StatusChipShell
-      ariaLabel={`${augment.label} ${chip.value}`}
+      ariaLabel={chip.hideValue ? augment.label : `${augment.label} ${chip.value}`}
       icon={<Icon className={cn("h-[2.7cqh] w-[2.7cqh]", augment.colorClass)} />}
       tooltip={
         <>
           <div className="flex items-center justify-between gap-3">
             <TooltipHeader className="mb-0">{augment.label}</TooltipHeader>
-            <span className={cn("rounded-full bg-background px-2 py-0.5 text-foreground", tooltipChipClass)}>
-              {chip.value}
-            </span>
+            {!chip.hideValue ? (
+              <span className={cn("rounded-full bg-background px-2 py-0.5 text-foreground", tooltipChipClass)}>
+                {chip.value}
+              </span>
+            ) : null}
           </div>
           <TooltipBody>
             <p>{augment.description}</p>

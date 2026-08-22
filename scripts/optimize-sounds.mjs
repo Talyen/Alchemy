@@ -14,6 +14,7 @@ import {
   resolveSourceHash,
   writeManifestIfChanged,
 } from "./lib/asset-manifest-cache.mjs";
+import { formatProcessError, runAudioScript } from "./lib/audio-optimizer.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -169,11 +170,7 @@ export async function optimizeSounds() {
     manifestPath,
     concurrency: TRANSFORM_CONCURRENCY,
     processEntry: optimizeSound,
-    handleError: (sound, error) => {
-      const detail = error instanceof Error ? error.message : String(error);
-      console.error(`FAILED ${sound.target}: ${detail}`);
-      return { message: `FAILED ${sound.target}: ${detail}`, entry: null };
-    },
+    handleError: (sound, error) => formatProcessError(sound.target, error),
   });
 
   console.log(`Processed ${results.length} sounds.`);
@@ -228,13 +225,5 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
 }
 
 if (isMainModule(import.meta.url)) {
-  optimizeSounds()
-    .then(({ ok }) => {
-      if (!ok) process.exitCode = 1;
-    })
-    .catch((error) => {
-      console.error("Sound optimization failed.");
-      console.error(error);
-      process.exitCode = 1;
-    });
+  runAudioScript("Sound optimization", optimizeSounds);
 }

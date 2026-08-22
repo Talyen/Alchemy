@@ -7,6 +7,7 @@ The executable catalog in `scripts/lib/change-routes.mjs` owns path-to-command a
 - During development: `npm run verify:changed -- --diff` (or pass explicit paths).
 - Inspect without running: add `--plan`; use `--verbose-plan` only when full argv is needed.
 - Save, gear, audio, and mystery routes include their focused E2E flow by default. `--e2e <route>` explicitly adds another supported screen flow; `--full` adds the full local handoff gate.
+- The Electron desktop suite (`test:ship:desktop`) is CI-only: it runs on pushes matching the `desktop_renderer` path filter and unconditionally on nightly. Run it locally only by explicit choice.
 - Unknown paths are labeled `unknown` and receive a TypeScript fallback with a warning that non-TypeScript behavior may not be exercised.
 - Canonical route fixtures and selected commands are tested in `tests/scripts/verify-changed.test.ts`.
 - On any push to `main`, use the fast pre-push hook (`check:push`); CI runs after push. CI E2E parity is `test:e2e:prepush:full`.
@@ -57,7 +58,7 @@ Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clea
 | CI `ship-gate`                                  | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop` (path-gated by `desktop_renderer` across Electron + renderer routing/boot/screen changes, after unit tests pass); uploads `dist-desktop` artifact |
 | CI `assets`                                     | `node scripts/prepare-assets.mjs` + git diff on committed outputs (path-filtered on Raw Assets / asset scripts / committed outputs)                                                             |
 | CI `save-gate`                                  | `npm run test:ship:e2e` (path-filtered)                                                                                                                                                         |
-| CI `desktop-build` / `electron-e2e`             | `npm run dist:desktop` / `npm run test:ship:desktop` (electron reuses ship-gate `dist/`)                                                                                                        |
+| CI `desktop-build` / `electron-e2e`             | `npm run dist:desktop` / desktop Playwright suite is CI-only (path-filtered job + nightly); manual opt-in: `npm run test:ship:desktop`                                                          |
 | CI `e2e` (`@critical` + `@prepush`, every push) | `npm run build && npm run test:e2e:prepush:full`                                                                                                                                                |
 | Pre-push hook                                   | `npm run check:push`                                                                                                                                                                            |
 | Tag `v*` release (`e2e-full` + release job)     | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md); release job runs `dist:desktop` once (no `check:ship` rebuild)                                                                    |

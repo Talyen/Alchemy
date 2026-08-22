@@ -48,13 +48,11 @@ export function EnemyTooltip({
   visible: boolean;
 }) {
   const attackLines = visible ? formatEnemyAttackLines(attackEffects ?? entry.attackEffects) : [];
-  const separatelyDisplayedTraitIds = visible ? new Set<string>(labyrinthModifiers) : null;
-  const traitLines =
-    visible && separatelyDisplayedTraitIds
-      ? entry.traits
-          .filter((trait) => !separatelyDisplayedTraitIds.has(trait.id))
-          .flatMap((trait) => trait.description.split("\n"))
-      : [];
+  const traitLines = visible
+    ? entry.traits
+        .filter((trait) => !labyrinthModifiers.includes(trait.id as EncounterCombatTraitId))
+        .flatMap((trait) => trait.description.split("\n"))
+    : [];
 
   return (
     <PortaledTooltip triggerRef={triggerRef} visible={visible} className="rounded-shell-tooltip">

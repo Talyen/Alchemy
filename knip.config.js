@@ -49,5 +49,7 @@ export default {
     "tailwindcss-animate",
     // Loaded via node_modules path string in scripts/dist-desktop.mjs; knip cannot trace it.
     "electron-builder",
+    // Invoked via npx in scripts/lib/release-runner.mjs; knip cannot trace it.
+    "commit-and-tag-version",
   ],
 };

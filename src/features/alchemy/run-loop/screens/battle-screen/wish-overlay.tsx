@@ -1,17 +1,18 @@
 // Wish selection overlay for battle.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
 import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/card-button";
-import { fadePhaseClass, useFadePresence, useHeldWhile } from "../../../shared/ui/fade-presence";
+import { useHeldWhile } from "../../../shared/ui/fade-presence";
 import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
+import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { ScreenHeader } from "../../../shared/ui/shared-ui";
 import { handCardWidthClass, BUTTON_WIDTH_ACTION, bodyTextClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 import type { BattleActionsProps, BattleScreenState } from "./types";
+import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 
 function WishCardItem({
@@ -56,7 +57,6 @@ export function WishOverlay({
   battleState: BattleScreenState;
   actions: BattleActionsProps;
 }) {
-  const { mounted, phase } = useFadePresence(open);
   const displayState = useHeldWhile(open, battleState);
   const { onWishChoice } = actions;
   const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
@@ -64,19 +64,11 @@ export function WishOverlay({
   const resolvingRef = useRef(false);
   const onWishChoiceRef = useRef(onWishChoice);
   const handWidthClass = handCardWidthClass;
+  const descriptionContext = useBattleDescriptionContext(displayState);
 
   useEffect(() => {
     onWishChoiceRef.current = onWishChoice;
   }, [onWishChoice]);
-
-  const descriptionContext = useMemo(
-    () => ({
-      ...displayState.talentEffects,
-      companionDamageBonus: displayState.trinketEffects.companionDamageBonus,
-      companionDamageBuff: displayState.companionDamageBuff,
-    }),
-    [displayState.talentEffects, displayState.trinketEffects.companionDamageBonus, displayState.companionDamageBuff],
-  );
 
   useEffect(() => {
     if (!open) return;
@@ -94,29 +86,13 @@ export function WishOverlay({
     setWishSelectedCard(null);
   }
 
-  useEffect(() => {
-    if (!mounted || phase === "exit") return;
-    return pushEscapeHandler({
-      id: "wish-overlay",
-      priority: ESCAPE_PRIORITY.MODAL,
-      onEscape: () => {
-        if (resolvingRef.current) return;
-        resolvingRef.current = true;
-        setIsResolving(true);
-        onWishChoiceRef.current(null);
-        setWishSelectedCard(null);
-      },
-    });
-  }, [mounted, phase]);
-
-  if (!mounted) return null;
-
   return (
-    <div
-      className={cn(
-        "wish-overlay-backdrop absolute inset-0 z-[90] flex items-center justify-center bg-black/70 px-6",
-        fadePhaseClass(phase),
-      )}
+    <ModalOverlayShell
+      open={open}
+      escapeId="wish-overlay"
+      onClose={() => resolveWish(null)}
+      zIndex={90}
+      className="wish-overlay-backdrop flex items-center justify-center px-6"
     >
       <div className="wish-overlay-panel alchemy-shell w-full max-w-5xl rounded-shell-screen border border-border/80 px-6 py-6">
         <ScreenHeader title="Wish" />
@@ -155,6 +131,6 @@ export function WishOverlay({
           </Button>
         </div>
       </div>
-    </div>
+    </ModalOverlayShell>
   );
 }

@@ -44,7 +44,7 @@ export function PurchasableCardItem(props: PurchasableCardItemProps) {
     </div>
   );
 
-  return <PurchasableShopTile media={media} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />;
+  return <PurchasableShopTile media={media} purchased={purchased} />;
 }
 
 export type SelectableCardChrome = "shop" | "deck" | "corruption";

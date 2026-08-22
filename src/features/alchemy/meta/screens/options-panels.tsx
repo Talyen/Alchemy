@@ -22,9 +22,9 @@ export interface DisplayOptionsProps {
 }
 
 export interface AudioOptionsProps {
-  masterVol: number;
-  musicVol: number;
-  sfxVol: number;
+  masterVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
   onMasterVolChange: (value: number) => void;
   onMusicVolChange: (value: number) => void;
   onSfxVolChange: (value: number) => void;
@@ -142,9 +142,9 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
 export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
   return (
     <div className="space-y-4">
-      <SliderOption label="Master Volume" value={audio.masterVol} onChange={audio.onMasterVolChange} />
-      <SliderOption label="Music Volume" value={audio.musicVol} onChange={audio.onMusicVolChange} />
-      <SliderOption label="Sound Effects Volume" value={audio.sfxVol} onChange={audio.onSfxVolChange} />
+      <SliderOption label="Master Volume" value={audio.masterVolume} onChange={audio.onMasterVolChange} />
+      <SliderOption label="Music Volume" value={audio.musicVolume} onChange={audio.onMusicVolChange} />
+      <SliderOption label="Sound Effects Volume" value={audio.sfxVolume} onChange={audio.onSfxVolChange} />
       <ToggleOption
         label="Mute in Background"
         description="Silence music and effects while the game is in a background tab or minimized."

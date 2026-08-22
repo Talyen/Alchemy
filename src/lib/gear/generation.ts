@@ -1,9 +1,9 @@
 import { GEAR_AFFIX_COUNT, GEAR_AFFIX_COUNT_MIN_WEIGHT, GEAR_REWARD_RARITY_CHANCE } from "@/lib/game-constants";
-import { createInstanceId, pickRandom } from "@/lib/utils";
+import { createInstanceId, pickRandom, sampleItems } from "@/lib/utils";
 import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";
-import { gearDefinitions, getGearDefinitionsByRarity } from "./definitions";
+import { gearDefinitionId, gearDefinitions, getGearDefinitionsByRarity } from "./definitions";
 import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity, GearSlot } from "./types";
 
 const SHIELD_BASE_ITEM_IDS = new Set(["leather-buckler", "kite-shield"]);
@@ -86,6 +86,12 @@ export function createGearInstance(definition: GearDefinition, affixes: GearAffi
   };
 }
 
+/** Shared generation tail: roll affix count for the rarity, roll affixes, build the instance. */
+function rollAndCreateInstance(definition: GearDefinition, rarity: GearRarity, rng: () => number): GearInstance {
+  const affixCount = rollAffixCount(rarity, rng);
+  return createGearInstance(definition, rollAffixes(definition, affixCount, rng));
+}
+
 export function generateGearInstanceForBaseItem(
   baseItemId: string,
   rng: () => number,
@@ -94,11 +100,9 @@ export function generateGearInstanceForBaseItem(
   if (!(baseItemId in gearBaseItems)) return null;
   const baseItem = gearBaseItems[baseItemId as GearBaseItemId];
   const rarity = rollGearRewardRarity(rng, astralChanceBonus);
-  const definition = gearDefinitions[`${baseItem.id}-${rarity}`];
+  const definition = gearDefinitions[gearDefinitionId(baseItem.id, rarity)];
   if (!definition) return null;
-  const affixCount = rollAffixCount(rarity, rng);
-  const affixes = rollAffixes(definition, affixCount, rng);
-  return createGearInstance(definition, affixes);
+  return rollAndCreateInstance(definition, rarity, rng);
 }
 
 export function generateDevRandomGearInstance(rng: () => number): GearInstance {
@@ -106,11 +110,9 @@ export function generateDevRandomGearInstance(rng: () => number): GearInstance {
   if (!baseItem) throw new Error("gearBaseItemList is empty");
   const rarity = pickRandom(baseItem.availableRarities, rng);
   if (!rarity) throw new Error(`No rarities configured for ${baseItem.id}`);
-  const definition = gearDefinitions[`${baseItem.id}-${rarity}`];
+  const definition = gearDefinitions[gearDefinitionId(baseItem.id, rarity)];
   if (!definition) throw new Error(`Missing gear definition for ${baseItem.id}-${rarity}`);
-  const affixCount = rollAffixCount(rarity, rng);
-  const affixes = rollAffixes(definition, affixCount, rng);
-  return createGearInstance(definition, affixes);
+  return rollAndCreateInstance(definition, rarity, rng);
 }
 
 function generateGearInstance(rng: () => number, astralChanceBonus = 0): GearInstance | null {
@@ -119,37 +121,18 @@ function generateGearInstance(rng: () => number, astralChanceBonus = 0): GearIns
   if (pool.length === 0) return null;
   const definition = pickRandom(pool, rng);
   if (!definition) return null;
-  const affixCount = rollAffixCount(rarity, rng);
-  const affixes = rollAffixes(definition, affixCount, rng);
-  return createGearInstance(definition, affixes);
-}
-
-function fullRollKey(instance: GearInstance): string {
-  return `${instance.definitionId}:${instance.affixes.map((roll) => `${roll.id}=${roll.value}`).join(",")}`;
-}
-
-function tryAddDistinctRoll(choices: GearInstance[], seenFullRolls: Set<string>, instance: GearInstance): boolean {
-  const key = fullRollKey(instance);
-  if (seenFullRolls.has(key)) return false;
-  seenFullRolls.add(key);
-  choices.push(instance);
-  return true;
+  return rollAndCreateInstance(definition, rarity, rng);
 }
 
 export function generateGearRewardChoices(count: number, rng: () => number, astralChanceBonus = 0): GearInstance[] {
+  const chosenBaseItems = sampleItems(gearBaseItemList, count, rng);
   const choices: GearInstance[] = [];
-  const seenFullRolls = new Set<string>();
-  const seenBaseItemIds = new Set<string>();
-  let attempts = 0;
-  const maxDistinctRollAttempts = count * 30;
-  while (choices.length < count && attempts < maxDistinctRollAttempts) {
-    attempts += 1;
-    const instance = generateGearInstance(rng, astralChanceBonus);
-    if (!instance) continue;
-    const def = gearDefinitions[instance.definitionId];
-    if (!def || seenBaseItemIds.has(def.baseItemId)) continue;
-    seenBaseItemIds.add(def.baseItemId);
-    tryAddDistinctRoll(choices, seenFullRolls, instance);
+
+  for (const baseItem of chosenBaseItems) {
+    const instance = generateGearInstanceForBaseItem(baseItem.id, rng, astralChanceBonus);
+    if (instance) {
+      choices.push(instance);
+    }
   }
 
   while (choices.length < count) {

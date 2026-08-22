@@ -50,22 +50,15 @@ export function PortaledTooltip({
     placement,
   );
 
-  // The panel renders synchronously whenever visible (so placement measures on
-  // the same commit) and stays mounted for the fade-out window after hide.
-  const [mounted, setMounted] = useState(false);
-  const renderPanel = visible || mounted;
+  const [mounted, setMounted] = useState(visible);
+  if (visible && !mounted) {
+    setMounted(true);
+  }
+
+  const renderPanel = visible || (fadeOutMs > 0 && mounted);
 
   useEffect(() => {
-    if (visible) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- stays mounted while visible; clears any pending unmount timer
-      setMounted(true);
-      return;
-    }
-    if (!mounted) return;
-    if (fadeOutMs <= 0) {
-      setMounted(false);
-      return;
-    }
+    if (visible || !mounted || fadeOutMs <= 0) return;
     const timer = window.setTimeout(() => setMounted(false), fadeOutMs);
     return () => window.clearTimeout(timer);
   }, [visible, mounted, fadeOutMs]);

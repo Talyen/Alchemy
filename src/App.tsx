@@ -200,9 +200,9 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
   const screen = useActiveRunScreenValue();
   useAppAudioEffects({
-    masterVol: settings.masterVol,
-    musicVol: settings.musicVol,
-    sfxVol: settings.sfxVol,
+    masterVolume: settings.masterVolume,
+    musicVolume: settings.musicVolume,
+    sfxVolume: settings.sfxVolume,
     muteInBackground: settings.muteInBackground,
     screen,
   });

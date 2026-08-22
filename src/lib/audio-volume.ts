@@ -1,7 +1,7 @@
 // Volume and mute controls shared by SFX and streamed music.
 // Depends on shared audio state and music volume application.
 // Used by options UI through the public lib/audio facade.
-import { audioState, syncMasterGain } from "./audio-state";
+import { audioState } from "./audio-state";
 import { applyMusicVolume } from "./audio-music";
 import { syncActiveHtmlSfxPlayback } from "./audio-sfx";
 import { clamp } from "./utils";
@@ -9,7 +9,6 @@ import { clamp } from "./utils";
 // Mutes streamed music and in-flight HTMLAudio SFX.
 export function setMuted(value: boolean) {
   audioState.muted = value;
-  syncMasterGain();
   syncActiveHtmlSfxPlayback();
 
   if (audioState.currentMusic) {
@@ -26,7 +25,6 @@ export function setSfxVolume(value: number) {
 // Applies master volume to both in-flight SFX and current streamed music.
 export function setMasterVolume(value: number) {
   audioState.masterVolume = clamp(value, 0, 1);
-  syncMasterGain();
   syncActiveHtmlSfxPlayback();
 
   if (audioState.currentMusic) {

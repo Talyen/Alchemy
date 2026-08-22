@@ -144,7 +144,7 @@ test.describe("Ultra HD 3840x2160 (4K) additional checks", slow, () => {
   });
 });
 
-test.describe("high-DPR layout", () => {
+test.describe("high-DPR layout", slow, () => {
   test.use({ deviceScaleFactor: 2, viewport: { width: 1512, height: 982 } });
 
   test("uses CSS viewport dimensions without double-scaling for DPR", async ({ page }) => {

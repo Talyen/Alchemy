@@ -12,7 +12,7 @@ import {
 } from "@/features/alchemy/shared/storage";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
-import { AUTOSAVE_DEBOUNCE_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";
+import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_MAX_WAIT_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";
 import type { Screen } from "@/lib/routing";
 
 // Persists the normalized App/controller snapshot whenever a saved field changes.
@@ -23,6 +23,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
     let isDirty = false;
+    let dirtySince = 0;
 
     const flush = (terminal = false) => {
       if (!isDirty || !enabledRef.current) return;
@@ -33,6 +34,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
       }
 
       isDirty = false;
+      dirtySince = 0;
 
       const activeRun = resolveActiveRunForSave(readHasActiveRun(), runScreenOverrideRef.current ?? undefined);
 
@@ -45,6 +47,8 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
     };
 
     const triggerSave = () => {
+      const now = Date.now();
+      if (!isDirty) dirtySince = now;
       isDirty = true;
       if (timer) {
         clearTimeout(timer);
@@ -52,15 +56,21 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
       // Battle-screen commits are the highest-frequency writes; debounce them
       // longer so the full-save serialization doesn't hitch every quiet gap.
       // Terminal pagehide/visibilitychange flushes are unaffected and still
-      // persist the freshest battle state for crash-resume.
+      // persist the freshest battle state for crash-resume. The max-wait keeps
+      // continuous play from deferring disk writes indefinitely.
       const debounceMs = isAnimationDisabled()
         ? 0
         : readRunPhase() === "battle"
           ? BATTLE_AUTOSAVE_DEBOUNCE_MS
           : AUTOSAVE_DEBOUNCE_MS;
-      timer = setTimeout(() => {
-        flush();
-      }, debounceMs);
+      const maxWaitDelay = Math.max(0, AUTOSAVE_MAX_WAIT_MS - (now - dirtySince));
+      timer = setTimeout(
+        () => {
+          timer = null;
+          flush();
+        },
+        Math.min(debounceMs, maxWaitDelay),
+      );
     };
 
     const unsubscribePersistence = subscribeAlchemyPersistence(triggerSave);

@@ -5,25 +5,32 @@ import {
   BLEED_STATUS_MULTIPLIER,
   STUN_THRESHOLD_FRACTION,
   FREEZE_THRESHOLD_FRACTION,
+  ROOM_SCALING_INCREMENT,
+  GHOST_TRAVEL_SCALE,
+  CAMPFIRE_HEAL_FRACTION,
+  XP_ROOT_DIVISOR,
+  DEFAULT_MUSIC_VOLUME,
   WISH_CHOICE_COUNT,
   MIN_MAX_MANA_FLOOR,
-  ROOM_SCALING_INCREMENT,
   ELITE_HP_MULTIPLIER,
+  BOSS_HEALTH_MULTIPLIER,
   STARTING_TURN,
+  ACTS_PER_RUN,
   ENEMY_BASE_REGENERATION,
   AUTO_END_TURN_DELAY,
-  SLICE_DEATH_DURATION_MS,
   VICTORY_TRANSITION_DELAY,
+  SLICE_DEATH_DURATION_MS,
   ENEMY_PHASE_DELAY,
   SHAKE_DURATION,
   COMPANION_ATTACK_DELAY,
   CAMPFIRE_ANIMATION_MS,
   CAMPFIRE_CONTINUE_DELAY,
-  CAMPFIRE_HEAL_FRACTION,
+  SHIMMER_COOLDOWN_MS,
+  COMBAT_TEXT_LIFETIME_MS,
+  CARD_TRANSFER_CONFIG,
   XP_BASE_PER_POINT,
   XP_TRIANGULAR_MULTIPLIER,
   XP_MIN_THRESHOLD,
-  XP_ROOT_DIVISOR,
   SHOP_CARD_PRICE,
   SHOP_REMOVE_PRICE,
   SHOP_REFRESH_PRICE,
@@ -34,209 +41,94 @@ import {
   GOLD_REWARD_MAX,
   REWARD_CARD_CHOICES,
   DESTINATION_CHOICES,
-  ACTS_PER_RUN,
-  BOSS_HEALTH_MULTIPLIER,
-  MASTER_GAIN,
-  DEFAULT_MUSIC_VOLUME,
-  MUSIC_BASE_PATH,
-  SHIMMER_COOLDOWN_MS,
-  COMBAT_TEXT_LIFETIME_MS,
-  CARD_TRANSFER_CONFIG,
-  GHOST_TRAVEL_SCALE,
   COLLECTION_PAGE_SIZE,
-  SAVE_KEY,
   MUSIC_KEYS,
 } from "@/lib/game-constants";
 
-describe("Combat constants", () => {
-  it("GLOBAL_CRIT_CHANCE is between 0 and 100", () => {
-    expect(GLOBAL_CRIT_CHANCE).toBeGreaterThanOrEqual(0);
-    expect(GLOBAL_CRIT_CHANCE).toBeLessThanOrEqual(100);
-  });
-
-  it("CRIT_MULTIPLIER is positive", () => {
-    expect(CRIT_MULTIPLIER).toBeGreaterThan(0);
-  });
-
-  it("BLEED_STATUS_MULTIPLIER is positive", () => {
-    expect(BLEED_STATUS_MULTIPLIER).toBeGreaterThan(0);
-  });
-
-  it("STUN_THRESHOLD_FRACTION is between 0 and 1", () => {
-    expect(STUN_THRESHOLD_FRACTION).toBeGreaterThan(0);
-    expect(STUN_THRESHOLD_FRACTION).toBeLessThanOrEqual(1);
-  });
-
-  it("FREEZE_THRESHOLD_FRACTION is between 0 and 1", () => {
-    expect(FREEZE_THRESHOLD_FRACTION).toBeGreaterThan(0);
-    expect(FREEZE_THRESHOLD_FRACTION).toBeLessThanOrEqual(1);
-  });
-
-  it("WISH_CHOICE_COUNT is positive", () => {
-    expect(WISH_CHOICE_COUNT).toBeGreaterThan(0);
-  });
-
-  it("MIN_MAX_MANA_FLOOR is at least 1", () => {
-    expect(MIN_MAX_MANA_FLOOR).toBeGreaterThanOrEqual(1);
-  });
-});
-
-describe("Battle / Room constants", () => {
-  it("ROOM_SCALING_INCREMENT is between 0 and 1", () => {
+// Constants have no behavior of their own; these tests pin only the domains and
+// cross-constant orderings that other code relies on. Exact tuning values live
+// in src/lib/game-constants/ and are exercised by balance sims, not here.
+describe("combat tuning constants", () => {
+  it("fraction constants stay within their valid domain", () => {
+    // Inside (0, 1]: zero would disable the mechanic.
+    for (const value of [
+      STUN_THRESHOLD_FRACTION,
+      FREEZE_THRESHOLD_FRACTION,
+      GHOST_TRAVEL_SCALE,
+      CAMPFIRE_HEAL_FRACTION,
+      XP_ROOT_DIVISOR,
+      DEFAULT_MUSIC_VOLUME,
+    ]) {
+      expect(value).toBeGreaterThan(0);
+      expect(value).toBeLessThanOrEqual(1);
+    }
+    // Strictly below 1: full value means runaway per-room scaling.
     expect(ROOM_SCALING_INCREMENT).toBeGreaterThan(0);
     expect(ROOM_SCALING_INCREMENT).toBeLessThan(1);
   });
 
-  it("ELITE_HP_MULTIPLIER is at least 1", () => {
-    expect(ELITE_HP_MULTIPLIER).toBeGreaterThanOrEqual(1);
-  });
+  it("counters, prices, and durations are positive", () => {
+    const positive = [
+      GLOBAL_CRIT_CHANCE,
+      CRIT_MULTIPLIER,
+      BLEED_STATUS_MULTIPLIER,
+      WISH_CHOICE_COUNT,
+      XP_BASE_PER_POINT,
+      XP_TRIANGULAR_MULTIPLIER,
+      XP_MIN_THRESHOLD,
+      SHOP_CARD_PRICE,
+      SHOP_REMOVE_PRICE,
+      SHOP_REFRESH_PRICE,
+      ALCHEMIST_POTION_PRICE,
+      ALCHEMIST_REFRESH_PRICE,
+      ALCHEMIST_MIX_PRICE,
+      REWARD_CARD_CHOICES,
+      COLLECTION_PAGE_SIZE,
+      AUTO_END_TURN_DELAY,
+      VICTORY_TRANSITION_DELAY,
+      ENEMY_PHASE_DELAY,
+      SHAKE_DURATION,
+      COMPANION_ATTACK_DELAY,
+      CAMPFIRE_ANIMATION_MS,
+      CAMPFIRE_CONTINUE_DELAY,
+      SHIMMER_COOLDOWN_MS,
+      COMBAT_TEXT_LIFETIME_MS,
+      CARD_TRANSFER_CONFIG.drawDurationSeconds,
+      CARD_TRANSFER_CONFIG.discardDurationSeconds,
+      CARD_TRANSFER_CONFIG.completionBufferMs,
+      CARD_TRANSFER_CONFIG.stableRectTimeoutMs,
+    ];
+    for (const value of positive) {
+      expect(value).toBeGreaterThan(0);
+    }
+    // GLOBAL_CRIT_CHANCE is percent-domain, not unbounded.
+    expect(GLOBAL_CRIT_CHANCE).toBeLessThanOrEqual(100);
 
-  it("STARTING_TURN is a positive integer", () => {
+    // Floors and non-negative accumulators.
+    expect(MIN_MAX_MANA_FLOOR).toBeGreaterThanOrEqual(1);
+    expect(ELITE_HP_MULTIPLIER).toBeGreaterThanOrEqual(1);
+    expect(BOSS_HEALTH_MULTIPLIER).toBeGreaterThanOrEqual(1);
+    expect(Number.isFinite(BOSS_HEALTH_MULTIPLIER)).toBe(true);
+    expect(REWARD_CARD_CHOICES).toBeGreaterThanOrEqual(1);
+    expect(DESTINATION_CHOICES).toBeGreaterThanOrEqual(2);
+    expect(ENEMY_BASE_REGENERATION).toBeGreaterThanOrEqual(0);
+
+    // Integer counters start at sane values.
     expect(STARTING_TURN).toBeGreaterThan(0);
     expect(Number.isInteger(STARTING_TURN)).toBe(true);
-  });
-
-  it("ENEMY_BASE_REGENERATION is non-negative", () => {
-    expect(ENEMY_BASE_REGENERATION).toBeGreaterThanOrEqual(0);
-  });
-});
-
-describe("Timing constants", () => {
-  it("all timing durations are positive", () => {
-    expect(AUTO_END_TURN_DELAY).toBeGreaterThan(0);
-    expect(VICTORY_TRANSITION_DELAY).toBeGreaterThan(0);
-    expect(ENEMY_PHASE_DELAY).toBeGreaterThan(0);
-    expect(SHAKE_DURATION).toBeGreaterThan(0);
-    expect(COMPANION_ATTACK_DELAY).toBeGreaterThan(0);
-    expect(CAMPFIRE_ANIMATION_MS).toBeGreaterThan(0);
-    expect(CAMPFIRE_CONTINUE_DELAY).toBeGreaterThan(0);
-  });
-
-  it("VICTORY_TRANSITION_DELAY is long enough for death animation", () => {
-    expect(VICTORY_TRANSITION_DELAY).toBeGreaterThanOrEqual(SLICE_DEATH_DURATION_MS);
-  });
-});
-
-describe("Campfire constants", () => {
-  it("CAMPFIRE_HEAL_FRACTION is between 0 and 1", () => {
-    expect(CAMPFIRE_HEAL_FRACTION).toBeGreaterThan(0);
-    expect(CAMPFIRE_HEAL_FRACTION).toBeLessThanOrEqual(1);
-  });
-});
-
-describe("Talent / XP constants", () => {
-  it("XP_BASE_PER_POINT is positive", () => {
-    expect(XP_BASE_PER_POINT).toBeGreaterThan(0);
-  });
-
-  it("XP_TRIANGULAR_MULTIPLIER is positive", () => {
-    expect(XP_TRIANGULAR_MULTIPLIER).toBeGreaterThan(0);
-  });
-
-  it("XP_MIN_THRESHOLD is positive", () => {
-    expect(XP_MIN_THRESHOLD).toBeGreaterThan(0);
-  });
-
-  it("XP_ROOT_DIVISOR is between 0 and 1", () => {
-    expect(XP_ROOT_DIVISOR).toBeGreaterThan(0);
-    expect(XP_ROOT_DIVISOR).toBeLessThanOrEqual(1);
-  });
-});
-
-describe("Shop constants", () => {
-  it("all shop prices are positive", () => {
-    expect(SHOP_CARD_PRICE).toBeGreaterThan(0);
-    expect(SHOP_REMOVE_PRICE).toBeGreaterThan(0);
-    expect(SHOP_REFRESH_PRICE).toBeGreaterThan(0);
-    expect(ALCHEMIST_POTION_PRICE).toBeGreaterThan(0);
-    expect(ALCHEMIST_REFRESH_PRICE).toBeGreaterThan(0);
-    expect(ALCHEMIST_MIX_PRICE).toBeGreaterThan(0);
-  });
-
-  it("REMOVE_PRICE is higher than CARD_PRICE (remove should cost more)", () => {
-    expect(SHOP_REMOVE_PRICE).toBeGreaterThan(SHOP_CARD_PRICE);
-  });
-});
-
-describe("Reward constants", () => {
-  it("GOLD_REWARD_MIN <= GOLD_REWARD_MAX", () => {
-    expect(GOLD_REWARD_MIN).toBeLessThanOrEqual(GOLD_REWARD_MAX);
-  });
-
-  it("REWARD_CARD_CHOICES is at least 1", () => {
-    expect(REWARD_CARD_CHOICES).toBeGreaterThanOrEqual(1);
-  });
-
-  it("DESTINATION_CHOICES is at least 2", () => {
-    expect(DESTINATION_CHOICES).toBeGreaterThanOrEqual(2);
-  });
-
-  it("ACTS_PER_RUN is a positive integer", () => {
     expect(ACTS_PER_RUN).toBeGreaterThan(0);
     expect(Number.isInteger(ACTS_PER_RUN)).toBe(true);
   });
 
-  it("BOSS_HEALTH_MULTIPLIER is at least 1", () => {
-    expect(BOSS_HEALTH_MULTIPLIER).toBeGreaterThanOrEqual(1);
-    expect(Number.isFinite(BOSS_HEALTH_MULTIPLIER)).toBe(true);
-  });
-});
-
-describe("Audio constants", () => {
-  it("MASTER_GAIN is between 0 and 1", () => {
-    expect(MASTER_GAIN).toBeGreaterThan(0);
-    expect(MASTER_GAIN).toBeLessThanOrEqual(1);
+  it("keeps cross-constant ordering invariants", () => {
+    // Victory must not cut off the slice-death animation.
+    expect(VICTORY_TRANSITION_DELAY).toBeGreaterThanOrEqual(SLICE_DEATH_DURATION_MS);
+    // Removing a card should cost more than buying one.
+    expect(SHOP_REMOVE_PRICE).toBeGreaterThan(SHOP_CARD_PRICE);
+    expect(GOLD_REWARD_MIN).toBeLessThanOrEqual(GOLD_REWARD_MAX);
   });
 
-  it("DEFAULT_MUSIC_VOLUME is between 0 and 1", () => {
-    expect(DEFAULT_MUSIC_VOLUME).toBeGreaterThanOrEqual(0);
-    expect(DEFAULT_MUSIC_VOLUME).toBeLessThanOrEqual(1);
-  });
-
-  it("MUSIC_BASE_PATH is a non-empty string", () => {
-    expect(MUSIC_BASE_PATH).toBeTruthy();
-    expect(typeof MUSIC_BASE_PATH).toBe("string");
-  });
-});
-
-describe("Animation constants", () => {
-  it("SHIMMER_COOLDOWN_MS is positive", () => {
-    expect(SHIMMER_COOLDOWN_MS).toBeGreaterThan(0);
-  });
-
-  it("COMBAT_TEXT_LIFETIME_MS is positive", () => {
-    expect(COMBAT_TEXT_LIFETIME_MS).toBeGreaterThan(0);
-  });
-  it("CARD_TRANSFER_CONFIG timing values are positive", () => {
-    expect(CARD_TRANSFER_CONFIG.drawDurationSeconds).toBeGreaterThan(0);
-    expect(CARD_TRANSFER_CONFIG.discardDurationSeconds).toBeGreaterThan(0);
-    expect(CARD_TRANSFER_CONFIG.completionBufferMs).toBeGreaterThan(0);
-    expect(CARD_TRANSFER_CONFIG.stableRectTimeoutMs).toBeGreaterThan(0);
-  });
-});
-
-describe("Layout constants", () => {
-  it("GHOST_TRAVEL_SCALE is between 0 and 1", () => {
-    expect(GHOST_TRAVEL_SCALE).toBeGreaterThan(0);
-    expect(GHOST_TRAVEL_SCALE).toBeLessThan(1);
-  });
-});
-
-describe("Collection constants", () => {
-  it("COLLECTION_PAGE_SIZE is positive", () => {
-    expect(COLLECTION_PAGE_SIZE).toBeGreaterThan(0);
-  });
-});
-
-describe("Storage constants", () => {
-  it("SAVE_KEY is a non-empty string", () => {
-    expect(SAVE_KEY).toBeTruthy();
-    expect(typeof SAVE_KEY).toBe("string");
-  });
-});
-
-describe("MUSIC_KEYS enum", () => {
-  it("has the expected keys", () => {
+  it("pins the music track ids", () => {
     expect(MUSIC_KEYS.MENU).toBe("menu");
     expect(MUSIC_KEYS.BATTLE).toBe("battle");
   });

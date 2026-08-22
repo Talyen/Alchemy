@@ -2,7 +2,7 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
-import { critical, slow } from "./playwright-tags";
+import { critical, prepush, slow } from "./playwright-tags";
 import { injectSaveState, makeCard, makeHighDamageCard, SAVE_KEY, seedRandom } from "./helpers";
 
 async function pickDraftCard(page: import("@playwright/test").Page) {
@@ -47,7 +47,7 @@ function wildwoodBossState(overrides: Record<string, unknown> = {}) {
   };
 }
 
-test.describe("Wildwood Draft", () => {
+test.describe("Wildwood Draft", prepush, () => {
   test("drafts six cards and starts a modified boss battle", slow, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;

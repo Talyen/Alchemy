@@ -3,7 +3,7 @@
  * Depends on: ./draw, ./effect-handlers, ./combat-text, ../game-constants, @/lib/game-data, ./types.
  * Depended on by: features/alchemy controllers.
  */
-import { drawFromState } from "./draw";
+import { drawFromState, applyDrawResult } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { type BattleCard } from "@/lib/game-data";
@@ -15,6 +15,7 @@ import {
   isPlayerDefeated,
   addEnemyStatus,
   addPlayerStatus,
+  gainMana,
 } from "./types";
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
@@ -102,6 +103,7 @@ export function canPlayCard(state: BattleState, card: BattleCard, index: number,
 
 /**
  * Executes state changes directly related to removing a card from hand and applying its effects.
+ * `playTwice` must be resolved by the caller before the hand/flags reset performed here.
  */
 function executeCardPlayState(
   state: BattleState,
@@ -109,8 +111,8 @@ function executeCardPlayState(
   index: number,
   effectiveCost: number,
   combatTexts: CombatTextEvent[],
+  playTwice: boolean,
 ): BattleState {
-  const playTwice = state.flags.playNextCardTwice;
   const consumeCrit = state.flags.nextHitCrit && cardDealsDamage(card);
   let nextState: BattleState = {
     ...state,
@@ -132,8 +134,8 @@ function executeCardPlayState(
   if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {
     if (rollPercent(state.gearEffects.manaOnNatureDamageChance, state.rng)) {
       const granted = paceCombatMagnitude(nextState, 1, "player");
-      const nextMana = Math.min(nextState.maxMana, nextState.mana + granted);
-      const gained = nextMana - nextState.mana;
+      const nextMana = gainMana(nextState, granted);
+      const gained = nextMana.mana - nextState.mana;
       if (gained > 0) {
         mergeCombatText(combatTexts, {
           target: "player",
@@ -141,7 +143,7 @@ function executeCardPlayState(
           stat: "mana",
           amount: gained,
         });
-        nextState = { ...nextState, mana: nextMana };
+        nextState = nextMana;
       }
     }
   }
@@ -162,17 +164,17 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
     state.cardsPlayedThisTurn >= resonantChimeCardsRequired
   ) {
     const grantedMana = paceCombatMagnitude(state, resonantChimeMana, "player");
+    const nextState = gainMana(state, grantedMana);
+    const gained = nextState.mana - state.mana;
+    // At full mana the chime holds its charge instead of wasting it.
+    if (gained <= 0) return state;
     mergeCombatText(combatTexts, {
       target: "player",
       kind: "status",
       stat: "mana",
-      amount: grantedMana,
+      amount: gained,
     });
-    return {
-      ...state,
-      mana: state.mana + grantedMana,
-      flags: { ...state.flags, resonantChimeUsedThisTurn: true },
-    };
+    return { ...nextState, flags: { ...state.flags, resonantChimeUsedThisTurn: true } };
   }
   return state;
 }
@@ -218,11 +220,7 @@ function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTe
   if (talents.drawOnConsume > 0 && !nextState.flags.consumeDrawUsedThisTurn) {
     const draw = drawFromState(nextState, talents.drawOnConsume);
     nextState = {
-      ...nextState,
-      deck: draw.deck,
-      discard: draw.discard,
-      hand: draw.hand,
-      nextCardUid: draw.nextCardUid,
+      ...applyDrawResult(nextState, draw),
       flags: { ...nextState.flags, consumeDrawUsedThisTurn: true },
     };
   }
@@ -267,11 +265,7 @@ function handlePostPlayCardDestination(
       if (state.trinketEffects.runicQuillDrawOnConsume > 0 && !state.flags.runicQuillUsedThisTurn) {
         const draw = drawFromState(nextState, state.trinketEffects.runicQuillDrawOnConsume);
         nextState = {
-          ...nextState,
-          deck: draw.deck,
-          discard: draw.discard,
-          hand: draw.hand,
-          nextCardUid: draw.nextCardUid,
+          ...applyDrawResult(nextState, draw),
           flags: { ...nextState.flags, runicQuillUsedThisTurn: true },
         };
       }
@@ -294,6 +288,7 @@ function handlePostPlayCardDestination(
 
 /**
  * Coordinates cost checks, play validation, effect dispatching, and deck movement.
+ * Validation is owned by canPlayCard; this function trusts its verdict.
  */
 export function playBattleCardResolved(
   state: BattleState,
@@ -304,32 +299,23 @@ export function playBattleCardResolved(
   const combatTexts: CombatTextEvent[] = [];
   const enemyWasAlive = state.enemyHealth > 0;
 
-  if (!options?.allowAfterEnemyDefeat && state.enemyHealth <= 0) {
-    return { state, combatTexts };
-  }
-  if (isPlayerDefeated(state)) {
-    return { state, combatTexts };
-  }
-
   const card = getPlayableCard(state, cardId, index);
-  if (!card) return { state, combatTexts };
-  if (!canPlayCard(state, card, index, options)) return { state, combatTexts };
+  if (!card || !canPlayCard(state, card, index, options)) return { state, combatTexts };
 
   const { state: costState, effectiveCost } = resolveCardPlayCost(state, card);
-  if (costState.mana < effectiveCost) {
-    return { state, combatTexts };
-  }
 
+  // Single resolution point for replay; both the effect application and the
+  // encounter-trait pass consume this decision.
   const playTwice = costState.flags.playNextCardTwice;
-  let nextState = executeCardPlayState(costState, card, index, effectiveCost, combatTexts);
+  let nextState = executeCardPlayState(costState, card, index, effectiveCost, combatTexts, playTwice);
   nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
   if (playTwice) nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
-  if (!isPlayerDefeated(nextState)) {
-    if (enemyWasAlive) {
-      nextState = applyResonantChimeTrinket(nextState, combatTexts);
-    }
+  // Chime only grants mana, so survival cannot change across it.
+  const playerAlive = !isPlayerDefeated(nextState);
+  if (playerAlive && enemyWasAlive) {
+    nextState = applyResonantChimeTrinket(nextState, combatTexts);
   }
-  nextState = handlePostPlayCardDestination(nextState, card, !isPlayerDefeated(nextState), combatTexts);
+  nextState = handlePostPlayCardDestination(nextState, card, playerAlive, combatTexts);
 
   return { state: nextState, combatTexts };
 }

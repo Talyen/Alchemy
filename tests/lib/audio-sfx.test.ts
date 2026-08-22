@@ -34,8 +34,6 @@ function lastAudio() {
 beforeEach(() => {
   created.length = 0;
   audioState.muted = false;
-  audioState.audioUnlocked = false;
-  audioState.context = null;
   audioState.sfxVolume = 0.35;
   audioState.masterVolume = 1;
   audioState.lastPlayedAt = new Map();

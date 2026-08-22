@@ -44,7 +44,7 @@ test.describe("Battle Flow", critical, () => {
   });
 });
 
-test.describe("Talents", () => {
+test.describe("Talents", critical, () => {
   test.beforeEach(async ({ page }) => {
     await new MenuPage(page).gotoWithUnlockedMeta();
   });

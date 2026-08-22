@@ -198,6 +198,39 @@ describe("storage io", () => {
     expect(JSON.parse(mockStorage[SAVE_KEY]).discoveredCardIds).toEqual(["latest"]);
   });
 
+  it("desktop exit flush wins over an async write that is already in flight", async () => {
+    const storage: Record<string, string> = {};
+    let releaseWrite: (() => void) | undefined;
+    const writeGate = new Promise<void>((resolve) => {
+      releaseWrite = resolve;
+    });
+    configureSaveBackend({
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: async (_key, value) => {
+        await writeGate;
+        storage[SAVE_KEY] = value;
+        return { ok: true };
+      },
+      clear: async () => ({ ok: true }),
+      writeSync: (_key, value) => {
+        storage[SAVE_KEY] = value;
+        return { ok: true };
+      },
+    });
+
+    const pending = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] });
+    releaseWrite?.();
+    await pending;
+
+    // The stale in-flight write lands first, but the terminal snapshot must be
+    // rewritten after it — the exit state can never be clobbered.
+    expect(JSON.parse(storage[SAVE_KEY]).discoveredCardIds).toEqual(["latest"]);
+  });
+
   it("skips terminal exit save while a clear is in flight", async () => {
     let releaseClear: (() => void) | undefined;
     const clearGate = new Promise<void>((resolve) => {

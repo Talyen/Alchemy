@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { installRafStub } from "../helpers/animation-test";
 import { IMAGE_PRELOAD_TIMEOUT_MS } from "@/lib/game-constants";

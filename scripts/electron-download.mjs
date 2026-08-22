@@ -2,7 +2,6 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
 import {
   electronRoot,
   getExecutablePath,
@@ -11,6 +10,7 @@ import {
   platformPath,
   resolveElectronExecutablePath,
 } from "./electron-path.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
 
 const require = createRequire(import.meta.url);
 const { downloadArtifact } = require("@electron/get");
@@ -168,7 +168,7 @@ async function downloadElectronIfNeeded() {
   }
 }
 
-const isMain = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+const isMain = isMainModule(import.meta.url);
 
 if (isMain) {
   downloadElectronIfNeeded()

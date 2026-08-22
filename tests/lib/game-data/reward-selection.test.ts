@@ -111,7 +111,12 @@ describe("selectRewardCards", () => {
       card({ id: "burn", effects: [{ kind: "damage", damageType: "burn", amount: 3 }] }),
     ];
 
-    const result = selectRewardCards([], allCards, 1, [], () => 0.99, ["block"]);
+    let roll = false;
+    const rng = () => {
+      roll = !roll;
+      return roll ? 0.99 : 0.0;
+    };
+    const result = selectRewardCards([], allCards, 1, [], rng, ["block"]);
 
     expect(result[0].id).toBe("block");
   });
@@ -124,7 +129,12 @@ describe("selectRewardCards", () => {
       card({ id: "plain" }),
     ];
 
-    const result = selectRewardCards(drafted, allCards, 2, drafted, () => 0.99, ["block"]);
+    let roll = false;
+    const rng = () => {
+      roll = !roll;
+      return roll ? 0.99 : 0.0;
+    };
+    const result = selectRewardCards(drafted, allCards, 2, drafted, rng, ["block"]);
 
     expect(result.map((entry) => entry.id).sort()).toEqual(["block", "burn"]);
   });

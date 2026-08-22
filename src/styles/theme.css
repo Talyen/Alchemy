@@ -48,6 +48,7 @@
   --text-xl--line-height: calc(1.75 / 1.375);
 
   --animate-shine: shine 14s linear infinite;
+  --animate-shine-text-corruption: shine 6s linear infinite;
 
   --animate-shake: shake 380ms ease-out;
   --animate-hurt-flash: hurtFlash 280ms ease-out forwards;

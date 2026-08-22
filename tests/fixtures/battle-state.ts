@@ -23,7 +23,7 @@ export type InjectedBattleState = Partial<Omit<BattleState, ResumeMergedFields>>
   [K in ResumeMergedFields]?: Partial<BattleState[K]>;
 };
 
-export const GOBLIN_ENEMY: BestiaryEntry = {
+const GOBLIN_ENEMY: BestiaryEntry = {
   id: "goblin",
   title: "Goblin",
   subtitle: "",

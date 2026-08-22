@@ -22,6 +22,7 @@ For non-trivial work, select only the owner that matches the task; other documen
 | ----------------------------------------------- | -------------------------------------------------------------------- |
 | Run state, controllers, import boundaries, boot | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)                       |
 | Saves, cards, screens, materials, motion        | [docs/WORKFLOWS.md](./docs/WORKFLOWS.md)                             |
+| Raw art / sound / generated asset barrels       | [docs/WORKFLOWS-ASSETS.md](./docs/WORKFLOWS-ASSETS.md)               |
 | Commands, battle rules, glossary                | [docs/REFERENCE.md](./docs/REFERENCE.md)                             |
 | Hooks, changed-path verification, E2E policy    | [CONTRIBUTING.md](./CONTRIBUTING.md)                                 |
 | Save compatibility                              | [MIGRATIONS.md](./src/features/alchemy/shared/storage/MIGRATIONS.md) |
@@ -38,7 +39,7 @@ For non-trivial work, select only the owner that matches the task; other documen
 - Read headings first, then the one matching H2/H3 section; expand only across a demonstrated ownership boundary.
 - Search the touched path or named symbol first. For repository-wide work, list/count matches before printing content, cap the first pass, and inspect symbol/heading ranges before whole files.
 - Inspect `git status --short` before diffs and `git diff --stat` before a large diff.
-- Keep evidence opt-in: raw/optimized assets, generated files, lockfiles, release notes, `reports/`, `dist/`, `release-desktop/`, `playwright-report/`, `test-results/`, `coverage/`, and `node_modules/` are not default context.
+- Keep evidence opt-in: raw/optimized assets, generated files, lockfiles, `CHANGELOG.md`, release notes, `reports/`, `dist/`, `release-desktop/`, `playwright-report/`, `test-results/`, `coverage/`, and `node_modules/` are not default context.
 
 ## Verification
 
@@ -59,7 +60,7 @@ For non-trivial work, select only the owner that matches the task; other documen
 - **Battle:** treat `BattleState` as immutable; use `state.rng` and `Math.round()`, never `Math.random()`/`Math.floor()`. Tuning belongs in topical files under `src/lib/game-constants/`.
 - **Content:** `descriptionLines` must match effects. Run-earned materials use `awardMaterialsDuringRun()`, not progress `addMaterials()`.
 - **Persistence:** change schemas, normalization/migrations, defaults, hydration/snapshots, and legacy fixtures together as applicable. Follow [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md).
-- **Routes/assets:** route screens are statically imported through `screen-routes/`; game art loads eagerly. Generated asset barrels are outputs—edit their manifest/source and regenerate.
+- **Routes/assets:** route screens are statically imported through `screen-routes/`; game art loads eagerly. Generated asset barrels are outputs—edit their manifest/source and regenerate. Pipeline: [WORKFLOWS-ASSETS](./docs/WORKFLOWS-ASSETS.md).
 - **Imports/purity:** `eslint.config.js` owns import boundaries. Keep pure logic out of screens and I/O, clocks, RNG, storage, and shared mutation at the owning seam.
 
 ## Change guards
@@ -72,7 +73,7 @@ For non-trivial work, select only the owner that matches the task; other documen
 ## UI
 
 - Plain function components with explicit `Props`, not `React.FC`; `cn()` for conditional Tailwind classes.
-- CSS `active:` feedback; shared hover/press, button, tooltip, and fade rules live in [WORKFLOWS](./docs/WORKFLOWS.md#interactive-button-conventions) — do not invent parallel motion.
+- CSS `active:` feedback; shared hover/press, button, and fade rules live in [WORKFLOWS § Interactive buttons](./docs/WORKFLOWS.md#interactive-button-conventions), tooltips in [§ Hover tooltips](./docs/WORKFLOWS.md#hover-tooltips) — do not invent parallel motion.
 - `FadeSlot` for in-screen identity swaps; no staggered page chrome, no Framer hover scale.
 - Cosmetic randomness initializes lazily via `useState(() => ...)`, never render-time `Math.random()`.
 

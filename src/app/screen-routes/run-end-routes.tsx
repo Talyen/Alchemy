@@ -1,40 +1,34 @@
 import type { ReactNode } from "react";
-import { GameOverScreen, RunVictoryScreen } from "@/features/alchemy/run-loop/screens";
-import { useGameOverScreenData, useRunVictoryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
+import { useRunEndScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunEndCommands, RunEndRouteCtx } from "./route-ctx";
 
-function GameOverScreenRoute({
-  commands,
-  onOpenBattleMenu,
-}: {
-  commands: RunEndCommands;
-  onOpenBattleMenu: RunEndRouteCtx["onOpenBattleMenu"];
-}) {
-  const r = useGameOverScreenData();
-  return (
-    <GameOverScreen
-      runEndTalentXP={r.runEndTalentXP}
-      talentXP={r.talentXP}
-      runEndMaterials={r.runEndMaterials}
-      onContinue={commands.continueFromRunEnd}
-      onOpenMenu={onOpenBattleMenu}
-    />
-  );
-}
+const RUN_END_COPY = {
+  defeat: { title: "Defeat", subtitle: "Your run has ended." },
+  victory: {
+    title: "Victory",
+    subtitle: "The primordial evils have been vanquished. Alchemy is saved.",
+  },
+} as const;
 
-function RunVictoryScreenRoute({
+function RunEndScreenRoute({
+  outcome,
   commands,
   onOpenBattleMenu,
 }: {
+  outcome: keyof typeof RUN_END_COPY;
   commands: RunEndCommands;
   onOpenBattleMenu: RunEndRouteCtx["onOpenBattleMenu"];
 }) {
-  const r = useRunVictoryScreenData();
+  const { runEndTalentXP, talentXP, runEndMaterials } = useRunEndScreenData();
+  const { title, subtitle } = RUN_END_COPY[outcome];
   return (
-    <RunVictoryScreen
-      runEndTalentXP={r.runEndTalentXP}
-      talentXP={r.talentXP}
-      runEndMaterials={r.runEndMaterials}
+    <RunEndScreen
+      title={title}
+      subtitle={subtitle}
+      runEndTalentXP={runEndTalentXP}
+      talentXP={talentXP}
+      runEndMaterials={runEndMaterials}
       onContinue={commands.continueFromRunEnd}
       onOpenMenu={onOpenBattleMenu}
     />
@@ -46,9 +40,9 @@ export const runEndScreenRoutes: {
   "run-victory": (ctx: RunEndRouteCtx) => ReactNode;
 } = {
   "game-over": ({ routeCommands, onOpenBattleMenu }) => (
-    <GameOverScreenRoute commands={routeCommands.runEnd} onOpenBattleMenu={onOpenBattleMenu} />
+    <RunEndScreenRoute outcome="defeat" commands={routeCommands.runEnd} onOpenBattleMenu={onOpenBattleMenu} />
   ),
   "run-victory": ({ routeCommands, onOpenBattleMenu }) => (
-    <RunVictoryScreenRoute commands={routeCommands.runEnd} onOpenBattleMenu={onOpenBattleMenu} />
+    <RunEndScreenRoute outcome="victory" commands={routeCommands.runEnd} onOpenBattleMenu={onOpenBattleMenu} />
   ),
 };

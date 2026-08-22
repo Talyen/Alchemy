@@ -120,34 +120,31 @@ describe("defaultHomesteadEffects", () => {
 
 // ─── data integrity ─────────────────────────────────────────────
 
-describe("buildings data integrity", () => {
-  it("all building IDs are unique", () => {
-    const ids = buildings.map((b) => b.id);
+describe.each([
+  { name: "buildings", items: buildings, hasTiers: true },
+  { name: "farmPlots", items: farmPlots, hasTiers: false },
+  { name: "researchUpgrades", items: researchUpgrades, hasTiers: true },
+])("$name data integrity", ({ items, hasTiers }) => {
+  it("all IDs are unique", () => {
+    const ids = items.map((item) => item.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("each building has required fields", () => {
-    for (const b of buildings) {
-      expect(b.title).toBeTruthy();
-      expect(typeof b.description).toBe("string");
-      expect(b.buttonLabel).toBeTruthy();
-      expect(b.tiers.length).toBeGreaterThan(0);
+  it("each entry has required fields", () => {
+    for (const item of items) {
+      expect(item.title).toBeTruthy();
+      expect(typeof item.description).toBe("string");
+      expect(item.buttonLabel).toBeTruthy();
+      if (hasTiers) expect(item.tiers.length).toBeGreaterThan(0);
     }
   });
 
-  it("each building tier cost uses only valid materials", () => {
-    for (const b of buildings) {
-      for (const tier of b.tiers) {
+  it("tier costs use only valid non-negative materials", () => {
+    for (const item of items) {
+      for (const tier of item.tiers ?? []) {
         for (const mat of Object.keys(tier.cost)) {
           expect(MATERIAL_IDS).toContain(mat);
         }
-      }
-    }
-  });
-
-  it("each building tier cost is non-negative", () => {
-    for (const b of buildings) {
-      for (const tier of b.tiers) {
         for (const mat of MATERIAL_IDS) {
           expect(tier.cost[mat]).toBeGreaterThanOrEqual(0);
         }
@@ -156,52 +153,15 @@ describe("buildings data integrity", () => {
   });
 });
 
-describe("farmPlots data integrity", () => {
-  it("all farm IDs are unique", () => {
-    const ids = farmPlots.map((f) => f.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
-  it("each farm has required fields", () => {
+describe("farmPlots yields", () => {
+  it("use only valid materials and are non-negative", () => {
     for (const f of farmPlots) {
-      expect(f.title).toBeTruthy();
-      expect(typeof f.description).toBe("string");
-      expect(f.yield).toBeDefined();
-      expect(f.buttonLabel).toBeTruthy();
-    }
-  });
-
-  it("each farm cost and yield use only valid materials", () => {
-    for (const f of farmPlots) {
-      for (const tier of f.tiers) {
-        for (const mat of Object.keys(tier.cost).concat(Object.keys(f.yield))) {
-          expect(MATERIAL_IDS).toContain(mat);
-        }
+      for (const mat of Object.keys(f.yield)) {
+        expect(MATERIAL_IDS).toContain(mat);
       }
-    }
-  });
-
-  it("each farm yield is non-negative", () => {
-    for (const f of farmPlots) {
       for (const mat of MATERIAL_IDS) {
         expect(f.yield[mat]).toBeGreaterThanOrEqual(0);
       }
-    }
-  });
-});
-
-describe("researchUpgrades data integrity", () => {
-  it("all research IDs are unique", () => {
-    const ids = researchUpgrades.map((r) => r.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
-  it("each research has required fields", () => {
-    for (const r of researchUpgrades) {
-      expect(r.title).toBeTruthy();
-      expect(typeof r.description).toBe("string");
-      expect(r.buttonLabel).toBeTruthy();
-      expect(r.tiers.length).toBeGreaterThan(0);
     }
   });
 });

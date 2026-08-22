@@ -123,19 +123,14 @@ export function teardownRun(): void {
   teardownListeners.forEach((listener) => listener());
 }
 
-/** Write the full save file immediately (bypasses autosave debounce). */
-async function flushPersistedSave(activeRun: ActiveRunData | null): Promise<void> {
-  await flushAlchemySaveNow(activeRun);
-}
-
 /** Persist meta/talent progress after a run ends with no resumable active run. */
 function flushSaveAfterRunEnd(): void {
-  void flushPersistedSave(null);
+  void flushAlchemySaveNow(null);
 }
 
 /** Persist immediately after a gear mutation (bypasses autosave debounce). */
 export function flushSaveAfterGearMutation(activeRun: ActiveRunData | null): void {
-  void flushPersistedSave(activeRun);
+  void flushAlchemySaveNow(activeRun);
 }
 
 /** Apply run-end bookkeeping mutations without opening or flushing a transaction. */

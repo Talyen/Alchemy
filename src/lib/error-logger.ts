@@ -32,6 +32,11 @@ export function registerErrorSink(sink: LogSink): void {
   sinks = [...sinks, sink];
 }
 
+/** Test-only isolation for module-scoped sink state. */
+export function resetErrorSinksForTests(): void {
+  sinks = [];
+}
+
 export function logError(
   message: string,
   source: ErrorSource,

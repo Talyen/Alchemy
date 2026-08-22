@@ -5,7 +5,7 @@
  * ./status-helpers, ./gear-effects, ./trinket-effects, ../game-constants.
  * Depended on by: ./status-ticks, ./damage-riders, ./effect-handlers, ./status-player.
  */
-import type { BattleCardEffect, DamageType } from "@/lib/game-data";
+import type { BattleCardEffect } from "@/lib/game-data";
 import {
   addEnemyStatus,
   clampHealth,
@@ -52,12 +52,6 @@ export function applyPoisonTalentRiders(
 ): BattleState {
   let nextState = state;
   if (nextState.talentEffects.poisonStripArmor) {
-    nextState = reduceEnemyArmor(nextState, 1);
-  }
-  if (
-    nextState.gearEffects.poisonArmorShredChance > 0 &&
-    rollPercent(nextState.gearEffects.poisonArmorShredChance, nextState.rng)
-  ) {
     nextState = reduceEnemyArmor(nextState, 1);
   }
   if (damage > 0) {
@@ -203,10 +197,21 @@ function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextE
   let nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
+    pendingBleedLeechHealing: 0,
   };
   nextState = setEnemyStatus(nextState, "bleed", 0);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: finalDamage });
   nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
+  // Detonation is the bleed burst, so it pays the queued leech just like tickBleed.
+  const leechAmount = state.pendingBleedLeechHealing;
+  if (leechAmount > 0) {
+    nextState = applyHealingWithCombatText(
+      nextState,
+      scaledGearLeechHeal(computeLeechHeal(leechAmount), nextState.gearEffects),
+      combatTexts,
+      { skipFightPacing: true },
+    );
+  }
   return nextState;
 }
 
@@ -220,30 +225,9 @@ function applyPhysicalStatusRider(
   return nextState;
 }
 
-interface DamageStatusContext {
-  state: BattleState;
-  effect: Extract<BattleCardEffect, { kind: "damage" }>;
-  actualDamage: number;
-  combatTexts: CombatTextEvent[];
-  preHitHealth: number;
-}
-
-type DamageStatusHandler = (ctx: DamageStatusContext) => BattleState;
-
-const DAMAGE_STATUS_HANDLERS: Partial<Record<DamageType, DamageStatusHandler>> = {
-  burn: ({ state, actualDamage }) => applyBurnStatusRider(state, actualDamage),
-  poison: ({ state, actualDamage, combatTexts }) => applyPoisonStatusRider(state, actualDamage, combatTexts),
-  bleed: ({ state, effect, actualDamage, combatTexts }) =>
-    applyBleedStatusRider(state, effect, actualDamage, combatTexts),
-  stun: ({ state, actualDamage, combatTexts, preHitHealth }) =>
-    applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth),
-  freeze: ({ state, actualDamage, combatTexts, preHitHealth }) =>
-    applyFreezeStatusRider(state, actualDamage, combatTexts, preHitHealth),
-  physical: ({ state, actualDamage, combatTexts }) => applyPhysicalStatusRider(state, actualDamage, combatTexts),
-  holy: ({ state }) => state,
-  nature: ({ state }) => state,
-};
-
+/**
+ * Dispatches the per-type status rider; holy/nature deal damage without riders.
+ */
 export function applyDamageStatuses(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
@@ -251,7 +235,20 @@ export function applyDamageStatuses(
   combatTexts: CombatTextEvent[],
   preHitHealth = state.enemyHealth,
 ) {
-  const handler = DAMAGE_STATUS_HANDLERS[effect.damageType];
-  if (!handler) return state;
-  return handler({ state, effect, actualDamage, combatTexts, preHitHealth });
+  switch (effect.damageType) {
+    case "burn":
+      return applyBurnStatusRider(state, actualDamage);
+    case "poison":
+      return applyPoisonStatusRider(state, actualDamage, combatTexts);
+    case "bleed":
+      return applyBleedStatusRider(state, effect, actualDamage, combatTexts);
+    case "stun":
+      return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth);
+    case "freeze":
+      return applyFreezeStatusRider(state, actualDamage, combatTexts, preHitHealth);
+    case "physical":
+      return applyPhysicalStatusRider(state, actualDamage, combatTexts);
+    default:
+      return state;
+  }
 }

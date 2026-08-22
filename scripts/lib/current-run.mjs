@@ -11,11 +11,26 @@ function gitOutput(rootDir, args) {
   return result.status === 0 ? result.stdout : "";
 }
 
-function sourceState(rootDir, commit) {
-  const rawPaths = gitOutput(rootDir, ["status", "--short", "--untracked-files=all", "-z"])
+/**
+ * Paths reported by `git status --short --untracked-files=all` (rename entries
+ * collapse to the target path). Returns null when git itself fails so callers
+ * can distinguish "clean tree" from "could not ask".
+ */
+export function changedGitPaths(rootDir) {
+  const result = spawnSync("git", ["status", "--short", "--untracked-files=all", "-z"], {
+    cwd: rootDir,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  if (result.status !== 0) return null;
+  return (result.stdout ?? "")
     .split("\0")
     .filter((entry) => entry.trim())
     .map((entry) => (entry.length >= 3 && entry[2] === " " ? entry.slice(3) : entry).trim());
+}
+
+function sourceState(rootDir, commit) {
+  const rawPaths = changedGitPaths(rootDir) ?? [];
   return {
     commit: commit === undefined ? gitOutput(rootDir, ["rev-parse", "HEAD"]).trim() || null : commit,
     dirtyPaths: rawPaths.slice(0, 20),

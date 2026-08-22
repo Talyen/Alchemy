@@ -10,7 +10,7 @@ export function targetPlatform(target) {
   throw new Error(`Unsupported desktop target: ${target}`);
 }
 
-export function unpackedDirectoryName(target) {
+function unpackedDirectoryName(target) {
   if (!(target in TARGET_PREFIXES)) throw new Error(`Unsupported desktop target: ${target}`);
   return `${TARGET_PREFIXES[target]}-unpacked`;
 }

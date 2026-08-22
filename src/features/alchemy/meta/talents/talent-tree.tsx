@@ -2,7 +2,7 @@
 // A row unlocks once every real talent in the rows above it is unlocked; any real
 // talent on an unlocked row can be allocated with an unspent point. Placeholder
 // nodes render as inert "Coming Soon" cards and never participate in progression.
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { Lock } from "lucide-react";
 
@@ -17,7 +17,7 @@ import { TALENT_UNLOCK_ANIMATION_MS } from "@/lib/game-constants";
 import { keywordDefinitions, isTalentPlaceholder, TALENT_ROW_SIZES } from "@/lib/game-data";
 import type { TalentDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { tokenizeDescription } from "../../shared/utils";
+import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
 import { TalentUnlockBurst } from "./talent-unlock-burst";
 
 export interface TalentLayoutProps {
@@ -38,23 +38,6 @@ function chunkRows(talents: TalentDefinition[]): TalentDefinition[][] {
     index += size;
   }
   return rows;
-}
-
-function TalentDescription({ description }: { description: string }) {
-  const parts = tokenizeDescription(description);
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.keywordId ? (
-          <span key={i} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>
-            {part.text}
-          </span>
-        ) : (
-          <Fragment key={i}>{part.text}</Fragment>
-        ),
-      )}
-    </>
-  );
 }
 
 function TalentCard({
@@ -142,7 +125,7 @@ function TalentCard({
           </div>
           {isPlaceholder ? null : (
             <p className="mt-1 text-base leading-snug text-balance text-foreground/90 sm:text-lg">
-              <TalentDescription description={talent.description} />
+              {renderColoredKeywords(talent.description)}
             </p>
           )}
         </div>

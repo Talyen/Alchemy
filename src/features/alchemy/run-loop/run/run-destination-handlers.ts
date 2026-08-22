@@ -72,7 +72,6 @@ export function applyRewardSelection({ choice, type, draft }: RewardSelectionInp
   } else if (type === "gear") {
     const characterId = draft.run.activeRun.characterId;
     mutateGearWithRunHealthSync(draft, {
-      characterId,
       mutate: (gear: GearStore) => gear.addInstance(choice as GearInstance, characterId),
     });
   }

@@ -4,7 +4,7 @@ import { HomesteadPage } from "./pages/homestead-page";
 import { assertRowAlignment } from "./helpers";
 import { critical } from "./playwright-tags";
 
-test.describe("Homestead Flow", () => {
+test.describe("Homestead Flow", critical, () => {
   test.beforeEach(async ({ runtimeErrors }) => {
     void runtimeErrors;
   });

@@ -35,6 +35,9 @@ export default defineConfig(({ mode, command }) => {
         presets: [reactCompilerPreset()],
       }),
       command === "serve" &&
+        // The Playwright webServer sets this: E2E runs own typecheck as a separate
+        // gate, and an in-server checker competes with test workers for CPU.
+        process.env.ALCHEMY_SKIP_CHECKER !== "1" &&
         checker({
           typescript: { tsconfigPath: "./tsconfig.json" },
         }),
@@ -131,7 +134,14 @@ export default defineConfig(({ mode, command }) => {
       deps: {
         optimizer: {
           ssr: {
-            include: ["@/lib/game-data", "@/lib/battle", "@/lib/validation"],
+            include: [
+              "@/lib/game-data",
+              "@/lib/battle",
+              "@/lib/validation",
+              "@/lib/gear",
+              "@/lib/routing",
+              "@/features/alchemy/shared",
+            ],
           },
         },
       },

@@ -109,7 +109,7 @@ export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigat
   );
 }
 
-function toRunSession(state: GameplayState, screen?: Screen): RunSession {
+export function getRunSessionFromState(state: GameplayState, screen?: Screen): RunSession {
   const resolvedScreen = screen ?? state.run.navigation.screen;
   const battle = pickRunSessionBattleSlice(state.battle);
   const { talentXP, unlockedTalents } = state.runProfile;
@@ -122,11 +122,7 @@ function toRunSession(state: GameplayState, screen?: Screen): RunSession {
   };
 }
 
-export function getRunSessionFromState(state: GameplayState, screen?: Screen): RunSession {
-  return toRunSession(state, screen);
-}
-
 /** Imperative snapshot of run + session + battle for the current screen. */
 export function getRunSession(screen?: Screen): RunSession {
-  return toRunSession(readGameplayState(), screen);
+  return getRunSessionFromState(readGameplayState(), screen);
 }

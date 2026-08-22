@@ -106,9 +106,9 @@ describe("settings store", () => {
     expect(useSettingsStore.getState()).toMatchObject({
       selectedAspectRatio: "16:9",
       displayMode: "windowed",
-      musicVol: 50,
-      sfxVol: 80,
-      masterVol: 90,
+      musicVolume: 50,
+      sfxVolume: 80,
+      masterVolume: 90,
       autoEndTurn: false,
     });
   });
@@ -117,12 +117,12 @@ describe("settings store", () => {
     useProfileStore.getState().setDiscoveredCardIds(["card-a"]);
     const settings = useSettingsStore.getState();
     settings.setBrightness(120);
-    settings.setMasterVol(75);
+    settings.setMasterVolume(75);
     settings.setShowClearSaveConfirm(true);
     settings.resetToDefaults();
 
     expect(useSettingsStore.getState().brightness).toBe(defaultSaveData.brightness);
-    expect(useSettingsStore.getState().masterVol).toBe(defaultSaveData.masterVolume);
+    expect(useSettingsStore.getState().masterVolume).toBe(defaultSaveData.masterVolume);
     expect(useSettingsStore.getState().showClearSaveConfirm).toBe(false);
     expect(useProfileStore.getState().discoveredCardIds).toEqual(["card-a"]);
   });

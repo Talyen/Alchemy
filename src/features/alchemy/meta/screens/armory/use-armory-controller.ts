@@ -17,21 +17,19 @@ import {
   dispatchGearMutationWithRunHealthSync,
   dispatchGearSalvageWithMaterialGrant,
 } from "@/features/alchemy/shared/stores/gear-session-command";
-import { useActiveRunCharacterId, useHasActiveRun } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useGearArmorySlice } from "@/features/alchemy/shared/stores/gear-store";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
-/** HP-sync uses the active-run hero; `mutate` may edit another character's loadout. */
 function mutateGearWithFlush<T>(
-  runHealthCharacterId: CharacterId,
   flush: () => void,
   mutate: (state: GearStore) => T,
   options?: { flushOnSuccessOnly?: boolean },
 ): T {
-  const result = dispatchGearMutationWithRunHealthSync({ characterId: runHealthCharacterId, mutate });
+  const result = dispatchGearMutationWithRunHealthSync({ mutate });
   if (options?.flushOnSuccessOnly ? result : true) flush();
   return result;
 }
@@ -56,7 +54,6 @@ export function useArmoryController(): ArmoryController {
   const gear = useGearArmorySlice();
   const finishedRunCharacters = useFinishedRunCharacters();
   const hasActiveRun = useHasActiveRun();
-  const activeRunCharacterId = useActiveRunCharacterId();
 
   const flush = useCallback(() => {
     flushSaveAfterGearMutation(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
@@ -64,48 +61,45 @@ export function useArmoryController(): ArmoryController {
 
   const onEquip = useCallback<ArmoryController["onEquip"]>(
     (characterId, slot, instance) => {
-      mutateGearWithFlush(activeRunCharacterId, flush, (state) => {
+      mutateGearWithFlush(flush, (state) => {
         state.equip(characterId, slot, instance);
       });
     },
-    [activeRunCharacterId, flush],
+    [flush],
   );
 
   const onUnequip = useCallback<ArmoryController["onUnequip"]>(
     (characterId, slot) => {
-      mutateGearWithFlush(activeRunCharacterId, flush, (state) => {
+      mutateGearWithFlush(flush, (state) => {
         state.unequip(characterId, slot);
       });
     },
-    [activeRunCharacterId, flush],
+    [flush],
   );
 
   const onSalvage = useCallback<ArmoryController["onSalvage"]>(
     (instanceId, salvageYield) => {
-      const result = dispatchGearSalvageWithMaterialGrant(activeRunCharacterId, (state) =>
+      const result = dispatchGearSalvageWithMaterialGrant((state) =>
         state.salvage(instanceId, { yield: salvageYield }),
       );
       if (result) flush();
       return Boolean(result);
     },
-    [activeRunCharacterId, flush],
+    [flush],
   );
 
   const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
     (currencyId, instanceId) =>
-      mutateGearWithFlush(
-        activeRunCharacterId,
-        flush,
-        (state) => state.applyCurrency(currencyId, instanceId, { rng: Math.random }),
-        { flushOnSuccessOnly: true },
-      ),
-    [activeRunCharacterId, flush],
+      mutateGearWithFlush(flush, (state) => state.applyCurrency(currencyId, instanceId, { rng: Math.random }), {
+        flushOnSuccessOnly: true,
+      }),
+    [flush],
   );
 
   const onSpawnDevGear = useCallback<NonNullable<ArmoryController["onSpawnDevGear"]>>(
     (characterId) => {
       if (!isAlchemyDevBuild()) return;
-      mutateGearWithFlush(characterId, flush, (state) => {
+      mutateGearWithFlush(flush, (state) => {
         state.addInstance(generateDevRandomGearInstance(Math.random), characterId);
       });
     },

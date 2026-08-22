@@ -49,11 +49,11 @@ describe("playBattleCardResolved", () => {
     expect(result.state.enemyHealth).toBe(29);
   });
 
-  it("deducts cost before restore-mana so refunds at maxMana are not capped", () => {
+  it("deducts cost before restore-mana and caps the refund at maxMana", () => {
     const card = makeTestCard({ cost: 1, effects: [{ kind: "restore-mana", amount: 2 }] });
     const state = makeState({ mana: 4, maxMana: 4, hand: [card] });
     const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.mana).toBe(5);
+    expect(result.state.mana).toBe(4);
     expect(result.state.maxMana).toBe(4);
   });
 
@@ -289,8 +289,8 @@ describe("playBattleCardResolved", () => {
     const card1 = makeTestCard({ id: "c1", cost: 0, effects: [] });
     const card2 = makeTestCard({ id: "c2", cost: 0, effects: [] });
     const state = makeState({
-      mana: 5,
-      maxMana: 5,
+      mana: 3,
+      maxMana: 6,
       hand: [card1, card2],
       cardsPlayedThisTurn: 2,
       trinketEffects: {
@@ -300,10 +300,28 @@ describe("playBattleCardResolved", () => {
       },
     });
     const first = playBattleCardResolved(state, card1.id, 0);
-    expect(first.state.mana).toBe(6);
+    expect(first.state.mana).toBe(4);
     expect(first.state.flags.resonantChimeUsedThisTurn).toBe(true);
     const second = playBattleCardResolved(first.state, card2.id, 0);
     expect(second.state.mana).toBe(first.state.mana);
+  });
+
+  it("Resonant Chime holds its charge at full mana instead of consuming it", () => {
+    const card = makeTestCard({ id: "c1", cost: 0, effects: [] });
+    const state = makeState({
+      mana: 3,
+      maxMana: 3,
+      hand: [card],
+      cardsPlayedThisTurn: 2,
+      trinketEffects: {
+        ...makeState().trinketEffects,
+        resonantChimeCardsRequired: 3,
+        resonantChimeMana: 1,
+      },
+    });
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.state.mana).toBe(3);
+    expect(result.state.flags.resonantChimeUsedThisTurn).toBe(false);
   });
 });
 

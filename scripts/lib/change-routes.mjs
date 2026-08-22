@@ -94,7 +94,7 @@ const COMMANDS = Object.freeze({
       "--",
       "tests/lib/audio-sfx.test.ts",
       "tests/lib/audio-sfx-playback.test.ts",
-      "tests/lib/audio-buffer-cache.test.ts",
+      "tests/lib/audio-preload.test.ts",
       "tests/lib/sound-assets.test.ts",
     ],
   },
@@ -208,12 +208,6 @@ const COMMANDS = Object.freeze({
     reason: "browser audio behavior requires a real page context",
     command: "npx",
     args: ["playwright", "test", "tests/audio-sfx.spec.ts", "--project", "chromium"],
-  },
-  "e2e-electron": {
-    label: "Electron desktop Playwright flow",
-    reason: "desktop main-process changes require the packaged Electron specs",
-    command: NPM,
-    args: ["run", "test:e2e:electron"],
   },
   "unit-content": {
     label: "content-systems unit tests",
@@ -447,19 +441,6 @@ export const ROUTES = Object.freeze([
     commands: ["unit-changed", "e2e-prepush"],
     docs: [doc("CONTRIBUTING.md", "E2E policy", "changed-path and CI tier policy")],
     fixture: "tests/helpers.ts",
-  },
-  {
-    id: "desktop-shell",
-    patterns: [
-      "desktop/**",
-      "tests/electron-smoke.spec.ts",
-      "tests/electron-security.spec.ts",
-      "tests/electron-helpers.ts",
-      "tests/electron-global-setup.ts",
-    ],
-    commands: ["e2e-electron"],
-    docs: [doc("docs/RELEASE.md", "Steam depot and App ID", "desktop packaging")],
-    fixture: "desktop/main.cjs",
   },
   {
     id: "tooling",

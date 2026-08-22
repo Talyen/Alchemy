@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";

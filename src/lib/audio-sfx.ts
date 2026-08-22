@@ -10,7 +10,7 @@ import {
   type UISound,
 } from "./sound-registry";
 import { audioState } from "./audio-state";
-import { getSoundUrl } from "./audio-buffer-cache";
+import { getSoundUrl } from "./audio-preload";
 import { pickRandom } from "./utils";
 import {
   SFX_COOLDOWN_MS,

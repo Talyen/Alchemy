@@ -13,6 +13,7 @@ import {
   type DifficultyModifier,
 } from "@/lib/game-data";
 import { createRunStreamRng } from "@/lib/run-rng";
+import { sampleItems } from "@/lib/utils";
 import { ANOMALY_METRICS, ANOMALY_THRESHOLD_BY_PRESET, getAnomalyThreshold } from "./anomalies";
 import {
   buildClassSimDeck,
@@ -104,16 +105,7 @@ function cellFromBatch(batch: BalanceBatchResult): RateCell {
 
 function buildRandomDeck(seed: number, size = 10): BattleCard[] {
   const rng = createRunStreamRng(seed, "world");
-  const shuffled = [...cardLibrary];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    const current = shuffled[i];
-    const swap = shuffled[j];
-    if (!current || !swap) continue;
-    shuffled[i] = swap;
-    shuffled[j] = current;
-  }
-  return shuffled.slice(0, Math.min(size, shuffled.length));
+  return sampleItems(cardLibrary, size, rng);
 }
 
 function buildFixedCardDeck(target: BattleCard, seed: number, size = 10): BattleCard[] {

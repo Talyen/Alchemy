@@ -7,7 +7,7 @@ import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
 import { drawFromState } from "./draw";
-import type { BattleState, CombatTextEvent } from "./types";
+import { gainMana, type BattleState, type CombatTextEvent } from "./types";
 import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
 import { getEnemyDamageMultiplier } from "./status-helpers";
@@ -188,8 +188,12 @@ function applyWishDesperateTrigger(state: BattleState, combatTexts: CombatTextEv
 function applyWishManaTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   const manaGain = state.talentEffects.manaOnWish + state.gearEffects.manaOnWish;
   if (manaGain <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: manaGain });
-  return { ...state, mana: state.mana + manaGain };
+  const nextState = gainMana(state, manaGain);
+  const gained = nextState.mana - state.mana;
+  if (gained > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
+  }
+  return nextState;
 }
 
 export function chooseWishCard(state: BattleState, cardId: string | null) {

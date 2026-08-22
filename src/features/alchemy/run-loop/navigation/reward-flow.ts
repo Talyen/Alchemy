@@ -3,7 +3,7 @@ import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/car
 import { cardLibrary, selectRewardCards, trinketLibrary, type BattleCard } from "@/lib/game-data";
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { sampleItems } from "@/lib/utils";
+import { pickRandom, sampleItems } from "@/lib/utils";
 import { CONSTANTS } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { generateGearRewardChoices } from "@/lib/gear";
@@ -44,12 +44,11 @@ export function createNextRewardState(rewardState: RewardState): CardRewardState
 }
 
 export function getRandomPotionCard(rng: () => number): BattleCard {
-  const potionCards = getStandardPotionPool();
-  const index = Math.floor(rng() * potionCards.length);
-  if (process.env.NODE_ENV !== "production" && potionCards.length === 0) {
-    console.error("[reward-flow] getRandomPotionCard: no potion cards found in getStandardPotionPool()");
+  const potion = pickRandom(getStandardPotionPool(), rng);
+  if (!potion) {
+    throw new Error("[reward-flow] getRandomPotionCard: no potion cards found in getStandardPotionPool()");
   }
-  return potionCards[index]!;
+  return potion;
 }
 
 export function getCompanionCardChoices(rng: () => number): BattleCard[] {

@@ -31,7 +31,7 @@ const DOT_STATUS_CASES = [
 // Goblin's trinket-hoarder doubles burn; play+tick can kill and leave this suite on Victory.
 const DOT_ENCOUNTER_OVERRIDES = { encounteredRunEnemyIds: ["goblin"] };
 
-test.describe("Damage-over-Time Status Effects", () => {
+test.describe("Damage-over-Time Status Effects", critical, () => {
   for (const statusCase of DOT_STATUS_CASES) {
     const gate = statusCase.damageType === "burn" ? critical : slow;
 
@@ -66,7 +66,7 @@ test.describe("Damage-over-Time Status Effects", () => {
   }
 });
 
-test.describe("Companion Battle Behavior", () => {
+test.describe("Companion Battle Behavior", critical, () => {
   const COMPANION_DECK = Array.from({ length: 6 }, () => WOLF_COMPANION_CARD);
 
   test("summon companion card places companion in battle panel", async ({ page, fastBattle, runtimeErrors }) => {
@@ -111,7 +111,7 @@ const TALENT_CASES: TalentCase[] = [
   },
 ];
 
-test.describe("Talents in Battle", () => {
+test.describe("Talents in Battle", critical, () => {
   for (const tc of TALENT_CASES) {
     test(`${tc.id} ${tc.description}`, async ({ page, fastBattle, runtimeErrors }) => {
       void fastBattle;

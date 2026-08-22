@@ -95,18 +95,6 @@ async function collectSaveCandidates(): Promise<string[]> {
   return [];
 }
 
-async function writeStorageItem(key: string, value: string): Promise<{ ok: true } | { ok: false; error: unknown }> {
-  const result = await saveBackend.write(key, value);
-  if (result.ok) return { ok: true };
-  return { ok: false, error: result.error };
-}
-
-async function removeStorageItem(key: string): Promise<{ ok: true } | { ok: false; error: unknown }> {
-  const result = await saveBackend.clear(key);
-  if (result.ok) return { ok: true };
-  return { ok: false, error: result.error };
-}
-
 function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
   for (const candidate of candidates) {
     let parsed: unknown;
@@ -196,6 +184,7 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
 let saveWriteChain: Promise<void> = Promise.resolve();
 let coalescedSave: SaveData | null = null;
 let clearPending = false;
+let saveChainTasks = 0;
 
 /** Test-only isolation for module-scoped write policy and queue state. */
 export async function resetStorageIoForTests(): Promise<void> {
@@ -205,11 +194,12 @@ export async function resetStorageIoForTests(): Promise<void> {
   saveWriteChain = Promise.resolve();
   coalescedSave = null;
   clearPending = false;
+  saveChainTasks = 0;
 }
 
 async function writeSaveSnapshot(data: SaveData): Promise<void> {
   try {
-    const result = await writeStorageItem(SAVE_KEY, serializeSaveSnapshot(data));
+    const result = await saveBackend.write(SAVE_KEY, serializeSaveSnapshot(data));
     if (result.ok) return;
     logStorageFailure("Save data could not be written", result.error);
   } catch (error) {
@@ -230,12 +220,17 @@ export async function saveAlchemySaveData(data: SaveData) {
   if (writesDisabledForSession) return;
 
   coalescedSave = data;
+  saveChainTasks += 1;
   const run = saveWriteChain.then(async () => {
-    while (coalescedSave !== null && !clearPending) {
-      const snapshot = coalescedSave;
-      coalescedSave = null;
-      if (writesDisabledForSession) return;
-      await writeSaveSnapshot(snapshot);
+    try {
+      while (coalescedSave !== null && !clearPending) {
+        const snapshot = coalescedSave;
+        coalescedSave = null;
+        if (writesDisabledForSession) return;
+        await writeSaveSnapshot(snapshot);
+      }
+    } finally {
+      saveChainTasks -= 1;
     }
   });
   // Keep the chain alive even if a write logs-and-continues; never reject the gate.
@@ -267,8 +262,13 @@ export function saveAlchemySaveDataForExit(data: SaveData): void {
       return;
     }
 
-    // A queued, not-yet-started snapshot must not overwrite the terminal snapshot.
-    coalescedSave = null;
+    // Keep the terminal snapshot queued only while a chain task is still pending:
+    // if an async write is in flight (desktop IPC latency), it completes first and
+    // the serialized chain then rewrites this snapshot — a stale write can never
+    // land last. An idle chain has no writer left, so nothing needs queueing.
+    if (saveChainTasks > 0) {
+      coalescedSave = data;
+    }
   } catch (error) {
     logStorageFailure("Save data could not be serialized during page exit", error);
     void saveAlchemySaveData(data);
@@ -291,7 +291,7 @@ export async function clearAlchemySaveData(options?: { keepWritesDisabled?: bool
   const run = saveWriteChain.then(async () => {
     try {
       coalescedSave = null;
-      const result = await removeStorageItem(SAVE_KEY);
+      const result = await saveBackend.clear(SAVE_KEY);
       if (result.ok) {
         if (!options?.keepWritesDisabled) {
           writesDisabledForSession = false;

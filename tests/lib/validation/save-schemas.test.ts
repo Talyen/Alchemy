@@ -118,22 +118,11 @@ describe("SaveDataSchema", () => {
 });
 
 describe("ActiveRunDataSchema persisted session payloads", () => {
+  const run = (overrides: Record<string, unknown> = {}) =>
+    makeMinimalActiveRunInput({ runGold: 0, selectedDifficulty: null, labyrinthMap: null, ...overrides });
+
   it("parses a valid run", () => {
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-    });
+    const result = ActiveRunDataSchema.safeParse(run());
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (result.success) {
       expect(result.data.encounteredRunEnemyIds).toEqual([]);
@@ -141,29 +130,18 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
   });
 
   it("parses destination resume fields", () => {
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-      currentScreen: "rewards",
-      interruptedFlow: {
-        kind: "destination",
-        destinations: ["Campfire"],
-        selectedBossId: null,
-        lastVictoryEnemyType: null,
-        lastVictoryContentSystem: null,
-      },
-    });
+    const result = ActiveRunDataSchema.safeParse(
+      run({
+        currentScreen: "rewards",
+        interruptedFlow: {
+          kind: "destination",
+          destinations: ["Campfire"],
+          selectedBossId: null,
+          lastVictoryEnemyType: null,
+          lastVictoryContentSystem: null,
+        },
+      }),
+    );
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (result.success) {
       expect(result.data.currentScreen).toBe("rewards");
@@ -178,23 +156,9 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
   });
 
   it("rejects invalid resume screens", () => {
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-      currentScreen: "not-a-screen",
-      interruptedFlow: { kind: "none" },
-    });
+    const result = ActiveRunDataSchema.safeParse(
+      run({ currentScreen: "not-a-screen", interruptedFlow: { kind: "none" } }),
+    );
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.currentScreen).toBeNull();
@@ -202,22 +166,7 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
   });
 
   it("normalizes encountered run enemy IDs", () => {
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      encounteredRunEnemyIds: ["goblin", "goblin", 1],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-    });
+    const result = ActiveRunDataSchema.safeParse(run({ encounteredRunEnemyIds: ["goblin", "goblin", 1] }));
 
     expect(result.success).toBe(true);
     if (result.success) {
@@ -231,29 +180,19 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
       flatPhysicalDamage: 4,
       flatStunDamage: 2,
     };
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 1,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-      activeCombat: {
-        battleState: {
-          ...defaults,
-          gearEffects: legacyGearEffects,
+    const result = ActiveRunDataSchema.safeParse(
+      run({
+        roomsEncountered: 1,
+        activeCombat: {
+          battleState: {
+            ...defaults,
+            gearEffects: legacyGearEffects,
+          },
+          activeLabyrinthModifiers: [],
+          activeLabyrinthRewardModifiers: [],
         },
-        activeLabyrinthModifiers: [],
-        activeLabyrinthRewardModifiers: [],
-      },
-    });
+      }),
+    );
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (!result.success) return;
     const gearEffects = result.data.activeCombat!.battleState.gearEffects;
@@ -267,31 +206,21 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
 
   it("defaults missing battle transition metadata and accepts resumable enemy turns", () => {
     const defaults = defaultBattleState();
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 1,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-      activeCombat: {
-        battleState: { ...defaults, turnPhase: "enemy", hand: [] },
-        pendingBattleTransition: {
-          kind: "enemy-turn",
-          resultState: defaults,
-          playerTurnSkipped: false,
+    const result = ActiveRunDataSchema.safeParse(
+      run({
+        roomsEncountered: 1,
+        activeCombat: {
+          battleState: { ...defaults, turnPhase: "enemy", hand: [] },
+          pendingBattleTransition: {
+            kind: "enemy-turn",
+            resultState: defaults,
+            playerTurnSkipped: false,
+          },
+          activeLabyrinthModifiers: [],
+          activeLabyrinthRewardModifiers: [],
         },
-        activeLabyrinthModifiers: [],
-        activeLabyrinthRewardModifiers: [],
-      },
-    });
+      }),
+    );
 
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (!result.success) return;
@@ -300,27 +229,17 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
 
   it("accepts legacy-enemy-turn pending transition markers", () => {
     const defaults = defaultBattleState();
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 1,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-      activeCombat: {
-        battleState: { ...defaults, turnPhase: "enemy", hand: [] },
-        pendingBattleTransition: { kind: "legacy-enemy-turn" },
-        activeLabyrinthModifiers: [],
-        activeLabyrinthRewardModifiers: [],
-      },
-    });
+    const result = ActiveRunDataSchema.safeParse(
+      run({
+        roomsEncountered: 1,
+        activeCombat: {
+          battleState: { ...defaults, turnPhase: "enemy", hand: [] },
+          pendingBattleTransition: { kind: "legacy-enemy-turn" },
+          activeLabyrinthModifiers: [],
+          activeLabyrinthRewardModifiers: [],
+        },
+      }),
+    );
 
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (!result.success) return;
@@ -340,31 +259,21 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     );
     const strippedBattleState = JSON.parse(JSON.stringify({ ...defaults, turnPhase: "enemy", hand: [], turn: 2 }));
 
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 1,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-      activeCombat: {
-        battleState: strippedBattleState,
-        pendingBattleTransition: {
-          kind: "enemy-turn",
-          resultState: strippedResultState,
-          playerTurnSkipped: false,
+    const result = ActiveRunDataSchema.safeParse(
+      run({
+        roomsEncountered: 1,
+        activeCombat: {
+          battleState: strippedBattleState,
+          pendingBattleTransition: {
+            kind: "enemy-turn",
+            resultState: strippedResultState,
+            playerTurnSkipped: false,
+          },
+          activeLabyrinthModifiers: [],
+          activeLabyrinthRewardModifiers: [],
         },
-        activeLabyrinthModifiers: [],
-        activeLabyrinthRewardModifiers: [],
-      },
-    });
+      }),
+    );
 
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (!result.success) return;
@@ -392,21 +301,7 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
         effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
       },
     ];
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: legacyDeck,
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-    });
+    const result = ActiveRunDataSchema.safeParse(run({ runDeck: legacyDeck }));
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.runDeck.length).toBe(1);
@@ -414,27 +309,19 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
   });
 
   it("parses persisted shop slices", () => {
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 50,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 2,
-      currentAct: 1,
-      destinationIndexInAct: 1,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-      currentScreen: "trinket-shop",
-      trinketShopState: {
-        trinketIds: ["lucky-clover"],
-        refreshesLeft: 2,
-        firstPurchaseUsed: true,
-      },
-    });
+    const result = ActiveRunDataSchema.safeParse(
+      run({
+        runGold: 50,
+        roomsEncountered: 2,
+        destinationIndexInAct: 1,
+        currentScreen: "trinket-shop",
+        trinketShopState: {
+          trinketIds: ["lucky-clover"],
+          refreshesLeft: 2,
+          firstPurchaseUsed: true,
+        },
+      }),
+    );
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (result.success) {
       expect(result.data.trinketShopState?.trinketIds).toEqual(["lucky-clover"]);
@@ -443,35 +330,24 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
   });
 
   it("defaults companion reward ids for legacy pending rewards", () => {
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-      interruptedFlow: {
-        kind: "primary-reward",
-        pending: {
-          rewardType: "card",
-          choiceIds: ["slash"],
-          selectedId: null,
-          gold: 0,
-          materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-          destinations: [],
-          selectedBossId: null,
-          lastVictoryEnemyType: null,
-          lastVictoryContentSystem: null,
+    const result = ActiveRunDataSchema.safeParse(
+      run({
+        interruptedFlow: {
+          kind: "primary-reward",
+          pending: {
+            rewardType: "card",
+            choiceIds: ["slash"],
+            selectedId: null,
+            gold: 0,
+            materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+            destinations: [],
+            selectedBossId: null,
+            lastVictoryEnemyType: null,
+            lastVictoryContentSystem: null,
+          },
         },
-      },
-    });
+      }),
+    );
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (result.success && result.data.interruptedFlow.kind === "primary-reward") {
       expect(result.data.interruptedFlow.pending.companionChoiceIds).toEqual([]);
@@ -479,35 +355,24 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
   });
 
   it("rejects pending gear rewards with no valid choices", () => {
-    const result = ActiveRunDataSchema.safeParse({
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "campaign",
-      labyrinthMap: null,
-      interruptedFlow: {
-        kind: "primary-reward",
-        pending: {
-          rewardType: "gear",
-          gearChoices: [],
-          selectedId: null,
-          gold: 0,
-          materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-          destinations: [],
-          selectedBossId: null,
-          lastVictoryEnemyType: null,
-          lastVictoryContentSystem: null,
+    const result = ActiveRunDataSchema.safeParse(
+      run({
+        interruptedFlow: {
+          kind: "primary-reward",
+          pending: {
+            rewardType: "gear",
+            gearChoices: [],
+            selectedId: null,
+            gold: 0,
+            materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+            destinations: [],
+            selectedBossId: null,
+            lastVictoryEnemyType: null,
+            lastVictoryContentSystem: null,
+          },
         },
-      },
-    });
+      }),
+    );
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.interruptedFlow).toEqual({ kind: "none" });

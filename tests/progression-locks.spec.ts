@@ -3,7 +3,7 @@ import { injectHomestead } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { critical } from "./playwright-tags";
 
-test.describe("Progression Locks", () => {
+test.describe("Progression Locks", critical, () => {
   test.beforeEach(async ({ fastBattle, runtimeErrors }) => {
     void runtimeErrors;
     void fastBattle;

@@ -17,7 +17,8 @@ export const STARTING_TURN = 1;
 export const ENEMY_BASE_REGENERATION = 1;
 export const ENEMY_BOSS_REGENERATION = 1;
 export const FREE_CARD_SENTINEL = 99; // nextCardCostReduction value that guarantees a card costs 0.
-export const COMPANION_LOW_HEALTH_THRESHOLD_PERCENT = 30;
+/** Shared "enemy below 30% health" threshold used by companion and archery low-health doubling. */
+export const LOW_HEALTH_THRESHOLD_PERCENT = 30;
 export const ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT = 75;
 export const PERCENT_DENOMINATOR = 100;
 export const HALF_DIVISOR = 2;

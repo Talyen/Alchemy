@@ -355,6 +355,51 @@ describe("applyDamageStatuses — physical riders", () => {
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 8 });
   });
 
+  it("detonation pays out queued bleed leech healing immediately", () => {
+    const state = makeTestBattleState({
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, bleed: 8 }),
+      pendingBleedLeechHealing: 16,
+      talentEffects: {
+        ...defaultTalentEffects,
+        ...makeTestBattleState().talentEffects,
+        physicalDetonatesBleed: true,
+      },
+      rng: seededRng(42),
+    });
+    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5, lifesteal: true };
+    const result = applyDamageStatuses(state, effect, 5, []);
+    expect(result.enemyStatuses.bleed).toBe(0);
+    // Queued leech is paid with the burst instead of stranding until a future tick.
+    expect(result.pendingBleedLeechHealing).toBe(0);
+    expect(result.playerHealth).toBe(20 + Math.round(16 * 0.5));
+  });
+
+  it("detonation leech payout scales with leechHealBonusPercent", () => {
+    const state = makeTestBattleState({
+      playerHealth: 20,
+      playerMaxHealth: 40,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, bleed: 8 }),
+      pendingBleedLeechHealing: 4,
+      gearEffects: { ...makeTestBattleState().gearEffects, leechHealBonusPercent: 50 },
+      talentEffects: {
+        ...defaultTalentEffects,
+        ...makeTestBattleState().talentEffects,
+        physicalDetonatesBleed: true,
+      },
+      rng: seededRng(42),
+    });
+    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
+    const result = applyDamageStatuses(state, effect, 5, []);
+    // computeLeechHeal(4) = 2, scaled by +50% -> 3 (unscaled would heal 2).
+    expect(result.playerHealth).toBe(23);
+  });
+
   it("physical stun chance procs at 100%", () => {
     const state = makeTestBattleState({
       enemyHealth: 30,

@@ -15,14 +15,27 @@ export interface GearBaseItemDefinition {
   quiver?: boolean;
 }
 
-type GearBaseItemInput = Omit<GearBaseItemDefinition, "id">;
+type GearBaseItemInput = Omit<GearBaseItemDefinition, "id" | "availableRarities" | "rangedWeapon"> & {
+  availableRarities?: readonly GearRarity[];
+  rangedWeapon?: boolean;
+};
 type GearBaseItemCatalog<T extends Record<string, GearBaseItemInput>> = {
   [K in keyof T]: GearBaseItemDefinition;
 };
 
+const DEFAULT_AVAILABLE_RARITIES: readonly GearRarity[] = ["basic", "astral"];
+
 function defineGearBaseItems<const T extends Record<string, GearBaseItemInput>>(items: T): GearBaseItemCatalog<T> {
   return Object.fromEntries(
-    Object.entries(items).map(([id, definition]) => [id, { id, ...definition }]),
+    Object.entries(items).map(([id, definition]) => [
+      id,
+      {
+        id,
+        ...definition,
+        availableRarities: definition.availableRarities ?? DEFAULT_AVAILABLE_RARITIES,
+        rangedWeapon: definition.rangedWeapon ?? false,
+      },
+    ]),
   ) as GearBaseItemCatalog<T>;
 }
 
@@ -50,88 +63,69 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["main-hand"],
     requiresTwoHands: true,
     affinityKeywords: ["physical", "stun", "bleed"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: ironHeavy,
-    rangedWeapon: false,
   },
   maul: {
     displayName: "Maul",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: true,
     affinityKeywords: ["physical", "stun", "holy"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: ironHeavy,
-    rangedWeapon: false,
   },
   greatsword: {
     displayName: "Greatsword",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: true,
     affinityKeywords: ["physical", "stun", "forge"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: ironHeavy,
-    rangedWeapon: false,
   },
   hatchet: {
     displayName: "Hatchet",
     compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "bleed"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: salvageBy({ iron: 3, wood: 3 }, { iron: 6, wood: 3 }),
-    rangedWeapon: false,
   },
   longsword: {
     displayName: "Longsword",
     compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "forge", "holy"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: ironMedium,
-    rangedWeapon: false,
   },
   shortsword: {
     displayName: "Shortsword",
     compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "forge", "bleed"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: ironLight,
-    rangedWeapon: false,
   },
   dagger: {
     displayName: "Dagger",
     compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "bleed", "poison"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: salvageBy({ iron: 3 }, { iron: 3, herbs: 3 }),
-    rangedWeapon: false,
   },
   mace: {
     displayName: "Mace",
     compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "stun", "holy"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: ironMedium,
-    rangedWeapon: false,
   },
   flail: {
     displayName: "Flail",
     compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "stun"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: ironMedium,
-    rangedWeapon: false,
   },
   longbow: {
     displayName: "Longbow",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["archery", "physical", "nature", "companion"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: woodMedium,
     rangedWeapon: true,
   },
@@ -140,7 +134,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["archery", "physical", "nature", "companion"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: woodLight,
     rangedWeapon: true,
   },
@@ -149,7 +142,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["archery", "nature", "physical", "companion"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: salvageBy({ wood: 6 }, { wood: 6, herbs: 3 }),
     rangedWeapon: true,
   },
@@ -158,7 +150,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["archery", "physical"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: salvageBy({ wood: 6, iron: 3 }, { wood: 6, iron: 6 }),
     rangedWeapon: true,
   },
@@ -167,25 +158,20 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["main-hand"],
     requiresTwoHands: true,
     affinityKeywords: ["burn", "freeze", "mana"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: salvageBy({ wood: 3, crystal: 3 }, { wood: 6, crystal: 3 }),
-    rangedWeapon: false,
   },
   wand: {
     displayName: "Wand",
     compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["burn", "freeze", "mana"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: salvageBy({ wood: 3 }, { wood: 3, crystal: 3 }),
-    rangedWeapon: false,
   },
   "leather-buckler": {
     displayName: "Leather Buckler",
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["block", "armor", "physical"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: woodLight,
   },
   "kite-shield": {
@@ -193,7 +179,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["block", "armor", "stun", "physical"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: ironHeavy,
   },
   quiver: {
@@ -201,7 +186,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["archery", "physical"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: woodLight,
     quiver: true,
   },
@@ -210,7 +194,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["burn", "freeze", "holy"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: salvageBy({ herbs: 3, crystal: 3 }, { herbs: 6, crystal: 3 }),
   },
   "leather-armor": {
@@ -218,7 +201,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["body"],
     requiresTwoHands: false,
     affinityKeywords: ["physical", "health", "armor"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: salvageBy({ herbs: 6 }, { herbs: 9 }),
   },
   "plate-armor": {
@@ -226,7 +208,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["body"],
     requiresTwoHands: false,
     affinityKeywords: ["armor", "block", "stun", "physical"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: ironHeavy,
   },
   "ruby-ring": {
@@ -234,7 +215,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["left-ring", "right-ring"],
     requiresTwoHands: false,
     affinityKeywords: ["burn", "bleed", "leech"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: gemLight,
   },
   "sapphire-ring": {
@@ -242,7 +222,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["left-ring", "right-ring"],
     requiresTwoHands: false,
     affinityKeywords: ["freeze", "mana", "block"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: gemLight,
   },
   "emerald-ring": {
@@ -250,7 +229,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["left-ring", "right-ring"],
     requiresTwoHands: false,
     affinityKeywords: ["nature", "poison", "archery"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: natureGem,
   },
   "topaz-ring": {
@@ -258,7 +236,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["left-ring", "right-ring"],
     requiresTwoHands: false,
     affinityKeywords: ["holy", "gold", "forge", "stun"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: gemLight,
   },
   "ruby-amulet": {
@@ -266,7 +243,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["amulet"],
     requiresTwoHands: false,
     affinityKeywords: ["burn", "bleed", "leech"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: gemLight,
   },
   "sapphire-amulet": {
@@ -274,7 +250,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["amulet"],
     requiresTwoHands: false,
     affinityKeywords: ["freeze", "mana", "block"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: gemLight,
   },
   "emerald-amulet": {
@@ -282,7 +257,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["amulet"],
     requiresTwoHands: false,
     affinityKeywords: ["nature", "poison", "archery"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: natureGem,
   },
   "topaz-amulet": {
@@ -290,7 +264,6 @@ export const gearBaseItems = defineGearBaseItems({
     compatibleSlots: ["amulet"],
     requiresTwoHands: false,
     affinityKeywords: ["holy", "gold", "forge", "stun"],
-    availableRarities: ["basic", "astral"],
     salvageByRarity: gemLight,
   },
 });

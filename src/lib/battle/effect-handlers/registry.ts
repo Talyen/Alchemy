@@ -1,7 +1,9 @@
 /**
  * Maps each registered effect kind to its battle apply handler.
  */
-import type { BattleCardEffectKind } from "@/lib/game-data";
+import type { BattleCard, BattleCardEffect, BattleCardEffectKind } from "@/lib/game-data";
+import type { BattleState, CombatTextEvent } from "../types";
+import type { CardEffectResolutionContext, EffectHandler } from "./handler-types";
 import {
   applyDamageEffect,
   applySelfDamageEffect,
@@ -33,7 +35,6 @@ import {
   applyPlayNextCardTwiceEffect,
   applyNextHitPoisonEffect,
 } from "./utility-handlers";
-import type { EffectHandler } from "./handler-types";
 
 type RegisteredEffectKind = Exclude<BattleCardEffectKind, "chance" | "repeat-over-turns">;
 
@@ -72,10 +73,15 @@ export function hasEffectApplyHandler(kind: BattleCardEffectKind): kind is Regis
 
 export function applyEffectByKind(
   kind: BattleCardEffectKind,
-  ...args: Parameters<EffectHandler>
-): ReturnType<EffectHandler> {
+  state: BattleState,
+  card: BattleCard,
+  effect: BattleCardEffect,
+  potionMult: number,
+  combatTexts: CombatTextEvent[],
+  context?: CardEffectResolutionContext,
+): BattleState {
   if (!hasEffectApplyHandler(kind)) {
-    return args[0];
+    return state;
   }
-  return EFFECT_APPLY_BY_KIND[kind](...args);
+  return EFFECT_APPLY_BY_KIND[kind](state, card, effect, potionMult, combatTexts, context);
 }

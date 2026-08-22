@@ -1,7 +1,7 @@
 // Core card selection helper using keyword deck affinity and tie-breaking randomness.
 // Fits within src/lib/ boundaries (no imports from features/).
 import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "../game-constants";
-import { shuffle } from "../utils";
+import { pickRandom, shuffle } from "../utils";
 import { getCardKeywords } from "./keywords";
 import type { BattleCard, KeywordId } from "./types";
 
@@ -44,8 +44,8 @@ function pickOneCard(
   const availableRandom = shuffledCandidates.filter((c) => !selected.includes(c));
   const primary = rollRandom ? availableRandom : availableAffinity;
   const fallback = rollRandom ? availableAffinity : availableRandom;
-  if (primary.length > 0) return shuffle(primary, activeRng)[0];
-  if (fallback.length > 0) return shuffle(fallback, activeRng)[0];
+  if (primary.length > 0) return pickRandom(primary, activeRng);
+  if (fallback.length > 0) return pickRandom(fallback, activeRng);
   return undefined;
 }
 

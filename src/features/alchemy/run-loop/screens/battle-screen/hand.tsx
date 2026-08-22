@@ -1,7 +1,7 @@
 // Player hand fan for battle cards.
 // Depends on battle controller playability props and hand layout constants.
 // Used by BattleBottomBar to render playable cards and animation refs.
-import { type MouseEvent, type RefObject, memo, useLayoutEffect, useMemo, useRef } from "react";
+import { type MouseEvent, type RefObject, memo, useLayoutEffect, useRef } from "react";
 
 import {
   HAND_CARD_BASE_Z_INDEX,
@@ -25,6 +25,7 @@ import {
   handCardWidthClass,
 } from "@/features/alchemy/shared/config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
+import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { getHandCardKey } from "../../battle/playable-hand";
 import { useHiddenHandCardKeys, usePlayableHandCardKeys } from "../../battle/presentation/use-hand-presentation";
@@ -120,15 +121,7 @@ export function BattleHand({
   const hiddenHandCardKeys = useHiddenHandCardKeys();
   const playableHandCardKeys = usePlayableHandCardKeys(playabilityState);
   const handWidthClass = handCardWidthClass;
-
-  const descriptionContext = useMemo(
-    () => ({
-      ...battleState.talentEffects,
-      companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
-      companionDamageBuff: battleState.companionDamageBuff,
-    }),
-    [battleState.talentEffects, battleState.trinketEffects.companionDamageBonus, battleState.companionDamageBuff],
-  );
+  const descriptionContext = useBattleDescriptionContext(battleState);
 
   return (
     <div className={battleHandContainerClass} aria-label="Player hand">

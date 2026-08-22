@@ -1,6 +1,6 @@
 // Resolves mystery trinket grants so choice UI matches the item that will be given.
 import { trinketLibrary } from "@/lib/game-data";
-import { sampleItems } from "@/lib/utils";
+import { pickRandom } from "@/lib/utils";
 
 import type { MysteryEffect, MysteryEvent } from "./types";
 
@@ -26,10 +26,10 @@ export function pickMysteryTrinketGrantId({
   const constrained = fromIds?.length
     ? trinketLibrary.filter((entry) => fromIds.includes(entry.id) && !owned.has(entry.id))
     : [];
-  if (constrained.length > 0) return sampleItems(constrained, 1, rng)[0]?.id;
+  if (constrained.length > 0) return pickRandom(constrained, rng)?.id;
 
   const unowned = trinketLibrary.filter((entry) => !owned.has(entry.id));
-  if (unowned.length > 0) return sampleItems(unowned, 1, rng)[0]?.id;
+  if (unowned.length > 0) return pickRandom(unowned, rng)?.id;
 
   return preferredId ?? fromIds?.[0];
 }

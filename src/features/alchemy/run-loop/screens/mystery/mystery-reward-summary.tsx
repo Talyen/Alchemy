@@ -1,5 +1,5 @@
 // Mystery consequence reward summary after run state has been updated.
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, type KeywordId, type TalentXP, type TrinketEntry } from "@/lib/game-data";
 import { type MaterialId } from "@/lib/homestead/types";
@@ -29,7 +29,7 @@ import { DetailPopup } from "../../../shared/ui/card-popup";
 import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
 import { MysteryEffectBadge } from "../../../shared/ui/mystery-effect-badge";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
-import { KeywordProgressCard } from "../keyword-progress-card";
+import { KeywordProgressGrid } from "../keyword-progress-grid";
 
 interface LookupProps {
   findCard: (id: string) => BattleCard | undefined;
@@ -189,28 +189,17 @@ export function MysteryRewardSummary({
   talentXP?: TalentXP;
   onContinue: () => void;
 } & LookupProps) {
-  const [animate, setAnimate] = useState(false);
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setAnimate(true));
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
   const xpEffects = choice.effects.filter((e): e is Extract<MysteryEffect, { kind: "gainXP" }> => e.kind === "gainXP");
   const resourceEffects = choice.effects.filter((e) => e.kind === "gainGold" || e.kind === "gainMaterial");
   const otherEffects = choice.effects.filter(
     (e) => e.kind !== "gainGold" && e.kind !== "gainMaterial" && e.kind !== "gainXP",
   );
 
-  const xpByKeyword = useMemo(() => {
-    const acc: Partial<Record<KeywordId, number>> = {};
-    for (const effect of xpEffects) {
-      acc[effect.keyword] = (acc[effect.keyword] ?? 0) + effect.amount;
-    }
-    return acc;
-  }, [xpEffects]);
-
-  const xpKeywordEntries = useMemo(() => Object.entries(xpByKeyword) as Array<[KeywordId, number]>, [xpByKeyword]);
+  const xpByKeyword: Partial<Record<KeywordId, number>> = {};
+  for (const effect of xpEffects) {
+    xpByKeyword[effect.keyword] = (xpByKeyword[effect.keyword] ?? 0) + effect.amount;
+  }
+  const xpKeywordEntries = Object.entries(xpByKeyword) as Array<[KeywordId, number]>;
 
   const totalGold = resourceEffects
     .filter((e): e is typeof e & { kind: "gainGold" } => e.kind === "gainGold")
@@ -247,20 +236,13 @@ export function MysteryRewardSummary({
         );
       })}
 
-      {xpKeywordEntries.length > 0 && (
-        <div className="flex w-full max-w-2xl flex-wrap justify-center gap-2">
-          {xpKeywordEntries.map(([kw, amount]) => (
-            <div key={kw} className="w-[23.33cqh] flex-none">
-              <KeywordProgressCard
-                kw={kw}
-                runXP={amount}
-                totalXP={(talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0)}
-                animate={animate}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+      <KeywordProgressGrid
+        entries={xpKeywordEntries.map(([kw, amount]) => ({
+          kw,
+          runXP: amount,
+          totalXP: (talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0),
+        }))}
+      />
 
       {resourceEffects.length > 0 ? (
         <div>

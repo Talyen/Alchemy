@@ -44,5 +44,5 @@ export function PurchasableTrinketItem({ trinket, price, gold, purchased, onBuy 
     </InteractiveArtTile>
   );
 
-  return <PurchasableShopTile media={media} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />;
+  return <PurchasableShopTile media={media} purchased={purchased} />;
 }

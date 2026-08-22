@@ -100,59 +100,41 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
       <div>
         <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
       </div>
-      {result.transformed ? (
-        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3">
-          <div className="col-start-1 flex flex-col items-center">
-            <BattleCardButton
-              card={result.originalCard}
-              hovered={hoveredOriginal}
-              onHoverStart={() => setHoveredOriginal(true)}
-              onHoverEnd={() => setHoveredOriginal(false)}
-              ariaLabel={`Original: ${getCardDisplayTitle(result.originalCard)}`}
-              shimmerActive={false}
-              shimmerToken={undefined}
-              className={viewCardWidthClass}
-            />
-          </div>
-          <div className="col-start-2 flex shrink-0 self-center">
-            <MoveRight className="h-10 w-10 text-red-800" />
-          </div>
-          <div className="col-start-3 flex flex-col items-center">
-            <BattleCardButton
-              card={result.corruptedCard}
-              hovered={hoveredResult}
-              onHoverStart={() => setHoveredResult(true)}
-              onHoverEnd={() => setHoveredResult(false)}
-              ariaLabel={`Result: ${getCardDisplayTitle(result.corruptedCard)}`}
-              shimmerActive={false}
-              shimmerToken={undefined}
-              className={viewCardWidthClass}
-            />
-          </div>
-          <div className={cn("col-start-1", controlLabelClass)}>
-            <CardTitle card={result.originalCard} />
-          </div>
-          <div className={cn("col-start-3", controlLabelClass)}>
-            <CardTitle card={result.corruptedCard} />
-          </div>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3">
+        <div className="col-start-1 flex flex-col items-center">
+          <BattleCardButton
+            card={result.originalCard}
+            hovered={hoveredOriginal}
+            onHoverStart={() => setHoveredOriginal(true)}
+            onHoverEnd={() => setHoveredOriginal(false)}
+            ariaLabel={`Original: ${getCardDisplayTitle(result.originalCard)}`}
+            shimmerActive={false}
+            shimmerToken={undefined}
+            className={viewCardWidthClass}
+          />
         </div>
-      ) : (
-        <div className="flex flex-col items-center gap-3">
+        <div className="col-start-2 flex shrink-0 self-center">
+          <MoveRight className="h-10 w-10 text-red-800" />
+        </div>
+        <div className="col-start-3 flex flex-col items-center">
           <BattleCardButton
             card={result.corruptedCard}
             hovered={hoveredResult}
             onHoverStart={() => setHoveredResult(true)}
             onHoverEnd={() => setHoveredResult(false)}
-            ariaLabel={`Inspect ${getCardDisplayTitle(result.corruptedCard)}`}
+            ariaLabel={`Result: ${getCardDisplayTitle(result.corruptedCard)}`}
             shimmerActive={false}
             shimmerToken={undefined}
             className={viewCardWidthClass}
           />
-          <p className="text-xl font-semibold text-foreground">
-            <CardTitle card={result.corruptedCard} />
-          </p>
         </div>
-      )}
+        <div className={cn("col-start-1", controlLabelClass)}>
+          <CardTitle card={result.originalCard} />
+        </div>
+        <div className={cn("col-start-3", controlLabelClass)}>
+          <CardTitle card={result.corruptedCard} />
+        </div>
+      </div>
       <div>
         <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
           Continue

@@ -5,6 +5,14 @@ export interface MockDesktopOptions {
   steamName?: string | null;
   writeSaveSuccess?: boolean;
   cloudWriteSuccess?: boolean;
+  cloudDeleteSuccess?: boolean;
+  richPresenceResult?: boolean;
+}
+
+type DesktopApi = NonNullable<Window["alchemyDesktop"]>;
+
+export interface InstallDesktopApiOptions extends MockDesktopOptions {
+  overrides?: Partial<DesktopApi>;
 }
 
 function createMockAlchemyDesktop(options: MockDesktopOptions = {}) {
@@ -16,10 +24,11 @@ function createMockAlchemyDesktop(options: MockDesktopOptions = {}) {
     writeSave: vi.fn().mockResolvedValue(options.writeSaveSuccess ?? true),
     clearSave: vi.fn().mockResolvedValue(true),
     steamGetName: vi.fn().mockResolvedValue(options.steamName === undefined ? "Tester" : options.steamName),
-    steamSetRichPresence: vi.fn(),
+    steamSetRichPresence:
+      options.richPresenceResult === undefined ? vi.fn() : vi.fn().mockResolvedValue(options.richPresenceResult),
     steamCloudRead: vi.fn().mockResolvedValue(null),
     steamCloudWrite: vi.fn().mockResolvedValue(options.cloudWriteSuccess ?? true),
-    steamCloudDelete: vi.fn().mockResolvedValue(true),
+    steamCloudDelete: vi.fn().mockResolvedValue(options.cloudDeleteSuccess ?? true),
   };
 }
 
@@ -49,4 +58,21 @@ export function setupMockWindowDesktop(options: MockDesktopOptions = {}) {
     alchemyDesktop: mockDesktop,
   });
   return mockDesktop;
+}
+
+// Platform-bridge flavor: no Steam identity and cloud operations fail by default.
+export function installDesktopApi(options: InstallDesktopApiOptions = {}): DesktopApi {
+  const { overrides, ...mockOptions } = options;
+  const api = createMockAlchemyDesktop({
+    steamName: null,
+    cloudWriteSuccess: false,
+    cloudDeleteSuccess: false,
+    richPresenceResult: false,
+    ...mockOptions,
+  }) as unknown as DesktopApi;
+  if (overrides) Object.assign(api, overrides);
+  const globalWithWindow = globalThis as unknown as { window?: { alchemyDesktop?: DesktopApi } };
+  if (!globalWithWindow.window) globalWithWindow.window = {};
+  globalWithWindow.window.alchemyDesktop = api;
+  return api;
 }

@@ -60,7 +60,7 @@ test.describe("Menu", critical, () => {
   });
 });
 
-test.describe("Navigation", () => {
+test.describe("Navigation", critical, () => {
   test("in-battle menu allows navigation to collection, options, and talents", async ({
     page,
     fastBattle,
@@ -84,7 +84,7 @@ test.describe("Navigation", () => {
   });
 });
 
-test.describe("Options Screen", () => {
+test.describe("Options Screen", critical, () => {
   test("all option tabs are accessible and show correct content", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
@@ -139,7 +139,7 @@ test.describe("Options Screen", () => {
   });
 });
 
-test.describe("Auto-End Turn", () => {
+test.describe("Auto-End Turn", critical, () => {
   test("auto-end turn toggle is accessible in gameplay tab", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
@@ -174,7 +174,7 @@ test.describe("Startup Loading Screen", slow, () => {
   });
 });
 
-test.describe("Talents Screen", () => {
+test.describe("Talents Screen", critical, () => {
   test("shows talent overview grid and navigates to keyword tree and back", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta();

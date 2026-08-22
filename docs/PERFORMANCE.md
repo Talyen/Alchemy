@@ -143,4 +143,4 @@ Measure → identify failing scenario/phase → perf:trace that scenario → opt
 | `scripts/run-performance.mjs`       | CLI entry (`npm run perf`)             |
 | `tests/performance/metrics.test.ts` | Metrics/compare/report unit tests      |
 
-Related: [12-PerformanceAudit.md](./Audits/12-PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).
+Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).

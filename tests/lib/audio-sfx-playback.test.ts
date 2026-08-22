@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { audioState } from "@/lib/audio-state";
 import { playBattleEvent, playUISound, playVictory, resetHtmlSfxRuntime } from "@/lib/audio-sfx";
@@ -9,10 +8,7 @@ describe("SFX playback from a cold audio runtime", () => {
 
   beforeEach(() => {
     playedSrcs.length = 0;
-    audioState.context = null;
-    audioState.masterGain = null;
     audioState.muted = false;
-    audioState.audioUnlocked = false;
     audioState.sfxVolume = 0.5;
     audioState.masterVolume = 1;
     audioState.lastPlayedAt = new Map();
@@ -39,11 +35,9 @@ describe("SFX playback from a cold audio runtime", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    audioState.context = null;
-    audioState.audioUnlocked = false;
   });
 
-  it("does not no-op UI, combat, or victory SFX when Web Audio has never unlocked", () => {
+  it("does not no-op UI, combat, or victory SFX from a cold runtime", () => {
     playUISound("error");
     playBattleEvent("enemyHit");
     playVictory();

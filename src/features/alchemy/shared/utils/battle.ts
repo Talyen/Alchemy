@@ -3,8 +3,11 @@
 // Used by battle controller and widgets to keep presentation derivation out of combat logic.
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
 import {
+  DAMAGE_TYPES,
   ENEMY_STATUS_DISPLAY_ORDER,
   PLAYER_STATUS_DISPLAY_ORDER,
+  type BattleCardEffect,
+  type DamageType,
   type KeywordId,
   keywordDefinitions,
 } from "@/lib/game-data";
@@ -45,9 +48,68 @@ function buildStatusChips(
   }, []);
 }
 
+// Buff-tier player chips precede armed-effect chips, which precede harmful DoT build-ups.
+const BUFF_TIER_CHIP_IDS = new Set<string>(["block", "armor", "forge", "haste", "phoenixFeather"]);
+
+function insertAfterBuffTier(chips: StatusChip[], additions: StatusChip[]): StatusChip[] {
+  if (additions.length === 0) return chips;
+  let insertAt = 0;
+  for (const [index, chip] of chips.entries()) {
+    if (BUFF_TIER_CHIP_IDS.has(chip.id)) insertAt = index + 1;
+  }
+  return [...chips.slice(0, insertAt), ...additions, ...chips.slice(insertAt)];
+}
+
+function isDamageEffect(effect: BattleCardEffect): effect is Extract<BattleCardEffect, { kind: "damage" }> {
+  return effect.kind === "damage";
+}
+
+// Armed one-shot buffs keyed by their CombatFlags field, plus repeat-over-turns pulses
+// split by audience: anything granting the player an effect reads as a hero Echo
+// (purely-offensive pulses surface under the enemy via buildPendingEnemyChips).
+// CC immunity surfaces on whichever side holds the post-trigger cooldown.
+function buildArmedPlayerChips(state: BattleState): StatusChip[] {
+  const chips: StatusChip[] = [];
+  const { flags } = state;
+  if (flags.playNextCardTwice) chips.push({ id: "playNextCardTwice", value: 1, hideValue: true });
+  if (flags.nextHitCrit) chips.push({ id: "nextHitCrit", value: 1, hideValue: true });
+  if (flags.nextHitPoison) chips.push({ id: "nextHitPoison", value: 1, hideValue: true });
+
+  let echoCount = 0;
+  for (const pulse of state.pendingTurnStartEffects) {
+    if (pulse.effects.length === 0) continue;
+    const damages = pulse.effects.filter(isDamageEffect);
+    if (damages.length !== pulse.effects.length) echoCount += 1;
+  }
+  if (echoCount > 0) chips.push({ id: "echo", value: echoCount });
+
+  if (state.playerCC.cooldown > 0) chips.push({ id: "ccImmunity", value: state.playerCC.cooldown });
+
+  return chips;
+}
+
+function buildPendingEnemyChips(state: BattleState): StatusChip[] {
+  const incomingByType = new Map<DamageType, number>();
+  for (const pulse of state.pendingTurnStartEffects) {
+    if (pulse.effects.length === 0) continue;
+    const damages = pulse.effects.filter(isDamageEffect);
+    if (damages.length !== pulse.effects.length) continue;
+    for (const effect of damages) {
+      incomingByType.set(effect.damageType, (incomingByType.get(effect.damageType) ?? 0) + effect.amount);
+    }
+  }
+  return DAMAGE_TYPES.flatMap((damageType): StatusChip[] => {
+    const amount = incomingByType.get(damageType);
+    return amount ? [{ id: `pending-${damageType}`, value: amount }] : [];
+  });
+}
+
 export function getPlayerStatusChips(state: BattleState | null | undefined): StatusChip[] {
   if (!state) return [];
-  return buildStatusChips(PLAYER_STATUS_DISPLAY_ORDER, state.playerStatuses);
+  return insertAfterBuffTier(
+    buildStatusChips(PLAYER_STATUS_DISPLAY_ORDER, state.playerStatuses),
+    buildArmedPlayerChips(state),
+  );
 }
 
 export function getEnemyStatusChips(state: BattleState | null | undefined): StatusChip[] {
@@ -58,5 +120,8 @@ export function getEnemyStatusChips(state: BattleState | null | undefined): Stat
     if (value > 0) mitigationChips.push({ id: key, value });
   }
   const statusChips = buildStatusChips(ENEMY_STATUS_DISPLAY_ORDER, state.enemyStatuses);
-  return [...mitigationChips, ...statusChips];
+  const pendingChips = buildPendingEnemyChips(state);
+  const immunityChips: StatusChip[] =
+    state.enemyCC.cooldown > 0 ? [{ id: "ccImmunity", value: state.enemyCC.cooldown }] : [];
+  return [...mitigationChips, ...statusChips, ...pendingChips, ...immunityChips];
 }

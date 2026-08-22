@@ -2,21 +2,17 @@
 // fields required by its screen, and its return type describes exactly that data.
 import { useShallow } from "zustand/react/shallow";
 import { useGameplayStateStore } from "./gameplay-state-store";
-import type { RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
+import type { RunEndScreenData, RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
 
 type ScreenData<S extends RunDataScreen> = RunScreenDataByScreen[S];
 
-function useHealthFields(): ScreenData<"campfire"> {
+export function useCampfireScreenData(): ScreenData<"campfire"> {
   return useGameplayStateStore(
     useShallow((state) => ({
       runPlayerHealth: state.run.activeRun.runPlayerHealth,
       runMaxHealth: state.run.activeRun.runMaxHealth,
     })),
   );
-}
-
-export function useCampfireScreenData(): ScreenData<"campfire"> {
-  return useHealthFields();
 }
 
 export function useShopScreenData(): ScreenData<"shop"> {
@@ -100,7 +96,7 @@ export function useCorruptionScreenData(): ScreenData<"corruption"> {
   );
 }
 
-function useRunEndFields(): ScreenData<"game-over"> {
+export function useRunEndScreenData(): RunEndScreenData {
   return useGameplayStateStore(
     useShallow((state) => ({
       runEndMaterials: state.session.runEndMaterials,
@@ -108,14 +104,6 @@ function useRunEndFields(): ScreenData<"game-over"> {
       talentXP: state.runProfile.talentXP,
     })),
   );
-}
-
-export function useGameOverScreenData(): ScreenData<"game-over"> {
-  return useRunEndFields();
-}
-
-export function useRunVictoryScreenData(): ScreenData<"run-victory"> {
-  return useRunEndFields();
 }
 
 export function useWildwoodRemovalScreenData(): ScreenData<"wildwood-removal"> {

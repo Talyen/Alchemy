@@ -37,6 +37,7 @@ function loadLog() {
       cwd: ROOT,
       encoding: "utf8",
       env: { ...process.env, GIT_PAGER: "cat", GIT_TERMINAL_PROMPT: "0" },
+      shell: process.platform === "win32",
     },
   );
   if (result.status !== 0) {

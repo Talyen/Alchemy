@@ -60,11 +60,18 @@ export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) 
 // Immutable update helpers for BattleState. Replaces the error-prone nested spread
 // pattern used ~25 times across the battle engine with one-line focused updaters.
 
+/** Effective delta after gear bonuses; positive block gains add flatBlockGained. */
+export function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
+  return status === "block" && delta > 0 ? delta + state.gearEffects.flatBlockGained : delta;
+}
+
 export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delta: number): BattleState {
-  const bonus = status === "block" && delta > 0 ? state.gearEffects.flatBlockGained : 0;
   return {
     ...state,
-    playerStatuses: { ...state.playerStatuses, [status]: state.playerStatuses[status] + delta + bonus },
+    playerStatuses: {
+      ...state.playerStatuses,
+      [status]: state.playerStatuses[status] + playerStatusDelta(state, status, delta),
+    },
   };
 }
 
@@ -75,17 +82,22 @@ export function setPlayerStatus(state: BattleState, status: PlayerStatusId, valu
 export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {
   const traitAdjustedDelta =
     status === "stun" && state.currentEnemy.traits.some((trait) => trait.id === "braced")
-      ? Math.round(delta / 2)
+      ? Math.round(delta / HALF_DIVISOR)
       : delta;
   let nextState = {
     ...state,
     enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + traitAdjustedDelta },
   };
 
-  if (status === "poison" && traitAdjustedDelta > 0 && nextState.gearEffects.poisonArmorShredChance > 0) {
-    if (nextState.rng() * 100 < nextState.gearEffects.poisonArmorShredChance) {
-      nextState = reduceEnemyArmor(nextState, 1);
-    }
+  // Sole shred roll owner: every poison application strips once, whatever its
+  // source (hits stack through here too; ticks are not applications).
+  if (
+    status === "poison" &&
+    traitAdjustedDelta > 0 &&
+    nextState.gearEffects.poisonArmorShredChance > 0 &&
+    nextState.rng() * PERCENT_DENOMINATOR < nextState.gearEffects.poisonArmorShredChance
+  ) {
+    nextState = reduceEnemyArmor(nextState, 1);
   }
 
   return nextState;
@@ -135,20 +147,18 @@ export function clampHealth(current: number, delta: number, max: number): number
   return Math.max(0, Math.min(max, current + delta));
 }
 
-function computeDamageReduction(baseReduction: number, damageType: string | undefined, state: BattleState): number {
-  if (damageType === "burn") {
-    return baseReduction - state.talentEffects.burnDamageReduction;
-  }
-  if (damageType === "freeze") {
-    return baseReduction - state.talentEffects.freezeDamageReduction;
-  }
-  if (damageType === "nature") {
-    return baseReduction - state.talentEffects.natureDamageReduction;
-  }
-  if (damageType === "poison") {
-    return baseReduction - state.talentEffects.poisonDamageReduction;
-  }
-  return baseReduction;
+/** Adds mana clamped at maxMana — overcap is discarded, never carried into later turns. */
+export function gainMana(state: BattleState, amount: number): BattleState {
+  if (amount <= 0) return state;
+  return { ...state, mana: Math.min(state.maxMana, state.mana + amount) };
+}
+
+function computeDamageReduction(damage: number, damageType: string | undefined, state: BattleState): number {
+  if (damageType === "burn") return damage - state.talentEffects.burnDamageReduction;
+  if (damageType === "freeze") return damage - state.talentEffects.freezeDamageReduction;
+  if (damageType === "nature") return damage - state.talentEffects.natureDamageReduction;
+  if (damageType === "poison") return damage - state.talentEffects.poisonDamageReduction;
+  return damage;
 }
 
 /** Halves incoming player damage when the matching resist talent is unlocked. */

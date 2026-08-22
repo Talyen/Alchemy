@@ -221,7 +221,12 @@ function main() {
   }
 
   if (args.compare) {
-    runCompare(args.compare[0], args.compare[1]);
+    const [beforeDir, afterDir] = args.compare;
+    if (!beforeDir || !afterDir) {
+      console.error("Usage: npm run perf:compare -- <beforeDir> <afterDir>");
+      process.exit(1);
+    }
+    runCompare(beforeDir, afterDir);
     return;
   }
 

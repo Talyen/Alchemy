@@ -17,9 +17,9 @@ const defaultProps = {
     onBrightnessChange: vi.fn(),
   },
   audio: {
-    masterVol: 100,
-    musicVol: 100,
-    sfxVol: 100,
+    masterVolume: 100,
+    musicVolume: 100,
+    sfxVolume: 100,
     onMasterVolChange: vi.fn(),
     onMusicVolChange: vi.fn(),
     onSfxVolChange: vi.fn(),

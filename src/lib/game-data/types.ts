@@ -217,4 +217,5 @@ export const ENEMY_STATUS_DISPLAY_ORDER: readonly EnemyStatusId[] = [
   "bleed",
   "freeze",
   "stun",
+  "onAttackBleed",
 ];

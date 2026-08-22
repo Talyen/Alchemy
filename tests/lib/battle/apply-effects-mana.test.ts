@@ -30,8 +30,9 @@ describe("applyEffectByKind (mana effects)", () => {
     const texts = makeTexts();
     const effect = { kind: "restore-mana" as const, amount: 3 };
     const result = applyManaEffect(state, effect, 1.5, texts);
-    expect(result.mana).toBe(5);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 5 });
+    // 3 * 1.5 rounds to 5 but gains cap at maxMana.
+    expect(result.mana).toBe(4);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 4 });
   });
 
   it("heals on mana gain when healOnManaGain talent is active", () => {

@@ -1,8 +1,7 @@
 // Battle trinket inspect: sack chrome toggle plus a fading full-art overlay.
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ShoppingBag, X } from "lucide-react";
 
-import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
 import {
   battleTrinketInspectRowMaxWidthClass,
@@ -14,9 +13,9 @@ import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 import { DetailPopup } from "../../../shared/ui/card-popup";
-import { fadePhaseClass, useFadePresence } from "../../../shared/ui/fade-presence";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
+import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { PaginationControls, ScreenHeader } from "../../../shared/ui/shared-ui";
 import { uniqueRunTrinkets } from "./unique-run-trinkets";
 
@@ -47,7 +46,6 @@ export function BattleTrinketInspectOverlay({
   trinketIds: readonly string[];
   onClose: () => void;
 }) {
-  const { mounted, phase } = useFadePresence(open);
   const trinkets = useMemo(() => uniqueRunTrinkets(trinketIds), [trinketIds]);
   const [page, setPage] = useState(0);
   const totalPages = Math.max(1, Math.ceil(trinkets.length / TRINKET_PAGE_SIZE));
@@ -60,25 +58,16 @@ export function BattleTrinketInspectOverlay({
     pageTrinkets.slice(rowIndex * INSPECT_COLUMNS, rowIndex * INSPECT_COLUMNS + INSPECT_COLUMNS),
   );
 
-  useEffect(() => {
-    if (!mounted || phase === "exit") return;
-    return pushEscapeHandler({
-      id: "battle-trinket-inspect",
-      priority: ESCAPE_PRIORITY.MODAL,
-      onEscape: onClose,
-    });
-  }, [mounted, phase, onClose]);
-
-  if (!mounted || trinkets.length === 0) return null;
-
   return (
-    <div
-      className={cn(
-        "absolute inset-0 z-[80] flex items-center justify-center bg-black/70 px-6 py-8",
-        fadePhaseClass(phase),
-      )}
-      data-testid="battle-trinket-inspect-overlay"
-      onClick={onClose}
+    <ModalOverlayShell
+      open={open}
+      escapeId="battle-trinket-inspect"
+      onClose={onClose}
+      dismissOnBackdrop
+      zIndex={80}
+      testId="battle-trinket-inspect-overlay"
+      mount={trinkets.length > 0}
+      className="flex items-center justify-center px-6 py-8"
     >
       <div
         className="alchemy-shell relative w-fit max-w-full rounded-shell-screen border border-border/80 px-8 py-8"
@@ -131,6 +120,6 @@ export function BattleTrinketInspectOverlay({
           <PaginationControls page={safePage} totalPages={totalPages} onPageChange={setPage} />
         </div>
       </div>
-    </div>
+    </ModalOverlayShell>
   );
 }

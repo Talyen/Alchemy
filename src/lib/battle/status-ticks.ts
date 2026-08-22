@@ -20,6 +20,7 @@ import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { decayArmorAfterDamage, decayHalvedStatus, decayPoisonStacks, rollPercent } from "./status-helpers";
 import { computeLeechHeal, HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
+import { scaledGearLeechHeal } from "./gear-effects";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 import { applyEnemyLeechHealing } from "./enemy-turn-attack";
 import { dealPlayerTypedHit } from "./player-typed-hit";
@@ -116,7 +117,12 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   return dealEnemyDotTick(state, "bleed", finalDamage, 0, combatTexts, (nextState) => {
     let next = { ...nextState, pendingBleedLeechHealing: 0 };
     if (leechAmount > 0) {
-      next = applyHealingWithCombatText(next, computeLeechHeal(leechAmount), combatTexts, { skipFightPacing: true });
+      next = applyHealingWithCombatText(
+        next,
+        scaledGearLeechHeal(computeLeechHeal(leechAmount), next.gearEffects),
+        combatTexts,
+        { skipFightPacing: true },
+      );
     }
     mergeCombatText(combatTexts, {
       target: "enemy",
@@ -129,6 +135,9 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
+  if (state.enemyStatuses.burn <= 0 && state.enemyStatuses.poison <= 0 && state.enemyStatuses.bleed <= 0) {
+    return state;
+  }
   let nextState = tickBurn(state, combatTexts);
   nextState = tickPoison(nextState, combatTexts);
   nextState = tickBleed(nextState, combatTexts);
@@ -159,17 +168,25 @@ function dealPlayerDotTick(
   return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 
+/**
+ * Canonical player DoT mitigation chain, shared by burn and bleed so their
+ * order cannot drift: percentage resists first, then flat reductions
+ * (block-scaled talents, armor last) — matching applyPlayerCombatDamage.
+ */
+function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | "bleed"): number {
+  const scaled = scaleReceivedPlayerDamage(damage, state.talentEffects, status);
+  const blockReduction = status === "burn" ? state.talentEffects.blockReduceBurnDamage : 0;
+  const afterBlock =
+    blockReduction > 0 && state.playerStatuses.block > 0 ? Math.max(0, scaled - blockReduction) : scaled;
+  const armorMitigates =
+    status === "burn" ? state.talentEffects.armorMitigatesBurn : state.talentEffects.armorMitigatesBleed;
+  return armorMitigates ? Math.max(0, afterBlock - state.playerStatuses.armor) : afterBlock;
+}
+
 function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.burn;
   if (damage <= 0) return state;
-  const actualDamage = scaleReceivedPlayerDamage(damage, state.talentEffects, "burn");
-  const afterBlockReduction =
-    state.talentEffects.blockReduceBurnDamage > 0 && state.playerStatuses.block > 0
-      ? Math.max(0, actualDamage - state.talentEffects.blockReduceBurnDamage)
-      : actualDamage;
-  const reducedDamage = state.talentEffects.armorMitigatesBurn
-    ? Math.max(0, afterBlockReduction - state.playerStatuses.armor)
-    : afterBlockReduction;
+  const reducedDamage = mitigatePlayerDot(state, damage, "burn");
   return dealPlayerDotTick(
     state,
     reducedDamage,
@@ -190,10 +207,7 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.bleed;
   if (damage <= 0) return state;
-  const reducedDamage = state.talentEffects.armorMitigatesBleed
-    ? Math.max(0, damage - state.playerStatuses.armor)
-    : damage;
-  const finalDamage = scaleReceivedPlayerDamage(reducedDamage, state.talentEffects, "bleed");
+  const finalDamage = mitigatePlayerDot(state, damage, "bleed");
   return dealPlayerDotTick(state, finalDamage, "bleed", 0, combatTexts, undefined, (nextState) => {
     const enemyLeechDamage = Math.min(state.pendingEnemyBleedLeechHealing, state.playerHealth - nextState.playerHealth);
     let next = nextState;
@@ -205,6 +219,9 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
+  if (state.playerStatuses.burn <= 0 && state.playerStatuses.poison <= 0 && state.playerStatuses.bleed <= 0) {
+    return resolvePlayerCrowdControlTriggers(state, combatTexts);
+  }
   let nextState = tickPlayerBurn(state, combatTexts);
   nextState = tickPlayerPoison(nextState, combatTexts);
   nextState = tickPlayerBleed(nextState, combatTexts);

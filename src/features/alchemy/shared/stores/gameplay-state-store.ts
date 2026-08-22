@@ -93,10 +93,6 @@ interface TalentActions {
 
 type StateUpdate = GameplayState | Partial<GameplayState> | ((state: GameplayState) => unknown);
 
-function readActiveGameplayState(): GameplayState {
-  return useGameplayStateStore.getState();
-}
-
 type RootSet = (partial: StateUpdate) => void;
 
 type NestedSet<State extends object> = (partial: State | Partial<State> | ((state: State) => unknown)) => void;
@@ -284,7 +280,7 @@ export const useGameplayStateStore = create<GameplayState>()(
 );
 
 export function readGameplayState(): GameplayState {
-  return readActiveGameplayState();
+  return useGameplayStateStore.getState();
 }
 
 /** Create action groups whose setters mutate the supplied Immer draft in place. */

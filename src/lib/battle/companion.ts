@@ -6,16 +6,11 @@
 import { applyCardEffects } from "./effect-handlers";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { addPlayerStatus, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
-import {
-  COMPANION_LOW_HEALTH_THRESHOLD_PERCENT,
-  computeLeechHeal,
-  HALF_DIVISOR,
-  PERCENT_DENOMINATOR,
-} from "../game-constants";
+import { LOW_HEALTH_THRESHOLD_PERCENT, computeLeechHeal, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { rollPercent, getBattleRng } from "./status-helpers";
-import { rollTalentChance } from "./damage-rider-leech";
+import { rollTalentChance } from "./status-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 
@@ -133,9 +128,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
   if (!state.activeCompanion || state.enemyHealth <= 0) return state;
   const companionBondLevel = state.talentEffects.companionBondLevels?.[state.activeCompanion.id] ?? 0;
 
-  const lowHealthThreshold = Math.round(
-    (state.enemyMaxHealth * COMPANION_LOW_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR,
-  );
+  const lowHealthThreshold = Math.round((state.enemyMaxHealth * LOW_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR);
   const lowHealthMultiplier =
     state.talentEffects.companionDoubledVsLowHealth && state.enemyHealth <= lowHealthThreshold ? 2 : 1;
 

@@ -32,9 +32,9 @@ import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 // ── Audio Effects ──
 
 interface AppAudioEffectsOptions {
-  masterVol: number;
-  musicVol: number;
-  sfxVol: number;
+  masterVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
   muteInBackground: boolean;
   screen: Screen;
 }
@@ -48,19 +48,25 @@ function pickMusicKey(screen: Screen): string {
   return getBossMusicKey(enemy.id) ?? MUSIC_KEYS.BATTLE;
 }
 
-export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen }: AppAudioEffectsOptions) {
+export function useAppAudioEffects({
+  masterVolume,
+  musicVolume,
+  sfxVolume,
+  muteInBackground,
+  screen,
+}: AppAudioEffectsOptions) {
   const screenRef = useRef(screen);
   const gestureFiredRef = useRef(false);
 
   useEffect(() => {
-    setMasterVolume(masterVol / 100);
-  }, [masterVol]);
+    setMasterVolume(masterVolume / 100);
+  }, [masterVolume]);
   useEffect(() => {
-    setMusicVolume(musicVol / 100);
-  }, [musicVol]);
+    setMusicVolume(musicVolume / 100);
+  }, [musicVolume]);
   useEffect(() => {
-    setSfxVolume(sfxVol / 100);
-  }, [sfxVol]);
+    setSfxVolume(sfxVolume / 100);
+  }, [sfxVolume]);
 
   useEffect(() => {
     function applyBackgroundMute() {

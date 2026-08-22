@@ -1,21 +1,20 @@
-import { type PlayerStatusId } from "@/lib/game-data";
+import { pickRandom } from "@/lib/utils";
+import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
 import {
   addEnemyStatus,
   addPlayerStatus,
+  playerStatusDelta,
   setFlag,
+  gainMana,
   type BattleState,
   type CombatTextEvent,
   type EnemyMitigation,
 } from "./types";
 import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { scaledGearLeechHeal } from "./gear-effects";
-import { rollPercent, getBattleRng } from "./status-helpers";
+import { rollPercent, getBattleRng, rollTalentChance } from "./status-helpers";
 import { computeLeechHeal, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
-
-export function rollTalentChance(chance: number, state: { rng?: () => number }): boolean {
-  return chance > 0 && rollPercent(chance, getBattleRng(state));
-}
 
 function executePlayerHealing(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (amount <= 0) return state;
@@ -24,9 +23,9 @@ function executePlayerHealing(state: BattleState, amount: number, combatTexts: C
   });
 }
 
-function applyLeechBleedRider(state: BattleState, damage: number): BattleState {
-  if (rollTalentChance(state.talentEffects.leechBleedChance, state)) {
-    return addEnemyStatus(state, "bleed", damage);
+function applyLeechStatusRider(state: BattleState, status: EnemyStatusId, chance: number, damage: number): BattleState {
+  if (rollTalentChance(chance, state)) {
+    return addEnemyStatus(state, status, damage);
   }
   return state;
 }
@@ -36,8 +35,12 @@ function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[])
   for (const chance of [state.talentEffects.manaOnLeechChance, state.gearEffects.manaOnLeechChance]) {
     if (rollTalentChance(chance, state)) {
       const grantedMana = paceCombatMagnitude(nextState, 1, "player");
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: grantedMana });
-      nextState = { ...nextState, mana: nextState.mana + grantedMana };
+      const afterMana = gainMana(nextState, grantedMana);
+      const gained = afterMana.mana - nextState.mana;
+      if (gained > 0) {
+        mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
+        nextState = afterMana;
+      }
     }
   }
   return nextState;
@@ -50,8 +53,8 @@ function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
     if (mit.forge > 0) pool.push({ key: "forge", status: "forge" });
     if (mit.armor > 0) pool.push({ key: "armor", status: "armor" });
     if (mit.block > 0) pool.push({ key: "block", status: "block" });
-    if (pool.length > 0) {
-      const steal = pool[Math.trunc(getBattleRng(state)() * pool.length)]!;
+    const steal = pickRandom(pool, state.rng);
+    if (steal) {
       const nextState = {
         ...state,
         enemyMitigation: { ...mit, [steal.key]: Math.max(0, mit[steal.key] - 1) },
@@ -62,23 +65,16 @@ function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
   return state;
 }
 
-function applyLeechPoisonRider(state: BattleState, damage: number): BattleState {
-  if (rollTalentChance(state.talentEffects.leechPoisonChance, state)) {
-    return addEnemyStatus(state, "poison", damage);
-  }
-  return state;
-}
-
 /**
  * Applies standard lifesteal to restore player health based on damage dealt.
  */
 function applyLeechHitRiders(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   let nextState = state;
-  nextState = applyLeechBleedRider(nextState, damage);
+  nextState = applyLeechStatusRider(nextState, "bleed", state.talentEffects.leechBleedChance, damage);
   nextState = applyLeechManaRider(nextState, combatTexts);
   nextState = applyLeechTrinketSiphonRider(nextState);
-  nextState = applyLeechPoisonRider(nextState, damage);
+  nextState = applyLeechStatusRider(nextState, "poison", state.talentEffects.leechPoisonChance, damage);
   return nextState;
 }
 
@@ -112,7 +108,7 @@ export function applyLifestealAndPlayerHitTriggers(state: BattleState, damage: n
 }
 
 /**
- * Restores player health proportionally for holy damage types.
+ * Rolls nature leech; on success applies standard lifesteal and hit riders.
  */
 export function applyNatureLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
@@ -135,8 +131,12 @@ export function applyDamageBlock(state: BattleState, damage: number, combatTexts
   if (damage <= 0 || state.talentEffects.holyBlockPercentFromDamage <= 0) return state;
   const blockAmount = Math.round((damage * state.talentEffects.holyBlockPercentFromDamage) / PERCENT_DENOMINATOR);
   if (blockAmount <= 0) return state;
-  const blockGain = blockAmount + (state.gearEffects.flatBlockGained > 0 ? state.gearEffects.flatBlockGained : 0);
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: blockGain });
+  mergeCombatText(combatTexts, {
+    target: "player",
+    kind: "status",
+    stat: "block",
+    amount: playerStatusDelta(state, "block", blockAmount),
+  });
   return addPlayerStatus(state, "block", blockAmount);
 }
 
@@ -150,7 +150,3 @@ export function applyHolyTithe(state: BattleState, damage: number, combatTexts: 
   }
   return state;
 }
-
-/**
- * Applies first-time burn multipliers from talents and boons, updating state in place.
- */

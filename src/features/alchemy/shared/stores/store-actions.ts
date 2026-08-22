@@ -14,9 +14,9 @@ const settingsActionKeys = [
   "setSelectedAspectRatio",
   "setDisplayMode",
   "setBrightness",
-  "setMasterVol",
-  "setMusicVol",
-  "setSfxVol",
+  "setMasterVolume",
+  "setMusicVolume",
+  "setSfxVolume",
   "setMuteInBackground",
   "setAutoEndTurn",
   "setRememberAutoplayPreference",
@@ -67,9 +67,9 @@ export interface AppSettings {
   selectedAspectRatio: SettingsStore["selectedAspectRatio"];
   displayMode: SettingsStore["displayMode"];
   brightness: SettingsStore["brightness"];
-  musicVol: SettingsStore["musicVol"];
-  sfxVol: SettingsStore["sfxVol"];
-  masterVol: SettingsStore["masterVol"];
+  musicVolume: SettingsStore["musicVolume"];
+  sfxVolume: SettingsStore["sfxVolume"];
+  masterVolume: SettingsStore["masterVolume"];
   muteInBackground: SettingsStore["muteInBackground"];
   autoEndTurn: SettingsStore["autoEndTurn"];
   rememberAutoplayPreference: SettingsStore["rememberAutoplayPreference"];
@@ -81,9 +81,9 @@ function selectAppSettings(state: SettingsStore): AppSettings {
     selectedAspectRatio: state.selectedAspectRatio,
     displayMode: state.displayMode,
     brightness: state.brightness,
-    musicVol: state.musicVol,
-    sfxVol: state.sfxVol,
-    masterVol: state.masterVol,
+    musicVolume: state.musicVolume,
+    sfxVolume: state.sfxVolume,
+    masterVolume: state.masterVolume,
     muteInBackground: state.muteInBackground,
     autoEndTurn: state.autoEndTurn,
     rememberAutoplayPreference: state.rememberAutoplayPreference,

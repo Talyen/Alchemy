@@ -57,7 +57,7 @@ export default defineConfig({
     command: webServerCommand,
     port: 4173,
     reuseExistingServer: !isCi,
-    env: { ALCHEMY_DEV_PORT: "4173" },
+    env: { ALCHEMY_DEV_PORT: "4173", ALCHEMY_SKIP_CHECKER: "1" },
   },
   projects: [
     {

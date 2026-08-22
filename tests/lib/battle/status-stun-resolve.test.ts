@@ -367,7 +367,8 @@ describe("resolveStunTrigger", () => {
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
-    expect(result.mana).toBe(5);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 2 });
+    // 3 + 2 caps at maxMana (4), so only 1 mana actually lands.
+    expect(result.mana).toBe(4);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 1 });
   });
 });

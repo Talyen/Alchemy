@@ -13,23 +13,12 @@ import { mergeCombatText } from "./combat-text";
 import { addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
 
-const CONSTANTS = {
-  DECAY_THRESHOLD: 1,
-  MIN_ARMOR: 0,
-  TARGETS: {
-    PLAYER: "player",
-    ENEMY: "enemy",
-  },
-  COMBAT_TEXT: {
-    TARGET_PLAYER: "player",
-    KIND_STATUS: "status",
-    STAT_BLOCK: "block",
-  },
-} as const;
+const DECAY_THRESHOLD = 1;
+const MIN_ARMOR = 0;
 
 /** Halves a stack each tick; stacks of 1 or less clear entirely. */
 export function decayHalvedStatus(value: number) {
-  if (value <= CONSTANTS.DECAY_THRESHOLD) return 0;
+  if (value <= DECAY_THRESHOLD) return 0;
   return Math.round(value / HALF_DIVISOR);
 }
 
@@ -74,6 +63,11 @@ export function getBattleRng(state: { rng?: () => number }): () => number {
   return state.rng;
 }
 
+/** Evaluates a talent/boon percent chance roll using state's RNG. */
+export function rollTalentChance(chance: number, state: { rng?: () => number }): boolean {
+  return chance > 0 && rollPercent(chance, getBattleRng(state));
+}
+
 export type ArmorDecayTarget = "player" | "enemy";
 
 /**
@@ -81,7 +75,7 @@ export type ArmorDecayTarget = "player" | "enemy";
  * Enemy armor is stored in enemyMitigation.
  */
 function decayEnemyArmor(state: BattleState): BattleState {
-  if (state.enemyMitigation.armor <= CONSTANTS.MIN_ARMOR) {
+  if (state.enemyMitigation.armor <= MIN_ARMOR) {
     return state;
   }
   return {
@@ -99,7 +93,7 @@ function decayEnemyArmor(state: BattleState): BattleState {
  * checks and applies the player's armorBreakBlock talent.
  */
 function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
-  if (state.playerStatuses.armor <= CONSTANTS.MIN_ARMOR) {
+  if (state.playerStatuses.armor <= MIN_ARMOR) {
     return state;
   }
 
@@ -113,7 +107,7 @@ function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): 
   };
 
   // If player armor breaks and the armorBreakBlock talent is active, grant block.
-  const armorBroke = armorBefore > CONSTANTS.MIN_ARMOR && nextState.playerStatuses.armor === CONSTANTS.MIN_ARMOR;
+  const armorBroke = armorBefore > MIN_ARMOR && nextState.playerStatuses.armor === MIN_ARMOR;
   const hasArmorBreakTalent = nextState.talentEffects.armorBreakBlock > 0;
 
   if (armorBroke && hasArmorBreakTalent) {
@@ -125,9 +119,9 @@ function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): 
     );
     if (combatTexts) {
       mergeCombatText(combatTexts, {
-        target: CONSTANTS.COMBAT_TEXT.TARGET_PLAYER,
-        kind: CONSTANTS.COMBAT_TEXT.KIND_STATUS,
-        stat: CONSTANTS.COMBAT_TEXT.STAT_BLOCK,
+        target: "player",
+        kind: "status",
+        stat: "block",
         amount: nextState.playerStatuses.block - beforeBlock,
       });
     }
@@ -145,7 +139,7 @@ export function decayArmorAfterDamage(
 ): BattleState {
   if (damage <= 0) return state;
 
-  if (target === CONSTANTS.TARGETS.ENEMY) {
+  if (target === "enemy") {
     return decayEnemyArmor(state);
   }
   return decayPlayerArmor(state, combatTexts);

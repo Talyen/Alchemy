@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { openingPacedDamage } from "@/lib/battle/fight-pacing";
 import type { GearAffixRoll } from "@/lib/gear";
 import { createEmptyGearInventories, createEmptyGearLoadouts } from "./armory";
 import { startBattleWithDeck } from "./battle-setup";
@@ -6,7 +7,6 @@ import { makeCard } from "./cards";
 import { seedRandom } from "./rng";
 import { BattlePage } from "../pages/battle-page";
 import { MenuPage } from "../pages/menu-page";
-import { openingPacedDamage } from "./fight-pacing-expect";
 
 interface GearSlotSetup {
   instanceId: string;

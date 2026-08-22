@@ -374,7 +374,6 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
     dispatchGearMutationWithRunHealthSync({
-      characterId: "knight",
       mutate: (gear) => gear.equip("knight", "body", armor),
     });
 

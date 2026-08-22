@@ -1,6 +1,7 @@
 // Static card definitions. Cards are data and live in one flat library by design.
 // Pool/persistence helpers live in cards/card-pools.ts and cards/hydrate-card.ts.
 import type { BattleCard } from "../../types";
+import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import * as assetRefs from "../../assets";
 import * as cardBuilders from "../card-builders";
 
@@ -31,7 +32,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "haste",
     title: "Haste",
-    descriptionLines: ["Take an extra turn after this one", "Consume"],
+    descriptionLines: ["Take an extra turn after this one", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.haste,
     cost: 1,
     consume: true,
@@ -71,7 +72,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "panacea-potion",
     title: "Panacea Potion",
-    descriptionLines: ["Remove all harmful status effects", "Consume"],
+    descriptionLines: ["Remove all harmful status effects", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.panaceaPotion,
     cost: 1,
     consume: true,
@@ -112,7 +113,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "meteor",
     title: "Meteor",
-    descriptionLines: ["Deal 5 Burn damage", "Lose 1 Mana Crystal", "Consume"],
+    descriptionLines: ["Deal 5 Burn damage", "Lose 1 Mana Crystal", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.meteor,
     cost: 1,
     consume: true,
@@ -124,7 +125,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "mixed-potion",
     title: "Mixed Potion",
-    descriptionLines: ["Mixed at an Alchemist's Shop", "Consume"],
+    descriptionLines: ["Mixed at an Alchemist's Shop", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.mixedPotion,
     cost: 1,
     consume: true,
@@ -529,7 +530,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "sniff-out",
     title: "Sniff Out",
-    descriptionLines: ["Draw 2 Cards", "Consume"],
+    descriptionLines: ["Draw 2 Cards", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.sniffOut,
     cost: 1,
     consume: true,
@@ -561,7 +562,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "avatar",
     title: "Avatar",
-    descriptionLines: ["Gain 4 Block", "Deal 4 Holy damage", "Repeat next turn", "Consume"],
+    descriptionLines: ["Gain 4 Block", "Deal 4 Holy damage", "Repeat next turn", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.avatar,
     cost: 1,
     consume: true,
@@ -581,7 +582,13 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "astral-arrow",
     title: "Astral Arrow",
-    descriptionLines: ["Deal 2 Stun damage", "Deal 2 Freeze damage", "Deal 2 Burn damage", "Archery", "Consume"],
+    descriptionLines: [
+      "Deal 2 Stun damage",
+      "Deal 2 Freeze damage",
+      "Deal 2 Burn damage",
+      "Archery",
+      CONSUME_DESCRIPTION_LINE,
+    ],
     art: assetRefs.astralArrow,
     cost: 1,
     consume: true,
@@ -595,7 +602,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "shadowstep",
     title: "Shadowstep",
-    descriptionLines: ["Your next card is played twice", "Consume"],
+    descriptionLines: ["Your next card is played twice", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.shadowstep,
     cost: 1,
     consume: true,
@@ -722,50 +729,34 @@ export const cardLibrary: BattleCard[] = [
     art: assetRefs.foxCompanion,
     companionId: "fox",
   }),
-  {
+  cardBuilders.statusThenEffectCard({
     id: "molten-bulwark",
-    title: "Molten Bulwark",
-    descriptionLines: ["Gain 3 Block", "Deal 1 Burn damage"],
     art: assetRefs.moltenBulwark,
-    cost: 1,
-    effects: [
-      { kind: "player-status", status: "block", amount: 3 },
-      { kind: "damage", damageType: "burn", amount: 1 },
-    ],
-  },
-  {
+    status: "block",
+    amount: 3,
+    effect: { kind: "damage", damageType: "burn", amount: 1 },
+  }),
+  cardBuilders.statusThenEffectCard({
     id: "glacial-ward",
-    title: "Glacial Ward",
-    descriptionLines: ["Gain 3 Block", "Deal 1 Freeze damage"],
     art: assetRefs.glacialWard,
-    cost: 1,
-    effects: [
-      { kind: "player-status", status: "block", amount: 3 },
-      { kind: "damage", damageType: "freeze", amount: 1 },
-    ],
-  },
-  {
+    status: "block",
+    amount: 3,
+    effect: { kind: "damage", damageType: "freeze", amount: 1 },
+  }),
+  cardBuilders.statusThenEffectCard({
     id: "spiked-shield",
-    title: "Spiked Shield",
-    descriptionLines: ["Gain 2 Armor", "Deal 1 Bleed damage"],
     art: assetRefs.spikedShield,
-    cost: 1,
-    effects: [
-      { kind: "player-status", status: "armor", amount: 2 },
-      { kind: "damage", damageType: "bleed", amount: 1 },
-    ],
-  },
-  {
+    status: "armor",
+    amount: 2,
+    effect: { kind: "damage", damageType: "bleed", amount: 1 },
+  }),
+  cardBuilders.statusThenEffectCard({
     id: "golden-plate",
-    title: "Golden Plate",
-    descriptionLines: ["Gain 1 Armor", "Gain 2 Gold"],
     art: assetRefs.goldenPlate,
-    cost: 1,
-    effects: [
-      { kind: "player-status", status: "armor", amount: 1 },
-      { kind: "gain-gold", amount: 2 },
-    ],
-  },
+    status: "armor",
+    amount: 1,
+    effect: { kind: "gain-gold", amount: 2 },
+  }),
   {
     id: "crystal-bulwark",
     title: "Crystal Bulwark",

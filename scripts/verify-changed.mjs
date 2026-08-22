@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /** Route the smallest complete verification set for the paths being changed. */
-import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { firstOutputLine, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { E2E_NAMES, resolveRoutePlan, resolveRoutes } from "./lib/change-routes.mjs";
-import { writeCurrentRun } from "./lib/current-run.mjs";
+import { changedGitPaths, writeCurrentRun } from "./lib/current-run.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -18,16 +18,9 @@ export function resolvePlan(paths, options = {}) {
 }
 
 function changedPathsFromGit() {
-  const result = spawnSync("git", ["status", "--short", "--untracked-files=all", "-z"], {
-    cwd: ROOT,
-    encoding: "utf8",
-  });
-  if (result.status !== 0) throw new Error(result.stderr?.trim() || "git status failed");
-  return (result.stdout ?? "")
-    .split("\0")
-    .map((entry) => (entry.length >= 3 && entry[2] === " " ? entry.slice(3) : entry).trim())
-    .filter(Boolean)
-    .map((filePath) => (filePath.includes(" -> ") ? filePath.split(" -> ").at(-1) : filePath));
+  const paths = changedGitPaths(ROOT);
+  if (!paths) throw new Error("git status failed");
+  return paths;
 }
 
 function parseArgs(argv) {
@@ -127,4 +120,7 @@ export function main(argv = process.argv.slice(2)) {
   }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exit(main());
+if (isMainModule(import.meta.url)) {
+  const code = main();
+  if (code !== 0) process.exitCode = code;
+}

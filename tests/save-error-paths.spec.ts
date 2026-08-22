@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures/e2e";
 import { failOnRuntimeErrors, SAVE_KEY } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
-import { critical } from "./playwright-tags";
+import { critical, prepush } from "./playwright-tags";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation/metadata";
 
 type SaveErrorSetupKind = "corrupt" | "missing" | "nullActiveRun" | "empty";
@@ -35,7 +35,7 @@ const SAVE_ERROR_SCENARIOS: Array<{
   },
 ];
 
-test.describe("Save Error Paths", () => {
+test.describe("Save Error Paths", prepush, () => {
   for (const scenario of SAVE_ERROR_SCENARIOS) {
     test(scenario.name, critical, async ({ page }) => {
       const errors = scenario.expectNoRuntimeErrors === false ? null : failOnRuntimeErrors(page);

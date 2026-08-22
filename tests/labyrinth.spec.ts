@@ -3,7 +3,7 @@ import { test } from "./fixtures/e2e";
 import { critical } from "./playwright-tags";
 import { injectLabyrinthRun, makeHighDamageCard } from "./helpers";
 
-test.describe("Labyrinth Mode", () => {
+test.describe("Labyrinth Mode", critical, () => {
   test.beforeEach(async ({ runtimeErrors }) => {
     void runtimeErrors;
   });

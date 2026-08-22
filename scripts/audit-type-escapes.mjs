@@ -1,6 +1,6 @@
 /**
  * Count typing escapes in non-test, non-generated authored source so trends
- * can be compared run-over-run. Interpret via docs/Audits/15-TypeSafetyAudit.md.
+ * can be compared run-over-run. Interpret via docs/Audits/TypeSafetyAudit.md.
  * Run: node scripts/audit-type-escapes.mjs
  *
  * Trend instrumentation only — always exits 0. Counts are directional

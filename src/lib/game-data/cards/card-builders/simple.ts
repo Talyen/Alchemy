@@ -175,6 +175,32 @@ export function loseHealthBenefitCard({
   };
 }
 
+type StatusThenEffectCardInput = CardBaseInput & {
+  status: "block" | "armor";
+  amount: number;
+  effect: BattleCardEffect;
+};
+
+/** Status gain followed by a second effect (damage, gold, ...). */
+export function statusThenEffectCard({
+  id,
+  title,
+  art,
+  status,
+  amount,
+  effect,
+  cost = 1,
+}: StatusThenEffectCardInput): BattleCard {
+  return {
+    id,
+    title: deriveTitle(id, title),
+    descriptionLines: [playerStatusDescriptionLine(status, amount), effectDescriptionLine(effect)],
+    art,
+    cost,
+    effects: [{ kind: "player-status", status, amount }, effect],
+  };
+}
+
 type HealThenDamageCardInput = CardBaseInput & {
   heal: number;
   damageType: DamageType;

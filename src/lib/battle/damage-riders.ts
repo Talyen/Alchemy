@@ -9,18 +9,18 @@ import { addGoldWithCombatText } from "./combat-text";
 import { applyGearKillRewards } from "./gear-effects";
 import { applyWishEffect } from "./wish";
 import {
-  rollTalentChance,
   applyDamageBlock,
   applyHolyLifesteal,
   applyHolyTithe,
   applyLifestealAndPlayerHitTriggers,
   applyNatureLeech,
 } from "./damage-rider-leech";
+import { rollTalentChance } from "./status-helpers";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { addEnemyStatus, addPlayerStatus, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { BATTLE_CONFIG, HALF_DIVISOR } from "../game-constants";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
-import { decayArmorAfterDamage, rollPercent } from "./status-helpers";
+import { decayArmorAfterDamage } from "./status-helpers";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 
 function applyBurnDamageRiders(
@@ -86,11 +86,11 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
   nextState = applyDamageBlock(nextState, damage, combatTexts);
   nextState = applyHolyTithe(nextState, damage, combatTexts);
 
-  if (rollPercent(nextState.talentEffects.holyBurnChance, nextState.rng)) {
+  if (rollTalentChance(nextState.talentEffects.holyBurnChance, nextState)) {
     nextState = addEnemyStatus(nextState, "burn", damage);
   }
 
-  if (rollPercent(nextState.talentEffects.holyWishChance, nextState.rng)) {
+  if (rollTalentChance(nextState.talentEffects.holyWishChance, nextState)) {
     nextState = applyWishEffect(nextState, card, 1, combatTexts);
   }
 
@@ -156,7 +156,7 @@ export function applyDamageRiders(
     }
   }
   if (effect.damageType === "poison" && modifiedDamage > 0) {
-    if (rollPercent(nextState.talentEffects.poisonStunChance, nextState.rng)) {
+    if (rollTalentChance(nextState.talentEffects.poisonStunChance, nextState)) {
       nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
     }
   }

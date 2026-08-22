@@ -5,6 +5,7 @@ import type { CSSProperties, RefObject } from "react";
 
 import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle";
+import type { ArmedFlagChipId, PendingPulseChipId } from "./augment-definitions";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 
 type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
@@ -94,8 +95,10 @@ export const CONSTANTS = {
 export type CollectionTab = "cards" | "bestiary" | "trinkets";
 
 export interface StatusChip {
-  id: PlayerStatusId | EnemyStatusId;
+  id: PlayerStatusId | EnemyStatusId | ArmedFlagChipId | "echo" | "ccImmunity" | PendingPulseChipId;
   value: number;
+  /** Armed flag chips (e.g. Shadowstep) omit the numeric badge in their tooltip. */
+  hideValue?: boolean;
 }
 
 export interface DescriptionPart {

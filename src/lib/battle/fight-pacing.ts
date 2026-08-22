@@ -112,3 +112,18 @@ export function paceCombatMagnitude(
   if (multiplier === 1) return amount;
   return Math.round(amount * multiplier);
 }
+
+/**
+ * Authored magnitude after the opening-turn stall clock: full health pools,
+ * turn 1, no comeback. Lets E2E expectations consume live pacing math directly.
+ */
+export function openingPacedDamage(amount: number, enemyType: EnemyType = "normal"): number {
+  if (amount <= 0) return amount;
+  const bonus = fightPacingScheduleClockBonus(
+    { playerFraction: 1, enemyFraction: 1, actualBurnFraction: 0 },
+    1,
+    fightPacingClockConfig(enemyType),
+  );
+  if (bonus === 0) return amount;
+  return Math.round(amount * (1 + bonus));
+}

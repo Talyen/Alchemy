@@ -3,15 +3,11 @@ import path from "node:path";
 
 const ANSI_PATTERN = new RegExp(String.raw`\u001B(?:[@-_][0-?]*[ -/]*[@-~]|\][^\u0007]*(?:\u0007|\u001B\\))`, "gu");
 
+// eslint-disable-next-line no-control-regex
+const NON_PRINTABLE_PATTERN = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/gu;
+
 export function sanitizeOutput(output) {
-  return output
-    .replace(ANSI_PATTERN, "")
-    .split("")
-    .filter((character) => {
-      const code = character.charCodeAt(0);
-      return character === "\n" || character === "\r" || character === "\t" || (code >= 32 && code !== 127);
-    })
-    .join("");
+  return output.replace(ANSI_PATTERN, "").replace(NON_PRINTABLE_PATTERN, "");
 }
 
 /**

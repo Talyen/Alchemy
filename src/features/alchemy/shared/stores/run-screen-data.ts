@@ -73,7 +73,7 @@ interface CorruptionScreenData {
   corruptionResult: CorruptionResult | null;
 }
 
-interface RunEndScreenData {
+export interface RunEndScreenData {
   runEndTalentXP: TalentXP;
   talentXP: TalentXP;
   runEndMaterials: MaterialInventory;

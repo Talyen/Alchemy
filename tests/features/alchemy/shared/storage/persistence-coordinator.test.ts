@@ -59,7 +59,7 @@ describe("persistence coordinator", () => {
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
-    useSettingsStore.getState().setMusicVol(42);
+    useSettingsStore.getState().setMusicVolume(42);
     useProfileStore.getState().setDiscoveredCardIds(["slash"]);
     useGearStore.getState().addCurrencies({ voidstone: 1 });
     getRunProfileStore().setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
@@ -67,7 +67,7 @@ describe("persistence coordinator", () => {
     expect(listener).toHaveBeenCalledTimes(4);
 
     unsubscribe();
-    useSettingsStore.getState().setMusicVol(43);
+    useSettingsStore.getState().setMusicVolume(43);
     expect(listener).toHaveBeenCalledTimes(4);
   });
 

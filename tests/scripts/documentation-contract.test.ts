@@ -3,7 +3,18 @@ import { dirname, extname, join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = resolve(import.meta.dirname, "../..");
-const ignoredDirectories = new Set([".git", "node_modules", "dist", "dist-desktop", "release-desktop", "test-results"]);
+const ignoredDirectories = new Set([
+  ".git",
+  "node_modules",
+  "dist",
+  "dist-desktop",
+  "release-desktop",
+  "test-results",
+  "playwright-report",
+  "coverage",
+  "reports",
+  "release-notes",
+]);
 
 function markdownFiles(directory = root): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -163,5 +174,44 @@ describe("documentation contracts", () => {
       if (!existsSync(join(root, rel))) missing.push(rel);
     }
     expect(missing).toEqual([]);
+  });
+
+  it("keeps every durable document reachable from a documented entry point", () => {
+    // Ephemeral/generated trees are exempt: plans are deleted at handoff, CHANGELOG is release-generated,
+    // and .agents skill manifests load by loader convention rather than documentation links.
+    const isExempt = (rel: string): boolean =>
+      rel === "CHANGELOG.md" || rel.startsWith("docs/Plans/") || rel.startsWith(".agents/");
+    const documents = new Map<string, Set<string>>();
+    for (const file of markdownFiles()) {
+      const rel = file.slice(root.length + 1);
+      if (isExempt(rel)) continue;
+      const targets = new Set<string>();
+      for (const match of readFileSync(file, "utf8").matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
+        const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
+        if (!target || /^(?:https?:|mailto:|#)/u.test(target)) continue;
+        const absolutePath = resolve(dirname(file), decodeURIComponent(target.split("#")[0]));
+        if (!/\.(?:md|mdx)$/u.test(absolutePath)) continue;
+        const targetRel = absolutePath.slice(root.length + 1);
+        if (targetRel !== rel && !isExempt(targetRel)) targets.add(targetRel);
+      }
+      documents.set(rel, targets);
+    }
+
+    const entryPoints = ["AGENTS.md", "README.md"];
+    for (const entry of entryPoints) {
+      if (!documents.has(entry)) throw new Error(`entry point missing from scanned documents: ${entry}`);
+    }
+    const reachable = new Set<string>(entryPoints);
+    const queue = [...reachable];
+    while (queue.length > 0) {
+      for (const next of documents.get(queue.pop() ?? "") ?? []) {
+        if (!reachable.has(next)) {
+          reachable.add(next);
+          queue.push(next);
+        }
+      }
+    }
+    const orphans = [...documents.keys()].filter((rel) => !reachable.has(rel));
+    expect(orphans).toEqual([]);
   });
 });

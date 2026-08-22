@@ -2,17 +2,6 @@
 
 Reference for commands, glossary, battle rules, and file lookup. Strict coding rules: **[AGENTS.md](../AGENTS.md)**. Run state: [ARCHITECTURE.md](./ARCHITECTURE.md). How-to checklists: [WORKFLOWS.md](./WORKFLOWS.md). Hooks and tests: [CONTRIBUTING.md](../CONTRIBUTING.md). Audits: [Audits/README.md](./Audits/README.md).
 
-## Quick Reference
-
-- [Environment & Commands](#environment--commands)
-- [Failure-first triage](#failure-first-triage)
-- [Balance simulation](#balance-simulation)
-- [Battle Implementation Rules](#battle-implementation-rules)
-- [Domain Glossary](#domain-glossary)
-- [Navigation Hints](#navigation-hints)
-
----
-
 ## Environment & Commands
 
 - **Node.js `>=24`** — authoritative in `package.json` `engines`.
@@ -30,9 +19,9 @@ npm run build               # vite build (typecheck is a separate gate; Vercel r
 npm test                    # Vitest; `npm test -- <path>` for a single file
 npm run verify:changed -- --diff  # Changed-path verification route (--plan previews; --e2e <route> escalates)
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci and pre-commit)
-npm run lint:ci             # Full static gate; composition and gate-tier policy live in CONTRIBUTING.md
+npm run lint:ci             # Full static gate
 npm run check:push          # Local pre-push gate
-npm run check:ship          # Ship gate: lint:ci + ship unit tests + desktop renderer build
+npm run check:ship          # Ship gate before tagging/desktop packaging
 npm run docs:check          # Validate plan metadata (--final at handoff)
 npm run new:plan -- <Name>  # Scaffold an execution plan under docs/Plans/
 npm run balance:sim         # Headless balance findings (opens reports/balance-findings.html)
@@ -41,7 +30,7 @@ npm run clean               # Remove local diagnostics/artifacts
 npm run release             # Version bump, changelog, tag ([RELEASE.md](./RELEASE.md))
 ```
 
-This is the curated agent subset. The full catalog is `package.json` (exhaustive); gate-tier relationships are owned by [CONTRIBUTING.md](../CONTRIBUTING.md#before-you-push).
+This is the curated agent subset. The full catalog is `package.json` (exhaustive); what each gate includes and when it applies is owned by [CONTRIBUTING.md](../CONTRIBUTING.md#before-you-push).
 
 ### Build commands decision tree
 

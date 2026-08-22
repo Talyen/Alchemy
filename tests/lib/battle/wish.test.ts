@@ -406,6 +406,17 @@ describe("new wish talents", () => {
     expect(result.mana).toBe(4);
   });
 
+  it("wishManaTrigger caps mana at maxMana", () => {
+    const card = makeTestCard({ id: "strike", title: "Strike" });
+    const state = makeTestBattleState({
+      mana: 3,
+      maxMana: 3,
+      talentEffects: { ...makeTestBattleState().talentEffects, manaOnWish: 2 },
+    });
+    const result = applyWishEffect(state, card, 1, []);
+    expect(result.mana).toBe(3);
+  });
+
   it("wishBurnTrigger applies burn damage on wish", () => {
     const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({

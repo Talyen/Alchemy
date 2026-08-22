@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";
 import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage/bootstrap-save-state";
