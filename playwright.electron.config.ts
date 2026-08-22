@@ -1,8 +1,8 @@
 import { defineConfig } from "@playwright/test";
+import { playwrightCiSettings } from "./tests/playwright-shared";
 
 const previewPort = Number.parseInt(process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT ?? "4175", 10);
 const isCi = !!process.env.CI;
-const playwrightJsonOut = process.env.PLAYWRIGHT_JSON_OUTPUT_NAME ?? "reports/playwright-results.json";
 
 export default defineConfig({
   testDir: "./tests",
@@ -11,11 +11,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   timeout: 90_000,
-  retries: isCi ? 1 : 0,
-  forbidOnly: isCi,
-  reporter: isCi
-    ? [["github"], ["line"], ["html"], ["json", { outputFile: playwrightJsonOut }]]
-    : [["line"], ["html", { open: "never" }]],
+  globalTimeout: 600_000,
+  ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-electron-results.json" }),
+  preserveOutput: "failures-only",
   webServer: {
     command: `npx vite preview --host 127.0.0.1 --port ${previewPort} --strictPort`,
     port: previewPort,

@@ -1,9 +1,5 @@
 pre-commit:
   commands:
-    lockfile-check:
-      run: npm ci --dry-run
-    typecheck:
-      run: npm run typecheck
     format:
       # Formats staged files that match scripts/prettier-paths.mjs (same set as format:check).
       run: node scripts/run-prettier.mjs --write {staged_files}
@@ -16,6 +12,8 @@ commit-msg:
 
 pre-push:
   commands:
+    lockfile-check:
+      run: npm ci --dry-run
     fast-gate:
       # check:push runs format, typecheck:all (src + tests), lint, a build with
       # committed assets, and the preview-mode prepush E2E — so the browser gate

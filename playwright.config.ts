@@ -1,5 +1,6 @@
 import os from "node:os";
 import { defineConfig, devices } from "@playwright/test";
+import { playwrightCiSettings } from "./tests/playwright-shared";
 
 const viteMode = process.env.PLAYWRIGHT_VITE_MODE === "preview" ? "preview" : "dev";
 const webServerCommand =
@@ -13,7 +14,6 @@ const isCi = !!process.env.CI && !isPrepush;
 const isFullE2eSuite = process.env.PLAYWRIGHT_E2E_FULL === "1";
 // Critical CI job: fail fast. Full suite (~100 tests): report up to 5 failures per run.
 const maxFailures = isFullE2eSuite ? 5 : isCi ? 1 : 0;
-const playwrightJsonOut = process.env.PLAYWRIGHT_JSON_OUTPUT_NAME ?? "reports/playwright-results.json";
 
 const defaultWorkers = Math.min(3, Math.max(2, os.cpus().length > 1 ? os.cpus().length - 1 : 2));
 
@@ -29,16 +29,9 @@ export default defineConfig({
   workers: isNightly ? 4 : isCi ? 4 : defaultWorkers,
   globalTimeout: 600_000,
   timeout: isCi ? 30_000 : 20_000,
-  retries: isCi ? 1 : 0,
-  forbidOnly: isCi,
+  ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-results.json" }),
   // Keep only failed-run output locally/CI so successful shards do not accumulate under test-results/.
   preserveOutput: "failures-only",
-  // CI: github annotations + compact console + HTML artifact + JSON for step summary.
-  reporter: isPrepush
-    ? "line"
-    : isCi
-      ? [["github"], ["line"], ["html"], ["json", { outputFile: playwrightJsonOut }]]
-      : [["line"], ["html", { open: "never" }]],
   use: {
     baseURL: "http://127.0.0.1:4173",
     trace: isPrepush ? "off" : "retain-on-failure",

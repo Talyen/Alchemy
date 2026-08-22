@@ -1,4 +1,8 @@
 {
+  // Strictness relaxations are intentional: the ~330 exactOptionalPropertyTypes /
+  // noUncheckedIndexedAccess violations across tests/ and performance/ are spread
+  // over fixture and helper code, not contract mismatches. Tighten only alongside
+  // a dedicated fixture-cleanup pass.
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["vitest/globals", "vite/client", "node"],

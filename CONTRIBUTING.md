@@ -30,7 +30,7 @@ The default local hook is `npm run check:push` (format, TypeScript for src and t
 
 Install hooks once: `npm run prepare` (runs on `npm install`).
 
-`lefthook` `pre-commit` runs `npm ci --dry-run`, `npm run typecheck`, and Prettier on **staged files** that match `scripts/prettier-paths.mjs` (same set as `npm run format` / `format:check`). Do not hand-duplicate those globs in lefthook.
+`lefthook` `pre-commit` runs Prettier on **staged files** that match `scripts/prettier-paths.mjs` (same set as `npm run format` / `format:check`). Do not hand-duplicate those globs in lefthook. Static checks and the lockfile check live in `pre-push` (`lockfile-check` then `check:push`), which blocks the push anyway; CI repeats them.
 
 E2E timings / flakiness: `npm run test:e2e:timings`, `npm run test:e2e:audit`.
 Frame pacing (on-demand, not CI): [docs/PERFORMANCE.md](./docs/PERFORMANCE.md).

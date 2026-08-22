@@ -402,7 +402,7 @@ jobs:
 
       - name: Summarize Electron e2e
         if: always()
-        run: node scripts/ci-summarize-playwright.mjs
+        run: node scripts/ci-summarize-playwright.mjs reports/playwright-electron-results.json
 
       - name: Upload Electron Playwright report
         if: failure()
@@ -412,6 +412,6 @@ jobs:
           path: |
             playwright-report/
             test-results/
-            reports/playwright-results.json
+            reports/playwright-electron-results.json
             reports/current-run.*
           retention-days: 7
