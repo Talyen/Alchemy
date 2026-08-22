@@ -192,6 +192,9 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
   };
   if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
   if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
+  // Earlier-registered init scripts (injectTalentUnlocks) own this key at
+  // navigation time; the fixture's empty default must not clobber them.
+  delete save.unlockedTalents;
   return save;
 }
 
