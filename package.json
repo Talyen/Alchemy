@@ -46,7 +46,7 @@
     "check:generated": "node scripts/sync-assets.mjs --check && node scripts/sync-gear-art.mjs --check",
     "test:ship:unit": "node scripts/run-ship-unit.mjs",
     "test:ship:e2e": "playwright test tests/save-persistence.spec.ts tests/save-error-paths.spec.ts --project chromium",
-    "test:ship:desktop": "cross-env PLAYWRIGHT_ELECTRON_PREVIEW_PORT=4175 npm run ensure:electron && playwright test --config playwright.electron.config.ts",
+    "test:ship:desktop": "cross-env PLAYWRIGHT_ELECTRON_PREVIEW_PORT=4175 playwright test --config playwright.electron.config.ts",
     "check:ship": "npm run lint:ci && npm run test:ship:unit && cross-env ALCHEMY_SKIP_ASSETS=1 npm run build:desktop",
     "check:ship:full": "npm run check:ship && npm run test:ship:e2e",
     "verify:release-version": "node scripts/verify-release-version.mjs",
