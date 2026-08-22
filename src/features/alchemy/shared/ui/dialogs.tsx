@@ -9,10 +9,6 @@ import { bodyTextClass, sectionTitleClass } from "@/features/alchemy/shared/conf
 import { cn } from "@/lib/utils";
 import { ModalOverlayShell } from "./modal-overlay-shell";
 
-const DIALOG_CONFIG = {
-  dangerTone: "danger",
-} as const;
-
 export function ConfirmationDialog({
   open = true,
   title,
@@ -70,7 +66,7 @@ export function ConfirmationDialog({
           <Button size="lg" variant="outline" onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button size="lg" variant={tone === DIALOG_CONFIG.dangerTone ? "destructive" : "default"} onClick={onConfirm}>
+          <Button size="lg" variant={tone === "danger" ? "destructive" : "default"} onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>

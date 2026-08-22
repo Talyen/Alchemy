@@ -17,6 +17,8 @@ function MenuNavButton({ children }: { children: ReactNode }) {
   return <div className="menu-nav-button">{children}</div>;
 }
 
+const MENU_NAV_BUTTON_CLASS = cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU);
+
 export function MenuScreen({
   onPlay,
   onCollection,
@@ -82,12 +84,7 @@ export function MenuScreen({
 
       <div className="grid gap-2 overflow-visible">
         <MenuNavButton>
-          <Button
-            size="lg"
-            variant="primary"
-            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-            onClick={onPlay}
-          >
+          <Button size="lg" variant="primary" className={MENU_NAV_BUTTON_CLASS} onClick={onPlay}>
             <Swords className="h-7 w-7" />
             Play
           </Button>
@@ -99,7 +96,7 @@ export function MenuScreen({
             locked={isKnightGatedLocked}
             onSelect={onTalents}
             icon={<WandSparkles className="h-7 w-7" />}
-            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+            className={MENU_NAV_BUTTON_CLASS}
             size="lg"
             variant="outline"
             tooltipPlacement="side-start"
@@ -117,7 +114,7 @@ export function MenuScreen({
             locked={isKnightGatedLocked}
             onSelect={onHomestead}
             icon={<TreePine className="h-7 w-7" />}
-            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+            className={MENU_NAV_BUTTON_CLASS}
             size="lg"
             variant="outline"
             tooltipPlacement="side-start"
@@ -135,7 +132,7 @@ export function MenuScreen({
             locked={isArmoryLocked}
             onSelect={onArmory}
             icon={<Shield className="h-7 w-7" />}
-            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
+            className={MENU_NAV_BUTTON_CLASS}
             size="lg"
             variant="outline"
             tooltipPlacement="side-start"
@@ -144,35 +141,20 @@ export function MenuScreen({
           </LockedMenuItem>
         </MenuNavButton>
         <MenuNavButton>
-          <Button
-            size="lg"
-            variant="outline"
-            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-            onClick={onCollection}
-          >
+          <Button size="lg" variant="outline" className={MENU_NAV_BUTTON_CLASS} onClick={onCollection}>
             <BookOpen className="h-7 w-7" />
             Collection
           </Button>
         </MenuNavButton>
         <MenuNavButton>
-          <Button
-            size="lg"
-            variant="outline"
-            className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-            onClick={onOptions}
-          >
+          <Button size="lg" variant="outline" className={MENU_NAV_BUTTON_CLASS} onClick={onOptions}>
             <Cog className="h-7 w-7" />
             Options
           </Button>
         </MenuNavButton>
         {onQuit ? (
           <MenuNavButton>
-            <Button
-              size="lg"
-              variant="outline"
-              className={cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU)}
-              onClick={onQuit}
-            >
+            <Button size="lg" variant="outline" className={MENU_NAV_BUTTON_CLASS} onClick={onQuit}>
               Quit
             </Button>
           </MenuNavButton>

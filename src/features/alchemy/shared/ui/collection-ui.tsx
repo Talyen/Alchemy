@@ -4,7 +4,7 @@
 /* eslint-disable react-refresh/only-export-components -- co-located collection subcomponents and search/zoom utilities */
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { PaginationControls } from "./shared-ui";
+import { PaginationControls } from "./navigation";
 import { FadeSlot } from "./fade-slot";
 import {
   collectionBestiaryGridClass,

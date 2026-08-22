@@ -8,7 +8,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { CardSelectionGrid } from "./card-selection-grid";
-import { GoldCost } from "./shared-ui";
+import { GoldCost } from "./display-elements";
 import { SelectableShopCard } from "./shop-card-item";
 import { useCaptureEscapeCancel } from "./use-capture-escape-cancel";
 

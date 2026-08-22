@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import type { BattleCard } from "@/lib/game-data";
 
 import { FadeSlot } from "./fade-slot";
-import { PaginationControls } from "./shared-ui";
+import { PaginationControls } from "./navigation";
 
 const CARD_SELECTION_GRID_CONFIG = {
   cardsPerRow: 4,

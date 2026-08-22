@@ -98,7 +98,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
   return (
     <div className="flex flex-col items-center gap-5">
       <div>
-        <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
+        <ScreenDescription tone="danger">The altar returns your card changed.</ScreenDescription>
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3">
         <div className="col-start-1 flex flex-col items-center">
@@ -174,7 +174,7 @@ export function CorruptionScreen({
         ) : selecting ? (
           <div className="flex flex-col items-center gap-5">
             <div>
-              <ScreenDescription className="text-red-100/75">
+              <ScreenDescription tone="danger">
                 Select one card. The altar may weaken, strengthen, or remake it.
               </ScreenDescription>
             </div>

@@ -23,22 +23,6 @@ export function getVrStageBounds(): DOMRect {
   return document.documentElement.getBoundingClientRect();
 }
 
-/** Prefer above unless the tooltip would clip the vr-stage top edge. */
-export function shouldPlacePortaledTooltipBelow(
-  anchor: PortaledTooltipAnchor,
-  tooltipHeight: number,
-  stage: Pick<DOMRect, "top" | "bottom">,
-  padding = 8,
-): boolean {
-  const spaceAbove = anchor.top - stage.top - 2 * padding;
-  if (spaceAbove >= tooltipHeight) {
-    return false;
-  }
-
-  const spaceBelow = stage.bottom - anchor.bottom - 2 * padding;
-  return spaceBelow >= tooltipHeight || spaceBelow > spaceAbove;
-}
-
 export function buildPortaledTooltipStyle(
   anchor: PortaledTooltipAnchor,
   placeBelow: boolean,

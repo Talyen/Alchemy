@@ -5,31 +5,12 @@ import {
   buildPortaledTooltipStyle,
   buildSideTooltipStyle,
   measurePortaledTooltipPlacement,
-  shouldPlacePortaledTooltipBelow,
 } from "@/features/alchemy/shared/ui/portaled-tooltip-placement";
 
 const stage = { top: 0, left: 0, right: 1280, bottom: 720 };
 const midTrigger = { left: 590, right: 690 };
 const shortTooltip = { width: 200, height: 100 };
 const tallTooltip = { width: 200, height: 400 };
-
-describe("shouldPlacePortaledTooltipBelow", () => {
-  it("keeps above when there is room within the stage", () => {
-    const anchor = { centerX: 640, top: 250, bottom: 330 };
-    expect(shouldPlacePortaledTooltipBelow(anchor, 100, stage)).toBe(false);
-  });
-
-  it("flips below when the tile is within the old 320px threshold but above still fits in stage", () => {
-    const anchor = { centerX: 640, top: 280, bottom: 360 };
-    expect(anchor.top < 320).toBe(true);
-    expect(shouldPlacePortaledTooltipBelow(anchor, 100, stage)).toBe(false);
-  });
-
-  it("flips below when the tooltip would clip the stage top", () => {
-    const anchor = { centerX: 640, top: 40, bottom: 120 };
-    expect(shouldPlacePortaledTooltipBelow(anchor, 100, stage)).toBe(true);
-  });
-});
 
 describe("measurePortaledTooltipPlacement", () => {
   it("clamps horizontal position to stage bounds", () => {
