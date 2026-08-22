@@ -7,10 +7,15 @@ import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
 import { drawFromState } from "./draw";
-import { gainMana, type BattleState, type CombatTextEvent } from "./types";
-import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { type BattleState, type CombatTextEvent } from "./types";
+import {
+  addGoldWithCombatText,
+  applyHealingWithCombatText,
+  gainManaWithCombatText,
+  mergeCombatText,
+} from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
-import { getEnemyDamageMultiplier } from "./status-helpers";
+import { getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
 import { applyGearKillRewards, dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
@@ -50,8 +55,7 @@ function upgradeWishCard(card: BattleCard): BattleCard {
 }
 
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
-  const baseCount =
-    WISH_CHOICE_COUNT + (state.rng() * PERCENT_DENOMINATOR < state.talentEffects.wishExtraChoiceChance ? 1 : 0);
+  const baseCount = WISH_CHOICE_COUNT + (rollPercent(state.talentEffects.wishExtraChoiceChance, state.rng) ? 1 : 0);
 
   let candidates = getOfferableCardPool().filter((candidate) => candidate.id !== card.id);
 
@@ -188,12 +192,7 @@ function applyWishDesperateTrigger(state: BattleState, combatTexts: CombatTextEv
 function applyWishManaTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   const manaGain = state.talentEffects.manaOnWish + state.gearEffects.manaOnWish;
   if (manaGain <= 0) return state;
-  const nextState = gainMana(state, manaGain);
-  const gained = nextState.mana - state.mana;
-  if (gained > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
-  }
-  return nextState;
+  return gainManaWithCombatText(state, manaGain, combatTexts, { skipFightPacing: true });
 }
 
 export function chooseWishCard(state: BattleState, cardId: string | null) {

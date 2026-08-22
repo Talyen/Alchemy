@@ -6,7 +6,7 @@
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import { addPlayerStatus, setFlag, type BattleState, type CombatTextEvent } from "./types";
-import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { addForgeToPlayer } from "./status-forge";
 import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
@@ -70,18 +70,7 @@ function procArmorBlockThreshold(state: BattleState, newArmor: number, combatTex
   ) {
     return state;
   }
-  const nextState = addPlayerStatus(
-    state,
-    "block",
-    paceCombatMagnitude(state, state.talentEffects.armorBlockAmount, "player"),
-  );
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: "block",
-    amount: nextState.playerStatuses.block - state.playerStatuses.block,
-  });
-  return nextState;
+  return addPlayerStatusWithCombatText(state, "block", state.talentEffects.armorBlockAmount, combatTexts);
 }
 
 function procArmorCleanseThreshold(state: BattleState, newArmor: number, combatTexts: CombatTextEvent[]) {

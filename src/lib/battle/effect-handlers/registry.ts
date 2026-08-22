@@ -67,7 +67,7 @@ export const EFFECT_APPLY_BY_KIND = {
   "next-hit-poison": applyNextHitPoisonEffect,
 } satisfies Record<RegisteredEffectKind, EffectHandler>;
 
-export function hasEffectApplyHandler(kind: BattleCardEffectKind): kind is RegisteredEffectKind {
+function hasEffectApplyHandler(kind: BattleCardEffectKind): kind is RegisteredEffectKind {
   return kind !== "chance" && kind !== "repeat-over-turns" && kind in EFFECT_APPLY_BY_KIND;
 }
 

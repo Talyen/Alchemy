@@ -1,16 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { BATTLE_CARD_EFFECT_KINDS, RECURSIVE_BATTLE_CARD_EFFECT_KINDS } from "@/lib/game-data";
-import { EFFECT_APPLY_BY_KIND, hasEffectApplyHandler } from "@/lib/battle/effect-handlers/registry";
+import { EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
 
 describe("battle effect-handlers registry", () => {
   it("provides an apply handler for every registered kind except recursive kinds", () => {
     const recursive = new Set<string>(RECURSIVE_BATTLE_CARD_EFFECT_KINDS);
+    const registered = new Set(Object.keys(EFFECT_APPLY_BY_KIND));
     for (const kind of BATTLE_CARD_EFFECT_KINDS) {
-      if (recursive.has(kind) || !hasEffectApplyHandler(kind)) {
-        expect(hasEffectApplyHandler(kind)).toBe(false);
-        continue;
-      }
-      expect(EFFECT_APPLY_BY_KIND[kind]).toBeTypeOf("function");
+      expect(registered.has(kind)).toBe(!recursive.has(kind));
     }
   });
 

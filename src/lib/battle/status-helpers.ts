@@ -9,15 +9,8 @@ import {
   TRAIT_DAMAGE_RULES,
   TRAIT_DAMAGE_WEAKNESS,
 } from "../game-constants";
-import { mergeCombatText } from "./combat-text";
-import {
-  addPlayerStatus,
-  applyPlayerCombatDamage,
-  type BattleState,
-  type CombatTextEvent,
-  type CombatTextStat,
-} from "./types";
-import { paceCombatMagnitude } from "./fight-pacing";
+import { addPlayerStatusWithCombatText, mergeCombatText } from "./combat-text";
+import { applyPlayerCombatDamage, type BattleState, type CombatTextEvent, type CombatTextStat } from "./types";
 
 const DECAY_THRESHOLD = 1;
 const MIN_ARMOR = 0;
@@ -141,20 +134,7 @@ function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): 
   const hasArmorBreakTalent = nextState.talentEffects.armorBreakBlock > 0;
 
   if (armorBroke && hasArmorBreakTalent) {
-    const beforeBlock = nextState.playerStatuses.block;
-    nextState = addPlayerStatus(
-      nextState,
-      "block",
-      paceCombatMagnitude(nextState, nextState.talentEffects.armorBreakBlock, "player"),
-    );
-    if (combatTexts) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "status",
-        stat: "block",
-        amount: nextState.playerStatuses.block - beforeBlock,
-      });
-    }
+    nextState = addPlayerStatusWithCombatText(nextState, "block", nextState.talentEffects.armorBreakBlock, combatTexts);
   }
 
   return nextState;

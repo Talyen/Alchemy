@@ -4,9 +4,11 @@
  * Depended on by: effect-handlers, card-play, damage, status-player, status-cc,
  * status-stun-resolve, damage-status-riders, status-ticks, enemy-turn, trinket-effects, wish.
  */
-import { harmfulPlayerStatusIds } from "@/lib/game-data";
+import { harmfulPlayerStatusIds, type PlayerStatusId } from "@/lib/game-data";
 import {
+  addPlayerStatus,
   applyPlayerHealing,
+  gainMana,
   scaleGoldReward,
   type BattleState,
   type CombatTextEvent,
@@ -104,6 +106,46 @@ export function applyHealOnManaGain(
 ): BattleState {
   if (state.talentEffects.healOnManaGain <= 0 || gainAmount <= 0) return state;
   return applyHealingWithCombatText(state, state.talentEffects.healOnManaGain, combatTexts);
+}
+
+// Paces the mana amount, applies it capped at maxMana, and reports the applied
+// gain (never the authored amount) as floating text.
+export function gainManaWithCombatText(
+  state: BattleState,
+  amount: number,
+  combatTexts?: CombatTextEvent[],
+  options?: { skipFightPacing?: boolean },
+): BattleState {
+  if (amount <= 0) return state;
+  const granted = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
+  const nextState = gainMana(state, granted);
+  const gained = nextState.mana - state.mana;
+  if (gained > 0 && combatTexts) {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
+  }
+  return nextState;
+}
+
+// Paces the status amount and reports the applied delta as floating text so
+// clamped applications never display more than actually landed.
+export function addPlayerStatusWithCombatText(
+  state: BattleState,
+  stat: PlayerStatusId,
+  amount: number,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
+  if (amount <= 0) return state;
+  const before = state.playerStatuses[stat];
+  const nextState = addPlayerStatus(state, stat, paceCombatMagnitude(state, amount, "player"));
+  if (combatTexts) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat,
+      amount: nextState.playerStatuses[stat] - before,
+    });
+  }
+  return nextState;
 }
 
 export function addGoldWithCombatText(

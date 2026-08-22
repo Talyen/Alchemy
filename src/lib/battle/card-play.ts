@@ -5,7 +5,13 @@
  */
 import { drawFromState, applyDrawResult } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
-import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import {
+  addGoldWithCombatText,
+  addPlayerStatusWithCombatText,
+  applyHealingWithCombatText,
+  gainManaWithCombatText,
+  mergeCombatText,
+} from "./combat-text";
 import { type BattleCard } from "@/lib/game-data";
 import {
   type BattleResolution,
@@ -14,15 +20,12 @@ import {
   type CombatTextEvent,
   isPlayerDefeated,
   addEnemyStatus,
-  addPlayerStatus,
-  gainMana,
 } from "./types";
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { rollPercent } from "./status-helpers";
 
 import { cardHasDamageType, computeEffectiveCost } from "./card-cost-rules";
-import { paceCombatMagnitude } from "./fight-pacing";
 
 /**
  * Resolves the final state and cost for a played card, modifying flags if discounts were used.
@@ -133,18 +136,7 @@ function executeCardPlayState(
 
   if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {
     if (rollPercent(state.gearEffects.manaOnNatureDamageChance, state.rng)) {
-      const granted = paceCombatMagnitude(nextState, 1, "player");
-      const nextMana = gainMana(nextState, granted);
-      const gained = nextMana.mana - nextState.mana;
-      if (gained > 0) {
-        mergeCombatText(combatTexts, {
-          target: "player",
-          kind: "status",
-          stat: "mana",
-          amount: gained,
-        });
-        nextState = nextMana;
-      }
+      nextState = gainManaWithCombatText(nextState, 1, combatTexts);
     }
   }
 
@@ -163,18 +155,10 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
     !state.flags.resonantChimeUsedThisTurn &&
     state.cardsPlayedThisTurn >= resonantChimeCardsRequired
   ) {
-    const grantedMana = paceCombatMagnitude(state, resonantChimeMana, "player");
-    const nextState = gainMana(state, grantedMana);
-    const gained = nextState.mana - state.mana;
     // At full mana the chime holds its charge instead of wasting it.
-    if (gained <= 0) return state;
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "mana",
-      amount: gained,
-    });
-    return { ...nextState, flags: { ...state.flags, resonantChimeUsedThisTurn: true } };
+    const afterMana = gainManaWithCombatText(state, resonantChimeMana, combatTexts);
+    if (afterMana.mana <= state.mana) return state;
+    return { ...afterMana, flags: { ...state.flags, resonantChimeUsedThisTurn: true } };
   }
   return state;
 }
@@ -183,18 +167,12 @@ function applyNatureCardPlayTalents(state: BattleState, card: BattleCard, combat
   if (!cardHasDamageType(card, "nature")) return state;
   let nextState = state;
   if (nextState.talentEffects.blockOnNatureCard > 0) {
-    const before = nextState.playerStatuses.block;
-    nextState = addPlayerStatus(
+    nextState = addPlayerStatusWithCombatText(
       nextState,
       "block",
-      paceCombatMagnitude(nextState, nextState.talentEffects.blockOnNatureCard, "player"),
+      nextState.talentEffects.blockOnNatureCard,
+      combatTexts,
     );
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "block",
-      amount: nextState.playerStatuses.block - before,
-    });
   }
   if (nextState.talentEffects.healOnNatureCard > 0) {
     nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnNatureCard, combatTexts);
@@ -236,16 +214,7 @@ function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTe
     }
   }
   if (talents.blockOnConsume > 0) {
-    const before = nextState.playerStatuses.block;
-    nextState = addPlayerStatus(nextState, "block", paceCombatMagnitude(nextState, talents.blockOnConsume, "player"));
-    if (combatTexts) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "status",
-        stat: "block",
-        amount: nextState.playerStatuses.block - before,
-      });
-    }
+    nextState = addPlayerStatusWithCombatText(nextState, "block", talents.blockOnConsume, combatTexts);
   }
   return nextState;
 }

@@ -5,16 +5,19 @@ import {
   addPlayerStatus,
   playerStatusDelta,
   setFlag,
-  gainMana,
   type BattleState,
   type CombatTextEvent,
   type EnemyMitigation,
 } from "./types";
-import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import {
+  addGoldWithCombatText,
+  applyHealingWithCombatText,
+  gainManaWithCombatText,
+  mergeCombatText,
+} from "./combat-text";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { rollPercent, getBattleRng, rollTalentChance } from "./status-helpers";
 import { computeLeechHeal, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
-import { paceCombatMagnitude } from "./fight-pacing";
 
 function executePlayerHealing(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (amount <= 0) return state;
@@ -34,13 +37,7 @@ function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[])
   let nextState = state;
   for (const chance of [state.talentEffects.manaOnLeechChance, state.gearEffects.manaOnLeechChance]) {
     if (rollTalentChance(chance, state)) {
-      const grantedMana = paceCombatMagnitude(nextState, 1, "player");
-      const afterMana = gainMana(nextState, grantedMana);
-      const gained = afterMana.mana - nextState.mana;
-      if (gained > 0) {
-        mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
-        nextState = afterMana;
-      }
+      nextState = gainManaWithCombatText(nextState, 1, combatTexts);
     }
   }
   return nextState;

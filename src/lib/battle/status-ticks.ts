@@ -114,6 +114,13 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const multiplier = getEnemyDamageMultiplier(state, "bleed");
   const finalDamage = Math.round(damage * multiplier);
   const leechAmount = state.pendingBleedLeechHealing;
+  // Merge before the tick like burn/poison so all DoT damage text shares one order.
+  mergeCombatText(combatTexts, {
+    target: "enemy",
+    kind: "damage",
+    stat: "bleed",
+    amount: finalDamage,
+  });
   return dealEnemyDotTick(state, "bleed", finalDamage, 0, combatTexts, (nextState) => {
     let next = { ...nextState, pendingBleedLeechHealing: 0 };
     if (leechAmount > 0) {
@@ -124,12 +131,6 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
         { skipFightPacing: true },
       );
     }
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "damage",
-      stat: "bleed",
-      amount: finalDamage,
-    });
     return next;
   });
 }

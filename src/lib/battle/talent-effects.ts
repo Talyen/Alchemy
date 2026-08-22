@@ -4,11 +4,10 @@
  * Depended on by: ./status-stun-resolve, ./damage-status-riders.
  */
 import { drawFromState, applyDrawResult } from "./draw";
-import { mergeCombatText } from "./combat-text";
-import { addPlayerStatus, setFlag, stripEnemyArmor, gainMana, type BattleState, type CombatTextEvent } from "./types";
+import { addPlayerStatusWithCombatText, gainManaWithCombatText } from "./combat-text";
+import { setFlag, stripEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 import { addForgeToPlayer } from "./status-forge";
 import { FREE_CARD_SENTINEL } from "../game-constants";
-import { paceCombatMagnitude } from "./fight-pacing";
 
 export interface CrowdControlTriggerBonuses {
   block?: number;
@@ -34,16 +33,7 @@ export function applyCrowdControlTriggerBonuses(
   }
   const block = bonuses.block ?? 0;
   if (block > 0) {
-    const before = nextState.playerStatuses.block;
-    nextState = addPlayerStatus(nextState, "block", paceCombatMagnitude(nextState, block, "player"));
-    if (combatTexts) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "status",
-        stat: "block",
-        amount: nextState.playerStatuses.block - before,
-      });
-    }
+    nextState = addPlayerStatusWithCombatText(nextState, "block", block, combatTexts);
   }
   const forge = bonuses.forge ?? 0;
   if (forge > 0) {
@@ -54,18 +44,7 @@ export function applyCrowdControlTriggerBonuses(
   }
   const mana = bonuses.mana ?? 0;
   if (mana > 0) {
-    const grantedMana = paceCombatMagnitude(nextState, mana, "player");
-    const afterMana = gainMana(nextState, grantedMana);
-    const gained = afterMana.mana - nextState.mana;
-    nextState = afterMana;
-    if (gained > 0 && combatTexts) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "status",
-        stat: "mana",
-        amount: gained,
-      });
-    }
+    nextState = gainManaWithCombatText(nextState, mana, combatTexts);
   }
   return nextState;
 }
