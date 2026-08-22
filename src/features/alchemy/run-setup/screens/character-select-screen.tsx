@@ -1,7 +1,6 @@
 // Hero selection screen with character art, keyword previews, shine frames, and shimmer feedback.
 // Depends on character game data, shared alchemy UI, and hover shimmer hooks.
 // Used when beginning a fresh run before destination routing starts.
-import { useRef, useState } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import {
@@ -18,6 +17,7 @@ import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "../../shared/ui/tooltip-panel";
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
+import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import {
   cardInteractiveGlowClass,
   cardSurfaceClass,
@@ -65,15 +65,27 @@ function CharacterCard({
   isLocked: boolean;
   unlockRequirementText: string;
 }) {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const cardWrapperRef = useRef<HTMLDivElement>(null);
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
+    useHoverVisible<HTMLDivElement>();
   const char = characters[id];
   const art = characterArt[char.id];
   const shineColors = isLocked ? [] : id === "wildcard" ? WILDCARD_KEYWORD_SHINE_COLORS : getCharacterShineColors(id);
 
+  function handleEnter() {
+    if (!isLocked) onHoverShimmer(id);
+    onMouseEnter();
+  }
+
   return (
     <div className="flex min-w-0 flex-col items-center gap-2">
-      <div ref={cardWrapperRef} className={cn("relative min-w-0", chooserHeroArtWidthClass)}>
+      <div
+        ref={triggerRef}
+        className={cn("relative min-w-0", chooserHeroArtWidthClass)}
+        onMouseEnter={handleEnter}
+        onMouseLeave={onMouseLeave}
+        onFocusCapture={onFocusCapture}
+        onBlurCapture={onBlurCapture}
+      >
         <TiltSurface
           as="button"
           ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
@@ -94,11 +106,6 @@ function CharacterCard({
               onSelect(id);
             }
           }}
-          onMouseEnter={() => {
-            if (!isLocked) onHoverShimmer(id);
-            setShowTooltip(true);
-          }}
-          onMouseLeave={() => setShowTooltip(false)}
         >
           <img
             src={art}
@@ -110,8 +117,8 @@ function CharacterCard({
             )}
           />
         </TiltSurface>
-        {showTooltip ? (
-          <PortaledTooltip triggerRef={cardWrapperRef} visible>
+        {visible ? (
+          <PortaledTooltip triggerRef={triggerRef} visible>
             <TooltipHeader>{char.name}</TooltipHeader>
 
             {isLocked ? (

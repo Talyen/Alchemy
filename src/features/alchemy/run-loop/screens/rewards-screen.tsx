@@ -1,16 +1,11 @@
 // Victory reward screen — pick a card or trinket to add or skip.
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
-import {
-  gearDefinitions,
-  getAstralShineColors,
-  getGearInstanceDescriptionLines,
-  getGearInstanceTitle,
-  type GearInstance,
-} from "@/lib/gear";
+import { gearDefinitions, getAstralShineColors, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 
 import { DetailPopup } from "../../shared/ui/card-popup";
+import { GearDetailPopup } from "../../shared/ui/gear-detail-popup";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
 import { InteractiveArtTile } from "../../shared/ui/interactive-art-tile";
 import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
@@ -137,7 +132,6 @@ function GearRewardButton({
   const definition = gearDefinitions[instance.definitionId];
   const title = getGearInstanceTitle(instance);
   const art = definition?.art ?? "";
-  const descriptionLines = getGearInstanceDescriptionLines(instance);
   return (
     <InteractiveArtTile
       id={instance.instanceId}
@@ -150,15 +144,10 @@ function GearRewardButton({
       selected={selected}
       onClick={onClick}
       ariaLabel={`Select ${title}`}
+      // Same rich content as the shop so reward choices expose rarity and
+      // rolled affixes, not just base description lines.
       popup={({ visible, triggerRef }) => (
-        <DetailPopup
-          idPrefix={instance.instanceId}
-          title={title}
-          subtitle={undefined}
-          descriptionLines={descriptionLines}
-          visible={visible}
-          triggerRef={triggerRef}
-        />
+        <GearDetailPopup definition={definition} instance={instance} visible={visible} triggerRef={triggerRef} />
       )}
       as="button"
     />

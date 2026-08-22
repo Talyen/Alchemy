@@ -10,6 +10,7 @@ import {
   type RefObject,
   useEffect,
   useRef,
+  useState,
 } from "react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -26,9 +27,10 @@ import { TiltSurface } from "./tilt-surface";
 
 interface BattleCardButtonProps {
   card: BattleCard;
-  hovered: boolean;
-  onHoverStart: () => void;
-  onHoverEnd: () => void;
+  /** Controlled hover state; omit all three hover props to let the button track hover itself. */
+  hovered?: boolean;
+  onHoverStart?: (() => void) | undefined;
+  onHoverEnd?: (() => void) | undefined;
   onClick?: ((event: MouseEvent<HTMLButtonElement>) => void) | undefined;
   onPointerDown?: ((event: ReactPointerEvent<HTMLButtonElement>) => void) | undefined;
   buttonRef?: Ref<HTMLButtonElement> | undefined;
@@ -54,20 +56,16 @@ interface BattleCardButtonProps {
 }
 
 export function BattleCardButton(props: BattleCardButtonProps) {
-  const {
-    card,
-    hovered,
-    onHoverStart,
-    onHoverEnd,
-    wrapperClassName,
-    wrapperStyle,
-    wrapperDataCardKey,
-    dragging = false,
-  } = props;
+  const { wrapperClassName, wrapperStyle, wrapperDataCardKey, dragging = false } = props;
   const inheritedDescriptionContext = useCardDescriptionContext();
   const descriptionContext = props.descriptionContext ?? inheritedDescriptionContext;
   const wrapperRef = useRef<HTMLDivElement>(null);
   const hoverEndTimerRef = useRef(0);
+  const [internalHovered, setInternalHovered] = useState(false);
+  // Hand-style call sites control hover for handoff timing; simple call sites
+  // omit the props and get self-contained hover behavior.
+  const isControlledHover = props.onHoverStart !== undefined || props.onHoverEnd !== undefined;
+  const hovered = isControlledHover ? (props.hovered ?? false) : internalHovered;
 
   useEffect(() => {
     return () => window.clearTimeout(hoverEndTimerRef.current);
@@ -75,7 +73,14 @@ export function BattleCardButton(props: BattleCardButtonProps) {
 
   function handleHoverStart() {
     window.clearTimeout(hoverEndTimerRef.current);
-    onHoverStart();
+    if (isControlledHover) props.onHoverStart?.();
+    else setInternalHovered(true);
+  }
+
+  function handleHoverEnd() {
+    window.clearTimeout(hoverEndTimerRef.current);
+    if (isControlledHover) props.onHoverEnd?.();
+    else setInternalHovered(false);
   }
 
   function handleHoverLeave(event: MouseEvent<HTMLDivElement>) {
@@ -84,11 +89,11 @@ export function BattleCardButton(props: BattleCardButtonProps) {
       return;
     }
     if (!wrapperDataCardKey) {
-      onHoverEnd();
+      handleHoverEnd();
       return;
     }
     window.clearTimeout(hoverEndTimerRef.current);
-    hoverEndTimerRef.current = window.setTimeout(onHoverEnd, HAND_HOVER_HANDOFF_MS);
+    hoverEndTimerRef.current = window.setTimeout(handleHoverEnd, HAND_HOVER_HANDOFF_MS);
   }
 
   return (
@@ -102,13 +107,13 @@ export function BattleCardButton(props: BattleCardButtonProps) {
       onMouseLeave={handleHoverLeave}
     >
       <CardHoverPopup
-        card={card}
+        card={props.card}
         visible={hovered && !dragging}
         triggerRef={wrapperRef}
         descriptionContext={descriptionContext}
         padding={props.tooltipPadding}
       />
-      <CardButtonSurface {...props} onHoverStart={handleHoverStart} />
+      <CardButtonSurface {...props} hovered={hovered} onHoverStart={handleHoverStart} onHoverEnd={handleHoverEnd} />
     </div>
   );
 }
@@ -146,8 +151,8 @@ function CardHoverPopup({
 function CardButtonSurface({
   card,
   hovered,
-  onHoverStart,
-  onHoverEnd,
+  onHoverStart = () => {},
+  onHoverEnd = () => {},
   onClick,
   onPointerDown,
   buttonRef,

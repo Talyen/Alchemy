@@ -92,9 +92,6 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
 }
 
 function CorruptionResultView({ result, onContinue }: { result: CorruptionResult; onContinue: () => void }) {
-  const [hoveredOriginal, setHoveredOriginal] = useState(false);
-  const [hoveredResult, setHoveredResult] = useState(false);
-
   return (
     <div className="flex flex-col items-center gap-5">
       <div>
@@ -104,9 +101,6 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
         <div className="col-start-1 flex flex-col items-center">
           <BattleCardButton
             card={result.originalCard}
-            hovered={hoveredOriginal}
-            onHoverStart={() => setHoveredOriginal(true)}
-            onHoverEnd={() => setHoveredOriginal(false)}
             ariaLabel={`Original: ${getCardDisplayTitle(result.originalCard)}`}
             shimmerActive={false}
             shimmerToken={undefined}
@@ -119,9 +113,6 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
         <div className="col-start-3 flex flex-col items-center">
           <BattleCardButton
             card={result.corruptedCard}
-            hovered={hoveredResult}
-            onHoverStart={() => setHoveredResult(true)}
-            onHoverEnd={() => setHoveredResult(false)}
             ariaLabel={`Result: ${getCardDisplayTitle(result.corruptedCard)}`}
             shimmerActive={false}
             shimmerToken={undefined}

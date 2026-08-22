@@ -22,26 +22,20 @@ interface PurchasableCardItemProps {
 
 export function PurchasableCardItem(props: PurchasableCardItemProps) {
   const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass } = props;
-  const [hovered, setHovered] = useState(false);
   const canAfford = gold >= price;
 
   const media = (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-      <BattleCardButton
-        card={card}
-        hovered={hovered}
-        onHoverStart={() => setHovered(true)}
-        onHoverEnd={() => setHovered(false)}
-        onClick={!purchased && canAfford ? onBuy : undefined}
-        disabled={purchased || !canAfford}
-        ariaLabel={purchased ? getCardDisplayTitle(card) : `Buy ${getCardDisplayTitle(card)}`}
-        shimmerActive={false}
-        shimmerToken={undefined}
-        className={cn(widthClass, !purchased && canAfford && cardInteractiveGlowClass)}
-      >
-        <ShopPriceChip price={price} gold={gold} purchased={purchased} />
-      </BattleCardButton>
-    </div>
+    <BattleCardButton
+      card={card}
+      onClick={!purchased && canAfford ? onBuy : undefined}
+      disabled={purchased || !canAfford}
+      ariaLabel={purchased ? getCardDisplayTitle(card) : `Buy ${getCardDisplayTitle(card)}`}
+      shimmerActive={false}
+      shimmerToken={undefined}
+      className={cn(widthClass, !purchased && canAfford && cardInteractiveGlowClass)}
+    >
+      <ShopPriceChip price={price} gold={gold} purchased={purchased} />
+    </BattleCardButton>
   );
 
   return <PurchasableShopTile media={media} purchased={purchased} />;

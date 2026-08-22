@@ -54,7 +54,6 @@ export function AlchemistShopScreen({
   const [selectedB, setSelectedB] = useState<number | null>(null);
   const [mixedCard, setMixedCard] = useState<BattleCard | null>(null);
   const [mixPage, setMixPage] = useState(0);
-  const [mixedCardHovered, setMixedCardHovered] = useState(false);
 
   function cancelMix() {
     setMixMode(false);
@@ -120,18 +119,13 @@ export function AlchemistShopScreen({
               <p className="text-lg font-semibold text-balance text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
             </div>
             <div className="flex flex-col items-center gap-3">
-              <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>
-                <BattleCardButton
-                  card={mixedCard}
-                  hovered={mixedCardHovered}
-                  onHoverStart={() => setMixedCardHovered(true)}
-                  onHoverEnd={() => setMixedCardHovered(false)}
-                  ariaLabel={MIXED_POTION_TITLE}
-                  shimmerActive={false}
-                  shimmerToken={undefined}
-                  className={collectionTileWidthClass}
-                />
-              </div>
+              <BattleCardButton
+                card={mixedCard}
+                ariaLabel={MIXED_POTION_TITLE}
+                shimmerActive={false}
+                shimmerToken={undefined}
+                className={collectionTileWidthClass}
+              />
             </div>
             <div>
               <Button
