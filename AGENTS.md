@@ -16,7 +16,7 @@ Write for a collaborator who knows Alchemy as a game, not its file tree. Lead wi
 
 ## Documentation owners
 
-For non-trivial work, select only the owner that matches the task; other documents link to that owner instead of copying volatile commands, versions, counts, or inventories.
+For non-trivial work, choose the primary owner that matches the task. Read an additional owner only when the change demonstrably crosses that document's boundary; other documents link to the owner instead of copying volatile commands, versions, counts, or inventories.
 
 | Need                                            | Read                                                                 |
 | ----------------------------------------------- | -------------------------------------------------------------------- |
@@ -43,9 +43,7 @@ For non-trivial work, select only the owner that matches the task; other documen
 
 ## Verification
 
-- Run `npm run verify:changed -- --diff` (or explicit paths); `--plan` previews without running. The route catalog owns selection; risk routes may include focused E2E by default. Details: [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change).
-- During implementation, run the changed-path route and focused tests. Use the `verifier` skill before handoff for static typechecks, boundary linting, and route test execution; treat lint, test, flake, and React Compiler failures as real problems.
-- Active plans live only under `docs/Plans/` (for multi-turn, cross-session architectural work): scaffold with `npm run new:plan -- <Name>`, validate with `npm run docs:check`, and delete the plan file when the work ends — `npm run docs:check:final` requires none remaining.
+- After edits, use the `verifier` skill for changed-path verification and the final handoff gate. [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) owns exact commands and route policy; treat lint, test, flake, and React Compiler failures as real problems.
 
 ## Branch and commits
 
@@ -57,7 +55,7 @@ For non-trivial work, select only the owner that matches the task; other documen
 
 - **Run state:** feature code outside `shared/stores/` uses capability ports and domain stores, never `run-transitions` directly. Gameplay writes go through `run-session-write-port.ts` and commit through `dispatchRunSessionCommand()`. See [ARCHITECTURE](./docs/ARCHITECTURE.md#run-state).
 - **Controllers:** screens receive run/battle bindings through route or shell controller props, not React context.
-- **Battle:** treat `BattleState` as immutable; use `state.rng` and `Math.round()`, never `Math.random()`/`Math.floor()`. Tuning belongs in topical files under `src/lib/game-constants/`.
+- **Battle:** treat `BattleState` as immutable and use the supplied RNG; follow [REFERENCE](./docs/REFERENCE.md#battle-implementation-rules) for arithmetic and engine rules. Tuning belongs in topical files under `src/lib/game-constants/`.
 - **Content:** `descriptionLines` must match effects. Run-earned materials use `awardMaterialsDuringRun()`, not progress `addMaterials()`.
 - **Persistence:** change schemas, normalization/migrations, defaults, hydration/snapshots, and legacy fixtures together as applicable. Follow [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md).
 - **Routes/assets:** route screens are statically imported through `screen-routes/`; game art loads eagerly. Generated asset barrels are outputs—edit their manifest/source and regenerate. Pipeline: [WORKFLOWS-ASSETS](./docs/WORKFLOWS-ASSETS.md).
@@ -73,10 +71,9 @@ For non-trivial work, select only the owner that matches the task; other documen
 ## UI
 
 - Plain function components with explicit `Props`, not `React.FC`; `cn()` for conditional Tailwind classes.
-- CSS `active:` feedback; shared hover/press, button, and fade rules live in [WORKFLOWS § Interactive buttons](./docs/WORKFLOWS.md#interactive-button-conventions), tooltips in [§ Hover tooltips](./docs/WORKFLOWS.md#hover-tooltips) — do not invent parallel motion.
-- `FadeSlot` for in-screen identity swaps; no staggered page chrome, no Framer hover scale.
+- Motion, interaction, and tooltip behavior is owned by [WORKFLOWS](./docs/WORKFLOWS.md#screen-fade-motion); follow the matching section before changing it.
 - Cosmetic randomness initializes lazily via `useState(() => ...)`, never render-time `Math.random()`.
-- No dedicated accessibility features beyond test-serving names/states; see [WORKFLOWS § Accessibility stance](./docs/WORKFLOWS.md#accessibility-stance).
+- Accessibility scope is intentionally constrained; follow the canonical [WORKFLOWS stance](./docs/WORKFLOWS.md#accessibility-stance) before adding accessibility-specific behavior.
 
 ## Environment and failures
 

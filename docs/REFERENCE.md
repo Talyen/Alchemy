@@ -107,6 +107,7 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
 - **Death's Door** — [Domain Glossary](#domain-glossary).
 - **Fight pacing** — hidden combat scaler, not a player-facing status. [Domain Glossary](#domain-glossary). Balance simulator: `ALCHEMY_BALANCE_PACING=off` measures raw kit.
+- **State and arithmetic** — treat `BattleState` as immutable. Combat magnitudes use nearest-integer `Math.round()`, never `Math.floor()`; the battle-engine lint boundary enforces this convention.
 - **Battle RNG** — live combat draws the persisted `world` run stream (`withDraftWorldBattleRng` inside a command). Pure engine code uses `state.rng` / `getBattleRng(state)`, never `Math.random()`. Tests and the balance simulator use `createRunStreamRng` (same mixer as `nextRunRngValue`). `createBattleState` may pass explicit RNG in unit tests.
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types.ts`; `braced` enemy trait halves incoming stun.
 - **Static enemy actions** — `enemyAttackEffects` resolve sequentially every turn; no randomized intents.
