@@ -67,10 +67,6 @@ export function TalentUnlockBurst({ active, colors }: { active: boolean; colors:
   if (!active) return null;
 
   return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden
-      className="pointer-events-none absolute -top-[50%] -left-[50%] z-30 h-[200%] w-[200%]"
-    />
+    <canvas ref={canvasRef} className="pointer-events-none absolute -top-[50%] -left-[50%] z-30 h-[200%] w-[200%]" />
   );
 }

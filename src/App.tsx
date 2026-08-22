@@ -162,7 +162,6 @@ function AppMainContent({
         />
         {content}
         <div
-          aria-hidden
           className="pointer-events-none absolute inset-0 z-[90] bg-black"
           style={{ opacity: Math.max(0, 1 - brightness / 100) }}
         />

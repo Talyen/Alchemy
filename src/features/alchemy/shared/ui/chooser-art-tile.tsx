@@ -91,7 +91,6 @@ export function ChooserArtTile({
         <img
           src={art}
           alt=""
-          aria-hidden
           className="pointer-events-none block h-full w-full object-cover select-none"
           draggable={false}
         />

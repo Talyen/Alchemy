@@ -25,7 +25,6 @@ function SalvageCurrencyChip({ currency, count }: { currency: CraftingCurrencyDe
         type="button"
         data-testid="armory-salvage-currency-preview"
         data-currency-id={currency.id}
-        aria-label={`${currency.displayName} +${count}`}
         className="relative h-16 w-16 overflow-hidden rounded-xl border border-border/80 bg-black"
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}

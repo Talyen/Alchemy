@@ -7,10 +7,7 @@ export function PortraitHurtVfx({ pulse }: { pulse: number | null }) {
 
   return (
     <>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-20 animate-hurt-flash rounded-[inherit] bg-red-950/85"
-      />
+      <div className="pointer-events-none absolute inset-0 z-20 animate-hurt-flash rounded-[inherit] bg-red-950/85" />
       <HurtSparkBurst flashToken={pulse} />
     </>
   );

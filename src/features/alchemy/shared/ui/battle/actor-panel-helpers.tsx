@@ -67,26 +67,19 @@ export function ArtTurnActiveBorder({
   shineColor?: readonly string[];
 }) {
   const palette = shineColor ?? SHINE_PALETTES.turnEnemy;
-  const label = side === "player" ? "Your Turn" : "Enemy Turn";
   return (
-    <>
-      <ShineBorder
-        data-testid={side === "player" ? "turn-badge-player" : "turn-badge-enemy"}
-        data-active={active ? "true" : "false"}
-        borderWidth={ACTOR_PANEL_CONFIG.turnActiveArtBorderWidth}
-        duration={ACTOR_PANEL_CONFIG.turnActiveShineDurationSeconds}
-        shineColor={[...palette]}
-        className={cn(
-          "z-[5] rounded-shell-hero transition-opacity",
-          urgentHide ? "duration-150" : "duration-500",
-          active ? "opacity-100" : "opacity-0",
-        )}
-        aria-hidden
-      />
-      <span className="sr-only" aria-live="polite">
-        {active ? label : ""}
-      </span>
-    </>
+    <ShineBorder
+      data-testid={side === "player" ? "turn-badge-player" : "turn-badge-enemy"}
+      data-active={active ? "true" : "false"}
+      borderWidth={ACTOR_PANEL_CONFIG.turnActiveArtBorderWidth}
+      duration={ACTOR_PANEL_CONFIG.turnActiveShineDurationSeconds}
+      shineColor={[...palette]}
+      className={cn(
+        "z-[5] rounded-shell-hero transition-opacity",
+        urgentHide ? "duration-150" : "duration-500",
+        active ? "opacity-100" : "opacity-0",
+      )}
+    />
   );
 }
 

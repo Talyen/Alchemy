@@ -36,8 +36,8 @@ Structural screen twins → Simplification; Playwright rewrites → TestQuality;
 
 - **Interaction:** every modal has a dismiss path; destructive actions confirm; Escape cancels overlays where expected. Every `setPointerCapture` releases on up/cancel/unmount; cursor/body styles restore; no ghost clicks; one interaction mode at a time.
 - **Feedback:** visible click response; progress/disabled during async work; victory/defeat and claim flows remain completable/dismissible.
-- **Keyboard/focus:** accessible names and roles; visible focus rings; sensible focus restore on modal/route transitions; keyboard order follows visible order.
-- **Responsive/motion:** controls reachable at supported viewports; scroll lock/restore correct; reduced-motion avoids nonessential blocking motion while preserving feedback; Electron blur/deactivate must not leave drag/targeting armed.
+- **Keyboard/focus:** programmatic names and states on interactive controls where tests locate them; no dedicated focus-management features (traps, restore, order) — Alchemy intentionally ships none.
+- **Responsive/motion:** controls reachable at supported viewports; scroll lock/restore correct; Electron blur/deactivate must not leave drag/targeting armed.
 - **Tokens:** prefer existing shadcn/Radix wrappers, CVA variants, Tailwind theme variables used by neighbors; no double padding on already-padded surfaces; drag motion tracks 1:1 and settles with interruptible springs.
 
 ## Known signals
@@ -45,4 +45,4 @@ Structural screen twins → Simplification; Playwright rewrites → TestQuality;
 - Arbitrary Tailwind literals (`w-[…]`, `p-[…]`, `text-[…]`) beside tokens; raw hex/`rgb(`/`hsl(` in TSX or `src/styles`; parallel button/card markup beside primitives; repeated shadow/border recipes.
 - Sibling controls with incompatible focus/selected/disabled/loading states; conflicting breakpoints/easing/durations in one surface family; inconsistent icon treatment.
 - `setPointerCapture` without matching release; overlapping drag+tooltip+modal handlers; tooltips intercepting clicks; primary actions without `isProcessing` guards; overlays without Escape wiring.
-- Window `blur`/`visibilitychange` leaving modes armed (check Armory + battle targeting, `desktop/`); focus lost/trapped across modals and routes; clickable non-controls and unnamed icon actions; body/container scroll left locked after overlay exit.
+- Window `blur`/`visibilitychange` leaving modes armed (check Armory + battle targeting, `desktop/`); clickable non-controls and unnamed icon actions; body/container scroll left locked after overlay exit.

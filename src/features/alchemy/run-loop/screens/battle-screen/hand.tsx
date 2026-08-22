@@ -124,7 +124,7 @@ export function BattleHand({
   const descriptionContext = useBattleDescriptionContext(battleState);
 
   return (
-    <div className={battleHandContainerClass} aria-label="Player hand">
+    <div className={battleHandContainerClass}>
       {battleState.hand.map((card, index) => {
         const cardKey = getHandCardKey(card);
         return (

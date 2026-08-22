@@ -64,27 +64,12 @@ function TalentCard({
   const showShine = interactive;
   const isLockedLook = !isUnlocked && !interactive && !isUnlocking;
 
-  const handleKeyDown = interactive
-    ? (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onUnlock?.(talent.id);
-        }
-      }
-    : undefined;
-
-  const ariaLabel = interactive
-    ? `Unlock talent: ${talent.name ? `${talent.name} — ` : ""}${talent.description}`
-    : undefined;
-
   const style = accentColor ? ({ "--talent-accent": accentColor } as CSSProperties) : undefined;
 
   const card = (
     <div
       role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
-      onKeyDown={handleKeyDown}
       className={cn(
         "talent-node relative h-[10.5rem] w-[20.5rem] shrink-0 rounded-lg bg-stone-900",
         showShine && "talent-card-available",
@@ -94,7 +79,6 @@ function TalentCard({
         interactive && "cursor-pointer",
       )}
       style={style}
-      aria-label={ariaLabel}
     >
       <TalentUnlockBurst active={isUnlocking} colors={shineColors} />
       <div

@@ -113,6 +113,19 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared
 
 ---
 
+## Accessibility stance
+
+Alchemy is visual-heavy and intentionally ships no dedicated accessibility
+features beyond what tests and robustness need. Keep semantic buttons and
+programmatic names/states (`aria-label`, `aria-disabled`, `aria-pressed`) —
+Playwright locates through them — and mark decorative art `aria-hidden`. Do not
+add focus traps or restore, screen-reader announcements, contrast tooling, or
+per-component reduced-motion variants. The single global
+`prefers-reduced-motion` block at the bottom of `src/styles/keyframes.css` is
+the only motion accommodation; leave it as-is.
+
+---
+
 ## Hover tooltips
 
 Every hover tooltip renders in the root-space `#tooltip-root` overlay (registered
@@ -366,7 +379,7 @@ Layout and ownership: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-
 | 6. Extend phase route ctx / `RenderAlchemyScreenProps` if new props are needed                                            | `src/app/screen-routes/route-ctx.ts`, `src/app/screen-routes/index.tsx`                                                                                                                                                                                                             |
 | 7. Wire navigation trigger                                                                                                | caller of `goToScreen("<name>")`                                                                                                                                                                                                                                                    |
 
-Boot restore/hydration sets a validated saved screen directly and intentionally bypasses the interactive transition table.
+Boot restore/hydration sets a validated saved screen directly and intentionally bypasses the interactive transition table. Screen components subscribing to Zustand stores should select narrow slices or use `useShallow` to prevent render churn during high-frequency combat ticks.
 
 ---
 

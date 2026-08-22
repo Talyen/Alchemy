@@ -1,14 +1,7 @@
 // Tilt-surface wrapper with shimmer overlay and selection ring support.
 // Handles tilt mechanics (mouseMove/mouseLeave → setTiltFromEvent/clearTiltFromEvent)
 // and the common card-surface decoration shared across card, boon, character, and homestead tiles.
-import {
-  type CSSProperties,
-  type KeyboardEvent,
-  type MouseEvent,
-  type PointerEvent,
-  type ReactNode,
-  type Ref,
-} from "react";
+import { type CSSProperties, type MouseEvent, type PointerEvent, type ReactNode, type Ref } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -201,23 +194,13 @@ function TiltSurfaceDiv({
   overlay,
 }: TiltSurfaceInner) {
   const { handleMouseMove, handleMouseLeave } = useTiltHandlers(tiltEnabled !== false, onMouseLeave);
-  const handleDivKeyDown = onDivClick
-    ? (e: KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onDivClick();
-        }
-      }
-    : undefined;
   return (
     <div
       ref={surfaceRef}
       data-testid={testId}
       {...(dataCount !== undefined ? { "data-count": dataCount } : {})}
       onClick={onDivClick}
-      onKeyDown={handleDivKeyDown}
       role={onDivClick ? "button" : undefined}
-      tabIndex={onDivClick ? 0 : undefined}
       aria-label={onDivClick ? ariaLabel : undefined}
       onMouseMove={handleMouseMove}
       onMouseEnter={onMouseEnter}

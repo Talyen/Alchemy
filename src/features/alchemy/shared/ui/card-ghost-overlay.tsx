@@ -12,7 +12,6 @@ export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: 
     <img
       src={ghost.art}
       alt=""
-      aria-hidden="true"
       data-variant={ghost.variant}
       className={cn("card-ghost-overlay pointer-events-none absolute z-[80] rounded-shell-hero bg-black object-cover")}
       onAnimationEnd={onDone}

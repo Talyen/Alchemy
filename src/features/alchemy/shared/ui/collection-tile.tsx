@@ -119,7 +119,7 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
         flipped={flipped}
         className="aspect-[3/4] w-full"
         front={<TileImage item={item} className={cn("h-full", cardArtImageClass)} />}
-        back={<img src={cardBack} alt="" aria-hidden="true" className={cn("block h-full w-full", cardArtImageClass)} />}
+        back={<img src={cardBack} className={cn("block h-full w-full", cardArtImageClass)} />}
       />
     );
   }

@@ -104,11 +104,8 @@ export function ArtPanel({
         <div
           ref={artWrapperRef}
           className="group/art-wrapper relative"
-          tabIndex={currentEnemy || descriptionLines ? 0 : undefined}
           onMouseEnter={() => setTooltipVisible(true)}
           onMouseLeave={() => setTooltipVisible(false)}
-          onFocus={() => setTooltipVisible(true)}
-          onBlur={() => setTooltipVisible(false)}
         >
           <ActorTooltip
             title={title}

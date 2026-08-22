@@ -172,7 +172,6 @@ export function ItemPickerGrid({
               key={`armory-inventory-filler-${index}`}
               data-testid="armory-inventory-filler"
               className={cn(collectionGridTileWidthClass, gearArtAspectClass)}
-              aria-hidden="true"
             />
           ))}
         </div>

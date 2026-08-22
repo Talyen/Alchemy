@@ -27,10 +27,7 @@ export function PaginationControls({
 
   if (totalPages <= 1) {
     return reserveSpace ? (
-      <div
-        className={cn("mt-4 w-full", NAVIGATION_CONFIG.paginationMinHeightClass, widthClass, className)}
-        aria-hidden="true"
-      />
+      <div className={cn("mt-4 w-full", NAVIGATION_CONFIG.paginationMinHeightClass, widthClass, className)} />
     ) : null;
   }
 

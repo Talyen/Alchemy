@@ -109,7 +109,7 @@ export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
   }, [imageUrl]);
 
   if (complete) {
-    return <div className={cn("w-full", imageClassName)} aria-hidden />;
+    return <div className={cn("w-full", imageClassName)} />;
   }
 
   return (
@@ -126,16 +126,11 @@ export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
         ref={rightRef}
         src={imageUrl}
         alt=""
-        aria-hidden
         className={cn("absolute inset-0 block w-full", imageClassName)}
         style={{ clipPath: SLICE_SECONDARY_CLIP_PATH, transformOrigin: "center center" }}
         loading="eager"
       />
-      <canvas
-        ref={canvasRef}
-        aria-hidden
-        className="pointer-events-none absolute -top-1/2 -left-1/2 z-10 h-[200%] w-[200%]"
-      />
+      <canvas ref={canvasRef} className="pointer-events-none absolute -top-1/2 -left-1/2 z-10 h-[200%] w-[200%]" />
     </div>
   );
 }

@@ -230,7 +230,7 @@ export function DifficultySelectScreen({
 
         <div className="hidden w-4 shrink-0 flex-col items-center self-stretch lg:flex">
           <div className="w-px flex-1 bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
-          <Swords className="my-1 h-4 w-4 text-amber-100/75" aria-hidden="true" />
+          <Swords className="my-1 h-4 w-4 text-amber-100/75" />
           <div className="w-px flex-1 bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
         </div>
 
@@ -258,7 +258,7 @@ export function DifficultySelectScreen({
         primary={{
           label: (
             <>
-              <Swords className="h-4 w-4" aria-hidden="true" />
+              <Swords className="h-4 w-4" />
               Play
             </>
           ),

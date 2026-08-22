@@ -1,4 +1,5 @@
-// Word-by-word blur-in-up text animation with viewport trigger and accessibility support.
+// Word-by-word blur-in-up text animation with viewport trigger. The aria-label
+// mirrors the narrative text so tests can query it while the words animate.
 import { motion, type Variants } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -10,7 +11,6 @@ interface TextAnimateProps {
   duration?: number;
   startOnView?: boolean;
   once?: boolean;
-  accessible?: boolean;
 }
 
 const containerVariants: Variants = {
@@ -45,7 +45,6 @@ export function TextAnimate({
   className,
   startOnView = true,
   once = false,
-  accessible = true,
 }: TextAnimateProps) {
   const segments = children.split(/(\s+)/);
   const staggerChildren = duration / segments.length;
@@ -72,15 +71,10 @@ export function TextAnimate({
       {...(startOnView ? { whileInView: "show" as const } : { animate: "show" as const })}
       className={cn("whitespace-pre-wrap", className)}
       viewport={{ once }}
-      aria-label={accessible ? children : undefined}
+      aria-label={children}
     >
       {segments.map((segment, i) => (
-        <motion.span
-          key={`word-${segment}-${i}`}
-          variants={variants.item}
-          className="inline-block whitespace-pre"
-          aria-hidden={accessible ? true : undefined}
-        >
+        <motion.span key={`word-${segment}-${i}`} variants={variants.item} className="inline-block whitespace-pre">
           {segment}
         </motion.span>
       ))}

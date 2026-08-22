@@ -28,8 +28,6 @@ export function BattleTrinketInspectButton({ open, onToggle }: { open: boolean; 
       size="icon"
       className={cn("h-10 w-10", !open && "text-muted-foreground")}
       onClick={onToggle}
-      aria-label={open ? "Hide trinkets" : "View trinkets"}
-      aria-pressed={open}
       data-testid="battle-trinket-inspect-toggle"
     >
       <ShoppingBag className="h-5 w-5" />

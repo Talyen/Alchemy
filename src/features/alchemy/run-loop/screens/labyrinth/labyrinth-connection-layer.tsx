@@ -16,7 +16,6 @@ export function LabyrinthConnectionLayer({ labyrinthMap }: Props) {
       className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
-      aria-hidden="true"
     >
       {connections.map((connection) => {
         const from = positionFor(connection.from.row, connection.from.col, labyrinthMap.rows, labyrinthMap.cols);

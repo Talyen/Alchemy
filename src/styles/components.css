@@ -39,13 +39,8 @@
     transform-origin: center center;
   }
 
-  .talent-card-available:is(:hover, :focus-visible) {
+  .talent-card-available:hover {
     animation: none;
-  }
-
-  .talent-card-available:focus-visible {
-    outline: 2px solid var(--talent-accent);
-    outline-offset: 2px;
   }
 
   .talent-card-unlocked {
@@ -346,9 +341,8 @@
     filter 200ms ease-out;
 }
 
-.card-interactive-glow:is(:hover, :focus-visible):not(:disabled),
+.card-interactive-glow:hover:not(:disabled),
 .group:hover .card-interactive-glow:not(:disabled),
-.group:focus-visible .card-interactive-glow:not(:disabled),
 .card-interactive-selected {
   border-color: var(--color-primary);
   /* Drop-shadow follows rounded alpha; a live box-shadow on a 3D layer is rectangular. */
@@ -356,15 +350,13 @@
   filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-primary) 45%, transparent));
 }
 
-.card-interactive-glow:is(:hover, :focus-visible):not(:disabled),
-.group:hover .card-interactive-glow:not(:disabled),
-.group:focus-visible .card-interactive-glow:not(:disabled) {
+.card-interactive-glow:hover:not(:disabled),
+.group:hover .card-interactive-glow:not(:disabled) {
   scale: 1.035;
 }
 
-.card-interactive-glow.talent-hover-scale-only:is(:hover, :focus-visible),
-.group:hover .card-interactive-glow.talent-hover-scale-only,
-.group:focus-visible .card-interactive-glow.talent-hover-scale-only {
+.card-interactive-glow.talent-hover-scale-only:hover,
+.group:hover .card-interactive-glow.talent-hover-scale-only {
   border-color: transparent;
   box-shadow: none;
   filter: none;
@@ -407,24 +399,22 @@
   transition: padding 200ms ease-out;
 }
 
-.has-shine-border:is(:hover, :focus-visible):not(:disabled),
+.has-shine-border:hover:not(:disabled),
 .group:hover .has-shine-border:not(:disabled),
-.group:focus-visible .has-shine-border:not(:disabled),
 .has-shine-border.card-interactive-selected {
   border-width: 0;
   border-color: transparent;
   --tilt-frame-border-width: 0px;
 }
 
-.has-shine-border:is(:hover, :focus-visible):not(:disabled) .shine-border,
+.has-shine-border:hover:not(:disabled) .shine-border,
 .group:hover .has-shine-border:not(:disabled) .shine-border,
-.group:focus-visible .has-shine-border:not(:disabled) .shine-border,
 .has-shine-border.card-interactive-selected .shine-border {
   --border-width: 3px !important;
 }
 
 /* Hero select: keep the rest-state grey frame; keyword shine replaces the gold hover ring. */
-.hero-affinity-shine:is(:hover, :focus-visible):not(:disabled) {
+.hero-affinity-shine:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
   filter: none;
 }

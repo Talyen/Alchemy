@@ -30,7 +30,7 @@ export function ShopBrowseShell({
         {showGold ? (
           <GoldDisplay gold={gold} />
         ) : (
-          <div className="invisible" aria-hidden="true">
+          <div className="invisible">
             <GoldDisplay gold={gold} />
           </div>
         )}

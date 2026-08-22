@@ -44,8 +44,8 @@ For non-trivial work, select only the owner that matches the task; other documen
 ## Verification
 
 - Run `npm run verify:changed -- --diff` (or explicit paths); `--plan` previews without running. The route catalog owns selection; risk routes may include focused E2E by default. Details: [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change).
-- During implementation, run the changed-path route and focused tests. At handoff, report exact checks; treat lint, test, flake, and React Compiler failures as real problems.
-- Active plans live only under `docs/Plans/`: scaffold with `npm run new:plan -- <Name>`, validate with `npm run docs:check`, and delete the plan file when the work ends — `npm run docs:check:final` requires none remaining.
+- During implementation, run the changed-path route and focused tests. Use the `verifier` skill before handoff for static typechecks, boundary linting, and route test execution; treat lint, test, flake, and React Compiler failures as real problems.
+- Active plans live only under `docs/Plans/` (for multi-turn, cross-session architectural work): scaffold with `npm run new:plan -- <Name>`, validate with `npm run docs:check`, and delete the plan file when the work ends — `npm run docs:check:final` requires none remaining.
 
 ## Branch and commits
 
@@ -76,6 +76,7 @@ For non-trivial work, select only the owner that matches the task; other documen
 - CSS `active:` feedback; shared hover/press, button, and fade rules live in [WORKFLOWS § Interactive buttons](./docs/WORKFLOWS.md#interactive-button-conventions), tooltips in [§ Hover tooltips](./docs/WORKFLOWS.md#hover-tooltips) — do not invent parallel motion.
 - `FadeSlot` for in-screen identity swaps; no staggered page chrome, no Framer hover scale.
 - Cosmetic randomness initializes lazily via `useState(() => ...)`, never render-time `Math.random()`.
+- No dedicated accessibility features beyond test-serving names/states; see [WORKFLOWS § Accessibility stance](./docs/WORKFLOWS.md#accessibility-stance).
 
 ## Environment and failures
 

@@ -31,8 +31,7 @@ import {
 } from "@/features/alchemy/shared/config";
 import { playUISound } from "@/lib/audio";
 
-const HERO_SHINE_CLASS =
-  "z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100";
+const HERO_SHINE_CLASS = "z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100";
 
 function HeroCardShine({ characterId, colors }: { characterId: CharacterId; colors: readonly string[] }) {
   if (colors.length === 0) return null;

@@ -72,7 +72,7 @@ export function CollectionGrid({
           </div>
         ))}
         {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (
-          <div key={`collection-filler-${index}`} className={fillerClass} aria-hidden="true" />
+          <div key={`collection-filler-${index}`} className={fillerClass} />
         ))}
       </div>
     </FadeSlot>

@@ -85,7 +85,7 @@ function RewardsFound({
 }) {
   const hasRewards = rewardGold > 0 || MATERIAL_IDS.some((mat) => (rewardMaterials[mat] ?? 0) > 0);
   if (!hasRewards) {
-    return <div className="min-h-[2.5rem]" aria-hidden="true" />;
+    return <div className="min-h-[2.5rem]" />;
   }
   return <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />;
 }

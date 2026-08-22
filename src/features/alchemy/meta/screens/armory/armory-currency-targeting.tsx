@@ -23,7 +23,6 @@ export function ArmoryCurrencyCursor({
   return createPortal(
     <div
       data-testid="armory-crafting-cursor"
-      aria-label={activeCurrency.displayName}
       className={cn(
         "pointer-events-none fixed z-[130] h-8 w-8 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl",
         CURRENCY_CURSOR_STYLES[activeCurrencyId].className,

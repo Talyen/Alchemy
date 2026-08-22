@@ -78,14 +78,11 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
         </TiltSurface>
 
         <div className="mt-1.5 flex max-w-full items-center justify-center gap-2.5">
-          <span className="truncate text-center font-sans text-base font-bold tracking-wide text-foreground/90 transition-colors group-hover:text-amber-300 group-focus:text-amber-300 sm:text-lg">
+          <span className="truncate text-center font-sans text-base font-bold tracking-wide text-foreground/90 transition-colors group-hover:text-amber-300 sm:text-lg">
             {definition.label}
           </span>
           {progress.hasUnspent ? (
-            <span
-              className="pointer-events-none h-2 w-2 shrink-0 rounded-full bg-red-500/70 select-none"
-              aria-label="Unspent talent points available"
-            />
+            <span className="pointer-events-none h-2 w-2 shrink-0 rounded-full bg-red-500/70 select-none" />
           ) : null}
         </div>
       </button>
