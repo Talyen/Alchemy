@@ -182,6 +182,9 @@ export interface TalentEffectManifest {
   wellspringKeepMana: number;
   manaBulwarkActive: boolean;
   manaShellActive: boolean;
+  // Per-mana-crystal damage uses two units by design (values are tuned around it):
+  // burn is a percent of maxMana — amount = maxMana * value / 100;
+  // freeze and companion are mana-halves — amount = maxMana * value / 2.
   burnDamagePerManaCrystal: number;
   freezeDamagePerManaCrystal: number;
   burnDamageOnManaCrystalLoss: number;
