@@ -57,8 +57,13 @@ test.describe("Progression Locks", critical, () => {
 
       const labyrinthCard = page.getByRole("button", { name: /The Labyrinth/ });
       await expect(labyrinthCard).toHaveAttribute("aria-disabled", "true");
-      await labyrinthCard.hover();
-      await expect(page.getByText("Finish a Run as the Rogue to unlock")).toBeVisible();
+      // Under runner load the hover event can land before the tile's handlers
+      // are settled, so re-hover until the portal tooltip actually mounts.
+      const rogueLockText = page.getByText("Finish a Run as the Rogue to unlock");
+      await expect(async () => {
+        await labyrinthCard.hover();
+        await expect(rogueLockText).toBeVisible();
+      }).toPass({ timeout: 10_000 });
       // The lock tooltip must anchor to the hovered tile — not the last tile in
       // the list, which a ref shared across the tiles would resolve to.
       const labyrinthTooltip = page.locator(".hover-popup-panel", { hasText: "Finish a Run as the Rogue to unlock" });
@@ -70,8 +75,11 @@ test.describe("Progression Locks", critical, () => {
 
       const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
       await expect(wildwoodCard).toHaveAttribute("aria-disabled", "true");
-      await wildwoodCard.hover();
-      await expect(page.getByText("Finish a Run as the Ranger to unlock")).toBeVisible();
+      const rangerLockText = page.getByText("Finish a Run as the Ranger to unlock");
+      await expect(async () => {
+        await wildwoodCard.hover();
+        await expect(rangerLockText).toBeVisible();
+      }).toPass({ timeout: 10_000 });
 
       // 6. Start Campaign and check character selection screen locks
       await page.getByRole("button", { name: /The Campaign/ }).click();
