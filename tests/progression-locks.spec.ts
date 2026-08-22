@@ -118,8 +118,9 @@ test.describe("Progression Locks", critical, () => {
     await page.getByRole("button", { name: "Play" }).click();
     const labyrinthCard = page.getByRole("button", { name: /The Labyrinth/ });
     const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
-    await expect(labyrinthCard).toHaveAttribute("aria-disabled", "false");
-    await expect(wildwoodCard).toHaveAttribute("aria-disabled", "false");
+    // Mode tiles signal locking through the locked surface style, not aria state.
+    await expect(labyrinthCard).not.toHaveClass(/opacity-45/);
+    await expect(wildwoodCard).not.toHaveClass(/opacity-45/);
     await labyrinthCard.click();
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
 

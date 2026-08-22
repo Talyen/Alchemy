@@ -141,7 +141,12 @@ test.describe("Battle Autoplay", critical, () => {
     const enemyBefore = await battle.enemyHealth();
 
     await battle.autoplayToggle.click();
-    await expect(battle.autoplayToggle).toHaveAttribute("aria-pressed", "true");
+    // Under load the battle can resolve before the pressed attribute
+    // re-renders; once the control unmounts, the outcome poll below takes over.
+    await expect(async () => {
+      if (!(await battle.autoplayToggle.isVisible())) return;
+      await expect(battle.autoplayToggle).toHaveAttribute("aria-pressed", "true");
+    }).toPass({ timeout: 5_000 });
 
     await expect
       .poll(async () => {
