@@ -1,6 +1,6 @@
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
-import type { BattleCard, BattleCardEffect, DamageType } from "../../types";
+import type { BattleCard, BattleCardEffect, DamageType, KeywordId } from "../../types";
 import { deriveTitle, effectDescriptionLine, playerStatusDescriptionLine, type CardBaseInput } from "./shared";
 
 type ArcheryDamageCardInput = CardBaseInput & {
@@ -226,5 +226,40 @@ export function healThenDamageCard({
       { kind: "heal", amount: heal },
       { kind: "damage", damageType, amount: damage },
     ],
+  };
+}
+
+type EffectsCardInput = CardBaseInput & {
+  effects: BattleCardEffect[];
+  tags?: KeywordId[];
+  consume?: boolean;
+};
+
+/**
+ * Derive every description line from its effect via the shared formatters.
+ * Unsupported effect kinds throw here instead of drifting from shipped text,
+ * so bespoke-prose cards keep their hand-authored literals.
+ */
+export function effectsCard({
+  id,
+  title,
+  art,
+  effects,
+  tags,
+  consume = false,
+  cost = 1,
+}: EffectsCardInput): BattleCard {
+  const lines = effects.map((effect) => effectDescriptionLine(effect));
+  if (tags) lines.push(...tags.map((tag) => capitalizeWord(tag)));
+  if (consume) lines.push(CONSUME_DESCRIPTION_LINE);
+  return {
+    id,
+    title: deriveTitle(id, title),
+    descriptionLines: lines,
+    art,
+    cost,
+    ...(tags ? { tags } : {}),
+    ...(consume ? { consume: true } : {}),
+    effects,
   };
 }

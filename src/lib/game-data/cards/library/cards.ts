@@ -38,14 +38,11 @@ export const cardLibrary: BattleCard[] = [
     consume: true,
     effects: [{ kind: "player-status", status: "haste", amount: 1 }],
   },
-  {
+  cardBuilders.effectsCard({
     id: "poison-dagger",
-    title: "Poison Dagger",
-    descriptionLines: ["Deal 2 Poison damage", "Your next attack is converted to Poison damage"],
     art: assetRefs.poisonDagger,
-    cost: 1,
     effects: [{ kind: "damage", damageType: "poison", amount: 2 }, { kind: "next-hit-poison" }],
-  },
+  }),
   cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 3 }),
   cardBuilders.damageCard({ id: "fangs", art: assetRefs.fangs, damageType: "physical", amount: 3, lifesteal: true }),
   cardBuilders.damageCard({ id: "frostbolt", art: assetRefs.frostbolt, damageType: "freeze", amount: 3 }),
@@ -254,18 +251,15 @@ export const cardLibrary: BattleCard[] = [
       { kind: "enemy-status", status: "onAttackBleed", amount: 2 },
     ],
   },
-  {
+  cardBuilders.effectsCard({
     id: "bounty-shot",
-    title: "Bounty Shot",
-    descriptionLines: ["Deal 2 Physical damage", "Gain 2 Gold", "Archery"],
     art: assetRefs.bountyShot,
-    cost: 1,
     tags: ["archery"],
     effects: [
       { kind: "damage", damageType: "physical", amount: 2 },
       { kind: "gain-gold", amount: 2 },
     ],
-  },
+  }),
   {
     id: "sap-arrow",
     title: "Sap Arrow",
@@ -319,17 +313,14 @@ export const cardLibrary: BattleCard[] = [
     scaleFrom: "armor",
     playerStat: { status: "armor", amount: 1 },
   }),
-  {
+  cardBuilders.effectsCard({
     id: "shield-bash",
-    title: "Shield Bash",
-    descriptionLines: ["Deal 2 Stun damage", "Gain 2 Block"],
     art: assetRefs.shieldBash,
-    cost: 1,
     effects: [
       { kind: "damage", damageType: "stun", amount: 2 },
       { kind: "player-status", status: "block", amount: 2 },
     ],
-  },
+  }),
   {
     id: "steal",
     title: "Steal",
@@ -490,28 +481,22 @@ export const cardLibrary: BattleCard[] = [
       },
     ],
   },
-  {
+  cardBuilders.effectsCard({
     id: "stargaze",
-    title: "Stargaze",
-    descriptionLines: ["Deal 2 Freeze damage", "Restore 1 Mana"],
     art: assetRefs.stargaze,
-    cost: 1,
     effects: [
       { kind: "damage", damageType: "freeze", amount: 2 },
       { kind: "restore-mana", amount: 1 },
     ],
-  },
-  {
+  }),
+  cardBuilders.effectsCard({
     id: "pixie-dust",
-    title: "Pixie Dust",
-    descriptionLines: ["Deal 2 Burn damage", "Restore 1 Mana"],
     art: assetRefs.pixieDust,
-    cost: 1,
     effects: [
       { kind: "damage", damageType: "burn", amount: 2 },
       { kind: "restore-mana", amount: 1 },
     ],
-  },
+  }),
   {
     id: "maul",
     title: "Maul",
@@ -579,18 +564,9 @@ export const cardLibrary: BattleCard[] = [
       },
     ],
   },
-  {
+  cardBuilders.effectsCard({
     id: "astral-arrow",
-    title: "Astral Arrow",
-    descriptionLines: [
-      "Deal 2 Stun damage",
-      "Deal 2 Freeze damage",
-      "Deal 2 Burn damage",
-      "Archery",
-      CONSUME_DESCRIPTION_LINE,
-    ],
     art: assetRefs.astralArrow,
-    cost: 1,
     consume: true,
     tags: ["archery"],
     effects: [
@@ -598,16 +574,13 @@ export const cardLibrary: BattleCard[] = [
       { kind: "damage", damageType: "freeze", amount: 2 },
       { kind: "damage", damageType: "burn", amount: 2 },
     ],
-  },
-  {
+  }),
+  cardBuilders.effectsCard({
     id: "shadowstep",
-    title: "Shadowstep",
-    descriptionLines: ["Your next card is played twice", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.shadowstep,
-    cost: 1,
     consume: true,
     effects: [{ kind: "play-next-card-twice" }],
-  },
+  }),
   cardBuilders.dualDamageCard({
     id: "smite",
     art: assetRefs.smite,
@@ -652,17 +625,14 @@ export const cardLibrary: BattleCard[] = [
     cost: 1,
     effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 }],
   },
-  {
+  cardBuilders.effectsCard({
     id: "prayer",
-    title: "Prayer",
-    descriptionLines: ["Wish 1", "Restore 3 Health"],
     art: assetRefs.prayer,
-    cost: 1,
     effects: [
       { kind: "wish", amount: 1 },
       { kind: "heal", amount: 3 },
     ],
-  },
+  }),
   cardBuilders.loseHealthBenefitCard({
     id: "faustian-bargain",
     art: assetRefs.faustianBargain,
