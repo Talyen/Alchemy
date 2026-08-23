@@ -138,6 +138,9 @@ jobs:
       - name: Ensure Electron binary
         run: node scripts/ensure-electron.mjs
 
+      - name: Setup Playwright Chromium
+        uses: ./.github/actions/setup-playwright
+
       - run: node scripts/sync-version-metadata.mjs
       - run: npm run check:ship:full
 
