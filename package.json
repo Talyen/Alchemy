@@ -75,7 +75,7 @@
     "lint:architecture-smoke": "node scripts/lint-architecture-smoke.mjs",
     "typecheck": "tsc --noEmit",
     "typecheck:all": "concurrently \"tsc --noEmit\" \"tsc -p tsconfig.test.json --noEmit\"",
-    "lint:ci": "npm run docs:check && npm run ci:routing && npm run check:generated && npm run format:check && npm run typecheck:all && npm run lint && npm run lint:boundaries && npm run lint:architecture-smoke && npm run deadcode",
+    "lint:ci": "concurrently --kill-others-on-fail --names docs,routing,generated,format,typecheck,eslint,boundaries,arch-smoke,knip \"npm run docs:check\" \"npm run ci:routing\" \"npm run check:generated\" \"npm run format:check\" \"npm run typecheck:all\" \"npm run lint\" \"npm run lint:boundaries\" \"npm run lint:architecture-smoke\" \"npm run deadcode\"",
     "format": "node scripts/run-prettier.mjs --write",
     "ensure:electron": "node scripts/ensure-electron.mjs",
     "deadcode": "knip --no-config-hints",

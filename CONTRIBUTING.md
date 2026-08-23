@@ -39,15 +39,15 @@ Release gate: `npm run release` (includes `check:ship:full`). Command details:
 
 ### Lint / format / dead-code commands
 
-| Command                           | Role                                                                                                                                |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run format` / `format:check` | Prettier via `scripts/run-prettier.mjs`                                                                                             |
-| `npm run lint`                    | ESLint (`eslint.config.js` + `eslint/`)                                                                                             |
-| `npm run lint:boundaries`         | dependency-cruiser phase / lib edges                                                                                                |
-| `npm run lint:architecture-smoke` | Cold ESLint smoke over representative screens and effective-config checks; included in `lint:ci`                                    |
-| `npm run deadcode`                | knip (`lint:ci` / CI; not default `pre-push`)                                                                                       |
-| `npm run deadcode:strict`         | knip strict + entry exports, deps excluded (nightly)                                                                                |
-| `npm run lint:ci`                 | docs:check → CI routing → generated-output check → format:check → typecheck:all → lint → boundaries → architecture-smoke → deadcode |
+| Command                           | Role                                                                                                                                                                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run format` / `format:check` | Prettier via `scripts/run-prettier.mjs`                                                                                                                                                                                  |
+| `npm run lint`                    | ESLint (`eslint.config.js` + `eslint/`)                                                                                                                                                                                  |
+| `npm run lint:boundaries`         | dependency-cruiser phase / lib edges                                                                                                                                                                                     |
+| `npm run lint:architecture-smoke` | Cold ESLint smoke over representative screens and effective-config checks; included in `lint:ci`                                                                                                                         |
+| `npm run deadcode`                | knip (`lint:ci` / CI; not default `pre-push`)                                                                                                                                                                            |
+| `npm run deadcode:strict`         | knip strict + entry exports, deps excluded (nightly)                                                                                                                                                                     |
+| `npm run lint:ci`                 | All nine static gates run concurrently via `concurrently` (docs:check, CI routing, generated-output check, format:check, typecheck:all, lint, boundaries, architecture-smoke, deadcode); fails fast on the first failure |
 
 Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clean:all` (also `dist` / `release-desktop` + stale E2E ports `4173`/`4175`). The main Vite port is left alone unless you pass `--include-dev-port`.
 
