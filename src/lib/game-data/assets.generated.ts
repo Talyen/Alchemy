@@ -12,7 +12,6 @@ export { default as alchemyLogoHolyBlock } from "@/assets/optimized/alchemy-logo
 export { default as alchemyLogoNatureBleed } from "@/assets/optimized/alchemy-logo-nature-bleed.webp";
 export { default as alchemyLogoPoison } from "@/assets/optimized/alchemy-logo-poison.webp";
 export { default as alchemyLogo } from "@/assets/optimized/alchemy-logo.webp";
-export { default as antivenomPotion } from "@/assets/optimized/antivenom-potion.webp";
 export { default as anvil } from "@/assets/optimized/anvil.webp";
 export { default as apple } from "@/assets/optimized/apple.webp";
 export { default as astralArrow } from "@/assets/optimized/astral-arrow.webp";

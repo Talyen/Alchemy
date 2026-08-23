@@ -58,7 +58,6 @@ export const cardSounds: Record<string, string[]> = {
   sunburst: ["fireball-1.ogg"],
   "holy-radiance": ["buff-pickup-1.ogg"],
   "smelling-salts": ["ice-in-water.ogg"],
-  "antivenom-potion": ["ice-in-water.ogg"],
   prayer: ["music-box-mystery.ogg"],
   "faustian-bargain": ["music-box-mystery.ogg"],
   "grasping-vines": ["swish-hit.ogg"],

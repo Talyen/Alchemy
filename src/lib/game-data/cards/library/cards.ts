@@ -589,13 +589,6 @@ export const cardLibrary: BattleCard[] = [
       { damageType: "burn", amount: 2 },
     ],
   }),
-  cardBuilders.cleansePlayerStatusCard({
-    id: "antivenom-potion",
-    art: assetRefs.antivenomPotion,
-    status: "poison",
-    cleanseLine: "Cleanse all Poison",
-    consume: true,
-  }),
   cardBuilders.damageThenMultiplyEnemyStatusCard({
     id: "cold-snap",
     art: assetRefs.coldSnap,
