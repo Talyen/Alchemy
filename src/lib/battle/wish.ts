@@ -6,7 +6,7 @@
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
-import { drawFromState } from "./draw";
+import { applyDrawResult, drawFromState } from "./draw";
 import { type BattleState, type CombatTextEvent } from "./types";
 import {
   addGoldWithCombatText,
@@ -18,7 +18,8 @@ import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-p
 import { getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
-import { applyGearKillRewards, dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
+import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
+import { payKillPayouts } from "./kill-payouts";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 
 function upgradeWishCard(card: BattleCard): BattleCard {
@@ -119,17 +120,9 @@ function applyWishHealthAndStatusTriggers(state: BattleState, combatTexts: Comba
 }
 
 function applyWishDrawTriggers(state: BattleState): BattleState {
-  const nextState = state;
-  const drawCount = (nextState.talentEffects.wishDrawsCard ? 1 : 0) + nextState.gearEffects.drawOnWish;
-  if (drawCount <= 0) return nextState;
-  const draw = drawFromState(nextState, drawCount);
-  return {
-    ...nextState,
-    deck: draw.deck,
-    discard: draw.discard,
-    hand: draw.hand,
-    nextCardUid: draw.nextCardUid,
-  };
+  const drawCount = (state.talentEffects.wishDrawsCard ? 1 : 0) + state.gearEffects.drawOnWish;
+  if (drawCount <= 0) return state;
+  return applyDrawResult(state, drawFromState(state, drawCount));
 }
 
 export function applyWishEffect(state: BattleState, card: BattleCard, amount: number, combatTexts: CombatTextEvent[]) {
@@ -164,7 +157,7 @@ function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]
     multiplier,
     riders: (damagedState) => processEncounterTraitHealthThreshold(state.enemyHealth, damagedState, combatTexts),
   });
-  return applyGearKillRewards(afterThreshold, enemyWasAlive, combatTexts);
+  return payKillPayouts(afterThreshold, enemyWasAlive, combatTexts);
 }
 
 function applyWishTrinketTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

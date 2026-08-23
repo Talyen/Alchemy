@@ -1,6 +1,6 @@
 ﻿import { describe, expect, it } from "vitest";
+import { applyGearKillRewards } from "@/lib/battle/kill-payouts";
 import {
-  applyGearKillRewards,
   applyGearProcPhysicalDamage,
   gearFrozenDamageMultiplier,
   scaledGearLeechHeal,

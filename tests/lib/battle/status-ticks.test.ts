@@ -238,6 +238,66 @@ describe("tickEnemyStatuses", () => {
   });
 });
 
+describe("DoT tick kills pay lethality payouts", () => {
+  it("a lethal burn tick pays Bone Charm and gear rewards once", () => {
+    const state = patchBattleState({
+      enemyHealth: 5,
+      playerHealth: 20,
+      enemyStatuses: defaultEnemyStatusValues({ burn: 10 }),
+      gearEffects: { ...makeTestBattleState().gearEffects, healOnKill: 3, goldOnKill: 4 },
+      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
+    });
+    const texts = makeTexts();
+    const next = tickEnemyStatuses(state, texts);
+    expect(next.enemyHealth).toBe(0);
+    expect(next.playerHealth).toBe(25); // +2 bone charm, +3 heal-on-kill
+    expect(next.gold).toBe(4);
+  });
+
+  it("a lethal burn tick still counts as defeated while burning", () => {
+    const state = patchBattleState({
+      // 1-stack burn is lethal here and decays to 0 after the tick; the payout
+      // must run before that decay to see burn > 0.
+      enemyHealth: 1,
+      playerHealth: 20,
+      enemyStatuses: defaultEnemyStatusValues({ burn: 1 }),
+      gearEffects: { ...makeTestBattleState().gearEffects, healOnBurnEnemyDefeated: 6 },
+    });
+    const next = tickEnemyStatuses(state, makeTexts());
+    expect(next.enemyHealth).toBe(0);
+    expect(next.playerHealth).toBe(26);
+  });
+
+  it.each(["poison", "bleed"] as const)("a lethal %s tick pays the same rewards", (status) => {
+    const state = patchBattleState({
+      enemyHealth: 5,
+      playerHealth: 20,
+      enemyStatuses: defaultEnemyStatusValues({ [status]: 8 }),
+      gearEffects: { ...makeTestBattleState().gearEffects, healOnKill: 3, goldOnKill: 4 },
+      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
+    });
+    const next = tickEnemyStatuses(state, makeTexts());
+    expect(next.enemyHealth).toBe(0);
+    expect(next.playerHealth).toBe(25);
+    expect(next.gold).toBe(4);
+  });
+
+  it("does not double-pay when later DoTs tick an already-dead enemy", () => {
+    const state = patchBattleState({
+      enemyHealth: 5,
+      playerHealth: 20,
+      enemyMaxHealth: 30,
+      enemyStatuses: defaultEnemyStatusValues({ burn: 10, poison: 8, bleed: 6 }),
+      gearEffects: { ...makeTestBattleState().gearEffects, healOnKill: 3, goldOnKill: 4 },
+      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
+    });
+    const next = tickEnemyStatuses(state, makeTexts());
+    expect(next.enemyHealth).toBe(0);
+    expect(next.gold).toBe(4); // single goldOnKill payment
+    expect(next.playerHealth).toBe(25); // +2 +3 paid once
+  });
+});
+
 describe("tickPlayerStatuses", () => {
   it("deals burn damage to player and halves burn", () => {
     const state = patchBattleState({

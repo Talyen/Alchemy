@@ -3,10 +3,9 @@
  */
 import { forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
-import { mergeCombatText } from "./combat-text";
-import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
-import { addGoldWithCombatText } from "./combat-text";
-import { applyGearKillRewards } from "./gear-effects";
+import { mergeCombatText, addGoldWithCombatText } from "./combat-text";
+import { payKillPayouts } from "./kill-payouts";
+import { applyLuckyCloverGold } from "./trinket-effects";
 import { applyWishEffect } from "./wish";
 import {
   applyDamageBlock,
@@ -135,10 +134,10 @@ export function applyDamageRiders(
   };
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
-  // boneCharmHeal uses state.enemyHealth > 0 (pre-hit state), not nextState,
-  // so heal-on-kill only triggers if the enemy WAS alive before this hit.
-  nextState = applyBoneCharmHeal(nextState, state.enemyHealth > 0, combatTexts);
-  nextState = applyGearKillRewards(nextState, state.enemyHealth > 0, combatTexts);
+  // Payouts key off pre-hit health so heal/gold-on-kill trigger only when the
+  // enemy WAS alive before this hit. Nested CC procs capture their own
+  // aliveness (dead here → they no-op), so payments never double.
+  nextState = payKillPayouts(nextState, previousHealth > 0, combatTexts);
   if (
     card.tags?.includes("archery") &&
     nextState.talentEffects.goldOnArcheryKill > 0 &&

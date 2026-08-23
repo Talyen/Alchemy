@@ -21,6 +21,7 @@ import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { decayArmorAfterDamage, decayHalvedStatus, decayPoisonStacks, rollPercent } from "./status-helpers";
 import { computeLeechHeal, HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
 import { scaledGearLeechHeal } from "./gear-effects";
+import { payKillPayouts } from "./kill-payouts";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 import { applyEnemyLeechHealing } from "./enemy-turn-attack";
 import { dealPlayerTypedHit } from "./player-typed-hit";
@@ -39,6 +40,9 @@ function dealEnemyDotTick(
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
   };
+  // Paid before stack decay so a lethal burn tick still counts as "defeated
+  // while burning" for healOnBurnEnemyDefeated.
+  nextState = payKillPayouts(nextState, previousHealth > 0, combatTexts);
   nextState = setEnemyStatus(nextState, status, nextStacks);
   if (applyRiders) nextState = applyRiders(nextState);
   nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);

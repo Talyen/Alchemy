@@ -1,30 +1,11 @@
 import type { GearEffectManifest } from "@/lib/gear";
 import { PERCENT_DENOMINATOR } from "../game-constants";
-import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { mergeCombatText } from "./combat-text";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyLuckyCloverGold } from "./trinket-effects";
+import { payKillPayouts } from "./kill-payouts";
 import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
-
-export function applyGearKillRewards(
-  state: BattleState,
-  enemyWasAlive: boolean,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  if (state.enemyHealth > 0 || !enemyWasAlive) return state;
-  let nextState = state;
-  const { healOnKill, goldOnKill, healOnBurnEnemyDefeated } = state.gearEffects;
-  if (healOnKill > 0) {
-    nextState = applyHealingWithCombatText(nextState, healOnKill, combatTexts);
-  }
-  if (healOnBurnEnemyDefeated > 0 && state.enemyStatuses.burn > 0) {
-    nextState = applyHealingWithCombatText(nextState, healOnBurnEnemyDefeated, combatTexts);
-  }
-  if (goldOnKill > 0) {
-    nextState = addGoldWithCombatText(nextState, goldOnKill, combatTexts);
-  }
-  return nextState;
-}
 
 export function gearFrozenDamageMultiplier(state: BattleState): number {
   if (state.enemyCC.freezeSkipTurns <= 0 || state.gearEffects.frozenEnemyDamageBonusPercent <= 0) return 1;
@@ -74,7 +55,7 @@ export function dealEnemyScaledDamage(
 
 /**
  * Deals gear-on-Crowd-Control physical damage (freeze / stun procs), clamping
- * enemy health and paying kill rewards when the hit is lethal. Freeze keeps
+ * enemy health and paying kill payouts when the hit is lethal. Freeze keeps
  * lucky-clover gold off by default; stun opts in via `grantLuckyClover`.
  */
 export function applyGearCcPhysicalDamage(
@@ -88,11 +69,8 @@ export function applyGearCcPhysicalDamage(
   return dealEnemyScaledDamage(state, gearDamage, "physical", combatTexts, {
     multiplier: getEnemyDamageMultiplier(state, "physical") * gearFrozenDamageMultiplier(state),
     riders: (nextState, finalDamage, texts) => {
-      let result = options.grantLuckyClover ? applyLuckyCloverGold(nextState, finalDamage, texts) : nextState;
-      if (enemyWasAlive && result.enemyHealth <= 0) {
-        result = applyGearKillRewards(result, true, texts);
-      }
-      return result;
+      const afterClover = options.grantLuckyClover ? applyLuckyCloverGold(nextState, finalDamage, texts) : nextState;
+      return payKillPayouts(afterClover, enemyWasAlive, texts);
     },
   });
 }

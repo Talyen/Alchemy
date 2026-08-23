@@ -22,6 +22,7 @@ import { resolveStunTrigger } from "./status-stun-resolve";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
 import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, computeLeechHeal, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
+import { payKillPayouts } from "./kill-payouts";
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number): BattleState {
   let nextState = addEnemyStatus(state, "burn", actualDamage);
@@ -125,8 +126,10 @@ function applyStunStatusRider(
 
 function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.trinketEffects.frozenHeartDamage <= 0) return state;
+  const enemyWasAlive = state.enemyHealth > 0;
   return dealEnemyScaledDamage(state, state.trinketEffects.frozenHeartDamage, "physical", combatTexts, {
     multiplier: getEnemyDamageMultiplier(state, "physical"),
+    riders: (damagedState) => payKillPayouts(damagedState, enemyWasAlive, combatTexts),
   });
 }
 
@@ -199,6 +202,9 @@ function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextE
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
     pendingBleedLeechHealing: 0,
   };
+  // Same placement as dealEnemyDotTick: payouts fire right after the health
+  // transition, ahead of any follow-up riders.
+  nextState = payKillPayouts(nextState, state.enemyHealth > 0, combatTexts);
   nextState = setEnemyStatus(nextState, "bleed", 0);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: finalDamage });
   nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);

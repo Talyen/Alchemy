@@ -5,6 +5,7 @@
 import type { BattleState, CombatTextEvent } from "./types";
 import { applyLuckyCloverGold } from "./trinket-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
+import { payKillPayouts } from "./kill-payouts";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyCrowdControlTriggerBonuses } from "./talent-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
@@ -36,6 +37,7 @@ function applyStunGearDamage(state: BattleState, combatTexts?: CombatTextEvent[]
 function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (nextState.trinketEffects.thunderstoneDamageOnStun > 0) {
+    const enemyWasAlive = nextState.enemyHealth > 0;
     nextState = dealEnemyScaledDamage(
       nextState,
       nextState.trinketEffects.thunderstoneDamageOnStun,
@@ -43,7 +45,12 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
       combatTexts ?? [],
       {
         multiplier: getEnemyDamageMultiplier(nextState, "nature"),
-        riders: (damagedState, finalDamage) => applyLuckyCloverGold(damagedState, finalDamage, combatTexts ?? []),
+        riders: (damagedState, finalDamage) =>
+          payKillPayouts(
+            applyLuckyCloverGold(damagedState, finalDamage, combatTexts ?? []),
+            enemyWasAlive,
+            combatTexts ?? [],
+          ),
       },
     );
   }

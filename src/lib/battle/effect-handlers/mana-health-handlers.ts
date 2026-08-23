@@ -1,13 +1,17 @@
 // Mana and health-related card effect apply handlers.
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
-import { applyHealOnManaGain, mergeCombatText, applyHealingWithCombatText } from "../combat-text";
-import { gainMana } from "../types";
+import {
+  applyHealOnManaGain,
+  gainManaWithCombatText,
+  mergeCombatText,
+  applyHealingWithCombatText,
+} from "../combat-text";
 import { dealSelfDamage, getEnemyDamageMultiplier } from "../status-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
 import type { EffectHandler } from "./handler-types";
 import { processEncounterTraitHealthThreshold } from "../encounter-trait-events";
 import { dealEnemyScaledDamage } from "../gear-effects";
-import { paceCombatMagnitude } from "../fight-pacing";
+import { payKillPayouts } from "../kill-payouts";
 
 function restoreMana(
   state: BattleState,
@@ -15,14 +19,9 @@ function restoreMana(
   potionMult: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const adjustedMana = paceCombatMagnitude(state, Math.round(amount * potionMult), "player");
-  const nextState = gainMana(state, adjustedMana);
-  const gained = nextState.mana - state.mana;
-  if (gained > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
-    return applyHealOnManaGain(nextState, gained, combatTexts);
-  }
-  return nextState;
+  const manaBefore = state.mana;
+  const nextState = gainManaWithCombatText(state, Math.round(amount * potionMult), combatTexts);
+  return applyHealOnManaGain(nextState, nextState.mana - manaBefore, combatTexts);
 }
 
 function loseMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -53,7 +52,12 @@ function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatText
       combatTexts,
       {
         multiplier: getEnemyDamageMultiplier(nextState, "burn"),
-        riders: (damagedState) => processEncounterTraitHealthThreshold(state.enemyHealth, damagedState, combatTexts),
+        riders: (damagedState) =>
+          payKillPayouts(
+            processEncounterTraitHealthThreshold(state.enemyHealth, damagedState, combatTexts),
+            state.enemyHealth > 0,
+            combatTexts,
+          ),
       },
     );
   }

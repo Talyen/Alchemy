@@ -6,7 +6,7 @@
 import type { BattleCard, DamageType } from "@/lib/game-data";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
-import { applyGearKillRewards } from "./gear-effects";
+import { payKillPayouts } from "./kill-payouts";
 import { mergeCombatText } from "./combat-text";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
@@ -40,5 +40,5 @@ export function dealPlayerTypedHit(
   if (modifiedDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: damageType, amount: modifiedDamage });
   }
-  return applyGearKillRewards(nextState, enemyWasAlive, combatTexts);
+  return payKillPayouts(nextState, enemyWasAlive, combatTexts);
 }

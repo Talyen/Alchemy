@@ -138,6 +138,26 @@ describe("applyCardEffects — multiply-enemy-status", () => {
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyStatuses.poison).toBe(8);
   });
+
+  it("halves added stun stacks against a braced enemy like every other stack source", () => {
+    const state = makeState({
+      enemyStatuses: defaultEnemyStatusValues({ stun: 3 }),
+      currentEnemy: {
+        id: "braced-test-enemy",
+        title: "Braced Test Enemy",
+        subtitle: "",
+        descriptionLines: [],
+        art: "",
+        enemyType: "boss",
+        traits: [{ id: "braced" }],
+        attackEffects: [],
+      } as never,
+    });
+    const card = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "stun", factor: 2 }] });
+    const result = applyCardEffects(state, card, []);
+    // current 3 → +3 added → braced halves the addition → 3 + round(3/2) = 5
+    expect(result.enemyStatuses.stun).toBe(5);
+  });
 });
 
 describe("applyCardEffects — remove-player-status", () => {

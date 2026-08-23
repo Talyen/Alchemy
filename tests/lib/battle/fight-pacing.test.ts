@@ -10,9 +10,11 @@ import {
   paceCombatMagnitude,
 } from "@/lib/battle/fight-pacing";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
+import { resolvePlayerCrowdControlTrigger } from "@/lib/battle/status-cc";
 import { appliesFightPacingFromEnv } from "@/lib/balance";
-import { FIGHT_PACING } from "@/lib/game-constants";
+import { FIGHT_PACING, STUN_THRESHOLD_FRACTION } from "@/lib/game-constants";
 import type { BattleCardEffect } from "@/lib/game-data";
+import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 
 function noCritRng() {
@@ -103,6 +105,26 @@ describe("paceCombatMagnitude", () => {
     const state = pacedState({ playerHealth: 8, playerMaxHealth: 30, enemyHealth: 30, turn: 4 });
     const expected = Math.round(10 * fightPacingMultiplier(state, "player"));
     expect(paceCombatMagnitude(state, 10, "player")).toBe(expected);
+  });
+});
+
+describe("proc defensive grants bypass pacing (policy pin)", () => {
+  it("grants CC-proc armor at authored magnitude even while the player is behind", () => {
+    // Player badly behind → comeback multiplier > 1 for player-side magnitudes.
+    const base = pacedState({ playerHealth: 4, playerMaxHealth: 30, enemyHealth: 30, enemyMaxHealth: 30 });
+    const armorAmount = 6;
+    const state = { ...base, gearEffects: { ...base.gearEffects, armorOnStunOrFreeze: armorAmount } };
+    expect(paceCombatMagnitude(state, 10, "player")).toBeGreaterThan(10);
+    const texts: CombatTextEvent[] = [];
+    const triggered = resolvePlayerCrowdControlTrigger({
+      state,
+      stat: "stun",
+      stackValue: 999,
+      thresholdFraction: STUN_THRESHOLD_FRACTION,
+      combatTexts: texts,
+    });
+    expect(triggered.playerStatuses.armor).toBe(armorAmount);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "armor", amount: armorAmount });
   });
 });
 

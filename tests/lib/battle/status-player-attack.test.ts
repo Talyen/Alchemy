@@ -21,7 +21,9 @@ describe("applyPlayerStatusFromAttack", () => {
       const effect = { kind: "player-status" as const, status, amount: 5 };
       const result = applyPlayerStatusFromAttack(state, effect, texts);
       expect(result.playerStatuses[status]).toBe(expectedAmount);
-      expect(texts).toEqual([{ target: "player", kind: "damage", stat: status, amount: expectedAmount }]);
+      // Harmful statuses emit kind:"status" like card applications, so the
+      // shared filter keeps them out of floating damage numbers.
+      expect(texts).toEqual([]);
     });
 
     it("does not mutate original state", () => {

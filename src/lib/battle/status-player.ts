@@ -182,9 +182,12 @@ function applyHarmfulStatusFromAttack(
   }
   const appliedAmount = status === "bleed" ? amount * BLEED_STATUS_MULTIPLIER : amount;
   const nextState = addPlayerStatus(state, status, appliedAmount);
+  // kind:"status" matches the card-applied path so the harmful-status filter
+  // in shouldShowCombatText treats both sources identically (hidden floats,
+  // while the DoT damage they later deal still shows as -N).
   mergeCombatText(combatTexts, {
     target: "player",
-    kind: "damage",
+    kind: "status",
     stat: status,
     amount: appliedAmount,
   });

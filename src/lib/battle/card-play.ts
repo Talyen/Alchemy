@@ -125,11 +125,14 @@ function executeCardPlayState(
     mana: Math.max(0, state.mana - effectiveCost),
   };
 
-  nextState = applyCardEffects(nextState, card, combatTexts, {
+  const playContext = {
     manaAtStart: state.mana,
     enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
-  });
-  if (playTwice) nextState = applyCardEffects(nextState, card, combatTexts);
+  };
+  nextState = applyCardEffects(nextState, card, combatTexts, playContext);
+  // Replay shares the first application's context so start-of-play conditionals
+  // (e.g. restore-mana ifEnemyFrozen) compare against the same pre-play snapshot.
+  if (playTwice) nextState = applyCardEffects(nextState, card, combatTexts, playContext);
   if (consumeCrit) nextState = { ...nextState, flags: { ...nextState.flags, nextHitCrit: false } };
 
   nextState = applyNatureCardPlayTalents(nextState, card, combatTexts);

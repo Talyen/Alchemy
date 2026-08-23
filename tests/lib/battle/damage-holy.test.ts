@@ -92,4 +92,28 @@ describe("applyHolyDamageRiders", () => {
     const result = dealDamage(state, card);
     expect(result.enemyStatuses.burn).toBeGreaterThan(0);
   });
+
+  it("triggers a wish on holy damage with holyWishChance", () => {
+    const state = patchBattleState({
+      rng: () => 0.01,
+      talentEffects: {
+        ...defaultTalentEffects,
+        holyWishChance: 50,
+        holyLifestealPercent: 0,
+      },
+    });
+    const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
+    const result = dealDamage(state, card);
+    expect(result.wishOptions).not.toBeNull();
+  });
+
+  it("does not trigger a wish when the holyWishChance roll fails", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      talentEffects: { ...defaultTalentEffects, holyWishChance: 50 },
+    });
+    const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
+    const result = dealDamage(state, card);
+    expect(result.wishOptions).toBeNull();
+  });
 });

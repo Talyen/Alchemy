@@ -12,6 +12,28 @@ import {
   defaultCombatFlags,
 } from "../../fixtures/default-battle-state";
 
+describe("applyPlayerStatusEffect — armor talent thresholds", () => {
+  it("cleanses harmful statuses when armor crosses armorCleanseThreshold", () => {
+    const state = patchBattleState({
+      playerStatuses: defaultPlayerStatusValues({ burn: 4, armor: 1 }),
+      talentEffects: { ...defaultTalentEffects, armorCleanseThreshold: 5 },
+    });
+    const texts = makeTexts();
+    const result = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 5 }, texts);
+    expect(result.playerStatuses.armor).toBe(6);
+    expect(result.playerStatuses.burn).toBe(0);
+  });
+
+  it("does not cleanse when armor stays below the threshold", () => {
+    const state = patchBattleState({
+      playerStatuses: defaultPlayerStatusValues({ burn: 4, armor: 0 }),
+      talentEffects: { ...defaultTalentEffects, armorCleanseThreshold: 5 },
+    });
+    const result = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 2 }, makeTexts());
+    expect(result.playerStatuses.burn).toBe(4);
+  });
+});
+
 describe("removeHarmfulPlayerStatuses", () => {
   it("removes statuses in priority order", () => {
     const state = patchBattleState({

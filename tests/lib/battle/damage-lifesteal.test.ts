@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects } from "../../fixtures/default-battle-state";
-import { dealDamage, makeEffect, makeTestCard } from "../../fixtures/battle";
+import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
+import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/damage-rider-leech";
 
 describe("dealDamageToEnemy — lifesteal", () => {
   it("heals player when effect has lifesteal", () => {
@@ -14,5 +15,31 @@ describe("dealDamageToEnemy — lifesteal", () => {
     const card = makeTestCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] });
     const result = dealDamage(state, card);
     expect(result.playerHealth).toBe(23);
+  });
+});
+
+describe("applyLifestealAndPlayerHitTriggers — leechMissingHealthStep", () => {
+  it("adds rounded missing-health chunks on top of base leech (half rounds up)", () => {
+    // Base leech = round(6 * 0.5) = 3; missing = 10, step 4 → round(2.5) = 3 extra.
+    const state = patchBattleState({
+      rng: () => 0.99,
+      playerHealth: 20,
+      talentEffects: { ...defaultTalentEffects, leechMissingHealthStep: 4 },
+    });
+    const texts = makeCombatTexts();
+    const result = applyLifestealAndPlayerHitTriggers(state, 6, texts);
+    expect(result.playerHealth).toBe(26);
+  });
+
+  it("floors partial chunks below the step size", () => {
+    // Base leech 3; missing = 10 → floor(10 / 7) = 1 extra.
+    const state = patchBattleState({
+      rng: () => 0.99,
+      playerHealth: 20,
+      talentEffects: { ...defaultTalentEffects, leechMissingHealthStep: 7 },
+    });
+    const texts = makeCombatTexts();
+    const result = applyLifestealAndPlayerHitTriggers(state, 6, texts);
+    expect(result.playerHealth).toBe(24);
   });
 });

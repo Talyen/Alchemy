@@ -3,7 +3,7 @@ import { makeStateWithFailedRolls as makeState, makeTestCard } from "../../fixtu
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-turn-attack";
-import { applyGearKillRewards } from "@/lib/battle/gear-effects";
+import { applyGearKillRewards } from "@/lib/battle/kill-payouts";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { addEnemyStatus } from "@/lib/battle/types/state-helpers";

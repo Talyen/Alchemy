@@ -3,6 +3,7 @@ import { applyEffectByKind } from "@/lib/battle/effect-handlers/registry";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
 import { makeCombatTexts as makeTexts, makeTestBattleState, makeTestCard } from "../../fixtures/battle";
+import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 const manaCard = makeTestCard({ id: "mana-test", effects: [] });
 
@@ -98,5 +99,24 @@ describe("applyEffectByKind (mana effects)", () => {
     const result = applyManaEffect(state, effect, 1, texts);
     expect(result.enemyHealth).toBe(17);
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 3 });
+  });
+
+  it("a lethal mana-crystal burn pays lethality payouts", () => {
+    const state = makeTestBattleState({
+      mana: 4,
+      maxMana: 4,
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      enemyHealth: 2,
+      talentEffects: { ...makeTestBattleState().talentEffects, burnDamageOnManaCrystalLoss: 3 },
+      gearEffects: { ...makeTestBattleState().gearEffects, goldOnKill: 4 },
+      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
+    });
+    const texts = makeTexts();
+    const effect = { kind: "lose-max-mana" as const, amount: 1 };
+    const result = applyManaEffect(state, effect, 1, texts);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.playerHealth).toBe(22); // +2 bone charm
+    expect(result.gold).toBe(4);
   });
 });

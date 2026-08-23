@@ -355,6 +355,29 @@ describe("applyDamageStatuses — physical riders", () => {
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 8 });
   });
 
+  it("a lethal detonation pays Bone Charm and gear kill rewards", () => {
+    const state = makeTestBattleState({
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      enemyHealth: 5,
+      enemyMaxHealth: 30,
+      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, bleed: 8 }),
+      talentEffects: {
+        ...defaultTalentEffects,
+        ...makeTestBattleState().talentEffects,
+        physicalDetonatesBleed: true,
+      },
+      gearEffects: { ...makeTestBattleState().gearEffects, goldOnKill: 4 },
+      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
+      rng: seededRng(42),
+    });
+    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
+    const result = applyDamageStatuses(state, effect, 5, makeTexts());
+    expect(result.enemyHealth).toBe(0);
+    expect(result.playerHealth).toBe(22); // +2 bone charm
+    expect(result.gold).toBe(4);
+  });
+
   it("detonation pays out queued bleed leech healing immediately", () => {
     const state = makeTestBattleState({
       playerHealth: 20,

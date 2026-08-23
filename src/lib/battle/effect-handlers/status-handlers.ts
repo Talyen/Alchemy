@@ -1,5 +1,5 @@
 // Status-related card effect apply handlers.
-import { addEnemyStatus, setEnemyStatus, type BattleState, type CombatTextEvent } from "../types";
+import { addEnemyStatus, type BattleState, type CombatTextEvent } from "../types";
 import { mergeCombatText } from "../combat-text";
 import type { EffectHandler } from "./handler-types";
 import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses } from "../status-player";
@@ -76,15 +76,15 @@ export const applyMultiplyEnemyStatusEffect: EffectHandler = (state, _card, effe
   if (effect.kind !== "multiply-enemy-status") return state;
   const current = state.enemyStatuses[effect.status];
   if (current <= 0) return state;
-  const added = current * (effect.factor - 1);
+  // Route through addEnemyStatus so stack additions honor enemy traits
+  // (braced halves stun; poison rolls its armor shred) like every other source.
+  const nextState = addEnemyStatus(state, effect.status, current * (effect.factor - 1));
   mergeCombatText(combatTexts, {
     target: "enemy",
     kind: "multiply",
     stat: effect.status,
-    amount: added,
+    amount: nextState.enemyStatuses[effect.status] - current,
   });
-
-  const nextState = setEnemyStatus(state, effect.status, current + added);
 
   return resolveEnemyStatusCcTrigger(state, nextState, effect.status, combatTexts);
 };
