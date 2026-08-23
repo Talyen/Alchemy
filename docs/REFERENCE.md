@@ -18,7 +18,7 @@ npm run dev                 # Vite dev server
 npm run build               # vite build (typecheck is a separate gate; Vercel runs vercel.json buildCommand)
 npm test                    # Vitest; `npm test -- <path>` for a single file
 npm run verify:changed -- --diff  # Changed-path verification route (--plan previews; --e2e <route> escalates)
-npm run typecheck           # tsc --noEmit (fast; also in gate:static / lint:ci)
+npm run typecheck           # tsc --noEmit (fast; also in lint:ci / check:push)
 npm run lint:ci             # Full static gate
 npm run check:push          # Local pre-push gate
 npm run check:ship          # Ship gate before tagging/desktop packaging
