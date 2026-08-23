@@ -3,10 +3,6 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { steamContentRoot } from "./desktop-artifact.mjs";
 
-export function resolveSteamContentRoot(root) {
-  return steamContentRoot(root);
-}
-
 export function substituteSteamVdf(template, env) {
   const buildOutput = (env.BUILD_OUTPUT ?? "").replaceAll("\\", "/");
   const contentRoot = (env.CONTENT_ROOT ?? "").replaceAll("\\", "/");
@@ -22,7 +18,7 @@ export function writeSteamBuildVdfs(root, env) {
   mkdirSync(buildDir, { recursive: true });
 
   const buildOutput = join(root, "release-desktop");
-  const contentRoot = resolveSteamContentRoot(root);
+  const contentRoot = steamContentRoot(root);
   const resolvedEnv = {
     STEAM_APP_ID: env.STEAM_APP_ID ?? "0",
     STEAM_DEPOT_ID: env.STEAM_DEPOT_ID ?? "0",

@@ -47,7 +47,9 @@ export function getCommitsSinceTag(root, tag) {
       stdio: ["ignore", "pipe", "ignore"],
     }).toString();
   } catch {
-    return [];
+    // Distinguish git failure from an empty range so release tooling can abort
+    // instead of writing a "_No changes yet._" section over real notes.
+    return null;
   }
 
   if (!output.trim()) return [];

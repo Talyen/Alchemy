@@ -6,7 +6,6 @@ import { fileURLToPath } from "node:url";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const WORKFLOW_PATH = path.join(ROOT, ".github", "workflows", "ci.yml");
 const DIAGNOSTIC_WORKFLOW_PATHS = [
   path.join(ROOT, ".github", "workflows", "ci.yml"),
   path.join(ROOT, ".github", "workflows", "nightly.yml"),
@@ -84,13 +83,13 @@ export function checkDiagnosticRetention(sources) {
 }
 
 function main() {
-  const source = fs.readFileSync(WORKFLOW_PATH, "utf8");
   const sources = Object.fromEntries(
     DIAGNOSTIC_WORKFLOW_PATHS.map((workflowPath) => [
       path.basename(workflowPath),
       fs.readFileSync(workflowPath, "utf8"),
     ]),
   );
+  const source = sources["ci.yml"];
   const failures = [...checkCiRouting(source), ...checkJobBoundaries(source), ...checkDiagnosticRetention(sources)];
   if (failures.length > 0) {
     console.error("CI routing checks failed:");

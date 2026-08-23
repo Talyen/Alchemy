@@ -3,19 +3,13 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { firstOutputLine, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
-import { E2E_NAMES, resolveRoutePlan, resolveRoutes } from "./lib/change-routes.mjs";
+import { E2E_NAMES, resolveRoutePlan } from "./lib/change-routes.mjs";
 import { changedGitPaths, writeCurrentRun } from "./lib/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REPORTS_DIR = path.join(ROOT, "reports", "verify-changed");
-
-export { resolveRoutes };
-
-export function resolvePlan(paths, options = {}) {
-  return resolveRoutePlan(paths, options);
-}
 
 function changedPathsFromGit() {
   const paths = changedGitPaths(ROOT);
@@ -105,7 +99,7 @@ function runVerificationCommand(command, index, verbose) {
 export function main(argv = process.argv.slice(2)) {
   try {
     const { e2e, flags, paths } = parseArgs(argv);
-    const plan = resolvePlan(paths, { e2e, full: flags.has("full") });
+    const plan = resolveRoutePlan(paths, { e2e, full: flags.has("full") });
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
     if (flags.has("plan")) return 0;
     let failed = 0;

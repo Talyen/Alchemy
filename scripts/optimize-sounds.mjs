@@ -16,6 +16,7 @@ import {
 } from "./lib/asset-manifest-cache.mjs";
 import { formatProcessError, runAudioScript } from "./lib/audio-optimizer.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { mapPool } from "./lib/map-pool.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -131,7 +132,7 @@ async function optimizeSound({ source, target }, storedEntry) {
     return { message: `${target} already up to date`, entry: sourceEntry };
   }
 
-  if (ext === ".ogg" && settings.mode === "copy") {
+  if (settings.mode === "copy") {
     // Already OGG — copy through unchanged.
     await copyFile(sourcePath, outputPath);
     return { message: `${target} copied`, entry: sourceEntry };
@@ -190,7 +191,7 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
   const mp3Entries = {};
   const curatedOggEntries = {};
   let converted = 0;
-  for (const ogg of oggs) {
+  await mapPool(oggs, TRANSFORM_CONCURRENCY, async (ogg) => {
     const oggPath = path.join(outputDir, ogg);
     const mp3Name = ogg.replace(/\.ogg$/i, ".mp3");
     const mp3Path = path.join(outputDir, mp3Name);
@@ -214,12 +215,11 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
       .then(() => true)
       .catch(() => false);
     // Existing MP3s stay committed across machines; only encode when missing or the OGG hash changed.
-    if (mp3Exists && (!stored || stored.hash === sourceEntry.hash)) continue;
-    if (await isOutputFresh(mp3Path, stored, sourceEntry.hash)) continue;
+    if (mp3Exists && (!stored || stored.hash === sourceEntry.hash)) return;
 
     await execFileAsync(ffmpegPath, ["-y", "-i", oggPath, "-c:a", "libmp3lame", "-q:a", "4", "-vn", mp3Path]);
     converted += 1;
-  }
+  });
   if (converted > 0) console.log(`Wrote ${converted} MP3 SFX fallbacks for Safari.`);
   return { mp3Entries, curatedOggEntries };
 }

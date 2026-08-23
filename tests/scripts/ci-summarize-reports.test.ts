@@ -9,7 +9,7 @@ import {
   formatPlaywrightSummaryMarkdown,
   summarizePlaywrightFile,
   summarizePlaywrightReport,
-} from "../../scripts/ci-summarize-playwright.mjs";
+} from "../../scripts/lib/playwright-summary.mjs";
 import { writeCurrentRun } from "../../scripts/lib/current-run.mjs";
 import {
   buildFailureDiagnostic,

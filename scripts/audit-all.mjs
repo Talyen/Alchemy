@@ -12,7 +12,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { writeCurrentRun } from "./lib/current-run.mjs";
-import { runCommand } from "./lib/run-command.mjs";
+import { runCommandAsync } from "./lib/run-command.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(currentFile), "..");
@@ -43,18 +43,20 @@ const STEPS = [
   { name: "change amplification", cmd: "node", args: ["scripts/audit-change-amplification.mjs"], timeout: 60_000 },
 ];
 
-let failed = 0;
 const started = Date.now();
 console.log("Running all measurable audits…\n");
 
-for (const step of STEPS) {
-  console.log(`── ${step.name} ──`);
-  const r = runCommand(step.cmd, step.args, {
-    cwd: ROOT,
-    stdio: ["ignore", "pipe", "pipe"],
-    shell: process.platform === "win32",
-    timeout: step.timeout,
-  });
+// Probes are independent and output is captured, so they run concurrently and
+// results print in a stable order once all have finished.
+const outcomes = await Promise.all(
+  STEPS.map(async (step) => ({
+    step,
+    r: await runCommandAsync(step.cmd, step.args, { cwd: ROOT, timeout: step.timeout }),
+  })),
+);
+
+let failed = 0;
+for (const { step, r } of outcomes) {
   const ms = r.elapsedMs;
   const { output } = r;
   if (verbose && output) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
@@ -62,11 +64,12 @@ for (const step of STEPS) {
     failed++;
     const safeName = step.name.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-");
     const logPath = writeDiagnosticLog(path.join(ROOT, "reports", "audit-all"), safeName, output);
+    console.log(`── ${step.name} ──`);
     console.log(`  ✗ failed (${ms}ms, exit ${r.status ?? "unknown"})`);
     console.log(`  ${tailOutput(output)}`);
     console.log(`  Full output: ${path.relative(ROOT, logPath)}\n`);
   } else {
-    console.log(`  ✓ ok (${ms}ms)\n`);
+    console.log(`── ${step.name} ── ✓ ok (${ms}ms)\n`);
   }
 }
 

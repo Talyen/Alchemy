@@ -80,14 +80,22 @@ function ensureDist() {
   const indexHtml = path.join(root, "dist", "index.html");
   if (!fs.existsSync(indexHtml)) {
     console.error("dist/ is missing. Building production renderer…");
-    const result = spawnSync("npm", ["run", "build"], { cwd: root, stdio: "inherit" });
+    const result = spawnSync("npm", ["run", "build"], {
+      cwd: root,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    });
     if (result.status !== 0) process.exit(result.status ?? 1);
   }
 }
 
 function buildDist() {
   console.log("Building production renderer for performance profiling…");
-  const result = spawnSync("npm", ["run", "build"], { cwd: root, stdio: "inherit" });
+  const result = spawnSync("npm", ["run", "build"], {
+    cwd: root,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
@@ -252,6 +260,7 @@ function main() {
     const ensure = spawnSync("npm", ["run", "ensure:electron"], {
       cwd: root,
       stdio: "inherit",
+      shell: process.platform === "win32",
     });
     if (ensure.status !== 0) process.exit(ensure.status ?? 1);
   }
@@ -288,6 +297,7 @@ function main() {
     cwd: root,
     stdio: "inherit",
     env,
+    shell: process.platform === "win32",
   });
 
   const summaryPath = path.join(outDir, "summary.md");

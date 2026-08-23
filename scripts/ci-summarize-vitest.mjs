@@ -112,10 +112,10 @@ export function summarizeVitestFile(reportPath) {
 
 function main() {
   const reportPath = path.resolve(process.argv[2] ?? DEFAULT_REPORT);
-  const markdown = summarizeVitestFile(reportPath);
   const summary = fs.existsSync(reportPath)
     ? summarizeVitestReport(JSON.parse(fs.readFileSync(reportPath, "utf8")))
     : null;
+  const markdown = summary ? formatVitestSummaryMarkdown(summary) : `## Vitest\n\n_No report at \`${reportPath}\`._\n`;
   publishCiSummary({
     rootDir: process.cwd(),
     markdown,

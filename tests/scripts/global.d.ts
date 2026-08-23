@@ -25,8 +25,11 @@ declare module "*/patch-notes-core.mjs" {
   export function replaceChangelogUnreleased(source: string, newSection: string): string;
 }
 
+declare module "*/desktop-artifact.mjs" {
+  export function steamContentRoot(root: string): string;
+}
+
 declare module "*/steam-vdf.mjs" {
-  export function resolveSteamContentRoot(root: string): string;
   export function substituteSteamVdf(template: string, values: Record<string, string>): string;
   export function writeSteamBuildVdfs(
     root: string,
@@ -40,7 +43,6 @@ declare module "*/sync-changelog.mjs" {
 }
 
 declare module "../../scripts/lib/steam-vdf.mjs" {
-  export function resolveSteamContentRoot(root: string): string;
   export function substituteSteamVdf(template: string, values: Record<string, string>): string;
   export function writeSteamBuildVdfs(
     root: string,
@@ -207,7 +209,7 @@ interface PlaywrightSummary {
   failures: PlaywrightFailure[];
 }
 
-declare module "*/ci-summarize-playwright.mjs" {
+declare module "*/playwright-summary.mjs" {
   export function collectPlaywrightTests(report: unknown): {
     allTests: Array<Record<string, unknown>>;
     totalTests: number;
@@ -224,7 +226,7 @@ declare module "*/ci-summarize-playwright.mjs" {
   export function summarizePlaywrightFile(reportPath: string): string;
 }
 
-declare module "../../scripts/ci-summarize-playwright.mjs" {
+declare module "*/playwright-summary.mjs" {
   export function collectPlaywrightTests(report: unknown): {
     allTests: Array<Record<string, unknown>>;
     totalTests: number;
@@ -335,6 +337,21 @@ declare module "../../scripts/verify-changed.mjs" {
 
 declare module "*/change-routes.mjs" {
   export function validateRouteCatalog(options?: { rootDir?: string }): string[];
+  export function resolveRoutes(paths: string[]): VerificationRoute[];
+  export function resolveRoutePlan(
+    paths: string[],
+    options?: { e2e?: boolean | string; includeE2E?: boolean; full?: boolean },
+  ): { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] };
+}
+
+declare module "../../scripts/lib/change-routes.mjs" {
+  export const E2E_NAMES: readonly string[];
+  export function validateRouteCatalog(options?: { rootDir?: string }): string[];
+  export function resolveRoutes(paths: string[]): VerificationRoute[];
+  export function resolveRoutePlan(
+    paths: string[],
+    options?: { e2e?: boolean | string; includeE2E?: boolean; full?: boolean },
+  ): { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] };
 }
 
 declare module "../../scripts/lib/current-run.mjs" {

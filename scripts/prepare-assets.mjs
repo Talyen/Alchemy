@@ -29,8 +29,8 @@ export async function prepareAssets() {
   if (pipelineFailed(musicResult)) failures.push("Music optimization failed.");
 
   if (artResult.status === "fulfilled" && artResult.value.ok) {
-    await syncAssets();
-    await syncGearArt();
+    // Both regenerate barrels from the completed art manifest but write disjoint outputs.
+    await Promise.all([syncAssets(), syncGearArt()]);
   } else {
     console.warn("Skipping generated art barrels because art optimization did not complete successfully.");
   }

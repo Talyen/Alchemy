@@ -4,24 +4,19 @@ import fs from "node:fs";
 import path from "node:path";
 import { publishCiSummary } from "./lib/ci-summary.mjs";
 import { writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
-import {
-  collectPlaywrightTests,
-  formatPlaywrightSummaryMarkdown,
-  summarizePlaywrightFile,
-  summarizePlaywrightReport,
-} from "./lib/playwright-summary.mjs";
+import { formatPlaywrightSummaryMarkdown, summarizePlaywrightReport } from "./lib/playwright-summary.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-
-export { collectPlaywrightTests, formatPlaywrightSummaryMarkdown, summarizePlaywrightFile, summarizePlaywrightReport };
 
 const DEFAULT_REPORT = "reports/playwright-results.json";
 
 function main() {
   const reportPath = path.resolve(process.argv[2] ?? DEFAULT_REPORT);
-  const markdown = summarizePlaywrightFile(reportPath);
   const summary = fs.existsSync(reportPath)
     ? summarizePlaywrightReport(JSON.parse(fs.readFileSync(reportPath, "utf8")))
     : null;
+  const markdown = summary
+    ? formatPlaywrightSummaryMarkdown(summary)
+    : `## Playwright\n\n_No report at \`${reportPath}\`._\n`;
   const failureIndex = writeFailureIndex(process.cwd());
   const exactDigests = (summary?.failures ?? [])
     .map((failure) => failure.digestPath)

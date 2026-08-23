@@ -23,41 +23,36 @@ function traverseSuite(suite, visit) {
   }
 }
 
-function firstErrorMessage(spec) {
-  const tests = Array.isArray(spec.tests) ? spec.tests : [];
-  for (const test of tests) {
-    if (!test || typeof test !== "object") continue;
-    const testNode = /** @type {Record<string, unknown>} */ (test);
-    const results = Array.isArray(testNode.results) ? testNode.results : [];
-    for (const result of results) {
-      if (!result || typeof result !== "object") continue;
-      const resultNode = /** @type {Record<string, unknown>} */ (result);
-      const errors = Array.isArray(resultNode.errors) ? resultNode.errors : [];
-      for (const err of errors) {
-        if (!err || typeof err !== "object") continue;
-        const message = /** @type {Record<string, unknown>} */ (err).message;
-        if (typeof message === "string" && message.length > 0)
-          return (message.split("\n")[0] ?? "").slice(0, MESSAGE_CHARS);
-      }
+/** First non-empty error message line from a results array, capped for display. */
+function firstResultMessage(results) {
+  if (!Array.isArray(results)) return "";
+  for (const result of results) {
+    if (!result || typeof result !== "object") continue;
+    const resultNode = /** @type {Record<string, unknown>} */ (result);
+    const errors = Array.isArray(resultNode.errors) ? resultNode.errors : [];
+    for (const err of errors) {
+      if (!err || typeof err !== "object") continue;
+      const message = /** @type {Record<string, unknown>} */ (err).message;
+      if (typeof message === "string" && message.length > 0)
+        return (message.split("\n")[0] ?? "").slice(0, MESSAGE_CHARS);
     }
   }
   return "";
 }
 
-function firstErrorMessageForTest(test) {
-  const results = Array.isArray(test?.results) ? test.results : [];
-  for (const result of results) {
-    if (!result || typeof result !== "object") continue;
-    const errors = Array.isArray(result.errors) ? result.errors : [];
-    for (const error of errors) {
-      if (!error || typeof error !== "object") continue;
-      const message = error.message;
-      if (typeof message === "string" && message.length > 0) {
-        return (message.split("\n")[0] ?? "").slice(0, MESSAGE_CHARS);
-      }
-    }
+function firstErrorMessage(spec) {
+  const tests = Array.isArray(spec.tests) ? spec.tests : [];
+  for (const test of tests) {
+    if (!test || typeof test !== "object") continue;
+    const testNode = /** @type {Record<string, unknown>} */ (test);
+    const message = firstResultMessage(testNode.results);
+    if (message) return message;
   }
-  return null;
+  return "";
+}
+
+function firstErrorMessageForTest(test) {
+  return firstResultMessage(test?.results);
 }
 
 /**

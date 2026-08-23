@@ -4,7 +4,8 @@ import { firstOutputLine, sanitizeOutput, tailOutput } from "../../scripts/lib/c
 import { validateRouteCatalog } from "../../scripts/lib/change-routes.mjs";
 import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-suites.mjs";
 import { measureAllRoutes, measureContext } from "../../scripts/measure-agent-context.mjs";
-import { formatPlan, resolvePlan, resolveRoutes } from "../../scripts/verify-changed.mjs";
+import { formatPlan } from "../../scripts/verify-changed.mjs";
+import { resolveRoutePlan as resolvePlan, resolveRoutes } from "../../scripts/lib/change-routes.mjs";
 
 describe("verify-changed route catalog", () => {
   it("keeps concrete command paths, fixtures, and owner headings current", () => {

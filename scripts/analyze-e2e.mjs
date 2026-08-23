@@ -167,6 +167,8 @@ try {
   console.log(`👉 ${path.relative(process.cwd(), auditReportPath)}\n`);
 } catch (err) {
   console.error("❌ Failed to process playwright JSON and generate audit report:", err);
+  // A green run with an unreadable/corrupt report must not exit 0 silently.
+  process.exitCode = 1;
 }
 
 const failureIndex = writeFailureIndex(process.cwd());

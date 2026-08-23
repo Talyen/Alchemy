@@ -12,9 +12,10 @@ function gitOutput(rootDir, args) {
 }
 
 /**
- * Paths reported by `git status --short --untracked-files=all` (rename entries
- * collapse to the target path). Returns null when git itself fails so callers
- * can distinguish "clean tree" from "could not ask".
+ * Paths reported by `git status --short --untracked-files=all`. Rename entries
+ * emit the new path as the entry and the original path as a following
+ * NUL-delimited field; only the target path is kept. Returns null when git
+ * itself fails so callers can distinguish "clean tree" from "could not ask".
  */
 export function changedGitPaths(rootDir) {
   const result = spawnSync("git", ["status", "--short", "--untracked-files=all", "-z"], {
@@ -23,10 +24,17 @@ export function changedGitPaths(rootDir) {
     stdio: ["ignore", "pipe", "ignore"],
   });
   if (result.status !== 0) return null;
-  return (result.stdout ?? "")
-    .split("\0")
-    .filter((entry) => entry.trim())
-    .map((entry) => (entry.length >= 3 && entry[2] === " " ? entry.slice(3) : entry).trim());
+  const fields = (result.stdout ?? "").split("\0");
+  const paths = [];
+  for (let i = 0; i < fields.length; i += 1) {
+    const entry = fields[i];
+    if (!entry.trim()) continue;
+    paths.push((entry.length >= 3 && entry[2] === " " ? entry.slice(3) : entry).trim());
+    // Rename/copy entries carry the original path in the next NUL field — skip it.
+    const status = entry.slice(0, 2);
+    if (/^[RC]/.test(status) && i + 1 < fields.length) i += 1;
+  }
+  return paths;
 }
 
 function sourceState(rootDir, commit) {

@@ -82,7 +82,6 @@ export const cardAssets = [
   { source: "Cards/Smelling Salts.jpeg", target: "smelling-salts.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Smite.jpeg", target: "smite.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Sunder.jpeg", target: "sunder.webp", width: cardWidth, quality: cardQuality },
-  { source: "Cards/Antivenom Potion.jpeg", target: "antivenom-potion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Blood Offering.jpeg", target: "blood-offering.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Tithe.jpeg", target: "tithe.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Exorcism.jpeg", target: "exorcism.webp", width: cardWidth, quality: cardQuality },

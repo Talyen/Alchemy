@@ -2,10 +2,10 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { resolveSteamContentRoot } from "../../scripts/lib/steam-vdf.mjs";
+import { steamContentRoot } from "../../scripts/lib/desktop-artifact.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
-const contentRoot = resolveSteamContentRoot(ROOT);
+const contentRoot = steamContentRoot(ROOT);
 const buildDir = join(ROOT, "steam/build");
 
 function ensureFakeWinUnpacked() {

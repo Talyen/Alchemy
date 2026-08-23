@@ -43,12 +43,11 @@ function absolutePath(relativePath) {
   return path.resolve(ROOT, relativePath);
 }
 
-function fileBytes(relativePath, { required = false } = {}) {
+function fileBytes(relativePath) {
   try {
     const stats = fs.statSync(absolutePath(relativePath));
     return stats.isFile() ? stats.size : 0;
   } catch {
-    if (required) throw new Error(`Context file is missing: ${relativePath}`);
     return 0;
   }
 }

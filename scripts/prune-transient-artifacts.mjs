@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { TRANSIENT_ARTIFACT_DIRS, formatBytes, removePath } from "./lib/clean-dev-artifacts.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const TRANSIENT_DIRS = TRANSIENT_ARTIFACT_DIRS;
@@ -103,4 +104,4 @@ function main(argv = process.argv.slice(2)) {
   }
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exitCode = main();
+if (isMainModule(import.meta.url)) process.exitCode = main();

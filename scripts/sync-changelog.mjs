@@ -25,8 +25,13 @@ export function readChangelog(rootDir = root) {
 
 export function computeSyncedChangelog(existingContent, rootDir = root) {
   const lastTag = latestVersionTag(rootDir);
-  const commits = getCommitsSinceTag(rootDir, lastTag).filter((commit) => !isSyncCommitSubject(commit.subject));
-  const unreleasedMarkdown = buildChangelogUnreleased(commits);
+  const commits = getCommitsSinceTag(rootDir, lastTag);
+  if (commits === null) {
+    throw new Error(
+      `git log failed while reading commits since ${lastTag ?? "HEAD"}; refusing to rewrite CHANGELOG.md`,
+    );
+  }
+  const unreleasedMarkdown = buildChangelogUnreleased(commits.filter((c) => !isSyncCommitSubject(c.subject)));
   return replaceChangelogUnreleased(normalizeNewlines(existingContent), unreleasedMarkdown);
 }
 

@@ -1,7 +1,8 @@
 import { readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { resolveSteamContentRoot, substituteSteamVdf, writeSteamBuildVdfs } from "../../scripts/lib/steam-vdf.mjs";
+import { substituteSteamVdf, writeSteamBuildVdfs } from "../../scripts/lib/steam-vdf.mjs";
+import { steamContentRoot } from "../../scripts/lib/desktop-artifact.mjs";
 
 const workspaceRoot = join(import.meta.dirname, "../..");
 
@@ -36,7 +37,7 @@ describe("steam VDF substitution", () => {
     expect(appVdf).not.toContain("${STEAM_APP_ID}");
     expect(appVdf).toContain(`"contentroot" "${contentRoot.replaceAll("\\", "/")}"`);
     expect(appVdf).toContain('"setlive" ""');
-    expect(contentRoot).toBe(resolveSteamContentRoot(workspaceRoot));
+    expect(contentRoot).toBe(steamContentRoot(workspaceRoot));
     expect(contentRoot.replaceAll("\\", "/")).toMatch(/release-desktop\/win-unpacked$/);
 
     rmSync(join(workspaceRoot, "steam/build"), { recursive: true, force: true });
