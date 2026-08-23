@@ -31,7 +31,7 @@ function renderFoundOrLost(effect: MysteryEffect, prefix: string) {
   return (
     <div className="flex items-center justify-center gap-2 text-lg font-medium text-balance text-muted-foreground">
       {prefix}
-      <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
+      <MysteryEffectBadge effect={effect} />
     </div>
   );
 }

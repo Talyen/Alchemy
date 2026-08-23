@@ -68,7 +68,8 @@ export function BattleTrinketInspectOverlay({
           <Button
             variant="outline"
             size="icon"
-            className="h-10 w-10 justify-self-end text-muted-foreground"
+            className="h-10 w-10 text-muted-foreground"
+            wrapperClassName="justify-self-end"
             onClick={onClose}
             aria-label="Close trinkets"
           >

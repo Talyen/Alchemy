@@ -1,18 +1,17 @@
 import type { CSSProperties, HTMLAttributes } from "react";
 
-import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 interface ShineBorderProps extends HTMLAttributes<HTMLDivElement> {
   borderWidth?: number;
   duration?: number;
-  shineColor?: string | readonly string[];
+  shineColor: string | readonly string[];
 }
 
 export function ShineBorder({
   borderWidth = 1,
   duration = 14,
-  shineColor = keywordDefinitions.physical.shineColors,
+  shineColor,
   className,
   style,
   ...props

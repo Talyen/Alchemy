@@ -73,8 +73,7 @@ export function PortaledTooltip({
     <TooltipPanel
       ref={tooltipRef}
       width={width}
-      {...(tooltipSide ? { placement: tooltipSide } : {})}
-      flip={placeBelow}
+      placement={tooltipSide ?? (placeBelow ? "below" : "above")}
       visible={placed && visible}
       className={cn(
         "pointer-events-none fixed top-auto bottom-auto z-[100] mt-0 mb-0",

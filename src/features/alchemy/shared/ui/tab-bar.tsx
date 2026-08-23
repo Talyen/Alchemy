@@ -37,7 +37,8 @@ export function TabBar<T extends string>({
             size="lg"
             disabled={isDisabled}
             onClick={() => onSelectTab(tab.id)}
-            className={cn("shrink-0", tab.id === activeTab ? activeClassName : "hover:border-border")}
+            className={tab.id === activeTab ? activeClassName : "hover:border-border"}
+            wrapperClassName="shrink-0"
             aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}
           >
             <Icon className={cn("h-7 w-7", tab.iconClassName)} />

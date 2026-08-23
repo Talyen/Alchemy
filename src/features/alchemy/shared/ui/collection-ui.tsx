@@ -57,11 +57,9 @@ export function CollectionGrid({
         ? collectionBestiaryGridClass
         : collectionCardGridClass;
   const fillerClass =
-    collectionTab === "trinkets"
-      ? cn(collectionCardGridTileWidthClass, "aspect-[3/4]")
-      : collectionTab === "bestiary"
-        ? cn(collectionGridBestiaryWidthClass, "aspect-[4/3]")
-        : cn(collectionCardGridTileWidthClass, "aspect-[3/4]");
+    collectionTab === "bestiary"
+      ? cn(collectionGridBestiaryWidthClass, "aspect-[4/3]")
+      : cn(collectionCardGridTileWidthClass, "aspect-[3/4]");
 
   return (
     <FadeSlot swapKey={`${collectionTab}-${page}`} className={cn("overflow-visible", collectionGridMinHeightClass)}>

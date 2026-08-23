@@ -24,7 +24,6 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: primaryVariantClasses,
         primary: primaryVariantClasses,
         destructive: cn(
           "bg-destructive text-destructive-foreground active:bg-destructive/90 active:brightness-100",
@@ -48,87 +47,24 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "primary",
       size: "default",
     },
   },
 );
 
-const POSITIONING_PREFIXES = [
-  "absolute",
-  "relative",
-  "fixed",
-  "sticky",
-  "left-",
-  "right-",
-  "top-",
-  "bottom-",
-  "inset-",
-  "z-",
-];
-const SIZING_PREFIXES = [
-  "basis-",
-  "col-",
-  "flex-",
-  "grow-",
-  "h-",
-  "max-h-",
-  "max-w-",
-  "min-h-",
-  "min-w-",
-  "order-",
-  "row-",
-  "shrink-",
-  "w-",
-];
-
-function createPrefixRegex(prefixes: readonly string[]): RegExp {
-  const patterns = prefixes.map((p) => (p.endsWith("-") ? `${p.slice(0, -1)}(?:-.*)?` : p));
-  return new RegExp(`^(?:${patterns.join("|")})$`);
-}
-
-const POSITIONING_REGEX = createPrefixRegex(POSITIONING_PREFIXES);
-const WRAPPER_LAYOUT_REGEX = createPrefixRegex([...POSITIONING_PREFIXES, ...SIZING_PREFIXES]);
-
-function getWrapperLayoutClassName(className: string | undefined): string | undefined {
-  if (!className) return undefined;
-  return className
-    .split(/\s+/)
-    .filter((token) => {
-      const baseToken = token.slice(token.lastIndexOf(":") + 1);
-      return WRAPPER_LAYOUT_REGEX.test(baseToken);
-    })
-    .join(" ");
-}
-
-function getVisualClassName(className: string | undefined): string | undefined {
-  if (!className) return undefined;
-  return className
-    .split(/\s+/)
-    .filter((token) => {
-      const baseToken = token.slice(token.lastIndexOf(":") + 1);
-      return !POSITIONING_REGEX.test(baseToken);
-    })
-    .join(" ");
-}
-
 interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  /** Classes for the outer inline-flex wrapper span (margins/positioning within the parent layout). */
+  wrapperClassName?: string;
 }
 
-function Button({ className, variant, size, asChild = false, ref, ...props }: ButtonProps) {
-  const wrapperClassName = getWrapperLayoutClassName(className);
-  const visualClassName = getVisualClassName(className);
-  const button = (
-    <button
-      className={cn(buttonVariants({ variant, size, className: visualClassName }), size !== "icon" && "w-full")}
-      ref={ref}
-      {...props}
-    />
-  );
+function Button({ className, wrapperClassName, variant, size, asChild = false, ref, ...props }: ButtonProps) {
+  const classes = cn(buttonVariants({ variant, size }), className);
+  const button = <button className={cn(classes, size !== "icon" && "w-full")} ref={ref} {...props} />;
 
   if (asChild) {
-    return <Slot className={cn(buttonVariants({ variant, size, className: visualClassName }))} ref={ref} {...props} />;
+    return <Slot className={classes} ref={ref} {...props} />;
   }
 
   return <span className={cn("inline-flex", wrapperClassName)}>{button}</span>;

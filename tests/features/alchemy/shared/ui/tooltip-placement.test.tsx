@@ -9,7 +9,7 @@ describe("TooltipPanel", () => {
     cleanup();
   });
 
-  it("anchors above by default and below when flipped", () => {
+  it("anchors above by default and below when placement is below", () => {
     const { rerender } = render(
       <div className="relative">
         <TooltipPanel visible>Body</TooltipPanel>
@@ -22,7 +22,7 @@ describe("TooltipPanel", () => {
 
     rerender(
       <div className="relative">
-        <TooltipPanel visible flip>
+        <TooltipPanel visible placement="below">
           Body
         </TooltipPanel>
       </div>,

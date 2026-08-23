@@ -1,7 +1,7 @@
 // Battle actor panels for hero/enemy art, health, status rows, and death effects.
 // Depends on actor subcomponents, enemy tooltips, and shared card styling.
 // Used by BattleScreen through the battle UI barrel.
-import { useRef, useState, type ReactNode, type Ref } from "react";
+import { type ReactNode, type Ref } from "react";
 
 import { Progress } from "@/components/ui/progress";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
@@ -18,11 +18,14 @@ import {
 } from "../../config";
 import type { StatusChip } from "../../types";
 import { TiltSurface } from "../tilt-surface";
+import { useHoverVisible } from "../use-hover-visible";
 import { PortraitHurtVfx } from "./portrait-hurt-vfx";
 import { useHurtPulse } from "./use-hurt-pulse";
 import { SliceDeath } from "./slice-death";
 import { DeathsDoorStatusIcon, StatusIcon } from "./status-icons";
 import { useChangeToken } from "./use-change-token";
+
+import { ActorTooltip, ArtDeathDoorBorder, ArtTurnActiveBorder, StatsDeathDoorBorder } from "./actor-panel-helpers";
 
 const ACTOR_PANEL_CONFIG = {
   fullHealthPercent: 100,
@@ -91,8 +94,7 @@ export function ArtPanel({
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
-  const artWrapperRef = useRef<HTMLDivElement>(null);
-  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const { triggerRef: artWrapperRef, visible: tooltipVisible, ...tooltipHandlers } = useHoverVisible<HTMLDivElement>();
 
   const resolvedCardWidthClass =
     cardWidthClass ?? (side === "enemy" ? battleEnemyCardWidthClass : battleCardWidthClass);
@@ -104,8 +106,8 @@ export function ArtPanel({
         <div
           ref={artWrapperRef}
           className="group/art-wrapper relative"
-          onMouseEnter={() => setTooltipVisible(true)}
-          onMouseLeave={() => setTooltipVisible(false)}
+          onMouseEnter={tooltipHandlers.onMouseEnter}
+          onMouseLeave={tooltipHandlers.onMouseLeave}
         >
           <ActorTooltip
             title={title}
@@ -156,8 +158,6 @@ export function ArtPanel({
     </div>
   );
 }
-
-import { ActorTooltip, ArtDeathDoorBorder, ArtTurnActiveBorder, StatsDeathDoorBorder } from "./actor-panel-helpers";
 
 function ActorArtFrame({
   side,
@@ -297,7 +297,7 @@ function ActorHealthHeader({
   );
 }
 
-// Separate component for the status rows to keep code clean and prevent re-rendering.
+// Isolates the status-row markup from the stats-panel layout.
 function ActorStatusRow({
   title,
   statuses,

@@ -1,9 +1,8 @@
 // Battle status icon popups for keyword statuses and Death's Door.
 // Depends on keyword metadata/icons and shared tooltip panel.
 // Used by ArtPanel to keep actor layout separate from status tooltip details.
-import { useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Skull, Sparkles } from "lucide-react";
-
 import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
@@ -15,6 +14,7 @@ import { renderColoredKeywords } from "../card-description-ui";
 import { KeywordTag } from "../keyword-tag";
 import { PortaledTooltip } from "../portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "../tooltip-panel";
+import { useHoverVisible } from "../use-hover-visible";
 
 function StatusChipShell({
   ariaLabel,
@@ -27,8 +27,8 @@ function StatusChipShell({
   icon: ReactNode;
   tooltip: ReactNode;
 }) {
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [visible, setVisible] = useState(false);
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
+    useHoverVisible<HTMLButtonElement>();
 
   return (
     <div className="status-chip-pop relative flex items-center justify-center">
@@ -37,8 +37,10 @@ function StatusChipShell({
         type="button"
         className={cn("relative flex h-9 w-9 items-center justify-center", buttonClassName)}
         aria-label={ariaLabel}
-        onMouseEnter={() => setVisible(true)}
-        onMouseLeave={() => setVisible(false)}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onFocusCapture={onFocusCapture}
+        onBlurCapture={onBlurCapture}
       >
         {icon}
       </button>

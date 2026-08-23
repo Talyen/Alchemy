@@ -21,7 +21,6 @@ interface TooltipPanelProps {
   children: ReactNode;
   width?: string;
   className?: string;
-  flip?: boolean;
   placement?: TooltipPlacement;
   /** State-driven tooltips that are not inside a hover group. */
   visible?: boolean;
@@ -40,27 +39,23 @@ export function TooltipPanel({
   children,
   width = tooltipWidthClass,
   className,
-  flip,
   placement = "above",
   visible,
   style,
   ref,
 }: TooltipPanelProps) {
-  const resolvedPlacement: TooltipPlacement = flip ? "below" : placement;
-
   return (
     <div
       ref={ref}
       className={cn(
         popupBaseClassName,
-        tooltipAnchorClass(resolvedPlacement),
+        tooltipAnchorClass(placement),
         width,
         "hover-popup-panel pointer-events-none",
         className,
       )}
       style={style}
-      data-placement={resolvedPlacement}
-      data-flip={flip ? "below" : "above"}
+      data-placement={placement}
       {...(visible ? { "data-visible": true } : {})}
     >
       {children}

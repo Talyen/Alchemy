@@ -51,6 +51,16 @@ export function ChooserArtTile({
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, interactionId);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const trackTooltip = renderTooltip !== undefined;
+  // One show/hide pair drives both pointer and keyboard focus so the four
+  // TiltSurface handlers stay in sync with the tooltip and hover shimmer.
+  const hoverIn = () => {
+    if (trackTooltip) setTooltipVisible(true);
+    onHoverStart();
+  };
+  const hoverOut = () => {
+    if (trackTooltip) setTooltipVisible(false);
+    onHoverEnd();
+  };
 
   return (
     <div className={cn("group flex flex-col items-center gap-5", paddedTileClass)}>
@@ -61,22 +71,10 @@ export function ChooserArtTile({
         ariaLabel={ariaLabel ?? label}
         {...(disabled ? { ariaDisabled: true } : {})}
         onClick={onClick}
-        onMouseEnter={() => {
-          if (trackTooltip) setTooltipVisible(true);
-          onHoverStart();
-        }}
-        onMouseLeave={() => {
-          if (trackTooltip) setTooltipVisible(false);
-          onHoverEnd();
-        }}
-        onFocus={() => {
-          if (trackTooltip) setTooltipVisible(true);
-          onHoverStart();
-        }}
-        onBlur={() => {
-          if (trackTooltip) setTooltipVisible(false);
-          onHoverEnd();
-        }}
+        onMouseEnter={hoverIn}
+        onMouseLeave={hoverOut}
+        onFocus={hoverIn}
+        onBlur={hoverOut}
         shimmerActive={disabled ? false : shimmerActive}
         shimmerToken={disabled ? undefined : shimmerToken}
         shimmerRounded="rounded-shell-card"

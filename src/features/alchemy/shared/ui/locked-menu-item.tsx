@@ -1,8 +1,9 @@
-import { useRef, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { LockedFeatureTooltip } from "./locked-feature-tooltip";
 import { PortaledTooltip } from "./portaled-tooltip";
 import type { PortaledTooltipSide } from "./portaled-tooltip-placement";
+import { useHoverVisible } from "./use-hover-visible";
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 
@@ -31,16 +32,10 @@ export function LockedMenuItem({
   size = "default",
   variant = "ghost",
 }: LockedMenuItemProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const triggerRef = useRef<HTMLDivElement>(null);
+  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
 
   return (
-    <div
-      ref={triggerRef}
-      className="relative overflow-visible"
-      onMouseEnter={() => locked && setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
-    >
+    <div ref={triggerRef} className="relative overflow-visible" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       <Button
         variant={variant}
         size={size}
@@ -57,7 +52,7 @@ export function LockedMenuItem({
         {icon}
         {children}
       </Button>
-      {showTooltip && locked && (
+      {visible && locked && (
         <PortaledTooltip triggerRef={triggerRef} visible placement={tooltipPlacement} className="text-left">
           <LockedFeatureTooltip title={title} message={message} />
         </PortaledTooltip>

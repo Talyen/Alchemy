@@ -164,8 +164,8 @@ export function MysteryEffectBadge({
   tooltip,
 }: {
   effect: MysteryEffect;
-  findCard: ((id: string) => { title: string } | undefined) | undefined;
-  findTrinket: ((id: string) => { title: string } | undefined) | undefined;
+  findCard?: ((id: string) => { title: string } | undefined) | undefined;
+  findTrinket?: ((id: string) => { title: string } | undefined) | undefined;
   tooltip?: boolean;
 }) {
   const render = EFFECT_RENDERERS[effect.kind];

@@ -11,13 +11,16 @@ import { useHoverVisible } from "./use-hover-visible";
 
 export function DisabledTooltip({ show, message, children }: { show: boolean; message: string; children: ReactNode }) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
-  if (!show) return <>{children}</>;
+  // The wrapper renders unconditionally so children keep the same DOM/stacking
+  // context whether or not the tooltip is armed.
   return (
-    <div ref={triggerRef} className="relative" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+    <div ref={triggerRef} className="relative" {...(show ? { onMouseEnter, onMouseLeave } : {})}>
       {children}
-      <PortaledTooltip triggerRef={triggerRef} visible={visible} className="whitespace-nowrap">
-        <p className={cn(tooltipBodyClass, "mt-0 space-y-0 leading-none text-foreground")}>{message}</p>
-      </PortaledTooltip>
+      {show ? (
+        <PortaledTooltip triggerRef={triggerRef} visible={visible} className="whitespace-nowrap">
+          <p className={cn(tooltipBodyClass, "mt-0 space-y-0 leading-none text-foreground")}>{message}</p>
+        </PortaledTooltip>
+      ) : null}
     </div>
   );
 }
