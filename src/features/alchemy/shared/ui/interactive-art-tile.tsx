@@ -22,11 +22,11 @@ interface InteractiveArtTileProps {
   className: string;
   imageClassName: string;
   popup?: (ctx: PopupContext) => ReactNode;
-  as?: "button" | "div";
-  interactive?: boolean;
-  selected?: boolean;
+  as?: "button" | "div" | undefined;
+  interactive?: boolean | undefined;
+  selected?: boolean | undefined;
   /** Hover/select 3px chrome. Shine tiles keep scale/glow and thicken the shine instead. */
-  interactiveChrome?: boolean;
+  interactiveChrome?: boolean | undefined;
   shineColor?: string | readonly string[] | undefined;
   disabled?: boolean | undefined;
   onClick?: (() => void) | undefined;

@@ -1,22 +1,17 @@
 // Battle trinket inspect: sack chrome toggle plus a fading full-art overlay.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { ShoppingBag, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  battleTrinketInspectRowMaxWidthClass,
-  trinketArtFillClass,
-  trinketArtImageClass,
-  trinketArtTileClass,
-} from "@/features/alchemy/shared/config";
+import { battleTrinketInspectRowMaxWidthClass } from "@/features/alchemy/shared/config";
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
-import { DetailPopup } from "../../../shared/ui/card-popup";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
-import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
 import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { PaginationControls, ScreenHeader } from "../../../shared/ui/shared-ui";
+import { TrinketTile } from "../../../shared/ui/collection-art-tiles";
+import { usePaginatedRows } from "../../../shared/ui/use-paginated-rows";
 import { uniqueRunTrinkets } from "./unique-run-trinkets";
 
 const INSPECT_COLUMNS = 4;
@@ -45,16 +40,12 @@ export function BattleTrinketInspectOverlay({
   onClose: () => void;
 }) {
   const trinkets = useMemo(() => uniqueRunTrinkets(trinketIds), [trinketIds]);
-  const [page, setPage] = useState(0);
-  const totalPages = Math.max(1, Math.ceil(trinkets.length / TRINKET_PAGE_SIZE));
-  const safePage = Math.min(page, totalPages - 1);
-  if (!open && page !== 0) setPage(0);
-  if (open && page !== safePage) setPage(safePage);
+  const { page: safePage, totalPages, rows, setPage } = usePaginatedRows(trinkets, TRINKET_PAGE_SIZE, INSPECT_COLUMNS);
 
-  const pageTrinkets = trinkets.slice(safePage * TRINKET_PAGE_SIZE, (safePage + 1) * TRINKET_PAGE_SIZE);
-  const rows = Array.from({ length: Math.ceil(pageTrinkets.length / INSPECT_COLUMNS) }, (_, rowIndex) =>
-    pageTrinkets.slice(rowIndex * INSPECT_COLUMNS, rowIndex * INSPECT_COLUMNS + INSPECT_COLUMNS),
-  );
+  // Restart at the first page each time the overlay opens.
+  useEffect(() => {
+    if (!open) setPage(0);
+  }, [open, setPage]);
 
   return (
     <ModalOverlayShell
@@ -89,25 +80,12 @@ export function BattleTrinketInspectOverlay({
           {rows.map((row) => (
             <div key={row.map((trinket) => trinket.id).join("-")} className="flex justify-center gap-x-6">
               {row.map((trinket) => (
-                <InteractiveArtTile
+                <TrinketTile
                   key={trinket.id}
-                  id={trinket.id}
+                  trinket={trinket}
                   interactionKey="battle-trinket"
-                  title={trinket.title}
-                  art={trinket.art}
+                  idPrefix={`battle-trinket-${trinket.id}`}
                   as="div"
-                  className={trinketArtTileClass}
-                  imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
-                  popup={({ visible, triggerRef }) => (
-                    <DetailPopup
-                      idPrefix={`battle-trinket-${trinket.id}`}
-                      title={trinket.title}
-                      footerChip="This Run"
-                      descriptionLines={trinket.descriptionLines}
-                      visible={visible}
-                      triggerRef={triggerRef}
-                    />
-                  )}
                 />
               ))}
             </div>

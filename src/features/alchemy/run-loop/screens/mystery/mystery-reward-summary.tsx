@@ -10,23 +10,14 @@ import {
   BUTTON_WIDTH_ACTION,
   bodyTextClass,
   cardInteractiveGlowClass,
-  cardSurfaceClass,
-  collectionTileWidthClass,
   controlLabelClass,
-  gearArtAspectClass,
-  gearArtFillClass,
-  trinketArtFillClass,
-  trinketArtImageClass,
-  trinketArtTileClass,
   viewCardWidthClass,
 } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
-import { gearDefinitions, getAstralShineColors, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
-import { GearDetailPopup } from "../../../shared/ui/gear-detail-popup";
+import { getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
-import { DetailPopup } from "../../../shared/ui/card-popup";
-import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
+import { GearTile, TrinketTile } from "../../../shared/ui/collection-art-tiles";
 import { MysteryEffectBadge } from "../../../shared/ui/mystery-effect-badge";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { KeywordProgressGrid } from "../keyword-progress-grid";
@@ -73,47 +64,17 @@ function MysteryCardRewardItem({ card }: { card: BattleCard }) {
 function MysteryTrinketRewardItem({ boon }: { boon: TrinketEntry }) {
   return (
     <div className="flex flex-col items-center gap-3">
-      <InteractiveArtTile
-        id={boon.id}
-        interactionKey="mystery-reward"
-        title={boon.title}
-        art={boon.art}
-        className={trinketArtTileClass}
-        imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
-        popup={({ visible, triggerRef }) => (
-          <DetailPopup
-            idPrefix={boon.id}
-            title={boon.title}
-            footerChip="This Run"
-            descriptionLines={boon.descriptionLines}
-            visible={visible}
-            triggerRef={triggerRef}
-          />
-        )}
-      />
+      <TrinketTile trinket={boon} interactionKey="mystery-reward" />
       <p className={controlLabelClass}>{boon.title}</p>
     </div>
   );
 }
 
 function MysteryGearRewardItem({ instance }: { instance: GearInstance }) {
-  const definition = gearDefinitions[instance.definitionId];
-  const title = getGearInstanceTitle(instance);
   return (
     <div className="flex flex-col items-center gap-3">
-      <InteractiveArtTile
-        id={instance.instanceId}
-        interactionKey="mystery-reward"
-        title={title}
-        art={definition?.art ?? ""}
-        className={cn(cardSurfaceClass, collectionTileWidthClass, gearArtAspectClass)}
-        imageClassName={gearArtFillClass}
-        shineColor={getAstralShineColors(instance)}
-        popup={({ visible, triggerRef }) => (
-          <GearDetailPopup definition={definition} instance={instance} visible={visible} triggerRef={triggerRef} />
-        )}
-      />
-      <p className={controlLabelClass}>{title}</p>
+      <GearTile instance={instance} interactionKey="mystery-reward" />
+      <p className={controlLabelClass}>{getGearInstanceTitle(instance)}</p>
     </div>
   );
 }

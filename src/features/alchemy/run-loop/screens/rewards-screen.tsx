@@ -1,26 +1,15 @@
 // Victory reward screen — pick a card or trinket to add or skip.
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
-import { gearDefinitions, getAstralShineColors, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
+import { getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 
-import { DetailPopup } from "../../shared/ui/card-popup";
-import { GearDetailPopup } from "../../shared/ui/gear-detail-popup";
+import { GearTile, TrinketTile } from "../../shared/ui/collection-art-tiles";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
-import { InteractiveArtTile } from "../../shared/ui/interactive-art-tile";
 import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
 import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { FadeSlot } from "../../shared/ui/fade-slot";
-import {
-  cardSurfaceClass,
-  collectionTileWidthClass,
-  gearArtAspectClass,
-  gearArtFillClass,
-  sectionTitleClass,
-  trinketArtFillClass,
-  trinketArtImageClass,
-  trinketArtTileClass,
-} from "@/features/alchemy/shared/config";
+import { sectionTitleClass } from "@/features/alchemy/shared/config";
 import {
   getRewardChoiceId,
   type GearRewardState,
@@ -95,27 +84,13 @@ function TrinketRewardButton({
   selected: boolean;
 }) {
   return (
-    <InteractiveArtTile
-      id={trinket.id}
+    <TrinketTile
+      trinket={trinket}
       interactionKey="reward"
-      title={trinket.title}
-      art={trinket.art}
-      className={trinketArtTileClass}
-      imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
+      as="button"
       selected={selected}
       onClick={onClick}
       ariaLabel={`Select ${trinket.title}`}
-      popup={({ visible, triggerRef }) => (
-        <DetailPopup
-          idPrefix={trinket.id}
-          title={trinket.title}
-          footerChip="This Run"
-          descriptionLines={trinket.descriptionLines}
-          visible={visible}
-          triggerRef={triggerRef}
-        />
-      )}
-      as="button"
     />
   );
 }
@@ -129,27 +104,14 @@ function GearRewardButton({
   onClick: () => void;
   selected: boolean;
 }) {
-  const definition = gearDefinitions[instance.definitionId];
-  const title = getGearInstanceTitle(instance);
-  const art = definition?.art ?? "";
   return (
-    <InteractiveArtTile
-      id={instance.instanceId}
+    <GearTile
+      instance={instance}
       interactionKey="reward"
-      title={title}
-      art={art}
-      className={cn(cardSurfaceClass, collectionTileWidthClass, gearArtAspectClass)}
-      imageClassName={gearArtFillClass}
-      shineColor={getAstralShineColors(instance)}
+      as="button"
       selected={selected}
       onClick={onClick}
-      ariaLabel={`Select ${title}`}
-      // Same rich content as the shop so reward choices expose rarity and
-      // rolled affixes, not just base description lines.
-      popup={({ visible, triggerRef }) => (
-        <GearDetailPopup definition={definition} instance={instance} visible={visible} triggerRef={triggerRef} />
-      )}
-      as="button"
+      ariaLabel={`Select ${getGearInstanceTitle(instance)}`}
     />
   );
 }

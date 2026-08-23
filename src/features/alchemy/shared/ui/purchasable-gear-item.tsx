@@ -1,10 +1,8 @@
 // Shop gear tile with buy button and sold-out state.
-import { gearDefinitions, getAstralShineColors, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
-import { cn } from "@/lib/utils";
-import { cardSurfaceClass, collectionTileWidthClass, gearArtAspectClass, gearArtFillClass } from "../config";
-import { GearDetailPopup } from "./gear-detail-popup";
-import { InteractiveArtTile } from "./interactive-art-tile";
+import type { GearInstance } from "@/lib/gear";
+import { getGearInstanceTitle } from "@/lib/gear";
 import { PurchasableShopTile, ShopPriceChip } from "./purchasable-shop-tile";
+import { GearTile } from "./collection-art-tiles";
 
 interface PurchasableGearItemProps {
   instance: GearInstance;
@@ -15,30 +13,21 @@ interface PurchasableGearItemProps {
 }
 
 export function PurchasableGearItem({ instance, price, gold, purchased, onBuy }: PurchasableGearItemProps) {
-  const definition = gearDefinitions[instance.definitionId];
   const title = getGearInstanceTitle(instance);
-  const art = definition?.art ?? "";
   const canAfford = gold >= price;
   const media = (
-    <InteractiveArtTile
-      id={instance.instanceId}
+    <GearTile
+      instance={instance}
       interactionKey="shop"
-      title={title}
-      art={art}
       as="button"
-      className={cn(cardSurfaceClass, collectionTileWidthClass, gearArtAspectClass)}
-      imageClassName={gearArtFillClass}
-      shineColor={purchased ? undefined : getAstralShineColors(instance)}
+      shine={!purchased}
       interactiveChrome={!purchased}
       disabled={purchased || !canAfford}
       onClick={!purchased && canAfford ? onBuy : undefined}
       ariaLabel={purchased ? title : `Buy ${title}`}
-      popup={({ visible, triggerRef }) => (
-        <GearDetailPopup definition={definition} instance={instance} visible={visible} triggerRef={triggerRef} />
-      )}
     >
       <ShopPriceChip price={price} gold={gold} purchased={purchased} />
-    </InteractiveArtTile>
+    </GearTile>
   );
 
   return <PurchasableShopTile media={media} purchased={purchased} />;

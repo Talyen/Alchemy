@@ -7,6 +7,7 @@ import type { BattleCard } from "@/lib/game-data";
 
 import { FadeSlot } from "./fade-slot";
 import { PaginationControls } from "./navigation";
+import { paginateRows } from "./use-paginated-rows";
 
 const CARD_SELECTION_GRID_CONFIG = {
   cardsPerRow: 4,
@@ -37,17 +38,12 @@ export function CardSelectionGrid({
   paginationReserveSpace?: boolean;
 }) {
   // The original deck index travels with each item so paginated/filtered pickers still mutate the correct slot.
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
-  const safePage = Math.min(page, totalPages - 1);
-  const pageItems = items.slice(safePage * pageSize, (safePage + 1) * pageSize);
-  const rows = Array.from(
-    { length: Math.ceil(pageItems.length / CARD_SELECTION_GRID_CONFIG.cardsPerRow) },
-    (_, rowIndex) =>
-      pageItems.slice(
-        rowIndex * CARD_SELECTION_GRID_CONFIG.cardsPerRow,
-        rowIndex * CARD_SELECTION_GRID_CONFIG.cardsPerRow + CARD_SELECTION_GRID_CONFIG.cardsPerRow,
-      ),
-  );
+  const {
+    page: safePage,
+    pageItems,
+    rows,
+    totalPages,
+  } = paginateRows(items, page, pageSize, CARD_SELECTION_GRID_CONFIG.cardsPerRow);
 
   return (
     <div>
