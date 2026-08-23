@@ -143,9 +143,11 @@ test.describe("Battle Autoplay", critical, () => {
     await battle.autoplayToggle.click();
     // Under load the battle can resolve before the pressed attribute
     // re-renders; once the control unmounts, the outcome poll below takes over.
+    // Keep the inner timeout short so a mid-poll unmount (victory screen replaces
+    // the HUD) ends this iteration instead of consuming the whole toPass budget.
     await expect(async () => {
       if (!(await battle.autoplayToggle.isVisible())) return;
-      await expect(battle.autoplayToggle).toHaveAttribute("aria-pressed", "true");
+      await expect(battle.autoplayToggle).toHaveAttribute("aria-pressed", "true", { timeout: 250 });
     }).toPass({ timeout: 5_000 });
 
     await expect

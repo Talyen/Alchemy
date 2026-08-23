@@ -59,10 +59,12 @@ test.describe("Progression Locks", critical, () => {
       await expect(labyrinthCard).toHaveAttribute("aria-disabled", "true");
       // Under runner load the hover event can land before the tile's handlers
       // are settled, so re-hover until the portal tooltip actually mounts.
+      // Keep the inner timeout short so each iteration re-hovers instead of
+      // spending its whole budget waiting on one attempt.
       const rogueLockText = page.getByText("Finish a Run as the Rogue to unlock");
       await expect(async () => {
         await labyrinthCard.hover();
-        await expect(rogueLockText).toBeVisible();
+        await expect(rogueLockText).toBeVisible({ timeout: 250 });
       }).toPass({ timeout: 10_000 });
       // The lock tooltip must anchor to the hovered tile — not the last tile in
       // the list, which a ref shared across the tiles would resolve to.
@@ -78,7 +80,7 @@ test.describe("Progression Locks", critical, () => {
       const rangerLockText = page.getByText("Finish a Run as the Ranger to unlock");
       await expect(async () => {
         await wildwoodCard.hover();
-        await expect(rangerLockText).toBeVisible();
+        await expect(rangerLockText).toBeVisible({ timeout: 250 });
       }).toPass({ timeout: 10_000 });
 
       // 6. Start Campaign and check character selection screen locks
