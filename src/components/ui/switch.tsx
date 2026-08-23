@@ -1,21 +1,29 @@
+// Pill-style toggle on a native checkbox — same geometry as the previous Radix
+// switch without the dependency. Keyboard/focus semantics come from the input.
 import { type ComponentProps } from "react";
-import * as SwitchPrimitive from "@radix-ui/react-switch";
 import { cn } from "@/lib/utils";
 
-type SwitchProps = ComponentProps<typeof SwitchPrimitive.Root>;
+type SwitchProps = Omit<ComponentProps<"input">, "onChange" | "checked"> & {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+};
 
-function Switch({ className, ref, ...props }: SwitchProps) {
+function Switch({ className, checked, onCheckedChange, ...props }: SwitchProps) {
   return (
-    <SwitchPrimitive.Root
-      ref={ref}
-      className={cn(
-        "peer inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted",
-        className,
-      )}
-      {...props}
-    >
-      <SwitchPrimitive.Thumb className="pointer-events-none block h-5 w-5 rounded-full shadow transition-transform data-[state=checked]:translate-x-4 data-[state=checked]:bg-foreground data-[state=unchecked]:translate-x-0 data-[state=unchecked]:bg-muted-foreground" />
-    </SwitchPrimitive.Root>
+    <span className={cn("relative inline-flex h-6 w-10 shrink-0", className)}>
+      <input
+        type="checkbox"
+        role="switch"
+        checked={checked}
+        onChange={(event) => onCheckedChange(event.target.checked)}
+        className="peer absolute inset-0 h-full w-full cursor-pointer appearance-none rounded-full border-2 border-transparent transition-colors not-checked:bg-muted checked:bg-primary focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+        {...props}
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-0.5 left-0.5 block h-5 w-5 rounded-full shadow transition-transform peer-not-checked:bg-muted-foreground peer-checked:translate-x-4 peer-checked:bg-foreground"
+      />
+    </span>
   );
 }
 
