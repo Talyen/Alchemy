@@ -1,11 +1,30 @@
 import type { BattleState, EndPlayerTurnResolution } from "@/lib/battle";
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
-import { bindDraftAction, type GameplayDraft } from "./run-session-command";
-import { createGameplayDraftBattleActions } from "./gameplay-state-store";
-import type { DisplayOverrides } from "./run-domain-types";
+import { createInitialBattleFields, type DisplayOverrides, type RunDomainBattleState } from "./run-domain-types";
+import type { GameplayDraft } from "./run-session-command";
+import type { Draft } from "immer";
 import { syncPurseFromBattleGold } from "./gold-purse";
 
-const battleActions = (state: GameplayDraft) => createGameplayDraftBattleActions(state);
+function hydrateBattleState(battleState: BattleState): BattleState {
+  return {
+    ...battleState,
+    deck: battleState.deck.map(hydrateCard),
+    hand: battleState.hand.map(hydrateCard),
+    discard: battleState.discard.map(hydrateCard),
+    exhausted: battleState.exhausted.map(hydrateCard),
+    wishOptions: battleState.wishOptions ? battleState.wishOptions.map(hydrateCard) : null,
+    wishQueue: battleState.wishQueue ? battleState.wishQueue.map((list) => list.map(hydrateCard)) : [],
+  };
+}
+
+function hydrateBattleTransition(transition: PersistedBattleTransition | null): PersistedBattleTransition | null {
+  if (!transition || transition.kind !== "enemy-turn") return transition;
+  return {
+    ...transition,
+    resultState: hydrateBattleState(transition.resultState),
+  };
+}
 
 function restingWorldRng(): () => number {
   return () => {
@@ -41,20 +60,44 @@ export function withRestingEndPlayerTurnResolution(
   };
 }
 
-function applyBattleSnapshot(
+/** Commit the logical combat state and clear stale display overrides. */
+export function setSyncedBattleState(
+  draft: GameplayDraft,
   action: BattleState | ((prev: BattleState) => BattleState),
-  prev: BattleState,
-): BattleState {
-  const next = typeof action === "function" ? action(prev) : action;
-  return rebindBattleWorldRng(next);
+): void {
+  const prev = draft.battle.battleState;
+  draft.battle.battleState = typeof action === "function" ? action(prev) : action;
+  draft.battle.displayOverrides = {};
 }
 
 export function setBattleState(draft: GameplayDraft, action: BattleState | ((prev: BattleState) => BattleState)): void {
-  battleActions(draft).setSyncedBattleState((prev) => applyBattleSnapshot(action, prev));
+  setSyncedBattleState(draft, (prev) => rebindBattleWorldRng(typeof action === "function" ? action(prev) : action));
   syncPurseFromBattleGold(draft);
 }
-export const setBattleStartState = bindDraftAction((s) => battleActions(s).setBattleStartState);
-export const setHasActiveBattle = bindDraftAction((s) => battleActions(s).setHasActiveBattle);
+
+export function setPendingBattleTransition(draft: GameplayDraft, transition: PersistedBattleTransition | null): void {
+  draft.battle.pendingBattleTransition = transition;
+}
+
+export function clearPendingTransitionResumeRequired(draft: GameplayDraft): void {
+  draft.battle.pendingTransitionResumeRequired = false;
+}
+
+export function setDisplayOverrides(draft: GameplayDraft, overrides: DisplayOverrides): void {
+  draft.battle.displayOverrides = overrides;
+}
+
+export function clearDisplayOverrides(draft: GameplayDraft): void {
+  draft.battle.displayOverrides = {};
+}
+
+export function setBattleStartState(draft: GameplayDraft, state: BattleState | null): void {
+  draft.battle.battleStartState = state;
+}
+
+export function setHasActiveBattle(draft: GameplayDraft, active: boolean | ((prev: boolean) => boolean)): void {
+  draft.battle.hasActiveBattle = typeof active === "function" ? active(draft.battle.hasActiveBattle) : active;
+}
 
 function rebindPendingTransitionWorldRng(
   pendingBattleTransition: PersistedBattleTransition | null,
@@ -66,20 +109,25 @@ function rebindPendingTransitionWorldRng(
   };
 }
 
+/** Hydrate and start a battle with resting RNG, or clear combat state entirely when passed `null`. */
 export function initializeActiveBattle(
   draft: GameplayDraft,
   battleState: BattleState | null,
   pendingBattleTransition?: PersistedBattleTransition | null,
 ): void {
-  const battle = battleActions(draft);
   if (!battleState) {
-    battle.initializeActiveBattle(null, null);
+    Object.assign(draft.battle, createInitialBattleFields());
     return;
   }
-  battle.initializeActiveBattle(
-    rebindBattleWorldRng(battleState),
-    rebindPendingTransitionWorldRng(pendingBattleTransition ?? null),
-  );
+  const hydrated = rebindBattleWorldRng(hydrateBattleState(battleState));
+  const pending = rebindPendingTransitionWorldRng(hydrateBattleTransition(pendingBattleTransition ?? null));
+  const battle: Draft<RunDomainBattleState> = draft.battle;
+  battle.battleState = hydrated;
+  battle.pendingBattleTransition = pending;
+  battle.pendingTransitionResumeRequired = pending != null;
+  battle.displayOverrides = {};
+  battle.battleStartState = hydrated;
+  battle.hasActiveBattle = true;
 }
 
 /** Commit the logical state and its async continuation as one durable revision. */
@@ -88,10 +136,9 @@ export function commitBattleTransition(
   battleState: BattleState,
   pendingBattleTransition: PersistedBattleTransition | null,
 ): void {
-  const battle = battleActions(draft);
-  battle.setSyncedBattleState(rebindBattleWorldRng(battleState));
-  battle.setPendingBattleTransition(rebindPendingTransitionWorldRng(pendingBattleTransition));
-  battle.clearPendingTransitionResumeRequired();
+  setSyncedBattleState(draft, rebindBattleWorldRng(battleState));
+  setPendingBattleTransition(draft, rebindPendingTransitionWorldRng(pendingBattleTransition));
+  clearPendingTransitionResumeRequired(draft);
   syncPurseFromBattleGold(draft);
 }
 
@@ -102,15 +149,13 @@ export function beginBattleTransition(
   pendingBattleTransition: PersistedBattleTransition,
   displayOverrides: DisplayOverrides,
 ): void {
-  const battle = battleActions(draft);
-  battle.setSyncedBattleState(rebindBattleWorldRng(battleState));
-  battle.setPendingBattleTransition(rebindPendingTransitionWorldRng(pendingBattleTransition));
-  battle.setDisplayOverrides(displayOverrides);
+  setSyncedBattleState(draft, rebindBattleWorldRng(battleState));
+  setPendingBattleTransition(draft, rebindPendingTransitionWorldRng(pendingBattleTransition));
+  setDisplayOverrides(draft, displayOverrides);
   syncPurseFromBattleGold(draft);
 }
 
 export function clearBattleTransition(draft: GameplayDraft): void {
-  const battle = battleActions(draft);
-  battle.setPendingBattleTransition(null);
-  battle.clearPendingTransitionResumeRequired();
+  setPendingBattleTransition(draft, null);
+  clearPendingTransitionResumeRequired(draft);
 }

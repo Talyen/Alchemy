@@ -1,14 +1,30 @@
 // Stable action-only selectors for render paths (functions do not change between store updates).
 import { useShallow } from "zustand/react/shallow";
 import { useSettingsStore, type SettingsStore } from "./settings-store";
-import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
-import { bondCompanion, completeResearch, constructBuilding, plantFarm } from "./run-session-write-port";
+import {
+  bondCompanion,
+  completeResearch,
+  constructBuilding,
+  handleCollectionTabChange,
+  plantFarm,
+  setCollectionPage,
+} from "./run-session-write-port";
 import { createRunSessionCommand } from "./run-session-command";
 
 const commandConstructBuilding = createRunSessionCommand(constructBuilding);
 const commandPlantFarm = createRunSessionCommand(plantFarm);
 const commandCompleteResearch = createRunSessionCommand(completeResearch);
 const commandBondCompanion = createRunSessionCommand(bondCompanion);
+
+export interface CollectionActions {
+  setCollectionPage: (tab: Parameters<typeof setCollectionPage>[1], page: number) => void;
+  handleCollectionTabChange: (tab: Parameters<typeof handleCollectionTabChange>[1]) => void;
+}
+
+const collectionActions: CollectionActions = {
+  setCollectionPage: createRunSessionCommand(setCollectionPage),
+  handleCollectionTabChange: createRunSessionCommand(handleCollectionTabChange),
+};
 
 const settingsActionKeys = [
   "setSelectedAspectRatio",
@@ -25,12 +41,7 @@ const settingsActionKeys = [
   "resetToDefaults",
 ] as const;
 
-const collectionActionKeys = ["setCollectionPage", "handleCollectionTabChange"] as const;
-
-type ProfileSelect = GameplayState["profile"] & GameplayState["profileActions"];
-
 export type SettingsActions = Pick<SettingsStore, (typeof settingsActionKeys)[number]>;
-export type CollectionActions = Pick<ProfileSelect, (typeof collectionActionKeys)[number]>;
 
 function pickActions<T extends object, K extends keyof T>(state: T, keys: readonly K[]): Pick<T, K> {
   const out = {} as Pick<T, K>;
@@ -48,10 +59,9 @@ export function useSettingsActions(): SettingsActions {
   return useSettingsStore(useShallow(selectSettingsActions));
 }
 
+/** Collection paging commands, bound once so references are stable across renders. */
 export function useCollectionActions(): CollectionActions {
-  return useGameplayStateStore(
-    useShallow((state) => pickActions({ ...state.profile, ...state.profileActions }, collectionActionKeys)),
-  );
+  return collectionActions;
 }
 
 export function useHomesteadActions() {

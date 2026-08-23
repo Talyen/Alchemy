@@ -10,99 +10,119 @@ import {
   normalizeCraftingCurrencies,
   EMPTY_CRAFTING_CURRENCIES,
 } from "@/lib/gear";
-import type { GearStore } from "./gear-store-types";
+import type {
+  CraftingCurrencyId,
+  GearInstance,
+  GearInventories,
+  GearLoadouts,
+  GearSlot,
+  SalvageYield,
+} from "@/lib/gear";
+import type { CharacterId } from "@/lib/game-data";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import type { Draft } from "immer";
 import { initialState } from "./gear-store-initial-state";
+import type { GearStateFields } from "./gear-store-types";
 
-export type GearStateFields = Pick<GearStore, "inventories" | "loadouts" | "craftingCurrencies">;
-export type GearActions = Omit<GearStore, keyof GearStateFields>;
+/** Mutations over the aggregate's gear region; each takes the gear draft directly. */
 
-type SetState = (partial: Partial<GearStateFields> | ((state: GearStateFields) => unknown), replace?: boolean) => void;
-type GetState = () => GearStateFields;
+export function initializeGear(
+  gear: Draft<GearStateFields>,
+  inventories: GearInventories,
+  loadouts: GearLoadouts,
+  craftingCurrencies: Partial<Record<CraftingCurrencyId, number>> = EMPTY_CRAFTING_CURRENCIES,
+): void {
+  gear.inventories = inventories;
+  gear.loadouts = loadouts;
+  gear.craftingCurrencies = normalizeCraftingCurrencies(craftingCurrencies);
+}
 
-export function createGearActions(set: SetState, get: GetState): GearActions {
-  return {
-    initialize: (inventories, loadouts, craftingCurrencies = initialState.craftingCurrencies) => {
-      set(() => ({
-        inventories,
-        loadouts,
-        craftingCurrencies: normalizeCraftingCurrencies(craftingCurrencies),
-      }));
-    },
-    addInstance: (instance, characterId) =>
-      set((state) => ({
-        inventories: {
-          ...state.inventories,
-          [characterId]: [...(state.inventories[characterId] ?? []), instance],
-        },
-      })),
-    equip: (characterId, slot, instance) =>
-      set((state) => {
-        const flatInventory = flattenGearInventories(state.inventories);
-        return {
-          loadouts: equipGear(state.loadouts, characterId, slot, instance, flatInventory),
-        };
-      }),
-    unequip: (characterId, slot) =>
-      set((state) => ({
-        loadouts: unequipGear(state.loadouts, characterId, slot),
-      })),
-    salvage: (instanceId, options) => {
-      const state = get();
-      const owner = findGearInventoryOwner(state.inventories, instanceId);
-      if (!owner) return null;
-      if (!options?.yield && !options?.rng) throw new Error("salvage requires an explicit rng or yield");
-      const result = salvageGear(
-        flattenGearInventories(state.inventories),
-        state.loadouts,
-        instanceId,
-        options.rng ?? (() => 0),
-        options.yield,
-      );
-      if (!result) return null;
-      const nextInventories = {
-        ...state.inventories,
-        [owner]: state.inventories[owner].filter((item) => item.instanceId !== instanceId),
-      };
-      const nextCurrencies = addCraftingCurrencies(state.craftingCurrencies, result.yieldedCurrencies);
-      set(() => ({
-        inventories: nextInventories,
-        loadouts: result.loadouts,
-        craftingCurrencies: nextCurrencies,
-      }));
-      return {
-        inventories: nextInventories,
-        yieldedCurrencies: result.yieldedCurrencies,
-        yieldedMaterials: result.yieldedMaterials,
-      };
-    },
-    applyCurrency: (currencyId, instanceId, options) => {
-      const state = get();
-      const owner = findGearInventoryOwner(state.inventories, instanceId);
-      if (!owner) return false;
-      const item = state.inventories[owner].find((entry) => entry.instanceId === instanceId);
-      if (!item || (state.craftingCurrencies[currencyId] ?? 0) < 1 || !canApplyCraftingCurrency(currencyId, item))
-        return false;
-      if (!options?.rng) throw new Error("applyCurrency requires an explicit rng");
-      const updatedItem = applyCraftingCurrency(currencyId, item, options.rng);
-      if (updatedItem === item) return false;
-      const nextInventories = {
-        ...state.inventories,
-        [owner]: state.inventories[owner].map((entry) => (entry.instanceId === instanceId ? updatedItem : entry)),
-      };
-      const nextCurrencies = normalizeCraftingCurrencies({
-        ...state.craftingCurrencies,
-        [currencyId]: (state.craftingCurrencies[currencyId] ?? 0) - 1,
-      });
-      set(() => ({
-        inventories: nextInventories,
-        craftingCurrencies: nextCurrencies,
-      }));
-      return true;
-    },
-    addCurrencies: (currencies) =>
-      set((state) => ({
-        craftingCurrencies: addCraftingCurrencies(state.craftingCurrencies, currencies),
-      })),
-    reset: () => set(() => ({ ...initialState, craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES } })),
+export function addGearInstance(gear: Draft<GearStateFields>, instance: GearInstance, characterId: CharacterId): void {
+  gear.inventories = {
+    ...gear.inventories,
+    [characterId]: [...(gear.inventories[characterId] ?? []), instance],
   };
+}
+
+export function equipGearInstance(
+  gear: Draft<GearStateFields>,
+  characterId: CharacterId,
+  slot: GearSlot,
+  instance: GearInstance,
+): void {
+  const flatInventory = flattenGearInventories(gear.inventories);
+  gear.loadouts = equipGear(gear.loadouts, characterId, slot, instance, flatInventory);
+}
+
+export function unequipGearInstance(gear: Draft<GearStateFields>, characterId: CharacterId, slot: GearSlot): void {
+  gear.loadouts = unequipGear(gear.loadouts, characterId, slot);
+}
+
+export function salvageGearInstance(
+  gear: Draft<GearStateFields>,
+  instanceId: string,
+  options?: { rng?: () => number; yield?: SalvageYield },
+): {
+  inventories: GearInventories;
+  yieldedCurrencies: Record<CraftingCurrencyId, number>;
+  yieldedMaterials: MaterialInventory;
+} | null {
+  const owner = findGearInventoryOwner(gear.inventories, instanceId);
+  if (!owner) return null;
+  if (!options?.yield && !options?.rng) throw new Error("salvage requires an explicit rng or yield");
+  const result = salvageGear(
+    flattenGearInventories(gear.inventories),
+    gear.loadouts,
+    instanceId,
+    options.rng ?? (() => 0),
+    options.yield,
+  );
+  if (!result) return null;
+  gear.inventories = {
+    ...gear.inventories,
+    [owner]: gear.inventories[owner].filter((item) => item.instanceId !== instanceId),
+  };
+  gear.loadouts = result.loadouts;
+  gear.craftingCurrencies = addCraftingCurrencies(gear.craftingCurrencies, result.yieldedCurrencies);
+  return {
+    inventories: gear.inventories,
+    yieldedCurrencies: result.yieldedCurrencies,
+    yieldedMaterials: result.yieldedMaterials,
+  };
+}
+
+export function applyGearCurrency(
+  gear: Draft<GearStateFields>,
+  currencyId: CraftingCurrencyId,
+  instanceId: string,
+  options?: { rng?: () => number },
+): boolean {
+  const owner = findGearInventoryOwner(gear.inventories, instanceId);
+  if (!owner) return false;
+  const item = gear.inventories[owner].find((entry) => entry.instanceId === instanceId);
+  if (!item || (gear.craftingCurrencies[currencyId] ?? 0) < 1 || !canApplyCraftingCurrency(currencyId, item))
+    return false;
+  if (!options?.rng) throw new Error("applyCurrency requires an explicit rng");
+  const updatedItem = applyCraftingCurrency(currencyId, item, options.rng);
+  if (updatedItem === item) return false;
+  gear.inventories = {
+    ...gear.inventories,
+    [owner]: gear.inventories[owner].map((entry) => (entry.instanceId === instanceId ? updatedItem : entry)),
+  };
+  gear.craftingCurrencies = normalizeCraftingCurrencies({
+    ...gear.craftingCurrencies,
+    [currencyId]: (gear.craftingCurrencies[currencyId] ?? 0) - 1,
+  });
+  return true;
+}
+
+export function addGearCurrencies(
+  gear: Draft<GearStateFields>,
+  currencies: Partial<Record<CraftingCurrencyId, number>>,
+): void {
+  gear.craftingCurrencies = addCraftingCurrencies(gear.craftingCurrencies, currencies);
+}
+
+export function resetGear(gear: Draft<GearStateFields>): void {
+  Object.assign(gear, initialState, { craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES } });
 }

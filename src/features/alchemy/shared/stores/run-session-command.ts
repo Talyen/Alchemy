@@ -11,13 +11,6 @@ import { subscribeGameplayCommits, useGameplayStateStore, type GameplayState } f
 
 export type GameplayDraft = Draft<GameplayState>;
 
-/** Bind an aggregate action as an explicit draft-first mutator. */
-export function bindDraftAction<Args extends unknown[], Ret>(
-  select: (state: GameplayDraft) => (...args: Args) => Ret,
-): (draft: GameplayDraft, ...args: Args) => Ret {
-  return (draft, ...args) => select(draft)(...args);
-}
-
 /**
  * Execute one synchronous gameplay command and publish one committed revision.
  * The recipe runs against one Immer draft. A thrown recipe discards that draft;
@@ -49,8 +42,4 @@ export function createRunSessionCommand<Args extends unknown[], Ret>(
 
 export function subscribeRunSessionCommits(listener: (revision: number) => void): () => void {
   return subscribeGameplayCommits(listener);
-}
-
-export function getRunSessionRevision(): number {
-  return useGameplayStateStore.getState().revision;
 }

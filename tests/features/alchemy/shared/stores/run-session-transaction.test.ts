@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   dispatchRunSessionCommand,
-  getRunSessionRevision,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -24,11 +23,13 @@ import {
   withDraftWorldBattleRng,
   withRestingWorldBattleRng,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import {
-  createGameplayDraftActions,
-  readGameplayState,
-  useGameplayStateStore,
-} from "@/features/alchemy/shared/stores/gameplay-state-store";
+  setDiscoveredCardIds,
+  setMaterials as setRunProfileMaterials,
+} from "@/features/alchemy/shared/stores/write-port-profile";
+import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
+import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { defaultBattleState } from "@/lib/battle";
 import { placeholderRng } from "@/lib/battle/rng";
 import { createRunRngState } from "@/lib/run-rng";
@@ -42,17 +43,19 @@ beforeEach(() => {
 });
 
 describe("run-session transaction coordinator", () => {
-  it("keeps the root nested with action groups beside each lifetime", () => {
+  it("keeps the root data-only with one region per lifetime", () => {
     const root = readGameplayState();
 
     expect(root).not.toHaveProperty("activeRun");
     expect(root.run).toHaveProperty("activeRun");
-    expect(root.runActions).toBeDefined();
-    expect(root.sessionActions).toBeDefined();
-    expect(root.battleActions).toBeDefined();
-    expect(root.runProfileActions).toBeDefined();
-    expect(root.profileActions).toBeDefined();
-    expect(root.gearActions).toBeDefined();
+    expect(root.session).toBeDefined();
+    expect(root.battle).toBeDefined();
+    expect(root.runProfile).toBeDefined();
+    expect(root.profile).toBeDefined();
+    expect(root.gear).toBeDefined();
+    expect(root).not.toHaveProperty("runActions");
+    expect(root).not.toHaveProperty("sessionActions");
+    expect(root).not.toHaveProperty("gearActions");
   });
 
   it("executes the public command boundary and runs its effect after commit", () => {
@@ -74,7 +77,7 @@ describe("run-session transaction coordinator", () => {
 
   it("publishes one commit after multiple store mutations", () => {
     const commits: Array<{ revision: number; gold: number; hasActiveRun: boolean }> = [];
-    const beforeRevision = getRunSessionRevision();
+    const beforeRevision = readGameplayState().revision;
     const unsubscribe = subscribeRunSessionCommits((revision) => {
       commits.push({
         revision,
@@ -85,7 +88,7 @@ describe("run-session transaction coordinator", () => {
 
     dispatchRunSessionCommand((draft) => {
       setRunGold(draft, 125);
-      createGameplayDraftActions(draft).sessionActions.setHasActiveRun(true);
+      setHasActiveRun(draft, true);
     });
 
     unsubscribe();
@@ -212,7 +215,7 @@ describe("run-session transaction coordinator", () => {
 
     dispatchRunSessionCommand((draft) => {
       setRunGold(draft, 125);
-      createGameplayDraftActions(draft).sessionActions.setHasActiveRun(true);
+      setHasActiveRun(draft, true);
 
       expect(draft.runProfile.gold).toBe(125);
       expect(useGameplayStateStore.getState()).toBe(before);
@@ -272,7 +275,7 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
-    expect(getRunSessionRevision()).toBeGreaterThanOrEqual(commits[0]);
+    expect(readGameplayState().revision).toBeGreaterThanOrEqual(commits[0]);
     expect(getRunProfileStore().gold).toBe(20);
   });
 
@@ -324,14 +327,14 @@ describe("run-session transaction coordinator", () => {
   it("does not publish a commit for an unchanged transaction", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
-    const before = getRunSessionRevision();
+    const before = readGameplayState().revision;
 
     dispatchRunSessionCommand((draft) => void draft);
 
     unsubscribe();
 
     expect(commits).toHaveLength(0);
-    expect(getRunSessionRevision()).toBe(before);
+    expect(readGameplayState().revision).toBe(before);
   });
 
   it("publishes one commit for all persisted gameplay stores", () => {
@@ -340,11 +343,10 @@ describe("run-session transaction coordinator", () => {
 
     dispatchRunSessionCommand((draft) => {
       setRunGold(draft, 125);
-      const actions = createGameplayDraftActions(draft);
-      actions.sessionActions.setHasActiveRun(true);
-      actions.runProfileActions.setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
-      actions.profileActions.setDiscoveredCardIds(["slash"]);
-      actions.gearActions.gearAddCurrencies({ voidstone: 1 });
+      setHasActiveRun(draft, true);
+      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
+      setDiscoveredCardIds(draft, ["slash"]);
+      addGearCurrencies(draft.gear, { voidstone: 1 });
     });
 
     unsubscribe();
@@ -393,11 +395,10 @@ describe("run-session transaction coordinator", () => {
     expect(() =>
       dispatchRunSessionCommand((draft) => {
         setRunGold(draft, 999);
-        const actions = createGameplayDraftActions(draft);
-        actions.sessionActions.setHasActiveRun(true);
-        actions.runProfileActions.setMaterials({ wood: 9, iron: 0, herbs: 0, food: 0, crystal: 0 });
-        actions.profileActions.setDiscoveredCardIds(["burn"]);
-        actions.gearActions.gearAddCurrencies({ voidstone: 9 });
+        setHasActiveRun(draft, true);
+        setRunProfileMaterials(draft, { wood: 9, iron: 0, herbs: 0, food: 0, crystal: 0 });
+        setDiscoveredCardIds(draft, ["burn"]);
+        addGearCurrencies(draft.gear, { voidstone: 9 });
         throw new Error("transaction failed");
       }),
     ).toThrow("transaction failed");

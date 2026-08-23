@@ -1,11 +1,14 @@
 // Test facades over the gameplay aggregate (`useRunTransientStore`, `useActiveRunStore`, etc.).
 // These names are not production APIs; production code uses capability ports on gameplay-state-store.
+// Action members dispatch real gameplay commands through the production write-port mutators.
 import { vi } from "vitest";
+import type { Draft } from "immer";
 import {
   readGameplayState,
   useGameplayStateStore,
   type GameplayState,
 } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   createInitialBattleFields,
@@ -18,23 +21,19 @@ import {
   createInitialActiveRunFields,
   createInitialPermanentFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
+import * as runPort from "@/features/alchemy/shared/stores/write-port-run";
+import * as sessionPort from "@/features/alchemy/shared/stores/write-port-session";
+import * as battlePort from "@/features/alchemy/shared/stores/write-port-battle";
+import * as profilePort from "@/features/alchemy/shared/stores/write-port-profile";
+import * as gearMutators from "@/features/alchemy/shared/stores/gear-actions";
 
-type RunDomainStore = GameplayState["run"] & GameplayState["runActions"];
-type RunProfileStore = GameplayState["runProfile"] & GameplayState["runProfileActions"];
-type RunTransientStore = RunSessionFields & GameplayState["sessionActions"];
-type RunBattleDomainStore = RunDomainBattleState & GameplayState["battleActions"];
-type ActiveRunStore = GameplayState["run"]["activeRun"] &
-  Pick<GameplayState["run"], "initialized"> &
-  GameplayState["runActions"] & { reset: GameplayState["runActions"]["resetProgress"] };
-type NavigationStore = GameplayState["run"]["navigation"] &
-  Pick<GameplayState["runActions"], "setScreen"> & { reset: GameplayState["runActions"]["resetNavigation"] };
-
-interface StoreFacade<S> {
-  <T>(selector?: (state: S) => T): T;
-  getState: () => S;
-  getInitialState: () => S;
-  setState: (partial: Partial<S> | S | ((state: S) => unknown), replace?: boolean) => void;
+/** Wrap a draft-first mutator as a self-contained command for test setup. */
+function command<A extends unknown[], R>(mutate: (draft: GameplayDraft, ...args: A) => R): (...args: A) => R {
+  return (...args) => dispatchRunSessionCommand((draft) => mutate(draft, ...args));
 }
+
+/** Parameter list of `F` without its leading draft-region argument. */
+type Tail<F extends (...args: never[]) => unknown> = F extends (_: never, ...rest: infer R) => unknown ? R : never;
 
 /** Test-only aggregate mutation seam; production commands publish directly through Zustand. */
 export function applyGameplayStateUpdate(partial: (state: GameplayState) => void): void {
@@ -44,24 +43,178 @@ export function applyGameplayStateUpdate(partial: (state: GameplayState) => void
   });
 }
 
+const runCommands = {
+  setRunDeck: command(runPort.setRunDeck),
+  setRunPlayerHealth: command(runPort.setRunPlayerHealth),
+  setRunMaxHealth: command(runPort.setRunMaxHealth),
+  setRoomsEncountered: command(runPort.setRoomsEncountered),
+  setCurrentAct: command(runPort.setCurrentAct),
+  setDestinationIndexInAct: command(runPort.setDestinationIndexInAct),
+  setCompletedDestinations: command(runPort.setCompletedDestinations),
+  setDestinationOfferState: command(runPort.setDestinationOfferState),
+  setRunTrinkets: command(runPort.setRunTrinkets),
+  setEncounteredRunEnemyIds: command(runPort.setEncounteredRunEnemyIds),
+  setSelectedDifficulty: command(runPort.setSelectedDifficulty),
+  setContentSystemType: command(runPort.setContentSystemType),
+  setCharacter: command(runPort.setCharacter),
+  resetProgress: command(runPort.resetProgress),
+  nextRunRandom: command(runPort.nextRunRandom),
+  resetRunXP: command(runPort.resetRunXP),
+  awardCardXP: command(runPort.awardCardXP),
+  awardMysteryXP: command(runPort.awardMysteryXP),
+  addRunMaterialsEarned: command(runPort.addRunMaterialsEarned),
+  clearRunMaterialsEarned: command(runPort.clearRunMaterialsEarned),
+  initialize: command(
+    (
+      draft: GameplayDraft,
+      activeRun: Parameters<typeof runPort.initializeActiveRun>[1],
+      fallbackCharacterId?: Parameters<typeof runPort.initializeActiveRun>[2],
+    ) => runPort.initializeActiveRun(draft, activeRun, fallbackCharacterId),
+  ),
+  initializeFromResumeSnapshot: command(runPort.initializeFromResumeSnapshot),
+  hydrateFromSnapshot: command(runPort.hydrateFromSnapshot),
+  setScreen: command(runPort.setScreen),
+  resetNavigation: command(runPort.resetNavigation),
+};
+
+const sessionCommands = {
+  setHasActiveRun: command(sessionPort.setHasActiveRun),
+  beginRewardClaim: command(sessionPort.beginRewardClaim),
+  releaseRewardClaim: command(sessionPort.releaseRewardClaim),
+  beginDestinationClaim: command(sessionPort.beginDestinationClaim),
+  cancelDestinationClaim: command(sessionPort.cancelDestinationClaim),
+  setActiveLabyrinthModifiers: command(sessionPort.setActiveLabyrinthModifiers),
+  setActiveLabyrinthRewardModifiers: command(sessionPort.setActiveLabyrinthRewardModifiers),
+  setActiveLabyrinthPendingNode: command(sessionPort.setActiveLabyrinthPendingNode),
+  setRewardState: command(sessionPort.setRewardState),
+  setCompanionRewardCards: command(sessionPort.setCompanionRewardCards),
+  setRunEndMaterials: command(sessionPort.setRunEndMaterials),
+  setRunEndTalentXP: command(sessionPort.setRunEndTalentXP),
+  setCorruptionResult: command(sessionPort.setCorruptionResult),
+  setPendingCharacterId: command(sessionPort.setPendingCharacterId),
+  setPendingContentSystemType: command(sessionPort.setPendingContentSystemType),
+  setLabyrinthMap: command(sessionPort.setLabyrinthMap),
+  setWildwoodDraft: command(sessionPort.setWildwoodDraft),
+  setStarterDraftChoices: command(sessionPort.setStarterDraftChoices),
+  setShopState: command(sessionPort.setShopState),
+  setAlchemistState: command(sessionPort.setAlchemistState),
+  setTrinketShopState: command(sessionPort.setTrinketShopState),
+  setEquipmentShopState: command(sessionPort.setEquipmentShopState),
+  setMysteryEvent: command(sessionPort.setMysteryEvent),
+  setMysteryChosenChoice: command(sessionPort.setMysteryChosenChoice),
+  setMysteryPendingRemoval: command(sessionPort.setMysteryPendingRemoval),
+  setMysteryCardChoices: command(sessionPort.setMysteryCardChoices),
+  setMysteryGrantedTrinketIds: command(sessionPort.setMysteryGrantedTrinketIds),
+  setMysteryGrantedGearInstances: command(sessionPort.setMysteryGrantedGearInstances),
+  setMysteryChosenCardId: command(sessionPort.setMysteryChosenCardId),
+  clearTransientSession: command(sessionPort.clearTransientSession),
+  applyDestinationChoices: command(sessionPort.applyDestinationChoices),
+};
+
+const battleCommands = {
+  setSyncedBattleState: command(battlePort.setSyncedBattleState),
+  setPendingBattleTransition: command(battlePort.setPendingBattleTransition),
+  clearPendingTransitionResumeRequired: command(battlePort.clearPendingTransitionResumeRequired),
+  setDisplayOverrides: command(battlePort.setDisplayOverrides),
+  clearDisplayOverrides: command(battlePort.clearDisplayOverrides),
+  setBattleStartState: command(battlePort.setBattleStartState),
+  setHasActiveBattle: command(battlePort.setHasActiveBattle),
+  initializeActiveBattle: command(battlePort.initializeActiveBattle),
+};
+
+const runProfileCommands = {
+  addMaterials: command(profilePort.addMaterials),
+  setMaterials: command(profilePort.setMaterials),
+  constructBuilding: command(profilePort.constructBuilding),
+  plantFarm: command(profilePort.plantFarm),
+  completeResearch: command(profilePort.completeResearch),
+  bondCompanion: command(profilePort.bondCompanion),
+  unlockTalent: command(profilePort.unlockTalent),
+  unlockAllTalents: command(profilePort.unlockAllTalents),
+  resetUnlockedTalents: command(profilePort.resetUnlockedTalents),
+  clearPermanentData: command(profilePort.clearPermanentData),
+  applyTalentState: command(profilePort.applyTalentState),
+  mergeRunTalentXPIntoProfile: command(profilePort.mergeRunTalentXPIntoProfile),
+};
+
+const profileCommands = {
+  setDiscoveredCardIds: command(profilePort.setDiscoveredCardIds),
+  setEncounteredEnemyIds: command(profilePort.setEncounteredEnemyIds),
+  setDiscoveredTrinketIds: command(profilePort.setDiscoveredTrinketIds),
+  setCompletedDifficulties: command(profilePort.setCompletedDifficulties),
+  setFinishedRunCharacters: command(profilePort.setFinishedRunCharacters),
+  setCollectionPage: command(profilePort.setCollectionPage),
+  handleCollectionTabChange: command(profilePort.handleCollectionTabChange),
+  resetToDefaults: command(profilePort.resetToDefaults),
+};
+
+const gearCommands = {
+  initialize: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.initializeGear>) =>
+    gearMutators.initializeGear(draft.gear, ...args),
+  ),
+  addInstance: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.addGearInstance>) =>
+    gearMutators.addGearInstance(draft.gear, ...args),
+  ),
+  equip: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.equipGearInstance>) =>
+    gearMutators.equipGearInstance(draft.gear, ...args),
+  ),
+  unequip: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.unequipGearInstance>) =>
+    gearMutators.unequipGearInstance(draft.gear, ...args),
+  ),
+  salvage: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.salvageGearInstance>) =>
+    gearMutators.salvageGearInstance(draft.gear, ...args),
+  ),
+  applyCurrency: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.applyGearCurrency>) =>
+    gearMutators.applyGearCurrency(draft.gear, ...args),
+  ),
+  addCurrencies: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.addGearCurrencies>) =>
+    gearMutators.addGearCurrencies(draft.gear, ...args),
+  ),
+  reset: command((draft: GameplayDraft) => gearMutators.resetGear(draft.gear)),
+};
+
+type RunDomainStore = GameplayState["run"] & typeof runCommands;
+type RunProfileStore = GameplayState["runProfile"] & typeof runProfileCommands;
+type RunTransientStore = RunSessionFields & typeof sessionCommands;
+type RunBattleDomainStore = RunDomainBattleState & typeof battleCommands;
+type ActiveRunStore = GameplayState["run"]["activeRun"] &
+  Pick<GameplayState["run"], "initialized"> &
+  typeof runCommands & { reset: typeof runCommands.resetProgress };
+type NavigationStore = GameplayState["run"]["navigation"] &
+  Pick<typeof runCommands, "setScreen" | "resetNavigation"> & { reset: typeof runCommands.resetNavigation };
+type TestProfileStore = GameplayState["profile"] & typeof profileCommands;
+type TestGearStore = GameplayState["gear"] & typeof gearCommands;
+
+interface StoreFacade<S> {
+  <T>(selector?: (state: S) => T): T;
+  getState: () => S;
+  getInitialState: () => S;
+  setState: (partial: Partial<S> | S | ((state: S) => unknown), replace?: boolean) => void;
+}
+
 function runDomainView(state: GameplayState): RunDomainStore {
-  return { ...state.run, ...state.runActions };
+  return { ...state.run, ...runCommands };
 }
 
 function runProfileView(state: GameplayState): RunProfileStore {
-  return { ...state.runProfile, ...state.runProfileActions };
+  return { ...state.runProfile, ...runProfileCommands };
 }
 
 function runSessionView(state: GameplayState): RunTransientStore {
-  return { ...state.session, ...state.sessionActions };
+  return { ...state.session, ...sessionCommands };
 }
 
 function runBattleView(state: GameplayState): RunBattleDomainStore {
-  return { ...state.battle, ...state.battleActions };
+  return { ...state.battle, ...battleCommands };
 }
 
 function navigationView(state: GameplayState): NavigationStore {
-  return { ...state.run.navigation, setScreen: state.runActions.setScreen, reset: state.runActions.resetNavigation };
+  return {
+    ...state.run.navigation,
+    setScreen: runCommands.setScreen,
+    resetNavigation: runCommands.resetNavigation,
+    reset: runCommands.resetNavigation,
+  };
 }
 
 function cloneView<S extends object>(view: S): S {
@@ -102,15 +255,15 @@ const useRunDomainStore = createFacade(runDomainView, (state, next) => {
   };
 });
 
-export const useRunProfileStore = createFacade(runProfileView, (state, next) => {
+export const useRunProfileStore = createFacade(runProfileView, (state: Draft<GameplayState>, next) => {
   state.runProfile = { ...state.runProfile, ...next };
 });
 
-export const useRunTransientStore = createFacade(runSessionView, (state, next) => {
+export const useRunTransientStore = createFacade(runSessionView, (state: Draft<GameplayState>, next) => {
   state.session = { ...state.session, ...next };
 });
 
-export const useRunBattleDomainStore = createFacade(runBattleView, (state, next) => {
+export const useRunBattleDomainStore = createFacade(runBattleView, (state: Draft<GameplayState>, next) => {
   state.battle = { ...state.battle, ...next };
 });
 
@@ -139,8 +292,8 @@ export function getActiveRunStoreView(): ActiveRunStore {
   return {
     ...state.run.activeRun,
     initialized: state.run.initialized,
-    ...state.runActions,
-    reset: state.runActions.resetProgress,
+    ...runCommands,
+    reset: runCommands.resetProgress,
   };
 }
 
@@ -205,29 +358,12 @@ export function resetAllTestStores(): void {
 // by src/ — only by tests, for setup/reset and full-view reads). Kept as a thin
 // convenience here so tests can still reset and inspect those two domains.
 
-type TestProfileStore = GameplayState["profile"] & GameplayState["profileActions"];
-
 function profileStoreView(state: GameplayState): TestProfileStore {
-  return { ...state.profile, ...state.profileActions };
+  return { ...state.profile, ...profileCommands };
 }
-
-function gearStoreActions(state: GameplayState) {
-  return {
-    initialize: state.gearActions.gearInitialize,
-    addInstance: state.gearActions.gearAddInstance,
-    equip: state.gearActions.gearEquip,
-    unequip: state.gearActions.gearUnequip,
-    salvage: state.gearActions.gearSalvage,
-    applyCurrency: state.gearActions.gearApplyCurrency,
-    addCurrencies: state.gearActions.gearAddCurrencies,
-    reset: state.gearActions.gearReset,
-  };
-}
-
-type TestGearStore = GameplayState["gear"] & ReturnType<typeof gearStoreActions>;
 
 function gearStoreView(state: GameplayState): TestGearStore {
-  return { ...state.gear, ...gearStoreActions(state) };
+  return { ...state.gear, ...gearCommands };
 }
 
 export const useProfileStore = createFacade<TestProfileStore>(profileStoreView, (state, next) => {

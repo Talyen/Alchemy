@@ -1,51 +1,49 @@
 // Apply the decoded resume session to the aggregate's session region.
 import type { DecodedRunResumeSession } from "./run-resume-codec";
-import type { SessionActions } from "./slices/session-slice";
+import type { GameplayDraft } from "./run-session-command";
+import {
+  setActiveLabyrinthModifiers,
+  setActiveLabyrinthPendingNode,
+  setActiveLabyrinthRewardModifiers,
+  setAlchemistState,
+  setCompanionRewardCards,
+  setCorruptionResult,
+  setEquipmentShopState,
+  setLabyrinthMap,
+  setMysteryCardChoices,
+  setMysteryChosenCardId,
+  setMysteryChosenChoice,
+  setMysteryEvent,
+  setMysteryGrantedGearInstances,
+  setMysteryGrantedTrinketIds,
+  setMysteryPendingRemoval,
+  setRewardState,
+  setShopState,
+  setStarterDraftChoices,
+  setTrinketShopState,
+  setWildwoodDraft,
+} from "./write-port-session";
 
-/** Session-region writers needed to rehydrate a persisted run. */
-type SessionStore = Pick<
-  SessionActions,
-  | "setLabyrinthMap"
-  | "setActiveLabyrinthModifiers"
-  | "setActiveLabyrinthRewardModifiers"
-  | "setActiveLabyrinthPendingNode"
-  | "setRewardState"
-  | "setCompanionRewardCards"
-  | "setWildwoodDraft"
-  | "setStarterDraftChoices"
-  | "setShopState"
-  | "setAlchemistState"
-  | "setTrinketShopState"
-  | "setEquipmentShopState"
-  | "setMysteryEvent"
-  | "setMysteryChosenChoice"
-  | "setMysteryPendingRemoval"
-  | "setMysteryCardChoices"
-  | "setMysteryGrantedTrinketIds"
-  | "setMysteryGrantedGearInstances"
-  | "setMysteryChosenCardId"
-  | "setCorruptionResult"
->;
-
-export function restoreRunSession(store: SessionStore, decoded: DecodedRunResumeSession): void {
-  if (decoded.labyrinthMap) store.setLabyrinthMap(decoded.labyrinthMap);
-  store.setActiveLabyrinthModifiers(decoded.activeLabyrinthModifiers);
-  store.setActiveLabyrinthRewardModifiers(decoded.activeLabyrinthRewardModifiers);
-  store.setActiveLabyrinthPendingNode(decoded.labyrinthPendingNode);
-  store.setWildwoodDraft(decoded.wildwoodDraft);
-  store.setStarterDraftChoices(decoded.starterDraftChoices);
-  if (decoded.rewardState) store.setRewardState(decoded.rewardState);
-  store.setCompanionRewardCards(decoded.companionRewardCards);
-  if (decoded.shopState) store.setShopState(decoded.shopState);
-  if (decoded.alchemistState) store.setAlchemistState(decoded.alchemistState);
-  if (decoded.trinketShopState) store.setTrinketShopState(decoded.trinketShopState);
-  if (decoded.equipmentShopState) store.setEquipmentShopState(decoded.equipmentShopState);
-  store.setMysteryEvent(decoded.mysteryEvent);
-  store.setMysteryChosenChoice(decoded.mysteryChosenChoice);
-  store.setMysteryPendingRemoval(decoded.mysteryPendingRemoval);
-  store.setMysteryCardChoices(decoded.mysteryCardChoices);
-  store.setMysteryGrantedTrinketIds(decoded.mysteryGrantedTrinketIds);
-  store.setMysteryGrantedGearInstances(decoded.mysteryGrantedGearInstances);
-  store.setMysteryChosenCardId(decoded.mysteryChosenCardId);
-  store.setCorruptionResult(decoded.corruptionResult);
+/** Rehydrate a persisted run's transient session fields onto the command draft. */
+export function restoreRunSession(draft: GameplayDraft, decoded: DecodedRunResumeSession): void {
+  if (decoded.labyrinthMap) setLabyrinthMap(draft, decoded.labyrinthMap);
+  setActiveLabyrinthModifiers(draft, decoded.activeLabyrinthModifiers);
+  setActiveLabyrinthRewardModifiers(draft, decoded.activeLabyrinthRewardModifiers);
+  setActiveLabyrinthPendingNode(draft, decoded.labyrinthPendingNode);
+  setWildwoodDraft(draft, decoded.wildwoodDraft);
+  setStarterDraftChoices(draft, decoded.starterDraftChoices);
+  if (decoded.rewardState) setRewardState(draft, decoded.rewardState);
+  setCompanionRewardCards(draft, decoded.companionRewardCards);
+  if (decoded.shopState) setShopState(draft, decoded.shopState);
+  if (decoded.alchemistState) setAlchemistState(draft, decoded.alchemistState);
+  if (decoded.trinketShopState) setTrinketShopState(draft, decoded.trinketShopState);
+  if (decoded.equipmentShopState) setEquipmentShopState(draft, decoded.equipmentShopState);
+  setMysteryEvent(draft, decoded.mysteryEvent);
+  setMysteryChosenChoice(draft, decoded.mysteryChosenChoice);
+  setMysteryPendingRemoval(draft, decoded.mysteryPendingRemoval);
+  setMysteryCardChoices(draft, decoded.mysteryCardChoices);
+  setMysteryGrantedTrinketIds(draft, decoded.mysteryGrantedTrinketIds);
+  setMysteryGrantedGearInstances(draft, decoded.mysteryGrantedGearInstances);
+  setMysteryChosenCardId(draft, decoded.mysteryChosenCardId);
+  setCorruptionResult(draft, decoded.corruptionResult);
 }

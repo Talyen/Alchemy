@@ -15,6 +15,8 @@ export interface GearSaveFields {
   craftingCurrencies: Record<CraftingCurrencyId, number>;
 }
 
+export type GearStateFields = Pick<GearStore, "inventories" | "loadouts" | "craftingCurrencies">;
+
 export interface GearStore {
   inventories: GearInventories;
   loadouts: GearLoadouts;

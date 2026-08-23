@@ -2,15 +2,16 @@ import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import { appendUniqueMany } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
 import type { PersistenceCodec } from "./persistence-codec";
-import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
-import { bindDraftAction, type GameplayDraft } from "./run-session-command";
-import { createGameplayDraftProfileActions } from "./gameplay-state-store";
+import { createDefaultProfileSaveFields, type ProfileSaveFields, type ProfileStateFields } from "./profile-store-types";
+import type { GameplayDraft } from "./run-session-command";
+import { readGameplayState, subscribeGameplayCommits, useGameplayStateStore } from "./gameplay-state-store";
 import {
-  readGameplayState,
-  subscribeGameplayCommits,
-  useGameplayStateStore,
-  type ProfileStateFields,
-} from "./gameplay-state-store";
+  setCompletedDifficulties as setCompletedDifficultiesInDraft,
+  setDiscoveredCardIds as setDiscoveredCardIdsInDraft,
+  setDiscoveredTrinketIds as setDiscoveredTrinketIdsInDraft,
+  setEncounteredEnemyIds as setEncounteredEnemyIdsInDraft,
+  setFinishedRunCharacters as setFinishedRunCharactersInDraft,
+} from "./write-port-profile";
 
 export type { ProfileSaveFields } from "./profile-store-types";
 
@@ -91,20 +92,16 @@ export function useCompletedDifficulties() {
   return useGameplayStateStore((state) => state.profile.completedDifficulties);
 }
 
-const profileActions = (state: GameplayDraft) => createGameplayDraftProfileActions(state);
-
-const setDiscoveredCardIds = bindDraftAction((s) => profileActions(s).setDiscoveredCardIds);
-export const setEncounteredEnemyIds = bindDraftAction((s) => profileActions(s).setEncounteredEnemyIds);
-const setDiscoveredTrinketIds = bindDraftAction((s) => profileActions(s).setDiscoveredTrinketIds);
-export const setCompletedDifficulties = bindDraftAction((s) => profileActions(s).setCompletedDifficulties);
-export const setFinishedRunCharacters = bindDraftAction((s) => profileActions(s).setFinishedRunCharacters);
-
 export function discoverCardIds(draft: GameplayDraft, ids: readonly string[]): void {
   if (ids.length === 0) return;
-  setDiscoveredCardIds(draft, (current) => appendUniqueMany(current, ids));
+  setDiscoveredCardIdsInDraft(draft, (current) => appendUniqueMany(current, ids));
 }
 
 export function discoverTrinketIds(draft: GameplayDraft, ids: readonly string[]): void {
   if (ids.length === 0) return;
-  setDiscoveredTrinketIds(draft, (current) => appendUniqueMany(current, ids));
+  setDiscoveredTrinketIdsInDraft(draft, (current) => appendUniqueMany(current, ids));
 }
+
+export const setEncounteredEnemyIds = setEncounteredEnemyIdsInDraft;
+export const setCompletedDifficulties = setCompletedDifficultiesInDraft;
+export const setFinishedRunCharacters = setFinishedRunCharactersInDraft;

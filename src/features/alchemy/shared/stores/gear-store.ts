@@ -10,12 +10,8 @@ import {
 import { useShallow } from "zustand/react/shallow";
 import type { PersistenceCodec } from "./persistence-codec";
 import type { GearSaveFields, GearStore } from "./gear-store-types";
-import {
-  createGameplayDraftGearActions,
-  readGameplayState,
-  subscribeGameplayCommits,
-  useGameplayStateStore,
-} from "./gameplay-state-store";
+import { initializeGear } from "./gear-actions";
+import { readGameplayState, subscribeGameplayCommits, useGameplayStateStore } from "./gameplay-state-store";
 import type { GameplayDraft } from "./run-session-command";
 
 export type { GearSaveFields } from "./gear-store-types";
@@ -35,11 +31,7 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: Game
     };
   },
   hydrate: (fields, draft) => {
-    createGameplayDraftGearActions(draft).gearInitialize(
-      fields.gearInventories,
-      fields.gearLoadouts,
-      fields.craftingCurrencies,
-    );
+    initializeGear(draft.gear, fields.gearInventories, fields.gearLoadouts, fields.craftingCurrencies);
   },
   subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };

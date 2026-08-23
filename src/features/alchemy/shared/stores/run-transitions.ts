@@ -10,13 +10,10 @@ import { useUiStore } from "./ui-store";
 import { getRunSession } from "./run-session-model";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
-import {
-  createGameplayDraftProfileActions,
-  createGameplayDraftRunActions,
-  createGameplayDraftRunProfileActions,
-  createGameplayDraftSessionActions,
-} from "./gameplay-state-store";
 import { initializeActiveBattle, setHasActiveBattle } from "./run-session-write-port";
+import { resetNavigation, resetProgress, setRunPlayerHealth } from "./write-port-run";
+import { clearTransientSession, setHasActiveRun } from "./write-port-session";
+import { applyTalentState, setFinishedRunCharacters } from "./write-port-profile";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { applyRestoreRunToDraft, clearModeSlotInDraft } from "./run-park-restore";
 import { touchRunRecency, type ParkedRunsMap } from "./parked-runs";
@@ -31,7 +28,7 @@ export function restoreRun(
   runRecency: ContentSystemId[] = [],
 ): void {
   dispatchRunSessionCommand((draft) => {
-    createGameplayDraftRunProfileActions(draft).applyTalentState(talentXP, unlockedTalents);
+    applyTalentState(draft, talentXP, unlockedTalents);
     draft.run.parkedRuns = { ...parkedRuns };
     draft.run.runRecency = [...runRecency];
     applyRestoreRunToDraft(draft, activeRun);
@@ -58,7 +55,6 @@ export function syncRunMaxHealthFromGearMutation(draft: GameplayDraft): void {
 
 /** Clamp run HP for battle entry and persist before creating BattleState. */
 export function syncRunToBattleStart(draft: GameplayDraft, playerHealth?: number): number {
-  const run = createGameplayDraftRunActions(draft);
   const startingHealth =
     playerHealth ??
     getBattleStartPlayerHealth(
@@ -66,14 +62,14 @@ export function syncRunToBattleStart(draft: GameplayDraft, playerHealth?: number
       draft.run.activeRun.runMaxHealth,
       draft.run.activeRun.runTrinkets,
     );
-  run.setRunPlayerHealth(startingHealth);
+  setRunPlayerHealth(draft, startingHealth);
   return startingHealth;
 }
 
 /** Persist combat HP to run progress after victory or when leaving battle. */
 export function syncBattleToRun(draft: GameplayDraft, options?: { playerHealth?: number }): void {
   const health = options?.playerHealth ?? draft.battle.battleState.playerHealth;
-  createGameplayDraftRunActions(draft).setRunPlayerHealth(health);
+  setRunPlayerHealth(draft, health);
 }
 
 type LifecycleListener = () => void;
@@ -109,14 +105,12 @@ export function clearBattlePresentationUi(): void {
 /** Clear active combat, run progression, session UI, navigation, and presentation (profile survives). */
 export function teardownRun(): void {
   dispatchRunSessionCommand((draft) => {
-    const run = createGameplayDraftRunActions(draft);
-    const session = createGameplayDraftSessionActions(draft);
     if (draft.session.hasActiveRun) {
       clearModeSlotInDraft(draft, draft.run.activeRun.contentSystemType);
     }
-    run.resetProgress();
-    run.resetNavigation();
-    session.clearTransientSession();
+    resetProgress(draft);
+    resetNavigation(draft);
+    clearTransientSession(draft);
     initializeActiveBattle(draft, null);
   });
   useUiStore.getState().clearCardHover();
@@ -142,17 +136,14 @@ function finalizeRunEndSessionState(
   },
   draft: GameplayDraft,
 ): MaterialInventory {
-  const aggregate = draft;
-  const profile = createGameplayDraftProfileActions(draft);
-  const sessionActions = createGameplayDraftSessionActions(draft);
-  const session = aggregate.session;
+  const session = draft.session;
   // Re-entry guard: run-end rewards are granted once per active run (menu abandon, defeat, victory).
   if (!session.hasActiveRun) {
     return emptyInventory();
   }
 
-  const activeChar = aggregate.run.activeRun.characterId;
-  profile.setFinishedRunCharacters((prev) => {
+  const activeChar = draft.run.activeRun.characterId;
+  setFinishedRunCharacters(draft, (prev) => {
     if (prev.includes(activeChar)) return prev;
     return [...prev, activeChar];
   });
@@ -160,8 +151,8 @@ function finalizeRunEndSessionState(
   const materials = options.awardRunEndMaterials(draft, options.displayMaterials);
   options.finalizeRunXP(draft);
 
-  clearModeSlotInDraft(draft, aggregate.run.activeRun.contentSystemType);
-  sessionActions.setHasActiveRun(false);
+  clearModeSlotInDraft(draft, draft.run.activeRun.contentSystemType);
+  setHasActiveRun(draft, false);
   return materials;
 }
 

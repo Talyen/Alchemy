@@ -13,10 +13,20 @@ import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-c
 import { inferActiveRunScreen } from "./encode-interrupted-flow";
 import { getRunSessionFromState } from "./run-session-model";
 import { restoreRunSession } from "./restore-active-run-session";
-import { createGameplayDraftRunActions, createGameplayDraftSessionActions } from "./gameplay-state-store";
+import {
+  abandonMysteryDestinationVisit,
+  clearMysteryVisitState,
+  clearTransientSession,
+  setHasActiveRun,
+  setMysteryEvent,
+} from "./write-port-session";
+import {
+  createDraftRunRandomSource,
+  initializeActiveRun,
+  initializeFromResumeSnapshot,
+  setScreen,
+} from "./write-port-run";
 import { initializeActiveBattle } from "./write-port-battle";
-import { createDraftRunRandomSource } from "./write-port-run";
-import { abandonMysteryDestinationVisit, clearMysteryVisitState, setMysteryEvent } from "./write-port-session";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { omitParkedMode, removeRunRecency, touchRunRecency } from "./parked-runs";
 
@@ -35,18 +45,15 @@ export function parkForegroundRunInDraft(draft: GameplayDraft): void {
 export function parkAndDeactivateForegroundRunInDraft(draft: GameplayDraft): void {
   if (!draft.session.hasActiveRun) return;
   parkForegroundRunInDraft(draft);
-  const session = createGameplayDraftSessionActions(draft);
-  session.clearTransientSession();
-  session.setHasActiveRun(false);
+  clearTransientSession(draft);
+  setHasActiveRun(draft, false);
   initializeActiveBattle(draft, null);
 }
 
 export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRunData | null): void {
   const decoded = activeRun ? decodeRunResumeSnapshot(activeRun) : null;
-  const run = createGameplayDraftRunActions(draft);
-  const session = createGameplayDraftSessionActions(draft);
-  if (decoded) run.initializeFromResumeSnapshot(decoded.progress);
-  else run.initialize(null);
+  if (decoded) initializeFromResumeSnapshot(draft, decoded.progress);
+  else initializeActiveRun(draft, null);
 
   const battleState =
     activeRun?.activeCombat?.battleState != null
@@ -56,12 +63,12 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
   initializeActiveBattle(draft, battleState, pending);
 
   const resumeScreen = decoded?.screen ?? (activeRun ? inferActiveRunScreen(activeRun) : null);
-  if (resumeScreen) run.setScreen(resumeScreen);
+  if (resumeScreen) setScreen(draft, resumeScreen);
   if (!activeRun) return;
 
-  session.clearTransientSession();
-  session.setHasActiveRun(true);
-  if (decoded) restoreRunSession(session, decoded.session);
+  clearTransientSession(draft);
+  setHasActiveRun(draft, true);
+  if (decoded) restoreRunSession(draft, decoded.session);
   if (draft.session.mysteryEvent && eventHasUnresolvedRandomTrinket(draft.session.mysteryEvent)) {
     const rng = createDraftRunRandomSource(draft, "events");
     setMysteryEvent(
@@ -73,7 +80,7 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
     if (activeRun.mysteryVisit != null) {
       abandonMysteryDestinationVisit(draft);
       clearMysteryVisitState(draft);
-      run.setScreen(ROUTE_SCREENS.DESTINATION);
+      setScreen(draft, ROUTE_SCREENS.DESTINATION);
       rebindLiveRunMeta(draft);
       return;
     }

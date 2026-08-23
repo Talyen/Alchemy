@@ -1,58 +1,111 @@
-import { getDifficultyXPMultiplier, type KeywordId } from "@/lib/game-data";
-import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
-import type { CompanionId } from "@/lib/game-data";
-import { bindDraftAction, type GameplayDraft } from "./run-session-command";
+import { getDifficultyXPMultiplier, tryUnlockTalent, type KeywordId } from "@/lib/game-data";
 import {
-  createGameplayDraftRunActions,
-  createGameplayDraftRunProfileActions,
-  createGameplayDraftSessionActions,
-} from "./gameplay-state-store";
+  computeRunEndTalentXPSnapshot,
+  mergeRunTalentXPIntoPermanent,
+  talentPool,
+  xpThresholdForPoints,
+  type TalentXP,
+  type UnlockedTalents,
+} from "@/lib/game-data";
+import type { CompanionId } from "@/lib/game-data";
+import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
+import type { CollectionTab } from "@/features/alchemy/shared/types";
+import type { GameplayDraft } from "./run-session-command";
+import { createInitialPermanentFields } from "./run-state-init";
+import { createInitialProfileState, type ProfileStateFields } from "./profile-store-types";
+import * as homestead from "./homestead-actions";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
+import { addRunMaterialsEarned, resetRunXP } from "./write-port-run";
 
-const runActions = (state: GameplayDraft) => createGameplayDraftRunActions(state);
-const sessionActions = (state: GameplayDraft) => createGameplayDraftSessionActions(state);
-const runProfileActions = (state: GameplayDraft) => createGameplayDraftRunProfileActions(state);
+// --- Run-earned materials ---
 
 /** Persist homestead materials and track totals for the run-end summary screen. */
 export function awardMaterialsDuringRun(draft: GameplayDraft, materials: MaterialInventory): void {
-  runProfileActions(draft).addMaterials(materials);
-  runActions(draft).addRunMaterialsEarned(materials);
+  homestead.addMaterials(draft.runProfile, materials);
+  addRunMaterialsEarned(draft, materials);
 }
 
-export const setMaterials = bindDraftAction((s) => runProfileActions(s).setMaterials);
-export const addMaterials = bindDraftAction((s) => runProfileActions(s).addMaterials);
+export function setMaterials(draft: GameplayDraft, materials: MaterialInventory): void {
+  homestead.setMaterials(draft.runProfile, materials);
+}
+
+export function addMaterials(draft: GameplayDraft, materials: MaterialInventory): void {
+  homestead.addMaterials(draft.runProfile, materials);
+}
+
+// --- Homestead upgrades (recompute live-run manifests after each spend) ---
 
 export function constructBuilding(draft: GameplayDraft, id: BuildingId): boolean {
-  const ok = runProfileActions(draft).constructBuilding(id);
+  const ok = homestead.constructBuilding(draft.runProfile, id);
   if (ok) rebindLiveRunMeta(draft);
   return ok;
 }
+
 export function plantFarm(draft: GameplayDraft, id: FarmId): boolean {
-  const ok = runProfileActions(draft).plantFarm(id);
+  const ok = homestead.plantFarm(draft.runProfile, id);
   if (ok) rebindLiveRunMeta(draft);
   return ok;
 }
+
 export function completeResearch(draft: GameplayDraft, id: ResearchId): boolean {
-  const ok = runProfileActions(draft).completeResearch(id);
+  const ok = homestead.completeResearch(draft.runProfile, id);
   if (ok) rebindLiveRunMeta(draft);
   return ok;
 }
+
 export function bondCompanion(draft: GameplayDraft, id: CompanionId): boolean {
-  const ok = runProfileActions(draft).bondCompanion(id);
+  const ok = homestead.bondCompanion(draft.runProfile, id);
   if (ok) rebindLiveRunMeta(draft);
   return ok;
 }
+
+// --- Talents ---
+
 export function unlockTalent(draft: GameplayDraft, keywordId: KeywordId, talentId: string): void {
-  runProfileActions(draft).unlockTalent(keywordId, talentId);
+  const result = tryUnlockTalent(keywordId, talentId, draft.runProfile.talentXP, draft.runProfile.unlockedTalents);
+  if (result.unlockedTalents) draft.runProfile.unlockedTalents = result.unlockedTalents;
   rebindLiveRunMeta(draft);
 }
-export const resetUnlockedTalents = bindDraftAction((s) => runProfileActions(s).resetUnlockedTalents);
+
+export function resetUnlockedTalents(draft: GameplayDraft): void {
+  draft.runProfile.unlockedTalents = {};
+}
 
 /** Dev unlock-all: max every talent and drop pending run XP so run-end cannot merge on top. */
 export function unlockAllTalents(draft: GameplayDraft): void {
-  runProfileActions(draft).unlockAllTalents();
-  runActions(draft).resetRunXP();
+  if (!import.meta.env.DEV) return;
+  const next: UnlockedTalents = {};
+  const xp: TalentXP = {};
+  for (const talent of talentPool) {
+    next[talent.keywordId] = [...(next[talent.keywordId] ?? []), talent.id];
+  }
+  for (const [keyword, ids] of Object.entries(next)) {
+    xp[keyword as KeywordId] = xpThresholdForPoints(ids.length);
+  }
+  draft.runProfile.unlockedTalents = next;
+  draft.runProfile.talentXP = xp;
+  resetRunXP(draft);
   rebindLiveRunMeta(draft);
+}
+
+export function applyTalentState(draft: GameplayDraft, talentXP: TalentXP, unlockedTalents: UnlockedTalents): void {
+  draft.runProfile.talentXP = talentXP;
+  draft.runProfile.unlockedTalents = unlockedTalents;
+}
+
+/**
+ * Merge the finished run's talent XP into permanent progression and return the
+ * run-end snapshot for the game-over / victory screens.
+ */
+export function mergeRunTalentXPIntoProfile(draft: GameplayDraft, runTalentXP: TalentXP, multiplier: number): TalentXP {
+  const snapshot = computeRunEndTalentXPSnapshot(runTalentXP, multiplier);
+  draft.runProfile.talentXP = mergeRunTalentXPIntoPermanent(runTalentXP, draft.runProfile.talentXP, multiplier);
+  return snapshot;
+}
+
+/** Reset every permanent (profile-lifetime) field to its initial values. */
+export function clearPermanentData(draft: GameplayDraft): void {
+  Object.assign(draft.runProfile, createInitialPermanentFields());
 }
 
 /**
@@ -61,16 +114,76 @@ export function unlockAllTalents(draft: GameplayDraft): void {
  * call with no run XP left clears the snapshot instead of double-counting.
  */
 export function finalizeRunXP(draft: GameplayDraft): void {
-  const run = runActions(draft);
-  const session = sessionActions(draft);
-  const runProfile = runProfileActions(draft);
   const runTalentXP = draft.run.activeRun.runTalentXP;
   if (Object.keys(runTalentXP).length === 0) {
-    session.setRunEndTalentXP({});
+    draft.session.runEndTalentXP = {};
     return;
   }
   const multiplier = getDifficultyXPMultiplier(draft.run.activeRun.selectedDifficulty);
-  session.setRunEndTalentXP(runProfile.mergeRunTalentXPIntoProfile(runTalentXP, multiplier));
-  run.resetRunXP();
+  draft.session.runEndTalentXP = mergeRunTalentXPIntoProfile(draft, runTalentXP, multiplier);
+  resetRunXP(draft);
   rebindLiveRunMeta(draft);
+}
+
+// --- Profile (collection/discovery) region ---
+
+export const setDiscoveredCardIds = (
+  draft: GameplayDraft,
+  action:
+    | ProfileStateFields["discoveredCardIds"]
+    | ((prev: ProfileStateFields["discoveredCardIds"]) => ProfileStateFields["discoveredCardIds"]),
+): void => {
+  draft.profile.discoveredCardIds = typeof action === "function" ? action(draft.profile.discoveredCardIds) : action;
+};
+
+export const setEncounteredEnemyIds = (
+  draft: GameplayDraft,
+  action:
+    | ProfileStateFields["encounteredEnemyIds"]
+    | ((prev: ProfileStateFields["encounteredEnemyIds"]) => ProfileStateFields["encounteredEnemyIds"]),
+): void => {
+  draft.profile.encounteredEnemyIds = typeof action === "function" ? action(draft.profile.encounteredEnemyIds) : action;
+};
+
+export const setDiscoveredTrinketIds = (
+  draft: GameplayDraft,
+  action:
+    | ProfileStateFields["discoveredTrinketIds"]
+    | ((prev: ProfileStateFields["discoveredTrinketIds"]) => ProfileStateFields["discoveredTrinketIds"]),
+): void => {
+  draft.profile.discoveredTrinketIds =
+    typeof action === "function" ? action(draft.profile.discoveredTrinketIds) : action;
+};
+
+export const setCompletedDifficulties = (
+  draft: GameplayDraft,
+  action:
+    | ProfileStateFields["completedDifficulties"]
+    | ((prev: ProfileStateFields["completedDifficulties"]) => ProfileStateFields["completedDifficulties"]),
+): void => {
+  draft.profile.completedDifficulties =
+    typeof action === "function" ? action(draft.profile.completedDifficulties) : action;
+};
+
+export const setFinishedRunCharacters = (
+  draft: GameplayDraft,
+  action:
+    | ProfileStateFields["finishedRunCharacters"]
+    | ((prev: ProfileStateFields["finishedRunCharacters"]) => ProfileStateFields["finishedRunCharacters"]),
+): void => {
+  draft.profile.finishedRunCharacters =
+    typeof action === "function" ? action(draft.profile.finishedRunCharacters) : action;
+};
+
+export function setCollectionPage(draft: GameplayDraft, tab: CollectionTab, page: number): void {
+  draft.profile.collectionPages[tab] = Math.max(0, page);
+}
+
+export function handleCollectionTabChange(draft: GameplayDraft, tab: CollectionTab): void {
+  draft.profile.collectionTab = tab;
+  draft.profile.collectionPages[tab] ??= 0;
+}
+
+export function resetToDefaults(draft: GameplayDraft): void {
+  Object.assign(draft.profile, createInitialProfileState());
 }

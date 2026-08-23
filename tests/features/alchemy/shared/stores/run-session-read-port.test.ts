@@ -2,6 +2,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
+import { setHasActiveBattle } from "@/features/alchemy/shared/stores/write-port-battle";
+import {
+  setFinishedRunCharacters,
+  setMaterials as setRunProfileMaterials,
+} from "@/features/alchemy/shared/stores/write-port-profile";
 import {
   readActiveRun,
   readBattle,
@@ -15,12 +21,13 @@ beforeEach(() => {
 
 describe("aggregate read ports", () => {
   it("reads every gameplay lifetime from the authoritative aggregate", () => {
-    dispatchRunSessionCommand((draft) => setRunGold(draft, 23));
-    const root = readGameplayState();
-    root.sessionActions.setHasActiveRun(true);
-    root.battleActions.setHasActiveBattle(true);
-    root.runProfileActions.setMaterials({ wood: 4, iron: 0, herbs: 0, food: 0, crystal: 0 });
-    root.profileActions.setFinishedRunCharacters(["knight"]);
+    dispatchRunSessionCommand((draft) => {
+      setRunGold(draft, 23);
+      setHasActiveRun(draft, true);
+      setHasActiveBattle(draft, true);
+      setRunProfileMaterials(draft, { wood: 4, iron: 0, herbs: 0, food: 0, crystal: 0 });
+      setFinishedRunCharacters(draft, ["knight"]);
+    });
 
     expect(readRunProfile().gold).toBe(23);
     expect(readRunSession().hasActiveRun).toBe(true);

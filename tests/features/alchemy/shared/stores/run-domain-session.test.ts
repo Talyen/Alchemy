@@ -15,7 +15,8 @@ import {
   createRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { createGameplayDraftActions } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { setHasActiveBattle } from "@/features/alchemy/shared/stores/write-port-battle";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { emptyInventory } from "@/lib/homestead/inventory";
 
 const syncBattleToRun = createRunSessionCommand(mutateBattleToRun);
@@ -88,7 +89,7 @@ describe("battle slice", () => {
     expect(getBattleStoreView().pendingTransitionResumeRequired).toBe(true);
     expect(getBattleStoreView().pendingBattleTransition).toEqual({
       kind: "enemy-turn",
-      resultState,
+      resultState: { ...resultState, rng: expect.any(Function) },
       playerTurnSkipped: false,
     });
   });
@@ -147,8 +148,7 @@ describe("run transitions", () => {
     getBattleStoreView().setHasActiveBattle(true);
     const awardRunEndMaterials = vi.fn(() => emptyInventory());
     const finalizeRunXP = vi.fn();
-    const clearCombatState = (draft: Parameters<typeof createGameplayDraftActions>[0]) =>
-      createGameplayDraftActions(draft).battleActions.setHasActiveBattle(false);
+    const clearCombatState = (draft: GameplayDraft) => setHasActiveBattle(draft, false);
     const clearCombatPresentation = vi.fn();
     const commits: Array<{ hasActiveRun: boolean; hasActiveBattle: boolean }> = [];
     const unsubscribe = subscribeRunSessionCommits(() => {

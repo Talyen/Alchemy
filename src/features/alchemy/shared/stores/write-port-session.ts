@@ -4,83 +4,147 @@ import {
   emptyShopState,
   emptyTrinketShopState,
 } from "@/lib/active-run-session";
+import type {
+  AlchemistState,
+  EquipmentShopState,
+  RewardState,
+  ShopState,
+  TrinketShopState,
+} from "@/lib/active-run-session";
+import { createEmptyRewardState } from "@/lib/active-run-session/reward-types";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import { DESTINATIONS, type Destination } from "@/lib/routing";
-import { bindDraftAction, type GameplayDraft } from "./run-session-command";
-import { createGameplayDraftRunActions, createGameplayDraftSessionActions } from "./gameplay-state-store";
+import { DESTINATIONS, filterValidDestinations, type Destination } from "@/lib/routing";
+import type { GameplayDraft } from "./run-session-command";
+import { createInitialSessionFields, type RunSessionFields } from "./run-domain-types";
+import {
+  hydrateFromSnapshot,
+  setCompletedDestinations,
+  setDestinationIndexInAct,
+  setDestinationOfferState,
+} from "./write-port-run";
 
-const runActions = (state: GameplayDraft) => createGameplayDraftRunActions(state);
-const sessionActions = (state: GameplayDraft) => createGameplayDraftSessionActions(state);
+/** Set a session field from a direct value or an updater over the previous value. */
+function setSessionField<K extends keyof RunSessionFields>(
+  draft: GameplayDraft,
+  field: K,
+  action: RunSessionFields[K] | ((prev: RunSessionFields[K]) => RunSessionFields[K]),
+): void {
+  draft.session[field] = typeof action === "function" ? action(draft.session[field]) : action;
+}
 
-export const setPendingCharacterId = bindDraftAction((s) => sessionActions(s).setPendingCharacterId);
-export const setPendingContentSystemType = bindDraftAction((s) => sessionActions(s).setPendingContentSystemType);
-export const setWildwoodDraft = bindDraftAction((s) => sessionActions(s).setWildwoodDraft);
-export const setStarterDraftChoices = bindDraftAction((s) => sessionActions(s).setStarterDraftChoices);
-export const clearTransientSession = bindDraftAction((s) => sessionActions(s).clearTransientSession);
+export const setPendingCharacterId = (draft: GameplayDraft, id: RunSessionFields["pendingCharacterId"]) =>
+  setSessionField(draft, "pendingCharacterId", id);
+export const setPendingContentSystemType = (draft: GameplayDraft, type: RunSessionFields["pendingContentSystemType"]) =>
+  setSessionField(draft, "pendingContentSystemType", type);
+export const setWildwoodDraft = (
+  draft: GameplayDraft,
+  action:
+    | RunSessionFields["wildwoodDraft"]
+    | ((prev: RunSessionFields["wildwoodDraft"]) => RunSessionFields["wildwoodDraft"]),
+) => setSessionField(draft, "wildwoodDraft", action);
+export const setStarterDraftChoices = (
+  draft: GameplayDraft,
+  action:
+    | RunSessionFields["starterDraftChoices"]
+    | ((prev: RunSessionFields["starterDraftChoices"]) => RunSessionFields["starterDraftChoices"]),
+) => setSessionField(draft, "starterDraftChoices", action);
+
+export function setHasActiveRun(draft: GameplayDraft, active: boolean): void {
+  draft.session.hasActiveRun = active;
+}
+
+export function clearTransientSession(draft: GameplayDraft): void {
+  Object.assign(draft.session, createInitialSessionFields());
+}
 
 /** Start a fresh run: seed active-run progress, drop the previous run-end XP snapshot, flag the run active. */
 export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
-  const run = runActions(draft);
-  const session = sessionActions(draft);
-  run.hydrateFromSnapshot(snapshot);
-  session.setRunEndTalentXP({});
-  session.setHasActiveRun(snapshot.hasActiveRun);
+  hydrateFromSnapshot(draft, snapshot);
+  draft.session.runEndTalentXP = {};
+  draft.session.hasActiveRun = snapshot.hasActiveRun;
 }
 
-export const setRewardState = bindDraftAction((s) => sessionActions(s).setRewardState);
-export const setCompanionRewardCards = bindDraftAction((s) => sessionActions(s).setCompanionRewardCards);
-export const beginRewardClaim = bindDraftAction((s) => sessionActions(s).beginRewardClaim);
-export const releaseRewardClaim = bindDraftAction((s) => sessionActions(s).releaseRewardClaim);
-export const beginDestinationClaim = bindDraftAction((s) => sessionActions(s).beginDestinationClaim);
-export const cancelDestinationClaim = bindDraftAction((s) => sessionActions(s).cancelDestinationClaim);
-export const setRunEndMaterials = bindDraftAction((s) => sessionActions(s).setRunEndMaterials);
-export const setCorruptionResult = bindDraftAction((s) => sessionActions(s).setCorruptionResult);
+export const setRewardState = (draft: GameplayDraft, action: RewardState | ((prev: RewardState) => RewardState)) =>
+  setSessionField(draft, "rewardState", action);
+export const setCompanionRewardCards = (draft: GameplayDraft, cards: RunSessionFields["companionRewardCards"]) =>
+  setSessionField(draft, "companionRewardCards", cards);
+export const setRunEndMaterials = (draft: GameplayDraft, materials: RunSessionFields["runEndMaterials"]) =>
+  setSessionField(draft, "runEndMaterials", materials);
+export const setRunEndTalentXP = (draft: GameplayDraft, xp: RunSessionFields["runEndTalentXP"]) =>
+  setSessionField(draft, "runEndTalentXP", xp);
+export const setCorruptionResult = (draft: GameplayDraft, result: RunSessionFields["corruptionResult"]) =>
+  setSessionField(draft, "corruptionResult", result);
+
+/** Claim reward-screen focus once per pending reward; false when nothing is claimable or already claimed. */
+export function beginRewardClaim(draft: GameplayDraft): boolean {
+  if (draft.session.rewardClaimInFlight) return false;
+  if (draft.session.rewardState.choices.length === 0 && !draft.session.companionRewardCards?.length) return false;
+  draft.session.rewardClaimInFlight = true;
+  return true;
+}
+
+export function releaseRewardClaim(draft: GameplayDraft): void {
+  draft.session.rewardClaimInFlight = false;
+}
+
+/** Reserve one destination for claiming; false when another claim is open or the destination is not offered. */
+export function beginDestinationClaim(draft: GameplayDraft, destination: Destination): boolean {
+  if (draft.session.pendingDestinationClaim !== null) return false;
+  if (!draft.session.rewardState.destinations.includes(destination)) return false;
+  draft.session.pendingDestinationClaim = destination;
+  return true;
+}
+
+export function cancelDestinationClaim(draft: GameplayDraft): void {
+  draft.session.pendingDestinationClaim = null;
+}
+
+/** Restore reward state with pre-sampled destinations on campaign resume, filtering invalid choices. */
+export function applyDestinationChoices(draft: GameplayDraft, choices: string[]): void {
+  draft.session.rewardState = { ...createEmptyRewardState(), destinations: filterValidDestinations(choices) };
+}
 
 /** Commit destination claim across session + active-run progress (cross-lifetime). */
 export function commitDestinationClaim(draft: GameplayDraft, destination: Destination): boolean {
-  const run = runActions(draft);
-  const session = sessionActions(draft);
   const transient = draft.session;
   if (transient.pendingDestinationClaim !== destination) return false;
   if (!transient.rewardState.destinations.includes(destination)) {
-    session.cancelDestinationClaim();
+    cancelDestinationClaim(draft);
     return false;
   }
   if (draft.run.activeRun.lastOfferedDestinations.length === 0) {
-    run.setDestinationOfferState({
+    setDestinationOfferState(draft, {
       lastOfferedDestinations: [...transient.rewardState.destinations],
       roundsSinceOffered: { ...draft.run.activeRun.destinationRoundsSinceOffered },
     });
   }
-  session.setRewardState((prev) => ({ ...prev, destinations: [] }));
-  session.cancelDestinationClaim();
-  run.setCompletedDestinations((prev) => [...prev, destination]);
-  run.setDestinationIndexInAct((prev) => prev + 1);
+  setRewardState(draft, (prev) => ({ ...prev, destinations: [] }));
+  cancelDestinationClaim(draft);
+  setCompletedDestinations(draft, (prev) => [...prev, destination]);
+  setDestinationIndexInAct(draft, (prev) => prev + 1);
   return true;
 }
 
 /** Undo a destination visit that never resolved so the same picker returns. */
 function abandonDestinationVisit(draft: GameplayDraft, destination: Destination): void {
-  const run = runActions(draft);
-  const session = sessionActions(draft);
   const transient = draft.session;
 
   if (transient.pendingDestinationClaim === destination) {
-    session.cancelDestinationClaim();
+    cancelDestinationClaim(draft);
   } else if (draft.run.activeRun.completedDestinations.at(-1) === destination) {
-    run.setCompletedDestinations((prev) => prev.slice(0, -1));
-    run.setDestinationIndexInAct((prev) => Math.max(0, prev - 1));
+    setCompletedDestinations(draft, (prev) => prev.slice(0, -1));
+    setDestinationIndexInAct(draft, (prev) => Math.max(0, prev - 1));
   }
 
   if (transient.rewardState.destinations.length === 0) {
     const restored = [...draft.run.activeRun.lastOfferedDestinations];
     if (restored.length > 0) {
-      session.setRewardState((prev) => ({ ...prev, destinations: restored }));
+      setRewardState(draft, (prev) => ({ ...prev, destinations: restored }));
     }
   }
 
   if (destination === DESTINATIONS.CORRUPTION) {
-    session.setCorruptionResult(null);
+    setCorruptionResult(draft, null);
   }
 }
 
@@ -94,10 +158,20 @@ export function abandonMysteryDestinationVisit(draft: GameplayDraft): void {
   abandonDestinationVisit(draft, DESTINATIONS.MYSTERY);
 }
 
-export const setShopState = bindDraftAction((s) => sessionActions(s).setShopState);
-export const setAlchemistState = bindDraftAction((s) => sessionActions(s).setAlchemistState);
-export const setTrinketShopState = bindDraftAction((s) => sessionActions(s).setTrinketShopState);
-export const setEquipmentShopState = bindDraftAction((s) => sessionActions(s).setEquipmentShopState);
+export const setShopState = (draft: GameplayDraft, action: ShopState | ((prev: ShopState) => ShopState)) =>
+  setSessionField(draft, "shopState", action);
+export const setAlchemistState = (
+  draft: GameplayDraft,
+  action: AlchemistState | ((prev: AlchemistState) => AlchemistState),
+) => setSessionField(draft, "alchemistState", action);
+export const setTrinketShopState = (
+  draft: GameplayDraft,
+  action: TrinketShopState | ((prev: TrinketShopState) => TrinketShopState),
+) => setSessionField(draft, "trinketShopState", action);
+export const setEquipmentShopState = (
+  draft: GameplayDraft,
+  action: EquipmentShopState | ((prev: EquipmentShopState) => EquipmentShopState),
+) => setSessionField(draft, "equipmentShopState", action);
 
 /** Drop leftover offerings when leaving a shop so runtime matches screen-gated encode. */
 export function clearShopOfferings(draft: GameplayDraft): void {
@@ -107,13 +181,51 @@ export function clearShopOfferings(draft: GameplayDraft): void {
   setEquipmentShopState(draft, emptyEquipmentShopState());
 }
 
-export const setMysteryEvent = bindDraftAction((s) => sessionActions(s).setMysteryEvent);
-export const setMysteryChosenChoice = bindDraftAction((s) => sessionActions(s).setMysteryChosenChoice);
-export const setMysteryPendingRemoval = bindDraftAction((s) => sessionActions(s).setMysteryPendingRemoval);
-export const setMysteryCardChoices = bindDraftAction((s) => sessionActions(s).setMysteryCardChoices);
-export const setMysteryGrantedTrinketIds = bindDraftAction((s) => sessionActions(s).setMysteryGrantedTrinketIds);
-export const setMysteryGrantedGearInstances = bindDraftAction((s) => sessionActions(s).setMysteryGrantedGearInstances);
-export const setMysteryChosenCardId = bindDraftAction((s) => sessionActions(s).setMysteryChosenCardId);
+export const setActiveLabyrinthModifiers = (
+  draft: GameplayDraft,
+  modifiers: RunSessionFields["activeLabyrinthModifiers"],
+) => setSessionField(draft, "activeLabyrinthModifiers", modifiers);
+export const setActiveLabyrinthRewardModifiers = (
+  draft: GameplayDraft,
+  modifiers: RunSessionFields["activeLabyrinthRewardModifiers"],
+) => setSessionField(draft, "activeLabyrinthRewardModifiers", modifiers);
+export const setActiveLabyrinthPendingNode = (
+  draft: GameplayDraft,
+  node: RunSessionFields["activeLabyrinthPendingNode"],
+) => setSessionField(draft, "activeLabyrinthPendingNode", node);
+export const setLabyrinthMap = (
+  draft: GameplayDraft,
+  action:
+    | RunSessionFields["labyrinthMap"]
+    | ((prev: RunSessionFields["labyrinthMap"]) => RunSessionFields["labyrinthMap"]),
+) => setSessionField(draft, "labyrinthMap", action);
+
+export const setMysteryEvent = (draft: GameplayDraft, event: RunSessionFields["mysteryEvent"]) =>
+  setSessionField(draft, "mysteryEvent", event);
+export const setMysteryChosenChoice = (draft: GameplayDraft, choice: RunSessionFields["mysteryChosenChoice"]) =>
+  setSessionField(draft, "mysteryChosenChoice", choice);
+export const setMysteryPendingRemoval = (draft: GameplayDraft, pending: RunSessionFields["mysteryPendingRemoval"]) =>
+  setSessionField(draft, "mysteryPendingRemoval", pending);
+export const setMysteryCardChoices = (
+  draft: GameplayDraft,
+  action:
+    | RunSessionFields["mysteryCardChoices"]
+    | ((prev: RunSessionFields["mysteryCardChoices"]) => RunSessionFields["mysteryCardChoices"]),
+) => setSessionField(draft, "mysteryCardChoices", action);
+export const setMysteryGrantedTrinketIds = (
+  draft: GameplayDraft,
+  action:
+    | RunSessionFields["mysteryGrantedTrinketIds"]
+    | ((prev: RunSessionFields["mysteryGrantedTrinketIds"]) => RunSessionFields["mysteryGrantedTrinketIds"]),
+) => setSessionField(draft, "mysteryGrantedTrinketIds", action);
+export const setMysteryGrantedGearInstances = (
+  draft: GameplayDraft,
+  action:
+    | RunSessionFields["mysteryGrantedGearInstances"]
+    | ((prev: RunSessionFields["mysteryGrantedGearInstances"]) => RunSessionFields["mysteryGrantedGearInstances"]),
+) => setSessionField(draft, "mysteryGrantedGearInstances", action);
+export const setMysteryChosenCardId = (draft: GameplayDraft, id: RunSessionFields["mysteryChosenCardId"]) =>
+  setSessionField(draft, "mysteryChosenCardId", id);
 
 export function clearMysteryVisitState(draft: GameplayDraft): void {
   setMysteryEvent(draft, null);
@@ -124,10 +236,3 @@ export function clearMysteryVisitState(draft: GameplayDraft): void {
   setMysteryGrantedGearInstances(draft, []);
   setMysteryChosenCardId(draft, null);
 }
-
-export const setActiveLabyrinthModifiers = bindDraftAction((s) => sessionActions(s).setActiveLabyrinthModifiers);
-export const setActiveLabyrinthRewardModifiers = bindDraftAction(
-  (s) => sessionActions(s).setActiveLabyrinthRewardModifiers,
-);
-export const setActiveLabyrinthPendingNode = bindDraftAction((s) => sessionActions(s).setActiveLabyrinthPendingNode);
-export const setLabyrinthMap = bindDraftAction((s) => sessionActions(s).setLabyrinthMap);

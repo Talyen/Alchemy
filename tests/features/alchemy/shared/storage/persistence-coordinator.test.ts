@@ -9,7 +9,12 @@ import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-stor
 import { useGearStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
 import { getRunProfileStore, useRunProfileStore } from "../../../../helpers/gameplay-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { createGameplayDraftActions } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
+import {
+  setDiscoveredCardIds,
+  setMaterials as setRunProfileMaterials,
+} from "@/features/alchemy/shared/stores/write-port-profile";
+import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
 import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
 
@@ -77,8 +82,7 @@ describe("persistence coordinator", () => {
 
     dispatchRunSessionCommand((draft) => {
       setRunGold(draft, 42);
-      const actions = createGameplayDraftActions(draft);
-      actions.sessionActions.setHasActiveRun(true);
+      setHasActiveRun(draft, true);
     });
 
     expect(listener).toHaveBeenCalledOnce();
@@ -92,11 +96,10 @@ describe("persistence coordinator", () => {
 
     dispatchRunSessionCommand((draft) => {
       setRunGold(draft, 42);
-      const actions = createGameplayDraftActions(draft);
-      actions.sessionActions.setHasActiveRun(true);
-      actions.profileActions.setDiscoveredCardIds(["slash"]);
-      actions.gearActions.gearAddCurrencies({ voidstone: 1 });
-      actions.runProfileActions.setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
+      setHasActiveRun(draft, true);
+      setDiscoveredCardIds(draft, ["slash"]);
+      addGearCurrencies(draft.gear, { voidstone: 1 });
+      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
     });
 
     expect(listener).toHaveBeenCalledOnce();
