@@ -42,6 +42,50 @@ describe("verify-changed route catalog", () => {
     expect(explicitPlan.commands.map((command) => command.key)).toContain("e2e-mystery");
   });
 
+  it("keeps focused E2E flows out of local default plans", () => {
+    expect(resolvePlan(["src/features/alchemy/shared/storage/io.ts"]).commands.map((command) => command.key)).toEqual([
+      "unit-save",
+      "e2e-prepush",
+    ]);
+    expect(
+      resolvePlan(["src/features/alchemy/meta/screens/armory-screen.tsx"]).commands.map((command) => command.key),
+    ).toEqual(["unit-gear"]);
+
+    const audioMysteryKeys = resolvePlan(["src/lib/audio-sfx.ts", "src/lib/mystery/pool.ts"]).commands.map(
+      (command) => command.key,
+    );
+    expect(audioMysteryKeys).toContain("unit-audio");
+    expect(audioMysteryKeys).toContain("unit-mystery");
+    expect(audioMysteryKeys).not.toContain("e2e-audio");
+    expect(audioMysteryKeys).not.toContain("e2e-mystery");
+
+    expect(
+      resolvePlan(["src/features/alchemy/run-loop/screens/alchemist-shop-screen.tsx"]).commands.map(
+        (command) => command.key,
+      ),
+    ).toEqual(["unit-shop", "typecheck"]);
+  });
+
+  it("escalates focused E2E flows on explicit selection", () => {
+    for (const [selection, commandKey] of [
+      ["save", "e2e-save"],
+      ["shop", "e2e-shop"],
+      ["audio", "e2e-audio"],
+      ["gear", "e2e-gear"],
+      ["mystery", "e2e-mystery"],
+    ] as const) {
+      const keys = resolvePlan(["src/lib/battle/damage.ts"], { e2e: selection }).commands.map((command) => command.key);
+      expect(keys, selection).toContain(commandKey);
+    }
+
+    const allKeys = resolvePlan(
+      ["src/features/alchemy/shared/storage/io.ts", "src/features/alchemy/meta/screens/armory-screen.tsx"],
+      { e2e: true },
+    ).commands.map((command) => command.key);
+    expect(allKeys).toContain("e2e-save");
+    expect(allKeys).toContain("e2e-gear");
+  });
+
   it("keeps the default plan bounded and exposes full argv only on request", () => {
     const plan = resolvePlan(["src/lib/battle/damage.ts"]);
     const compact = formatPlan(plan);

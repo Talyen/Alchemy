@@ -295,7 +295,7 @@ export const ROUTES = Object.freeze([
       "src/lib/active-run-session/**",
       "src/features/alchemy/app/autosave-*.ts",
     ],
-    commands: ["unit-save", "e2e-save", "e2e-prepush"],
+    commands: ["unit-save", "e2e-prepush"],
     docs: [
       doc("docs/WORKFLOWS.md", "Change persisted save data", "save-change checklist"),
       doc("src/features/alchemy/shared/storage/MIGRATIONS.md", "Public save contract", "save compatibility contract"),
@@ -359,14 +359,14 @@ export const ROUTES = Object.freeze([
   {
     id: "shop-screen",
     patterns: ["src/features/alchemy/run-loop/screens/*shop*"],
-    commands: ["e2e-shop"],
+    commands: ["typecheck"],
     docs: [doc("docs/WORKFLOWS.md", "Change a shop", "shop screen workflow")],
     fixture: "src/features/alchemy/run-loop/screens/alchemist-shop-screen.tsx",
   },
   {
     id: "audio",
     patterns: ["src/lib/audio*.ts", "src/lib/sound-registry.ts", "public/sounds/**"],
-    commands: ["unit-audio", "e2e-audio"],
+    commands: ["unit-audio"],
     docs: [],
     fixture: "src/lib/audio-sfx.ts",
   },
@@ -390,7 +390,7 @@ export const ROUTES = Object.freeze([
       "src/features/alchemy/meta/screens/armory-screen.tsx",
       "src/features/alchemy/shared/stores/gear-*.ts",
     ],
-    commands: ["unit-gear", "e2e-gear"],
+    commands: ["unit-gear"],
     docs: [
       doc("docs/WORKFLOWS.md", "Add permanent Gear", "gear authoring workflow"),
       doc("docs/ARMORY.md", "Layout", "Armory feature map"),
@@ -407,7 +407,7 @@ export const ROUTES = Object.freeze([
       "src/app/screen-routes/mystery-screen-route.tsx",
       "src/features/alchemy/shell/use-mystery-event-navigation.ts",
     ],
-    commands: ["unit-mystery", "e2e-mystery"],
+    commands: ["unit-mystery"],
     docs: [doc("docs/WORKFLOWS.md", "Adding a new mystery effect kind", "mystery effect workflow")],
     fixture: "src/lib/mystery/pool.ts",
   },
