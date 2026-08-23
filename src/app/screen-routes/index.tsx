@@ -1,11 +1,11 @@
 // Screen route registry — maps Screen values to screen components.
 import type { ReactNode } from "react";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { optionsScreenRoutes } from "./options-screen-route";
 import { metaScreenRoutes } from "./meta-routes";
 import { runSetupScreenRoutes } from "./run-setup-routes";
 import { runLoopScreenRoutes } from "./run-loop-routes";
 import { runEndScreenRoutes } from "./run-end-routes";
-import { withScreenBoundary } from "./with-screen-boundary";
 import type { Screen } from "@/lib/routing";
 
 export type ScreenRoute = (ctx: RenderAlchemyScreenProps) => ReactNode;
@@ -21,22 +21,30 @@ type PhaseRouteTables = typeof metaScreenRoutes &
   typeof runEndScreenRoutes &
   typeof optionsScreenRoutes;
 type PhaseKeys = keyof PhaseRouteTables;
-type SharedPhaseKeys =
-  | (keyof typeof metaScreenRoutes & keyof typeof runSetupScreenRoutes)
-  | (keyof typeof metaScreenRoutes & keyof typeof runLoopScreenRoutes)
-  | (keyof typeof metaScreenRoutes & keyof typeof runEndScreenRoutes)
-  | (keyof typeof metaScreenRoutes & keyof typeof optionsScreenRoutes)
-  | (keyof typeof runSetupScreenRoutes & keyof typeof runLoopScreenRoutes)
-  | (keyof typeof runSetupScreenRoutes & keyof typeof runEndScreenRoutes)
-  | (keyof typeof runSetupScreenRoutes & keyof typeof optionsScreenRoutes)
-  | (keyof typeof runLoopScreenRoutes & keyof typeof runEndScreenRoutes)
-  | (keyof typeof runLoopScreenRoutes & keyof typeof optionsScreenRoutes)
-  | (keyof typeof runEndScreenRoutes & keyof typeof optionsScreenRoutes);
+
+/** Keys shared between the head table and any later table. */
+type SharedWithLater<Head, Rest extends readonly unknown[]> = Rest extends readonly [infer Next, ...infer Tail]
+  ? (keyof Head & keyof Next) | SharedWithLater<Head, Tail>
+  : never;
+/** Keys shared by at least two tables in the tuple. */
+type PairwiseSharedKeys<Tables extends readonly unknown[]> = Tables extends readonly [infer Head, ...infer Rest]
+  ? Rest extends readonly unknown[]
+    ? SharedWithLater<Head, Rest> | PairwiseSharedKeys<Rest>
+    : never
+  : never;
+
+type PhaseRouteTableTuple = [
+  typeof metaScreenRoutes,
+  typeof runSetupScreenRoutes,
+  typeof runLoopScreenRoutes,
+  typeof runEndScreenRoutes,
+  typeof optionsScreenRoutes,
+];
 
 type _Exhaustive = [PhaseKeys] extends [Screen] ? ([Screen] extends [PhaseKeys] ? true : false) : false;
 const _exhaustive: _Exhaustive = true;
 void _exhaustive;
-type _Disjoint = [SharedPhaseKeys] extends [never] ? true : false;
+type _Disjoint = [PairwiseSharedKeys<PhaseRouteTableTuple>] extends [never] ? true : false;
 const _disjoint: _Disjoint = true;
 void _disjoint;
 
@@ -56,5 +64,5 @@ export function renderAlchemyScreenRoute(ctx: RenderAlchemyScreenProps): ReactNo
   if (!render) {
     throw new Error(`Missing screen route for ${ctx.screen}`);
   }
-  return withScreenBoundary(ctx.screen, render(ctx));
+  return <ErrorBoundary label={ctx.screen}>{render(ctx)}</ErrorBoundary>;
 }
