@@ -53,9 +53,7 @@ Page objects: `BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPa
 
 - `@prepush` — fast local hook subset: boot plus battle canary.
 - `@critical` — every-push CI coverage for representative core gameplay and adjacent flows.
-- `@smoke` — quick boot/menu coverage.
 - `@slow` — animation canaries and viewport loops; release/full-suite tier.
-- `@armory` — Armory/gear interaction coverage; may overlap other tags.
 
 Combine tags with the array form — `{ tag: [a.tag, b.tag] }` — never object
 spread, which silently drops every tag but the last. Tests with no tag run only

@@ -21,7 +21,7 @@ import { seedRandom } from "./e2e/rng";
 import { injectActiveBattle, makeGoblinBattleState } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { test } from "./fixtures/e2e";
-import { armory, critical, slow } from "./playwright-tags";
+import { critical, slow } from "./playwright-tags";
 
 const affixedSword = {
   instanceId: "gear-sword",
@@ -38,7 +38,7 @@ const emptyCraftingCurrencies = {
   "smiths-whetstone": 0,
 };
 
-test.describe("Armory equip", armory, () => {
+test.describe("Armory equip", () => {
   test.beforeEach(async ({ runtimeErrors }) => {
     void runtimeErrors;
   });
@@ -144,7 +144,7 @@ test.describe("Armory equip", armory, () => {
   });
 });
 
-test.describe("Armory crafting", armory, () => {
+test.describe("Armory crafting", () => {
   test.beforeEach(async ({ runtimeErrors }) => {
     void runtimeErrors;
   });
@@ -260,7 +260,7 @@ test.describe("Armory crafting", armory, () => {
   });
 });
 
-test.describe("Gear combat", { tag: [armory.tag, critical.tag] }, () => {
+test.describe("Gear combat", { tag: [critical.tag] }, () => {
   test("equipped gear increases physical damage in battle", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;

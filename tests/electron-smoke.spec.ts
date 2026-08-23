@@ -3,9 +3,9 @@ import type { ElectronApplication, Page } from "playwright";
 import { getElectronMainWindow, launchElectronApp } from "./electron-helpers";
 import { failOnRuntimeErrors } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
-import { desktop, smoke } from "./playwright-tags";
+import { desktop } from "./playwright-tags";
 
-test.describe("Electron desktop integration", { tag: [desktop.tag, smoke.tag] }, () => {
+test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
   let electronApp: ElectronApplication | undefined;
   let window: Page;
 

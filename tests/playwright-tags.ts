@@ -6,11 +6,7 @@ export const critical = { tag: "@critical" } as const;
  * output does not duplicate @critical on pre-push tests.
  */
 export const prepush = { tag: "@prepush" } as const;
-/** Quick boot/menu checks (alchemy boot + electron boot). */
-export const smoke = { tag: "@smoke" } as const;
 /** Intentionally slow specs (drag, animation, viewport loops). Not excluded from full E2E; useful for filtering. */
 export const slow = { tag: "@slow" } as const;
 /** Desktop-only Electron specs excluded from web E2E runs. */
 export const desktop = { tag: "@desktop" } as const;
-/** Armory screen / gear interaction specs. Overlaps with critical and slow on per-test basis. */
-export const armory = { tag: "@armory" } as const;
