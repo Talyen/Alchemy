@@ -50,13 +50,13 @@ describe("formatEnemyAttackLines", () => {
 
   it("formats multiple damage + single status without dropping damage", () => {
     const effects: EnemyAttackEffect[] = [
-      { kind: "damage", damageType: "fire", amount: 5 },
-      { kind: "damage", damageType: "ice", amount: 3 },
+      { kind: "damage", damageType: "burn", amount: 5 },
+      { kind: "damage", damageType: "freeze", amount: 3 },
       { kind: "player-status", status: "poison", amount: 2 },
     ];
     expect(formatEnemyAttackLines(effects)).toEqual([
-      "Deals 5 Fire damage",
-      "Deals 3 Ice damage",
+      "Deals 5 Burn damage",
+      "Deals 3 Freeze damage",
       "Deals 2 Poison damage",
     ]);
   });

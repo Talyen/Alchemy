@@ -79,7 +79,7 @@ function patchElectronGoto(page: Page): void {
 async function launchElectronPage(): Promise<Page> {
   const { launchElectronApp, getElectronMainWindow } = await import("../tests/electron-helpers");
   const previewPort = previewPortFromEnv("PLAYWRIGHT_PERF_PORT", PERF_PREVIEW_PORT);
-  process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT = previewPort;
+  process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT = String(previewPort);
   electronApp = await launchElectronApp({ enableGpu: true });
   const page = await getElectronMainWindow(electronApp);
   patchElectronGoto(page);

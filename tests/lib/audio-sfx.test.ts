@@ -22,6 +22,8 @@ interface FakeAudio {
   muted: boolean;
   play: ReturnType<typeof vi.fn>;
   pause: ReturnType<typeof vi.fn>;
+  removeAttribute: ReturnType<typeof vi.fn>;
+  load: ReturnType<typeof vi.fn>;
   onended: (() => void) | null;
 }
 
