@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { CharacterId } from "@/lib/game-data";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
-import type { ArmoryCursorPoint, ArmorySalvagePending } from "./armory-screen-types";
+import type { ArmorySalvagePending } from "./armory-screen-types";
 
 export function useArmoryResetEffects({
   editable,
@@ -10,7 +10,6 @@ export function useArmoryResetEffects({
   characterId,
   inventoryById,
   salvagePending,
-  setCursorPoint,
   setSalvageMode,
   setSalvagePending,
   setActiveCurrencyId,
@@ -21,7 +20,6 @@ export function useArmoryResetEffects({
   characterId: CharacterId;
   inventoryById: Map<string, GearInstance>;
   salvagePending: ArmorySalvagePending | null;
-  setCursorPoint: React.Dispatch<React.SetStateAction<ArmoryCursorPoint | null>>;
   setSalvageMode: React.Dispatch<React.SetStateAction<boolean>>;
   setSalvagePending: React.Dispatch<React.SetStateAction<ArmorySalvagePending | null>>;
   setActiveCurrencyId: React.Dispatch<React.SetStateAction<CraftingCurrencyId | null>>;
@@ -29,22 +27,18 @@ export function useArmoryResetEffects({
   useEffect(() => {
     if (editable) return;
     const timer = setTimeout(() => {
-      setCursorPoint(null);
       setSalvageMode(false);
       setSalvagePending(null);
       setActiveCurrencyId(null);
     }, 0);
     return () => clearTimeout(timer);
-  }, [editable, setCursorPoint, setSalvageMode, setSalvagePending, setActiveCurrencyId]);
+  }, [editable, setSalvageMode, setSalvagePending, setActiveCurrencyId]);
 
   useEffect(() => {
     if (!activeCurrencyId || craftingCurrencies[activeCurrencyId] > 0) return;
-    const timer = setTimeout(() => {
-      setCursorPoint(null);
-      setActiveCurrencyId(null);
-    }, 0);
+    const timer = setTimeout(() => setActiveCurrencyId(null), 0);
     return () => clearTimeout(timer);
-  }, [activeCurrencyId, craftingCurrencies, setCursorPoint, setActiveCurrencyId]);
+  }, [activeCurrencyId, craftingCurrencies, setActiveCurrencyId]);
 
   useEffect(() => {
     if (!salvagePending || inventoryById.has(salvagePending.instance.instanceId)) return;

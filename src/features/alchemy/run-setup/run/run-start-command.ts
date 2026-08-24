@@ -1,7 +1,7 @@
 import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { readGearMaxHealthBonus } from "@/features/alchemy/shared/stores/gear-store";
-import { discoverCardIds, setEncounteredEnemyIds } from "@/features/alchemy/shared/stores/profile-store";
+import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { applyRunStartSnapshot, clearTransientSession } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -21,7 +21,6 @@ interface CreateRunStartSnapshotInput {
 
 interface ApplyRunStartOptions {
   discoverDeck?: boolean;
-  resetEncounteredEnemies?: boolean;
 }
 
 /** Resolve meta-progression inputs before opening the gameplay command. */
@@ -70,5 +69,4 @@ export function applyRunStartToDraft(
       snapshot.freshDeck.map((card) => card.id),
     );
   }
-  if (options.resetEncounteredEnemies) setEncounteredEnemyIds(draft, []);
 }

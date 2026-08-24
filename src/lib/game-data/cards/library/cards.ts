@@ -66,15 +66,11 @@ export const cardLibrary: BattleCard[] = [
     art: assetRefs.manaPotion,
     effect: { kind: "restore-mana", amount: 2 },
   }),
-  {
+  cardBuilders.consumableCard({
     id: "panacea-potion",
-    title: "Panacea Potion",
-    descriptionLines: ["Remove all harmful status effects", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.panaceaPotion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "remove-harmful-status", amount: 5, removeAll: true }],
-  },
+    effect: { kind: "remove-harmful-status", amount: 5, removeAll: true },
+  }),
   cardBuilders.consumableCard({
     id: "stoneskin-potion",
     art: assetRefs.stoneskinPotion,
@@ -210,10 +206,10 @@ export const cardLibrary: BattleCard[] = [
     consume: true,
   }),
   {
-    id: "roulette",
-    title: "Roulette",
+    id: "roll-the-dice",
+    title: "Roll the Dice",
     descriptionLines: ["Deal 3 Random damage or Gain 3 Gold"],
-    art: assetRefs.roulette,
+    art: assetRefs.rollTheDice,
     cost: 1,
     effects: [
       {
@@ -437,17 +433,14 @@ export const cardLibrary: BattleCard[] = [
       { damageType: "physical", amount: 3 },
     ],
   }),
-  {
+  cardBuilders.effectsCard({
     id: "caustic-jab",
-    title: "Caustic Jab",
-    descriptionLines: ["Deal 2 Poison damage", "Strip 2 enemy Armor"],
     art: assetRefs.causticJab,
-    cost: 1,
     effects: [
       { kind: "damage", damageType: "poison", amount: 2 },
       { kind: "remove-enemy-armor", amount: 2 },
     ],
-  },
+  }),
   cardBuilders.damageThenMultiplyEnemyStatusCard({
     id: "rend",
     art: assetRefs.rend,
@@ -521,14 +514,12 @@ export const cardLibrary: BattleCard[] = [
     consume: true,
     effects: [{ kind: "draw-cards", amount: 2 }],
   },
-  {
+  cardBuilders.singleEffectCard({
     id: "predators-focus",
     title: "Predator's Focus",
-    descriptionLines: ["Your next damaging card is a critical strike"],
     art: assetRefs.predatorsFocus,
-    cost: 1,
-    effects: [{ kind: "next-hit-crit" }],
-  },
+    effect: { kind: "next-hit-crit" },
+  }),
   {
     id: "blizzard",
     title: "Blizzard",
@@ -599,17 +590,14 @@ export const cardLibrary: BattleCard[] = [
     multiplyLine: "Double enemy's Freeze build-up",
   }),
   cardBuilders.loseHealthBenefitCard({ id: "blood-offering", art: assetRefs.bloodOffering, healthLoss: 1, draw: 2 }),
-  {
+  cardBuilders.effectsCard({
     id: "sunder",
-    title: "Sunder",
-    descriptionLines: ["Deal 4 Physical damage", "Strip 2 enemy Armor"],
     art: assetRefs.sunder,
-    cost: 1,
     effects: [
       { kind: "damage", damageType: "physical", amount: 4 },
       { kind: "remove-enemy-armor", amount: 2 },
     ],
-  },
+  }),
   {
     id: "mana-shield",
     title: "Mana Shield",
@@ -641,11 +629,11 @@ export const cardLibrary: BattleCard[] = [
       { damageType: "stun", amount: 1 },
     ],
   }),
-  cardBuilders.cleansePlayerStatusCard({
+  cardBuilders.singleEffectCard({
     id: "smelling-salts",
     art: assetRefs.smellingSalts,
-    status: "stun",
-    cleanseLine: "Cleanse Stun build-up",
+    effect: { kind: "remove-player-status", status: "stun" },
+    descriptionLine: "Cleanse Stun build-up",
   }),
   cardBuilders.loseHealthBenefitCard({
     id: "dark-pact",
@@ -737,3 +725,6 @@ export const cardLibrary: BattleCard[] = [
     effects: [{ kind: "damage", damageType: "burn", amount: 2, doubleIfEnemyBurning: true }],
   },
 ] satisfies BattleCard[];
+
+/** Id-keyed view of the library — prefer this over scanning `cardLibrary` by id. */
+export const cardById: Record<string, BattleCard> = Object.fromEntries(cardLibrary.map((card) => [card.id, card]));

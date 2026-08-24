@@ -4,12 +4,12 @@ import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";
 import { gearDefinitionId, gearDefinitions, getGearDefinitionsByRarity } from "./definitions";
+import { GEAR_RARITIES } from "./types-core";
 import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity, GearSlot } from "./types";
 
 const SHIELD_BASE_ITEM_IDS = new Set(["leather-buckler", "kite-shield"]);
 const OFF_HAND_OFFENSIVE_BASE_ITEMS = new Set(["quiver", "spellbook"]);
 const JEWELRY_SLOTS = new Set<GearSlot>(["left-ring", "right-ring", "amulet"]);
-const ARMOR_SLOTS = new Set<GearSlot>(["body"]);
 
 function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
   if (SHIELD_BASE_ITEM_IDS.has(def.baseItemId)) {
@@ -23,9 +23,6 @@ function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
   }
   if (def.compatibleSlots.includes("off-hand") && OFF_HAND_OFFENSIVE_BASE_ITEMS.has(def.baseItemId)) {
     return ["offensive"];
-  }
-  if (def.compatibleSlots.some((slot) => ARMOR_SLOTS.has(slot))) {
-    return ["defensive"];
   }
   return ["defensive"];
 }
@@ -108,8 +105,7 @@ export function generateGearInstanceForBaseItem(
 export function generateDevRandomGearInstance(rng: () => number): GearInstance {
   const baseItem = pickRandom(gearBaseItemList, rng);
   if (!baseItem) throw new Error("gearBaseItemList is empty");
-  const rarity = pickRandom(baseItem.availableRarities, rng);
-  if (!rarity) throw new Error(`No rarities configured for ${baseItem.id}`);
+  const rarity = pickRandom(GEAR_RARITIES, rng) ?? "basic";
   const definition = gearDefinitions[gearDefinitionId(baseItem.id, rarity)];
   if (!definition) throw new Error(`Missing gear definition for ${baseItem.id}-${rarity}`);
   return rollAndCreateInstance(definition, rarity, rng);

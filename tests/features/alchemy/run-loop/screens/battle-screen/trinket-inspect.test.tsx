@@ -10,8 +10,8 @@ import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { trinketLibrary, type TrinketEntry } from "@/lib/game-data";
 
 const library: TrinketEntry[] = [
-  { id: "alpha", title: "Alpha Charm", descriptionLines: ["Gain 1 Block."], art: "alpha-art" },
-  { id: "beta", title: "Beta Stone", descriptionLines: ["Draw 1."], art: "beta-art" },
+  { id: "alpha", title: "Alpha Charm", descriptionLines: ["Gain 1 Block."], art: "alpha-art", effects: {} },
+  { id: "beta", title: "Beta Stone", descriptionLines: ["Draw 1."], art: "beta-art", effects: {} },
 ];
 
 describe("uniqueRunTrinkets", () => {

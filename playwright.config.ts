@@ -1,12 +1,10 @@
 import os from "node:os";
 import { defineConfig, devices } from "@playwright/test";
-import { playwrightCiSettings } from "./tests/playwright-shared";
+import { BROWSER_PREVIEW_PORT, playwrightCiSettings, previewWebServer } from "./tests/playwright-shared";
 
 const viteMode = process.env.PLAYWRIGHT_VITE_MODE === "preview" ? "preview" : "dev";
-const webServerCommand =
-  viteMode === "preview"
-    ? "npx vite preview --host 127.0.0.1 --port 4173 --strictPort"
-    : "npx vite --host 127.0.0.1 --port 4173 --strictPort";
+const port = BROWSER_PREVIEW_PORT;
+const webServerCommand = previewWebServer(port, { mode: viteMode }).command;
 
 const isPrepush = process.env.PLAYWRIGHT_PREPUSH === "1";
 const isNightly = process.env.PLAYWRIGHT_NIGHTLY === "1";
@@ -33,14 +31,14 @@ export default defineConfig({
   // Keep only failed-run output locally/CI so successful shards do not accumulate under test-results/.
   preserveOutput: "failures-only",
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL: `http://127.0.0.1:${port}`,
     trace: isPrepush ? "off" : "retain-on-failure",
     actionTimeout: isCi ? 15_000 : 10_000,
     storageState: {
       cookies: [],
       origins: [
         {
-          origin: "http://127.0.0.1:4173",
+          origin: `http://127.0.0.1:${port}`,
           localStorage: [{ name: "alchemy-skip-loading-screen", value: "true" }],
         },
       ],
@@ -48,9 +46,9 @@ export default defineConfig({
   },
   webServer: {
     command: webServerCommand,
-    port: 4173,
+    port,
     reuseExistingServer: !isCi,
-    env: { ALCHEMY_DEV_PORT: "4173", ALCHEMY_SKIP_CHECKER: "1" },
+    env: { ALCHEMY_DEV_PORT: String(port), ALCHEMY_SKIP_CHECKER: "1" },
   },
   projects: [
     {

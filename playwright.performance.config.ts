@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import { PERF_PREVIEW_PORT, previewPortFromEnv, previewWebServer } from "./tests/playwright-shared";
 import { PERF_VIEWPORT } from "./performance/viewport";
 
-const previewPort = Number.parseInt(process.env.PLAYWRIGHT_PERF_PORT ?? "4176", 10);
+const previewPort = previewPortFromEnv("PLAYWRIGHT_PERF_PORT", PERF_PREVIEW_PORT);
 const isElectron = process.env.PLAYWRIGHT_PERF_ELECTRON === "1";
 const isTrace = process.env.PLAYWRIGHT_PERF_TRACE === "1";
 
@@ -33,8 +34,7 @@ export default defineConfig({
     // idle-preloads before combat (blank portraits were common when skipping).
   },
   webServer: {
-    command: `npx vite preview --host 127.0.0.1 --port ${previewPort} --strictPort`,
-    port: previewPort,
+    ...previewWebServer(previewPort),
     reuseExistingServer: false,
     env: { ALCHEMY_DEV_PORT: String(previewPort) },
   },

@@ -35,7 +35,7 @@ protocol.registerSchemesAsPrivileged([
 
 const CRASH_REPORTING_ENABLED = initializeMainSentry(app);
 
-const DEV_SERVER_URL = process.env.ELECTRON_RENDERER_URL ?? "http://127.0.0.1:5173";
+const DEV_SERVER_URL = process.env.ELECTRON_RENDERER_URL ?? `http://127.0.0.1:${process.env.ALCHEMY_DEV_PORT ?? 5173}`;
 const USE_PACKAGED_RENDERER = app.isPackaged || process.env.ELECTRON_FORCE_PACKAGED_RENDERER === "1";
 const RENDERER_POLICY = { packaged: USE_PACKAGED_RENDERER, devServerUrl: DEV_SERVER_URL };
 const RENDERER_ROOT = path.join(__dirname, "..", "dist");
@@ -74,7 +74,7 @@ function initializeSteamworks() {
     steamClient = steamworks.init(steamAppId);
     console.log(`Steamworks initialized successfully (App ID ${steamAppId}).`);
   } catch (error) {
-    console.warn("Failed to initialize Steamworks (Steam might not be running):", error.message);
+    console.warn("Failed to initialize Steamworks (Steam might not be running):", error);
   }
 }
 

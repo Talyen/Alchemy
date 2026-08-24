@@ -38,20 +38,6 @@ declare module "*/steam-vdf.mjs" {
 }
 
 declare module "*/sync-changelog.mjs" {
-  export function syncChangelog(root: { root: string }): string;
-  export function computeSyncedChangelog(existingContent: string, rootDir?: string): string;
-}
-
-declare module "../../scripts/lib/steam-vdf.mjs" {
-  export function substituteSteamVdf(template: string, values: Record<string, string>): string;
-  export function writeSteamBuildVdfs(
-    root: string,
-    env: { STEAM_APP_ID: string; STEAM_DEPOT_ID: string; [key: string]: string },
-  ): { appPath: string; depotPath: string; buildDir: string; contentRoot: string };
-}
-
-declare module "../../scripts/sync-changelog.mjs" {
-  export function syncChangelog(root: { root: string }): string;
   export function computeSyncedChangelog(existingContent: string, rootDir?: string): string;
 }
 
@@ -60,41 +46,14 @@ declare module "*/prettier-paths.mjs" {
   export function filterPrettierPaths(paths: readonly string[]): string[];
 }
 
-declare module "../../scripts/prettier-paths.mjs" {
-  export const PRETTIER_GLOBS: readonly string[];
-  export function filterPrettierPaths(paths: readonly string[]): string[];
-}
-
 declare module "*/clean-dev-artifacts.mjs" {
   export const TRANSIENT_ARTIFACT_DIRS: readonly string[];
   export const DEFAULT_ARTIFACT_DIRS: readonly string[];
   export const BUILD_ARTIFACT_DIRS: readonly string[];
-  export const STALE_TEST_PORTS: readonly number[];
   export function listArtifactDirsToRemove(rootDir: string, options?: { builds?: boolean }): string[];
   export function measurePath(absolutePath: string): { path: string; bytes: number };
   export function removePath(absolutePath: string): void;
   export function formatBytes(bytes: number): string;
-  export function parseCleanArgs(argv: string[]): {
-    help: boolean;
-    builds: boolean;
-    processes: boolean;
-    includeDevPort: boolean;
-    dryRun: boolean;
-  };
-}
-
-declare module "../../scripts/lib/clean-dev-artifacts.mjs" {
-  export const TRANSIENT_ARTIFACT_DIRS: readonly string[];
-  export const DEFAULT_ARTIFACT_DIRS: readonly string[];
-  export const BUILD_ARTIFACT_DIRS: readonly string[];
-  export const STALE_TEST_PORTS: readonly number[];
-  export function listArtifactDirsToRemove(rootDir: string, options?: { builds?: boolean }): string[];
-  export function measurePath(absolutePath: string): { path: string; bytes: number };
-  export function removePath(absolutePath: string): void;
-  export function formatBytes(bytes: number): string;
-}
-
-declare module "../../scripts/clean-dev-artifacts.mjs" {
   export function parseCleanArgs(argv: string[]): {
     help: boolean;
     builds: boolean;
@@ -186,12 +145,6 @@ declare module "*/ci-summarize-vitest.mjs" {
   export function summarizeVitestFile(reportPath: string): string;
 }
 
-declare module "../../scripts/ci-summarize-vitest.mjs" {
-  export function summarizeVitestReport(report: unknown, options?: { maxFailures?: number }): VitestSummary;
-  export function formatVitestSummaryMarkdown(summary: VitestSummary): string;
-  export function summarizeVitestFile(reportPath: string): string;
-}
-
 interface PlaywrightFailure {
   file: string;
   line: number;
@@ -226,58 +179,10 @@ declare module "*/playwright-summary.mjs" {
   export function summarizePlaywrightFile(reportPath: string): string;
 }
 
-declare module "*/playwright-summary.mjs" {
-  export function collectPlaywrightTests(report: unknown): {
-    allTests: Array<Record<string, unknown>>;
-    totalTests: number;
-    passedTests: number;
-    skippedTests: number;
-    failedTests: Array<Record<string, unknown>>;
-    flakyTests: Array<Record<string, unknown>>;
-  };
-  export function summarizePlaywrightReport(
-    report: unknown,
-    options?: { maxFailures?: number; rootDir?: string },
-  ): PlaywrightSummary;
-  export function formatPlaywrightSummaryMarkdown(summary: PlaywrightSummary): string;
-  export function summarizePlaywrightFile(reportPath: string): string;
-}
-
 interface PlanMetadataResult {
   metadata: Record<string, string>;
   errors: string[];
   updated?: Date;
-}
-
-declare module "../../scripts/check-docs.mjs" {
-  export function parsePlanMetadata(source: string): PlanMetadataResult;
-  export function checkPlans(options?: { final?: boolean; today?: Date }): {
-    failures: string[];
-    warnings: string[];
-    activePlans: number;
-  };
-}
-
-declare module "../../scripts/new-plan.mjs" {
-  export function safePlanName(value: string): string;
-  export function planTemplate(name: string, updated: string): string;
-}
-
-declare module "../../scripts/prune-transient-artifacts.mjs" {
-  export function parsePruneArgs(argv: string[]): { days: number; dryRun: boolean };
-  export function pruneTransientArtifacts(options?: {
-    days?: number;
-    dryRun?: boolean;
-    now?: number;
-    rootDir?: string;
-    transientDirs?: readonly string[];
-  }): { removed: Array<{ path: string; bytes: number }>; bytes: number };
-}
-
-declare module "../../scripts/lib/compact-output.mjs" {
-  export function sanitizeOutput(output: string): string;
-  export function firstOutputLine(output: string): string;
-  export function tailOutput(output: string, maxChars?: number): string;
 }
 
 interface ContextMeasurement {
@@ -298,16 +203,6 @@ interface ContextMeasurement {
   namedOutputBytes: number;
 }
 
-declare module "../../scripts/measure-agent-context.mjs" {
-  export function measureContext(options?: {
-    paths?: string[];
-    docs?: string[];
-    artifacts?: string[];
-    outputFiles?: string[];
-  }): ContextMeasurement;
-  export function measureAllRoutes(): ContextMeasurement[];
-}
-
 interface VerificationRoute {
   id: string;
   patterns: string[];
@@ -323,46 +218,14 @@ interface VerificationCommand {
   args: string[];
 }
 
-declare module "../../scripts/verify-changed.mjs" {
-  export function resolveRoutes(paths: string[]): VerificationRoute[];
-  export function resolvePlan(
-    paths: string[],
-    options?: { e2e?: boolean | string; includeE2E?: boolean; full?: boolean },
-  ): { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] };
-  export function formatPlan(
-    plan: { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] },
-    options?: { verbosePlan?: boolean },
-  ): string;
-}
-
 declare module "*/change-routes.mjs" {
+  export const E2E_NAMES: ReadonlySet<string>;
   export function validateRouteCatalog(options?: { rootDir?: string }): string[];
   export function resolveRoutes(paths: string[]): VerificationRoute[];
   export function resolveRoutePlan(
     paths: string[],
     options?: { e2e?: boolean | string; includeE2E?: boolean; full?: boolean },
   ): { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] };
-}
-
-declare module "../../scripts/lib/change-routes.mjs" {
-  export const E2E_NAMES: readonly string[];
-  export function validateRouteCatalog(options?: { rootDir?: string }): string[];
-  export function resolveRoutes(paths: string[]): VerificationRoute[];
-  export function resolveRoutePlan(
-    paths: string[],
-    options?: { e2e?: boolean | string; includeE2E?: boolean; full?: boolean },
-  ): { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] };
-}
-
-declare module "../../scripts/lib/current-run.mjs" {
-  export function writeCurrentRun(options: {
-    rootDir: string;
-    status: string;
-    command: string;
-    artifacts?: Array<string | { path: string; role?: "primary" | "secondary" }>;
-    summary?: string;
-    commit?: string | null;
-  }): { jsonPath: string; markdownPath: string };
 }
 
 interface PlaywrightDiagnosticInput {
@@ -386,29 +249,6 @@ interface PlaywrightDiagnostic {
   omittedDomBytes: number;
 }
 
-declare module "../../scripts/lib/playwright-diagnostics.mjs" {
-  export const MAX_DIAGNOSTIC_BYTES: number;
-  export function diagnosticIdentity(input: {
-    rootDir?: string;
-    file: string;
-    line?: number;
-    project?: string;
-    title: string;
-  }): PlaywrightDiagnostic["identity"];
-  export function buildFailureDiagnostic(
-    input: PlaywrightDiagnosticInput,
-    options?: { maxBytes?: number },
-  ): PlaywrightDiagnostic;
-  export function writeFailureDiagnostic(
-    rootDir: string,
-    diagnostic: PlaywrightDiagnostic,
-  ): { digestPath: string; recordPath: string };
-  export function writeFailureIndex(rootDir: string): {
-    indexPath: string;
-    failures: Array<{ id: string; digestPath: string; bytes: number }>;
-  };
-}
-
 declare module "*/playwright-diagnostics.mjs" {
   export const MAX_DIAGNOSTIC_BYTES: number;
   export function diagnosticIdentity(input: {
@@ -430,12 +270,6 @@ declare module "*/playwright-diagnostics.mjs" {
     indexPath: string;
     failures: Array<{ id: string; digestPath: string; bytes: number }>;
   };
-}
-
-declare module "../../scripts/check-ci-routing.mjs" {
-  export function checkCiRouting(source: string): string[];
-  export function checkJobBoundaries(source: string): string[];
-  export function checkDiagnosticRetention(sources: Record<string, string>): string[];
 }
 
 declare module "*/check-docs.mjs" {

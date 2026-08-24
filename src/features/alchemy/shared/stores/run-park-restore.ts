@@ -4,9 +4,8 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import { repairPersistedBattleTrinketManifest } from "@/lib/battle";
 import {
   eventHasUnresolvedRandomTrinket,
-  pickMysteryEvent,
+  pickResolvedMysteryEvent,
   repairUnresolvedMysteryTrinkets,
-  resolveMysteryEventTrinkets,
 } from "@/lib/mystery";
 import type { GameplayDraft } from "./run-session-command";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
@@ -85,7 +84,7 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
       return;
     }
     const rng = createDraftRunRandomSource(draft, "events");
-    setMysteryEvent(draft, resolveMysteryEventTrinkets(pickMysteryEvent(rng), draft.run.activeRun.runTrinkets, rng));
+    setMysteryEvent(draft, pickResolvedMysteryEvent(rng, draft.run.activeRun.runTrinkets));
   }
   rebindLiveRunMeta(draft);
 }

@@ -49,7 +49,7 @@ Release gate: `npm run release` (includes `check:ship:full`). Command details:
 | `npm run deadcode:strict`         | knip strict + entry exports, deps excluded (nightly)                                                                                                                                                                     |
 | `npm run lint:ci`                 | All nine static gates run concurrently via `concurrently` (docs:check, CI routing, generated-output check, format:check, typecheck:all, lint, boundaries, architecture-smoke, deadcode); fails fast on the first failure |
 
-Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clean:all` (also `dist` / `release-desktop` + stale E2E ports `4173`/`4175`). The main Vite port is left alone unless you pass `--include-dev-port`.
+Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clean:all` (also `dist` / `release-desktop` + stale E2E/smoke ports `4173`/`4174`/`4175`). The main Vite port is left alone unless you pass `--include-dev-port`.
 
 ## CI parity
 
@@ -60,6 +60,7 @@ Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clea
 | CI `save-gate`                                  | `npm run test:ship:e2e` (path-filtered)                                                                                                                                                         |
 | CI `desktop-build` / `electron-e2e`             | `npm run dist:desktop` / desktop Playwright suite is CI-only (path-filtered job + nightly); manual opt-in: `npm run test:ship:desktop`                                                          |
 | CI `e2e` (`@critical` + `@prepush`, every push) | `npm run build && npm run test:e2e:prepush:full`                                                                                                                                                |
+| Nightly `coverage`                              | `npm run test:coverage` — unit tests with coverage thresholds from `vite.config.ts` (sparse checkout excludes Raw Assets; asset-reading suites self-skip)                                       |
 | Pre-push hook                                   | `npm run check:push`                                                                                                                                                                            |
 | Tag `v*` release (`e2e-full` + release job)     | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md); release job runs `dist:desktop` once (no `check:ship` rebuild)                                                                    |
 

@@ -80,30 +80,3 @@ export function damageThenMultiplyEnemyStatusCard({
     ],
   };
 }
-
-type CleansePlayerStatusCardInput = CardBaseInput & {
-  status: EnemyStatusDamageId;
-  cleanseLine: string;
-  consume?: boolean;
-};
-
-export function cleansePlayerStatusCard({
-  id,
-  title,
-  art,
-  status,
-  cleanseLine,
-  consume = false,
-  cost = 1,
-}: CleansePlayerStatusCardInput): BattleCard {
-  const descriptionLines = [...(consume ? [cleanseLine, CONSUME_DESCRIPTION_LINE] : [cleanseLine])];
-  return {
-    id,
-    title: deriveTitle(id, title),
-    descriptionLines,
-    art,
-    cost,
-    ...(consume ? { consume: true } : {}),
-    effects: [{ kind: "remove-player-status", status }],
-  };
-}

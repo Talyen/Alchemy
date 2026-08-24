@@ -12,6 +12,7 @@ const boneCharm: TrinketEntry = {
   title: "Bone Charm",
   descriptionLines: ["Enemies you defeat drop Gold."],
   art: "bone-charm-art",
+  effects: {},
 };
 
 function renderSummary(

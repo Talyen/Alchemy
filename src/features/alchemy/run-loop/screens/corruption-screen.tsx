@@ -17,7 +17,7 @@ import {
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description-ui";
-import { SelectableShopCard } from "../../shared/ui/shop-card-item";
+import { SelectableCard } from "../../shared/ui/selectable-card";
 import { ScreenDescription, ShineAccentButton, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +48,7 @@ function CorruptionDeckPicker({
       emptyMessage="No uncorrupted cards remain."
       paginationReserveSpace
       renderItem={({ card, index }) => (
-        <SelectableShopCard
+        <SelectableCard
           card={card}
           chrome="corruption"
           isSelected={selectedIndex === index}

@@ -22,6 +22,7 @@ import {
   setSfxVolume,
 } from "@/lib/audio";
 import { logError } from "@/lib/error-logger";
+import { isDesktop, setDisplayMode as setPlatformDisplayMode } from "@/lib/platform";
 import { allGameArt } from "@/lib/game-data";
 import { preloadImagesInBatches } from "@/lib/image-preload";
 import type { DisplayMode } from "@/features/alchemy/shared/types";
@@ -140,6 +141,7 @@ export function useAppDisplayEffects({ displayMode, brightness, stageRef }: AppD
   "use no memo";
   useEffect(() => {
     document.body.dataset.displayMode = displayMode;
+    if (isDesktop()) void setPlatformDisplayMode(displayMode);
   }, [displayMode]);
 
   useLayoutEffect(() => {

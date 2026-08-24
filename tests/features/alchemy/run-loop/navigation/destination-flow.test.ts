@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   advanceDestinationOfferState,
   computeDestinationWeight,
@@ -78,10 +78,6 @@ describe("getRunAvailableDestinations", () => {
     });
     expect(result).not.toContain(DESTINATIONS.CORRUPTION);
   });
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
 });
 
 describe("computeDestinationWeight", () => {

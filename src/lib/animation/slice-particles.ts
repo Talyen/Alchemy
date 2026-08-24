@@ -35,7 +35,6 @@ export interface SliceBorderParticle {
   lifetimeNoise: number;
   distanceNoise: number;
   sizeNoise: number;
-  fadeNoise: number;
 }
 
 export interface SliceCutParticle {
@@ -107,7 +106,6 @@ function makeBorderParticle(index: number, salt: number, origin: SlicePoint, out
     lifetimeNoise: sliceEffectNoise(index + salt, 59),
     distanceNoise: sliceEffectNoise(index + salt, 61),
     sizeNoise: sliceEffectNoise(index + salt, 67),
-    fadeNoise: sliceEffectNoise(index + salt, 71),
   };
 }
 
@@ -173,8 +171,7 @@ export function sampleBorderSpark(
     0,
     (BORDER_SIZE + particle.sizeNoise * BORDER_SIZE_VARIATION) * (1 - age * BORDER_SIZE_SHRINK),
   );
-  const fadeStart = Math.min(Math.max(BORDER_FADE_START + particle.fadeNoise * 0, 0), 0.99);
-  const fadeProgress = Math.max(0, (age - fadeStart) / (1 - fadeStart));
+  const fadeProgress = Math.max(0, (age - BORDER_FADE_START) / (1 - BORDER_FADE_START));
   const opacity = progress >= delay && age < 1 ? (1 - fadeProgress) ** BORDER_FADE_EXPONENT : 0;
   if (opacity <= 0 || diameter <= 0) return null;
   return {

@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeCurrentRun } from "./lib/current-run.mjs";
+import { PERF_PREVIEW_PORT } from "./lib/dev-port.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PERFORMANCE_CATALOG = JSON.parse(fs.readFileSync(path.join(root, "performance/catalog.json"), "utf8"));
@@ -76,20 +77,8 @@ Options:
 `);
 }
 
-function ensureDist() {
-  const indexHtml = path.join(root, "dist", "index.html");
-  if (!fs.existsSync(indexHtml)) {
-    console.error("dist/ is missing. Building production renderer…");
-    const result = spawnSync("npm", ["run", "build"], {
-      cwd: root,
-      stdio: "inherit",
-      shell: process.platform === "win32",
-    });
-    if (result.status !== 0) process.exit(result.status ?? 1);
-  }
-}
-
-function buildDist() {
+function buildDist({ onlyIfMissing = false } = {}) {
+  if (onlyIfMissing && fs.existsSync(path.join(root, "dist", "index.html"))) return;
   console.log("Building production renderer for performance profiling…");
   const result = spawnSync("npm", ["run", "build"], {
     cwd: root,
@@ -265,17 +254,14 @@ function main() {
     if (ensure.status !== 0) process.exit(ensure.status ?? 1);
   }
 
-  if (args.skipBuild) {
-    ensureDist();
-  } else {
-    buildDist();
-  }
+  buildDist({ onlyIfMissing: args.skipBuild });
 
   const outDir = stampOutputDir(args.electron ? "electron" : "chromium");
+  const perfPort = process.env.PLAYWRIGHT_PERF_PORT ?? String(PERF_PREVIEW_PORT);
   const env = {
     ...process.env,
     PERF_OUTPUT_DIR: outDir,
-    PLAYWRIGHT_PERF_PORT: process.env.PLAYWRIGHT_PERF_PORT ?? "4176",
+    PLAYWRIGHT_PERF_PORT: perfPort,
     PLAYWRIGHT_PERF_TRACE: args.trace ? "1" : "",
     PLAYWRIGHT_PERF_ELECTRON: args.electron ? "1" : "",
     PLAYWRIGHT_PERF_COLD: args.cold ? "1" : "",
@@ -283,7 +269,7 @@ function main() {
     PERF_SCENARIO: scenario ?? "",
     ...(process.env.PERF_MEASURE_MS ? { PERF_MEASURE_MS: process.env.PERF_MEASURE_MS } : {}),
     ...(process.env.PERF_MIN_FRAMES ? { PERF_MIN_FRAMES: process.env.PERF_MIN_FRAMES } : {}),
-    ...(args.electron ? { PLAYWRIGHT_ELECTRON_PREVIEW_PORT: process.env.PLAYWRIGHT_PERF_PORT ?? "4176" } : {}),
+    ...(args.electron ? { PLAYWRIGHT_ELECTRON_PREVIEW_PORT: perfPort } : {}),
   };
 
   // --all runs metric scenarios only; battle-art-diag is opt-in via --scenario.

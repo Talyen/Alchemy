@@ -8,11 +8,6 @@ import type {
   SalvageYield,
 } from "@/lib/gear";
 
-export interface ArmoryCursorPoint {
-  x: number;
-  y: number;
-}
-
 export interface ArmorySalvagePending {
   instance: GearInstance;
   yield: SalvageYield;

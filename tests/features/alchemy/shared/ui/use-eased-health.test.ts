@@ -7,7 +7,6 @@ import { useEasedHealth } from "@/features/alchemy/shared/ui/use-eased-health";
 
 describe("useEasedHealth", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 

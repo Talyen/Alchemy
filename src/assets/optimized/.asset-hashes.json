@@ -1,8 +1,9 @@
 {
   "acid-potion.webp": {
-    "hash": "d5c167e25efd15a0",
-    "mtimeMs": 1785148534000,
-    "size": 773782
+    "hash": "4ccd59386e0f9e7a",
+    "mtimeMs": 1787451437293.9717,
+    "size": 2681863,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "agility-training.webp": {
     "hash": "6f56b2c02679557c",
@@ -60,9 +61,10 @@
     "size": 2822941
   },
   "anvil.webp": {
-    "hash": "722de015e1062154",
-    "mtimeMs": 1782421241614.085,
-    "size": 2017267
+    "hash": "e94b019a26d55d9e",
+    "mtimeMs": 1787452217629.165,
+    "size": 2491927,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "apple.webp": {
     "hash": "55381458053713d9",
@@ -145,9 +147,10 @@
     "size": 2693311
   },
   "bread.webp": {
-    "hash": "c43c87013aca33c2",
-    "mtimeMs": 1782421241636.9094,
-    "size": 1566480
+    "hash": "cba87406b870bd42",
+    "mtimeMs": 1787452094147.9392,
+    "size": 2938096,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "briar-shield.webp": {
     "hash": "4aeec6481a184759",
@@ -155,9 +158,10 @@
     "size": 741885
   },
   "burning-blade.webp": {
-    "hash": "513475fa99841edb",
-    "mtimeMs": 1782421241640.4902,
-    "size": 961029
+    "hash": "8474a129c4240c63",
+    "mtimeMs": 1787538358155.8132,
+    "size": 2852358,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "campfire.webp": {
     "hash": "9506c70faddb4ac1",
@@ -175,9 +179,10 @@
     "size": 583688
   },
   "cauterize.webp": {
-    "hash": "db710237530f7d30",
-    "mtimeMs": 1782421241641.1934,
-    "size": 836040
+    "hash": "867b3a3f7a1bc3bd",
+    "mtimeMs": 1787538272406.884,
+    "size": 2570733,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "chicken-coop.webp": {
     "hash": "4a0fa4b9dbe9e4e0",
@@ -215,9 +220,10 @@
     "size": 2440176
   },
   "concussive-shot.webp": {
-    "hash": "e9e58919d782a3f1",
-    "mtimeMs": 1782421241649.5771,
-    "size": 975655
+    "hash": "a62e380eed660e80",
+    "mtimeMs": 1787537592918.586,
+    "size": 2398010,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "corruption-altar.webp": {
     "hash": "60ce68bcd97eb4b4",
@@ -255,9 +261,10 @@
     "size": 223501
   },
   "crystal-bulwark.webp": {
-    "hash": "a60b7e213c206ecc",
-    "mtimeMs": 1782421241650.225,
-    "size": 194481
+    "hash": "d00890f92eeb1cc3",
+    "mtimeMs": 1787540249355.7778,
+    "size": 2878342,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "crystal-garden.webp": {
     "hash": "03ba8abc7b451d85",
@@ -325,9 +332,10 @@
     "size": 573460
   },
   "exorcism.webp": {
-    "hash": "674c84b838eedd71",
-    "mtimeMs": 1782421241654.011,
-    "size": 769241
+    "hash": "f8af23b40dd74dd1",
+    "mtimeMs": 1787537567812.0146,
+    "size": 3305606,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "fangs.webp": {
     "hash": "fbecfca7a6fe54d1",
@@ -355,9 +363,10 @@
     "size": 718315
   },
   "fox-companion.webp": {
-    "hash": "b1bdde70e7513db0",
-    "mtimeMs": 1786569711922.8374,
-    "size": 929117
+    "hash": "6afabb488701f466",
+    "mtimeMs": 1787538533735.866,
+    "size": 2777755,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "frost-elemental.webp": {
     "hash": "4fabfd9fb8b3e3fa",
@@ -380,9 +389,10 @@
     "size": 2835590
   },
   "gamblers-shot.webp": {
-    "hash": "0ff249a8a8246f5b",
-    "mtimeMs": 1782421241661.881,
-    "size": 316507
+    "hash": "015fa18855cd9beb",
+    "mtimeMs": 1787537721551.9067,
+    "size": 2974259,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "gear-crossbow-astral.webp": {
     "hash": "3788671043ef1425",
@@ -725,9 +735,10 @@
     "size": 921771
   },
   "grasping-vines.webp": {
-    "hash": "b2168b32fc84c1a6",
-    "mtimeMs": 1782421241675.9812,
-    "size": 1070078
+    "hash": "034966b00bee67cf",
+    "mtimeMs": 1787538521934.9956,
+    "size": 2726314,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "groves-favor.webp": {
     "hash": "befafe950cac15e6",
@@ -735,9 +746,10 @@
     "size": 3012107
   },
   "haste.webp": {
-    "hash": "63b2ea702df35a60",
-    "mtimeMs": 1782421241677.4006,
-    "size": 399151
+    "hash": "56847c6a13494f10",
+    "mtimeMs": 1787539009786.2554,
+    "size": 2480268,
+    "settingsSig": "72b2c75dbbc3f1de"
   },
   "heal.webp": {
     "hash": "b858a365df47d519",
@@ -745,9 +757,10 @@
     "size": 639353
   },
   "health-potion.webp": {
-    "hash": "a1f159326d36aadc",
-    "mtimeMs": 1782421241683.5825,
-    "size": 2073687
+    "hash": "45bb3ee064d8ebbc",
+    "mtimeMs": 1787451405343.348,
+    "size": 2228690,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "hemorrhage.webp": {
     "hash": "01f792257104b021",
@@ -795,9 +808,10 @@
     "size": 2414430
   },
   "judgment.webp": {
-    "hash": "b41fd9d5ece487c0",
-    "mtimeMs": 1782421241695.5652,
-    "size": 323432
+    "hash": "9bdd8cfab577d81d",
+    "mtimeMs": 1787538771485.539,
+    "size": 2501831,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "kindling.webp": {
     "hash": "8be5529e7165eceb",
@@ -820,14 +834,16 @@
     "size": 1006036
   },
   "lightning-arrow.webp": {
-    "hash": "470001ae22776a47",
-    "mtimeMs": 1782421241702.6138,
-    "size": 907691
+    "hash": "c1d3f51db41752c2",
+    "mtimeMs": 1787537793022.9563,
+    "size": 2528938,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "lightning-bolt.webp": {
-    "hash": "ad959877dedb973c",
-    "mtimeMs": 1782421241705.0327,
-    "size": 960921
+    "hash": "5d217bbdb877082c",
+    "mtimeMs": 1787537771285.2402,
+    "size": 2610248,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "living-armor.webp": {
     "hash": "7c42b0503b08cab7",
@@ -840,9 +856,10 @@
     "size": 1003055
   },
   "luck-potion.webp": {
-    "hash": "fe59d065f527f5aa",
-    "mtimeMs": 1785148534000,
-    "size": 782988
+    "hash": "0289226c96d96dec",
+    "mtimeMs": 1787451446559.796,
+    "size": 2934981,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "lucky-clover.webp": {
     "hash": "a4945e6b525535f1",
@@ -855,9 +872,10 @@
     "size": 847984
   },
   "mana-crystal.webp": {
-    "hash": "e2e95bf11c460156",
-    "mtimeMs": 1782421241719.1833,
-    "size": 167010
+    "hash": "778b59cb285a6d19",
+    "mtimeMs": 1787539054219.1208,
+    "size": 2684446,
+    "settingsSig": "72b2c75dbbc3f1de"
   },
   "mana-moth-companion.webp": {
     "hash": "6d9cb701b4145e48",
@@ -865,9 +883,10 @@
     "size": 784416
   },
   "mana-potion.webp": {
-    "hash": "3a4255a9cdb3aa8a",
-    "mtimeMs": 1785148534000,
-    "size": 637769
+    "hash": "319a9d0ba016b564",
+    "mtimeMs": 1787451389393.8118,
+    "size": 2606371,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "mana-shield.webp": {
     "hash": "2f1d60b3c0bc7551",
@@ -905,9 +924,10 @@
     "size": 864795
   },
   "mixed-potion.webp": {
-    "hash": "dd203bac22096c8d",
-    "mtimeMs": 1782421241734.2014,
-    "size": 891655
+    "hash": "2950de15a3c984f7",
+    "mtimeMs": 1787451425861.8843,
+    "size": 2343606,
+    "settingsSig": "2f9018cdf557f0a4"
   },
   "molten-bulwark.webp": {
     "hash": "9afeb65d1f170e98",
@@ -1135,9 +1155,10 @@
     "size": 2664805
   },
   "plate-mail.webp": {
-    "hash": "4e085d0306529b5e",
-    "mtimeMs": 1782421241758.1145,
-    "size": 1769372
+    "hash": "ce98c4132a687121",
+    "mtimeMs": 1787451355148.7139,
+    "size": 2734839,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "pointer-c-shaded.webp": {
     "hash": "1e645e5caeb4d9c8",
@@ -1155,9 +1176,10 @@
     "size": 2549075
   },
   "prayer.webp": {
-    "hash": "d699396082469bc6",
-    "mtimeMs": 1782421241764.647,
-    "size": 1070869
+    "hash": "3dee196dcf827e4c",
+    "mtimeMs": 1787539071885.7053,
+    "size": 2858321,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "predators-focus.webp": {
     "hash": "c0666edd03123625",
@@ -1234,10 +1256,11 @@
     "mtimeMs": 1785148536000,
     "size": 939994
   },
-  "roulette.webp": {
-    "hash": "cd573762ddeb1d60",
-    "mtimeMs": 1782421241774.2166,
-    "size": 923525
+  "roll-the-dice.webp": {
+    "hash": "07f1a90069ece199",
+    "mtimeMs": 1787539085085.839,
+    "size": 3033651,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "runesmiths-workshop.webp": {
     "hash": "bda96503e3b4f320",
@@ -1250,9 +1273,10 @@
     "size": 2309251
   },
   "sanctified-plate.webp": {
-    "hash": "c205de494ba25f55",
-    "mtimeMs": 1782421241777.1082,
-    "size": 888194
+    "hash": "84798ce3dbdf736f",
+    "mtimeMs": 1787539440919.15,
+    "size": 2774553,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "sap-arrow.webp": {
     "hash": "440d117bf044de5e",
@@ -1260,9 +1284,10 @@
     "size": 719303
   },
   "serrated-arrowhead.webp": {
-    "hash": "1978ff7be058f62c",
-    "mtimeMs": 1782421241784.5496,
-    "size": 651340
+    "hash": "d62423b44a1fd677",
+    "mtimeMs": 1787539379553.6582,
+    "size": 1854236,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "serrated-edge.webp": {
     "hash": "fc05a6ae34625fec",
@@ -1305,9 +1330,10 @@
     "size": 950957
   },
   "smelling-salts.webp": {
-    "hash": "eb71d8d8d3d42239",
-    "mtimeMs": 1782421241795.9104,
-    "size": 969988
+    "hash": "f57fb82c091dc6a0",
+    "mtimeMs": 1787451451776.2642,
+    "size": 3244560,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "smite.webp": {
     "hash": "d6531c9a1d111731",
@@ -1540,19 +1566,22 @@
     "size": 2158412
   },
   "will-o-wisp-companion.webp": {
-    "hash": "057414be0291d97c",
-    "mtimeMs": 1782421241837.243,
-    "size": 271785
+    "hash": "5e07e47a38ff4aaa",
+    "mtimeMs": 1787539512055.1826,
+    "size": 2601862,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "wish.webp": {
-    "hash": "5780f044ee4303b4",
-    "mtimeMs": 1782421241839.4153,
-    "size": 837592
+    "hash": "23565e61f1d90fd9",
+    "mtimeMs": 1787539493901.706,
+    "size": 3070365,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "wishing-potion.webp": {
-    "hash": "b66afb61741dbfef",
-    "mtimeMs": 1782421241842.338,
-    "size": 894937
+    "hash": "7ce0a46abcefe88e",
+    "mtimeMs": 1787451442733.0427,
+    "size": 2731620,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "wishing-well-coin.webp": {
     "hash": "562fa1c636d62c69",
@@ -1560,9 +1589,10 @@
     "size": 2341699
   },
   "wishing-well.webp": {
-    "hash": "09696801e6706c02",
-    "mtimeMs": 1782421241847.9333,
-    "size": 771167
+    "hash": "4618e07240a69200",
+    "mtimeMs": 1787539539920.2253,
+    "size": 2891326,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "wizard.webp": {
     "hash": "e80ef0b6da4b0888",

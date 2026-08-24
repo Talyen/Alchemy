@@ -4,11 +4,11 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { resolveDevPort, STALE_TEST_PORTS } from "./lib/dev-port.mjs";
 import { stopDevServer } from "./stop-dev-server.mjs";
 import {
   BUILD_ARTIFACT_DIRS,
   DEFAULT_ARTIFACT_DIRS,
-  STALE_TEST_PORTS,
   formatBytes,
   listArtifactDirsToRemove,
   measurePath,
@@ -105,9 +105,11 @@ export async function runClean(options = {}) {
   if (processes) {
     const ports = [...STALE_TEST_PORTS];
     if (includeDevPort) {
-      const devPort = Number.parseInt(process.env.ALCHEMY_DEV_PORT ?? "5173", 10);
-      if (Number.isInteger(devPort) && devPort > 0 && !ports.includes(devPort)) {
-        ports.push(devPort);
+      try {
+        const devPort = resolveDevPort();
+        if (!ports.includes(devPort)) ports.push(devPort);
+      } catch {
+        // A malformed ALCHEMY_DEV_PORT should not block artifact cleanup.
       }
     }
     for (const port of ports) {

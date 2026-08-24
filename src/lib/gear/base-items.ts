@@ -9,34 +9,10 @@ export interface GearBaseItemDefinition {
   compatibleSlots: GearSlot[];
   requiresTwoHands: boolean;
   affinityKeywords: KeywordId[];
-  availableRarities: readonly GearRarity[];
   salvageByRarity: Record<GearRarity, MaterialInventory>;
+  /** Explicit on every main-hand item so ranged tagging is a data-level decision. */
   rangedWeapon?: boolean;
   quiver?: boolean;
-}
-
-type GearBaseItemInput = Omit<GearBaseItemDefinition, "id" | "availableRarities" | "rangedWeapon"> & {
-  availableRarities?: readonly GearRarity[];
-  rangedWeapon?: boolean;
-};
-type GearBaseItemCatalog<T extends Record<string, GearBaseItemInput>> = {
-  [K in keyof T]: GearBaseItemDefinition;
-};
-
-const DEFAULT_AVAILABLE_RARITIES: readonly GearRarity[] = ["basic", "astral"];
-
-function defineGearBaseItems<const T extends Record<string, GearBaseItemInput>>(items: T): GearBaseItemCatalog<T> {
-  return Object.fromEntries(
-    Object.entries(items).map(([id, definition]) => [
-      id,
-      {
-        id,
-        ...definition,
-        availableRarities: definition.availableRarities ?? DEFAULT_AVAILABLE_RARITIES,
-        rangedWeapon: definition.rangedWeapon ?? false,
-      },
-    ]),
-  ) as GearBaseItemCatalog<T>;
 }
 
 function salvageBy(
@@ -57,13 +33,14 @@ const woodMedium = salvageBy({ wood: 6 }, { wood: 9 });
 const gemLight = salvageBy({ crystal: 3 }, { crystal: 6 });
 const natureGem = salvageBy({ crystal: 3 }, { crystal: 3, herbs: 3 });
 
-export const gearBaseItems = defineGearBaseItems({
+const gearBaseItemCatalog = {
   "double-axe": {
     displayName: "Double Axe",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: true,
     affinityKeywords: ["physical", "stun", "bleed"],
     salvageByRarity: ironHeavy,
+    rangedWeapon: false,
   },
   maul: {
     displayName: "Maul",
@@ -71,6 +48,7 @@ export const gearBaseItems = defineGearBaseItems({
     requiresTwoHands: true,
     affinityKeywords: ["physical", "stun", "holy"],
     salvageByRarity: ironHeavy,
+    rangedWeapon: false,
   },
   greatsword: {
     displayName: "Greatsword",
@@ -78,6 +56,7 @@ export const gearBaseItems = defineGearBaseItems({
     requiresTwoHands: true,
     affinityKeywords: ["physical", "stun", "forge"],
     salvageByRarity: ironHeavy,
+    rangedWeapon: false,
   },
   hatchet: {
     displayName: "Hatchet",
@@ -85,6 +64,7 @@ export const gearBaseItems = defineGearBaseItems({
     requiresTwoHands: false,
     affinityKeywords: ["physical", "bleed"],
     salvageByRarity: salvageBy({ iron: 3, wood: 3 }, { iron: 6, wood: 3 }),
+    rangedWeapon: false,
   },
   longsword: {
     displayName: "Longsword",
@@ -92,6 +72,7 @@ export const gearBaseItems = defineGearBaseItems({
     requiresTwoHands: false,
     affinityKeywords: ["physical", "forge", "holy"],
     salvageByRarity: ironMedium,
+    rangedWeapon: false,
   },
   shortsword: {
     displayName: "Shortsword",
@@ -99,6 +80,7 @@ export const gearBaseItems = defineGearBaseItems({
     requiresTwoHands: false,
     affinityKeywords: ["physical", "forge", "bleed"],
     salvageByRarity: ironLight,
+    rangedWeapon: false,
   },
   dagger: {
     displayName: "Dagger",
@@ -106,6 +88,7 @@ export const gearBaseItems = defineGearBaseItems({
     requiresTwoHands: false,
     affinityKeywords: ["physical", "bleed", "poison"],
     salvageByRarity: salvageBy({ iron: 3 }, { iron: 3, herbs: 3 }),
+    rangedWeapon: false,
   },
   mace: {
     displayName: "Mace",
@@ -113,6 +96,7 @@ export const gearBaseItems = defineGearBaseItems({
     requiresTwoHands: false,
     affinityKeywords: ["physical", "stun", "holy"],
     salvageByRarity: ironMedium,
+    rangedWeapon: false,
   },
   flail: {
     displayName: "Flail",
@@ -120,6 +104,7 @@ export const gearBaseItems = defineGearBaseItems({
     requiresTwoHands: false,
     affinityKeywords: ["physical", "stun"],
     salvageByRarity: ironMedium,
+    rangedWeapon: false,
   },
   longbow: {
     displayName: "Longbow",
@@ -159,6 +144,7 @@ export const gearBaseItems = defineGearBaseItems({
     requiresTwoHands: true,
     affinityKeywords: ["burn", "freeze", "mana"],
     salvageByRarity: salvageBy({ wood: 3, crystal: 3 }, { wood: 6, crystal: 3 }),
+    rangedWeapon: false,
   },
   wand: {
     displayName: "Wand",
@@ -166,6 +152,7 @@ export const gearBaseItems = defineGearBaseItems({
     requiresTwoHands: false,
     affinityKeywords: ["burn", "freeze", "mana"],
     salvageByRarity: salvageBy({ wood: 3 }, { wood: 3, crystal: 3 }),
+    rangedWeapon: false,
   },
   "leather-buckler": {
     displayName: "Leather Buckler",
@@ -266,8 +253,12 @@ export const gearBaseItems = defineGearBaseItems({
     affinityKeywords: ["holy", "gold", "forge", "stun"],
     salvageByRarity: gemLight,
   },
-});
+} satisfies Record<string, Omit<GearBaseItemDefinition, "id">>;
 
-export type GearBaseItemId = keyof typeof gearBaseItems;
+export type GearBaseItemId = keyof typeof gearBaseItemCatalog;
+
+export const gearBaseItems = Object.fromEntries(
+  Object.entries(gearBaseItemCatalog).map(([id, item]) => [id, { ...item, id }]),
+) as Record<GearBaseItemId, GearBaseItemDefinition>;
 
 export const gearBaseItemList = Object.values(gearBaseItems);

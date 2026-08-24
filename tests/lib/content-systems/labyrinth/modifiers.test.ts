@@ -1,11 +1,7 @@
 // Unit tests for labyrinth modifier definitions and encounter-type selection.
 import { describe, expect, it } from "vitest";
-import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
-import {
-  getEnemyModifiersForNodeType,
-  getRewardModifiersForNodeType,
-  REWARD_MODIFIER_KINDS,
-} from "@/lib/content-systems/labyrinth/modifiers";
+import { ENCOUNTER_TRAITS, REWARD_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
+import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "@/lib/content-systems/labyrinth/modifiers";
 
 describe("ENCOUNTER_TRAITS", () => {
   it("each modifier has a non-empty label and description", () => {
@@ -32,7 +28,7 @@ describe("getEnemyModifiersForNodeType", () => {
       for (let trial = 0; trial < 30; trial++) {
         const mods = getEnemyModifiersForNodeType(type, Math.random);
         for (const m of mods) {
-          expect(REWARD_MODIFIER_KINDS.has(m as "companion" | "alchemist" | "generous" | "scavenger")).toBe(false);
+          expect((REWARD_ENCOUNTER_TRAIT_IDS as readonly string[]).includes(m)).toBe(false);
         }
       }
     }
@@ -72,12 +68,12 @@ describe("getRewardModifiersForNodeType", () => {
     expect(hasOne).toBe(true);
   });
 
-  it("reward modifiers are always from REWARD_MODIFIER_KINDS", () => {
+  it("reward modifiers are always reward trait ids", () => {
     for (const type of ["combat", "elite"] as const) {
       for (let trial = 0; trial < 30; trial++) {
         const mods = getRewardModifiersForNodeType(type, Math.random);
         for (const m of mods) {
-          expect(REWARD_MODIFIER_KINDS.has(m)).toBe(true);
+          expect((REWARD_ENCOUNTER_TRAIT_IDS as readonly string[]).includes(m)).toBe(true);
         }
       }
     }

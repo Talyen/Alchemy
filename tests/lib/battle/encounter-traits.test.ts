@@ -53,7 +53,7 @@ describe("encounter trait enemy actions", () => {
     expect(result.state.playerHealth).toBe(25);
   });
 
-  it("does not activate recurring traits on a skipped enemy action", () => {
+  it("keeps per-turn stat gains on a skipped enemy action but skips action riders", () => {
     const currentEnemy = enemyWith("tempered", "zealot");
     const state = makeTestBattleState({
       currentEnemy,
@@ -61,7 +61,9 @@ describe("encounter trait enemy actions", () => {
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
     });
     const result = endPlayerTurn(state);
-    expect(result.state.enemyMitigation.forge).toBe(0);
+    // Tempered's gain fires every enemy phase, stunned or not (matching the
+    // bestiary stacking traits); zealot's damage rider needs a real attack.
+    expect(result.state.enemyMitigation.forge).toBe(1);
     expect(result.state.playerHealth).toBe(state.playerHealth);
   });
 

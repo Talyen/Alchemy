@@ -4,7 +4,7 @@ import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchem
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
-import { getBossEnemy } from "@/features/alchemy/shared/config";
+import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards } from "../navigation/victory-flow";
 import type { CommitVictoryRewardsDeps, VictoryRewardsResult } from "../navigation/victory-flow-types";
 import { CONSTANTS } from "../../shared/types";
@@ -80,7 +80,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
         completedDestinations: runState.completedDestinations,
         homesteadEffects: runProfile.effects,
         getAvailableDestinations: deps.getAvailableDestinations,
-        bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
+        bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
         destinationOfferState: {
           lastOfferedDestinations: runState.lastOfferedDestinations,
           roundsSinceOffered: runState.destinationRoundsSinceOffered,

@@ -1,7 +1,7 @@
 // Mystery event navigation: begin + choice handlers with screen transition + sound.
 import { useCallback, useMemo } from "react";
-import { cardLibrary } from "@/lib/game-data";
-import { pickMysteryEvent, resolveMysteryEventTrinkets, type MysteryChoice } from "@/lib/mystery";
+import { cardById } from "@/lib/game-data";
+import { pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
 import {
@@ -30,10 +30,7 @@ export function useMysteryEventNavigation({
         (draft) => {
           clearMysteryVisitState(draft);
           const rng = createDraftRunRandomSource(draft, "events");
-          setMysteryEvent(
-            draft,
-            resolveMysteryEventTrinkets(pickMysteryEvent(rng), draft.run.activeRun.runTrinkets, rng),
-          );
+          setMysteryEvent(draft, pickResolvedMysteryEvent(rng, draft.run.activeRun.runTrinkets));
         },
         {
           afterCommit: () => {
@@ -75,7 +72,7 @@ export function useMysteryEventNavigation({
   const handleMysteryChooseCard = useCallback((cardId: string) => {
     dispatchRunSessionCommand((draft) => {
       if (draft.session.mysteryChosenCardId !== null) return;
-      const card = cardLibrary.find((c) => c.id === cardId);
+      const card = cardById[cardId];
       if (card) {
         appendCardToRunWithDiscovery(draft, card);
         setMysteryChosenCardId(draft, cardId);

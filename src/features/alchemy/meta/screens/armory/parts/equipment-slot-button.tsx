@@ -48,10 +48,10 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   editable: boolean;
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
-  onSelect: () => void;
-  onUnequip: () => void;
-  onSalvage: () => void;
-  onApplyCurrency: () => void;
+  onSelect: (slot: GearSlot) => void;
+  onUnequip: (slot: GearSlot) => void;
+  onSalvage: (instance: GearInstance) => void;
+  onApplyCurrency: (instance: GearInstance) => void;
 }) {
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
   const shineColors = instance ? getAstralShineColors(instance) : undefined;
@@ -106,22 +106,22 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         )}
         onClick={() => {
           if (!editable) {
-            onSelect();
+            onSelect(slot);
             return;
           }
           if (salvageable) {
-            onSalvage();
+            if (instance) onSalvage(instance);
             return;
           }
           if (activeCurrencyId && instance) {
-            onApplyCurrency();
+            onApplyCurrency(instance);
             return;
           }
           if (selected && instance) {
-            onUnequip();
+            onUnequip(slot);
             return;
           }
-          onSelect();
+          onSelect(slot);
         }}
       >
         <GearSlotArt definition={definition} slot={slot} />

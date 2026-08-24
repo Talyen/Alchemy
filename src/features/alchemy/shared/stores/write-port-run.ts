@@ -62,22 +62,12 @@ export const setRunTrinkets = (draft: GameplayDraft, action: string[] | ((prev: 
   setRunField(draft, "runTrinkets", action);
 export const setEncounteredRunEnemyIds = (draft: GameplayDraft, action: string[] | ((prev: string[]) => string[])) =>
   setRunField(draft, "encounteredRunEnemyIds", action);
-export const setSelectedDifficulty = (
-  draft: GameplayDraft,
-  action:
-    | ActiveRunProgressFields["selectedDifficulty"]
-    | ((prev: ActiveRunProgressFields["selectedDifficulty"]) => ActiveRunProgressFields["selectedDifficulty"]),
-) => setRunField(draft, "selectedDifficulty", action);
 export const setContentSystemType = (
   draft: GameplayDraft,
   action:
     | ActiveRunProgressFields["contentSystemType"]
     | ((prev: ActiveRunProgressFields["contentSystemType"]) => ActiveRunProgressFields["contentSystemType"]),
 ) => setRunField(draft, "contentSystemType", action);
-
-export function setCharacter(draft: GameplayDraft, selectedId: CharacterId): void {
-  draft.run.activeRun.characterId = selectedId;
-}
 
 /** Clear run-scoped tallies while keeping the chosen character. */
 export function resetProgress(draft: GameplayDraft): void {

@@ -11,9 +11,8 @@ import type {
   ShopState,
   TrinketShopState,
 } from "@/lib/active-run-session";
-import { createEmptyRewardState } from "@/lib/active-run-session/reward-types";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import { DESTINATIONS, filterValidDestinations, type Destination } from "@/lib/routing";
+import { DESTINATIONS, type Destination } from "@/lib/routing";
 import type { GameplayDraft } from "./run-session-command";
 import { createInitialSessionFields, type RunSessionFields } from "./run-domain-types";
 import {
@@ -70,8 +69,6 @@ export const setCompanionRewardCards = (draft: GameplayDraft, cards: RunSessionF
   setSessionField(draft, "companionRewardCards", cards);
 export const setRunEndMaterials = (draft: GameplayDraft, materials: RunSessionFields["runEndMaterials"]) =>
   setSessionField(draft, "runEndMaterials", materials);
-export const setRunEndTalentXP = (draft: GameplayDraft, xp: RunSessionFields["runEndTalentXP"]) =>
-  setSessionField(draft, "runEndTalentXP", xp);
 export const setCorruptionResult = (draft: GameplayDraft, result: RunSessionFields["corruptionResult"]) =>
   setSessionField(draft, "corruptionResult", result);
 
@@ -97,11 +94,6 @@ export function beginDestinationClaim(draft: GameplayDraft, destination: Destina
 
 export function cancelDestinationClaim(draft: GameplayDraft): void {
   draft.session.pendingDestinationClaim = null;
-}
-
-/** Restore reward state with pre-sampled destinations on campaign resume, filtering invalid choices. */
-export function applyDestinationChoices(draft: GameplayDraft, choices: string[]): void {
-  draft.session.rewardState = { ...createEmptyRewardState(), destinations: filterValidDestinations(choices) };
 }
 
 /** Commit destination claim across session + active-run progress (cross-lifetime). */

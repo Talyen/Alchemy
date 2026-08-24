@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { BUTTON_HOVER_PRIMARY, BUTTON_HOVER_SECONDARY } from "@/lib/ui/button-hover";
 import { destinationMeta } from "@/features/alchemy/shared/config";
-import { BUTTON_SURFACE_NEUTRAL } from "@/features/alchemy/shared/config/button-tokens";
 
 describe("destinationMeta", () => {
   it("uses accent text classes instead of colored button fills", () => {
@@ -25,13 +24,5 @@ describe("button hover tokens", () => {
 
   it("uses muted background hover for secondary", () => {
     expect(BUTTON_HOVER_SECONDARY).toContain("hover:bg-muted/80");
-  });
-});
-
-describe("button surface token", () => {
-  it("matches outline button background", () => {
-    expect(BUTTON_SURFACE_NEUTRAL).toContain("bg-background");
-    expect(BUTTON_SURFACE_NEUTRAL).toContain("border");
-    expect(BUTTON_SURFACE_NEUTRAL).not.toContain("zinc");
   });
 });

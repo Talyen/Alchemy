@@ -1,5 +1,5 @@
 // Public card library barrel.
-export { cardLibrary } from "./cards/library/cards";
+export { cardLibrary, cardById } from "./cards/library/cards";
 
 export {
   expectedCompanionTurnLine,

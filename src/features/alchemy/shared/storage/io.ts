@@ -9,7 +9,6 @@ import {
   safeParseWithErrors,
   getRawContentVersion,
   getRawSaveSchemaVersion,
-  isTombstonedCardId,
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
   type ParsedSaveData,
@@ -59,23 +58,11 @@ export interface SaveLoadState {
   status: SaveLoadStatus;
 }
 
-// Drops intentionally tombstoned card IDs, then hydrates remaining cards into the
-// runtime ActiveRunData contract. Unknown non-tombstoned IDs (e.g. E2E fixtures)
-// are kept so fully-specified saved cards remain drawable.
+// Tombstoned card stripping happens inside ActiveRunDataSchema normalization
+// (normalizeActiveRunData), so this only hydrates parsed output into the runtime contract.
 function hydrateActiveRunDeck(activeRun: ParsedSaveData["activeRun"]): SaveData["activeRun"] {
   if (!activeRun) return null;
-  const keepCard = (card: { id: string }) => !isTombstonedCardId(card.id);
-  return toActiveRunData({
-    ...activeRun,
-    runDeck: activeRun.runDeck.filter(keepCard),
-    wildwoodDraft: activeRun.wildwoodDraft
-      ? {
-          ...activeRun.wildwoodDraft,
-          draftChoices: activeRun.wildwoodDraft.draftChoices.filter(keepCard),
-        }
-      : null,
-    starterDraftChoices: activeRun.starterDraftChoices?.filter(keepCard) ?? null,
-  });
+  return toActiveRunData(activeRun);
 }
 
 function hydrateParkedRuns(parked: ParsedSaveData["parkedRuns"]): SaveData["parkedRuns"] {

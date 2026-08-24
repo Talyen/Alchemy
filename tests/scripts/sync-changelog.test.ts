@@ -1,13 +1,22 @@
 import { execSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { computeSyncedChangelog } from "../../scripts/sync-changelog.mjs";
+
+const tempDirs: string[] = [];
+
+afterEach(() => {
+  for (const dir of tempDirs.splice(0)) {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 /** Temp git repo with one conventional commit so getCommitsSinceTag has real data. */
 function gitRepoWithCommit(message: string) {
   const root = mkdtempSync(join(tmpdir(), "alchemy-changelog-"));
+  tempDirs.push(root);
   execSync("git init -q", { cwd: root });
   execSync("git config user.email test@example.com && git config user.name test", {
     cwd: root,
@@ -73,6 +82,7 @@ describe("sync-changelog", () => {
 
   it("refuses to rewrite the changelog when git history is unreadable", () => {
     const root = mkdtempSync(join(tmpdir(), "alchemy-changelog-"));
+    tempDirs.push(root);
     // No git repo: getCommitsSinceTag cannot distinguish commits from failure.
     expect(() => computeSyncedChangelog("# Changelog\n", root)).toThrow(/git log failed/);
   });

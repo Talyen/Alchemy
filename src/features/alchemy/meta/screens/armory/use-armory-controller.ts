@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type { CharacterId } from "@/lib/game-data";
 import {
   generateDevRandomGearInstance,
@@ -106,19 +106,32 @@ export function useArmoryController(): ArmoryController {
     [flush],
   );
 
-  const controller: ArmoryController = {
-    inventories: gear.inventories,
-    loadouts: gear.loadouts,
-    craftingCurrencies: gear.craftingCurrencies,
+  return useMemo(() => {
+    const controller: ArmoryController = {
+      inventories: gear.inventories,
+      loadouts: gear.loadouts,
+      craftingCurrencies: gear.craftingCurrencies,
+      finishedRunCharacters,
+      browseOnly: false,
+      hasActiveRun,
+      onEquip,
+      onUnequip,
+      onSalvage,
+      onApplyCurrency,
+      rng: Math.random,
+    };
+    if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
+    return controller;
+  }, [
+    gear.inventories,
+    gear.loadouts,
+    gear.craftingCurrencies,
     finishedRunCharacters,
-    browseOnly: false,
     hasActiveRun,
     onEquip,
     onUnequip,
     onSalvage,
     onApplyCurrency,
-    rng: Math.random,
-  };
-  if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
-  return controller;
+    onSpawnDevGear,
+  ]);
 }

@@ -97,11 +97,10 @@ export function HomesteadScreen({
                     companionPage * HOMESTEAD_CONFIG.companionPageSize,
                     (companionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,
                   )
-                  .map((card, index) => (
+                  .map((card) => (
                     <CompanionCardNode
                       key={card.id}
                       card={card}
-                      index={index}
                       discovered={discoveredCardIds.includes(card.id)}
                       bondedCompanions={bondedCompanions}
                       materialInventory={materialInventory}
@@ -113,28 +112,25 @@ export function HomesteadScreen({
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-x-4 gap-y-4">
-                {(tab === "buildings" ? buildingsItems : tab === "farm" ? farmItems : researchItems).map(
-                  (item, index) => (
-                    <HomesteadUpgradeNode
-                      key={item.data.id}
-                      item={item}
-                      index={index}
-                      currentLevel={
-                        (
-                          (tab === "buildings"
-                            ? constructedBuildings
-                            : tab === "farm"
-                              ? plantedFarms
-                              : completedResearch) as Record<string, number>
-                        )[item.data.id] ?? 0
-                      }
-                      materialInventory={materialInventory}
-                      hoveredItemId={hoveredItemId}
-                      setHoveredItemId={setHoveredItemId}
-                      onAction={handleAction}
-                    />
-                  ),
-                )}
+                {(tab === "buildings" ? buildingsItems : tab === "farm" ? farmItems : researchItems).map((item) => (
+                  <HomesteadUpgradeNode
+                    key={item.data.id}
+                    item={item}
+                    currentLevel={
+                      (
+                        (tab === "buildings"
+                          ? constructedBuildings
+                          : tab === "farm"
+                            ? plantedFarms
+                            : completedResearch) as Record<string, number>
+                      )[item.data.id] ?? 0
+                    }
+                    materialInventory={materialInventory}
+                    hoveredItemId={hoveredItemId}
+                    setHoveredItemId={setHoveredItemId}
+                    onAction={handleAction}
+                  />
+                ))}
               </div>
             )}
           </FadeSlot>

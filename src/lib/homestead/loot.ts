@@ -4,6 +4,7 @@
 import type { MaterialId, MaterialInventory } from "./types";
 import type { HomesteadEffectManifest } from "./types";
 import { emptyInventory, addInventory } from "./inventory";
+import { materialCost } from "./costs";
 import { HOMESTEAD_LOOT_CONFIG } from "../game-constants";
 
 // Per-enemy loot table: a guaranteed drop, plus possible bonus drops with weight.
@@ -29,46 +30,61 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
     bonuses: [lootEntry("herbs", 0, 1, 0.3)],
   },
   goblin: {
-    guaranteed: { wood: 1, iron: 0, herbs: 0, food: 1, crystal: 0 },
+    guaranteed: materialCost({ wood: 1, food: 1 }),
     bonuses: [lootEntry("wood", 0, 1, 0.4)],
   },
-  imp: {
-    guaranteed: { wood: 0, iron: 0, herbs: 1, food: 0, crystal: 0 },
-    bonuses: [lootEntry("crystal", 0, 1, 0.1)],
-  },
-  "lizard-scout": {
-    guaranteed: { wood: 0, iron: 0, herbs: 1, food: 0, crystal: 0 },
-    bonuses: [lootEntry("herbs", 0, 1, 0.3)],
-  },
   mimic: {
-    guaranteed: { wood: 0, iron: 2, herbs: 0, food: 0, crystal: 0 },
+    guaranteed: materialCost({ iron: 2 }),
     bonuses: [lootEntry("crystal", 0, 1, 0.5), lootEntry("iron", 0, 1, 0.4)],
   },
   "mud-elemental": {
-    guaranteed: { wood: 0, iron: 0, herbs: 1, food: 0, crystal: 0 },
+    guaranteed: materialCost({ herbs: 1 }),
     bonuses: [],
   },
   necromancer: {
-    guaranteed: { wood: 0, iron: 0, herbs: 2, food: 0, crystal: 1 },
+    guaranteed: materialCost({ herbs: 2, crystal: 1 }),
     bonuses: [lootEntry("crystal", 0, 1, 0.3), lootEntry("herbs", 0, 1, 0.5)],
   },
   "plague-doctor": {
-    guaranteed: { wood: 0, iron: 0, herbs: 2, food: 0, crystal: 0 },
+    guaranteed: materialCost({ herbs: 2 }),
     bonuses: [lootEntry("herbs", 0, 1, 0.4)],
   },
   "forge-golem": {
-    guaranteed: { wood: 0, iron: 3, herbs: 0, food: 0, crystal: 1 },
+    guaranteed: materialCost({ iron: 3, crystal: 1 }),
     bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
   },
   frostwarden: {
-    guaranteed: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 3 },
+    guaranteed: materialCost({ crystal: 3 }),
     bonuses: [lootEntry("crystal", 0, 2, 0.6), lootEntry("iron", 0, 1, 0.3)],
   },
   "blight-treant": {
-    guaranteed: { wood: 2, iron: 0, herbs: 2, food: 0, crystal: 0 },
+    guaranteed: materialCost({ wood: 2, herbs: 2 }),
     bonuses: [lootEntry("wood", 0, 2, 0.6), lootEntry("herbs", 0, 2, 0.5)],
   },
+  "living-armor": {
+    guaranteed: materialCost({ iron: 2 }),
+    bonuses: [lootEntry("iron", 0, 1, 0.4), lootEntry("crystal", 0, 1, 0.3)],
+  },
+  "iron-bear": {
+    guaranteed: materialCost({ iron: 2, food: 1 }),
+    bonuses: [lootEntry("iron", 0, 2, 0.5), lootEntry("food", 0, 1, 0.4)],
+  },
+  "fire-elemental": {
+    guaranteed: materialCost({ iron: 1, crystal: 1 }),
+    bonuses: [lootEntry("crystal", 0, 1, 0.4)],
+  },
+  "frost-elemental": {
+    guaranteed: materialCost({ crystal: 2 }),
+    bonuses: [lootEntry("crystal", 0, 1, 0.6)],
+  },
+  slime: {
+    guaranteed: materialCost({ food: 1 }),
+    bonuses: [lootEntry("herbs", 0, 1, 0.3)],
+  },
 };
+
+// Exported for the bestiary↔loot parity test; not a production lookup.
+export const enemyLootTableIds = Object.keys(enemyLootTables);
 
 function rollBonuses(table: EnemyLootTable, rng: () => number): MaterialInventory {
   const result = emptyInventory();
@@ -120,7 +136,7 @@ type EndOfRunHomesteadEffects = Pick<
   "endRunFoodPerRoom" | "endRunHerbsPerRoom" | "endRunCrystalPerRoom" | "herbFindBonus"
 >;
 
-// Applies homestead flat end-of-run yields, then herb find multiplier (combat/mystery only).
+// Applies homestead flat end-of-run yields, then herb find multiplier.
 export function applyEndOfRunHomesteadBonuses(
   base: MaterialInventory,
   effects: EndOfRunHomesteadEffects,

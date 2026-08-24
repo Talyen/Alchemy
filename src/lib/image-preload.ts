@@ -24,7 +24,6 @@ export function preloadImage(src: string): Promise<void> {
   }
 
   const token = {};
-  let cacheable = true;
   const promise = new Promise<void>((resolve) => {
     const image = new Image();
     image.decoding = "async";
@@ -34,7 +33,6 @@ export function preloadImage(src: string): Promise<void> {
     function finish(keepCached: boolean) {
       if (handled) return;
       handled = true;
-      cacheable = keepCached;
       clearTimeout(timeout);
       image.onload = null;
       image.onerror = null;
@@ -64,14 +62,8 @@ export function preloadImage(src: string): Promise<void> {
     }
   });
 
-  if (cacheable) imageLoads.set(src, { token, promise });
+  imageLoads.set(src, { token, promise });
   return promise;
-}
-
-// Warms a list immediately for high-confidence assets, such as the current battle
-// enemy and hand images, while still allowing the browser to prioritize rendering.
-export function preloadImages(srcs: readonly string[]): Promise<void> {
-  return Promise.all(srcs.map(preloadImage)).then(() => undefined);
 }
 
 // Warms the complete set while yielding between bounded batches. Startup awaits this

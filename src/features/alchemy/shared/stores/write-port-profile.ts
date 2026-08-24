@@ -127,13 +127,22 @@ export function finalizeRunXP(draft: GameplayDraft): void {
 
 // --- Profile (collection/discovery) region ---
 
+/** Set a profile field from a direct value or an updater over the previous value. */
+function assignProfileField<K extends keyof ProfileStateFields>(
+  draft: GameplayDraft,
+  field: K,
+  action: ProfileStateFields[K] | ((prev: ProfileStateFields[K]) => ProfileStateFields[K]),
+): void {
+  draft.profile[field] = typeof action === "function" ? action(draft.profile[field]) : action;
+}
+
 export const setDiscoveredCardIds = (
   draft: GameplayDraft,
   action:
     | ProfileStateFields["discoveredCardIds"]
     | ((prev: ProfileStateFields["discoveredCardIds"]) => ProfileStateFields["discoveredCardIds"]),
 ): void => {
-  draft.profile.discoveredCardIds = typeof action === "function" ? action(draft.profile.discoveredCardIds) : action;
+  assignProfileField(draft, "discoveredCardIds", action);
 };
 
 export const setEncounteredEnemyIds = (
@@ -142,7 +151,7 @@ export const setEncounteredEnemyIds = (
     | ProfileStateFields["encounteredEnemyIds"]
     | ((prev: ProfileStateFields["encounteredEnemyIds"]) => ProfileStateFields["encounteredEnemyIds"]),
 ): void => {
-  draft.profile.encounteredEnemyIds = typeof action === "function" ? action(draft.profile.encounteredEnemyIds) : action;
+  assignProfileField(draft, "encounteredEnemyIds", action);
 };
 
 export const setDiscoveredTrinketIds = (
@@ -151,8 +160,7 @@ export const setDiscoveredTrinketIds = (
     | ProfileStateFields["discoveredTrinketIds"]
     | ((prev: ProfileStateFields["discoveredTrinketIds"]) => ProfileStateFields["discoveredTrinketIds"]),
 ): void => {
-  draft.profile.discoveredTrinketIds =
-    typeof action === "function" ? action(draft.profile.discoveredTrinketIds) : action;
+  assignProfileField(draft, "discoveredTrinketIds", action);
 };
 
 export const setCompletedDifficulties = (
@@ -161,8 +169,7 @@ export const setCompletedDifficulties = (
     | ProfileStateFields["completedDifficulties"]
     | ((prev: ProfileStateFields["completedDifficulties"]) => ProfileStateFields["completedDifficulties"]),
 ): void => {
-  draft.profile.completedDifficulties =
-    typeof action === "function" ? action(draft.profile.completedDifficulties) : action;
+  assignProfileField(draft, "completedDifficulties", action);
 };
 
 export const setFinishedRunCharacters = (
@@ -171,8 +178,7 @@ export const setFinishedRunCharacters = (
     | ProfileStateFields["finishedRunCharacters"]
     | ((prev: ProfileStateFields["finishedRunCharacters"]) => ProfileStateFields["finishedRunCharacters"]),
 ): void => {
-  draft.profile.finishedRunCharacters =
-    typeof action === "function" ? action(draft.profile.finishedRunCharacters) : action;
+  assignProfileField(draft, "finishedRunCharacters", action);
 };
 
 export function setCollectionPage(draft: GameplayDraft, tab: CollectionTab, page: number): void {

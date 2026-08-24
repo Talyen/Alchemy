@@ -41,7 +41,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const { preloadImage, preloadImages, preloadImagesInBatches } = await import("@/lib/image-preload");
+const { preloadImage, preloadImagesInBatches } = await import("@/lib/image-preload");
 
 describe("preloadImage", () => {
   it("creates an Image and sets decoding to async", async () => {
@@ -125,33 +125,6 @@ describe("preloadImage", () => {
 
   it("handles empty string safely", async () => {
     await expect(preloadImage("")).resolves.toBeUndefined();
-  });
-});
-
-describe("preloadImages", () => {
-  it("resolves when empty array is passed", async () => {
-    await expect(preloadImages([])).resolves.toBeUndefined();
-  });
-
-  it("starts each image immediately and resolves after all images decode", async () => {
-    const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl()];
-    const promise = preloadImages(srcs);
-    expect(mockImageInstances.length).toBe(3);
-    expect(mockImageInstances[0].src).toBe(srcs[0]);
-    expect(mockImageInstances[1].src).toBe(srcs[1]);
-    expect(mockImageInstances[2].src).toBe(srcs[2]);
-
-    let settled = false;
-    void promise.then(() => {
-      settled = true;
-    });
-    mockImageInstances[0].onload?.();
-    mockImageInstances[1].onload?.();
-    await Promise.resolve();
-    expect(settled).toBe(false);
-
-    mockImageInstances[2].onload?.();
-    await expect(promise).resolves.toBeUndefined();
   });
 });
 

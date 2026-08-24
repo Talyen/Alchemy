@@ -122,7 +122,8 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
     runDeck: [...activeRun.runDeck],
     runPlayerHealth: activeRun.runPlayerHealth,
     runMaxHealth: activeRun.runMaxHealth,
-    runMetaMaxHealth: activeRun.runMetaMaxHealth || activeRun.runMaxHealth,
+    // Legacy 0 baselines are already shimmed to runMaxHealth by normalizeActiveRunData.
+    runMetaMaxHealth: activeRun.runMetaMaxHealth,
     roomsEncountered: activeRun.roomsEncountered,
     currentAct: activeRun.currentAct,
     destinationIndexInAct: activeRun.destinationIndexInAct,

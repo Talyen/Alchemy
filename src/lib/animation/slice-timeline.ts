@@ -36,7 +36,7 @@ function clamp01(value: number): number {
 
 export function computeSliceVisual(progress: number, width: number, height: number): SliceVisual {
   const p = clamp01(progress);
-  const delay = Math.min(Math.max(SLICE_SPLIT_DELAY, 0), 0.6);
+  const delay = SLICE_SPLIT_DELAY;
   const crackT = clamp01((p - SLICE_CRACK_OPEN_START) / 0.06);
   const crackGapAmount = width * SLICE_CRACK_GAP * crackT * SLICE_INTENSITY;
   const rawSplitT = delay >= 1 ? 0 : clamp01((p - delay) / (1 - delay));
@@ -44,10 +44,9 @@ export function computeSliceVisual(progress: number, width: number, height: numb
   const gap = crackGapAmount + width * Math.max(SLICE_SPLIT_GAP - SLICE_CRACK_GAP, 0) * splitT * SLICE_INTENSITY;
   const lift = height * 0.08 * splitT * SLICE_INTENSITY;
   const twistDeg = 7 * splitT * SLICE_INTENSITY;
-  const dissolveLinear = delay >= 1 ? 0 : clamp01((p - delay) / (1 - delay));
-  const dissolve = dissolveLinear ** 2.6;
+  const dissolve = rawSplitT ** 2.6;
   const halfOpacity = 1 - dissolve;
-  const drawDuration = Math.min(Math.max(SLICE_CRACK_DRAW_DURATION, 0.001), Math.max(delay, 0.001));
+  const drawDuration = Math.min(SLICE_CRACK_DRAW_DURATION, Math.max(delay, 0.001));
   const crackDraw = clamp01(p / drawDuration);
   const fade = 1 - clamp01((p - delay) / 0.18);
   const lineOpacity = fade * Math.max(SLICE_INTENSITY, 0.35) * (0.55 + SLICE_TINT_STRENGTH * 0.7);

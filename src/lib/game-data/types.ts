@@ -1,6 +1,8 @@
 // Core game-data type contracts shared across lib and features: card shapes, status IDs,
 // enemy/trait/boon definitions. No runtime code — pure types only so other modules can import
 // shapes without dragging in data or side effects.
+import type { TrinketManifest } from "./trinket-manifest";
+
 export type KeywordId =
   | "physical"
   | "stun"
@@ -25,7 +27,7 @@ export type KeywordId =
 
 export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature";
 
-/** Damage types used for random-hit effects (e.g. Roulette). Archery is a card tag, not a damage type. */
+/** Damage types used for random-hit effects (e.g. Roll the Dice). Archery is a card tag, not a damage type. */
 export const DAMAGE_TYPES = ["physical", "stun", "holy", "burn", "poison", "bleed", "freeze", "nature"] as const;
 
 export type PlayerStatusId =
@@ -177,6 +179,7 @@ export interface TrinketEntry {
   title: string;
   descriptionLines: string[];
   art: string;
+  effects: Partial<TrinketManifest>;
 }
 
 export interface KeywordDefinition {
@@ -188,7 +191,6 @@ export interface KeywordDefinition {
   shineColors: string[];
   /** Translucent pill background for badges; must be a full Tailwind class string for JIT. */
   pillBgClass?: string;
-  hidden?: boolean;
 }
 
 export const harmfulPlayerStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];

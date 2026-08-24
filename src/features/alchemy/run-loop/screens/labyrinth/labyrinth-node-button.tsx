@@ -1,4 +1,7 @@
 // Single interactive node on the labyrinth map grid.
+// Memoized: hovering one node re-renders the screen-level tooltip state, and an
+// unmemoized grid re-ran enterability checks for every node on each pointer move.
+import { memo } from "react";
 import { Star } from "lucide-react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -34,7 +37,15 @@ interface Props {
   onLeave: () => void;
 }
 
-export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick, onHover, onLeave }: Props) {
+export const LabyrinthNodeButton = memo(function LabyrinthNodeButton({
+  row,
+  col,
+  node,
+  labyrinthMap,
+  onNodeClick,
+  onHover,
+  onLeave,
+}: Props) {
   const isCurrent = node.state === "current";
   const isEnterable = canEnterLabyrinthNode(labyrinthMap, row, col);
   const meta = LABYRINTH_NODE_META[node.type];
@@ -78,7 +89,7 @@ export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick,
       </button>
     </div>
   );
-}
+});
 
 function getNodeIconClassName(nodeType: LabyrinthNodeType, isCurrent: boolean): string {
   const size = nodeType === "boss" && !isCurrent ? "h-8 w-8" : "h-7 w-7";

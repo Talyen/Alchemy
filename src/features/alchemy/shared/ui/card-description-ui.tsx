@@ -2,7 +2,7 @@
 // Depends on game-data keyword metadata, description tokenization, and card text helpers.
 // Used by card popups, enemy tooltips, battle cards, shops, and collection previews.
 /* eslint-disable react-refresh/only-export-components -- co-located card description components and bare-token utility */
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -16,18 +16,31 @@ import { PortaledTooltip } from "./portaled-tooltip";
 import { useHoverVisible } from "./use-hover-visible";
 import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "./card-text";
 
-export function renderColoredKeywords(description: string) {
-  const parts = tokenizeDescription(description);
-  return parts.map((part, i) => {
+export interface TokenizedTextOptions {
+  renderKeyword?: (text: string, keywordId: KeywordId, key: number) => ReactNode;
+  renderPlain?: (text: string, key: number) => ReactNode;
+}
+
+/** Shared keyword-tokenizing text renderer; defaults to colored keywords with plain fragments. */
+export function renderTokenizedDescription(text: string, options?: TokenizedTextOptions): ReactNode[] {
+  return tokenizeDescription(text).map((part, index) => {
     if (part.keywordId) {
-      return (
-        <span key={i} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>
+      const render = options?.renderKeyword;
+      return render ? (
+        render(part.text, part.keywordId, index)
+      ) : (
+        <span key={index} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>
           {part.text}
         </span>
       );
     }
-    return <Fragment key={i}>{part.text}</Fragment>;
+    const renderPlain = options?.renderPlain;
+    return renderPlain ? renderPlain(part.text, index) : <Fragment key={index}>{part.text}</Fragment>;
   });
+}
+
+export function renderColoredKeywords(description: string) {
+  return renderTokenizedDescription(description);
 }
 
 export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {

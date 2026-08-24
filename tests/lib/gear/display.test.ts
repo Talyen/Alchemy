@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   getGearAffixDisplayName,
   getGearAffixTooltipEntries,
-  getGearInstanceDescriptionLines,
   getGearInstanceTooltipEntries,
   type GearInstance,
 } from "@/lib/gear";
@@ -45,10 +44,6 @@ describe("gear display", () => {
     expect(getGearInstanceTooltipEntries(astralArmor)).toEqual([]);
   });
 
-  it("strips affix names from description lines", () => {
-    expect(getGearInstanceDescriptionLines(affixedArmor)).toEqual(["Increases Health by 7"]);
-  });
-
   it("returns no display entries for an unknown definition without affixes", () => {
     const unknown: GearInstance = {
       instanceId: "missing-1",
@@ -57,7 +52,6 @@ describe("gear display", () => {
     };
 
     expect(getGearInstanceTooltipEntries(unknown)).toEqual([]);
-    expect(getGearInstanceDescriptionLines(unknown)).toEqual([]);
   });
 
   it("uses affix epithets for tooltip display names", () => {

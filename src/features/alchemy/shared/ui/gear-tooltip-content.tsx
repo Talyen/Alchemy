@@ -2,6 +2,7 @@ import {
   gearInstanceRarity,
   getGearAffixTooltipEntries,
   getGearInstanceTooltipLines,
+  getGearDefinitionTitle,
   type GearDefinition,
   type GearInstance,
   gearAffixCatalog,
@@ -32,7 +33,7 @@ export function GearTooltipContent({
         {instance ? (
           <GearItemTitle instance={instance} className="whitespace-normal" />
         ) : (
-          <span>{definition.title}</span>
+          <span>{getGearDefinitionTitle(definition)}</span>
         )}
       </TooltipHeader>
       {affixEntries.length > 0 ? (

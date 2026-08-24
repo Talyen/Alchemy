@@ -4,12 +4,14 @@ import {
   createInitialAlchemistState as createInitialAlchemistStateImpl,
   createInitialTrinketShopState as createInitialTrinketShopStateImpl,
   createInitialEquipmentShopState as createInitialEquipmentShopStateImpl,
+  resampleTrinketShopOfferings,
+} from "@/features/alchemy/run-loop/shop/shop-state-init";
+import {
   serializeTrinketShopState,
   hydrateTrinketShopState,
   serializeEquipmentShopState,
   hydrateEquipmentShopState,
-  resampleTrinketShopOfferings,
-} from "@/features/alchemy/run-loop/shop/shop-state-init";
+} from "@/lib/active-run-session";
 import {
   SHOP_CARDS_OFFERED,
   ALCHEMIST_POTIONS_OFFERED,

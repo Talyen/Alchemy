@@ -9,9 +9,8 @@ import {
   MIN_MAX_MANA_FLOOR,
 } from "@/lib/game-constants";
 
-// Startup validation runs at import time via side effects in validate-startup.ts.
-// Rather than testing the side-effect module directly (which runs on import),
-// we test the invariants that it asserts: constants are positive and data arrays are non-empty.
+// Runtime startup validation only covers data-driven checks (libraries non-empty,
+// effect-handler coverage); these compile-time constants are pinned here instead.
 
 describe("startup validation invariants", () => {
   it("CARDS_PER_TURN > 0", () => {

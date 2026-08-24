@@ -35,7 +35,10 @@ const EFFECT_DESCRIPTION_FORMATTERS: {
   heal: (effect) => `Restore ${effect.amount} Health`,
   "restore-mana": (effect) => `Restore ${effect.amount} Mana`,
   "gain-max-mana": (effect) => `Gain ${effect.amount} Maximum Mana`,
-  "remove-harmful-status": (effect) => `Remove ${effect.amount} harmful status effect`,
+  "remove-harmful-status": (effect) =>
+    effect.removeAll
+      ? "Remove all harmful status effects"
+      : `Remove ${effect.amount} harmful status effect${effect.amount === 1 ? "" : "s"}`,
   "player-status": (effect) => {
     if (effect.status === "block" || effect.status === "armor" || effect.status === "forge")
       return playerStatusDescriptionLine(effect.status, effect.amount);
@@ -51,7 +54,7 @@ const EFFECT_DESCRIPTION_FORMATTERS: {
   "buff-companion": () => unsupportedEffectKind("buff-companion"),
   "lose-health": () => unsupportedEffectKind("lose-health"),
   "draw-cards": () => unsupportedEffectKind("draw-cards"),
-  "remove-enemy-armor": () => unsupportedEffectKind("remove-enemy-armor"),
+  "remove-enemy-armor": (effect) => `Strip ${effect.amount} enemy Armor`,
   "multiply-enemy-status": () => unsupportedEffectKind("multiply-enemy-status"),
   "remove-player-status": () => unsupportedEffectKind("remove-player-status"),
   "self-damage": () => unsupportedEffectKind("self-damage"),

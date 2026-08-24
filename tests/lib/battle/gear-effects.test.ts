@@ -1,10 +1,6 @@
 ﻿import { describe, expect, it } from "vitest";
 import { applyGearKillRewards } from "@/lib/battle/kill-payouts";
-import {
-  applyGearProcPhysicalDamage,
-  gearFrozenDamageMultiplier,
-  scaledGearLeechHeal,
-} from "@/lib/battle/gear-effects";
+import { gearFrozenDamageMultiplier, scaledGearLeechHeal } from "@/lib/battle/gear-effects";
 import { applyGearDamageResistance, scaleGoldReward } from "@/lib/battle/types";
 import { defaultGearEffects } from "@/lib/gear";
 import { patchBattleState } from "../../fixtures/battle";
@@ -35,14 +31,6 @@ describe("gear-effects", () => {
     });
     expect(gearFrozenDamageMultiplier(state)).toBe(1.5);
     expect(gearFrozenDamageMultiplier(patchBattleState({ enemyCC: defaultCcState({ freezeSkipTurns: 0 }) }))).toBe(1);
-  });
-
-  it("includes frozen multiplier in gear proc physical damage", () => {
-    const state = patchBattleState({
-      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
-      gearEffects: { ...defaultGearEffects, frozenEnemyDamageBonusPercent: 100 },
-    });
-    expect(applyGearProcPhysicalDamage(state, 10)).toBe(20);
   });
 
   it("applies kill rewards with scaled gold", () => {

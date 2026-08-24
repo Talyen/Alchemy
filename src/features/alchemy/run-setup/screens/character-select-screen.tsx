@@ -18,6 +18,7 @@ import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "../../shared/ui/tooltip-panel";
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
+import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 import {
   cardInteractiveGlowClass,
   cardSurfaceClass,
@@ -50,29 +51,24 @@ function HeroCardShine({ characterId, colors }: { characterId: CharacterId; colo
 
 function CharacterCard({
   id,
-  isShimmer,
-  shimmerToken,
   onSelect,
-  onHoverShimmer,
   isLocked,
   unlockRequirementText,
 }: {
   id: CharacterId;
-  isShimmer: boolean;
-  shimmerToken: number | undefined;
   onSelect: (id: CharacterId) => void;
-  onHoverShimmer: (id: CharacterId) => void;
   isLocked: boolean;
   unlockRequirementText: string;
 }) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLDivElement>();
+  const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard("character-select", id);
   const char = characters[id];
   const art = characterArt[char.id];
   const shineColors = isLocked ? [] : id === "wildcard" ? WILDCARD_KEYWORD_SHINE_COLORS : getCharacterShineColors(id);
 
   function handleEnter() {
-    if (!isLocked) onHoverShimmer(id);
+    if (!isLocked) onHoverStart();
     onMouseEnter();
   }
 
@@ -95,7 +91,7 @@ function CharacterCard({
             !isLocked && cardInteractiveGlowClass,
             !isLocked && "hero-affinity-shine",
           )}
-          shimmerActive={isLocked ? false : isShimmer}
+          shimmerActive={isLocked ? false : shimmerActive}
           shimmerToken={isLocked ? undefined : shimmerToken}
           shimmerRounded="rounded-shell-tooltip"
           overlay={<HeroCardShine characterId={id} colors={shineColors} />}
@@ -176,14 +172,10 @@ export function CharacterSelectScreen({
   onSelect,
   onOpenMenu,
   finishedRunCharacters,
-  shimmerState,
-  onHoverShimmer,
 }: {
   onSelect: (characterId: CharacterId) => void;
   onOpenMenu: (rect?: DOMRect) => void;
   finishedRunCharacters: CharacterId[];
-  shimmerState?: { cardId?: string; token?: number } | null;
-  onHoverShimmer: (cardId: CharacterId) => void;
 }) {
   const charIds = Object.keys(characters) as CharacterId[];
 
@@ -203,10 +195,7 @@ export function CharacterSelectScreen({
             <CharacterCard
               key={id}
               id={id}
-              isShimmer={shimmerState?.cardId === id}
-              shimmerToken={shimmerState?.token}
               onSelect={onSelect}
-              onHoverShimmer={onHoverShimmer}
               isLocked={isLocked}
               unlockRequirementText={unlockRequirementText}
             />

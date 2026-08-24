@@ -208,12 +208,15 @@ function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextE
   nextState = setEnemyStatus(nextState, "bleed", 0);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: finalDamage });
   nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
-  // Detonation is the bleed burst, so it pays the queued leech just like tickBleed.
+  // Detonation is the bleed burst, so it pays the queued leech just like tickBleed:
+  // only for health actually lost, so overkill cannot out-heal the damage dealt.
   const leechAmount = state.pendingBleedLeechHealing;
-  if (leechAmount > 0) {
+  const healthLost = Math.max(0, state.enemyHealth - nextState.enemyHealth);
+  const leechPaid = Math.min(leechAmount, healthLost);
+  if (leechPaid > 0) {
     nextState = applyHealingWithCombatText(
       nextState,
-      scaledGearLeechHeal(computeLeechHeal(leechAmount), nextState.gearEffects),
+      scaledGearLeechHeal(computeLeechHeal(leechPaid), nextState.gearEffects),
       combatTexts,
       { skipFightPacing: true },
     );

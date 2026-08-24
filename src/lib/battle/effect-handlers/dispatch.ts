@@ -2,8 +2,8 @@
  * Routes card effects to per-kind apply handlers (see registry.ts and game-data/effects/).
  */
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import type { BattleState, CombatTextEvent } from "../types";
-import { POTION_CARD_ID_SUFFIX } from "../../game-constants";
 import { getBattleRng } from "../status-helpers";
 import { applyEffectByKind } from "./registry";
 import type { CardEffectResolutionContext } from "./handler-types";
@@ -47,7 +47,7 @@ export function applyCardEffects(
     enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
   },
 ): BattleState {
-  const potionMult = card.id.endsWith(POTION_CARD_ID_SUFFIX) ? state.talentEffects.potionPotency : 1;
+  const potionMult = isPotionCard(card) ? state.talentEffects.potionPotency : 1;
   return card.effects.reduce(
     (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, combatTexts, context),
     state,

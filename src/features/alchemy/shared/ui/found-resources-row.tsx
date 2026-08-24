@@ -11,7 +11,6 @@ export function FoundResourcesRow({
 }: {
   gold?: number;
   materials?: Partial<Record<MaterialId, number>>;
-  label?: string;
   className?: string;
 }) {
   const earnedMaterials = MATERIAL_IDS.filter((mat) => (materials?.[mat] ?? 0) > 0);

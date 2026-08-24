@@ -29,6 +29,12 @@ export function defineEnemy(entry: Omit<BestiaryEntry, "subtitle" | "description
   };
 }
 
-export function trinket(id: TrinketEntry["id"], title: string, description: string, art: string): TrinketEntry {
-  return { id, title, descriptionLines: [description], art };
+export function trinket(
+  id: TrinketEntry["id"],
+  title: string,
+  description: string,
+  art: string,
+  effects: TrinketEntry["effects"] = {},
+): TrinketEntry {
+  return { id, title, descriptionLines: [description], art, effects };
 }

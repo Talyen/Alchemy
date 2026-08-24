@@ -14,7 +14,6 @@ import { initializeActiveBattle, setHasActiveBattle } from "./run-session-write-
 import { resetNavigation, resetProgress, setRunPlayerHealth } from "./write-port-run";
 import { clearTransientSession, setHasActiveRun } from "./write-port-session";
 import { applyTalentState, setFinishedRunCharacters } from "./write-port-profile";
-import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { applyRestoreRunToDraft, clearModeSlotInDraft } from "./run-park-restore";
 import { touchRunRecency, type ParkedRunsMap } from "./parked-runs";
 import type { ContentSystemId } from "@/lib/content-systems/types";
@@ -46,11 +45,6 @@ export function resolveActiveRunForSave(hasActiveRun: boolean, screen?: Screen):
 /** Serialize the run-lifetime stores into persisted ActiveRunData. */
 export function snapshotRun(screen?: Screen): ActiveRunData {
   return encodeRunResumeSnapshot(getRunSession(screen), screen);
-}
-
-/** Rebind max HP and battle manifests after Armory mutations. */
-export function syncRunMaxHealthFromGearMutation(draft: GameplayDraft): void {
-  rebindLiveRunMeta(draft);
 }
 
 /** Clamp run HP for battle entry and persist before creating BattleState. */

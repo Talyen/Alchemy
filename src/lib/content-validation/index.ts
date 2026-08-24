@@ -5,6 +5,7 @@ import {
   validateEnemies,
   validateCompanions,
   validateTrinkets,
+  validateTalents,
   validateKeywordsAndStatuses,
   validateEncounterTraits,
   validateGear,
@@ -28,6 +29,7 @@ export function runContentValidation(): ContentValidationResult {
   validateEnemies(collector);
   validateCompanions(collector);
   validateTrinkets(collector);
+  validateTalents(collector);
   validateKeywordsAndStatuses(collector);
   validateEncounterTraits(collector);
   validateGear(collector);

@@ -12,15 +12,9 @@ describe("CharacterSelectScreen", () => {
   it("renders heroes and respects finishedRunCharacters unlock state", () => {
     const onSelect = vi.fn();
     const onOpenMenu = vi.fn();
-    const onHoverShimmer = vi.fn();
 
     const { rerender } = render(
-      <CharacterSelectScreen
-        onSelect={onSelect}
-        onOpenMenu={onOpenMenu}
-        onHoverShimmer={onHoverShimmer}
-        finishedRunCharacters={[]}
-      />,
+      <CharacterSelectScreen onSelect={onSelect} onOpenMenu={onOpenMenu} finishedRunCharacters={[]} />,
     );
 
     const knight = screen.getByRole("button", { name: /Knight/i });
@@ -29,14 +23,7 @@ describe("CharacterSelectScreen", () => {
     expect(knight.getAttribute("aria-disabled")).toBe("false");
     expect(rogue.getAttribute("aria-disabled")).toBe("true");
 
-    rerender(
-      <CharacterSelectScreen
-        onSelect={onSelect}
-        onOpenMenu={onOpenMenu}
-        onHoverShimmer={onHoverShimmer}
-        finishedRunCharacters={["knight"]}
-      />,
-    );
+    rerender(<CharacterSelectScreen onSelect={onSelect} onOpenMenu={onOpenMenu} finishedRunCharacters={["knight"]} />);
 
     expect(screen.getByRole("button", { name: /Rogue/i }).getAttribute("aria-disabled")).toBe("false");
   });
@@ -45,16 +32,8 @@ describe("CharacterSelectScreen", () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
     const onOpenMenu = vi.fn();
-    const onHoverShimmer = vi.fn();
 
-    render(
-      <CharacterSelectScreen
-        onSelect={onSelect}
-        onOpenMenu={onOpenMenu}
-        onHoverShimmer={onHoverShimmer}
-        finishedRunCharacters={[]}
-      />,
-    );
+    render(<CharacterSelectScreen onSelect={onSelect} onOpenMenu={onOpenMenu} finishedRunCharacters={[]} />);
 
     await user.click(screen.getByRole("button", { name: /Knight/i }));
     expect(onSelect).toHaveBeenCalledWith("knight");

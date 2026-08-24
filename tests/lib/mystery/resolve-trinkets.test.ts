@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { trinketLibrary } from "@/lib/game-data";
+import { gearBaseItemList } from "@/lib/gear/base-items";
 import { findMysteryEvent } from "@/lib/mystery";
 import {
   applyResolvedMysteryTrinketIds,
@@ -7,6 +8,19 @@ import {
   repairUnresolvedMysteryTrinkets,
   resolveMysteryEventTrinkets,
 } from "@/lib/mystery/resolve-trinkets";
+
+const eventWithTwoTrinkets = {
+  id: "owned-set-test",
+  title: "Owned Set",
+  art: "test-art",
+  narrative: "Test",
+  choices: [
+    {
+      label: "A",
+      effects: [{ kind: "gainTrinket" as const, trinketId: "bone-charm" }, { kind: "gainRandomTrinket" as const }],
+    },
+  ],
+};
 
 function trinketIdsOn(event: ReturnType<typeof resolveMysteryEventTrinkets>): string[] {
   return event.choices.flatMap((choice) =>
@@ -47,19 +61,7 @@ describe("resolveMysteryEventTrinkets", () => {
   });
 
   it("reserves a kept preferred trinket so a later random grant cannot reuse it", () => {
-    const event = {
-      id: "owned-set-test",
-      title: "Owned Set",
-      art: "test-art",
-      narrative: "Test",
-      choices: [
-        {
-          label: "A",
-          effects: [{ kind: "gainTrinket" as const, trinketId: "bone-charm" }, { kind: "gainRandomTrinket" as const }],
-        },
-      ],
-    };
-    const resolved = resolveMysteryEventTrinkets(event, [], () => 0);
+    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, [], () => 0);
     const ids = trinketIdsOn(resolved);
     expect(ids).toHaveLength(2);
     expect(ids[0]).toBe("bone-charm");
@@ -87,6 +89,24 @@ describe("resolveMysteryEventTrinkets", () => {
     if (trinket?.kind !== "gainTrinket") return;
     expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(trinket.trinketId);
   });
+
+  it("falls back to an astral gear drop instead of a duplicate when every trinket is owned", () => {
+    const allOwned = trinketLibrary.map((entry) => entry.id);
+    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0);
+    for (const effect of resolved.choices[0]!.effects) {
+      expect(effect).toMatchObject({ kind: "gainGeneratedGear", astral: true });
+      if (effect.kind !== "gainGeneratedGear") return;
+      expect(gearBaseItemList.some((item) => item.id === effect.baseItemId)).toBe(true);
+    }
+    expect(trinketIdsOn(resolved)).toHaveLength(0);
+  });
+
+  it("derives the same fallback gear from the same slot across resolution passes", () => {
+    const allOwned = trinketLibrary.map((entry) => entry.id);
+    const first = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0.5);
+    const second = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0.9);
+    expect(second.choices).toEqual(first.choices);
+  });
 });
 
 describe("collect and apply resolved mystery trinket ids", () => {
@@ -96,6 +116,15 @@ describe("collect and apply resolved mystery trinket ids", () => {
     const resolved = resolveMysteryEventTrinkets(event!, ["icy-heart"], () => 0);
     const ids = collectResolvedMysteryTrinketIds(resolved);
     const hydrated = applyResolvedMysteryTrinketIds(event!, ids);
+    expect(hydrated.choices).toEqual(resolved.choices);
+  });
+
+  it("round-trips astral-gear fallback slots through the positional id contract", () => {
+    const allOwned = trinketLibrary.map((entry) => entry.id);
+    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0);
+    const ids = collectResolvedMysteryTrinketIds(resolved);
+    expect(ids).toEqual(["", ""]);
+    const hydrated = applyResolvedMysteryTrinketIds(eventWithTwoTrinkets, ids);
     expect(hydrated.choices).toEqual(resolved.choices);
   });
 

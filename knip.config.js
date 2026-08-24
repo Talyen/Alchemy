@@ -21,6 +21,8 @@
 export default {
   entry: [
     "src/lib/game-data/index.ts",
+    "playwright.electron.config.ts",
+    "playwright.performance.config.ts",
     "src/lib/battle/index.ts",
     "src/lib/validation/index.ts",
     "src/features/alchemy/shared/run-flow/index.ts",

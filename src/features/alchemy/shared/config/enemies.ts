@@ -38,3 +38,8 @@ export function getBossEnemy(encounteredEnemyIds: readonly string[] = [], rng?: 
 export function getBossById(bossId: string): BestiaryEntry | undefined {
   return enemyBestiary.find((e) => e.id === bossId);
 }
+
+// Destination offers roll without encounter memory; only battle-init passes history to getBossEnemy.
+export function rollFreshBossId(rng?: () => number): string {
+  return getBossEnemy([], rng).id;
+}

@@ -52,6 +52,8 @@ export const ALCHEMIST_POTIONS_OFFERED = 3;
 export const ALCHEMIST_REFRESHES = 1;
 export const BOSS_HEALTH_MULTIPLIER = 1.4;
 export const GEAR_REWARD_RARITY_CHANCE = 0.5;
+/** Astral chance bonus large enough to clamp the basic-rarity chance to zero, forcing astral rolls. */
+export const GEAR_ASTRAL_GUARANTEE_BONUS = 1;
 export const GEAR_AFFIX_COUNT = {
   basic: { min: 1, max: 2 },
   astral: { min: 3, max: 4 },

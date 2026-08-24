@@ -196,7 +196,7 @@ describe("gear domain", () => {
     expect(result?.inventory).toEqual([]);
     expect(result?.loadouts.knight["left-ring"]).toBeNull();
     expect(result?.yieldedCurrencies).toEqual({
-      "discordant-dice": 1,
+      "discordant-dice": 2,
       "sprig-of-growth": 1,
       voidstone: 1,
       "ascension-seal": 0,

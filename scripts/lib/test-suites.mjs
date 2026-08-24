@@ -5,21 +5,18 @@ import { globSync } from "node:fs";
  * Keep directory entries broad only where the owning workflow already treats
  * the directory as one contract; individual files belong in the route catalog.
  */
+const save = Object.freeze([
+  "tests/features/alchemy/shared/storage",
+  "tests/features/alchemy/app/autosave-hook.test.ts",
+  "tests/features/alchemy/app/autosave-active-run.test.ts",
+]);
+const tooling = Object.freeze(["tests/scripts", "tests/architecture"]);
+
 export const TEST_SUITES = Object.freeze({
-  save: Object.freeze([
-    "tests/features/alchemy/shared/storage",
-    "tests/features/alchemy/app/autosave-hook.test.ts",
-    "tests/features/alchemy/app/autosave-active-run.test.ts",
-  ]),
-  tooling: Object.freeze(["tests/scripts", "tests/architecture"]),
-  shipUnit: Object.freeze([
-    "tests/features/alchemy/shared/storage",
-    "tests/features/alchemy/app/autosave-hook.test.ts",
-    "tests/features/alchemy/app/autosave-active-run.test.ts",
-    "tests/lib/validation",
-    "tests/architecture",
-    "tests/scripts",
-  ]),
+  save,
+  tooling,
+  // The ship gate runs save + validation + tooling; composed so renamed paths only change once.
+  shipUnit: Object.freeze([...save, "tests/lib/validation", ...tooling]),
 });
 
 export function testFilesUnder(rootDir, rootPath) {

@@ -15,12 +15,17 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
-import { getBossEnemy } from "@/features/alchemy/shared/config";
+import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { CONSTANTS } from "../../shared/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { applyRunStartToDraft, createConfiguredRunStartSnapshot } from "./run-start-command";
 
 export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
+  // Gold jingle plays only when this start is a fresh start for the system, matching grantStartGold.
+  function isFreshSystemStart(contentSystemType: ContentSystemId): boolean {
+    return !readHasActiveRun() || readActiveRun().contentSystemType !== contentSystemType;
+  }
+
   function createStartSnapshot(
     characterId: CharacterId,
     contentSystemType: ContentSystemId,
@@ -40,11 +45,10 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
 
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
     const startSnapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN, difficultyId);
-    const playStartGold =
-      !readHasActiveRun() || readActiveRun().contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN;
+    const playStartGold = isFreshSystemStart(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
     return dispatchRunSessionCommand(
       (draft) => {
-        applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true, resetEncounteredEnemies: true });
+        applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
         setStarterDraftChoices(draft, null);
         const run = draft.run.activeRun;
         const initialDestinations = createInitialDestinationResult({
@@ -58,7 +62,7 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
             lastOfferedDestinations: run.lastOfferedDestinations,
             roundsSinceOffered: run.destinationRoundsSinceOffered,
           },
-          bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
+          bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
           rng: createDraftRunRandomSource(draft, "destinations"),
         });
         setDestinationOfferState(draft, initialDestinations.offerState);
@@ -76,8 +80,7 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
 
   function initializeLabyrinthRun(characterId: CharacterId) {
     const snapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
-    const playStartGold =
-      !readHasActiveRun() || readActiveRun().contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.LABYRINTH;
+    const playStartGold = isFreshSystemStart(CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
     dispatchRunSessionCommand(
       (draft) => {
         applyRunStartToDraft(draft, snapshot, { discoverDeck: true });
@@ -95,8 +98,7 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
 
   function initializeWildwoodRun(characterId: CharacterId) {
     const startSnapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, null, []);
-    const playStartGold =
-      !readHasActiveRun() || readActiveRun().contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
+    const playStartGold = isFreshSystemStart(CONSTANTS.CONTENT_SYSTEMS.WILDWOOD);
     dispatchRunSessionCommand(
       (draft) => {
         applyRunStartToDraft(draft, startSnapshot);

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 import { CardSelectionGrid } from "./card-selection-grid";
 import { GoldCost } from "./display-elements";
-import { SelectableShopCard } from "./shop-card-item";
+import { SelectableCard } from "./selectable-card";
 import { useCaptureEscapeCancel } from "./use-capture-escape-cancel";
 
 export function RemoveCardPanel({
@@ -58,8 +58,9 @@ export function RemoveCardPanel({
         paginationSize="default"
         paginationReserveSpace={!compact}
         renderItem={({ card, index }) => (
-          <SelectableShopCard
+          <SelectableCard
             card={card}
+            chrome="shop"
             isSelected={selectedIndex === index}
             onSelect={() => setSelectedIndex(index)}
           />

@@ -12,11 +12,6 @@ export function gearFrozenDamageMultiplier(state: BattleState): number {
   return 1 + state.gearEffects.frozenEnemyDamageBonusPercent / PERCENT_DENOMINATOR;
 }
 
-export function applyGearProcPhysicalDamage(state: BattleState, baseDamage: number, damageType = "physical"): number {
-  const multiplier = getEnemyDamageMultiplier(state, damageType) * gearFrozenDamageMultiplier(state);
-  return Math.round(baseDamage * multiplier);
-}
-
 export function scaledGearLeechHeal(baseHeal: number, gear: GearEffectManifest): number {
   if (gear.leechHealBonusPercent <= 0) return baseHeal;
   return Math.round(baseHeal * (1 + gear.leechHealBonusPercent / PERCENT_DENOMINATOR));

@@ -4,7 +4,6 @@ import { installDesktopApi } from "../helpers/desktop-save-mock-helper";
 import { initializeSteam, isDesktop, quitDesktopApp, setDisplayMode, setSteamRichPresence } from "@/lib/platform";
 
 afterEach(() => {
-  vi.restoreAllMocks();
   window.alchemyDesktop = undefined;
 });
 

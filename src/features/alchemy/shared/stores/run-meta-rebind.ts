@@ -17,7 +17,9 @@ function computeDerivedRunMaxHealth(draft: GameplayDraft): number {
 
 function applyDerivedMaxHealth(draft: GameplayDraft): void {
   const derived = computeDerivedRunMaxHealth(draft);
-  const metaBaseline = draft.run.activeRun.runMetaMaxHealth || derived;
+  // runMetaMaxHealth is always a positive baseline: seeded at run start or shimmed
+  // from legacy 0 values by normalizeActiveRunData.
+  const metaBaseline = draft.run.activeRun.runMetaMaxHealth;
   const combatBonus = Math.max(0, draft.run.activeRun.runMaxHealth - metaBaseline);
   draft.run.activeRun.runMetaMaxHealth = derived;
   draft.run.activeRun.runMaxHealth = Math.max(1, derived + combatBonus);

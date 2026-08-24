@@ -66,7 +66,7 @@ function TalentCard({
 
   const style = accentColor ? ({ "--talent-accent": accentColor } as CSSProperties) : undefined;
 
-  const card = (
+  return (
     <div
       role={interactive ? "button" : undefined}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
@@ -119,8 +119,6 @@ function TalentCard({
       ) : null}
     </div>
   );
-
-  return card;
 }
 
 export function TalentTree({

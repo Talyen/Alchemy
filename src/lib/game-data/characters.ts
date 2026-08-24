@@ -1,7 +1,7 @@
 // Character class definitions — starting decks, gold multipliers, and keyword XP preferences.
 // Depends on card library and type contracts. Each character is a play-style preset.
 import type { BattleCard } from "./types";
-import { cardLibrary } from "./cards";
+import { cardById } from "./cards";
 import type { KeywordId } from "./types";
 
 export type CharacterId = "knight" | "ranger" | "rogue" | "wizard" | "alchemist" | "warlock" | "druid" | "wildcard";
@@ -16,9 +16,7 @@ export interface CharacterDefinition {
 }
 
 function resolveDeck(ids: string[]): BattleCard[] {
-  return ids
-    .map((cardId) => cardLibrary.find((card) => card.id === cardId))
-    .filter((card): card is BattleCard => Boolean(card));
+  return ids.map((cardId) => cardById[cardId]).filter((card): card is BattleCard => Boolean(card));
 }
 
 export const characters: Record<CharacterId, CharacterDefinition> = {

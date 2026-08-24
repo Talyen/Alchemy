@@ -6,7 +6,7 @@ import { BUTTON_WIDTH_ACTION, bodyTextClass, collectionTileWidthClass } from "@/
 import { cn } from "@/lib/utils";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
-import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
+import { SelectableCard } from "../../shared/ui/selectable-card";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
@@ -68,9 +68,10 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
         ) : (
           <div className="flex flex-wrap items-start justify-center gap-6">
             {draftChoices.map((card, index) => (
-              <SelectableChoiceCard
+              <SelectableCard
                 key={"draft-choice-" + String(index) + "-" + card.id}
                 card={card}
+                isSelected={false}
                 onSelect={() => onPick(card)}
                 interactionKey={"draft-choice-" + String(index)}
                 tiltEnabled={false}

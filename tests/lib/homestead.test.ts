@@ -4,7 +4,13 @@ import { emptyInventory, addInventory, canAfford, subtractInventory } from "@/li
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades, visibleFarmPlots } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
-import { applyEndOfRunHomesteadBonuses, applyMaterialFindBonus, getEnemyMaterialLoot } from "@/lib/homestead/loot";
+import {
+  applyEndOfRunHomesteadBonuses,
+  applyMaterialFindBonus,
+  enemyLootTableIds,
+  getEnemyMaterialLoot,
+} from "@/lib/homestead/loot";
+import { enemyBestiary } from "@/lib/game-data/compendium/enemies";
 import { createEmptyTalentEffectManifest } from "@/lib/game-data";
 
 // ─── types ──────────────────────────────────────────────────────
@@ -339,6 +345,14 @@ describe("getEnemyMaterialLoot", () => {
     for (const [mat, value] of Object.entries(expected)) {
       expect(loot[mat as keyof typeof loot]).toBe(value);
     }
+  });
+});
+
+describe("enemy loot parity", () => {
+  it("every bestiary enemy has a loot table and vice versa", () => {
+    const bestiaryIds = enemyBestiary.map((enemy) => enemy.id).sort();
+    const lootIds = [...enemyLootTableIds].sort();
+    expect(lootIds).toEqual(bestiaryIds);
   });
 });
 

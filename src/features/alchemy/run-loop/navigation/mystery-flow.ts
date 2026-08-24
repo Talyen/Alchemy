@@ -2,14 +2,16 @@
 // Depends on game libraries, audio triggers, utility helpers, and mystery types.
 // Consumed by the run navigation flow and `useMysteryEventNavigation`.
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { cardLibrary, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
-import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
+import { cardById, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
+import { MYSTERY_CARD_CHOICES, GEAR_ASTRAL_GUARANTEE_BONUS } from "@/lib/game-constants";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "../run/deck-mutations";
 import type { MaterialId } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 import { generateGearInstanceForBaseItem } from "@/lib/gear";
 import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
+import { gearBaseItemList } from "@/lib/gear/base-items";
+import { pickRandom } from "@/lib/utils";
 import { spendRunGold } from "../run-gold";
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
@@ -40,7 +42,7 @@ export interface MysteryEffectContext {
 }
 
 function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
-  const card = cardLibrary.find((c) => c.id === cardId);
+  const card = cardById[cardId];
   if (card) appendCardToRunWithDiscovery(context.draft, card);
   return { followUp: null };
 }
@@ -118,17 +120,24 @@ function gainRandomMysteryTrinket(
 ) {
   const owned = new Set(context.draft.run.activeRun.runTrinkets);
   const trinketId = pickMysteryTrinketGrantId({ fromIds: effect.fromIds, owned, rng: context.rng });
-  if (!trinketId) return { followUp: null };
+  if (!trinketId) {
+    // Legacy unresolved random-trinket effects only: the grant is persisted immediately, so a
+    // random base item is fine (unlike pre-choice badges, which need cross-session stability and
+    // therefore derive the fallback deterministically in resolve-trinkets.ts).
+    const baseItem = pickRandom(gearBaseItemList, context.rng);
+    if (!baseItem) return { followUp: null };
+    return gainMysteryGeneratedGear(baseItem.id, context, true);
+  }
   gainMysteryTrinket(trinketId, context);
   setMysteryGrantedTrinketIds(context.draft, (previous) => [...previous, trinketId]);
   return { followUp: null };
 }
 
-function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectContext) {
+function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectContext, forceAstral = false) {
   const instance = generateGearInstanceForBaseItem(
     baseItemId,
     context.rng,
-    context.draft.runProfile.effects.gearAstralChanceBonus,
+    forceAstral ? GEAR_ASTRAL_GUARANTEE_BONUS : context.draft.runProfile.effects.gearAstralChanceBonus,
   );
   if (!instance) return { followUp: null };
   mutateGearWithRunHealthSync(context.draft, {
@@ -166,7 +175,7 @@ const mysteryApplyHandlers: {
   removeCard: (_effect, context) => removeMysteryCard(context),
   gainTrinket: (effect, context) => gainMysteryTrinket(effect.trinketId, context),
   gainRandomTrinket: (effect, context) => gainRandomMysteryTrinket(effect, context),
-  gainGeneratedGear: (effect, context) => gainMysteryGeneratedGear(effect.baseItemId, context),
+  gainGeneratedGear: (effect, context) => gainMysteryGeneratedGear(effect.baseItemId, context, effect.astral === true),
   gainMaterial: (effect, context) => gainMysteryMaterial(effect.material, effect.amount, context),
 };
 

@@ -9,7 +9,8 @@ import { MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, SELECTION_GRID_PAGE_SIZE } fr
 import { collectionTileWidthClass, BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 
 import { BattleCardButton } from "../../shared/ui/card-button";
-import { PurchasableCardItem, SelectableShopCard } from "../../shared/ui/shop-card-item";
+import { PurchasableCardItem } from "../../shared/ui/shop-card-item";
+import { SelectableCard } from "../../shared/ui/selectable-card";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { ScreenDescription, ServiceButton } from "../../shared/ui/shared-ui";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-capture-escape-cancel";
@@ -48,30 +49,25 @@ export function AlchemistShopScreen({
   onContinue: () => void;
   onOpenMenu: (rect?: DOMRect) => void;
 }) {
-  const [mixMode, setMixMode] = useState(false);
-  const [mixStep, setMixStep] = useState(0);
-  const [selectedA, setSelectedA] = useState<number | null>(null);
-  const [selectedB, setSelectedB] = useState<number | null>(null);
+  // One phase machine for potion mixing: idle → picking (two picks) with page state.
+  const [mix, setMix] = useState<{ step: 0 | 1 | 2; a: number | null; b: number | null; page: number }>({
+    step: 0,
+    a: null,
+    b: null,
+    page: 0,
+  });
   const [mixedCard, setMixedCard] = useState<BattleCard | null>(null);
-  const [mixPage, setMixPage] = useState(0);
+  const mixMode = mix.step > 0;
 
-  function cancelMix() {
-    setMixMode(false);
-    setMixStep(0);
-    setSelectedA(null);
-    setSelectedB(null);
-    setMixPage(0);
+  function resetSelections() {
+    setMix({ step: 0, a: null, b: null, page: 0 });
   }
 
   // Escape cancels potion selection only — not the mixed-card reveal (Continue).
-  useCaptureEscapeCancel(mixMode && !mixedCard ? cancelMix : undefined);
+  useCaptureEscapeCancel(mixMode && !mixedCard ? resetSelections : undefined);
 
   function startMix() {
-    setMixMode(true);
-    setMixStep(1);
-    setSelectedA(null);
-    setSelectedB(null);
-    setMixPage(0);
+    setMix({ step: 1, a: null, b: null, page: 0 });
   }
 
   function selectMixCard(index: number) {
@@ -80,24 +76,24 @@ export function AlchemistShopScreen({
     const card = runDeck[index];
     if (!card) return;
     if (card.id === MIXED_POTION_CARD_ID) return;
-    if (mixStep === 1) {
-      setSelectedA(index);
-      setMixStep(2);
-    } else if (mixStep === 2) {
-      if (index === selectedA) {
-        setSelectedA(null);
-        setMixStep(1);
-      } else if (index === selectedB) {
-        setSelectedB(null);
-      } else setSelectedB(index);
+    if (mix.step === 1) {
+      setMix((s) => ({ ...s, step: 2, a: index }));
+    } else if (mix.step === 2) {
+      if (index === mix.a) {
+        setMix((s) => ({ ...s, step: 1, a: null }));
+      } else if (index === mix.b) {
+        setMix((s) => ({ ...s, b: null }));
+      } else {
+        setMix((s) => ({ ...s, b: index }));
+      }
     }
   }
 
   function handleMixConfirm() {
     // Build a preview result before mutating the deck so the reveal can show the crafted
     // card after the controller removes the two source potions.
-    if (selectedA === null || selectedB === null) return;
-    const result = onMixPotions(selectedA, selectedB);
+    if (mix.a === null || mix.b === null) return;
+    const result = onMixPotions(mix.a, mix.b);
     if (result) setMixedCard(result);
   }
 
@@ -133,7 +129,7 @@ export function AlchemistShopScreen({
                 className={BUTTON_WIDTH_ACTION}
                 onClick={() => {
                   setMixedCard(null);
-                  cancelMix();
+                  resetSelections();
                 }}
               >
                 Continue
@@ -189,24 +185,25 @@ export function AlchemistShopScreen({
             <ScreenDescription className="mb-3">Select two Potions to Combine</ScreenDescription>
             <CardSelectionGrid
               items={mixableCards}
-              page={mixPage}
-              onPageChange={setMixPage}
+              page={mix.page}
+              onPageChange={(page) => setMix((s) => ({ ...s, page }))}
               pageSize={SELECTION_GRID_PAGE_SIZE}
               paginationSize="default"
               paginationReserveSpace
               renderItem={({ card, index }) => (
-                <SelectableShopCard
+                <SelectableCard
                   card={card}
-                  isSelected={selectedA === index || selectedB === index}
+                  chrome="shop"
+                  isSelected={mix.a === index || mix.b === index}
                   onSelect={() => selectMixCard(index)}
                 />
               )}
             />
             <div className="mt-5 flex justify-center gap-3">
-              <Button size="lg" variant="outline" onClick={cancelMix}>
+              <Button size="lg" variant="outline" onClick={resetSelections}>
                 Cancel
               </Button>
-              <Button size="lg" disabled={selectedA === null || selectedB === null} onClick={handleMixConfirm}>
+              <Button size="lg" disabled={mix.a === null || mix.b === null} onClick={handleMixConfirm}>
                 Combine
               </Button>
             </div>

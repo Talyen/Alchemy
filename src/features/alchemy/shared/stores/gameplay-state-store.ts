@@ -1,12 +1,12 @@
 // Authoritative gameplay aggregate.
 //
-// All persisted gameplay state lives in one Zustand root. Commands can mutate a
-// private Immer draft and publish the root once, which keeps React readers and
-// autosave on one revision while preserving explicit lifetime-specific reset
-// operations. The aggregate holds data only; every mutation is a draft-first
-// mutator in the write-port modules committed via dispatchRunSessionCommand().
+// All persisted gameplay state lives in one Zustand root. Commands open an
+// explicit Immer produce over the committed root (dispatchRunSessionCommand)
+// and publish it once, which keeps React readers and autosave on one revision
+// while preserving explicit lifetime-specific reset operations. The aggregate
+// holds data only; every mutation is a draft-first mutator in the write-port
+// modules committed via dispatchRunSessionCommand().
 import { create } from "zustand";
-import { immer } from "zustand/middleware/immer";
 import { createInitialRunDomainData, createInitialSessionFields, createInitialBattleFields } from "./run-domain-types";
 import { createInitialPermanentFields } from "./run-state-init";
 import { createInitialProfileState } from "./profile-store-types";
@@ -30,17 +30,15 @@ export interface GameplayState {
   gear: GearStateFields;
 }
 
-export const useGameplayStateStore = create<GameplayState>()(
-  immer(() => ({
-    revision: 0,
-    run: createInitialRunDomainData(),
-    session: createInitialSessionFields(),
-    battle: createInitialBattleFields(),
-    runProfile: createInitialPermanentFields(),
-    profile: createInitialProfileState(),
-    gear: initialGearState,
-  })),
-);
+export const useGameplayStateStore = create<GameplayState>()(() => ({
+  revision: 0,
+  run: createInitialRunDomainData(),
+  session: createInitialSessionFields(),
+  battle: createInitialBattleFields(),
+  runProfile: createInitialPermanentFields(),
+  profile: createInitialProfileState(),
+  gear: initialGearState,
+}));
 
 export function readGameplayState(): GameplayState {
   return useGameplayStateStore.getState();

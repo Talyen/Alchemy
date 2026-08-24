@@ -126,6 +126,11 @@ export function shouldBlockPreventStunBuildup(state: BattleState): boolean {
   return state.talentEffects.blockPreventsStun && state.playerStatuses.block > 0;
 }
 
+/**
+ * Adds DoT/CC buildup equal to damage dealt after an enemy hit lands.
+ * Stun suppression (block-prevents-stun) is the caller's responsibility,
+ * checked against pre-hit Block before spending it.
+ */
 export function applyPlayerDamageStatuses(
   state: BattleState,
   effect: { damageType: DamageType },
@@ -133,7 +138,6 @@ export function applyPlayerDamageStatuses(
 ): BattleState {
   if (actualDamage <= 0) return state;
   const statusType = effect.damageType;
-  if (statusType === "stun" && shouldBlockPreventStunBuildup(state)) return state;
   if (
     statusType === "burn" ||
     statusType === "poison" ||

@@ -47,6 +47,8 @@ beforeEach(() => {
       onended: (() => void) | null = null;
       play = vi.fn(() => Promise.resolve());
       pause = vi.fn();
+      removeAttribute = vi.fn();
+      load = vi.fn();
       currentTime = 0;
       constructor(src?: string) {
         this.src = src ?? "";
@@ -70,6 +72,8 @@ describe("stopAllSfx", () => {
     const el = lastAudio()!;
     stopAllSfx();
     expect(el.pause).toHaveBeenCalledOnce();
+    expect(el.removeAttribute).toHaveBeenCalledWith("src");
+    expect(el.load).toHaveBeenCalledOnce();
   });
 
   it("does not stop UI sounds", () => {

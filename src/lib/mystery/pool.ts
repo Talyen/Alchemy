@@ -2,6 +2,7 @@ import { mysteryEventArt, type KeywordId } from "@/lib/game-data";
 import type { MaterialId } from "@/lib/homestead/types";
 import { pickRandom } from "@/lib/utils";
 
+import { resolveMysteryEventTrinkets } from "./resolve-trinkets";
 import type { MysteryEffect, MysteryEvent } from "./types";
 
 const xp = (keyword: KeywordId, amount = 8): MysteryEffect => ({ kind: "gainXP", keyword, amount });
@@ -244,4 +245,9 @@ export function pickMysteryEvent(rng: () => number): MysteryEvent {
   const event = pickRandom(mysteryPool, rng);
   if (!event) throw new Error("mysteryPool is empty");
   return event;
+}
+
+/** Draws a new event and resolves its trinket grants against owned trinkets so badges match payouts. */
+export function pickResolvedMysteryEvent(rng: () => number, ownedTrinketIds: readonly string[]): MysteryEvent {
+  return resolveMysteryEventTrinkets(pickMysteryEvent(rng), ownedTrinketIds, rng);
 }

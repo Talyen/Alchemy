@@ -119,14 +119,6 @@ describe("session slice", () => {
     expect(getRunTransientStore().pendingDestinationClaim).toBeNull();
   });
 
-  it("applyDestinationChoices keeps only valid labels and resets reward fields", () => {
-    getRunTransientStore().setRewardState({ ...createEmptyRewardState(), gold: 40 });
-    getRunTransientStore().applyDestinationChoices(["bogus", DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY]);
-    const reward = getRunTransientStore().rewardState;
-    expect(reward.destinations).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY]);
-    expect(reward.gold).toBe(0);
-  });
-
   it("clearTransientSession restores initial transient fields", () => {
     const session = getRunTransientStore();
     session.setHasActiveRun(true);
@@ -172,7 +164,9 @@ describe("progress slice", () => {
 
   it("resetProgress preserves character while clearing run-scoped tallies", () => {
     const run = getRunDomainStore();
-    run.setCharacter("rogue");
+    applyGameplayStateUpdate((state) => {
+      state.run.activeRun.characterId = "rogue";
+    });
     run.awardMysteryXP("burn", 50);
     run.setRoomsEncountered(7);
     run.resetProgress();

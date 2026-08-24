@@ -10,6 +10,7 @@ export type ContentValidationArea =
   | "keywords"
   | "rewards"
   | "statuses"
+  | "talents"
   | "trinkets";
 
 export interface ContentValidationIssue {

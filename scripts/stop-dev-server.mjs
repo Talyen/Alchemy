@@ -7,11 +7,11 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { resolveDevPort } from "./lib/dev-port.mjs";
 
 const execFileAsync = promisify(execFile);
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
-const defaultPort = Number.parseInt(process.env.ALCHEMY_DEV_PORT ?? "5173", 10);
 const UNIX_STOP_GRACE_MS = 1_500;
 
 function normalizePathForMatch(value) {
@@ -155,7 +155,7 @@ async function stopUnixDevServer(port, projectRoot) {
   console.log(`No project-owned dev server found on port ${port}.`);
 }
 
-export async function stopDevServer({ port = defaultPort, projectRoot = rootDir } = {}) {
+export async function stopDevServer({ port = resolveDevPort(), projectRoot = rootDir } = {}) {
   if (!Number.isInteger(port) || port <= 0) {
     throw new Error(`Invalid ALCHEMY_DEV_PORT: ${port}`);
   }

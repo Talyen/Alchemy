@@ -31,7 +31,7 @@ describe("reward flow orchestration", () => {
     it("clears choices, gold, and selection but keeps destinations and selectedBossId", () => {
       const previous = {
         ...createEmptyRewardState(["Normal Combat", "Campfire"]),
-        choices: [{ id: "card-a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }],
+        choices: [{ id: "card-a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: {} }],
         gold: 12,
         selectedId: "card-a",
         rewardType: "trinket" as const,
@@ -197,6 +197,7 @@ describe("reward flow orchestration", () => {
       title: "Bone Charm",
       descriptionLines: ["Heal on kill"],
       art: "",
+      effects: {},
     };
 
     function stampedRewardState(

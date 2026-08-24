@@ -2,15 +2,19 @@ import { gearDefinitions, gearInstanceRarity } from "./definitions";
 import { gearBaseItems } from "./base-items";
 import type { GearDefinition, GearInstance } from "./types";
 
-function resolveBaseDisplayName(definition: GearDefinition): string {
-  const baseItem = gearBaseItems[definition.baseItemId];
-  return baseItem.displayName ?? definition.title;
+function baseItemDisplayName(definition: GearDefinition): string {
+  return gearBaseItems[definition.baseItemId].displayName;
+}
+
+export function getGearDefinitionTitle(definition: GearDefinition): string {
+  const name = baseItemDisplayName(definition);
+  return definition.rarity === "astral" ? `Astral ${name}` : name;
 }
 
 export function getGearInstanceTitle(instance: GearInstance): string {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return "Gear";
 
-  const baseName = resolveBaseDisplayName(definition);
-  return gearInstanceRarity(instance) === "astral" ? `Astral ${baseName}` : baseName;
+  const name = baseItemDisplayName(definition);
+  return gearInstanceRarity(instance) === "astral" ? `Astral ${name}` : name;
 }

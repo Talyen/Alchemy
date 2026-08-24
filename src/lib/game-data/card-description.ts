@@ -1,5 +1,5 @@
 import { capitalizeWord } from "@/lib/utils";
-import { POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
+import { isPotionCard } from "./cards/card-pools";
 import { formatCompanionTurnStartLine } from "./cards/companion-turn-description";
 import { companionLibrary } from "./companions";
 import type { BattleCard, BattleCardEffect, CompanionId } from "./types";
@@ -18,7 +18,7 @@ function displayDamageType(type: string): string {
 }
 
 function getPotionMultiplier(card: Pick<BattleCard, "id">, context: CardDescriptionContext): number {
-  return card.id.endsWith(POTION_CARD_ID_SUFFIX) ? (context.potionPotency ?? 1) : 1;
+  return isPotionCard(card) ? (context.potionPotency ?? 1) : 1;
 }
 
 function adjustedAmount(amount: number, multiplier: number): number {
@@ -101,7 +101,8 @@ function formatEffectiveLine(
 
   if (line.startsWith("Remove ")) {
     const effect = getNextEffect("remove-harmful-status");
-    if (!effect) return line;
+    // Full cleanses keep their authored wording — the amount is a handler cap, not a display number.
+    if (!effect || effect.removeAll) return line;
     const amount = adjustedAmount(effect.amount, potionMultiplier);
     return `Remove ${amount} harmful Status${amount === 1 ? "" : "es"}`;
   }

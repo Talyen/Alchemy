@@ -1,6 +1,6 @@
 // Rehydrates a saved card against the library entry. Re-exported by ../cards.
 import type { BattleCard } from "../types";
-import { cardLibrary } from "../cards";
+import { cardById } from "../cards";
 
 export type SavedCard = BattleCard;
 
@@ -28,7 +28,7 @@ function pickOptionalField<T>(saved: SavedCard, key: keyof SavedCard): T | undef
 }
 
 export function hydrateCard(savedCard: SavedCard): BattleCard {
-  const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);
+  const libraryCard = cardById[savedCard.id];
   if (!libraryCard) {
     // E2E / custom cards with no library entry — keep the saved shape as-is.
     return savedCard;

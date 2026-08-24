@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, utimes, writeFile } from "node:fs/promises";
+import { rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -16,19 +17,21 @@ import { mapPool } from "../../scripts/lib/map-pool.mjs";
 import { writeTextIfChanged } from "../../scripts/lib/write-text-if-changed.mjs";
 import { kebabToCamel } from "../../scripts/lib/kebab-to-camel.mjs";
 
-describe("asset-manifest-cache", () => {
-  const tempDirs: string[] = [];
+const tempDirs: string[] = [];
 
-  afterEach(() => {
-    tempDirs.length = 0;
-  });
-
-  async function makeTempDir() {
-    const dir = await mkdtemp(path.join(tmpdir(), "alchemy-asset-cache-"));
-    tempDirs.push(dir);
-    return dir;
+afterEach(() => {
+  for (const dir of tempDirs.splice(0)) {
+    rmSync(dir, { recursive: true, force: true });
   }
+});
 
+async function makeTempDir(prefix = "alchemy-asset-cache-") {
+  const dir = await mkdtemp(path.join(tmpdir(), prefix));
+  tempDirs.push(dir);
+  return dir;
+}
+
+describe("asset-manifest-cache", () => {
   it("computes a stable content hash for source + settings + schema", async () => {
     const dir = await makeTempDir();
     const sourcePath = path.join(dir, "a.png");
@@ -205,7 +208,7 @@ describe("mapPool", () => {
 
 describe("writeTextIfChanged", () => {
   it("writes only when content changes", async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), "alchemy-write-if-changed-"));
+    const dir = await makeTempDir("alchemy-write-if-changed-");
     const filePath = path.join(dir, "out.ts");
     expect(await writeTextIfChanged(filePath, "a\n")).toBe(true);
     expect(await writeTextIfChanged(filePath, "a\n")).toBe(false);
@@ -214,7 +217,7 @@ describe("writeTextIfChanged", () => {
   });
 
   it("fails check mode when a generated file would change", async () => {
-    const dir = await mkdtemp(path.join(tmpdir(), "alchemy-write-if-changed-check-"));
+    const dir = await makeTempDir("alchemy-write-if-changed-check-");
     const filePath = path.join(dir, "out.ts");
     await writeFile(filePath, "a\n");
 

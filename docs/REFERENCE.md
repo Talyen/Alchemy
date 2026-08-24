@@ -105,6 +105,7 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Companions** — invulnerable; act at player turn start; persist indefinitely.
 - **Draw / deck** — draw 4 per turn, max hand 7 (overflow skipped); hand cleared before draw; discard reshuffles when draw pile empties; only `consume` cards leave permanently.
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
+- **Haste** — extra turns skip the enemy phase; both blocks hold until a real attack window resolves, then halve once each.
 - **Death's Door** — [Domain Glossary](#domain-glossary).
 - **Fight pacing** — hidden combat scaler, not a player-facing status. Paces damage, block, forge, mana, and healing magnitudes; armor and gold grants bypass it at every site (pinned by `tests/lib/battle/fight-pacing.test.ts`). [Domain Glossary](#domain-glossary). Balance simulator: `ALCHEMY_BALANCE_PACING=off` measures raw kit.
 - **Lethality payouts** — a kill via any damage source (main hits, follow-up typed hits, stun/freeze procs, wish triggers, DoT ticks, bleed detonation, mana-crystal burn) pays the same rewards exactly once per health transition: Bone Charm heal + gear kill rewards via `payKillPayouts` (`src/lib/battle/kill-payouts.ts`). Documented exceptions stay source-specific (e.g. Lucky Clover gold is off freeze-proc kills).

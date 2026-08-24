@@ -51,9 +51,8 @@ export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
   return colors;
 }
 
-/** First shine stop of every visible keyword, cycled one-at-a-time on Wildcard hero select. */
+/** First shine stop of every keyword, cycled one-at-a-time on Wildcard hero select. */
 export const WILDCARD_KEYWORD_SHINE_COLORS: readonly string[] = Object.values(keywordDefinitions).flatMap((def) => {
-  if (def.hidden) return [];
   const first = def.shineColors[0];
   return first ? [first] : [];
 });

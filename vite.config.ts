@@ -8,13 +8,11 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
 import { visualizer } from "rollup-plugin-visualizer";
+import { resolveDevPort } from "./scripts/lib/dev-port.mjs";
 
-const devPort = Number.parseInt(process.env.ALCHEMY_DEV_PORT ?? "5173", 10);
+// Single port contract shared with scripts/lib/dev-port.mjs consumers (polling/stop/cleanup).
+const devPort = resolveDevPort(process.env);
 const sentryRelease = process.env.SENTRY_RELEASE?.trim() || `alchemy@${process.env.npm_package_version ?? "0.0.0"}`;
-
-if (!Number.isInteger(devPort) || devPort <= 0) {
-  throw new Error(`Invalid ALCHEMY_DEV_PORT: ${process.env.ALCHEMY_DEV_PORT}`);
-}
 
 export default defineConfig(({ mode, command }) => {
   const sentryEnabled =
@@ -159,6 +157,14 @@ export default defineConfig(({ mode, command }) => {
           "tests/**",
           "**/*.md",
         ],
+        // Enforced by the nightly coverage job (nightly.yml) — keep thresholds
+        // at or below the measured baseline and ratchet them upward.
+        thresholds: {
+          lines: 75,
+          functions: 65,
+          branches: 65,
+          statements: 75,
+        },
       },
     },
   };

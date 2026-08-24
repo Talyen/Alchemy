@@ -1,7 +1,6 @@
 export * from "./types";
 export * from "./definitions";
 export * from "./operations";
-export * from "./footprints";
 export * from "./affixes";
 export * from "./affix-catalog";
 export * from "./base-items";

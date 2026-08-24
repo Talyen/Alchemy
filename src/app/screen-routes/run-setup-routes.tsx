@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { CharacterSelectScreen, DifficultySelectScreen, DraftDeckScreen } from "@/features/alchemy/run-setup/screens";
 import { useCompletedDifficulties, useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useDifficultySelectSlice, useDraftDeckSlice } from "@/features/alchemy/shared/stores/run-session-react-ports";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { RunSetupCommands, RunSetupRouteCtx } from "./route-ctx";
 
 function CharacterSelectScreenRoute({
@@ -13,16 +12,12 @@ function CharacterSelectScreenRoute({
   onOpenBattleMenu: RunSetupRouteCtx["onOpenBattleMenu"];
 }) {
   const finishedRunCharacters = useFinishedRunCharacters();
-  const shimmerState = useUiStore((s) => s.shimmerState);
-  const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
 
   return (
     <CharacterSelectScreen
       onSelect={commands.handleCharacterSelect}
       onOpenMenu={onOpenBattleMenu}
       finishedRunCharacters={finishedRunCharacters}
-      shimmerState={shimmerState}
-      onHoverShimmer={maybeTriggerShimmer}
     />
   );
 }
@@ -36,16 +31,12 @@ function DifficultySelectScreenRoute({
 }) {
   const { characterId, selectedDifficulty } = useDifficultySelectSlice();
   const completedDifficulties = useCompletedDifficulties()[characterId];
-  const shimmerState = useUiStore((s) => s.shimmerState);
-  const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
 
   return (
     <DifficultySelectScreen
       characterId={characterId}
       selectedDifficulty={selectedDifficulty}
       completedDifficulties={completedDifficulties}
-      shimmerState={shimmerState}
-      onHoverShimmer={maybeTriggerShimmer}
       onSelect={commands.handleDifficultySelect}
       onBack={commands.handleBackFromDifficultySelect}
       onOpenMenu={onOpenBattleMenu}

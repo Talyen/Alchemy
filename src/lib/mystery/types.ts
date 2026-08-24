@@ -13,7 +13,8 @@ export type MysteryEffect =
   | { kind: "removeCard" }
   | { kind: "gainTrinket"; trinketId: string }
   | { kind: "gainRandomTrinket"; fromIds?: string[] }
-  | { kind: "gainGeneratedGear"; baseItemId: string }
+  /** astral is set only by the all-trinkets-owned fallback; authored content never rolls rarity. */
+  | { kind: "gainGeneratedGear"; baseItemId: string; astral?: true }
   | { kind: "gainMaterial"; material: MaterialId; amount: number };
 
 export interface MysteryChoice {

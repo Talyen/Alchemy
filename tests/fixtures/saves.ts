@@ -50,32 +50,41 @@ export interface HomesteadSaveFixture {
   lastSavedAt: number;
 }
 
+/** Single owner of the current-schema envelope core shared by unit fixtures and E2E injection. */
+export function saveEnvelopeFixture(overrides: Record<string, unknown> = {}) {
+  return {
+    saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+    gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
+    contentVersion: CURRENT_CONTENT_VERSION,
+    selectedAspectRatio: "auto",
+    displayMode: "borderless-fullscreen",
+    brightness: 100,
+    musicVolume: 50,
+    sfxVolume: 50,
+    masterVolume: 50,
+    muteInBackground: true,
+    autoEndTurn: true,
+    activeRun: null,
+    completedDifficulties: {
+      knight: [],
+      rogue: [],
+      wizard: [],
+      ranger: [],
+      alchemist: [],
+      warlock: [],
+      druid: [],
+      wildcard: [],
+    },
+    lastSavedAt: 0,
+    ...overrides,
+  };
+}
+
 export const baseHomesteadSave: HomesteadSaveFixture = {
-  saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-  gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
-  contentVersion: CURRENT_CONTENT_VERSION,
-  selectedAspectRatio: "auto",
-  displayMode: "borderless-fullscreen",
-  brightness: 100,
-  musicVolume: 50,
-  sfxVolume: 50,
-  masterVolume: 50,
-  muteInBackground: true,
-  autoEndTurn: true,
+  ...saveEnvelopeFixture(),
   rememberAutoplayPreference: false,
   autoplayEnabled: false,
-  completedDifficulties: {
-    knight: [],
-    rogue: [],
-    wizard: [],
-    ranger: [],
-    alchemist: [],
-    warlock: [],
-    druid: [],
-    wildcard: [],
-  },
   finishedRunCharacters: [...ALL_PLAYABLE_CHARACTERS],
-  activeRun: null,
   materialInventory: { wood: 999, iron: 999, herbs: 999, food: 999, crystal: 999 },
   constructedBuildings: {
     "blacksmiths-forge": 0,
@@ -115,5 +124,4 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
   discoveredTrinketIds: [],
   talentXP: {},
   unlockedTalents: {},
-  lastSavedAt: 0,
 };

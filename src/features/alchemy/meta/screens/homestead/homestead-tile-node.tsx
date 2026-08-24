@@ -18,7 +18,6 @@ export function HomesteadTileFrame({
   wrapperClassName,
 }: {
   id: string;
-  index: number;
   hoveredItemId: string | null;
   setHoveredItemId: (id: string | null) => void;
   detailTooltip: (ctx: PopupContext) => ReactNode;

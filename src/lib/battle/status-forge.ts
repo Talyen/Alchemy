@@ -30,7 +30,7 @@ function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: num
     if (combatTexts) {
       mergeCombatText(combatTexts, {
         target: "enemy",
-        kind: "damage",
+        kind: "status",
         stat: "burn",
         amount: burnAmount,
       });

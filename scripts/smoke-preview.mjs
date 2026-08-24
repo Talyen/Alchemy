@@ -5,10 +5,11 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { waitForHttp } from "./lib/wait-for-http.mjs";
+import { SMOKE_PREVIEW_PORT } from "./lib/dev-port.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const viteCli = join(root, "node_modules", "vite", "bin", "vite.js");
-const DEFAULT_PORT = 4174;
+const DEFAULT_PORT = SMOKE_PREVIEW_PORT;
 const TIMEOUT_MS = 30_000;
 const POLL_MS = 250;
 

@@ -1,5 +1,5 @@
-import { POTION_CARD_ID_SUFFIX } from "../game-constants";
 import { type BattleCard } from "@/lib/game-data";
+import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { type BattleState, type CombatFlags } from "./types";
 
 type BooleanCombatFlag = {
@@ -60,11 +60,7 @@ function applyCostDiscount(cost: number, reduction: number): number {
  * Checks if a boon discount applies to the first potion played.
  */
 function checkTrinketFreePotion(state: CardCostState, card: BattleCard): boolean {
-  return (
-    !state.flags.firstPotionFreeUsed &&
-    state.trinketEffects.mortarPestleFreeFirstPotion &&
-    card.id.endsWith(POTION_CARD_ID_SUFFIX)
-  );
+  return !state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && isPotionCard(card);
 }
 
 /**

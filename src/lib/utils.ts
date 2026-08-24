@@ -13,6 +13,11 @@ export function capitalizeWord(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+/** Shared wallet-style amount formatting: thousands separators, compact above 100k. */
+export function formatLargeAmount(amount: number): string {
+  return amount >= 100000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString();
+}
+
 // Fisher-Yates shuffle — O(n), unbiased, in-place on a clone.
 export function shuffle<T>(items: readonly T[], rng: () => number = Math.random): T[] {
   const shuffled = [...items];

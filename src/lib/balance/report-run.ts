@@ -1,5 +1,6 @@
 // Opt-in balance-report scenario matrix. Pure orchestration over simulateBatch.
 import {
+  cardById,
   cardLibrary,
   characters,
   companionLibrary,
@@ -513,7 +514,7 @@ function collectAnomalies(rows: CoreRow[]): { anomalies: AnomalyReportRow[]; met
               : key === "maxSingleHitDamageToPlayer"
                 ? a.maxSingleHitDamageToPlayerStat
                 : "";
-          const card = cardId ? (cardLibrary.find((item) => item.id === cardId)?.title ?? cardId) : "";
+          const card = cardId ? (cardById[cardId]?.title ?? cardId) : "";
           entry.peakScenario = [`${sim.characterId} vs ${sim.enemyId} (${row.tier})`, stat, card]
             .filter(Boolean)
             .join(" · ");

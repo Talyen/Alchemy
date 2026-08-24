@@ -6,7 +6,6 @@ export {
   teardownRun,
   syncRunToBattleStart,
   syncBattleToRun,
-  syncRunMaxHealthFromGearMutation,
   clearBattleUi,
   clearBattlePresentationUi,
   finalizeRunEndSession,

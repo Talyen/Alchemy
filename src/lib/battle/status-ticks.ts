@@ -126,11 +126,15 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     amount: finalDamage,
   });
   return dealEnemyDotTick(state, "bleed", finalDamage, 0, combatTexts, (nextState) => {
+    // Leech pays only for health actually lost (Death's Door floors can shrink the
+    // tick), matching the player-side bleed-leech clamp.
+    const healthLost = Math.max(0, state.enemyHealth - nextState.enemyHealth);
     let next = { ...nextState, pendingBleedLeechHealing: 0 };
-    if (leechAmount > 0) {
+    const leechPaid = Math.min(leechAmount, healthLost);
+    if (leechPaid > 0) {
       next = applyHealingWithCombatText(
         next,
-        scaledGearLeechHeal(computeLeechHeal(leechAmount), next.gearEffects),
+        scaledGearLeechHeal(computeLeechHeal(leechPaid), next.gearEffects),
         combatTexts,
         { skipFightPacing: true },
       );

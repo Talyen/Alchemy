@@ -5,7 +5,10 @@ import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { RewardState } from "@/lib/active-run-session";
 import type { Destination } from "@/lib/routing";
-import type { DestinationOfferState } from "@/features/alchemy/shared/run-flow/destination-flow";
+import type {
+  DestinationOfferState,
+  DestinationOptionsInput,
+} from "@/features/alchemy/shared/run-flow/destination-flow";
 
 export interface VictoryRewardsInput {
   characterId: CharacterId;
@@ -22,12 +25,7 @@ export interface VictoryRewardsInput {
   destinationIndexInAct: number;
   completedDestinations: Destination[];
   homesteadEffects: HomesteadEffectManifest;
-  getAvailableDestinations: (options?: {
-    currentHealth?: number;
-    currentGold?: number;
-    destinationIndexInAct?: number;
-    maxHealth?: number;
-  }) => Destination[];
+  getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
   bossEnemyId?: string | null | undefined;
   destinationOfferState: DestinationOfferState;
 }

@@ -14,13 +14,6 @@ export function runStartupValidation() {
     if (!condition) logError(`Startup validation FAILED: ${name}`, "validation");
   }
 
-  check("CARDS_PER_TURN > 0", true);
-  check("MAX_HAND_SIZE > 0", true);
-  check("MAX_PLAYER_HEALTH > 0", true);
-  check("BASE_ENEMY_HEALTH > 0", true);
-  check("BASE_PLAYER_MANA >= 0", true);
-  check("STARTING_TURN > 0", true);
-  check("MIN_MAX_MANA_FLOOR > 0", true);
   check("WISH_OVERLAY_Z_INDEX is 90", WISH_OVERLAY_Z_INDEX === 90);
   check("enemyBestiary is non-empty", enemyBestiary.length > 0);
   check("cardLibrary is non-empty", cardLibrary.length > 0);

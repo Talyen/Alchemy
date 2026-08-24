@@ -7,7 +7,7 @@ export function PurchasableCardItem() {
   return <div>Shop offer</div>;
 }
 
-export function SelectableShopCard({ onSelect }: { onSelect: () => void }) {
+export function SelectableCard({ onSelect }: { onSelect: () => void }) {
   return (
     <button type="button" onClick={onSelect}>
       Select shop card

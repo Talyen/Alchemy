@@ -2,6 +2,7 @@
 // These names are not production APIs; production code uses capability ports on gameplay-state-store.
 // Action members dispatch real gameplay commands through the production write-port mutators.
 import { vi } from "vitest";
+import { produce } from "immer";
 import type { Draft } from "immer";
 import {
   readGameplayState,
@@ -37,10 +38,12 @@ type Tail<F extends (...args: never[]) => unknown> = F extends (_: never, ...res
 
 /** Test-only aggregate mutation seam; production commands publish directly through Zustand. */
 export function applyGameplayStateUpdate(partial: (state: GameplayState) => void): void {
-  useGameplayStateStore.setState((state) => {
-    partial(state);
-    state.revision += 1;
-  });
+  useGameplayStateStore.setState((state) =>
+    produce(state, (draft) => {
+      partial(draft);
+      draft.revision += 1;
+    }),
+  );
 }
 
 const runCommands = {
@@ -54,9 +57,7 @@ const runCommands = {
   setDestinationOfferState: command(runPort.setDestinationOfferState),
   setRunTrinkets: command(runPort.setRunTrinkets),
   setEncounteredRunEnemyIds: command(runPort.setEncounteredRunEnemyIds),
-  setSelectedDifficulty: command(runPort.setSelectedDifficulty),
   setContentSystemType: command(runPort.setContentSystemType),
-  setCharacter: command(runPort.setCharacter),
   resetProgress: command(runPort.resetProgress),
   nextRunRandom: command(runPort.nextRunRandom),
   resetRunXP: command(runPort.resetRunXP),
@@ -89,7 +90,6 @@ const sessionCommands = {
   setRewardState: command(sessionPort.setRewardState),
   setCompanionRewardCards: command(sessionPort.setCompanionRewardCards),
   setRunEndMaterials: command(sessionPort.setRunEndMaterials),
-  setRunEndTalentXP: command(sessionPort.setRunEndTalentXP),
   setCorruptionResult: command(sessionPort.setCorruptionResult),
   setPendingCharacterId: command(sessionPort.setPendingCharacterId),
   setPendingContentSystemType: command(sessionPort.setPendingContentSystemType),
@@ -108,7 +108,6 @@ const sessionCommands = {
   setMysteryGrantedGearInstances: command(sessionPort.setMysteryGrantedGearInstances),
   setMysteryChosenCardId: command(sessionPort.setMysteryChosenCardId),
   clearTransientSession: command(sessionPort.clearTransientSession),
-  applyDestinationChoices: command(sessionPort.applyDestinationChoices),
 };
 
 const battleCommands = {

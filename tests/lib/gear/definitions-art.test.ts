@@ -21,7 +21,7 @@ function isGearVariantArtKey(definitionId: string): boolean {
 describe("gear definitions and art", () => {
   it("builds one variant per base item rarity", () => {
     for (const baseItem of Object.values(gearBaseItems)) {
-      for (const rarity of baseItem.availableRarities) {
+      for (const rarity of GEAR_RARITIES) {
         const id = `${baseItem.id}-${rarity}`;
         expect(gearDefinitions[id]).toBeDefined();
         expect(gearDefinitions[id]?.rarity).toBe(rarity);
@@ -33,18 +33,6 @@ describe("gear definitions and art", () => {
 
   it("keeps definition ids aligned with the catalog", () => {
     expect(GEAR_DEFINITION_IDS.length).toBe(gearDefinitionList.length);
-  });
-
-  it("offers basic and astral for every base item", () => {
-    const missing: string[] = [];
-    for (const baseItem of Object.values(gearBaseItems)) {
-      for (const rarity of GEAR_RARITIES) {
-        if (!baseItem.availableRarities.includes(rarity)) {
-          missing.push(`${baseItem.id} → missing ${rarity}`);
-        }
-      }
-    }
-    expect(missing, missing.join("\n")).toEqual([]);
   });
 
   it("maps art for every gear variant", () => {

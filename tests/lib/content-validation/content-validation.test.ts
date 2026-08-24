@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runContentValidation } from "@/lib/content-validation";
+import { collectTrinketParityIssues } from "@/lib/content-validation/validators";
 import type { ContentValidationArea } from "@/lib/content-validation";
 
 const ALL_AREAS: ContentValidationArea[] = [
@@ -13,6 +14,7 @@ const ALL_AREAS: ContentValidationArea[] = [
   "keywords",
   "rewards",
   "statuses",
+  "talents",
   "trinkets",
 ];
 
@@ -29,5 +31,31 @@ describe("content authoring validation", () => {
       const areaWarnings = result.warnings.filter((w) => w.area === area);
       expect(areaWarnings, `${area} warnings`).toEqual([]);
     }
+  });
+});
+
+describe("collectTrinketParityIssues", () => {
+  const baseTrinket = {
+    id: "test-charm",
+    descriptionLines: ["Gain 3 Block whenever you play 2 cards."],
+    effects: { blockPerCardsPlayed: 3, cardsRequired: 2 },
+  };
+
+  it("passes when every numeric effect appears in the prose", () => {
+    expect(collectTrinketParityIssues(baseTrinket)).toEqual([]);
+  });
+
+  it("rejects a value satisfied only as a substring of a larger number", () => {
+    const trinket = { ...baseTrinket, descriptionLines: ["Gain 13 Block on turn start."], effects: { block: 3 } };
+    expect(collectTrinketParityIssues(trinket)).toEqual(["Effect block value 3 does not appear in description"]);
+  });
+
+  it("does not match digits inside decimals", () => {
+    const trinket = { ...baseTrinket, descriptionLines: ["Heals 1.5x your level."], effects: { heal: 1 } };
+    expect(collectTrinketParityIssues(trinket)).toEqual(["Effect heal value 1 does not appear in description"]);
+  });
+
+  it("flags a trinket that declares no combat effects", () => {
+    expect(collectTrinketParityIssues({ ...baseTrinket, effects: {} })).toEqual(["declares no combat effects"]);
   });
 });

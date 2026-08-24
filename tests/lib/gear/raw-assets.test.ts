@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { gearBaseItems } from "@/lib/gear/base-items";
+import { GEAR_RARITIES } from "@/lib/gear/types-core";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const gearDir = path.join(rootDir, "Raw Assets", "Gear");
@@ -36,7 +37,7 @@ describe.skipIf(!rawGearPresent)("raw gear assets", () => {
       const baseItemId = slugifyGearName(asset.displayName);
       const baseItem = gearBaseItems[baseItemId as keyof typeof gearBaseItems];
       expect(baseItem, `missing base item for raw asset ${asset.displayName}`).toBeDefined();
-      expect(baseItem?.availableRarities).toContain(asset.rarity);
+      expect(GEAR_RARITIES).toContain(asset.rarity);
     }
   });
 
@@ -61,7 +62,7 @@ describe.skipIf(!rawGearPresent)("raw gear assets", () => {
 
     for (const baseItem of Object.values(gearBaseItems)) {
       const rarities = assetsBySlug.get(baseItem.id) ?? new Set<string>();
-      for (const rarity of baseItem.availableRarities) {
+      for (const rarity of GEAR_RARITIES) {
         expect(rarities.has(rarity), `${baseItem.id} missing ${rarity} raw art`).toBe(true);
       }
     }

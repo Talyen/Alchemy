@@ -31,7 +31,7 @@ if (missing.length > 0) {
   console.error(
     `The ship unit suite matches no test files for:\n${missing.map((m) => `  - ${m}`).join("\n")}\n` +
       "A path above is stale — vitest would silently run a narrower gate. Fix the path or remove " +
-      "it from the SUITES list in scripts/run-ship-unit.mjs.",
+      "it from TEST_SUITES in scripts/lib/test-suites.mjs.",
   );
   process.exit(1);
 }

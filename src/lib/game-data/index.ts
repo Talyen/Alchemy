@@ -3,6 +3,7 @@
 // Feature code should import through this barrel instead of reaching into submodule paths.
 export * from "./types";
 export type { TalentEffectManifest, HealthThresholdBonus } from "./talent-effect-manifest";
+export type { TrinketManifest } from "./trinket-manifest";
 export * from "./effects";
 export * from "./card-description";
 export * from "./assets";

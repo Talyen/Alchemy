@@ -1,8 +1,4 @@
-import { characters, type CharacterId, type KeywordId } from "@/lib/game-data";
-import type { MaterialInventory } from "@/lib/homestead/types";
-import type { GearAffixId } from "./affix-catalog";
-import type { GearBaseItemId } from "./base-items";
-import type { GearDefinitionId } from "./definitions";
+import { characters, type CharacterId } from "@/lib/game-data";
 import { GEAR_SLOTS, type GearSlot, type GearRarity, GEAR_RARITIES } from "./types-core";
 
 export type { GearEffectManifest } from "./gear-effect-manifest";
@@ -17,31 +13,8 @@ export const GEAR_CHARACTER_IDS = Object.keys(characters) as GearCharacterId[];
 
 export type { GearAffixId } from "./affix-catalog";
 
-export interface GearAffixRoll {
-  id: GearAffixId;
-  value: number;
-}
-
-export interface GearDefinition {
-  id: string;
-  baseItemId: GearBaseItemId;
-  rarity: GearRarity | null;
-  title: string;
-  descriptionLines: string[];
-  art: string;
-  compatibleSlots: GearSlot[];
-  requiresTwoHands: boolean;
-  affinityKeywords: KeywordId[];
-  salvageValue: MaterialInventory;
-  rangedWeapon?: boolean;
-  quiver?: boolean;
-}
-
-export interface GearInstance {
-  instanceId: string;
-  definitionId: GearDefinitionId;
-  affixes: GearAffixRoll[];
-}
+export type { GearAffixRoll, GearDefinition, GearInstance } from "./definitions";
+import type { GearInstance } from "./definitions";
 
 export type GearInventory = GearInstance[];
 export type GearInventories = Record<GearCharacterId, GearInventory>;

@@ -18,41 +18,40 @@ const MUSIC_CONFIG = {
   TRACKS: {
     [MUSIC_KEYS.MENU]: ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3"],
     [MUSIC_KEYS.BATTLE]: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"],
-    [MUSIC_KEYS.BOSS_FORGE_GOLEM]: ["The Forge Golem.mp3"],
-    [MUSIC_KEYS.BOSS_FROSTWARDEN]: ["The Frostwarden.mp3"],
-    [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: ["The Blight Treant.mp3"],
-    [MUSIC_KEYS.BOSS_IRON_BEAR]: ["The Iron Bear.mp3"],
   },
   VOLUME_MIN: 0,
 } as const;
 
-const BOSS_MUSIC_KEYS: ReadonlySet<string> = new Set([
-  MUSIC_KEYS.BOSS_FORGE_GOLEM,
-  MUSIC_KEYS.BOSS_FROSTWARDEN,
-  MUSIC_KEYS.BOSS_BLIGHT_TREANT,
-  MUSIC_KEYS.BOSS_IRON_BEAR,
-]);
+// One row per boss track: the boss id ↔ music key mapping, files, and optional
+// intro skip live only here.
+interface BossMusicRow {
+  bossId: string;
+  tracks: readonly string[];
+  skipSeconds?: number;
+}
+
+const BOSS_MUSIC = {
+  [MUSIC_KEYS.BOSS_FORGE_GOLEM]: { bossId: "forge-golem", tracks: ["The Forge Golem.mp3"] },
+  [MUSIC_KEYS.BOSS_FROSTWARDEN]: { bossId: "frostwarden", tracks: ["The Frostwarden.mp3"] },
+  [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: { bossId: "blight-treant", tracks: ["The Blight Treant.mp3"] },
+  [MUSIC_KEYS.BOSS_IRON_BEAR]: { bossId: "iron-bear", tracks: ["The Iron Bear.mp3"], skipSeconds: 6 },
+} satisfies Record<string, BossMusicRow>;
+
+type BossMusicEntry = [key: string, boss: BossMusicRow];
+
+const BOSS_MUSIC_ENTRIES = Object.entries(BOSS_MUSIC) as BossMusicEntry[];
+
+const BOSS_MUSIC_KEYS: ReadonlySet<string> = new Set(BOSS_MUSIC_ENTRIES.map(([key]) => key));
 
 const BOSS_MUSIC_VOLUME_BOOST = 2;
 
-const BOSS_MUSIC_SKIP_TIMES: Record<string, number> = {
-  [MUSIC_KEYS.BOSS_IRON_BEAR]: 6,
-};
+function bossMusic(key: string): BossMusicRow | undefined {
+  return BOSS_MUSIC[key as keyof typeof BOSS_MUSIC];
+}
 
 // Maps a boss enemy id to its music key, falling back to undefined for non-boss or unknown ids.
 export function getBossMusicKey(bossId: string): string | undefined {
-  switch (bossId) {
-    case "forge-golem":
-      return MUSIC_KEYS.BOSS_FORGE_GOLEM;
-    case "frostwarden":
-      return MUSIC_KEYS.BOSS_FROSTWARDEN;
-    case "blight-treant":
-      return MUSIC_KEYS.BOSS_BLIGHT_TREANT;
-    case "iron-bear":
-      return MUSIC_KEYS.BOSS_IRON_BEAR;
-    default:
-      return undefined;
-  }
+  return BOSS_MUSIC_ENTRIES.find(([, boss]) => boss.bossId === bossId)?.[0];
 }
 
 // Cache of HTMLAudioElements keyed by music key, so re-entering a battle or boss fight
@@ -157,7 +156,8 @@ function replaceCurrentTrack(key: string, fadeProgress: number): HTMLAudioElemen
     return cached;
   }
 
-  const track = pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
+  const boss = bossMusic(key);
+  const track = pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? boss?.tracks ?? []);
   if (!track) return undefined;
 
   const el = new Audio(musicBase + track);
@@ -165,9 +165,8 @@ function replaceCurrentTrack(key: string, fadeProgress: number): HTMLAudioElemen
   el.loop = true;
   applyMusicVolume(el, key, fadeProgress);
   el.muted = audioState.muted;
-  const skipTime = BOSS_MUSIC_SKIP_TIMES[key];
-  if (skipTime) {
-    el.currentTime = skipTime;
+  if (boss?.skipSeconds) {
+    el.currentTime = boss.skipSeconds;
   }
   playElement(el);
   musicCache.set(key, el);

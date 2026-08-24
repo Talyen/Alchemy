@@ -3,11 +3,7 @@
 // Depends on deterministic labyrinth map generation so fixture tests can cover mid-run map saves.
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import {
-  CURRENT_CONTENT_VERSION,
-  CURRENT_GAME_BUILD_VERSION,
-  CURRENT_SAVE_SCHEMA_VERSION,
-} from "@/lib/validation/metadata";
+import { saveEnvelopeFixture } from "./saves";
 
 const FIXTURE_CHARACTER_IDS = [
   "knight",
@@ -42,14 +38,9 @@ function emptyCraftingCurrencies() {
   };
 }
 
+/** Current-schema envelope: shared core plus the gear/crafting fields migration guards rely on. */
 function currentSaveEnvelope(overrides: Record<string, unknown> = {}) {
-  return {
-    saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-    gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
-    contentVersion: CURRENT_CONTENT_VERSION,
-    selectedAspectRatio: "auto",
-    displayMode: "borderless-fullscreen",
-    brightness: 100,
+  return saveEnvelopeFixture({
     discoveredCardIds: [] as string[],
     encounteredEnemyIds: [] as string[],
     discoveredTrinketIds: [] as string[],
@@ -58,31 +49,14 @@ function currentSaveEnvelope(overrides: Record<string, unknown> = {}) {
     craftingCurrencies: emptyCraftingCurrencies(),
     talentXP: {} as Record<string, number>,
     unlockedTalents: {} as Record<string, string[]>,
-    musicVolume: 50,
-    sfxVolume: 50,
-    masterVolume: 50,
-    muteInBackground: true,
-    autoEndTurn: true,
-    activeRun: null,
     materialInventory: {},
     constructedBuildings: {},
     plantedFarms: {},
     completedResearch: {},
     bondedCompanions: {},
-    completedDifficulties: {
-      knight: [],
-      rogue: [],
-      wizard: [],
-      ranger: [],
-      alchemist: [],
-      warlock: [],
-      druid: [],
-      wildcard: [],
-    },
     finishedRunCharacters: [] as string[],
-    lastSavedAt: 0,
     ...overrides,
-  };
+  });
 }
 
 /** Full meta-progress v10 save with gear, talents, and a mid-campaign active run. */
@@ -339,8 +313,103 @@ export const CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () =
   10: currentSchemaSave,
 };
 
+const FIXTURE_LIVE_SLASH = {
+  id: "slash",
+  title: "Slash",
+  descriptionLines: ["Deal 6 Physical damage"],
+  art: "slash.webp",
+  cost: 1,
+  effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+};
+
+const FIXTURE_TOMBSTONED_ANTIVENOM = {
+  ...FIXTURE_LIVE_SLASH,
+  id: "antivenom-potion",
+};
+
+/**
+ * Active run whose persisted card piles still carry removed-content cards
+ * (deck, battle snapshot piles, shop/alchemist inventories, mystery choices).
+ * Covers the normalize-active-run-data stripping pass end-to-end through the
+ * save schemas, including non-card sibling survival.
+ */
+function currentSchemaTombstonedPilesSave() {
+  return currentSaveEnvelope({
+    finishedRunCharacters: ["knight"],
+    activeRun: {
+      characterId: "knight",
+      runDeck: [FIXTURE_TOMBSTONED_ANTIVENOM, FIXTURE_LIVE_SLASH],
+      runGold: 12,
+      runPlayerHealth: 24,
+      runMaxHealth: 30,
+      roomsEncountered: 3,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: "difficulty-1",
+      contentSystemType: "campaign",
+      currentScreen: "shop",
+      shopState: {
+        cards: [FIXTURE_LIVE_SLASH, FIXTURE_TOMBSTONED_ANTIVENOM],
+        removeUsed: false,
+        refreshesLeft: 1,
+        purchasedSlotKeys: ["slot-0"],
+      },
+      alchemistState: {
+        potions: [FIXTURE_TOMBSTONED_ANTIVENOM, FIXTURE_LIVE_SLASH],
+        mixUsed: true,
+        refreshesLeft: 2,
+      },
+      mysteryVisit: {
+        eventId: "cardless-shrine",
+        cardChoices: [FIXTURE_TOMBSTONED_ANTIVENOM, FIXTURE_LIVE_SLASH],
+        grantedTrinketIds: [],
+      },
+      activeCombat: {
+        battleState: {
+          deck: [FIXTURE_TOMBSTONED_ANTIVENOM, FIXTURE_LIVE_SLASH],
+          hand: [],
+          discard: [FIXTURE_TOMBSTONED_ANTIVENOM],
+          exhausted: [],
+          wishQueue: [[FIXTURE_LIVE_SLASH, FIXTURE_TOMBSTONED_ANTIVENOM]],
+          mana: 2,
+          maxMana: 3,
+          gold: 12,
+          turn: 2,
+          turnPhase: "player",
+          playerHealth: 24,
+          playerMaxHealth: 30,
+          enemyHealth: 25,
+          enemyMaxHealth: 30,
+          currentEnemy: {
+            id: "goblin",
+            title: "Goblin",
+            subtitle: "",
+            descriptionLines: [],
+            art: "",
+            enemyType: "normal",
+            traits: [],
+            attackEffects: [],
+          },
+          enemyAttackEffects: [],
+          playerStatuses: {},
+          enemyStatuses: {},
+          flags: {},
+          discoveredCardIds: [],
+          difficultyModifiers: [],
+          trinketEffects: {},
+        },
+        activeLabyrinthModifiers: [],
+        activeLabyrinthRewardModifiers: [],
+      },
+    },
+  });
+}
+
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {
   midCombatTrinket: currentSchemaMidCombatTrinketSave,
   wildwoodTrinketReward: currentSchemaWildwoodTrinketRewardSave,
   shippedBaseline: currentSchemaSave,
+  tombstonedPiles: currentSchemaTombstonedPilesSave,
 };

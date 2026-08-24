@@ -102,6 +102,19 @@ describe("migrateSaveDataToCurrent", () => {
     expect(result.discoveredCardIds).toEqual(["sunder", "slash"]);
     expect(result.activeRun).toEqual({ deck: [{ id: "sunder", title: "Sunder Armor" }] });
   });
+
+  it("remaps roulette card ids when content version is below 3", () => {
+    const result = migrateSaveDataToCurrent({
+      contentVersion: 2,
+      discoveredCardIds: ["roulette", "slash"],
+      activeRun: {
+        deck: [{ id: "roulette", title: "Roulette" }],
+      },
+    });
+    expect(result.contentVersion).toBe(CURRENT_CONTENT_VERSION);
+    expect(result.discoveredCardIds).toEqual(["roll-the-dice", "slash"]);
+    expect(result.activeRun).toEqual({ deck: [{ id: "roll-the-dice", title: "Roulette" }] });
+  });
 });
 
 describe("isUnsupportedFutureSaveData", () => {

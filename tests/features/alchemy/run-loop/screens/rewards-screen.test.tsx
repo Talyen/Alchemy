@@ -136,6 +136,7 @@ describe("RewardsScreen", () => {
               title: "Lucky Coin",
               descriptionLines: ["Gain 5 gold."],
               art: "",
+              effects: {},
             },
           ],
         }}

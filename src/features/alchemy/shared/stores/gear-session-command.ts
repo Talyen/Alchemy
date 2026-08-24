@@ -14,7 +14,7 @@ import {
 } from "./gear-actions";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
 import { addMaterials, awardMaterialsDuringRun } from "./run-session-write-port";
-import { syncRunMaxHealthFromGearMutation } from "./run-session-lifecycle-port";
+import { rebindLiveRunMeta } from "./run-meta-rebind";
 
 function gearCommandView(state: GameplayDraft): GearStore {
   const gear = state.gear;
@@ -48,7 +48,7 @@ export function mutateGearWithRunHealthSync<T>(
 ): T {
   const result = options.mutate(gearCommandView(draft));
   if (options.syncRunHealth ?? draft.session.hasActiveRun) {
-    syncRunMaxHealthFromGearMutation(draft);
+    rebindLiveRunMeta(draft);
   }
   return result;
 }

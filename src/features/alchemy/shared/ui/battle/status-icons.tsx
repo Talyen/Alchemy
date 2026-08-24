@@ -51,6 +51,35 @@ function StatusChipShell({
   );
 }
 
+/** Shared status tooltip: label row with optional value chip, then description body. */
+function StatusTooltip({
+  labelNode,
+  value,
+  hideValue,
+  description,
+}: {
+  labelNode: ReactNode;
+  value?: number;
+  hideValue?: boolean | undefined;
+  description: ReactNode;
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        {labelNode}
+        {value !== undefined && !hideValue ? (
+          <span className={cn("rounded-full bg-background px-2 py-0.5 text-foreground", tooltipChipClass)}>
+            {value}
+          </span>
+        ) : null}
+      </div>
+      <TooltipBody>
+        <p>{description}</p>
+      </TooltipBody>
+    </>
+  );
+}
+
 export function StatusIcon({ chip }: { chip: StatusChip }) {
   if (chip.id === "haste") {
     return <HasteStatusIcon value={chip.value} />;
@@ -75,17 +104,11 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
       ariaLabel={`${definition.label} ${chip.value}`}
       icon={<Icon className={cn("h-[2.7cqh] w-[2.7cqh]", definition.colorClass)} />}
       tooltip={
-        <>
-          <div className="flex items-center justify-between gap-3">
-            <KeywordTag keywordId={kw} className="text-sm sm:text-base" />
-            <span className={cn("rounded-full bg-background px-2 py-0.5 text-foreground", tooltipChipClass)}>
-              {chip.value}
-            </span>
-          </div>
-          <TooltipBody>
-            <p>{renderColoredKeywords(definition.description)}</p>
-          </TooltipBody>
-        </>
+        <StatusTooltip
+          labelNode={<KeywordTag keywordId={kw} className="text-sm sm:text-base" />}
+          value={chip.value}
+          description={renderColoredKeywords(definition.description)}
+        />
       }
     />
   );
@@ -104,19 +127,12 @@ function AugmentStatusIcon({
       ariaLabel={chip.hideValue ? augment.label : `${augment.label} ${chip.value}`}
       icon={<Icon className={cn("h-[2.7cqh] w-[2.7cqh]", augment.colorClass)} />}
       tooltip={
-        <>
-          <div className="flex items-center justify-between gap-3">
-            <TooltipHeader className="mb-0">{augment.label}</TooltipHeader>
-            {!chip.hideValue ? (
-              <span className={cn("rounded-full bg-background px-2 py-0.5 text-foreground", tooltipChipClass)}>
-                {chip.value}
-              </span>
-            ) : null}
-          </div>
-          <TooltipBody>
-            <p>{augment.description}</p>
-          </TooltipBody>
-        </>
+        <StatusTooltip
+          labelNode={<TooltipHeader className="mb-0">{augment.label}</TooltipHeader>}
+          value={chip.value}
+          hideValue={chip.hideValue}
+          description={augment.description}
+        />
       }
     />
   );
@@ -128,17 +144,11 @@ function HasteStatusIcon({ value }: { value: number }) {
       ariaLabel={`Haste ${value}`}
       icon={<Sparkles className="h-[2.7cqh] w-[2.7cqh] text-fuchsia-300" />}
       tooltip={
-        <>
-          <div className="flex items-center justify-between gap-3">
-            <TooltipHeader className="mb-0">Haste</TooltipHeader>
-            <span className={cn("rounded-full bg-background px-2 py-0.5 text-foreground", tooltipChipClass)}>
-              {value}
-            </span>
-          </div>
-          <TooltipBody>
-            <p>Skips the next enemy phase and grants another player turn.</p>
-          </TooltipBody>
-        </>
+        <StatusTooltip
+          labelNode={<TooltipHeader className="mb-0">Haste</TooltipHeader>}
+          value={value}
+          description="Skips the next enemy phase and grants another player turn."
+        />
       }
     />
   );

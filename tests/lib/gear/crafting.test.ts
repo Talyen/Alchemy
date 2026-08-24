@@ -169,7 +169,7 @@ describe("crafting currency logic", () => {
     const salvageYield = computeSalvageYield(createBasicItem(), () => 0);
     expect(salvageYield.materials.iron).toBe(3);
     expect(salvageYield.materials.food).toBe(0);
-    expect(salvageYield.currencies["discordant-dice"]).toBe(1);
+    expect(salvageYield.currencies["discordant-dice"]).toBe(2);
   });
 
   it("uses a frozen yield instead of re-rolling when salvageGear is given one", () => {

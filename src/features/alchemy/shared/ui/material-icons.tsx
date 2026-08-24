@@ -1,7 +1,7 @@
 // Shared material/resource artwork, wallet cards, and reward pills adopting Trinket styling.
 /* eslint-disable react-refresh/only-export-components -- co-located resource artwork, wallet pills, and color maps */
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatLargeAmount } from "@/lib/utils";
 import { MATERIAL_IDS, materialLabels, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
 import {
   resourceCrystal,
@@ -119,7 +119,7 @@ function TrinketWalletResourcePill({
   className?: string | undefined;
 }) {
   const displayTitle = title ?? RESOURCE_LABELS[resource] ?? resource;
-  const formattedAmount = amount >= 100000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString();
+  const formattedAmount = formatLargeAmount(amount);
   const displayedValue = showsIncreasePrefix ? `+${formattedAmount}` : formattedAmount;
 
   return (

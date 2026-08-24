@@ -3,6 +3,7 @@ import { BattleCardEffectSchema, keywordDefinitions, type KeywordId } from "@/li
 import { GEAR_AFFIX_IDS, GEAR_EFFECT_KEYS, GEAR_RARITIES, GEAR_SLOTS } from "@/lib/gear";
 import { DamageTypeSchema, PlayerStatusIdSchema, EnemyStatusIdSchema } from "@/lib/validation";
 import { COMBAT_ENCOUNTER_TRAIT_IDS, REWARD_ENCOUNTER_TRAIT_IDS } from "../content-systems/encounter-traits";
+import { defaultTrinketEffects } from "@/lib/trinkets";
 
 const keywordIds = Object.keys(keywordDefinitions) as [KeywordId, ...KeywordId[]];
 export const enemyStatusIds = EnemyStatusIdSchema.options;
@@ -63,18 +64,21 @@ export const CompanionContentSchema = z.object({
   turnStartEffects: z.array(BattleCardEffectSchema).length(1),
 });
 
+const trinketEffectKeys = Object.keys(defaultTrinketEffects) as [string, ...string[]];
+
 export const TrinketContentSchema = z.object({
   id: NonEmptyStringSchema,
   title: NonEmptyStringSchema,
   descriptionLines: z.array(NonEmptyStringSchema).min(1),
   art: NonEmptyStringSchema,
+  // partialRecord: rows author only the knobs they use; record would demand every key.
+  effects: z.partialRecord(z.enum(trinketEffectKeys), z.union([z.number(), z.boolean()])),
 });
 
 export const GearDefinitionContentSchema = z.object({
   id: NonEmptyStringSchema,
   baseItemId: NonEmptyStringSchema,
   rarity: z.enum(GEAR_RARITIES).nullable(),
-  title: NonEmptyStringSchema,
   descriptionLines: z.array(z.string()),
   art: NonEmptyStringSchema,
   compatibleSlots: z.array(z.enum(GEAR_SLOTS)).min(1),

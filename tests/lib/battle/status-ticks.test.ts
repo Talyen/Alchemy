@@ -86,6 +86,22 @@ describe("tickEnemyStatuses", () => {
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
   });
 
+  it("caps pending bleed leech at the health the tick actually removed", () => {
+    const state = patchBattleState({
+      enemyHealth: 3,
+      enemyMaxHealth: 30,
+      playerHealth: 20,
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 6 }),
+      pendingBleedLeechHealing: 10,
+    });
+    const texts = makeTexts();
+    const next = tickEnemyStatuses(state, texts);
+    expect(next.enemyHealth).toBe(0);
+    // Only 3 health was lost, so leech pays round(3 / 2) — not the queued round(10 / 2).
+    expect(next.playerHealth).toBe(22);
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
+  });
+
   it("skips tick when burn is 0", () => {
     const state = patchBattleState();
     const texts = makeTexts();

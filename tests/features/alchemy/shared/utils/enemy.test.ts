@@ -48,6 +48,19 @@ describe("formatEnemyAttackLines", () => {
     expect(formatEnemyAttackLines(effects)).toEqual(["Deals 3 Physical and 2 Burn"]);
   });
 
+  it("formats multiple damage + single status without dropping damage", () => {
+    const effects: EnemyAttackEffect[] = [
+      { kind: "damage", damageType: "fire", amount: 5 },
+      { kind: "damage", damageType: "ice", amount: 3 },
+      { kind: "player-status", status: "poison", amount: 2 },
+    ];
+    expect(formatEnemyAttackLines(effects)).toEqual([
+      "Deals 5 Fire damage",
+      "Deals 3 Ice damage",
+      "Deals 2 Poison damage",
+    ]);
+  });
+
   it("formats mixed damage (with lifesteal) + status", () => {
     const effects: EnemyAttackEffect[] = [
       { kind: "damage", damageType: "physical", amount: 2, lifesteal: true },

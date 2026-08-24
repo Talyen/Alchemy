@@ -247,7 +247,7 @@ export { default as resourceStone } from "@/assets/optimized/resource-stone.webp
 export { default as resourceWood } from "@/assets/optimized/resource-wood.webp";
 export { default as risenSkeletonCompanion } from "@/assets/optimized/risen-skeleton-companion.webp";
 export { default as rogue } from "@/assets/optimized/rogue.webp";
-export { default as roulette } from "@/assets/optimized/roulette.webp";
+export { default as rollTheDice } from "@/assets/optimized/roll-the-dice.webp";
 export { default as runesmithsWorkshop } from "@/assets/optimized/runesmiths-workshop.webp";
 export { default as runicQuill } from "@/assets/optimized/runic-quill.webp";
 export { default as sanctifiedPlate } from "@/assets/optimized/sanctified-plate.webp";

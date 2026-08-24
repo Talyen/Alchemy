@@ -239,7 +239,8 @@ describe("resolveStunTrigger", () => {
     const result = resolveStunTrigger(state, texts);
     expect(result.playerStatuses.forge).toBe(5);
     expect(result.enemyStatuses.burn).toBe(8);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 8 });
+    // Burn application is silent — the DoT itself floats -N when it ticks.
+    expect(texts.some((t) => t.target === "enemy" && t.stat === "burn")).toBe(false);
   });
 
   it("does not trigger forge burn burst when forge stays below threshold", () => {

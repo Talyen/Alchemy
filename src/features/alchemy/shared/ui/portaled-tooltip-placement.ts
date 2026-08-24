@@ -146,18 +146,29 @@ export function usePortaledTooltipPlacement(
 
     updatePlacement();
 
-    const onScrollOrResize = () => updatePlacement();
-    window.addEventListener("resize", onScrollOrResize);
-    // Capture scroll from nested overflow containers (armory inventory, collection grids).
-    document.addEventListener("scroll", onScrollOrResize, true);
+    // Coalesce scroll/resize storms into one measurement per frame, matching
+    // the rAF-batched convention used for tilt writes in shared/utils/dom.
+    let frame: number | null = null;
+    const requestPlacementUpdate = () => {
+      if (frame !== null) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        updatePlacement();
+      });
+    };
 
-    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => updatePlacement()) : null;
+    window.addEventListener("resize", requestPlacementUpdate);
+    // Capture scroll from nested overflow containers (armory inventory, collection grids).
+    document.addEventListener("scroll", requestPlacementUpdate, true);
+
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(requestPlacementUpdate) : null;
     resizeObserver?.observe(trigger);
     resizeObserver?.observe(tooltip);
 
     return () => {
-      window.removeEventListener("resize", onScrollOrResize);
-      document.removeEventListener("scroll", onScrollOrResize, true);
+      if (frame !== null) cancelAnimationFrame(frame);
+      window.removeEventListener("resize", requestPlacementUpdate);
+      document.removeEventListener("scroll", requestPlacementUpdate, true);
       resizeObserver?.disconnect();
     };
   }, [active, triggerRef, padding, placement]);

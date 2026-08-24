@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useHeldWhile } from "@/features/alchemy/shared/ui/fade-presence";
-import { cardLibrary, trinketLibrary } from "@/features/alchemy/shared/config/game-data-catalog";
+import { cardById, trinketLibrary } from "@/features/alchemy/shared/config/game-data-catalog";
 import { MysteryScreen, MysteryScreenShell } from "@/features/alchemy/run-loop/screens";
 import { useMysteryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunLoopCommands, RunLoopRouteCtx } from "./route-ctx";
@@ -51,7 +51,7 @@ export function MysteryScreenRoute({
       onChooseCard={commands.handleChooseCard}
       onRemoveCard={commands.handleRemoveCard}
       onContinue={commands.handleContinue}
-      findCard={(id) => cardLibrary.find((c) => c.id === id)}
+      findCard={(id) => cardById[id]}
       findTrinket={(id) => trinketLibrary.find((t) => t.id === id)}
       onOpenMenu={onOpenBattleMenu}
     />

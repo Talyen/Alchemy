@@ -20,29 +20,14 @@ function checkSimpleValueLine(
   return true;
 }
 
-function checkRestoreManaLine(
+function checkRestoreLine(
   line: string,
+  resource: "Mana" | "Health",
   nextEffect: () => { amount: number } | undefined,
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!line.startsWith("Restore ") || !line.includes("Mana")) return false;
-  const effect = nextEffect();
-  if (!effect) {
-    pushMissingEffect(issues, cardId, line);
-    return true;
-  }
-  if (parseLeadingNumber(line, "Restore ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
-  return true;
-}
-
-function checkRestoreHealthLine(
-  line: string,
-  nextEffect: () => { amount: number } | undefined,
-  issues: ContentValidationIssue[],
-  cardId: string,
-): boolean {
-  if (!line.startsWith("Restore ") || !line.includes("Health")) return false;
+  if (!line.startsWith("Restore ") || !line.includes(resource)) return false;
   const effect = nextEffect();
   if (!effect) {
     pushMissingEffect(issues, cardId, line);
@@ -88,13 +73,16 @@ function checkGoldLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!line.startsWith("Gain ") || !line.includes(" Gold")) return false;
+  // "Gain N Gold" and "Steal N Gold" both route to gain-gold; the flavor prefix
+  // must not let a mismatched number slip past numeric parity.
+  const prefix = line.startsWith("Gain ") ? "Gain " : line.startsWith("Steal ") ? "Steal " : null;
+  if (!prefix || !line.includes(" Gold")) return false;
   const effect = nextGold();
   if (!effect) {
     pushMissingEffect(issues, cardId, line);
     return true;
   }
-  if (parseLeadingNumber(line, "Gain ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  if (parseLeadingNumber(line, prefix) !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
   return true;
 }
 
@@ -194,8 +182,8 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
     if (checkPerManaBlockLine(line, nextPlayerStatus, issues, card.id)) continue;
     if (checkStatusLine(line, nextPlayerStatus, issues, card.id)) continue;
     if (checkSimpleValueLine(line, "Heal ", nextHeal, issues, card.id)) continue;
-    if (checkRestoreManaLine(line, nextRestoreMana, issues, card.id)) continue;
-    if (checkRestoreHealthLine(line, nextHeal, issues, card.id)) continue;
+    if (checkRestoreLine(line, "Mana", nextRestoreMana, issues, card.id)) continue;
+    if (checkRestoreLine(line, "Health", nextHeal, issues, card.id)) continue;
     if (checkWishLine(line, nextWish, issues, card.id)) continue;
     checkRemoveHarmfulLine(line, nextRemoveHarmful, issues, card.id);
   }

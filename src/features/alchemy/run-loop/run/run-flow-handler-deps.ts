@@ -1,5 +1,6 @@
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Destination } from "@/lib/routing";
+import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
 import type { RunFlowShellActions } from "./run-flow-shell-actions";
 
 export type CompleteRunVictory = (
@@ -14,10 +15,5 @@ export type AdvanceToNextDestination = () => void;
 export interface RunFlowHandlerDeps {
   /** Shell-executed side effects (navigate, shops, battle starts, content hooks). */
   actions: RunFlowShellActions;
-  getAvailableDestinations: (options?: {
-    currentHealth?: number;
-    currentGold?: number;
-    destinationIndexInAct?: number;
-    maxHealth?: number;
-  }) => Destination[];
+  getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
 }

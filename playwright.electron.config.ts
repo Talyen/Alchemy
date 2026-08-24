@@ -1,7 +1,12 @@
 import { defineConfig } from "@playwright/test";
-import { playwrightCiSettings } from "./tests/playwright-shared";
+import {
+  ELECTRON_PREVIEW_PORT,
+  playwrightCiSettings,
+  previewPortFromEnv,
+  previewWebServer,
+} from "./tests/playwright-shared";
 
-const previewPort = Number.parseInt(process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT ?? "4175", 10);
+const previewPort = previewPortFromEnv("PLAYWRIGHT_ELECTRON_PREVIEW_PORT", ELECTRON_PREVIEW_PORT);
 const isCi = !!process.env.CI;
 
 export default defineConfig({
@@ -15,8 +20,7 @@ export default defineConfig({
   ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-electron-results.json" }),
   preserveOutput: "failures-only",
   webServer: {
-    command: `npx vite preview --host 127.0.0.1 --port ${previewPort} --strictPort`,
-    port: previewPort,
+    ...previewWebServer(previewPort),
     reuseExistingServer: !isCi,
   },
 });

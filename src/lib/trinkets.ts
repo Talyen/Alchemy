@@ -1,6 +1,7 @@
 // Trinket manifest defaults and ID-to-effect conversion for run trinkets.
-// Depends on the battle TrinketManifest shape only.
-// Used during battle creation and shop pricing so combat reads flat trinket bonuses.
+// Effect values are authored on the compendium rows; this module derives the
+// flat battle-facing manifest. Used during battle creation and shop pricing.
+import { trinketLibrary } from "@/lib/game-data";
 import type { TrinketManifest } from "./battle/types";
 
 export const defaultTrinketEffects: TrinketManifest = {
@@ -33,32 +34,10 @@ export const defaultTrinketEffects: TrinketManifest = {
   luckyCloverGoldChance: 0,
 };
 
-const trinketEffects: Record<string, Partial<TrinketManifest>> = {
-  "brass-censer": { firstHolyDamageDoubled: true },
-  "tattered-pages": { extraDrawPerBattle: 1 },
-  meteorite: { firstBurnDoubled: true },
-  "bone-charm": { boneCharmHealOnKill: 3 },
-  "obsidian-hammer": { forgeStunThreshold: 4, forgeStunAmount: 1 },
-  "icy-heart": { frozenHeartDamage: 6 },
-  "ironwood-buckler": { blockToArmorThreshold: 6, blockToArmorAmount: 1 },
-  "runic-quill": { runicQuillDrawOnConsume: 1 },
-  "sin-eaters-lantern": { sinEaterHealOnHarmfulStatusRemove: 6 },
-  "vanguards-crest": { vanguardCrestForgeOnBlockAbsorb: 1 },
-  "parasitic-bloom": { parasiticBloomLeechChance: 10 },
-  "cutpurse-knife": { cutpurseGoldOnBleed: 1 },
-  "wishing-well-coin": { wishingWellGoldOnWish: 3 },
-  "merchants-favor": { merchantsFavorDiscount: 7 },
-  "plague-doctors-mask": { plagueDoctorImmunity: true },
-  "mortar-and-pestle": { mortarPestleFreeFirstPotion: true },
-  "sundering-charm": { sunderingArmorPiercing: 2 },
-  "resonant-chimes": { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
-  "smugglers-map": { smugglersMapGoldBonus: 2 },
-  "groves-favor": { grovesFavorStartHeal: 2 },
-  "companions-collar": { companionDamageBonus: 1 },
-  "frozen-pocketwatch": { freezeDurationExtension: 1 },
-  thunderstone: { thunderstoneDamageOnStun: 6 },
-  "lucky-clover": { luckyCloverGoldChance: 10 },
-};
+/** Authored effect per trinket id, derived from the compendium rows. */
+const trinketEffects: Record<string, Partial<TrinketManifest>> = Object.fromEntries(
+  trinketLibrary.map((entry) => [entry.id, entry.effects]),
+);
 
 export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
   const manifest = { ...defaultTrinketEffects };

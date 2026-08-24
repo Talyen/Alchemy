@@ -1,5 +1,5 @@
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { cardLibrary, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { cardById, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { filterValidDestinations, type Destination } from "@/lib/routing";
 import type { PersistedPendingReward } from "./types";
@@ -31,7 +31,7 @@ export function resolveCardChoices(choiceIds: string[]): BattleCard[] | null {
 
 function resolveCompanionChoices(choiceIds: string[]): BattleCard[] | null {
   const choices = choiceIds
-    .map((id) => cardLibrary.find((entry) => entry.id === id))
+    .map((id) => cardById[id])
     .filter((entry): entry is BattleCard =>
       Boolean(entry && entry.effects.some((effect) => effect.kind === "summon-companion")),
     );

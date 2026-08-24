@@ -60,8 +60,9 @@ describe("steam platform config", () => {
 
   it("routes packaging through dist-desktop rather than direct electron-builder scripts", () => {
     expect(pkg.scripts["dist:desktop"]).toContain("dist-desktop.mjs");
-    expect(pkg.scripts["package:win"]).toContain("dist-desktop.mjs");
-    expect(pkg.scripts["package:win"]).toContain("ALCHEMY_PACKAGE_DIR");
+    // package:win is the directory-packaging variant of the same pipeline.
+    expect(pkg.scripts["package:win"]).toContain("dist:desktop");
+    expect(pkg.scripts["package:win"]).toContain("--dir");
     expect(pkg.scripts["dist:win"]).toBeUndefined();
     expect(pkg.scripts["package:win:full"]).toBeUndefined();
     expect(pkg.scripts["build:desktop:no-sync"]).toBeUndefined();

@@ -396,9 +396,33 @@ describe("applyDamageStatuses — physical riders", () => {
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5, lifesteal: true };
     const result = applyDamageStatuses(state, effect, 5, []);
     expect(result.enemyStatuses.bleed).toBe(0);
-    // Queued leech is paid with the burst instead of stranding until a future tick.
+    // Queued leech is paid with the burst instead of stranding until a future
+    // tick, capped at the health the burst actually removed.
     expect(result.pendingBleedLeechHealing).toBe(0);
-    expect(result.playerHealth).toBe(20 + Math.round(16 * 0.5));
+    // The burst dealt 8, so only 8 of the queued 16 is payable -> round(8 / 2).
+    expect(result.playerHealth).toBe(24);
+  });
+
+  it("caps detonation leech payout at the health actually lost", () => {
+    const state = makeTestBattleState({
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      enemyHealth: 4,
+      enemyMaxHealth: 30,
+      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, bleed: 8 }),
+      pendingBleedLeechHealing: 16,
+      talentEffects: {
+        ...defaultTalentEffects,
+        ...makeTestBattleState().talentEffects,
+        physicalDetonatesBleed: true,
+      },
+      rng: seededRng(42),
+    });
+    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
+    const result = applyDamageStatuses(state, effect, 5, []);
+    expect(result.enemyHealth).toBe(0);
+    // Overkill: only 4 of the queued 16 is payable, matching the tickBleed clamp.
+    expect(result.playerHealth).toBe(22);
   });
 
   it("detonation leech payout scales with leechHealBonusPercent", () => {

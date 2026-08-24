@@ -67,4 +67,67 @@ describe("normalizeActiveRunData", () => {
     const result = normalizeActiveRunData(input);
     expect(result.starterDraftChoices).toBeNull();
   });
+
+  it("filters tombstoned starter draft choices instead of nulling them on campaign runs", () => {
+    const input = {
+      ...baseInput(),
+      contentSystemType: "campaign",
+      starterDraftChoices: [{ id: "slash" }, { id: "antivenom-potion" }],
+    };
+    const result = normalizeActiveRunData(input);
+    expect(result.starterDraftChoices).toEqual([{ id: "slash" }]);
+  });
+
+  it("strips tombstoned card ids from every persisted card collection", () => {
+    const tombstoned = { id: "antivenom-potion" };
+    const live = { id: "slash" };
+    const battlePiles = {
+      deck: [live, tombstoned],
+      hand: [tombstoned],
+      discard: [live],
+      exhausted: [tombstoned],
+      wishOptions: [tombstoned],
+      wishQueue: [[live], [tombstoned, live]],
+    };
+    const input = {
+      ...baseInput(),
+      contentSystemType: "wildwood",
+      runDeck: [live, tombstoned],
+      starterDraftChoices: [tombstoned],
+      wildwoodDraft: { version: 3, phase: "draft", draftChoices: [tombstoned] },
+      activeCombat: { battleState: battlePiles },
+      shopState: { cards: [live, tombstoned] },
+      alchemistState: { potions: [tombstoned] },
+      mysteryVisit: { eventId: "e", cardChoices: [tombstoned] },
+    };
+    const result = normalizeActiveRunData(input);
+
+    expect(result.runDeck.map((c: { id: string }) => c.id)).toEqual(["slash"]);
+    expect(result.starterDraftChoices).toBeNull();
+    expect((result.wildwoodDraft as Record<string, unknown>).draftChoices).toEqual([]);
+
+    const combat = result.activeCombat as Record<string, unknown>;
+    const state = combat.battleState as Record<string, Array<{ id: string }>>;
+    expect(state.deck.map((c) => c.id)).toEqual(["slash"]);
+    expect(state.hand).toEqual([]);
+    expect(state.discard.map((c) => c.id)).toEqual(["slash"]);
+    expect(state.exhausted).toEqual([]);
+    expect(state.wishOptions).toEqual([]);
+    expect(state.wishQueue).toEqual([[live], [live]]);
+
+    expect((result.shopState as Record<string, unknown>).cards).toEqual([live]);
+    expect((result.alchemistState as Record<string, unknown>).potions).toEqual([]);
+    expect((result.mysteryVisit as Record<string, unknown>).cardChoices).toEqual([]);
+  });
+
+  it("drops malformed wishQueue entries instead of aborting the parse", () => {
+    const live = { id: "slash" };
+    const input = {
+      ...baseInput(),
+      activeCombat: { battleState: { wishQueue: [[live], "junk", 7] } },
+    };
+    const result = normalizeActiveRunData(input);
+    const state = (result.activeCombat as Record<string, unknown>).battleState as Record<string, unknown>;
+    expect(state.wishQueue).toEqual([[live]]);
+  });
 });

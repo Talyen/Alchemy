@@ -1,20 +1,19 @@
 import type { KeywordId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearArtByDefinitionId } from "@/lib/game-data";
-import { gearBaseItems, type GearBaseItemDefinition, type GearBaseItemId } from "./base-items";
-import type { GearRarity, GearSlot } from "./types-core";
+import { gearBaseItems, type GearBaseItemId } from "./base-items";
+import { GEAR_RARITIES, type GearRarity, type GearSlot } from "./types-core";
 import type { GearAffixId } from "./affix-catalog";
 
-interface GearAffixRoll {
+export interface GearAffixRoll {
   id: GearAffixId;
   value: number;
 }
 
-interface GearDefinition {
+export interface GearDefinition {
   id: string;
   baseItemId: GearBaseItemId;
   rarity: GearRarity | null;
-  title: string;
   descriptionLines: string[];
   art: string;
   compatibleSlots: GearSlot[];
@@ -25,7 +24,7 @@ interface GearDefinition {
   quiver?: boolean;
 }
 
-interface GearInstance {
+export interface GearInstance {
   instanceId: string;
   definitionId: string;
   affixes: GearAffixRoll[];
@@ -36,7 +35,7 @@ export function gearInstanceRarity(instance: GearInstance): GearRarity {
 }
 
 /** Single owner of the `<baseItemId>-<rarity>` definition-id format. */
-export function gearDefinitionId(baseItemId: GearBaseItemId | string, rarity: GearRarity): string {
+export function gearDefinitionId(baseItemId: string, rarity: GearRarity): string {
   return `${baseItemId}-${rarity}`;
 }
 
@@ -44,8 +43,8 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
   const variants: Record<string, GearDefinition> = {};
 
   for (const baseItemId of Object.keys(gearBaseItems) as GearBaseItemId[]) {
-    const baseItem: GearBaseItemDefinition = gearBaseItems[baseItemId];
-    for (const rarity of baseItem.availableRarities) {
+    const baseItem = gearBaseItems[baseItemId];
+    for (const rarity of GEAR_RARITIES) {
       const id = gearDefinitionId(baseItemId, rarity);
       const art = gearArtByDefinitionId[id];
       if (!art) {
@@ -55,7 +54,6 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
         id,
         baseItemId,
         rarity,
-        title: baseItem.displayName,
         compatibleSlots: [...baseItem.compatibleSlots],
         requiresTwoHands: baseItem.requiresTwoHands,
         affinityKeywords: [...baseItem.affinityKeywords],

@@ -90,18 +90,17 @@ Motion tokens live in `src/styles/theme.css` and `src/styles/components.css`. Ho
 
 Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared components before hand-rolling styles.
 
-| Concern         | Standard                                                                                                             |
-| --------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Shape           | `rounded-xl` rectangles (`BUTTON_SHAPE`)                                                                             |
-| Primary CTA     | `Button variant="primary"` (gold fill) — Play, Continue, Confirm                                                     |
-| Secondary CTA   | `Button variant="outline"` — Back, Cancel, Skip, alternate menu nav                                                  |
-| Neutral surface | `bg-background` + `border-border/80` — outline, `TabBar`, talent filters (`BUTTON_SURFACE_NEUTRAL`)                  |
-| Accent CTA      | `ShineAccentButton` — corruption forward actions with shine border                                                   |
-| Paired footers  | `ActionButtonRow` — secondary left, primary right                                                                    |
-| Equal choices   | Destination art tiles (`DestinationChoices` + `TiltSurface`) with a label under the art                              |
-| Tabs            | `TabBar` — `h-11`, `rounded-xl`                                                                                      |
-| Hover / press   | Use shared component/CSS rules; press feedback uses CSS `active:`. Do not add Framer hover scale or parallel motion. |
-| Width tiers     | `BUTTON_WIDTH_*` in `src/features/alchemy/shared/config/button-tokens.ts`                                            |
+| Concern        | Standard                                                                                                             |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Shape          | `rounded-xl` rectangles (`BUTTON_SHAPE`)                                                                             |
+| Primary CTA    | `Button variant="primary"` (gold fill) — Play, Continue, Confirm                                                     |
+| Secondary CTA  | `Button variant="outline"` — Back, Cancel, Skip, alternate menu nav                                                  |
+| Accent CTA     | `ShineAccentButton` — corruption forward actions with shine border                                                   |
+| Paired footers | `ActionButtonRow` — secondary left, primary right                                                                    |
+| Equal choices  | Destination art tiles (`DestinationChoices` + `TiltSurface`) with a label under the art                              |
+| Tabs           | `TabBar` — `h-11`, `rounded-xl`                                                                                      |
+| Hover / press  | Use shared component/CSS rules; press feedback uses CSS `active:`. Do not add Framer hover scale or parallel motion. |
+| Width tiers    | `BUTTON_WIDTH_*` in `src/features/alchemy/shared/config/button-tokens.ts`                                            |
 
 | Step               | Guidance                                                                                 |
 | ------------------ | ---------------------------------------------------------------------------------------- |

@@ -3,6 +3,7 @@
 export {
   alchemistShopBg,
   campfire,
+  cardById,
   cardLibrary,
   characterArt,
   characters,

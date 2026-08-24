@@ -1,12 +1,5 @@
 // Labyrinth encounter trait cadence built on the shared content-system trait catalog.
-import {
-  REWARD_ENCOUNTER_TRAIT_IDS,
-  pickEncounterTraits,
-  type EncounterCombatTraitId,
-  type EncounterRewardTraitId,
-} from "../encounter-traits";
-
-export const REWARD_MODIFIER_KINDS: ReadonlySet<EncounterRewardTraitId> = new Set(REWARD_ENCOUNTER_TRAIT_IDS);
+import { pickEncounterTraits, type EncounterCombatTraitId, type EncounterRewardTraitId } from "../encounter-traits";
 
 export function getEnemyModifiersForNodeType(
   type: "combat" | "elite" | "boss",

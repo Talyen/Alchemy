@@ -16,11 +16,10 @@ import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
 import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
 import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 
-import { KeywordToken } from "../../shared/ui/card-description-ui";
+import { KeywordToken, renderTokenizedDescription } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
-import { tokenizeDescription } from "../../shared/utils";
 import {
   cardInteractiveGlowClass,
   cardSurfaceClass,
@@ -36,6 +35,7 @@ import {
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
 import { TooltipBody } from "../../shared/ui/tooltip-panel";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
+import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
 const DIFFICULTY_CONFIG = {
   XP_BONUSES: {
@@ -46,21 +46,17 @@ const DIFFICULTY_CONFIG = {
 
 function renderDescription(text: string) {
   const lines = text.split("\n");
-  return lines.map((line, i) => {
-    const parts = tokenizeDescription(line);
-    return (
-      <Fragment key={i}>
-        {i > 0 && <br />}
-        {parts.map((part, j) =>
-          part.keywordId ? (
-            <KeywordToken key={j} keywordId={part.keywordId} matchedText={part.text} />
-          ) : (
-            <span key={j}>{part.text}</span>
-          ),
-        )}
-      </Fragment>
-    );
-  });
+  return lines.map((line, i) => (
+    <Fragment key={i}>
+      {i > 0 && <br />}
+      {renderTokenizedDescription(line, {
+        renderKeyword: (partText, keywordId, key) => (
+          <KeywordToken key={key} keywordId={keywordId} matchedText={partText} />
+        ),
+        renderPlain: (partText, key) => <span key={key}>{partText}</span>,
+      })}
+    </Fragment>
+  ));
 }
 
 function DifficultyCard({
@@ -70,9 +66,6 @@ function DifficultyCard({
   completed,
   locked,
   isSelected,
-  isShimmer,
-  shimmerToken,
-  onHoverShimmer,
   onSelect,
 }: {
   difficultyId: DifficultyId;
@@ -81,9 +74,6 @@ function DifficultyCard({
   completed: boolean;
   locked: boolean;
   isSelected: boolean;
-  isShimmer: boolean;
-  shimmerToken: number | undefined;
-  onHoverShimmer: (id: DifficultyId) => void;
   onSelect: (id: DifficultyId) => void;
 }) {
   const bonusLine = DIFFICULTY_CONFIG.XP_BONUSES[difficultyId] ?? "";
@@ -92,6 +82,7 @@ function DifficultyCard({
   const DIFFICULTY_ART: Record<string, string> = { "difficulty-1": difficulty1Art, "difficulty-2": difficulty2Art };
   const diffArt = DIFFICULTY_ART[difficultyId] ?? difficulty3Art;
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
+  const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard("difficulty-select", difficultyId);
 
   return (
     <div
@@ -116,10 +107,10 @@ function DifficultyCard({
         {showTilt ? (
           <TiltSurface
             className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", chooserHeroArtWidthClass)}
-            shimmerActive={isShimmer}
+            shimmerActive={shimmerActive}
             shimmerToken={shimmerToken}
             shimmerRounded="rounded-shell-panel"
-            onMouseEnter={() => onHoverShimmer(difficultyId)}
+            onMouseEnter={onHoverStart}
           >
             <img src={diffArt} alt="" className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")} />
             {completed && (
@@ -164,8 +155,6 @@ export function DifficultySelectScreen({
   onSelect,
   onBack,
   onOpenMenu,
-  shimmerState,
-  onHoverShimmer,
 }: {
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
@@ -173,8 +162,6 @@ export function DifficultySelectScreen({
   onSelect: (difficultyId: DifficultyId) => void;
   onBack: () => void;
   onOpenMenu: (rect?: DOMRect) => void;
-  shimmerState?: { cardId?: string; token?: number } | null;
-  onHoverShimmer: (cardId: string) => void;
 }) {
   const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficulty);
   const config = difficultyConfigs[characterId];
@@ -182,6 +169,7 @@ export function DifficultySelectScreen({
   const art = characterArt[char.id];
 
   const canPlay = selectedDifficultyId !== null && isDifficultyUnlocked(selectedDifficultyId, completedDifficulties);
+  const characterShimmer = useInteractiveCard("difficulty-select", "character");
 
   function handlePlay() {
     if (canPlay) onSelect(selectedDifficultyId);
@@ -209,10 +197,10 @@ export function DifficultySelectScreen({
         >
           <TiltSurface
             className={cn("relative aspect-[3/4] overflow-hidden rounded-shell-panel", chooserHeroArtWidthClass)}
-            shimmerActive={shimmerState?.cardId === "character"}
-            shimmerToken={shimmerState?.token}
+            shimmerActive={characterShimmer.shimmerActive}
+            shimmerToken={characterShimmer.shimmerToken}
             shimmerRounded="rounded-shell-panel"
-            onMouseEnter={() => onHoverShimmer("character")}
+            onMouseEnter={characterShimmer.onHoverStart}
           >
             <img
               src={art}
@@ -243,9 +231,6 @@ export function DifficultySelectScreen({
             completed={completedDifficulties.includes(d.id)}
             locked={!isDifficultyUnlocked(d.id, completedDifficulties)}
             isSelected={selectedDifficultyId === d.id}
-            isShimmer={shimmerState?.cardId === d.id}
-            shimmerToken={shimmerState?.token}
-            onHoverShimmer={onHoverShimmer}
             onSelect={handleSelectDifficulty}
           />
         ))}

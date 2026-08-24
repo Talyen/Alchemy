@@ -10,6 +10,7 @@ import {
   CORRUPTION_TRANSFORM_CHANCE,
   MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
+import { pickRandom } from "@/lib/utils";
 
 type NumericEffect = BattleCardEffect & { amount: number };
 
@@ -112,13 +113,13 @@ export function corruptCard(
 
   const shouldTransform =
     selectedTargets.length === 0 || (candidates.length > 0 && rng() < CORRUPTION_TRANSFORM_CHANCE);
-  const sourceCard = shouldTransform ? candidates[Math.floor(rng() * candidates.length)] : selectedCard;
+  const sourceCard = shouldTransform ? pickRandom(candidates, rng) : selectedCard;
   if (!sourceCard) return null;
 
   const targets = getEditableCorruptionTargets(sourceCard);
   if (targets.length === 0) return null;
 
-  const target = targets[Math.floor(rng() * targets.length)]!;
+  const target = pickRandom(targets, rng)!;
   const delta: 1 | -1 = rng() < CORRUPTION_DELTA_CHANCE ? -1 : 1;
   return {
     originalCard: selectedCard,

@@ -1,24 +1,21 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  restoreRun,
-  snapshotRun,
-  syncRunMaxHealthFromGearMutation as mutateRunMaxHealthFromGearMutation,
-} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
   applyRunStartSnapshot as mutateRunStartSnapshot,
   finalizeRunXP as mutateFinalizeRunXP,
   unlockAllTalents as mutateUnlockAllTalents,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useGearStore, useRunProfileStore } from "../../../../helpers/gameplay-store-test";
+import { applyGameplayStateUpdate, useGearStore, useRunProfileStore } from "../../../../helpers/gameplay-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
 
-const syncRunMaxHealthFromGearMutation = createRunSessionCommand(mutateRunMaxHealthFromGearMutation);
+const syncGearRunHealth = createRunSessionCommand(rebindLiveRunMeta);
 const applyRunStartSnapshot = createRunSessionCommand(mutateRunStartSnapshot);
 const finalizeRunXP = createRunSessionCommand(mutateFinalizeRunXP);
 const unlockAllTalents = createRunSessionCommand(mutateUnlockAllTalents);
@@ -199,7 +196,7 @@ describe("gear max health sync", () => {
     });
     setRunSession({ hasActiveRun: true });
 
-    syncRunMaxHealthFromGearMutation();
+    syncGearRunHealth();
 
     expect(getRunProgressStoreView().runMaxHealth).toBe(37);
     expect(getRunProgressStoreView().runPlayerHealth).toBe(30);
@@ -215,7 +212,7 @@ describe("gear max health sync", () => {
     });
     setRunSession({ hasActiveRun: true });
 
-    syncRunMaxHealthFromGearMutation();
+    syncGearRunHealth();
 
     expect(getRunProgressStoreView().runMaxHealth).toBe(30);
     expect(getRunProgressStoreView().runPlayerHealth).toBe(30);
@@ -459,7 +456,9 @@ describe("finalizeRunXP", () => {
   });
 
   it("clears runEndTalentXP snapshot when there is no run XP to merge", () => {
-    getRunSessionStoreView().setRunEndTalentXP({ burn: 99 });
+    applyGameplayStateUpdate((state) => {
+      state.session.runEndTalentXP = { burn: 99 };
+    });
     finalizeRunXP();
     expect(getRunSessionStoreView().runEndTalentXP).toEqual({});
   });
@@ -468,7 +467,9 @@ describe("finalizeRunXP", () => {
 describe("applyRunStartSnapshot", () => {
   it("clears runTalentXP and runEndTalentXP when starting a fresh run", () => {
     getRunProgressStoreView().awardMysteryXP("burn", 5);
-    getRunSessionStoreView().setRunEndTalentXP({ burn: 5 });
+    applyGameplayStateUpdate((state) => {
+      state.session.runEndTalentXP = { burn: 5 };
+    });
     applyRunStartSnapshot({
       characterId: "knight",
       contentSystemType: "campaign",

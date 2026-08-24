@@ -15,13 +15,5 @@ export {
 } from "./destinations";
 export { filterValidDestinations, filterValidDestinationRounds } from "./destination-validation";
 export { getAvailableDestinations } from "./destination-availability";
-export {
-  getRunPhase,
-  isMetaScreen,
-  isRunLoopScreen,
-  isRunEndScreen,
-  requiresActiveRun,
-  SCREEN_PHASE,
-  type RunPhase,
-} from "./run-screen-router";
+export { getRunPhase, isRunLoopScreen, SCREEN_PHASE, type RunPhase } from "./run-screen-router";
 export { getSteamRichPresenceLabel } from "./run-phase-presence";

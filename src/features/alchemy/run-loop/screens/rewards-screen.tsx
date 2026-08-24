@@ -6,7 +6,7 @@ import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 
 import { GearTile, TrinketTile } from "../../shared/ui/collection-art-tiles";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
-import { SelectableChoiceCard } from "../../shared/ui/selectable-choice-card";
+import { SelectableCard } from "../../shared/ui/selectable-card";
 import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { sectionTitleClass } from "@/features/alchemy/shared/config";
@@ -47,9 +47,9 @@ function RewardChoiceItems({
             selected={selectedRewardId === choiceId}
           />
         ) : (
-          <SelectableChoiceCard
+          <SelectableCard
             card={item as BattleCard}
-            selected={selectedRewardId === choiceId}
+            isSelected={selectedRewardId === choiceId}
             onSelect={() => onSelectReward(choiceId)}
             interactionKey="reward"
             tiltEnabled={false}

@@ -11,6 +11,7 @@ import {
 } from "./metrics";
 import { installFrameSampler, setPerfPhase, startFrameSampler, stopFrameSampler } from "./frame-sampler";
 import { startCdpTrace, stopCdpTrace, summarizeTraceFile } from "./cdp-trace";
+import { PERF_PREVIEW_PORT, previewPortFromEnv } from "../tests/playwright-shared";
 import {
   collectGitState,
   ensureOutputDirs,
@@ -58,7 +59,10 @@ interface PerfFixtures {
 let electronApp: ElectronApplication | null = null;
 
 function electronRendererOrigin(): string {
-  const port = process.env.PLAYWRIGHT_PERF_PORT ?? process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT ?? "4176";
+  const port = Number.parseInt(
+    process.env.PLAYWRIGHT_PERF_PORT ?? process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT ?? String(PERF_PREVIEW_PORT),
+    10,
+  );
   return `http://127.0.0.1:${port}`;
 }
 
@@ -74,7 +78,7 @@ function patchElectronGoto(page: Page): void {
 
 async function launchElectronPage(): Promise<Page> {
   const { launchElectronApp, getElectronMainWindow } = await import("../tests/electron-helpers");
-  const previewPort = process.env.PLAYWRIGHT_PERF_PORT ?? "4176";
+  const previewPort = previewPortFromEnv("PLAYWRIGHT_PERF_PORT", PERF_PREVIEW_PORT);
   process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT = previewPort;
   electronApp = await launchElectronApp({ enableGpu: true });
   const page = await getElectronMainWindow(electronApp);

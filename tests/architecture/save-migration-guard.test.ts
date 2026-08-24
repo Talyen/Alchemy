@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
 import { migrateSaveDataToCurrent } from "@/lib/validation/migration";
-import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { cardLibrary } from "@/lib/game-data/cards";
 import { TOMBSTONED_CARD_IDS } from "@/lib/validation/migration/tombstoned-content-ids";
@@ -51,6 +50,31 @@ describe("save migration guard", () => {
     expect(migrated.activeRun?.wildwoodDraft?.phase).toBe("reward");
   });
 
+  it("strips tombstoned cards from every pile while keeping run state playable", () => {
+    const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.tombstonedPiles());
+    const run = migrated.activeRun;
+    expect(run).not.toBeNull();
+    expect(run?.runDeck.map((card) => card.id)).toEqual(["slash"]);
+
+    // Shop/alchemist/mystery piles lose only the dead cards; sibling fields survive.
+    expect(run?.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
+    expect(run?.shopState?.refreshesLeft).toBe(1);
+    expect(run?.shopState?.purchasedSlotKeys).toEqual(["slot-0"]);
+    expect(run?.alchemistState?.potions.map((card) => card.id)).toEqual(["slash"]);
+    expect(run?.alchemistState?.mixUsed).toBe(true);
+    expect(run?.mysteryVisit?.cardChoices?.map((card) => card.id)).toEqual(["slash"]);
+
+    // Mid-combat snapshot stays resumable: live deck, filtered wish queue.
+    const battle = run?.activeCombat?.battleState;
+    expect(battle?.deck.map((card) => card.id)).toEqual(["slash"]);
+    expect(battle?.discard).toEqual([]);
+    expect(battle?.wishQueue).toEqual([[{ ...battle?.deck[0] }]]);
+    expect(battle?.mana).toBe(2);
+
+    // Missing runMetaMaxHealth shims from runMaxHealth so combat HP bonuses survive.
+    expect(run?.runMetaMaxHealth).toBe(run?.runMaxHealth);
+  });
+
   it("preserves campaign progress fields in current-schema fixtures", () => {
     const campaign = normalizeSaveData(currentSchemaCampaignSave());
     expect(campaign.gold).toBe(42);
@@ -74,14 +98,6 @@ describe("save migration guard", () => {
       const migrated = normalizeSaveData(raw);
       expect(migrated.activeRun?.wildwoodDraft).not.toBeNull();
     }
-  });
-
-  it("keeps defaults.ts keys aligned with SaveData top-level fields", () => {
-    const defaultKeys = Object.keys(defaultSaveData).sort();
-    expect(defaultKeys).toContain("lastSavedAt");
-    expect(defaultKeys).toContain("saveSchemaVersion");
-    expect(defaultKeys).toContain("activeRun");
-    expect(new Set(defaultKeys).size).toBe(defaultKeys.length);
   });
 
   it("references only catalog or tombstoned card IDs in migrated fixtures", () => {

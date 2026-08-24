@@ -2,6 +2,24 @@
 // The performance config is intentionally standalone (on-demand profiling).
 import type { ReporterDescription } from "@playwright/test";
 
+/** Port contracts live in scripts/lib/dev-port.mjs; re-exported here for TS consumers. */
+export { BROWSER_PREVIEW_PORT, ELECTRON_PREVIEW_PORT, PERF_PREVIEW_PORT } from "../scripts/lib/dev-port.mjs";
+
+export function previewPortFromEnv(envName: string, fallback: number): number {
+  return Number.parseInt(process.env[envName] ?? String(fallback), 10);
+}
+
+/** Standard strictPort vite server binding shared by all Playwright surfaces. */
+export function previewWebServer(
+  port: number,
+  { mode = "preview" }: { mode?: "dev" | "preview" } = {},
+): { command: string; port: number } {
+  return {
+    command: `npx vite${mode === "dev" ? "" : " preview"} --host 127.0.0.1 --port ${port} --strictPort`,
+    port,
+  };
+}
+
 export interface PlaywrightCiSettingsOptions {
   isCi: boolean;
   /** JSON reporter output used in CI when PLAYWRIGHT_JSON_OUTPUT_NAME is unset. */

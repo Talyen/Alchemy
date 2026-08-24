@@ -96,7 +96,6 @@ const LIFECYCLE_PORT_EXPORTS = [
   "restoreRun",
   "snapshotRun",
   "syncBattleToRun",
-  "syncRunMaxHealthFromGearMutation",
   "syncRunToBattleStart",
   "teardownRun",
 ] as const;

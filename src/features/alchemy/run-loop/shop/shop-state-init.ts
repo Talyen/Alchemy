@@ -22,13 +22,6 @@ import { sampleItems } from "@/lib/utils";
 
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
 
-export {
-  serializeTrinketShopState,
-  hydrateTrinketShopState,
-  serializeEquipmentShopState,
-  hydrateEquipmentShopState,
-} from "@/lib/active-run-session";
-
 export function resampleTrinketShopOfferings(rng: () => number, ownedIds: readonly string[] = []): TrinketEntry[] {
   const owned = new Set(ownedIds);
   return sampleItems(

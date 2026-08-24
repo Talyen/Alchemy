@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { enemyBestiary } from "@/lib/game-data";
 import * as config from "@/features/alchemy/shared/config";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
@@ -30,8 +29,7 @@ describe("run destination controller actions", () => {
   });
 
   it("prepareDestinationScreen sets boss id for boss-only destinations", () => {
-    const mimicBoss = enemyBestiary.find((enemy) => enemy.id === "mimic")!;
-    vi.spyOn(config, "getBossEnemy").mockReturnValue(mimicBoss);
+    vi.spyOn(config, "rollFreshBossId").mockReturnValue("mimic");
 
     getRunSessionStoreView().setRewardState({
       ...createEmptyRewardState(),
@@ -53,8 +51,7 @@ describe("run destination controller actions", () => {
   });
 
   it("advanceToNextDestination samples the next picker at the live destination index after a non-combat continue", () => {
-    const mimicBoss = enemyBestiary.find((enemy) => enemy.id === "mimic")!;
-    vi.spyOn(config, "getBossEnemy").mockReturnValue(mimicBoss);
+    vi.spyOn(config, "rollFreshBossId").mockReturnValue("mimic");
     setRunProgress({
       destinationIndexInAct: 7,
       completedDestinations: Array.from({ length: 7 }, () => CONSTANTS.DESTINATIONS.NORMAL_COMBAT),

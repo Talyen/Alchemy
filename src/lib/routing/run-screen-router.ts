@@ -45,22 +45,8 @@ export const SCREEN_PHASE: Record<Screen, RunPhase> = {
   [ROUTE_SCREENS.RUN_VICTORY]: "runEnd",
 };
 
-export function isMetaScreen(screen: Screen): boolean {
-  return SCREEN_PHASE[screen] === "meta";
-}
-
 export function isRunLoopScreen(screen: Screen): boolean {
   return SCREEN_PHASE[screen] === "runLoop";
-}
-
-export function isRunEndScreen(screen: Screen): boolean {
-  return SCREEN_PHASE[screen] === "runEnd";
-}
-
-/** True when gameplay expects hasActiveRun and run domain/session data to be populated. */
-export function requiresActiveRun(screen: Screen): boolean {
-  const phase = SCREEN_PHASE[screen];
-  return phase === "runLoop" || phase === "runEnd";
 }
 
 /** Derives run phase from the current screen and whether combat state is active. */

@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import {
-  definitionOfferFootprintKey,
-  eligibleOfferFootprintKeys,
   generateDevRandomGearInstance,
   generateGearInstanceForBaseItem,
   generateGearRewardChoices,
@@ -41,27 +39,6 @@ describe("gear generation", () => {
       const baseItemIds = choices.map((c) => gearDefinitions[c.definitionId]?.baseItemId);
       expect(new Set(baseItemIds).size, `seed ${seed}: ${JSON.stringify(baseItemIds)}`).toBe(baseItemIds.length);
     }
-  });
-
-  it("offers three choices that share the same footprint family", () => {
-    const seenFamilies = new Set<string>();
-    for (let seed = 1; seed <= 80; seed += 1) {
-      const rng = createSeededRng(seed);
-      const choices = generateGearRewardChoices(3, rng);
-      expect(choices).toHaveLength(3);
-      const keys = choices.map((choice) => {
-        const definition = gearDefinitions[choice.definitionId];
-        expect(definition, `seed ${seed}: missing definition ${choice.definitionId}`).toBeTruthy();
-        return definitionOfferFootprintKey(definition!);
-      });
-      expect(new Set(keys).size, `seed ${seed}: ${JSON.stringify(keys)}`).toBe(1);
-      seenFamilies.add(keys[0]!);
-    }
-    expect([...seenFamilies]).toEqual(["3x4"]);
-  });
-
-  it("lists only footprint families with enough unique base items", () => {
-    expect(eligibleOfferFootprintKeys(3)).toEqual(["3x4"]);
   });
 
   it("guarantees the requested choice count even with duplicate-prone rng", () => {

@@ -32,7 +32,7 @@ import {
 } from "@/features/alchemy/shared/run-flow/starter-draft";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
 import { createContentSystemRunInit } from "./content-system-run-init";
-import { getBossEnemy } from "@/features/alchemy/shared/config";
+import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { CONSTANTS } from "../../shared/types";
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
@@ -44,7 +44,11 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     initializeRunForDifficulty,
     getDifficultyModifiers,
     onStartBattle: deps.onStartBattle,
-    navigateToBattle: () => deps.navigateTo(CONSTANTS.SCREENS.BATTLE),
+    // Mirror handleDifficultySelect: the started run supersedes any pending character.
+    navigateToBattle: () =>
+      deps.navigateTo(CONSTANTS.SCREENS.BATTLE, () =>
+        dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, null)),
+      ),
   });
 
   function resumeActiveContentSystem(systemId: ContentSystemId) {
@@ -82,7 +86,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
                 lastOfferedDestinations: active.lastOfferedDestinations,
                 roundsSinceOffered: active.destinationRoundsSinceOffered,
               },
-              bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
+              bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
               rng: createDraftRunRandomSource(draft, "destinations"),
               onSampled: (result) => setDestinationOfferState(draft, result.offerState),
             }),

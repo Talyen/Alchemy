@@ -185,3 +185,30 @@ jobs:
 
       - name: Knip strict (entry exports)
         run: npm run deadcode:strict
+
+  coverage:
+    name: Unit coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !Raw Assets
+          sparse-checkout-cone-mode: false
+
+      - uses: ./.github/actions/setup
+        with:
+          skip-electron-download: "true"
+
+      - run: mkdir -p reports
+      - name: Unit tests with coverage (thresholds in vite.config.ts)
+        run: npm run test:coverage
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7

@@ -27,9 +27,9 @@ export type EndPlayerTurnResolution =
   | (EndPlayerTurnResolutionBase & { kind: "haste" })
   | (EndPlayerTurnResolutionBase & { kind: "skipped" | "standard"; enemyTurnStartState: BattleState });
 
-function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
+function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[], options?: { preserveBlock?: boolean }) {
   const nextState = applyIronwoodBuckler(state, combatTexts);
-  const finalState = advanceToPlayerTurn(nextState, combatTexts);
+  const finalState = advanceToPlayerTurn(nextState, combatTexts, options);
   return { state: finalState, combatTexts, playerTurnSkipped: finalState.turnPhase === "enemy" };
 }
 
@@ -45,13 +45,15 @@ function processHasteEarlyTurn(state: BattleState): BattleState {
   };
 }
 
+// Clears the hand and folds it into the discard. Enemy block decay is NOT done
+// here: per the block rule, enemy block halves when a real enemy phase begins,
+// and a haste turn never begins one.
 function beginEnemyPhase(state: BattleState): BattleState {
-  const resetState = resetEnemyTurnState(state);
   return {
-    ...resetState,
+    ...state,
     turnPhase: "enemy",
     hand: [],
-    discard: [...resetState.discard, ...resetState.hand],
+    discard: [...state.discard, ...state.hand],
   };
 }
 
@@ -60,7 +62,7 @@ function resolveHasteTurn(state: BattleState) {
   const nextState = processHasteEarlyTurn(state);
   return {
     kind: "haste" as const,
-    ...finalizePlayerTurn(nextState, combatTexts),
+    ...finalizePlayerTurn(nextState, combatTexts, { preserveBlock: true }),
     enemyTurnStartCombatTexts: [] as CombatTextEvent[],
     enemyResolutionCombatTexts: [] as CombatTextEvent[],
     enemyPerformedAttack: false,
@@ -86,6 +88,9 @@ function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: num
     };
   }
 
+  // Per-turn stat gains fire every enemy phase, including CC-skipped ones —
+  // matching the bestiary stacking traits, which never gated on acting.
+  nextState = processEncounterTraitActionStart(nextState, enemyResolutionCombatTexts);
   nextState = processEnemyTraits(nextState, enemyResolutionCombatTexts, options);
   nextState = reduceSkipTurns(nextState);
   nextState = tickPlayerStatuses(nextState, enemyResolutionCombatTexts);
@@ -164,11 +169,15 @@ export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number
     return resolveHasteTurn(nextState);
   }
 
+  // A real enemy phase begins here, so the enemy block halves now (once per
+  // attack window even across chained haste turns).
+  const enemyPhaseState = resetEnemyTurnState(nextState);
+
   if (state.enemyCC.stunSkipTurns + state.enemyCC.freezeSkipTurns > 0) {
-    return resolveSkippedEnemyTurn(nextState, options);
+    return resolveSkippedEnemyTurn(enemyPhaseState, options);
   }
 
-  return resolveStandardEnemyTurn(nextState, options);
+  return resolveStandardEnemyTurn(enemyPhaseState, options);
 }
 
 /**

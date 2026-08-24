@@ -32,8 +32,8 @@ import {
 import { tooltipChipClass } from "../../../shared/config";
 import { MaterialIcon, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
 import { TabBar } from "../../../shared/ui/tab-bar";
+import { renderTokenizedDescription } from "../../../shared/ui/card-description-ui";
 import { Hammer, Wheat, FlaskConical, PawPrint } from "lucide-react";
-import { tokenizeDescription } from "../../../shared/utils";
 
 export type Tab = "buildings" | "companions" | "farm" | "research";
 
@@ -79,42 +79,29 @@ export { MaterialCost, HomesteadResourceWallet as MaterialsBar } from "../../../
 const MATERIAL_LABELS_LIST = MATERIAL_IDS.map((m) => materialLabels[m]);
 const MATERIAL_REGEX = new RegExp(`(${MATERIAL_LABELS_LIST.join("|")})`, "g");
 
+function renderMaterialPills(text: string, key: number): ReactNode {
+  return text.split(MATERIAL_REGEX).map((sub, index) => {
+    const mat = MATERIAL_IDS.find((m) => materialLabels[m] === sub);
+    if (!mat) return <span key={`${key}-${index}`}>{sub}</span>;
+    return (
+      <span
+        key={`${key}-${index}`}
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 align-middle shadow-xs",
+          tooltipChipClass,
+          matPillStyle[mat],
+          matTextColor[mat],
+        )}
+      >
+        <MaterialIcon material={mat} size="sm" className="inline-block" />
+        {sub}
+      </span>
+    );
+  });
+}
+
 export function renderTextWithMaterials(text: string): ReactNode {
-  const keywordParts = tokenizeDescription(text);
-  const result: ReactNode[] = [];
-  for (const part of keywordParts) {
-    if (part.keywordId) {
-      result.push(
-        <span key={result.length} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>
-          {part.text}
-        </span>,
-      );
-    } else {
-      const materialParts = part.text.split(MATERIAL_REGEX);
-      for (const sub of materialParts) {
-        const mat = MATERIAL_IDS.find((m) => materialLabels[m] === sub);
-        if (mat) {
-          result.push(
-            <span
-              key={result.length}
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 align-middle shadow-xs",
-                tooltipChipClass,
-                matPillStyle[mat],
-                matTextColor[mat],
-              )}
-            >
-              <MaterialIcon material={mat} size="sm" className="inline-block" />
-              {sub}
-            </span>,
-          );
-        } else {
-          result.push(<span key={result.length}>{sub}</span>);
-        }
-      }
-    }
-  }
-  return result;
+  return renderTokenizedDescription(text, { renderPlain: renderMaterialPills });
 }
 
 const tabs: Array<{ id: Tab; label: string; icon: typeof Hammer; iconClassName: string }> = [

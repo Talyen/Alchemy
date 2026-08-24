@@ -62,13 +62,18 @@ export function scaleByRoomMultiplier(state: BattleState, value: number): number
   return Math.round(value * state.roomScalingMultiplier);
 }
 
-function resetPlayerTurnState(state: BattleState): BattleState {
+function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: boolean }): BattleState {
   return {
     ...state,
     turn: state.turn + 1,
     playerCC: { ...state.playerCC, cooldown: Math.max(0, state.playerCC.cooldown - 1) },
     enemyCC: { ...state.enemyCC, cooldown: Math.max(0, state.enemyCC.cooldown - 1) },
-    playerStatuses: { ...state.playerStatuses, block: decayHalvedStatus(state.playerStatuses.block) },
+    playerStatuses: {
+      ...state.playerStatuses,
+      // Haste turns skip the enemy attack window, so the block gained this turn
+      // has not yet been attacked into and must hold until a real enemy phase resolves.
+      block: options?.preserveBlock ? state.playerStatuses.block : decayHalvedStatus(state.playerStatuses.block),
+    },
     cardsPlayedThisTurn: 0,
     flags: {
       ...state.flags,
@@ -90,8 +95,8 @@ export function resetEnemyTurnState(state: BattleState): BattleState {
   };
 }
 
-function handleCCSkipTurn(state: BattleState): BattleState {
-  const nextState = resetPlayerTurnState(state);
+function handleCCSkipTurn(state: BattleState, options?: { preserveBlock?: boolean }): BattleState {
+  const nextState = resetPlayerTurnState(state, options);
   return {
     ...nextState,
     turnPhase: "enemy",
@@ -103,9 +108,13 @@ function handleCCSkipTurn(state: BattleState): BattleState {
   };
 }
 
-function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTurn: boolean): BattleState {
+function performDrawAndResetPhase(
+  state: BattleState,
+  deathsDoorNeedsRecoveryTurn: boolean,
+  options?: { preserveBlock?: boolean },
+): BattleState {
   const nextDraw = drawCards(state.deck, state.discard, [], CARDS_PER_TURN, state.nextCardUid, state.rng);
-  const nextState = resetPlayerTurnState(state);
+  const nextState = resetPlayerTurnState(state, options);
   const hadUnspentMana = state.mana > 0;
   const wellspringBonus =
     hadUnspentMana && state.talentEffects.wellspringKeepMana > 0 ? state.talentEffects.wellspringKeepMana : 0;
@@ -121,7 +130,11 @@ function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTur
   };
 }
 
-export function advanceToPlayerTurn(state: BattleState, combatTexts: CombatTextEvent[] = []) {
+export function advanceToPlayerTurn(
+  state: BattleState,
+  combatTexts: CombatTextEvent[] = [],
+  options?: { preserveBlock?: boolean },
+) {
   const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive;
 
   let nextState = state;
@@ -133,11 +146,11 @@ export function advanceToPlayerTurn(state: BattleState, combatTexts: CombatTextE
   }
 
   if (!deathsDoorNeedsRecoveryTurn && state.playerCC.stunSkipTurns + state.playerCC.freezeSkipTurns > 0) {
-    return handleCCSkipTurn(nextState);
+    return handleCCSkipTurn(nextState, options);
   }
 
   const drawnState = processPendingTurnStartEffects(
-    performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn),
+    performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options),
     combatTexts,
   );
   if (drawnState.gearEffects.healthPerTurn <= 0) return drawnState;

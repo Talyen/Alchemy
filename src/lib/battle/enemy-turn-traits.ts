@@ -158,6 +158,13 @@ export function collectUncoveredDifficultyModifierKinds(
   return [...new Set(kinds)].filter((kind) => !isDifficultyModifierTurnStartCovered(kind));
 }
 
+/** Shared handler-failure policy: log-and-continue in production, rethrow in DEV. */
+function reportHandlerFailure(source: string, err: unknown, context?: Record<string, unknown>): void {
+  const message = err instanceof Error ? err.message : String(err);
+  logError(`${source} failed: ${message}`, "battle", context);
+  if (import.meta.env.DEV) throw err;
+}
+
 function processTraitHandler(
   trait: BestiaryEntry["traits"][number],
   state: BattleState,
@@ -171,8 +178,9 @@ function processTraitHandler(
   }
   if (!PASSIVE_ONLY_TRAITS.has(trait.id)) {
     console.warn(`[Enemy Turn] No turn-start handler for trait: ${trait.id}`);
-    logError(`No turn-start handler for trait: ${trait.id}`, "battle", { state });
-    if (import.meta.env.DEV) throw new Error(`No turn-start handler for trait: ${trait.id}`);
+    reportHandlerFailure(`No turn-start handler for trait ${trait.id}`, new Error("uncovered enemy trait"), {
+      traitId: trait.id,
+    });
   }
   return state;
 }
@@ -187,8 +195,10 @@ function processDifficultyModifier(
   if (!handler) {
     if (!PASSIVE_ONLY_MODIFIERS.has(modifier.kind)) {
       console.warn(`[Enemy Turn] No turn-start handler for difficulty modifier: ${modifier.kind}`);
-      logError(`No turn-start handler for difficulty modifier: ${modifier.kind}`, "battle", { state });
-      if (import.meta.env.DEV) throw new Error(`No turn-start handler for difficulty modifier: ${modifier.kind}`);
+      reportHandlerFailure(
+        `No turn-start handler for difficulty modifier ${modifier.kind}`,
+        new Error("uncovered difficulty modifier"),
+      );
     }
     return state;
   }
@@ -210,15 +220,20 @@ export function processEnemyTraits(
       try {
         nextState = processTraitHandler(trait, nextState, combatTexts, traitRoll);
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        logError(`Enemy trait handler failed: ${message}`, "battle", { traitId: trait.id });
+        // In DEV every failure path terminates via throw; skip the second report.
         if (import.meta.env.DEV) throw err;
+        reportHandlerFailure(`Enemy trait handler for ${trait.id}`, err);
       }
     }
   }
 
   for (const modifier of nextState.difficultyModifiers) {
-    nextState = processDifficultyModifier(modifier, nextState, combatTexts, scalingBlocked);
+    try {
+      nextState = processDifficultyModifier(modifier, nextState, combatTexts, scalingBlocked);
+    } catch (err) {
+      if (import.meta.env.DEV) throw err;
+      reportHandlerFailure(`Difficulty modifier handler for ${modifier.kind}`, err, { kind: modifier.kind });
+    }
   }
 
   return nextState;

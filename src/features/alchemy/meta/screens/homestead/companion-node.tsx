@@ -73,7 +73,6 @@ function getCompanionTooltip(
 
 export function CompanionCardNode({
   card,
-  index,
   discovered,
   bondedCompanions,
   materialInventory,
@@ -82,7 +81,6 @@ export function CompanionCardNode({
   onBond,
 }: {
   card: BattleCard;
-  index: number;
   discovered: boolean;
   bondedCompanions: Record<CompanionId, number>;
   materialInventory: MaterialInventory;
@@ -109,7 +107,6 @@ export function CompanionCardNode({
   return (
     <HomesteadTileFrame
       id={card.id}
-      index={index}
       hoveredItemId={hoveredItemId}
       setHoveredItemId={setHoveredItemId}
       detailTooltip={detailTooltip}

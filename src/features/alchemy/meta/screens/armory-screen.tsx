@@ -27,7 +27,6 @@ import {
   ArmoryOverlays,
   ArmoryScreenHeader,
   useArmoryResetEffects,
-  type ArmoryCursorPoint,
   type ArmorySalvagePending,
   type ArmoryScreenProps,
 } from "./armory";
@@ -64,7 +63,6 @@ export function ArmoryScreen({
   const [salvageMode, setSalvageMode] = useState(false);
   const [salvagePending, setSalvagePending] = useState<ArmorySalvagePending | null>(null);
   const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
-  const [cursorPoint, setCursorPoint] = useState<ArmoryCursorPoint | null>(null);
   const sharedInventory = useMemo(() => flattenGearInventories(inventories), [inventories]);
   const inventoryById = useMemo(
     () => new Map(sharedInventory.map((item) => [item.instanceId, item])),
@@ -82,9 +80,9 @@ export function ArmoryScreen({
   const handleSelectCharacter = useCallback(
     (id: CharacterId) => {
       setCharacterId(id);
-      resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setCursorPoint, setSalvagePending });
+      resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setSalvagePending });
     },
-    [setActiveCurrencyId, setCursorPoint, setSalvageMode, setSalvagePending],
+    [setActiveCurrencyId, setSalvageMode, setSalvagePending],
   );
 
   useArmoryResetEffects({
@@ -94,7 +92,6 @@ export function ArmoryScreen({
     characterId,
     inventoryById,
     salvagePending,
-    setCursorPoint,
     setSalvageMode,
     setSalvagePending,
     setActiveCurrencyId,
@@ -103,8 +100,7 @@ export function ArmoryScreen({
     salvageMode,
     activeCurrencyId,
     salvageTarget: salvagePending?.instance ?? null,
-    clearTargeting: () =>
-      resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setCursorPoint, setSalvagePending }),
+    clearTargeting: () => resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setSalvagePending }),
   });
 
   function handleSelectCurrency(currencyId: CraftingCurrencyId) {
@@ -113,23 +109,29 @@ export function ArmoryScreen({
     setSalvageMode(false);
   }
 
-  function handleApplyCurrency(instance: GearInstance) {
-    applyCurrencyToGear({
-      editable,
-      activeCurrencyId,
-      instance,
-      craftingCurrencies,
-      onApplyCurrency,
-      clearCurrency: () => {
-        setCursorPoint(null);
-        setActiveCurrencyId(null);
-      },
-    });
-  }
+  const beginSalvage = useCallback(
+    (instance: GearInstance) => {
+      setSalvagePending({ instance, yield: computeSalvageYield(instance, rng) });
+    },
+    [rng],
+  );
 
-  function beginSalvage(instance: GearInstance) {
-    setSalvagePending({ instance, yield: computeSalvageYield(instance, rng) });
-  }
+  const handleApplyCurrency = useCallback(
+    (instance: GearInstance) => {
+      applyCurrencyToGear({
+        editable,
+        activeCurrencyId,
+        instance,
+        craftingCurrencies,
+        onApplyCurrency,
+        clearCurrency: () => setActiveCurrencyId(null),
+      });
+    },
+    [editable, activeCurrencyId, craftingCurrencies, onApplyCurrency],
+  );
+
+  const handleSlotSelect = useCallback((slot: GearSlot) => setSelectedSlot(slot), []);
+  const handleSlotUnequip = useCallback((slot: GearSlot) => onUnequip(characterId, slot), [onUnequip, characterId]);
 
   return (
     <PageLayout>
@@ -152,14 +154,7 @@ export function ArmoryScreen({
           finishedRunCharacters={finishedRunCharacters}
           onSelectTab={handleSelectCharacter}
         />
-        <div
-          className="armory-workspace mt-2 min-h-0 min-w-0 flex-1"
-          data-testid="armory-workspace"
-          onPointerMove={(event) => {
-            if (activeCurrencyId) setCursorPoint({ x: event.clientX, y: event.clientY });
-          }}
-          onPointerLeave={() => setCursorPoint(null)}
-        >
+        <div className="armory-workspace mt-2 min-h-0 min-w-0 flex-1" data-testid="armory-workspace">
           <FadeSlot swapKey={characterId} className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div className="armory-workspace-grid">
               <section
@@ -175,25 +170,20 @@ export function ArmoryScreen({
                 >
                   {EQUIP_SLOTS.map((slot) => {
                     const instanceId = loadout[slot];
+                    const instance = instanceId ? inventoryById.get(instanceId) : undefined;
                     return (
                       <EquipmentSlotButton
                         key={slot}
                         slot={slot}
-                        instance={instanceId ? inventoryById.get(instanceId) : undefined}
+                        instance={instance}
                         selected={selectedSlot === slot}
                         editable={editable}
                         salvageMode={salvageMode}
                         activeCurrencyId={activeCurrencyId}
-                        onSelect={() => setSelectedSlot(slot)}
-                        onUnequip={() => onUnequip(characterId, slot)}
-                        onSalvage={() => {
-                          const instance = instanceId ? inventoryById.get(instanceId) : undefined;
-                          if (instance) beginSalvage(instance);
-                        }}
-                        onApplyCurrency={() => {
-                          const instance = instanceId ? inventoryById.get(instanceId) : undefined;
-                          if (instance) handleApplyCurrency(instance);
-                        }}
+                        onSelect={handleSlotSelect}
+                        onUnequip={handleSlotUnequip}
+                        onSalvage={beginSalvage}
+                        onApplyCurrency={handleApplyCurrency}
                       />
                     );
                   })}
@@ -262,7 +252,6 @@ export function ArmoryScreen({
         <ArmoryOverlays
           salvagePending={salvagePending}
           activeCurrencyId={activeCurrencyId}
-          cursorPoint={cursorPoint}
           editable={editable}
           onSalvage={onSalvage}
           onClearSalvageTarget={() => setSalvagePending(null)}

@@ -1,14 +1,7 @@
 // Filters the post-victory destination pool by current run health and gold.
 import { CAMPFIRE_HEALTH_THRESHOLD, ELITE_HEALTH_THRESHOLD, SHOP_MIN_GOLD } from "@/lib/game-constants";
 
-import { DESTINATIONS, type Destination } from "./destinations";
-
-const GOLD_GATED_SHOPS: Destination[] = [
-  DESTINATIONS.MERCHANT_SHOP,
-  DESTINATIONS.ALCHEMIST_SHOP,
-  DESTINATIONS.TRINKET_SHOP,
-  DESTINATIONS.EQUIPMENT_SHOP,
-];
+import { DESTINATIONS, isShopDestination, type Destination } from "./destinations";
 
 const destinationPool: Destination[] = [
   DESTINATIONS.NORMAL_COMBAT,
@@ -31,7 +24,7 @@ export function getAvailableDestinations(
   return destinationPool.filter((destination) => {
     if (destination === DESTINATIONS.CAMPFIRE && currentHealth >= Math.floor(maxHealth * CAMPFIRE_HEALTH_THRESHOLD))
       return false;
-    if (GOLD_GATED_SHOPS.includes(destination) && currentGold < SHOP_MIN_GOLD) return false;
+    if (isShopDestination(destination) && currentGold < SHOP_MIN_GOLD) return false;
     if (destination === DESTINATIONS.EQUIPMENT_SHOP && !hasAnyOwnedGear) return false;
     if (destination === DESTINATIONS.ELITE_COMBAT && currentHealth < Math.floor(maxHealth * ELITE_HEALTH_THRESHOLD))
       return false;

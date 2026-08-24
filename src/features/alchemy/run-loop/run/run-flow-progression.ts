@@ -16,7 +16,7 @@ import {
 import { setCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { getBossById, getBossEnemy } from "@/features/alchemy/shared/config";
+import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
@@ -34,7 +34,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
     if (!bossOnly) return;
     if (state.selectedBossId && getBossById(state.selectedBossId)) return;
     dispatchRunSessionCommand((draft) => {
-      const selectedBossId = getBossEnemy([], createDraftRunRandomSource(draft, "world")).id;
+      const selectedBossId = rollFreshBossId(createDraftRunRandomSource(draft, "world"));
       setRewardState(draft, (prev) => ({ ...prev, selectedBossId }));
     });
   }
@@ -50,7 +50,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
             lastOfferedDestinations: run.lastOfferedDestinations,
             roundsSinceOffered: run.destinationRoundsSinceOffered,
           },
-          bossEnemyId: getBossEnemy([], createDraftRunRandomSource(draft, "world")).id,
+          bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
           rng: createDraftRunRandomSource(draft, "destinations"),
         });
         setDestinationOfferState(draft, initialDestinations.offerState);

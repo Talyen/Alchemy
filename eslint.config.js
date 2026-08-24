@@ -304,30 +304,16 @@ export default tseslint.config(
           },
         ],
       }),
-      "no-restricted-syntax": restrictedSyntax(
-        {
-          selector: 'CallExpression[callee.name="enableFastMode"]',
-          message: "Do not call enableFastMode in animation-focused specs or performance scenarios.",
-        },
-        {
-          selector: 'ImportDeclaration[source.value="./fixtures/e2e"]',
-          message: "Animation specs must use @playwright/test directly — fixtures/e2e enables fastBattle.",
-        },
-        {
-          selector: 'ImportDeclaration[source.value="../tests/fixtures/e2e"]',
-          message: "Performance scenarios must keep real animations — do not import fixtures/e2e.",
-        },
-        {
-          selector: 'ImportDeclaration[source.value="../../tests/fixtures/e2e"]',
-          message: "Performance scenarios must keep real animations — do not import fixtures/e2e.",
-        },
-      ),
+      "no-restricted-syntax": restrictedSyntax({
+        selector: 'CallExpression[callee.name="enableFastMode"]',
+        message: "Do not call enableFastMode in animation-focused specs or performance scenarios.",
+      }),
     },
   },
 
-  // Node.js scripts (CommonJS + ESM) — after base rules so overrides take effect
+  // Node.js scripts (CommonJS + ESM) — after base rules so overrides take effect.
   {
-    files: ["desktop/**/*.cjs", "scripts/**/*.mjs"],
+    files: ["scripts/**/*.mjs"],
     languageOptions: {
       globals: {
         console: "readable",
@@ -341,8 +327,17 @@ export default tseslint.config(
         clearTimeout: "readable",
         setInterval: "readable",
         clearInterval: "readable",
+        fetch: "readable",
+        AbortSignal: "readable",
+        URL: "readable",
       },
     },
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
+
+  // Electron's .cjs entry uses runtime-injected CJS globals, so no-undef stays off.
+  {
+    files: ["desktop/**/*.cjs"],
     rules: { "@typescript-eslint/no-require-imports": "off", "no-undef": "off" },
   },
 );

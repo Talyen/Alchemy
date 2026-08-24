@@ -58,7 +58,7 @@ describe("applyCardEffects - equalToGoldPercent (Tithe)", () => {
   });
 });
 
-describe("applyCardEffects - chance (Roulette)", () => {
+describe("applyCardEffects - chance (Roll the Dice)", () => {
   it("damage branch deals 3 of a random type when roll succeeds", () => {
     const rng = seededRng(7);
     const branchRoll = rng();
@@ -70,7 +70,7 @@ describe("applyCardEffects - chance (Roulette)", () => {
 
     const state = makeState({ rng: seededRng(7), gold: 10 });
     const card = makeTestCard({
-      id: "roulette",
+      id: "roll-the-dice",
       effects: [
         {
           kind: "chance",
@@ -95,7 +95,7 @@ describe("applyCardEffects - chance (Roulette)", () => {
 
     const state = makeState({ rng: seededRng(99), gold: 10 });
     const card = makeTestCard({
-      id: "roulette",
+      id: "roll-the-dice",
       effects: [
         {
           kind: "chance",

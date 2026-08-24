@@ -6,7 +6,7 @@ import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { RemoveCardPanel } from "@/features/alchemy/shared/ui/remove-card-panel";
 import type { BattleCard } from "@/lib/game-data";
 
-vi.mock("@/features/alchemy/shared/ui/shop-card-item", () => import("../../../../helpers/shop-screen-ui-mocks"));
+vi.mock("@/features/alchemy/shared/ui/selectable-card", () => import("../../../../helpers/shop-screen-ui-mocks"));
 
 const runDeck = [
   {

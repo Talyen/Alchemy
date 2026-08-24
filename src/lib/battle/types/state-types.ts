@@ -11,8 +11,11 @@ import type {
   EnemyStatusId,
   PlayerStatusId,
   TalentEffectManifest,
+  TrinketManifest,
 } from "@/lib/game-data";
 import type { GearEffectManifest } from "@/lib/gear";
+
+export type { TrinketManifest };
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 
@@ -48,36 +51,8 @@ export interface CcState {
 
 // Pre-computed bonuses from boons acquired during the run. Follows the same
 // pattern as TalentEffectManifest — computed once at battle start, immutable for
-// the duration of the battle.
-export interface TrinketManifest {
-  extraDrawPerBattle: number;
-  firstHolyDamageDoubled: boolean;
-  firstBurnDoubled: boolean;
-  boneCharmHealOnKill: number;
-  forgeStunThreshold: number;
-  forgeStunAmount: number;
-  frozenHeartDamage: number;
-  blockToArmorThreshold: number;
-  blockToArmorAmount: number;
-  runicQuillDrawOnConsume: number;
-  sinEaterHealOnHarmfulStatusRemove: number;
-  vanguardCrestForgeOnBlockAbsorb: number;
-  parasiticBloomLeechChance: number;
-  cutpurseGoldOnBleed: number;
-  wishingWellGoldOnWish: number;
-  plagueDoctorImmunity: boolean;
-  mortarPestleFreeFirstPotion: boolean;
-  sunderingArmorPiercing: number;
-  resonantChimeCardsRequired: number;
-  resonantChimeMana: number;
-  smugglersMapGoldBonus: number;
-  grovesFavorStartHeal: number;
-  merchantsFavorDiscount: number;
-  companionDamageBonus: number;
-  freezeDurationExtension: number;
-  thunderstoneDamageOnStun: number;
-  luckyCloverGoldChance: number;
-}
+// the duration of the battle. Type lives in game-data next to the trinket rows
+// that author their effect values; re-exported here for battle consumers.
 
 // Threshold-driven combat flags that reset each battle.
 export interface CombatFlags {

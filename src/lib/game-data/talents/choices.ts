@@ -15,9 +15,7 @@ export const TALENT_ROW_SIZES = [1, 2, 3, 4] as const;
 
 /** Keywords shown in the talent tree and counted for unspent-point badges. */
 export function getTalentTreeKeywordIds(): KeywordId[] {
-  return (Object.keys(keywordDefinitions) as KeywordId[]).filter(
-    (kw) => !keywordDefinitions[kw].hidden && countImplementedTalents(kw) > 0,
-  );
+  return (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => countImplementedTalents(kw) > 0);
 }
 
 export function getTalentsForKeyword(keywordId: KeywordId): TalentDefinition[] {

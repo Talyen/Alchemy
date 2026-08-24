@@ -7,6 +7,7 @@ import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 import type { BestiaryEntry } from "@/lib/game-data";
 import {
   defaultCcState,
+  defaultEnemyMitigation,
   defaultEnemyStatusValues,
   defaultPlayerStatusValues,
 } from "../../fixtures/default-battle-state";
@@ -64,6 +65,32 @@ describe("endPlayerTurn - haste branch", () => {
     const result = endPlayerTurn(state);
     expect(result.state.playerHealth).toBe(20);
   });
+
+  it("holds both blocks across a haste turn — no attack window elapsed", () => {
+    const state = battleState({
+      playerStatuses: { ...emptyPlayerStatuses, haste: 1, block: 10 },
+      enemyMitigation: defaultEnemyMitigation({ block: 8 }),
+    });
+    const result = endPlayerTurn(state);
+    expect(result.kind).toBe("haste");
+    expect(result.state.playerStatuses.block).toBe(10);
+    expect(result.state.enemyMitigation.block).toBe(8);
+  });
+
+  it("decays each block exactly once across a full haste chain", () => {
+    const first = endPlayerTurn(
+      battleState({
+        playerStatuses: { ...emptyPlayerStatuses, haste: 1, block: 30 },
+        enemyMitigation: defaultEnemyMitigation({ block: 8 }),
+      }),
+    );
+    // Extra player turn ends into a real enemy phase: enemy block halves at phase
+    // start, player block halves after absorbing the enemy's attack window.
+    const second = endPlayerTurn(first.state);
+    expect(second.enemyPerformedAttack).toBe(true);
+    expect(second.state.enemyMitigation.block).toBe(4);
+    expect(second.state.playerStatuses.block).toBe(10);
+  });
 });
 
 describe("endPlayerTurn - CC skip branch", () => {
@@ -105,6 +132,17 @@ describe("endPlayerTurn - CC skip branch", () => {
     state.currentEnemy.traits = [{ id: "rusting-carapace", title: "Rusting Carapace", description: "" }];
     const result = endPlayerTurn(state);
     expect(result.state.enemyMitigation.forge).toBeGreaterThan(0);
+  });
+
+  it("still grants encounter-trait per-turn gains during CC skip", () => {
+    const state = battleState({
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
+      currentEnemy: baseEnemy("tempered"),
+    });
+    state.currentEnemy.traits = [{ id: "tempered", title: "Tempered", description: "" }];
+    const result = endPlayerTurn(state);
+    expect(result.enemyPerformedAttack).toBe(false);
+    expect(result.state.enemyMitigation.forge).toBe(1);
   });
 });
 

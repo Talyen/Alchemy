@@ -11,20 +11,12 @@ import { playUISound } from "@/lib/audio";
 interface Props {
   salvagePending: ArmorySalvagePending | null;
   activeCurrencyId: CraftingCurrencyId | null;
-  cursorPoint: { x: number; y: number } | null;
   editable: boolean;
   onSalvage: (instanceId: string, salvageYield: ArmorySalvagePending["yield"]) => boolean;
   onClearSalvageTarget: () => void;
 }
 
-export function ArmoryOverlays({
-  salvagePending,
-  activeCurrencyId,
-  cursorPoint,
-  editable,
-  onSalvage,
-  onClearSalvageTarget,
-}: Props) {
+export function ArmoryOverlays({ salvagePending, activeCurrencyId, editable, onSalvage, onClearSalvageTarget }: Props) {
   const heldPending = useHeldWhile(salvagePending !== null, salvagePending);
   return (
     <>
@@ -61,7 +53,7 @@ export function ArmoryOverlays({
           }
         }}
       />
-      <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} cursorPoint={cursorPoint} />
+      <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} />
     </>
   );
 }

@@ -3,11 +3,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { type ElectronApplication, type Page, _electron as electron } from "playwright";
 import { resolveElectronExecutablePathWithMarker } from "../scripts/electron-path.mjs";
+import { ELECTRON_PREVIEW_PORT, previewPortFromEnv } from "./playwright-shared";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function getPreviewPort(): number {
-  return Number.parseInt(process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT ?? "4175", 10);
+  return previewPortFromEnv("PLAYWRIGHT_ELECTRON_PREVIEW_PORT", ELECTRON_PREVIEW_PORT);
 }
 
 function getRendererUrl(): string {

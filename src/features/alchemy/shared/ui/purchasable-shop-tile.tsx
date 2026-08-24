@@ -1,8 +1,8 @@
 // Shared purchasable shop tile chrome — media slot + price / purchased chip.
 import type { ReactNode } from "react";
-import { Coins } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { CurrencyAmount } from "./display-elements";
 import { DisabledTooltip } from "./service-button";
 
 export function ShopPriceChip({ price, gold, purchased }: { price: number; gold: number; purchased: boolean }) {
@@ -24,8 +24,12 @@ export function ShopPriceChip({ price, gold, purchased }: { price: number; gold:
                 : "border border-border/50 bg-stone-950/85 text-muted-foreground",
             )}
           >
-            <Coins className={cn("h-6 w-6 shrink-0", canAfford ? "text-yellow-300" : "text-muted-foreground")} />
-            <span className="whitespace-nowrap tabular-nums">{price} Gold</span>
+            <CurrencyAmount
+              amount={price}
+              suffix=" Gold"
+              iconClassName={cn("h-6 w-6", canAfford ? "text-yellow-300" : "text-muted-foreground")}
+              className="whitespace-nowrap"
+            />
           </div>
         </DisabledTooltip>
       )}

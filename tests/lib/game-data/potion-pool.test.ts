@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getStandardPotionPool, isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
+import { getStandardPotionPool, isPotionCard, isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import { cardLibrary } from "@/lib/game-data";
 
 describe("getStandardPotionPool", () => {
@@ -34,5 +34,16 @@ describe("isStandardPotionCard", () => {
 
   it("rejects non-potion cards", () => {
     expect(isStandardPotionCard({ id: "slash" })).toBe(false);
+  });
+});
+
+describe("isPotionCard", () => {
+  it("includes the base mixed potion so battle perks apply to it", () => {
+    expect(isPotionCard({ id: "mixed-potion" })).toBe(true);
+  });
+
+  it("excludes composite mixed ids and non-potions", () => {
+    expect(isPotionCard({ id: "mixed-potion-health-potion-a1-mana-potion-b2" })).toBe(false);
+    expect(isPotionCard({ id: "slash" })).toBe(false);
   });
 });

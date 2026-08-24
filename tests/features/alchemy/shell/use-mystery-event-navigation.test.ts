@@ -12,6 +12,7 @@ import {
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { findMysteryEvent, type MysteryEffect } from "@/lib/mystery";
 import * as mystery from "@/lib/mystery";
+import { resolveMysteryEventTrinkets } from "@/lib/mystery/resolve-trinkets";
 import { gearDefinitions } from "@/lib/gear";
 import { useGearStore } from "../../../helpers/gameplay-store-test";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
@@ -50,7 +51,9 @@ describe("useMysteryEventNavigation", () => {
   it("beginMysteryEvent shows an unowned fallback on owned trinket choices", () => {
     const spring = findMysteryEvent("enchanted-spring");
     if (!spring) throw new Error("enchanted-spring is missing from the mystery pool");
-    vi.spyOn(mystery, "pickMysteryEvent").mockReturnValue(spring);
+    vi.spyOn(mystery, "pickResolvedMysteryEvent").mockReturnValue(
+      resolveMysteryEventTrinkets(spring, ["icy-heart"], () => 0),
+    );
     setRunProgress({ runTrinkets: ["icy-heart"] });
     const { result } = renderMysteryNav();
 

@@ -16,7 +16,6 @@ const ZERO_COST: MaterialInventory = emptyInventory();
 
 export function HomesteadUpgradeNode({
   item,
-  index,
   currentLevel,
   materialInventory,
   hoveredItemId,
@@ -24,7 +23,6 @@ export function HomesteadUpgradeNode({
   onAction,
 }: {
   item: GoalItem;
-  index: number;
   currentLevel: number;
   materialInventory: MaterialInventory;
   hoveredItemId: string | null;
@@ -66,7 +64,6 @@ export function HomesteadUpgradeNode({
   return (
     <HomesteadTileFrame
       id={item.data.id}
-      index={index}
       hoveredItemId={hoveredItemId}
       setHoveredItemId={setHoveredItemId}
       detailTooltip={detailTooltip}

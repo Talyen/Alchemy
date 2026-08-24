@@ -63,7 +63,9 @@ export function stopAllSfx() {
   for (const entry of activeHtmlSfx) {
     if (!entry.trackForCleanup) continue;
     entry.el.pause();
-    entry.el.src = "";
+    // Clearing via removeAttribute avoids browsers re-fetching the page URL as media.
+    entry.el.removeAttribute("src");
+    entry.el.load();
     activeHtmlSfx.delete(entry);
   }
 }

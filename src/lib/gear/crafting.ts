@@ -128,12 +128,6 @@ export function getCraftingCurrencyDefinition(id: CraftingCurrencyId): CraftingC
   return CRAFTING_CURRENCY_LIST.find((currency) => currency.id === id) ?? CRAFTING_CURRENCY_LIST[0]!;
 }
 
-function rollDistinctAffixes(item: GearInstance, count: number, rng: () => number): GearAffixRoll[] {
-  const def = gearDefinitions[item.definitionId];
-  if (!def) return [];
-  return rollAffixes(def, count, rng);
-}
-
 function addRandomAffix(item: GearInstance, rng: () => number): GearInstance {
   const def = gearDefinitions[item.definitionId];
   if (!def) return item;
@@ -190,7 +184,10 @@ interface CraftingCurrencyBehavior {
 const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBehavior> = {
   "discordant-dice": {
     canApply: hasAnyAffix,
-    apply: (item, rng) => ({ ...item, affixes: rollDistinctAffixes(item, item.affixes.length, rng) }),
+    apply: (item, rng) => {
+      const def = gearDefinitions[item.definitionId];
+      return { ...item, affixes: def ? rollAffixes(def, item.affixes.length, rng) : [] };
+    },
   },
   "sprig-of-growth": {
     canApply: (item) =>

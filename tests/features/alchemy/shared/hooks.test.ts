@@ -73,7 +73,6 @@ describe("getVirtualResolutionLayout", () => {
 
 describe("useVirtualResolution", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 

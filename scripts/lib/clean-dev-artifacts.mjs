@@ -18,9 +18,6 @@ export const DEFAULT_ARTIFACT_DIRS = Object.freeze([...TRANSIENT_ARTIFACT_DIRS, 
 /** Heavier rebuildable outputs; only removed with `--builds` / `--all`. */
 export const BUILD_ARTIFACT_DIRS = Object.freeze(["dist", "release-desktop"]);
 
-/** E2E / Electron preview ports that should not linger after crashed test runs. */
-export const STALE_TEST_PORTS = Object.freeze([4173, 4175, 4176]);
-
 /**
  * @param {string} rootDir
  * @param {{ builds?: boolean }} [options]

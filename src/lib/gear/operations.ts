@@ -101,10 +101,9 @@ function resolveHandConflicts(
   definition: GearDefinition,
   inventory: GearInstance[],
 ): GearLoadouts[GearCharacterId] {
-  const next = { ...characterLoadout, [slot]: characterLoadout[slot] };
-  if (slot === "main-hand" && isTwoHanded(definition)) return resolveMainHandTwoHanded(next);
-  if (slot === "off-hand") return resolveOffHand(next, inventory);
-  return resolveSingleMainHand(next, definition, inventory);
+  if (slot === "main-hand" && isTwoHanded(definition)) return resolveMainHandTwoHanded(characterLoadout);
+  if (slot === "off-hand") return resolveOffHand(characterLoadout, inventory);
+  return resolveSingleMainHand(characterLoadout, definition, inventory);
 }
 
 export function equipGear(

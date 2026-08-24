@@ -4,7 +4,7 @@
  * Depended on by: use-alchemy-run-controller.ts, tests
  */
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { current } from "immer";
 import {
   canEnterLabyrinthNode,
@@ -125,5 +125,8 @@ export function useLabyrinthController(): LabyrinthController {
     }
   }, []);
 
-  return { enterNode, onNodeCleared, onNodeFailed, resetMap };
+  return useMemo(
+    () => ({ enterNode, onNodeCleared, onNodeFailed, resetMap }),
+    [enterNode, onNodeCleared, onNodeFailed, resetMap],
+  );
 }

@@ -1,6 +1,8 @@
 import { gearArtByDefinitionId } from "@/lib/game-data";
 import {
+  buildEligibleAffixPool,
   gearBaseItems,
+  gearDefinitionId,
   gearDefinitionList,
   gearDefinitions,
   gearAffixCatalog,
@@ -31,14 +33,9 @@ function validateGearAffixIds(collector: ReturnType<typeof createCollector>): vo
 }
 
 function validateBaseItems(collector: ReturnType<typeof createCollector>): void {
-  for (const baseItem of Object.values(gearBaseItems)) {
-    if (baseItem.id === "") collector.error("gear", "base-item", "Gear base item has an empty id");
+  for (const baseItemId of Object.keys(gearBaseItems)) {
     for (const rarity of GEAR_RARITIES) {
-      if (!baseItem.availableRarities.includes(rarity))
-        collector.error("gear", baseItem.id, `Base item does not declare ${rarity} rarity`);
-    }
-    for (const rarity of baseItem.availableRarities) {
-      const definitionId = `${baseItem.id}-${rarity}`;
+      const definitionId = gearDefinitionId(baseItemId, rarity);
       if (!gearDefinitions[definitionId])
         collector.error("gear", definitionId, "Missing generated gear definition for base item rarity");
     }
@@ -53,11 +50,8 @@ function validateGearDefinitions(collector: ReturnType<typeof createCollector>):
       collector.error("art", definition.id, "Missing generated gear art mapping");
     const minAffixes = definition.rarity ? GEAR_AFFIX_COUNT[definition.rarity].min : 0;
     if (!definition.rarity) continue;
-    const eligibleAffixes = Object.values(gearAffixCatalog).filter((affix) =>
-      definition.affinityKeywords.some(
-        (keyword) => keyword === affix.keywordId || keyword === affix.secondaryKeywordId,
-      ),
-    );
+    // Same eligibility rule generation uses (aspect + affinity), not a restated copy.
+    const eligibleAffixes = buildEligibleAffixPool(definition);
     if (eligibleAffixes.length < minAffixes)
       collector.error(
         "gear",
