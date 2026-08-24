@@ -195,6 +195,7 @@ interface ContextMeasurement {
   ownerDocBytes: number;
   selectedBytes: number;
   changedFileBytes: number;
+  totalContextBytes: number;
   verificationCommands: number;
   deduplicatedTestPaths: number;
   artifacts: Array<{ path: string; bytes: number }>;
@@ -291,13 +292,24 @@ declare module "*/playwright-run-reporter.mjs" {
   }
 }
 
-declare module "*/check-docs.mjs" {
+declare module "*/check-plans.mjs" {
   export function parsePlanMetadata(source: string): PlanMetadataResult;
   export function checkPlans(options?: { final?: boolean; today?: Date }): {
     failures: string[];
     warnings: string[];
     activePlans: number;
   };
+}
+
+declare module "*/check-documentation-contract.mjs" {
+  export const DOCUMENTATION_CONTRACTS: ReadonlyArray<readonly [string, () => string[]]>;
+  export function checkLocalMarkdownLinks(): string[];
+  export function checkInlineRepositoryPaths(): string[];
+  export function checkDocumentedNpmScripts(): string[];
+  export function checkMarkdownHeadingAnchors(): string[];
+  export function checkContributingE2ePaths(): string[];
+  export function checkDurableDocumentReachability(): string[];
+  export function checkDocumentationContracts(): string[];
 }
 
 declare module "*/archive-plans.mjs" {
@@ -330,12 +342,37 @@ declare module "*/test-suites.mjs" {
 }
 
 declare module "*/compact-output.mjs" {
+  export const ROUTINE_EXPOSURE_BUDGET_BYTES: number;
   export function sanitizeOutput(output: string): string;
+  export function outputStats(output: string): { bytes: number; lines: number };
+  export function commandExposure(options: {
+    key: string;
+    label: string;
+    command: string;
+    result: { output: string; status: number | null; elapsedMs: number };
+    exposedOutput?: string;
+    budgetBytes?: number | null;
+  }): {
+    key: string;
+    label: string;
+    command: string;
+    status: number | null;
+    durationMs: number;
+    rawBytes: number;
+    rawLines: number;
+    exposedBytes: number;
+    exposedLines: number;
+    omittedBytes: number;
+    omittedPercent: number;
+    budgetBytes: number | null;
+    overBudget: boolean;
+  };
   export function firstOutputLine(output: string): string;
-  export function tailOutput(output: string, maxChars?: number): string;
+  export function tailOutput(output: string, maxBytes?: number): string;
 }
 
 declare module "*/measure-agent-context.mjs" {
+  export const ROUTE_CONTEXT_BUDGETS: Readonly<Record<string, { preread: number; total: number }>>;
   export function measureContext(options?: {
     paths?: string[];
     docs?: string[];
@@ -343,6 +380,40 @@ declare module "*/measure-agent-context.mjs" {
     outputFiles?: string[];
   }): ContextMeasurement;
   export function measureAllRoutes(): ContextMeasurement[];
+}
+
+declare module "*/context-hotspots.mjs" {
+  export const ROUTINE_EXPOSURE_BUDGET_BYTES: number;
+  interface CommandHotspot {
+    key: string;
+    label: string;
+    occurrences: number;
+    failures: number;
+    rawBytes: number;
+    exposedBytes: number;
+    maxExposedBytes: number;
+    overBudgetOccurrences: number;
+    maxRawBytes: number;
+    rawLines: number;
+    avoidedPercent: number;
+  }
+  export function parseContextHotspotArgs(argv: string[]): {
+    last: number;
+    minBytes: number;
+    json: boolean;
+    check: boolean;
+  };
+  export function aggregateCommandExposures(runs: Array<Record<string, unknown>>, minBytes?: number): CommandHotspot[];
+  export function buildContextHotspotReport(
+    rootDir: string,
+    options?: { last?: number; minBytes?: number },
+  ): { generatedAt: string; inspectedRuns: number; routes: ContextMeasurement[]; commands: CommandHotspot[] };
+  export function formatContextHotspotReport(report: {
+    generatedAt: string;
+    inspectedRuns: number;
+    routes: ContextMeasurement[];
+    commands: CommandHotspot[];
+  }): string;
 }
 
 declare module "*/verify-changed.mjs" {
@@ -377,6 +448,21 @@ declare module "*/current-run.mjs" {
     summary?: string;
     counts?: Partial<Record<"passed" | "failed" | "skipped" | "flaky", number>>;
     commit?: string | null;
+    commandExposures?: Array<{
+      key: string;
+      label: string;
+      command: string;
+      status: number | null;
+      durationMs: number;
+      rawBytes: number;
+      rawLines: number;
+      exposedBytes: number;
+      exposedLines: number;
+      omittedBytes: number;
+      omittedPercent: number;
+      budgetBytes: number | null;
+      overBudget: boolean;
+    }>;
   }): {
     jsonPath: string;
     markdownPath: string;

@@ -1,4 +1,4 @@
-# 15. Type Safety Audit
+# Type Safety Audit
 
 **Goal:** Remove confirmed unsafe typing escapes and dishonest type models without replacing valid invariants with vague fallbacks.
 
@@ -33,7 +33,7 @@ Confirm unsafe escapes, unsound generics, broad records, non-exhaustive unions, 
 - External and JSON data is `unknown` until a boundary validates it; types must not claim fields or variants that decoding does not establish.
 - Prefer exhaustive switches and domain-specific unions over string bags, broad `Record<string, unknown>`, and boolean/optional-property combinations.
 - Test builders used to create production state must preserve production invariants or deliberately expose an explicitly unsafe fixture boundary.
-- Targets (directional, not absolute gates): `any` → 0 in non-test `src`; `@ts-expect-error` / `as unknown as` trending to 0; `!.` ≤ ~1 per 500 LOC.
+- Directional targets: `any` in non-test `src`, `@ts-expect-error`, `as unknown as`, and unjustified non-null assertions trend downward. Enforced compiler and lint gates remain authoritative.
 
 ## Known signals
 

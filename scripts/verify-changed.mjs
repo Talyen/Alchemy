@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { sanitizeOutput, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
+import { commandExposure, sanitizeOutput, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { E2E_NAMES, resolveRoutePlan } from "./lib/change-routes.mjs";
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
@@ -108,18 +108,53 @@ function runVerificationCommand(command, index, verbose, runId) {
   });
   const { output } = result;
   const elapsed = (result.elapsedMs / 1000).toFixed(1);
-  if (verbose && output) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
+  const verboseOutput = verbose && output ? output : "";
+  if (verboseOutput) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
   if (result.status === 0) {
-    console.log(`✓ ${command.label} (${elapsed}s, run ${runId})`);
-    return { passed: true, command, result };
+    const exposure = commandExposure({
+      key: command.key,
+      label: command.label,
+      command: `${command.command} ${command.args.join(" ")}`,
+      result,
+      exposedOutput: verboseOutput,
+      budgetBytes: verbose ? null : undefined,
+    });
+    if (exposure.overBudget) {
+      console.error(
+        `✗ ${command.label} exposed ${exposure.exposedBytes.toLocaleString()} bytes; ` +
+          `routine budget is ${exposure.budgetBytes?.toLocaleString()} bytes (run ${runId})`,
+      );
+    } else console.log(`✓ ${command.label} (${elapsed}s, run ${runId})`);
+    return {
+      passed: !exposure.overBudget,
+      exposureFailure: exposure.overBudget,
+      command,
+      result,
+      exposure,
+    };
   }
   const reportsDir = path.join(ROOT, "reports", "runs", runId, "verify-changed");
   const { digestPath, logPath } = writeFailureDigest(reportsDir, command, result, runId, index);
   console.error(`✗ ${command.label} (${elapsed}s, exit ${result.status ?? "unknown"}, run ${runId})`);
-  console.error(`  ${tailOutput(output)}`);
+  const failureTail = tailOutput(output);
+  console.error(`  ${failureTail}`);
   console.error(`  Failure digest: ${path.relative(ROOT, digestPath)}`);
   console.error(`  Full output: ${path.relative(ROOT, logPath)}`);
-  return { passed: false, command, result, digestPath, logPath };
+  return {
+    passed: false,
+    command,
+    result,
+    digestPath,
+    logPath,
+    exposure: commandExposure({
+      key: command.key,
+      label: command.label,
+      command: `${command.command} ${command.args.join(" ")}`,
+      result,
+      exposedOutput: verboseOutput ? `${verboseOutput}\n${failureTail}` : failureTail,
+      budgetBytes: verbose ? null : undefined,
+    }),
+  };
 }
 
 export function main(argv = process.argv.slice(2)) {
@@ -137,10 +172,15 @@ export function main(argv = process.argv.slice(2)) {
       if (!outcome.passed && !flags.has("keep-going")) break;
     }
     const failed = outcomes.filter((outcome) => !outcome.passed);
-    const artifacts = failed.flatMap((outcome) => [
-      { path: outcome.digestPath, role: "primary" },
-      { path: outcome.logPath, role: "secondary" },
-    ]);
+    const artifacts = failed.flatMap((outcome) =>
+      outcome.digestPath && outcome.logPath
+        ? [
+            { path: outcome.digestPath, role: "primary" },
+            { path: outcome.logPath, role: "secondary" },
+          ]
+        : [],
+    );
+    const exposureFailures = failed.filter((outcome) => outcome.exposureFailure);
     writeCurrentRun({
       rootDir: ROOT,
       runId,
@@ -148,9 +188,12 @@ export function main(argv = process.argv.slice(2)) {
       command: "npm run verify:changed",
       artifacts,
       counts: { passed: outcomes.length - failed.length, failed: failed.length },
+      commandExposures: outcomes.map((outcome) => outcome.exposure),
       summary:
         failed.length > 0
-          ? `${failed[0].command.label} failed; inspect its bounded digest first.`
+          ? exposureFailures.length > 0
+            ? `${exposureFailures[0].command.label} exceeded the routine command-output exposure budget.`
+            : `${failed[0].command.label} failed; inspect its bounded digest first.`
           : `${outcomes.length}/${outcomes.length} verification steps passed.`,
     });
     return failed.length === 0 ? 0 : 1;

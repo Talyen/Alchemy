@@ -1,6 +1,7 @@
 ---
 status: complete
 updated: 2026-08-24
+implementation: f07bbb72
 ---
 
 # Boss traits and HP scaling

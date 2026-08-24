@@ -1,4 +1,4 @@
-# 13. Side-Effect Surface Audit
+# Side-Effect Surface Audit
 
 **Goal:** Confine I/O, shared mutation, environment access, and non-deterministic primitives to well-owned seams, and ensure those seams have coherent lifetime, failure, batching, and testability behavior.
 

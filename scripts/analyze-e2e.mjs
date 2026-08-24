@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
-import { tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
+import { commandExposure, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { diagnosticIdentity, failureDigestRelativePath, writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 import {
@@ -37,11 +37,15 @@ const result = runCommand("npm", ["run", "test:e2e:timings", "--", ...extraArgs]
   shell: true,
 });
 const commandOutput = result.output;
-if (verbose && commandOutput) process.stdout.write(commandOutput.endsWith("\n") ? commandOutput : `${commandOutput}\n`);
+const verboseOutput = verbose && commandOutput ? commandOutput : "";
+let exposedCommandOutput = verboseOutput;
+if (verboseOutput) process.stdout.write(commandOutput.endsWith("\n") ? commandOutput : `${commandOutput}\n`);
 if (result.status !== 0) {
   const logPath = writeDiagnosticLog(reportsDir, "e2e-audit-command", commandOutput);
   console.error(`Playwright exited with ${result.status ?? "unknown"}.`);
-  console.error(tailOutput(commandOutput));
+  const failureTail = tailOutput(commandOutput);
+  exposedCommandOutput = verboseOutput ? `${verboseOutput}\n${failureTail}` : failureTail;
+  console.error(failureTail);
   console.error(`Full command output: ${path.relative(process.cwd(), logPath)}`);
   if (fs.existsSync(path.join(reportsDir, "e2e-results.json"))) {
     console.error(
@@ -55,6 +59,23 @@ if (result.status !== 0) {
 }
 
 const reportPath = path.join(reportsDir, "e2e-results.json");
+const e2eCommandExposure = commandExposure({
+  key: "test:e2e:timings",
+  label: "Playwright E2E timings",
+  command: `npm run test:e2e:timings -- ${extraArgs.join(" ")}`.trim(),
+  result,
+  exposedOutput: exposedCommandOutput,
+  budgetBytes: verbose ? null : undefined,
+});
+const exposureFailed = e2eCommandExposure.overBudget;
+if (exposureFailed) {
+  const logPath = writeDiagnosticLog(reportsDir, "e2e-audit-command", commandOutput);
+  console.error(
+    `Command output exposed ${e2eCommandExposure.exposedBytes.toLocaleString()} bytes; ` +
+      `routine budget is ${e2eCommandExposure.budgetBytes?.toLocaleString()} bytes.`,
+  );
+  console.error(`Full command output: ${path.relative(process.cwd(), logPath)}`);
+}
 
 if (!fs.existsSync(reportPath)) {
   console.error("❌ Error: playwright json report was not generated at:", reportPath);
@@ -63,6 +84,7 @@ if (!fs.existsSync(reportPath)) {
     status: "failed",
     command: "npm run test:e2e:audit",
     artifacts: ["reports/e2e-results.json"],
+    commandExposures: [e2eCommandExposure],
     summary: "Playwright JSON report was not generated.",
   });
   process.exit(typeof result.status === "number" && result.status !== 0 ? result.status : 1);
@@ -177,7 +199,7 @@ try {
 const failureIndex = writeFailureIndex(process.cwd());
 writeCurrentRun({
   rootDir: process.cwd(),
-  status: result.status === 0 ? "passed" : "failed",
+  status: result.status === 0 && !exposureFailed ? "passed" : "failed",
   command: "npm run test:e2e:audit",
   artifacts: [
     { path: "reports/e2e-audit-report.md", role: "primary" },
@@ -191,8 +213,14 @@ writeCurrentRun({
     { path: "playwright-report", role: "secondary" },
     { path: "test-results", role: "secondary" },
   ],
-  summary: result.status === 0 ? "E2E audit completed." : "E2E audit failed; inspect the first failure digest.",
+  commandExposures: [e2eCommandExposure],
+  summary:
+    result.status === 0 && !exposureFailed
+      ? "E2E audit completed."
+      : exposureFailed
+        ? "E2E audit exceeded the routine command-output exposure budget."
+        : "E2E audit failed; inspect the first failure digest.",
 });
 
 // Exit with the code returned by Playwright to preserve CI pipelines
-process.exit(result.status ?? 1);
+process.exit(exposureFailed ? 1 : (result.status ?? 1));

@@ -1,5 +1,12 @@
 # Contributing
 
+Install dependencies with `npm ci`, find the canonical owner for the behavior
+in the [documentation map](./README.md#documentation), and keep the change
+focused on that owner. During implementation, run
+`npm run verify:changed -- --diff`; before pushing, run `npm run check:push`.
+Use Conventional Commits and
+leave `CHANGELOG.md` to the release automation.
+
 ## What to run when you change…
 
 The executable catalog in `scripts/lib/change-routes.mjs` owns path-to-command and path-to-document selection; `scripts/verify-changed.mjs` executes its deduplicated plan.
@@ -22,7 +29,7 @@ raw traces or report directories.
 
 ## Before you push
 
-Execution plans are short-lived working documents under [`docs/Plans/`](docs/Plans/README.md). Run `npm run docs:check` while a plan is active. When the work ends, mark it `complete` (or `cancelled`), refresh its `updated` date, and run `npm run docs:check:final`; the command archives terminal plans and requires no active plans to remain.
+Execution plans are short-lived working documents under [`docs/Plans/`](docs/Plans/README.md). Run `npm run plans:check` while a plan is active; `npm run docs:check` includes that check plus repository-wide documentation contracts. When the work ends, mark the plan `complete` (or `cancelled`), refresh its `updated` date, and run `npm run docs:check:final`; the command archives terminal plans and requires no active plans to remain.
 
 The default local hook is `npm run check:push` (format, TypeScript for src and tests, ESLint, a fresh production build, `@prepush` E2E canary). CI is the full gate after every push to `main`. Do **not** require a GitHub **push** status check on `main` — that blocks trunk pushes before CI can run.
 
@@ -35,8 +42,9 @@ Install hooks once: `npm run prepare` (runs on `npm install`).
 E2E timings / flakiness: `npm run test:e2e:timings`, `npm run test:e2e:audit`.
 Recent local verification/test records: `npm run runs:show -- --last 10`.
 Frame pacing (on-demand, not CI): [docs/PERFORMANCE.md](./docs/PERFORMANCE.md).
-Release gate: `npm run release` (includes `check:ship:full`). Command details:
-[docs/REFERENCE.md](./docs/REFERENCE.md#script-command-reference).
+Release command: `npm run release` runs `check:ship:full`, creates the release
+commit and tag, pushes `main` and the tag, then watches GitHub Actions. Use it
+only when intentionally shipping; see [RELEASE.md](./docs/RELEASE.md).
 
 ### Lint / format / dead-code commands
 

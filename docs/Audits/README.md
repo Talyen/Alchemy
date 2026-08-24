@@ -53,5 +53,3 @@ Leave alone unless the owning architecture doc changes: battle RNG injection; pe
 Verify with the path-scoped gates for the touched area in [CONTRIBUTING.md](../../CONTRIBUTING.md). Prefer existing gates over aspirational absolute metrics; the only absolute-zero target is a failing enforced boundary gate. When toolchain pieces are absent, state exactly which checks were skipped and why — never fail an audit solely because Electron, Steam credentials, or a full ship build is unavailable.
 
 Standing conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [AGENTS.md](../../AGENTS.md). Optional measurable sweep: `npm run audit:all` (`npm run content:audit` is a content-catalog check, outside this pack).
-
-**`rg` path required in Cursor cloud shells:** pathless `rg` waits on stdin forever there; pass an explicit path (usually `.`) and prefer `--type ts`.

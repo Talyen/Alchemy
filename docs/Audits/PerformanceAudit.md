@@ -1,4 +1,4 @@
-# 12. Performance Audit
+# Performance Audit
 
 **Goal:** Fix confirmed runtime and payload performance problems — startup, input latency, render churn, frame cost, memory/allocation pressure, synchronous persistence work, background CPU, and bundle/asset weight — without speculative optimization or degrading intentional spectacle.
 

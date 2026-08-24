@@ -19,16 +19,18 @@ npm run build               # vite build (typecheck is a separate gate; Vercel r
 npm test                    # Vitest; `npm test -- <path>` for a single file
 npm run verify:changed -- --diff  # Changed-path verification route (--plan previews; --e2e <route> escalates)
 npm run runs:show -- --last 10    # Recent run IDs, outcomes, counts, and evidence availability
+npm run context:hotspots          # Ranked route context and recent command-output exposure
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci / check:push)
 npm run lint:ci             # Full static gate
 npm run check:push          # Local pre-push gate
 npm run check:ship          # Ship gate before tagging/desktop packaging
-npm run docs:check          # Validate plan metadata (--final at handoff)
+npm run docs:check          # Validate documentation contracts and plan metadata
+npm run plans:check         # Validate active plan metadata only
 npm run new:plan -- <Name>  # Scaffold an execution plan under docs/Plans/
 npm run balance:sim         # Headless balance findings (opens reports/balance-findings.html)
 npm run perf                # FPS / hitch profiling ([PERFORMANCE.md](./PERFORMANCE.md))
 npm run clean               # Remove local diagnostics/artifacts
-npm run release             # Version bump, changelog, tag ([RELEASE.md](./RELEASE.md))
+npm run release             # Full release: gates, commit/tag, push, CI watch ([RELEASE.md](./RELEASE.md))
 ```
 
 This is the curated agent subset. The full catalog is `package.json` (exhaustive); what each gate includes and when it applies is owned by [CONTRIBUTING.md](../CONTRIBUTING.md#before-you-push).
@@ -70,6 +72,8 @@ Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI d
 ### Context-efficiency measurements
 
 `npm run measure:agent-context -- --path <changed-path>` reports a stable preread byte proxy: always-loaded instructions, route-selected owner sections, changed-file bytes, verification/test-path counts, and explicitly named artifact bytes. `--all-routes` compares one canonical fixture per route.
+
+`npm run context:hotspots -- --last 20` ranks every canonical route by preread plus fixture bytes, then aggregates raw versus agent-exposed output for commands captured in recent report-producing runs. The default hides command groups below 4,000 raw bytes; use `--min-bytes 0` for the complete inventory, `--json` for machine-readable output, or `--check` to fail when a recorded command exceeded the 4 KiB routine-exposure budget. Route budgets are ratcheted in the repository-tooling tests. `verify:changed`, `audit:all`, and `test:e2e:audit` enforce the exposure budget on their own current run, while the verifier handoff rechecks the latest record. `--verbose` remains an explicit opt-in that records full exposure without enforcing the routine budget.
 
 ## Balance simulation
 
@@ -124,6 +128,12 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 
 Definitions of common terms used in the Alchemy codebase.
 
+### Content systems
+
+- **Content System** — `campaign`, `labyrinth`, or `wildwood`; owns map generation and encounter rules. Implementations live under `src/lib/content-systems/`.
+
+### Shared battle and progression terms
+
 | Term                     | Definition                                                                                                                                                                                                                                                                                                     |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Block**                | Damage absorption on player/enemy; halves at the start of the owner's next turn after one opposing attack window.                                                                                                                                                                                              |
@@ -135,7 +145,6 @@ Definitions of common terms used in the Alchemy codebase.
 | **Materials**            | Meta currency for homestead upgrades.                                                                                                                                                                                                                                                                          |
 | **Screen**               | Route union (`menu`, `battle`, `rewards`, …) on `navigation.screen` — not a map node.                                                                                                                                                                                                                          |
 | **Companion Bond**       | Per-companion talent level; boosts companion damage each turn.                                                                                                                                                                                                                                                 |
-| **Content System**       | `campaign`, `labyrinth`, or `wildwood` — map generation and encounter rules.                                                                                                                                                                                                                                   |
 | **Corruption**           | Altar event that mutates a card with a random harmful effect/tag. Leave without corrupting returns to the same Choose Destination picker and does not consume the destination.                                                                                                                                 |
 | **Damage type**          | `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature` — enemies may resist or be vulnerable per type.                                                                                                                                                                                      |
 | **Potion**               | Consumable with temporary effect from the Alchemist shop.                                                                                                                                                                                                                                                      |

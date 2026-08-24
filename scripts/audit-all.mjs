@@ -10,7 +10,7 @@
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
+import { commandExposure, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { writeCurrentRun } from "./lib/current-run.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
 
@@ -56,17 +56,44 @@ const outcomes = await Promise.all(
 );
 
 let failed = 0;
+const commandExposures = [];
 for (const { step, r } of outcomes) {
   const ms = r.elapsedMs;
   const { output } = r;
-  if (verbose && output) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
+  const verboseOutput = verbose && output ? output : "";
+  if (verboseOutput) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
+  let exposedOutput = verboseOutput;
+  let failureTail = "";
+  if (r.status !== 0) {
+    failureTail = tailOutput(output);
+    exposedOutput = verboseOutput ? `${verboseOutput}\n${failureTail}` : failureTail;
+  }
+  const exposure = commandExposure({
+    key: step.name,
+    label: step.name,
+    command: `${step.cmd} ${step.args.join(" ")}`,
+    result: r,
+    exposedOutput,
+    budgetBytes: verbose ? null : undefined,
+  });
+  commandExposures.push(exposure);
   if (r.status !== 0) {
     failed++;
     const safeName = step.name.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-");
     const logPath = writeDiagnosticLog(path.join(ROOT, "reports", "audit-all"), safeName, output);
     console.log(`── ${step.name} ──`);
     console.log(`  ✗ failed (${ms}ms, exit ${r.status ?? "unknown"})`);
-    console.log(`  ${tailOutput(output)}`);
+    console.log(`  ${failureTail}`);
+    console.log(`  Full output: ${path.relative(ROOT, logPath)}\n`);
+  } else if (exposure.overBudget) {
+    failed++;
+    const safeName = step.name.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-");
+    const logPath = writeDiagnosticLog(path.join(ROOT, "reports", "audit-all"), safeName, output);
+    console.log(`── ${step.name} ──`);
+    console.log(
+      `  ✗ exposed ${exposure.exposedBytes.toLocaleString()} bytes; ` +
+        `routine budget is ${exposure.budgetBytes?.toLocaleString()} bytes`,
+    );
     console.log(`  Full output: ${path.relative(ROOT, logPath)}\n`);
   } else {
     console.log(`── ${step.name} ── ✓ ok (${ms}ms)\n`);
@@ -81,6 +108,7 @@ writeCurrentRun({
   status: failed > 0 ? "failed" : "passed",
   command: "npm run audit:all",
   artifacts: [{ path: "reports/audit-all", role: "secondary" }],
+  commandExposures,
   summary: `${STEPS.length - failed}/${STEPS.length} audit probes passed.`,
 });
 if (failed > 0) {

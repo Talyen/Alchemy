@@ -13,8 +13,8 @@ Ship, desktop, and installer scripts (`check:ship`, `check:ship:full`, `build:de
 | `npm run sync:changelog`         | Optional: rebuild `CHANGELOG.md` ## [Unreleased] from git (also runs automatically as release `prerelease`) |
 | `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`                              |
 | `npm run steam:upload:dry-run`   | Validates Steam VDF templates + contentroot (`release-desktop/win-unpacked`) without credentials            |
-| `npm run release`                | Bumps version, syncs + promotes changelog, creates git tag                                                  |
-| `npm run release:hotfix`         | Patch bump with the lighter gate (`check:ship` + `@prepush` E2E)                                            |
+| `npm run release`                | Full gate, release commit/tag, pushes `main` + tag, then watches release CI                                 |
+| `npm run release:hotfix`         | Lighter gate, forced patch commit/tag, pushes `main` + tag, then watches release CI                         |
 
 ## Changelog (release-time only)
 
@@ -34,6 +34,26 @@ Ship, desktop, and installer scripts (`check:ship`, `check:ship:full`, `build:de
    Steam publishing. The release job must not introduce a second desktop build
    when the workflow already produced the release artifact.
 5. After a successful Steam upload, **manually promote** the new build to the live branch in Steamworks (`setlive` is empty so uploads do not auto-publish).
+
+## Failed release and rollback
+
+`npm run release` pushes the release commit and tag before it watches GitHub
+Actions. A workflow failure is therefore a published failed release attempt,
+not an uncommitted local operation.
+
+- If a job fails before Steam upload, fix the cause on `main` and use a new
+  patch release. Do not move or reuse the published tag.
+- If packaging succeeds but Steam upload fails, leave the current live branch
+  untouched, repair credentials or workflow configuration, and rerun the
+  failed workflow for the same immutable tag.
+- If a promoted build is defective, use Steamworks to restore the previously
+  known-good build to the live branch, then ship a new hotfix tag. Record the
+  rollback and affected versions in the release or incident notes.
+- Never delete a public release tag merely to make history look successful.
+  GitHub and Steam artifacts must remain traceable to immutable source.
+
+The release workflow must keep upload and live promotion separate so a failed
+or unreviewed build cannot become player-visible automatically.
 
 ## Steam depot and App ID
 
@@ -59,7 +79,9 @@ identity or save data. Otherwise, events use Sentry's standard Electron error co
    auth token only to release creation and source-map upload.
 3. In Sentry, create an email alert for new and regressed issues. The initial free tier is quota limited; when the
    quota is exhausted the game continues normally and events are dropped.
-4. Add this disclosure to the Steam privacy notice before enabling the secrets:
+4. Publish [the privacy notice](../PRIVACY.md) on the Steam store page before
+   enabling the secrets. Keep its crash-reporting disclosure aligned with this
+   runtime contract:
    “Alchemy automatically sends technical error reports to Sentry. Reports can include the game version, operating
    system, Electron version, crash location, screen label, and diagnostic context collected by Sentry's Electron
    SDK. Alchemy does not deliberately attach Steam identity or save data.”
@@ -67,6 +89,15 @@ identity or save data. Otherwise, events use Sentry's standard Electron error co
 Release desktop builds create hidden source maps, upload them as `alchemy@<package version>`, and delete them before
 electron-builder assembles the application. The packaging verifier checks that maps and CI credentials are absent.
 Reporting failures and offline play never block startup, saves, gameplay, or quit.
+
+## Player notices and asset provenance
+
+Before a public build can be promoted, review [PRIVACY.md](../PRIVACY.md) and
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md). Every third-party art,
+audio, font, or bundled runtime must have a recorded source, license, required
+attribution, and redistribution permission. An unknown or incomplete asset
+provenance row is a release blocker; do not infer permission from the presence
+of a file in `Raw Assets/`.
 
 ## Windows signing readiness
 
@@ -97,7 +128,11 @@ Windows release job.
 | `SENTRY_ORG` / `SENTRY_PROJECT`     | Source-map destination         |
 | `AZURE_*` values above              | Optional Azure Trusted Signing |
 
-## System requirements (Windows)
+## Steam listing baseline (Windows)
+
+These are the current player-facing store assumptions, not values derived from
+Electron configuration. Revalidate them on representative minimum-spec
+hardware before changing the Steam listing or promoting a public build.
 
 - Windows 10/11 64-bit
 - 4 GB RAM
@@ -111,3 +146,10 @@ are defined in [`.github/workflows/release.yml`](../.github/workflows/release.ym
 and [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Keep this page
 focused on release decisions; update the workflow files when CI topology
 changes.
+
+## Changelog output policy
+
+`CHANGELOG.md` is a generated developer history and may be verbose between
+releases. Never trim or reorganize it by hand. If an unreleased section becomes
+hard to consume, change `sync-changelog.mjs` filtering/grouping with tests or
+cut a release; player-facing communication belongs in generated patch notes.

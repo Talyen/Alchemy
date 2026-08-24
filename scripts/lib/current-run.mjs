@@ -116,6 +116,31 @@ function normalizeCounts(counts) {
   return Object.keys(normalized).length > 0 ? normalized : null;
 }
 
+function normalizeCommandExposures(exposures) {
+  if (!Array.isArray(exposures)) return [];
+  return exposures.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const numeric = (key) => Math.max(0, Number(entry[key]) || 0);
+    return [
+      {
+        key: String(entry.key ?? "command").slice(0, 120),
+        label: String(entry.label ?? entry.key ?? "command").slice(0, 200),
+        command: String(entry.command ?? "unknown").slice(0, 300),
+        status: Number.isInteger(entry.status) ? entry.status : null,
+        durationMs: numeric("durationMs"),
+        rawBytes: numeric("rawBytes"),
+        rawLines: numeric("rawLines"),
+        exposedBytes: numeric("exposedBytes"),
+        exposedLines: numeric("exposedLines"),
+        omittedBytes: numeric("omittedBytes"),
+        omittedPercent: Math.min(100, numeric("omittedPercent")),
+        budgetBytes: entry.budgetBytes == null ? null : numeric("budgetBytes"),
+        overBudget: entry.overBudget === true,
+      },
+    ];
+  });
+}
+
 function renderRunMarkdown(payload) {
   const countText = payload.counts
     ? Object.entries(payload.counts)
@@ -134,6 +159,11 @@ function renderRunMarkdown(payload) {
     `- Dirty paths at generation: ${payload.dirtyPaths.length + payload.omittedDirtyPaths}`,
     ...payload.dirtyPaths.map((dirtyPath) => `  - \`${dirtyPath}\``),
     ...(payload.omittedDirtyPaths > 0 ? [`  - _…and ${payload.omittedDirtyPaths} more_`] : []),
+    ...(payload.commandExposures.length > 0
+      ? [
+          `- Captured command output: ${payload.commandExposures.reduce((sum, entry) => sum + entry.rawBytes, 0).toLocaleString()} bytes; exposed ${payload.commandExposures.reduce((sum, entry) => sum + entry.exposedBytes, 0).toLocaleString()} bytes`,
+        ]
+      : []),
     "",
     "## Primary evidence",
     "",
@@ -157,6 +187,7 @@ export function writeCurrentRun({
   summary = "",
   counts,
   commit,
+  commandExposures = [],
 } = {}) {
   if (!rootDir) throw new Error("writeCurrentRun requires rootDir");
   const reportsDir = path.join(rootDir, "reports");
@@ -176,6 +207,7 @@ export function writeCurrentRun({
     artifacts: normalizedArtifacts,
     summary: summary.slice(0, 500),
     counts: normalizeCounts(counts),
+    commandExposures: normalizeCommandExposures(commandExposures),
   };
   const jsonPath = path.join(reportsDir, "current-run.json");
   const markdownPath = path.join(reportsDir, "current-run.md");

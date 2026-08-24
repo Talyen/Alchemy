@@ -10,6 +10,22 @@ export interface RunArtifact {
   role?: "primary" | "secondary";
 }
 
+export interface CommandExposure {
+  key: string;
+  label: string;
+  command: string;
+  status: number | null;
+  durationMs: number;
+  rawBytes: number;
+  rawLines: number;
+  exposedBytes: number;
+  exposedLines: number;
+  omittedBytes: number;
+  omittedPercent: number;
+  budgetBytes?: number | null;
+  overBudget?: boolean;
+}
+
 export interface CurrentRunOptions {
   rootDir: string;
   runId?: string;
@@ -19,6 +35,7 @@ export interface CurrentRunOptions {
   summary?: string;
   counts?: RunCounts;
   commit?: string | null;
+  commandExposures?: CommandExposure[];
 }
 
 export function normalizeRunId(value: unknown): string;

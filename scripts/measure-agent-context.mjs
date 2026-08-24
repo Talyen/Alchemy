@@ -9,6 +9,32 @@ import { isMainModule } from "./lib/is-main-module.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const INSTRUCTION_FILES = ["AGENTS.md"];
 
+export const ROUTE_CONTEXT_BUDGETS = Object.freeze({
+  "active-run": { preread: 13 * 1024, total: 16 * 1024 },
+  save: { preread: 12 * 1024, total: 23 * 1024 },
+  battle: { preread: 12 * 1024, total: 13 * 1024 },
+  "content-systems": { preread: 9 * 1024, total: 14 * 1024 },
+  homestead: { preread: 10 * 1024, total: 10 * 1024 },
+  generated: { preread: 9 * 1024, total: 35 * 1024 },
+  balance: { preread: 9 * 1024, total: 31 * 1024 },
+  shop: { preread: 9 * 1024, total: 11 * 1024 },
+  "shop-screen": { preread: 9 * 1024, total: 17 * 1024 },
+  audio: { preread: 9 * 1024, total: 13 * 1024 },
+  routing: { preread: 12 * 1024, total: 24 * 1024 },
+  gear: { preread: 11 * 1024, total: 21 * 1024 },
+  mystery: { preread: 11 * 1024, total: 21 * 1024 },
+  integration: { preread: 13 * 1024, total: 23 * 1024 },
+  "unit-test": { preread: 9 * 1024, total: 23 * 1024 },
+  "e2e-helper": { preread: 13 * 1024, total: 16 * 1024 },
+  "root-specs": { preread: 9 * 1024, total: 10 * 1024 },
+  tooling: { preread: 9 * 1024, total: 17 * 1024 },
+  assets: { preread: 13 * 1024, total: 17 * 1024 },
+  "ci-routing": { preread: 9 * 1024, total: 21 * 1024 },
+  documentation: { preread: 10 * 1024, total: 56 * 1024 },
+  "ui-flow": { preread: 13 * 1024, total: 22 * 1024 },
+  unknown: { preread: 9 * 1024, total: 9 * 1024 },
+});
+
 function parseArgs(argv) {
   const paths = [];
   const docs = [];
@@ -103,25 +129,28 @@ function countTestFiles(plan) {
 export function measureContext(options = {}) {
   const paths = options.paths?.length ? options.paths : ["docs/REFERENCE.md"];
   const plan = resolveRoutePlan(paths);
+  const routes = options.routes ?? plan.routes;
   const instructions = INSTRUCTION_FILES.map((filePath) =>
     measureDocument({ path: filePath, reason: "always-loaded repository instructions" }, "instruction"),
   );
   const explicitDocs = options.docs?.length ? options.docs.map((filePath) => ({ path: filePath })) : null;
-  const ownerDocs = (explicitDocs ?? uniqueDocuments(plan.routes)).map((entry) => measureDocument(entry, "owner"));
+  const ownerDocs = (explicitDocs ?? uniqueDocuments(routes)).map((entry) => measureDocument(entry, "owner"));
   const artifacts = (options.artifacts ?? []).map((filePath) => ({ path: filePath, bytes: fileBytes(filePath) }));
   const outputs = (options.outputFiles ?? []).map((filePath) => ({ path: filePath, bytes: fileBytes(filePath) }));
   const instructionBytes = instructions.reduce((total, entry) => total + entry.bytes, 0);
   const ownerDocBytes = ownerDocs.reduce((total, entry) => total + entry.bytes, 0);
+  const changedFileBytes = paths.reduce((total, filePath) => total + fileBytes(filePath), 0);
   return {
     changedPaths: paths,
-    routes: plan.routes.map((route) => route.id),
+    routes: routes.map((route) => route.id),
     instructions,
     ownerDocs,
     docs: [...instructions, ...ownerDocs],
     instructionBytes,
     ownerDocBytes,
     selectedBytes: instructionBytes + ownerDocBytes,
-    changedFileBytes: paths.reduce((total, filePath) => total + fileBytes(filePath), 0),
+    changedFileBytes,
+    totalContextBytes: instructionBytes + ownerDocBytes + changedFileBytes,
     verificationCommands: plan.commands.length,
     deduplicatedTestPaths: countTestFiles(plan),
     artifacts,
@@ -132,9 +161,9 @@ export function measureContext(options = {}) {
 }
 
 export function measureAllRoutes() {
-  const rows = ROUTES.map((route) => measureContext({ paths: [route.fixture] }));
+  const rows = ROUTES.map((route) => measureContext({ paths: [route.fixture], routes: [route] }));
   rows.push(measureContext({ paths: ["unknown.file"] }));
-  return rows.sort((a, b) => b.selectedBytes - a.selectedBytes);
+  return rows.sort((a, b) => b.totalContextBytes - a.totalContextBytes);
 }
 
 function formatDocument(entry) {
@@ -145,12 +174,13 @@ function formatDocument(entry) {
 function formatMeasurement(measurement) {
   return [
     `Selected preread proxy: ${measurement.selectedBytes.toLocaleString()} bytes`,
+    `Changed files: ${measurement.changedFileBytes.toLocaleString()} bytes`,
+    `Total context proxy: ${measurement.totalContextBytes.toLocaleString()} bytes`,
     `Routes: ${measurement.routes.join(", ")}`,
     `Instructions: ${measurement.instructionBytes.toLocaleString()} bytes`,
     ...measurement.instructions.map(formatDocument),
     `Owner docs: ${measurement.ownerDocBytes.toLocaleString()} bytes`,
     ...(measurement.ownerDocs.length > 0 ? measurement.ownerDocs.map(formatDocument) : ["  none selected"]),
-    `Changed files: ${measurement.changedFileBytes.toLocaleString()} bytes`,
     `Verification commands: ${measurement.verificationCommands}; deduplicated test paths: ${measurement.deduplicatedTestPaths}`,
     ...(measurement.artifactBytes > 0 ? [`Named artifacts: ${measurement.artifactBytes.toLocaleString()} bytes`] : []),
     ...(measurement.namedOutputBytes > 0
@@ -165,8 +195,13 @@ function main(argv = process.argv.slice(2)) {
     const result = args.allRoutes ? measureAllRoutes() : measureContext(args);
     if (args.json) console.log(JSON.stringify(result, null, 2));
     else if (Array.isArray(result)) {
-      console.log("Route preread proxy (largest first):");
-      for (const row of result) console.log(`${row.routes.join("+")}: ${row.selectedBytes.toLocaleString()} bytes`);
+      console.log("Route context proxy (largest first):");
+      for (const row of result) {
+        console.log(
+          `${row.routes.join("+")}: ${row.totalContextBytes.toLocaleString()} bytes ` +
+            `(preread ${row.selectedBytes.toLocaleString()}; fixture ${row.changedFileBytes.toLocaleString()})`,
+        );
+      }
     } else console.log(formatMeasurement(result));
     return 0;
   } catch (error) {

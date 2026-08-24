@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { archiveTerminalPlans } from "../../scripts/archive-plans.mjs";
-import { parsePlanMetadata } from "../../scripts/check-docs.mjs";
+import { parsePlanMetadata } from "../../scripts/check-plans.mjs";
 import { planTemplate, safePlanName } from "../../scripts/new-plan.mjs";
 import { parsePruneArgs, pruneTransientArtifacts } from "../../scripts/prune-transient-artifacts.mjs";
 

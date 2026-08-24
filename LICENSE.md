@@ -1,4 +1,4 @@
-# Alchemy license notice
+# Alchemy license notice and summary
 
 Copyright © Ryan McIntire. SPDX-License-Identifier: CC-BY-NC-4.0.
 
@@ -27,4 +27,9 @@ No warranties are given. The license may not give you all of the permissions nec
 
 ---
 
-The summary above does not replace the license terms. See the [official license deed](https://creativecommons.org/licenses/by-nc/4.0/) and [full legal code](https://creativecommons.org/licenses/by-nc/4.0/legalcode).
+The summary above does not replace the license terms. The repository uses SPDX
+identifier `CC-BY-NC-4.0`; the authoritative terms are the
+[official license deed](https://creativecommons.org/licenses/by-nc/4.0/) and
+[full legal code](https://creativecommons.org/licenses/by-nc/4.0/legalcode).
+Third-party material is governed by its own terms and is recorded in
+[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).

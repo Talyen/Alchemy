@@ -17,8 +17,8 @@
 ## Quick Start
 
 ```sh
-git clone <repository-url>
-cd alchemy
+git clone https://github.com/Talyen/Alchemy.git
+cd Alchemy
 npm ci
 npm run dev
 ```
@@ -27,13 +27,12 @@ npm run dev
 
 ## Key Scripts
 
-| Command            | Action                               |
-| ------------------ | ------------------------------------ |
-| `npm run dev`      | Start Vite dev server                |
-| `npm test`         | Run Vitest unit tests                |
-| `npm run test:e2e` | Run Playwright end-to-end tests      |
-| `npm run lint`     | Lint all source files                |
-| `npm run release`  | Bump version, changelog, and git tag |
+| Command            | Action                          |
+| ------------------ | ------------------------------- |
+| `npm run dev`      | Start Vite dev server           |
+| `npm test`         | Run Vitest unit tests           |
+| `npm run test:e2e` | Run Playwright end-to-end tests |
+| `npm run lint`     | Lint all source files           |
 
 Full command catalog (build, desktop, gates, balance sim, perf, clean): [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands).
 
@@ -75,6 +74,18 @@ Headless balance simulation (`npm run balance:sim`) runs the real battle engine 
 - `tests/` — Vitest unit tests and Playwright specs
 
 Feature layout and run-state ownership: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+
+## Documentation
+
+| Need                                  | Start here                                                                                               |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Architecture, state, controllers      | [Architecture](./docs/ARCHITECTURE.md)                                                                   |
+| Content and implementation checklists | [Workflows](./docs/WORKFLOWS.md) · [Asset workflow](./docs/WORKFLOWS-ASSETS.md)                          |
+| Commands, battle rules, glossary      | [Developer reference](./docs/REFERENCE.md)                                                               |
+| Verification and CI                   | [Contributing](./CONTRIBUTING.md) · [E2E helpers](./tests/e2e/README.md)                                 |
+| Saves and migrations                  | [Save migration guide](./src/features/alchemy/shared/storage/MIGRATIONS.md)                              |
+| Gear and profiling                    | [Armory](./docs/ARMORY.md) · [Performance](./docs/PERFORMANCE.md)                                        |
+| Shipping and player notices           | [Release](./docs/RELEASE.md) · [Privacy](./PRIVACY.md) · [Third-party notices](./THIRD_PARTY_NOTICES.md) |
 
 ## Assets
 

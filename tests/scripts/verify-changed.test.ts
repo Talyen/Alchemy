@@ -2,14 +2,61 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { firstOutputLine, sanitizeOutput, tailOutput } from "../../scripts/lib/compact-output.mjs";
+import {
+  commandExposure,
+  firstOutputLine,
+  outputStats,
+  sanitizeOutput,
+  tailOutput,
+} from "../../scripts/lib/compact-output.mjs";
 import { validateRouteCatalog } from "../../scripts/lib/change-routes.mjs";
 import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-suites.mjs";
-import { measureAllRoutes, measureContext } from "../../scripts/measure-agent-context.mjs";
+import { measureAllRoutes, measureContext, ROUTE_CONTEXT_BUDGETS } from "../../scripts/measure-agent-context.mjs";
 import { formatPlan, writeFailureDigest } from "../../scripts/verify-changed.mjs";
 import { resolveRoutePlan as resolvePlan, resolveRoutes } from "../../scripts/lib/change-routes.mjs";
 
 describe("verify-changed route catalog", () => {
+  it("measures raw and agent-exposed command output", () => {
+    expect(outputStats("first\nsecond")).toEqual({ bytes: 12, lines: 2 });
+    expect(
+      commandExposure({
+        key: "fixture",
+        label: "fixture command",
+        command: "npm test",
+        result: { output: "0123456789", status: 1, elapsedMs: 15.4 },
+        exposedOutput: "6789",
+      }),
+    ).toMatchObject({
+      key: "fixture",
+      status: 1,
+      durationMs: 15,
+      rawBytes: 10,
+      exposedBytes: 4,
+      omittedBytes: 6,
+      omittedPercent: 60,
+      budgetBytes: 4_096,
+      overBudget: false,
+    });
+    expect(
+      commandExposure({
+        key: "flood",
+        label: "flood",
+        command: "fixture",
+        result: { output: "x".repeat(5_000), status: 0, elapsedMs: 1 },
+        exposedOutput: "x".repeat(5_000),
+      }).overBudget,
+    ).toBe(true);
+    expect(
+      commandExposure({
+        key: "verbose",
+        label: "verbose",
+        command: "fixture",
+        result: { output: "x".repeat(5_000), status: 0, elapsedMs: 1 },
+        exposedOutput: "x".repeat(5_000),
+        budgetBytes: null,
+      }),
+    ).toMatchObject({ budgetBytes: null, overBudget: false });
+  });
   it("writes a run-attributed bounded digest while keeping the full stream separate", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "verify-digest-"));
     try {
@@ -135,10 +182,7 @@ describe("verify-changed route catalog", () => {
 
   it("routes documentation changes to the documentation contract", () => {
     expect(resolveRoutes(["docs/new-guide.md"]).map((route) => route.id)).toEqual(["documentation"]);
-    expect(resolvePlan(["docs/new-guide.md"]).commands.map((command) => command.key)).toEqual([
-      "docs-check",
-      "docs-contract",
-    ]);
+    expect(resolvePlan(["docs/new-guide.md"]).commands.map((command) => command.key)).toEqual(["docs-check"]);
   });
 
   it("routes CI workflow changes to the CI path-filter contract", () => {
@@ -167,7 +211,7 @@ describe("verify-changed route catalog", () => {
   it("retains the unknown fallback when a mixed diff also has an owned path", () => {
     const plan = resolvePlan(["docs/REFERENCE.md", "src/new-subsystem/example.ts"]);
     expect(plan.routes.map((route) => route.id)).toEqual(["documentation", "unknown"]);
-    expect(plan.commands.map((command) => command.key)).toEqual(["docs-check", "docs-contract", "typecheck"]);
+    expect(plan.commands.map((command) => command.key)).toEqual(["docs-check", "typecheck"]);
     expect(formatPlan(plan)).toContain("route ownership is unknown");
   });
 
@@ -236,6 +280,19 @@ describe("verify-changed route catalog", () => {
     }
   });
 
+  it("ratchets preread and total context for every canonical route", () => {
+    const measurements = measureAllRoutes();
+    expect(new Set(measurements.map((measurement) => measurement.routes.join("+")))).toEqual(
+      new Set(Object.keys(ROUTE_CONTEXT_BUDGETS)),
+    );
+    for (const measurement of measurements) {
+      const route = measurement.routes[0] ?? "unknown";
+      const budget = ROUTE_CONTEXT_BUDGETS[route];
+      expect(measurement.selectedBytes, `${route} preread`).toBeLessThanOrEqual(budget?.preread ?? 0);
+      expect(measurement.totalContextBytes, `${route} total`).toBeLessThanOrEqual(budget?.total ?? 0);
+    }
+  });
+
   it("keeps the routine persistence guard stack bounded", () => {
     const agents = fs.readFileSync("AGENTS.md", "utf8");
     const start = agents.indexOf("## Change guards");
@@ -256,8 +313,9 @@ describe("compact child output", () => {
   it("keeps a useful first line and bounded tail", () => {
     expect(firstOutputLine("\n\nTimeoutError: locator.click\nstack\n")).toBe("TimeoutError: locator.click");
     const output = tailOutput("x".repeat(30), 10);
-    expect(output.length).toBeLessThanOrEqual(60);
-    expect(output).toContain("chars omitted");
+    expect(Buffer.byteLength(output, "utf8")).toBeLessThanOrEqual(30);
+    expect(output).toContain("bytes omitted");
+    expect(Buffer.byteLength(tailOutput("🔥".repeat(2_000)), "utf8")).toBeLessThanOrEqual(4_000);
   });
 
   it("strips terminal control noise from compact output", () => {
