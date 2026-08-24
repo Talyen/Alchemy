@@ -257,7 +257,7 @@ export function applyCraftingCurrency(
 export function rollSalvageYield(rarity: GearRarity, rng: () => number): Record<CraftingCurrencyId, number> {
   const yieldRecord = { ...EMPTY_CRAFTING_CURRENCIES };
 
-  yieldRecord["discordant-dice"] = rng() < SALVAGE_DICE_HIGH_CHANCE ? 1 : 2;
+  yieldRecord["discordant-dice"] = rng() < SALVAGE_DICE_HIGH_CHANCE ? 2 : 1;
   if (rarity === "basic") {
     if (rng() < SALVAGE_BASIC_SPRIG_CHANCE) yieldRecord["sprig-of-growth"] = 1;
     if (rng() < SALVAGE_BASIC_VOIDSTONE_CHANCE) yieldRecord.voidstone = 1;
