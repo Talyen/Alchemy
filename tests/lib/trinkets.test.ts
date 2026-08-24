@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { trinketLibrary } from "@/lib/game-data";
-import { computeTrinketManifest, defaultTrinketEffects, isDefaultTrinketManifest } from "@/lib/trinkets";
+import {
+  combineTrinketEffectIds,
+  computeTrinketManifest,
+  defaultTrinketEffects,
+  isDefaultTrinketManifest,
+} from "@/lib/trinkets";
 
 describe("computeTrinketManifest", () => {
   it("returns all defaults for empty array", () => {
@@ -117,6 +122,11 @@ describe("computeTrinketManifest", () => {
   it("handles duplicate boon IDs (no double-counting)", () => {
     const manifest = computeTrinketManifest(["brass-censer", "brass-censer"]);
     expect(manifest.firstHolyDamageDoubled).toBe(true);
+  });
+
+  it("deduplicates an equipped trinket that matches an active boon", () => {
+    expect(combineTrinketEffectIds(["bone-charm"], "bone-charm")).toEqual(["bone-charm"]);
+    expect(combineTrinketEffectIds(["bone-charm"], "meteorite")).toEqual(["bone-charm", "meteorite"]);
   });
 
   it("Companion's Collar → companionDamageBonus: 1", () => {

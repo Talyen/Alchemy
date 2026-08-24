@@ -1,4 +1,10 @@
-import { canApplyCraftingCurrency, type CraftingCurrencyId, type GearInstance } from "@/lib/gear";
+import {
+  canApplyCraftingCurrency,
+  gearDefinitions,
+  type CraftingCurrencyId,
+  type GearInstance,
+  type GearSlot,
+} from "@/lib/gear";
 import { playUISound } from "@/lib/audio";
 import type { ArmorySalvagePending } from "./armory-screen-types";
 
@@ -6,6 +12,10 @@ interface TargetingSetters {
   setSalvageMode: (value: boolean) => void;
   setActiveCurrencyId: (value: CraftingCurrencyId | null) => void;
   setSalvagePending?: (value: ArmorySalvagePending | null) => void;
+}
+
+export function itemsMatchingSlot(inventory: GearInstance[], slot: GearSlot): GearInstance[] {
+  return inventory.filter((item) => gearDefinitions[item.definitionId]?.compatibleSlots.includes(slot) ?? false);
 }
 
 export function resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setSalvagePending }: TargetingSetters) {

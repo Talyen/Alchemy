@@ -17,6 +17,7 @@ import { applyTalentState, setFinishedRunCharacters } from "./write-port-profile
 import { applyRestoreRunToDraft, clearModeSlotInDraft } from "./run-park-restore";
 import { touchRunRecency, type ParkedRunsMap } from "./parked-runs";
 import type { ContentSystemId } from "@/lib/content-systems/types";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 /** Apply persisted active-run data across the run-lifetime stores atomically. */
 export function restoreRun(
@@ -54,7 +55,10 @@ export function syncRunToBattleStart(draft: GameplayDraft, playerHealth?: number
     getBattleStartPlayerHealth(
       draft.run.activeRun.runPlayerHealth,
       draft.run.activeRun.runMaxHealth,
-      draft.run.activeRun.runTrinkets,
+      combineTrinketEffectIds(
+        draft.run.activeRun.runBoons,
+        draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+      ),
     );
   setRunPlayerHealth(draft, startingHealth);
   return startingHealth;

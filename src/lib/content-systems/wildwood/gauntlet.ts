@@ -27,7 +27,7 @@ export interface WildwoodDraftState {
   currentBossId: WildwoodBossId | null;
   currentCombatTraitIds: EncounterCombatTraitId[];
   currentRewardTraitIds: EncounterRewardTraitId[];
-  rewardType: "card" | "trinket" | "gear" | null;
+  rewardType: "card" | "boon" | "trinket" | "gear" | null;
   rewardChoiceIds: string[];
   rewardGearChoices: GearInstance[];
   selectedRewardId: string | null;

@@ -68,5 +68,5 @@ export interface BattleScreenData {
   battleState: BattleState;
   displayOverrides: DisplayOverrides;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
-  runTrinkets: string[];
+  runBoons: string[];
 }

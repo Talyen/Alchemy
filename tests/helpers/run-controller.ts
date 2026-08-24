@@ -17,7 +17,7 @@ export function makeRunController(): BattleRunPort & ContentNavigationRunPort {
     runMaxHealth: state.activeRun.runMaxHealth,
     contentSystemType: state.activeRun.contentSystemType,
     roomsEncountered: state.activeRun.roomsEncountered,
-    runTrinkets: state.activeRun.runTrinkets,
+    runBoons: state.activeRun.runBoons,
     encounteredRunEnemyIds: state.activeRun.encounteredRunEnemyIds,
     runDeck: state.activeRun.runDeck,
     runGold: getRunProgressStoreView().runGold,

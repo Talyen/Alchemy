@@ -58,11 +58,11 @@ test.describe("Reward Flow", critical, () => {
     },
   );
 
-  test("trinket reward: trinket appears in runTrinkets after claiming", async ({ page, fastBattle, runtimeErrors }) => {
+  test("boon reward: boon appears in runBoons after claiming", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
     await enterPrimaryRewardScreen(page, {
-      rewardType: "trinket",
+      rewardType: "boon",
       choiceIds: ["tattered-pages", "companions-collar"],
     });
 
@@ -72,9 +72,29 @@ test.describe("Reward Flow", critical, () => {
 
     const trinkets = await page.evaluate((saveKey) => {
       const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.runTrinkets ?? [];
+      return save.activeRun?.runBoons ?? [];
     }, SAVE_KEY);
     expect(trinkets).toContain("tattered-pages");
+  });
+
+  test("permanent trinket reward: ownership is added without granting a boon", async ({
+    page,
+    fastBattle,
+    runtimeErrors,
+  }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await enterPrimaryRewardScreen(page, {
+      rewardType: "trinket",
+      choiceIds: ["tattered-pages", "companions-collar"],
+    });
+
+    await new RewardPage(page).claimWithConfirmationGate();
+    await new DestinationPage(page).expectVisible();
+
+    const saved = await page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}"), SAVE_KEY);
+    expect(saved.ownedTrinketIds).toContain("tattered-pages");
+    expect(saved.activeRun?.runBoons ?? []).not.toContain("tattered-pages");
   });
 
   test("gear reward: claiming gear adds it to gearInventory", async ({ page, fastBattle, runtimeErrors }) => {

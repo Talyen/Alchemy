@@ -5,12 +5,15 @@ import type { GearStore } from "./gear-store-types";
 import {
   addGearCurrencies,
   addGearInstance,
+  addPermanentTrinket,
   applyGearCurrency,
   equipGearInstance,
+  equipPermanentTrinket,
   initializeGear,
   resetGear,
   salvageGearInstance,
   unequipGearInstance,
+  unequipPermanentTrinket,
 } from "./gear-actions";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
 import { addMaterials, awardMaterialsDuringRun } from "./run-session-write-port";
@@ -20,11 +23,14 @@ function gearCommandView(state: GameplayDraft): GearStore {
   const gear = state.gear;
   return {
     ...gear,
-    initialize: (inventories, loadouts, craftingCurrencies) =>
-      initializeGear(gear, inventories, loadouts, craftingCurrencies),
+    initialize: (inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets) =>
+      initializeGear(gear, inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets),
     addInstance: (instance, characterId) => addGearInstance(gear, instance, characterId),
     equip: (characterId, slot, instance) => equipGearInstance(gear, characterId, slot, instance),
     unequip: (characterId, slot) => unequipGearInstance(gear, characterId, slot),
+    addTrinket: (trinketId) => addPermanentTrinket(gear, trinketId),
+    equipTrinket: (characterId, trinketId) => equipPermanentTrinket(gear, characterId, trinketId),
+    unequipTrinket: (characterId) => unequipPermanentTrinket(gear, characterId),
     salvage: (instanceId, options) => salvageGearInstance(gear, instanceId, options),
     applyCurrency: (currencyId, instanceId, options) => applyGearCurrency(gear, currencyId, instanceId, options),
     addCurrencies: (currencies) => addGearCurrencies(gear, currencies),

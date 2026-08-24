@@ -49,7 +49,7 @@ const ACTIVE_RUN_PROGRESS_KEYS = [
   "completedDestinations",
   "lastOfferedDestinations",
   "destinationRoundsSinceOffered",
-  "runTrinkets",
+  "runBoons",
   "encounteredRunEnemyIds",
   "selectedDifficulty",
   "contentSystemType",

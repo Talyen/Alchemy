@@ -14,6 +14,11 @@ export type CardRewardState = RewardStateBase & {
   choices: BattleCard[];
 };
 
+export type BoonRewardState = RewardStateBase & {
+  rewardType: "boon";
+  choices: TrinketEntry[];
+};
+
 export type TrinketRewardState = RewardStateBase & {
   rewardType: "trinket";
   choices: TrinketEntry[];
@@ -24,7 +29,7 @@ export type GearRewardState = RewardStateBase & {
   choices: GearInstance[];
 };
 
-export type RewardState = CardRewardState | TrinketRewardState | GearRewardState;
+export type RewardState = CardRewardState | BoonRewardState | TrinketRewardState | GearRewardState;
 
 export function getRewardChoiceId(choice: BattleCard | TrinketEntry | GearInstance): string {
   return "instanceId" in choice ? choice.instanceId : choice.id;

@@ -55,7 +55,7 @@ const runCommands = {
   setDestinationIndexInAct: command(runPort.setDestinationIndexInAct),
   setCompletedDestinations: command(runPort.setCompletedDestinations),
   setDestinationOfferState: command(runPort.setDestinationOfferState),
-  setRunTrinkets: command(runPort.setRunTrinkets),
+  setRunBoons: command(runPort.setRunBoons),
   setEncounteredRunEnemyIds: command(runPort.setEncounteredRunEnemyIds),
   setContentSystemType: command(runPort.setContentSystemType),
   resetProgress: command(runPort.resetProgress),
@@ -159,6 +159,15 @@ const gearCommands = {
   ),
   unequip: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.unequipGearInstance>) =>
     gearMutators.unequipGearInstance(draft.gear, ...args),
+  ),
+  addTrinket: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.addPermanentTrinket>) =>
+    gearMutators.addPermanentTrinket(draft.gear, ...args),
+  ),
+  equipTrinket: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.equipPermanentTrinket>) =>
+    gearMutators.equipPermanentTrinket(draft.gear, ...args),
+  ),
+  unequipTrinket: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.unequipPermanentTrinket>) =>
+    gearMutators.unequipPermanentTrinket(draft.gear, ...args),
   ),
   salvage: command((draft: GameplayDraft, ...args: Tail<typeof gearMutators.salvageGearInstance>) =>
     gearMutators.salvageGearInstance(draft.gear, ...args),

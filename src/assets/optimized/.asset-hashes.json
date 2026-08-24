@@ -634,35 +634,28 @@
     "mtimeMs": 1786238991454.158,
     "size": 3197884
   },
-  "gear-slot-amulet.webp": {
+  "gear-slot-accessory.webp": {
     "hash": "f7aaa7db9330730c",
-    "mtimeMs": 1786238872041.4124,
-    "size": 2396445
+    "mtimeMs": 1786580077030.5251,
+    "size": 2396445,
+    "settingsSig": "a71948c44793b914"
   },
   "gear-slot-body.webp": {
     "hash": "a4d0b8fb1d231a10",
     "mtimeMs": 1786238867645.0479,
     "size": 2074292
   },
-  "gear-slot-left-ring.webp": {
-    "hash": "f7aaa7db9330730c",
-    "mtimeMs": 1786238872041.4124,
-    "size": 2396445
+  "gear-slot-trinket.webp": {
+    "hash": "604d4a6a313f1b1e",
+    "mtimeMs": 1786658591883.7168,
+    "size": 2172403,
+    "settingsSig": "a71948c44793b914"
   },
-  "gear-slot-main-hand.webp": {
+  "gear-slot-weapon.webp": {
     "hash": "9e47010266e1d847",
-    "mtimeMs": 1786238876956.5105,
-    "size": 1894024
-  },
-  "gear-slot-off-hand.webp": {
-    "hash": "9e47010266e1d847",
-    "mtimeMs": 1786238876956.5105,
-    "size": 1894024
-  },
-  "gear-slot-right-ring.webp": {
-    "hash": "f7aaa7db9330730c",
-    "mtimeMs": 1786238872041.4124,
-    "size": 2396445
+    "mtimeMs": 1786580077039.0796,
+    "size": 1894024,
+    "settingsSig": "a71948c44793b914"
   },
   "gear-spellbook-astral.webp": {
     "hash": "176ca92f18c5c292",

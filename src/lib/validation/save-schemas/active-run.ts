@@ -171,7 +171,7 @@ const WildwoodDraftStateSchema = z
     currentBossId: WildwoodBossIdSchema.nullable(),
     currentCombatTraitIds: z.array(z.string()).default([]),
     currentRewardTraitIds: z.array(z.string()).default([]),
-    rewardType: z.enum(["card", "trinket", "gear"]).nullable(),
+    rewardType: z.enum(["card", "boon", "trinket", "gear"]).nullable(),
     rewardChoiceIds: z.array(z.string()),
     rewardGearChoices: GearInstanceArraySchema.default([]),
     selectedRewardId: z.string().nullable(),
@@ -201,6 +201,11 @@ const PersistedPendingRewardBaseSchema = {
 const PersistedPendingRewardUnionSchema = z.discriminatedUnion("rewardType", [
   z.object({
     rewardType: z.literal("card"),
+    choiceIds: z.array(z.string()),
+    ...PersistedPendingRewardBaseSchema,
+  }),
+  z.object({
+    rewardType: z.literal("boon"),
     choiceIds: z.array(z.string()),
     ...PersistedPendingRewardBaseSchema,
   }),
@@ -254,7 +259,7 @@ export const ActiveRunDataSchema = z
     completedDestinations: DestinationArraySchema,
     lastOfferedDestinations: DestinationArraySchema.default([]),
     destinationRoundsSinceOffered: z.record(z.string(), z.number().int().nonnegative()).catch({}).default({}),
-    runTrinkets: z.array(z.string()).catch([]),
+    runBoons: z.array(z.string()).catch([]),
     encounteredRunEnemyIds: deduplicatedStringArraySchema().default([]),
     selectedDifficulty: DifficultyIdSchema.nullable().catch(null).default(null),
     contentSystemType: ContentSystemIdSchema.catch("campaign"),

@@ -20,6 +20,8 @@ import {
   resampleEquipmentShopOfferings,
   type EquipmentShopState,
 } from "./shop-state-init";
+import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export function createEquipmentShopCommands({
   talentEffects,
@@ -28,12 +30,14 @@ export function createEquipmentShopCommands({
   talentEffects: TalentEffectManifest;
   gearAstralChanceBonus: number;
 }): EquipmentShopCommands {
-  const getBuyPrice = (instance: GearInstance) =>
-    computeGearBuyPrice(instance, {
+  const getBuyPrice = (instance: GearInstance) => {
+    const run = readActiveRun();
+    return computeGearBuyPrice(instance, {
       talentEffects,
-      runTrinkets: readActiveRun().runTrinkets,
+      runBoons: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId)),
       firstPurchaseUsed: readShopFirstPurchaseUsed("equipmentShopState"),
     });
+  };
   const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
 
   function initialize(): void {
@@ -47,7 +51,10 @@ export function createEquipmentShopCommands({
       const state = draft.session.equipmentShopState;
       const price = computeGearBuyPrice(instance, {
         talentEffects,
-        runTrinkets: draft.run.activeRun.runTrinkets,
+        runBoons: combineTrinketEffectIds(
+          draft.run.activeRun.runBoons,
+          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+        ),
         firstPurchaseUsed: state.firstPurchaseUsed,
       });
       return purchaseShopOffering({

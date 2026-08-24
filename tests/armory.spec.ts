@@ -186,7 +186,7 @@ test.describe("Armory crafting", () => {
       craftingCurrencies: { ...emptyCraftingCurrencies },
     });
 
-    await selectArmorySlot(page, "left-ring");
+    await selectArmorySlot(page, "left-accessory");
     await enterSalvageMode(page);
     await page.getByLabel("Salvage Ruby Ring", { exact: true }).first().click();
     await expectSalvageDialog(page);

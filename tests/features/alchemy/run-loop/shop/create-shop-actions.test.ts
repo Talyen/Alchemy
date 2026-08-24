@@ -78,7 +78,7 @@ function buildActions(
   }>,
 ) {
   if (overrides?.trinketIds) {
-    getRunProgressStoreView().setRunTrinkets(() => overrides.trinketIds!);
+    getRunProgressStoreView().setRunBoons(() => overrides.trinketIds!);
   }
   // Read fresh state after any mutations above
   const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects } as TalentEffectManifest;
@@ -431,7 +431,7 @@ describe("createShopActions", () => {
   });
 
   describe("trinket shop", () => {
-    it("deducts gold and adds trinket on purchase", () => {
+    it("deducts 80 gold and adds a permanent trinket on purchase", () => {
       setRunProgress({ runGold: 999 });
       setTrinketShopState(createInitialTrinketShopState(() => 0));
       const actions = buildActions();
@@ -441,21 +441,24 @@ describe("createShopActions", () => {
 
       expect(result).toBe(true);
       expect(getRunProgressStoreView().runGold).toBe(999 - TRINKET_SHOP_TRINKET_PRICE);
-      expect(getRunProgressStoreView().runTrinkets).toContain(trinket.id);
+      expect(TRINKET_SHOP_TRINKET_PRICE).toBe(80);
+      expect(useGearStore.getState().ownedTrinketIds).toContain(trinket.id);
+      expect(getRunProgressStoreView().runBoons).not.toContain(trinket.id);
       expect(getRunSessionStoreView().trinketShopState.firstPurchaseUsed).toBe(true);
     });
 
     it("does not charge gold when the trinket is already owned", () => {
       setTrinketShopState(createInitialTrinketShopState(() => 0));
       const trinket = requiredItem(getRunSessionStoreView().trinketShopState.trinkets[0], "trinket offering");
-      setRunProgress({ runGold: 999, runTrinkets: [trinket.id] });
+      setRunProgress({ runGold: 999 });
+      useGearStore.getState().addTrinket(trinket.id);
       const actions = buildActions();
 
       const result = actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0));
 
       expect(result).toBe(false);
       expect(getRunProgressStoreView().runGold).toBe(999);
-      expect(getRunProgressStoreView().runTrinkets).toEqual([trinket.id]);
+      expect(useGearStore.getState().ownedTrinketIds).toEqual([trinket.id]);
     });
 
     it("rejects a buy when the payload is not the live slot offering", () => {
@@ -469,7 +472,7 @@ describe("createShopActions", () => {
 
       expect(result).toBe(false);
       expect(getRunProgressStoreView().runGold).toBe(999);
-      expect(getRunProgressStoreView().runTrinkets).not.toContain(other.id);
+      expect(getRunProgressStoreView().runBoons).not.toContain(other.id);
     });
   });
 

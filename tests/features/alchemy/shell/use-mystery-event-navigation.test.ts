@@ -54,7 +54,7 @@ describe("useMysteryEventNavigation", () => {
     vi.spyOn(mystery, "pickResolvedMysteryEvent").mockReturnValue(
       resolveMysteryEventTrinkets(spring, ["icy-heart"], () => 0),
     );
-    setRunProgress({ runTrinkets: ["icy-heart"] });
+    setRunProgress({ runBoons: ["icy-heart"] });
     const { result } = renderMysteryNav();
 
     act(() => {

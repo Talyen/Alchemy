@@ -58,10 +58,10 @@ describe("MysteryRewardSummary", () => {
     expect(screen.getAllByText("Bone Charm")).toHaveLength(2);
   });
 
-  it("falls back to random trinket text when the granted id is unavailable", () => {
+  it("falls back to random Boon text when the granted id is unavailable", () => {
     renderSummary([{ kind: "gainRandomTrinket" }], []);
 
-    expect(screen.getByText("Gained a random trinket for this run")).toBeTruthy();
+    expect(screen.getByText("Gained a random Boon for this run")).toBeTruthy();
     expect(screen.queryByText("Bone Charm")).toBeNull();
   });
 

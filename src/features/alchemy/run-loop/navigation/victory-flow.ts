@@ -33,6 +33,7 @@ import {
   sampleDestinationChoices,
   withSelectedBossForDestinations,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 // Pure victory reward computation for run-flow victory handlers.
 // Depends on: reward-flow, destination-flow, game data, game constants, homestead loot.
@@ -81,7 +82,9 @@ export function computeVictoryRewardState(
     selectedDifficulty: DifficultyId | null;
     unlockedTalents: UnlockedTalents;
     runDeck: BattleCard[];
-    runTrinkets: string[];
+    runBoons: string[];
+    equippedTrinketId?: string | null;
+    ownedTrinketIds?: string[];
     contentSystemType: ContentSystemId;
     activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
     battleState: BattleState;
@@ -100,6 +103,7 @@ export function computeVictoryRewardState(
   const talentEffects = input.talentEffects ?? computeTalentEffects(input.unlockedTalents);
   const goldMultiplier = getGoldMultiplier(input.characterId, input.selectedDifficulty);
   const gearAstralChanceBonus = input.gearAstralChanceBonus ?? 0;
+  const activeTrinketEffectIds = combineTrinketEffectIds(input.runBoons, input.equippedTrinketId ?? null);
 
   if (input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS) {
     return createBossRewardStateFromFlow({
@@ -108,10 +112,11 @@ export function computeVictoryRewardState(
       generousBonus: input.generousBonus,
       talentGoldPerCombat: talentEffects.goldPerCombat,
       materials: input.materials,
-      trinketIds: input.runTrinkets,
+      trinketIds: activeTrinketEffectIds,
       goldMultiplier,
       rng,
       gearAstralChanceBonus,
+      ownedTrinketIds: input.ownedTrinketIds ?? [],
     });
   }
 
@@ -126,9 +131,10 @@ export function computeVictoryRewardState(
       talentGoldPerCombat: talentEffects.goldPerCombat,
       materials: input.materials,
       destinations: input.destinations,
-      trinketIds: input.runTrinkets,
+      trinketIds: activeTrinketEffectIds,
       goldMultiplier,
       rng,
+      excludedBoonIds: activeTrinketEffectIds,
     }),
     input.bossEnemyId,
   );
@@ -139,6 +145,7 @@ export function computeVictoryRewards(
   rng: () => number,
   destinationRng: () => number = rng,
 ): VictoryRewardsResult {
+  const activeTrinketEffectIds = combineTrinketEffectIds(input.runBoons, input.equippedTrinketId ?? null);
   const labyrinthRewardModifiers = getActiveRewardModifiersForContentSystem(
     input.contentSystemType,
     input.activeLabyrinthRewardModifiers,
@@ -148,7 +155,13 @@ export function computeVictoryRewards(
   if (input.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
     const goldEarned = Math.max(0, input.battleState.gold - input.runGold);
     return {
-      rewardState: createWildwoodRewardState(input.runDeck, rng, input.homesteadEffects.gearAstralChanceBonus),
+      rewardState: createWildwoodRewardState(
+        input.runDeck,
+        rng,
+        input.homesteadEffects.gearAstralChanceBonus,
+        activeTrinketEffectIds,
+        input.ownedTrinketIds ?? [],
+      ),
       labyrinthRewardModifiers,
       goldEarned,
       playerHealth: input.battleState.playerHealth,
@@ -166,7 +179,7 @@ export function computeVictoryRewards(
   const goldResult = computeVictoryGold({
     battleState: input.battleState,
     runGold: input.runGold,
-    runTrinkets: input.runTrinkets,
+    runBoons: activeTrinketEffectIds,
     gold,
     eliteBonus,
     generousBonus,
@@ -205,7 +218,9 @@ export function computeVictoryRewards(
       selectedDifficulty: input.selectedDifficulty,
       unlockedTalents: input.unlockedTalents,
       runDeck: input.runDeck,
-      runTrinkets: input.runTrinkets,
+      runBoons: input.runBoons,
+      equippedTrinketId: input.equippedTrinketId ?? null,
+      ownedTrinketIds: input.ownedTrinketIds ?? [],
       contentSystemType: input.contentSystemType,
       activeLabyrinthRewardModifiers: input.activeLabyrinthRewardModifiers,
       battleState: input.battleState,

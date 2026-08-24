@@ -18,6 +18,7 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export function useMysteryEventNavigation({
   navigateTo,
@@ -30,7 +31,16 @@ export function useMysteryEventNavigation({
         (draft) => {
           clearMysteryVisitState(draft);
           const rng = createDraftRunRandomSource(draft, "events");
-          setMysteryEvent(draft, pickResolvedMysteryEvent(rng, draft.run.activeRun.runTrinkets));
+          setMysteryEvent(
+            draft,
+            pickResolvedMysteryEvent(
+              rng,
+              combineTrinketEffectIds(
+                draft.run.activeRun.runBoons,
+                draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+              ),
+            ),
+          );
         },
         {
           afterCommit: () => {

@@ -9,8 +9,8 @@ import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
 import { HamburgerTrigger, PageLayout } from "../../../shared/ui/shared-ui";
 import { BattleAutoplayToggle } from "./autoplay-toggle";
-import { BattleTrinketInspectButton, BattleTrinketInspectOverlay } from "./trinket-inspect";
-import { uniqueRunTrinkets } from "./unique-run-trinkets";
+import { BattleTrinketInspectButton, BattleBoonInspectOverlay } from "./trinket-inspect";
+import { uniqueRunBoons } from "./unique-run-trinkets";
 import { WishOverlay } from "./wish-overlay";
 import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleScreenData } from "./types";
 import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils";
@@ -53,7 +53,7 @@ export function BattleScreen(props: BattleScreenProps) {
     onToggleAutoplay,
   } = props;
 
-  const { battleState, displayOverrides, activeLabyrinthModifiers, runTrinkets } = battleScreenData;
+  const { battleState, displayOverrides, activeLabyrinthModifiers, runBoons } = battleScreenData;
 
   const displayState = useMemo(() => ({ ...battleState, ...displayOverrides }), [battleState, displayOverrides]);
 
@@ -102,10 +102,10 @@ export function BattleScreen(props: BattleScreenProps) {
 
   const { battleSceneRef: sceneRef } = refs;
 
-  const inspectTrinkets = useMemo(() => uniqueRunTrinkets(runTrinkets), [runTrinkets]);
+  const inspectBoons = useMemo(() => uniqueRunBoons(runBoons), [runBoons]);
   const [trinketInspectOpen, setTrinketInspectOpen] = useState(false);
   const closeTrinketInspect = useCallback(() => setTrinketInspectOpen(false), []);
-  const inspectUiOpen = trinketInspectOpen && inspectTrinkets.length > 0 && !battleState.wishOptions;
+  const inspectUiOpen = trinketInspectOpen && inspectBoons.length > 0 && !battleState.wishOptions;
 
   return (
     <PageLayout>
@@ -121,7 +121,7 @@ export function BattleScreen(props: BattleScreenProps) {
         <div className="relative z-10 flex min-h-0 flex-1 flex-col">
           <div className="absolute top-0 right-0 z-30 flex items-center gap-2">
             <BattleAutoplayToggle enabled={actions.isAutoplayEnabled} onToggle={actions.onToggleAutoplay} />
-            {inspectTrinkets.length > 0 ? (
+            {inspectBoons.length > 0 ? (
               <BattleTrinketInspectButton
                 open={inspectUiOpen}
                 onToggle={() => setTrinketInspectOpen((open) => !open)}
@@ -141,7 +141,7 @@ export function BattleScreen(props: BattleScreenProps) {
 
             <WishOverlay open={Boolean(battleState.wishOptions)} battleState={displayState} actions={actions} />
 
-            <BattleTrinketInspectOverlay open={inspectUiOpen} trinketIds={runTrinkets} onClose={closeTrinketInspect} />
+            <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={closeTrinketInspect} />
 
             <CardGhostLayer />
             <CardTransferLayer />

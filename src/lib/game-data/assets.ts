@@ -60,11 +60,11 @@ export const allGameArt = Object.values(assetModules) as string[];
 
 export const gearSlotBackgroundArt = {
   body: assetRefs.gearSlotBody,
-  "main-hand": assetRefs.gearSlotMainHand,
-  "off-hand": assetRefs.gearSlotOffHand,
-  "left-ring": assetRefs.gearSlotLeftRing,
-  "right-ring": assetRefs.gearSlotRightRing,
-  amulet: assetRefs.gearSlotAmulet,
+  "main-hand": assetRefs.gearSlotWeapon,
+  "off-hand": assetRefs.gearSlotWeapon,
+  "left-accessory": assetRefs.gearSlotAccessory,
+  trinket: assetRefs.gearSlotTrinket,
+  "right-accessory": assetRefs.gearSlotAccessory,
 } as const;
 
 export const talentArt: Partial<Record<KeywordId, string>> = {

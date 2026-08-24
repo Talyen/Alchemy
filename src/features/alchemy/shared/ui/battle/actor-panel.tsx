@@ -205,7 +205,8 @@ function ActorArtFrame({
         cardSurfaceClass,
         !isDead && cardHoverScaleClass,
         cardWidthClass ?? battleCardWidthClass,
-        "border border-border/80",
+        "border",
+        isDead ? "border-transparent transition-[border-color] duration-150" : "border-border/80",
         sparksOverflow && "overflow-visible",
         isDead && "overflow-visible !bg-transparent",
       )}

@@ -17,7 +17,7 @@ export async function injectMidCombatSave(page: Page) {
     roomsEncountered: 2,
     destinationIndexInAct: 1,
     completedDestinations: ["Normal Combat"],
-    runTrinkets: ["tattered-pages"],
+    runBoons: ["tattered-pages"],
     encounteredRunEnemyIds: ["goblin"],
     selectedDifficulty: "difficulty-1",
     currentScreen: "battle",

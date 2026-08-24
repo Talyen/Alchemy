@@ -103,7 +103,7 @@ export interface ActiveRunData {
   completedDestinations: string[];
   lastOfferedDestinations: string[];
   destinationRoundsSinceOffered: Record<string, number>;
-  runTrinkets: string[];
+  runBoons: string[];
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;

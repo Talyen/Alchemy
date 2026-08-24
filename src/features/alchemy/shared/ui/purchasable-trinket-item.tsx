@@ -22,6 +22,7 @@ export function PurchasableTrinketItem({ trinket, price, gold, purchased, onBuy 
       disabled={purchased || !canAfford}
       onClick={!purchased && canAfford ? onBuy : undefined}
       ariaLabel={purchased ? trinket.title : `Buy ${trinket.title}`}
+      footerChip="Armory"
     >
       <ShopPriceChip price={price} gold={gold} purchased={purchased} />
     </TrinketTile>

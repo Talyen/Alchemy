@@ -39,21 +39,21 @@ describe("gear domain", () => {
   });
 
   it("allows one ring instance in either ring slot, but not both on one class", () => {
-    expect(isGearCompatibleWithSlot(gearDefinitions[ring.definitionId], "left-ring")).toBe(true);
-    expect(isGearCompatibleWithSlot(gearDefinitions[ring.definitionId], "right-ring")).toBe(true);
+    expect(isGearCompatibleWithSlot(gearDefinitions[ring.definitionId], "left-accessory")).toBe(true);
+    expect(isGearCompatibleWithSlot(gearDefinitions[ring.definitionId], "right-accessory")).toBe(true);
 
-    const left = equipGear(createEmptyGearLoadouts(), "knight", "left-ring", ring, [ring]);
-    expect(left.knight["left-ring"]).toBe(ring.instanceId);
-    const right = equipGear(left, "knight", "right-ring", ring, [ring]);
-    expect(right.knight["left-ring"]).toBeNull();
-    expect(right.knight["right-ring"]).toBe(ring.instanceId);
+    const left = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
+    expect(left.knight["left-accessory"]).toBe(ring.instanceId);
+    const right = equipGear(left, "knight", "right-accessory", ring, [ring]);
+    expect(right.knight["left-accessory"]).toBeNull();
+    expect(right.knight["right-accessory"]).toBe(ring.instanceId);
   });
 
   it("moves the same instance between classes", () => {
-    const knight = equipGear(createEmptyGearLoadouts(), "knight", "left-ring", ring, [ring]);
-    const rogue = equipGear(knight, "rogue", "right-ring", ring, [ring]);
-    expect(rogue.knight["left-ring"]).toBeNull();
-    expect(rogue.rogue["right-ring"]).toBe(ring.instanceId);
+    const knight = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
+    const rogue = equipGear(knight, "rogue", "right-accessory", ring, [ring]);
+    expect(rogue.knight["left-accessory"]).toBeNull();
+    expect(rogue.rogue["right-accessory"]).toBe(ring.instanceId);
   });
 
   it("returns unchanged loadouts for unknown definition or incompatible slot", () => {
@@ -76,7 +76,7 @@ describe("gear domain", () => {
       equipGear(
         loadouts,
         "knight",
-        "amulet",
+        "right-accessory",
         {
           instanceId: "body-1",
           definitionId: "leather-armor-basic",
@@ -99,7 +99,7 @@ describe("gear domain", () => {
       affixes: [{ id: "flat-physical", value: 1 }],
     };
     let loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body, ringWithAffix]);
-    loadouts = equipGear(loadouts, "knight", "left-ring", ringWithAffix, [body, ringWithAffix]);
+    loadouts = equipGear(loadouts, "knight", "left-accessory", ringWithAffix, [body, ringWithAffix]);
     expect(computeGearManifest("knight", [body, ringWithAffix], loadouts)).toEqual(manifestWithPhysical(2));
   });
 
@@ -161,7 +161,7 @@ describe("gear domain", () => {
   it("skips orphan loadout references and missing definitions in manifest", () => {
     const body: GearInstance = { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] };
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body]);
-    loadouts.knight.amulet = "missing-instance";
+    loadouts.knight["right-accessory"] = "missing-instance";
     expect(computeGearManifest("knight", [body], loadouts)).toEqual(manifestWithPhysical(0));
   });
 
@@ -186,15 +186,15 @@ describe("gear domain", () => {
   });
 
   it("rejects equipping gear that is not in inventory", () => {
-    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-ring", ring, []);
-    expect(loadouts.knight["left-ring"]).toBeNull();
+    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, []);
+    expect(loadouts.knight["left-accessory"]).toBeNull();
   });
 
   it("salvages equipped gear for crafting currencies and clears loadouts", () => {
-    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-ring", ring, [ring]);
+    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
     const result = salvageGear([ring], loadouts, ring.instanceId, () => 0);
     expect(result?.inventory).toEqual([]);
-    expect(result?.loadouts.knight["left-ring"]).toBeNull();
+    expect(result?.loadouts.knight["left-accessory"]).toBeNull();
     expect(result?.yieldedCurrencies).toEqual({
       "discordant-dice": 2,
       "sprig-of-growth": 1,
@@ -213,9 +213,9 @@ describe("gear domain", () => {
   });
 
   it("reports equipped gear as salvage eligible", () => {
-    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-ring", ring, [ring]);
+    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
     expect(canSalvageGear([ring], ring.instanceId)).toBe(true);
-    expect(unequipGear(loadouts, "knight", "left-ring").knight["left-ring"]).toBeNull();
+    expect(unequipGear(loadouts, "knight", "left-accessory").knight["left-accessory"]).toBeNull();
   });
 
   it("does not report nonexistent gear as salvage eligible", () => {
@@ -230,19 +230,19 @@ describe("gear domain", () => {
 
     const exclusive = normalizeExclusiveGearLoadouts({
       ...createEmptyGearLoadouts(),
-      knight: { ...createEmptyGearLoadouts().knight, "left-ring": "ring-1" },
-      rogue: { ...createEmptyGearLoadouts().rogue, "right-ring": "ring-1" },
+      knight: { ...createEmptyGearLoadouts().knight, "left-accessory": "ring-1" },
+      rogue: { ...createEmptyGearLoadouts().rogue, "right-accessory": "ring-1" },
     });
-    expect(exclusive.knight["left-ring"]).toBe("ring-1");
-    expect(exclusive.rogue["right-ring"]).toBeNull();
+    expect(exclusive.knight["left-accessory"]).toBe("ring-1");
+    expect(exclusive.rogue["right-accessory"]).toBeNull();
   });
 
   it("prunes loadout references missing from inventory", () => {
     const inventory = [ring];
-    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-ring", ring, [ring]);
+    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
     const pruned = pruneOrphanGearLoadouts([], loadouts);
-    expect(pruned.knight["left-ring"]).toBeNull();
-    expect(pruneOrphanGearLoadouts(inventory, loadouts).knight["left-ring"]).toBe("ring-1");
+    expect(pruned.knight["left-accessory"]).toBeNull();
+    expect(pruneOrphanGearLoadouts(inventory, loadouts).knight["left-accessory"]).toBe("ring-1");
   });
 
   it("reports gear max-health bonus from equipped loadout", () => {

@@ -8,7 +8,8 @@ import type { RewardState } from "@/lib/active-run-session";
 import type { Destination } from "@/lib/routing";
 import { CONSTANTS } from "../../shared/types";
 import { getRandomPotionCard } from "../navigation/reward-flow";
-import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
+import { appendCardToRunWithDiscovery, appendBoonToRunWithDiscovery } from "./deck-mutations";
+import { discoverTrinketIds } from "../../shared/stores/profile-store";
 import type { RunFlowShellActions } from "./run-flow-shell-actions";
 
 export type DestinationRouteDeps = Pick<
@@ -67,8 +68,12 @@ interface RewardSelectionInput {
 export function applyRewardSelection({ choice, type, draft }: RewardSelectionInput) {
   if (type === "card") {
     appendCardToRunWithDiscovery(draft, choice as BattleCard);
+  } else if (type === "boon") {
+    appendBoonToRunWithDiscovery(draft, (choice as { id: string }).id);
   } else if (type === "trinket") {
-    appendTrinketToRunWithDiscovery(draft, (choice as { id: string }).id);
+    const trinketId = (choice as { id: string }).id;
+    mutateGearWithRunHealthSync(draft, { mutate: (gear: GearStore) => gear.addTrinket(trinketId) });
+    discoverTrinketIds(draft, [trinketId]);
   } else if (type === "gear") {
     const characterId = draft.run.activeRun.characterId;
     mutateGearWithRunHealthSync(draft, {

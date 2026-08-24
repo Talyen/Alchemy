@@ -125,12 +125,10 @@ export { default as gearShortbowAstral } from "@/assets/optimized/gear-shortbow-
 export { default as gearShortbowBasic } from "@/assets/optimized/gear-shortbow-basic.webp";
 export { default as gearShortswordAstral } from "@/assets/optimized/gear-shortsword-astral.webp";
 export { default as gearShortswordBasic } from "@/assets/optimized/gear-shortsword-basic.webp";
-export { default as gearSlotAmulet } from "@/assets/optimized/gear-slot-amulet.webp";
+export { default as gearSlotAccessory } from "@/assets/optimized/gear-slot-accessory.webp";
 export { default as gearSlotBody } from "@/assets/optimized/gear-slot-body.webp";
-export { default as gearSlotLeftRing } from "@/assets/optimized/gear-slot-left-ring.webp";
-export { default as gearSlotMainHand } from "@/assets/optimized/gear-slot-main-hand.webp";
-export { default as gearSlotOffHand } from "@/assets/optimized/gear-slot-off-hand.webp";
-export { default as gearSlotRightRing } from "@/assets/optimized/gear-slot-right-ring.webp";
+export { default as gearSlotTrinket } from "@/assets/optimized/gear-slot-trinket.webp";
+export { default as gearSlotWeapon } from "@/assets/optimized/gear-slot-weapon.webp";
 export { default as gearSpellbookAstral } from "@/assets/optimized/gear-spellbook-astral.webp";
 export { default as gearSpellbookBasic } from "@/assets/optimized/gear-spellbook-basic.webp";
 export { default as gearStaffAstral } from "@/assets/optimized/gear-staff-astral.webp";

@@ -56,8 +56,8 @@ describe("gear save normalization", () => {
     const inventories = createEmptyGearInventories();
     inventories.knight = [{ instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] }];
     const loadouts = createEmptyGearLoadouts();
-    loadouts.knight["left-ring"] = "ring-1";
-    loadouts.rogue["right-ring"] = "ring-1";
+    loadouts.knight["left-accessory"] = "ring-1";
+    loadouts.rogue["right-accessory"] = "ring-1";
 
     const save = normalizeSaveData({
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
@@ -65,8 +65,8 @@ describe("gear save normalization", () => {
       gearLoadouts: loadouts,
     });
 
-    expect(save.gearLoadouts.knight["left-ring"]).toBe("ring-1");
-    expect(save.gearLoadouts.rogue["right-ring"]).toBeNull();
+    expect(save.gearLoadouts.knight["left-accessory"]).toBe("ring-1");
+    expect(save.gearLoadouts.rogue["right-accessory"]).toBeNull();
   });
 
   it("drops loadout references that are not present in gearInventories", () => {
@@ -141,7 +141,7 @@ describe("gear save normalization", () => {
 
     expect(normalized.gearInventories.knight).toEqual([body, ring]);
     expect(normalized.gearLoadouts.knight.body).toBe("body-1");
-    expect(normalized.gearLoadouts.knight["left-ring"]).toBeNull();
+    expect(normalized.gearLoadouts.knight["left-accessory"]).toBeNull();
     expect(normalized.craftingCurrencies).toEqual(craftingCurrencies);
   });
 });

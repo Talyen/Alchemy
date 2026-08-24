@@ -5,6 +5,7 @@ import { filterValidDestinations, type Destination } from "@/lib/routing";
 import type { PersistedPendingReward } from "./types";
 import {
   createEmptyRewardState,
+  type BoonRewardState,
   type CardRewardState,
   type GearRewardState,
   type RewardState,
@@ -83,6 +84,9 @@ export function serializePendingReward(
   if (rewardState.rewardType === "trinket") {
     return { ...shared, rewardType: "trinket", choiceIds: rewardState.choices.map((choice) => choice.id) };
   }
+  if (rewardState.rewardType === "boon") {
+    return { ...shared, rewardType: "boon", choiceIds: rewardState.choices.map((choice) => choice.id) };
+  }
   return { ...shared, rewardType: "card", choiceIds: rewardState.choices.map((choice) => choice.id) };
 }
 
@@ -116,7 +120,9 @@ export function restorePendingReward(persisted: PersistedPendingReward): RewardS
 
   const choices = resolveTrinketChoices(persisted.choiceIds);
   if (!choices) return null;
-  return { ...shared, rewardType: "trinket", choices } satisfies TrinketRewardState;
+  return persisted.rewardType === "boon"
+    ? ({ ...shared, rewardType: "boon", choices } satisfies BoonRewardState)
+    : ({ ...shared, rewardType: "trinket", choices } satisfies TrinketRewardState);
 }
 
 export interface RestoredPendingReward {

@@ -59,7 +59,7 @@ describe("reward flow orchestration", () => {
     it("sums all gold sources", () => {
       const result = unmultipliedTotal({
         battleState: { gold: 15 },
-        runTrinkets: [],
+        runBoons: [],
         gold: 10,
         eliteBonus: 3,
         generousBonus: 0,
@@ -72,7 +72,7 @@ describe("reward flow orchestration", () => {
     it("handles zero gold sources", () => {
       const result = unmultipliedTotal({
         battleState: { gold: 0 },
-        runTrinkets: [],
+        runBoons: [],
         gold: 0,
         eliteBonus: 0,
         generousBonus: 0,
@@ -85,7 +85,7 @@ describe("reward flow orchestration", () => {
     it("includes Smuggler's Map boon gold bonus", () => {
       const result = unmultipliedTotal({
         battleState: { gold: 10 },
-        runTrinkets: ["smugglers-map"],
+        runBoons: ["smugglers-map"],
         gold: 5,
         eliteBonus: 1,
         generousBonus: 0,
@@ -98,7 +98,7 @@ describe("reward flow orchestration", () => {
     it("handles nonexistent boon gracefully", () => {
       const result = unmultipliedTotal({
         battleState: { gold: 10 },
-        runTrinkets: ["bad-id"],
+        runBoons: ["bad-id"],
         gold: 0,
         eliteBonus: 0,
         generousBonus: 0,
@@ -111,7 +111,7 @@ describe("reward flow orchestration", () => {
     it("includes generous bonus by name", () => {
       const result = unmultipliedTotal({
         battleState: { gold: 10 },
-        runTrinkets: [],
+        runBoons: [],
         gold: 5,
         eliteBonus: 0,
         generousBonus: 4,
@@ -358,7 +358,7 @@ describe("reward flow orchestration", () => {
       const result = computeVictoryGold({
         battleState: { currentEnemy: { enemyType: "normal" }, gold: 20 } as never,
         runGold: 10,
-        runTrinkets: [],
+        runBoons: [],
         gold: 15,
         eliteBonus: 0,
         generousBonus: 0,

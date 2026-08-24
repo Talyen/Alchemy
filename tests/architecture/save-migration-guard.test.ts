@@ -46,7 +46,7 @@ describe("save migration guard", () => {
   it("preserves wildwood draft reward state in current-schema fixtures", () => {
     const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.wildwoodTrinketReward());
     expect(migrated.activeRun?.contentSystemType).toBe("wildwood");
-    expect(migrated.activeRun?.wildwoodDraft?.rewardType).toBe("trinket");
+    expect(migrated.activeRun?.wildwoodDraft?.rewardType).toBe("boon");
     expect(migrated.activeRun?.wildwoodDraft?.phase).toBe("reward");
   });
 
@@ -84,7 +84,7 @@ describe("save migration guard", () => {
     const midCombat = normalizeSaveData(currentSchemaMidCombatTrinketSave());
     expect(midCombat.activeRun?.activeCombat?.battleState.trinketEffects.boneCharmHealOnKill).toBe(3);
     expect(midCombat.activeRun?.activeCombat?.battleState.flags.firstBurnTrinketDoubledUsed).toBe(true);
-    expect(midCombat.activeRun?.runTrinkets).toEqual(["meteorite", "bone-charm"]);
+    expect(midCombat.activeRun?.runBoons).toEqual(["meteorite", "bone-charm"]);
   });
 
   it("does not drop wildwood active runs during migration", () => {

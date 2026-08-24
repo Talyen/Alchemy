@@ -23,4 +23,4 @@ export {
   paceCombatMagnitude,
   type FightPacingSide,
 } from "./fight-pacing";
-export { repairPersistedBattleTrinketManifest } from "./repair-persisted-trinket-manifest";
+export { repairPersistedBattleBoonManifest } from "./repair-persisted-trinket-manifest";

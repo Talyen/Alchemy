@@ -1,13 +1,13 @@
 import { characters, type CharacterId } from "@/lib/game-data";
-import { GEAR_SLOTS, type GearSlot, type GearRarity, GEAR_RARITIES } from "./types-core";
+import { ARMORY_SLOTS, GEAR_SLOTS, type ArmorySlot, type GearSlot, type GearRarity, GEAR_RARITIES } from "./types-core";
 
 export type { GearEffectManifest } from "./gear-effect-manifest";
 export { defaultGearEffects, GEAR_EFFECT_KEYS } from "./gear-effect-manifest";
 
 export type GearCharacterId = CharacterId;
 
-export { GEAR_SLOTS, GEAR_RARITIES };
-export type { GearSlot, GearRarity };
+export { ARMORY_SLOTS, GEAR_SLOTS, GEAR_RARITIES };
+export type { ArmorySlot, GearSlot, GearRarity };
 
 export const GEAR_CHARACTER_IDS = Object.keys(characters) as GearCharacterId[];
 
@@ -20,6 +20,7 @@ export type GearInventory = GearInstance[];
 export type GearInventories = Record<GearCharacterId, GearInventory>;
 export type GearLoadout = Record<GearSlot, string | null>;
 export type GearLoadouts = Record<GearCharacterId, GearLoadout>;
+export type EquippedTrinkets = Record<GearCharacterId, string | null>;
 
 export function createEmptyGearInventories(): GearInventories {
   return Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, [] as GearInventory])) as GearInventories;
@@ -53,6 +54,20 @@ export function createEmptyGearLoadout(): GearLoadout {
 
 export function createEmptyGearLoadouts(): GearLoadouts {
   return Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, createEmptyGearLoadout()])) as GearLoadouts;
+}
+
+export function createEmptyEquippedTrinkets(): EquippedTrinkets {
+  return Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, null])) as EquippedTrinkets;
+}
+
+export function normalizeEquippedTrinkets(value: Partial<EquippedTrinkets> | null | undefined): EquippedTrinkets {
+  const next = createEmptyEquippedTrinkets();
+  if (!value) return next;
+  for (const characterId of GEAR_CHARACTER_IDS) {
+    const trinketId = value[characterId];
+    next[characterId] = typeof trinketId === "string" ? trinketId : null;
+  }
+  return next;
 }
 
 export function normalizeGearLoadout(loadout: Partial<GearLoadout> | null | undefined): GearLoadout {

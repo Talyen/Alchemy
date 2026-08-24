@@ -13,6 +13,7 @@ import { sectionTitleClass } from "@/features/alchemy/shared/config";
 import {
   getRewardChoiceId,
   type GearRewardState,
+  type BoonRewardState,
   type RewardState,
   type TrinketRewardState,
 } from "@/lib/active-run-session";
@@ -29,6 +30,7 @@ function RewardChoiceItems({
   onSelectReward: (id: string) => void;
 }) {
   const isTrinket = rewardType === "trinket";
+  const isBoon = rewardType === "boon";
   const isGear = rewardType === "gear";
   return choices.map((item) => {
     const choiceId = getRewardChoiceId(item);
@@ -40,9 +42,10 @@ function RewardChoiceItems({
             onClick={() => onSelectReward(choiceId)}
             selected={selectedRewardId === choiceId}
           />
-        ) : isTrinket ? (
+        ) : isTrinket || isBoon ? (
           <TrinketRewardButton
-            trinket={item as TrinketRewardState["choices"][number]}
+            trinket={item as (TrinketRewardState | BoonRewardState)["choices"][number]}
+            temporary={isBoon}
             onClick={() => onSelectReward(choiceId)}
             selected={selectedRewardId === choiceId}
           />
@@ -77,10 +80,12 @@ function TrinketRewardButton({
   trinket,
   onClick,
   selected,
+  temporary,
 }: {
   trinket: TrinketEntry;
   onClick: () => void;
   selected: boolean;
+  temporary: boolean;
 }) {
   return (
     <TrinketTile
@@ -88,6 +93,8 @@ function TrinketRewardButton({
       interactionKey="reward"
       as="button"
       selected={selected}
+      temporary={temporary}
+      footerChip={temporary ? "Boon • This Run" : "Armory"}
       onClick={onClick}
       ariaLabel={`Select ${trinket.title}`}
     />
@@ -120,7 +127,6 @@ export function RewardsScreen({
   onAddReward,
   onSkip,
   onSelectReward,
-  allowTrinketSkip = false,
   claimInFlight = false,
   onOpenMenu,
 }: {
@@ -128,7 +134,6 @@ export function RewardsScreen({
   onAddReward: () => void;
   onSkip: () => void;
   onSelectReward: (id: string) => void;
-  allowTrinketSkip?: boolean;
   claimInFlight?: boolean;
   onOpenMenu: (rect?: DOMRect) => void;
 }) {
@@ -138,12 +143,15 @@ export function RewardsScreen({
   const rewardMaterials = rewardState.materials;
   const selectedRewardId = rewardState.selectedId;
   const isTrinket = rewardType === "trinket";
+  const isBoon = rewardType === "boon";
   const isGear = rewardType === "gear";
   const choicePrompt = isGear
     ? "Add Gear to your Armory"
     : isTrinket
-      ? "Gain a Trinket for this Run"
-      : "Add a Card to your Deck";
+      ? "Choose a Trinket to add to your Armory"
+      : isBoon
+        ? "Choose a Boon for this Run"
+        : "Add a Card to your Deck";
   const selectedRewardItem = selectedRewardId
     ? (rewardChoices.find((item) => getRewardChoiceId(item) === selectedRewardId) ?? null)
     : null;
@@ -172,7 +180,7 @@ export function RewardsScreen({
       <ActionButtonRow
         className="mt-5"
         width="action"
-        {...((!isTrinket && !isGear) || allowTrinketSkip
+        {...(!isTrinket && !isBoon && !isGear
           ? {
               secondary: {
                 label: "Skip",
@@ -183,7 +191,7 @@ export function RewardsScreen({
             }
           : {})}
         primary={{
-          label: isGear ? "Take Gear" : isTrinket ? "Take Trinket" : "Add Card",
+          label: isGear ? "Take Gear" : isTrinket ? "Take Trinket" : isBoon ? "Take Boon" : "Add Card",
           disabled: !selectedRewardItem || claimLocked,
           onClick: onAddReward,
         }}

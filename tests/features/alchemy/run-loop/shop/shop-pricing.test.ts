@@ -24,7 +24,7 @@ describe("shop-pricing", () => {
         haggleDiscount: 5,
         firstPurchaseUsed: false,
       }),
-    ).toBe(45);
+    ).toBe(TRINKET_SHOP_TRINKET_PRICE - 5);
   });
 
   it("computeShopBuyPrice stacks haggle and apothecary on potions", () => {
@@ -51,7 +51,7 @@ describe("shop-pricing", () => {
         merchantsFavorDiscount: 7,
         firstPurchaseUsed: false,
       }),
-    ).toBe(43);
+    ).toBe(TRINKET_SHOP_TRINKET_PRICE - 7);
   });
 
   it("computeShopRefreshPrice grants Restock on first refresh", () => {

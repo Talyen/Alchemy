@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resetEscapeStackForTests } from "@/app/escape-stack";
-import { BattleTrinketInspectOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/trinket-inspect";
-import { uniqueRunTrinkets } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-trinkets";
+import { BattleBoonInspectOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/trinket-inspect";
+import { uniqueRunBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-trinkets";
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { trinketLibrary, type TrinketEntry } from "@/lib/game-data";
 
@@ -14,31 +14,31 @@ const library: TrinketEntry[] = [
   { id: "beta", title: "Beta Stone", descriptionLines: ["Draw 1."], art: "beta-art", effects: {} },
 ];
 
-describe("uniqueRunTrinkets", () => {
+describe("uniqueRunBoons", () => {
   it("keeps first-seen ids and skips duplicates and unknown entries", () => {
-    expect(uniqueRunTrinkets(["beta", "missing", "alpha", "beta", "alpha"], library).map((entry) => entry.id)).toEqual([
+    expect(uniqueRunBoons(["beta", "missing", "alpha", "beta", "alpha"], library).map((entry) => entry.id)).toEqual([
       "beta",
       "alpha",
     ]);
   });
 
   it("returns an empty list when nothing resolves", () => {
-    expect(uniqueRunTrinkets(["missing"], library)).toEqual([]);
+    expect(uniqueRunBoons(["missing"], library)).toEqual([]);
   });
 });
 
-describe("BattleTrinketInspectOverlay", () => {
+describe("BattleBoonInspectOverlay", () => {
   afterEach(() => {
     cleanup();
     resetEscapeStackForTests();
   });
 
-  it("lists unique trinket art and shows a This Run tooltip on hover", () => {
+  it("lists unique Boon art and shows a This Run tooltip on hover", () => {
     render(
-      <BattleTrinketInspectOverlay open trinketIds={["brass-censer", "brass-censer", "meteorite"]} onClose={vi.fn()} />,
+      <BattleBoonInspectOverlay open trinketIds={["brass-censer", "brass-censer", "meteorite"]} onClose={vi.fn()} />,
     );
 
-    expect(screen.getByRole("heading", { name: "Trinkets" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Boons" })).toBeTruthy();
     expect(screen.getByRole("img", { name: "Brass Censer" })).toBeTruthy();
     expect(screen.getByRole("img", { name: "Meteorite" })).toBeTruthy();
     expect(screen.getAllByRole("img")).toHaveLength(2);
@@ -49,14 +49,14 @@ describe("BattleTrinketInspectOverlay", () => {
     fireEvent.mouseEnter(tileWrapper!);
 
     expect(screen.getByText("Brass Censer")).toBeTruthy();
-    expect(screen.getByText("This Run")).toBeTruthy();
+    expect(screen.getByText("Boon • This Run")).toBeTruthy();
     expect(screen.getByText(/Holy/)).toBeTruthy();
   });
 
   it("closes on Escape and on backdrop click", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(<BattleTrinketInspectOverlay open trinketIds={["brass-censer"]} onClose={onClose} />);
+    render(<BattleBoonInspectOverlay open trinketIds={["brass-censer"]} onClose={onClose} />);
 
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -71,16 +71,16 @@ describe("BattleTrinketInspectOverlay", () => {
   it("closes from the header close button", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(<BattleTrinketInspectOverlay open trinketIds={["brass-censer"]} onClose={onClose} />);
+    render(<BattleBoonInspectOverlay open trinketIds={["brass-censer"]} onClose={onClose} />);
 
-    await user.click(screen.getByRole("button", { name: "Close trinkets" }));
+    await user.click(screen.getByRole("button", { name: "Close boons" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("pages when there are more trinkets than one inspect page", async () => {
     const user = userEvent.setup();
     const ids = trinketLibrary.slice(0, TRINKET_PAGE_SIZE + 1).map((entry) => entry.id);
-    render(<BattleTrinketInspectOverlay open trinketIds={ids} onClose={vi.fn()} />);
+    render(<BattleBoonInspectOverlay open trinketIds={ids} onClose={vi.fn()} />);
 
     expect(screen.getAllByRole("img")).toHaveLength(TRINKET_PAGE_SIZE);
     expect(screen.getByRole("img", { name: trinketLibrary[0]!.title })).toBeTruthy();

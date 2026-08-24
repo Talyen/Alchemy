@@ -32,4 +32,12 @@ describe("ArtPanel hover motion", () => {
 
     expect(screen.getByTestId("battle-player-art-panel").classList.contains("card-hover-scale")).toBe(false);
   });
+
+  it("fades the art frame border when death starts", () => {
+    render(<ArtPanel {...baseProps} isDead />);
+
+    const artPanel = screen.getByTestId("battle-player-art-panel");
+    expect(artPanel.classList.contains("border-transparent")).toBe(true);
+    expect(artPanel.classList.contains("transition-[border-color]")).toBe(true);
+  });
 });

@@ -32,6 +32,7 @@ export interface BossRewardInput {
   goldMultiplier?: number;
   rng: () => number;
   gearAstralChanceBonus?: number;
+  ownedTrinketIds?: string[];
 }
 
 export interface CombatRewardInput {
@@ -46,4 +47,5 @@ export interface CombatRewardInput {
   trinketIds: string[];
   goldMultiplier?: number;
   rng: () => number;
+  excludedBoonIds?: string[];
 }

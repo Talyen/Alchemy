@@ -26,7 +26,8 @@ import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { preloadBattleSounds } from "@/lib/audio";
 import { applyCombatTextPortraitFeedback } from "./battle-feedback";
 import { playCompanionSound, playCombatTextSounds } from "./controller-utils";
-import { readGearManifestForCharacter } from "../../shared/stores/gear-store";
+import { readEquippedTrinketId, readGearManifestForCharacter } from "../../shared/stores/gear-store";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 
@@ -54,7 +55,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       talentEffects: battleEffects,
       discoveredCardIds: readProfileStore().discoveredCardIds,
       maxHealth: run.runMaxHealth,
-      trinketIds: run.runTrinkets,
+      trinketIds: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId)),
       gearEffects,
       difficultyModifiers: activeModifiers,
       contentSystemType: run.contentSystemType,

@@ -1,7 +1,9 @@
 import type { CharacterId } from "@/lib/game-data";
+import { trinketLibrary } from "@/lib/game-data";
 import { useMemo } from "react";
 import {
   computeGearManifest,
+  createEmptyEquippedTrinkets,
   createEmptyGearInventories,
   createEmptyGearLoadouts,
   EMPTY_CRAFTING_CURRENCIES,
@@ -20,6 +22,8 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: Game
   createDefault: () => ({
     gearInventories: createEmptyGearInventories(),
     gearLoadouts: createEmptyGearLoadouts(),
+    ownedTrinketIds: [],
+    equippedTrinkets: createEmptyEquippedTrinkets(),
     craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
   }),
   encode: () => {
@@ -27,16 +31,28 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: Game
     return {
       gearInventories: state.inventories,
       gearLoadouts: state.loadouts,
+      ownedTrinketIds: state.ownedTrinketIds,
+      equippedTrinkets: state.equippedTrinkets,
       craftingCurrencies: state.craftingCurrencies,
     };
   },
   hydrate: (fields, draft) => {
-    initializeGear(draft.gear, fields.gearInventories, fields.gearLoadouts, fields.craftingCurrencies);
+    initializeGear(
+      draft.gear,
+      fields.gearInventories,
+      fields.gearLoadouts,
+      fields.craftingCurrencies,
+      fields.ownedTrinketIds,
+      fields.equippedTrinkets,
+    );
   },
   subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };
 
-export type GearArmorySlice = Pick<GearStore, "inventories" | "loadouts" | "craftingCurrencies">;
+export type GearArmorySlice = Pick<
+  GearStore,
+  "inventories" | "loadouts" | "ownedTrinketIds" | "equippedTrinkets" | "craftingCurrencies"
+>;
 
 /** Canonical gear read/command slice for feature controllers. */
 export function useGearArmorySlice(): GearArmorySlice {
@@ -44,18 +60,30 @@ export function useGearArmorySlice(): GearArmorySlice {
     useShallow((state) => ({
       inventories: state.gear.inventories,
       loadouts: state.gear.loadouts,
+      ownedTrinketIds: state.gear.ownedTrinketIds,
+      equippedTrinkets: state.gear.equippedTrinkets,
       craftingCurrencies: state.gear.craftingCurrencies,
     })),
   );
 }
 
 export function readHasAnyOwnedGear(): boolean {
-  return flattenGearInventories(readGameplayState().gear.inventories).length > 0;
+  const gear = readGameplayState().gear;
+  return flattenGearInventories(gear.inventories).length > 0 || gear.ownedTrinketIds.length > 0;
+}
+
+export function readHasUnownedTrinkets(): boolean {
+  return readGameplayState().gear.ownedTrinketIds.length < trinketLibrary.length;
 }
 
 function useHasAnyOwnedGear(): boolean {
-  const inventories = useGameplayStateStore((state) => state.gear.inventories);
-  return useMemo(() => flattenGearInventories(inventories).length > 0, [inventories]);
+  const { inventories, ownedTrinketIds } = useGameplayStateStore(
+    useShallow((state) => ({ inventories: state.gear.inventories, ownedTrinketIds: state.gear.ownedTrinketIds })),
+  );
+  return useMemo(
+    () => flattenGearInventories(inventories).length > 0 || ownedTrinketIds.length > 0,
+    [inventories, ownedTrinketIds],
+  );
 }
 
 export function useIsArmoryLocked(): boolean {
@@ -70,4 +98,8 @@ export function readGearManifestForCharacter(characterId: CharacterId) {
 
 export function readGearMaxHealthBonus(characterId: CharacterId): number {
   return readGearManifestForCharacter(characterId).maxHealth;
+}
+
+export function readEquippedTrinketId(characterId: CharacterId): string | null {
+  return readGameplayState().gear.equippedTrinkets[characterId];
 }

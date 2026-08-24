@@ -18,6 +18,7 @@ import {
 import { DetailPopup } from "./card-popup";
 import { GearDetailPopup } from "./gear-detail-popup";
 import { InteractiveArtTile } from "./interactive-art-tile";
+import { SHINE_PALETTES } from "../config/shine-palettes";
 
 export interface TrinketTileProps {
   trinket: TrinketEntry;
@@ -32,6 +33,7 @@ export interface TrinketTileProps {
   ariaLabel?: string | undefined;
   /** Popup footer label; pass null to omit. Defaults to "This Run". */
   footerChip?: string | null | undefined;
+  temporary?: boolean | undefined;
   children?: ReactNode | undefined;
 }
 
@@ -45,7 +47,8 @@ export function TrinketTile({
   interactiveChrome,
   onClick,
   ariaLabel,
-  footerChip = "This Run",
+  footerChip,
+  temporary = false,
   children,
 }: TrinketTileProps) {
   return (
@@ -56,6 +59,7 @@ export function TrinketTile({
       art={trinket.art}
       className={trinketArtTileClass}
       imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
+      shineColor={temporary ? SHINE_PALETTES.boon : undefined}
       as={as}
       selected={selected}
       disabled={disabled}
@@ -66,7 +70,7 @@ export function TrinketTile({
         <DetailPopup
           idPrefix={idPrefix}
           title={trinket.title}
-          footerChip={footerChip ?? undefined}
+          footerChip={footerChip === null ? undefined : (footerChip ?? (temporary ? "Boon • This Run" : "Trinket"))}
           descriptionLines={trinket.descriptionLines}
           visible={visible}
           triggerRef={triggerRef}

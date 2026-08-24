@@ -25,7 +25,7 @@ export interface ShopBuyPriceInput {
 
 export interface ShopBuyPriceContext {
   talentEffects: TalentEffectManifest;
-  runTrinkets: string[];
+  runBoons: string[];
   firstPurchaseUsed: boolean;
 }
 
@@ -76,7 +76,7 @@ function computeBuyPrice(
   return computeShopBuyPrice({
     basePrice,
     ...discounts,
-    merchantsFavorDiscount: computeTrinketManifest(context.runTrinkets).merchantsFavorDiscount,
+    merchantsFavorDiscount: computeTrinketManifest(context.runBoons).merchantsFavorDiscount,
     firstPurchaseUsed: context.firstPurchaseUsed,
   });
 }

@@ -8,12 +8,12 @@ const discoveryMocks = vi.hoisted(() => ({
   discoverCardIds: vi.fn(),
   discoverTrinketIds: vi.fn(),
   setRunDeck: vi.fn(),
-  setRunTrinkets: vi.fn(),
+  setRunBoons: vi.fn(),
 }));
 
 vi.mock("@/features/alchemy/shared/stores/run-session-write-port", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-write-port")>();
-  return { ...actual, setRunDeck: discoveryMocks.setRunDeck, setRunTrinkets: discoveryMocks.setRunTrinkets };
+  return { ...actual, setRunDeck: discoveryMocks.setRunDeck, setRunBoons: discoveryMocks.setRunBoons };
 });
 
 vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal) => {
@@ -29,7 +29,7 @@ beforeEach(() => {
   discoveryMocks.discoverCardIds.mockClear();
   discoveryMocks.discoverTrinketIds.mockClear();
   discoveryMocks.setRunDeck.mockClear();
-  discoveryMocks.setRunTrinkets.mockClear();
+  discoveryMocks.setRunBoons.mockClear();
 });
 
 describe("applyRewardSelection", () => {
@@ -48,11 +48,11 @@ describe("applyRewardSelection", () => {
 
     applyRewardSelection({
       choice: { id: "bone-charm" },
-      type: "trinket",
+      type: "boon",
       draft,
     });
 
-    const boonUpdater = discoveryMocks.setRunTrinkets.mock.calls[0][1];
+    const boonUpdater = discoveryMocks.setRunBoons.mock.calls[0][1];
     expect(boonUpdater([])).toEqual(["bone-charm"]);
     expect(discoveryMocks.discoverTrinketIds).toHaveBeenCalledWith(draft, ["bone-charm"]);
   });

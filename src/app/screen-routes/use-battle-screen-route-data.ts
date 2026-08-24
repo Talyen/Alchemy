@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import {
   useActiveRunScreenValue,
-  useActiveRunTrinkets,
+  useActiveRunBoons,
   useDisplayOverrides,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-model";
@@ -15,15 +15,15 @@ export function useBattleScreenRouteData() {
     activeLabyrinthModifiers,
   } = useRunSessionBattleContext(screen);
   const displayOverrides = useDisplayOverrides();
-  const runTrinkets = useActiveRunTrinkets();
+  const runBoons = useActiveRunBoons();
   const battleScreenData: BattleScreenData = useMemo(
     () => ({
       battleState,
       displayOverrides,
       activeLabyrinthModifiers,
-      runTrinkets,
+      runBoons,
     }),
-    [battleState, displayOverrides, activeLabyrinthModifiers, runTrinkets],
+    [battleState, displayOverrides, activeLabyrinthModifiers, runBoons],
   );
 
   return {

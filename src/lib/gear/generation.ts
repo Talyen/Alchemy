@@ -9,7 +9,7 @@ import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity, GearSlot 
 
 const SHIELD_BASE_ITEM_IDS = new Set(["leather-buckler", "kite-shield"]);
 const OFF_HAND_OFFENSIVE_BASE_ITEMS = new Set(["quiver", "spellbook"]);
-const JEWELRY_SLOTS = new Set<GearSlot>(["left-ring", "right-ring", "amulet"]);
+const JEWELRY_SLOTS = new Set<GearSlot>(["left-accessory", "right-accessory"]);
 
 function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
   if (SHIELD_BASE_ITEM_IDS.has(def.baseItemId)) {

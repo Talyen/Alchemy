@@ -58,8 +58,8 @@ export function setDestinationOfferState(
   draft.run.activeRun.lastOfferedDestinations = [...offerState.lastOfferedDestinations];
   draft.run.activeRun.destinationRoundsSinceOffered = { ...offerState.roundsSinceOffered };
 }
-export const setRunTrinkets = (draft: GameplayDraft, action: string[] | ((prev: string[]) => string[])) =>
-  setRunField(draft, "runTrinkets", action);
+export const setRunBoons = (draft: GameplayDraft, action: string[] | ((prev: string[]) => string[])) =>
+  setRunField(draft, "runBoons", action);
 export const setEncounteredRunEnemyIds = (draft: GameplayDraft, action: string[] | ((prev: string[]) => string[])) =>
   setRunField(draft, "encounteredRunEnemyIds", action);
 export const setContentSystemType = (

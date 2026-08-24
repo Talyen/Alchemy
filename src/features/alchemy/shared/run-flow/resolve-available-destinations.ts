@@ -10,6 +10,7 @@ export interface ResolveAvailableDestinationsInput {
   runGold: number;
   runMaxHealth: number;
   hasAnyOwnedGear: boolean;
+  hasUnownedTrinkets?: boolean;
   options?: DestinationOptionsInput;
 }
 
@@ -25,5 +26,6 @@ export function resolveAvailableDestinations(input: ResolveAvailableDestinations
     maxHealth: options.maxHealth ?? input.runMaxHealth,
     previousDestination,
     hasAnyOwnedGear: options.hasAnyOwnedGear ?? input.hasAnyOwnedGear,
+    hasUnownedTrinkets: options.hasUnownedTrinkets ?? input.hasUnownedTrinkets ?? true,
   });
 }

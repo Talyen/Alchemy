@@ -73,7 +73,7 @@ const WRITE_PORT_EXPORTS = [
   "setRunGold",
   "setRunMaxHealth",
   "setRunPlayerHealth",
-  "setRunTrinkets",
+  "setRunBoons",
   "setScreen",
   "setShopState",
   "setStarterDraftChoices",

@@ -10,6 +10,7 @@ import {
   createEmptyRewardState,
   getRewardChoiceId,
   type CardRewardState,
+  type BoonRewardState,
   type GearRewardState,
   type RewardState,
   type TrinketRewardState,
@@ -112,11 +113,11 @@ export function createBossRewardState({
   goldMultiplier = 1,
   rng,
   gearAstralChanceBonus = 0,
-}: BossRewardInput): GearRewardState {
+  ownedTrinketIds = [],
+}: BossRewardInput): GearRewardState | TrinketRewardState {
+  const reward = createGearOrPermanentTrinketReward(ownedTrinketIds, rng, gearAstralChanceBonus);
   return {
-    ...createEmptyRewardState(),
-    rewardType: "gear",
-    choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, gearAstralChanceBonus),
+    ...reward,
     gold: computeRewardGold({
       baseGold: gold,
       bonusGold: bossBonus,
@@ -129,10 +130,31 @@ export function createBossRewardState({
   };
 }
 
-function rollWildwoodRewardType(rng: () => number): "card" | "trinket" | "gear" {
+function createGearOrPermanentTrinketReward(
+  ownedTrinketIds: readonly string[],
+  rng: () => number,
+  gearAstralChanceBonus: number,
+): GearRewardState | TrinketRewardState {
+  const owned = new Set(ownedTrinketIds);
+  const unowned = trinketLibrary.filter((entry) => !owned.has(entry.id));
+  if (unowned.length > 0 && rng() < 1 / 3) {
+    return {
+      ...createEmptyRewardState(),
+      rewardType: "trinket",
+      choices: sampleItems(unowned, REWARD_CARD_CHOICES, rng),
+    };
+  }
+  return {
+    ...createEmptyRewardState(),
+    rewardType: "gear",
+    choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, gearAstralChanceBonus),
+  };
+}
+
+function rollWildwoodRewardType(rng: () => number): "card" | "boon" | "gear" {
   const roll = Math.floor(rng() * 3);
   if (roll === 0) return "card";
-  if (roll === 1) return "trinket";
+  if (roll === 1) return "boon";
   return "gear";
 }
 
@@ -140,20 +162,23 @@ export function createWildwoodRewardState(
   runDeck: BattleCard[],
   rng: () => number,
   gearAstralChanceBonus = 0,
-): CardRewardState | TrinketRewardState | GearRewardState {
+  excludedBoonIds: string[] = [],
+  ownedTrinketIds: string[] = [],
+): CardRewardState | BoonRewardState | TrinketRewardState | GearRewardState {
   const rewardType = rollWildwoodRewardType(rng);
   if (rewardType === "gear") {
-    return {
-      ...createEmptyRewardState(),
-      rewardType: "gear",
-      choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, gearAstralChanceBonus),
-    };
+    return createGearOrPermanentTrinketReward(ownedTrinketIds, rng, gearAstralChanceBonus);
   }
-  if (rewardType === "trinket") {
+  if (rewardType === "boon") {
+    const excluded = new Set(excludedBoonIds);
     return {
       ...createEmptyRewardState(),
-      rewardType: "trinket",
-      choices: sampleItems(trinketLibrary, REWARD_CARD_CHOICES, rng),
+      rewardType: "boon",
+      choices: sampleItems(
+        trinketLibrary.filter((entry) => !excluded.has(entry.id)),
+        REWARD_CARD_CHOICES,
+        rng,
+      ),
     };
   }
   return {
@@ -175,7 +200,8 @@ export function createCombatRewardState({
   trinketIds,
   goldMultiplier = 1,
   rng,
-}: CombatRewardInput): CardRewardState | TrinketRewardState {
+  excludedBoonIds = [],
+}: CombatRewardInput): CardRewardState | BoonRewardState {
   const goldTotal = computeRewardGold({
     baseGold: gold,
     bonusGold: eliteBonus,
@@ -185,10 +211,15 @@ export function createCombatRewardState({
     goldMultiplier,
   });
   if (battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE) {
+    const excluded = new Set(excludedBoonIds);
     return {
       ...createEmptyRewardState(destinations),
-      rewardType: "trinket",
-      choices: sampleItems(trinketLibrary, REWARD_CARD_CHOICES, rng),
+      rewardType: "boon",
+      choices: sampleItems(
+        trinketLibrary.filter((entry) => !excluded.has(entry.id)),
+        REWARD_CARD_CHOICES,
+        rng,
+      ),
       gold: goldTotal,
       materials,
     };

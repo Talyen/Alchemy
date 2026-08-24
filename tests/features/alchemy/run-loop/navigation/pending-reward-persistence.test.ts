@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createGearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear/definitions";
-import { cardLibrary } from "@/lib/game-data";
+import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { Destination } from "@/lib/routing";
 import {
   restorePendingReward,
@@ -59,6 +59,21 @@ describe("pending reward persistence", () => {
     });
     expect(parsed?.rewardType).toBe("trinket");
     expect(parsed?.choices).toHaveLength(1);
+  });
+
+  it("round-trips a run-scoped boon reward distinctly", () => {
+    const entry = trinketLibrary.find((trinket) => trinket.id === "bone-charm");
+    expect(entry).toBeDefined();
+    const rewardState = {
+      ...createEmptyRewardState(),
+      rewardType: "boon" as const,
+      choices: [entry!],
+    };
+    const persisted = serializePendingReward(rewardState);
+    const boon = restorePendingReward(persisted!);
+    expect(persisted?.rewardType).toBe("boon");
+    expect(boon?.rewardType).toBe("boon");
+    expect(boon?.choices).toEqual([entry]);
   });
 
   it("filters invalid destination labels on restore", () => {

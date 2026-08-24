@@ -131,7 +131,7 @@ function TrinketWalletResourcePill({
     >
       <HomesteadResourceArtwork resource={resource} size="lg" className="drop-shadow-sm" />
       <div className="flex min-w-0 flex-col text-left leading-tight">
-        <span className="truncate text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+        <span className="truncate text-xs font-medium tracking-wider text-muted-foreground uppercase">
           {displayTitle}
         </span>
         <span className="truncate text-base font-bold text-foreground tabular-nums">{displayedValue}</span>

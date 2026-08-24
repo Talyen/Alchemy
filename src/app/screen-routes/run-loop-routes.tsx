@@ -28,7 +28,7 @@ import {
   useTrinketShopScreenData,
   useWildwoodRemovalScreenData,
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import { useIsWildwoodRun, useTalentEffects } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { useTalentEffects } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { getCampfireHealFraction } from "@/lib/game-constants";
 import type { BattleCommands, BattleRouteCtx, RunLoopCommands, RunLoopRouteCtx } from "./route-ctx";
 
@@ -104,7 +104,6 @@ function RewardsScreenRoute({
   onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
 }) {
   const r = useRewardsScreenData();
-  const isWildwood = useIsWildwoodRun();
   return (
     <RewardsScreen
       rewardState={r.rewardState}
@@ -112,7 +111,6 @@ function RewardsScreenRoute({
       onAddReward={commands.finish}
       onSkip={commands.finish}
       onSelectReward={commands.selectChoice}
-      allowTrinketSkip={isWildwood}
       onOpenMenu={onOpenBattleMenu}
     />
   );

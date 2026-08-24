@@ -1,6 +1,6 @@
 import { trinketLibrary, type TrinketEntry } from "@/features/alchemy/shared/config/game-data-catalog";
 
-export function uniqueRunTrinkets(
+export function uniqueRunBoons(
   ids: readonly string[],
   library: readonly TrinketEntry[] = trinketLibrary,
 ): TrinketEntry[] {

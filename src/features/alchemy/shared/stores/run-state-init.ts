@@ -34,7 +34,7 @@ export interface ActiveRunProgressFields {
   completedDestinations: Destination[];
   lastOfferedDestinations: Destination[];
   destinationRoundsSinceOffered: Partial<Record<Destination, number>>;
-  runTrinkets: string[];
+  runBoons: string[];
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
@@ -105,7 +105,7 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
     completedDestinations: [],
     lastOfferedDestinations: [],
     destinationRoundsSinceOffered: {},
-    runTrinkets: [],
+    runBoons: [],
     encounteredRunEnemyIds: [],
     selectedDifficulty: null,
     contentSystemType: "campaign",
@@ -128,7 +128,7 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
     currentAct: activeRun.currentAct,
     destinationIndexInAct: activeRun.destinationIndexInAct,
     ...hydrateDestinations(activeRun),
-    runTrinkets: [...activeRun.runTrinkets],
+    runBoons: [...activeRun.runBoons],
     encounteredRunEnemyIds: [...activeRun.encounteredRunEnemyIds],
     selectedDifficulty: activeRun.selectedDifficulty,
     contentSystemType: activeRun.contentSystemType,
@@ -180,7 +180,7 @@ export function runFieldsFromSnapshot(
   | "completedDestinations"
   | "lastOfferedDestinations"
   | "destinationRoundsSinceOffered"
-  | "runTrinkets"
+  | "runBoons"
   | "encounteredRunEnemyIds"
 > {
   return {
@@ -197,7 +197,7 @@ export function runFieldsFromSnapshot(
     completedDestinations: snapshot.completedDestinations,
     lastOfferedDestinations: [],
     destinationRoundsSinceOffered: {},
-    runTrinkets: snapshot.runTrinkets,
+    runBoons: snapshot.runBoons,
     encounteredRunEnemyIds: [],
   };
 }

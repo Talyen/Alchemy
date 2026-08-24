@@ -9,7 +9,7 @@ export const ALCHEMIST_REFRESH_PRICE = 20;
 export const ALCHEMIST_MIX_PRICE = 40;
 
 // ============ Trinket Shop ============
-export const TRINKET_SHOP_TRINKET_PRICE = 50;
+export const TRINKET_SHOP_TRINKET_PRICE = 80;
 export const TRINKET_SHOP_OFFERED = 3;
 export const TRINKET_SHOP_REFRESHES = 1;
 

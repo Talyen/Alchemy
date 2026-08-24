@@ -1,6 +1,6 @@
 // Destination / screen navigation helpers for run-flow shell wiring.
 import { useCallback, useMemo } from "react";
-import { readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
+import { readHasAnyOwnedGear, readHasUnownedTrinkets } from "@/features/alchemy/shared/stores/gear-store";
 import {
   readActiveRun,
   readActiveRunScreen,
@@ -33,6 +33,7 @@ export function useRunDestinationWiring({
       runGold: readRunProfile().gold,
       runMaxHealth: active.runMaxHealth,
       hasAnyOwnedGear: readHasAnyOwnedGear(),
+      hasUnownedTrinkets: readHasUnownedTrinkets(),
       options,
     });
   }, []);

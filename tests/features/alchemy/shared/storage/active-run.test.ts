@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseActiveRun } from "@/lib/active-run-session";
 import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
-import { defaultBattleState, repairPersistedBattleTrinketManifest } from "@/lib/battle";
+import { defaultBattleState, repairPersistedBattleBoonManifest } from "@/lib/battle";
 import { cardLibrary } from "@/lib/game-data";
 import { makeRunCandidate } from "../../../../fixtures/active-run";
 import { makeTestCard } from "../../../../fixtures/cards";
@@ -218,7 +218,7 @@ describe("parseActiveRun", () => {
     expect(result!.labyrinthPendingNode).toBeNull();
   });
 
-  it("reconciles default trinketEffects from runTrinkets on resume", () => {
+  it("reconciles default trinketEffects from runBoons on resume", () => {
     const battleState = defaultBattleState();
     const legacyBattleState = { ...battleState };
     delete (legacyBattleState as { trinketEffects?: unknown }).trinketEffects;
@@ -227,7 +227,7 @@ describe("parseActiveRun", () => {
       saveSchemaVersion: 3,
       activeRun: {
         ...makeRunCandidate({
-          runTrinkets: ["bone-charm"],
+          runBoons: ["bone-charm"],
           activeCombat: { battleState: legacyBattleState },
         }),
       },
@@ -235,11 +235,10 @@ describe("parseActiveRun", () => {
 
     const parsedBattle = migrated.activeRun?.activeCombat?.battleState;
     expect(parsedBattle).toBeTruthy();
-    // Wire parse keeps structural defaults; resume repair recomputes from runTrinkets.
+    // Wire parse keeps structural defaults; resume repair recomputes from runBoons.
     expect(parsedBattle!.trinketEffects.boneCharmHealOnKill).toBe(0);
     expect(
-      repairPersistedBattleTrinketManifest(parsedBattle!, migrated.activeRun!.runTrinkets).trinketEffects
-        .boneCharmHealOnKill,
+      repairPersistedBattleBoonManifest(parsedBattle!, migrated.activeRun!.runBoons).trinketEffects.boneCharmHealOnKill,
     ).toBe(3);
   });
 

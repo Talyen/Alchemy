@@ -9,7 +9,7 @@ const BASE_RUN_TEMPLATE = {
   currentAct: 1,
   destinationIndexInAct: 0,
   completedDestinations: [],
-  runTrinkets: [],
+  runBoons: [],
   contentSystemType: "campaign",
 } as const;
 
@@ -19,7 +19,7 @@ export function makeMinimalActiveRunInput(overrides: Record<string, unknown> = {
     ...BASE_RUN_TEMPLATE,
     completedDestinations: [],
     runDeck: [],
-    runTrinkets: [],
+    runBoons: [],
     ...overrides,
   };
 }

@@ -1,5 +1,7 @@
-import { appendTrinketToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { readActiveRun, readShopFirstPurchaseUsed } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
+import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { discoverTrinketIds } from "@/features/alchemy/shared/stores/profile-store";
 import {
   createDraftRunRandomSource,
   setTrinketShopState,
@@ -16,23 +18,26 @@ import {
 import { shopArrayOfferingMatches } from "./shop-slot-keys";
 import type { TrinketShopCommands } from "./shop-action-types";
 import { createInitialTrinketShopState, resampleTrinketShopOfferings, type TrinketShopState } from "./shop-state-init";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export function createTrinketShopCommands({
   talentEffects,
 }: {
   talentEffects: TalentEffectManifest;
 }): TrinketShopCommands {
-  const getBuyPrice = (_trinket: TrinketEntry) =>
-    computeTrinketBuyPrice({
+  const getBuyPrice = (_trinket: TrinketEntry) => {
+    const run = readActiveRun();
+    return computeTrinketBuyPrice({
       talentEffects,
-      runTrinkets: readActiveRun().runTrinkets,
+      runBoons: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId)),
       firstPurchaseUsed: readShopFirstPurchaseUsed("trinketShopState"),
     });
+  };
   const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
 
   function initialize(): void {
     commitShopInitialize(setTrinketShopState, (draft) =>
-      createInitialTrinketShopState(createDraftRunRandomSource(draft, "shops"), draft.run.activeRun.runTrinkets),
+      createInitialTrinketShopState(createDraftRunRandomSource(draft, "shops"), draft.gear.ownedTrinketIds),
     );
   }
 
@@ -41,7 +46,10 @@ export function createTrinketShopCommands({
       const state = draft.session.trinketShopState;
       const price = computeTrinketBuyPrice({
         talentEffects,
-        runTrinkets: draft.run.activeRun.runTrinkets,
+        runBoons: combineTrinketEffectIds(
+          draft.run.activeRun.runBoons,
+          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+        ),
         firstPurchaseUsed: state.firstPurchaseUsed,
       });
       return purchaseShopOffering({
@@ -51,9 +59,12 @@ export function createTrinketShopCommands({
         setState: setTrinketShopState,
         slotKey,
         offeringMatches:
-          !draft.run.activeRun.runTrinkets.includes(trinket.id) &&
+          !draft.gear.ownedTrinketIds.includes(trinket.id) &&
           shopArrayOfferingMatches(state.trinkets, slotKey, trinket.id, (offered) => offered.id),
-        acquire: () => appendTrinketToRunWithDiscovery(draft, trinket.id),
+        acquire: () => {
+          mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addTrinket(trinket.id) });
+          discoverTrinketIds(draft, [trinket.id]);
+        },
       });
     }).committed;
   }
@@ -67,7 +78,7 @@ export function createTrinketShopCommands({
         refreshesLeft: state.refreshesLeft,
         setState: setTrinketShopState,
         resample: () =>
-          resampleTrinketShopOfferings(createDraftRunRandomSource(draft, "shops"), draft.run.activeRun.runTrinkets),
+          resampleTrinketShopOfferings(createDraftRunRandomSource(draft, "shops"), draft.gear.ownedTrinketIds),
         mapState: (previous, trinkets) => mapRefreshedShopOfferings(previous, "trinkets", trinkets),
       });
     }).committed;

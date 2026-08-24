@@ -25,6 +25,8 @@ import {
 import { shopArrayOfferingMatches } from "./shop-slot-keys";
 import type { AlchemistShopCommands } from "./shop-action-types";
 import { createInitialAlchemistState, type AlchemistState } from "./shop-state-init";
+import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export function createAlchemistShopCommands({
   talentEffects,
@@ -33,12 +35,14 @@ export function createAlchemistShopCommands({
   talentEffects: TalentEffectManifest;
   homesteadEffects: HomesteadEffectManifest;
 }): AlchemistShopCommands {
-  const getPotionBuyPrice = (card: BattleCard) =>
-    computeAlchemistPotionBuyPrice(card, {
+  const getPotionBuyPrice = (card: BattleCard) => {
+    const run = readActiveRun();
+    return computeAlchemistPotionBuyPrice(card, {
       talentEffects,
-      runTrinkets: readActiveRun().runTrinkets,
+      runBoons: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId)),
       firstPurchaseUsed: readShopFirstPurchaseUsed("alchemistState"),
     });
+  };
   const getMixPrice = () => computeMixPotionPrice(talentEffects);
   const getRefreshPrice = (refreshesLeft: number) => computeAlchemistRefreshPrice(talentEffects, refreshesLeft);
 
@@ -53,7 +57,10 @@ export function createAlchemistShopCommands({
       const state = draft.session.alchemistState;
       const price = computeAlchemistPotionBuyPrice(card, {
         talentEffects,
-        runTrinkets: draft.run.activeRun.runTrinkets,
+        runBoons: combineTrinketEffectIds(
+          draft.run.activeRun.runBoons,
+          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+        ),
         firstPurchaseUsed: state.firstPurchaseUsed,
       });
       return purchaseShopOffering({

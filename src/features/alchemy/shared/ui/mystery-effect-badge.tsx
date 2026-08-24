@@ -89,12 +89,12 @@ const renderChooseCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "choos
 };
 
 const renderTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainTrinket" }>> = (effect, ctx) => {
-  const title = ctx.findTrinket?.(effect.trinketId)?.title ?? "a trinket";
+  const title = ctx.findTrinket?.(effect.trinketId)?.title ?? "a boon";
   return <span className="text-sm text-balance text-muted-foreground">Add {title} for this run</span>;
 };
 
 const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainRandomTrinket" }>> = () => (
-  <span className="text-sm text-balance text-muted-foreground">Gain a random trinket for this run</span>
+  <span className="text-sm text-balance text-muted-foreground">Gain a random Boon for this run</span>
 );
 
 const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainGeneratedGear" }>> = (effect) => {

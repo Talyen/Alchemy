@@ -93,7 +93,7 @@ describe("applyMysteryEffect", () => {
   it("gainTrinket appends unowned trinkets exactly once", () => {
     apply({ kind: "gainTrinket", trinketId: "bone-charm" });
     apply({ kind: "gainTrinket", trinketId: "bone-charm" });
-    expect(getRunProgressStoreView().runTrinkets).toEqual(["bone-charm"]);
+    expect(getRunProgressStoreView().runBoons).toEqual(["bone-charm"]);
   });
 
   it("gainRandomTrinket grants an unowned pick and records it", () => {
@@ -102,11 +102,11 @@ describe("applyMysteryEffect", () => {
     const granted = getRunSessionStoreView().mysteryGrantedTrinketIds;
     expect(granted).toHaveLength(1);
     expect(["bone-charm", "sin-eaters-lantern"]).toContain(granted[0]);
-    expect(getRunProgressStoreView().runTrinkets).toEqual(granted);
+    expect(getRunProgressStoreView().runBoons).toEqual(granted);
   });
 
   it("gainRandomTrinket falls back outside fromIds when every candidate is owned", () => {
-    setRunProgress({ runTrinkets: ["bone-charm", "sin-eaters-lantern"] });
+    setRunProgress({ runBoons: ["bone-charm", "sin-eaters-lantern"] });
     const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }, () => 0.5);
     expect(result.followUp).toBeNull();
     const granted = getRunSessionStoreView().mysteryGrantedTrinketIds;

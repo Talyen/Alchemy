@@ -7,6 +7,7 @@ import {
   type GearInstance,
   type GearLoadouts,
   type GearSlot,
+  type EquippedTrinkets,
   type SalvageYield,
 } from "@/lib/gear";
 import {
@@ -37,12 +38,16 @@ function mutateGearWithFlush<T>(
 export interface ArmoryController {
   inventories: GearInventories;
   loadouts: GearLoadouts;
+  ownedTrinketIds: string[];
+  equippedTrinkets: EquippedTrinkets;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   finishedRunCharacters: CharacterId[];
   browseOnly: boolean;
   hasActiveRun: boolean;
   onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
+  onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
+  onUnequipTrinket: (characterId: CharacterId) => void;
   onSalvage: (instanceId: string, salvageYield: SalvageYield) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
@@ -73,6 +78,20 @@ export function useArmoryController(): ArmoryController {
       mutateGearWithFlush(flush, (state) => {
         state.unequip(characterId, slot);
       });
+    },
+    [flush],
+  );
+
+  const onEquipTrinket = useCallback<ArmoryController["onEquipTrinket"]>(
+    (characterId, trinketId) => {
+      mutateGearWithFlush(flush, (state) => state.equipTrinket(characterId, trinketId));
+    },
+    [flush],
+  );
+
+  const onUnequipTrinket = useCallback<ArmoryController["onUnequipTrinket"]>(
+    (characterId) => {
+      mutateGearWithFlush(flush, (state) => state.unequipTrinket(characterId));
     },
     [flush],
   );
@@ -110,12 +129,16 @@ export function useArmoryController(): ArmoryController {
     const controller: ArmoryController = {
       inventories: gear.inventories,
       loadouts: gear.loadouts,
+      ownedTrinketIds: gear.ownedTrinketIds,
+      equippedTrinkets: gear.equippedTrinkets,
       craftingCurrencies: gear.craftingCurrencies,
       finishedRunCharacters,
       browseOnly: false,
       hasActiveRun,
       onEquip,
       onUnequip,
+      onEquipTrinket,
+      onUnequipTrinket,
       onSalvage,
       onApplyCurrency,
       rng: Math.random,
@@ -125,11 +148,15 @@ export function useArmoryController(): ArmoryController {
   }, [
     gear.inventories,
     gear.loadouts,
+    gear.ownedTrinketIds,
+    gear.equippedTrinkets,
     gear.craftingCurrencies,
     finishedRunCharacters,
     hasActiveRun,
     onEquip,
     onUnequip,
+    onEquipTrinket,
+    onUnequipTrinket,
     onSalvage,
     onApplyCurrency,
     onSpawnDevGear,

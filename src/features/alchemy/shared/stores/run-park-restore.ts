@@ -1,7 +1,8 @@
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { ContentSystemId } from "@/lib/content-systems/types";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { repairPersistedBattleTrinketManifest } from "@/lib/battle";
+import { repairPersistedBattleBoonManifest } from "@/lib/battle";
 import {
   eventHasUnresolvedRandomTrinket,
   pickResolvedMysteryEvent,
@@ -56,7 +57,10 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
 
   const battleState =
     activeRun?.activeCombat?.battleState != null
-      ? repairPersistedBattleTrinketManifest(activeRun.activeCombat.battleState, activeRun.runTrinkets)
+      ? repairPersistedBattleBoonManifest(
+          activeRun.activeCombat.battleState,
+          combineTrinketEffectIds(activeRun.runBoons, draft.gear.equippedTrinkets[activeRun.characterId]),
+        )
       : null;
   const pending = decoded?.pendingBattleTransition ?? null;
   initializeActiveBattle(draft, battleState, pending);
@@ -72,7 +76,14 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
     const rng = createDraftRunRandomSource(draft, "events");
     setMysteryEvent(
       draft,
-      repairUnresolvedMysteryTrinkets(draft.session.mysteryEvent, draft.run.activeRun.runTrinkets, rng),
+      repairUnresolvedMysteryTrinkets(
+        draft.session.mysteryEvent,
+        combineTrinketEffectIds(
+          draft.run.activeRun.runBoons,
+          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+        ),
+        rng,
+      ),
     );
   }
   if (resumeScreen === "mystery" && !draft.session.mysteryEvent) {
@@ -84,7 +95,16 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
       return;
     }
     const rng = createDraftRunRandomSource(draft, "events");
-    setMysteryEvent(draft, pickResolvedMysteryEvent(rng, draft.run.activeRun.runTrinkets));
+    setMysteryEvent(
+      draft,
+      pickResolvedMysteryEvent(
+        rng,
+        combineTrinketEffectIds(
+          draft.run.activeRun.runBoons,
+          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+        ),
+      ),
+    );
   }
   rebindLiveRunMeta(draft);
 }

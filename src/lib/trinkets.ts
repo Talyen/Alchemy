@@ -1,4 +1,4 @@
-// Trinket manifest defaults and ID-to-effect conversion for run trinkets.
+// Shared Boon/permanent Trinket manifest defaults and ID-to-effect conversion.
 // Effect values are authored on the compendium rows; this module derives the
 // flat battle-facing manifest. Used during battle creation and shop pricing.
 import { trinketLibrary } from "@/lib/game-data";
@@ -48,6 +48,10 @@ export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
   }
 
   return manifest;
+}
+
+export function combineTrinketEffectIds(runBoons: readonly string[], equippedTrinketId: string | null): string[] {
+  return [...new Set(equippedTrinketId ? [...runBoons, equippedTrinketId] : runBoons)];
 }
 
 export function isDefaultTrinketManifest(manifest: TrinketManifest): boolean {

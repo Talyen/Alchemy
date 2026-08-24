@@ -17,6 +17,7 @@ export const SHINE_PALETTES = {
   turnEnemy: ["#450a0a", "#b91c1c", "#f87171", "#7f1d1d"],
   wildwoodBossSelection: ["#450a0a", "#ef4444", "#991b1b", "#7f1d1d"],
   corruption: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"],
+  boon: ["#312e81", "#818cf8", "#e0e7ff", "#7c3aed"],
   labyrinth: {
     entrance: ["#292524", "#57534e", "#a8a29e", "#44403c"],
     combat: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"],

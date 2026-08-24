@@ -263,11 +263,11 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 ## Add a new trinket
 
-| Step                                      | File(s)                                                                   |
-| ----------------------------------------- | ------------------------------------------------------------------------- |
-| 1. Define entry in `trinketLibrary` array | `src/lib/game-data/compendium/trinkets.ts`                                |
-| 2. Implement effect logic                 | `src/lib/trinkets.ts` — extend `TrinketManifest` and apply in battle init |
-| 3. Add art reference                      | `src/lib/game-data/assets.ts`                                             |
+One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both reveal one Collection entry; Boons occupy no slot. `combineTrinketEffectIds` deduplicates matching forms.
+
+1. Add data/art in `game-data/compendium/trinkets.ts` and `game-data/assets.ts`.
+2. Extend `TrinketManifest` in `lib/trinkets.ts`; check battle/run consumers and Boon exclusions.
+3. Verify Gear-aggregate ownership/equip plus permanent and ephemeral UI/discovery.
 
 ## Add permanent Gear
 

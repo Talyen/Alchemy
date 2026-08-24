@@ -17,9 +17,9 @@ describe("reward flow selection", () => {
       expect(result.materials).toEqual(emptyInventory());
     });
 
-    it("rolls trinket rewards in the middle third", () => {
+    it("rolls boon rewards in the middle third", () => {
       const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.5);
-      expect(result.rewardType).toBe("trinket");
+      expect(result.rewardType).toBe("boon");
       expect(result.choices).toHaveLength(3);
     });
 
@@ -111,7 +111,7 @@ describe("reward flow selection", () => {
       expect(result.choices.length).toBeGreaterThan(0);
     });
 
-    it("always offers trinket rewards for elite enemies", () => {
+    it("always offers boon rewards for elite enemies", () => {
       const eliteState = { currentEnemy: { enemyType: "elite" }, gold: 10 } as const;
       const result = createCombatRewardState({
         battleState: eliteState as never,
@@ -125,7 +125,7 @@ describe("reward flow selection", () => {
         trinketIds: [],
         rng: () => 0.5,
       });
-      expect(result.rewardType).toBe("trinket");
+      expect(result.rewardType).toBe("boon");
       expect(result.gold).toBe(17);
     });
 

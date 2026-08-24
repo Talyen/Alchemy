@@ -6,7 +6,7 @@ export class RewardPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.addRewardBtn = this.page.getByRole("button", { name: /^(Add Card|Take Trinket|Take Gear)$/ });
+    this.addRewardBtn = this.page.getByRole("button", { name: /^(Add Card|Take Boon|Take Trinket|Take Gear)$/ });
   }
 
   async selectFirstReward() {

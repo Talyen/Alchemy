@@ -5,6 +5,7 @@ import type {
   GearInventories,
   GearLoadouts,
   GearSlot,
+  EquippedTrinkets,
   SalvageYield,
 } from "@/lib/gear";
 
@@ -16,11 +17,15 @@ export interface ArmorySalvagePending {
 export interface ArmoryScreenProps {
   inventories: GearInventories;
   loadouts: GearLoadouts;
+  ownedTrinketIds: string[];
+  equippedTrinkets: EquippedTrinkets;
   finishedRunCharacters: CharacterId[];
   browseOnly: boolean;
   onOpenMenu: (rect?: DOMRect) => void;
   onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
+  onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
+  onUnequipTrinket: (characterId: CharacterId) => void;
   onSalvage: (instanceId: string, salvageYield: SalvageYield) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
   craftingCurrencies?: Record<CraftingCurrencyId, number>;

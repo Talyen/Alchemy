@@ -2,7 +2,12 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 import { ArmoryScreen } from "@/features/alchemy/meta/screens/armory-screen";
 import type { ArmoryScreenProps } from "@/features/alchemy/meta/screens/armory";
-import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
+import {
+  createEmptyEquippedTrinkets,
+  createEmptyGearInventories,
+  createEmptyGearLoadouts,
+  type GearInstance,
+} from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { useGearStore } from "../../../../../helpers/gameplay-store-test";
@@ -26,11 +31,15 @@ export function createArmoryScreenProps(overrides: Partial<ArmoryScreenProps> = 
   return {
     inventories: createArmoryInventories(),
     loadouts: createEmptyGearLoadouts(),
+    ownedTrinketIds: [],
+    equippedTrinkets: createEmptyEquippedTrinkets(),
     finishedRunCharacters: ["knight"],
     browseOnly: false,
     onOpenMenu: vi.fn(),
     onEquip: vi.fn(),
     onUnequip: vi.fn(),
+    onEquipTrinket: vi.fn(),
+    onUnequipTrinket: vi.fn(),
     onSalvage: vi.fn(() => true),
     rng: vi.fn(() => 0.5),
     ...overrides,

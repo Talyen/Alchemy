@@ -15,7 +15,9 @@ export interface VictoryRewardsInput {
   selectedDifficulty: DifficultyId | null;
   unlockedTalents: UnlockedTalents;
   runDeck: BattleCard[];
-  runTrinkets: string[];
+  runBoons: string[];
+  equippedTrinketId?: string | null;
+  ownedTrinketIds?: string[];
   contentSystemType: ContentSystemId;
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   battleState: BattleState;

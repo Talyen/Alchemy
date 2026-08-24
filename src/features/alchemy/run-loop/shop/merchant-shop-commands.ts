@@ -22,18 +22,22 @@ import {
 import { shopArrayOfferingMatches } from "./shop-slot-keys";
 import type { MerchantShopCommands } from "./shop-action-types";
 import { createInitialShopState, type ShopState } from "./shop-state-init";
+import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export function createMerchantShopCommands({
   talentEffects,
 }: {
   talentEffects: TalentEffectManifest;
 }): MerchantShopCommands {
-  const getCardBuyPrice = (card: BattleCard) =>
-    computeMerchantCardBuyPrice(card, {
+  const getCardBuyPrice = (card: BattleCard) => {
+    const run = readActiveRun();
+    return computeMerchantCardBuyPrice(card, {
       talentEffects,
-      runTrinkets: readActiveRun().runTrinkets,
+      runBoons: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId)),
       firstPurchaseUsed: readShopFirstPurchaseUsed("shopState"),
     });
+  };
   const getRemoveCardPrice = () => computeRemoveCardPrice(talentEffects);
   const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
 
@@ -48,7 +52,10 @@ export function createMerchantShopCommands({
       const state = draft.session.shopState;
       const price = computeMerchantCardBuyPrice(card, {
         talentEffects,
-        runTrinkets: draft.run.activeRun.runTrinkets,
+        runBoons: combineTrinketEffectIds(
+          draft.run.activeRun.runBoons,
+          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+        ),
         firstPurchaseUsed: state.firstPurchaseUsed,
       });
       return purchaseShopOffering({

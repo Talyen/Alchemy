@@ -19,22 +19,22 @@ describe("gear-store", () => {
 
   it("initializes inventory and loadouts from save data", () => {
     const loadouts = createEmptyGearLoadouts();
-    loadouts.knight["left-ring"] = ring.instanceId;
+    loadouts.knight["left-accessory"] = ring.instanceId;
     useGearStore.getState().initialize(knightInventories(ring), loadouts);
     expect(useGearStore.getState().inventories.knight).toEqual([ring]);
-    expect(useGearStore.getState().loadouts.knight["left-ring"]).toBe("ring-1");
+    expect(useGearStore.getState().loadouts.knight["left-accessory"]).toBe("ring-1");
     useGearStore.getState().reset();
   });
 
   it("updates loadouts on equip and inventory on salvage", () => {
     useGearStore.getState().reset();
     useGearStore.getState().addInstance(ring, "knight");
-    useGearStore.getState().equip("knight", "left-ring", ring);
-    expect(useGearStore.getState().loadouts.knight["left-ring"]).toBe("ring-1");
+    useGearStore.getState().equip("knight", "left-accessory", ring);
+    expect(useGearStore.getState().loadouts.knight["left-accessory"]).toBe("ring-1");
 
     const salvaged = useGearStore.getState().salvage(ring.instanceId, { rng: () => 0 });
     expect(salvaged?.inventories.knight).toEqual([]);
-    expect(useGearStore.getState().loadouts.knight["left-ring"]).toBeNull();
+    expect(useGearStore.getState().loadouts.knight["left-accessory"]).toBeNull();
     expect(flattenGearInventories(useGearStore.getState().inventories)).toEqual([]);
     useGearStore.getState().reset();
   });
@@ -43,9 +43,9 @@ describe("gear-store", () => {
     useGearStore.getState().reset();
     const ringB: GearInstance = { instanceId: "ring-2", definitionId: "sapphire-ring-basic", affixes: [] };
     useGearStore.getState().initialize(knightInventories(ring, ringB), createEmptyGearLoadouts());
-    useGearStore.getState().equip("knight", "left-ring", ring);
-    useGearStore.getState().equip("knight", "left-ring", ringB);
-    expect(useGearStore.getState().loadouts.knight["left-ring"]).toBe("ring-2");
+    useGearStore.getState().equip("knight", "left-accessory", ring);
+    useGearStore.getState().equip("knight", "left-accessory", ringB);
+    expect(useGearStore.getState().loadouts.knight["left-accessory"]).toBe("ring-2");
     useGearStore.getState().reset();
   });
 
@@ -55,5 +55,24 @@ describe("gear-store", () => {
     useGearStore.getState().addInstance(armor, "knight");
     expect(flattenGearInventories(useGearStore.getState().inventories).length === 0).toBe(false);
     useGearStore.getState().reset();
+  });
+
+  it("owns one permanent copy and moves it exclusively between character loadouts", () => {
+    useGearStore.getState().reset();
+    expect(useGearStore.getState().addTrinket("bone-charm")).toBe(true);
+    expect(useGearStore.getState().addTrinket("bone-charm")).toBe(false);
+    expect(useGearStore.getState().ownedTrinketIds).toEqual(["bone-charm"]);
+
+    expect(useGearStore.getState().equipTrinket("knight", "bone-charm")).toBe(true);
+    expect(useGearStore.getState().equippedTrinkets.knight).toBe("bone-charm");
+    expect(useGearStore.getState().equipTrinket("rogue", "bone-charm")).toBe(true);
+    expect(useGearStore.getState().equippedTrinkets.knight).toBeNull();
+    expect(useGearStore.getState().equippedTrinkets.rogue).toBe("bone-charm");
+  });
+
+  it("rejects unknown or unowned permanent trinkets", () => {
+    useGearStore.getState().reset();
+    expect(useGearStore.getState().addTrinket("missing-trinket")).toBe(false);
+    expect(useGearStore.getState().equipTrinket("knight", "bone-charm")).toBe(false);
   });
 });

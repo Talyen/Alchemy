@@ -12,7 +12,7 @@ import { pickRandom } from "@/lib/utils";
 import type { TalentPreset } from "./types";
 
 const MID_GEAR_SLOTS: GearSlot[] = ["main-hand", "body"];
-const LATE_GEAR_SLOTS: GearSlot[] = ["main-hand", "off-hand", "body", "left-ring", "right-ring", "amulet"];
+const LATE_GEAR_SLOTS: GearSlot[] = ["main-hand", "off-hand", "body", "left-accessory", "right-accessory"];
 
 function slotsForPreset(preset: TalentPreset): GearSlot[] {
   if (preset === "early") return [];

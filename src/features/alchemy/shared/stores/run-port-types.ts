@@ -46,7 +46,7 @@ export interface ContentNavigationTalentPort {
 
 /** Battle initialization and combat reads. */
 export interface BattleRunPort extends ActiveRunCorePort {
-  runTrinkets: string[];
+  runBoons: string[];
   encounteredRunEnemyIds: string[];
   runDeck: BattleCard[];
   runGold: number;

@@ -4,6 +4,7 @@ import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import type { GameplayDraft } from "./run-session-command";
 import { syncBattleGoldFromPurse } from "./gold-purse";
+import { combineTrinketEffectIds, computeTrinketManifest } from "@/lib/trinkets";
 
 function computeDerivedRunMaxHealth(draft: GameplayDraft): number {
   const characterId = draft.run.activeRun.characterId;
@@ -43,6 +44,9 @@ export function rebindLiveRunMeta(draft: GameplayDraft): void {
   );
   const battle = draft.battle.battleState;
   battle.gearEffects = gearEffects;
+  battle.trinketEffects = computeTrinketManifest(
+    combineTrinketEffectIds(draft.run.activeRun.runBoons, draft.gear.equippedTrinkets[characterId]),
+  );
   battle.talentEffects = talentEffects;
   battle.playerMaxHealth = draft.run.activeRun.runMaxHealth;
   battle.playerHealth = Math.min(battle.playerMaxHealth, battle.playerHealth);

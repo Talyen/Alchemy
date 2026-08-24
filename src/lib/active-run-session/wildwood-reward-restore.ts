@@ -3,17 +3,18 @@ import type { GearInstance } from "@/lib/gear";
 import { resolveCardChoices, resolveGearChoices, resolveTrinketChoices } from "./pending-reward-persistence";
 import {
   createEmptyRewardState,
+  type BoonRewardState,
   type CardRewardState,
   type GearRewardState,
   type TrinketRewardState,
 } from "./reward-types";
 
 export function restoreWildwoodRewardState(
-  rewardType: "card" | "trinket" | "gear",
+  rewardType: "card" | "boon" | "trinket" | "gear",
   choiceIds: string[],
   selectedId: string | null,
   gearChoices: GearInstance[] = [],
-): CardRewardState | TrinketRewardState | GearRewardState {
+): CardRewardState | BoonRewardState | TrinketRewardState | GearRewardState {
   if (rewardType === "gear") {
     const choices = resolveGearChoices(gearChoices) ?? [];
     return { ...createEmptyRewardState(), rewardType: "gear", choices, selectedId };
@@ -23,5 +24,5 @@ export function restoreWildwoodRewardState(
     return { ...createEmptyRewardState(), rewardType: "card", choices, selectedId };
   }
   const choices = resolveTrinketChoices(choiceIds) ?? [];
-  return { ...createEmptyRewardState(), rewardType: "trinket", choices, selectedId };
+  return { ...createEmptyRewardState(), rewardType, choices, selectedId };
 }

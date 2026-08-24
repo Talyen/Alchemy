@@ -1,6 +1,6 @@
 # Armory
 
-The Armory is the permanent meta-progression screen for managing **Gear** (per-character equipment with affix rolls) and **Crafting Currencies** (six crafting currencies used to upgrade gear). It is the primary surface for `useGearArmorySlice` and the gateway to in-battle gear effects.
+The Armory is the permanent meta-progression screen for managing **Gear** (per-character equipment with affix rolls), fixed collectible **Trinkets**, and **Crafting Currencies**. It is the primary surface for `useGearArmorySlice` and the gateway to their in-battle effects.
 
 > **Related:** [ARCHITECTURE.md § Permanent Gear](./ARCHITECTURE.md#permanent-gear-gear-store), [REFERENCE.md § Domain Glossary](./REFERENCE.md#domain-glossary), [WORKFLOWS.md § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
@@ -24,8 +24,10 @@ contract and controller seams.
 
 - A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
+- Permanent Trinkets are unique definition IDs in `ownedTrinketIds`, not generated `GearInstance` values; they have no rarity, affixes, crafting, or salvage.
+- `equippedTrinkets` maps each character to one owned Trinket at most. Equipping a shared Trinket moves it from any other character.
 - Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
-- Equipment slots are `main-hand`, `off-hand`, `body`, `left-ring`, `right-ring`, and `amulet` (inventory headers: Weapons, Weapons, Armor, Rings, Rings, Amulets).
+- Gear slots are `main-hand`, `off-hand`, `body`, `left-accessory`, and `right-accessory`. Both Accessory slots accept Rings or Amulets. The Armory lays these out over `left-accessory | trinket | right-accessory`; the dedicated Trinket slot accepts only permanent Trinkets.
 
 ## State flow
 
@@ -39,8 +41,8 @@ contract and controller seams.
 
 ### Read paths
 
-- **`Armory lock`** — computed from gear ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat does not lock the Armory.
-- **`ArmoryScreen`** — reads `inventories`, `loadouts`, and `craftingCurrencies` via `useGearArmorySlice`.
+- **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat does not lock the Armory.
+- **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`.
 - **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.
 - **Battle** — `computeGearManifest` is applied at battle start and rebound onto the live `BattleState` whenever gear, talents, or homestead change.
 - **Run start** — `content-system-run-init.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
@@ -55,6 +57,7 @@ There is no external `useGearStore` hook. Gear mutations run against a `GearStor
 2. **Salvage** — preview rolls `computeSalvageYield` (definition `salvageValue` homestead materials + `rollSalvageYield` crafting currencies). Confirm passes that frozen yield into `(state) => state.salvage(instanceId, { yield })`, which removes the item from inventory + loadouts and adds crafting currencies. Homestead materials are granted in the same session command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta).
 3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`.
 4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ characterId, mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { characterId, mutate: (gear) => gear.addInstance(instance, characterId) })`.
+5. **Permanent Trinkets** — use `addTrinket`, `equipTrinket`, and `unequipTrinket` on the Gear aggregate. Rewards and the Trinket Shop add ownership inside their existing run-session command; acquisition never auto-equips or creates a Boon.
 
 ### `useArmoryController` facade
 
@@ -79,12 +82,14 @@ Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest
 
 ## Persistence
 
-Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/build-save-data-from-stores.ts`), which serializes three Gear-owned fields:
+Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/build-save-data-from-stores.ts`), which serializes five Gear-owned fields:
 
 | Field                | Notes                                                              |
 | -------------------- | ------------------------------------------------------------------ |
 | `gearInventories`    | `Record<CharacterId, GearInstance[]>` — per-character inventories. |
 | `gearLoadouts`       | `Record<CharacterId, GearLoadout>` — pruned of orphan references.  |
+| `ownedTrinketIds`    | Unique permanent Trinket definition IDs.                           |
+| `equippedTrinkets`   | Per-character equipped Trinket ID, normalized for exclusivity.     |
 | `craftingCurrencies` | `Record<CraftingCurrencyId, number>`.                              |
 
 Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) and `src/lib/validation/metadata.ts` own the supported floor and current version. Gear shape changes follow that migration contract: safe additive fields may use schema defaults, while transforms require a versioned migration.

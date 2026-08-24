@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { gearSlotBackgroundArt } from "@/lib/game-data";
-import type { GearDefinition, GearSlot } from "@/lib/gear";
+import type { ArmorySlot, GearDefinition } from "@/lib/gear";
 import { gearArtFillClass } from "../../../../shared/config";
 
 export function GearSlotArt({
@@ -9,7 +9,7 @@ export function GearSlotArt({
   isHidden = false,
 }: {
   definition: GearDefinition | undefined;
-  slot: GearSlot;
+  slot: ArmorySlot;
   isHidden?: boolean;
 }) {
   return (

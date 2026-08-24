@@ -4,12 +4,13 @@
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { cardById, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { MYSTERY_CARD_CHOICES, GEAR_ASTRAL_GUARANTEE_BONUS } from "@/lib/game-constants";
-import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "../run/deck-mutations";
+import { appendCardToRunWithDiscovery, appendBoonToRunWithDiscovery } from "../run/deck-mutations";
 import type { MaterialId } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 import { generateGearInstanceForBaseItem } from "@/lib/gear";
 import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { pickRandom } from "@/lib/utils";
 import { spendRunGold } from "../run-gold";
@@ -110,7 +111,7 @@ function removeMysteryCard(context: MysteryEffectContext) {
 }
 
 function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
-  appendTrinketToRunWithDiscovery(context.draft, trinketId);
+  appendBoonToRunWithDiscovery(context.draft, trinketId);
   return { followUp: null };
 }
 
@@ -118,7 +119,8 @@ function gainRandomMysteryTrinket(
   effect: Extract<MysteryEffect, { kind: "gainRandomTrinket" }>,
   context: MysteryEffectContext,
 ) {
-  const owned = new Set(context.draft.run.activeRun.runTrinkets);
+  const run = context.draft.run.activeRun;
+  const owned = new Set(combineTrinketEffectIds(run.runBoons, context.draft.gear.equippedTrinkets[run.characterId]));
   const trinketId = pickMysteryTrinketGrantId({ fromIds: effect.fromIds, owned, rng: context.rng });
   if (!trinketId) {
     // Legacy unresolved random-trinket effects only: the grant is persisted immediately, so a

@@ -33,12 +33,14 @@ import { GearInstanceArraySchema } from "./gear-schemas";
 import {
   createEmptyGearInventories,
   createEmptyGearLoadouts,
+  createEmptyEquippedTrinkets,
   flattenGearInventories,
   normalizeExclusiveGearLoadouts,
   normalizeGearLoadout,
   pruneOrphanGearLoadouts,
   type GearInventories,
   type GearLoadouts,
+  type EquippedTrinkets,
 } from "@/lib/gear/types";
 
 const GearInventorySchema = GearInstanceArraySchema;
@@ -63,6 +65,15 @@ for (const id of CHARACTER_IDS) {
 const GearLoadoutsSchema = z
   .object(gearLoadoutsShape)
   .transform((loadouts) => normalizeExclusiveGearLoadouts(loadouts as GearLoadouts));
+const emptyEquippedTrinkets = createEmptyEquippedTrinkets();
+const equippedTrinketsShape: Record<string, z.ZodType> = {};
+for (const id of CHARACTER_IDS) {
+  equippedTrinketsShape[id] = z.string().nullable().catch(null);
+}
+const EquippedTrinketsSchema = z
+  .object(equippedTrinketsShape)
+  .catch(emptyEquippedTrinkets)
+  .transform((value) => value as EquippedTrinkets);
 
 function leftoverActiveRunGold(activeRun: unknown): number {
   if (!activeRun || typeof activeRun !== "object") return 0;
@@ -115,6 +126,8 @@ export const SaveDataSchema = z.preprocess(
       discoveredTrinketIds: deduplicatedStringArraySchema(),
       gearInventories: GearInventoriesSchema.catch(emptyGearInventories),
       gearLoadouts: GearLoadoutsSchema.catch(emptyGearLoadouts),
+      ownedTrinketIds: deduplicatedStringArraySchema(),
+      equippedTrinkets: EquippedTrinketsSchema,
       talentXP: TalentXPSchema,
       unlockedTalents: UnlockedTalentsSchema,
       // .catch() fallbacks must match defaults.ts — both come from game-constants.ts.

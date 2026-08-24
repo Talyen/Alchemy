@@ -1,6 +1,7 @@
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "../metadata";
 import type { RawSaveData } from "./types";
 import { migrateContentV1ToV2, migrateContentV2ToV3 } from "./content-steps";
+import { migrateV11ToV12 } from "./steps-v11-v12";
 
 /** Returns 0 for invalid versions so callers can treat missing-version saves as v0. */
 export function getRawSaveSchemaVersion(parsed: unknown): number {
@@ -29,6 +30,10 @@ export function getRawContentVersion(parsed: unknown): number {
 export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
   if (!parsed || typeof parsed !== "object") return {};
   let next = { ...(parsed as RawSaveData) };
+  const schemaVersion = getRawSaveSchemaVersion(next);
+  if (schemaVersion <= 11) {
+    next = migrateV11ToV12(next);
+  }
   const contentVersion = getRawContentVersion(next);
   if (contentVersion < 2) {
     next = migrateContentV1ToV2(next);

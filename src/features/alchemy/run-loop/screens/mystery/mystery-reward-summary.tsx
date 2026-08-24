@@ -64,7 +64,7 @@ function MysteryCardRewardItem({ card }: { card: BattleCard }) {
 function MysteryTrinketRewardItem({ boon }: { boon: TrinketEntry }) {
   return (
     <div className="flex flex-col items-center gap-3">
-      <TrinketTile trinket={boon} interactionKey="mystery-reward" />
+      <TrinketTile trinket={boon} interactionKey="mystery-reward" temporary />
       <p className={controlLabelClass}>{boon.title}</p>
     </div>
   );
@@ -107,7 +107,7 @@ function MysteryRewardEffectItem({
     },
     gainRandomTrinket: () => {
       const boon = grantedTrinketId ? findTrinket(grantedTrinketId) : undefined;
-      if (!boon) return <p className={cn(controlLabelClass, "text-balance")}>Gained a random trinket for this run</p>;
+      if (!boon) return <p className={cn(controlLabelClass, "text-balance")}>Gained a random Boon for this run</p>;
       return <MysteryTrinketRewardItem boon={boon} />;
     },
     gainGeneratedGear: () => {

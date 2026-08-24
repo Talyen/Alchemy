@@ -144,7 +144,7 @@ describe("initialize", () => {
       completedDestinations: activeRun.completedDestinations,
       lastOfferedDestinations: activeRun.lastOfferedDestinations,
       destinationRoundsSinceOffered: activeRun.destinationRoundsSinceOffered,
-      runTrinkets: activeRun.runTrinkets,
+      runBoons: activeRun.runBoons,
       encounteredRunEnemyIds: activeRun.encounteredRunEnemyIds,
       selectedDifficulty: activeRun.selectedDifficulty,
       contentSystemType: activeRun.contentSystemType,
@@ -482,7 +482,7 @@ describe("applyRunStartSnapshot", () => {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runTrinkets: [],
+      runBoons: [],
       hasActiveRun: true,
     });
     expect(getRunProgressStoreView().runTalentXP).toEqual({});

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { defaultBattleState, repairPersistedBattleTrinketManifest } from "@/lib/battle";
+import { defaultBattleState, repairPersistedBattleBoonManifest } from "@/lib/battle";
 
-describe("repairPersistedBattleTrinketManifest", () => {
-  it("recomputes default trinketEffects from runTrinkets", () => {
+describe("repairPersistedBattleBoonManifest", () => {
+  it("recomputes default trinketEffects from runBoons", () => {
     const battleState = defaultBattleState();
-    const repaired = repairPersistedBattleTrinketManifest(battleState, ["bone-charm"]);
+    const repaired = repairPersistedBattleBoonManifest(battleState, ["bone-charm"]);
     expect(repaired.trinketEffects.boneCharmHealOnKill).toBe(3);
   });
 
@@ -16,13 +16,13 @@ describe("repairPersistedBattleTrinketManifest", () => {
         boneCharmHealOnKill: 9,
       },
     };
-    const repaired = repairPersistedBattleTrinketManifest(battleState, ["bone-charm"]);
+    const repaired = repairPersistedBattleBoonManifest(battleState, ["bone-charm"]);
     expect(repaired.trinketEffects.boneCharmHealOnKill).toBe(9);
   });
 
-  it("no-ops when runTrinkets is empty", () => {
+  it("no-ops when runBoons is empty", () => {
     const battleState = defaultBattleState();
-    const repaired = repairPersistedBattleTrinketManifest(battleState, []);
+    const repaired = repairPersistedBattleBoonManifest(battleState, []);
     expect(repaired).toBe(battleState);
   });
 });

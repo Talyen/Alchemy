@@ -41,6 +41,7 @@ function emptyCraftingCurrencies() {
 /** Current-schema envelope: shared core plus the gear/crafting fields migration guards rely on. */
 function currentSaveEnvelope(overrides: Record<string, unknown> = {}) {
   return saveEnvelopeFixture({
+    saveSchemaVersion: 11,
     discoveredCardIds: [] as string[],
     encounteredEnemyIds: [] as string[],
     discoveredTrinketIds: [] as string[],
@@ -310,7 +311,7 @@ export function currentSchemaMidCombatTrinketSave() {
 }
 
 export const CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
-  10: currentSchemaSave,
+  11: currentSchemaSave,
 };
 
 const FIXTURE_LIVE_SLASH = {

@@ -9,6 +9,8 @@ import {
   addCraftingCurrencies,
   normalizeCraftingCurrencies,
   EMPTY_CRAFTING_CURRENCIES,
+  GEAR_CHARACTER_IDS,
+  normalizeEquippedTrinkets,
 } from "@/lib/gear";
 import type {
   CraftingCurrencyId,
@@ -16,6 +18,7 @@ import type {
   GearInventories,
   GearLoadouts,
   GearSlot,
+  EquippedTrinkets,
   SalvageYield,
 } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
@@ -23,6 +26,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Draft } from "immer";
 import { initialState } from "./gear-store-initial-state";
 import type { GearStateFields } from "./gear-store-types";
+import { trinketLibrary } from "@/lib/game-data";
 
 /** Mutations over the aggregate's gear region; each takes the gear draft directly. */
 
@@ -31,9 +35,22 @@ export function initializeGear(
   inventories: GearInventories,
   loadouts: GearLoadouts,
   craftingCurrencies: Partial<Record<CraftingCurrencyId, number>> = EMPTY_CRAFTING_CURRENCIES,
+  ownedTrinketIds: string[] = [],
+  equippedTrinkets?: EquippedTrinkets,
 ): void {
   gear.inventories = inventories;
   gear.loadouts = loadouts;
+  const validIds = new Set(trinketLibrary.map((entry) => entry.id));
+  gear.ownedTrinketIds = [...new Set(ownedTrinketIds.filter((id) => validIds.has(id)))];
+  const owned = new Set(gear.ownedTrinketIds);
+  const normalized = normalizeEquippedTrinkets(equippedTrinkets);
+  const seen = new Set<string>();
+  for (const characterId of GEAR_CHARACTER_IDS) {
+    const id = normalized[characterId];
+    if (!id || !owned.has(id) || seen.has(id)) normalized[characterId] = null;
+    else seen.add(id);
+  }
+  gear.equippedTrinkets = normalized;
   gear.craftingCurrencies = normalizeCraftingCurrencies(craftingCurrencies);
 }
 
@@ -56,6 +73,29 @@ export function equipGearInstance(
 
 export function unequipGearInstance(gear: Draft<GearStateFields>, characterId: CharacterId, slot: GearSlot): void {
   gear.loadouts = unequipGear(gear.loadouts, characterId, slot);
+}
+
+export function addPermanentTrinket(gear: Draft<GearStateFields>, trinketId: string): boolean {
+  if (!trinketLibrary.some((entry) => entry.id === trinketId) || gear.ownedTrinketIds.includes(trinketId)) return false;
+  gear.ownedTrinketIds.push(trinketId);
+  return true;
+}
+
+export function equipPermanentTrinket(
+  gear: Draft<GearStateFields>,
+  characterId: CharacterId,
+  trinketId: string,
+): boolean {
+  if (!gear.ownedTrinketIds.includes(trinketId)) return false;
+  for (const id of GEAR_CHARACTER_IDS) {
+    if (gear.equippedTrinkets[id] === trinketId) gear.equippedTrinkets[id] = null;
+  }
+  gear.equippedTrinkets[characterId] = trinketId;
+  return true;
+}
+
+export function unequipPermanentTrinket(gear: Draft<GearStateFields>, characterId: CharacterId): void {
+  gear.equippedTrinkets[characterId] = null;
 }
 
 export function salvageGearInstance(

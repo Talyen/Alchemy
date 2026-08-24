@@ -9,7 +9,7 @@ import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-tra
 interface VictoryGoldInput {
   battleState: Pick<BattleState, "gold">;
   runGold: number;
-  runTrinkets: string[];
+  runBoons: string[];
   gold: number;
   eliteBonus: number;
   generousBonus: number;
@@ -90,7 +90,7 @@ export function computeRewardGold(input: RewardGoldInput): number {
 export function computeVictoryGold({
   battleState,
   runGold,
-  runTrinkets,
+  runBoons,
   gold,
   eliteBonus,
   generousBonus,
@@ -101,7 +101,7 @@ export function computeVictoryGold({
   const earnedBeforeMultiplier =
     battleState.gold +
     gold +
-    sumGoldBonuses(eliteBonus + bossBonus, generousBonus, talentGoldPerCombat, runTrinkets) -
+    sumGoldBonuses(eliteBonus + bossBonus, generousBonus, talentGoldPerCombat, runBoons) -
     runGold;
   return {
     earnedBeforeMultiplier,

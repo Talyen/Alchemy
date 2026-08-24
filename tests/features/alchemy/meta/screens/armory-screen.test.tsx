@@ -159,7 +159,7 @@ describe("ArmoryScreen core", () => {
     const user = userEvent.setup();
     renderArmoryScreen();
 
-    await user.click(screen.getByLabelText("Amulet equipment slot"));
+    await user.click(screen.getByLabelText("Right accessory equipment slot"));
     await waitFor(() => {
       expect(screen.getByText("Empty")).toBeTruthy();
       expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(0);

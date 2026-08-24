@@ -9,6 +9,7 @@ import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
+import { trinketLibrary } from "@/lib/game-data";
 import type { Destination } from "@/lib/routing";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
@@ -49,7 +50,7 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
     selectedDifficulty: null,
     unlockedTalents: {},
     runDeck: [],
-    runTrinkets: [],
+    runBoons: [],
     contentSystemType: "campaign",
     activeLabyrinthRewardModifiers: [],
     battleState: baseBattleState(),
@@ -71,14 +72,14 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
 const testRng = () => 0.25;
 
 describe("computeVictoryRewardState", () => {
-  it("creates a gear boss reward for boss enemies", () => {
+  it("rolls a permanent trinket instead of gear one third of the time", () => {
     const result = computeVictoryRewardState(
       {
         characterId: "knight",
         selectedDifficulty: null,
         unlockedTalents: {},
         runDeck: [],
-        runTrinkets: [],
+        runBoons: [],
         contentSystemType: "campaign",
         activeLabyrinthRewardModifiers: [],
         battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
@@ -91,7 +92,7 @@ describe("computeVictoryRewardState", () => {
       },
       () => 0.25,
     );
-    expect(result.rewardType).toBe("gear");
+    expect(result.rewardType).toBe("trinket");
     expect(result.gold).toBe(25);
   });
 
@@ -102,7 +103,7 @@ describe("computeVictoryRewardState", () => {
         selectedDifficulty: null,
         unlockedTalents: {},
         runDeck: [],
-        runTrinkets: [],
+        runBoons: [],
         contentSystemType: "campaign",
         activeLabyrinthRewardModifiers: [],
         battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
@@ -127,7 +128,7 @@ describe("computeVictoryRewardState", () => {
         selectedDifficulty: null,
         unlockedTalents: {},
         runDeck: [],
-        runTrinkets: [],
+        runBoons: [],
         contentSystemType: "labyrinth",
         activeLabyrinthRewardModifiers: [],
         battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
@@ -143,14 +144,14 @@ describe("computeVictoryRewardState", () => {
     expect(result.rewardType).toBe("card");
   });
 
-  it("always awards trinket rewards for elite enemies", () => {
+  it("always awards boon rewards for elite enemies", () => {
     const result = computeVictoryRewardState(
       {
         characterId: "knight",
         selectedDifficulty: null,
         unlockedTalents: {},
         runDeck: [],
-        runTrinkets: [],
+        runBoons: [],
         contentSystemType: "campaign",
         activeLabyrinthRewardModifiers: [],
         battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
@@ -163,16 +164,16 @@ describe("computeVictoryRewardState", () => {
       },
       () => 0.01,
     );
-    expect(result.rewardType).toBe("trinket");
+    expect(result.rewardType).toBe("boon");
   });
 
-  it("always awards gear rewards for boss enemies", () => {
+  it("awards gear for a boss when the permanent trinket roll misses", () => {
     const input = {
       characterId: "knight" as const,
       selectedDifficulty: null,
       unlockedTalents: {},
       runDeck: [],
-      runTrinkets: [],
+      runBoons: [],
       contentSystemType: "campaign" as const,
       activeLabyrinthRewardModifiers: [],
       battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
@@ -183,10 +184,63 @@ describe("computeVictoryRewardState", () => {
       materials: emptyInventory(),
       destinations: [],
     };
-    const gearReward = computeVictoryRewardState(input, () => 0.25);
+    const gearReward = computeVictoryRewardState(input, () => 0.5);
     expect(gearReward.rewardType).toBe("gear");
     expect(gearReward.choices.every((choice) => "instanceId" in choice)).toBe(true);
     expect(gearReward.choices.every((choice) => "affixes" in choice)).toBe(true);
+  });
+
+  it("filters owned permanent trinkets and reduces the choice count", () => {
+    const unowned = trinketLibrary.slice(-2);
+    const result = computeVictoryRewardState(
+      {
+        characterId: "knight",
+        selectedDifficulty: null,
+        unlockedTalents: {},
+        runDeck: [],
+        runBoons: [],
+        ownedTrinketIds: trinketLibrary.slice(0, -2).map((entry) => entry.id),
+        contentSystemType: "campaign",
+        activeLabyrinthRewardModifiers: [],
+        battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
+        gold: 15,
+        eliteBonus: 0,
+        generousBonus: 0,
+        bossBonus: 7,
+        materials: emptyInventory(),
+        destinations: [],
+      },
+      () => 0,
+    );
+
+    expect(result.rewardType).toBe("trinket");
+    if (result.rewardType !== "trinket") throw new Error("expected permanent trinket reward");
+    expect(result.choices.map((choice) => choice.id).sort()).toEqual(unowned.map((entry) => entry.id).sort());
+  });
+
+  it("falls back to gear when every permanent trinket is owned", () => {
+    const result = computeVictoryRewardState(
+      {
+        characterId: "knight",
+        selectedDifficulty: null,
+        unlockedTalents: {},
+        runDeck: [],
+        runBoons: [],
+        ownedTrinketIds: trinketLibrary.map((entry) => entry.id),
+        contentSystemType: "campaign",
+        activeLabyrinthRewardModifiers: [],
+        battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
+        gold: 15,
+        eliteBonus: 0,
+        generousBonus: 0,
+        bossBonus: 7,
+        materials: emptyInventory(),
+        destinations: [],
+      },
+      () => 0,
+    );
+
+    expect(result.rewardType).toBe("gear");
   });
 });
 
@@ -270,7 +324,7 @@ describe("computeVictoryRewards", () => {
     );
     // Base roll 15 + boss bonus 7.
     expect(result.goldEarned).toBe(22);
-    expect(result.rewardState.rewardType).toBe("gear");
+    expect(result.rewardState.rewardType).toBe("trinket");
   });
 
   it("applies generous labyrinth modifier gold bonus", () => {
@@ -296,7 +350,7 @@ describe("computeVictoryRewards", () => {
     expect(result.rewardState.materials.wood).toBeGreaterThanOrEqual(1);
   });
 
-  it("awards trinket rewards for elite combat victories", () => {
+  it("awards boon rewards for elite combat victories", () => {
     const result = computeVictoryRewards(
       baseInput({
         contentSystemType: "labyrinth",
@@ -304,7 +358,7 @@ describe("computeVictoryRewards", () => {
       }),
       () => 0.25,
     );
-    expect(result.rewardState.rewardType).toBe("trinket");
+    expect(result.rewardState.rewardType).toBe("boon");
   });
 
   it("applies companion gold find when talent is active and companion present", () => {

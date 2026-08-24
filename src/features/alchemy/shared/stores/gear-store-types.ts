@@ -5,6 +5,7 @@ import type {
   GearInventories,
   GearLoadouts,
   GearSlot,
+  EquippedTrinkets,
   SalvageYield,
 } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -12,23 +13,35 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 export interface GearSaveFields {
   gearInventories: GearInventories;
   gearLoadouts: GearLoadouts;
+  ownedTrinketIds: string[];
+  equippedTrinkets: EquippedTrinkets;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
 }
 
-export type GearStateFields = Pick<GearStore, "inventories" | "loadouts" | "craftingCurrencies">;
+export type GearStateFields = Pick<
+  GearStore,
+  "inventories" | "loadouts" | "ownedTrinketIds" | "equippedTrinkets" | "craftingCurrencies"
+>;
 
 export interface GearStore {
   inventories: GearInventories;
   loadouts: GearLoadouts;
+  ownedTrinketIds: string[];
+  equippedTrinkets: EquippedTrinkets;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   initialize: (
     inventories: GearInventories,
     loadouts: GearLoadouts,
     craftingCurrencies?: Partial<Record<CraftingCurrencyId, number>>,
+    ownedTrinketIds?: string[],
+    equippedTrinkets?: EquippedTrinkets,
   ) => void;
   addInstance: (instance: GearInstance, characterId: CharacterId) => void;
   equip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
   unequip: (characterId: CharacterId, slot: GearSlot) => void;
+  addTrinket: (trinketId: string) => boolean;
+  equipTrinket: (characterId: CharacterId, trinketId: string) => boolean;
+  unequipTrinket: (characterId: CharacterId) => void;
   salvage: (
     instanceId: string,
     options?: { rng?: () => number; yield?: SalvageYield },

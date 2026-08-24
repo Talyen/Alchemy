@@ -69,6 +69,8 @@ Migration tests must verify gameplay progress, not just field presence:
 - Homestead materials and upgrade tiers remain intact.
 - Active campaign, labyrinth, and wildwood runs resume when structurally valid (**`activeRun` must not be silently dropped**).
 - Mid-combat snapshots preserve trinket effects, gear effects, and combat flags.
+- Active and parked runs preserve Boons, pending reward meaning, and battle Trinket manifests across the schema-11 to schema-12 rename.
+- Schema-11 jewelry loadouts map left Ring to left Accessory and Amulet to right Accessory; the old middle right Ring is unequipped but remains in inventory. Permanent Trinket ownership starts empty because discovery does not imply ownership.
 - Every fixture is **idempotent** after `normalizeSaveData`.
 
 ## Future schema saves
@@ -112,6 +114,8 @@ Active runs persist a seed and counters for named run-outcome streams. This is a
 ## Shop offerings (`activeRun` shop fields)
 
 Shop inventories (`shopState`, `alchemistState`, `trinketShopState`, `equipmentShopState`) persist only while `currentScreen` is that shop. Leaving a shop clears in-memory offerings in the same command as destination advance, so autosave and session state agree. No schema bump: absent shop fields already default to empty.
+
+The schema-12 migration reinterprets a saved Trinket Shop as a permanent vendor. Restore filters its offerings against permanent ownership; an exhausted restored shop is a sold-out state that can still be left safely.
 
 ## Mystery visit (`activeRun.mysteryVisit`)
 

@@ -12,7 +12,7 @@ import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { PaginationControls, ScreenHeader } from "../../../shared/ui/shared-ui";
 import { TrinketTile } from "../../../shared/ui/collection-art-tiles";
 import { usePaginatedRows } from "../../../shared/ui/use-paginated-rows";
-import { uniqueRunTrinkets } from "./unique-run-trinkets";
+import { uniqueRunBoons } from "./unique-run-trinkets";
 
 const INSPECT_COLUMNS = 4;
 
@@ -23,6 +23,7 @@ export function BattleTrinketInspectButton({ open, onToggle }: { open: boolean; 
       size="icon"
       className={cn("h-10 w-10", !open && "text-muted-foreground")}
       onClick={onToggle}
+      aria-label={open ? "Close Boons" : "Inspect Boons"}
       data-testid="battle-trinket-inspect-toggle"
     >
       <ShoppingBag className="h-5 w-5" />
@@ -30,7 +31,7 @@ export function BattleTrinketInspectButton({ open, onToggle }: { open: boolean; 
   );
 }
 
-export function BattleTrinketInspectOverlay({
+export function BattleBoonInspectOverlay({
   open,
   trinketIds,
   onClose,
@@ -39,7 +40,7 @@ export function BattleTrinketInspectOverlay({
   trinketIds: readonly string[];
   onClose: () => void;
 }) {
-  const trinkets = useMemo(() => uniqueRunTrinkets(trinketIds), [trinketIds]);
+  const trinkets = useMemo(() => uniqueRunBoons(trinketIds), [trinketIds]);
   const { page: safePage, totalPages, rows, setPage } = usePaginatedRows(trinkets, TRINKET_PAGE_SIZE, INSPECT_COLUMNS);
 
   // Restart at the first page each time the overlay opens.
@@ -64,14 +65,14 @@ export function BattleTrinketInspectOverlay({
       >
         <div className="grid w-full grid-cols-[2.5rem_1fr_2.5rem] items-start">
           <span />
-          <ScreenHeader title="Trinkets" />
+          <ScreenHeader title="Boons" />
           <Button
             variant="outline"
             size="icon"
             className="h-10 w-10 text-muted-foreground"
             wrapperClassName="justify-self-end"
             onClick={onClose}
-            aria-label="Close trinkets"
+            aria-label="Close boons"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -87,6 +88,7 @@ export function BattleTrinketInspectOverlay({
                   interactionKey="battle-trinket"
                   idPrefix={`battle-trinket-${trinket.id}`}
                   as="div"
+                  temporary
                 />
               ))}
             </div>

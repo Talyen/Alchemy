@@ -21,7 +21,7 @@ export {
   setRunGold,
   setRunMaxHealth,
   setRunPlayerHealth,
-  setRunTrinkets,
+  setRunBoons,
   setScreen,
 } from "./write-port-run";
 export {

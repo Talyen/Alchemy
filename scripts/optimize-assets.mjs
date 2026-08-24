@@ -27,15 +27,13 @@ const TRANSFORM_CONCURRENCY = 6;
 const gearAssetWidth = 420;
 const gearAssetQuality = 82;
 
-const GEAR_SLOT_IDS = ["body", "main-hand", "off-hand", "amulet", "left-ring", "right-ring"];
+const GEAR_SLOT_IDS = ["body", "weapon", "accessory", "trinket"];
 
 const GEAR_SLOT_BACKGROUND_NAME_TO_ID = {
-  amulet: "amulet",
+  accessory: "accessory",
   body: "body",
-  "left ring": "left-ring",
-  "main hand": "main-hand",
-  "off-hand": "off-hand",
-  "right ring": "right-ring",
+  trinket: "trinket",
+  weapon: "weapon",
 };
 
 function slugifyGearName(name) {

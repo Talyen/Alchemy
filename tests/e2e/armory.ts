@@ -3,7 +3,7 @@ import type { CraftingCurrencyId, GearInstance, GearSlot } from "@/lib/gear";
 import { MenuPage } from "../pages/menu-page";
 
 const characterIds = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid", "wildcard"];
-const gearSlots = ["main-hand", "off-hand", "body", "left-ring", "right-ring", "amulet"] as const;
+const gearSlots = ["main-hand", "off-hand", "body", "left-accessory", "right-accessory"] as const;
 
 export const bodyGear = {
   instanceId: "gear-body",

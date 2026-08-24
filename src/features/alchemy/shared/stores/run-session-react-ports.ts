@@ -51,7 +51,7 @@ export function useBattleRunPort(): BattleRunPort {
       characterId: state.run.activeRun.characterId,
       selectedDifficulty: state.run.activeRun.selectedDifficulty,
       runMaxHealth: state.run.activeRun.runMaxHealth,
-      runTrinkets: state.run.activeRun.runTrinkets,
+      runBoons: state.run.activeRun.runBoons,
       roomsEncountered: state.run.activeRun.roomsEncountered,
       contentSystemType: state.run.activeRun.contentSystemType,
       encounteredRunEnemyIds: state.run.activeRun.encounteredRunEnemyIds,
@@ -148,10 +148,6 @@ export function useContentSystemType(): ContentSystemId {
   return useGameplayStateStore((state) => state.run.activeRun.contentSystemType);
 }
 
-export function useIsWildwoodRun(): boolean {
-  return useGameplayStateStore((state) => state.run.activeRun.contentSystemType === "wildwood");
-}
-
 export function useHomesteadProgressSlice() {
   return useGameplayStateStore(
     useShallow((state) => ({
@@ -210,6 +206,6 @@ export function useActiveRunCharacterId(): CharacterId {
   return useGameplayStateStore((state) => state.run.activeRun.characterId);
 }
 
-export function useActiveRunTrinkets(): string[] {
-  return useGameplayStateStore((state) => state.run.activeRun.runTrinkets);
+export function useActiveRunBoons(): string[] {
+  return useGameplayStateStore((state) => state.run.activeRun.runBoons);
 }

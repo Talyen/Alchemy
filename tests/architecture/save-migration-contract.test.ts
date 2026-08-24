@@ -21,17 +21,18 @@ describe("save migration contract", () => {
     expect(CURRENT_SAVE_SCHEMA_VERSION).toBeGreaterThanOrEqual(LAUNCH_SAVE_SCHEMA_VERSION);
   });
 
-  it("has no schema migration step functions at the pre-launch floor", () => {
-    const migrationSource = read("src/lib/validation/migration/index.ts");
-    expect(migrationSource).not.toMatch(/SCHEMA_MIGRATIONS/);
-    expect(countMigrationSteps(migrationSource)).toBe(0);
-    expect(CURRENT_SAVE_SCHEMA_VERSION - LAUNCH_SAVE_SCHEMA_VERSION).toBe(0);
+  it("keeps one migration step for every supported schema increment", () => {
+    const migrationSources = [
+      read("src/lib/validation/migration/index.ts"),
+      read("src/lib/validation/migration/steps-v11-v12.ts"),
+    ].join("\n");
+    expect(countMigrationSteps(migrationSources)).toBe(CURRENT_SAVE_SCHEMA_VERSION - LAUNCH_SAVE_SCHEMA_VERSION);
   });
 
   it("keeps rename logic out of active-run schema transforms", () => {
     const activeRunSource = read("src/lib/validation/save-schemas/active-run.ts");
     expect(activeRunSource).not.toContain("boonEffects");
-    expect(activeRunSource).not.toContain("runBoons");
+    expect(activeRunSource).not.toContain("runTrinkets");
     expect(activeRunSource).not.toContain("firstBurnBoon");
   });
 
@@ -51,6 +52,7 @@ describe("save migration contract", () => {
       "discoveredCardIds",
       "displayMode",
       "encounteredEnemyIds",
+      "equippedTrinkets",
       "finishedRunCharacters",
       "gameBuildVersion",
       "gearInventories",
@@ -61,6 +63,7 @@ describe("save migration contract", () => {
       "masterVolume",
       "materialInventory",
       "muteInBackground",
+      "ownedTrinketIds",
       "musicVolume",
       "parkedRuns",
       "plantedFarms",

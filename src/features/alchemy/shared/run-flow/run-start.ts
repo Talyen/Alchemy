@@ -24,7 +24,7 @@ export interface RunStartSnapshot {
   currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: Destination[];
-  runTrinkets: string[];
+  runBoons: string[];
   hasActiveRun: boolean;
 }
 
@@ -64,7 +64,7 @@ export function createRunStartSnapshot({
     currentAct: 1,
     destinationIndexInAct: 0,
     completedDestinations: [],
-    runTrinkets: [],
+    runBoons: [],
     hasActiveRun: true,
   };
 }

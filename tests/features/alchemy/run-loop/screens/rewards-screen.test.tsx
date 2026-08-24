@@ -146,7 +146,30 @@ describe("RewardsScreen", () => {
         onOpenMenu={vi.fn()}
       />,
     );
-    expect(screen.getByRole("heading", { name: "Gain a Trinket for this Run" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Choose a Trinket to add to your Armory" })).toBeTruthy();
+
+    rerender(
+      <RewardsScreen
+        rewardState={{
+          ...createEmptyRewardState(),
+          rewardType: "boon",
+          choices: [
+            {
+              id: "lucky-coin",
+              title: "Lucky Coin",
+              descriptionLines: ["Gain 5 gold."],
+              art: "",
+              effects: {},
+            },
+          ],
+        }}
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={vi.fn()}
+        onOpenMenu={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Choose a Boon for this Run" })).toBeTruthy();
 
     rerender(
       <RewardsScreen

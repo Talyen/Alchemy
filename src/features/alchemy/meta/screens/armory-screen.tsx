@@ -1,14 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { Lock } from "lucide-react";
-import { Dices } from "lucide-react";
 import {
   EMPTY_CRAFTING_CURRENCIES,
   computeSalvageYield,
   flattenGearInventories,
-  gearDefinitions,
   type CraftingCurrencyId,
   type GearInstance,
   type GearSlot,
+  type ArmorySlot,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { collectionGridGapXClass, screenShellPaddingClass, sectionTitleClass } from "@/features/alchemy/shared/config";
@@ -17,8 +16,8 @@ import {
   getRequiredPreviousCharacter,
   isCharacterUnlocked,
   type CharacterId,
+  trinketLibrary,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-import { Button } from "@/components/ui/button";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { PageLayout } from "../../shared/ui/shared-ui";
 import {
@@ -30,36 +29,34 @@ import {
   type ArmorySalvagePending,
   type ArmoryScreenProps,
 } from "./armory";
-import { applyCurrencyToGear, resetArmoryTargeting } from "./armory/armory-screen-actions";
+import { applyCurrencyToGear, itemsMatchingSlot, resetArmoryTargeting } from "./armory/armory-screen-actions";
+import { ArmoryPickerPanel } from "./armory/armory-picker-panel";
 import { EquipmentSlotButton } from "./armory/parts/equipment-slot-button";
 import { CraftingStrip } from "./armory/parts/crafting-strip";
-import { EQUIP_SLOTS, SLOT_LABELS } from "./armory/parts/slot-labels";
-import { ItemPickerGrid } from "./armory/item-picker-grid";
+import { EQUIP_SLOTS } from "./armory/parts/slot-labels";
+import { TrinketSlotButton } from "./armory/parts/trinket-slot-button";
 import "./armory/armory-screen.css";
-
-function itemsMatchingSlot(inventory: GearInstance[], slot: GearSlot): GearInstance[] {
-  return inventory.filter((item) => {
-    const definition = gearDefinitions[item.definitionId];
-    return definition?.compatibleSlots.includes(slot) ?? false;
-  });
-}
 
 export function ArmoryScreen({
   inventories,
   loadouts,
+  ownedTrinketIds,
+  equippedTrinkets,
   craftingCurrencies = EMPTY_CRAFTING_CURRENCIES,
   finishedRunCharacters,
   browseOnly,
   onOpenMenu,
   onEquip,
   onUnequip,
+  onEquipTrinket,
+  onUnequipTrinket,
   onSalvage,
   onApplyCurrency = () => false,
   onSpawnDevGear,
   rng,
 }: ArmoryScreenProps) {
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
-  const [selectedSlot, setSelectedSlot] = useState<GearSlot>("main-hand");
+  const [selectedSlot, setSelectedSlot] = useState<ArmorySlot>("main-hand");
   const [salvageMode, setSalvageMode] = useState(false);
   const [salvagePending, setSalvagePending] = useState<ArmorySalvagePending | null>(null);
   const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
@@ -73,9 +70,16 @@ export function ArmoryScreen({
   const locked = !isCharacterUnlocked(characterId, finishedRunCharacters);
   const editable = !browseOnly && !locked;
   const pickerItems = useMemo(() => {
+    if (selectedSlot === "trinket") return [];
     const equippedId = loadout[selectedSlot];
     return itemsMatchingSlot(sharedInventory, selectedSlot).filter((item) => item.instanceId !== equippedId);
   }, [sharedInventory, loadout, selectedSlot]);
+  const ownedTrinkets = useMemo(() => {
+    const owned = new Set(ownedTrinketIds);
+    const equippedId = equippedTrinkets[characterId];
+    return trinketLibrary.filter((entry) => owned.has(entry.id) && entry.id !== equippedId);
+  }, [ownedTrinketIds, equippedTrinkets, characterId]);
+  const equippedTrinket = trinketLibrary.find((entry) => entry.id === equippedTrinkets[characterId]);
 
   const handleSelectCharacter = useCallback(
     (id: CharacterId) => {
@@ -130,7 +134,10 @@ export function ArmoryScreen({
     [editable, activeCurrencyId, craftingCurrencies, onApplyCurrency],
   );
 
-  const handleSlotSelect = useCallback((slot: GearSlot) => setSelectedSlot(slot), []);
+  const handleSlotSelect = useCallback((slot: ArmorySlot) => {
+    setSelectedSlot(slot);
+    if (slot === "trinket") resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setSalvagePending });
+  }, []);
   const handleSlotUnequip = useCallback((slot: GearSlot) => onUnequip(characterId, slot), [onUnequip, characterId]);
 
   return (
@@ -169,6 +176,18 @@ export function ArmoryScreen({
                   className={cn("mt-2 grid w-full grid-cols-3", collectionGridGapXClass, "gap-y-6")}
                 >
                   {EQUIP_SLOTS.map((slot) => {
+                    if (slot === "trinket") {
+                      return (
+                        <TrinketSlotButton
+                          key={slot}
+                          trinket={equippedTrinket}
+                          selected={selectedSlot === slot}
+                          editable={editable}
+                          onSelect={() => handleSlotSelect(slot)}
+                          onUnequip={() => onUnequipTrinket(characterId)}
+                        />
+                      );
+                    }
                     const instanceId = loadout[slot];
                     const instance = instanceId ? inventoryById.get(instanceId) : undefined;
                     return (
@@ -211,41 +230,26 @@ export function ArmoryScreen({
                   </div>
                 ) : null}
               </section>
-              <section
-                data-testid="armory-right-panel"
-                className="alchemy-shell relative flex min-h-0 min-w-0 flex-col rounded-shell-dialog border border-border/80 p-4"
-              >
-                <div className="relative flex min-h-10 w-full items-center justify-center">
-                  <h2 className={cn("text-center font-sans", sectionTitleClass)}>{SLOT_LABELS[selectedSlot]}</h2>
-                  {onSpawnDevGear && editable ? (
-                    <div className="absolute right-0">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label="Spawn random gear"
-                        onClick={() => onSpawnDevGear(characterId)}
-                      >
-                        <Dices className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-                <ItemPickerGrid
-                  slot={selectedSlot}
-                  characterId={characterId}
-                  items={pickerItems}
-                  loadout={loadout}
-                  loadouts={loadouts}
-                  inventory={sharedInventory}
-                  editable={editable}
-                  salvageMode={salvageMode}
-                  activeCurrencyId={activeCurrencyId}
-                  onEquip={(instance) => onEquip(characterId, selectedSlot, instance)}
-                  onSalvage={beginSalvage}
-                  onApplyCurrency={handleApplyCurrency}
-                />
-              </section>
+              <ArmoryPickerPanel
+                selectedSlot={selectedSlot}
+                characterId={characterId}
+                pickerItems={pickerItems}
+                ownedTrinkets={ownedTrinkets}
+                equippedTrinkets={equippedTrinkets}
+                loadout={loadout}
+                loadouts={loadouts}
+                inventory={sharedInventory}
+                editable={editable}
+                salvageMode={salvageMode}
+                activeCurrencyId={activeCurrencyId}
+                onSpawnDevGear={onSpawnDevGear}
+                onEquipGear={(instance) => {
+                  if (selectedSlot !== "trinket") onEquip(characterId, selectedSlot, instance);
+                }}
+                onEquipTrinket={(trinketId) => onEquipTrinket(characterId, trinketId)}
+                onSalvage={beginSalvage}
+                onApplyCurrency={handleApplyCurrency}
+              />
             </div>
           </FadeSlot>
         </div>
