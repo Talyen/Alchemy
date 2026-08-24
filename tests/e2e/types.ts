@@ -6,6 +6,8 @@ export type DestinationName =
   | "Elite Combat"
   | "Merchant's Shop"
   | "Alchemist's Shop"
+  | "Trinket Shop"
+  | "Equipment Shop"
   | "Mystery"
   | "Corruption"
   | "Campfire";
