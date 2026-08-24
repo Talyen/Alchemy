@@ -36,7 +36,7 @@ export class ShopPage {
 
   async gold(): Promise<number> {
     const text = await this.goldText.textContent();
-    return text ? Number(text.match(/\d+/)?.[0]) : 0;
+    return text ? Number(text.match(/[\d,]+/)?.[0]?.replace(/,/g, "")) : 0;
   }
 
   async buyCard(index = 0) {

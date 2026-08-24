@@ -208,7 +208,10 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
     if (!managedOggs.has(ogg)) {
       const storedOgg = previousManifest[ogg];
       const oggEntry = await resolveSourceHash(oggPath, { mode: "curated" }, SCHEMA_VERSION, storedOgg);
-      curatedOggEntries[ogg] = { ...oggEntry, owner: SOUND_ENTRY_OWNERS.curated };
+      // Keep the stored fingerprint when content is unchanged so manifests stay stable across machines.
+      const fingerprint =
+        storedOgg && storedOgg.hash === oggEntry.hash && Number.isFinite(storedOgg.mtimeMs) ? storedOgg : oggEntry;
+      curatedOggEntries[ogg] = { ...fingerprint, owner: SOUND_ENTRY_OWNERS.curated };
     }
 
     const mp3Exists = await stat(mp3Path)

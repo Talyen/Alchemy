@@ -1,4 +1,3 @@
-export const DEFAULT_DEV_PORT: number;
 export const BROWSER_PREVIEW_PORT: number;
 export const SMOKE_PREVIEW_PORT: number;
 export const ELECTRON_PREVIEW_PORT: number;

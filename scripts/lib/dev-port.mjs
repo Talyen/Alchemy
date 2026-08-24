@@ -1,5 +1,5 @@
 // Dev / preview port contracts shared by vite.config.ts, Playwright configs, and cleanup scripts.
-export const DEFAULT_DEV_PORT = 5173;
+const DEFAULT_DEV_PORT = 5173;
 
 /** Default vite preview ports per E2E surface — one owner for every config, helper, and cleanup list. */
 export const BROWSER_PREVIEW_PORT = 4173;
