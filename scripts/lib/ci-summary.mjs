@@ -10,7 +10,7 @@ function appendCiSummary(markdown) {
   }
 }
 
-export function publishCiSummary({ rootDir = process.cwd(), markdown, status, command, artifacts, summary }) {
-  writeCurrentRun({ rootDir, status, command, artifacts, summary });
-  appendCiSummary(`${markdown}\n_Current run: \`reports/current-run.md\`_\n`);
+export function publishCiSummary({ rootDir = process.cwd(), markdown, status, command, artifacts, summary, counts }) {
+  const run = writeCurrentRun({ rootDir, status, command, artifacts, summary, counts });
+  appendCiSummary(`${markdown}\n_Run: \`${run.runId}\` · Current pointer: \`reports/current-run.md\`_\n`);
 }

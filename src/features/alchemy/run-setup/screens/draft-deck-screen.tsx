@@ -26,7 +26,7 @@ function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
       ariaLabel={getCardDisplayTitle(card)}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
-      tiltEnabled={false}
+      scaleOnHover={false}
       className={collectionTileWidthClass}
       wrapperClassName="relative flex justify-center"
     />
@@ -74,7 +74,6 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
                 isSelected={false}
                 onSelect={() => onPick(card)}
                 interactionKey={"draft-choice-" + String(index)}
-                tiltEnabled={false}
               />
             ))}
           </div>

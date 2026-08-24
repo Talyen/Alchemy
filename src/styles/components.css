@@ -190,11 +190,6 @@
     animation: numberPop 280ms ease-out both;
   }
 
-  .campfire-hp-progress > div {
-    transition-duration: 1250ms;
-    transition-timing-function: ease-out;
-  }
-
   .mana-gem-active {
     animation: manaGemSettle 260ms ease-out both;
   }
@@ -248,7 +243,7 @@
 }
 
 /* Unlayered so these beat utility overflow/border/ring on the same node.
-   Ring + box-shadow glow square off on 3D-tilted overflow-hidden layers;
+   Ring + box-shadow glow square off on transformed overflow-hidden layers;
    drop-shadow follows the rounded painted alpha instead. */
 .tilt-surface {
   position: relative;
@@ -333,6 +328,15 @@
   border-width: 3px;
 }
 
+.card-hover-scale {
+  transition: scale 200ms ease-out;
+}
+
+.card-hover-scale:hover:not(:disabled),
+.group:hover .card-hover-scale:not(:disabled) {
+  scale: 1.035;
+}
+
 .card-interactive-glow {
   border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
   transition:
@@ -345,7 +349,7 @@
 .group:hover .card-interactive-glow:not(:disabled),
 .card-interactive-selected {
   border-color: var(--color-primary);
-  /* Drop-shadow follows rounded alpha; a live box-shadow on a 3D layer is rectangular. */
+  /* Drop-shadow follows rounded alpha; a live box-shadow on a transformed layer is rectangular. */
   box-shadow: none;
   filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-primary) 45%, transparent));
 }

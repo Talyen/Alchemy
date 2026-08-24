@@ -1,5 +1,5 @@
-// Interactive battle-card button with tilt, shimmer, selection, and detail popup behavior.
-// Depends on card description context, shared card styling, and tilt utilities.
+// Interactive battle-card button with hover scale, shimmer, selection, and detail popup behavior.
+// Depends on card description context and shared card-surface styling.
 // Used by hand cards, shop cards, rewards, and collection-adjacent selection flows.
 import {
   type CSSProperties,
@@ -18,7 +18,7 @@ import { HAND_HOVER_HANDOFF_MS } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardArtImageClass, cardShineFrameClass, cardSurfaceClass } from "../config";
+import { cardArtImageClass, cardHoverScaleClass, cardShineFrameClass, cardSurfaceClass } from "../config";
 import { useCardDescriptionContext } from "@/features/alchemy/shared/context/card-description-context";
 import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "@/lib/game-data";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
@@ -42,7 +42,7 @@ interface BattleCardButtonBaseProps {
   selected?: boolean;
   disabled?: boolean | undefined;
   dragging?: boolean | undefined;
-  tiltEnabled?: boolean | undefined;
+  scaleOnHover?: boolean | undefined;
   descriptionContext?: CardDescriptionContext | undefined;
   /** Keyword shine palette; shown only while hovered/focused and not dragging. */
   shineColor?: readonly string[] | undefined;
@@ -170,7 +170,7 @@ function CardButtonSurface({
   selected = false,
   disabled = false,
   dragging = false,
-  tiltEnabled = true,
+  scaleOnHover = true,
   shineColor,
 }: BattleCardButtonProps) {
   const showShine = Boolean(hovered && !dragging && shineColor && shineColor.length > 0);
@@ -180,6 +180,7 @@ function CardButtonSurface({
       className={cn(
         cardSurfaceClass,
         "group",
+        scaleOnHover && cardHoverScaleClass,
         showShine && cardShineFrameClass,
         !showShine && "border border-border/80",
         className,
@@ -189,7 +190,6 @@ function CardButtonSurface({
       selected={selected}
       disabled={disabled}
       dragging={dragging}
-      tiltEnabled={tiltEnabled}
       baseTransform={baseTransform}
       onClick={onClick}
       onPointerDown={onPointerDown}

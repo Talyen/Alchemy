@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { diagnosticIdentity } from "./playwright-diagnostics.mjs";
+import { ensureRunId } from "./current-run.mjs";
+import { diagnosticIdentity, failureDigestRelativePath } from "./playwright-diagnostics.mjs";
 
 const MAX_FAILURES = 5;
 const MESSAGE_CHARS = 240;
@@ -109,6 +110,7 @@ export function collectPlaywrightTests(report) {
 export function summarizePlaywrightReport(report, options = {}) {
   const maxFailures = options.maxFailures ?? MAX_FAILURES;
   const rootDir = options.rootDir ?? process.cwd();
+  const runId = options.runId ?? ensureRunId("playwright");
   const root = report && typeof report === "object" ? /** @type {Record<string, unknown>} */ (report) : {};
   const stats = root.stats && typeof root.stats === "object" ? /** @type {Record<string, unknown>} */ (root.stats) : {};
   const failures = [];
@@ -141,7 +143,7 @@ export function summarizePlaywrightReport(report, options = {}) {
               project: typeof testNode.projectName === "string" ? testNode.projectName : "chromium",
               title: typeof spec.title === "string" ? spec.title : "failed test",
             });
-            const digestPath = `test-results/failures/${identity.id}.md`;
+            const digestPath = failureDigestRelativePath(runId, identity.id);
             failures.push({
               file,
               line,

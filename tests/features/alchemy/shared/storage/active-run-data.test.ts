@@ -152,6 +152,27 @@ describe("encodeRunResumeSnapshot", () => {
     });
   });
 
+  it("round-trips the empty opening hand and its resolved draw", () => {
+    const deck = getStartingDeck("knight");
+    const openingState = { ...defaultBattleState(), deck, hand: [] };
+    const resultState = { ...openingState, deck: deck.slice(4), hand: deck.slice(0, 4) };
+    useRunBattleDomainStore.setState({
+      hasActiveBattle: true,
+      battleState: openingState,
+      pendingBattleTransition: { kind: "opening-draw", resultState },
+    });
+
+    const encoded = encodeState();
+    const decoded = decodeRunResumeSnapshot(encoded);
+
+    expect(encoded.activeCombat?.battleState.hand).toEqual([]);
+    expect(encoded.activeCombat?.pendingBattleTransition).toEqual({ kind: "opening-draw", resultState });
+    expect(decoded.pendingBattleTransition?.kind).toBe("opening-draw");
+    if (decoded.pendingBattleTransition?.kind === "opening-draw") {
+      expect(decoded.pendingBattleTransition.resultState.hand).toHaveLength(4);
+    }
+  });
+
   it("marks enemy-phase saves without a pending transition for boot recovery", () => {
     useRunBattleDomainStore.setState({
       hasActiveBattle: true,

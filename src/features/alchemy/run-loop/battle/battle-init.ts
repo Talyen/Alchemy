@@ -1,11 +1,18 @@
 // Battle start helpers: enemy selection, state creation, and encounter tracking.
-import { createBattleState, isPlayerDefeated, processCompanionTurnStart, type CombatTextEvent } from "@/lib/battle";
+import {
+  createBattleStartState,
+  drawOpeningHand,
+  isPlayerDefeated,
+  processCompanionTurnStart,
+  type CombatTextEvent,
+} from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
 import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
+  beginBattleTransition,
   createDraftRunRandomSource,
   initializeActiveBattle,
   setEncounteredRunEnemyIds,
@@ -38,7 +45,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     const battleEffects = mergeIntoManifest(ctx.talents.talentEffects, ctx.homesteadEffects);
     const activeModifiers =
       modifiers ?? (run.selectedDifficulty ? getDifficultyModifiers(run.characterId, run.selectedDifficulty) : []);
-    return createBattleState({
+    return createBattleStartState({
       runDeck: deck,
       gold,
       totalRooms: roomsEncountered,
@@ -84,7 +91,9 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
         if (companionId) {
           nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
         }
+        const openingDrawState = drawOpeningHand(nextBattleState);
         initializeActiveBattle(draft, nextBattleState, null);
+        beginBattleTransition(draft, nextBattleState, { kind: "opening-draw", resultState: openingDrawState }, {});
         setEncounteredRunEnemyIds(draft, (current) => appendUnique(current, enemy.id));
         setEncounteredEnemyIds(draft, (current) => appendUnique(current, enemy.id));
 
@@ -110,15 +119,12 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
           : nextBattleState.enemyHealth <= 0
             ? "victory"
             : null;
-        return { startingTexts, companionId, outcome };
+        return { startingTexts, companionId, outcome, openingCardIds: openingDrawState.hand.map((card) => card.id) };
       },
       {
-        afterCommit: ({ startingTexts, companionId, outcome }) => {
+        afterCommit: ({ startingTexts, companionId, outcome, openingCardIds }) => {
           const battleState = readBattle().battleState;
-          preloadBattleSounds(
-            battleState.hand.map((card) => card.id),
-            battleState.currentEnemy.id,
-          );
+          preloadBattleSounds(openingCardIds, battleState.currentEnemy.id);
           if (typeof session.prepareBattleSessionForStart === "function") {
             session.prepareBattleSessionForStart();
           } else {
@@ -129,6 +135,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
           presentationStore.resetCardTransfers();
           presentationStore.resetHandTransferUi();
           presentationStore.clearCardGhosts();
+          presentationStore.setCardTransferInProgress(true);
           if (companionId) {
             playCompanionSound(companionId);
             presentationStore.shakeCompanion();

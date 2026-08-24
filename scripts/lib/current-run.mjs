@@ -1,6 +1,47 @@
 import { spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+
+function runSlug(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/^-|-$/gu, "")
+    .slice(0, 48);
+}
+
+export function normalizeRunId(value) {
+  return runSlug(value);
+}
+
+export function createRunId(label = "run", options = {}) {
+  const now = options.now ?? new Date();
+  const stamp = now
+    .toISOString()
+    .replace(/\.\d{3}Z$/u, "Z")
+    .replaceAll(/[-:]/gu, "");
+  const pid = options.pid ?? process.pid;
+  const suffix = options.suffix ?? randomBytes(3).toString("hex");
+  return runSlug(`${runSlug(label) || "run"}-${stamp}-${pid}-${runSlug(suffix) || "id"}`);
+}
+
+export function ensureRunId(label = "run", env = process.env) {
+  const supplied = runSlug(env.ALCHEMY_RUN_ID);
+  if (supplied) {
+    env.ALCHEMY_RUN_ID = supplied;
+    return supplied;
+  }
+  const githubRun = runSlug(env.GITHUB_RUN_ID);
+  const githubAttempt = runSlug(env.GITHUB_RUN_ATTEMPT);
+  const githubJob = runSlug(env.GITHUB_JOB);
+  const variant = runSlug(env.ALCHEMY_RUN_VARIANT);
+  const runId = githubRun
+    ? ["gh", githubRun, githubAttempt || "1", githubJob || "job", variant].filter(Boolean).join("-")
+    : createRunId(label);
+  env.ALCHEMY_RUN_ID = runId;
+  return runId;
+}
 
 function gitOutput(rootDir, args) {
   const result = spawnSync("git", args, {
@@ -65,32 +106,31 @@ function artifactLines(artifacts, role) {
     : ["- None"];
 }
 
-/** Write one compact, source-state-aware pointer to the latest report-producing command. */
-export function writeCurrentRun({ rootDir, status, command, artifacts = [], summary = "", commit } = {}) {
-  if (!rootDir) throw new Error("writeCurrentRun requires rootDir");
-  const reportsDir = path.join(rootDir, "reports");
-  fs.mkdirSync(reportsDir, { recursive: true });
-  const generatedAt = new Date().toISOString();
-  const state = sourceState(rootDir, commit);
-  const normalizedArtifacts = artifacts.map((artifact) => normalizeArtifact(rootDir, artifact));
-  const payload = {
-    generatedAt,
-    ...state,
-    status: status ?? "unknown",
-    command: command ?? "unknown",
-    artifacts: normalizedArtifacts,
-    summary: summary.slice(0, 500),
-  };
-  const jsonPath = path.join(reportsDir, "current-run.json");
-  const markdownPath = path.join(reportsDir, "current-run.md");
-  fs.writeFileSync(jsonPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-  const lines = [
+function normalizeCounts(counts) {
+  if (!counts || typeof counts !== "object") return null;
+  const normalized = {};
+  for (const key of ["passed", "failed", "skipped", "flaky"]) {
+    const value = Number(counts[key]);
+    if (Number.isInteger(value) && value >= 0) normalized[key] = value;
+  }
+  return Object.keys(normalized).length > 0 ? normalized : null;
+}
+
+function renderRunMarkdown(payload) {
+  const countText = payload.counts
+    ? Object.entries(payload.counts)
+        .map(([key, value]) => `${key} ${value}`)
+        .join(", ")
+    : "";
+  return [
     "# Current run",
     "",
+    `- Run: \`${payload.runId}\``,
     `- Status: **${payload.status}**`,
     `- Command: \`${payload.command}\``,
     `- Generated: ${payload.generatedAt}`,
     ...(payload.commit ? [`- Commit: \`${payload.commit}\``] : []),
+    ...(countText ? [`- Counts: ${countText}`] : []),
     `- Dirty paths at generation: ${payload.dirtyPaths.length + payload.omittedDirtyPaths}`,
     ...payload.dirtyPaths.map((dirtyPath) => `  - \`${dirtyPath}\``),
     ...(payload.omittedDirtyPaths > 0 ? [`  - _…and ${payload.omittedDirtyPaths} more_`] : []),
@@ -104,7 +144,48 @@ export function writeCurrentRun({ rootDir, status, command, artifacts = [], summ
     ...artifactLines(payload.artifacts, "secondary"),
     ...(payload.summary ? ["", payload.summary] : []),
     "",
-  ];
-  fs.writeFileSync(markdownPath, lines.join("\n"), "utf8");
-  return { jsonPath, markdownPath };
+  ].join("\n");
+}
+
+/** Write one compact, source-state-aware pointer to the latest report-producing command. */
+export function writeCurrentRun({
+  rootDir,
+  runId = ensureRunId("run"),
+  status,
+  command,
+  artifacts = [],
+  summary = "",
+  counts,
+  commit,
+} = {}) {
+  if (!rootDir) throw new Error("writeCurrentRun requires rootDir");
+  const reportsDir = path.join(rootDir, "reports");
+  const normalizedRunId = runSlug(runId);
+  if (!normalizedRunId) throw new Error("writeCurrentRun requires a valid runId");
+  const runDir = path.join(reportsDir, "runs", normalizedRunId);
+  fs.mkdirSync(runDir, { recursive: true });
+  const generatedAt = new Date().toISOString();
+  const state = sourceState(rootDir, commit);
+  const normalizedArtifacts = artifacts.map((artifact) => normalizeArtifact(rootDir, artifact));
+  const payload = {
+    runId: normalizedRunId,
+    generatedAt,
+    ...state,
+    status: status ?? "unknown",
+    command: command ?? "unknown",
+    artifacts: normalizedArtifacts,
+    summary: summary.slice(0, 500),
+    counts: normalizeCounts(counts),
+  };
+  const jsonPath = path.join(reportsDir, "current-run.json");
+  const markdownPath = path.join(reportsDir, "current-run.md");
+  const runJsonPath = path.join(runDir, "run.json");
+  const runMarkdownPath = path.join(runDir, "run.md");
+  const json = `${JSON.stringify(payload, null, 2)}\n`;
+  const markdown = renderRunMarkdown(payload);
+  fs.writeFileSync(runJsonPath, json, "utf8");
+  fs.writeFileSync(runMarkdownPath, markdown, "utf8");
+  fs.writeFileSync(jsonPath, json, "utf8");
+  fs.writeFileSync(markdownPath, markdown, "utf8");
+  return { jsonPath, markdownPath, runJsonPath, runMarkdownPath, runId: normalizedRunId };
 }

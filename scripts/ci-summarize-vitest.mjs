@@ -123,6 +123,9 @@ function main() {
     command: process.env.GITHUB_JOB ? `vitest (${process.env.GITHUB_JOB})` : "vitest",
     artifacts: [path.relative(process.cwd(), reportPath)],
     summary: summary ? `Vitest: ${summary.numPassedTests}/${summary.numTotalTests} passed.` : "Vitest report missing.",
+    counts: summary
+      ? { passed: summary.numPassedTests, failed: summary.numFailedTests, skipped: summary.numPendingTests }
+      : undefined,
   });
 }
 

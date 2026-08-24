@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defaultGearEffects } from "@/lib/gear";
-import { createBattleState } from "@/lib/battle/battle-setup";
+import { createBattleStartState, createBattleState, drawOpeningHand } from "@/lib/battle/battle-setup";
 import { enemyBestiary, computeTalentEffects } from "@/lib/game-data";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import {
@@ -30,6 +30,28 @@ describe("createBattleState", () => {
     expect(result.hand.length).toBeGreaterThanOrEqual(1);
     expect(result.mana).toBe(BASE_PLAYER_MANA);
     expect(result.activeCompanion).toBeNull();
+  });
+
+  it("stages battle start with an empty hand before resolving the opening draw", () => {
+    const runDeck = Array.from({ length: 8 }, (_, index) => makeTestCard({ id: `card-${index}` }));
+    const start = createBattleStartState({
+      runDeck,
+      currentEnemy: skeleton,
+      trinketIds: ["tattered-pages"],
+      rng: seededRng(42),
+    });
+
+    expect(start.hand).toEqual([]);
+    expect(start.deck).toHaveLength(8);
+    expect(start.nextCardUid).toBe(0);
+
+    const opened = drawOpeningHand(start);
+    expect(opened.hand).toHaveLength(5);
+    expect(opened.deck).toHaveLength(3);
+    expect(opened.hand.map((card) => card.uid)).toEqual([0, 1, 2, 3, 4]);
+    expect([...opened.hand, ...opened.deck].map((card) => card.id).sort()).toEqual(
+      runDeck.map((card) => card.id).sort(),
+    );
   });
 
   it("throws when no enemy is provided", () => {

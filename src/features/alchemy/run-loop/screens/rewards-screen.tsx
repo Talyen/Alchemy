@@ -52,7 +52,6 @@ function RewardChoiceItems({
             isSelected={selectedRewardId === choiceId}
             onSelect={() => onSelectReward(choiceId)}
             interactionKey="reward"
-            tiltEnabled={false}
           />
         )}
       </div>

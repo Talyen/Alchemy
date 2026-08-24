@@ -12,6 +12,12 @@ Plans require minimal front matter:
 
 Use `npm run new:plan -- <PlanName>` to scaffold valid metadata. Use
 `npm run docs:check` while working; it warns when a plan has not been updated
-recently. When the work ends, simply **delete the plan file** — git history
-retains it — then run `npm run docs:check:final`, which requires none to
-remain.
+recently. When the work ends, update its date and set `status: complete` (or
+`cancelled`), then run `npm run docs:check:final`. The command automatically
+moves terminal plans into [`Archived/`](./Archived/) and requires no active
+plans to remain.
+
+`npm run archive:plans` performs only the archive step when final handoff is not
+yet appropriate. Automation remains explicit because tooling cannot reliably
+infer that implementation work is finished; CI validates the contract but does
+not modify the working tree.

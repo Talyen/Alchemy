@@ -67,6 +67,10 @@ export interface LabyrinthNodePosition {
 
 export type PersistedBattleTransition =
   | {
+      kind: "opening-draw";
+      resultState: BattleState;
+    }
+  | {
       kind: "enemy-turn";
       resultState: BattleState;
       playerTurnSkipped: boolean;

@@ -71,6 +71,7 @@ jobs:
           path: |
             reports/vitest-timings.json
             reports/current-run.*
+            reports/runs/
           retention-days: 7
           if-no-files-found: ignore
 
@@ -106,6 +107,8 @@ jobs:
     name: E2E (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      ALCHEMY_RUN_VARIANT: shard-${{ matrix.shard }}
     strategy:
       fail-fast: false
       matrix:
@@ -164,6 +167,7 @@ jobs:
             test-results/
             reports/playwright-results.json
             reports/current-run.*
+            reports/runs/
           retention-days: 7
 
   release:

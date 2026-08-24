@@ -23,11 +23,11 @@ describe("CI routing contract", () => {
     );
   });
 
-  it("requires failure-only seven-day diagnostic uploads with the current-run pointer", () => {
+  it("requires failure-only seven-day diagnostic uploads with current and run-specific records", () => {
     const source = fs.readFileSync(path.join(root, ".github/workflows/ci.yml"), "utf8");
     expect(checkDiagnosticRetention({ "ci.yml": source })).toEqual([]);
     expect(
       checkDiagnosticRetention({ "ci.yml": "  - uses: actions/upload-artifact@v7\n    name: vitest-timings\n" }),
-    ).toHaveLength(3);
+    ).toHaveLength(4);
   });
 });

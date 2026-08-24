@@ -1,13 +1,38 @@
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { firstOutputLine, sanitizeOutput, tailOutput } from "../../scripts/lib/compact-output.mjs";
 import { validateRouteCatalog } from "../../scripts/lib/change-routes.mjs";
 import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-suites.mjs";
 import { measureAllRoutes, measureContext } from "../../scripts/measure-agent-context.mjs";
-import { formatPlan } from "../../scripts/verify-changed.mjs";
+import { formatPlan, writeFailureDigest } from "../../scripts/verify-changed.mjs";
 import { resolveRoutePlan as resolvePlan, resolveRoutes } from "../../scripts/lib/change-routes.mjs";
 
 describe("verify-changed route catalog", () => {
+  it("writes a run-attributed bounded digest while keeping the full stream separate", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "verify-digest-"));
+    try {
+      const output = `> alchemy@0.1.0 test\n> vitest run\n\nAssertionError: expected map node to exist\n${"x".repeat(5_000)}`;
+      const result = writeFailureDigest(
+        root,
+        { key: "unit-map", label: "map unit tests", command: "npm", args: [], reason: "fixture" },
+        { output, status: 1, elapsedMs: 1234 },
+        "verify-run-id",
+        0,
+      );
+      const digest = fs.readFileSync(result.digestPath, "utf8");
+      const full = fs.readFileSync(result.logPath, "utf8");
+      expect(digest).toContain("Run: `verify-run-id`");
+      expect(digest).toContain("Verification failure: map unit tests");
+      expect(digest).toContain("AssertionError: expected map node to exist");
+      expect(digest.length).toBeLessThan(full.length);
+      expect(full).toBe(output);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("keeps concrete command paths, fixtures, and owner headings current", () => {
     expect(validateRouteCatalog({ rootDir: process.cwd() })).toEqual([]);
   });

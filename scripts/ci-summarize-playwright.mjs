@@ -38,6 +38,9 @@ function main() {
     summary: summary
       ? `Playwright: ${summary.expected} passed, ${summary.unexpected} failed.`
       : "Playwright report missing.",
+    counts: summary
+      ? { passed: summary.expected, failed: summary.unexpected, skipped: summary.skipped, flaky: summary.flaky }
+      : undefined,
   });
 }
 

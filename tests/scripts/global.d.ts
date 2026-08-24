@@ -173,7 +173,7 @@ declare module "*/playwright-summary.mjs" {
   };
   export function summarizePlaywrightReport(
     report: unknown,
-    options?: { maxFailures?: number; rootDir?: string },
+    options?: { maxFailures?: number; rootDir?: string; runId?: string },
   ): PlaywrightSummary;
   export function formatPlaywrightSummaryMarkdown(summary: PlaywrightSummary): string;
   export function summarizePlaywrightFile(reportPath: string): string;
@@ -229,6 +229,7 @@ declare module "*/change-routes.mjs" {
 }
 
 interface PlaywrightDiagnosticInput {
+  runId?: string;
   rootDir?: string;
   title: string;
   file: string;
@@ -239,14 +240,17 @@ interface PlaywrightDiagnosticInput {
   url?: string;
   errorMessage?: string;
   logs?: string[];
-  html?: string;
+  accessibilitySnapshot?: string;
+  htmlFallback?: string;
 }
 
 interface PlaywrightDiagnostic {
+  runId: string;
   identity: { id: string; file: string; line: number; project: string; title: string };
   markdown: string;
   omittedLogs: number;
-  omittedDomBytes: number;
+  omittedContextBytes: number;
+  contextKind: "accessibility" | "html-fallback";
 }
 
 declare module "*/playwright-diagnostics.mjs" {
@@ -258,6 +262,7 @@ declare module "*/playwright-diagnostics.mjs" {
     project?: string;
     title: string;
   }): PlaywrightDiagnostic["identity"];
+  export function failureDigestRelativePath(runId: string, diagnosticId: string): string;
   export function buildFailureDiagnostic(
     input: PlaywrightDiagnosticInput,
     options?: { maxBytes?: number },
@@ -266,10 +271,24 @@ declare module "*/playwright-diagnostics.mjs" {
     rootDir: string,
     diagnostic: PlaywrightDiagnostic,
   ): { digestPath: string; recordPath: string };
-  export function writeFailureIndex(rootDir: string): {
+  export function writeFailureIndex(
+    rootDir: string,
+    runId?: string,
+  ): {
     indexPath: string;
-    failures: Array<{ id: string; digestPath: string; bytes: number }>;
+    failures: Array<{ id: string; runId: string; digestPath: string; bytes: number }>;
   };
+}
+
+declare module "*/playwright-run-reporter.mjs" {
+  export default class PlaywrightRunReporter {
+    runId: string;
+    onBegin(
+      config: unknown,
+      suite: { allTests(): Array<{ outcome(): "expected" | "unexpected" | "flaky" | "skipped" }> },
+    ): void;
+    onEnd(): void;
+  }
 }
 
 declare module "*/check-docs.mjs" {
@@ -279,6 +298,10 @@ declare module "*/check-docs.mjs" {
     warnings: string[];
     activePlans: number;
   };
+}
+
+declare module "*/archive-plans.mjs" {
+  export function archiveTerminalPlans(options?: { plansDir?: string }): string[];
 }
 
 declare module "*/new-plan.mjs" {
@@ -332,17 +355,44 @@ declare module "*/verify-changed.mjs" {
     plan: { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] },
     options?: { verbosePlan?: boolean },
   ): string;
+  export function writeFailureDigest(
+    directory: string,
+    command: VerificationCommand,
+    result: { output: string; status: number | null; elapsedMs: number },
+    runId: string,
+    index: number,
+  ): { digestPath: string; logPath: string };
 }
 
 declare module "*/current-run.mjs" {
+  export function normalizeRunId(value: unknown): string;
+  export function createRunId(label?: string, options?: { now?: Date; pid?: number; suffix?: string }): string;
+  export function ensureRunId(label?: string, env?: NodeJS.ProcessEnv): string;
   export function writeCurrentRun(options: {
     rootDir: string;
+    runId?: string;
     status: string;
     command: string;
     artifacts?: Array<string | { path: string; role?: "primary" | "secondary" }>;
     summary?: string;
+    counts?: Partial<Record<"passed" | "failed" | "skipped" | "flaky", number>>;
     commit?: string | null;
-  }): { jsonPath: string; markdownPath: string };
+  }): {
+    jsonPath: string;
+    markdownPath: string;
+    runJsonPath: string;
+    runMarkdownPath: string;
+    runId: string;
+  };
+}
+
+declare module "*/show-runs.mjs" {
+  export function parseShowRunsArgs(argv: string[]): { last: number; status?: string };
+  export function readRecentRuns(
+    rootDir: string,
+    options?: { last?: number; status?: string },
+  ): Array<Record<string, unknown>>;
+  export function formatRecentRun(rootDir: string, record: Record<string, unknown>): string;
 }
 
 declare module "*/check-ci-routing.mjs" {

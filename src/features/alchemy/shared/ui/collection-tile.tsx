@@ -1,5 +1,5 @@
 // Single interactive collection tile for card, bestiary, and boon entries.
-// Depends on tile item data, card flipping, tooltip components, audio, and tilt utilities.
+// Depends on tile item data, card flipping, tooltip components, audio, and shared surface styling.
 // Used by CollectionGrid to keep grid layout separate from tile behavior.
 import { memo, useState, type RefObject } from "react";
 

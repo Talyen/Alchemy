@@ -64,8 +64,10 @@ describe("MysteryEffectList", () => {
     );
 
     expect(screen.getByText("Harvest")).toBeTruthy();
-    expect(screen.getByText(/Add Mana Berries card to your deck/)).toBeTruthy();
-    expect(screen.getByText(/2 Herbs/)).toBeTruthy();
+    expect(screen.getByText("Harvest").classList.contains("text-sm")).toBe(true);
+    expect(screen.getByText("Harvest").classList.contains("font-bold")).toBe(true);
+    expect(screen.getByText(/Add Mana Berries card to your deck/).classList.contains("text-sm")).toBe(true);
+    expect(screen.getByText(/2 Herbs/).classList.contains("text-sm")).toBe(true);
     expect(screen.queryByText("Add Mana Berries to your deck")).toBeNull();
   });
 });

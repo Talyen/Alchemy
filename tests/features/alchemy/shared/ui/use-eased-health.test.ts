@@ -7,6 +7,7 @@ import { useEasedHealth } from "@/features/alchemy/shared/ui/use-eased-health";
 
 describe("useEasedHealth", () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -29,5 +30,31 @@ describe("useEasedHealth", () => {
     });
 
     expect(result.current.displayHealth).toBe(20);
+  });
+
+  it("drives the displayed number and progress from one eased health value", () => {
+    vi.spyOn(performance, "now").mockReturnValue(0);
+    const frames = installRafStub();
+    const onFinished = vi.fn();
+
+    const { result } = renderHook(() =>
+      useEasedHealth({ from: 10, to: 20, active: true, durationMs: 1000, onFinished }),
+    );
+
+    act(() => {
+      frames.shift()?.(500);
+    });
+
+    expect(result.current.progressHealth).toBeCloseTo(18.75);
+    expect(result.current.displayHealth).toBe(Math.round(result.current.progressHealth));
+    expect(onFinished).not.toHaveBeenCalled();
+
+    act(() => {
+      frames.shift()?.(1000);
+    });
+
+    expect(result.current.progressHealth).toBe(20);
+    expect(result.current.displayHealth).toBe(20);
+    expect(onFinished).toHaveBeenCalledOnce();
   });
 });

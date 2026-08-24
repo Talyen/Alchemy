@@ -74,7 +74,7 @@ export function checkDiagnosticRetention(sources) {
   for (const [workflow, source] of Object.entries(sources)) {
     for (const block of uploadArtifactBlocks(source)) {
       if (!/(?:vitest-timings|playwright-report)/u.test(block)) continue;
-      for (const marker of ["if: failure()", "retention-days: 7", "reports/current-run.*"]) {
+      for (const marker of ["if: failure()", "retention-days: 7", "reports/current-run.*", "reports/runs/"]) {
         if (!block.includes(marker)) failures.push(`${workflow}: diagnostic upload missing ${marker}`);
       }
     }

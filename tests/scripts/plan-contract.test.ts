@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { archiveTerminalPlans } from "../../scripts/archive-plans.mjs";
 import { parsePlanMetadata } from "../../scripts/check-docs.mjs";
 import { planTemplate, safePlanName } from "../../scripts/new-plan.mjs";
 import { parsePruneArgs, pruneTransientArtifacts } from "../../scripts/prune-transient-artifacts.mjs";
@@ -34,6 +35,23 @@ describe("execution-plan contract", () => {
     );
     expect(complete.errors).toEqual([]);
     expect(complete.metadata.status).toBe("complete");
+  });
+
+  it("archives terminal plans and leaves active plans in place", () => {
+    const plansDir = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-plans-"));
+    fs.writeFileSync(
+      path.join(plansDir, "Complete.md"),
+      planTemplate("Complete", "2026-08-20").replace("status: active", "status: complete"),
+    );
+    fs.writeFileSync(path.join(plansDir, "Active.md"), planTemplate("Active", "2026-08-20"));
+
+    try {
+      expect(archiveTerminalPlans({ plansDir })).toEqual(["docs/Plans/Archived/Complete.md"]);
+      expect(fs.existsSync(path.join(plansDir, "Archived", "Complete.md"))).toBe(true);
+      expect(fs.existsSync(path.join(plansDir, "Active.md"))).toBe(true);
+    } finally {
+      fs.rmSync(plansDir, { recursive: true, force: true });
+    }
   });
 });
 

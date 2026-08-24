@@ -97,7 +97,7 @@ export const COMPANION_SOUND_CARD_IDS: Record<string, string> = {
 };
 
 // ============ Corruption ============
-export const CORRUPTION_TRANSFORM_CHANCE = 0.5;
+export const CORRUPTION_TRANSFORM_CHANCE = 0.2;
 export const CORRUPTION_DELTA_CHANCE = 0.2; // P(nerf): 20%; otherwise corruption buffs (+1).
 export const CORRUPTION_TEXT_PATTERNS = {
   authoredNumber: /\d+/g,

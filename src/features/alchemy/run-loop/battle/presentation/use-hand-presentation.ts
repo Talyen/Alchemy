@@ -12,7 +12,7 @@ export function useCardTransferInProgress() {
   return useBattlePresentationStore((s) => s.cardTransferInProgress);
 }
 
-export function usePlayableHandCardKeys(battleState: BattleState) {
+export function useInteractiveHandCardKeys(battleState: BattleState) {
   const hiddenHandCardKeys = useHiddenHandCardKeys();
   const cardTransferInProgress = useCardTransferInProgress();
   return useMemo(

@@ -1,6 +1,5 @@
-// Tilt-surface wrapper with shimmer overlay and selection ring support.
-// Handles tilt mechanics (mouseMove/mouseLeave → setTiltFromEvent/clearTiltFromEvent)
-// and the common card-surface decoration shared across card, boon, character, and homestead tiles.
+// Shared surface wrapper with shimmer overlay, selection ring, and optional logo tilt.
+// Card, boon, character, and homestead surfaces use it structurally without pointer tilt.
 import { type CSSProperties, type MouseEvent, type PointerEvent, type ReactNode, type Ref } from "react";
 
 import { cn } from "@/lib/utils";
@@ -156,7 +155,7 @@ function TiltSurfaceButton({
       onMouseEnter={onMouseEnter}
       onMouseLeave={handleMouseLeave}
       data-testid={testId}
-      data-tilt-strength={String(DEFAULT_TILT_STRENGTH)}
+      data-tilt-strength={canTilt ? String(DEFAULT_TILT_STRENGTH) : undefined}
       className={surfaceClassName(selected, dragging, disabled, className)}
       style={surfaceStyle}
     >
@@ -193,7 +192,8 @@ function TiltSurfaceDiv({
   clipContents = true,
   overlay,
 }: TiltSurfaceInner) {
-  const { handleMouseMove, handleMouseLeave } = useTiltHandlers(tiltEnabled !== false, onMouseLeave);
+  const canTilt = tiltEnabled !== false;
+  const { handleMouseMove, handleMouseLeave } = useTiltHandlers(canTilt, onMouseLeave);
   return (
     <div
       ref={surfaceRef}
@@ -205,7 +205,7 @@ function TiltSurfaceDiv({
       onMouseMove={handleMouseMove}
       onMouseEnter={onMouseEnter}
       onMouseLeave={handleMouseLeave}
-      data-tilt-strength={String(DEFAULT_TILT_STRENGTH)}
+      data-tilt-strength={canTilt ? String(DEFAULT_TILT_STRENGTH) : undefined}
       className={surfaceClassName(selected, dragging, undefined, className)}
       style={surfaceStyle}
     >

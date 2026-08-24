@@ -69,9 +69,34 @@ describe("OptionsScreen", () => {
     const user = userEvent.setup();
     render(<OptionsScreen {...defaultProps} />);
 
+    await user.click(screen.getByRole("button", { name: "Sound" }));
+    await waitFor(() => {
+      expect(screen.getByText("Mute in Background")).toBeTruthy();
+    });
+    expect(
+      screen.queryByText("Silence music and effects while the game is in a background tab or minimized."),
+    ).toBeNull();
+
     await user.click(screen.getByRole("button", { name: "Gameplay" }));
     await waitFor(() => {
       expect(screen.getByText("Remember Auto-Battle Preference")).toBeTruthy();
     });
+    expect(screen.queryByText("Automatically end your turn when no cards in hand can be played.")).toBeNull();
+    expect(screen.queryByText("Restore the in-battle Autoplay toggle across battles.")).toBeNull();
+  });
+
+  it("keeps developer controls in a bottom-only section on the Other tab", async () => {
+    const user = userEvent.setup();
+    render(<OptionsScreen {...defaultProps} />);
+
+    await user.click(screen.getByRole("button", { name: "Other" }));
+    await waitFor(() => {
+      expect(screen.getByText("Dev Only")).toBeTruthy();
+    });
+
+    const devSection = screen.getByText("Dev Only").closest("section");
+    expect(devSection?.parentElement?.lastElementChild).toBe(devSection);
+    expect(devSection?.textContent).toContain("Dev / QA Unlocks");
+    expect(devSection?.textContent).toContain("Error Log");
   });
 });

@@ -88,6 +88,26 @@ describe("InteractiveArtTile hover popup", () => {
     expect(screen.getByTestId("tile-popup").textContent).toBe("shown");
   });
 
+  it("suppresses shine chrome when a tile is disabled", () => {
+    render(
+      <InteractiveArtTile
+        id="sold-astral-ring"
+        interactionKey="shop"
+        title="Astral Ruby Ring"
+        art={undefined}
+        className=""
+        imageClassName=""
+        as="button"
+        shineColor={["#cbd5e1", "#64748b"]}
+        disabled
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "Astral Ruby Ring" });
+    expect(button.className).not.toMatch(/has-shine-border/);
+    expect(button.querySelector(".shine-border")).toBeNull();
+  });
+
   it("renders a shine border and keeps hover glow without a second frame", () => {
     render(
       <InteractiveArtTile

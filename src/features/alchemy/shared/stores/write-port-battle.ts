@@ -19,7 +19,7 @@ function hydrateBattleState(battleState: BattleState): BattleState {
 }
 
 function hydrateBattleTransition(transition: PersistedBattleTransition | null): PersistedBattleTransition | null {
-  if (!transition || transition.kind !== "enemy-turn") return transition;
+  if (!transition || !("resultState" in transition)) return transition;
   return {
     ...transition,
     resultState: hydrateBattleState(transition.resultState),
@@ -102,7 +102,7 @@ export function setHasActiveBattle(draft: GameplayDraft, active: boolean | ((pre
 function rebindPendingTransitionWorldRng(
   pendingBattleTransition: PersistedBattleTransition | null,
 ): PersistedBattleTransition | null {
-  if (!pendingBattleTransition || pendingBattleTransition.kind !== "enemy-turn") return pendingBattleTransition;
+  if (!pendingBattleTransition || !("resultState" in pendingBattleTransition)) return pendingBattleTransition;
   return {
     ...pendingBattleTransition,
     resultState: rebindBattleWorldRng(pendingBattleTransition.resultState),

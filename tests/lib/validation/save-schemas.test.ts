@@ -246,6 +246,28 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     expect(result.data.activeCombat?.pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
   });
 
+  it("accepts a resumable opening draw transition", () => {
+    const defaults = defaultBattleState();
+    const result = ActiveRunDataSchema.safeParse(
+      run({
+        roomsEncountered: 1,
+        activeCombat: {
+          battleState: { ...defaults, hand: [] },
+          pendingBattleTransition: {
+            kind: "opening-draw",
+            resultState: defaults,
+          },
+          activeLabyrinthModifiers: [],
+          activeLabyrinthRewardModifiers: [],
+        },
+      }),
+    );
+
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (!result.success) return;
+    expect(result.data.activeCombat?.pendingBattleTransition?.kind).toBe("opening-draw");
+  });
+
   it("normalizes enemy-turn resultState manifests after JSON save/load", () => {
     const defaults = defaultBattleState();
     const strippedResultState = JSON.parse(

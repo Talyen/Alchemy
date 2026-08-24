@@ -12,6 +12,7 @@ import {
   battleCardWidthClass,
   battleEnemyCardWidthClass,
   cardArtImageClass,
+  cardHoverScaleClass,
   cardSurfaceClass,
   landscapeArtImageClass,
   sectionTitleClass,
@@ -198,12 +199,13 @@ function ActorArtFrame({
     <TiltSurface
       surfaceRef={surfaceRef}
       testId={`battle-${side}-art-panel`}
-      tiltEnabled={!isDead}
       clipContents={false}
       className={cn(
         "relative",
         cardSurfaceClass,
+        !isDead && cardHoverScaleClass,
         cardWidthClass ?? battleCardWidthClass,
+        "border border-border/80",
         sparksOverflow && "overflow-visible",
         isDead && "overflow-visible !bg-transparent",
       )}

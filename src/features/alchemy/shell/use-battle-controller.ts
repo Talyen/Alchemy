@@ -8,6 +8,7 @@ import {
   createBattleInit,
   createBattleCardPlay,
   createBattleDevOutcomes,
+  createBattleOpeningDraw,
   isVictoryGraceActive,
   useBattleControllerContext,
 } from "@/features/alchemy/run-loop/battle";
@@ -45,7 +46,7 @@ export function useBattleController({
   measureElementRect = defaultMeasureElementRect,
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: UseBattleControllerProps) {
-  const { hasActiveBattle, pendingTransitionResumeRequired } = useBattleLifetimeFields();
+  const { hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired } = useBattleLifetimeFields();
 
   const scheduleAutoEndTurnRef = useRef<((state?: BattleState) => void) | null>(null);
   const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
@@ -92,6 +93,7 @@ export function useBattleController({
     const endTurnUi = createBattleEndTurnUi(ctx, session, transferDeps);
     const cardPlay = createBattleCardPlay(ctx, session, transferDeps);
     const init = createBattleInit(ctx, session);
+    const openingDraw = createBattleOpeningDraw(ctx, transferDeps);
     const devOutcomes = createBattleDevOutcomes(ctx, session);
 
     return {
@@ -99,6 +101,7 @@ export function useBattleController({
       endTurnUi,
       cardPlay,
       init,
+      openingDraw,
       devOutcomes,
     };
   }, [ctx]);
@@ -114,6 +117,31 @@ export function useBattleController({
     pendingTransitionResumeAttemptedRef.current = true;
     actions.endTurnUi.resumePendingBattleTransition();
   }, [actions.endTurnUi, hasActiveBattle, pendingTransitionResumeRequired, screen]);
+
+  const playOpeningDrawWhenReady = useCallback(() => {
+    const battle = readBattle();
+    if (
+      battle.pendingTransitionResumeRequired ||
+      battle.pendingBattleTransition?.kind !== "opening-draw" ||
+      !ctx.battleSceneRef.current ||
+      !ctx.drawPileRef.current
+    ) {
+      return;
+    }
+    void actions.openingDraw.playOpeningDraw();
+  }, [actions.openingDraw, ctx]);
+
+  useEffect(() => {
+    if (
+      !hasActiveBattle ||
+      screen !== "battle" ||
+      pendingTransitionResumeRequired ||
+      pendingBattleTransition?.kind !== "opening-draw"
+    ) {
+      return;
+    }
+    playOpeningDrawWhenReady();
+  }, [hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired, playOpeningDrawWhenReady, screen]);
 
   useEffect(() => {
     if (hasActiveBattle) return;
@@ -131,10 +159,14 @@ export function useBattleController({
     }
   }, [screen]);
 
-  const bindPlayback = useCallback((bind: BattlePlaybackBind | null) => {
-    scheduleAutoEndTurnRef.current = bind?.scheduleAutoEndTurn ?? null;
-    clearAutoEndTurnRef.current = bind?.clearAutoEndTurn ?? null;
-  }, []);
+  const bindPlayback = useCallback(
+    (bind: BattlePlaybackBind | null) => {
+      scheduleAutoEndTurnRef.current = bind?.scheduleAutoEndTurn ?? null;
+      clearAutoEndTurnRef.current = bind?.clearAutoEndTurn ?? null;
+      if (bind) queueMicrotask(playOpeningDrawWhenReady);
+    },
+    [playOpeningDrawWhenReady],
+  );
 
   const refs = useMemo(
     () => ({

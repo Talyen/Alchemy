@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /** Route the smallest complete verification set for the paths being changed. */
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { firstOutputLine, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
+import { sanitizeOutput, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { E2E_NAMES, resolveRoutePlan } from "./lib/change-routes.mjs";
-import { changedGitPaths, writeCurrentRun } from "./lib/current-run.mjs";
+import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const REPORTS_DIR = path.join(ROOT, "reports", "verify-changed");
 
 function changedPathsFromGit() {
   const paths = changedGitPaths(ROOT);
@@ -66,9 +66,43 @@ export function formatPlan(plan, { verbosePlan = false } = {}) {
   return `${lines.join("\n")}\n`;
 }
 
-function runVerificationCommand(command, index, verbose) {
+export function writeFailureDigest(directory, command, result, runId, index) {
+  fs.mkdirSync(directory, { recursive: true });
+  const stem = `${String(index + 1).padStart(2, "0")}-${command.key}`;
+  const logPath = writeDiagnosticLog(directory, stem, result.output);
+  const digestPath = path.join(directory, `${stem}.md`);
+  const normalized = sanitizeOutput(result.output).trim();
+  const excerpt = (
+    normalized.length <= 4_000
+      ? normalized
+      : `${normalized.slice(0, 1_200)}\n[…${normalized.length - 4_000} chars omitted…]\n${normalized.slice(-2_800)}`
+  ).replaceAll("```", "``\u200b`");
+  fs.writeFileSync(
+    digestPath,
+    [
+      `# Verification failure: ${command.label}`,
+      "",
+      `- Run: \`${runId}\``,
+      `- Command key: \`${command.key}\``,
+      `- Exit: \`${result.status ?? "unknown"}\``,
+      `- Duration: \`${(result.elapsedMs / 1000).toFixed(1)}s\``,
+      "",
+      "## Bounded failure output",
+      "",
+      "```text",
+      excerpt,
+      "```",
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+  return { digestPath, logPath };
+}
+
+function runVerificationCommand(command, index, verbose, runId) {
   const result = runCommand(command.command, command.args, {
     cwd: ROOT,
+    env: { ...process.env, ALCHEMY_RUN_ID: runId },
     shell: process.platform === "win32",
     stdio: ["inherit", "pipe", "pipe"],
   });
@@ -76,38 +110,50 @@ function runVerificationCommand(command, index, verbose) {
   const elapsed = (result.elapsedMs / 1000).toFixed(1);
   if (verbose && output) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
   if (result.status === 0) {
-    console.log(`✓ ${command.label} (${elapsed}s)`);
-    return true;
+    console.log(`✓ ${command.label} (${elapsed}s, run ${runId})`);
+    return { passed: true, command, result };
   }
-  const logPath = writeDiagnosticLog(REPORTS_DIR, `${String(index + 1).padStart(2, "0")}-${command.key}`, output);
-  const first = firstOutputLine(output);
-  const tail = tailOutput(output);
-  writeCurrentRun({
-    rootDir: ROOT,
-    status: "failed",
-    command: `npm run verify:changed (${command.key})`,
-    artifacts: [{ path: logPath, role: "primary" }],
-    summary: first,
-  });
-  console.error(`✗ ${command.label} (${elapsed}s, exit ${result.status ?? "unknown"})`);
-  console.error(`  ${first}`);
-  if (tail !== first) console.error(`  ${tail}`);
+  const reportsDir = path.join(ROOT, "reports", "runs", runId, "verify-changed");
+  const { digestPath, logPath } = writeFailureDigest(reportsDir, command, result, runId, index);
+  console.error(`✗ ${command.label} (${elapsed}s, exit ${result.status ?? "unknown"}, run ${runId})`);
+  console.error(`  ${tailOutput(output)}`);
+  console.error(`  Failure digest: ${path.relative(ROOT, digestPath)}`);
   console.error(`  Full output: ${path.relative(ROOT, logPath)}`);
-  return false;
+  return { passed: false, command, result, digestPath, logPath };
 }
 
 export function main(argv = process.argv.slice(2)) {
+  const runId = ensureRunId("verify");
   try {
     const { e2e, flags, paths } = parseArgs(argv);
     const plan = resolveRoutePlan(paths, { e2e, full: flags.has("full") });
+    console.log(`Run: ${runId}`);
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
     if (flags.has("plan")) return 0;
-    let failed = 0;
+    const outcomes = [];
     for (const [index, command] of plan.commands.entries()) {
-      if (!runVerificationCommand(command, index, flags.has("verbose"))) failed += 1;
-      if (failed > 0 && !flags.has("keep-going")) break;
+      const outcome = runVerificationCommand(command, index, flags.has("verbose"), runId);
+      outcomes.push(outcome);
+      if (!outcome.passed && !flags.has("keep-going")) break;
     }
-    return failed === 0 ? 0 : 1;
+    const failed = outcomes.filter((outcome) => !outcome.passed);
+    const artifacts = failed.flatMap((outcome) => [
+      { path: outcome.digestPath, role: "primary" },
+      { path: outcome.logPath, role: "secondary" },
+    ]);
+    writeCurrentRun({
+      rootDir: ROOT,
+      runId,
+      status: failed.length > 0 ? "failed" : "passed",
+      command: "npm run verify:changed",
+      artifacts,
+      counts: { passed: outcomes.length - failed.length, failed: failed.length },
+      summary:
+        failed.length > 0
+          ? `${failed[0].command.label} failed; inspect its bounded digest first.`
+          : `${outcomes.length}/${outcomes.length} verification steps passed.`,
+    });
+    return failed.length === 0 ? 0 : 1;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return 2;

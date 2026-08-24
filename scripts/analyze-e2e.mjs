@@ -1,14 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
-import { writeCurrentRun } from "./lib/current-run.mjs";
+import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
-import { diagnosticIdentity, writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
+import { diagnosticIdentity, failureDigestRelativePath, writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 import {
   collectPlaywrightTests,
   formatPlaywrightSummaryMarkdown,
   summarizePlaywrightReport,
 } from "./lib/playwright-summary.mjs";
+
+const runId = ensureRunId("e2e-audit");
+console.log(`Run: ${runId}`);
 
 console.log("=========================================");
 console.log("🚀 Starting E2E Test Suite Audit...");
@@ -106,7 +109,7 @@ try {
         line: test.line,
         project: test.project,
       });
-      const digestPath = `test-results/failures/${identity.id}.md`;
+      const digestPath = failureDigestRelativePath(runId, identity.id);
       const diagnosticLine = fs.existsSync(path.resolve(digestPath))
         ? `- **Failure Diagnostics:** [${digestPath}](${linkFromReport(digestPath)})`
         : "- **Failure Diagnostics:** No bounded digest was produced for this test; use the error below.";

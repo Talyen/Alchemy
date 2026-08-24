@@ -1,6 +1,7 @@
 // Shared CI-sensitive Playwright settings for the browser and desktop configs.
 // The performance config is intentionally standalone (on-demand profiling).
 import type { ReporterDescription } from "@playwright/test";
+import { ensureRunId } from "../scripts/lib/current-run.mjs";
 
 /** Port contracts live in scripts/lib/dev-port.mjs; re-exported here for TS consumers. */
 export { BROWSER_PREVIEW_PORT, ELECTRON_PREVIEW_PORT, PERF_PREVIEW_PORT } from "../scripts/lib/dev-port.mjs";
@@ -31,13 +32,20 @@ export function playwrightCiSettings({ isCi, defaultJsonOut }: PlaywrightCiSetti
   forbidOnly: boolean;
   reporter: ReporterDescription[];
 } {
+  ensureRunId("playwright");
   const jsonOutputFile = process.env.PLAYWRIGHT_JSON_OUTPUT_NAME ?? defaultJsonOut;
   return {
     retries: isCi ? 1 : 0,
     forbidOnly: isCi,
     // CI: github annotations + compact console + HTML artifact + JSON for step summary.
     reporter: isCi
-      ? [["github"], ["line"], ["html"], ["json", { outputFile: jsonOutputFile }]]
-      : [["line"], ["html", { open: "never" }]],
+      ? [
+          ["./scripts/lib/playwright-run-reporter.mjs"],
+          ["github"],
+          ["line"],
+          ["html"],
+          ["json", { outputFile: jsonOutputFile }],
+        ]
+      : [["./scripts/lib/playwright-run-reporter.mjs"], ["line"], ["html", { open: "never" }]],
   };
 }

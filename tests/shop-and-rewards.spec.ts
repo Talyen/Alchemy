@@ -24,6 +24,23 @@ test.describe("Merchant Shop", critical, () => {
       expect(await shop.gold()).toBeLessThan(goldBefore);
     });
   });
+
+  for (const destination of ["Merchant's Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"] as const) {
+    test(`keeps ${destination} offerings mounted through route fade-out`, async ({ page, runtimeErrors }) => {
+      void runtimeErrors;
+      const shop = new ShopPage(page);
+      await shop.enterFromDestination(9999, destination);
+      const offeringCount = await shop.buyBtn.count();
+      expect(offeringCount).toBeGreaterThan(0);
+
+      await page.getByRole("button", { name: "Leave", exact: true }).click();
+
+      await expect(page.locator(".page-exit")).toBeAttached();
+      await expect(shop.heading).toBeAttached();
+      await expect.poll(() => shop.buyBtn.count()).toBe(offeringCount);
+      await new DestinationPage(page).expectVisible();
+    });
+  }
 });
 
 test.describe("Reward Flow", critical, () => {

@@ -41,13 +41,20 @@ describe("run destination controller actions", () => {
   });
 
   it("continues from campfire through the progression handler", () => {
-    const navigateTo = vi.fn();
+    let commit: (() => void) | undefined;
+    const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => {
+      commit = onCommitted;
+    });
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
 
     handlers.handleCampfireContinue();
 
-    expect(getRunProgressStoreView().roomsEncountered).toBe(1);
     expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DESTINATION, expect.any(Function));
+    expect(getRunProgressStoreView().roomsEncountered).toBe(0);
+
+    commit?.();
+
+    expect(getRunProgressStoreView().roomsEncountered).toBe(1);
   });
 
   it("advanceToNextDestination samples the next picker at the live destination index after a non-combat continue", () => {
@@ -157,8 +164,22 @@ describe("run destination controller actions", () => {
       });
 
       const labyrinthClearNode = vi.fn();
-      const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
+      let commit: (() => void) | undefined;
+      const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => {
+        commit = onCommitted;
+      });
+      const roomsBeforeExit = getRunProgressStoreView().roomsEncountered;
       createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, labyrinthClearNode })).advanceToNextDestination();
+
+      const outgoing = getRunSessionStoreView();
+      expect(outgoing.mysteryEvent?.id).toBe("stale-event");
+      expect(outgoing.shopState.cards).toEqual([stale]);
+      expect(outgoing.alchemistState.potions).toEqual([stale]);
+      expect(outgoing.corruptionResult?.originalCard.id).toBe("slash");
+      expect(getRunProgressStoreView().roomsEncountered).toBe(roomsBeforeExit);
+      expect(labyrinthClearNode).not.toHaveBeenCalled();
+
+      commit?.();
 
       const cleared = getRunSessionStoreView();
       expect(cleared.mysteryEvent).toBeNull();
@@ -173,6 +194,7 @@ describe("run destination controller actions", () => {
       expect(cleared.alchemistState.potions).toEqual([]);
       expect(cleared.trinketShopState.trinkets).toEqual([]);
       expect(cleared.equipmentShopState.gear).toEqual([]);
+      expect(getRunProgressStoreView().roomsEncountered).toBe(roomsBeforeExit + 1);
       expect(navigateTo.mock.calls[0]?.[0]).toBe(expectedScreen);
       if (expectLabyrinthClear) expect(labyrinthClearNode).toHaveBeenCalledOnce();
       else expect(labyrinthClearNode).not.toHaveBeenCalled();

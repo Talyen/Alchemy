@@ -1,5 +1,6 @@
 import { test as base, expect, type ConsoleMessage } from "@playwright/test";
 export { expect } from "@playwright/test";
+import { ensureRunId } from "../../scripts/lib/current-run.mjs";
 import { buildFailureDiagnostic, writeFailureDiagnostic } from "../../scripts/lib/playwright-diagnostics.mjs";
 import { enableFastMode } from "../e2e/battle-setup";
 import { failOnRuntimeErrors } from "../e2e/errors";
@@ -51,9 +52,21 @@ export const test = base.extend<E2EFixtures>({
 
         if (testInfo.status !== testInfo.expectedStatus) {
           try {
+            const runId = ensureRunId("playwright");
             const url = page.url();
-            const htmlContent = await page.content().catch(() => "Unable to fetch page HTML");
+            let accessibilitySnapshot = "";
+            try {
+              accessibilitySnapshot = await page.ariaSnapshot({ mode: "ai", depth: 8, timeout: 2_000 });
+            } catch (error) {
+              recordLog(
+                `[Diagnostic] Accessibility snapshot unavailable: ${error instanceof Error ? error.message : String(error)}`,
+              );
+            }
+            const htmlFallback = accessibilitySnapshot
+              ? ""
+              : await page.content().catch(() => "Unable to fetch page HTML");
             const diagnostic = buildFailureDiagnostic({
+              runId,
               rootDir: process.cwd(),
               title: testInfo.title,
               file: testInfo.file,
@@ -67,7 +80,8 @@ export const test = base.extend<E2EFixtures>({
                 ...(droppedLogs > 0 ? [`[Diagnostic] ${droppedLogs} earlier console entries dropped in memory`] : []),
                 ...consoleLogs,
               ],
-              html: htmlContent,
+              accessibilitySnapshot,
+              htmlFallback,
             });
             const { digestPath } = writeFailureDiagnostic(process.cwd(), diagnostic);
             console.log(`\n[Diagnostic] Saved E2E failure digest to ${digestPath}\n`);

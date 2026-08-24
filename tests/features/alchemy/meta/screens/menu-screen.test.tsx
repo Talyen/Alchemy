@@ -61,4 +61,13 @@ describe("MenuScreen logo variants", () => {
     rerender(<MenuScreen {...defaultProps} finishedRunCharacters={["knight"]} />);
     expect(screen.getByRole("button", { name: /talents/i }).getAttribute("aria-disabled")).toBe("false");
   });
+
+  it("keeps every navigation button at the shared menu width", () => {
+    render(<MenuScreen {...defaultProps} />);
+
+    for (const label of ["Play", "Talents", "Homestead", "Armory", "Collection", "Options"]) {
+      const button = screen.getByRole("button", { name: new RegExp(label, "i") });
+      expect(button.parentElement?.className).toContain("w-[19.2rem]");
+    }
+  });
 });

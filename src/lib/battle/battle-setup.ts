@@ -16,7 +16,7 @@ import type { GearEffectManifest } from "@/lib/gear";
 import { defaultGearEffects } from "@/lib/gear";
 import { EMPTY_ENEMY_MITIGATION, type BattleState } from "./types";
 import { computeTrinketManifest } from "../trinkets";
-import { drawCards } from "./draw";
+import { applyDrawResult, drawCards } from "./draw";
 import { shuffle } from "../utils";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
@@ -25,19 +25,6 @@ import { dealPlayerTypedHit } from "./player-typed-hit";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 
 export { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
-
-function setupOpeningHand(deck: BattleCard[], extraDrawPerBattle: number, rng: () => number = placeholderRng) {
-  const openingHand = drawCards(shuffle(deck, rng), [], [], CARDS_PER_TURN, 0, rng);
-  if (extraDrawPerBattle <= 0) return openingHand;
-  return drawCards(
-    openingHand.deck,
-    openingHand.discard,
-    openingHand.hand,
-    extraDrawPerBattle,
-    openingHand.nextCardUid,
-    rng,
-  );
-}
 
 export interface CreateBattleStateOptions {
   runDeck: BattleCard[];
@@ -147,7 +134,23 @@ function buildInitialBattleState(
   };
 }
 
-export function createBattleState(options: CreateBattleStateOptions): BattleState {
+/** Resolve the normal opening draw after the empty-hand battle start state is committed. */
+export function drawOpeningHand(state: BattleState): BattleState {
+  return applyDrawResult(
+    state,
+    drawCards(
+      state.deck,
+      state.discard,
+      state.hand,
+      CARDS_PER_TURN + state.trinketEffects.extraDrawPerBattle,
+      state.nextCardUid,
+      state.rng,
+    ),
+  );
+}
+
+/** Create the durable battle-start snapshot shown before the opening hand is dealt. */
+export function createBattleStartState(options: CreateBattleStateOptions): BattleState {
   const {
     runDeck,
     gold: battleGold = 0,
@@ -169,7 +172,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
 
   const trinketEffects = computeTrinketManifest(battleBoons);
   const activeRng = optionsRng ?? placeholderRng;
-  const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects.extraDrawPerBattle, activeRng);
+  const deck = shuffle(runDeck, activeRng);
 
   const {
     enemyMaxHealth,
@@ -192,8 +195,8 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
 
   const state = buildInitialBattleState(defaultBattleState(), {
     deck,
-    hand,
-    discard,
+    hand: [],
+    discard: [],
     mana: BASE_PLAYER_MANA + manaBonus + battleTalents.startMana + battleTalents.runMaxManaBonus,
     gold: battleGold,
     playerHealth: startingHealth,
@@ -212,7 +215,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     trinketEffects,
     gearEffects: battleGearEffects,
     discoveredCardIds: battleDiscovered,
-    nextCardUid,
+    nextCardUid: 0,
     difficultyModifiers: battleDiffs,
     rng: activeRng,
     contentSystemType: battleContentSystem,
@@ -221,4 +224,9 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
   const startFreeze = battleTalents.startFreeze + battleGearEffects.startFreeze;
   if (startFreeze <= 0) return state;
   return dealPlayerTypedHit(state, "freeze", startFreeze, []);
+}
+
+/** Create an immediately playable battle state for engine, test, and simulator consumers. */
+export function createBattleState(options: CreateBattleStateOptions): BattleState {
+  return drawOpeningHand(createBattleStartState(options));
 }

@@ -60,6 +60,8 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      ALCHEMY_RUN_VARIANT: shard-${{ matrix.shard }}
     strategy:
       fail-fast: false
       matrix:
@@ -106,6 +108,7 @@ jobs:
             test-results/
             reports/playwright-results.json
             reports/current-run.*
+            reports/runs/
           retention-days: 7
 
   ship-gate-full:
@@ -165,6 +168,7 @@ jobs:
             test-results/
             reports/playwright-electron-results.json
             reports/current-run.*
+            reports/runs/
           retention-days: 7
 
   deadcode-strict:

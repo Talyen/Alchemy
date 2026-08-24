@@ -123,7 +123,7 @@ Discriminated union (`kind: none | primary-reward | companion-reward | destinati
 
 ## Battle transition continuation
 
-`activeCombat.pendingBattleTransition` is an additive field with a `null` default. New saves use it to carry a computed enemy-turn result across presentation delays. Enemy-phase battle state without pending transition metadata is recovered on decode as `{ kind: "legacy-enemy-turn" }`; boot resume runs `recoverLegacyEnemyPhase` to force a playable player turn. Persisted `{ kind: "legacy-enemy-turn" }` markers are still accepted by Zod.
+`activeCombat.pendingBattleTransition` is an additive field with a `null` default. New saves use it to carry computed opening-draw and enemy-turn results across presentation delays. Opening draws persist the empty-hand start state plus an `{ kind: "opening-draw" }` result and fast-forward on boot instead of replaying presentation. Enemy-phase battle state without pending transition metadata is recovered on decode as `{ kind: "legacy-enemy-turn" }`; boot resume runs `recoverLegacyEnemyPhase` to force a playable player turn. Persisted `{ kind: "legacy-enemy-turn" }` markers are still accepted by Zod.
 
 ## Parked runs and shared gold
 

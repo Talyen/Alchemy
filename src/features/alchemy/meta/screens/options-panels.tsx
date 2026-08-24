@@ -89,22 +89,17 @@ function SliderOption({
 // Toggle row with a native switch role for boolean options.
 function ToggleOption({
   label,
-  description,
   checked,
   onChange,
 }: {
   label: string;
-  description: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
     <div className={settingsPanelShellClass}>
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className={controlLabelClass}>{label}</p>
-          <p className={controlDescriptionClass}>{description}</p>
-        </div>
+        <p className={controlLabelClass}>{label}</p>
         <Switch checked={checked} onCheckedChange={onChange} />
       </div>
     </div>
@@ -147,7 +142,6 @@ export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
       <SliderOption label="Sound Effects Volume" value={audio.sfxVolume} onChange={audio.onSfxVolChange} />
       <ToggleOption
         label="Mute in Background"
-        description="Silence music and effects while the game is in a background tab or minimized."
         checked={audio.muteInBackground}
         onChange={audio.onMuteInBackgroundChange}
       />
@@ -159,15 +153,9 @@ export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
 export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsProps }) {
   return (
     <div className="space-y-4">
-      <ToggleOption
-        label="Auto-End Turn"
-        description="Automatically end your turn when no cards in hand can be played."
-        checked={gameplay.autoEndTurn}
-        onChange={gameplay.onAutoEndTurnChange}
-      />
+      <ToggleOption label="Auto-End Turn" checked={gameplay.autoEndTurn} onChange={gameplay.onAutoEndTurnChange} />
       <ToggleOption
         label="Remember Auto-Battle Preference"
-        description="Restore the in-battle Autoplay toggle across battles."
         checked={gameplay.rememberAutoplayPreference}
         onChange={gameplay.onRememberAutoplayPreferenceChange}
       />
@@ -179,34 +167,6 @@ export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsPr
 export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; dev: DevOptionsProps }) {
   return (
     <div className="space-y-4">
-      {import.meta.env.DEV ? (
-        <div className="rounded-shell-panel border border-primary/40 p-5 surface-muted">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className={controlLabelClass}>Dev / QA Unlocks</p>
-              <p className={controlDescriptionClass}>
-                Unlock every compendium entry and grant every talent node for testing.
-              </p>
-            </div>
-            <Button size="lg" onClick={dev.onUnlockAll}>
-              Unlock All
-            </Button>
-          </div>
-        </div>
-      ) : null}
-      {import.meta.env.DEV && dev.onOpenErrorLog ? (
-        <div className="rounded-shell-panel border border-primary/40 p-5 surface-muted">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className={controlLabelClass}>Error Log</p>
-              <p className={controlDescriptionClass}>Inspect errors logged during this session for bug reports.</p>
-            </div>
-            <Button size="lg" variant="outline" onClick={dev.onOpenErrorLog}>
-              View Log
-            </Button>
-          </div>
-        </div>
-      ) : null}
       <div className={settingsPanelShellClass}>
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -229,6 +189,35 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
           </Button>
         </div>
       </div>
+      {import.meta.env.DEV ? (
+        <section className="rounded-shell-panel border border-primary/40 p-5 surface-muted">
+          <p className={cn(controlLabelClass, "mb-4")}>Dev Only</p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className={controlLabelClass}>Dev / QA Unlocks</p>
+                <p className={controlDescriptionClass}>
+                  Unlock every compendium entry and grant every talent node for testing.
+                </p>
+              </div>
+              <Button size="lg" onClick={dev.onUnlockAll}>
+                Unlock All
+              </Button>
+            </div>
+            {dev.onOpenErrorLog ? (
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className={controlLabelClass}>Error Log</p>
+                  <p className={controlDescriptionClass}>Inspect errors logged during this session for bug reports.</p>
+                </div>
+                <Button size="lg" variant="outline" onClick={dev.onOpenErrorLog}>
+                  View Log
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

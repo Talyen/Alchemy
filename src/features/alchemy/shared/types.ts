@@ -97,7 +97,7 @@ export type CollectionTab = "cards" | "bestiary" | "trinkets";
 export interface StatusChip {
   id: PlayerStatusId | EnemyStatusId | ArmedFlagChipId | "echo" | "ccImmunity" | PendingPulseChipId;
   value: number;
-  /** Armed flag chips (e.g. Shadowstep) omit the numeric badge in their tooltip. */
+  /** Binary effects (e.g. Phoenix Feather or Control Immunity) omit the numeric badge in their tooltip. */
   hideValue?: boolean;
 }
 

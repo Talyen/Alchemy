@@ -1,17 +1,16 @@
 // Shared heal chrome used by campfire rest.
 import { Progress } from "@/components/ui/progress";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
-import { CAMPFIRE_ANIMATION_MS } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 export function HealthRestoreMeter({
   displayHealth,
   maxHealth,
-  progressTarget,
+  progressHealth,
 }: {
   displayHealth: number;
   maxHealth: number;
-  progressTarget: number;
+  progressHealth: number;
 }) {
   return (
     <div className="w-full rounded-shell-inner px-4 py-3 surface-muted">
@@ -22,9 +21,9 @@ export function HealthRestoreMeter({
         </p>
       </div>
       <Progress
-        value={(progressTarget / maxHealth) * 100}
-        fillStyle={{ transitionDuration: `${CAMPFIRE_ANIMATION_MS}ms` }}
-        className="campfire-hp-progress mt-2.5 h-3 bg-background/80 [&>div]:bg-destructive"
+        value={(progressHealth / maxHealth) * 100}
+        fillStyle={{ transition: "none" }}
+        className="mt-2.5 h-3 bg-background/80 [&>div]:bg-destructive"
       />
     </div>
   );

@@ -65,14 +65,14 @@ export function checkPlans({ final = false, today = new Date() } = {}) {
     const { metadata, updated } = result;
     if (metadata.status === "complete" || metadata.status === "cancelled") {
       failures.push(
-        `${relative}: ${metadata.status} plans are deleted at handoff — remove the file (git history keeps it)`,
+        `${relative}: ${metadata.status} plans belong in docs/Plans/Archived — run \`npm run archive:plans\``,
       );
       continue;
     }
     if (updated.getTime() <= today.getTime() - PLAN_STALE_DAYS * 86_400_000) {
-      warnings.push(`${relative}: not updated since ${metadata.updated}; finish and delete it or refresh \`updated\``);
+      warnings.push(`${relative}: not updated since ${metadata.updated}; finish and archive it or refresh \`updated\``);
     }
-    if (final) failures.push(`${relative}: plan remains at final handoff; delete it once its work is done`);
+    if (final) failures.push(`${relative}: plan remains active at final handoff; complete or cancel it first`);
   }
   if (plans.length > 3) warnings.push(`docs/Plans/: ${plans.length} active plan files are present`);
   return { failures, warnings, activePlans: plans.length };

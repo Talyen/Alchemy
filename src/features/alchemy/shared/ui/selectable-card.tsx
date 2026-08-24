@@ -24,7 +24,6 @@ interface SelectableCardBaseProps {
   /** Tile family — controls default width; "corruption" swaps in the danger ring. */
   chrome?: SelectableCardChrome;
   widthClass?: string;
-  tiltEnabled?: boolean;
   /**
    * Store-backed hover/shimmer identity (e.g. "reward", "draft-choice-0").
    * Omit it for quiet tiles — shop-style flows never shimmer and let the button
@@ -90,7 +89,6 @@ function SelectableCardSurface({
   onSelect,
   chrome = "choice",
   widthClass,
-  tiltEnabled = true,
   hover,
   shimmerActive,
   shimmerToken,
@@ -104,7 +102,6 @@ function SelectableCardSurface({
     onClick: onSelect,
     ariaLabel: `Select ${getCardDisplayTitle(card)}`,
     selected: chrome === "corruption" ? false : isSelected,
-    tiltEnabled,
     className: cn(
       widthClass ?? DEFAULT_WIDTH_BY_CHROME[chrome],
       cardInteractiveGlowClass,

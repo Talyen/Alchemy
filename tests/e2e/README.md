@@ -45,7 +45,7 @@ Decision order:
 
 - `fastBattle` enables fast mode when explicitly requested.
 - `runtimeErrors` collects page errors and asserts that none occurred.
-- `autoDiagnostic` runs for every test. On failure it writes one bounded text digest and an exact entry in `test-results/failures/index.json`; raw HTML/trace output remains secondary evidence.
+- `autoDiagnostic` runs for every test. On failure it writes one run-attributed bounded digest with an accessibility snapshot and an exact entry in `test-results/failures/<run-id>/index.json`. If the page can no longer provide that snapshot, the digest falls back to bounded HTML; raw traces remain secondary evidence.
 
 Page objects: `BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPage`, `MysteryPage`, `CorruptionPage`, `HomesteadPage`, `GameStage`.
 

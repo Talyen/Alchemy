@@ -82,6 +82,8 @@ export const cardSurfaceClass = "relative overflow-hidden rounded-shell-hero bg-
  * those paint a rectangular halo once the tile is a 3D compositor layer.
  */
 export const cardInteractiveGlowClass = "card-interactive-glow";
+/** Scale-only hover motion for surfaces that should not gain interactive frame chrome. */
+export const cardHoverScaleClass = "card-hover-scale";
 export const screenShellPaddingClass = "p-[2.1rem]";
 /** Battle inner stage uses denser padding (`p-7`) than ScreenShell; keep that exception local to battle. */
 

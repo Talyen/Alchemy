@@ -24,7 +24,7 @@ type BadgeRenderer<T extends MysteryEffect> = (effect: T, ctx: BadgeCtx) => Reac
 const chipPillClass = (ctx: BadgeCtx) =>
   cn(
     "inline-flex items-center gap-1.5 rounded-full border shadow-xs",
-    ctx.tooltip ? cn("px-2 py-0.5", tooltipChipClass) : "px-3 py-1 text-xs font-semibold",
+    ctx.tooltip ? cn("px-2 py-0.5", tooltipChipClass, "text-sm") : "px-3 py-1 text-xs font-semibold",
   );
 
 const renderGoldBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainGold" | "loseGold" }>> = (effect, ctx) => (
@@ -70,7 +70,7 @@ const renderXpBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainXP" }>> =
 const renderAddCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "addCard" }>> = (effect, ctx) => {
   const title = ctx.findCard?.(effect.cardId)?.title ?? "a card";
   return ctx.tooltip ? (
-    <span className="text-xs text-balance text-muted-foreground">Add {title} card to your deck</span>
+    <span className="text-sm text-balance text-muted-foreground">Add {title} card to your deck</span>
   ) : (
     <span className="text-sm text-balance text-muted-foreground">Add {title}</span>
   );
@@ -82,7 +82,7 @@ const renderChooseCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "choos
     ? `Choose 1 of ${MYSTERY_CARD_CHOICES} ${tagLabel} cards`
     : `Choose 1 of ${MYSTERY_CARD_CHOICES} cards`;
   return ctx.tooltip ? (
-    <span className="text-xs text-balance text-muted-foreground">{chooseLabel} to add to your deck</span>
+    <span className="text-sm text-balance text-muted-foreground">{chooseLabel} to add to your deck</span>
   ) : (
     <span className="text-sm text-balance text-muted-foreground">{chooseLabel}</span>
   );
@@ -90,36 +90,21 @@ const renderChooseCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "choos
 
 const renderTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainTrinket" }>> = (effect, ctx) => {
   const title = ctx.findTrinket?.(effect.trinketId)?.title ?? "a trinket";
-  return (
-    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-balance text-muted-foreground")}>
-      Add {title} for this run
-    </span>
-  );
+  return <span className="text-sm text-balance text-muted-foreground">Add {title} for this run</span>;
 };
 
-const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainRandomTrinket" }>> = (_e, ctx) => (
-  <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-balance text-muted-foreground")}>
-    Gain a random trinket for this run
-  </span>
+const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainRandomTrinket" }>> = () => (
+  <span className="text-sm text-balance text-muted-foreground">Gain a random trinket for this run</span>
 );
 
-const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainGeneratedGear" }>> = (
-  effect,
-  ctx,
-) => {
+const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainGeneratedGear" }>> = (effect) => {
   const baseItem = gearBaseItems[effect.baseItemId as keyof typeof gearBaseItems];
   const title = baseItem ? `${effect.astral ? "Astral " : ""}${baseItem.displayName}` : "Gear";
-  return (
-    <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-balance text-muted-foreground")}>
-      Add {title} to your Armory
-    </span>
-  );
+  return <span className="text-sm text-balance text-muted-foreground">Add {title} to your Armory</span>;
 };
 
-const renderRemoveCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "removeCard" }>> = (_e, ctx) => (
-  <span className={cn(ctx.tooltip ? "text-xs" : "text-sm", "text-balance text-muted-foreground")}>
-    Remove a random card
-  </span>
+const renderRemoveCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "removeCard" }>> = () => (
+  <span className="text-sm text-balance text-muted-foreground">Remove a random card</span>
 );
 
 /** Compact rendering of a single mystery effect — used in both tooltip and reward screen. */
@@ -192,7 +177,7 @@ export function MysteryEffectList({
               : null;
 
         return (
-          <div key={i} className="flex items-center gap-1.5 text-xs">
+          <div key={i} className="flex items-center gap-1.5 text-sm">
             {prefix && <span className="text-muted-foreground">{prefix}</span>}
             <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} tooltip />
           </div>

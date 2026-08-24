@@ -78,7 +78,7 @@ function DifficultyCard({
 }) {
   const bonusLine = DIFFICULTY_CONFIG.XP_BONUSES[difficultyId] ?? "";
   const fullDescription = description + (bonusLine ? "\n" + bonusLine : "");
-  const showTilt = !locked;
+  const showUnlockedArt = !locked;
   const DIFFICULTY_ART: Record<string, string> = { "difficulty-1": difficulty1Art, "difficulty-2": difficulty2Art };
   const diffArt = DIFFICULTY_ART[difficultyId] ?? difficulty3Art;
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
@@ -104,7 +104,7 @@ function DifficultyCard({
           isSelected && tiltSurfaceSelectedRingClass,
         )}
       >
-        {showTilt ? (
+        {showUnlockedArt ? (
           <TiltSurface
             className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", chooserHeroArtWidthClass)}
             shimmerActive={shimmerActive}

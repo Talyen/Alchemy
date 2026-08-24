@@ -60,7 +60,9 @@ export function InteractiveArtTile({
     onHoverEnd,
   });
   const shineColors = shineColor == null ? [] : Array.isArray(shineColor) ? shineColor : [shineColor];
-  const showShine = shineColors.length > 0;
+  // Sold-out/purchased tiles remain interactive for their detail popup, but
+  // disabled state must silence every purchasable glow layer.
+  const showShine = shineColors.length > 0 && !disabled;
   const showGlow = interactiveChrome && interactive && !disabled;
 
   return (

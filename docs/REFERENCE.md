@@ -18,6 +18,7 @@ npm run dev                 # Vite dev server
 npm run build               # vite build (typecheck is a separate gate; Vercel runs vercel.json buildCommand)
 npm test                    # Vitest; `npm test -- <path>` for a single file
 npm run verify:changed -- --diff  # Changed-path verification route (--plan previews; --e2e <route> escalates)
+npm run runs:show -- --last 10    # Recent run IDs, outcomes, counts, and evidence availability
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci / check:push)
 npm run lint:ci             # Full static gate
 npm run check:push          # Local pre-push gate
@@ -53,12 +54,15 @@ shared Playwright caches.
 
 Verification and audit commands keep full artifacts on disk but print a bounded digest. Start with the digest and open the referenced artifact only when it names the next useful seam. Battle warnings use the `[Enemy Turn]` prefix.
 
+Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI derives the same identity from its run, attempt, job, and optional matrix variant. Do not change it within one invocation.
+
 - Unit failures: rerun the exact path from the report, then inspect the first assertion and its nearest fixture. `reports/vitest-timings.json` is timing data, not default context.
-- Playwright failures: read the compact failure summary and `test-results/failures/<name>.md` first. Open a trace ZIP only when the DOM/console artifact cannot explain the failure; use `npx playwright show-trace` for that one test.
+- Playwright failures: read the compact failure summary and `test-results/failures/<run-id>/<name>.md` first. Its bounded accessibility snapshot shows the roles, names, and hierarchy present at failure; open a trace ZIP only when that and the console evidence cannot explain the failure.
+- Changed-path failures: open the run-specific Markdown digest named by `reports/current-run.md`; the sibling `.log` is secondary evidence when its bounded failure tail is insufficient.
 - E2E audit: `npm run test:e2e:audit` writes `reports/e2e-audit-report.md` and keeps the full JSON report. Use `--verbose` only when the child runner's complete stream is needed.
 - Measurable audits: `npm run audit:all` reports one line per passing probe and a bounded failure tail. Full step output is under `reports/audit-all/` after a failure; pass `--verbose` to stream it deliberately.
 - Balance: read `reports/balance-findings.html` or its JSON summary first. The full matrix under `reports/balance-full/` is drill-down evidence only.
-- Report pointer: report-producing summaries overwrite `reports/current-run.md` and `reports/current-run.json`; start there instead of recursively listing `reports/`.
+- Report pointer: `reports/current-run.md` and `.json` point to the latest run-specific record under `reports/runs/<run-id>/`. Start there, or use `npm run runs:show -- --last 10`, instead of recursively listing `reports/`.
 - Do not paste complete logs, traces, snapshots, generated bundles, or report directories into agent context when the digest identifies a narrower file or test.
 - Local transient artifacts are pruned automatically before dev/build preparation and remain available for test/performance investigation until explicitly pruned. Copy a failure artifact elsewhere only when an investigation genuinely needs to outlive the grace period; use `npm run prune:transient -- --dry-run` to inspect candidates.
 - CI retains failure-only diagnostic artifacts for seven days and retains no successful-run report history.
@@ -103,7 +107,7 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Turn order** — Player (companion attacks → play cards) → Enemy (enemy DoTs → attack → player DoTs → regen) → reset (draw 4, restore mana, halve player block). Enemy block halves when the next enemy phase begins.
 - **Mana** — resets to `maxMana` each turn; unspent mana is lost (Wellspring talent excepted).
 - **Companions** — invulnerable; act at player turn start; persist indefinitely.
-- **Draw / deck** — draw 4 per turn, max hand 7 (overflow skipped); hand cleared before draw; discard reshuffles when draw pile empties; only `consume` cards leave permanently.
+- **Draw / deck** — battles commit with an empty hand, then deal the opening 4 plus battle-start bonus draws; later turns draw 4. Max hand 7 (overflow skipped); hand clears before turn draws; discard reshuffles when the draw pile empties; only `consume` cards leave permanently.
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
 - **Haste** — extra turns skip the enemy phase; both blocks hold until a real attack window resolves, then halve once each.
 - **Death's Door** — [Domain Glossary](#domain-glossary).

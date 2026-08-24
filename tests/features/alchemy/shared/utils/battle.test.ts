@@ -100,7 +100,13 @@ describe("getPlayerStatusChips", () => {
   it("surfaces the player's CC immunity cooldown with turns remaining", () => {
     const state = makeProductionBattleState();
     state.playerCC.cooldown = 2;
-    expect(getPlayerStatusChips(state)).toEqual([{ id: "ccImmunity", value: 2 }]);
+    expect(getPlayerStatusChips(state)).toEqual([{ id: "ccImmunity", value: 2, hideValue: true }]);
+  });
+
+  it("surfaces Phoenix Feather as a badge-less binary effect", () => {
+    const state = makeProductionBattleState();
+    state.playerStatuses.phoenixFeather = 1;
+    expect(getPlayerStatusChips(state)).toEqual([{ id: "phoenixFeather", value: 1, hideValue: true }]);
   });
 });
 
@@ -177,8 +183,10 @@ describe("getEnemyStatusChips", () => {
     const state = makeProductionBattleState();
     state.enemyStatuses.stun = 1;
     state.enemyCC.cooldown = 2;
-    const ids = getEnemyStatusChips(state).map((c) => c.id);
-    expect(ids).toEqual(["stun", "ccImmunity"]);
+    expect(getEnemyStatusChips(state)).toEqual([
+      { id: "stun", value: 1 },
+      { id: "ccImmunity", value: 2, hideValue: true },
+    ]);
   });
 });
 

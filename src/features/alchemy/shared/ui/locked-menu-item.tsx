@@ -15,6 +15,7 @@ interface LockedMenuItemProps {
   icon: ReactNode;
   children: ReactNode;
   className?: string;
+  wrapperClassName?: string;
   tooltipPlacement?: PortaledTooltipSide;
   size?: "sm" | "default" | "lg";
   variant?: "outline" | "ghost";
@@ -28,6 +29,7 @@ export function LockedMenuItem({
   icon,
   children,
   className,
+  wrapperClassName,
   tooltipPlacement = "side-end",
   size = "default",
   variant = "ghost",
@@ -39,6 +41,7 @@ export function LockedMenuItem({
       <Button
         variant={variant}
         size={size}
+        {...(wrapperClassName === undefined ? {} : { wrapperClassName })}
         className={cn(locked && "cursor-not-allowed opacity-50", className)}
         aria-disabled={locked}
         onClick={() => {

@@ -34,11 +34,11 @@ Describe the user-visible outcome and the bounded implementation scope.
 - [ ] Implement the smallest complete change.
 - [ ] Add or extend only consequential coverage.
 - [ ] Run path-scoped verification.
-- [ ] Delete this plan file when the work ends and report verification.
+- [ ] Mark this plan complete, run the final docs check, and report verification.
 
 ## Notes
 
-Keep durable policy in its canonical documentation owner. Delete the plan at handoff; git history retains it.
+Keep durable policy in its canonical documentation owner. At handoff, set status to complete, refresh the updated date, and run \`npm run docs:check:final\` to archive this plan.
 `;
 }
 

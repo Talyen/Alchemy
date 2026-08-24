@@ -51,6 +51,7 @@ export function TalentsScreen({
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const keywordIds = useMemo(() => getTalentTreeKeywordIds(), []);
+  const hasAllocatedTalents = Object.values(unlockedTalents).some((talents) => (talents?.length ?? 0) > 0);
 
   const selectedKeywordDef = selectedKeyword ? keywordDefinitions[selectedKeyword] : undefined;
   const unlockedIds = useMemo(
@@ -106,6 +107,7 @@ export function TalentsScreen({
                 variant="outline"
                 size="icon"
                 className="h-10 w-10 text-muted-foreground"
+                disabled={!hasAllocatedTalents}
                 onClick={() => setShowResetConfirm(true)}
                 aria-label="Reset talents"
               >

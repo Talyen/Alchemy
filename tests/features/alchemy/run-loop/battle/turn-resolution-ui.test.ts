@@ -277,6 +277,20 @@ describe("executeEnemyPhase", () => {
 });
 
 describe("resumePendingBattleTransition", () => {
+  it("fast-forwards an opening draw without replaying turn-start companion effects", () => {
+    const resultState = { ...defaultBattleState(), hand: [] };
+    domain.pendingBattleTransition = { kind: "opening-draw", resultState };
+    const orch = makeOrch();
+    const battleSession = makeBattleTurnSession();
+
+    resumePendingBattleTransition(1, battleSession, orch);
+
+    expect(commitBattleTransition).toHaveBeenCalledWith(resultState, null);
+    expect(orch.resetHandTransferUi).toHaveBeenCalledOnce();
+    expect(orch.scheduleCompanionFollowUp).not.toHaveBeenCalled();
+    expect(orch.scheduleAutoEndTurn).toHaveBeenCalledWith(resultState);
+  });
+
   it("commits the computed result without replaying animation delays", () => {
     const resultState = { ...defaultBattleState(), turn: 2, playerHealth: 18 };
     domain.pendingBattleTransition = {

@@ -22,7 +22,7 @@ raw traces or report directories.
 
 ## Before you push
 
-Execution plans are short-lived working documents under [`docs/Plans/`](docs/Plans/README.md). Run `npm run docs:check` while a plan is active. When the work ends, delete the plan file (git history retains it) and run `npm run docs:check:final`, which requires none to remain.
+Execution plans are short-lived working documents under [`docs/Plans/`](docs/Plans/README.md). Run `npm run docs:check` while a plan is active. When the work ends, mark it `complete` (or `cancelled`), refresh its `updated` date, and run `npm run docs:check:final`; the command archives terminal plans and requires no active plans to remain.
 
 The default local hook is `npm run check:push` (format, TypeScript for src and tests, ESLint, a fresh production build, `@prepush` E2E canary). CI is the full gate after every push to `main`. Do **not** require a GitHub **push** status check on `main` — that blocks trunk pushes before CI can run.
 
@@ -33,6 +33,7 @@ Install hooks once: `npm run prepare` (runs on `npm install`).
 `lefthook` `pre-commit` runs Prettier on **staged files** that match `scripts/prettier-paths.mjs` (same set as `npm run format` / `format:check`). Do not hand-duplicate those globs in lefthook. Static checks and the lockfile check live in `pre-push` (`lockfile-check` then `check:push`), which blocks the push anyway; CI repeats them.
 
 E2E timings / flakiness: `npm run test:e2e:timings`, `npm run test:e2e:audit`.
+Recent local verification/test records: `npm run runs:show -- --last 10`.
 Frame pacing (on-demand, not CI): [docs/PERFORMANCE.md](./docs/PERFORMANCE.md).
 Release gate: `npm run release` (includes `check:ship:full`). Command details:
 [docs/REFERENCE.md](./docs/REFERENCE.md#script-command-reference).

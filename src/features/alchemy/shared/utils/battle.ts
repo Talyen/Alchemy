@@ -43,7 +43,9 @@ function buildStatusChips(
   if (!statuses) return [];
   return order.reduce<StatusChip[]>((chips, id) => {
     const value = statuses[id];
-    if ((value ?? 0) > 0) chips.push({ id, value: value! });
+    if ((value ?? 0) > 0) {
+      chips.push({ id, value: value!, ...(id === "phoenixFeather" ? { hideValue: true } : {}) });
+    }
     return chips;
   }, []);
 }
@@ -83,7 +85,9 @@ function buildArmedPlayerChips(state: BattleState): StatusChip[] {
   }
   if (echoCount > 0) chips.push({ id: "echo", value: echoCount });
 
-  if (state.playerCC.cooldown > 0) chips.push({ id: "ccImmunity", value: state.playerCC.cooldown });
+  if (state.playerCC.cooldown > 0) {
+    chips.push({ id: "ccImmunity", value: state.playerCC.cooldown, hideValue: true });
+  }
 
   return chips;
 }
@@ -122,6 +126,6 @@ export function getEnemyStatusChips(state: BattleState | null | undefined): Stat
   const statusChips = buildStatusChips(ENEMY_STATUS_DISPLAY_ORDER, state.enemyStatuses);
   const pendingChips = buildPendingEnemyChips(state);
   const immunityChips: StatusChip[] =
-    state.enemyCC.cooldown > 0 ? [{ id: "ccImmunity", value: state.enemyCC.cooldown }] : [];
+    state.enemyCC.cooldown > 0 ? [{ id: "ccImmunity", value: state.enemyCC.cooldown, hideValue: true }] : [];
   return [...mitigationChips, ...statusChips, ...pendingChips, ...immunityChips];
 }

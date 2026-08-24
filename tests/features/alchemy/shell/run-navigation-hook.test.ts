@@ -68,7 +68,10 @@ describe("useRunFlowEngine", () => {
       wildwoodDraft,
     });
     const onStartBossById = vi.fn(() => true);
-    const navigateTo = vi.fn();
+    let commit: (() => void) | undefined;
+    const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => {
+      commit = onCommit;
+    });
 
     const { result } = renderHook(() =>
       useRunFlowEngine({
@@ -93,9 +96,106 @@ describe("useRunFlowEngine", () => {
 
     expect(getRunProgressStoreView().runDeck).toEqual(draftedCards);
     expect(getRunSessionStoreView().pendingCharacterId).toBeNull();
+    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "draft" });
+    expect(onStartBossById).not.toHaveBeenCalled();
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
+
+    act(() => commit?.());
+
     expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "battle" });
     expect(onStartBossById).toHaveBeenCalledOnce();
-    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, undefined);
+  });
+
+  it("keeps the Wildwood removal deck intact until the battle screen swap", () => {
+    const runDeck = Array.from({ length: 3 }, (_, index) => makeTestCard({ id: `wildwood-removal-${index}` }));
+    setRunProgress({ contentSystemType: "wildwood", runDeck });
+    setRunSession({
+      hasActiveRun: true,
+      wildwoodDraft: { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "removal" },
+    });
+    const onStartBossById = vi.fn(() => true);
+    let commit: (() => void) | undefined;
+    const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => {
+      commit = onCommit;
+    });
+
+    const { result } = renderHook(() =>
+      useRunFlowEngine({
+        screen: ROUTE_SCREENS.WILDWOOD_REMOVAL,
+        navigateTo,
+        transition: vi.fn(),
+        cancelPending: vi.fn(),
+        battle: {
+          onStartBattle: vi.fn(),
+          onStartBossBattle: vi.fn(),
+          onStartBossById,
+        },
+        initializeShop: vi.fn(),
+        labyrinthClearNode: vi.fn(),
+        labyrinthFailNode: vi.fn(),
+      }),
+    );
+
+    act(() => result.current.handleWildwoodRemoveCard(1));
+
+    expect(getRunProgressStoreView().runDeck).toEqual(runDeck);
+    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "removal" });
+    expect(onStartBossById).not.toHaveBeenCalled();
+
+    act(() => commit?.());
+
+    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual([
+      "wildwood-removal-0",
+      "wildwood-removal-2",
+    ]);
+    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "battle" });
+    expect(onStartBossById).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the Wildwood removal phase intact when skipping until the battle screen swap", () => {
+    const runDeck = Array.from({ length: 3 }, (_, index) => makeTestCard({ id: `wildwood-skip-${index}` }));
+    setRunProgress({ contentSystemType: "wildwood", runDeck });
+    setRunSession({
+      hasActiveRun: true,
+      wildwoodDraft: { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "removal" },
+    });
+    const onStartBossById = vi.fn(() => true);
+    let commit: (() => void) | undefined;
+    const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => {
+      commit = onCommit;
+    });
+
+    const { result } = renderHook(() =>
+      useRunFlowEngine({
+        screen: ROUTE_SCREENS.WILDWOOD_REMOVAL,
+        navigateTo,
+        transition: vi.fn(),
+        cancelPending: vi.fn(),
+        battle: {
+          onStartBattle: vi.fn(),
+          onStartBossBattle: vi.fn(),
+          onStartBossById,
+        },
+        initializeShop: vi.fn(),
+        labyrinthClearNode: vi.fn(),
+        labyrinthFailNode: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.handleWildwoodSkipRemoval();
+      result.current.handleWildwoodSkipRemoval();
+    });
+
+    expect(getRunProgressStoreView().runDeck).toEqual(runDeck);
+    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "removal" });
+    expect(navigateTo).toHaveBeenCalledOnce();
+
+    act(() => commit?.());
+
+    expect(getRunProgressStoreView().runDeck).toEqual(runDeck);
+    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "battle" });
+    expect(onStartBossById).toHaveBeenCalledOnce();
   });
 
   it("does not advance an incomplete Wildwood draft", () => {

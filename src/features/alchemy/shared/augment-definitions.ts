@@ -3,7 +3,7 @@
 // (burnBonus/freezeBonus), armed player buffs (Shadowstep/Predator's Focus/Poison Dagger),
 // delayed repeat-over-turns pulses, and Hemorrhage's on-attack bleed.
 import type { LucideIcon } from "lucide-react";
-import { Ban, Copy, Focus, Repeat } from "lucide-react";
+import { Copy, Focus, Repeat, ShieldCheck } from "lucide-react";
 import { keywordIcons } from "./config";
 import { DAMAGE_TYPES, keywordDefinitions, type DamageType } from "@/lib/game-data";
 
@@ -74,9 +74,9 @@ export const augmentDefinitions: Record<AugmentId, AugmentDefinition> = {
   },
   ccImmunity: {
     id: "ccImmunity",
-    label: "Immune",
+    label: "Control Immunity",
     description: "Stun and Freeze build-up has no effect while immune.",
-    icon: Ban,
+    icon: ShieldCheck,
     colorClass: "text-zinc-400",
   },
   playNextCardTwice: {

@@ -1,4 +1,4 @@
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setDestinationOfferState,
   setHasActiveBattle,
@@ -17,7 +17,7 @@ import { setCompletedDifficulties } from "@/features/alchemy/shared/stores/profi
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { CONSTANTS } from "../../shared/types";
@@ -28,6 +28,29 @@ interface ProgressionCallbacks {
 }
 
 export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRunVictory }: ProgressionCallbacks) {
+  function clearCompletedDestinationState(draft: GameplayDraft) {
+    setRoomsEncountered(draft, (p) => p + 1);
+    clearMysteryVisitState(draft);
+    clearShopOfferings(draft);
+    setCorruptionResult(draft, null);
+  }
+
+  function setNextDestinationState(draft: GameplayDraft, destinationIndexInAct?: number) {
+    const run = draft.run.activeRun;
+    const indexInAct = destinationIndexInAct ?? run.destinationIndexInAct;
+    const initialDestinations = createInitialDestinationResult({
+      availableDestinations: deps.getAvailableDestinations({ destinationIndexInAct: indexInAct }),
+      offerState: {
+        lastOfferedDestinations: run.lastOfferedDestinations,
+        roundsSinceOffered: run.destinationRoundsSinceOffered,
+      },
+      bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
+      rng: createDraftRunRandomSource(draft, "destinations"),
+    });
+    setDestinationOfferState(draft, initialDestinations.offerState);
+    setRewardState(draft, initialDestinations.rewardState);
+  }
+
   function prepareDestinationScreen() {
     const state = readRunSession().rewardState;
     const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
@@ -42,19 +65,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
   function prepareNextDestination(destinationIndexInAct?: number, onCommitted?: () => void) {
     deps.actions.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
       dispatchRunSessionCommand((draft) => {
-        const run = draft.run.activeRun;
-        const indexInAct = destinationIndexInAct ?? run.destinationIndexInAct;
-        const initialDestinations = createInitialDestinationResult({
-          availableDestinations: deps.getAvailableDestinations({ destinationIndexInAct: indexInAct }),
-          offerState: {
-            lastOfferedDestinations: run.lastOfferedDestinations,
-            roundsSinceOffered: run.destinationRoundsSinceOffered,
-          },
-          bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
-          rng: createDraftRunRandomSource(draft, "destinations"),
-        });
-        setDestinationOfferState(draft, initialDestinations.offerState);
-        setRewardState(draft, initialDestinations.rewardState);
+        setNextDestinationState(draft, destinationIndexInAct);
       });
       prepareDestinationScreen();
       onCommitted?.();
@@ -108,26 +119,18 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
   }
 
   function advanceToNextDestination() {
-    dispatchRunSessionCommand(
-      (draft) => {
-        setRoomsEncountered(draft, (p) => p + 1);
-        clearMysteryVisitState(draft);
-        clearShopOfferings(draft);
-        setCorruptionResult(draft, null);
-        return draft.run.activeRun.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH;
-      },
-      {
-        afterCommit: (labyrinth) => {
-          clearBattlePresentationUi();
-          if (labyrinth) {
-            deps.actions.labyrinthClearNode();
-            deps.actions.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
-          } else {
-            prepareNextDestination();
-          }
-        },
-      },
-    );
+    const labyrinth = readActiveRun().contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH;
+    const nextScreen = labyrinth ? CONSTANTS.SCREENS.LABYRINTH_MAP : CONSTANTS.SCREENS.DESTINATION;
+
+    deps.actions.navigateTo(nextScreen, () => {
+      dispatchRunSessionCommand((draft) => {
+        clearCompletedDestinationState(draft);
+        if (!labyrinth) setNextDestinationState(draft);
+      });
+      clearBattlePresentationUi();
+      if (labyrinth) deps.actions.labyrinthClearNode();
+      else prepareDestinationScreen();
+    });
   }
 
   return {

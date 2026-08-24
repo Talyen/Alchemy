@@ -88,6 +88,7 @@ export function useBattleLifetimeFields() {
   return useGameplayStateStore(
     useShallow((state) => ({
       hasActiveBattle: state.battle.hasActiveBattle,
+      pendingBattleTransition: state.battle.pendingBattleTransition,
       pendingTransitionResumeRequired: state.battle.pendingTransitionResumeRequired,
     })),
   );

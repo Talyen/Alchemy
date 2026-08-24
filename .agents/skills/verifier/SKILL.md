@@ -13,5 +13,5 @@ Run `npm run verify:changed -- --diff` (or explicit paths) over `git status --sh
 
 1. Static gates: `npm run typecheck`, `npm run lint:boundaries`, `npm run ci:routing`.
 2. If the user requested a commit to `main`: run `npm run check:push`.
-3. Run `npm run docs:check:final`; delete finished plan files first — none may remain unless the task is intentionally unfinished.
+3. Mark finished plans `complete` (or `cancelled`) and run `npm run docs:check:final`; it archives terminal plans, and no active plan may remain unless the task is intentionally unfinished.
 4. Format the handoff brief: lead with the domain/game outcome (what is now true, what changed), report exact verification commands and pass/fail status. Do not paste raw build logs, test transcripts, or diff dumps into chat.

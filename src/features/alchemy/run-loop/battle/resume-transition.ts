@@ -26,6 +26,16 @@ export function resumePendingBattleTransition(
   const pending = readBattle().pendingBattleTransition;
   if (!pending) return;
 
+  if (pending.kind === "opening-draw") {
+    const state = pending.resultState;
+    dispatchRunSessionCommand((draft) => commitBattleTransition(draft, state, null));
+    orch.resetHandTransferUi();
+    if (!battleSession.checkBattleEnd(state, sessionNum)) {
+      orch.scheduleAutoEndTurn(state);
+    }
+    return;
+  }
+
   if (pending.kind === "legacy-enemy-turn") {
     const recovered = dispatchRunSessionCommand((draft) => {
       const next = withRestingWorldBattleRng(

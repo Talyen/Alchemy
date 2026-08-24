@@ -63,14 +63,14 @@ export function OptionsScreen({
         {showErrorLog ? (
           <ErrorLogViewer onClose={() => setShowErrorLog(false)} />
         ) : (
-          <ScreenShell maxWidthClass="max-w-3xl">
+          <ScreenShell maxWidthClass="max-w-4xl">
             <ScreenHeaderRow
               title="Options"
               trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open options menu" />}
             />
 
             <div className="mt-6 flex flex-wrap justify-center gap-2">
-              <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} />
+              <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} className="flex-nowrap" />
             </div>
 
             <FadeSlot swapKey={tab} className="min-h-[42cqh] pt-6 text-left">

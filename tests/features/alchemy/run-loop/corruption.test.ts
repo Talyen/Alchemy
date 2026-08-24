@@ -112,8 +112,8 @@ describe("card corruption", () => {
     expect(result.result?.originalCard.id).toBe("stab");
   });
 
-  it("transforms when random < 0.5 even with editable targets", () => {
-    const rng = makeRng([0.4, 0, 0, 0.9]);
+  it("transforms when random < 0.2 even with editable targets", () => {
+    const rng = makeRng([0.1, 0, 0, 0.9]);
     const slash = makeCard();
     const bash = makeCard({
       id: "bash",
@@ -129,6 +129,25 @@ describe("card corruption", () => {
     expect(result.transformed).toBe(true);
     expect(result.corruptedCard.id).toBe("bash");
     expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 9 });
+  });
+
+  it("mutates directly when the transform roll reaches 0.2", () => {
+    const rng = makeRng([0.2, 0, 0.9]);
+    const slash = makeCard();
+    const bash = makeCard({
+      id: "bash",
+      title: "Bash",
+      descriptionLines: ["Deal 8 Physical damage"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+    });
+
+    const result = corruptCard(slash, [slash, bash], rng);
+    expect(result).not.toBeNull();
+    if (!result) return;
+
+    expect(result.transformed).toBe(false);
+    expect(result.corruptedCard.id).toBe("slash");
+    expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 6 });
   });
 
   it("returns null when the selected card cannot mutate or transform", () => {

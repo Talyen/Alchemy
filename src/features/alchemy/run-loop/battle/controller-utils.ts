@@ -103,8 +103,12 @@ export function defaultMeasureVisualCardRect(
   const sceneRect = getBattleSceneLocalRect(sceneElement);
   if (!element || !sceneRect) return null;
   const rect = element.getBoundingClientRect();
-  const width = element.offsetWidth;
-  const height = element.offsetHeight;
+  const computedStyle = getComputedStyle(element);
+  // Hand cards are sized with container-query units, so their used size is often
+  // fractional. offsetWidth/offsetHeight round that size to whole CSS pixels and
+  // make the flying transfer card subtly resize when the live card is revealed.
+  const width = Number.parseFloat(computedStyle.width) || element.offsetWidth;
+  const height = Number.parseFloat(computedStyle.height) || element.offsetHeight;
   return {
     x: (rect.left + rect.width / 2 - sceneRect.left) / sceneRect.scaleX - width / 2,
     y: (rect.top + rect.height / 2 - sceneRect.top) / sceneRect.scaleY - height / 2,

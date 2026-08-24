@@ -27,8 +27,8 @@ import {
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
-import { getHandCardKey } from "../../battle/playable-hand";
-import { useHiddenHandCardKeys, usePlayableHandCardKeys } from "../../battle/presentation/use-hand-presentation";
+import { getHandCardKey, getPlayableHandCardKeys } from "../../battle/playable-hand";
+import { useHiddenHandCardKeys, useInteractiveHandCardKeys } from "../../battle/presentation/use-hand-presentation";
 import type { BattleState } from "@/lib/battle";
 
 const HandCardItem = memo(function HandCardItem({
@@ -38,7 +38,8 @@ const HandCardItem = memo(function HandCardItem({
   handWidthClass,
   stagePixelRatio,
   handCardRefs,
-  canPlay,
+  isInteractionEnabled,
+  isVisuallyPlayable,
   isHidden,
   onCardClick,
   descriptionContext,
@@ -49,7 +50,8 @@ const HandCardItem = memo(function HandCardItem({
   handWidthClass: string;
   stagePixelRatio: number;
   handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
-  canPlay: boolean;
+  isInteractionEnabled: boolean;
+  isVisuallyPlayable: boolean;
   isHidden: boolean;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   descriptionContext: CardDescriptionContext;
@@ -90,9 +92,14 @@ const HandCardItem = memo(function HandCardItem({
       baseTransform={
         isHovered ? getHoverHandTransform(offset, stagePixelRatio) : getRestingHandTransform(offset, stagePixelRatio)
       }
-      className={cn(handWidthClass, "hand-card-motion", !canPlay && "cursor-default grayscale")}
+      className={cn(
+        handWidthClass,
+        "hand-card-motion",
+        !isInteractionEnabled && "cursor-default",
+        !isVisuallyPlayable && "grayscale",
+      )}
       tooltipPadding={HAND_HOVER_TOOLTIP_PADDING_PX}
-      tiltEnabled={canPlay}
+      scaleOnHover={false}
       dragging={isHidden}
       shineColor={getCardKeywordShineColors(card)}
       wrapperClassName="relative -mx-5 flex justify-center sm:-mx-6"
@@ -119,7 +126,8 @@ export function BattleHand({
   const { handCardRefs } = refs;
   const { onCardClick } = actions;
   const hiddenHandCardKeys = useHiddenHandCardKeys();
-  const playableHandCardKeys = usePlayableHandCardKeys(playabilityState);
+  const interactiveHandCardKeys = useInteractiveHandCardKeys(playabilityState);
+  const visuallyPlayableHandCardKeys = getPlayableHandCardKeys(playabilityState);
   const handWidthClass = handCardWidthClass;
   const descriptionContext = useBattleDescriptionContext(battleState);
 
@@ -136,7 +144,8 @@ export function BattleHand({
             handWidthClass={handWidthClass}
             stagePixelRatio={stagePixelRatio}
             handCardRefs={handCardRefs}
-            canPlay={playableHandCardKeys.has(cardKey)}
+            isInteractionEnabled={interactiveHandCardKeys.has(cardKey)}
+            isVisuallyPlayable={visuallyPlayableHandCardKeys.has(cardKey)}
             isHidden={hiddenHandCardKeys.includes(cardKey)}
             onCardClick={onCardClick}
             descriptionContext={descriptionContext}

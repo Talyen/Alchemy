@@ -91,6 +91,10 @@ const LabyrinthNodePositionSchema = z
 const PersistedBattleTransitionSchema = z
   .union([
     z.object({
+      kind: z.literal("opening-draw"),
+      resultState: PersistedBattleStateSchema,
+    }),
+    z.object({
       kind: z.literal("enemy-turn"),
       resultState: PersistedBattleStateSchema,
       playerTurnSkipped: z.boolean(),

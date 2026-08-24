@@ -42,10 +42,13 @@ export function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {
       }}
     >
       <div className="card-face absolute inset-0">
-        <img src={transfer.card.art} className={cn("h-full w-full object-cover", cardSurfaceClass)} />
+        <img
+          src={transfer.card.art}
+          className={cn("h-full w-full border border-border/80 object-cover", cardSurfaceClass)}
+        />
       </div>
       <div className="card-face-back absolute inset-0">
-        <img src={cardBack} className={cn("h-full w-full object-cover", cardSurfaceClass)} />
+        <img src={cardBack} className={cn("h-full w-full border border-border/80 object-cover", cardSurfaceClass)} />
       </div>
     </motion.div>
   );

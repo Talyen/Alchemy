@@ -25,7 +25,7 @@ export function CampfireScreen({
   const [resting, setResting] = useState(false);
   const [done, setDone] = useState(false);
   const targetHealth = resting ? getCampfireRestHealth(playerHealth, maxHealth, healFraction) : playerHealth;
-  const { displayHealth, progressTarget } = useEasedHealth({
+  const { displayHealth, progressHealth } = useEasedHealth({
     from: playerHealth,
     to: targetHealth,
     active: resting,
@@ -59,7 +59,7 @@ export function CampfireScreen({
                 Rest
               </Button>
             ) : (
-              <HealthRestoreMeter displayHealth={displayHealth} maxHealth={maxHealth} progressTarget={progressTarget} />
+              <HealthRestoreMeter displayHealth={displayHealth} maxHealth={maxHealth} progressHealth={progressHealth} />
             )}
           </div>
         </div>

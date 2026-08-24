@@ -65,6 +65,17 @@ describe("createBattleInit", () => {
     const enemyId = getBattleStoreView().battleState.currentEnemy.id;
     expect(getRunProgressStoreView().roomsEncountered).toBe(3);
     expect(getBattleStoreView().hasActiveBattle).toBe(true);
+    expect(getBattleStoreView().pendingTransitionResumeRequired).toBe(false);
+    expect(getBattleStoreView().battleState.hand).toEqual([]);
+    expect(getBattleStoreView().pendingBattleTransition).toEqual(
+      expect.objectContaining({
+        kind: "opening-draw",
+        resultState: expect.objectContaining({ hand: expect.any(Array) }),
+      }),
+    );
+    const pending = getBattleStoreView().pendingBattleTransition;
+    expect(pending?.kind === "opening-draw" ? pending.resultState.hand.length : 0).toBeGreaterThan(0);
+    expect(useBattlePresentationStore.getState().cardTransferInProgress).toBe(true);
     expect(getRunProgressStoreView().encounteredRunEnemyIds).toContain(enemyId);
     expect(resetBattleSession).toHaveBeenCalled();
   });

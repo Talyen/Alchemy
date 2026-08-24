@@ -909,9 +909,10 @@
     "size": 2629115
   },
   "meteor.webp": {
-    "hash": "f7dc3d9bbfb2c913",
-    "mtimeMs": 1785148534000,
-    "size": 799337
+    "hash": "fc4446f25498bd14",
+    "mtimeMs": 1787583836672.1257,
+    "size": 3161883,
+    "settingsSig": "b31ec6abf99f41a7"
   },
   "meteorite.webp": {
     "hash": "d57564c5da94bb2c",

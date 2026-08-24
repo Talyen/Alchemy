@@ -7,7 +7,7 @@ import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
-import { keywordIcons, tooltipChipClass } from "../../config";
+import { keywordIcons } from "../../config";
 import { augmentDefinitions } from "../../augment-definitions";
 import type { StatusChip } from "../../types";
 import { renderColoredKeywords } from "../card-description-ui";
@@ -56,11 +56,13 @@ function StatusTooltip({
   labelNode,
   value,
   hideValue,
+  valueColorClass,
   description,
 }: {
   labelNode: ReactNode;
   value?: number;
   hideValue?: boolean | undefined;
+  valueColorClass?: string;
   description: ReactNode;
 }) {
   return (
@@ -68,7 +70,12 @@ function StatusTooltip({
       <div className="flex items-center justify-between gap-3">
         {labelNode}
         {value !== undefined && !hideValue ? (
-          <span className={cn("rounded-full bg-background px-2 py-0.5 text-foreground", tooltipChipClass)}>
+          <span
+            className={cn(
+              "character-keyword-pill-tint rounded-full border border-current px-2.5 py-0.5 text-sm font-bold",
+              valueColorClass,
+            )}
+          >
             {value}
           </span>
         ) : null}
@@ -107,6 +114,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
         <StatusTooltip
           labelNode={<KeywordTag keywordId={kw} className="text-sm sm:text-base" />}
           value={chip.value}
+          valueColorClass={definition.colorClass}
           description={renderColoredKeywords(definition.description)}
         />
       }
@@ -131,6 +139,7 @@ function AugmentStatusIcon({
           labelNode={<TooltipHeader className="mb-0">{augment.label}</TooltipHeader>}
           value={chip.value}
           hideValue={chip.hideValue}
+          valueColorClass={augment.colorClass}
           description={augment.description}
         />
       }
@@ -147,6 +156,7 @@ function HasteStatusIcon({ value }: { value: number }) {
         <StatusTooltip
           labelNode={<TooltipHeader className="mb-0">Haste</TooltipHeader>}
           value={value}
+          valueColorClass="text-fuchsia-300"
           description="Skips the next enemy phase and grants another player turn."
         />
       }

@@ -20,7 +20,6 @@ interface ChooserArtTileProps {
   accentClassName: string;
   widthClass: string;
   paddedTileClass?: string | undefined;
-  tiltEnabled?: boolean | undefined;
   disabled?: boolean;
   surfaceClassName?: string | undefined;
   overlay?: ReactNode | undefined;
@@ -40,7 +39,6 @@ export function ChooserArtTile({
   accentClassName,
   widthClass,
   paddedTileClass,
-  tiltEnabled,
   disabled = false,
   surfaceClassName,
   overlay,
@@ -51,8 +49,8 @@ export function ChooserArtTile({
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, interactionId);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const trackTooltip = renderTooltip !== undefined;
-  // One show/hide pair drives both pointer and keyboard focus so the four
-  // TiltSurface handlers stay in sync with the tooltip and hover shimmer.
+  // One show/hide pair drives both pointer and keyboard focus so the surface,
+  // tooltip, and hover shimmer stay in sync.
   const hoverIn = () => {
     if (trackTooltip) setTooltipVisible(true);
     onHoverStart();
@@ -67,7 +65,6 @@ export function ChooserArtTile({
       <TiltSurface
         as="button"
         buttonRef={tooltipTriggerRef}
-        tiltEnabled={tiltEnabled ?? false}
         ariaLabel={ariaLabel ?? label}
         {...(disabled ? { ariaDisabled: true } : {})}
         onClick={onClick}

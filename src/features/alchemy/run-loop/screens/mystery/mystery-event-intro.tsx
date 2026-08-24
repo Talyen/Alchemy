@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 import {
   bodyTextClass,
+  cardInteractiveGlowClass,
   cardSurfaceClass,
   landscapeArtImageClass,
   standaloneLandscapeArtWidthClass,
@@ -19,6 +20,7 @@ import { MysteryEffectList } from "../../../shared/ui/mystery-effect-badge";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { PortaledTooltip } from "../../../shared/ui/portaled-tooltip";
 import { useHoverVisible } from "../../../shared/ui/use-hover-visible";
+import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 
 const CONFIG = {
   EVENT_IMAGE_WIDTH: 900,
@@ -86,11 +88,24 @@ export function MysteryEventIntro({
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   const featuredCard = findCard(event.id);
   const isHovered = hoveredCardId === event.id;
+  const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("mystery-event-art", event.id);
 
   return (
     <div className="flex w-full flex-col items-center gap-6">
       {event.art ? (
-        <TiltSurface className={cn(cardSurfaceClass, standaloneLandscapeArtWidthClass, "aspect-[4/3]")}>
+        <TiltSurface
+          shimmerActive={shimmerActive}
+          shimmerToken={shimmerToken}
+          onMouseEnter={onHoverStart}
+          onMouseLeave={onHoverEnd}
+          testId="mystery-event-art-surface"
+          className={cn(
+            cardSurfaceClass,
+            cardInteractiveGlowClass,
+            standaloneLandscapeArtWidthClass,
+            "aspect-[4/3] border border-border/80 shadow-md",
+          )}
+        >
           <img
             src={event.art}
             alt={event.title}
@@ -116,7 +131,7 @@ export function MysteryEventIntro({
         </div>
       ) : null}
       <div>
-        <TextAnimate once className={cn("max-w-lg", bodyTextClass)}>
+        <TextAnimate once className={cn("max-w-lg text-center", bodyTextClass)}>
           {event.narrative}
         </TextAnimate>
       </div>

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   formatVitestSummaryMarkdown,
   summarizeVitestFile,
@@ -10,7 +10,7 @@ import {
   summarizePlaywrightFile,
   summarizePlaywrightReport,
 } from "../../scripts/lib/playwright-summary.mjs";
-import { writeCurrentRun } from "../../scripts/lib/current-run.mjs";
+import { createRunId, ensureRunId, writeCurrentRun } from "../../scripts/lib/current-run.mjs";
 import {
   buildFailureDiagnostic,
   diagnosticIdentity,
@@ -20,6 +20,8 @@ import {
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { formatRecentRun, parseShowRunsArgs, readRecentRuns } from "../../scripts/show-runs.mjs";
+import PlaywrightRunReporter from "../../scripts/lib/playwright-run-reporter.mjs";
 
 describe("ci-summarize-vitest", () => {
   it("extracts failed assertions and formats a short markdown digest", () => {
@@ -75,6 +77,31 @@ describe("ci-summarize-vitest", () => {
 });
 
 describe("ci-summarize-playwright", () => {
+  it("prints a self-identifying final summary", () => {
+    const priorRunId = process.env.ALCHEMY_RUN_ID;
+    process.env.ALCHEMY_RUN_ID = "playwright-reporter-run";
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      const reporter = new PlaywrightRunReporter();
+      reporter.onBegin(
+        {},
+        {
+          allTests: () =>
+            (["expected", "unexpected", "flaky", "skipped"] as const).map((outcome) => ({ outcome: () => outcome })),
+        },
+      );
+      reporter.onEnd();
+      expect(log).toHaveBeenCalledWith("Playwright run: playwright-reporter-run");
+      expect(log).toHaveBeenCalledWith(
+        "playwright — 1 passed, 1 failed, 1 flaky, 1 skipped (run playwright-reporter-run)",
+      );
+    } finally {
+      log.mockRestore();
+      if (priorRunId === undefined) delete process.env.ALCHEMY_RUN_ID;
+      else process.env.ALCHEMY_RUN_ID = priorRunId;
+    }
+  });
+
   it("shares the flattened test model with the E2E audit", () => {
     const model = collectPlaywrightTests({
       suites: [
@@ -184,7 +211,7 @@ describe("ci-summarize-playwright", () => {
             },
           ],
         },
-        { rootDir: root },
+        { rootDir: root, runId: "no-digest-run" },
       );
 
       expect(summary.failures[0]?.digestPath).toBeNull();
@@ -201,6 +228,7 @@ describe("current-run pointer", () => {
     try {
       const paths = writeCurrentRun({
         rootDir: root,
+        runId: "verify-fixture-run",
         commit: "abc123",
         status: "failed",
         command: "vitest",
@@ -209,12 +237,14 @@ describe("current-run pointer", () => {
           { path: "reports/raw", role: "secondary" },
         ],
         summary: "First failure is in the save route.",
+        counts: { passed: 2, failed: 1 },
       });
       const json = JSON.parse(fs.readFileSync(paths.jsonPath, "utf8"));
       const markdown = fs.readFileSync(paths.markdownPath, "utf8");
 
       expect(json).toMatchObject({
         commit: "abc123",
+        runId: "verify-fixture-run",
         status: "failed",
         command: "vitest",
         artifacts: [
@@ -223,6 +253,10 @@ describe("current-run pointer", () => {
         ],
       });
       expect(json.dirtyPaths).toEqual([]);
+      expect(json.counts).toEqual({ passed: 2, failed: 1 });
+      expect(fs.existsSync(paths.runJsonPath)).toBe(true);
+      expect(fs.readFileSync(paths.runJsonPath, "utf8")).toBe(fs.readFileSync(paths.jsonPath, "utf8"));
+      expect(markdown).toContain("Run: `verify-fixture-run`");
       expect(markdown).toContain("## Primary evidence");
       expect(markdown).toContain("## Secondary drill-down");
       expect(markdown).toContain("missing when pointer was written");
@@ -231,11 +265,54 @@ describe("current-run pointer", () => {
       fs.rmSync(root, { recursive: true, force: true });
     }
   });
+
+  it("creates deterministic IDs, reuses supplied IDs, and shows recent evidence state", () => {
+    expect(createRunId("Verify Changed", { now: new Date("2026-08-24T15:47:49Z"), pid: 42, suffix: "abc123" })).toBe(
+      "verify-changed-20260824t154749z-42-abc123",
+    );
+    const env: NodeJS.ProcessEnv = { ALCHEMY_RUN_ID: "Chosen Run" };
+    expect(ensureRunId("ignored", env)).toBe("chosen-run");
+    const generatedEnv: NodeJS.ProcessEnv = {};
+    expect(ensureRunId("verify", generatedEnv)).toMatch(/^verify-\d{8}t\d{6}z-\d+-[a-z0-9]+$/u);
+    expect(generatedEnv.ALCHEMY_RUN_ID).toMatch(/^verify-\d{8}t\d{6}z-\d+-[a-z0-9]+$/u);
+
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "run-history-"));
+    try {
+      const evidence = path.join(root, "reports/evidence.md");
+      fs.mkdirSync(path.dirname(evidence), { recursive: true });
+      fs.writeFileSync(evidence, "failure");
+      writeCurrentRun({
+        rootDir: root,
+        runId: "older-run",
+        status: "failed",
+        command: "vitest",
+        artifacts: [{ path: evidence, role: "primary" }],
+        summary: "save test failed",
+      });
+      writeCurrentRun({
+        rootDir: root,
+        runId: "newer-run",
+        status: "passed",
+        command: "verify",
+        summary: "all steps passed",
+      });
+
+      expect(parseShowRunsArgs(["--last", "1", "--status", "failed"])).toEqual({ last: 1, status: "failed" });
+      const failed = readRecentRuns(root, { last: 1, status: "failed" });
+      expect(failed).toHaveLength(1);
+      expect(formatRecentRun(root, failed[0] ?? {})).toContain("evidence available");
+      fs.unlinkSync(evidence);
+      expect(formatRecentRun(root, failed[0] ?? {})).toContain("evidence pruned/missing");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("Playwright failure diagnostics", () => {
-  it("bounds warning floods and DOM output", () => {
+  it("bounds warning floods and accessibility output", () => {
     const diagnostic = buildFailureDiagnostic({
+      runId: "playwright-context-run",
       rootDir: process.cwd(),
       title: "fails with a warning flood",
       file: "tests/example.spec.ts",
@@ -246,13 +323,32 @@ describe("Playwright failure diagnostics", () => {
       url: "http://127.0.0.1:4173",
       errorMessage: "TimeoutError: expected button to be visible",
       logs: Array.from({ length: 200 }, (_, index) => `${index} ${"warning ".repeat(300)}`),
-      html: "<main>" + "🧪".repeat(20_000) + "</main>",
+      accessibilitySnapshot: '- main "Alchemy":\n' + '  - button "Play"\n'.repeat(20_000),
     });
 
     expect(Buffer.byteLength(diagnostic.markdown, "utf8")).toBeLessThanOrEqual(MAX_DIAGNOSTIC_BYTES);
     expect(diagnostic.omittedLogs).toBeGreaterThan(0);
-    expect(diagnostic.omittedDomBytes).toBeGreaterThan(0);
+    expect(diagnostic.omittedContextBytes).toBeGreaterThan(0);
+    expect(diagnostic.contextKind).toBe("accessibility");
+    expect(diagnostic.markdown).toContain("Accessibility snapshot");
+    expect(diagnostic.markdown).toContain("Run: playwright-context-run");
     expect(diagnostic.markdown).toContain("entries omitted");
+  });
+
+  it("uses bounded HTML only when accessibility capture is unavailable", () => {
+    const diagnostic = buildFailureDiagnostic({
+      runId: "playwright-fallback-run",
+      title: "page closed",
+      file: "tests/example.spec.ts",
+      status: "failed",
+      duration: 10,
+      logs: ["Accessibility snapshot unavailable"],
+      htmlFallback: "<main>fallback</main>",
+    });
+
+    expect(diagnostic.contextKind).toBe("html-fallback");
+    expect(diagnostic.markdown).toContain("## HTML fallback");
+    expect(diagnostic.markdown).toContain("<main>fallback</main>");
   });
 
   it("uses file, line, and project to avoid duplicate-title collisions", () => {
@@ -265,6 +361,7 @@ describe("Playwright failure diagnostics", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "pw-diagnostic-"));
     try {
       const diagnostic = buildFailureDiagnostic({
+        runId: "playwright-write-run",
         rootDir: root,
         title: "writes a digest",
         file: "tests/example.spec.ts",
@@ -273,12 +370,33 @@ describe("Playwright failure diagnostics", () => {
         status: "failed",
         duration: 20,
         logs: [],
-        html: "<main>failed</main>",
+        accessibilitySnapshot: '- main:\n  - button "Retry"',
       });
       const result = writeFailureDiagnostic(root, diagnostic);
-      const index = JSON.parse(fs.readFileSync(path.join(root, "test-results/failures/index.json"), "utf8"));
+      const index = JSON.parse(
+        fs.readFileSync(path.join(root, "test-results/failures/playwright-write-run/index.json"), "utf8"),
+      );
       expect(fs.existsSync(result.digestPath)).toBe(true);
-      expect(index.failures[0]).toMatchObject({ id: diagnostic.identity.id });
+      expect(index).toMatchObject({
+        runId: "playwright-write-run",
+        failures: [{ id: diagnostic.identity.id, runId: "playwright-write-run" }],
+      });
+
+      const second = buildFailureDiagnostic({
+        runId: "playwright-second-run",
+        title: "writes a digest",
+        file: "tests/example.spec.ts",
+        line: 9,
+        project: "chromium",
+        status: "failed",
+        duration: 20,
+        logs: [],
+        accessibilitySnapshot: '- main:\n  - button "Retry"',
+      });
+      const secondResult = writeFailureDiagnostic(root, second);
+      expect(second.identity.id).toBe(diagnostic.identity.id);
+      expect(secondResult.digestPath).not.toBe(result.digestPath);
+      expect(fs.existsSync(result.digestPath)).toBe(true);
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
