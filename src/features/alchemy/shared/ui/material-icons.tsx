@@ -1,6 +1,5 @@
 // Shared material/resource artwork, wallet cards, and reward pills adopting Trinket styling.
 /* eslint-disable react-refresh/only-export-components -- co-located resource artwork, wallet pills, and color maps */
-import type { ReactNode } from "react";
 import { cn, formatLargeAmount } from "@/lib/utils";
 import { MATERIAL_IDS, materialLabels, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
 import {
@@ -137,29 +136,6 @@ function TrinketWalletResourcePill({
         </span>
         <span className="truncate text-base font-bold text-foreground tabular-nums">{displayedValue}</span>
       </div>
-    </div>
-  );
-}
-
-/** Trinket wallet grid container with dark fantasy panel styling. */
-export function TrinketWalletGrid({
-  children,
-  hugsContent = false,
-  className,
-}: {
-  children: ReactNode;
-  hugsContent?: boolean | undefined;
-  className?: string | undefined;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-shell-card border border-border/60 bg-card/75 p-3 shadow-md backdrop-blur-md",
-        hugsContent ? "inline-flex flex-wrap items-center justify-center gap-2.5" : "w-full",
-        className,
-      )}
-    >
-      {children}
     </div>
   );
 }
