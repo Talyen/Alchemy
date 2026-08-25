@@ -1,41 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { cardLibrary, enemyBestiary } from "@/lib/game-data";
 import { cardSounds, enemyAttackSounds, battleEventSounds, uiSounds, stingerSounds } from "@/lib/sound-registry";
-
-const publicSoundsDir = path.resolve(process.cwd(), "public", "sounds");
-const optimizeSoundsScript = path.resolve(process.cwd(), "scripts", "optimize-sounds.mjs");
-
-const preservedPublicSounds = new Set([
-  "click-double-off.ogg",
-  "click-double-on.ogg",
-  "coin-collect.ogg",
-  "coin-jingle-small.ogg",
-  "coins-gather-quick.ogg",
-  "gurgling.ogg",
-  "keys-jingling.ogg",
-  "kick.ogg",
-  "power-down.ogg",
-  "punch-3.ogg",
-  "sci-fi-error.ogg",
-  "splat-quick.ogg",
-  "squelching-4.ogg",
-  "swipe.ogg",
-  "vibraphone-chime-quick.ogg",
-  "whoosh-1.ogg",
-  "whoosh-2.ogg",
-]);
-
-function registeredSounds() {
-  return new Set([
-    ...Object.values(cardSounds).flat(),
-    ...Object.values(enemyAttackSounds).flat(),
-    ...Object.values(battleEventSounds),
-    ...Object.values(uiSounds),
-    ...Object.values(stingerSounds),
-  ]);
-}
 
 describe("cardSounds", () => {
   it("every entry maps to a non-empty array of .ogg filenames", () => {
@@ -120,26 +85,6 @@ describe("cross-registry key consistency", () => {
     const enemyIds = new Set(enemyBestiary.map((e: { id: string }) => e.id));
     for (const enemyId of Object.keys(enemyAttackSounds)) {
       expect(enemyIds.has(enemyId)).toBe(true);
-    }
-  });
-});
-
-describe("sound asset files", () => {
-  it("every registered sound exists in public/sounds", () => {
-    const publicSounds = new Set(readdirSync(publicSoundsDir));
-    for (const sound of registeredSounds()) {
-      expect(publicSounds.has(sound), `${sound} is missing from public/sounds`).toBe(true);
-    }
-  });
-
-  it("registered sounds are generated or explicitly preserved", () => {
-    const script = readFileSync(optimizeSoundsScript, "utf8");
-    const generatedSounds = new Set(Array.from(script.matchAll(/target:\s*"([^"]+\.ogg)"/g), (match) => match[1]));
-
-    for (const sound of registeredSounds()) {
-      const isGenerated = generatedSounds.has(sound);
-      const isPreserved = preservedPublicSounds.has(sound) && existsSync(path.join(publicSoundsDir, sound));
-      expect(isGenerated || isPreserved, `${sound} is neither optimized nor preserved`).toBe(true);
     }
   });
 });

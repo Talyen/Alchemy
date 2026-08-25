@@ -16,6 +16,7 @@ Reference for commands, glossary, battle rules, and file lookup. Strict coding r
 ```sh
 npm run dev                 # Vite dev server
 npm run build               # vite build (typecheck is a separate gate; Vercel runs vercel.json buildCommand)
+npm run assets:check        # Prepare assets and fail unless the operation is idempotent
 npm test                    # Vitest; `npm test -- <path>` for a single file
 npm run verify:changed -- --diff  # Changed-path verification route (--plan previews; --e2e <route> escalates)
 npm run runs:show -- --last 10    # Recent run IDs, outcomes, counts, and evidence availability

@@ -23,7 +23,21 @@ export const CI_ROUTE_CONTRACTS = Object.freeze([
   },
   {
     id: "assets",
-    markers: ["assets:", '"Raw Assets/**"', '"scripts/assets/**"', '"src/assets/optimized/**"'],
+    markers: [
+      "assets:",
+      '"Raw Assets/**"',
+      '"scripts/assets/**"',
+      '"scripts/check-prepared-assets.mjs"',
+      '"scripts/prepare-assets.mjs"',
+      '"scripts/optimize-assets.mjs"',
+      '"scripts/optimize-music.mjs"',
+      '"scripts/optimize-sounds.mjs"',
+      '"scripts/sync-assets.mjs"',
+      '"scripts/sync-gear-art.mjs"',
+      '"scripts/lib/asset-manifest-cache.mjs"',
+      '"scripts/lib/audio-optimizer.mjs"',
+      '"src/assets/optimized/**"',
+    ],
   },
 ]);
 

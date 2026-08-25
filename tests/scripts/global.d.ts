@@ -69,12 +69,16 @@ declare module "*/asset-manifest-cache.mjs" {
     mtimeMs: number;
     size: number;
     settingsSig?: string;
+    outputHash?: string;
+    owner?: string;
   }
   export function computeContentHash(
     sourcePath: string,
     settings: Record<string, unknown>,
     schemaVersion: string | number,
   ): Promise<string>;
+  export function computeOutputHash(outputPath: string): Promise<string>;
+  export function withOutputHash(sourceEntry: ManifestEntry, outputPath: string): Promise<ManifestEntry>;
   export function resolveSourceHash(
     sourcePath: string,
     settings: Record<string, unknown>,
@@ -104,6 +108,12 @@ declare module "*/asset-manifest-cache.mjs" {
     nextManifest: Record<string, ManifestEntry>;
     failed: boolean;
   }>;
+}
+
+declare module "*/assets/sound-assets.mjs" {
+  export const generatedSoundAssets: Array<{ source: string; target: string }>;
+  export const curatedSoundFiles: string[];
+  export function validateSoundAssetRegistry(options?: { sourceDir?: string }): Promise<void>;
 }
 
 declare module "*/map-pool.mjs" {

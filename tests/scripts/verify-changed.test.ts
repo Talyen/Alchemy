@@ -198,7 +198,49 @@ describe("verify-changed route catalog", () => {
     expect(resolveRoutes(["playwright.config.ts"]).map((route) => route.id)).toEqual(["e2e-helper"]);
     expect(resolveRoutes(["scripts/measure-agent-context.mjs"]).map((route) => route.id)).toEqual(["tooling"]);
     expect(resolveRoutes(["package.json"]).map((route) => route.id)).toEqual(["tooling"]);
-    expect(resolveRoutes(["src/lib/game-data/assets.generated.ts"]).map((route) => route.id)).toEqual(["generated"]);
+    expect(resolveRoutes(["src/lib/game-data/assets.generated.ts"]).map((route) => route.id)).toEqual([
+      "generated",
+      "assets",
+    ]);
+  });
+
+  it("routes asset pipeline entrypoints through prepared-output verification", () => {
+    for (const filePath of [
+      "scripts/lib/asset-manifest-cache.mjs",
+      "scripts/lib/audio-optimizer.mjs",
+      "scripts/sync-assets.mjs",
+      "scripts/sync-gear-art.mjs",
+    ]) {
+      const plan = resolvePlan([filePath]);
+      expect(
+        plan.routes.map((route) => route.id),
+        filePath,
+      ).toEqual(["assets"]);
+      expect(
+        plan.commands.map((command) => command.key),
+        filePath,
+      ).toEqual(["unit-tooling", "typecheck", "assets-check"]);
+    }
+  });
+
+  it("keeps shared script helpers on the tooling route", () => {
+    for (const filePath of [
+      "scripts/lib/generated-module.mjs",
+      "scripts/lib/is-main-module.mjs",
+      "scripts/lib/kebab-to-camel.mjs",
+      "scripts/lib/map-pool.mjs",
+      "scripts/lib/write-text-if-changed.mjs",
+    ]) {
+      const plan = resolvePlan([filePath]);
+      expect(
+        plan.routes.map((route) => route.id),
+        filePath,
+      ).toEqual(["tooling"]);
+      expect(
+        plan.commands.map((command) => command.key),
+        filePath,
+      ).toEqual(["unit-tooling", "typecheck"]);
+    }
   });
 
   it("labels an unowned path honestly while retaining the static fallback", () => {

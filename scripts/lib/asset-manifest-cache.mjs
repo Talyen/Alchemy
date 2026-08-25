@@ -1,6 +1,6 @@
 // Content-hash freshness for asset optimization pipelines.
-// An output is fresh iff it exists and its manifest entry matches a hash of
-// source bytes + transformation settings + schema version salt.
+// An output is fresh iff its bytes match the committed output digest and its
+// manifest entry matches a hash of source bytes + transform settings + schema.
 // Manifest entries also store source mtimeMs + size so unchanged files can
 // skip re-reading/re-hashing when the filesystem fingerprint matches.
 import { createHash } from "node:crypto";
@@ -11,7 +11,7 @@ import { writeTextIfChanged } from "./write-text-if-changed.mjs";
 import { mapPool } from "./map-pool.mjs";
 
 /**
- * @typedef {{ hash: string, mtimeMs: number, size: number, settingsSig?: string, owner?: string }} ManifestEntry
+ * @typedef {{ hash: string, mtimeMs: number, size: number, settingsSig?: string, outputHash?: string, owner?: string }} ManifestEntry
  */
 
 /**
@@ -56,6 +56,26 @@ export async function computeContentHash(sourcePath, settings, schemaVersion) {
   hash.update("\0");
   hash.update(sourceBytes);
   return hash.digest("hex").slice(0, 16);
+}
+
+/**
+ * Hash committed output bytes so freshness checks detect corruption or manual edits.
+ * @param {string} outputPath
+ * @returns {Promise<string>}
+ */
+export async function computeOutputHash(outputPath) {
+  const bytes = await readFile(outputPath);
+  return createHash("sha256").update(bytes).digest("hex").slice(0, 16);
+}
+
+/**
+ * Attach the produced output digest to a source fingerprint.
+ * @param {ManifestEntry} sourceEntry
+ * @param {string} outputPath
+ * @returns {Promise<ManifestEntry>}
+ */
+export async function withOutputHash(sourceEntry, outputPath) {
+  return { ...sourceEntry, outputHash: await computeOutputHash(outputPath) };
 }
 
 /**
@@ -118,6 +138,7 @@ function parseManifestEntry(value) {
       mtimeMs: typeof record.mtimeMs === "number" ? record.mtimeMs : Number.NaN,
       size: typeof record.size === "number" ? record.size : Number.NaN,
       ...(typeof record.settingsSig === "string" ? { settingsSig: record.settingsSig } : {}),
+      ...(typeof record.outputHash === "string" ? { outputHash: record.outputHash } : {}),
       ...(typeof record.owner === "string" ? { owner: record.owner } : {}),
     };
   }
@@ -157,10 +178,12 @@ export async function loadManifest(manifestPath) {
  */
 export async function isOutputFresh(outputPath, storedEntry, expectedHash) {
   const storedHash = typeof storedEntry === "string" ? storedEntry : storedEntry?.hash;
-  if (!storedHash || storedHash !== expectedHash) {
+  const outputHash = typeof storedEntry === "string" ? undefined : storedEntry?.outputHash;
+  if (!storedHash || storedHash !== expectedHash || !outputHash) {
     return false;
   }
-  return pathExists(outputPath);
+  if (!(await pathExists(outputPath))) return false;
+  return (await computeOutputHash(outputPath)) === outputHash;
 }
 
 /**
@@ -178,6 +201,7 @@ function sortManifest(entries) {
       mtimeMs: entry.mtimeMs,
       size: entry.size,
       ...(typeof entry.settingsSig === "string" ? { settingsSig: entry.settingsSig } : {}),
+      ...(typeof entry.outputHash === "string" ? { outputHash: entry.outputHash } : {}),
       ...(typeof entry.owner === "string" ? { owner: entry.owner } : {}),
     };
   }
@@ -274,6 +298,7 @@ export async function processManifestEntries({
     if (
       previous &&
       previous.hash === result.entry.hash &&
+      previous.outputHash === result.entry.outputHash &&
       Number.isFinite(previous.mtimeMs) &&
       Number.isFinite(previous.size)
     ) {

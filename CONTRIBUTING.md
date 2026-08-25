@@ -12,6 +12,9 @@ leave `CHANGELOG.md` to the release automation.
 The executable catalog in `scripts/lib/change-routes.mjs` owns path-to-command and path-to-document selection; `scripts/verify-changed.mjs` executes its deduplicated plan.
 
 - During development: `npm run verify:changed -- --diff` (or pass explicit paths).
+- Asset source or pipeline changes also route through `npm run assets:check`,
+  which verifies complete preparation is idempotent. If preparation would change
+  outputs, the check restores them and fails with the changed paths.
 - Inspect without running: add `--plan`; use `--verbose-plan` only when full argv is needed.
 - Local defaults run focused unit suites plus the `@prepush` canary only; no focused browser flow runs by default. All five focused flows (`save`, `shop`, `audio`, `gear`, `mystery`) are opt-in via `--e2e <route>`, or bare `--e2e` for every touched route; `--full` adds the full local handoff gate. CI owns these flows: every-push critical gate, path-filtered `save-gate`, and nightly.
 - The Electron desktop suite (`test:ship:desktop`) is CI-only: it runs on pushes matching the `desktop_renderer` path filter and unconditionally on nightly. Run it locally only by explicit choice.
@@ -65,7 +68,7 @@ Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clea
 | Job                                             | Local equivalent                                                                                                                                                                                |
 | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CI `ship-gate`                                  | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop` (path-gated by `desktop_renderer` across Electron + renderer routing/boot/screen changes, after unit tests pass); uploads `dist-desktop` artifact |
-| CI `assets`                                     | `node scripts/prepare-assets.mjs` + git diff on committed outputs (path-filtered on Raw Assets / asset scripts / committed outputs)                                                             |
+| CI `assets`                                     | `npm run assets:check` (path-filtered on Raw Assets, asset scripts/helpers, and committed outputs)                                                                                              |
 | CI `save-gate`                                  | `npm run test:ship:e2e` (path-filtered)                                                                                                                                                         |
 | CI `desktop-build` / `electron-e2e`             | `npm run dist:desktop` / desktop Playwright suite is CI-only (path-filtered job + nightly); manual opt-in: `npm run test:ship:desktop`                                                          |
 | CI `e2e` (`@critical` + `@prepush`, every push) | `npm run build && npm run test:e2e:prepush:full`                                                                                                                                                |

@@ -6,12 +6,12 @@ authoring source.
 
 ## Pipeline overview
 
-| Asset kind    | Authoring source                       | Generated output                                 | Registry / consumer                                   |
-| ------------- | -------------------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
-| Game art      | `Raw Assets/` + `scripts/assets/*.mjs` | `src/assets/optimized/`                          | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
-| Gear art      | `Raw Assets/Gear/`                     | Optimized WebP + `src/lib/game-data/gear-art.ts` | Gear definitions by stable definition ID              |
-| Sound effects | `Raw Assets/Sound Effects/`            | `public/sounds/` OGG and MP3 fallbacks           | `src/lib/sound-registry.ts`                           |
-| Music         | `Raw Assets/Music/`                    | `public/Music/`                                  | Audio owners under `src/lib/audio*.ts`                |
+| Asset kind    | Authoring source                             | Generated output                                 | Registry / consumer                                   |
+| ------------- | -------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
+| Game art      | `Raw Assets/` + `scripts/assets/*.mjs`       | `src/assets/optimized/`                          | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
+| Gear art      | `Raw Assets/Gear/`                           | Optimized WebP + `src/lib/game-data/gear-art.ts` | Gear definitions by stable definition ID              |
+| Sound effects | `Raw Assets/Sound Effects/` + sound manifest | `public/sounds/` OGG and MP3 fallbacks           | `src/lib/sound-registry.ts`                           |
+| Music         | `Raw Assets/Music/`                          | `public/Music/`                                  | Audio owners under `src/lib/audio*.ts`                |
 
 `scripts/prepare-assets.mjs` is the full pipeline. Art, sound, and music
 optimization run concurrently because their outputs are disjoint; generated
@@ -48,14 +48,16 @@ missing slot names.
 
 ## Add or replace sound
 
-Sound effects are explicitly registered in `scripts/optimize-sounds.mjs` and
-then referenced by `src/lib/sound-registry.ts` or the owning audio module.
+Sound effects are explicitly registered in `scripts/assets/sound-assets.mjs`
+and then referenced by `src/lib/sound-registry.ts` or the owning audio module.
 
 - WAV sources are loudness-normalized and converted to OGG with MP3 fallbacks.
 - OGG sources are copied without re-encoding and still receive an MP3 fallback.
-- `public/sounds/` is partially managed: curated files without a raw source may
-  coexist with generated entries. Do not sweep unregistered files as orphans.
-- The generated manifest records generated versus curated ownership.
+- Curated files without a raw source must be listed in `curatedSoundFiles` in
+  the same manifest. The optimizer owns the complete directory and removes
+  files outside the declared OGG files, their MP3 fallbacks, and its hash manifest.
+- The generated hash manifest records generated versus curated ownership and
+  verifies both source identity and committed output bytes.
 
 Run `node scripts/optimize-sounds.mjs` for sound-only iteration or the complete
 preparation command before handoff.
@@ -74,7 +76,14 @@ barrels are already current. CI, Vercel, and release builds use this mode after
 separate generated-output checks; it is not a substitute for regenerating
 outputs after source changes.
 
-Before handoff:
+Before handoff, run the idempotence check. It fails without leaving a mutated
+tree if preparation would change committed outputs:
+
+```sh
+npm run assets:check
+```
+
+For manual inspection:
 
 ```sh
 node scripts/prepare-assets.mjs

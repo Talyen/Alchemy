@@ -17,6 +17,7 @@
   "main": "desktop/main.cjs",
   "scripts": {
     "assets:optimize": "node scripts/optimize-assets.mjs",
+    "assets:check": "node scripts/check-prepared-assets.mjs",
     "predev": "node scripts/prune-transient-artifacts.mjs && node scripts/stop-dev-server.mjs && node scripts/prepare-assets.mjs",
     "predev:desktop": "npm run predev",
     "prebuild": "node scripts/prune-transient-artifacts.mjs && node scripts/sync-version-metadata.mjs && node scripts/prepare-assets.mjs",

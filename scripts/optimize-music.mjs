@@ -7,6 +7,7 @@ import {
   processManifestEntries,
   removeOrphanOutputs,
   resolveSourceHash,
+  withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
 import { discoverAudioFiles, formatProcessError, runAudioScript } from "./lib/audio-optimizer.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
@@ -18,7 +19,7 @@ const outputDir = path.join(rootDir, "public", "Music");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
 
 /** Bump when copy pipeline settings, hash inputs, or manifest entry shape change. */
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 const MUSIC_SETTINGS = { mode: "copy" };
 
@@ -41,10 +42,10 @@ export async function optimizeMusic() {
       const sourceEntry = await resolveSourceHash(sourcePath, MUSIC_SETTINGS, SCHEMA_VERSION, storedEntry);
       const isFresh = await isOutputFresh(outputPath, storedEntry, sourceEntry.hash);
       if (isFresh) {
-        return { message: `${file} already up to date`, entry: sourceEntry };
+        return { message: `${file} already up to date`, entry: storedEntry };
       }
       await copyFile(sourcePath, outputPath);
-      return { message: `${file} copied`, entry: sourceEntry };
+      return { message: `${file} copied`, entry: await withOutputHash(sourceEntry, outputPath) };
     },
     handleError: formatProcessError,
   });

@@ -1,1606 +1,2200 @@
 {
   "acid-potion.webp": {
-    "hash": "4ccd59386e0f9e7a",
+    "hash": "6fca0e1bf7b46c45",
     "mtimeMs": 1787451437293.9717,
     "size": 2681863,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "80290dcb424c326b"
   },
   "agility-training.webp": {
-    "hash": "6f56b2c02679557c",
-    "mtimeMs": 1785148534000,
-    "size": 881505
+    "hash": "6d0c6392d833f949",
+    "mtimeMs": 1786580077475.3547,
+    "size": 881505,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "dd8bc3be526462c9"
   },
   "alchemist-shop.webp": {
-    "hash": "a75b9b9593d1d49d",
+    "hash": "0c4a95376ebff25f",
     "mtimeMs": 1786681644793.7952,
-    "size": 1075173
+    "size": 1075173,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "c15c25de02d6fcda"
   },
   "alchemist.webp": {
-    "hash": "ded37731f536eb4f",
+    "hash": "379a9c9388a3cf24",
     "mtimeMs": 1786833745298.2375,
-    "size": 3594209
+    "size": 3594209,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "95908696ae34e403"
   },
   "alchemy-lab.webp": {
-    "hash": "794aa3661a05a897",
-    "mtimeMs": 1785148536000,
-    "size": 1027080
+    "hash": "3f72ed2e79fc78a0",
+    "mtimeMs": 1786580077478.1702,
+    "size": 1027080,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "5ca826433650f815"
   },
   "alchemy-logo-arcane-mana.webp": {
-    "hash": "0a8b2332fce0f757",
+    "hash": "b590286043519eff",
     "mtimeMs": 1782421242018.4949,
-    "size": 3265337
+    "size": 3265337,
+    "settingsSig": "9267d47af0369af9",
+    "outputHash": "371892ca71ec67d6"
   },
   "alchemy-logo-fire-iron.webp": {
-    "hash": "eb0cfbd358c7c94f",
+    "hash": "4b45bea98bf1b105",
     "mtimeMs": 1782421242023.4927,
-    "size": 2009592
+    "size": 2009592,
+    "settingsSig": "9267d47af0369af9",
+    "outputHash": "7bd4e232bb7d6e5c"
   },
   "alchemy-logo-frost.webp": {
-    "hash": "2f92915365a3ae71",
+    "hash": "13c1415cb7ac8078",
     "mtimeMs": 1782421242025.408,
-    "size": 2842181
+    "size": 2842181,
+    "settingsSig": "9267d47af0369af9",
+    "outputHash": "f1eb730f36ea2a5a"
   },
   "alchemy-logo-holy-block.webp": {
-    "hash": "da7962429862b80f",
+    "hash": "158b396932405fe3",
     "mtimeMs": 1782421242027.877,
-    "size": 3360804
+    "size": 3360804,
+    "settingsSig": "9267d47af0369af9",
+    "outputHash": "c4ac18e5c082556d"
   },
   "alchemy-logo-nature-bleed.webp": {
-    "hash": "445419860f8a1986",
+    "hash": "16fc980677640885",
     "mtimeMs": 1782421242031.836,
-    "size": 3227827
+    "size": 3227827,
+    "settingsSig": "9267d47af0369af9",
+    "outputHash": "325897eed737d2a0"
   },
   "alchemy-logo-poison.webp": {
-    "hash": "44664cdd2724e35c",
+    "hash": "d9af32e390149c80",
     "mtimeMs": 1782421242034.6863,
-    "size": 2739989
+    "size": 2739989,
+    "settingsSig": "9267d47af0369af9",
+    "outputHash": "c5d1640e1d11571c"
   },
   "alchemy-logo.webp": {
-    "hash": "a55ce31b7b530447",
+    "hash": "4b484927f39d136c",
     "mtimeMs": 1782421242038.1123,
-    "size": 2822941
+    "size": 2822941,
+    "settingsSig": "9267d47af0369af9",
+    "outputHash": "e8957efbea4e5244"
   },
   "anvil.webp": {
-    "hash": "e94b019a26d55d9e",
+    "hash": "1e6dc00d4476a48d",
     "mtimeMs": 1787452217629.165,
     "size": 2491927,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "867924a709d74f58"
   },
   "apple.webp": {
-    "hash": "55381458053713d9",
-    "mtimeMs": 1785148534000,
-    "size": 823321
+    "hash": "999edfb37f89093a",
+    "mtimeMs": 1786580076628.1455,
+    "size": 823321,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "3440d700faba7267"
   },
   "astral-arrow.webp": {
-    "hash": "831683407705ddf0",
-    "mtimeMs": 1786569711886.4832,
-    "size": 794815
+    "hash": "2bc35e1bb38658c5",
+    "mtimeMs": 1786580076628.876,
+    "size": 794815,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "1f5c82bad426eba9"
   },
   "avatar.webp": {
-    "hash": "6f87340edc948683",
-    "mtimeMs": 1786569711888.9282,
-    "size": 744497
+    "hash": "0a3c9405d705c1a3",
+    "mtimeMs": 1786580076629.7844,
+    "size": 744497,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "3fc32ce987c5e45c"
   },
   "bash.webp": {
-    "hash": "d8e4de51d9b10307",
-    "mtimeMs": 1785148534000,
-    "size": 760106
+    "hash": "226512c3c5e86179",
+    "mtimeMs": 1786580076630.6318,
+    "size": 760106,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "f8129b11f7401559"
   },
   "bear-companion.webp": {
-    "hash": "66a703c17a3b20ad",
-    "mtimeMs": 1785148534000,
-    "size": 1083736
+    "hash": "f6e6aadda5b480f9",
+    "mtimeMs": 1786580076635.3914,
+    "size": 1083736,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "c57407a5edf9c9bc"
   },
   "blackjack.webp": {
-    "hash": "01f472346508bdb0",
-    "mtimeMs": 1785148534000,
-    "size": 670909
+    "hash": "f74e6cc3bfe2b175",
+    "mtimeMs": 1786580076636.8755,
+    "size": 670909,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "5959b572da26e2a9"
   },
   "blacksmiths-forge.webp": {
-    "hash": "91ffb3dc5a1446b7",
-    "mtimeMs": 1786566811527.762,
-    "size": 938952
+    "hash": "70252acfd5830e2c",
+    "mtimeMs": 1786580077480.8184,
+    "size": 938952,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "e11d328b2fafacc6"
   },
   "blessed-aegis.webp": {
-    "hash": "11cd909811f70fd0",
-    "mtimeMs": 1785148534000,
-    "size": 866888
+    "hash": "e4b3e7f9268a4572",
+    "mtimeMs": 1786580076639.886,
+    "size": 866888,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "aebf8ed74adbaf42"
   },
   "blizzard.webp": {
-    "hash": "bbae51ada52c2430",
-    "mtimeMs": 1786569711891.2568,
-    "size": 889327
+    "hash": "41c06759ab6dc3e2",
+    "mtimeMs": 1786580076640.9487,
+    "size": 889327,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "344349957a05fc7f"
   },
   "block.webp": {
-    "hash": "3aef1bf2ae4f35ef",
-    "mtimeMs": 1785148534000,
-    "size": 868061
+    "hash": "ebbf289d78494ace",
+    "mtimeMs": 1786580076641.7676,
+    "size": 868061,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "8f3bee53d375977a"
   },
   "blood-offering.webp": {
-    "hash": "9f433dc4f58dff90",
-    "mtimeMs": 1785148534000,
-    "size": 671875
+    "hash": "24734b958448f775",
+    "mtimeMs": 1786580076644.0588,
+    "size": 671875,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "547f6d4d5741f4d2"
   },
   "bloodthorn.webp": {
-    "hash": "a5b5808823ededcc",
-    "mtimeMs": 1785148534000,
-    "size": 837563
+    "hash": "f8b023f030274a50",
+    "mtimeMs": 1786580076646.7866,
+    "size": 837563,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "6896e5b3baa4783a"
   },
   "bone-charm.webp": {
-    "hash": "9b92e6f11453b45b",
+    "hash": "f012a7706abfadc4",
     "mtimeMs": 1786657559248.7952,
-    "size": 2285173
+    "size": 2285173,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "721b61ea8c709449"
   },
   "botanical-distillation.webp": {
-    "hash": "5962a33720787c4f",
+    "hash": "f02119f0a8b8858f",
     "mtimeMs": 1782421241981.7122,
-    "size": 839690
+    "size": 839690,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "370279730bacb3ef"
   },
   "bounty-shot.webp": {
-    "hash": "a5fb3c60829993b2",
-    "mtimeMs": 1785148534000,
-    "size": 688955
+    "hash": "c24c37f353c7b201",
+    "mtimeMs": 1786580076650.147,
+    "size": 688955,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "dd647352b3e08e1a"
   },
   "brass-censer.webp": {
-    "hash": "ed8b33f15ce5ad5e",
+    "hash": "9f1350b5525d0861",
     "mtimeMs": 1786657591542.9321,
-    "size": 2693311
+    "size": 2693311,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "34f42205cab3c99d"
   },
   "bread.webp": {
-    "hash": "cba87406b870bd42",
+    "hash": "ff3ab84a5a2b5d4d",
     "mtimeMs": 1787452094147.9392,
     "size": 2938096,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "008f8601512c94cc"
   },
   "briar-shield.webp": {
-    "hash": "4aeec6481a184759",
-    "mtimeMs": 1785148532000,
-    "size": 741885
+    "hash": "ef5f6febe1ad7ff9",
+    "mtimeMs": 1786580076653.9316,
+    "size": 741885,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "43f6cea200f08085"
   },
   "burning-blade.webp": {
-    "hash": "8474a129c4240c63",
+    "hash": "ae26a271dec6560d",
     "mtimeMs": 1787538358155.8132,
     "size": 2852358,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "56bdfa7b4e96dfd1"
   },
   "campfire.webp": {
-    "hash": "9506c70faddb4ac1",
+    "hash": "dff0aac89457b066",
     "mtimeMs": 1786681628027.8777,
-    "size": 802852
+    "size": 802852,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "01aa25c63a0fcc62"
   },
   "card-back.webp": {
-    "hash": "7d565a22d227a2d4",
+    "hash": "b0d723ede12da713",
     "mtimeMs": 1782421242044.3699,
-    "size": 2422182
+    "size": 2422182,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "044567c20868177b"
   },
   "caustic-jab.webp": {
-    "hash": "5e9b395967149eef",
-    "mtimeMs": 1786569711893.7585,
-    "size": 583688
+    "hash": "770db6e01099c7e2",
+    "mtimeMs": 1786580076655.3418,
+    "size": 583688,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "782286d2097e71e6"
   },
   "cauterize.webp": {
-    "hash": "867b3a3f7a1bc3bd",
+    "hash": "586809e39e7ad1ea",
     "mtimeMs": 1787538272406.884,
     "size": 2570733,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "6e761557fa3240b4"
   },
   "chicken-coop.webp": {
-    "hash": "4a0fa4b9dbe9e4e0",
-    "mtimeMs": 1785148536000,
-    "size": 997789
+    "hash": "ae7aa514055b6529",
+    "mtimeMs": 1786580077484.161,
+    "size": 997789,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "c2121f8e37581b3f"
   },
   "cinderbloom.webp": {
-    "hash": "c2b21f7ab5ea4e2b",
-    "mtimeMs": 1785148532000,
-    "size": 716710
+    "hash": "0a383ca12c34de71",
+    "mtimeMs": 1786580076657.7432,
+    "size": 716710,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "3f5d014897592459"
   },
   "cleanse.webp": {
-    "hash": "2c9f6900287b9341",
-    "mtimeMs": 1785148534000,
-    "size": 662754
+    "hash": "774fe11a7d136a23",
+    "mtimeMs": 1786580076660.6123,
+    "size": 662754,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "0b1983f314b166ba"
   },
   "cold-snap.webp": {
-    "hash": "515bf7bf73630d24",
-    "mtimeMs": 1785148534000,
-    "size": 1006296
+    "hash": "85597a816f87005c",
+    "mtimeMs": 1786580076663.1497,
+    "size": 1006296,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "70bfc52855a13b64"
   },
   "combustion.webp": {
-    "hash": "8b439b469a22b03f",
+    "hash": "a08ba27f5794966f",
     "mtimeMs": 1786580076666.1287,
-    "size": 791142
+    "size": 791142,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "14583a6ffa50ecee"
   },
   "companion-sanctuary.webp": {
-    "hash": "76ed71542b00690e",
+    "hash": "e1d2f47a68a91f08",
     "mtimeMs": 1782421241990.5637,
-    "size": 1033070
+    "size": 1033070,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "6950f376367b9711"
   },
   "companions-collar.webp": {
-    "hash": "5baf084b041e6de6",
+    "hash": "7176fb99daaf3c7f",
     "mtimeMs": 1786657545475.6377,
-    "size": 2440176
+    "size": 2440176,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "dc3b5e88eefae556"
   },
   "concussive-shot.webp": {
-    "hash": "a62e380eed660e80",
+    "hash": "5f13cca3e1bc14c1",
     "mtimeMs": 1787537592918.586,
     "size": 2398010,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "dc60f3211d8975e3"
   },
   "corruption-altar.webp": {
-    "hash": "60ce68bcd97eb4b4",
+    "hash": "016ec723eed77a3a",
     "mtimeMs": 1786681638610.5574,
-    "size": 759675
+    "size": 759675,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "55bfff0469f459d8"
   },
   "crafting-ascension-seal.webp": {
-    "hash": "89c0f2284ae2c65f",
+    "hash": "ebf8744c9e45e0af",
     "mtimeMs": 1782421241850,
-    "size": 383378
+    "size": 383378,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "8aa06d0f192bed69"
   },
   "crafting-discordant-dice.webp": {
-    "hash": "da011398987a782f",
+    "hash": "1ba44b3036b7efe6",
     "mtimeMs": 1782421241851.6638,
-    "size": 191862
+    "size": 191862,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "0867d689632a41c2"
   },
   "crafting-severance-maw.webp": {
-    "hash": "b8ed47a357ddf21c",
+    "hash": "2b17d020ac3ddfc5",
     "mtimeMs": 1782421241852.1143,
-    "size": 188777
+    "size": 188777,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "93565956d92d4853"
   },
   "crafting-smiths-whetstone.webp": {
-    "hash": "fbdd6d7428fb4eec",
+    "hash": "a07b06441018d27b",
     "mtimeMs": 1782421241852.3894,
-    "size": 149005
+    "size": 149005,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "54388a8f85444b61"
   },
   "crafting-sprig-of-growth.webp": {
-    "hash": "69c72b3b159d1f52",
+    "hash": "0c2aa67c51fe44fd",
     "mtimeMs": 1782421241852.911,
-    "size": 198009
+    "size": 198009,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "ec6221bb9175b476"
   },
   "crafting-voidstone.webp": {
-    "hash": "8b1ae0a1d797b27a",
+    "hash": "9d923853d549b2c1",
     "mtimeMs": 1782421241853.5815,
-    "size": 223501
+    "size": 223501,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "dd8c15f18a9456de"
   },
   "crystal-bulwark.webp": {
-    "hash": "d00890f92eeb1cc3",
+    "hash": "af0fb7b090bf70be",
     "mtimeMs": 1787540249355.7778,
     "size": 2878342,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "cc5dd097ddac6a67"
   },
   "crystal-garden.webp": {
-    "hash": "03ba8abc7b451d85",
-    "mtimeMs": 1785148534000,
-    "size": 1086791
+    "hash": "85bdcfb1377ed1e9",
+    "mtimeMs": 1786580077487.625,
+    "size": 1086791,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "0e8514748657dab8"
   },
   "culinary-arts.webp": {
-    "hash": "d4e8f75225316797",
-    "mtimeMs": 1785148536000,
-    "size": 1065755
+    "hash": "94da83eec8aa19e9",
+    "mtimeMs": 1786580077492.2722,
+    "size": 1065755,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "adc75597f25486fd"
   },
   "cutpurse-knife.webp": {
-    "hash": "0f8583a0abc330d0",
+    "hash": "8d02bd58574c28a6",
     "mtimeMs": 1786657574762.3855,
-    "size": 2119359
+    "size": 2119359,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "871814d4e8758864"
   },
   "dark-pact.webp": {
-    "hash": "a9e3133abf9c7136",
-    "mtimeMs": 1785148534000,
-    "size": 788397
+    "hash": "0faf2ea86e246c5c",
+    "mtimeMs": 1786580076668.3796,
+    "size": 788397,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "f902ddb435f303bc"
   },
   "detect-magic.webp": {
-    "hash": "1dbaa8ce26aa5612",
+    "hash": "9f2aea83eeb4f163",
     "mtimeMs": 1782421242001.2188,
-    "size": 938571
+    "size": 938571,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "15bc52e043c1b9ac"
   },
   "difficulty-1.webp": {
-    "hash": "cd0beff70ff7b3b3",
+    "hash": "6d2b3fe2712ad542",
     "mtimeMs": 1782421241881.7974,
-    "size": 935745
+    "size": 935745,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "193ac3c06051d6a1"
   },
   "difficulty-2.webp": {
-    "hash": "70992a7508f5f6f3",
+    "hash": "62c1011b22a1049a",
     "mtimeMs": 1782421241883.258,
-    "size": 951852
+    "size": 951852,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "cd959bfe5b276968"
   },
   "difficulty-3.webp": {
-    "hash": "e07b9f1a12a89e5f",
+    "hash": "c90cf44a60e48b06",
     "mtimeMs": 1782421241885.3286,
-    "size": 940620
+    "size": 940620,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "66850a7bb53a25be"
   },
   "discard-pile.webp": {
-    "hash": "1743553dd881b5b1",
+    "hash": "166a6c1d13113181",
     "mtimeMs": 1782421242051.7576,
-    "size": 1530706
+    "size": 1530706,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "b59f76c2c5a48ece"
   },
   "draw-pile.webp": {
-    "hash": "89bd018c94e72967",
+    "hash": "eed60f6d54055896",
     "mtimeMs": 1782421242055.1213,
-    "size": 1535309
+    "size": 1535309,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "4b49d1a582467909"
   },
   "druid.webp": {
-    "hash": "7b5f4ba1f90a8071",
+    "hash": "a9b61569334b7630",
     "mtimeMs": 1786841889280.3303,
-    "size": 1686083
+    "size": 1686083,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "ea93d1c24812c41f"
   },
   "earthquake.webp": {
-    "hash": "e4fac764af603c61",
-    "mtimeMs": 1786569711895.9404,
-    "size": 748110
+    "hash": "7a57bf0cbf10a8d0",
+    "mtimeMs": 1786580076669.563,
+    "size": 748110,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "60439852ed317795"
   },
   "elite-enemy.webp": {
-    "hash": "77afcfcba6a71da0",
+    "hash": "f4689ce39c9cfef0",
     "mtimeMs": 1786681634544.427,
-    "size": 573460
+    "size": 573460,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "504fde12728069a2"
   },
   "exorcism.webp": {
-    "hash": "f8af23b40dd74dd1",
+    "hash": "407303fcbc31edb2",
     "mtimeMs": 1787537567812.0146,
     "size": 3305606,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "10b03d0c1f35edc8"
   },
   "fangs.webp": {
-    "hash": "fbecfca7a6fe54d1",
-    "mtimeMs": 1785148534000,
-    "size": 717012
+    "hash": "ced6e962aba5d32b",
+    "mtimeMs": 1786580076670.6663,
+    "size": 717012,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "ee6b23cec77fe511"
   },
   "faustian-bargain.webp": {
-    "hash": "9d0345110a10cf0d",
-    "mtimeMs": 1785148534000,
-    "size": 614637
+    "hash": "55986fa881240cce",
+    "mtimeMs": 1786580076672.6877,
+    "size": 614637,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "9e39696dc69fbcee"
   },
   "fire-arrow.webp": {
-    "hash": "9e79a9c23944fc65",
-    "mtimeMs": 1785148534000,
-    "size": 634996
+    "hash": "86ca8bfc15a24a09",
+    "mtimeMs": 1786580076674.999,
+    "size": 634996,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "1db79db1cb1f4eb2"
   },
   "fire-elemental.webp": {
-    "hash": "9e6000b841643ef1",
-    "mtimeMs": 1786569711930.2466,
-    "size": 840730
+    "hash": "00d668eb26e28537",
+    "mtimeMs": 1786580076804.979,
+    "size": 840730,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "bb0ec0e6012ae6d8"
   },
   "fireball.webp": {
-    "hash": "4147b876e198313b",
-    "mtimeMs": 1785148534000,
-    "size": 718315
+    "hash": "9962002d7ccad6e4",
+    "mtimeMs": 1786580076676.529,
+    "size": 718315,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "b879f9aabb1055ee"
   },
   "fox-companion.webp": {
-    "hash": "6afabb488701f466",
+    "hash": "24869ff4eadaa75d",
     "mtimeMs": 1787538533735.866,
     "size": 2777755,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "ece58975abda74ee"
   },
   "frost-elemental.webp": {
-    "hash": "4fabfd9fb8b3e3fa",
-    "mtimeMs": 1786569711932.283,
-    "size": 859494
+    "hash": "601d738455de19fe",
+    "mtimeMs": 1786580076805.8035,
+    "size": 859494,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "0e68446eb1fd2c89"
   },
   "frost-whelp-companion.webp": {
-    "hash": "74aba7f5891c08be",
-    "mtimeMs": 1785148536000,
-    "size": 828944
+    "hash": "badb36e85ca23167",
+    "mtimeMs": 1786580076680.0596,
+    "size": 828944,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "1f5e34edf5a7fee9"
   },
   "frostbolt.webp": {
-    "hash": "3fd1d2770ca05175",
-    "mtimeMs": 1785148534000,
-    "size": 626349
+    "hash": "c7f7fb30bbd702c6",
+    "mtimeMs": 1786580076682.7854,
+    "size": 626349,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "1df7d448057b68ef"
   },
   "frozen-pocketwatch.webp": {
-    "hash": "c4fb36ee55baca4d",
+    "hash": "1fafd88c1fa43645",
     "mtimeMs": 1786657555992.0457,
-    "size": 2835590
+    "size": 2835590,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "3573c73cc8122372"
   },
   "gamblers-shot.webp": {
-    "hash": "015fa18855cd9beb",
+    "hash": "d0e98c5e9469ee8f",
     "mtimeMs": 1787537721551.9067,
     "size": 2974259,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "37755c2e5a56779c"
   },
   "gear-crossbow-astral.webp": {
-    "hash": "3788671043ef1425",
-    "mtimeMs": 1786238887924.5986,
-    "size": 2388441
+    "hash": "970a909b68ff6ea5",
+    "mtimeMs": 1786580076843.143,
+    "size": 2388441,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "ecb14c689a1d61cb"
   },
   "gear-crossbow-basic.webp": {
-    "hash": "b35956247c8de7e7",
-    "mtimeMs": 1786239038136.6265,
-    "size": 2109926
+    "hash": "2dda828b0f81bbd2",
+    "mtimeMs": 1786580076854.8105,
+    "size": 2109926,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "5134de4f67beb267"
   },
   "gear-dagger-astral.webp": {
-    "hash": "e92b427ee03d7544",
-    "mtimeMs": 1786239032823.4414,
-    "size": 2547522
+    "hash": "5c250a90b39c9815",
+    "mtimeMs": 1786580076867.0535,
+    "size": 2547522,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "d08d01dcd5a9d2d9"
   },
   "gear-dagger-basic.webp": {
-    "hash": "6c011ceeebdcb34d",
-    "mtimeMs": 1786239035572.9172,
-    "size": 1758277
+    "hash": "af6385a6946f4707",
+    "mtimeMs": 1786580076874.9092,
+    "size": 1758277,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "6455d14e1f3cea80"
   },
   "gear-double-axe-astral.webp": {
-    "hash": "52144cae1efd6785",
-    "mtimeMs": 1786239027216.7993,
-    "size": 3116615
+    "hash": "b029d27be63af33d",
+    "mtimeMs": 1786580076884.9011,
+    "size": 3116615,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "a460fac99ac7ab8c"
   },
   "gear-double-axe-basic.webp": {
-    "hash": "a676afea593b897a",
-    "mtimeMs": 1786239030020.4878,
-    "size": 2024197
+    "hash": "21f356ccfd412fda",
+    "mtimeMs": 1786580076896.45,
+    "size": 2024197,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "da7307ff937d812a"
   },
   "gear-emerald-amulet-astral.webp": {
-    "hash": "728005c77e9c80b6",
-    "mtimeMs": 1786238900314.4343,
-    "size": 3217958
+    "hash": "d56b47702b818b73",
+    "mtimeMs": 1786580076904.2483,
+    "size": 3217958,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "ef89b91927743cab"
   },
   "gear-emerald-amulet-basic.webp": {
-    "hash": "c42c221977ab660c",
-    "mtimeMs": 1786238967620.0967,
-    "size": 2987924
+    "hash": "12ce6a3a11f7139d",
+    "mtimeMs": 1786580076916.221,
+    "size": 2987924,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "fe399e24e213e69a"
   },
   "gear-emerald-ring-astral.webp": {
-    "hash": "825f54b1a2373747",
-    "mtimeMs": 1786238965057.0627,
-    "size": 2505501
+    "hash": "fe5993a55ec244c6",
+    "mtimeMs": 1786580076928.2283,
+    "size": 2505501,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "734fdf4d205ed555"
   },
   "gear-emerald-ring-basic.webp": {
-    "hash": "55b7543a086edcbc",
-    "mtimeMs": 1786238905453.3557,
-    "size": 1957882
+    "hash": "42e1f070d3561aeb",
+    "mtimeMs": 1786580076940.6074,
+    "size": 1957882,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "ccb7f34ebf44818d"
   },
   "gear-flail-astral.webp": {
-    "hash": "11e4e4415b8cfeef",
-    "mtimeMs": 1786238884879.7441,
-    "size": 2701844
+    "hash": "08d53b16597e640b",
+    "mtimeMs": 1786580076998.9683,
+    "size": 2701844,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "564784ebe903a07f"
   },
   "gear-flail-basic.webp": {
-    "hash": "b5ec654fd2a62305",
-    "mtimeMs": 1786239025119.99,
-    "size": 2732884
+    "hash": "8257500a1e233cd7",
+    "mtimeMs": 1786580077007.4204,
+    "size": 2732884,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "83f0fcaf4a71a92c"
   },
   "gear-greatsword-astral.webp": {
-    "hash": "7cd9cd2a4cd494bd",
-    "mtimeMs": 1786238879140.9385,
-    "size": 2576464
+    "hash": "1f10579ecce375e4",
+    "mtimeMs": 1786580077060.6904,
+    "size": 2576464,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "68572937dc4b6f21"
   },
   "gear-greatsword-basic.webp": {
-    "hash": "d494c41b60cdd1cf",
-    "mtimeMs": 1786239021424.536,
-    "size": 1822596
+    "hash": "038cb2bd7626059f",
+    "mtimeMs": 1786580077074.6892,
+    "size": 1822596,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "224ebd24b4571f1a"
   },
   "gear-hatchet-astral.webp": {
-    "hash": "6d8a10ba4aa59c8c",
-    "mtimeMs": 1786239015023.151,
-    "size": 3163001
+    "hash": "cf3d308e338f1fdd",
+    "mtimeMs": 1786580077086.1667,
+    "size": 3163001,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "e6aa2cdd44be85fb"
   },
   "gear-hatchet-basic.webp": {
-    "hash": "d98b43a9b01d2748",
-    "mtimeMs": 1786239016774.8677,
-    "size": 2568716
+    "hash": "5f88b1877b885f42",
+    "mtimeMs": 1786580077107.482,
+    "size": 2568716,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "93ac1e78e305f2b9"
   },
   "gear-kite-shield-astral.webp": {
-    "hash": "f66539c940b7ef88",
-    "mtimeMs": 1786239011719.9739,
-    "size": 2788268
+    "hash": "a9b88ca93f1c94bd",
+    "mtimeMs": 1786580077127.6353,
+    "size": 2788268,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "dfa79c1813c05ceb"
   },
   "gear-kite-shield-basic.webp": {
-    "hash": "5e60c401eafe4ef8",
-    "mtimeMs": 1786238946240.9795,
-    "size": 2108529
+    "hash": "b3f233fa3ecf31af",
+    "mtimeMs": 1786580077137.569,
+    "size": 2108529,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "41e5da9b62ed4153"
   },
   "gear-leather-armor-astral.webp": {
-    "hash": "12bb8f63efca29a6",
-    "mtimeMs": 1786238977640.435,
-    "size": 2754242
+    "hash": "5a50b77ecd45faaf",
+    "mtimeMs": 1786580077148.9,
+    "size": 2754242,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "d53c896be740b1af"
   },
   "gear-leather-armor-basic.webp": {
-    "hash": "a2ecd8a9115afdfc",
-    "mtimeMs": 1786238979825.62,
-    "size": 2325555
+    "hash": "409d318720470766",
+    "mtimeMs": 1786580077159.485,
+    "size": 2325555,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "d1f6ec913b60b7c7"
   },
   "gear-leather-buckler-astral.webp": {
-    "hash": "d2f91fc84693c1c9",
+    "hash": "d83c1c263cb428ab",
     "mtimeMs": 1782421241948.264,
-    "size": 183804
+    "size": 183804,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "a46fbc69823bb695"
   },
   "gear-leather-buckler-basic.webp": {
-    "hash": "b15b265e0e8c7f95",
+    "hash": "ab20dff377f59632",
     "mtimeMs": 1782421241948.5498,
-    "size": 174524
+    "size": 174524,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "43fb4f331276e4ab"
   },
   "gear-longbow-astral.webp": {
-    "hash": "ba88887298dede44",
-    "mtimeMs": 1786239004970.2087,
-    "size": 2620116
+    "hash": "820b3a230d0ab2f0",
+    "mtimeMs": 1786580077167.8445,
+    "size": 2620116,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "071962033fa853cc"
   },
   "gear-longbow-basic.webp": {
-    "hash": "8e7d9de5cf8a6821",
-    "mtimeMs": 1786239007703.449,
-    "size": 2066103
+    "hash": "33efaf8387e85a8f",
+    "mtimeMs": 1786580077179.9048,
+    "size": 2066103,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "6a65ceb9b4d7dd8d"
   },
   "gear-longsword-astral.webp": {
-    "hash": "d23e493828443e05",
-    "mtimeMs": 1786238999640.6055,
-    "size": 2404343
+    "hash": "6bd527e530fcf459",
+    "mtimeMs": 1786580077190.606,
+    "size": 2404343,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "1c3c0b99d46920ca"
   },
   "gear-longsword-basic.webp": {
-    "hash": "4489c0ecd6b4caca",
-    "mtimeMs": 1786239002404.496,
-    "size": 1953391
+    "hash": "1994a0e1ba4e6148",
+    "mtimeMs": 1786580077199.0305,
+    "size": 1953391,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "d7bb7179c62e5194"
   },
   "gear-mace-astral.webp": {
-    "hash": "80566664b1187088",
-    "mtimeMs": 1786238942537.853,
-    "size": 2611985
+    "hash": "11d3a4bba83fcdff",
+    "mtimeMs": 1786580077209.6545,
+    "size": 2611985,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "12c0f144a6725cb6"
   },
   "gear-mace-basic.webp": {
-    "hash": "f04b0aba95128dd8",
-    "mtimeMs": 1786238936156.8735,
-    "size": 2064565
+    "hash": "be144fc0a1d1ae62",
+    "mtimeMs": 1786580077219.196,
+    "size": 2064565,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "7808f92af084c993"
   },
   "gear-maul-astral.webp": {
-    "hash": "6f8525bcbb82ee8c",
-    "mtimeMs": 1786238939673.9304,
-    "size": 2864343
+    "hash": "9723c1bba5eee3fc",
+    "mtimeMs": 1786580077229.3408,
+    "size": 2864343,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "7b6cfcd63499bf43"
   },
   "gear-maul-basic.webp": {
-    "hash": "fa891fed41e5216b",
-    "mtimeMs": 1786238996257.4238,
-    "size": 1928420
+    "hash": "eaa926752b24decc",
+    "mtimeMs": 1786580077238.9045,
+    "size": 1928420,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "455b11eeae9fb28b"
   },
   "gear-plate-armor-astral.webp": {
-    "hash": "957fc74ad0acbdef",
-    "mtimeMs": 1786238970703.49,
-    "size": 3414423
+    "hash": "2d99bc4eaaf00d5a",
+    "mtimeMs": 1786580077247.772,
+    "size": 3414423,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "cfa6d4e2e159bfce"
   },
   "gear-plate-armor-basic.webp": {
-    "hash": "e995b3d3f19a438c",
-    "mtimeMs": 1786238972924.598,
-    "size": 2111277
+    "hash": "a06932e28a3808cf",
+    "mtimeMs": 1786580077255.7983,
+    "size": 2111277,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "790f62dbfec0ce1b"
   },
   "gear-quiver-astral.webp": {
-    "hash": "26bab7ee158281e5",
+    "hash": "f8341dee18472c13",
     "mtimeMs": 1782421241954.7263,
-    "size": 187290
+    "size": 187290,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "2e249987fee6c22b"
   },
   "gear-quiver-basic.webp": {
-    "hash": "3cc0e04a64cfdeb2",
+    "hash": "9535034b81096400",
     "mtimeMs": 1782421241955.2217,
-    "size": 151651
+    "size": 151651,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "f9bc5e23d47a41a6"
   },
   "gear-recurve-bow-astral.webp": {
-    "hash": "308fb7d4604092ba",
-    "mtimeMs": 1786238994336.55,
-    "size": 3332370
+    "hash": "41471d10bac3ed78",
+    "mtimeMs": 1786580077264.462,
+    "size": 3332370,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "c06fdf21774d7893"
   },
   "gear-recurve-bow-basic.webp": {
-    "hash": "b005167f769472fd",
-    "mtimeMs": 1786238928419.8015,
-    "size": 2407129
+    "hash": "da9f936ca6d06f1a",
+    "mtimeMs": 1786580077274.7678,
+    "size": 2407129,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "bfda190413274e79"
   },
   "gear-ruby-amulet-astral.webp": {
-    "hash": "67e10a838759e24b",
-    "mtimeMs": 1786238911149.4197,
-    "size": 2943651
+    "hash": "e336cbaa134b7979",
+    "mtimeMs": 1786580077283.3035,
+    "size": 2943651,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "acf2f0c3e9d31794"
   },
   "gear-ruby-amulet-basic.webp": {
-    "hash": "fda32c1e6aac5efd",
-    "mtimeMs": 1786238962366.9836,
-    "size": 2171084
+    "hash": "4bff4d40ce1ba5b5",
+    "mtimeMs": 1786580077292.4622,
+    "size": 2171084,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "0bc9af46e478f6c7"
   },
   "gear-ruby-ring-astral.webp": {
-    "hash": "f6acf55073845d6d",
-    "mtimeMs": 1786238957836.8147,
-    "size": 2811857
+    "hash": "aa043857a6a44a39",
+    "mtimeMs": 1786580077303.2107,
+    "size": 2811857,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "108ee31a5238ea3c"
   },
   "gear-ruby-ring-basic.webp": {
-    "hash": "c4c9ca3b9894f89d",
-    "mtimeMs": 1786238902950.8484,
-    "size": 2077754
+    "hash": "d8566da21b31002d",
+    "mtimeMs": 1786580077311.497,
+    "size": 2077754,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "b8f80b17b73e8847"
   },
   "gear-sapphire-amulet-astral.webp": {
-    "hash": "de598fab3c1e71bc",
-    "mtimeMs": 1786238917923.5337,
-    "size": 2530990
+    "hash": "ecdfe3dea77c30ca",
+    "mtimeMs": 1786580077321.4795,
+    "size": 2530990,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "fd8aa722f43d357b"
   },
   "gear-sapphire-amulet-basic.webp": {
-    "hash": "e6c1e454ba34560f",
-    "mtimeMs": 1786238911807.4429,
-    "size": 2004042
+    "hash": "8677af000ca6e2eb",
+    "mtimeMs": 1786580077330.435,
+    "size": 2004042,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "e8b04ce68de1c1dc"
   },
   "gear-sapphire-ring-astral.webp": {
-    "hash": "a4a24d360ea0f9f6",
-    "mtimeMs": 1786238920686.47,
-    "size": 2659053
+    "hash": "e5d74af0fb6fa1ba",
+    "mtimeMs": 1786580077340.8728,
+    "size": 2659053,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "f48b497c937836e5"
   },
   "gear-sapphire-ring-basic.webp": {
-    "hash": "0699850ea71a5215",
-    "mtimeMs": 1786238914073.059,
-    "size": 2096564
+    "hash": "de6fc6560e33a7b7",
+    "mtimeMs": 1786580077349.2815,
+    "size": 2096564,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "423b949552701b45"
   },
   "gear-shortbow-astral.webp": {
-    "hash": "e11c9cbef2bfcba0",
-    "mtimeMs": 1786238937673.8696,
-    "size": 2525923
+    "hash": "35c4f7f5554c5b7e",
+    "mtimeMs": 1786580077358.961,
+    "size": 2525923,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "9f3c75813f03f60b"
   },
   "gear-shortbow-basic.webp": {
-    "hash": "82daae35940ded0b",
-    "mtimeMs": 1786238931720.6597,
-    "size": 2083810
+    "hash": "a500dae8072c2a3d",
+    "mtimeMs": 1786580077365.7532,
+    "size": 2083810,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "b690c1df12e5755a"
   },
   "gear-shortsword-astral.webp": {
-    "hash": "76bddfe90089402b",
-    "mtimeMs": 1786238889957.0735,
-    "size": 2800436
+    "hash": "f9da0b5fd0bb1392",
+    "mtimeMs": 1786580077375.3237,
+    "size": 2800436,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "2ed0dda402d3814f"
   },
   "gear-shortsword-basic.webp": {
-    "hash": "0da0d1597920391d",
-    "mtimeMs": 1786238991454.158,
-    "size": 3197884
+    "hash": "1c0f541ac0bb44c4",
+    "mtimeMs": 1786580077386.5764,
+    "size": 3197884,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "739a2853fdb9402c"
   },
   "gear-slot-accessory.webp": {
-    "hash": "f7aaa7db9330730c",
+    "hash": "bc53b23b506a5fdf",
     "mtimeMs": 1786580077030.5251,
     "size": 2396445,
-    "settingsSig": "a71948c44793b914"
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "ed2711e620c0b8b4"
   },
   "gear-slot-body.webp": {
-    "hash": "a4d0b8fb1d231a10",
-    "mtimeMs": 1786238867645.0479,
-    "size": 2074292
+    "hash": "a31ff0dbf9418c5a",
+    "mtimeMs": 1786580077024.138,
+    "size": 2074292,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "b7f276e49290d728"
   },
   "gear-slot-trinket.webp": {
-    "hash": "604d4a6a313f1b1e",
+    "hash": "56c78ea8f56a03eb",
     "mtimeMs": 1786658591883.7168,
     "size": 2172403,
-    "settingsSig": "a71948c44793b914"
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "722934bb269ca091"
   },
   "gear-slot-weapon.webp": {
-    "hash": "9e47010266e1d847",
+    "hash": "11e80d9ebc808487",
     "mtimeMs": 1786580077039.0796,
     "size": 1894024,
-    "settingsSig": "a71948c44793b914"
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "8bd2c6ed7a769ca3"
   },
   "gear-spellbook-astral.webp": {
-    "hash": "176ca92f18c5c292",
-    "mtimeMs": 1786238986219.9282,
-    "size": 2979886
+    "hash": "dd9be36f436a77c4",
+    "mtimeMs": 1786580077395.4717,
+    "size": 2979886,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "da2846ab28c69239"
   },
   "gear-spellbook-basic.webp": {
-    "hash": "c875994bbc4309c5",
-    "mtimeMs": 1786238988889.942,
-    "size": 2226072
+    "hash": "1d95b6505833cf97",
+    "mtimeMs": 1786580077404.19,
+    "size": 2226072,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "ea58295df20df728"
   },
   "gear-staff-astral.webp": {
-    "hash": "c4df02f73bb7122e",
-    "mtimeMs": 1786238895439.9265,
-    "size": 3100681
+    "hash": "9fcce197edbe3f50",
+    "mtimeMs": 1786580077411.881,
+    "size": 3100681,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "a85f0bb7e4b2c373"
   },
   "gear-staff-basic.webp": {
-    "hash": "3a114ddcdd770b53",
-    "mtimeMs": 1786238892840.1646,
-    "size": 1921143
+    "hash": "f39a96f7108730c9",
+    "mtimeMs": 1786580077420.2964,
+    "size": 1921143,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "68c812c764fce22b"
   },
   "gear-topaz-amulet-astral.webp": {
-    "hash": "a1b533d908e57385",
-    "mtimeMs": 1786238952337.9612,
-    "size": 2605187
+    "hash": "49b867dff91b2768",
+    "mtimeMs": 1786580077428.0698,
+    "size": 2605187,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "907cb563d7f70ee9"
   },
   "gear-topaz-amulet-basic.webp": {
-    "hash": "4c2ded75a84ee772",
-    "mtimeMs": 1786238953553.75,
-    "size": 2534771
+    "hash": "cce201288ab92730",
+    "mtimeMs": 1786580077436.8306,
+    "size": 2534771,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "b73cfb6ca26fcc30"
   },
   "gear-topaz-ring-astral.webp": {
-    "hash": "c5e6c581d12d4453",
-    "mtimeMs": 1786238923554.4998,
-    "size": 2531305
+    "hash": "0d6f25533665dd73",
+    "mtimeMs": 1786580077446.5742,
+    "size": 2531305,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "89ddf91f6fb056da"
   },
   "gear-topaz-ring-basic.webp": {
-    "hash": "5a91c9e9a294f8c8",
-    "mtimeMs": 1786238949189.5671,
-    "size": 2467893
+    "hash": "650b38ec7776878d",
+    "mtimeMs": 1786580077456.2686,
+    "size": 2467893,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "b8de1a6eff8d4f5c"
   },
   "gear-wand-astral.webp": {
-    "hash": "6bb8eecbf6426cfd",
-    "mtimeMs": 1786238982971.038,
-    "size": 3075284
+    "hash": "bb0c2885b7b01061",
+    "mtimeMs": 1786580077463.5574,
+    "size": 3075284,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "003661f6dc31af8d"
   },
   "gear-wand-basic.webp": {
-    "hash": "f2e7102198c4cdd3",
-    "mtimeMs": 1786238897690.3367,
-    "size": 2500139
+    "hash": "952d5b6f67eb4a33",
+    "mtimeMs": 1786580077472.1,
+    "size": 2500139,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "1b74b1a2101342d6"
   },
   "glacial-ward.webp": {
-    "hash": "2efafe3ef72211af",
-    "mtimeMs": 1785148534000,
-    "size": 748008
+    "hash": "14a28108127ce65b",
+    "mtimeMs": 1786580076684.5222,
+    "size": 748008,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "64984c63f06c91a8"
   },
   "goblin.webp": {
-    "hash": "8ca9836c7b507214",
-    "mtimeMs": 1785148536000,
-    "size": 758776
+    "hash": "ee212a4429e26f37",
+    "mtimeMs": 1786580076807.5586,
+    "size": 758776,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "a487c0080993a9c7"
   },
   "golden-plate.webp": {
-    "hash": "c315fc0612416331",
-    "mtimeMs": 1785148534000,
-    "size": 866819
+    "hash": "738514bbcfc04485",
+    "mtimeMs": 1786580076687.0364,
+    "size": 866819,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "08a647ffa13688df"
   },
   "golden-retriever-companion.webp": {
-    "hash": "a0161e46337b7004",
-    "mtimeMs": 1785148536000,
-    "size": 921771
+    "hash": "e3c04c31c9fc7ea1",
+    "mtimeMs": 1786580076690.0662,
+    "size": 921771,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "f85d31ef86fe048a"
   },
   "grasping-vines.webp": {
-    "hash": "034966b00bee67cf",
+    "hash": "24a4c6f3ef4cc264",
     "mtimeMs": 1787538521934.9956,
     "size": 2726314,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "cd9b0ddb164b2f78"
   },
   "groves-favor.webp": {
-    "hash": "befafe950cac15e6",
+    "hash": "2f565b5c9cb552fb",
     "mtimeMs": 1786657543186.4766,
-    "size": 3012107
+    "size": 3012107,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "1d8c4cbc2512efa5"
   },
   "haste.webp": {
-    "hash": "56847c6a13494f10",
+    "hash": "a19dc8783a755e0b",
     "mtimeMs": 1787539009786.2554,
     "size": 2480268,
-    "settingsSig": "72b2c75dbbc3f1de"
+    "settingsSig": "015ff7015327230a",
+    "outputHash": "fd1fb4e4c5803997"
   },
   "heal.webp": {
-    "hash": "b858a365df47d519",
-    "mtimeMs": 1785148534000,
-    "size": 639353
+    "hash": "70d453b8180eed58",
+    "mtimeMs": 1786580076692.0798,
+    "size": 639353,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "c1aadba87958659d"
   },
   "health-potion.webp": {
-    "hash": "45bb3ee064d8ebbc",
+    "hash": "e1946c055cfcfe7f",
     "mtimeMs": 1787451405343.348,
     "size": 2228690,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "26ae1259c8b2f739"
   },
   "hemorrhage.webp": {
-    "hash": "01f792257104b021",
-    "mtimeMs": 1785148534000,
-    "size": 753628
+    "hash": "57f818a8fd878c4f",
+    "mtimeMs": 1786580076694.6248,
+    "size": 753628,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "96dbde71802935c2"
   },
   "herb-garden.webp": {
-    "hash": "f8550b48af4daa53",
-    "mtimeMs": 1785148534000,
-    "size": 1113468
+    "hash": "bdff943a5da48f10",
+    "mtimeMs": 1786580077496.2769,
+    "size": 1113468,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "a0a03da39d85708d"
   },
   "holy-radiance.webp": {
-    "hash": "5dd54277ede1c28d",
+    "hash": "649602bb53019bcd",
     "mtimeMs": 1782421241689.862,
-    "size": 813022
+    "size": 813022,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "25588d18b58bbf9e"
   },
   "homestead-wishing-well.webp": {
-    "hash": "265f34ab990f0451",
-    "mtimeMs": 1785148536000,
-    "size": 1036939
+    "hash": "20bc33f3dd0d8ea4",
+    "mtimeMs": 1786580077512.467,
+    "size": 1036939,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "1a63257f17622df2"
   },
   "hunters-lodge.webp": {
-    "hash": "3e5c5b63ac2ac748",
-    "mtimeMs": 1785148536000,
-    "size": 984897
+    "hash": "9bf6a468c92f3fc5",
+    "mtimeMs": 1786580077499.0642,
+    "size": 984897,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "d49506b7238b4cee"
   },
   "ice-shot.webp": {
-    "hash": "f7ee3efe99735e7b",
-    "mtimeMs": 1785148534000,
-    "size": 704208
+    "hash": "06ef60962d1b703a",
+    "mtimeMs": 1786580076696.5994,
+    "size": 704208,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "15ffb8513924be5e"
   },
   "icy-heart.webp": {
-    "hash": "bf2e52842d1d37f5",
+    "hash": "dab66b1fd9f90fef",
     "mtimeMs": 1786657568425.3748,
-    "size": 2483268
+    "size": 2483268,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "e3cfd1970519dd1d"
   },
   "iron-bear.webp": {
-    "hash": "be4b3f55f920159a",
-    "mtimeMs": 1785148536000,
-    "size": 708588
+    "hash": "be561e5ed11a0499",
+    "mtimeMs": 1786580076825.7876,
+    "size": 708588,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "0613fd227a2bf73e"
   },
   "ironwood-buckler.webp": {
-    "hash": "6acd8e6f5a82a5e4",
+    "hash": "3b779ad1a40b23e3",
     "mtimeMs": 1786657603432.459,
-    "size": 2414430
+    "size": 2414430,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "5eb2a27699be63e0"
   },
   "judgment.webp": {
-    "hash": "9bdd8cfab577d81d",
+    "hash": "f56ed2c0c66c67a2",
     "mtimeMs": 1787538771485.539,
     "size": 2501831,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "67971a54c7c2c012"
   },
   "kindling.webp": {
-    "hash": "8be5529e7165eceb",
-    "mtimeMs": 1785148534000,
-    "size": 838093
+    "hash": "d3b44007b6d068cb",
+    "mtimeMs": 1786580076698.3713,
+    "size": 838093,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "ba8a8d74fa65ea80"
   },
   "knight.webp": {
-    "hash": "b010cede444fb241",
-    "mtimeMs": 1767254400000,
-    "size": 2587913
+    "hash": "92a4818d8b612780",
+    "mtimeMs": 1786580077522.118,
+    "size": 2587913,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "9df663ffa3e3f52d"
   },
   "leyline-energy.webp": {
-    "hash": "c814ebc22858614b",
+    "hash": "d43ca310cc45fde0",
     "mtimeMs": 1782421242005.2546,
-    "size": 1016367
+    "size": 1016367,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "9c501975f4120f5e"
   },
   "library-owl-companion.webp": {
-    "hash": "a27308235fc34515",
-    "mtimeMs": 1785148536000,
-    "size": 1006036
+    "hash": "e3a29ed6e9f05124",
+    "mtimeMs": 1786580076702.9116,
+    "size": 1006036,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "234eb4aa55e37677"
   },
   "lightning-arrow.webp": {
-    "hash": "c1d3f51db41752c2",
+    "hash": "97be956c2717d27b",
     "mtimeMs": 1787537793022.9563,
     "size": 2528938,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "d584e0088f0f057c"
   },
   "lightning-bolt.webp": {
-    "hash": "5d217bbdb877082c",
+    "hash": "465f1571143637ab",
     "mtimeMs": 1787537771285.2402,
     "size": 2610248,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "529c3db3a831e94c"
   },
   "living-armor.webp": {
-    "hash": "7c42b0503b08cab7",
-    "mtimeMs": 1785148534000,
-    "size": 814644
+    "hash": "3d5d93c836406ac8",
+    "mtimeMs": 1786580076810.4377,
+    "size": 814644,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "5901192cc79af4d1"
   },
   "lizard-scout-companion.webp": {
-    "hash": "9aa916e2b1c2d9d3",
-    "mtimeMs": 1785148536000,
-    "size": 1003055
+    "hash": "2f19a5c0065782e8",
+    "mtimeMs": 1786580076705.0857,
+    "size": 1003055,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "e743b96ef1fab0c9"
   },
   "luck-potion.webp": {
-    "hash": "0289226c96d96dec",
+    "hash": "bdfca8f757118e18",
     "mtimeMs": 1787451446559.796,
     "size": 2934981,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "0b9c41764fa404f9"
   },
   "lucky-clover.webp": {
-    "hash": "a4945e6b525535f1",
+    "hash": "1f56965218961bf7",
     "mtimeMs": 1786657548142.4604,
-    "size": 2487145
+    "size": 2487145,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "799c9df3fe38d94a"
   },
   "mana-berries.webp": {
-    "hash": "001cbb32950e13ac",
-    "mtimeMs": 1785148534000,
-    "size": 847984
+    "hash": "ecf562ad52592081",
+    "mtimeMs": 1786580076709.0264,
+    "size": 847984,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "e4568cb2d3953254"
   },
   "mana-crystal.webp": {
-    "hash": "778b59cb285a6d19",
+    "hash": "67d4f74ad538ea35",
     "mtimeMs": 1787539054219.1208,
     "size": 2684446,
-    "settingsSig": "72b2c75dbbc3f1de"
+    "settingsSig": "015ff7015327230a",
+    "outputHash": "bf1fc0a45c91bd8f"
   },
   "mana-moth-companion.webp": {
-    "hash": "6d9cb701b4145e48",
-    "mtimeMs": 1785148536000,
-    "size": 784416
+    "hash": "38ffba20a2ac9a94",
+    "mtimeMs": 1786580076712.2363,
+    "size": 784416,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "136fbd15646456c6"
   },
   "mana-potion.webp": {
-    "hash": "319a9d0ba016b564",
+    "hash": "749583cc6e5c26cb",
     "mtimeMs": 1787451389393.8118,
     "size": 2606371,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "66547369575e24e2"
   },
   "mana-shield.webp": {
-    "hash": "2f1d60b3c0bc7551",
-    "mtimeMs": 1785148534000,
-    "size": 809674
+    "hash": "2a76c93998d83439",
+    "mtimeMs": 1786580076715.4336,
+    "size": 809674,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "a381fe37daf519d2"
   },
   "maul.webp": {
-    "hash": "fa373860486d7d24",
-    "mtimeMs": 1786569711898.197,
-    "size": 933659
+    "hash": "c245ce66e5ea3f93",
+    "mtimeMs": 1786580076716.9316,
+    "size": 933659,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "c1167071fd68d048"
   },
   "merchant-shop.webp": {
-    "hash": "c1d4fd336ff8bfbb",
+    "hash": "3373d182a02a7bb6",
     "mtimeMs": 1786681649510.2305,
-    "size": 959366
+    "size": 959366,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "d7561e490ad3c17f"
   },
   "merchants-favor.webp": {
-    "hash": "db0aba6d5800454e",
+    "hash": "7d5a335b0f1ca759",
     "mtimeMs": 1786657597025.1638,
-    "size": 2629115
+    "size": 2629115,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "5323eb57de518b0d"
   },
   "meteor.webp": {
-    "hash": "fc4446f25498bd14",
+    "hash": "b4827646b89c628b",
     "mtimeMs": 1787583836672.1257,
     "size": 3161883,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "094480dbdaee8ce2"
   },
   "meteorite.webp": {
-    "hash": "d57564c5da94bb2c",
+    "hash": "816c6660aa2f1b8f",
     "mtimeMs": 1786657594425.073,
-    "size": 3477784
+    "size": 3477784,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "4504b4b70873a9df"
   },
   "mimic.webp": {
-    "hash": "56f64c06893d88d4",
-    "mtimeMs": 1785148536000,
-    "size": 864795
+    "hash": "ac3afe63593a8fba",
+    "mtimeMs": 1786580076811.02,
+    "size": 864795,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "b909de861686da4d"
   },
   "mixed-potion.webp": {
-    "hash": "2950de15a3c984f7",
+    "hash": "549901597f1c9bf8",
     "mtimeMs": 1787451425861.8843,
     "size": 2343606,
-    "settingsSig": "2f9018cdf557f0a4"
+    "settingsSig": "47e68f2b6f8531b5",
+    "outputHash": "ef61f89bde7e1697"
   },
   "molten-bulwark.webp": {
-    "hash": "9afeb65d1f170e98",
-    "mtimeMs": 1785148534000,
-    "size": 667934
+    "hash": "3bcd117be41ad9d9",
+    "mtimeMs": 1786580076721.2341,
+    "size": 667934,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "be6b96d5f7b26aad"
   },
   "mortar-and-pestle.webp": {
-    "hash": "70b30455d00ac0db",
+    "hash": "accd78f7d7bdaf42",
     "mtimeMs": 1786657588459.7659,
-    "size": 2736817
+    "size": 2736817,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "1c1dc2463e71e9a3"
   },
   "mud-elemental.webp": {
-    "hash": "ead0ac9bfb375b08",
-    "mtimeMs": 1785148536000,
-    "size": 806958
+    "hash": "002acdfa5d24aa43",
+    "mtimeMs": 1786580076811.5579,
+    "size": 806958,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "87a9bfc47fdc04be"
   },
   "mystery-abandoned-study.webp": {
-    "hash": "2dfdabf4a71c254d",
+    "hash": "8a9e9055fdbcc3c5",
     "mtimeMs": 1786685129044.98,
-    "size": 977469
+    "size": 977469,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "dbbbf863dacfcd9c"
   },
   "mystery-ancient-altar.webp": {
-    "hash": "6ab30aaa5cf01b04",
+    "hash": "476a753d142d0900",
     "mtimeMs": 1786685131111.8586,
-    "size": 848543
+    "size": 848543,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "7ce01439221aa2dd"
   },
   "mystery-crystal-garden.webp": {
-    "hash": "1be6cad14f6026fc",
+    "hash": "a494b628dd4d728c",
     "mtimeMs": 1786685102295.4014,
-    "size": 1031144
+    "size": 1031144,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "aab37ad9c4d23651"
   },
   "mystery-crystal-geode.webp": {
-    "hash": "5e531ffa7565d443",
+    "hash": "55acd9787c4fb83d",
     "mtimeMs": 1786685122394.9993,
-    "size": 951598
+    "size": 951598,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "99baaba91bbcbb04"
   },
   "mystery-enchanted-spring.webp": {
-    "hash": "4d62da92d545bc0d",
+    "hash": "f5e0bb07be8177ce",
     "mtimeMs": 1786685139478.521,
-    "size": 984806
+    "size": 984806,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "101ae06deaccf948"
   },
   "mystery-fairy-ring.webp": {
-    "hash": "c8acd909e562af0e",
+    "hash": "591c677d2bfb5581",
     "mtimeMs": 1786685135211.6143,
-    "size": 1003922
+    "size": 1003922,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "8a443e4a98053bd5"
   },
   "mystery-forgotten-hoard.webp": {
-    "hash": "1691f2cc18bb9513",
+    "hash": "c75e19520942044b",
     "mtimeMs": 1786685097462.3086,
-    "size": 967443
+    "size": 967443,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "14699f43f6032e66"
   },
   "mystery-fungal-grotto.webp": {
-    "hash": "fb9cd4b132054e90",
+    "hash": "17b402c13b33503f",
     "mtimeMs": 1786685141528.7964,
-    "size": 1133409
+    "size": 1133409,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "b97426e9e154254f"
   },
   "mystery-hidden-cache.webp": {
-    "hash": "bd9f581f6277bfb4",
+    "hash": "8f2e8f001842ce00",
     "mtimeMs": 1786685133195.3682,
-    "size": 900957
+    "size": 900957,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "5b475a6b78250d60"
   },
   "mystery-hunters-lodge.webp": {
-    "hash": "069be825be1206c4",
+    "hash": "23b3d069411adb26",
     "mtimeMs": 1786725700423.5483,
-    "size": 984897
+    "size": 984897,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "1911b7af950dd2f7"
   },
   "mystery-mana-berries.webp": {
-    "hash": "e23d5e9e5f5acdc4",
+    "hash": "06656b7dac4f8245",
     "mtimeMs": 1786685143978.6133,
-    "size": 1098217
+    "size": 1098217,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "cbba7f61d9cb2fc3"
   },
   "mystery-medicinal-herb-garden.webp": {
-    "hash": "6cfe977de3be0158",
+    "hash": "fbae3ba7a2197139",
     "mtimeMs": 1786685113045.1604,
-    "size": 1248861
+    "size": 1248861,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "a95da15bbfc1ae72"
   },
   "mystery-meteorite-crash.webp": {
-    "hash": "2d3f295de97fa313",
+    "hash": "373945ad9518aeba",
     "mtimeMs": 1786685094016.5994,
-    "size": 777427
+    "size": 777427,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "9fdb36fbaa6694db"
   },
   "mystery-mountain-pass.webp": {
-    "hash": "22900af8662c0358",
+    "hash": "57b4cc249de00568",
     "mtimeMs": 1786685117982.2434,
-    "size": 1020550
+    "size": 1020550,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "ab7ec193d0fad17a"
   },
   "mystery-murky-pond.webp": {
-    "hash": "b2e63a6b4069dfcf",
+    "hash": "fb20dcfc7aa72b31",
     "mtimeMs": 1786685115911.4644,
-    "size": 819432
+    "size": 819432,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "6bddbec261488ff0"
   },
   "mystery-mysterious-tome.webp": {
-    "hash": "4d77175037154087",
+    "hash": "7695b2fa43fe0b94",
     "mtimeMs": 1786685126828.3652,
-    "size": 888362
+    "size": 888362,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "d502e79d87333e4d"
   },
   "mystery-necromancers-offer.webp": {
-    "hash": "0d880c3969424a7a",
+    "hash": "063bd6e2566715a4",
     "mtimeMs": 1786685099812.562,
-    "size": 883950
+    "size": 883950,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "1191bbea2458d0c0"
   },
   "mystery-overgrown-temple.webp": {
-    "hash": "19dfab2ec5fbe10f",
+    "hash": "49d45301799c8ebe",
     "mtimeMs": 1786685124645.5112,
-    "size": 1134072
+    "size": 1134072,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "a4474a944b4d174a"
   },
   "mystery-roadside-censer.webp": {
-    "hash": "0ddb2196b451fa37",
+    "hash": "f41fadaeb969e18b",
     "mtimeMs": 1786685111061.365,
-    "size": 1084603
+    "size": 1084603,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "c55bf37a027595f7"
   },
   "mystery-sacred-grove.webp": {
-    "hash": "c04d4a8f3878e142",
+    "hash": "70fd860bb3d1b7e1",
     "mtimeMs": 1786685120311.7395,
-    "size": 1214853
+    "size": 1214853,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "9ceb241d8a80260f"
   },
   "mystery-the-phoenix.webp": {
-    "hash": "2901bbfbd47b3944",
+    "hash": "186c53b13918e288",
     "mtimeMs": 1786685104428.259,
-    "size": 925092
+    "size": 925092,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "9f6306fe0c3c6480"
   },
   "mystery-the-wolf.webp": {
-    "hash": "ab73c3948eca6cc4",
+    "hash": "989ed4b2dc787331",
     "mtimeMs": 1786685106794.8872,
-    "size": 940845
+    "size": 940845,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "465e96b7312e29e8"
   },
   "mystery-wisdom-tree.webp": {
-    "hash": "cff2334c362f53a3",
+    "hash": "8d4bb51cba7cb9ab",
     "mtimeMs": 1786685137511.7317,
-    "size": 1201044
+    "size": 1201044,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "2cb3878d83954982"
   },
   "mystery.webp": {
-    "hash": "13b22dade0c99743",
+    "hash": "1df8e6bf9ca46ce6",
     "mtimeMs": 1786681618531.2366,
-    "size": 754544
+    "size": 754544,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "a018f125d300d477"
   },
   "necromancer.webp": {
-    "hash": "b28089e611f6831b",
-    "mtimeMs": 1785148536000,
-    "size": 882084
+    "hash": "11886cd6ad1bfe26",
+    "mtimeMs": 1786580076814.5044,
+    "size": 882084,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "b2b31dd302473d3b"
   },
   "normal-enemy.webp": {
-    "hash": "7f4cd606f6681b85",
+    "hash": "ed8f0b880d60acbf",
     "mtimeMs": 1786681623477.5378,
-    "size": 693728
+    "size": 693728,
+    "settingsSig": "c26f3aed294b842c",
+    "outputHash": "1c0d397dc5bd51eb"
   },
   "obsidian-hammer.webp": {
-    "hash": "78d35cabc3832c76",
+    "hash": "c41d78ed0ec1695a",
     "mtimeMs": 1786657565418.449,
-    "size": 2804360
+    "size": 2804360,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "741fa02218b606b8"
   },
   "orchard.webp": {
-    "hash": "025eb05b0df2122e",
+    "hash": "05246242b506c791",
     "mtimeMs": 1782421242006.0845,
-    "size": 1174027
+    "size": 1174027,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "b0378606d48dfa86"
   },
   "pack-tactics.webp": {
-    "hash": "91542497ed016557",
-    "mtimeMs": 1785148534000,
-    "size": 715085
+    "hash": "bd53165edf49a42d",
+    "mtimeMs": 1786580076723.946,
+    "size": 715085,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "e8c554460c10acd8"
   },
   "panacea-potion.webp": {
-    "hash": "ea68e058762d3317",
-    "mtimeMs": 1785148536000,
-    "size": 864350
+    "hash": "8bbc0118f13c896a",
+    "mtimeMs": 1786580076724.8118,
+    "size": 864350,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "992cc8446c68cdb4"
   },
   "panther-companion.webp": {
-    "hash": "e4734baaed930ddf",
-    "mtimeMs": 1785148536000,
-    "size": 892348
+    "hash": "c8ce95ed0bd0ae1b",
+    "mtimeMs": 1786580076728.3765,
+    "size": 892348,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "a0af59cefefc5671"
   },
   "parasitic-bloom.webp": {
-    "hash": "592d250e12b232a8",
+    "hash": "593b244697500aa7",
     "mtimeMs": 1786657571545.3105,
-    "size": 2401591
+    "size": 2401591,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "c33b021c66c5d31e"
   },
   "pasture.webp": {
-    "hash": "6d197cfb9b6d59ce",
-    "mtimeMs": 1785148536000,
-    "size": 1049858
+    "hash": "c60df40e2f29f21d",
+    "mtimeMs": 1786580077502.823,
+    "size": 1049858,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "f222da4d4f30f4a7"
   },
   "phoenix-companion.webp": {
-    "hash": "6ac62b54561e7b05",
-    "mtimeMs": 1785148534000,
-    "size": 793641
+    "hash": "ed13483bf8d4c9bd",
+    "mtimeMs": 1786580076730.416,
+    "size": 793641,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "f312e39cb3e673d1"
   },
   "phoenix-feather.webp": {
-    "hash": "e5c293f05420838a",
-    "mtimeMs": 1785148534000,
-    "size": 761320
+    "hash": "65d040ee75eead7f",
+    "mtimeMs": 1786580076733.4434,
+    "size": 761320,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "0d7b298d198bf9f0"
   },
   "pixie-companion.webp": {
-    "hash": "c727e469288c7cbe",
-    "mtimeMs": 1785148536000,
-    "size": 618779
+    "hash": "adc9cb2bd03d1620",
+    "mtimeMs": 1786580076737.4065,
+    "size": 618779,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "86d5b4e3bfa028d8"
   },
   "pixie-dust.webp": {
-    "hash": "73f13954158c0ede",
-    "mtimeMs": 1786569711900.3176,
-    "size": 929062
+    "hash": "76a377141099e0ec",
+    "mtimeMs": 1786580076734.8281,
+    "size": 929062,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "45970f766bf7ea2d"
   },
   "placeholder-card.webp": {
-    "hash": "58e55fe711c12f7a",
+    "hash": "8041d2e033d4d416",
     "mtimeMs": 1782421241754.0618,
-    "size": 59202
+    "size": 59202,
+    "settingsSig": "1b7544ec17e10d71",
+    "outputHash": "27644a1c72a71074"
   },
   "placeholder-difficulty.webp": {
-    "hash": "e3be5a0e84393ab5",
+    "hash": "66dc871529f35340",
     "mtimeMs": 1782421241885.471,
-    "size": 59202
+    "size": 59202,
+    "settingsSig": "d6af60201094d49b",
+    "outputHash": "b1bbfe44a8f8cf47"
   },
   "placeholder-enemy.webp": {
-    "hash": "e3be5a0e84393ab5",
+    "hash": "66dc871529f35340",
     "mtimeMs": 1782421241913.4238,
-    "size": 59202
+    "size": 59202,
+    "settingsSig": "d6af60201094d49b",
+    "outputHash": "b1bbfe44a8f8cf47"
   },
   "plague-doctor.webp": {
-    "hash": "d0e8bae3e19b4c5d",
-    "mtimeMs": 1785148536000,
-    "size": 746735
+    "hash": "5162c81c10b805d0",
+    "mtimeMs": 1786580076815.9805,
+    "size": 746735,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "6b8403a09b3ab2df"
   },
   "plague-doctors-mask.webp": {
-    "hash": "1d557b747d97c5ad",
+    "hash": "72c16762f11d830c",
     "mtimeMs": 1786657582324.9238,
-    "size": 2664805
+    "size": 2664805,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "8f1f72e3fd8b2f45"
   },
   "plate-mail.webp": {
-    "hash": "ce98c4132a687121",
+    "hash": "30c6e68a6c5b8940",
     "mtimeMs": 1787451355148.7139,
     "size": 2734839,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "df8bfed6deb4562d"
   },
   "pointer-c-shaded.webp": {
-    "hash": "1e645e5caeb4d9c8",
+    "hash": "0b03d9857c732621",
     "mtimeMs": 1782421242055.2048,
-    "size": 1082
+    "size": 1082,
+    "settingsSig": "e2508c2f450b72d4",
+    "outputHash": "15a40eece7de9de3"
   },
   "poison-dagger.webp": {
-    "hash": "cae5fdf4b2b8f306",
-    "mtimeMs": 1785148534000,
-    "size": 589667
+    "hash": "1207e9408a4c3413",
+    "mtimeMs": 1786580076739.2603,
+    "size": 589667,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "d1a1bceda7284826"
   },
   "pounce.webp": {
-    "hash": "01a94c0af80d2a30",
-    "mtimeMs": 1786569711903.7783,
-    "size": 2549075
+    "hash": "e4bcc296ccbcaaab",
+    "mtimeMs": 1786580076745.6477,
+    "size": 2549075,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "4bb7d1ac2f06a4d4"
   },
   "prayer.webp": {
-    "hash": "3dee196dcf827e4c",
+    "hash": "3d440b5c3e755ded",
     "mtimeMs": 1787539071885.7053,
     "size": 2858321,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "7daebd1f8c1e4b39"
   },
   "predators-focus.webp": {
-    "hash": "c0666edd03123625",
-    "mtimeMs": 1786569711906.3884,
-    "size": 682950
+    "hash": "239632efb3a3c0ef",
+    "mtimeMs": 1786580076746.8247,
+    "size": 682950,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "28a34d8aeb6f6ef1"
   },
   "ranger.webp": {
-    "hash": "a6c141463d9ab918",
-    "mtimeMs": 1785148534000,
-    "size": 800266
+    "hash": "1b04c79c3d66747d",
+    "mtimeMs": 1786580077526.7966,
+    "size": 800266,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "6d29938ef21f8691"
   },
   "ray-of-frost.webp": {
-    "hash": "bb90b6d95e08fe83",
+    "hash": "3eaa688b7cb8376e",
     "mtimeMs": 1786580076749.114,
-    "size": 732924
+    "size": 732924,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "019971c5b1c52ab5"
   },
   "rend.webp": {
-    "hash": "73eba6a5a928b882",
-    "mtimeMs": 1786569711909.1494,
-    "size": 693013
+    "hash": "5846076c4824a39f",
+    "mtimeMs": 1786580076750.677,
+    "size": 693013,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "d38a00bb48fe7329"
   },
   "resonant-chimes.webp": {
-    "hash": "53053cc81b2ae510",
+    "hash": "fa3ff804e5f391f8",
     "mtimeMs": 1786657539109.1182,
-    "size": 2937999
+    "size": 2937999,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "1c27013c6d552683"
   },
   "resource-crystal.webp": {
-    "hash": "e8508760012c6106",
+    "hash": "0c23b6d7ea6887c4",
     "mtimeMs": 1786941563776.1865,
-    "size": 1519726
+    "size": 1519726,
+    "settingsSig": "063cefa3f9b8b585",
+    "outputHash": "04923884c247dca0"
   },
   "resource-food.webp": {
-    "hash": "edbddfd1b80ff8bd",
+    "hash": "79f7e0816a75e063",
     "mtimeMs": 1786941563778.108,
-    "size": 1383539
+    "size": 1383539,
+    "settingsSig": "063cefa3f9b8b585",
+    "outputHash": "b1e5fe002948d052"
   },
   "resource-gold.webp": {
-    "hash": "34a819b770c1a28a",
+    "hash": "28b61823a76af258",
     "mtimeMs": 1786941563780.0295,
-    "size": 1638595
+    "size": 1638595,
+    "settingsSig": "063cefa3f9b8b585",
+    "outputHash": "6c0419089a01ae51"
   },
   "resource-herbs.webp": {
-    "hash": "ca1359dfc261593b",
+    "hash": "24909d943491de83",
     "mtimeMs": 1786941563781.6482,
-    "size": 1156444
+    "size": 1156444,
+    "settingsSig": "063cefa3f9b8b585",
+    "outputHash": "4d4dd0901e6f49d3"
   },
   "resource-hide.webp": {
-    "hash": "10848ea91f5b0ec4",
+    "hash": "e5048336c3e73f47",
     "mtimeMs": 1786941563783.505,
-    "size": 1479743
+    "size": 1479743,
+    "settingsSig": "063cefa3f9b8b585",
+    "outputHash": "d082d4d08ca745bf"
   },
   "resource-iron.webp": {
-    "hash": "3212febc12d2e86e",
+    "hash": "d7973bbe0f713253",
     "mtimeMs": 1786941563785.0857,
-    "size": 1305984
+    "size": 1305984,
+    "settingsSig": "063cefa3f9b8b585",
+    "outputHash": "3c9d949ff3053363"
   },
   "resource-stone.webp": {
-    "hash": "5aa8af3939df8834",
+    "hash": "2e6d58f728e3cefc",
     "mtimeMs": 1786941563786.7766,
-    "size": 1502078
+    "size": 1502078,
+    "settingsSig": "063cefa3f9b8b585",
+    "outputHash": "8632017ab2a8c1f5"
   },
   "resource-wood.webp": {
-    "hash": "82a12d1538b34a26",
+    "hash": "df3ad72b9ca4e537",
     "mtimeMs": 1786941563788.6296,
-    "size": 1571817
+    "size": 1571817,
+    "settingsSig": "063cefa3f9b8b585",
+    "outputHash": "c6c68c4bc6f4a7c5"
   },
   "risen-skeleton-companion.webp": {
-    "hash": "c34faab1846ded8d",
-    "mtimeMs": 1786569711926.069,
-    "size": 790200
+    "hash": "f1af93dcd32e9617",
+    "mtimeMs": 1786580076751.771,
+    "size": 790200,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "253f39b42ecdd69e"
   },
   "rogue.webp": {
-    "hash": "c0c130c0e86d9b86",
-    "mtimeMs": 1785148536000,
-    "size": 939994
+    "hash": "4327d180e85bf05a",
+    "mtimeMs": 1786580077527.9856,
+    "size": 939994,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "9383c538344d4cb6"
   },
   "roll-the-dice.webp": {
-    "hash": "07f1a90069ece199",
+    "hash": "3faefbdf38ca13a7",
     "mtimeMs": 1787539085085.839,
     "size": 3033651,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "9229b5e176411bd1"
   },
   "runesmiths-workshop.webp": {
-    "hash": "bda96503e3b4f320",
-    "mtimeMs": 1785148536000,
-    "size": 1044062
+    "hash": "6d4ef2f808eef737",
+    "mtimeMs": 1786580077506.532,
+    "size": 1044062,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "1fd360046ffc5d09"
   },
   "runic-quill.webp": {
-    "hash": "5a96f3d0f1132ae6",
+    "hash": "cea1364753122914",
     "mtimeMs": 1786657579258.019,
-    "size": 2309251
+    "size": 2309251,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "597e526f85bf9657"
   },
   "sanctified-plate.webp": {
-    "hash": "84798ce3dbdf736f",
+    "hash": "bae6507b8af98d43",
     "mtimeMs": 1787539440919.15,
     "size": 2774553,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "93fd695dfeb5533d"
   },
   "sap-arrow.webp": {
-    "hash": "440d117bf044de5e",
-    "mtimeMs": 1785148534000,
-    "size": 719303
+    "hash": "053b719ea46e91ad",
+    "mtimeMs": 1786580076754.1282,
+    "size": 719303,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "32adb0c7ce7337bf"
   },
   "serrated-arrowhead.webp": {
-    "hash": "d62423b44a1fd677",
+    "hash": "2c6f855e29ba5986",
     "mtimeMs": 1787539379553.6582,
     "size": 1854236,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "970a49a9c0874c92"
   },
   "serrated-edge.webp": {
-    "hash": "fc05a6ae34625fec",
-    "mtimeMs": 1785148534000,
-    "size": 489139
+    "hash": "dd3f34a47d7d2f14",
+    "mtimeMs": 1786580076756.7249,
+    "size": 489139,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "d2be5c2bd942b410"
   },
   "shadowstep.webp": {
-    "hash": "0f43c1af256106cd",
-    "mtimeMs": 1786569711911.2825,
-    "size": 845406
+    "hash": "ca9a94d3c5be6a6f",
+    "mtimeMs": 1786580076757.5747,
+    "size": 845406,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "fc349fbbb3dbab52"
   },
   "shield-bash.webp": {
-    "hash": "45d4b02399231a40",
-    "mtimeMs": 1785148534000,
-    "size": 744187
+    "hash": "46acdbd7a7bc4fe4",
+    "mtimeMs": 1786580076759.546,
+    "size": 744187,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "bc7ebaca6397a719"
   },
   "shield-scarab-companion.webp": {
-    "hash": "ead780dc333417c0",
-    "mtimeMs": 1785148534000,
-    "size": 847506
+    "hash": "a5824662ecb88411",
+    "mtimeMs": 1786580076762.3787,
+    "size": 847506,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "e4548e5c45d9d313"
   },
   "sin-eaters-lantern.webp": {
-    "hash": "dbd319b8e9b76d90",
+    "hash": "728e3bcf4c9898ef",
     "mtimeMs": 1786657600209.198,
-    "size": 2365128
+    "size": 2365128,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "c26c05186c2d5816"
   },
   "skeleton.webp": {
-    "hash": "164f5d73b680055f",
-    "mtimeMs": 1785148534000,
-    "size": 701116
+    "hash": "5b69ae31ff440405",
+    "mtimeMs": 1786580076817.0168,
+    "size": 701116,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "56134d7635eeeabf"
   },
   "slash.webp": {
-    "hash": "3f7968c334118024",
-    "mtimeMs": 1785148534000,
-    "size": 572601
+    "hash": "688a9c575d6a3844",
+    "mtimeMs": 1786580076764.1794,
+    "size": 572601,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "c9b25538af51efa1"
   },
   "slime.webp": {
-    "hash": "198f3c5ec5d833ec",
-    "mtimeMs": 1786569711934.7393,
-    "size": 950957
+    "hash": "b980896a42de2d55",
+    "mtimeMs": 1786580076817.7114,
+    "size": 950957,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "cde4d63c917013b6"
   },
   "smelling-salts.webp": {
-    "hash": "f57fb82c091dc6a0",
+    "hash": "72bf41c27f283671",
     "mtimeMs": 1787451451776.2642,
     "size": 3244560,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "5fd6f65e97926edb"
   },
   "smite.webp": {
-    "hash": "d6531c9a1d111731",
-    "mtimeMs": 1785148534000,
-    "size": 740366
+    "hash": "933f85de0837e1bd",
+    "mtimeMs": 1786580076772.1003,
+    "size": 740366,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "0138e57404a1aec9"
   },
   "smugglers-map.webp": {
-    "hash": "ecd9007b2e37ea0d",
+    "hash": "694e1487de3540f2",
     "mtimeMs": 1786657556753.5144,
-    "size": 3018583
+    "size": 3018583,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "5c528e4fe475b513"
   },
   "sniff-out.webp": {
-    "hash": "4a573dcaa913a439",
-    "mtimeMs": 1786569711913.3904,
-    "size": 796535
+    "hash": "c4650357889024f1",
+    "mtimeMs": 1786580076775.612,
+    "size": 796535,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "f692c68e006556ee"
   },
   "spiked-shield.webp": {
-    "hash": "a68793e870856959",
-    "mtimeMs": 1785148534000,
-    "size": 878229
+    "hash": "e49db82e8300dbfa",
+    "mtimeMs": 1786580076780.3557,
+    "size": 878229,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "d7dcd4bd17fa924f"
   },
   "stab.webp": {
-    "hash": "0780736111da3e6d",
-    "mtimeMs": 1785148534000,
-    "size": 608332
+    "hash": "fbdeca8c0581c64e",
+    "mtimeMs": 1786580076782.1843,
+    "size": 608332,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "ee3ed97114c00ed1"
   },
   "stargaze.webp": {
-    "hash": "4bdffd64418ec296",
+    "hash": "9c961bbb80ca66cc",
     "mtimeMs": 1786580076783.4543,
-    "size": 841111
+    "size": 841111,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "997cb0d2b7445646"
   },
   "steal.webp": {
-    "hash": "533bf47a06f2c7aa",
-    "mtimeMs": 1785148534000,
-    "size": 686685
+    "hash": "49f8e471247afb99",
+    "mtimeMs": 1786580076785.4443,
+    "size": 686685,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "18aedb37bc577fd9"
   },
   "stoneskin-potion.webp": {
-    "hash": "dd932cc4ad391fae",
-    "mtimeMs": 1785148534000,
-    "size": 853567
+    "hash": "bcb7d4d04593afa3",
+    "mtimeMs": 1786580076788.2163,
+    "size": 853567,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "16f4626e9f3c29cd"
   },
   "sunburst.webp": {
-    "hash": "dad54a591337c513",
-    "mtimeMs": 1785148536000,
-    "size": 984648
+    "hash": "96a147b23a8c6a30",
+    "mtimeMs": 1786580076789.5134,
+    "size": 984648,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "50513638c1a8ae5d"
   },
   "sunder.webp": {
-    "hash": "19820799cd549bf6",
-    "mtimeMs": 1786569711917.8616,
-    "size": 730549
+    "hash": "b276eb2b04e73012",
+    "mtimeMs": 1786580076790.5042,
+    "size": 730549,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "7efc61d26435cdd2"
   },
   "sundering-charm.webp": {
-    "hash": "73816757ab039fa9",
+    "hash": "38cb4945a4b2c44d",
     "mtimeMs": 1786657534054.0195,
-    "size": 2527551
+    "size": 2527551,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "0c3dc045453aa58a"
   },
   "talent-archery.webp": {
-    "hash": "dd475932e4a777ea",
+    "hash": "82b66ebfd1f4856e",
     "mtimeMs": 1786771352271.2288,
-    "size": 2307698
+    "size": 2307698,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "f3fe885db6439c44"
   },
   "talent-armor.webp": {
-    "hash": "446fd4e48374d548",
+    "hash": "f28375cbf99e4053",
     "mtimeMs": 1786771380237.639,
-    "size": 2111367
+    "size": 2111367,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "58e05a4c1584ee5c"
   },
   "talent-bleed.webp": {
-    "hash": "d3f10e04b6631a25",
+    "hash": "4b1383ed00750421",
     "mtimeMs": 1786769589837.204,
-    "size": 2079352
+    "size": 2079352,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "f5394ea620c001c9"
   },
   "talent-block.webp": {
-    "hash": "ac57492e52c23c91",
+    "hash": "8c5ad2118f583838",
     "mtimeMs": 1786769583220.921,
-    "size": 2031930
+    "size": 2031930,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "a44e71309db81d75"
   },
   "talent-burn.webp": {
-    "hash": "552502e4e1d8749c",
+    "hash": "9d7704ef078e5a9b",
     "mtimeMs": 1786769608320.566,
-    "size": 2150975
+    "size": 2150975,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "cb9698ca8f681f47"
   },
   "talent-companion.webp": {
-    "hash": "5219ef1402770f44",
+    "hash": "696b96db5a7c8222",
     "mtimeMs": 1786771341939.9736,
-    "size": 2036734
+    "size": 2036734,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "11b3e9797121fe56"
   },
   "talent-consume.webp": {
-    "hash": "2a8568a3b32409aa",
+    "hash": "6ba87c84836b0b86",
     "mtimeMs": 1786771361143.3958,
-    "size": 2244836
+    "size": 2244836,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "a36cc9df934c055f"
   },
   "talent-forge.webp": {
-    "hash": "e41704204c5e3a82",
+    "hash": "dac34ef774a07c86",
     "mtimeMs": 1786770182472.311,
-    "size": 2198312
+    "size": 2198312,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "1f40a36d5d9cc70c"
   },
   "talent-freeze.webp": {
-    "hash": "cdab7d1b5742125a",
+    "hash": "dfeccd20af69d2d6",
     "mtimeMs": 1786769602703.4255,
-    "size": 2140476
+    "size": 2140476,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "73429df482a0a4cb"
   },
   "talent-gold.webp": {
-    "hash": "03049a734493665a",
+    "hash": "d7470959d9dd80c2",
     "mtimeMs": 1786769540553.417,
-    "size": 2157384
+    "size": 2157384,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "550c255c0451aabe"
   },
   "talent-health.webp": {
-    "hash": "7b63ad5157f03769",
+    "hash": "edecd056d7f67eaf",
     "mtimeMs": 1786771355723.1584,
-    "size": 1975817
+    "size": 1975817,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "79a101fa4a4db070"
   },
   "talent-holy.webp": {
-    "hash": "bfc323397083f88c",
+    "hash": "1a8af488fec6c35d",
     "mtimeMs": 1786769596420.2632,
-    "size": 2146042
+    "size": 2146042,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "f569c98fd404973c"
   },
   "talent-leech.webp": {
-    "hash": "ad88fdcc98c94c40",
+    "hash": "8425a46938615eca",
     "mtimeMs": 1786769505809.0208,
-    "size": 1923064
+    "size": 1923064,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "7bd953c13ce7a4ac"
   },
   "talent-mana.webp": {
-    "hash": "8aae56a380515c18",
+    "hash": "48e8fe022f09241f",
     "mtimeMs": 1786769533110.4707,
-    "size": 2151305
+    "size": 2151305,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "a764934c1b281eb3"
   },
   "talent-nature.webp": {
-    "hash": "c1201fa80352bce9",
+    "hash": "afc3510fd31247f0",
     "mtimeMs": 1786769561826.6697,
-    "size": 2155536
+    "size": 2155536,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "cae9eaf177c637da"
   },
   "talent-physical.webp": {
-    "hash": "01ecd2787fa5f873",
+    "hash": "d28fd5ef7186a006",
     "mtimeMs": 1786769495827.4717,
-    "size": 1823511
+    "size": 1823511,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "30ea537b7e963d84"
   },
   "talent-poison.webp": {
-    "hash": "ea15518ded4f8c16",
+    "hash": "c830b1c53c56cb1b",
     "mtimeMs": 1786769576236.8184,
-    "size": 2227764
+    "size": 2227764,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "4c6d38d4178b5f78"
   },
   "talent-stun.webp": {
-    "hash": "8d17ee126fefec3c",
+    "hash": "0e0c36fb27655b87",
     "mtimeMs": 1786769548669.9343,
-    "size": 2170729
+    "size": 2170729,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "4701b47a3c8295e4"
   },
   "talent-wish.webp": {
-    "hash": "53270651122e8342",
+    "hash": "64d6cfbc4e3e9e69",
     "mtimeMs": 1786771375254.857,
-    "size": 2230330
+    "size": 2230330,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "70cac45c32cad25d"
   },
   "tattered-pages.webp": {
-    "hash": "f99e3d9c94750baa",
+    "hash": "bde2d811700ccfa4",
     "mtimeMs": 1786657606443.2188,
-    "size": 3243957
+    "size": 3243957,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "ef42b8ba36da8df1"
   },
   "the-blight-treant.webp": {
-    "hash": "19f7e7aa8322664c",
-    "mtimeMs": 1785148536000,
-    "size": 772472
+    "hash": "c2d12783ef968746",
+    "mtimeMs": 1786580076819.3157,
+    "size": 772472,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "e32c0f9860a36e19"
   },
   "the-campaign.webp": {
-    "hash": "e55f624960492720",
-    "mtimeMs": 1785148534000,
-    "size": 909418
+    "hash": "b24d8de3b2915b21",
+    "mtimeMs": 1786580076828.593,
+    "size": 909418,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "c43f95c61220143e"
   },
   "the-forge-golem.webp": {
-    "hash": "47bfb4cec61184e2",
-    "mtimeMs": 1785148536000,
-    "size": 717249
+    "hash": "821e03fb08c96598",
+    "mtimeMs": 1786580076820.955,
+    "size": 717249,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "58132859f77db041"
   },
   "the-frostwarden.webp": {
-    "hash": "cf3cf9f0e334dac3",
-    "mtimeMs": 1785148536000,
-    "size": 769113
+    "hash": "1490cc066af5d116",
+    "mtimeMs": 1786580076824.3743,
+    "size": 769113,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "cebbcb03ba6af4d5"
   },
   "the-labyrinth.webp": {
-    "hash": "e4e1a0e543abaf90",
-    "mtimeMs": 1785148536000,
-    "size": 924669
+    "hash": "fd786a9efa6c1ae9",
+    "mtimeMs": 1786580076832.5562,
+    "size": 924669,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "af99f6b0f88a8a03"
   },
   "thorn-mail.webp": {
-    "hash": "99e75873cf05fe51",
-    "mtimeMs": 1785148534000,
-    "size": 717810
+    "hash": "741619df5c06d40b",
+    "mtimeMs": 1786580076792.7937,
+    "size": 717810,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "fff81ec0d8a4d2d2"
   },
   "thunderstone.webp": {
-    "hash": "e63e5367687ea134",
+    "hash": "22b87718b8b943e5",
     "mtimeMs": 1786657550842.655,
-    "size": 2619655
+    "size": 2619655,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "1d66585c63d0e8b5"
   },
   "tithe.webp": {
-    "hash": "f015d99401dc46e8",
-    "mtimeMs": 1785148534000,
-    "size": 708130
+    "hash": "70a7363c0fc810c1",
+    "mtimeMs": 1786580076795.69,
+    "size": 708130,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "7413bd3780be4a19"
   },
   "vanguards-crest.webp": {
-    "hash": "ba02c3505a3c7107",
+    "hash": "55cf470f48f925e1",
     "mtimeMs": 1786657563291.791,
-    "size": 3175515
+    "size": 3175515,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "7b90ae10c2f7713b"
   },
   "venom-arrow.webp": {
-    "hash": "198c404ec154e765",
-    "mtimeMs": 1785148534000,
-    "size": 702155
+    "hash": "e4dfbb16c4991c5e",
+    "mtimeMs": 1786580076797.9814,
+    "size": 702155,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "6e7b0ff5e928d00a"
   },
   "venom-fangs.webp": {
-    "hash": "2a67aa5cef5ebebd",
-    "mtimeMs": 1785148534000,
-    "size": 817908
+    "hash": "7397f169c7d6d780",
+    "mtimeMs": 1786580076800.4246,
+    "size": 817908,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "9b5b95e16599970a"
   },
   "warlock.webp": {
-    "hash": "0ee852b983d65386",
-    "mtimeMs": 1785148536000,
-    "size": 926889
+    "hash": "d9e03b892c87ddbd",
+    "mtimeMs": 1786580077531.3801,
+    "size": 926889,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "056934393b1df694"
   },
   "wheat-field.webp": {
-    "hash": "6bff219db0439774",
-    "mtimeMs": 1785148536000,
-    "size": 979068
+    "hash": "277a0c613ef783c2",
+    "mtimeMs": 1786580077509.551,
+    "size": 979068,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "9603b650f9bcfe33"
   },
   "wildcard.webp": {
-    "hash": "1863a529fdbddf60",
+    "hash": "6d9595ea9006d87e",
     "mtimeMs": 1786834580890.587,
-    "size": 2664290
+    "size": 2664290,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "1cde2fd9c881e26e"
   },
   "wildwood-draft.webp": {
-    "hash": "46502563d2c383fa",
+    "hash": "afc87e05e424d104",
     "mtimeMs": 1786678122970.236,
-    "size": 2158412
+    "size": 2158412,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "d980c96be19cc17b"
   },
   "will-o-wisp-companion.webp": {
-    "hash": "5e07e47a38ff4aaa",
+    "hash": "b82b26b977ada3f4",
     "mtimeMs": 1787539512055.1826,
     "size": 2601862,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "4e6c1cccb8f19d9d"
   },
   "wish.webp": {
-    "hash": "23565e61f1d90fd9",
+    "hash": "962e4e41b68c7e17",
     "mtimeMs": 1787539493901.706,
     "size": 3070365,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "d0c499bb61ad973c"
   },
   "wishing-potion.webp": {
-    "hash": "7ce0a46abcefe88e",
+    "hash": "350dd84d7410d119",
     "mtimeMs": 1787451442733.0427,
     "size": 2731620,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "fa130f570fa9fe76"
   },
   "wishing-well-coin.webp": {
-    "hash": "562fa1c636d62c69",
+    "hash": "d48e37c9160e5faa",
     "mtimeMs": 1786657585242.074,
-    "size": 2341699
+    "size": 2341699,
+    "settingsSig": "f0323ec9e9ab055f",
+    "outputHash": "7def5a39a5c61343"
   },
   "wishing-well.webp": {
-    "hash": "4618e07240a69200",
+    "hash": "e7a65570744efd6c",
     "mtimeMs": 1787539539920.2253,
     "size": 2891326,
-    "settingsSig": "b31ec6abf99f41a7"
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "14f2e7edf8a6e0a8"
   },
   "wizard.webp": {
-    "hash": "e80ef0b6da4b0888",
-    "mtimeMs": 1785148536000,
-    "size": 848119
+    "hash": "0003ffb5914fe52f",
+    "mtimeMs": 1786580077532.3088,
+    "size": 848119,
+    "settingsSig": "ac047d7ec6c5e9a2",
+    "outputHash": "d3a53d2683a46bc2"
   },
   "wolf-companion.webp": {
-    "hash": "604e60368ef43011",
-    "mtimeMs": 1785148536000,
-    "size": 953213
+    "hash": "c34c28faecabf1f8",
+    "mtimeMs": 1786580076803.5686,
+    "size": 953213,
+    "settingsSig": "85c45afce5d9b270",
+    "outputHash": "1673166ea133524c"
   },
   "wool-tailoring.webp": {
-    "hash": "20106a866346dd9c",
-    "mtimeMs": 1785148536000,
-    "size": 1024135
+    "hash": "6ddf87bb42fadc63",
+    "mtimeMs": 1786580077515.0562,
+    "size": 1024135,
+    "settingsSig": "b604f709ec5e1b26",
+    "outputHash": "1fe58e6d2380fdb5"
   }
 }

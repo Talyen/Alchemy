@@ -10,6 +10,7 @@ import {
   processManifestEntries,
   removeOrphanOutputs,
   resolveSourceHash,
+  withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
@@ -21,7 +22,7 @@ const manifestPath = path.join(outputDir, ".asset-hashes.json");
 const MANIFEST_BASENAME = ".asset-hashes.json";
 
 /** Bump when sharp pipeline settings, hash inputs, or manifest entry shape change. */
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const TRANSFORM_CONCURRENCY = 6;
 
 const gearAssetWidth = 420;
@@ -135,25 +136,16 @@ function artTransformSettings({ width, quality }) {
 async function optimizeAsset(asset, storedEntry) {
   const sourcePath = path.join(sourceDir, asset.source);
   const outputPath = path.join(outputDir, asset.target);
-
-  let sourceEntry;
-  try {
-    sourceEntry = await resolveSourceHash(
-      sourcePath,
-      artTransformSettings({ width: asset.width, quality: asset.quality }),
-      SCHEMA_VERSION,
-      storedEntry,
-    );
-  } catch (error) {
-    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
-      return { message: `${asset.target} missing source`, hash: null, missing: true };
-    }
-    throw error;
-  }
+  const sourceEntry = await resolveSourceHash(
+    sourcePath,
+    artTransformSettings({ width: asset.width, quality: asset.quality }),
+    SCHEMA_VERSION,
+    storedEntry,
+  );
 
   const isFresh = await isOutputFresh(outputPath, storedEntry, sourceEntry.hash);
   if (isFresh) {
-    return { message: `${asset.target} already up to date`, entry: sourceEntry, missing: false };
+    return { message: `${asset.target} already up to date`, entry: storedEntry };
   }
 
   await sharp(sourcePath)
@@ -161,7 +153,7 @@ async function optimizeAsset(asset, storedEntry) {
     .webp({ quality: asset.quality, alphaQuality: 90, effort: 6 })
     .toFile(outputPath);
 
-  return { message: `${asset.target} optimized`, entry: sourceEntry, missing: false };
+  return { message: `${asset.target} optimized`, entry: await withOutputHash(sourceEntry, outputPath) };
 }
 
 export async function optimizeAssets() {
@@ -179,25 +171,18 @@ export async function optimizeAssets() {
     processEntry: optimizeAsset,
   });
 
-  const missing = results.filter((result) => result.missing);
-  for (const result of missing) {
-    console.error(`Missing art source for ${result.item.target}: ${result.item.source}`);
-  }
-
-  if (missing.length === 0) {
-    const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {
-      manifestBasename: MANIFEST_BASENAME,
-      label: "optimized asset",
-    });
-    if (removed > 0) {
-      console.log(`Removed ${removed} orphan optimized assets.`);
-    }
+  const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {
+    manifestBasename: MANIFEST_BASENAME,
+    label: "optimized asset",
+  });
+  if (removed > 0) {
+    console.log(`Removed ${removed} orphan optimized assets.`);
   }
 
   console.log(
     `Optimized ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
   );
-  return { ok: missing.length === 0, missing };
+  return { ok: true };
 }
 
 if (isMainModule(import.meta.url)) {

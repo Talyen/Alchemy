@@ -23,7 +23,7 @@ export async function prepareAssets() {
   const pipelineFailed = (result) => result.status === "rejected" || !result.value.ok;
 
   if (pipelineFailed(artResult)) {
-    failures.push("Art optimization failed (see missing-source errors above).");
+    failures.push("Art optimization failed.");
   }
   if (pipelineFailed(soundsResult)) failures.push("Sound optimization failed.");
   if (pipelineFailed(musicResult)) failures.push("Music optimization failed.");

@@ -6,10 +6,12 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   computeContentHash,
+  computeOutputHash,
   isOutputFresh,
   loadManifest,
   processManifestEntries,
   resolveSourceHash,
+  withOutputHash,
   writeManifestIfChanged,
 } from "../../scripts/lib/asset-manifest-cache.mjs";
 import type { ManifestEntry } from "../../scripts/lib/asset-manifest-cache.mjs";
@@ -123,11 +125,30 @@ describe("asset-manifest-cache", () => {
     const outputPath = path.join(dir, "out.webp");
     await writeFile(outputPath, "out");
 
-    expect(await isOutputFresh(outputPath, { hash: "abc", mtimeMs: 1, size: 1 }, "abc")).toBe(true);
-    expect(await isOutputFresh(outputPath, { hash: "abc", mtimeMs: 1, size: 1 }, "zzz")).toBe(false);
-    expect(await isOutputFresh(path.join(dir, "missing.webp"), { hash: "abc", mtimeMs: 1, size: 1 }, "abc")).toBe(
-      false,
-    );
+    const outputHash = await computeOutputHash(outputPath);
+    const entry = { hash: "abc", mtimeMs: 1, size: 1, outputHash };
+    expect(await isOutputFresh(outputPath, entry, "abc")).toBe(true);
+    expect(await isOutputFresh(outputPath, entry, "zzz")).toBe(false);
+    expect(await isOutputFresh(path.join(dir, "missing.webp"), entry, "abc")).toBe(false);
+  });
+
+  it("rejects a changed output even when its source fingerprint still matches", async () => {
+    const dir = await makeTempDir();
+    const outputPath = path.join(dir, "out.webp");
+    await writeFile(outputPath, "expected-output");
+    const entry = await withOutputHash({ hash: "source", mtimeMs: 1, size: 1 }, outputPath);
+
+    await writeFile(outputPath, "tampered-output");
+
+    expect(await isOutputFresh(outputPath, entry, "source")).toBe(false);
+  });
+
+  it("treats legacy entries without an output digest as stale", async () => {
+    const dir = await makeTempDir();
+    const outputPath = path.join(dir, "out.webp");
+    await writeFile(outputPath, "output");
+
+    expect(await isOutputFresh(outputPath, { hash: "source", mtimeMs: 1, size: 1 }, "source")).toBe(false);
   });
 
   it("processes entries, preserves successful manifests, and normalizes failures", async () => {

@@ -88,12 +88,14 @@ jobs:
               - "Raw Assets/**"
               - "scripts/assets/**"
               - "scripts/prepare-assets.mjs"
+              - "scripts/check-prepared-assets.mjs"
               - "scripts/optimize-assets.mjs"
               - "scripts/optimize-sounds.mjs"
               - "scripts/optimize-music.mjs"
               - "scripts/sync-assets.mjs"
               - "scripts/sync-gear-art.mjs"
               - "scripts/lib/asset-manifest-cache.mjs"
+              - "scripts/lib/audio-optimizer.mjs"
               - "src/assets/optimized/**"
               - "public/sounds/**"
               - "public/Music/**"
@@ -275,17 +277,8 @@ jobs:
       - uses: actions/checkout@v5
 
       - uses: ./.github/actions/setup
-      - name: Prepare assets from Raw Assets
-        run: node scripts/prepare-assets.mjs
-
-      - name: Assert committed outputs match prep
-        run: |
-          git diff --exit-code -- \
-            src/assets/optimized \
-            public/sounds \
-            public/Music \
-            src/lib/game-data/assets.generated.ts \
-            src/lib/game-data/gear-art.ts
+      - name: Assert committed outputs match preparation
+        run: npm run assets:check
 
   save-gate:
     needs: [changes, build]
