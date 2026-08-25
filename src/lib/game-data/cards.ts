@@ -7,3 +7,11 @@ export {
   formatCompanionTurnStartLine,
   type CompanionTurnLineContext,
 } from "./cards/companion-turn-description";
+
+export {
+  isMixedPotionCard,
+  isPotionCard,
+  isStandardPotionCard,
+  getOfferableCardPool,
+  getStandardPotionPool,
+} from "./cards/card-pools";

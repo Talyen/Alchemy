@@ -62,7 +62,7 @@ describe.skipIf(!rawGearPresent)("raw gear assets", () => {
 
     for (const baseItem of Object.values(gearBaseItems)) {
       const rarities = assetsBySlug.get(baseItem.id) ?? new Set<string>();
-      for (const rarity of GEAR_RARITIES) {
+      for (const rarity of ["basic", "astral"] as const) {
         expect(rarities.has(rarity), `${baseItem.id} missing ${rarity} raw art`).toBe(true);
       }
     }

@@ -51,6 +51,7 @@ export const STATUS_CONFIG = {
   MIN_STACK_AMOUNT: 1,
   CC_NOTICE_STUN: "Stunned",
   CC_NOTICE_FREEZE: "Frozen",
+  DODGE_NOTICE: "Dodge",
 } as const;
 
 // ============ Enemy Trait IDs (status/damage lookups) ============

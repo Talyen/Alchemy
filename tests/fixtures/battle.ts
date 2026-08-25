@@ -69,8 +69,29 @@ export function makeTestBattleState(overrides: Partial<BattleState> = {}): Battl
   };
 }
 
+type BattleStatePatch = Omit<
+  Partial<BattleState>,
+  | "playerStatuses"
+  | "enemyStatuses"
+  | "trinketEffects"
+  | "talentEffects"
+  | "flags"
+  | "enemyMitigation"
+  | "playerCC"
+  | "enemyCC"
+> & {
+  playerStatuses?: Partial<BattleState["playerStatuses"]>;
+  enemyStatuses?: Partial<BattleState["enemyStatuses"]>;
+  trinketEffects?: Partial<BattleState["trinketEffects"]>;
+  talentEffects?: Partial<BattleState["talentEffects"]>;
+  flags?: Partial<BattleState["flags"]>;
+  enemyMitigation?: Partial<BattleState["enemyMitigation"]>;
+  playerCC?: Partial<BattleState["playerCC"]>;
+  enemyCC?: Partial<BattleState["enemyCC"]>;
+};
+
 /** Merge partial battle state without repeating default status / boon / talent spreads. */
-export function patchBattleState(patch: Partial<BattleState> = {}): BattleState {
+export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
   const base = makeTestBattleState();
   return {
     ...base,

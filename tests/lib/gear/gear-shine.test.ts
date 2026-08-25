@@ -63,7 +63,7 @@ describe("gear shine", () => {
     });
 
     const gradient = getGearInstanceShineGradient(gear);
-    expect(gradient).toMatch(/^linear-gradient\(60deg,/);
+    expect(gradient).toMatch(/^linear-gradient\(in oklab/);
     expect(gradient).toContain(keywordDefinitions.burn.shineColors[0]!);
     expect(gradient).toContain(keywordDefinitions.gold.shineColors[0]!);
     expect(getGearInstanceShineGradient(gear)).toBe(gradient);

@@ -21,9 +21,18 @@ const verbose = process.argv.includes("--verbose");
 const STEPS = [
   { name: "knip (deadcode:strict)", cmd: "npm", args: ["run", "deadcode:strict"], timeout: 180_000 },
   {
-    name: "madge (circular)",
+    name: "depcruise (circular)",
     cmd: "npx",
-    args: ["-y", "madge", "--circular", "--extensions", "ts", "--ts-config", "tsconfig.json", "src"],
+    args: [
+      "depcruise",
+      "--include-only",
+      "^src",
+      "--config",
+      "dependency-cruiser.config.mjs",
+      "--output-type",
+      "err",
+      "src",
+    ],
     timeout: 120_000,
   },
   {

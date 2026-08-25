@@ -69,7 +69,7 @@ describe("dealDamageToEnemy — boonSiphon siphoning", () => {
     const state = patchBattleState({
       enemyMitigation: { armor: 0, block: 0, forge: 3 },
       talentEffects: { ...defaultTalentEffects, trinketSiphonChance: 100 },
-      rng: () => 0.0,
+      rng: () => 0.1,
     });
     const card = makeTestCard({ effects: [makeEffect("nature", 10, { lifesteal: true })] });
     const result = dealDamage(state, card);

@@ -6,12 +6,35 @@ type BooleanCombatFlag = {
   [K in keyof CombatFlags]: CombatFlags[K] extends boolean ? K : never;
 }[keyof CombatFlags];
 
+function effectHasDamageType(effect: BattleCard["effects"][number], damageType: string): boolean {
+  if (effect.kind === "damage" || effect.kind === "cleanse-player-status-to-damage") {
+    return effect.damageType === damageType;
+  }
+  if (effect.kind === "random-damage") {
+    return damageType === "physical";
+  }
+  if (effect.kind === "chance") {
+    return [...effect.successEffects, ...effect.failureEffects].some((e) => effectHasDamageType(e, damageType));
+  }
+  if (effect.kind === "repeat-over-turns") {
+    return effect.effects.some((e) => effectHasDamageType(e, damageType));
+  }
+  return false;
+}
+
 /**
  * Checks if a card contains a specific damage type effect.
  * Used for determining keyword affinity and applying first-card-free rules.
  */
 export function cardHasDamageType(card: BattleCard, damageType: string): boolean {
-  return card.effects.some((e) => e.kind === "damage" && e.damageType === damageType);
+  return card.effects.some((e) => effectHasDamageType(e, damageType));
+}
+
+/**
+ * Checks if a card belongs to the Nature archetype (deals nature damage or has nature tag).
+ */
+export function isNatureCard(card: BattleCard): boolean {
+  return cardHasDamageType(card, "nature") || card.tags?.includes("nature") === true;
 }
 
 type CardCostState = Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">;
@@ -72,11 +95,12 @@ function checkTrinketFreePotion(state: CardCostState, card: BattleCard): boolean
 export function computeEffectiveCost(
   state: CardCostState,
   card: BattleCard,
-): { effectiveCost: number; consumedFlags: Set<BooleanCombatFlag> } {
+): { effectiveCost: number; consumedFlags: Set<BooleanCombatFlag>; disarmedFlags: Set<BooleanCombatFlag> } {
   let effectiveCost = applyCostDiscount(card.cost, state.flags.nextCardCostReduction);
   const consumedFlags = new Set<BooleanCombatFlag>();
+  const disarmedFlags = new Set<BooleanCombatFlag>();
 
-  if (effectiveCost === 0) return { effectiveCost, consumedFlags };
+  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
 
   for (const rule of FIRST_CARD_FREE_RULES) {
     if (!state.flags[rule.flag] && rule.condition(state, card)) {
@@ -85,12 +109,21 @@ export function computeEffectiveCost(
       break;
     }
   }
-  if (effectiveCost === 0) return { effectiveCost, consumedFlags };
+  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
 
   if (checkTrinketFreePotion(state, card)) {
     effectiveCost = 0;
     consumedFlags.add("firstPotionFreeUsed");
   }
+  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
 
-  return { effectiveCost, consumedFlags };
+  if (state.flags.nextArcheryCardFree && !!card.tags?.includes("archery")) {
+    effectiveCost = 0;
+    disarmedFlags.add("nextArcheryCardFree");
+  } else if (state.flags.nextNatureCardFree && isNatureCard(card)) {
+    effectiveCost = 0;
+    disarmedFlags.add("nextNatureCardFree");
+  }
+
+  return { effectiveCost, consumedFlags, disarmedFlags };
 }

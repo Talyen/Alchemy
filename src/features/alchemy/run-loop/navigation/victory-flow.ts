@@ -85,6 +85,7 @@ export function computeVictoryRewardState(
     runBoons: string[];
     equippedTrinketId?: string | null;
     ownedTrinketIds?: string[];
+    ownedUniqueIds?: ReadonlySet<string>;
     contentSystemType: ContentSystemId;
     activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
     battleState: BattleState;
@@ -117,6 +118,7 @@ export function computeVictoryRewardState(
       rng,
       gearAstralChanceBonus,
       ownedTrinketIds: input.ownedTrinketIds ?? [],
+      ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
     });
   }
 
@@ -161,6 +163,7 @@ export function computeVictoryRewards(
         input.homesteadEffects.gearAstralChanceBonus,
         activeTrinketEffectIds,
         input.ownedTrinketIds ?? [],
+        input.ownedUniqueIds ?? new Set(),
       ),
       labyrinthRewardModifiers,
       goldEarned,
@@ -221,6 +224,7 @@ export function computeVictoryRewards(
       runBoons: input.runBoons,
       equippedTrinketId: input.equippedTrinketId ?? null,
       ownedTrinketIds: input.ownedTrinketIds ?? [],
+      ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
       contentSystemType: input.contentSystemType,
       activeLabyrinthRewardModifiers: input.activeLabyrinthRewardModifiers,
       battleState: input.battleState,

@@ -19,7 +19,16 @@ import {
 const ROOT = join(import.meta.dirname, "../../..");
 
 /** Fields with no talent or homestead writer must be listed here or deleted. */
-const UNUSED_MANIFEST_ALLOWLIST: ReadonlySet<keyof TalentEffectManifest> = new Set();
+const UNUSED_MANIFEST_ALLOWLIST: ReadonlySet<keyof TalentEffectManifest> = new Set([
+  "startBlock",
+  "damageReduction",
+  "damageReductionWithCompanion",
+  "poisonReducesEnemyDamage",
+  "bleedPhysicalBonus",
+  "blockOnFreeze",
+  "goldPerCombat",
+  "blockOnNatureCard",
+]);
 
 const HOMESTEAD_KEYS = new Set<string>([
   ...HOMESTEAD_BATTLE_NUMERIC_KEYS,

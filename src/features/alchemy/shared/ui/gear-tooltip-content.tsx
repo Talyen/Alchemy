@@ -41,7 +41,8 @@ export function GearTooltipContent({
           {affixEntries.map((entry, index) => {
             const roll = instance?.affixes[index];
             const def = roll ? gearAffixCatalog[roll.id] : undefined;
-            const isMaxAstral = rarity === "astral" && def && roll && roll.value === def.roll.astral.max;
+            const isMaxAstral =
+              (rarity === "astral" || rarity === "unique") && def && roll && roll.value === def.roll[rarity].max;
             const gradient = isMaxAstral ? getGearAffixShineGradient(def) : null;
 
             return (

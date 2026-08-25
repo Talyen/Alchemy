@@ -48,16 +48,17 @@ export const applyPlayerStatusEffectHandler: EffectHandler = (
   return applyPlayerStatusEffect(nextState, { ...effect, amount: adjustedAmount }, combatTexts);
 };
 
-export const applyEnemyStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
+export const applyEnemyStatusEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "enemy-status") return state;
+  const amount = potionMult !== 1 ? Math.round(effect.amount * potionMult) : effect.amount;
   if (effect.status === "stun" || effect.status === "freeze") {
-    return dealPlayerTypedHit(state, effect.status, effect.amount, combatTexts);
+    return dealPlayerTypedHit(state, effect.status, amount, combatTexts);
   }
-  const nextState = addEnemyStatus(state, effect.status, effect.amount);
+  const nextState = addEnemyStatus(state, effect.status, amount);
   const appliedAmount = nextState.enemyStatuses[effect.status] - state.enemyStatuses[effect.status];
   mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: effect.status, amount: appliedAmount });
 
-  return resolveEnemyStatusCcTrigger(state, nextState, effect.status, combatTexts);
+  return nextState;
 };
 
 export const applyRemoveHarmfulStatusEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {

@@ -63,6 +63,22 @@ export const GEAR_EFFECT_KEYS = [
   "stunOnBlockDepleted",
   "healOnCompanionAttack",
   "armorOnStunOrFreeze",
+  "stunPurgeDealHolyPerEffect",
+  "dodgeDrawAndPlay",
+  "dodgeChance",
+  "blockOnDodge",
+  "healOnDodge",
+  "armorOnDodge",
+  "physicalOnDodge",
+  "nextAttackPhysicalOnDodge",
+  "nextAttackCritOnDodge",
+  "bleedOnDodge",
+  "burnBleedMirrorAndLeech",
+  "freezeGrantsBlockAndMana",
+  "archeryDetonateBleedPoison",
+  "elementalTwinCasting",
+  "saintfallRetribution",
+  "holyStunBuildupGold",
 ] as const;
 
 export type GearEffectManifest = {

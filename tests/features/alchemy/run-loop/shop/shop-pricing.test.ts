@@ -10,6 +10,7 @@ import {
 import {
   EQUIPMENT_SHOP_ASTRAL_PRICE,
   EQUIPMENT_SHOP_BASIC_PRICE,
+  EQUIPMENT_SHOP_UNIQUE_PRICE,
   SHOP_REFRESH_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
 } from "@/lib/game-constants";
@@ -71,9 +72,11 @@ describe("shop-pricing", () => {
   });
 
   it("getEquipmentShopPrice uses rarity", () => {
-    const astralChoices = generateGearRewardChoices(10, () => 0.99);
-    const basicChoices = generateGearRewardChoices(10, () => 0.01);
+    const astralChoices = generateGearRewardChoices(10, () => 0.08);
+    const basicChoices = generateGearRewardChoices(10, () => 0.99);
+    const uniqueChoices = generateGearRewardChoices(10, () => 0.01);
     expect(astralChoices.some((c) => getEquipmentShopPrice(c) === EQUIPMENT_SHOP_ASTRAL_PRICE)).toBe(true);
     expect(basicChoices.some((c) => getEquipmentShopPrice(c) === EQUIPMENT_SHOP_BASIC_PRICE)).toBe(true);
+    expect(uniqueChoices.some((c) => getEquipmentShopPrice(c) === EQUIPMENT_SHOP_UNIQUE_PRICE)).toBe(true);
   });
 });

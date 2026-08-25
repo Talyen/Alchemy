@@ -1,5 +1,5 @@
 // Ranked, capped balance findings from a full report model. Discussion-only; does not retune content.
-import { enemyBestiary, talentPool } from "@/lib/game-data";
+import { enemyById, talentPool } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import {
   EQUITY_SPREAD,
@@ -94,7 +94,7 @@ const ENEMY_CAUSE_HINTS: Record<string, string> = {
 const REVIEW_SUFFIX = " Discuss before applying a change.";
 
 function enemyTypeOf(id: string): EnemyTypeBand | undefined {
-  const entry = enemyBestiary.find((enemy) => enemy.id === id);
+  const entry = enemyById[id];
   if (!entry) return undefined;
   if (entry.enemyType === "normal" || entry.enemyType === "elite" || entry.enemyType === "boss") {
     return entry.enemyType;

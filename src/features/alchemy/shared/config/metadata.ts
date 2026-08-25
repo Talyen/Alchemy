@@ -27,6 +27,7 @@ import {
   Sun,
   Swords,
   WandSparkles,
+  Wind,
   Zap,
   Trophy,
 } from "lucide-react";
@@ -119,4 +120,5 @@ export const keywordIcons: Record<KeywordId, LucideIcon> = {
   companion: PawPrint,
   archery: Crosshair,
   phoenixFeather: Feather,
+  dodge: Wind,
 };

@@ -4,32 +4,41 @@ import type { GearRarity } from "./types-core";
 
 export type GearAffixAspect = "offensive" | "defensive";
 
-interface AffixRollRange {
-  basic: { min: number; max: number };
-  astral: { min: number; max: number };
-}
+type AffixRollRange = Record<GearRarity, { min: number; max: number }>;
 
-/** [basicMin, basicMax, astralMin, astralMax] — keeps the 60+ catalog rows scannable. */
+/** [basicMin, basicMax, astralMin, astralMax] — keeps the catalog rows scannable. */
 function rollRange(basicMin: number, basicMax: number, astralMin: number, astralMax: number): AffixRollRange {
   return {
     basic: { min: basicMin, max: basicMax },
     astral: { min: astralMin, max: astralMax },
+    unique: { min: astralMin, max: astralMax },
+  };
+}
+
+function uniqueRoll(value: number): AffixRollRange {
+  return {
+    basic: { min: value, max: value },
+    astral: { min: value, max: value },
+    unique: { min: value, max: value },
   };
 }
 
 interface AffixRow {
   id: string;
+  name: string;
   aspect: GearAffixAspect;
   keywordId: KeywordId;
   secondaryKeywordId?: KeywordId;
   descriptionTemplate: string;
   effectKey: keyof GearEffectManifest;
   roll: AffixRollRange;
+  uniqueOnly?: boolean;
 }
 
 const affixRows = [
   {
     id: "flat-physical",
+    name: "Ironbound",
     aspect: "offensive",
     keywordId: "physical",
     descriptionTemplate: "Increases Physical damage by {value}",
@@ -38,6 +47,7 @@ const affixRows = [
   },
   {
     id: "flat-stun",
+    name: "Concussive",
     aspect: "offensive",
     keywordId: "stun",
     descriptionTemplate: "Increases Stun damage by {value}",
@@ -46,6 +56,7 @@ const affixRows = [
   },
   {
     id: "flat-holy",
+    name: "Sanctified",
     aspect: "offensive",
     keywordId: "holy",
     descriptionTemplate: "Increases Holy damage by {value}",
@@ -54,6 +65,7 @@ const affixRows = [
   },
   {
     id: "flat-burn",
+    name: "Blazing",
     aspect: "offensive",
     keywordId: "burn",
     descriptionTemplate: "Increases Burn damage by {value}",
@@ -62,6 +74,7 @@ const affixRows = [
   },
   {
     id: "flat-poison",
+    name: "Venomous",
     aspect: "offensive",
     keywordId: "poison",
     descriptionTemplate: "Increases Poison damage by {value}",
@@ -70,6 +83,7 @@ const affixRows = [
   },
   {
     id: "flat-bleed",
+    name: "Serrated",
     aspect: "offensive",
     keywordId: "bleed",
     descriptionTemplate: "Increases Bleed damage by {value}",
@@ -78,6 +92,7 @@ const affixRows = [
   },
   {
     id: "flat-freeze",
+    name: "Glacial",
     aspect: "offensive",
     keywordId: "freeze",
     descriptionTemplate: "Increases Freeze damage by {value}",
@@ -86,6 +101,7 @@ const affixRows = [
   },
   {
     id: "flat-nature",
+    name: "Wildheart",
     aspect: "offensive",
     keywordId: "nature",
     descriptionTemplate: "Increases Nature damage by {value}",
@@ -94,6 +110,7 @@ const affixRows = [
   },
   {
     id: "start-block",
+    name: "Bastioned",
     aspect: "defensive",
     keywordId: "block",
     descriptionTemplate: "Gain {value} Block at the start of combat",
@@ -102,6 +119,7 @@ const affixRows = [
   },
   {
     id: "armor-pierce",
+    name: "Piercing",
     aspect: "offensive",
     keywordId: "physical",
     descriptionTemplate: "Ignore {value} enemy Armor",
@@ -110,6 +128,7 @@ const affixRows = [
   },
   {
     id: "damage-on-stun",
+    name: "Stunning",
     aspect: "offensive",
     keywordId: "physical",
     descriptionTemplate: "On Stun: Deal {value} Physical damage",
@@ -118,6 +137,7 @@ const affixRows = [
   },
   {
     id: "forge-on-stun",
+    name: "Forged",
     aspect: "offensive",
     keywordId: "forge",
     descriptionTemplate: "On Stun: Gain {value} Forge",
@@ -126,6 +146,7 @@ const affixRows = [
   },
   {
     id: "poison-leech",
+    name: "Leeching",
     aspect: "offensive",
     keywordId: "leech",
     descriptionTemplate: "Poison has a {value}% chance to Leech",
@@ -135,6 +156,7 @@ const affixRows = [
   },
   {
     id: "companion-damage",
+    name: "Packbound",
     aspect: "offensive",
     keywordId: "companion",
     descriptionTemplate: "Increases Companion damage by {value}",
@@ -143,6 +165,7 @@ const affixRows = [
   },
   {
     id: "start-heal",
+    name: "Vital",
     aspect: "defensive",
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health at the start of combat",
@@ -151,6 +174,7 @@ const affixRows = [
   },
   {
     id: "heal-on-kill",
+    name: "Gravebound",
     aspect: "defensive",
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health on kill",
@@ -159,6 +183,7 @@ const affixRows = [
   },
   {
     id: "start-forge",
+    name: "Tempered",
     aspect: "defensive",
     keywordId: "forge",
     descriptionTemplate: "Gain {value} Forge at the start of combat",
@@ -167,6 +192,7 @@ const affixRows = [
   },
   {
     id: "start-armor",
+    name: "Plated",
     aspect: "defensive",
     keywordId: "armor",
     descriptionTemplate: "Gain {value} Armor at the start of combat",
@@ -175,6 +201,7 @@ const affixRows = [
   },
   {
     id: "block-on-stun",
+    name: "Steadfast",
     aspect: "defensive",
     keywordId: "block",
     descriptionTemplate: "On Stun: Gain {value} Block",
@@ -183,6 +210,7 @@ const affixRows = [
   },
   {
     id: "mana-on-stun",
+    name: "Arcane",
     aspect: "offensive",
     keywordId: "mana",
     descriptionTemplate: "On Stun: Gain {value} Mana",
@@ -191,6 +219,7 @@ const affixRows = [
   },
   {
     id: "physical-bleed-chance",
+    name: "Bloodletting",
     aspect: "offensive",
     keywordId: "bleed",
     descriptionTemplate: "{value}% chance for Physical damage to Bleed",
@@ -200,6 +229,7 @@ const affixRows = [
   },
   {
     id: "burn-per-mana",
+    name: "Pyric",
     aspect: "offensive",
     keywordId: "burn",
     descriptionTemplate: "Increases Burn damage by {value}% per Mana Crystal",
@@ -209,6 +239,7 @@ const affixRows = [
   },
   {
     id: "gold-on-wish",
+    name: "Wishful",
     aspect: "offensive",
     keywordId: "gold",
     descriptionTemplate: "Gain {value} Gold on Wish",
@@ -218,6 +249,7 @@ const affixRows = [
   },
   {
     id: "burn-on-wish",
+    name: "Wishfire",
     aspect: "offensive",
     keywordId: "burn",
     descriptionTemplate: "Deal {value} Burn damage on Wish",
@@ -227,6 +259,7 @@ const affixRows = [
   },
   {
     id: "gold-on-kill",
+    name: "Greed",
     aspect: "offensive",
     keywordId: "gold",
     descriptionTemplate: "Gain {value} Gold on kill",
@@ -235,6 +268,7 @@ const affixRows = [
   },
   {
     id: "physical-stun-chance",
+    name: "Thunderous",
     aspect: "offensive",
     keywordId: "stun",
     descriptionTemplate: "{value}% chance for Physical damage to Stun",
@@ -244,6 +278,7 @@ const affixRows = [
   },
   {
     id: "nature-leech",
+    name: "Sylvan",
     aspect: "offensive",
     keywordId: "leech",
     descriptionTemplate: "Nature damage has a {value}% chance to Leech",
@@ -253,6 +288,7 @@ const affixRows = [
   },
   {
     id: "forge-on-burn",
+    name: "Emberforged",
     aspect: "offensive",
     keywordId: "forge",
     descriptionTemplate: "Gain {value} Forge when you deal Burn damage",
@@ -262,6 +298,7 @@ const affixRows = [
   },
   {
     id: "draw-on-wish",
+    name: "Fateful",
     aspect: "offensive",
     keywordId: "wish",
     descriptionTemplate: "Draw {value} Cards on Wish",
@@ -270,6 +307,7 @@ const affixRows = [
   },
   {
     id: "consume-heal-bonus",
+    name: "Nourishing",
     aspect: "defensive",
     keywordId: "consume",
     descriptionTemplate: "Increases Healing from Consumed cards by {value}%",
@@ -279,6 +317,7 @@ const affixRows = [
   },
   {
     id: "archery-damage",
+    name: "Fletched",
     aspect: "offensive",
     keywordId: "archery",
     descriptionTemplate: "Increases Archery damage by {value}",
@@ -287,6 +326,7 @@ const affixRows = [
   },
   {
     id: "damage-on-freeze",
+    name: "Shattering",
     aspect: "offensive",
     keywordId: "physical",
     descriptionTemplate: "On Freeze: Deal {value} Physical damage",
@@ -296,6 +336,7 @@ const affixRows = [
   },
   {
     id: "heal-on-block-depleted",
+    name: "Resolute",
     aspect: "defensive",
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health when Block is depleted",
@@ -305,6 +346,7 @@ const affixRows = [
   },
   {
     id: "health-on-wish",
+    name: "Wishborn",
     aspect: "defensive",
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health on Wish",
@@ -314,6 +356,7 @@ const affixRows = [
   },
   {
     id: "mana-on-wish",
+    name: "Wishwoven",
     aspect: "offensive",
     keywordId: "mana",
     descriptionTemplate: "Gain {value} Mana on Wish",
@@ -323,6 +366,7 @@ const affixRows = [
   },
   {
     id: "start-freeze",
+    name: "Bitter",
     aspect: "defensive",
     keywordId: "freeze",
     descriptionTemplate: "Deal {value} Freeze damage at the start of combat",
@@ -331,6 +375,7 @@ const affixRows = [
   },
   {
     id: "holy-from-block",
+    name: "Aegis",
     aspect: "offensive",
     keywordId: "holy",
     descriptionTemplate: "Increases Holy damage by {value}% of your Block",
@@ -340,6 +385,7 @@ const affixRows = [
   },
   {
     id: "leech-potency",
+    name: "Leeching",
     aspect: "offensive",
     keywordId: "leech",
     descriptionTemplate: "Leech restores {value}% more Health",
@@ -348,6 +394,7 @@ const affixRows = [
   },
   {
     id: "frozen-vulnerable",
+    name: "Frigid",
     aspect: "offensive",
     keywordId: "freeze",
     descriptionTemplate: "Frozen enemies take {value}% more damage",
@@ -356,6 +403,7 @@ const affixRows = [
   },
   {
     id: "companion-forge-power",
+    name: "Bonded",
     aspect: "offensive",
     keywordId: "companion",
     descriptionTemplate: "Companions benefit from Forge",
@@ -365,6 +413,7 @@ const affixRows = [
   },
   {
     id: "gold-blessed-holy",
+    name: "Aureate",
     aspect: "offensive",
     keywordId: "holy",
     descriptionTemplate: "Increases Holy damage by {value}% of your Gold",
@@ -374,6 +423,7 @@ const affixRows = [
   },
   {
     id: "resist-physical",
+    name: "Stoneward",
     aspect: "defensive",
     keywordId: "physical",
     descriptionTemplate: "Reduce Physical damage taken by {value}%",
@@ -382,6 +432,7 @@ const affixRows = [
   },
   {
     id: "resist-stun",
+    name: "Unshaken",
     aspect: "defensive",
     keywordId: "stun",
     descriptionTemplate: "Reduce Stun damage taken by {value}%",
@@ -390,6 +441,7 @@ const affixRows = [
   },
   {
     id: "resist-holy",
+    name: "Shadowveiled",
     aspect: "defensive",
     keywordId: "holy",
     descriptionTemplate: "Reduce Holy damage taken by {value}%",
@@ -398,6 +450,7 @@ const affixRows = [
   },
   {
     id: "resist-burn",
+    name: "Fireproof",
     aspect: "defensive",
     keywordId: "burn",
     descriptionTemplate: "Reduce Burn damage taken by {value}%",
@@ -406,6 +459,7 @@ const affixRows = [
   },
   {
     id: "resist-poison",
+    name: "Antivenom",
     aspect: "defensive",
     keywordId: "poison",
     descriptionTemplate: "Reduce Poison damage taken by {value}%",
@@ -414,6 +468,7 @@ const affixRows = [
   },
   {
     id: "resist-bleed",
+    name: "Scarbound",
     aspect: "defensive",
     keywordId: "bleed",
     descriptionTemplate: "Reduce Bleed damage taken by {value}%",
@@ -422,6 +477,7 @@ const affixRows = [
   },
   {
     id: "resist-freeze",
+    name: "Warmblooded",
     aspect: "defensive",
     keywordId: "freeze",
     descriptionTemplate: "Reduce Freeze damage taken by {value}%",
@@ -430,6 +486,7 @@ const affixRows = [
   },
   {
     id: "resist-nature",
+    name: "Thornward",
     aspect: "defensive",
     keywordId: "nature",
     descriptionTemplate: "Reduce Nature damage taken by {value}%",
@@ -438,6 +495,7 @@ const affixRows = [
   },
   {
     id: "health-per-turn",
+    name: "Lifegiving",
     aspect: "defensive",
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health each turn",
@@ -446,6 +504,7 @@ const affixRows = [
   },
   {
     id: "block-gain",
+    name: "Warding",
     aspect: "defensive",
     keywordId: "block",
     descriptionTemplate: "Increases Block gained by {value}",
@@ -454,6 +513,7 @@ const affixRows = [
   },
   {
     id: "gold-gain",
+    name: "Prosperous",
     aspect: "defensive",
     keywordId: "gold",
     descriptionTemplate: "Increases Gold gained by {value}%",
@@ -462,6 +522,7 @@ const affixRows = [
   },
   {
     id: "max-health",
+    name: "Enduring",
     aspect: "defensive",
     keywordId: "health",
     descriptionTemplate: "Increases Health by {value}",
@@ -470,6 +531,7 @@ const affixRows = [
   },
   {
     id: "burn-on-consume",
+    name: "Consuming",
     aspect: "offensive",
     keywordId: "consume",
     descriptionTemplate: "Deal {value} Burn damage when you Consume",
@@ -479,6 +541,7 @@ const affixRows = [
   },
   {
     id: "archery-ignore-armor",
+    name: "Armorbreaking",
     aspect: "offensive",
     keywordId: "archery",
     descriptionTemplate: "Archery attacks ignore {value} Armor",
@@ -488,6 +551,7 @@ const affixRows = [
   },
   {
     id: "absorb-per-mana",
+    name: "Aegis",
     aspect: "defensive",
     keywordId: "mana",
     descriptionTemplate: "Reduce damage taken by {value} for each full Mana Crystal",
@@ -497,6 +561,7 @@ const affixRows = [
   },
   {
     id: "heal-on-burn-death",
+    name: "Cauterizing",
     aspect: "defensive",
     keywordId: "burn",
     descriptionTemplate: "Restore {value} Health when an enemy with Burn is defeated",
@@ -506,6 +571,7 @@ const affixRows = [
   },
   {
     id: "mana-on-leech-chance",
+    name: "Siphoning",
     aspect: "offensive",
     keywordId: "leech",
     descriptionTemplate: "Leech has a {value}% chance to restore 1 Mana",
@@ -515,6 +581,7 @@ const affixRows = [
   },
   {
     id: "poison-reduces-armor",
+    name: "Corrosive",
     aspect: "offensive",
     keywordId: "poison",
     descriptionTemplate: "Poison has a {value}% chance to remove 1 Armor",
@@ -524,6 +591,7 @@ const affixRows = [
   },
   {
     id: "nature-mana-refund-chance",
+    name: "Bloomwoven",
     aspect: "offensive",
     keywordId: "nature",
     descriptionTemplate: "Nature damage has a {value}% chance to restore 1 Mana",
@@ -533,6 +601,7 @@ const affixRows = [
   },
   {
     id: "burn-on-bleed",
+    name: "Cinderbound",
     aspect: "offensive",
     keywordId: "bleed",
     descriptionTemplate: "Burn deals {value}% more damage to Bleeding enemies",
@@ -542,6 +611,7 @@ const affixRows = [
   },
   {
     id: "stun-on-block-hit",
+    name: "Reactive",
     aspect: "defensive",
     keywordId: "block",
     descriptionTemplate: "Deal {value} Stun damage when your Block is depleted",
@@ -551,6 +621,7 @@ const affixRows = [
   },
   {
     id: "companion-leech",
+    name: "Kinbound",
     aspect: "defensive",
     keywordId: "companion",
     descriptionTemplate: "Restore {value} Health when your Companion attacks",
@@ -560,12 +631,173 @@ const affixRows = [
   },
   {
     id: "armor-on-cc",
+    name: "Stalwart",
     aspect: "defensive",
     keywordId: "armor",
     descriptionTemplate: "Gain {value} Armor when you are Stunned or Frozen",
     effectKey: "armorOnStunOrFreeze",
     roll: rollRange(1, 2, 3, 4),
     secondaryKeywordId: "stun",
+  },
+  {
+    id: "wardbreaker-purge",
+    name: "Wardbreaking",
+    aspect: "offensive",
+    keywordId: "stun",
+    secondaryKeywordId: "holy",
+    descriptionTemplate: "Purge enemy buffs when you Stun an enemy and deal {value} Holy damage per effect",
+    effectKey: "stunPurgeDealHolyPerEffect",
+    roll: uniqueRoll(2),
+    uniqueOnly: true,
+  },
+  {
+    id: "dance-of-blades",
+    name: "Bladedance",
+    aspect: "defensive",
+    keywordId: "dodge",
+    secondaryKeywordId: "physical",
+    descriptionTemplate: "When you Dodge an attack, draw and play a random card",
+    effectKey: "dodgeDrawAndPlay",
+    roll: uniqueRoll(1),
+    uniqueOnly: true,
+  },
+  {
+    id: "dodge-chance",
+    name: "Elusive",
+    aspect: "defensive",
+    keywordId: "dodge",
+    descriptionTemplate: "Increases Dodge chance by {value}%",
+    effectKey: "dodgeChance",
+    roll: rollRange(1, 2, 2, 3),
+  },
+  {
+    id: "dodge-block",
+    name: "Nimble",
+    aspect: "defensive",
+    keywordId: "dodge",
+    descriptionTemplate: "On Dodge: Gain {value} Block",
+    effectKey: "blockOnDodge",
+    roll: rollRange(2, 3, 4, 5),
+  },
+  {
+    id: "dodge-heal",
+    name: "Winded",
+    aspect: "defensive",
+    keywordId: "dodge",
+    descriptionTemplate: "On Dodge: Restore {value} Health",
+    effectKey: "healOnDodge",
+    roll: rollRange(1, 2, 2, 3),
+  },
+  {
+    id: "dodge-armor",
+    name: "Warding",
+    aspect: "defensive",
+    keywordId: "dodge",
+    descriptionTemplate: "On Dodge: Gain {value} Armor",
+    effectKey: "armorOnDodge",
+    roll: rollRange(1, 2, 2, 3),
+  },
+  {
+    id: "dodge-riposte",
+    name: "Riposting",
+    aspect: "offensive",
+    keywordId: "dodge",
+    descriptionTemplate: "On Dodge: Deal {value} Physical damage",
+    effectKey: "physicalOnDodge",
+    roll: rollRange(2, 3, 4, 6),
+  },
+  {
+    id: "dodge-opening",
+    name: "Opportunist",
+    aspect: "offensive",
+    keywordId: "dodge",
+    descriptionTemplate: "On Dodge: your next attack deals {value} additional Physical damage",
+    effectKey: "nextAttackPhysicalOnDodge",
+    roll: rollRange(2, 3, 4, 6),
+  },
+  {
+    id: "dodge-crit",
+    name: "Off-Balance",
+    aspect: "offensive",
+    keywordId: "dodge",
+    descriptionTemplate: "On Dodge: your next attack is guaranteed to Critically Hit",
+    effectKey: "nextAttackCritOnDodge",
+    roll: uniqueRoll(1),
+  },
+  {
+    id: "dodge-bleed",
+    name: "Fleeting",
+    aspect: "offensive",
+    keywordId: "dodge",
+    descriptionTemplate: "On Dodge: Deal {value} Bleed damage",
+    effectKey: "bleedOnDodge",
+    roll: rollRange(2, 3, 4, 5),
+  },
+  {
+    id: "bloodfire",
+    name: "Bloodfire",
+    aspect: "offensive",
+    keywordId: "burn",
+    secondaryKeywordId: "bleed",
+    descriptionTemplate: "Burn and Bleed cross-proc (20%) and gain Leech",
+    effectKey: "burnBleedMirrorAndLeech",
+    roll: uniqueRoll(1),
+    uniqueOnly: true,
+  },
+  {
+    id: "rimeheart",
+    name: "Rimeheart",
+    aspect: "offensive",
+    keywordId: "freeze",
+    secondaryKeywordId: "block",
+    descriptionTemplate: "Freeze damage grants Block; Freezing an enemy restores Mana equal to half your Block (max 4)",
+    effectKey: "freezeGrantsBlockAndMana",
+    roll: uniqueRoll(1),
+    uniqueOnly: true,
+  },
+  {
+    id: "blackfletch",
+    name: "Blackfletch",
+    aspect: "offensive",
+    keywordId: "archery",
+    secondaryKeywordId: "poison",
+    descriptionTemplate: "Archery attacks detonate and consume all Bleed and Poison",
+    effectKey: "archeryDetonateBleedPoison",
+    roll: uniqueRoll(1),
+    uniqueOnly: true,
+  },
+  {
+    id: "twin-casting",
+    name: "Twincasting",
+    aspect: "offensive",
+    keywordId: "burn",
+    secondaryKeywordId: "freeze",
+    descriptionTemplate: "Playing a Burn card draws a Freeze card, and vice versa",
+    effectKey: "elementalTwinCasting",
+    roll: uniqueRoll(1),
+    uniqueOnly: true,
+  },
+  {
+    id: "saintfall",
+    name: "Saintfall",
+    aspect: "defensive",
+    keywordId: "block",
+    secondaryKeywordId: "holy",
+    descriptionTemplate: "When Block is depleted, deal {value} Holy / {value} Stun to attacker and heal {value}",
+    effectKey: "saintfallRetribution",
+    roll: uniqueRoll(6),
+    uniqueOnly: true,
+  },
+  {
+    id: "golden-verdict",
+    name: "Verdict",
+    aspect: "offensive",
+    keywordId: "holy",
+    secondaryKeywordId: "stun",
+    descriptionTemplate: "Holy damage builds Stun; when this Stuns an enemy, gain {value} Gold",
+    effectKey: "holyStunBuildupGold",
+    roll: uniqueRoll(1),
+    uniqueOnly: true,
   },
 ] as const satisfies readonly AffixRow[];
 
@@ -576,12 +808,14 @@ export const GEAR_AFFIX_IDS = affixRows.map((row) => row.id) as [GearAffixId, ..
 
 export interface GearAffixDefinition {
   id: GearAffixId;
+  name: string;
   aspect: GearAffixAspect;
   keywordId: KeywordId;
   secondaryKeywordId?: KeywordId;
   descriptionTemplate: string;
   effectKey: keyof GearEffectManifest;
   roll: Record<GearRarity, { min: number; max: number }>;
+  uniqueOnly?: boolean;
 }
 
 export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = Object.fromEntries(
@@ -589,12 +823,14 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = Object
     row.id,
     {
       id: row.id,
+      name: row.name,
       aspect: row.aspect,
       keywordId: row.keywordId,
       ...("secondaryKeywordId" in row ? { secondaryKeywordId: row.secondaryKeywordId } : {}),
       descriptionTemplate: row.descriptionTemplate,
       effectKey: row.effectKey,
       roll: row.roll,
+      ...("uniqueOnly" in row ? { uniqueOnly: row.uniqueOnly } : {}),
     },
   ]),
 ) as Record<GearAffixId, GearAffixDefinition>;

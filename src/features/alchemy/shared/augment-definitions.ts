@@ -16,7 +16,14 @@ export interface AugmentDefinition {
 }
 
 /** Armed one-shot player buffs keyed by their CombatFlags field. */
-export type ArmedFlagChipId = "playNextCardTwice" | "nextHitCrit" | "nextHitPoison";
+export type ArmedFlagChipId =
+  | "playNextCardTwice"
+  | "nextHitCrit"
+  | "nextHitPoison"
+  | "nextHitPhysicalBonus"
+  | "nextPhysicalDealsBleed"
+  | "nextArcheryCardFree"
+  | "nextNatureCardFree";
 
 /** Enemy-side chips for purely-offensive repeat-over-turns pulses, grouped by damage type. */
 export type PendingPulseChipId = `pending-${DamageType}`;
@@ -99,6 +106,34 @@ export const augmentDefinitions: Record<AugmentId, AugmentDefinition> = {
     description: "Your next attack is converted to Poison damage.",
     icon: keywordIcons.poison,
     colorClass: keywordDefinitions.poison.colorClass,
+  },
+  nextHitPhysicalBonus: {
+    id: "nextHitPhysicalBonus",
+    label: "Opening",
+    description: "Your next attack deals additional Physical damage.",
+    icon: keywordIcons.physical,
+    colorClass: keywordDefinitions.physical.colorClass,
+  },
+  nextPhysicalDealsBleed: {
+    id: "nextPhysicalDealsBleed",
+    label: "Parting Cut",
+    description: "Your next Physical card deals Bleed damage equal to its damage.",
+    icon: keywordIcons.bleed,
+    colorClass: keywordDefinitions.bleed.colorClass,
+  },
+  nextArcheryCardFree: {
+    id: "nextArcheryCardFree",
+    label: "Arrow Dance",
+    description: "Your next Archery card is free.",
+    icon: keywordIcons.archery,
+    colorClass: keywordDefinitions.archery.colorClass,
+  },
+  nextNatureCardFree: {
+    id: "nextNatureCardFree",
+    label: "Windstep",
+    description: "Your next Nature card is free.",
+    icon: keywordIcons.nature,
+    colorClass: keywordDefinitions.nature.colorClass,
   },
   ...pendingPulseDefinitions,
 } as Record<AugmentId, AugmentDefinition>;

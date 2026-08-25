@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_IDS, gearAffixCatalog } from "@/lib/gear/affix-catalog";
-import { gearAffixNameParts } from "@/lib/gear/affix-name-parts";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear/gear-effect-manifest";
 
 describe("affix catalog guard", () => {
@@ -37,11 +36,11 @@ describe("affix catalog guard", () => {
     }
   });
 
-  it("defines name parts for every affix with at least a prefix or suffix", () => {
+  it("defines a non-empty name for every affix", () => {
     for (const id of GEAR_AFFIX_IDS) {
-      const parts = gearAffixNameParts[id];
-      expect(parts, `missing name parts for ${id}`).toBeDefined();
-      expect(Boolean(parts.prefix || parts.suffix), `affix ${id} needs a prefix or suffix for item naming`).toBe(true);
+      const definition = gearAffixCatalog[id];
+      expect(definition.name, `missing name for ${id}`).toBeDefined();
+      expect(definition.name.length, `affix ${id} needs a non-empty name`).toBeGreaterThan(0);
     }
   });
 });

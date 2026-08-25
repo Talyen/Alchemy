@@ -1,7 +1,7 @@
 // Reward state, gold math, and combat/boss reward builders.
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { cardLibrary, selectRewardCards, trinketLibrary, type BattleCard } from "@/lib/game-data";
-import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
+import { DROP_RATES_BOSS, LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import { pickRandom, sampleItems } from "@/lib/utils";
 import { CONSTANTS } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
@@ -114,8 +114,9 @@ export function createBossRewardState({
   rng,
   gearAstralChanceBonus = 0,
   ownedTrinketIds = [],
+  ownedUniqueIds = new Set(),
 }: BossRewardInput): GearRewardState | TrinketRewardState {
-  const reward = createGearOrPermanentTrinketReward(ownedTrinketIds, rng, gearAstralChanceBonus);
+  const reward = createGearOrPermanentTrinketReward(ownedTrinketIds, rng, gearAstralChanceBonus, true, ownedUniqueIds);
   return {
     ...reward,
     gold: computeRewardGold({
@@ -134,10 +135,13 @@ function createGearOrPermanentTrinketReward(
   ownedTrinketIds: readonly string[],
   rng: () => number,
   gearAstralChanceBonus: number,
+  isBoss = false,
+  ownedUniqueIds: ReadonlySet<string> = new Set(),
 ): GearRewardState | TrinketRewardState {
   const owned = new Set(ownedTrinketIds);
   const unowned = trinketLibrary.filter((entry) => !owned.has(entry.id));
-  if (unowned.length > 0 && rng() < 1 / 3) {
+  const trinketChance = isBoss ? DROP_RATES_BOSS.trinket : 1 / 3;
+  if (unowned.length > 0 && rng() < trinketChance) {
     return {
       ...createEmptyRewardState(),
       rewardType: "trinket",
@@ -147,7 +151,7 @@ function createGearOrPermanentTrinketReward(
   return {
     ...createEmptyRewardState(),
     rewardType: "gear",
-    choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, gearAstralChanceBonus),
+    choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, gearAstralChanceBonus, isBoss, ownedUniqueIds),
   };
 }
 
@@ -164,10 +168,11 @@ export function createWildwoodRewardState(
   gearAstralChanceBonus = 0,
   excludedBoonIds: string[] = [],
   ownedTrinketIds: string[] = [],
+  ownedUniqueIds: ReadonlySet<string> = new Set(),
 ): CardRewardState | BoonRewardState | TrinketRewardState | GearRewardState {
   const rewardType = rollWildwoodRewardType(rng);
   if (rewardType === "gear") {
-    return createGearOrPermanentTrinketReward(ownedTrinketIds, rng, gearAstralChanceBonus);
+    return createGearOrPermanentTrinketReward(ownedTrinketIds, rng, gearAstralChanceBonus, false, ownedUniqueIds);
   }
   if (rewardType === "boon") {
     const excluded = new Set(excludedBoonIds);

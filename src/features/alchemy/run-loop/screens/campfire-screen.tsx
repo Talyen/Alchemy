@@ -29,6 +29,7 @@ export function CampfireScreen({
     from: playerHealth,
     to: targetHealth,
     active: resting,
+    easing: "linear",
     onFinished: () => setDone(true),
   });
 

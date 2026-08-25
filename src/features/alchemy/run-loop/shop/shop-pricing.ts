@@ -5,6 +5,7 @@ import {
   ALCHEMIST_REFRESH_PRICE,
   EQUIPMENT_SHOP_ASTRAL_PRICE,
   EQUIPMENT_SHOP_BASIC_PRICE,
+  EQUIPMENT_SHOP_UNIQUE_PRICE,
   SHOP_CARD_PRICE,
   SHOP_REFRESH_PRICE,
   SHOP_REMOVE_PRICE,
@@ -31,6 +32,7 @@ export interface ShopBuyPriceContext {
 
 export function getEquipmentShopPrice(instance: GearInstance): number {
   const rarity = gearDefinitions[instance.definitionId]?.rarity;
+  if (rarity === "unique") return EQUIPMENT_SHOP_UNIQUE_PRICE;
   return rarity === "astral" ? EQUIPMENT_SHOP_ASTRAL_PRICE : EQUIPMENT_SHOP_BASIC_PRICE;
 }
 

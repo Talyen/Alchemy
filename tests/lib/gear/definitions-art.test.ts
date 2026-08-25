@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 import { gearArtByDefinitionId } from "@/lib/game-data/gear-art";
 import { gearBaseItems } from "@/lib/gear/base-items";
 import { gearDefinitions, gearDefinitionList, GEAR_DEFINITION_IDS } from "@/lib/gear/definitions";
-import { GEAR_RARITIES } from "@/lib/gear/types";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const optimizedDir = path.join(rootDir, "src", "assets", "optimized");
@@ -21,7 +20,7 @@ function isGearVariantArtKey(definitionId: string): boolean {
 describe("gear definitions and art", () => {
   it("builds one variant per base item rarity", () => {
     for (const baseItem of Object.values(gearBaseItems)) {
-      for (const rarity of GEAR_RARITIES) {
+      for (const rarity of ["basic", "astral"] as const) {
         const id = `${baseItem.id}-${rarity}`;
         expect(gearDefinitions[id]).toBeDefined();
         expect(gearDefinitions[id]?.rarity).toBe(rarity);
@@ -37,7 +36,9 @@ describe("gear definitions and art", () => {
 
   it("maps art for every gear variant", () => {
     for (const definition of gearDefinitionList) {
-      expect(gearArtByDefinitionId[definition.id], `${definition.id} missing art`).toBeTruthy();
+      if (definition.rarity !== "unique") {
+        expect(gearArtByDefinitionId[definition.id], `${definition.id} missing art`).toBeTruthy();
+      }
       expect(definition.art, `${definition.id} missing resolved art`).toBeTruthy();
     }
   });
@@ -60,7 +61,9 @@ describe("gear definitions and art", () => {
 
   it("has no unused item art mappings", () => {
     const mappedVariantIds = Object.keys(gearArtByDefinitionId).filter(isGearVariantArtKey);
-    const definedVariantIds = gearDefinitionList.map((definition) => definition.id);
+    const definedVariantIds = gearDefinitionList
+      .filter((definition) => definition.rarity !== "unique")
+      .map((definition) => definition.id);
 
     expect(mappedVariantIds.sort()).toEqual(definedVariantIds.sort());
   });

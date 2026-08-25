@@ -26,10 +26,10 @@ export const bleedTalents: TalentDefinition[] = [
   {
     id: "bleed-physical-bonus",
     keywordId: "bleed",
-    name: "Open Wound",
-    description: "Bleeding enemies take +1 Physical damage",
+    name: "Parting Cut",
+    description: "After you Dodge, your next Physical card deals Bleed damage equal to its damage",
     icon: Slash,
-    effects: [setEffect("bleedPhysicalBonus", 1)],
+    effects: [setEffect("partingCutOnDodge", true)],
   },
   {
     id: "bleed-leech-chance",

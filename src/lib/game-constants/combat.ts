@@ -3,6 +3,10 @@
 // through game-logic code. These are imported by battle/effects.ts and battle/turns.ts.
 
 export const GLOBAL_CRIT_CHANCE = 5;
+/** Chance for the player to Dodge an enemy attack damage packet, before Block and Armor. */
+export const PLAYER_DODGE_CHANCE = 5;
+/** Chance for an enemy to Dodge a player attack damage packet, before Block and Armor. */
+export const ENEMY_DODGE_CHANCE = 5;
 export const CRIT_MULTIPLIER = 2;
 export const BLEED_STATUS_MULTIPLIER = 2; // Bleed stacks gain 2× damage dealt (burst DoT vs burn/poison sustain).
 export const STUN_THRESHOLD_FRACTION = 0.5; // Stun when stacks reach this fraction of current enemy Health (uses >=, like freeze).

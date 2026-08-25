@@ -1,6 +1,5 @@
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { spendRunGold } from "@/features/alchemy/run-loop/run-gold";
-import { readActiveRun, readShopFirstPurchaseUsed } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { readDraftGold } from "@/features/alchemy/shared/stores/gold-purse";
 import {
   createDraftRunRandomSource,
@@ -12,6 +11,7 @@ import { SHOP_CARDS_OFFERED } from "@/lib/game-constants";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { computeMerchantCardBuyPrice, computeMerchantRefreshPrice, computeRemoveCardPrice } from "./shop-pricing";
+import { resolveDraftShopPricingContext, resolveReadShopPricingContext } from "./shop-pricing-context";
 import {
   commitShopInitialize,
   mapRefreshedShopOfferings,
@@ -22,8 +22,6 @@ import {
 import { shopArrayOfferingMatches } from "./shop-slot-keys";
 import type { MerchantShopCommands } from "./shop-action-types";
 import { createInitialShopState, type ShopState } from "./shop-state-init";
-import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export function createMerchantShopCommands({
   talentEffects,
@@ -31,12 +29,7 @@ export function createMerchantShopCommands({
   talentEffects: TalentEffectManifest;
 }): MerchantShopCommands {
   const getCardBuyPrice = (card: BattleCard) => {
-    const run = readActiveRun();
-    return computeMerchantCardBuyPrice(card, {
-      talentEffects,
-      runBoons: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId)),
-      firstPurchaseUsed: readShopFirstPurchaseUsed("shopState"),
-    });
+    return computeMerchantCardBuyPrice(card, resolveReadShopPricingContext(talentEffects, "shopState"));
   };
   const getRemoveCardPrice = () => computeRemoveCardPrice(talentEffects);
   const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
@@ -50,14 +43,7 @@ export function createMerchantShopCommands({
   function buyCard(card: BattleCard, slotKey: string): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.shopState;
-      const price = computeMerchantCardBuyPrice(card, {
-        talentEffects,
-        runBoons: combineTrinketEffectIds(
-          draft.run.activeRun.runBoons,
-          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
-        ),
-        firstPurchaseUsed: state.firstPurchaseUsed,
-      });
+      const price = computeMerchantCardBuyPrice(card, resolveDraftShopPricingContext(talentEffects, draft, state));
       return purchaseShopOffering({
         draft,
         price,

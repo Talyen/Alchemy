@@ -147,3 +147,28 @@ export function applyHolyTithe(state: BattleState, damage: number, combatTexts: 
   }
   return state;
 }
+
+export function payPendingBleedLeech(
+  preHitHealth: number,
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const leechAmount = state.pendingBleedLeechHealing;
+  if (leechAmount <= 0) return state;
+
+  const healthLost = Math.max(0, preHitHealth - state.enemyHealth);
+  let nextState: BattleState = {
+    ...state,
+    pendingBleedLeechHealing: 0,
+  };
+  const leechPaid = Math.min(leechAmount, healthLost);
+  if (leechPaid > 0) {
+    nextState = applyHealingWithCombatText(
+      nextState,
+      scaledGearLeechHeal(computeLeechHeal(leechPaid), nextState.gearEffects),
+      combatTexts,
+      { skipFightPacing: true },
+    );
+  }
+  return nextState;
+}

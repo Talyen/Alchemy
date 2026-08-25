@@ -63,10 +63,10 @@ export const blockTalents: TalentDefinition[] = [
   {
     id: "block-start",
     keywordId: "block",
-    name: "Fortify",
-    description: "Start each combat with 5 Block",
+    name: "Footwork",
+    description: "When you Dodge, gain Block equal to the dodged attack",
     icon: ChevronsUp,
-    effects: [setEffect("startBlock", 5)],
+    effects: [setEffect("blockOnDodgeEqualToAttack", true)],
   },
   {
     id: "block-prevent-bleed",

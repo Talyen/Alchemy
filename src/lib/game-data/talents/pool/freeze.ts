@@ -3,7 +3,7 @@ import {
   ThermometerSnowflake,
   Split,
   MountainSnow,
-  Shield,
+  Snowflake,
   CloudSnow,
   ShieldOff,
   Thermometer,
@@ -42,10 +42,10 @@ export const freezeTalents: TalentDefinition[] = [
   {
     id: "freeze-block-grant",
     keywordId: "freeze",
-    name: "Frost Ward",
-    description: "Gain 6 Block when you Freeze an enemy",
-    icon: Shield,
-    effects: [setEffect("blockOnFreeze", 6)],
+    name: "Icebound",
+    description: "Frozen enemies lose all Block and cannot Dodge",
+    icon: Snowflake,
+    effects: [setEffect("freezeStripBlock", true), setEffect("freezePreventsEnemyDodge", true)],
   },
   {
     id: "freeze-companion-bonus",

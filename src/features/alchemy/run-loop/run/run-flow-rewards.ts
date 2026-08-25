@@ -4,10 +4,7 @@ import {
   beginRewardClaim,
   releaseRewardClaim as releaseRewardClaimState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  createRunSessionCommand,
-  dispatchRunSessionCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   setCompanionRewardCards,
@@ -65,10 +62,6 @@ export function executeRewardRouteTransition(
       break;
   }
 }
-
-const commandSetRewardState = createRunSessionCommand(setRewardState);
-const commandSetCompanionRewardCards = createRunSessionCommand(setCompanionRewardCards);
-const commandReleaseRewardClaim = createRunSessionCommand(releaseRewardClaimState);
 
 interface RewardCallbacks {
   completeRunVictory: CompleteRunVictory;
@@ -140,9 +133,16 @@ export function createRewardHandlers(
           // Single commit hook for every route: restores the settled reward
           // surface (next state + companion handoff clear) and releases the claim.
           const settleClaimSurface = () => {
-            commandSetRewardState(result.nextRewardState);
-            if (result.clearCompanionRewardCards) commandSetCompanionRewardCards(null);
-            commandReleaseRewardClaim();
+            dispatchRunSessionCommand((draft) => {
+              setRewardState(draft, result.nextRewardState);
+              if (result.clearCompanionRewardCards) setCompanionRewardCards(draft, null);
+              releaseRewardClaimState(draft);
+            });
+          };
+          const releaseClaim = () => {
+            dispatchRunSessionCommand((draft) => {
+              releaseRewardClaimState(draft);
+            });
           };
 
           if (result.selectedChoice) playUISound("talentUnlock");
@@ -157,7 +157,7 @@ export function createRewardHandlers(
             handleActComplete,
             labyrinthClearNode: deps.actions.labyrinthClearNode,
             settleClaimSurface,
-            releaseClaim: commandReleaseRewardClaim,
+            releaseClaim: releaseClaim,
           });
         },
       },

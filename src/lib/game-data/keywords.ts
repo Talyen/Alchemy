@@ -184,6 +184,14 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     borderClass: "border-orange-300",
     shineColors: ["#fdba74", "#ea580c", "#fdba74"],
   },
+  dodge: {
+    id: "dodge",
+    label: "Dodge",
+    description: "Either side has a 5% chance to Dodge an attack entirely, before Block and Armor",
+    colorClass: "text-lime-300",
+    borderClass: "border-lime-300",
+    shineColors: ["#bef264", "#65a30d", "#bef264"],
+  },
 };
 
 /** Drops keyword ids that have no definition (e.g. from older persisted data). */

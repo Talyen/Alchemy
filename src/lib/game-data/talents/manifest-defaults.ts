@@ -12,6 +12,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   physicalDoubledVsFrozen: false,
   blockToPhysicalDamageMultiplier: 0,
   forgeToPhysicalDamageMultiplier: 0,
+  physicalOnDodgeEqualToAttack: false,
 
   stunThresholdReduction: 0,
   drawOnStun: 0,
@@ -33,6 +34,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   blockDepletedHeal: 0,
   blockToHolyDamage: false,
   blockToStunDamage: false,
+  blockOnDodgeEqualToAttack: false,
 
   startForge: 0,
   forgeToBurn: false,
@@ -69,6 +71,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   healOnStatusCleanse: 0,
   deathsDoorExtension: 0,
   damageReduction: 0,
+  dodgeChanceBelowHalfHealth: 0,
   burnDamageReduction: 0,
   freezeDamageReduction: 0,
   natureDamageReduction: 0,
@@ -95,6 +98,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   shopFreeRefresh: false,
   startGold: 0,
   goldPerCombat: 0,
+  goldOnDodge: 0,
   potionDiscount: 0,
   potionPotency: 1,
   potionMixPotency: 0,
@@ -151,6 +155,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   poisonStripArmor: false,
   poisonReducesEnemyDamage: 0,
   poisonLeechChance: 0,
+  poisonPreventsEnemyDodge: false,
 
   companionDamage: 0,
   companionGoldFindActive: false,
@@ -161,6 +166,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   blockOnCompanionDamage: 0,
   companionStunChance: 0,
   firstCompanionCardFree: false,
+  companionAttacksOnDodge: false,
 
   freezeThresholdReduction: 0,
   freezeDoubleDamage: false,
@@ -171,6 +177,8 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   freezePreventsPoisonDecay: false,
   freezeBlocksRegen: false,
   freezePreventsEnemyScaling: false,
+  freezeStripBlock: false,
+  freezePreventsEnemyDodge: false,
   receiveHalfFreezeDamage: false,
   flatFreezeDamage: 0,
 
@@ -184,6 +192,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   archeryDoubledVsLowHealth: false,
   archeryBleedChance: 0,
   goldOnArcheryKill: 0,
+  nextArcheryCardFreeOnDodge: false,
 
   flatNatureDamage: 0,
   naturePoisonChance: 0,
@@ -194,6 +203,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   armorToNatureDamage: false,
   blockOnNatureCard: 0,
   healOnNatureCard: 0,
+  nextNatureCardFreeOnDodge: false,
 
   firstBleedCardFree: false,
   bleedPhysicalBonus: 0,
@@ -206,6 +216,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   companionBleedDamageBonus: 0,
   receiveHalfBleedDamage: false,
   bleedHalvesEnemyHealing: false,
+  partingCutOnDodge: false,
 
   firstLeechCardDoubled: false,
   leechDesperateMultiplier: 0,

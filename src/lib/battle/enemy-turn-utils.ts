@@ -138,7 +138,7 @@ export function advanceToPlayerTurn(
   const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive;
 
   let nextState = state;
-  if (deathsDoorNeedsRecoveryTurn) {
+  if (deathsDoorNeedsRecoveryTurn && !options?.preserveBlock) {
     nextState = {
       ...state,
       deathsDoorGraceTurnsRemaining: computeDeathsDoorGraceRemaining(state) - 1,

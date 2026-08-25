@@ -10,6 +10,7 @@ import { payKillPayouts } from "./kill-payouts";
 import { mergeCombatText } from "./combat-text";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 
 const FOLLOW_UP_CARD: BattleCard = {
   id: "follow-up-typed-hit",
@@ -40,5 +41,6 @@ export function dealPlayerTypedHit(
   if (modifiedDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: damageType, amount: modifiedDamage });
   }
+  nextState = processEncounterTraitHealthThreshold(preHitHealth, nextState, combatTexts);
   return payKillPayouts(nextState, enemyWasAlive, combatTexts);
 }

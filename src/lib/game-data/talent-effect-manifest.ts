@@ -18,6 +18,7 @@ export interface TalentEffectManifest {
   physicalDoubledVsFrozen: boolean;
   blockToPhysicalDamageMultiplier: number;
   forgeToPhysicalDamageMultiplier: number;
+  physicalOnDodgeEqualToAttack: boolean;
 
   // --- Stun ---
   stunThresholdReduction: number;
@@ -41,6 +42,7 @@ export interface TalentEffectManifest {
   blockDepletedHeal: number;
   blockToHolyDamage: boolean;
   blockToStunDamage: boolean;
+  blockOnDodgeEqualToAttack: boolean;
 
   // --- Forge ---
   startForge: number;
@@ -80,6 +82,7 @@ export interface TalentEffectManifest {
   healOnStatusCleanse: number;
   deathsDoorExtension: number;
   damageReduction: number;
+  dodgeChanceBelowHalfHealth: number;
   burnDamageReduction: number;
   freezeDamageReduction: number;
   natureDamageReduction: number;
@@ -110,6 +113,7 @@ export interface TalentEffectManifest {
   shopFreeRefresh: boolean;
   startGold: number;
   goldPerCombat: number;
+  goldOnDodge: number;
   potionDiscount: number;
   potionPotency: number;
   potionMixPotency: number;
@@ -162,6 +166,7 @@ export interface TalentEffectManifest {
   poisonStripArmor: boolean;
   poisonReducesEnemyDamage: number;
   poisonLeechChance: number;
+  poisonPreventsEnemyDodge: boolean;
 
   // --- Companion combat ---
   companionDamage: number;
@@ -173,6 +178,7 @@ export interface TalentEffectManifest {
   blockOnCompanionDamage: number;
   companionStunChance: number;
   firstCompanionCardFree: boolean;
+  companionAttacksOnDodge: boolean;
 
   // --- Wishing Well ---
   wishCrystalGold: number;
@@ -201,6 +207,8 @@ export interface TalentEffectManifest {
   freezePreventsPoisonDecay: boolean;
   freezeBlocksRegen: boolean;
   freezePreventsEnemyScaling: boolean;
+  freezeStripBlock: boolean;
+  freezePreventsEnemyDodge: boolean;
   receiveHalfFreezeDamage: boolean;
   flatFreezeDamage: number;
 
@@ -215,6 +223,7 @@ export interface TalentEffectManifest {
   archeryDoubledVsLowHealth: boolean;
   archeryBleedChance: number;
   goldOnArcheryKill: number;
+  nextArcheryCardFreeOnDodge: boolean;
 
   // --- Nature ---
   flatNatureDamage: number;
@@ -226,6 +235,7 @@ export interface TalentEffectManifest {
   armorToNatureDamage: boolean;
   blockOnNatureCard: number;
   healOnNatureCard: number;
+  nextNatureCardFreeOnDodge: boolean;
 
   // --- Bleed ---
   firstBleedCardFree: boolean;
@@ -239,6 +249,7 @@ export interface TalentEffectManifest {
   companionBleedDamageBonus: number;
   receiveHalfBleedDamage: boolean;
   bleedHalvesEnemyHealing: boolean;
+  partingCutOnDodge: boolean;
 
   // --- Leech ---
   firstLeechCardDoubled: boolean;

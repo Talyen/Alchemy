@@ -6,6 +6,7 @@ import {
   DAMAGE_TYPES,
   ENEMY_STATUS_DISPLAY_ORDER,
   PLAYER_STATUS_DISPLAY_ORDER,
+  type BattleCard,
   type BattleCardEffect,
   type DamageType,
   type KeywordId,
@@ -76,6 +77,12 @@ function buildArmedPlayerChips(state: BattleState): StatusChip[] {
   if (flags.playNextCardTwice) chips.push({ id: "playNextCardTwice", value: 1, hideValue: true });
   if (flags.nextHitCrit) chips.push({ id: "nextHitCrit", value: 1, hideValue: true });
   if (flags.nextHitPoison) chips.push({ id: "nextHitPoison", value: 1, hideValue: true });
+  if (flags.nextHitPhysicalBonus > 0) {
+    chips.push({ id: "nextHitPhysicalBonus", value: flags.nextHitPhysicalBonus });
+  }
+  if (flags.nextPhysicalDealsBleed) chips.push({ id: "nextPhysicalDealsBleed", value: 1, hideValue: true });
+  if (flags.nextArcheryCardFree) chips.push({ id: "nextArcheryCardFree", value: 1, hideValue: true });
+  if (flags.nextNatureCardFree) chips.push({ id: "nextNatureCardFree", value: 1, hideValue: true });
 
   let echoCount = 0;
   for (const pulse of state.pendingTurnStartEffects) {
@@ -128,4 +135,55 @@ export function getEnemyStatusChips(state: BattleState | null | undefined): Stat
   const immunityChips: StatusChip[] =
     state.enemyCC.cooldown > 0 ? [{ id: "ccImmunity", value: state.enemyCC.cooldown, hideValue: true }] : [];
   return [...mitigationChips, ...statusChips, ...pendingChips, ...immunityChips];
+}
+
+function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
+  switch (effect.kind) {
+    case "damage":
+    case "random-damage":
+    case "enemy-status":
+    case "remove-enemy-armor":
+    case "multiply-enemy-status":
+    case "cleanse-player-status-to-damage":
+      return "enemy";
+    case "player-status":
+    case "heal":
+    case "restore-mana":
+    case "lose-mana":
+    case "lose-max-mana":
+    case "gain-max-mana":
+    case "gain-gold":
+    case "wish":
+    case "summon-companion":
+    case "buff-companion":
+    case "lose-health":
+    case "draw-cards":
+    case "remove-harmful-status":
+    case "remove-player-status":
+    case "self-damage":
+    case "next-hit-crit":
+    case "play-next-card-twice":
+    case "next-hit-poison":
+      return "player";
+    case "chance":
+      for (const nested of effect.successEffects) {
+        const target = effectTarget(nested);
+        if (target) return target;
+      }
+      return null;
+    case "repeat-over-turns":
+      for (const nested of effect.effects) {
+        const target = effectTarget(nested);
+        if (target) return target;
+      }
+      return null;
+  }
+}
+
+export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {
+  for (const effect of card.effects) {
+    const target = effectTarget(effect);
+    if (target) return target;
+  }
+  return "enemy";
 }

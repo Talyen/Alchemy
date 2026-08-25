@@ -100,7 +100,7 @@ describe("computeBaseDamage — archery tag", () => {
       enemyHealth: 50,
       enemyMaxHealth: 50,
       talentEffects: { ...defaultTalentEffects, archeryBleedChance: 100 },
-      rng: () => 0.01,
+      rng: () => 0.1,
     });
     const result = dealDamage(state, card);
     expect(result.enemyStatuses.bleed).toBeGreaterThan(0);

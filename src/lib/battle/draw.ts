@@ -9,7 +9,7 @@
  */
 import type { BattleCard } from "@/lib/game-data";
 import type { BattleState } from "./types";
-import { shuffle } from "../utils";
+import { shuffle, takeRandomItem } from "../utils";
 import { MAX_HAND_SIZE } from "../game-constants";
 
 function refillDeck(
@@ -49,6 +49,26 @@ export function drawCards(
   }
 
   return { deck: nextDeck, discard: nextDiscard, hand: nextHand, nextCardUid: uid };
+}
+
+/** Picks one card from the draw pile without occupying a hand slot, reshuffling discard if needed. */
+export function takeRandomCardFromDeck(state: BattleState): {
+  card: BattleCard;
+  deck: BattleCard[];
+  discard: BattleCard[];
+  nextCardUid: number;
+} | null {
+  const refilled = refillDeck([...state.deck], [...state.discard], state.rng);
+  if (!refilled || refilled.deck.length === 0) return null;
+  const deck = [...refilled.deck];
+  const rawCard = takeRandomItem(deck, state.rng);
+  if (!rawCard) return null;
+  return {
+    card: { ...rawCard, uid: state.nextCardUid },
+    deck,
+    discard: refilled.discard,
+    nextCardUid: state.nextCardUid + 1,
+  };
 }
 
 /** Convenience wrapper that pulls state.deck/discard/hand/rng from BattleState. */

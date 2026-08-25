@@ -1,6 +1,5 @@
 import { appendCardToRunWithDiscovery, discoverCardIds } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { spendRunGold } from "@/features/alchemy/run-loop/run-gold";
-import { readActiveRun, readShopFirstPurchaseUsed } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { readDraftGold } from "@/features/alchemy/shared/stores/gold-purse";
 import {
   createDraftRunRandomSource,
@@ -10,10 +9,11 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
-import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
+import { isMixedPotionCard, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { computeAlchemistPotionBuyPrice, computeAlchemistRefreshPrice, computeMixPotionPrice } from "./shop-pricing";
+import { resolveDraftShopPricingContext, resolveReadShopPricingContext } from "./shop-pricing-context";
 import {
   commitShopInitialize,
   mapRefreshedShopOfferings,
@@ -25,8 +25,6 @@ import {
 import { shopArrayOfferingMatches } from "./shop-slot-keys";
 import type { AlchemistShopCommands } from "./shop-action-types";
 import { createInitialAlchemistState, type AlchemistState } from "./shop-state-init";
-import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export function createAlchemistShopCommands({
   talentEffects,
@@ -36,12 +34,7 @@ export function createAlchemistShopCommands({
   homesteadEffects: HomesteadEffectManifest;
 }): AlchemistShopCommands {
   const getPotionBuyPrice = (card: BattleCard) => {
-    const run = readActiveRun();
-    return computeAlchemistPotionBuyPrice(card, {
-      talentEffects,
-      runBoons: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId)),
-      firstPurchaseUsed: readShopFirstPurchaseUsed("alchemistState"),
-    });
+    return computeAlchemistPotionBuyPrice(card, resolveReadShopPricingContext(talentEffects, "alchemistState"));
   };
   const getMixPrice = () => computeMixPotionPrice(talentEffects);
   const getRefreshPrice = (refreshesLeft: number) => computeAlchemistRefreshPrice(talentEffects, refreshesLeft);
@@ -55,14 +48,7 @@ export function createAlchemistShopCommands({
   function buyPotion(card: BattleCard, slotKey: string): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.alchemistState;
-      const price = computeAlchemistPotionBuyPrice(card, {
-        talentEffects,
-        runBoons: combineTrinketEffectIds(
-          draft.run.activeRun.runBoons,
-          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
-        ),
-        firstPurchaseUsed: state.firstPurchaseUsed,
-      });
+      const price = computeAlchemistPotionBuyPrice(card, resolveDraftShopPricingContext(talentEffects, draft, state));
       return purchaseShopOffering({
         draft,
         price,
@@ -94,7 +80,7 @@ export function createAlchemistShopCommands({
 
       const cardA = run.runDeck[indexA];
       const cardB = run.runDeck[indexB];
-      if (!cardA || !cardB || cardA.id === MIXED_POTION_CARD_ID || cardB.id === MIXED_POTION_CARD_ID) {
+      if (!cardA || !cardB || isMixedPotionCard(cardA) || isMixedPotionCard(cardB)) {
         return { committed: false, price, value: null };
       }
       const mixed = tryCreateMixedPotion(

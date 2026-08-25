@@ -34,3 +34,21 @@ describe("Iron Bear", () => {
     expect(burn.amount).toBe(1);
   });
 });
+
+describe("Compendium indexed maps", () => {
+  it("indexes all enemies in enemyById matching enemyBestiary", async () => {
+    const { enemyById, enemyBestiary } = await import("@/lib/game-data");
+    expect(Object.keys(enemyById)).toHaveLength(enemyBestiary.length);
+    for (const enemy of enemyBestiary) {
+      expect(enemyById[enemy.id]).toBe(enemy);
+    }
+  });
+
+  it("indexes all trinkets in trinketById matching trinketLibrary", async () => {
+    const { trinketById, trinketLibrary } = await import("@/lib/game-data");
+    expect(Object.keys(trinketById)).toHaveLength(trinketLibrary.length);
+    for (const trinket of trinketLibrary) {
+      expect(trinketById[trinket.id]).toBe(trinket);
+    }
+  });
+});

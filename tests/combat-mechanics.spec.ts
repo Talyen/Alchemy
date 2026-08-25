@@ -104,9 +104,9 @@ const TALENT_CASES: TalentCase[] = [
   {
     id: "block-start",
     category: "block",
-    description: "gives starting block in combat",
+    description: "does not grant starting Block",
     run: async (page, _battle) => {
-      await expect(page.getByRole("button", { name: "Block 5" })).toBeVisible({ timeout: 3000 });
+      await expect(page.getByRole("button", { name: "Block 5" })).toBeHidden();
     },
   },
 ];

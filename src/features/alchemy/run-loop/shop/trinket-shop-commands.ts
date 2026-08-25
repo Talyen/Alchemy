@@ -1,5 +1,3 @@
-import { readActiveRun, readShopFirstPurchaseUsed } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import { discoverTrinketIds } from "@/features/alchemy/shared/stores/profile-store";
 import {
@@ -8,6 +6,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
 import { computeMerchantRefreshPrice, computeTrinketBuyPrice } from "./shop-pricing";
+import { resolveDraftShopPricingContext, resolveReadShopPricingContext } from "./shop-pricing-context";
 import {
   commitShopInitialize,
   mapRefreshedShopOfferings,
@@ -18,7 +17,6 @@ import {
 import { shopArrayOfferingMatches } from "./shop-slot-keys";
 import type { TrinketShopCommands } from "./shop-action-types";
 import { createInitialTrinketShopState, resampleTrinketShopOfferings, type TrinketShopState } from "./shop-state-init";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export function createTrinketShopCommands({
   talentEffects,
@@ -26,12 +24,7 @@ export function createTrinketShopCommands({
   talentEffects: TalentEffectManifest;
 }): TrinketShopCommands {
   const getBuyPrice = (_trinket: TrinketEntry) => {
-    const run = readActiveRun();
-    return computeTrinketBuyPrice({
-      talentEffects,
-      runBoons: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId)),
-      firstPurchaseUsed: readShopFirstPurchaseUsed("trinketShopState"),
-    });
+    return computeTrinketBuyPrice(resolveReadShopPricingContext(talentEffects, "trinketShopState"));
   };
   const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
 
@@ -44,14 +37,7 @@ export function createTrinketShopCommands({
   function buy(trinket: TrinketEntry, slotKey: string): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.trinketShopState;
-      const price = computeTrinketBuyPrice({
-        talentEffects,
-        runBoons: combineTrinketEffectIds(
-          draft.run.activeRun.runBoons,
-          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
-        ),
-        firstPurchaseUsed: state.firstPurchaseUsed,
-      });
+      const price = computeTrinketBuyPrice(resolveDraftShopPricingContext(talentEffects, draft, state));
       return purchaseShopOffering({
         draft,
         price,

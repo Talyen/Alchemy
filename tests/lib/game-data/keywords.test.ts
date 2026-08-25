@@ -61,6 +61,7 @@ describe("keywordDefinitions", () => {
       "nature",
       "companion",
       "archery",
+      "dodge",
     ];
     for (const id of expected) {
       expect(keywordDefinitions).toHaveProperty(id);

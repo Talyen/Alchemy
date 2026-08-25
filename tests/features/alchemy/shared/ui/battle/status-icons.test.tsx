@@ -15,14 +15,15 @@ describe("StatusIcon", () => {
     expect(screen.queryByText("2")).toBeNull();
   });
 
-  it("styles stack values as larger keyword-colored tinted chips", () => {
+  it("styles stack values as neutral chips with keyword-colored numbers", () => {
     render(<StatusIcon chip={{ id: "burn", value: 3 }} />);
 
     fireEvent.mouseEnter(screen.getByRole("button", { name: "Burn 3" }));
 
     const valueChip = screen.getByText("3");
-    expect(valueChip.className).toContain("character-keyword-pill-tint");
-    expect(valueChip.className).toContain("border-current");
+    expect(valueChip.className).not.toContain("character-keyword-pill-tint");
+    expect(valueChip.className).not.toContain("border-current");
+    expect(valueChip.className).toContain("border-border/70");
     expect(valueChip.className).toContain("text-sm");
     expect(valueChip.className).toContain("font-bold");
     expect(valueChip.className).toContain("text-orange-400");

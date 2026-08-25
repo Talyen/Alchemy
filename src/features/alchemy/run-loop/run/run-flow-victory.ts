@@ -7,6 +7,7 @@ import { VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards } from "../navigation/victory-flow";
 import type { CommitVictoryRewardsDeps, VictoryRewardsResult } from "../navigation/victory-flow-types";
+import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import { CONSTANTS } from "../../shared/types";
 import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
@@ -72,6 +73,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
         runBoons: runState.runBoons,
         equippedTrinketId: draft.gear.equippedTrinkets[runState.characterId],
         ownedTrinketIds: [...draft.gear.ownedTrinketIds],
+        ownedUniqueIds: getOwnedUniqueDefinitionIds(draft.gear.inventories),
         contentSystemType: runState.contentSystemType,
         activeLabyrinthRewardModifiers: rewardTraits,
         battleState,

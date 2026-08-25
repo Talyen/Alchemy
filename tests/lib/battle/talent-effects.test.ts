@@ -57,6 +57,14 @@ describe("applyCrowdControlTriggerBonuses", () => {
     expect(result.enemyMitigation.armor).toBe(0);
   });
 
+  it("strips enemy Block", () => {
+    const state = makeTestBattleState({
+      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 6 },
+    });
+    const result = applyCrowdControlTriggerBonuses(state, { stripBlock: true });
+    expect(result.enemyMitigation.block).toBe(0);
+  });
+
   it("restores mana and emits combat text", () => {
     const state = makeTestBattleState({ mana: 1 });
     const texts: CombatTextEvent[] = [];

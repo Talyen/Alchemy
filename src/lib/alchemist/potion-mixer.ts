@@ -2,7 +2,7 @@
 // Depends only on battle card shapes and the Mixed Potion art/data shell.
 // Used by shop controller and UI previews so mixing behavior stays testable outside React.
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
-import { mixedPotion } from "@/lib/game-data";
+import { isMixedPotionCard, mixedPotion } from "@/lib/game-data";
 import {
   CONSUME_DESCRIPTION_LINE,
   MIXED_POTION_CARD_ID,
@@ -43,7 +43,7 @@ function scaleCardDescriptionLines(card: BattleCard, multiplier: number, potency
 
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
   // Existing Mixed Potions are rejected to avoid recursively combining generated effects.
-  if (cardA.id === MIXED_POTION_CARD_ID || cardB.id === MIXED_POTION_CARD_ID) {
+  if (isMixedPotionCard(cardA) || isMixedPotionCard(cardB)) {
     throw new Error(MIXED_POTION_ERROR);
   }
 
@@ -88,7 +88,7 @@ export function tryCreateMixedPotion(
   potencyBonus: number = 0,
 ): BattleCard | null {
   if (!cardA || !cardB) return null;
-  if (cardA.id === MIXED_POTION_CARD_ID || cardB.id === MIXED_POTION_CARD_ID) return null;
+  if (isMixedPotionCard(cardA) || isMixedPotionCard(cardB)) return null;
   return createMixedPotion(cardA, cardB, potencyBonus);
 }
 

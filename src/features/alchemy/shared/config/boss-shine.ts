@@ -2,7 +2,7 @@
 import { keywordDefinitions, type BestiaryEntry } from "@/features/alchemy/shared/config/game-data-catalog";
 
 import { keywordAliases } from "./keywords";
-import { SHINE_PALETTES } from "./shine-palettes";
+import { buildSmoothShineGradient, SHINE_PALETTES } from "./shine-palettes";
 
 function collectBossKeywordFromEffect(effect: BestiaryEntry["attackEffects"][number], ids: Set<string>): void {
   if (effect.kind === "damage" && effect.damageType in keywordDefinitions) ids.add(effect.damageType);
@@ -28,5 +28,8 @@ export function getBossShineColors(boss: BestiaryEntry): readonly string[] {
 }
 
 export function getBossShineGradient(boss: BestiaryEntry): string {
-  return `linear-gradient(60deg, ${getBossShineColors(boss).join(",")})`;
+  return (
+    buildSmoothShineGradient(getBossShineColors(boss)) ??
+    `linear-gradient(in oklab 90deg, ${SHINE_PALETTES.bossVictoryFallback.join(", ")})`
+  );
 }

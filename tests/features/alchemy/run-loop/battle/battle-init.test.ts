@@ -18,6 +18,7 @@ import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/b
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
+import { createRunRngState } from "@/lib/run-rng";
 
 beforeEach(() => {
   resetRunBattleSlice();
@@ -132,7 +133,12 @@ describe("createBattleInit", () => {
   });
 
   it("applies companion turn-start effects when a battle starts with a companion", () => {
-    setRunProgress({ roomsEncountered: 0, runPlayerHealth: 30, runMaxHealth: 30 });
+    setRunProgress({
+      roomsEncountered: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      rng: createRunRngState(() => 42 / 0x1_0000_0000),
+    });
     makeInit().startBattle(getRunProgressStoreView().runDeck, 0, "normal", [{ kind: "start-companion" }]);
 
     const battle = getBattleStoreView().battleState;
@@ -143,7 +149,12 @@ describe("createBattleInit", () => {
   it("plays combat-text sounds and portrait feedback for companion damage at battle start", () => {
     const sounds = vi.spyOn(controllerUtils, "playCombatTextSounds");
     const feedback = vi.spyOn(battleFeedback, "applyCombatTextPortraitFeedback");
-    setRunProgress({ roomsEncountered: 0, runPlayerHealth: 30, runMaxHealth: 30 });
+    setRunProgress({
+      roomsEncountered: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      rng: createRunRngState(() => 42 / 0x1_0000_0000),
+    });
     makeInit().startBattle(getRunProgressStoreView().runDeck, 0, "normal", [{ kind: "start-companion" }]);
 
     expect(sounds).toHaveBeenCalled();

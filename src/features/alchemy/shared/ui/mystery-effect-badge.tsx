@@ -1,7 +1,17 @@
 // Renders consistent badge indicators and text descriptions for mystery effects.
 // Depends on utility libraries, Lucide icons, homestead material maps, and keyword definitions.
 // Consumed by tooltip builders and outcome summary screens.
-import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
+import type { BattleCard, KeywordId } from "@/lib/game-data";
+import {
+  getCardKeywords,
+  getTrinketKeywords,
+  keywordDefinitions,
+} from "@/features/alchemy/shared/config/game-data-catalog";
+import {
+  buildSmoothShineGradient,
+  getKeywordShineColors,
+  SHINE_PALETTES,
+} from "@/features/alchemy/shared/config/shine-palettes";
 import { tooltipChipClass } from "@/features/alchemy/shared/config";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
@@ -9,12 +19,12 @@ import { materialLabels } from "@/lib/homestead/types";
 import { HomesteadResourceArtwork, goldPillStyle, goldTextColor, matPillStyle, matTextColor } from "./material-icons";
 import { TooltipHeader } from "./tooltip-panel";
 import type { MysteryEffect } from "@/lib/mystery";
-import { gearBaseItems } from "@/lib/gear";
+import { gearBaseItems, getUniqueItemDefinition } from "@/lib/gear";
 
 const PERCENTAGE_MULTIPLIER = 100;
 
 interface BadgeCtx {
-  findCard: ((id: string) => { title: string } | undefined) | undefined;
+  findCard: ((id: string) => BattleCard | { title: string } | undefined) | undefined;
   findTrinket: ((id: string) => { title: string } | undefined) | undefined;
   tooltip: boolean | undefined;
 }
@@ -23,14 +33,47 @@ type BadgeRenderer<T extends MysteryEffect> = (effect: T, ctx: BadgeCtx) => Reac
 
 const chipPillClass = (ctx: BadgeCtx) =>
   cn(
-    "inline-flex items-center gap-1.5 rounded-full border shadow-xs",
-    ctx.tooltip ? cn("px-2 py-0.5", tooltipChipClass, "text-sm") : "px-3 py-1 text-xs font-semibold",
+    "inline-flex items-center gap-1 rounded-full border shadow-xs",
+    ctx.tooltip
+      ? cn("mx-0.5 px-1.5 py-0.5 align-baseline", tooltipChipClass, "leading-none")
+      : "px-3 py-1 text-xs leading-none font-semibold",
   );
+
+function getKeywordsGradient(keywords: readonly KeywordId[]): string | null {
+  const colors: string[] = [];
+  const seen = new Set<string>();
+
+  for (const keywordId of keywords) {
+    for (const color of getKeywordShineColors(keywordId)) {
+      if (!seen.has(color)) {
+        seen.add(color);
+        colors.push(color);
+      }
+    }
+  }
+
+  return buildSmoothShineGradient(colors);
+}
+
+function ShineText({ children, gradient }: { children: React.ReactNode; gradient: string | null }) {
+  if (!gradient) {
+    return <span className="font-bold text-foreground">{children}</span>;
+  }
+
+  return (
+    <span
+      className="boss-title-shine [background-size:300%_300%] bg-clip-text font-bold text-transparent"
+      style={{ backgroundImage: gradient }}
+    >
+      {children}
+    </span>
+  );
+}
 
 const renderGoldBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainGold" | "loseGold" }>> = (effect, ctx) => (
   <span className={cn(chipPillClass(ctx), goldPillStyle, goldTextColor)}>
-    <HomesteadResourceArtwork resource="gold" size="sm" />
-    {`${effect.amount} Gold`}
+    <HomesteadResourceArtwork resource="gold" size={ctx.tooltip ? "xs" : "sm"} />
+    <span className="leading-none">{`${effect.amount} Gold`}</span>
   </span>
 );
 
@@ -38,8 +81,8 @@ const renderMaterialBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainMat
   const mat = effect.material;
   return (
     <span className={cn(chipPillClass(ctx), matPillStyle[mat], matTextColor[mat])}>
-      <HomesteadResourceArtwork resource={mat} size="sm" />
-      {`${effect.amount} ${materialLabels[mat]}`}
+      <HomesteadResourceArtwork resource={mat} size={ctx.tooltip ? "xs" : "sm"} />
+      <span className="leading-none">{`${effect.amount} ${materialLabels[mat]}`}</span>
     </span>
   );
 };
@@ -68,9 +111,15 @@ const renderXpBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainXP" }>> =
 };
 
 const renderAddCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "addCard" }>> = (effect, ctx) => {
-  const title = ctx.findCard?.(effect.cardId)?.title ?? "a card";
+  const card = ctx.findCard?.(effect.cardId);
+  const title = card?.title ?? "a card";
+  const keywords = card && "effects" in card ? getCardKeywords(card) : [];
+  const gradient = getKeywordsGradient(keywords);
+
   return ctx.tooltip ? (
-    <span className="text-sm text-balance text-muted-foreground">Add {title} card to your deck</span>
+    <span className="text-sm text-balance text-muted-foreground">
+      Add <ShineText gradient={gradient}>{title}</ShineText> card to your deck
+    </span>
   ) : (
     <span className="text-sm text-balance text-muted-foreground">Add {title}</span>
   );
@@ -90,17 +139,59 @@ const renderChooseCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "choos
 
 const renderTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainTrinket" }>> = (effect, ctx) => {
   const title = ctx.findTrinket?.(effect.trinketId)?.title ?? "a boon";
-  return <span className="text-sm text-balance text-muted-foreground">Add {title} for this run</span>;
+  const keywords = getTrinketKeywords(effect.trinketId);
+  const gradient =
+    keywords.length > 0 ? getKeywordsGradient(keywords) : buildSmoothShineGradient([...SHINE_PALETTES.boon]);
+
+  return ctx.tooltip ? (
+    <span className="text-sm text-balance text-muted-foreground">
+      Add <ShineText gradient={gradient}>{title}</ShineText> for this run
+    </span>
+  ) : (
+    <span className="text-sm text-balance text-muted-foreground">Add {title} for this run</span>
+  );
 };
 
-const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainRandomTrinket" }>> = () => (
-  <span className="text-sm text-balance text-muted-foreground">Gain a random Boon for this run</span>
-);
+const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainRandomTrinket" }>> = (
+  effect,
+  ctx,
+) => {
+  const keywords = effect.fromIds && effect.fromIds.length === 1 ? getTrinketKeywords(effect.fromIds[0]!) : [];
+  const gradient =
+    keywords.length > 0 ? getKeywordsGradient(keywords) : buildSmoothShineGradient([...SHINE_PALETTES.boon]);
 
-const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainGeneratedGear" }>> = (effect) => {
-  const baseItem = gearBaseItems[effect.baseItemId as keyof typeof gearBaseItems];
-  const title = baseItem ? `${effect.astral ? "Astral " : ""}${baseItem.displayName}` : "Gear";
-  return <span className="text-sm text-balance text-muted-foreground">Add {title} to your Armory</span>;
+  return ctx.tooltip ? (
+    <span className="text-sm text-balance text-muted-foreground">
+      Gain a random <ShineText gradient={gradient}>Boon</ShineText> for this run
+    </span>
+  ) : (
+    <span className="text-sm text-balance text-muted-foreground">Gain a random Boon for this run</span>
+  );
+};
+
+const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainGeneratedGear" }>> = (
+  effect,
+  ctx,
+) => {
+  const uniqueItem = getUniqueItemDefinition(effect.baseItemId);
+  const baseItem =
+    gearBaseItems[(uniqueItem ? uniqueItem.baseItemId : effect.baseItemId) as keyof typeof gearBaseItems];
+  const title = uniqueItem
+    ? uniqueItem.displayName
+    : baseItem
+      ? `${effect.astral ? "Astral " : ""}${baseItem.displayName}`
+      : "Gear";
+
+  const keywords = baseItem?.affinityKeywords ?? [];
+  const gradient = getKeywordsGradient(keywords);
+
+  return ctx.tooltip ? (
+    <span className="text-sm text-balance text-muted-foreground">
+      Add <ShineText gradient={gradient}>{title}</ShineText> to your Armory
+    </span>
+  ) : (
+    <span className="text-sm text-balance text-muted-foreground">Add {title} to your Armory</span>
+  );
 };
 
 const renderRemoveCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "removeCard" }>> = () => (

@@ -16,7 +16,7 @@ import {
   TRINKET_SHOP_OFFERED,
   EQUIPMENT_SHOP_OFFERED,
 } from "@/lib/game-constants";
-import { generateGearRewardChoices, type GearInstance } from "@/lib/gear";
+import { generateEquipmentShopOfferings, type GearInstance } from "@/lib/gear";
 import { trinketLibrary } from "@/lib/game-data";
 import { sampleItems } from "@/lib/utils";
 
@@ -31,8 +31,12 @@ export function resampleTrinketShopOfferings(rng: () => number, ownedIds: readon
   );
 }
 
-export function resampleEquipmentShopOfferings(rng: () => number, gearAstralChanceBonus = 0): GearInstance[] {
-  return generateGearRewardChoices(EQUIPMENT_SHOP_OFFERED, rng, gearAstralChanceBonus);
+export function resampleEquipmentShopOfferings(
+  rng: () => number,
+  gearAstralChanceBonus = 0,
+  ownedUniqueIds?: ReadonlySet<string>,
+): GearInstance[] {
+  return generateEquipmentShopOfferings(EQUIPMENT_SHOP_OFFERED, rng, gearAstralChanceBonus, ownedUniqueIds);
 }
 
 /** `firstPurchaseUsed` resets per visit (`empty*State`); Merchant's Favor is first purchase at each shop. */
@@ -57,9 +61,13 @@ export function createInitialTrinketShopState(rng: () => number, ownedIds: reado
   };
 }
 
-export function createInitialEquipmentShopState(rng: () => number, gearAstralChanceBonus = 0): EquipmentShopState {
+export function createInitialEquipmentShopState(
+  rng: () => number,
+  gearAstralChanceBonus = 0,
+  ownedUniqueIds?: ReadonlySet<string>,
+): EquipmentShopState {
   return {
     ...emptyEquipmentShopState(),
-    gear: resampleEquipmentShopOfferings(rng, gearAstralChanceBonus),
+    gear: resampleEquipmentShopOfferings(rng, gearAstralChanceBonus, ownedUniqueIds),
   };
 }

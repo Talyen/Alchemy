@@ -10,7 +10,6 @@ import {
 import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
@@ -120,7 +119,6 @@ export function useRunFlowEngine({
   const corruption = useMemo(
     () =>
       createCorruptionFlowHandlers({
-        getRunDeck: () => readActiveRun().runDeck,
         updateRunDeck: setRunDeck,
         advanceToNextDestination: flowHandlers.advanceToNextDestination,
         returnToCurrentDestination: flowHandlers.returnToCurrentDestination,

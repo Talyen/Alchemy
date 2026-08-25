@@ -1,5 +1,10 @@
 // Enemy attack resolution: damage, block, armor, and attack effect dispatch.
-import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import {
+  applyHealingWithCombatText,
+  addPlayerStatusWithCombatText,
+  addGoldWithCombatText,
+  mergeCombatText,
+} from "./combat-text";
 import {
   applyPlayerStatusFromAttack,
   applyPlayerDamageStatuses,
@@ -23,6 +28,11 @@ import { decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { setEnemyStatus } from "./types/state-helpers";
+import { takeRandomCardFromDeck } from "./draw";
+import { applyCardEffects } from "./effect-handlers";
+import { handlePostPlayCardDestination } from "./card-play";
+import { tryDodgeEnemyAttackPacket } from "./dodge";
+import { processCompanionTurnStart } from "./companion";
 
 function isDirectPlayerStatusAttack(
   effect: Extract<EnemyAttackEffect, { kind: "player-status" }>,
@@ -55,11 +65,7 @@ function computeMitigatedDamage(
   return scaleReceivedPlayerDamage(rawDamage, state.talentEffects, effect.damageType);
 }
 
-function calculateBlockAndArmorMitigation(
-  state: BattleState,
-  effect: EnemyAttackEffect & { kind: "damage" },
-  combatTexts: CombatTextEvent[],
-) {
+function computeIncomingEnemyAttackDamage(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   let remainingDamage = applyPhysicalForgeBonus(state, effect);
   if (state.gearEffects.damageReductionPerMana > 0) {
     const absorb = state.gearEffects.damageReductionPerMana * state.mana;
@@ -74,15 +80,26 @@ function calculateBlockAndArmorMitigation(
   if (effect.damageType === "freeze") {
     remainingDamage += state.enemyStatuses.freezeBonus;
   }
-  remainingDamage = paceCombatMagnitude(state, remainingDamage, "enemy");
+  return paceCombatMagnitude(state, remainingDamage, "enemy");
+}
+
+function calculateBlockAndArmorMitigation(
+  state: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  incomingDamage: number,
+  combatTexts: CombatTextEvent[],
+) {
+  let remainingDamage = incomingDamage;
   const effectiveBlock = computeEffectiveBlock(state, effect);
   const blockAbsorb = Math.min(remainingDamage, effectiveBlock);
   remainingDamage -= blockAbsorb;
   if (blockAbsorb > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockAbsorb });
   }
+  const armorMitigatesDamage = effect.damageType === "physical" || effect.damageType === "stun";
+  const armorAbsorb = armorMitigatesDamage ? Math.min(remainingDamage, state.playerStatuses.armor) : 0;
   const actualDamage = computeMitigatedDamage(state, effect, remainingDamage);
-  return { remainingDamage, blockAbsorb, actualDamage };
+  return { remainingDamage, blockAbsorb, armorAbsorb, actualDamage };
 }
 
 function applyVanguardCrestAfterBlock(
@@ -136,6 +153,97 @@ function resolvePostDamageThresholds(
   return nextState;
 }
 
+function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (state.gearEffects.dodgeDrawAndPlay <= 0) return state;
+  if (state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
+
+  const drawn = takeRandomCardFromDeck(state);
+  if (!drawn) return state;
+
+  let nextState: BattleState = {
+    ...state,
+    deck: drawn.deck,
+    discard: drawn.discard,
+    nextCardUid: drawn.nextCardUid,
+  };
+
+  const playContext = {
+    manaAtStart: nextState.mana,
+    enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
+  };
+
+  nextState = applyCardEffects(nextState, drawn.card, combatTexts, playContext);
+  nextState = handlePostPlayCardDestination(nextState, drawn.card, true, combatTexts);
+  return nextState;
+}
+
+function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], dodgedAmount: number): BattleState {
+  let nextState = state;
+  if (nextState.gearEffects.blockOnDodge > 0) {
+    nextState = addPlayerStatusWithCombatText(nextState, "block", nextState.gearEffects.blockOnDodge, combatTexts);
+  }
+  if (nextState.talentEffects.blockOnDodgeEqualToAttack && dodgedAmount > 0) {
+    nextState = addPlayerStatusWithCombatText(nextState, "block", dodgedAmount, combatTexts);
+  }
+  if (nextState.gearEffects.armorOnDodge > 0) {
+    nextState = addPlayerStatusWithCombatText(nextState, "armor", nextState.gearEffects.armorOnDodge, combatTexts);
+  }
+  if (nextState.gearEffects.healOnDodge > 0) {
+    nextState = applyHealingWithCombatText(nextState, nextState.gearEffects.healOnDodge, combatTexts);
+  }
+  if (nextState.gearEffects.physicalOnDodge > 0 && nextState.enemyHealth > 0) {
+    nextState = dealPlayerTypedHit(nextState, "physical", nextState.gearEffects.physicalOnDodge, combatTexts);
+  }
+  if (nextState.talentEffects.physicalOnDodgeEqualToAttack && dodgedAmount > 0 && nextState.enemyHealth > 0) {
+    nextState = dealPlayerTypedHit(nextState, "physical", dodgedAmount, combatTexts);
+  }
+  if (nextState.gearEffects.bleedOnDodge > 0 && nextState.enemyHealth > 0) {
+    nextState = dealPlayerTypedHit(nextState, "bleed", nextState.gearEffects.bleedOnDodge, combatTexts);
+  }
+  if (nextState.talentEffects.goldOnDodge > 0) {
+    nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnDodge, combatTexts);
+  }
+  if (nextState.gearEffects.nextAttackPhysicalOnDodge > 0) {
+    nextState = {
+      ...nextState,
+      flags: {
+        ...nextState.flags,
+        nextHitPhysicalBonus: nextState.flags.nextHitPhysicalBonus + nextState.gearEffects.nextAttackPhysicalOnDodge,
+      },
+    };
+  }
+  if (nextState.gearEffects.nextAttackCritOnDodge > 0) {
+    nextState = {
+      ...nextState,
+      flags: { ...nextState.flags, nextHitCrit: true },
+    };
+  }
+  if (nextState.talentEffects.partingCutOnDodge) {
+    nextState = { ...nextState, flags: { ...nextState.flags, nextPhysicalDealsBleed: true } };
+  }
+  if (nextState.talentEffects.nextArcheryCardFreeOnDodge) {
+    nextState = { ...nextState, flags: { ...nextState.flags, nextArcheryCardFree: true } };
+  }
+  if (nextState.talentEffects.nextNatureCardFreeOnDodge) {
+    nextState = { ...nextState, flags: { ...nextState.flags, nextNatureCardFree: true } };
+  }
+  if (nextState.talentEffects.companionAttacksOnDodge) {
+    nextState = processCompanionTurnStart(nextState, combatTexts);
+  }
+  return applyDodgeDrawAndPlay(nextState, combatTexts);
+}
+
+function tryDodgeEnemyDamagePacket(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  canDodge: boolean,
+  dodgedAmount: number,
+): BattleState | null {
+  const dodged = tryDodgeEnemyAttackPacket(state, combatTexts, canDodge);
+  if (!dodged) return null;
+  return applyOnPlayerDodge(dodged, combatTexts, dodgedAmount);
+}
+
 export function applyEnemyLeechHealing(
   state: BattleState,
   actualDamage: number,
@@ -182,6 +290,24 @@ function applyBlockDepletedHeal(
     finalState = dealPlayerTypedHit(finalState, "stun", prevState.gearEffects.stunOnBlockDepleted, combatTexts);
   }
 
+  if (
+    isBlockDepleted &&
+    prevState.gearEffects.saintfallRetribution > 0 &&
+    !prevState.flags.saintfallRetributionTriggered &&
+    finalState.enemyHealth > 0
+  ) {
+    finalState = {
+      ...finalState,
+      flags: {
+        ...finalState.flags,
+        saintfallRetributionTriggered: true,
+      },
+    };
+    finalState = dealPlayerTypedHit(finalState, "holy", prevState.gearEffects.saintfallRetribution, combatTexts);
+    finalState = dealPlayerTypedHit(finalState, "stun", prevState.gearEffects.saintfallRetribution, combatTexts);
+    finalState = applyHealingWithCombatText(finalState, prevState.gearEffects.saintfallRetribution, combatTexts);
+  }
+
   return finalState;
 }
 
@@ -189,8 +315,18 @@ export function processEnemyDamageEffect(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
   combatTexts: CombatTextEvent[],
+  options?: { canDodge?: boolean },
 ) {
-  const { remainingDamage, blockAbsorb, actualDamage } = calculateBlockAndArmorMitigation(state, effect, combatTexts);
+  const incomingDamage = computeIncomingEnemyAttackDamage(state, effect);
+  const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, options?.canDodge === true, incomingDamage);
+  if (dodged) return dodged;
+
+  const { remainingDamage, blockAbsorb, actualDamage } = calculateBlockAndArmorMitigation(
+    state,
+    effect,
+    incomingDamage,
+    combatTexts,
+  );
 
   const prevHealth = state.playerHealth;
   const damagedState = applyPlayerCombatDamage(state, actualDamage, effect.damageType);
@@ -239,7 +375,7 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
   for (const effect of state.enemyAttackEffects) {
     try {
       if (effect.kind === "damage") {
-        nextState = processEnemyDamageEffect(nextState, effect, combatTexts);
+        nextState = processEnemyDamageEffect(nextState, effect, combatTexts, { canDodge: true });
       } else if (effect.status === "stun" || effect.status === "freeze") {
         nextState = processEnemyDamageEffect(
           nextState,

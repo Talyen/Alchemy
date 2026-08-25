@@ -29,9 +29,11 @@ export default defineConfig(({ mode, command }) => {
     plugins: [
       tailwind(),
       react(),
-      babel({
-        presets: [reactCompilerPreset()],
-      }),
+      !process.env.VITEST &&
+        babel({
+          include: /\.[jt]sx$/,
+          presets: [reactCompilerPreset()],
+        }),
       command === "serve" &&
         // The Playwright webServer sets this: E2E runs own typecheck as a separate
         // gate, and an in-server checker competes with test workers for CPU.

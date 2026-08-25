@@ -46,7 +46,7 @@ describe("useEasedHealth", () => {
     });
 
     expect(result.current.progressHealth).toBeCloseTo(18.75);
-    expect(result.current.displayHealth).toBe(Math.round(result.current.progressHealth));
+    expect(result.current.displayHealth).toBe(19);
     expect(onFinished).not.toHaveBeenCalled();
 
     act(() => {
@@ -56,5 +56,21 @@ describe("useEasedHealth", () => {
     expect(result.current.progressHealth).toBe(20);
     expect(result.current.displayHealth).toBe(20);
     expect(onFinished).toHaveBeenCalledOnce();
+  });
+
+  it("supports linear easing for constant-velocity meters", () => {
+    vi.spyOn(performance, "now").mockReturnValue(0);
+    const frames = installRafStub();
+
+    const { result } = renderHook(() =>
+      useEasedHealth({ from: 10, to: 20, active: true, durationMs: 1000, easing: "linear" }),
+    );
+
+    act(() => {
+      frames.shift()?.(500);
+    });
+
+    expect(result.current.progressHealth).toBeCloseTo(15);
+    expect(result.current.displayHealth).toBe(15);
   });
 });

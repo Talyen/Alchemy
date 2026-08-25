@@ -72,7 +72,7 @@ function StatusTooltip({
         {value !== undefined && !hideValue ? (
           <span
             className={cn(
-              "character-keyword-pill-tint rounded-full border border-current px-2.5 py-0.5 text-sm font-bold",
+              "rounded-full border border-border/70 bg-stone-900/60 px-2.5 py-0.5 text-sm font-bold",
               valueColorClass,
             )}
           >

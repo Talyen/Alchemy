@@ -3,14 +3,18 @@ import { MIXED_POTION_CARD_ID, POTION_CARD_ID_SUFFIX } from "@/lib/game-constant
 import type { BattleCard } from "../types";
 import { cardLibrary } from "../cards";
 
+export function isMixedPotionCard(card: Pick<BattleCard, "id">): boolean {
+  return card.id === MIXED_POTION_CARD_ID || card.id.startsWith(`${MIXED_POTION_CARD_ID}-`);
+}
+
 export function isPotionCard(card: Pick<BattleCard, "id">): boolean {
-  return card.id.endsWith(POTION_CARD_ID_SUFFIX);
+  return card.id.endsWith(POTION_CARD_ID_SUFFIX) || isMixedPotionCard(card);
 }
 
 export function isStandardPotionCard(card: Pick<BattleCard, "id">): boolean {
   // Offer/reward pools exclude Mixed Potion so it only reaches decks via the alchemist.
   // Battle perks (potency, Mortar & Pestle) use isPotionCard and still apply to it.
-  return isPotionCard(card) && card.id !== MIXED_POTION_CARD_ID;
+  return card.id.endsWith(POTION_CARD_ID_SUFFIX) && !isMixedPotionCard(card);
 }
 
 // The content is static at module load; build both pools once instead of re-filtering on every call.

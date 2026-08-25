@@ -1,16 +1,5 @@
 // Talent definitions for keyword: physical.
-import {
-  Anvil,
-  HandFist,
-  Hammer,
-  Skull,
-  Split,
-  Scissors,
-  Droplets,
-  ChevronsUp,
-  ShieldCheck,
-  Shield,
-} from "lucide-react";
+import { Anvil, HandFist, Hammer, Skull, Split, Scissors, Droplets, ShieldCheck, Shield, Swords } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -82,10 +71,10 @@ export const physicalTalents: TalentDefinition[] = [
   {
     id: "physical-brute-force",
     keywordId: "physical",
-    name: "Brute Force",
-    description: "Increase Physical damage by 1",
-    icon: ChevronsUp,
-    effects: [addEffect("flatPhysicalDamage", 1)],
+    name: "Riposte",
+    description: "When you Dodge, deal Physical damage equal to the dodged attack",
+    icon: Swords,
+    effects: [setEffect("physicalOnDodgeEqualToAttack", true)],
   },
   {
     id: "physical-unrelenting",

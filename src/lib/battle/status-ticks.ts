@@ -20,11 +20,11 @@ import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { decayArmorAfterDamage, decayHalvedStatus, decayPoisonStacks, rollPercent } from "./status-helpers";
 import { computeLeechHeal, HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
-import { scaledGearLeechHeal } from "./gear-effects";
 import { payKillPayouts } from "./kill-payouts";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 import { applyEnemyLeechHealing } from "./enemy-turn-attack";
 import { dealPlayerTypedHit } from "./player-typed-hit";
+import { payPendingBleedLeech } from "./damage-rider-leech";
 
 /** Shared enemy DoT tail: clamp health, apply next stacks, optional riders, armor decay, trait threshold. */
 function dealEnemyDotTick(
@@ -117,7 +117,6 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   // leech heals when bleed actually deals damage.
   const multiplier = getEnemyDamageMultiplier(state, "bleed");
   const finalDamage = Math.round(damage * multiplier);
-  const leechAmount = state.pendingBleedLeechHealing;
   // Merge before the tick like burn/poison so all DoT damage text shares one order.
   mergeCombatText(combatTexts, {
     target: "enemy",
@@ -126,20 +125,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     amount: finalDamage,
   });
   return dealEnemyDotTick(state, "bleed", finalDamage, 0, combatTexts, (nextState) => {
-    // Leech pays only for health actually lost (Death's Door floors can shrink the
-    // tick), matching the player-side bleed-leech clamp.
-    const healthLost = Math.max(0, state.enemyHealth - nextState.enemyHealth);
-    let next = { ...nextState, pendingBleedLeechHealing: 0 };
-    const leechPaid = Math.min(leechAmount, healthLost);
-    if (leechPaid > 0) {
-      next = applyHealingWithCombatText(
-        next,
-        scaledGearLeechHeal(computeLeechHeal(leechPaid), next.gearEffects),
-        combatTexts,
-        { skipFightPacing: true },
-      );
-    }
-    return next;
+    return payPendingBleedLeech(state.enemyHealth, nextState, combatTexts);
   });
 }
 

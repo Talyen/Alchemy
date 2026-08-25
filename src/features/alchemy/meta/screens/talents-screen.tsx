@@ -49,7 +49,6 @@ export function TalentsScreen({
 }) {
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [resetKey, setResetKey] = useState(0);
   const keywordIds = useMemo(() => getTalentTreeKeywordIds(), []);
   const hasAllocatedTalents = Object.values(unlockedTalents).some((talents) => (talents?.length ?? 0) > 0);
 
@@ -90,7 +89,6 @@ export function TalentsScreen({
 
   function handleReset() {
     onResetTalents();
-    setResetKey((k) => k + 1);
     setShowResetConfirm(false);
   }
 
@@ -131,7 +129,7 @@ export function TalentsScreen({
           ) : (
             <div className={cn(TALENT_PANE_CLASS, "gap-4")}>
               <TalentTree
-                key={`${selectedKeyword}-${resetKey}`}
+                key={selectedKeyword}
                 allTalents={allTalentsForKeyword}
                 unlockedIds={unlockedIds}
                 allocatableIds={allocatableIds}

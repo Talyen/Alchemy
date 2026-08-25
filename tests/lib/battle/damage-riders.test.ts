@@ -133,7 +133,7 @@ describe("damage riders via applyCardEffects", () => {
       playerHealth: 10,
       playerMaxHealth: 30,
       talentEffects: { ...defaultTalentEffects, natureLeechChance: 100 },
-      rng: () => 0.01,
+      rng: () => 0.1,
       deck: [],
       hand: [],
       discard: [],

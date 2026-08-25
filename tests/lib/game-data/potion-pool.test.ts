@@ -42,8 +42,8 @@ describe("isPotionCard", () => {
     expect(isPotionCard({ id: "mixed-potion" })).toBe(true);
   });
 
-  it("excludes composite mixed ids and non-potions", () => {
-    expect(isPotionCard({ id: "mixed-potion-health-potion-a1-mana-potion-b2" })).toBe(false);
+  it("includes composite mixed ids and excludes non-potions", () => {
+    expect(isPotionCard({ id: "mixed-potion-health-potion-a1-mana-potion-b2" })).toBe(true);
     expect(isPotionCard({ id: "slash" })).toBe(false);
   });
 });

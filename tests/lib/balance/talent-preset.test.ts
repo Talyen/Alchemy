@@ -39,7 +39,7 @@ describe("buildPresetUnlockedTalents", () => {
   });
 
   it("counts affinity combat talents only for typical HP", () => {
-    expect(countAffinityCombatTalents(["poison", "bleed", "gold"], "mid")).toBe(12);
+    expect(countAffinityCombatTalents(["poison", "bleed", "gold"], "mid")).toBe(13);
     expect(countAffinityCombatTalents([], "mid")).toBe(15);
     expect(countAffinityCombatTalents([], "late")).toBe(21);
   });

@@ -52,9 +52,10 @@ export const matPillStyle: Record<MaterialId, string> = {
 export const goldTextColor = "text-[#D6B85A]";
 export const goldPillStyle = "border-[#D6B85A]/30 bg-[#D6B85A]/15";
 
-export type ResourceArtworkSize = "sm" | "md" | "lg" | "xl";
+export type ResourceArtworkSize = "xs" | "sm" | "md" | "lg" | "xl";
 
 const SIZE_CLASSES: Record<ResourceArtworkSize, string> = {
+  xs: "h-3.5 w-3.5",
   sm: "h-4 w-4",
   md: "h-6 w-6",
   lg: "h-9 w-9",

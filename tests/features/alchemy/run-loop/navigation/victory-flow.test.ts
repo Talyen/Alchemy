@@ -10,6 +10,7 @@ import { createEmptyRewardState } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { trinketLibrary } from "@/lib/game-data";
+import { gearDefinitions, uniqueItemList } from "@/lib/gear";
 import type { Destination } from "@/lib/routing";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
@@ -242,9 +243,61 @@ describe("computeVictoryRewardState", () => {
 
     expect(result.rewardType).toBe("gear");
   });
+
+  it("excludes owned uniques from campaign boss gear rewards", () => {
+    const ownedUniqueIds = new Set(uniqueItemList.map((unique) => unique.id));
+    const result = computeVictoryRewardState(
+      {
+        characterId: "knight",
+        selectedDifficulty: null,
+        unlockedTalents: {},
+        runDeck: [],
+        runBoons: [],
+        ownedTrinketIds: trinketLibrary.map((entry) => entry.id),
+        ownedUniqueIds,
+        contentSystemType: "campaign",
+        activeLabyrinthRewardModifiers: [],
+        battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
+        gold: 15,
+        eliteBonus: 0,
+        generousBonus: 0,
+        bossBonus: 7,
+        materials: emptyInventory(),
+        destinations: [],
+      },
+      () => 0,
+    );
+
+    expect(result.rewardType).toBe("gear");
+    if (result.rewardType !== "gear") throw new Error("expected gear reward");
+    expect(result.choices).toHaveLength(3);
+    for (const choice of result.choices) {
+      expect(ownedUniqueIds.has(choice.definitionId)).toBe(false);
+      expect(gearDefinitions[choice.definitionId]?.rarity).toBe("astral");
+    }
+  });
 });
 
 describe("computeVictoryRewards", () => {
+  it("passes owned uniques through campaign boss victory rewards", () => {
+    const ownedUniqueIds = new Set(uniqueItemList.map((unique) => unique.id));
+    const result = computeVictoryRewards(
+      baseInput({
+        ownedTrinketIds: trinketLibrary.map((entry) => entry.id),
+        ownedUniqueIds,
+        battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
+      }),
+      () => 0,
+    );
+
+    expect(result.rewardState.rewardType).toBe("gear");
+    if (result.rewardState.rewardType !== "gear") throw new Error("expected gear reward");
+    for (const choice of result.rewardState.choices) {
+      expect(ownedUniqueIds.has(choice.definitionId)).toBe(false);
+      expect(gearDefinitions[choice.definitionId]?.rarity).toBe("astral");
+    }
+  });
+
   it("awards no gold or materials for Wildwood Draft victories", () => {
     const result = computeVictoryRewards(baseInput({ contentSystemType: "wildwood", runGold: 7 }), () => 0.25);
 

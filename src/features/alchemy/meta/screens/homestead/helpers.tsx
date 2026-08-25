@@ -77,7 +77,7 @@ export function getArt(id: string): string {
 export { MaterialCost, HomesteadResourceWallet as MaterialsBar } from "../../../shared/ui/material-icons";
 
 const MATERIAL_LABELS_LIST = MATERIAL_IDS.map((m) => materialLabels[m]);
-const MATERIAL_REGEX = new RegExp(`(${MATERIAL_LABELS_LIST.join("|")})`, "g");
+const MATERIAL_REGEX = new RegExp(`\\b(${MATERIAL_LABELS_LIST.join("|")})\\b`, "g");
 
 function renderMaterialPills(text: string, key: number): ReactNode {
   return text.split(MATERIAL_REGEX).map((sub, index) => {
@@ -87,14 +87,15 @@ function renderMaterialPills(text: string, key: number): ReactNode {
       <span
         key={`${key}-${index}`}
         className={cn(
-          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 align-middle shadow-xs",
+          "mx-1 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 align-baseline shadow-xs",
           tooltipChipClass,
+          "leading-none",
           matPillStyle[mat],
           matTextColor[mat],
         )}
       >
-        <MaterialIcon material={mat} size="sm" className="inline-block" />
-        {sub}
+        <MaterialIcon material={mat} size="xs" />
+        <span className="leading-none">{sub}</span>
       </span>
     );
   });

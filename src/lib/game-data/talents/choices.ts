@@ -33,8 +33,8 @@ export function countImplementedTalents(keywordId: KeywordId): number {
 /** Index of the row containing the given position in the grid (0-based). */
 export function getTalentRowIndex(index: number): number {
   let cumulative = 0;
-  for (let row = 0; row < TALENT_ROW_SIZES.length; row++) {
-    cumulative += TALENT_ROW_SIZES[row]!;
+  for (const [row, size] of TALENT_ROW_SIZES.entries()) {
+    cumulative += size;
     if (index < cumulative) return row;
   }
   return TALENT_ROW_SIZES.length - 1;
@@ -57,11 +57,12 @@ export function isTalentRowUnlocked(keywordId: KeywordId, unlockedIds: string[],
   const talents = getTalentsForKeyword(keywordId);
   const unlocked = new Set(unlockedIds);
   let index = 0;
-  for (let row = 0; row < rowIndex; row++) {
-    for (const talent of talents.slice(index, index + TALENT_ROW_SIZES[row]!)) {
+  for (let row = 0; row < rowIndex && row < TALENT_ROW_SIZES.length; row++) {
+    const size = TALENT_ROW_SIZES[row] ?? 0;
+    for (const talent of talents.slice(index, index + size)) {
       if (!isTalentPlaceholder(talent) && !unlocked.has(talent.id)) return false;
     }
-    index += TALENT_ROW_SIZES[row]!;
+    index += size;
   }
   return true;
 }

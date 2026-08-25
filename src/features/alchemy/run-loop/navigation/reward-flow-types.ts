@@ -33,6 +33,7 @@ export interface BossRewardInput {
   rng: () => number;
   gearAstralChanceBonus?: number;
   ownedTrinketIds?: string[];
+  ownedUniqueIds?: ReadonlySet<string>;
 }
 
 export interface CombatRewardInput {

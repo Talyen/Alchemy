@@ -70,3 +70,12 @@ export function getShineColorsForKeywords(keywordIds: readonly KeywordId[]): rea
 export function getCharacterShineColors(characterId: CharacterId): readonly string[] {
   return getShineColorsForKeywords(characters[characterId].keywords);
 }
+
+/** Builds a seamless, mirrored linear gradient using in oklab color space to prevent harsh wipe boundaries. */
+export function buildSmoothShineGradient(colors: readonly string[]): string | null {
+  if (colors.length === 0) return null;
+  if (colors.length === 1) return `linear-gradient(in oklab 90deg, ${colors[0]}, ${colors[0]})`;
+
+  const mirrored = [...colors, ...colors.slice(1, -1).reverse(), colors[0]];
+  return `linear-gradient(in oklab 90deg, ${mirrored.join(", ")})`;
+}

@@ -353,8 +353,11 @@ export function computeCardDamageToEnemy(
     stateAfterFirstMods,
     finalDamage,
   );
+  const stateWithCritCleared = stateAfterBlock.flags.nextHitCrit
+    ? { ...stateAfterBlock, flags: { ...stateAfterBlock.flags, nextHitCrit: false } }
+    : stateAfterBlock;
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
-  const nextState = applySunderingArmorPiercing(stateAfterBlock, isPhysicalOrStun, card);
+  const nextState = applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun, card);
   const effectiveArmor = isPhysicalOrStun ? nextState.enemyMitigation.armor : 0;
   const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
   const multiplier =

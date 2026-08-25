@@ -1,8 +1,7 @@
-// DOM helpers for card rect capture, tilt effects, and card play target inference.
-// Depends on React mouse events, battle card shapes, and alchemy geometry types.
+// DOM helpers for card rect capture and tilt effects.
+// Depends on React mouse events and alchemy geometry types.
 // Used by card UI and ghost animation code where viewport coordinates matter.
 import type { MouseEvent } from "react";
-import type { BattleCard } from "@/lib/game-data";
 import type { CardRect } from "../types";
 
 interface TiltFrame {
@@ -57,14 +56,4 @@ function clearTiltElement(target: HTMLElement) {
 
 export function clearTiltFromEvent(event: MouseEvent<HTMLElement>) {
   clearTiltElement(event.currentTarget);
-}
-
-export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {
-  for (const effect of card.effects) {
-    if (effect.kind === "damage") return "enemy";
-    if (effect.kind === "player-status") return "player";
-    if (effect.kind === "heal") return "player";
-    if (effect.kind === "summon-companion") return "player";
-  }
-  return "enemy";
 }

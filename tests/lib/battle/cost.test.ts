@@ -139,4 +139,20 @@ describe("computeEffectiveCost", () => {
     expect(cost).toBe(0);
     expect(consumedFlags.has("firstHolyCardFreeUsed")).toBe(true);
   });
+
+  it("disarms Arrow Dance when the next Archery card is free", () => {
+    const card = physicalCard({ tags: ["archery"] });
+    const state = makeState({ nextArcheryCardFree: true });
+    const { effectiveCost: cost, disarmedFlags } = computeEffectiveCost(state, card);
+    expect(cost).toBe(0);
+    expect(disarmedFlags.has("nextArcheryCardFree")).toBe(true);
+  });
+
+  it("disarms Windstep when the next Nature card is free", () => {
+    const card = physicalCard({ effects: [{ kind: "damage", damageType: "nature", amount: 5 }] });
+    const state = makeState({ nextNatureCardFree: true });
+    const { effectiveCost: cost, disarmedFlags } = computeEffectiveCost(state, card);
+    expect(cost).toBe(0);
+    expect(disarmedFlags.has("nextNatureCardFree")).toBe(true);
+  });
 });

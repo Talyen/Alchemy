@@ -42,10 +42,10 @@ export const goldTalents: TalentDefinition[] = [
   {
     id: "gold-per-combat",
     keywordId: "gold",
-    name: "Bounty",
-    description: "Gain +5 Gold after each combat",
+    name: "Lucky Foot",
+    description: "Gain 1 Gold when you Dodge",
     icon: CircleDollarSign,
-    effects: [setEffect("goldPerCombat", 5)],
+    effects: [setEffect("goldOnDodge", 1)],
   },
   {
     id: "gold-potion-discount",

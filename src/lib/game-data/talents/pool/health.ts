@@ -82,10 +82,10 @@ export const healthTalents: TalentDefinition[] = [
   {
     id: "health-max-3",
     keywordId: "health",
-    name: "Thick Skin",
-    description: "Reduce all damage taken by 1",
+    name: "Last Gasp",
+    description: "While below 50% Health, gain 20% Dodge chance",
     icon: ShieldHalf,
-    effects: [setEffect("damageReduction", 1)],
+    effects: [setEffect("dodgeChanceBelowHalfHealth", 20)],
   },
   {
     id: "health-campfire",

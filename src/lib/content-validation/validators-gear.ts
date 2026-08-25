@@ -34,7 +34,7 @@ function validateGearAffixIds(collector: ReturnType<typeof createCollector>): vo
 
 function validateBaseItems(collector: ReturnType<typeof createCollector>): void {
   for (const baseItemId of Object.keys(gearBaseItems)) {
-    for (const rarity of GEAR_RARITIES) {
+    for (const rarity of ["basic", "astral"] as const) {
       const definitionId = gearDefinitionId(baseItemId, rarity);
       if (!gearDefinitions[definitionId])
         collector.error("gear", definitionId, "Missing generated gear definition for base item rarity");
@@ -46,9 +46,10 @@ function validateGearDefinitions(collector: ReturnType<typeof createCollector>):
   for (const definition of gearDefinitionList) {
     collectSchemaIssues(GearDefinitionContentSchema, definition, "gear", definition.id, collector.error);
     validateArt("gear", definition.id, definition.art, collector.error, collector.warning);
-    if (!gearArtByDefinitionId[definition.id])
+    if (definition.rarity !== "unique" && !gearArtByDefinitionId[definition.id])
       collector.error("art", definition.id, "Missing generated gear art mapping");
     const minAffixes = definition.rarity ? GEAR_AFFIX_COUNT[definition.rarity].min : 0;
+    if (definition.rarity === "unique") continue;
     if (!definition.rarity) continue;
     // Same eligibility rule generation uses (aspect + affinity), not a restated copy.
     const eligibleAffixes = buildEligibleAffixPool(definition);

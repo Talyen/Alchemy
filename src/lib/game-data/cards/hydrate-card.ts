@@ -47,7 +47,7 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
     ...(pickOptionalField<boolean>(savedCard, "consume") !== undefined && { consume: savedCard.consume }),
     ...(pickOptionalField<boolean>(savedCard, "corrupted") !== undefined && { corrupted: savedCard.corrupted }),
     ...(pickOptionalField<string>(savedCard, "baseTitle") !== undefined && { baseTitle: savedCard.baseTitle }),
-    ...(pickOptionalField<string>(savedCard, "uid") !== undefined && { uid: savedCard.uid }),
+    ...(pickOptionalField<number>(savedCard, "uid") !== undefined && { uid: savedCard.uid }),
     ...(corruptedValuePositions && { corruptedValuePositions }),
   };
 }

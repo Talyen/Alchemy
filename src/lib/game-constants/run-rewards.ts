@@ -16,8 +16,28 @@ export const TRINKET_SHOP_REFRESHES = 1;
 // ============ Equipment Shop ============
 export const EQUIPMENT_SHOP_BASIC_PRICE = 60;
 export const EQUIPMENT_SHOP_ASTRAL_PRICE = 80;
+export const EQUIPMENT_SHOP_UNIQUE_PRICE = 150;
 export const EQUIPMENT_SHOP_OFFERED = 3;
 export const EQUIPMENT_SHOP_REFRESHES = 1;
+export const EQUIPMENT_SHOP_DROP_RATES = {
+  unique: 0.05,
+  astral: 0.35,
+  basic: 0.6,
+} as const;
+
+// Unified Scarcity Drop Rates
+export const DROP_RATES_BOSS = {
+  unique: 0.3,
+  trinket: 0.3,
+  astral: 0.4,
+  basic: 0.0,
+} as const;
+
+export const DROP_RATES_NORMAL = {
+  unique: 0.05,
+  trinket: 0.07,
+  astral: 0.08,
+} as const;
 
 // ============ Draft ============
 export const DRAFT_ROUNDS = 6;
@@ -57,6 +77,7 @@ export const GEAR_ASTRAL_GUARANTEE_BONUS = 1;
 export const GEAR_AFFIX_COUNT = {
   basic: { min: 1, max: 2 },
   astral: { min: 3, max: 4 },
+  unique: { min: 4, max: 4 },
 } as const;
 /** Chance to roll the minimum affix count (vs max) when a rarity has a range. */
 export const GEAR_AFFIX_COUNT_MIN_WEIGHT = 0.8;

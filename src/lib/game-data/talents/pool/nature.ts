@@ -1,5 +1,5 @@
 // Talent definitions for keyword: nature.
-import { TrendingUp, Wind, Triangle, RotateCw, Network, Shield, Link, Hexagon, Trees, Leaf } from "lucide-react";
+import { TrendingUp, Wind, Triangle, RotateCw, Network, Shield, Link, Hexagon, Feather, Leaf } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -71,10 +71,10 @@ export const natureTalents: TalentDefinition[] = [
   {
     id: "nature-canopy",
     keywordId: "nature",
-    name: "Canopy",
-    description: "Gain 3 Block when you play a Nature card",
-    icon: Trees,
-    effects: [setEffect("blockOnNatureCard", 3)],
+    name: "Windstep",
+    description: "When you Dodge, your next Nature card is free",
+    icon: Feather,
+    effects: [setEffect("nextNatureCardFreeOnDodge", true)],
   },
   {
     id: "nature-photosynthesis",

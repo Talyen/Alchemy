@@ -78,6 +78,11 @@ export interface CombatFlags {
   nextHitCrit: boolean;
   playNextCardTwice: boolean;
   nextHitPoison: boolean;
+  nextHitPhysicalBonus: number;
+  nextPhysicalDealsBleed: boolean;
+  nextArcheryCardFree: boolean;
+  nextNatureCardFree: boolean;
+  saintfallRetributionTriggered: boolean;
 }
 
 // Subset of CombatFlags consumed by card play — companion actions must not consume these.
@@ -155,7 +160,15 @@ export interface BattleState {
 // from multi-hit cards shows "-5" instead of "-2 -3".
 type CombatTextTarget = "player" | "enemy";
 type CombatTextKind = "damage" | "heal" | "status" | "multiply" | "notice";
-export type CombatTextStat = DamageType | PlayerStatusId | EnemyStatusId | "health" | "mana" | "gold" | "crystal";
+export type CombatTextStat =
+  | DamageType
+  | PlayerStatusId
+  | EnemyStatusId
+  | "health"
+  | "mana"
+  | "gold"
+  | "crystal"
+  | "dodge";
 
 export interface NumericCombatTextEvent {
   target: CombatTextTarget;

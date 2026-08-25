@@ -389,6 +389,16 @@ describe("processCompanionTurnStart", () => {
     expect(result.flags.nextHitCrit).toBe(true);
   });
 
+  it("does not consume Opening on companion damage", () => {
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.wolf,
+      flags: { ...makeTestBattleState().flags, nextHitPhysicalBonus: 4 },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.enemyHealth).toBe(29);
+    expect(result.flags.nextHitPhysicalBonus).toBe(4);
+  });
+
   it("healOnCompanionAttack heals Fox when the damage branch resolves", () => {
     const state = makeTestBattleState({
       activeCompanion: companionLibrary.fox,

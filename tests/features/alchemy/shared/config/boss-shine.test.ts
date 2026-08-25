@@ -45,6 +45,9 @@ describe("getBossShineGradient", () => {
     const boss = makeBoss();
     const gradient = getBossShineGradient(boss);
 
-    expect(gradient).toBe(`linear-gradient(60deg, ${SHINE_PALETTES.bossVictoryFallback.join(",")})`);
+    expect(gradient).toMatch(/^linear-gradient\(in oklab/);
+    for (const color of SHINE_PALETTES.bossVictoryFallback) {
+      expect(gradient).toContain(color);
+    }
   });
 });

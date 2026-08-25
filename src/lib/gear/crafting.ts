@@ -124,8 +124,12 @@ export function addCraftingCurrencies(
   return next;
 }
 
+const CRAFTING_CURRENCIES_BY_ID: Record<CraftingCurrencyId, CraftingCurrencyDefinition> = Object.fromEntries(
+  CRAFTING_CURRENCY_LIST.map((currency) => [currency.id, currency]),
+) as Record<CraftingCurrencyId, CraftingCurrencyDefinition>;
+
 export function getCraftingCurrencyDefinition(id: CraftingCurrencyId): CraftingCurrencyDefinition {
-  return CRAFTING_CURRENCY_LIST.find((currency) => currency.id === id) ?? CRAFTING_CURRENCY_LIST[0]!;
+  return CRAFTING_CURRENCIES_BY_ID[id] ?? CRAFTING_CURRENCY_LIST[0]!;
 }
 
 function addRandomAffix(item: GearInstance, rng: () => number): GearInstance {
@@ -238,6 +242,7 @@ const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBe
 };
 
 export function canApplyCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInstance): boolean {
+  if (gearInstanceRarity(item) === "unique") return false;
   return CRAFTING_CURRENCY_BEHAVIORS[currencyId].canApply(item);
 }
 
@@ -246,6 +251,7 @@ export function applyCraftingCurrency(
   item: GearInstance,
   rng: () => number,
 ): GearInstance {
+  if (gearInstanceRarity(item) === "unique") return item;
   const behavior = CRAFTING_CURRENCY_BEHAVIORS[currencyId];
   if (!behavior.canApply(item)) return item;
   return behavior.apply(item, rng);
@@ -253,6 +259,14 @@ export function applyCraftingCurrency(
 
 export function rollSalvageYield(rarity: GearRarity, rng: () => number): Record<CraftingCurrencyId, number> {
   const yieldRecord = { ...EMPTY_CRAFTING_CURRENCIES };
+
+  if (rarity === "unique") {
+    yieldRecord["discordant-dice"] = 2;
+    yieldRecord["ascension-seal"] = 1;
+    yieldRecord["severance-maw"] = 1;
+    yieldRecord["smiths-whetstone"] = 1;
+    return yieldRecord;
+  }
 
   yieldRecord["discordant-dice"] = rng() < SALVAGE_DICE_HIGH_CHANCE ? 2 : 1;
   if (rarity === "basic") {

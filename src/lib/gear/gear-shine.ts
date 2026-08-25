@@ -3,22 +3,37 @@ import { gearAffixCatalog } from "./affix-catalog";
 import { gearDefinitions } from "./definitions";
 import type { GearInstance } from "./types";
 
+/** Builds a seamless mirrored gradient in oklab space so the loop has no visible wipe edge. */
+function buildSmoothShineGradient(colors: readonly string[]): string | null {
+  if (colors.length === 0) return null;
+  if (colors.length === 1) return `linear-gradient(in oklab 90deg, ${colors[0]}, ${colors[0]})`;
+  const mirrored = [...colors, ...colors.slice(1, -1).reverse(), colors[0]];
+  return `linear-gradient(in oklab 90deg, ${mirrored.join(", ")})`;
+}
+
 const ASTRAL_SHINE_FALLBACK = ["#cbd5e1", "#64748b", "#cbd5e1"] as const;
+const UNIQUE_SHINE_COLORS = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"] as const;
 
 export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
   const keywordIds = new Set<KeywordId>();
 
   for (const roll of instance.affixes) {
     const affix = gearAffixCatalog[roll.id];
-    keywordIds.add(affix.keywordId);
-    if (affix.secondaryKeywordId) keywordIds.add(affix.secondaryKeywordId);
+    if (affix) {
+      keywordIds.add(affix.keywordId);
+      if (affix.secondaryKeywordId) keywordIds.add(affix.secondaryKeywordId);
+    }
   }
 
   return [...keywordIds].sort();
 }
 
 export function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
-  if (gearDefinitions[instance.definitionId]?.rarity !== "astral") return [];
+  const rarity = gearDefinitions[instance.definitionId]?.rarity;
+  if (rarity === "unique") {
+    return [...UNIQUE_SHINE_COLORS];
+  }
+  if (rarity !== "astral") return [];
 
   const colors: string[] = [];
   for (const keywordId of getGearInstanceKeywordIds(instance)) {
@@ -38,8 +53,7 @@ export function getAstralShineColors(instance: GearInstance): readonly string[] 
 
 export function getGearInstanceShineGradient(instance: GearInstance): string | null {
   const colors = getGearInstanceShineColors(instance);
-  if (colors.length === 0) return null;
-  return `linear-gradient(60deg, ${colors.join(",")})`;
+  return buildSmoothShineGradient(colors);
 }
 
 function getGearAffixShineColors(affix: { keywordId: KeywordId; secondaryKeywordId?: KeywordId }): readonly string[] {
@@ -57,6 +71,5 @@ export function getGearAffixShineGradient(affix: {
   secondaryKeywordId?: KeywordId;
 }): string | null {
   const colors = getGearAffixShineColors(affix);
-  if (colors.length === 0) return null;
-  return `linear-gradient(60deg, ${colors.join(",")})`;
+  return buildSmoothShineGradient(colors);
 }

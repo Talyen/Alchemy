@@ -1,5 +1,5 @@
 // Talent definitions for keyword: poison.
-import { Biohazard, Droplets, FlaskRound, Shield, Coins, Skull, Lock, TrendingUp, X, Syringe } from "lucide-react";
+import { Biohazard, Droplets, FlaskRound, Shield, Coins, Skull, Lock, TrendingUp, Moon, Syringe } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { setEffect } from "../types";
 
@@ -71,10 +71,10 @@ export const poisonTalents: TalentDefinition[] = [
   {
     id: "poison-reduce-damage",
     keywordId: "poison",
-    name: "Crippling Toxin",
-    description: "Poisoned enemies deal 1 less damage",
-    icon: X,
-    effects: [setEffect("poisonReducesEnemyDamage", 1)],
+    name: "Torpor",
+    description: "Poisoned enemies cannot Dodge",
+    icon: Moon,
+    effects: [setEffect("poisonPreventsEnemyDodge", true)],
   },
   {
     id: "poison-first-free",

@@ -40,6 +40,14 @@ export function pickRandom<T>(items: readonly T[], rng: () => number = Math.rand
   return items[Math.floor(rng() * items.length)];
 }
 
+// Removes and returns one random item from a mutable array, or undefined if empty.
+export function takeRandomItem<T>(items: T[], rng: () => number = Math.random): T | undefined {
+  if (items.length === 0) return undefined;
+  const index = Math.floor(rng() * items.length);
+  const [removed] = items.splice(index, 1);
+  return removed;
+}
+
 // Mulberry32 seeded PRNG — returns a function that produces deterministic
 // values in [0, 1) for a given integer seed.
 export function createSeededRng(seed: number): () => number {

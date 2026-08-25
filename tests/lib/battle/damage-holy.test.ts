@@ -85,7 +85,7 @@ describe("applyHolyDamageRiders", () => {
 
   it("applies burn on holy damage with holyBurnChance", () => {
     const state = patchBattleState({
-      rng: () => 0.01,
+      rng: () => 0.1,
       talentEffects: { ...defaultTalentEffects, holyBurnChance: 50, holyLifestealPercent: 0, holyGoldPercent: 0 },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
@@ -95,7 +95,7 @@ describe("applyHolyDamageRiders", () => {
 
   it("triggers a wish on holy damage with holyWishChance", () => {
     const state = patchBattleState({
-      rng: () => 0.01,
+      rng: () => 0.1,
       talentEffects: {
         ...defaultTalentEffects,
         holyWishChance: 50,

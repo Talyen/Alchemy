@@ -5,7 +5,7 @@
  */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
-import { addPlayerStatus, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import { addPlayerStatus, playerStatusDelta, setFlag, type BattleState, type CombatTextEvent } from "./types";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { addForgeToPlayer } from "./status-forge";
 import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
@@ -113,11 +113,12 @@ export function applyPlayerStatusEffect(
   if (effect.status === "forge") {
     return addForgeToPlayer(state, amount, combatTexts);
   }
+  const effectiveAmount = playerStatusDelta(state, effect.status, amount);
   mergeCombatText(combatTexts, {
     target: "player",
     kind: "status",
     stat: effect.status,
-    amount,
+    amount: effectiveAmount,
   });
   return addPlayerStatus(state, effect.status, amount);
 }

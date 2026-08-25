@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { processEnemyAttack, processEnemyDamageEffect } from "@/lib/battle/enemy-turn-attack";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
 import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
@@ -373,5 +373,47 @@ describe("processEnemyAttack", () => {
     expect(result.playerStatuses.phoenixFeather).toBe(0);
     expect(result.deathsDoorUsed).toBe(false);
     expect(result.deathsDoorActive).toBe(false);
+  });
+
+  it("Dodges an enemy damage packet before Block and Armor", () => {
+    const texts = makeTexts();
+    const state = makeTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 5 },
+      rng: () => 0.01,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+    });
+    const result = processEnemyAttack(state, texts);
+    expect(result.playerHealth).toBe(30);
+    expect(result.playerStatuses.block).toBe(10);
+    expect(result.playerStatuses.armor).toBe(5);
+    expect(texts).toContainEqual({
+      target: "player",
+      kind: "notice",
+      stat: "dodge",
+      text: "Dodge",
+    });
+  });
+
+  it("does not Dodge status-only enemy attacks", () => {
+    const state = makeTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, poison: 0 },
+      rng: () => 0.01,
+      enemyAttackEffects: [{ kind: "player-status", status: "poison", amount: 4 }],
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerHealth).toBe(30);
+    expect(result.playerStatuses.poison).toBe(4);
+  });
+
+  it("does not Dodge encounter-style damage that omits canDodge", () => {
+    const state = makeTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      rng: () => 0.01,
+    });
+    const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 8 }, makeTexts());
+    expect(result.playerHealth).toBeLessThan(30);
   });
 });

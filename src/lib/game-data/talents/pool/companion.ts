@@ -1,5 +1,5 @@
 // Talent definitions for keyword: companion.
-import { Bone, Trash, HeartPulse, Link2, Eye, Hand, HeartHandshake, ShieldAlert, Ban, Bell } from "lucide-react";
+import { Bone, Trash, HeartPulse, Link2, Eye, Hand, PawPrint, ShieldAlert, Ban, Bell } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -55,10 +55,10 @@ export const companionTalents: TalentDefinition[] = [
   {
     id: "companion-loyal",
     keywordId: "companion",
-    name: "Loyal",
-    description: "If you have a Companion, you take 1 less damage",
-    icon: HeartHandshake,
-    effects: [setEffect("damageReductionWithCompanion", 1)],
+    name: "Pack Weave",
+    description: "When you Dodge, your Companion attacks",
+    icon: PawPrint,
+    effects: [setEffect("companionAttacksOnDodge", true)],
   },
   {
     id: "companion-watchdog",

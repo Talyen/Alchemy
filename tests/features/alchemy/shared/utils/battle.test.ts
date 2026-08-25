@@ -5,6 +5,7 @@ import {
   getEnemyStatusChips,
   getCombatTextColorClass,
   getCombatTextIcon,
+  getBattleCardPlayTarget,
 } from "@/features/alchemy/shared/utils/battle";
 import { keywordIcons } from "@/features/alchemy/shared/config";
 import { enemyBestiary } from "@/lib/game-data";
@@ -59,9 +60,15 @@ describe("getPlayerStatusChips", () => {
     const state = makeProductionBattleState();
     state.flags.playNextCardTwice = true;
     state.flags.nextHitCrit = true;
+    state.flags.nextHitPhysicalBonus = 4;
+    state.flags.nextPhysicalDealsBleed = true;
+    state.flags.nextArcheryCardFree = true;
     const chips = getPlayerStatusChips(state);
     expect(chips).toContainEqual({ id: "playNextCardTwice", value: 1, hideValue: true });
     expect(chips).toContainEqual({ id: "nextHitCrit", value: 1, hideValue: true });
+    expect(chips).toContainEqual({ id: "nextHitPhysicalBonus", value: 4 });
+    expect(chips).toContainEqual({ id: "nextPhysicalDealsBleed", value: 1, hideValue: true });
+    expect(chips).toContainEqual({ id: "nextArcheryCardFree", value: 1, hideValue: true });
     expect(chips.find((chip) => chip.id === "nextHitPoison")).toBeUndefined();
   });
 
@@ -219,5 +226,67 @@ describe("getCombatTextIcon", () => {
   it("returns the stat's icon for damage", () => {
     const icon = getCombatTextIcon({ target: "enemy", kind: "damage", stat: "burn", amount: 5 });
     expect(icon).toBe(keywordIcons.burn);
+  });
+});
+
+describe("getBattleCardPlayTarget", () => {
+  it('returns "enemy" for damage cards', () => {
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    expect(getBattleCardPlayTarget(card)).toBe("enemy");
+  });
+
+  it('returns "enemy" for enemy-status cards', () => {
+    const card = makeTestCard({ effects: [{ kind: "enemy-status", status: "burn", amount: 3 }] });
+    expect(getBattleCardPlayTarget(card)).toBe("enemy");
+  });
+
+  it('returns "player" for player-status cards', () => {
+    const card = makeTestCard({ effects: [{ kind: "player-status", status: "block", amount: 5 }] });
+    expect(getBattleCardPlayTarget(card)).toBe("player");
+  });
+
+  it('returns "player" for heal cards', () => {
+    const card = makeTestCard({ effects: [{ kind: "heal", amount: 5 }] });
+    expect(getBattleCardPlayTarget(card)).toBe("player");
+  });
+
+  it('returns "player" for restore-mana cards', () => {
+    const card = makeTestCard({ effects: [{ kind: "restore-mana", amount: 2 }] });
+    expect(getBattleCardPlayTarget(card)).toBe("player");
+  });
+
+  it('returns "player" for draw-cards cards', () => {
+    const card = makeTestCard({ effects: [{ kind: "draw-cards", amount: 1 }] });
+    expect(getBattleCardPlayTarget(card)).toBe("player");
+  });
+
+  it('returns "player" for summon-companion cards', () => {
+    const card = makeTestCard({ effects: [{ kind: "summon-companion", companionId: "wolf" }] });
+    expect(getBattleCardPlayTarget(card)).toBe("player");
+  });
+
+  it('returns "player" for wish cards', () => {
+    const card = makeTestCard({ effects: [{ kind: "wish", amount: 1 }] });
+    expect(getBattleCardPlayTarget(card)).toBe("player");
+  });
+
+  it('returns "enemy" for damage even when preceded by wish/gold', () => {
+    const card = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "physical", amount: 5 },
+        { kind: "gain-gold", amount: 5 },
+      ],
+    });
+    expect(getBattleCardPlayTarget(card)).toBe("enemy");
+  });
+
+  it('returns "player" for player-status even when preceded by draw-cards', () => {
+    const card = makeTestCard({
+      effects: [
+        { kind: "draw-cards", amount: 1 },
+        { kind: "player-status", status: "block", amount: 5 },
+      ],
+    });
+    expect(getBattleCardPlayTarget(card)).toBe("player");
   });
 });

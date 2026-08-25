@@ -23,7 +23,8 @@ export type KeywordId =
   | "nature"
   | "companion"
   | "archery"
-  | "phoenixFeather";
+  | "phoenixFeather"
+  | "dodge";
 
 export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature";
 

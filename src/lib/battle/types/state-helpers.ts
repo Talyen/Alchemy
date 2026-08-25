@@ -32,6 +32,10 @@ const NON_CARD_INACTIVE_FLAGS = {
   nextHitCrit: false,
   playNextCardTwice: false,
   nextHitPoison: false,
+  nextHitPhysicalBonus: 0,
+  nextPhysicalDealsBleed: false,
+  nextArcheryCardFree: false,
+  nextNatureCardFree: false,
 } as const satisfies Partial<CombatFlags>;
 
 const PRESERVED_NON_CARD_FLAG_VALUES = {
@@ -122,6 +126,11 @@ export function stripEnemyArmor(state: BattleState): BattleState {
   return { ...state, enemyMitigation: { ...state.enemyMitigation, armor: 0 } };
 }
 
+export function stripEnemyBlock(state: BattleState): BattleState {
+  if (state.enemyMitigation.block <= 0) return state;
+  return { ...state, enemyMitigation: { ...state.enemyMitigation, block: 0 } };
+}
+
 export function reduceEnemyArmor(state: BattleState, delta: number): BattleState {
   if (delta <= 0 || state.enemyMitigation.armor <= 0) return state;
   return {
@@ -193,7 +202,7 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
   const nextHealth = clampHealth(state.playerHealth, -reducedDamage, state.playerMaxHealth);
   if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
   if (state.playerStatuses.phoenixFeather > 0) {
-    const healAmount = Math.ceil(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
+    const healAmount = Math.round(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
     return {
       ...state,
       playerHealth: healAmount,

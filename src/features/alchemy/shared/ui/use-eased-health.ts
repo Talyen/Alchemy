@@ -8,12 +8,14 @@ export function useEasedHealth({
   to,
   active,
   durationMs = CAMPFIRE_ANIMATION_MS,
+  easing = "cubic",
   onFinished,
 }: {
   from: number;
   to: number;
   active: boolean;
   durationMs?: number;
+  easing?: "cubic" | "linear";
   onFinished?: () => void;
 }) {
   const [animatedHealth, setAnimatedHealth] = useState(from);
@@ -47,7 +49,7 @@ export function useEasedHealth({
     const startTime = performance.now();
     function animate(now: number) {
       const progress = Math.min(1, Math.max(0, (now - startTime) / durationMs));
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased = easing === "linear" ? progress : 1 - Math.pow(1 - progress, 3);
       setAnimatedHealth(from + (to - from) * eased);
       if (progress < 1) {
         frameRef.current = requestAnimationFrame(animate);
@@ -62,7 +64,7 @@ export function useEasedHealth({
     return () => {
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     };
-  }, [active, durationMs, from, to]);
+  }, [active, durationMs, easing, from, to]);
 
   return { displayHealth: Math.round(shownHealth), progressHealth: shownHealth };
 }

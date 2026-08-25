@@ -25,19 +25,23 @@ import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { rollPercent } from "./status-helpers";
 
-import { cardHasDamageType, computeEffectiveCost } from "./card-cost-rules";
+import { cardHasDamageType, computeEffectiveCost, isNatureCard } from "./card-cost-rules";
+import { MAX_HAND_SIZE } from "../game-constants";
 
 /**
  * Resolves the final state and cost for a played card, modifying flags if discounts were used.
  */
 function resolveCardPlayCost(state: BattleState, card: BattleCard) {
-  const { effectiveCost, consumedFlags } = computeEffectiveCost(state, card);
-  if (consumedFlags.size === 0) {
+  const { effectiveCost, consumedFlags, disarmedFlags } = computeEffectiveCost(state, card);
+  if (consumedFlags.size === 0 && disarmedFlags.size === 0) {
     return { state, effectiveCost };
   }
   let nextFlags: CombatFlags = { ...state.flags };
   for (const flag of consumedFlags) {
     nextFlags = { ...nextFlags, [flag]: true };
+  }
+  for (const flag of disarmedFlags) {
+    nextFlags = { ...nextFlags, [flag]: false };
   }
   return { state: { ...state, flags: nextFlags }, effectiveCost };
 }
@@ -69,24 +73,6 @@ function isCardInHand(state: BattleState, card: BattleCard, index: number): bool
   return !!currentCard && currentCard.id === card.id && currentCard.uid === card.uid;
 }
 
-function effectDealsDamageToEnemy(effect: BattleCard["effects"][number]): boolean {
-  if (
-    effect.kind === "damage" ||
-    effect.kind === "random-damage" ||
-    effect.kind === "cleanse-player-status-to-damage"
-  ) {
-    return true;
-  }
-  if (effect.kind === "chance") {
-    return [...effect.successEffects, ...effect.failureEffects].some(effectDealsDamageToEnemy);
-  }
-  return false;
-}
-
-function cardDealsDamage(card: BattleCard): boolean {
-  return card.effects.some(effectDealsDamageToEnemy);
-}
-
 function canAffordCard(state: BattleState, index: number): boolean {
   const currentCard = state.hand[index];
   return !!currentCard && state.mana >= computeEffectiveCost(state, currentCard).effectiveCost;
@@ -116,7 +102,6 @@ function executeCardPlayState(
   combatTexts: CombatTextEvent[],
   playTwice: boolean,
 ): BattleState {
-  const consumeCrit = state.flags.nextHitCrit && cardDealsDamage(card);
   let nextState: BattleState = {
     ...state,
     hand: state.hand.filter((_, i) => i !== index),
@@ -133,7 +118,6 @@ function executeCardPlayState(
   // Replay shares the first application's context so start-of-play conditionals
   // (e.g. restore-mana ifEnemyFrozen) compare against the same pre-play snapshot.
   if (playTwice) nextState = applyCardEffects(nextState, card, combatTexts, playContext);
-  if (consumeCrit) nextState = { ...nextState, flags: { ...nextState.flags, nextHitCrit: false } };
 
   nextState = applyNatureCardPlayTalents(nextState, card, combatTexts);
 
@@ -143,7 +127,42 @@ function executeCardPlayState(
     }
   }
 
+  nextState = applyTwinCasting(nextState, card);
+
   return nextState;
+}
+
+function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
+  if (state.gearEffects.elementalTwinCasting <= 0) return state;
+  if (state.hand.length >= MAX_HAND_SIZE) return state;
+
+  const hasBurn = cardHasDamageType(card, "burn") || card.tags?.includes("burn");
+  const hasFreeze = cardHasDamageType(card, "freeze") || card.tags?.includes("freeze");
+
+  let targetType: "burn" | "freeze" | null = null;
+  if (hasBurn && hasFreeze) {
+    targetType = state.rng() < 0.5 ? "freeze" : "burn";
+  } else if (hasBurn) {
+    targetType = "freeze";
+  } else if (hasFreeze) {
+    targetType = "burn";
+  }
+  if (!targetType) return state;
+
+  const targetIndex = state.deck.findIndex((c) => cardHasDamageType(c, targetType) || c.tags?.includes(targetType));
+  if (targetIndex === -1) return state;
+
+  const [rawDrawnCard] = state.deck.slice(targetIndex, targetIndex + 1);
+  if (!rawDrawnCard) return state;
+
+  const drawnCard = { ...rawDrawnCard, uid: state.nextCardUid };
+  const nextDeck = [...state.deck.slice(0, targetIndex), ...state.deck.slice(targetIndex + 1)];
+  return {
+    ...state,
+    deck: nextDeck,
+    hand: [...state.hand, drawnCard],
+    nextCardUid: state.nextCardUid + 1,
+  };
 }
 
 /**
@@ -167,7 +186,7 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
 }
 
 function applyNatureCardPlayTalents(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
-  if (!cardHasDamageType(card, "nature")) return state;
+  if (!isNatureCard(card)) return state;
   let nextState = state;
   if (nextState.talentEffects.blockOnNatureCard > 0) {
     nextState = addPlayerStatusWithCombatText(
@@ -225,7 +244,7 @@ function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTe
 /**
  * Resolves post-play destination (exhausted/discard pile) and triggers consume riders.
  */
-function handlePostPlayCardDestination(
+export function handlePostPlayCardDestination(
   state: BattleState,
   card: BattleCard,
   triggerConsumeRiders = true,

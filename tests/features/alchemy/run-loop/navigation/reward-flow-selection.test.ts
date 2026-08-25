@@ -4,8 +4,9 @@ import {
   createCombatRewardState,
   createWildwoodRewardState,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
-import { getStartingDeck } from "@/lib/game-data";
+import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { gearDefinitions, uniqueItemList } from "@/lib/gear";
 
 describe("reward flow selection", () => {
   describe("createWildwoodRewardState", () => {
@@ -74,6 +75,27 @@ describe("reward flow selection", () => {
         rng: () => 0.5,
       });
       expect(result.gold).toBe(34);
+    });
+
+    it("degrades unique rolls to astral when every unique is owned", () => {
+      const ownedUniqueIds = new Set(uniqueItemList.map((unique) => unique.id));
+      const result = createBossRewardState({
+        gold: 10,
+        bossBonus: 5,
+        generousBonus: 0,
+        talentGoldPerCombat: 2,
+        materials: emptyInventory(),
+        trinketIds: [],
+        ownedTrinketIds: trinketLibrary.map((entry) => entry.id),
+        ownedUniqueIds,
+        rng: () => 0,
+      });
+      expect(result.rewardType).toBe("gear");
+      if (result.rewardType !== "gear") throw new Error("expected gear reward");
+      for (const choice of result.choices) {
+        expect(ownedUniqueIds.has(choice.definitionId)).toBe(false);
+        expect(gearDefinitions[choice.definitionId]?.rarity).toBe("astral");
+      }
     });
 
     it("goldMultiplier defaults to 1 for boss rewards", () => {

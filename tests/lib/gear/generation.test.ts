@@ -23,7 +23,7 @@ describe("gear generation", () => {
     expect(choices).toHaveLength(3);
     for (const instance of choices) {
       expect(instance.instanceId).toBeTruthy();
-      expect(instance.definitionId).toMatch(/-(basic|astral)$/);
+      expect(gearDefinitions[instance.definitionId]).toBeDefined();
       expect(instance.affixes.length).toBeGreaterThanOrEqual(1);
       for (const affix of instance.affixes) {
         expect(affix.value).toBeGreaterThan(0);
@@ -54,7 +54,7 @@ describe("gear generation", () => {
     };
     const instance = generateDevRandomGearInstance(rng);
     expect(instance.instanceId).toBeTruthy();
-    expect(instance.definitionId).toMatch(/-(basic|astral)$/);
+    expect(gearDefinitions[instance.definitionId]).toBeDefined();
     const definition = gearDefinitions[instance.definitionId];
     expect(definition).toBeTruthy();
     const rarity = definition.rarity!;
@@ -106,5 +106,34 @@ describe("gear generation", () => {
 
   it("returns null for an unknown base item id", () => {
     expect(generateGearInstanceForBaseItem("not-a-real-item", () => 0.1)).toBeNull();
+  });
+
+  it("rolls defensive Dodge affixes on leather armor and offensive Dodge affixes on dagger, shortbow, and quiver", () => {
+    const defensiveDodge = ["dodge-chance", "dodge-block", "dodge-heal", "dodge-armor"];
+    const offensiveDodge = ["dodge-riposte", "dodge-opening", "dodge-crit", "dodge-bleed"];
+
+    const leatherPool = buildEligibleAffixPool(gearDefinitions["leather-armor-basic"]!).map((affix) => affix.id);
+    expect(leatherPool).toEqual(expect.arrayContaining(defensiveDodge));
+    expect(leatherPool.some((id) => offensiveDodge.includes(id))).toBe(false);
+
+    for (const definitionId of ["dagger-basic", "shortbow-basic", "quiver-basic"] as const) {
+      const pool = buildEligibleAffixPool(gearDefinitions[definitionId]!).map((affix) => affix.id);
+      expect(pool).toEqual(expect.arrayContaining(offensiveDodge));
+      expect(pool.some((id) => defensiveDodge.includes(id))).toBe(false);
+    }
+
+    const mixedDodge = [...defensiveDodge, ...offensiveDodge];
+    for (const definitionId of ["leather-buckler-basic", "emerald-ring-basic", "emerald-amulet-basic"] as const) {
+      const pool = buildEligibleAffixPool(gearDefinitions[definitionId]!).map((affix) => affix.id);
+      expect(pool).toEqual(expect.arrayContaining(mixedDodge));
+    }
+
+    const platePool = buildEligibleAffixPool(gearDefinitions["plate-armor-basic"]!).map((affix) => affix.id);
+    expect(platePool.some((id) => mixedDodge.includes(id))).toBe(false);
+
+    for (const definitionId of ["kite-shield-basic", "longbow-basic", "longsword-basic"] as const) {
+      const pool = buildEligibleAffixPool(gearDefinitions[definitionId]!).map((affix) => affix.id);
+      expect(pool.some((id) => mixedDodge.includes(id))).toBe(false);
+    }
   });
 });

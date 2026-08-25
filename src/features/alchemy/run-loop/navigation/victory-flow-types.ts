@@ -18,6 +18,7 @@ export interface VictoryRewardsInput {
   runBoons: string[];
   equippedTrinketId?: string | null;
   ownedTrinketIds?: string[];
+  ownedUniqueIds?: ReadonlySet<string>;
   contentSystemType: ContentSystemId;
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   battleState: BattleState;

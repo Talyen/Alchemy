@@ -10,3 +10,4 @@ export * from "./display";
 export * from "./item-names";
 export * from "./gear-shine";
 export * from "./crafting";
+export * from "./unique-catalog";

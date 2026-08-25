@@ -5,7 +5,7 @@
  */
 import { drawFromState, applyDrawResult } from "./draw";
 import { addPlayerStatusWithCombatText, gainManaWithCombatText } from "./combat-text";
-import { setFlag, stripEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
+import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
 import { addForgeToPlayer } from "./status-forge";
 import { FREE_CARD_SENTINEL } from "../game-constants";
 
@@ -16,6 +16,7 @@ export interface CrowdControlTriggerBonuses {
   draw?: number;
   nextCardFree?: boolean;
   stripArmor?: boolean;
+  stripBlock?: boolean;
 }
 
 export function applyCrowdControlTriggerBonuses(
@@ -41,6 +42,9 @@ export function applyCrowdControlTriggerBonuses(
   }
   if (bonuses.stripArmor) {
     nextState = stripEnemyArmor(nextState);
+  }
+  if (bonuses.stripBlock) {
+    nextState = stripEnemyBlock(nextState);
   }
   const mana = bonuses.mana ?? 0;
   if (mana > 0) {

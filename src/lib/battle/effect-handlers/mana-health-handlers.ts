@@ -43,11 +43,12 @@ function gainMaxMana(state: BattleState, amount: number, combatTexts: CombatText
 function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount });
   const newMaxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - amount);
+  const crystalsLost = state.maxMana - newMaxMana;
   let nextState: BattleState = { ...state, maxMana: newMaxMana, mana: Math.min(newMaxMana, state.mana) };
-  if (nextState.talentEffects.burnDamageOnManaCrystalLoss > 0 && nextState.enemyHealth > 0) {
+  if (crystalsLost > 0 && nextState.talentEffects.burnDamageOnManaCrystalLoss > 0 && nextState.enemyHealth > 0) {
     nextState = dealEnemyScaledDamage(
       nextState,
-      nextState.talentEffects.burnDamageOnManaCrystalLoss,
+      nextState.talentEffects.burnDamageOnManaCrystalLoss * crystalsLost,
       "burn",
       combatTexts,
       {

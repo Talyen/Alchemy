@@ -168,7 +168,7 @@ describe("playBattleCardResolved", () => {
     expect(result.state.enemyHealth).toBe(24);
   });
 
-  it("applies Canopy and Photosynthesis once when playing a Nature card", () => {
+  it("applies Nature card Block and Photosynthesis once when playing a Nature card", () => {
     const card = makeTestCard({
       id: "vines",
       cost: 1,

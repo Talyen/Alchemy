@@ -286,7 +286,6 @@ describe("corruption destination exit", () => {
     const advanceToNextDestination = vi.fn();
     const returnToCurrentDestination = vi.fn();
     createCorruptionFlowHandlers({
-      getRunDeck: () => [],
       updateRunDeck: () => {},
       advanceToNextDestination,
       returnToCurrentDestination,
@@ -308,7 +307,6 @@ describe("corruption destination exit", () => {
     const advanceToNextDestination = vi.fn();
     const returnToCurrentDestination = vi.fn();
     createCorruptionFlowHandlers({
-      getRunDeck: () => [],
       updateRunDeck: () => {},
       advanceToNextDestination,
       returnToCurrentDestination,
@@ -320,7 +318,6 @@ describe("corruption destination exit", () => {
 
   it("handleCorruptCard ignores a second pick after a result is stored", () => {
     const original = makeTestCard({ id: "slash" });
-    const other = makeTestCard({ id: "block" });
     getRunSessionStoreView().setCorruptionResult({
       originalCard: original,
       corruptedCard: { ...original, corrupted: true },
@@ -330,7 +327,6 @@ describe("corruption destination exit", () => {
 
     const updateRunDeck = vi.fn();
     createCorruptionFlowHandlers({
-      getRunDeck: () => [original, other],
       updateRunDeck,
       advanceToNextDestination: vi.fn(),
       returnToCurrentDestination: vi.fn(),

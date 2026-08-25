@@ -28,6 +28,9 @@ contract and controller seams.
 - `equippedTrinkets` maps each character to one owned Trinket at most. Equipping a shared Trinket moves it from any other character.
 - Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
 - Gear slots are `main-hand`, `off-hand`, `body`, `left-accessory`, and `right-accessory`. Both Accessory slots accept Rings or Amulets. The Armory lays these out over `left-accessory | trinket | right-accessory`; the dedicated Trinket slot accepts only permanent Trinkets.
+- **Unique** is a third Gear rarity (alongside basic and astral). Each unique is a named definition with a fixed signature affix plus three supporting affixes. Crafting currencies cannot modify uniques. Salvage yields a guaranteed crafting-currency package (2 Discordant Dice, 1 Ascension Seal, 1 Severance Maw, 1 Smith's Whetstone) plus homestead materials at the unique/astral salvage table.
+- Uniqueness is inventory-scoped: a unique definition is excluded from shops and rewards while any character still holds an instance. Salvaging it returns that definition to the drop pool. Reward and shop screens never offer the same unique twice, and never pair a unique with another item of the same base item.
+- Drop/shop tables live in `src/lib/game-constants/run-rewards.ts`: equipment shop 5% unique / 35% astral / 60% basic (unique rolls degrade to astral when none remain); normal gear rewards 5% unique / 8% astral / remainder basic; boss gear slots 30% unique / remainder astral after the separate 30% permanent-Trinket gate.
 
 ## State flow
 

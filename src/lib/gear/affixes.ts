@@ -1,5 +1,4 @@
 import type { GearAffixId } from "./affix-catalog";
-import { gearAffixNameParts } from "./affix-name-parts";
 import { gearAffixCatalog, type GearAffixDefinition } from "./affix-catalog";
 import type { GearEffectManifest } from "./gear-effect-manifest";
 import { defaultGearEffects } from "./gear-effect-manifest";
@@ -39,8 +38,7 @@ export function rollAffixValue(def: GearAffixDefinition, rarity: GearRarity, rng
 }
 
 export function getGearAffixDisplayName(affixId: GearAffixId): string {
-  const parts = gearAffixNameParts[affixId];
-  return parts?.prefix ?? parts?.suffix ?? affixId;
+  return gearAffixCatalog[affixId]?.name ?? affixId;
 }
 
 export function getGearAffixTooltipEntries(

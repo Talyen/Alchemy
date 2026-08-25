@@ -2,13 +2,13 @@
 // Depends on local utility submodules only.
 // Controllers and UI import from here to avoid deep utility paths.
 export { tokenizeDescription, getHoverId } from "./string";
-export { getCombatTextColorClass, getCombatTextIcon, getPlayerStatusChips, getEnemyStatusChips } from "./battle";
 export {
-  DEFAULT_TILT_STRENGTH,
-  getCardRect,
-  setTiltFromEvent,
-  clearTiltFromEvent,
+  getCombatTextColorClass,
+  getCombatTextIcon,
+  getPlayerStatusChips,
+  getEnemyStatusChips,
   getBattleCardPlayTarget,
-} from "./dom";
+} from "./battle";
+export { DEFAULT_TILT_STRENGTH, getCardRect, setTiltFromEvent, clearTiltFromEvent } from "./dom";
 export { formatEnemyAttackLines } from "./enemy";
 export { isAlchemyDevBuild, shouldSkipStartupLoadingGate } from "./dev-mode";

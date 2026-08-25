@@ -10,13 +10,10 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { discoverCardIds } from "../run/deck-mutations";
 
-function applyCorruptionToDeck(
-  runDeck: BattleCard[],
-  cardIndex: number,
-  updateRunDeck: (draft: GameplayDraft, deck: BattleCard[]) => void,
-) {
+function applyCorruptionToDeck(cardIndex: number, updateRunDeck: (draft: GameplayDraft, deck: BattleCard[]) => void) {
   dispatchRunSessionCommand(
     (nextDraft) => {
+      const runDeck = nextDraft.run.activeRun.runDeck as BattleCard[];
       const { deck, result } = corruptDeckCard(
         runDeck,
         cardIndex,
@@ -38,7 +35,6 @@ function applyCorruptionToDeck(
 }
 
 export interface CorruptionFlowDeps {
-  getRunDeck: () => BattleCard[];
   updateRunDeck: (draft: GameplayDraft, deck: BattleCard[]) => void;
   advanceToNextDestination: () => void;
   returnToCurrentDestination: () => void;
@@ -48,7 +44,7 @@ export interface CorruptionFlowDeps {
 export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
   function handleCorruptCard(cardIndex: number) {
     if (readRunSession().corruptionResult) return;
-    applyCorruptionToDeck(deps.getRunDeck(), cardIndex, deps.updateRunDeck);
+    applyCorruptionToDeck(cardIndex, deps.updateRunDeck);
   }
 
   function handleCorruptionExit() {

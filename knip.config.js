@@ -48,7 +48,6 @@ export default {
   },
   ignore: ["tests/environment.d.ts", "tests/scripts/global.d.ts", "tests/electron-environment.d.ts"],
   ignoreDependencies: [
-    "tailwindcss-animate",
     // Loaded via node_modules path string in scripts/dist-desktop.mjs; knip cannot trace it.
     "electron-builder",
     // Invoked via npx in scripts/lib/release-runner.mjs; knip cannot trace it.

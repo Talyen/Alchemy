@@ -1,5 +1,5 @@
 // Talent definitions for keyword: archery.
-import { Plug, CloudRain, Eye, ScanEye, ArrowRight, Aperture, Zap, Crosshair, Diamond, Award } from "lucide-react";
+import { Move, CloudRain, Eye, ScanEye, ArrowRight, Aperture, Zap, Crosshair, Diamond, Award } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -7,10 +7,10 @@ export const archeryTalents: TalentDefinition[] = [
   {
     id: "archery-damage",
     keywordId: "archery",
-    name: "Tripwire",
-    description: "Increase damage dealt by Archery cards by 1",
-    icon: Plug,
-    effects: [addEffect("flatArrowDamage", 1)],
+    name: "Arrow Dance",
+    description: "When you Dodge, your next Archery card is free",
+    icon: Move,
+    effects: [setEffect("nextArcheryCardFreeOnDodge", true)],
   },
   {
     id: "archery-hail",

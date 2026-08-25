@@ -84,13 +84,17 @@ function buildFarmYieldNodes(farm: { yield: Record<string, number> }): ReactNode
         <span
           key={`yield-${m}`}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 shadow-xs",
+            "inline-flex items-center gap-1.5 rounded-full border px-1.5 py-0.5 shadow-xs",
             tooltipChipClass,
+            "leading-none",
             matPillStyle[m],
             matTextColor[m],
           )}
         >
-          <MaterialIcon material={m} size="sm" className="inline-block" /> +{farm.yield[m]} {materialLabels[m]}
+          <MaterialIcon material={m} size="xs" />
+          <span className="leading-none">
+            +{farm.yield[m]} {materialLabels[m]}
+          </span>
         </span>,
       );
     }

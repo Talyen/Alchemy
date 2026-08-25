@@ -18,10 +18,12 @@ export interface GearBaseItemDefinition {
 function salvageBy(
   basic: Partial<MaterialInventory>,
   astral: Partial<MaterialInventory>,
+  unique?: Partial<MaterialInventory>,
 ): Record<GearRarity, MaterialInventory> {
   return {
     basic: { ...emptyInventory(), ...basic },
     astral: { ...emptyInventory(), ...astral },
+    unique: { ...emptyInventory(), ...(unique ?? astral) },
   };
 }
 
@@ -86,7 +88,7 @@ const gearBaseItemCatalog = {
     displayName: "Dagger",
     compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
-    affinityKeywords: ["physical", "bleed", "poison"],
+    affinityKeywords: ["physical", "bleed", "poison", "dodge"],
     salvageByRarity: salvageBy({ iron: 3 }, { iron: 3, herbs: 3 }),
     rangedWeapon: false,
   },
@@ -118,7 +120,7 @@ const gearBaseItemCatalog = {
     displayName: "Shortbow",
     compatibleSlots: ["main-hand"],
     requiresTwoHands: false,
-    affinityKeywords: ["archery", "physical", "nature", "companion"],
+    affinityKeywords: ["archery", "physical", "nature", "companion", "dodge"],
     salvageByRarity: woodLight,
     rangedWeapon: true,
   },
@@ -158,7 +160,7 @@ const gearBaseItemCatalog = {
     displayName: "Leather Buckler",
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
-    affinityKeywords: ["block", "armor", "physical"],
+    affinityKeywords: ["block", "armor", "physical", "dodge"],
     salvageByRarity: woodLight,
   },
   "kite-shield": {
@@ -172,7 +174,7 @@ const gearBaseItemCatalog = {
     displayName: "Quiver",
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
-    affinityKeywords: ["archery", "physical"],
+    affinityKeywords: ["archery", "physical", "dodge"],
     salvageByRarity: woodLight,
     quiver: true,
   },
@@ -187,7 +189,7 @@ const gearBaseItemCatalog = {
     displayName: "Leather Armor",
     compatibleSlots: ["body"],
     requiresTwoHands: false,
-    affinityKeywords: ["physical", "health", "armor"],
+    affinityKeywords: ["physical", "health", "armor", "dodge"],
     salvageByRarity: salvageBy({ herbs: 6 }, { herbs: 9 }),
   },
   "plate-armor": {
@@ -215,7 +217,7 @@ const gearBaseItemCatalog = {
     displayName: "Emerald Ring",
     compatibleSlots: ["left-accessory", "right-accessory"],
     requiresTwoHands: false,
-    affinityKeywords: ["nature", "poison", "archery"],
+    affinityKeywords: ["nature", "poison", "archery", "dodge"],
     salvageByRarity: natureGem,
   },
   "topaz-ring": {
@@ -243,7 +245,7 @@ const gearBaseItemCatalog = {
     displayName: "Emerald Amulet",
     compatibleSlots: ["left-accessory", "right-accessory"],
     requiresTwoHands: false,
-    affinityKeywords: ["nature", "poison", "archery"],
+    affinityKeywords: ["nature", "poison", "archery", "dodge"],
     salvageByRarity: natureGem,
   },
   "topaz-amulet": {

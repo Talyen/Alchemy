@@ -7,6 +7,8 @@ export const ARMORY_SLOTS = ["main-hand", "off-hand", "body", "left-accessory", 
 
 export type GearSlot = (typeof GEAR_SLOTS)[number];
 export type ArmorySlot = (typeof ARMORY_SLOTS)[number];
-export type GearRarity = "basic" | "astral";
+export type GearRarity = "basic" | "astral" | "unique";
 
-export const GEAR_RARITIES = ["basic", "astral"] as const satisfies readonly GearRarity[];
+export const GEAR_RARITIES = ["basic", "astral", "unique"] as const satisfies readonly GearRarity[];
+
+export type ItemDropTier = "basic" | "astral" | "trinket" | "unique";

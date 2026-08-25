@@ -8,6 +8,7 @@
 import type { BattleCardEffect } from "@/lib/game-data";
 import {
   addEnemyStatus,
+  addPlayerStatus,
   clampHealth,
   reduceEnemyArmor,
   setEnemyStatus,
@@ -23,11 +24,19 @@ import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollPercent } from "./
 import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, computeLeechHeal, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
 import { payKillPayouts } from "./kill-payouts";
+import { payPendingBleedLeech } from "./damage-rider-leech";
 
-function applyBurnStatusRider(state: BattleState, actualDamage: number): BattleState {
+function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = addEnemyStatus(state, "burn", actualDamage);
   if (nextState.talentEffects.burnRemovesEnemyArmor) {
     nextState = reduceEnemyArmor(nextState, actualDamage);
+  }
+  if (nextState.gearEffects.burnBleedMirrorAndLeech > 0 && actualDamage > 0) {
+    if (rollPercent(20, nextState.rng)) {
+      nextState = addEnemyStatus(nextState, "bleed", actualDamage);
+    }
+    const healAmount = Math.max(1, Math.round(actualDamage * 0.5));
+    nextState = applyHealingWithCombatText(nextState, healAmount, combatTexts, { skipFightPacing: true });
   }
   return nextState;
 }
@@ -112,6 +121,13 @@ function applyBleedStatusRider(
   let nextState = stackBleed(state, actualDamage);
   nextState = queueBleedLeech(nextState, effect, bleedAmount);
   nextState = procBleedPoison(nextState, actualDamage, bleedAmount);
+  if (nextState.gearEffects.burnBleedMirrorAndLeech > 0 && actualDamage > 0) {
+    if (rollPercent(20, nextState.rng)) {
+      nextState = addEnemyStatus(nextState, "burn", actualDamage);
+    }
+    const healAmount = Math.max(1, Math.round(actualDamage * 0.5));
+    nextState = applyHealingWithCombatText(nextState, healAmount, combatTexts, { skipFightPacing: true });
+  }
   return awardCutpurseGold(nextState, bleedAmount, combatTexts);
 }
 
@@ -120,8 +136,9 @@ function applyStunStatusRider(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
   preHitHealth: number,
+  fromHolyBuildup = false,
 ): BattleState {
-  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth);
+  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth, fromHolyBuildup);
 }
 
 function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -170,9 +187,17 @@ export function tryTriggerEnemyFreeze(
     {
       block: result.talentEffects.blockOnFreeze,
       stripArmor: result.talentEffects.freezeStripArmor,
+      stripBlock: result.talentEffects.freezeStripBlock,
     },
     combatTexts,
   );
+  if (result.gearEffects.freezeGrantsBlockAndMana > 0) {
+    const manaGain = Math.min(4, Math.round(result.playerStatuses.block / 2));
+    if (manaGain > 0) {
+      result = { ...result, mana: Math.min(result.maxMana, result.mana + manaGain) };
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: manaGain });
+    }
+  }
   return result;
 }
 
@@ -182,7 +207,11 @@ function applyFreezeStatusRider(
   combatTexts: CombatTextEvent[],
   preHitHealth: number,
 ): BattleState {
-  const nextState = addEnemyStatus(state, "freeze", actualDamage);
+  let nextState = addEnemyStatus(state, "freeze", actualDamage);
+  if (nextState.gearEffects.freezeGrantsBlockAndMana > 0 && actualDamage > 0) {
+    nextState = addPlayerStatus(nextState, "block", actualDamage);
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: actualDamage });
+  }
   return tryTriggerEnemyFreeze(state, nextState, combatTexts, preHitHealth);
 }
 
@@ -200,7 +229,6 @@ function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextE
   let nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-    pendingBleedLeechHealing: 0,
   };
   // Same placement as dealEnemyDotTick: payouts fire right after the health
   // transition, ahead of any follow-up riders.
@@ -208,20 +236,7 @@ function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextE
   nextState = setEnemyStatus(nextState, "bleed", 0);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: finalDamage });
   nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
-  // Detonation is the bleed burst, so it pays the queued leech just like tickBleed:
-  // only for health actually lost, so overkill cannot out-heal the damage dealt.
-  const leechAmount = state.pendingBleedLeechHealing;
-  const healthLost = Math.max(0, state.enemyHealth - nextState.enemyHealth);
-  const leechPaid = Math.min(leechAmount, healthLost);
-  if (leechPaid > 0) {
-    nextState = applyHealingWithCombatText(
-      nextState,
-      scaledGearLeechHeal(computeLeechHeal(leechPaid), nextState.gearEffects),
-      combatTexts,
-      { skipFightPacing: true },
-    );
-  }
-  return nextState;
+  return payPendingBleedLeech(state.enemyHealth, nextState, combatTexts);
 }
 
 function applyPhysicalStatusRider(
@@ -246,7 +261,7 @@ export function applyDamageStatuses(
 ) {
   switch (effect.damageType) {
     case "burn":
-      return applyBurnStatusRider(state, actualDamage);
+      return applyBurnStatusRider(state, actualDamage, combatTexts);
     case "poison":
       return applyPoisonStatusRider(state, actualDamage, combatTexts);
     case "bleed":
@@ -257,6 +272,11 @@ export function applyDamageStatuses(
       return applyFreezeStatusRider(state, actualDamage, combatTexts, preHitHealth);
     case "physical":
       return applyPhysicalStatusRider(state, actualDamage, combatTexts);
+    case "holy":
+      if (state.gearEffects.holyStunBuildupGold > 0 && actualDamage > 0) {
+        return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth, true);
+      }
+      return state;
     default:
       return state;
   }

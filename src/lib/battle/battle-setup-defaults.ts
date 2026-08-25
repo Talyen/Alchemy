@@ -81,6 +81,11 @@ function createInitialFlags(): CombatFlags {
     nextHitCrit: false,
     playNextCardTwice: false,
     nextHitPoison: false,
+    nextHitPhysicalBonus: 0,
+    nextPhysicalDealsBleed: false,
+    nextArcheryCardFree: false,
+    nextNatureCardFree: false,
+    saintfallRetributionTriggered: false,
   };
 }
 

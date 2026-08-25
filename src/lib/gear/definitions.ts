@@ -2,8 +2,9 @@ import type { KeywordId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearArtByDefinitionId } from "@/lib/game-data";
 import { gearBaseItems, type GearBaseItemId } from "./base-items";
-import { GEAR_RARITIES, type GearRarity, type GearSlot } from "./types-core";
+import type { GearRarity, GearSlot } from "./types-core";
 import type { GearAffixId } from "./affix-catalog";
+import { uniqueItemList } from "./unique-catalog";
 
 export interface GearAffixRoll {
   id: GearAffixId;
@@ -44,7 +45,7 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
 
   for (const baseItemId of Object.keys(gearBaseItems) as GearBaseItemId[]) {
     const baseItem = gearBaseItems[baseItemId];
-    for (const rarity of GEAR_RARITIES) {
+    for (const rarity of ["basic", "astral"] as const) {
       const id = gearDefinitionId(baseItemId, rarity);
       const art = gearArtByDefinitionId[id];
       if (!art) {
@@ -64,6 +65,30 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
         ...(baseItem.quiver !== undefined ? { quiver: baseItem.quiver } : {}),
       };
     }
+  }
+
+  for (const unique of uniqueItemList) {
+    const baseItem = gearBaseItems[unique.baseItemId];
+    if (!baseItem) continue;
+    const art =
+      gearArtByDefinitionId[gearDefinitionId(unique.baseItemId, "astral")] ??
+      gearArtByDefinitionId[gearDefinitionId(unique.baseItemId, "basic")];
+    if (!art) {
+      throw new Error(`Missing gear art for unique ${unique.id} (base ${unique.baseItemId})`);
+    }
+    variants[unique.id] = {
+      id: unique.id,
+      baseItemId: unique.baseItemId,
+      rarity: "unique",
+      compatibleSlots: [...baseItem.compatibleSlots],
+      requiresTwoHands: baseItem.requiresTwoHands,
+      affinityKeywords: [...baseItem.affinityKeywords],
+      descriptionLines: [unique.description],
+      art,
+      salvageValue: { ...baseItem.salvageByRarity.unique },
+      ...(baseItem.rangedWeapon !== undefined ? { rangedWeapon: baseItem.rangedWeapon } : {}),
+      ...(baseItem.quiver !== undefined ? { quiver: baseItem.quiver } : {}),
+    };
   }
 
   return variants;
