@@ -9,7 +9,6 @@ import {
   hydrateMysteryVisit,
   hydrateShopState,
   hydrateTrinketShopState,
-  restoreWildwoodRewardState,
   serializeMysteryVisit,
   type ActiveRunData,
   type AlchemistState,
@@ -172,15 +171,6 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
   let screen = activeRun.currentScreen;
   let rewardState: RewardState | null = null;
   let companionRewardCards: BattleCard[] | null = null;
-
-  if (activeRun.wildwoodDraft?.rewardType && activeRun.wildwoodDraft.phase === "reward") {
-    rewardState = restoreWildwoodRewardState(
-      activeRun.wildwoodDraft.rewardType,
-      activeRun.wildwoodDraft.rewardChoiceIds,
-      activeRun.wildwoodDraft.selectedRewardId,
-      activeRun.wildwoodDraft.rewardGearChoices,
-    );
-  }
 
   if (activeRun.interruptedFlow.kind !== "none") {
     const claim = decodeInterruptedFlow(activeRun);

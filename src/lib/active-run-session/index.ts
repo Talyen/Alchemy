@@ -26,7 +26,6 @@ export {
   emptyShopState,
   emptyTrinketShopState,
 } from "./shop-session-types";
-export { restoreWildwoodRewardState } from "./wildwood-reward-restore";
 export { parseActiveRun, toActiveRunData } from "./parse";
 export {
   restorePendingReward,

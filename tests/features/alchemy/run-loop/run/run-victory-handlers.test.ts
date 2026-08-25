@@ -195,7 +195,6 @@ describe("createRunFlowHandlers victory paths", () => {
       },
       companionRewardCards: [companion],
       wildwoodDraft: {
-        version: 3 as const,
         phase: "reward",
         draftChoices: [],
         remainingBossIds: [],
@@ -203,10 +202,6 @@ describe("createRunFlowHandlers victory paths", () => {
         currentBossId: null,
         currentCombatTraitIds: [],
         currentRewardTraitIds: ["companion"],
-        rewardType: "card",
-        rewardChoiceIds: [],
-        rewardGearChoices: [],
-        selectedRewardId: null,
       },
     });
     const navigateTo = vi.fn();
@@ -227,7 +222,6 @@ describe("createRunFlowHandlers victory paths", () => {
     });
     setRunSession({
       wildwoodDraft: {
-        version: 3 as const,
         phase: "battle",
         draftChoices: [],
         remainingBossIds: [],
@@ -235,10 +229,6 @@ describe("createRunFlowHandlers victory paths", () => {
         currentBossId: "forge-golem",
         currentCombatTraitIds: [],
         currentRewardTraitIds: [],
-        rewardType: null,
-        rewardChoiceIds: [],
-        rewardGearChoices: [],
-        selectedRewardId: null,
       },
     });
     let receivedDraft = false;
@@ -267,7 +257,6 @@ describe("createRunFlowHandlers victory paths", () => {
     });
     setRunSession({
       wildwoodDraft: {
-        version: 3 as const,
         phase: "battle",
         draftChoices: [],
         remainingBossIds: [],
@@ -275,10 +264,6 @@ describe("createRunFlowHandlers victory paths", () => {
         currentBossId: "forge-golem",
         currentCombatTraitIds: [],
         currentRewardTraitIds: [],
-        rewardType: null,
-        rewardChoiceIds: [],
-        rewardGearChoices: [],
-        selectedRewardId: null,
       },
     });
 

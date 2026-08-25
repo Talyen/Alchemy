@@ -70,6 +70,7 @@ Migration tests must verify gameplay progress, not just field presence:
 - Active campaign, labyrinth, and wildwood runs resume when structurally valid (**`activeRun` must not be silently dropped**).
 - Mid-combat snapshots preserve trinket effects, gear effects, and combat flags.
 - Active and parked runs preserve Boons, pending reward meaning, and battle Trinket manifests across the schema-11 to schema-12 rename.
+- Schema-13 Wildwood rewards resume from `interruptedFlow` (card, Boon, Gear, selection, companion handoff) after nested draft reward fields are lifted from a reward-phase draft or dropped.
 - Schema-11 jewelry loadouts map left Ring to left Accessory and Amulet to right Accessory; the old middle right Ring is unequipped but remains in inventory. Permanent Trinket ownership starts empty because discovery does not imply ownership.
 - Every fixture is **idempotent** after `normalizeSaveData`.
 
@@ -124,6 +125,8 @@ Mystery visit blobs persist only while `currentScreen` is mystery. New choices u
 ## Interrupted flow (`activeRun.interruptedFlow`)
 
 Discriminated union (`kind: none | primary-reward | companion-reward | destination`) that records which claim surface the run should resume on. Encode maps live session reward/companion/claim state into one arm; decode switches on `kind` with no legacy inference. Reward payloads live under `pending` on the reward arms; destination-only resume carries destinations and victory metadata on the destination arm. Pre-launch floor raise to schema 11 dropped the prior `resumePhase` + `destinationChoices` + top-level `pendingReward` triad.
+
+Schema 13 makes `interruptedFlow` the sole persisted reward owner for Wildwood as well. Nested `wildwoodDraft` reward fields (`rewardType`, `rewardChoiceIds`, `rewardGearChoices`, `selectedRewardId`) and the nested `version` stamp are stripped; a live nested copy is lifted into `interruptedFlow` only when the generic arm is `none` and the draft phase is `reward` or leftover `recovery`. Leftover nested reward fields on battle, draft, or removal are dropped. Wildwood progression (phase, boss bag, draft choices, encounter traits) stays on `wildwoodDraft`. Unknown boss IDs in the bag are filtered; they do not null the draft.
 
 ## Battle transition continuation
 

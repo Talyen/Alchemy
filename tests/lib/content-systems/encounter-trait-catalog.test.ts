@@ -4,6 +4,8 @@ import {
   COMBAT_ENCOUNTER_TRAIT_IDS,
   ENCOUNTER_TRAITS,
   REWARD_ENCOUNTER_TRAIT_IDS,
+  eligibleEncounterTraitIds,
+  pickEncounterTrait,
   pickEncounterTraits,
   sanitizeEncounterTraitIds,
 } from "@/lib/content-systems/encounter-traits";
@@ -17,6 +19,16 @@ describe("encounter trait catalog", () => {
     );
     expect(COMBAT_ENCOUNTER_TRAIT_IDS.every((id) => ENCOUNTER_TRAITS[id].category === "combat")).toBe(true);
     expect(REWARD_ENCOUNTER_TRAIT_IDS.every((id) => ENCOUNTER_TRAITS[id].category === "reward")).toBe(true);
+  });
+
+  it("keeps every eligible labyrinth and Wildwood trait pool non-empty", () => {
+    for (const mode of ["labyrinth", "wildwood"] as const) {
+      for (const category of ["combat", "reward"] as const) {
+        const pool = eligibleEncounterTraitIds(mode, category);
+        expect(pool.length, `${mode} ${category}`).toBeGreaterThan(0);
+        expect(() => pickEncounterTrait(mode, category, () => 0.5)).not.toThrow();
+      }
+    }
   });
 
   it("keeps Generous and Scavenger out of Wildwood while allowing its useful rewards", () => {

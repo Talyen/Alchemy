@@ -6,6 +6,7 @@ import {
   companionLibrary,
   computeTalentEffects,
   enemyBestiary,
+  enemiesByType,
   getCardKeywords,
   trinketLibrary,
   type BattleCard,
@@ -168,13 +169,13 @@ function runCoreScenarios(options: ReportRunOptions): CoreRow[] {
     const o = tier.depthOffset;
     for (const characterId of characterIds()) {
       const matchups: Array<{ enemyId: string; enemyType: string; depth: number }> = [];
-      for (const enemy of enemyBestiary.filter((entry) => entry.enemyType === "normal")) {
+      for (const enemy of enemiesByType.normal) {
         for (const depth of [o, o + 3, o + 6]) matchups.push({ enemyId: enemy.id, enemyType: "normal", depth });
       }
-      for (const enemy of enemyBestiary.filter((entry) => entry.enemyType === "elite")) {
+      for (const enemy of enemiesByType.elite) {
         for (const depth of [o + 2, o + 5, o + 7]) matchups.push({ enemyId: enemy.id, enemyType: "elite", depth });
       }
-      for (const enemy of enemyBestiary.filter((entry) => entry.enemyType === "boss")) {
+      for (const enemy of enemiesByType.boss) {
         matchups.push({ enemyId: enemy.id, enemyType: "boss", depth: o + 7 });
       }
 

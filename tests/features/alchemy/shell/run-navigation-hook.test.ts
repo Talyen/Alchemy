@@ -60,7 +60,7 @@ describe("useRunFlowEngine", () => {
       makeTestCard({ id: `wildwood-draft-${index}` }),
     );
     const wildwoodDraft = createInitialWildwoodDraftState("knight", () => 0.5);
-    setRunProgress({ contentSystemType: "wildwood", runDeck: draftedCards.slice(0, -1) });
+    setRunProgress({ contentSystemType: "wildwood", runDeck: draftedCards });
     setRunSession({
       hasActiveRun: true,
       pendingCharacterId: "knight",
@@ -106,8 +106,8 @@ describe("useRunFlowEngine", () => {
     expect(onStartBossById).toHaveBeenCalledOnce();
   });
 
-  it("keeps the Wildwood removal deck intact until the battle screen swap", () => {
-    const runDeck = Array.from({ length: 3 }, (_, index) => makeTestCard({ id: `wildwood-removal-${index}` }));
+  it("removes a Wildwood card in the same command that enters battle", () => {
+    const runDeck = Array.from({ length: 8 }, (_, index) => makeTestCard({ id: `wildwood-removal-${index}` }));
     setRunProgress({ contentSystemType: "wildwood", runDeck });
     setRunSession({
       hasActiveRun: true,
@@ -147,6 +147,11 @@ describe("useRunFlowEngine", () => {
     expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual([
       "wildwood-removal-0",
       "wildwood-removal-2",
+      "wildwood-removal-3",
+      "wildwood-removal-4",
+      "wildwood-removal-5",
+      "wildwood-removal-6",
+      "wildwood-removal-7",
     ]);
     expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "battle" });
     expect(onStartBossById).toHaveBeenCalledOnce();
@@ -230,6 +235,45 @@ describe("useRunFlowEngine", () => {
 
     act(() => {
       result.current.handleWildwoodDraftComplete(draftedCards);
+    });
+
+    expect(getRunSessionStoreView().pendingCharacterId).toBe("knight");
+    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "draft" });
+    expect(onStartBossById).not.toHaveBeenCalled();
+  });
+
+  it("does not advance a Wildwood draft when the screen deck disagrees", () => {
+    const draftedCards = Array.from({ length: DRAFT_ROUNDS }, (_, index) =>
+      makeTestCard({ id: `wildwood-draft-${index}` }),
+    );
+    setRunProgress({ contentSystemType: "wildwood", runDeck: draftedCards });
+    setRunSession({
+      hasActiveRun: true,
+      pendingCharacterId: "knight",
+      pendingContentSystemType: "wildwood",
+      wildwoodDraft: createInitialWildwoodDraftState("knight", () => 0.5),
+    });
+    const onStartBossById = vi.fn(() => true);
+
+    const { result } = renderHook(() =>
+      useRunFlowEngine({
+        screen: ROUTE_SCREENS.DRAFT_DECK,
+        navigateTo: vi.fn(),
+        transition: vi.fn(),
+        cancelPending: vi.fn(),
+        battle: {
+          onStartBattle: vi.fn(),
+          onStartBossBattle: vi.fn(),
+          onStartBossById,
+        },
+        initializeShop: vi.fn(),
+        labyrinthClearNode: vi.fn(),
+        labyrinthFailNode: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.handleWildwoodDraftComplete([makeTestCard({ id: "mismatched-card" })]);
     });
 
     expect(getRunSessionStoreView().pendingCharacterId).toBe("knight");

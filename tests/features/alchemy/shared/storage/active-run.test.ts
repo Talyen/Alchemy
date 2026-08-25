@@ -125,7 +125,6 @@ describe("parseActiveRun", () => {
 
   it("parses resumable Wildwood Draft state", () => {
     const wildwoodDraft = {
-      version: 3 as const,
       phase: "draft" as const,
       draftChoices: makeRunCandidate().runDeck,
       remainingBossIds: ["forge-golem", "iron-bear"] as const,
@@ -133,10 +132,6 @@ describe("parseActiveRun", () => {
       currentBossId: null,
       currentCombatTraitIds: [],
       currentRewardTraitIds: [],
-      rewardType: null,
-      rewardChoiceIds: [],
-      rewardGearChoices: [],
-      selectedRewardId: null,
     };
 
     const result = parseActiveRun(
@@ -151,13 +146,35 @@ describe("parseActiveRun", () => {
     expect(result?.wildwoodDraft).toMatchObject({ phase: "draft", remainingBossIds: ["forge-golem", "iron-bear"] });
   });
 
+  it("drops unknown Wildwood boss ids without invalidating the draft", () => {
+    const result = parseActiveRun(
+      makeRunCandidate({
+        contentSystemType: "wildwood",
+        selectedDifficulty: null,
+        wildwoodDraft: {
+          phase: "battle" as const,
+          draftChoices: [],
+          remainingBossIds: ["forge-golem", "retired-boss"],
+          previousBossId: "retired-boss",
+          currentBossId: "iron-bear" as const,
+          currentCombatTraitIds: ["tempered"],
+          currentRewardTraitIds: [],
+        },
+      }),
+    );
+
+    expect(result?.wildwoodDraft).not.toBeNull();
+    expect(result?.wildwoodDraft?.remainingBossIds).toEqual(["forge-golem"]);
+    expect(result?.wildwoodDraft?.previousBossId).toBeNull();
+    expect(result?.wildwoodDraft?.currentBossId).toBe("iron-bear");
+  });
+
   it("drops removed Wildwood trait ids without invalidating the run", () => {
     const result = parseActiveRun(
       makeRunCandidate({
         contentSystemType: "wildwood",
         selectedDifficulty: null,
         wildwoodDraft: {
-          version: 3 as const,
           phase: "battle" as const,
           draftChoices: [],
           remainingBossIds: [],
@@ -165,10 +182,6 @@ describe("parseActiveRun", () => {
           currentBossId: "forge-golem" as const,
           currentCombatTraitIds: ["tempered", "removed-combat-trait"],
           currentRewardTraitIds: ["collector", "removed-reward-trait"],
-          rewardType: null,
-          rewardChoiceIds: [],
-          rewardGearChoices: [],
-          selectedRewardId: null,
         },
       }),
     );
@@ -184,7 +197,6 @@ describe("parseActiveRun", () => {
         selectedDifficulty: null,
         currentScreen: "wildwood-recovery",
         wildwoodDraft: {
-          version: 3 as const,
           phase: "recovery" as const,
           draftChoices: [],
           remainingBossIds: [],
@@ -192,10 +204,6 @@ describe("parseActiveRun", () => {
           currentBossId: null,
           currentCombatTraitIds: [],
           currentRewardTraitIds: [],
-          rewardType: "card" as const,
-          rewardChoiceIds: ["slash"],
-          rewardGearChoices: [],
-          selectedRewardId: null,
         },
       }),
     );

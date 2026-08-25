@@ -266,13 +266,27 @@ describe("session facade API", () => {
     expect(getRunSessionStoreView().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
   });
 
-  it("restores wildwood gear rewards from reward-phase draft when interruptedFlow is none", () => {
+  it("restores wildwood gear rewards from interruptedFlow", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
     const activeRun = {
       ...snapshotRun(ROUTE_SCREENS.LABYRINTH_MAP),
-      interruptedFlow: { kind: "none" as const },
+      currentScreen: "rewards" as const,
+      interruptedFlow: {
+        kind: "primary-reward" as const,
+        pending: {
+          rewardType: "gear" as const,
+          gearChoices: [instance],
+          companionChoiceIds: [],
+          selectedId: null,
+          gold: 0,
+          materials: emptyInventory(),
+          destinations: [],
+          selectedBossId: null,
+          lastVictoryEnemyType: null,
+          lastVictoryContentSystem: "wildwood" as const,
+        },
+      },
       wildwoodDraft: {
-        version: 3 as const,
         phase: "reward" as const,
         draftChoices: [],
         remainingBossIds: ["iron-bear"] as Array<"forge-golem" | "frostwarden" | "blight-treant" | "iron-bear">,
@@ -280,10 +294,6 @@ describe("session facade API", () => {
         currentBossId: null,
         currentCombatTraitIds: [],
         currentRewardTraitIds: [],
-        rewardType: "gear" as const,
-        rewardChoiceIds: [],
-        rewardGearChoices: [instance],
-        selectedRewardId: null,
       },
     };
 
@@ -291,6 +301,51 @@ describe("session facade API", () => {
     restoreRun(activeRun, {}, {});
     expect(getRunSessionStoreView().rewardState.rewardType).toBe("gear");
     expect(getRunSessionStoreView().rewardState.choices).toEqual([instance]);
+  });
+
+  it("resumes a Wildwood card reward onto the Victory screen from interruptedFlow", () => {
+    restoreRun(
+      {
+        ...snapshotRun(ROUTE_SCREENS.REWARDS),
+        contentSystemType: "wildwood",
+        currentScreen: "rewards",
+        interruptedFlow: {
+          kind: "primary-reward",
+          pending: {
+            rewardType: "card",
+            choiceIds: ["slash", "bash", "block"],
+            companionChoiceIds: [],
+            selectedId: null,
+            gold: 0,
+            materials: emptyInventory(),
+            destinations: [],
+            selectedBossId: null,
+            lastVictoryEnemyType: "boss",
+            lastVictoryContentSystem: "wildwood",
+          },
+        },
+        wildwoodDraft: {
+          phase: "reward",
+          draftChoices: [],
+          remainingBossIds: ["iron-bear"] as Array<"forge-golem" | "frostwarden" | "blight-treant" | "iron-bear">,
+          previousBossId: null,
+          currentBossId: null,
+          currentCombatTraitIds: [],
+          currentRewardTraitIds: [],
+        },
+      },
+      {},
+      {},
+    );
+
+    expect(getNavigationStoreView().screen).toBe(ROUTE_SCREENS.REWARDS);
+    expect(getRunProgressStoreView().contentSystemType).toBe("wildwood");
+    expect(getRunSessionStoreView().wildwoodDraft?.phase).toBe("reward");
+    const rewardState = getRunSessionStoreView().rewardState;
+    expect(rewardState.rewardType).toBe("card");
+    if (rewardState.rewardType === "card") {
+      expect(rewardState.choices.map((choice) => choice.id)).toEqual(["slash", "bash", "block"]);
+    }
   });
 
   it("drops unrestorable pending reward choices without soft-locking", () => {

@@ -15,8 +15,9 @@ import {
 import {
   type TalentEffectManifest,
   characters,
-  enemyBestiary,
+  enemyById,
   getStartingDeck,
+  isEnemyId,
   type BattleCard,
   type BestiaryEntry,
 } from "@/lib/game-data";
@@ -192,7 +193,7 @@ function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number,
 export function simulateBattle(config: BattleSimulationConfig): BattleSimulationResult {
   const seed = orFallback(config.seed, DEFAULT_SEED);
   const rng = createRunStreamRng(seed, "world");
-  const enemy = enemyBestiary.find((entry) => entry.id === config.enemyId);
+  const enemy = isEnemyId(config.enemyId) ? enemyById[config.enemyId] : undefined;
   if (!enemy) throw new Error(`Unknown enemy id: ${config.enemyId}`);
 
   const { state: initialState, playerMaxHealth, trinketIds } = buildSimBattleConfig(config, rng, enemy, seed);

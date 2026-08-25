@@ -18,7 +18,7 @@ describe("Wildwood reward selection", () => {
     resetRunDomainStore();
   });
 
-  it("writes selectedRewardId in the same command as reward selectedId", () => {
+  it("writes reward selection only on the generic reward state", () => {
     const wildwoodDraft = {
       ...createInitialWildwoodDraftState("knight", () => 0.5),
       phase: "reward" as const,
@@ -32,6 +32,6 @@ describe("Wildwood reward selection", () => {
     createRunFlowHandlers(makeFlowHandlerDeps()).selectRewardChoice("slash");
 
     expect(getRunSessionStoreView().rewardState.selectedId).toBe("slash");
-    expect(getRunSessionStoreView().wildwoodDraft?.selectedRewardId).toBe("slash");
+    expect(getRunSessionStoreView().wildwoodDraft).toEqual(wildwoodDraft);
   });
 });

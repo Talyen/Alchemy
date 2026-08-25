@@ -1,13 +1,12 @@
 // Pure Wildwood Draft boss bag, removal, and shared encounter trait rules.
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { characters, selectRewardCards, type BattleCard, type BestiaryEntry, type CharacterId } from "@/lib/game-data";
-import { DRAFT_CHOICES } from "@/lib/game-constants";
-import type { GearInstance } from "@/lib/gear";
+import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
 import { shuffle } from "@/lib/utils";
-import { WILDWOOD_BOSS_IDS } from "./bosses";
+import { WILDWOOD_BOSS_IDS, type WildwoodBossId } from "./bosses";
 import {
   appendEncounterTraits,
-  pickEncounterTraits,
+  pickEncounterTrait,
   type EncounterCombatTraitId,
   type EncounterRewardTraitId,
 } from "../encounter-traits";
@@ -15,11 +14,10 @@ import {
 const WILDWOOD_MINIMUM_REMOVAL_DECK_SIZE = 8;
 
 export type WildwoodModifierId = EncounterCombatTraitId;
-export type WildwoodBossId = (typeof WILDWOOD_BOSS_IDS)[number];
+export type { WildwoodBossId } from "./bosses";
 type WildwoodDraftPhase = "draft" | "battle" | "reward" | "removal";
 
 export interface WildwoodDraftState {
-  version: 3;
   phase: WildwoodDraftPhase;
   draftChoices: BattleCard[];
   remainingBossIds: WildwoodBossId[];
@@ -27,10 +25,6 @@ export interface WildwoodDraftState {
   currentBossId: WildwoodBossId | null;
   currentCombatTraitIds: EncounterCombatTraitId[];
   currentRewardTraitIds: EncounterRewardTraitId[];
-  rewardType: "card" | "boon" | "trinket" | "gear" | null;
-  rewardChoiceIds: string[];
-  rewardGearChoices: GearInstance[];
-  selectedRewardId: string | null;
 }
 
 export function createWildwoodDraftChoices(
@@ -50,7 +44,6 @@ export function createWildwoodDraftChoices(
 
 export function createInitialWildwoodDraftState(characterId: CharacterId, rng: () => number): WildwoodDraftState {
   return {
-    version: 3,
     phase: "draft",
     draftChoices: createWildwoodDraftChoices(characterId, [], rng),
     remainingBossIds: [],
@@ -58,11 +51,39 @@ export function createInitialWildwoodDraftState(characterId: CharacterId, rng: (
     currentBossId: null,
     currentCombatTraitIds: [],
     currentRewardTraitIds: [],
-    rewardType: null,
-    rewardChoiceIds: [],
-    rewardGearChoices: [],
-    selectedRewardId: null,
   };
+}
+
+export function offeredWildwoodDraftCard(
+  state: WildwoodDraftState,
+  runDeck: readonly BattleCard[],
+  requestedCardId: string,
+): BattleCard | null {
+  if (state.phase !== "draft" || runDeck.length >= DRAFT_ROUNDS) return null;
+  return state.draftChoices.find((choice) => choice.id === requestedCardId) ?? null;
+}
+
+export function pickWildwoodDraftCard(
+  state: WildwoodDraftState,
+  characterId: CharacterId,
+  runDeck: readonly BattleCard[],
+  requestedCardId: string,
+  rng: () => number,
+): { card: BattleCard; state: WildwoodDraftState } | null {
+  const card = offeredWildwoodDraftCard(state, runDeck, requestedCardId);
+  if (!card) return null;
+  const nextDeck = [...runDeck, card];
+  return {
+    card,
+    state: {
+      ...state,
+      draftChoices: nextDeck.length >= DRAFT_ROUNDS ? [] : createWildwoodDraftChoices(characterId, nextDeck, rng),
+    },
+  };
+}
+
+export function canCompleteWildwoodDraft(state: WildwoodDraftState, deckSize: number): boolean {
+  return state.phase === "draft" && deckSize >= DRAFT_ROUNDS;
 }
 
 export function createWildwoodBossBag(rng: () => number): WildwoodBossId[] {
@@ -86,21 +107,79 @@ export function drawWildwoodBoss(
       }
     }
   }
-  const [firstBoss] = WILDWOOD_BOSS_IDS;
-  const [bossId = firstBoss, ...rest] = bag;
+  const [bossId, ...rest] = bag;
+  if (!bossId) throw new Error("Wildwood requires at least one boss in the compendium");
   return { bossId, remainingBossIds: rest };
+}
+
+export function canPrepareNextWildwoodBoss(state: WildwoodDraftState, deckSize: number): boolean {
+  return (
+    state.phase === "reward" ||
+    state.phase === "removal" ||
+    (state.phase === "draft" && canCompleteWildwoodDraft(state, deckSize))
+  );
+}
+
+export function prepareNextWildwoodBoss(
+  state: WildwoodDraftState,
+  deckSize: number,
+  rng: () => number,
+): { state: WildwoodDraftState; bossId: WildwoodBossId; modifierId: WildwoodModifierId } | null {
+  if (!canPrepareNextWildwoodBoss(state, deckSize)) return null;
+  const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId, rng);
+  const modifierId = pickWildwoodModifier(rng);
+  const rewardTraitId = pickWildwoodRewardTrait(rng);
+  return {
+    bossId: draw.bossId,
+    modifierId,
+    state: {
+      ...state,
+      remainingBossIds: draw.remainingBossIds,
+      previousBossId: state.currentBossId ?? state.previousBossId,
+      currentBossId: draw.bossId,
+      currentCombatTraitIds: [modifierId],
+      currentRewardTraitIds: [rewardTraitId],
+    },
+  };
+}
+
+export function enterWildwoodBattle(state: WildwoodDraftState): WildwoodDraftState | null {
+  if (state.phase === "battle" || !state.currentBossId || state.currentCombatTraitIds.length === 0) return null;
+  return { ...state, phase: "battle" };
 }
 
 export function canOfferWildwoodRemoval(deckSize: number): boolean {
   return deckSize >= WILDWOOD_MINIMUM_REMOVAL_DECK_SIZE;
 }
 
+export function enterWildwoodRemoval(state: WildwoodDraftState): WildwoodDraftState | null {
+  return state.phase === "reward" ? { ...state, phase: "removal" } : null;
+}
+
+export function removeWildwoodCard(
+  state: WildwoodDraftState,
+  runDeck: readonly BattleCard[],
+  index: number,
+): BattleCard[] | null {
+  if (state.phase !== "removal" || !canOfferWildwoodRemoval(runDeck.length) || !Number.isInteger(index)) return null;
+  if (index < 0 || index >= runDeck.length) return null;
+  return runDeck.filter((_, cardIndex) => cardIndex !== index);
+}
+
+export function canSkipWildwoodRemoval(state: WildwoodDraftState): boolean {
+  return state.phase === "removal";
+}
+
+export function enterWildwoodReward(state: WildwoodDraftState): WildwoodDraftState | null {
+  return state.phase === "battle" ? { ...state, phase: "reward", currentCombatTraitIds: [] } : null;
+}
+
 export function pickWildwoodModifier(rng: () => number): WildwoodModifierId {
-  return pickEncounterTraits("wildwood", "combat", 1, rng)[0] as EncounterCombatTraitId;
+  return pickEncounterTrait("wildwood", "combat", rng);
 }
 
 export function pickWildwoodRewardTrait(rng: () => number): EncounterRewardTraitId {
-  return pickEncounterTraits("wildwood", "reward", 1, rng)[0] as EncounterRewardTraitId;
+  return pickEncounterTrait("wildwood", "reward", rng);
 }
 
 export function withWildwoodModifier(boss: BestiaryEntry, modifierId: WildwoodModifierId): BestiaryEntry {

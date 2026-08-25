@@ -1,9 +1,9 @@
 // Shared type contracts for Labyrinth and Wildwood content systems.
 // Used by run controllers, map generation, modifiers, and screens.
+import type { EncounterCombatTraitId, EncounterRewardTraitId } from "./encounter-traits";
 
-export type ContentSystemId = "campaign" | "labyrinth" | "wildwood";
-
-export const CONTENT_SYSTEM_IDS: readonly ContentSystemId[] = ["campaign", "labyrinth", "wildwood"];
+export { CONTENT_SYSTEM_IDS, type ContentSystemId } from "./content-system-ids";
+export type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-traits";
 
 // ============ Labyrinth ============
 
@@ -18,10 +18,6 @@ export type LabyrinthNodeType =
   | "trinket-shop"
   | "equipment-shop"
   | "boss";
-
-import type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-trait-ids";
-
-export type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId };
 
 type LabyrinthNodeState = "hidden" | "visible" | "current" | "cleared" | "failed";
 
@@ -42,4 +38,5 @@ export interface LabyrinthMap {
 }
 
 // ============ Wildwood ============
-// No separate entry type — display data comes from compendium.
+// No separate entry type — display data comes from the compendium.
+// Gauntlet eligibility is the explicit allowlist in wildwood/bosses.ts.

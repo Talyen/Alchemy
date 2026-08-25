@@ -217,38 +217,201 @@ export function currentSchemaCorruptedCardRunSave() {
 }
 
 /** Wildwood reward phase with trinket choices at the current schema. */
+function nestedWildwoodDraft(overrides: Record<string, unknown> = {}) {
+  return {
+    version: 3,
+    phase: "reward",
+    draftChoices: [],
+    remainingBossIds: ["iron-bear"],
+    previousBossId: "forge-golem",
+    currentBossId: null,
+    currentCombatTraitIds: [],
+    currentRewardTraitIds: ["alchemist"],
+    rewardType: "boon",
+    rewardChoiceIds: ["meteorite"],
+    rewardGearChoices: [],
+    selectedRewardId: null,
+    ...overrides,
+  };
+}
+
+function wildwoodRun(overrides: Record<string, unknown> = {}) {
+  return {
+    characterId: "ranger",
+    runDeck: [],
+    runGold: 30,
+    runPlayerHealth: 28,
+    runMaxHealth: 30,
+    roomsEncountered: 2,
+    currentAct: 1,
+    destinationIndexInAct: 0,
+    completedDestinations: [],
+    runTrinkets: [],
+    selectedDifficulty: null,
+    contentSystemType: "wildwood",
+    currentScreen: "rewards",
+    interruptedFlow: { kind: "none" },
+    wildwoodDraft: nestedWildwoodDraft(),
+    ...overrides,
+  };
+}
+
 function currentSchemaWildwoodTrinketRewardSave() {
-  return currentSaveEnvelope({
-    finishedRunCharacters: ["knight", "ranger"],
-    activeRun: {
-      characterId: "ranger",
-      runDeck: [],
-      runGold: 30,
-      runPlayerHealth: 28,
-      runMaxHealth: 30,
-      roomsEncountered: 2,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "wildwood",
-      wildwoodDraft: {
-        version: 3,
-        phase: "reward",
-        draftChoices: [],
-        remainingBossIds: ["iron-bear"],
-        previousBossId: "forge-golem",
-        currentBossId: null,
-        currentCombatTraitIds: [],
-        currentRewardTraitIds: ["collector"],
-        rewardType: "trinket",
-        rewardChoiceIds: ["bone-charm", "brass-censer"],
-        rewardGearChoices: [],
-        selectedRewardId: null,
+  return {
+    ...currentSaveEnvelope({
+      finishedRunCharacters: ["knight", "ranger"],
+      activeRun: wildwoodRun({
+        wildwoodDraft: nestedWildwoodDraft({
+          currentRewardTraitIds: ["collector"],
+          rewardType: "trinket",
+          rewardChoiceIds: ["bone-charm", "brass-censer"],
+        }),
+      }),
+    }),
+    saveSchemaVersion: 12,
+  };
+}
+
+function currentSchemaV12Save() {
+  return {
+    ...currentSchemaSave(),
+    saveSchemaVersion: 12,
+  };
+}
+
+function currentSchemaWildwoodCardRewardSave() {
+  return {
+    ...currentSaveEnvelope({
+      finishedRunCharacters: ["knight"],
+      activeRun: wildwoodRun({
+        wildwoodDraft: nestedWildwoodDraft({
+          rewardType: "card",
+          rewardChoiceIds: ["slash", "block"],
+        }),
+      }),
+    }),
+    saveSchemaVersion: 12,
+  };
+}
+
+function currentSchemaWildwoodGearRewardSave() {
+  return {
+    ...currentSaveEnvelope({
+      finishedRunCharacters: ["knight"],
+      activeRun: wildwoodRun({
+        wildwoodDraft: nestedWildwoodDraft({
+          rewardType: "gear",
+          rewardChoiceIds: [],
+          rewardGearChoices: [{ instanceId: "gear-1", definitionId: "ruby-ring-basic", affixes: [] }],
+        }),
+      }),
+    }),
+    saveSchemaVersion: 12,
+  };
+}
+
+function currentSchemaWildwoodSelectedRewardSave() {
+  return {
+    ...currentSaveEnvelope({
+      finishedRunCharacters: ["knight"],
+      activeRun: wildwoodRun({
+        wildwoodDraft: nestedWildwoodDraft({
+          rewardType: "card",
+          rewardChoiceIds: ["slash", "block"],
+          selectedRewardId: "slash",
+        }),
+      }),
+    }),
+    saveSchemaVersion: 12,
+  };
+}
+
+function currentSchemaWildwoodCompanionHandoffSave() {
+  return {
+    ...currentSaveEnvelope({
+      finishedRunCharacters: ["knight"],
+      activeRun: wildwoodRun({
+        interruptedFlow: {
+          kind: "companion-reward",
+          pending: {
+            rewardType: "card",
+            choiceIds: [],
+            companionChoiceIds: ["wolf-companion"],
+            selectedId: null,
+            gold: 0,
+            materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+            destinations: [],
+            selectedBossId: null,
+            lastVictoryEnemyType: "boss",
+            lastVictoryContentSystem: "wildwood",
+          },
+        },
+        wildwoodDraft: nestedWildwoodDraft({
+          rewardType: "card",
+          rewardChoiceIds: ["slash"],
+        }),
+      }),
+    }),
+    saveSchemaVersion: 12,
+  };
+}
+
+function currentSchemaParkedWildwoodNestedRewardSave() {
+  return {
+    ...currentSaveEnvelope({
+      finishedRunCharacters: ["knight"],
+      parkedRuns: {
+        wildwood: wildwoodRun({
+          wildwoodDraft: nestedWildwoodDraft({
+            rewardType: "card",
+            rewardChoiceIds: ["slash", "bash"],
+          }),
+        }),
       },
-    },
-  });
+    }),
+    saveSchemaVersion: 12,
+  };
+}
+
+function currentSchemaParkedWildwoodDraftSave() {
+  return {
+    ...currentSaveEnvelope({
+      finishedRunCharacters: ["knight"],
+      parkedRuns: {
+        wildwood: wildwoodRun({
+          currentScreen: "draft-deck",
+          interruptedFlow: { kind: "none" },
+          wildwoodDraft: nestedWildwoodDraft({
+            phase: "draft",
+            rewardType: null,
+            rewardChoiceIds: [],
+            selectedRewardId: null,
+          }),
+        }),
+      },
+    }),
+    saveSchemaVersion: 12,
+  };
+}
+
+function currentSchemaWildwoodLeftoverNestedRewardSave() {
+  return {
+    ...currentSaveEnvelope({
+      finishedRunCharacters: ["knight"],
+      activeRun: wildwoodRun({
+        currentScreen: "battle",
+        interruptedFlow: { kind: "none" },
+        wildwoodDraft: nestedWildwoodDraft({
+          phase: "battle",
+          currentBossId: "forge-golem",
+          currentCombatTraitIds: ["tempered"],
+          rewardType: "card",
+          rewardChoiceIds: ["slash", "block"],
+        }),
+      }),
+    }),
+    saveSchemaVersion: 12,
+  };
 }
 
 /** Mid-combat snapshot with trinket effects and combat flags at the current schema. */
@@ -312,6 +475,7 @@ export function currentSchemaMidCombatTrinketSave() {
 
 export const CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
   11: currentSchemaSave,
+  12: currentSchemaV12Save,
 };
 
 const FIXTURE_LIVE_SLASH = {
@@ -411,6 +575,13 @@ function currentSchemaTombstonedPilesSave() {
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {
   midCombatTrinket: currentSchemaMidCombatTrinketSave,
   wildwoodTrinketReward: currentSchemaWildwoodTrinketRewardSave,
+  wildwoodCardReward: currentSchemaWildwoodCardRewardSave,
+  wildwoodGearReward: currentSchemaWildwoodGearRewardSave,
+  wildwoodSelectedReward: currentSchemaWildwoodSelectedRewardSave,
+  wildwoodCompanionHandoff: currentSchemaWildwoodCompanionHandoffSave,
+  parkedWildwoodNestedReward: currentSchemaParkedWildwoodNestedRewardSave,
+  parkedWildwoodDraft: currentSchemaParkedWildwoodDraftSave,
+  wildwoodLeftoverNestedReward: currentSchemaWildwoodLeftoverNestedRewardSave,
   shippedBaseline: currentSchemaSave,
   tombstonedPiles: currentSchemaTombstonedPilesSave,
 };

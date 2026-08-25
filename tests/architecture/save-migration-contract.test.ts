@@ -25,6 +25,7 @@ describe("save migration contract", () => {
     const migrationSources = [
       read("src/lib/validation/migration/index.ts"),
       read("src/lib/validation/migration/steps-v11-v12.ts"),
+      read("src/lib/validation/migration/steps-v12-v13.ts"),
     ].join("\n");
     expect(countMigrationSteps(migrationSources)).toBe(CURRENT_SAVE_SCHEMA_VERSION - LAUNCH_SAVE_SCHEMA_VERSION);
   });

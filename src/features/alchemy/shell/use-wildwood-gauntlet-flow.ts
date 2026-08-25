@@ -14,14 +14,19 @@ import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
 import { logError } from "@/lib/error-logger";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
-import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
 import {
-  createWildwoodDraftChoices,
   canOfferWildwoodRemoval,
-  drawWildwoodBoss,
-  pickWildwoodModifier,
-  pickWildwoodRewardTrait,
+  canCompleteWildwoodDraft,
+  canPrepareNextWildwoodBoss,
+  canSkipWildwoodRemoval,
+  enterWildwoodBattle,
+  enterWildwoodRemoval,
+  enterWildwoodReward,
+  offeredWildwoodDraftCard,
+  pickWildwoodDraftCard,
+  prepareNextWildwoodBoss,
+  removeWildwoodCard,
   type WildwoodModifierId,
 } from "@/lib/content-systems/wildwood/gauntlet";
 import type { VictoryRewardsResult } from "@/features/alchemy/run-loop/navigation/victory-flow";
@@ -37,6 +42,15 @@ interface UseWildwoodGauntletFlowOptions {
   clearCardHover: () => void;
 }
 
+interface OutgoingScreenCommit {
+  canCommit: (draft: GameplayDraft) => boolean;
+  commit: (draft: GameplayDraft) => void;
+}
+
+function sameCardIds(left: readonly BattleCard[], right: readonly BattleCard[]): boolean {
+  return left.length === right.length && left.every((card, index) => card.id === right[index]?.id);
+}
+
 export function useWildwoodGauntletFlow({
   navigateTo,
   onStartBossById,
@@ -45,26 +59,22 @@ export function useWildwoodGauntletFlow({
 }: UseWildwoodGauntletFlowOptions) {
   const bossTransitionPendingRef = useRef(false);
   const startNextWildwoodBoss = useCallback(
-    (onRenderedScreenCommit?: () => void, commitOutgoingScreen?: (draft: GameplayDraft) => void) => {
+    (onRenderedScreenCommit?: () => void, outgoing?: OutgoingScreenCommit) => {
       if (bossTransitionPendingRef.current) return;
       bossTransitionPendingRef.current = true;
       dispatchRunSessionCommand(
         (draft) => {
+          if (outgoing && !outgoing.canCommit(draft)) return null;
           const state = draft.session.wildwoodDraft;
-          if (!state) return null;
-          const draftRng = createDraftRunRandomSource(draft, "world");
-          const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId, draftRng);
-          const modifierId = pickWildwoodModifier(draftRng);
-          const rewardTraitId = pickWildwoodRewardTrait(draftRng);
-          setWildwoodDraft(draft, {
-            ...state,
-            remainingBossIds: draw.remainingBossIds,
-            previousBossId: state.currentBossId ?? state.previousBossId,
-            currentBossId: draw.bossId,
-            currentCombatTraitIds: [modifierId],
-            currentRewardTraitIds: [rewardTraitId],
-          });
-          return { bossId: draw.bossId, modifierId };
+          if (!state || !canPrepareNextWildwoodBoss(state, draft.run.activeRun.runDeck.length)) return null;
+          const prepared = prepareNextWildwoodBoss(
+            state,
+            draft.run.activeRun.runDeck.length,
+            createDraftRunRandomSource(draft, "world"),
+          );
+          if (!prepared) return null;
+          setWildwoodDraft(draft, prepared.state);
+          return { bossId: prepared.bossId, modifierId: prepared.modifierId };
         },
         {
           afterCommit: (started) => {
@@ -82,17 +92,11 @@ export function useWildwoodGauntletFlow({
             }
             navigateTo(CONSTANTS.SCREENS.BATTLE, () => {
               dispatchRunSessionCommand((draft) => {
-                commitOutgoingScreen?.(draft);
+                outgoing?.commit(draft);
                 const state = draft.session.wildwoodDraft;
                 if (!state) return;
-                setWildwoodDraft(draft, {
-                  ...state,
-                  phase: "battle",
-                  rewardType: null,
-                  rewardChoiceIds: [],
-                  rewardGearChoices: [],
-                  selectedRewardId: null,
-                });
+                const battleState = enterWildwoodBattle(state);
+                if (battleState) setWildwoodDraft(draft, battleState);
               });
               if (!onStartBossById(started.bossId, undefined, started.modifierId)) {
                 bossTransitionPendingRef.current = false;
@@ -139,26 +143,34 @@ export function useWildwoodGauntletFlow({
     dispatchRunSessionCommand((draft) => {
       const state = draft.session.wildwoodDraft;
       const activeRun = draft.run.activeRun;
-      if (activeRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || state?.phase !== "draft") return;
-      const nextDeck = [...activeRun.runDeck, card];
-      const draftRng = createDraftRunRandomSource(draft, "world");
-      appendCardToRunWithDiscovery(draft, card);
-      setWildwoodDraft(draft, {
-        ...state,
-        draftChoices:
-          nextDeck.length >= DRAFT_ROUNDS ? [] : createWildwoodDraftChoices(activeRun.characterId, nextDeck, draftRng),
-      });
+      if (activeRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || !state) return;
+      if (!offeredWildwoodDraftCard(state, activeRun.runDeck, card.id)) return;
+      const pick = pickWildwoodDraftCard(
+        state,
+        activeRun.characterId,
+        activeRun.runDeck,
+        card.id,
+        createDraftRunRandomSource(draft, "world"),
+      );
+      if (!pick) return;
+      appendCardToRunWithDiscovery(draft, pick.card);
+      setWildwoodDraft(draft, pick.state);
     });
   }, []);
 
   const handleWildwoodDraftComplete = useCallback(
     (draftedCards: BattleCard[]) => {
-      if (draftedCards.length < DRAFT_ROUNDS) return;
-      dispatchRunSessionCommand((draft) => {
-        setRunDeck(draft, draftedCards);
-        setPendingCharacterId(draft, null);
-      });
-      startNextWildwoodBoss();
+      dispatchRunSessionCommand(
+        (draft) => {
+          const state = draft.session.wildwoodDraft;
+          const runDeck = draft.run.activeRun.runDeck;
+          if (!state || !canCompleteWildwoodDraft(state, runDeck.length)) return false;
+          if (!sameCardIds(runDeck, draftedCards)) return false;
+          setPendingCharacterId(draft, null);
+          return true;
+        },
+        { afterCommit: (completed) => completed && startNextWildwoodBoss() },
+      );
     },
     [startNextWildwoodBoss],
   );
@@ -166,7 +178,7 @@ export function useWildwoodGauntletFlow({
   const handleWildwoodRewardComplete = useCallback(
     (onRenderedScreenCommit?: () => void) => {
       const state = readRunSession().wildwoodDraft;
-      if (!state) {
+      if (!state || state.phase !== "reward") {
         if (onRenderedScreenCommit) onRenderedScreenCommit();
         else dispatchRunSessionCommand((draft) => releaseRewardClaim(draft));
         return;
@@ -176,14 +188,8 @@ export function useWildwoodGauntletFlow({
           dispatchRunSessionCommand((draft) => {
             const current = draft.session.wildwoodDraft;
             if (!current) return;
-            setWildwoodDraft(draft, {
-              ...current,
-              phase: "removal",
-              rewardType: null,
-              rewardChoiceIds: [],
-              rewardGearChoices: [],
-              selectedRewardId: null,
-            });
+            const removalState = enterWildwoodRemoval(current);
+            if (removalState) setWildwoodDraft(draft, removalState);
           });
           onRenderedScreenCommit?.();
         });
@@ -196,29 +202,33 @@ export function useWildwoodGauntletFlow({
 
   const handleWildwoodRemoveCard = useCallback(
     (index: number) => {
-      startNextWildwoodBoss(undefined, (draft) => {
-        setRunDeck(draft, (deck) => deck.filter((_, cardIndex) => cardIndex !== index));
+      startNextWildwoodBoss(undefined, {
+        canCommit: (draft) => {
+          const current = draft.session.wildwoodDraft;
+          return current != null && removeWildwoodCard(current, draft.run.activeRun.runDeck, index) != null;
+        },
+        commit: (draft) => {
+          const current = draft.session.wildwoodDraft;
+          if (!current) return;
+          const nextDeck = removeWildwoodCard(current, draft.run.activeRun.runDeck, index);
+          if (nextDeck) setRunDeck(draft, nextDeck);
+        },
       });
     },
     [startNextWildwoodBoss],
   );
 
   const handleWildwoodSkipRemoval = useCallback(() => {
+    const state = readRunSession().wildwoodDraft;
+    if (!state || !canSkipWildwoodRemoval(state)) return;
     startNextWildwoodBoss();
   }, [startNextWildwoodBoss]);
 
-  const commitWildwoodVictory = useCallback((draft: GameplayDraft, result: VictoryRewardsResult) => {
+  const commitWildwoodVictory = useCallback((draft: GameplayDraft, _result: VictoryRewardsResult) => {
     const wildwood = draft.session.wildwoodDraft;
     if (!wildwood) return;
-    const rewardType = result.rewardState.rewardType;
-    setWildwoodDraft(draft, {
-      ...wildwood,
-      phase: "reward",
-      rewardType,
-      rewardChoiceIds: rewardType === "gear" ? [] : result.rewardState.choices.map((choice) => choice.id),
-      rewardGearChoices: rewardType === "gear" ? result.rewardState.choices : [],
-      selectedRewardId: null,
-    });
+    const rewardState = enterWildwoodReward(wildwood);
+    if (rewardState) setWildwoodDraft(draft, rewardState);
   }, []);
 
   return useMemo(

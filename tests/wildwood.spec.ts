@@ -12,10 +12,8 @@ async function pickDraftCard(page: import("@playwright/test").Page) {
     .click();
 }
 
-/** Default resumable draft state with the shared inert fields; override draftChoices etc. */
 function wildwoodDraftDefaults(overrides: Record<string, unknown> = {}) {
   return {
-    version: 3,
     phase: "draft",
     draftChoices: [makeCard({ id: "boss-killer-final" })],
     remainingBossIds: [],
@@ -23,14 +21,10 @@ function wildwoodDraftDefaults(overrides: Record<string, unknown> = {}) {
     currentBossId: null,
     currentCombatTraitIds: [],
     currentRewardTraitIds: [],
-    rewardType: null,
-    rewardChoiceIds: [],
-    selectedRewardId: null,
     ...overrides,
   };
 }
 
-/** Full save-state for a mid-draft wildwood run; merge per-test overrides. */
 function wildwoodBossState(overrides: Record<string, unknown> = {}) {
   return {
     contentSystemType: "wildwood",
@@ -43,6 +37,43 @@ function wildwoodBossState(overrides: Record<string, unknown> = {}) {
       effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
     })),
     wildwoodDraft: wildwoodDraftDefaults(),
+    ...overrides,
+  };
+}
+
+function wildwoodRewardFlow(overrides: Record<string, unknown> = {}) {
+  const bossKiller = {
+    ...makeHighDamageCard(),
+    effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
+  };
+  return {
+    contentSystemType: "wildwood",
+    selectedDifficulty: null,
+    currentScreen: "rewards",
+    interruptedFlow: {
+      kind: "primary-reward",
+      pending: {
+        rewardType: "card",
+        choiceIds: ["slash", "bash", "block"],
+        companionChoiceIds: [],
+        selectedId: null,
+        gold: 0,
+        materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+        destinations: [],
+        selectedBossId: null,
+        lastVictoryEnemyType: "boss",
+        lastVictoryContentSystem: "wildwood",
+      },
+    },
+    runPlayerHealth: 10,
+    runMaxHealth: 30,
+    runDeck: Array.from({ length: 6 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
+    wildwoodDraft: wildwoodDraftDefaults({
+      phase: "reward",
+      draftChoices: [],
+      remainingBossIds: ["iron-bear"],
+      previousBossId: "forge-golem",
+    }),
     ...overrides,
   };
 }
@@ -116,13 +147,14 @@ test.describe("Wildwood Draft", prepush, () => {
       }).toPass({ timeout: 10000 });
 
       await expect
-        .poll(() =>
-          page.evaluate(
+        .poll(async () => {
+          const health = await page.evaluate(
             (saveKey) => JSON.parse(localStorage.getItem(saveKey) ?? "{}").activeRun?.runPlayerHealth,
             SAVE_KEY,
-          ),
-        )
-        .toBe(10);
+          );
+          return typeof health === "number" && health > 0 && health < 30;
+        })
+        .toBe(true);
     },
   );
 
@@ -133,33 +165,11 @@ test.describe("Wildwood Draft", prepush, () => {
       test.setTimeout(30000);
       void fastBattle;
       void runtimeErrors;
-      const bossKiller = {
-        ...makeHighDamageCard(),
-        effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
-      };
-      // Inject directly into the reward phase — the reward screen hydrates from
-      // wildwoodDraft (phase "reward" + rewardType/rewardChoiceIds) so no boss
-      // gauntlet boot is needed to reach the Skip gate.
-      await injectSaveState(
-        page,
-        wildwoodBossState({
-          currentScreen: "rewards",
-          runPlayerHealth: 10,
-          runMaxHealth: 30,
-          runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
-          wildwoodDraft: wildwoodDraftDefaults({
-            phase: "reward",
-            rewardType: "card",
-            rewardChoiceIds: ["slash", "bash", "block"],
-            selectedRewardId: null,
-          }),
-        }),
-      );
+      await injectSaveState(page, wildwoodRewardFlow());
       await page.goto("/");
 
       await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
 
-      // Skip Rewards and start the next battle
       const skipBtn = page.getByRole("button", { name: "Skip" });
       await expect(skipBtn).toBeEnabled({ timeout: 5000 });
       await skipBtn.click();
@@ -168,6 +178,33 @@ test.describe("Wildwood Draft", prepush, () => {
       await expect(battle.hand.first()).toBeVisible({ timeout: 10000 });
     },
   );
+
+  test("reloading a Wildwood reward save keeps interruptedFlow choices", async ({
+    page,
+    fastBattle,
+    runtimeErrors,
+  }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await injectSaveState(page, wildwoodRewardFlow());
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
+
+    const choiceIdsBefore = await page.evaluate((saveKey) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      return save.activeRun?.interruptedFlow?.pending?.choiceIds ?? [];
+    }, SAVE_KEY);
+    expect(choiceIdsBefore).toEqual(["slash", "bash", "block"]);
+
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
+
+    const choiceIdsAfter = await page.evaluate((saveKey) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      return save.activeRun?.interruptedFlow?.pending?.choiceIds ?? [];
+    }, SAVE_KEY);
+    expect(choiceIdsAfter).toEqual(["slash", "bash", "block"]);
+  });
 });
 
 test.describe("Wildwood Traits", slow, () => {

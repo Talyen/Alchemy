@@ -400,6 +400,49 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
       expect(result.data.interruptedFlow).toEqual({ kind: "none" });
     }
   });
+
+  it("keeps Wildwood rewards on interruptedFlow without nested draft reward fields", () => {
+    const result = ActiveRunDataSchema.safeParse(
+      run({
+        contentSystemType: "wildwood",
+        currentScreen: "rewards",
+        interruptedFlow: {
+          kind: "primary-reward",
+          pending: {
+            rewardType: "card",
+            choiceIds: ["slash", "bash", "block"],
+            companionChoiceIds: [],
+            selectedId: null,
+            gold: 0,
+            materials: {},
+            destinations: [],
+            selectedBossId: null,
+            lastVictoryEnemyType: "boss",
+            lastVictoryContentSystem: "wildwood",
+          },
+        },
+        wildwoodDraft: {
+          phase: "reward",
+          draftChoices: [],
+          remainingBossIds: [],
+          previousBossId: null,
+          currentBossId: null,
+          currentCombatTraitIds: [],
+          currentRewardTraitIds: [],
+        },
+      }),
+    );
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (!result.success) return;
+    expect(result.data.wildwoodDraft).toMatchObject({ phase: "reward" });
+    expect(result.data.wildwoodDraft).not.toHaveProperty("rewardType");
+    expect(result.data.interruptedFlow).toEqual(
+      expect.objectContaining({
+        kind: "primary-reward",
+        pending: expect.objectContaining({ rewardType: "card", choiceIds: ["slash", "bash", "block"] }),
+      }),
+    );
+  });
 });
 
 describe("BattleCardEffectSchema", () => {

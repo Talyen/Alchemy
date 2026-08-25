@@ -2,8 +2,7 @@
 import { z } from "zod";
 import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
-import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
-import { sanitizeEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
+import { sanitizeWildwoodBossId, sanitizeWildwoodBossIds } from "@/lib/content-systems/wildwood/bosses";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
 import { GearInstanceArraySchema, GearInstanceSchema, normalizeGearInstanceArray } from "./gear-schemas";
 import { PersistedBattleStateSchema } from "./persisted-battle-state";
@@ -117,7 +116,12 @@ const ActiveCombatDataSchema = z
   .nullable()
   .catch(null);
 
-const WildwoodBossIdSchema = z.enum(WILDWOOD_BOSS_IDS);
+const WildwoodBossIdListSchema = z.array(z.string()).transform((ids) => sanitizeWildwoodBossIds(ids));
+const OptionalWildwoodBossIdSchema = z
+  .string()
+  .nullable()
+  .transform((id) => sanitizeWildwoodBossId(id))
+  .catch(null);
 
 const ShopPersistSchema = z
   .object({
@@ -163,24 +167,17 @@ const EquipmentShopPersistSchema = z
 
 const WildwoodDraftStateSchema = z
   .object({
-    version: z.literal(3),
     phase: z.enum(["draft", "battle", "recovery", "reward", "removal"]),
     draftChoices: z.array(BattleCardSchema),
-    remainingBossIds: z.array(WildwoodBossIdSchema),
-    previousBossId: WildwoodBossIdSchema.nullable(),
-    currentBossId: WildwoodBossIdSchema.nullable(),
-    currentCombatTraitIds: z.array(z.string()).default([]),
-    currentRewardTraitIds: z.array(z.string()).default([]),
-    rewardType: z.enum(["card", "boon", "trinket", "gear"]).nullable(),
-    rewardChoiceIds: z.array(z.string()),
-    rewardGearChoices: GearInstanceArraySchema.default([]),
-    selectedRewardId: z.string().nullable(),
+    remainingBossIds: WildwoodBossIdListSchema,
+    previousBossId: OptionalWildwoodBossIdSchema,
+    currentBossId: OptionalWildwoodBossIdSchema,
+    currentCombatTraitIds: EncounterCombatTraitArraySchema.default([]),
+    currentRewardTraitIds: EncounterRewardTraitArraySchema.default([]),
   })
   .transform((state) => ({
     ...state,
     phase: state.phase === "recovery" ? ("reward" as const) : state.phase,
-    currentCombatTraitIds: sanitizeEncounterTraitIds(state.currentCombatTraitIds, "combat"),
-    currentRewardTraitIds: sanitizeEncounterTraitIds(state.currentRewardTraitIds, "reward"),
   }))
   .nullable()
   .catch(null);

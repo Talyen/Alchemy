@@ -6,11 +6,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  setCompanionRewardCards,
-  setRewardState,
-  setWildwoodDraft,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setCompanionRewardCards, setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { playUISound } from "@/lib/audio";
 import {
   finalizeRewardState,
@@ -75,10 +71,6 @@ export function createRewardHandlers(
   function selectRewardChoice(id: string) {
     dispatchRunSessionCommand((draft) => {
       setRewardState(draft, (prev) => ({ ...prev, selectedId: id }));
-      if (draft.run.activeRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) return;
-      const state = draft.session.wildwoodDraft;
-      if (!state) return;
-      setWildwoodDraft(draft, { ...state, selectedRewardId: id });
     });
   }
 

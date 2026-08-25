@@ -251,13 +251,13 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 ## Add a new enemy
 
-| Step                                                  | File(s)                                           |
-| ----------------------------------------------------- | ------------------------------------------------- |
-| 1. Add enemy ID to `EnemyId` union                    | `src/lib/game-data/types.ts`                      |
-| 2. Define entry in `enemyBestiary` array              | `src/lib/game-data/compendium/enemies.ts`         |
-| 3. Set `enemyType` (`normal`/`elite`/`boss`)          | same file                                         |
-| 4. Add traits as `{ id, title, description }` objects | same file (logic lives in battle system)          |
-| 5. (Optional) Register attack sound                   | `src/lib/sound-registry.ts` (`enemyAttackSounds`) |
+| Step                                                                   | File(s)                                           |
+| ---------------------------------------------------------------------- | ------------------------------------------------- |
+| 1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)            | `src/lib/game-data/compendium/enemies.ts`         |
+| 2. Set `enemyType` (`normal`/`elite`/`boss`)                           | same file                                         |
+| 3. Add traits as `{ id, title, description }` objects                  | same file (logic lives in battle system)          |
+| 4. (Optional) Register attack sound                                    | `src/lib/sound-registry.ts` (`enemyAttackSounds`) |
+| 5. Wildwood gauntlet bosses must also be listed in `WILDWOOD_BOSS_IDS` | `src/lib/content-systems/wildwood/bosses.ts`      |
 
 ---
 
@@ -275,7 +275,7 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 2. Register raw art as `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg`; run `npm run assets:optimize` then `npm run sync:gear-art` to emit `gear-{slug}-{rarity}.webp` mappings in `src/lib/game-data/gear-art.ts`.
 3. Variant definitions are built automatically in `src/lib/gear/definitions.ts` as `{baseItemId}-{rarity}`.
 4. Add new affix definitions in `src/lib/gear/affix-catalog.ts` with a stable ID, `keywordId`, effect key, value range, and eligible slots. Display/roll helpers live in `affixes.ts`.
-5. Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards screen stores the exact `GearInstance` (never re-roll on accept). Mid-reward campaign/labyrinth progress is persisted in `activeRun.interruptedFlow` (`primary-reward` / `companion-reward` arms; gear stores full instances; cards/trinkets store choice ids).
+5. Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards screen stores the exact `GearInstance` (never re-roll on accept). Mid-reward progress for every content system, including Wildwood, is persisted in `activeRun.interruptedFlow` (`primary-reward` / `companion-reward` arms; gear stores full instances; cards/trinkets store choice ids).
 6. Keep owned items as unique `GearInstance` records with `affixes: GearAffixRoll[]`; never put definition objects or art URLs into save data.
 7. Battle applies aggregated `gearEffects` from `computeGearManifest()` during battle creation.
 8. Keep each affix's `keywordId` aligned with affinity weighting and its `effectKey` aligned with `GEAR_EFFECT_KEYS`; architecture tests enforce registry coverage.

@@ -1,5 +1,19 @@
-// Wildwood boss ID list — source of truth is enemyBestiary (compendium).
-// Only the IDs live here; all display data (title, art, attacks, traits) is
-// looked up from the compendium at render time.
-
+// Wildwood gauntlet boss allowlist. Adding a boss to the compendium does not
+// make it eligible until it is listed here.
 export const WILDWOOD_BOSS_IDS = ["forge-golem", "frostwarden", "blight-treant", "iron-bear"] as const;
+
+export type WildwoodBossId = (typeof WILDWOOD_BOSS_IDS)[number];
+
+const wildwoodBossIds = new Set<string>(WILDWOOD_BOSS_IDS);
+
+export function isWildwoodBossId(value: string): value is WildwoodBossId {
+  return wildwoodBossIds.has(value);
+}
+
+export function sanitizeWildwoodBossId(value: string | null | undefined): WildwoodBossId | null {
+  return typeof value === "string" && isWildwoodBossId(value) ? value : null;
+}
+
+export function sanitizeWildwoodBossIds(values: readonly string[]): WildwoodBossId[] {
+  return values.filter(isWildwoodBossId);
+}

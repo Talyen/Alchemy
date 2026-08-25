@@ -43,11 +43,83 @@ describe("save migration guard", () => {
     expect(once.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 
-  it("preserves wildwood draft reward state in current-schema fixtures", () => {
+  it("preserves wildwood draft reward state in interruptedFlow", () => {
     const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.wildwoodTrinketReward());
     expect(migrated.activeRun?.contentSystemType).toBe("wildwood");
-    expect(migrated.activeRun?.wildwoodDraft?.rewardType).toBe("boon");
+    expect(migrated.activeRun?.wildwoodDraft).not.toHaveProperty("rewardType");
+    expect(migrated.activeRun?.wildwoodDraft).not.toHaveProperty("version");
     expect(migrated.activeRun?.wildwoodDraft?.phase).toBe("reward");
+    expect(migrated.activeRun?.interruptedFlow).toEqual(
+      expect.objectContaining({
+        kind: "primary-reward",
+        pending: expect.objectContaining({
+          rewardType: "trinket",
+          choiceIds: ["bone-charm", "brass-censer"],
+        }),
+      }),
+    );
+  });
+
+  it("lifts nested card, gear, and selected Wildwood rewards into interruptedFlow", () => {
+    const card = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.wildwoodCardReward());
+    expect(card.activeRun?.interruptedFlow).toEqual(
+      expect.objectContaining({
+        kind: "primary-reward",
+        pending: expect.objectContaining({ rewardType: "card", choiceIds: ["slash", "block"] }),
+      }),
+    );
+
+    const gear = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.wildwoodGearReward());
+    expect(gear.activeRun?.interruptedFlow).toEqual(
+      expect.objectContaining({
+        kind: "primary-reward",
+        pending: expect.objectContaining({
+          rewardType: "gear",
+          gearChoices: [{ instanceId: "gear-1", definitionId: "ruby-ring-basic", affixes: [] }],
+        }),
+      }),
+    );
+
+    const selected = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.wildwoodSelectedReward());
+    expect(selected.activeRun?.interruptedFlow).toEqual(
+      expect.objectContaining({
+        kind: "primary-reward",
+        pending: expect.objectContaining({ rewardType: "card", selectedId: "slash" }),
+      }),
+    );
+  });
+
+  it("keeps a companion handoff interruptedFlow and strips nested Wildwood reward fields", () => {
+    const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.wildwoodCompanionHandoff());
+    expect(migrated.activeRun?.interruptedFlow.kind).toBe("companion-reward");
+    if (migrated.activeRun?.interruptedFlow.kind === "companion-reward") {
+      expect(migrated.activeRun.interruptedFlow.pending.companionChoiceIds).toEqual(["wolf-companion"]);
+    }
+    expect(migrated.activeRun?.wildwoodDraft).not.toHaveProperty("rewardType");
+  });
+
+  it("lifts parked Wildwood nested rewards and keeps parked non-reward drafts", () => {
+    const parkedReward = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.parkedWildwoodNestedReward());
+    expect(parkedReward.parkedRuns?.wildwood?.interruptedFlow).toEqual(
+      expect.objectContaining({
+        kind: "primary-reward",
+        pending: expect.objectContaining({ rewardType: "card", choiceIds: ["slash", "bash"] }),
+      }),
+    );
+    expect(parkedReward.parkedRuns?.wildwood?.wildwoodDraft).not.toHaveProperty("rewardType");
+
+    const parkedDraft = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.parkedWildwoodDraft());
+    expect(parkedDraft.parkedRuns?.wildwood?.interruptedFlow).toEqual({ kind: "none" });
+    expect(parkedDraft.parkedRuns?.wildwood?.wildwoodDraft?.phase).toBe("draft");
+    expect(parkedDraft.parkedRuns?.wildwood?.wildwoodDraft).not.toHaveProperty("version");
+  });
+
+  it("does not lift leftover nested Wildwood rewards outside the reward phase", () => {
+    const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.wildwoodLeftoverNestedReward());
+    expect(migrated.activeRun?.interruptedFlow).toEqual({ kind: "none" });
+    expect(migrated.activeRun?.wildwoodDraft?.phase).toBe("battle");
+    expect(migrated.activeRun?.wildwoodDraft).not.toHaveProperty("rewardType");
+    expect(migrated.activeRun?.wildwoodDraft?.currentBossId).toBe("forge-golem");
   });
 
   it("strips tombstoned cards from every pile while keeping run state playable", () => {

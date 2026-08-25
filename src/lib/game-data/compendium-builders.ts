@@ -21,7 +21,9 @@ export function playerStatus(status: PlayerStatusId, amount: number): BestiaryEn
   return { kind: "player-status", status, amount };
 }
 
-export function defineEnemy(entry: Omit<BestiaryEntry, "subtitle" | "descriptionLines">): BestiaryEntry {
+type EnemyDefinition = Omit<BestiaryEntry, "subtitle" | "descriptionLines">;
+
+export function defineEnemy<const T extends EnemyDefinition>(entry: T): BestiaryEntry & T {
   return {
     ...entry,
     subtitle: ENEMY_SUBTITLES[entry.enemyType],

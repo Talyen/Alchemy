@@ -256,7 +256,6 @@ describe("encodeRunResumeSnapshot", () => {
 
   it("persists Wildwood Draft phase state", () => {
     const wildwoodDraft = {
-      version: 3 as const,
       phase: "reward" as const,
       draftChoices: [],
       remainingBossIds: ["iron-bear"] as Array<"forge-golem" | "frostwarden" | "blight-treant" | "iron-bear">,
@@ -264,10 +263,6 @@ describe("encodeRunResumeSnapshot", () => {
       currentBossId: "frostwarden" as const,
       currentCombatTraitIds: ["tempered" as const],
       currentRewardTraitIds: ["alchemist" as const],
-      rewardType: "card" as const,
-      rewardChoiceIds: ["slash", "block"],
-      rewardGearChoices: [],
-      selectedRewardId: "slash",
     };
     setRunProgress({ contentSystemType: "wildwood" });
     setRunSession({ wildwoodDraft });
