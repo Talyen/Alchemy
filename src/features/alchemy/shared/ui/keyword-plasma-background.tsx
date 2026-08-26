@@ -13,18 +13,34 @@ const COLOR_LERP_MS = 400;
 
 const BLACK_PAIR: PlasmaColorPair = { primary: "#000000", secondary: "#000000" };
 
-function usePlasmaColorLerp(
-  target: PlasmaColorPair | null,
-  activeRef: { current: boolean },
-  wakeRef: { current: () => void },
-): { current: PlasmaColorState } {
-  const activePair = target ?? BLACK_PAIR;
+export function KeywordPlasmaBackground({
+  keywordIds,
+  colorPair: explicitColorPair,
+  renderer = "webgl",
+  focalYOffset = 0,
+  active = true,
+  className,
+}: {
+  keywordIds?: readonly KeywordId[] | null | undefined;
+  colorPair?: PlasmaColorPair | null | undefined;
+  renderer?: PlasmaRendererMode | undefined;
+  focalYOffset?: number | undefined;
+  active?: boolean | undefined;
+  className?: string | undefined;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const colorPair =
+    explicitColorPair !== undefined ? explicitColorPair : keywordIds ? getPlasmaColorPair(keywordIds) : null;
+  const activePair = colorPair ?? BLACK_PAIR;
   const targetPrimary = activePair.primary;
   const targetSecondary = activePair.secondary;
+
   const colorsRef = useRef<PlasmaColorState>({
     primary: targetPrimary,
     secondary: targetSecondary,
   });
+  const activeRef = useRef(colorPair !== null);
+  const wakeRef = useRef<() => void>(() => {});
   const targetRef = useRef<PlasmaColorPair | null>(null);
   const rafRef = useRef<number | null>(null);
   const idleTimerRef = useRef<number | null>(null);
@@ -36,8 +52,8 @@ function usePlasmaColorLerp(
 
     const from = { ...colorsRef.current };
     if (from.primary === targetPrimary && from.secondary === targetSecondary) {
-      activeRef.current = target !== null;
-      if (target !== null) wakeRef.current();
+      activeRef.current = colorPair !== null;
+      if (colorPair !== null) wakeRef.current();
       return;
     }
     activeRef.current = true;
@@ -57,7 +73,7 @@ function usePlasmaColorLerp(
 
       if (t < 1) {
         rafRef.current = requestAnimationFrame(tick);
-      } else if (target === null) {
+      } else if (colorPair === null) {
         idleTimerRef.current = window.setTimeout(() => {
           activeRef.current = false;
         }, 100);
@@ -69,32 +85,7 @@ function usePlasmaColorLerp(
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
     };
-  }, [activeRef, target, targetPrimary, targetSecondary, wakeRef]);
-
-  return colorsRef;
-}
-
-export function KeywordPlasmaBackground({
-  keywordIds,
-  colorPair: explicitColorPair,
-  renderer = "webgl",
-  focalYOffset = 0,
-  active = true,
-  className,
-}: {
-  keywordIds?: readonly KeywordId[] | null | undefined;
-  colorPair?: PlasmaColorPair | null | undefined;
-  renderer?: PlasmaRendererMode | undefined;
-  focalYOffset?: number | undefined;
-  active?: boolean | undefined;
-  className?: string | undefined;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const colorPair =
-    explicitColorPair !== undefined ? explicitColorPair : keywordIds ? getPlasmaColorPair(keywordIds) : null;
-  const activeRef = useRef(colorPair !== null);
-  const wakeRef = useRef<() => void>(() => {});
-  const colorsRef = usePlasmaColorLerp(colorPair, activeRef, wakeRef);
+  }, [colorPair, targetPrimary, targetSecondary]);
 
   // Color transitions mutate colorsRef; do not restart the renderer on hover.
   useEffect(() => {
@@ -116,7 +107,7 @@ export function KeywordPlasmaBackground({
     });
 
     return () => stop();
-  }, [renderer, focalYOffset, active, colorsRef]);
+  }, [renderer, focalYOffset, active]);
 
   return (
     <canvas

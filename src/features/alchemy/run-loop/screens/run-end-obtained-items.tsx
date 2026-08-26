@@ -1,6 +1,7 @@
 // Run-end recap of permanent Gear and Armory Trinkets obtained during the run.
 import { trinketById } from "@/lib/game-data";
 import type { RunObtainedItem } from "@/lib/active-run-session";
+import { cn } from "@/lib/utils";
 import { GearTile, TrinketTile } from "../../shared/ui/collection-art-tiles";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { FlankingPagination } from "../../shared/ui/navigation";
@@ -42,5 +43,5 @@ function RunEndObtainedItemTile({ item }: { item: RunObtainedItem }) {
     if (!trinket) return null;
     tile = <TrinketTile trinket={trinket} interactionKey="run-end-item" />;
   }
-  return <div className={`${RUN_END_ITEM_WIDTH} [&>*>*]:!w-full`}>{tile}</div>;
+  return <div className={cn(RUN_END_ITEM_WIDTH, "[&>*>*]:!w-full")}>{tile}</div>;
 }

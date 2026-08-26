@@ -2,7 +2,7 @@
 // A row unlocks once every real talent in the rows above it is unlocked; any real
 // talent on an unlocked row can be allocated with an unspent point. Placeholder
 // nodes render as inert "Coming Soon" cards and never participate in progression.
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createElement, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { Lock } from "lucide-react";
 
@@ -61,7 +61,6 @@ function TalentCard({
   const def = keywordDefinitions[talent.keywordId];
   const shineColors = getKeywordShineColors(talent.keywordId);
   const accentColor = shineColors[0];
-  const Icon = getTalentIcon(talent);
   const isPlaceholder = isTalentPlaceholder(talent);
   const interactive = isAllocatable && canAfford && !isUnlocking;
   const showShine = interactive;
@@ -103,7 +102,9 @@ function TalentCard({
         <div className={cn("flex flex-col items-center justify-center gap-1.5", isLockedLook && "opacity-50")}>
           <div className="flex items-center justify-center gap-2">
             <span className={cn(isPlaceholder ? "text-muted-foreground" : def?.colorClass)}>
-              {isPlaceholder ? <Lock className="h-7 w-7 sm:h-8 sm:w-8" /> : <Icon className="h-7 w-7 sm:h-8 sm:w-8" />}
+              {isPlaceholder
+                ? createElement(Lock, { className: "h-7 w-7 sm:h-8 sm:w-8" })
+                : createElement(getTalentIcon(talent), { className: "h-7 w-7 sm:h-8 sm:w-8" })}
             </span>
             <span
               className={cn(

@@ -60,7 +60,12 @@ export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: 
 ];
 
 // Destination visual theming gives each route type an icon, accent color, and art.
-type ThemedChooserMeta = { icon: LucideIcon; accentClassName: string; art: string; plasmaColorPair: PlasmaColorPair };
+interface ThemedChooserMeta {
+  icon: LucideIcon;
+  accentClassName: string;
+  art: string;
+  plasmaColorPair: PlasmaColorPair;
+}
 
 export const destinationMeta: Record<Destination, ThemedChooserMeta> = {
   "Normal Combat": {
