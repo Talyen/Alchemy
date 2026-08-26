@@ -1,8 +1,7 @@
 // Current-schema save payloads for migration guard and storage tests.
 // CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION maps the launch baseline to a fixture.
 // Labyrinth maps here are seeded so mid-run map-save fixtures stay deterministic.
-import { createSeededRng } from "@/lib/utils";
-import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
+import { hexLabyrinthMapFixture } from "./labyrinth-hex-map";
 import { saveEnvelopeFixture } from "./saves";
 
 const FIXTURE_CHARACTER_IDS = [
@@ -164,7 +163,7 @@ export function currentSchemaCampaignSave() {
 
 // Labyrinth fixture exercises persisted map hydration for a route in progress.
 export function currentSchemaLabyrinthRunSave() {
-  const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
+  const labyrinthMap = hexLabyrinthMapFixture();
   return currentSaveEnvelope({
     discoveredCardIds: ["slash", "bash"],
     activeRun: {
@@ -276,6 +275,13 @@ function currentSchemaV12Save() {
   return {
     ...currentSchemaSave(),
     saveSchemaVersion: 12,
+  };
+}
+
+function currentSchemaV13Save() {
+  return {
+    ...currentSchemaSave(),
+    saveSchemaVersion: 13,
   };
 }
 
@@ -476,6 +482,7 @@ export function currentSchemaMidCombatTrinketSave() {
 export const CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
   11: currentSchemaSave,
   12: currentSchemaV12Save,
+  13: currentSchemaV13Save,
 };
 
 const FIXTURE_LIVE_SLASH = {
@@ -572,6 +579,48 @@ function currentSchemaTombstonedPilesSave() {
   });
 }
 
+function currentSchemaLabyrinthGridV13Save() {
+  return {
+    ...currentSaveEnvelope({
+      finishedRunCharacters: ["rogue"],
+      activeRun: {
+        characterId: "ranger",
+        runDeck: [],
+        runGold: 12,
+        runPlayerHealth: 24,
+        runMaxHealth: 30,
+        roomsEncountered: 1,
+        currentAct: 1,
+        destinationIndexInAct: 0,
+        completedDestinations: [],
+        runTrinkets: [],
+        selectedDifficulty: null,
+        contentSystemType: "labyrinth",
+        currentScreen: "labyrinth-map",
+        rng: { seed: 42, counters: { rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 } },
+        labyrinthMap: {
+          rows: 8,
+          cols: 9,
+          currentNode: { row: 0, col: 4 },
+          grid: [
+            [
+              {
+                type: "entrance",
+                state: "current",
+                connections: [{ row: 1, col: 4 }],
+                modifiers: [],
+                rewardModifiers: [],
+              },
+            ],
+          ],
+        },
+        labyrinthPendingNode: { row: 1, col: 4 },
+      },
+    }),
+    saveSchemaVersion: 13,
+  };
+}
+
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {
   midCombatTrinket: currentSchemaMidCombatTrinketSave,
   wildwoodTrinketReward: currentSchemaWildwoodTrinketRewardSave,
@@ -584,4 +633,5 @@ export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, un
   wildwoodLeftoverNestedReward: currentSchemaWildwoodLeftoverNestedRewardSave,
   shippedBaseline: currentSchemaSave,
   tombstonedPiles: currentSchemaTombstonedPilesSave,
+  labyrinthGridRegen: currentSchemaLabyrinthGridV13Save,
 };

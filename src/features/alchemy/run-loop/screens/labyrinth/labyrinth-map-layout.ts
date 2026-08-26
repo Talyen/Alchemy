@@ -1,50 +1,23 @@
-// Grid positioning and connection geometry for the labyrinth map screen.
-import type { CSSProperties } from "react";
+// Hex projection and seal sizing for the labyrinth map screen.
+import type { LabyrinthGridPosition, LabyrinthNode } from "@/lib/content-systems/types";
+import { hexMetrics, hexRadius, projectedX } from "@/lib/content-systems/labyrinth/hex-grid";
 
-import type { LabyrinthMap } from "@/lib/content-systems/types";
-import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
-
-export function getUniqueConnections(map: LabyrinthMap) {
-  const seen = new Set<string>();
-  const result: Array<{ from: { row: number; col: number }; to: { row: number; col: number } }> = [];
-  for (let row = 0; row < map.rows; row += 1) {
-    for (let col = 0; col < map.cols; col += 1) {
-      const node = map.grid[row]?.[col];
-      if (!node) continue;
-      for (const connection of node.connections) {
-        const keyA = `${row},${col}`;
-        const keyB = `${connection.row},${connection.col}`;
-        const key = keyA < keyB ? `${keyA}-${keyB}` : `${keyB}-${keyA}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        result.push({ from: { row, col }, to: connection });
-      }
-    }
+export function layoutFloorNodes(nodes: LabyrinthNode[], availableWidth: number) {
+  const packedWidth = hexMetrics(hexRadius(availableWidth)).width;
+  const metrics = hexMetrics(hexRadius(availableWidth, packedWidth / 2));
+  const projectedXs = nodes.map((node) => projectedX(node.gridPosition, metrics.radius));
+  const minX = Math.min(...projectedXs, 0);
+  const maxX = Math.max(...projectedXs, 0);
+  const horizontalCenter = (minX + maxX) / 2;
+  const lastRow = nodes.reduce((max, node) => Math.max(max, node.gridPosition.row), 0);
+  const height = lastRow * metrics.verticalStep + metrics.height;
+  const positions = new Map<string, { x: number; y: number; position: LabyrinthGridPosition }>();
+  for (const node of nodes) {
+    positions.set(node.id, {
+      x: availableWidth / 2 + (projectedX(node.gridPosition, metrics.radius) - horizontalCenter),
+      y: node.gridPosition.row * metrics.verticalStep + metrics.height / 2,
+      position: node.gridPosition,
+    });
   }
-  return result;
-}
-
-export function positionStyle(row: number, col: number, rows: number, cols: number): CSSProperties {
-  const position = positionFor(row, col, rows, cols);
-  return { left: `${position.left}%`, top: `${position.top}%` };
-}
-
-export function positionFor(row: number, col: number, rows: number, cols: number) {
-  const gutter = LABYRINTH_MAP_UI.mapGutter;
-  return {
-    left: gutter + (col * (100 - gutter * 2)) / Math.max(1, cols - 1),
-    top: gutter + (row * (100 - gutter * 2)) / Math.max(1, rows - 1),
-  };
-}
-
-export function trimLine(from: { x: number; y: number }, to: { x: number; y: number }, amount: number) {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const length = Math.hypot(dx, dy) || 1;
-  const ux = dx / length;
-  const uy = dy / length;
-  return {
-    from: { x: from.x + ux * amount, y: from.y + uy * amount },
-    to: { x: to.x - ux * amount, y: to.y - uy * amount },
-  };
+  return { metrics, height, positions };
 }

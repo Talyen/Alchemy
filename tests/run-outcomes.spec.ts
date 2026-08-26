@@ -36,7 +36,7 @@ test.describe("Run Outcomes", critical, () => {
         await winBattleAndClaimReward(page);
 
         const destinationBtns = page.getByRole("button", {
-          name: /Combat|Campfire|Merchant|Alchemist|Mystery|Corruption|Trinket Shop|Equipment Shop/,
+          name: /Combat|Campfire|Card Shop|Alchemist|Mystery|Corruption|Trinket Shop|Equipment Shop/,
         });
         await expect(destinationBtns.first()).toBeVisible({ timeout: 3000 });
         expect(await destinationBtns.count()).toBeGreaterThanOrEqual(1);

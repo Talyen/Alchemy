@@ -54,7 +54,12 @@ export function useEquipmentShopScreenData(): ScreenData<"equipment-shop"> {
 }
 
 export function useLabyrinthMapScreenData(): ScreenData<"labyrinth-map"> {
-  return useGameplayStateStore(useShallow((state) => ({ labyrinthMap: state.session.labyrinthMap })));
+  return useGameplayStateStore(
+    useShallow((state) => ({
+      labyrinthMap: state.session.labyrinthMap,
+      selectedLabyrinthNodeId: state.session.selectedLabyrinthNodeId,
+    })),
+  );
 }
 
 export function useRewardsScreenData(): ScreenData<"rewards"> {
@@ -103,6 +108,7 @@ export function useRunEndScreenData(): ScreenData<"game-over"> {
       runEndMaterials: state.session.runEndMaterials,
       runEndTalentXP: state.session.runEndTalentXP,
       runEndItems: state.session.runEndItems,
+      runEndLabyrinthFloor: state.session.runEndLabyrinthFloor,
       talentXP: state.runProfile.talentXP,
     })),
   );

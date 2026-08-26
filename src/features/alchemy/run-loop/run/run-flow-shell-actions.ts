@@ -8,7 +8,6 @@ import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-type
 export interface RunFlowShellActions {
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
   transition: (screen: Screen, options?: ScreenTransitionOptions) => void;
-  labyrinthFailNode: () => void;
   labyrinthClearNode: () => void;
   initializeShop: (kind: ShopKind) => void;
   startBattle: (opts?: { deck?: BattleCard[]; gold?: number; enemyType?: "normal" | "elite" }) => void;

@@ -29,7 +29,6 @@ export function useRunFlowEngine({
   battle,
   initializeShop,
   labyrinthClearNode,
-  labyrinthFailNode,
 }: RunNavigationDeps) {
   const orchestration = useContentNavigationRunPort();
   const talentEffects = useTalentEffects();
@@ -81,7 +80,6 @@ export function useRunFlowEngine({
     return {
       navigateTo,
       transition,
-      labyrinthFailNode,
       labyrinthClearNode,
       initializeShop,
       startBattle: (opts) => battle.onStartBattle(opts?.deck, opts?.gold, opts?.enemyType),
@@ -97,7 +95,6 @@ export function useRunFlowEngine({
   }, [
     navigateTo,
     transition,
-    labyrinthFailNode,
     labyrinthClearNode,
     initializeShop,
     battle,

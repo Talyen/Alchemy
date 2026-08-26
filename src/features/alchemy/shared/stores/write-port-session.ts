@@ -61,6 +61,7 @@ export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSn
   hydrateFromSnapshot(draft, snapshot);
   draft.session.runEndTalentXP = {};
   draft.session.runEndItems = [];
+  draft.session.runEndLabyrinthFloor = null;
   draft.session.hasActiveRun = snapshot.hasActiveRun;
 }
 
@@ -188,6 +189,10 @@ export const setActiveLabyrinthPendingNode = (
   draft: GameplayDraft,
   node: RunSessionFields["activeLabyrinthPendingNode"],
 ) => setSessionField(draft, "activeLabyrinthPendingNode", node);
+export const setSelectedLabyrinthNodeId = (draft: GameplayDraft, nodeId: RunSessionFields["selectedLabyrinthNodeId"]) =>
+  setSessionField(draft, "selectedLabyrinthNodeId", nodeId);
+export const setRunEndLabyrinthFloor = (draft: GameplayDraft, floor: RunSessionFields["runEndLabyrinthFloor"]) =>
+  setSessionField(draft, "runEndLabyrinthFloor", floor);
 export const setLabyrinthMap = (
   draft: GameplayDraft,
   action:

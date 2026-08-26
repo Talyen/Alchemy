@@ -3,6 +3,7 @@ import type { RawSaveData } from "./types";
 import { migrateContentV1ToV2, migrateContentV2ToV3 } from "./content-steps";
 import { migrateV11ToV12 } from "./steps-v11-v12";
 import { migrateV12ToV13 } from "./steps-v12-v13";
+import { migrateV13ToV14 } from "./steps-v13-v14";
 
 /** Returns 0 for invalid versions so callers can treat missing-version saves as v0. */
 export function getRawSaveSchemaVersion(parsed: unknown): number {
@@ -25,7 +26,7 @@ export function getRawContentVersion(parsed: unknown): number {
 
 /**
  * Stamp the current schema version onto a parsed payload.
- * Schema steps exist from the launch floor (v11) through CURRENT (v13).
+ * Schema steps exist from the launch floor (v11) through CURRENT (v14).
  * Older local saves are unsupported; Zod defaults repair the envelope.
  */
 export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
@@ -37,6 +38,9 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
   }
   if (schemaVersion <= 12) {
     next = migrateV12ToV13(next);
+  }
+  if (schemaVersion <= 13) {
+    next = migrateV13ToV14(next);
   }
   const contentVersion = getRawContentVersion(next);
   if (contentVersion < 2) {

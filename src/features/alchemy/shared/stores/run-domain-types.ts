@@ -10,7 +10,7 @@ import {
   emptyTrinketShopState,
   type AlchemistState,
   type EquipmentShopState,
-  type LabyrinthNodePosition,
+  type LabyrinthPendingNodeId,
   type PersistedBattleTransition,
   type RewardState,
   type RunObtainedItem,
@@ -79,6 +79,8 @@ export function createInitialSessionFields(): RunSessionFields {
     activeLabyrinthModifiers: [],
     activeLabyrinthRewardModifiers: [],
     activeLabyrinthPendingNode: null,
+    selectedLabyrinthNodeId: null,
+    runEndLabyrinthFloor: null,
     rewardState: createEmptyRewardState(),
     companionRewardCards: null,
     runEndMaterials: emptyInventory(),
@@ -131,7 +133,9 @@ export interface RunSessionFields {
   pendingDestinationClaim: Destination | null;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
-  activeLabyrinthPendingNode: LabyrinthNodePosition | null;
+  activeLabyrinthPendingNode: LabyrinthPendingNodeId | null;
+  selectedLabyrinthNodeId: string | null;
+  runEndLabyrinthFloor: number | null;
   rewardState: RewardState;
   companionRewardCards: BattleCard[] | null;
   runEndMaterials: MaterialInventory;

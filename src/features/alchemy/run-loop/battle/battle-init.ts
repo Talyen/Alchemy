@@ -8,7 +8,7 @@ import {
 } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
-import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
+import { getBossById, getCurrentEnemy, getBossEnemy, enemyById, isEnemyId } from "@/features/alchemy/shared/config";
 import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -158,23 +158,29 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     gold?: number,
     enemyType: "normal" | "elite" = "normal",
     modifiers?: DifficultyModifier[],
+    enemyId?: string,
   ) {
     beginBattle(
-      (draft) =>
-        getCurrentEnemy(
+      (draft) => {
+        if (enemyId && isEnemyId(enemyId)) return enemyById[enemyId];
+        return getCurrentEnemy(
           enemyType,
           draft.run.activeRun.encounteredRunEnemyIds,
           createDraftRunRandomSource(draft, "world"),
-        ),
+        );
+      },
       deck,
       gold,
       modifiers,
     );
   }
 
-  function startBossBattle(modifiers?: DifficultyModifier[]) {
+  function startBossBattle(modifiers?: DifficultyModifier[], enemyId?: string) {
     beginBattle(
-      (draft) => getBossEnemy(draft.run.activeRun.encounteredRunEnemyIds, createDraftRunRandomSource(draft, "world")),
+      (draft) => {
+        if (enemyId && isEnemyId(enemyId) && enemyById[enemyId].enemyType === "boss") return enemyById[enemyId];
+        return getBossEnemy(draft.run.activeRun.encounteredRunEnemyIds, createDraftRunRandomSource(draft, "world"));
+      },
       undefined,
       undefined,
       modifiers,

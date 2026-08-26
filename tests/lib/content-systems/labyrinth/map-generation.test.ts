@@ -1,373 +1,132 @@
-// Unit tests for labyrinth map generation — grid invariants, cardinal connections,
-// node placement, visibility, and state transitions.
+// Unit tests for hex-floor labyrinth generation, reachability, and boss expansion.
 import { describe, expect, it } from "vitest";
 import { createSeededRng } from "@/lib/utils";
 import {
-  generateLabyrinthMap,
-  failNode,
-  setCurrentNode,
-  withCurrentNode,
   canEnterLabyrinthNode,
-  withFailedNode as failPendingLabyrinthNode,
+  createMinimalLabyrinthMap,
+  expandBeyondBoss,
+  generateLabyrinthMap,
+  withClearedLabyrinthNode,
 } from "@/lib/content-systems/labyrinth/map-generation";
+import { floorNodes, isNodeReachable, labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
+import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
+import { LABYRINTH_HEX, areHexesAdjacent, isHexInBounds } from "@/lib/content-systems/labyrinth/hex-grid";
+import { isValidFloorLayout } from "@/lib/content-systems/labyrinth/hex-layout";
 
-const ROWS = 8;
-const COLS = 9;
-const START_COL = Math.floor(COLS / 2);
+function playableNodes(map: ReturnType<typeof generateLabyrinthMap>) {
+  return Object.values(map.nodes).filter((node) => node.floor > 0);
+}
 
 describe("generateLabyrinthMap", () => {
-  it("generates an 8x9 grid", () => {
+  it("starts with a cleared entrance and a playable floor 1", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    expect(map.grid).toHaveLength(ROWS);
-    for (const row of map.grid) {
-      expect(row).toHaveLength(COLS);
-    }
+    expect(map.currentFloor).toBe(1);
+    expect(map.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.cleared).toBe(true);
+    expect(map.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
+    const floor1 = playableNodes(map);
+    expect(floor1.length).toBeGreaterThanOrEqual(LABYRINTH_HEX.minNodesPerFloor);
+    expect(floor1.length).toBeLessThanOrEqual(LABYRINTH_HEX.maxNodesPerFloor);
+    expect(floor1[0]?.type).toBe("combat");
+    expect(floor1.some((node) => node.type === "boss")).toBe(true);
   });
 
-  it("start node is at the top center, entrance type, current state", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    const start = map.grid[0][START_COL];
-    expect(start).not.toBeNull();
-    expect(start!.type).toBe("entrance");
-    expect(start!.state).toBe("current");
-    // All other row-0 cells must be empty.
-    for (let c = 0; c < COLS; c++) {
-      if (c !== START_COL) expect(map.grid[0][c]).toBeNull();
-    }
-  });
-
-  it("first node after the entrance is always normal combat", () => {
+  it("first floor node is always combat and reachable from the entrance", () => {
     for (const seed of [1, 7, 13, 19, 25, 42, 99, 100]) {
       const map = generateLabyrinthMap(createSeededRng(seed));
-      expect(map.grid[1][START_COL]?.type).toBe("combat");
+      const entryId = map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!.outgoingIds[0]!;
+      expect(map.nodes[entryId]?.type).toBe("combat");
+      expect(canEnterLabyrinthNode(map, entryId)).toBe(true);
     }
   });
 
-  it("fills substantially more of the map", () => {
+  it("keeps floor layouts within hex bounds and unique cells", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    const placedNodes = map.grid.flat().filter(Boolean).length;
-    expect(placedNodes).toBeGreaterThanOrEqual(36);
+    const seen = new Set<string>();
+    for (const node of floorNodes(map, 1)) {
+      expect(isHexInBounds(node.gridPosition)).toBe(true);
+      const key = `${node.gridPosition.row},${node.gridPosition.col}`;
+      expect(seen.has(key)).toBe(false);
+      seen.add(key);
+    }
   });
 
-  it("requires more than 10 nodes to reach the boss by the shortest path", () => {
-    for (const seed of [1, 8, 15, 22, 29, 36, 43, 50, 57, 64, 71, 78, 85, 92, 99]) {
+  it("is deterministic for the same seed", () => {
+    const a = generateLabyrinthMap(createSeededRng(123));
+    const b = generateLabyrinthMap(createSeededRng(123));
+    expect(Object.keys(a.nodes).sort()).toEqual(Object.keys(b.nodes).sort());
+    for (const id of Object.keys(a.nodes)) {
+      expect(a.nodes[id]).toEqual(b.nodes[id]);
+    }
+  });
+
+  it("differs across seeds", () => {
+    const a = generateLabyrinthMap(createSeededRng(1));
+    const b = generateLabyrinthMap(createSeededRng(2));
+    expect(JSON.stringify(a.nodes)).not.toBe(JSON.stringify(b.nodes));
+  });
+
+  it("assigns enemy ids to combat, elite, and boss nodes", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    for (const node of Object.values(map.nodes)) {
+      if (node.type === "combat" || node.type === "elite" || node.type === "boss") {
+        expect(node.enemyId).toBeTruthy();
+      }
+    }
+  });
+});
+
+describe("hex floor layouts", () => {
+  it("generated floor positions are valid trees or single-loop graphs", () => {
+    for (const seed of [1, 8, 15, 22, 29, 36, 43, 50]) {
       const map = generateLabyrinthMap(createSeededRng(seed));
-      expect(shortestBossPathNodeCount(map)).toBeGreaterThan(10);
-    }
-  });
-
-  it("all connections are cardinal-direction only", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const node = map.grid[r][c];
-        if (!node) continue;
-        for (const conn of node.connections) {
-          const dr = Math.abs(conn.row - r);
-          const dc = Math.abs(conn.col - c);
-          // Must be exactly one step in one direction, never diagonal.
-          expect((dr === 1 && dc === 0) || (dr === 0 && dc === 1)).toBe(true);
-        }
-      }
-    }
-  });
-
-  it("at least one path from start to a boss exists", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    expect(hasReachableBoss(map)).toBe(true);
-  });
-
-  it("does not generate treasure nodes", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    for (const row of map.grid) {
-      for (const node of row) {
-        expect(node?.type).not.toBe("treasure");
-      }
-    }
-  });
-
-  it("every placed node has one to three connections", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    for (const row of map.grid) {
-      for (const node of row) {
-        if (!node) continue;
-        expect(node.connections.length).toBeGreaterThanOrEqual(1);
-        expect(node.connections.length).toBeLessThanOrEqual(3);
-      }
-    }
-  });
-
-  it("creates branching choice points", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    const branchCount = map.grid.flat().filter((node) => node && node.connections.length === 3).length;
-    expect(branchCount).toBeGreaterThanOrEqual(2);
-  });
-
-  it("uses fixed modifier counts for combat and elite nodes", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    for (const node of map.grid.flat()) {
-      if (node?.type === "combat") expect(node.modifiers).toHaveLength(1);
-      if (node?.type === "elite") expect(node.modifiers).toHaveLength(2);
-    }
-  });
-
-  it("assigns reward modifiers on some combat and all elite nodes", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    for (const node of map.grid.flat()) {
-      if (node?.type === "elite") expect(node.rewardModifiers).toHaveLength(1);
-      if (node?.type === "combat") expect(node.rewardModifiers.length).toBeLessThanOrEqual(1);
-    }
-  });
-
-  it("every connection points back to its source", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    for (let row = 0; row < ROWS; row += 1) {
-      for (let col = 0; col < COLS; col += 1) {
-        const node = map.grid[row][col];
-        if (!node) continue;
-        for (const connection of node.connections) {
-          const target = map.grid[connection.row][connection.col];
-          expect(target?.connections).toContainEqual({ row, col });
-        }
-      }
-    }
-  });
-
-  it("every checked seed has a reachable boss path", () => {
-    for (const seed of [1, 8, 15, 22, 29, 36, 43, 50, 57, 64, 71, 78, 85, 92, 99]) {
-      const map = generateLabyrinthMap(createSeededRng(seed));
-      expect(hasReachableBoss(map)).toBe(true);
-    }
-  });
-
-  it("final row contains at least one boss node", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    const bossNodes = map.grid[ROWS - 1].filter((n) => n?.type === "boss");
-    expect(bossNodes.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("seeded RNG produces identical maps for the same seed", () => {
-    const mapA = generateLabyrinthMap(createSeededRng(123));
-    const mapB = generateLabyrinthMap(createSeededRng(123));
-    // Compare the grid structure: type and position must match.
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const a = mapA.grid[r][c];
-        const b = mapB.grid[r][c];
-        if (a === null && b === null) continue;
-        expect(a).not.toBeNull();
-        expect(b).not.toBeNull();
-        expect(a!.type).toBe(b!.type);
-      }
-    }
-  });
-
-  it("different seeds produce different maps", () => {
-    const mapA = generateLabyrinthMap(createSeededRng(1));
-    const mapB = generateLabyrinthMap(createSeededRng(2));
-    // Compare grid structure — almost certainly different.
-    let same = true;
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const a = mapA.grid[r][c];
-        const b = mapB.grid[r][c];
-        if (a === null && b === null) continue;
-        if (a === null || b === null || a.type !== b.type) {
-          same = false;
-          break;
-        }
-      }
-      if (!same) break;
-    }
-    expect(same).toBe(false);
-  });
-});
-
-describe("setCurrentNode", () => {
-  it("does not crash when targeting an out-of-bounds cell", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    setCurrentNode(map, -1, -1);
-    expect(map.currentNode).toEqual({ row: 0, col: START_COL });
-  });
-
-  it("marks previous current as cleared and sets new current", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    // Start node is "current" after generation.
-    const start = map.grid[0][START_COL]!;
-    expect(start.state).toBe("current");
-
-    // Move to a connected node.
-    if (start.connections.length > 0) {
-      const target = start.connections[0];
-      setCurrentNode(map, target.row, target.col);
-      expect(start.state).toBe("cleared");
-      const newNode = map.grid[target.row][target.col]!;
-      expect(newNode.state).toBe("current");
-      expect(map.currentNode).toEqual({ row: target.row, col: target.col });
+      const positions = floorNodes(map, 1).map((node) => node.gridPosition);
+      const treeValid = isValidFloorLayout(positions, false);
+      const loopValid = isValidFloorLayout(positions, true);
+      expect(treeValid || loopValid).toBe(true);
     }
   });
 });
 
-describe("failNode", () => {
-  it("returns state unchanged when failing an already-failed node", () => {
+describe("canEnterLabyrinthNode", () => {
+  it("rejects the entrance and uncleared non-adjacent rooms", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    const start = map.grid[0][START_COL]!;
-    if (start.connections.length > 0) {
-      const target = start.connections[0];
-      setCurrentNode(map, target.row, target.col);
-      failNode(map, target.row, target.col);
-      failNode(map, target.row, target.col);
-      expect(map.grid[target.row][target.col]!.state).toBe("failed");
-      expect(map.currentNode).toEqual({ row: 0, col: START_COL });
-    }
+    expect(canEnterLabyrinthNode(map, LABYRINTH_ENTRANCE_NODE_ID)).toBe(false);
+    const boss = Object.values(map.nodes).find((node) => node.type === "boss")!;
+    expect(canEnterLabyrinthNode(map, boss.id)).toBe(false);
   });
 
-  it("marks node as failed and resets position to start", () => {
+  it("unlocks hex neighbors after a node is cleared", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    const start = map.grid[0][START_COL]!;
-    // Move to a connected node first.
-    if (start.connections.length > 0) {
-      const target = start.connections[0];
-      setCurrentNode(map, target.row, target.col);
-      failNode(map, target.row, target.col);
-      const failed = map.grid[target.row][target.col]!;
-      expect(failed.state).toBe("failed");
-      expect(map.currentNode).toEqual({ row: 0, col: START_COL });
-    }
+    const entryId = map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!.outgoingIds[0]!;
+    const cleared = withClearedLabyrinthNode(map, entryId, createSeededRng(1));
+    const entry = cleared.nodes[entryId]!;
+    const neighbor = floorNodes(cleared, 1).find(
+      (node) => node.id !== entryId && areHexesAdjacent(entry.gridPosition, node.gridPosition),
+    );
+    expect(neighbor).toBeDefined();
+    expect(isNodeReachable(cleared, neighbor!.id)).toBe(true);
+    expect(labyrinthNodeVisualState(cleared, entryId)).toBe("cleared");
   });
 });
 
-describe("withCurrentNode", () => {
-  it("marks previous current as cleared and sets new node to current without mutating the original", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    const entrance = map.grid[0][START_COL]!;
-    expect(entrance.state).toBe("current");
-
-    const target = entrance.connections[0];
-    const next = withCurrentNode(map, target.row, target.col);
-
-    // Original map is unchanged
-    expect(entrance.state).toBe("current");
-    expect(map.grid[target.row][target.col]!.state).toBe("visible");
-    expect(map.currentNode).toEqual({ row: 0, col: START_COL });
-
-    // New map has the state transition
-    expect(next.grid[0][START_COL]!.state).toBe("cleared");
-    expect(next.grid[target.row][target.col]!.state).toBe("current");
-    expect(next.currentNode).toEqual({ row: target.row, col: target.col });
+describe("withClearedLabyrinthNode boss expansion", () => {
+  it("appends the next floor when the floor boss is cleared", () => {
+    const map = createMinimalLabyrinthMap();
+    const combat = Object.values(map.nodes).find((node) => node.type === "combat")!;
+    const rest = Object.values(map.nodes).find((node) => node.type === "rest")!;
+    const boss = Object.values(map.nodes).find((node) => node.type === "boss")!;
+    let next = withClearedLabyrinthNode(map, combat.id, createSeededRng(1));
+    next = withClearedLabyrinthNode(next, rest.id, createSeededRng(2));
+    next = withClearedLabyrinthNode(next, boss.id, createSeededRng(3));
+    expect(next.currentFloor).toBe(2);
+    expect(floorNodes(next, 2).some((node) => node.type === "boss")).toBe(true);
+    expect(next.nodes[boss.id]?.outgoingIds.length).toBe(1);
   });
 
-  it("always leaves exactly one current node after transition", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    const countCurrent = (m: ReturnType<typeof generateLabyrinthMap>) =>
-      m.grid.flat().filter((n) => n?.state === "current").length;
-    expect(countCurrent(map)).toBe(1);
-
-    // Walk along the main route checking the invariant after each step.
-    let pos = { row: 0, col: START_COL };
-    let current = map;
-    for (let step = 0; step < 6; step++) {
-      const node = current.grid[pos.row]?.[pos.col];
-      if (!node || node.connections.length === 0) break;
-      const next = node.connections[0];
-      current = withCurrentNode(current, next.row, next.col);
-      expect(countCurrent(current)).toBe(1);
-      expect(current.currentNode).toEqual({ row: next.row, col: next.col });
-      pos = next;
-    }
-  });
-});
-
-describe("createSeededRng", () => {
-  it("produces values in [0, 1)", () => {
-    const rng = createSeededRng(99);
-    for (let i = 0; i < 100; i++) {
-      const v = rng();
-      expect(v).toBeGreaterThanOrEqual(0);
-      expect(v).toBeLessThan(1);
-    }
-  });
-
-  it("is deterministic", () => {
-    const rng1 = createSeededRng(42);
-    const rng2 = createSeededRng(42);
-    for (let i = 0; i < 20; i++) {
-      expect(rng1()).toBe(rng2());
-    }
-  });
-});
-
-function hasReachableBoss(map: ReturnType<typeof generateLabyrinthMap>): boolean {
-  const visited = new Set<string>();
-  const queue = [{ row: 0, col: START_COL }];
-  while (queue.length > 0) {
-    const { row, col } = queue.shift()!;
-    const key = `${row},${col}`;
-    if (visited.has(key)) continue;
-    visited.add(key);
-    const node = map.grid[row][col];
-    if (!node) continue;
-    if (node.type === "boss") return true;
-    for (const conn of node.connections) {
-      queue.push(conn);
-    }
-  }
-  return false;
-}
-
-function shortestBossPathNodeCount(map: ReturnType<typeof generateLabyrinthMap>): number {
-  const visited = new Set<string>();
-  const queue = [{ row: 0, col: START_COL, count: 1 }];
-  while (queue.length > 0) {
-    const { row, col, count } = queue.shift()!;
-    const key = `${row},${col}`;
-    if (visited.has(key)) continue;
-    visited.add(key);
-    const node = map.grid[row][col];
-    if (!node) continue;
-    if (node.type === "boss") return count;
-    for (const conn of node.connections) {
-      queue.push({ ...conn, count: count + 1 });
-    }
-  }
-  return 0;
-}
-
-describe("canEnterLabyrinthNode on generated maps", () => {
-  it("rejects the opening entrance because it is the origin, not a chosen node", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    expect(map.grid[0][START_COL]!.type).toBe("entrance");
-    expect(canEnterLabyrinthNode(map, 0, START_COL)).toBe(false);
-  });
-
-  it("allows visible connected nodes", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    const target = map.grid[0][START_COL]!.connections[0];
-    expect(canEnterLabyrinthNode(map, target.row, target.col)).toBe(true);
-  });
-
-  it("rejects later current nodes to avoid replaying an entered node", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    const target = map.grid[0][START_COL]!.connections[0];
-    setCurrentNode(map, target.row, target.col);
-    expect(canEnterLabyrinthNode(map, target.row, target.col)).toBe(false);
-  });
-});
-
-describe("failPendingLabyrinthNode", () => {
-  it("marks the pending node failed and leaves only the entrance current", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    const first = map.grid[0][START_COL]!.connections[0];
-    setCurrentNode(map, first.row, first.col);
-    const second = map.grid[first.row][first.col]!.connections.find((connection) => connection.row !== 0);
-    expect(second).toBeDefined();
-
-    const next = failPendingLabyrinthNode(map, second!);
-    const currentNodes = next.grid.flat().filter((node) => node?.state === "current");
-
-    expect(next.grid[second!.row][second!.col]!.state).toBe("failed");
-    expect(next.currentNode).toEqual({ row: 0, col: START_COL });
-    expect(currentNodes).toHaveLength(1);
-    expect(next.grid[0][START_COL]!.state).toBe("current");
+  it("expandBeyondBoss is a no-op until the boss is cleared", () => {
+    const map = createMinimalLabyrinthMap();
+    const boss = Object.values(map.nodes).find((node) => node.type === "boss")!;
+    const next = expandBeyondBoss(map, boss.id, createSeededRng(9));
+    expect(next.floors).toHaveLength(map.floors.length);
   });
 });

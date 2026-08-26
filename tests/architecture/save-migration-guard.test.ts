@@ -147,7 +147,16 @@ describe("save migration guard", () => {
     expect(run?.runMetaMaxHealth).toBe(run?.runMaxHealth);
   });
 
-  it("preserves campaign progress fields in current-schema fixtures", () => {
+  it("regenerates a hex Labyrinth map from a legacy 8×9 grid without dropping the run", () => {
+    const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.labyrinthGridRegen());
+    expect(migrated.activeRun?.contentSystemType).toBe("labyrinth");
+    expect(migrated.activeRun?.runPlayerHealth).toBe(24);
+    expect(migrated.activeRun?.labyrinthMap?.floors.length).toBeGreaterThanOrEqual(2);
+    expect(migrated.activeRun?.labyrinthMap?.currentFloor).toBe(1);
+    expect(migrated.activeRun?.labyrinthPendingNode).toBeNull();
+  });
+
+  it("preserves gold, talent XP, and mid-combat trinket effects", () => {
     const campaign = normalizeSaveData(currentSchemaCampaignSave());
     expect(campaign.gold).toBe(42);
     expect(campaign.activeRun).not.toHaveProperty("runGold");

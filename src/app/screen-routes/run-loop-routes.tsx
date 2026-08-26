@@ -90,7 +90,10 @@ function LabyrinthMapScreenRoute({
   return (
     <LabyrinthMapScreen
       labyrinthMap={r.labyrinthMap}
-      onNodeClick={commands.handleNodeEnter}
+      selectedNodeId={r.selectedLabyrinthNodeId}
+      onNodeSelect={commands.handleNodeSelect}
+      onNodeDeselect={commands.handleNodeDeselect}
+      onNodeEnter={commands.handleNodeEnter}
       onOpenMenu={onOpenBattleMenu}
     />
   );

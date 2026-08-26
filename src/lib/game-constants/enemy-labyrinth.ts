@@ -8,12 +8,8 @@ export const LIVING_ARMOR_STARTING_ARMOR = 4;
 export const ENEMY_STARTING_BLOCK = 4;
 
 // ============ Labyrinth ============
-export const LABYRINTH_MIN_CONNECTIONS = 1;
-export const LABYRINTH_MAX_CONNECTIONS = 3;
 export const LABYRINTH_MAP_UI = {
-  lineTrimOffset: 3.35,
-  tooltipPadding: 8,
-  mapGutter: 4.5,
+  inspectorWidthPx: 380,
   shineDuration: 10,
   shineBorderWidth: 2,
 } as const;

@@ -1,5 +1,5 @@
 /**
- * Labyrinth configuration constants and labels.
+ * Labyrinth labels, identity constants, and floor-generation knobs.
  */
 import type { LabyrinthNodeType } from "../types";
 
@@ -9,7 +9,7 @@ export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
   elite: "Elite",
   rest: "Rest",
   mystery: "Mystery",
-  shop: "Merchant",
+  shop: "Cards",
   alchemist: "Alchemist",
   "trinket-shop": "Trinkets",
   "equipment-shop": "Equipment",
@@ -29,79 +29,22 @@ export const NODE_TYPE_TOOLTIPS: Record<LabyrinthNodeType, string> = {
   boss: "Challenge the Labyrinth guardian",
 };
 
-export const LABYRINTH_ROWS = 8;
-export const LABYRINTH_COLS = 9;
+export const LABYRINTH_ENTRANCE_NODE_ID = "labyrinth-entrance";
+export const LABYRINTH_ENTRANCE_FLOOR_ID = "labyrinth-floor-0";
 
-export const LABYRINTH_START_COL = Math.floor(LABYRINTH_COLS / 2);
-export const LABYRINTH_START_ROW = 0;
-export const LABYRINTH_BOSS_ROW = LABYRINTH_ROWS - 1;
+export const LABYRINTH_SUPPORT_TYPES: Array<Exclude<LabyrinthNodeType, "entrance" | "combat" | "elite" | "boss">> = [
+  "rest",
+  "mystery",
+  "shop",
+  "alchemist",
+  "trinket-shop",
+  "equipment-shop",
+];
 
-export interface LabyrinthPoint {
-  row: number;
-  col: number;
+export function labyrinthFloorId(depth: number): string {
+  return `labyrinth-floor-${depth}`;
 }
 
-export const LABYRINTH_MAP_CONFIG = {
-  minBossPathNodes: 11,
-  maxNodeDegree: 3,
-  upperRowBand: { min: 1, max: 3, combatPct: 0.55, elitePct: 0.2 },
-  lowerRowBand: { min: 4, max: 6, combatPct: 0.35, elitePct: 0.3 },
-  detourPaths: [
-    [
-      { row: 1, col: 3 },
-      { row: 1, col: 2 },
-      { row: 2, col: 2 },
-      { row: 2, col: 3 },
-    ],
-    [
-      { row: 1, col: 2 },
-      { row: 1, col: 1 },
-      { row: 2, col: 1 },
-      { row: 3, col: 1 },
-      { row: 3, col: 2 },
-      { row: 2, col: 2 },
-    ],
-    [
-      { row: 2, col: 4 },
-      { row: 2, col: 5 },
-      { row: 2, col: 6 },
-      { row: 3, col: 6 },
-      { row: 3, col: 5 },
-    ],
-    [
-      { row: 2, col: 6 },
-      { row: 2, col: 7 },
-      { row: 3, col: 7 },
-      { row: 4, col: 7 },
-      { row: 4, col: 6 },
-      { row: 3, col: 6 },
-    ],
-    [
-      { row: 4, col: 5 },
-      { row: 4, col: 6 },
-      { row: 5, col: 6 },
-      { row: 5, col: 5 },
-      { row: 5, col: 4 },
-    ],
-    [
-      { row: 5, col: 6 },
-      { row: 5, col: 7 },
-      { row: 6, col: 7 },
-      { row: 6, col: 6 },
-      { row: 6, col: 5 },
-      { row: 6, col: 4 },
-    ],
-    [
-      { row: 5, col: 3 },
-      { row: 5, col: 2 },
-      { row: 6, col: 2 },
-      { row: 6, col: 3 },
-    ],
-    [
-      { row: 5, col: 2 },
-      { row: 5, col: 1 },
-      { row: 6, col: 1 },
-      { row: 6, col: 2 },
-    ],
-  ],
-} as const;
+export function labyrinthNodeId(depth: number, index: number): string {
+  return `${labyrinthFloorId(depth)}-n${index}`;
+}

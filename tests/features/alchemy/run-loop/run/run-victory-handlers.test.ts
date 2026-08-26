@@ -28,7 +28,6 @@ vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (im
 
 import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { playGoldGain } from "@/lib/audio";
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
@@ -107,26 +106,19 @@ describe("createRunFlowHandlers victory paths", () => {
     );
   });
 
-  it("handleBattleDefeat routes labyrinth to map without teardown", () => {
+  it("handleBattleDefeat ends a labyrinth run like campaign", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
-    const navigateTo = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+    const transition = vi.fn();
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ transition }));
     handlers.handleBattleDefeat();
-    expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
-    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
-  });
-
-  it("handleBattleDefeat clears battle presentation for labyrinth", () => {
-    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
-    useBattlePresentationStore.getState().spawnCardGhost({
-      art: "test.webp",
-      rect: { x: 0, y: 0, width: 10, height: 10 },
-      rotation: 0,
-      delay: 0,
-      variant: "activate",
-    });
-    createRunFlowHandlers(makeFlowHandlerDeps()).handleBattleDefeat();
-    expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
+    expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
+      expect.objectContaining({
+        awardRunEndMaterials,
+        finalizeRunXP: expect.any(Function),
+        clearCombatState,
+      }),
+    );
+    expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
   });
 
   it("handleAbandonRun invokes applyRunDefeatTeardown for campaign", () => {
@@ -147,11 +139,9 @@ describe("createRunFlowHandlers victory paths", () => {
   it("handleAbandonRun abandons labyrinth run without failing the current node", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     const navigateTo = vi.fn();
-    const onLabyrinthFailNode = vi.fn();
     const transition = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, onLabyrinthFailNode, transition }));
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, transition }));
     handlers.handleAbandonRun();
-    expect(onLabyrinthFailNode).not.toHaveBeenCalled();
     expect(navigateTo).not.toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
     expect(applyRunDefeatTeardown).toHaveBeenCalled();
     expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
@@ -393,7 +383,7 @@ describe("createRunFlowHandlers victory paths", () => {
         gold: 0,
         materials: emptyInventory(),
         selectedId: null,
-        destinations: [DESTINATIONS.CAMPFIRE, DESTINATIONS.MERCHANT_SHOP],
+        destinations: [DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP],
         rewardType: "card",
         selectedBossId: null,
         lastVictoryEnemyType: null,
@@ -406,7 +396,7 @@ describe("createRunFlowHandlers victory paths", () => {
     handlers.handleDestinationChoice(DESTINATIONS.CAMPFIRE);
     const remountedHandlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
     remountedHandlers.handleDestinationChoice(DESTINATIONS.CAMPFIRE);
-    remountedHandlers.handleDestinationChoice(DESTINATIONS.MERCHANT_SHOP);
+    remountedHandlers.handleDestinationChoice(DESTINATIONS.CARD_SHOP);
 
     expect(navigateTo).toHaveBeenCalledTimes(1);
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CAMPFIRE, expect.any(Function));
@@ -414,10 +404,7 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(getRunProgressStoreView().completedDestinations).toEqual([]);
     expect(getRunProgressStoreView().destinationIndexInAct).toBe(0);
     expect(getRunSessionStoreView().pendingDestinationClaim).toBe(DESTINATIONS.CAMPFIRE);
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual([
-      DESTINATIONS.CAMPFIRE,
-      DESTINATIONS.MERCHANT_SHOP,
-    ]);
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP]);
 
     const onCommit = navigateTo.mock.calls[0][1] as () => void;
     onCommit();

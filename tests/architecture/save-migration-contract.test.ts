@@ -26,6 +26,7 @@ describe("save migration contract", () => {
       read("src/lib/validation/migration/index.ts"),
       read("src/lib/validation/migration/steps-v11-v12.ts"),
       read("src/lib/validation/migration/steps-v12-v13.ts"),
+      read("src/lib/validation/migration/steps-v13-v14.ts"),
     ].join("\n");
     expect(countMigrationSteps(migrationSources)).toBe(CURRENT_SAVE_SCHEMA_VERSION - LAUNCH_SAVE_SCHEMA_VERSION);
   });
@@ -50,6 +51,7 @@ describe("save migration contract", () => {
       "constructedBuildings",
       "contentVersion",
       "discoveredTrinketIds",
+      "discoveredUniqueIds",
       "discoveredCardIds",
       "displayMode",
       "encounteredEnemyIds",

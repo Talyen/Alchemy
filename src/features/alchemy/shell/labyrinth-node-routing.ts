@@ -10,7 +10,7 @@ interface LabyrinthNodeRoutingDeps {
   applyLabyrinthRewardModifiers: (modifiers: EncounterRewardTraitId[]) => void;
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
   labyrinth: {
-    enterNode: (row: number, col: number, handlers: LabyrinthNodeHandlers) => boolean;
+    enterSelectedNode: (handlers: LabyrinthNodeHandlers) => boolean;
   };
   battle: {
     startBattle: (
@@ -18,8 +18,9 @@ interface LabyrinthNodeRoutingDeps {
       gold?: number,
       enemyType?: "normal" | "elite",
       modifiers?: DifficultyModifier[],
+      enemyId?: string,
     ) => void;
-    startBossBattle: (modifiers?: DifficultyModifier[]) => void;
+    startBossBattle: (modifiers?: DifficultyModifier[], enemyId?: string) => void;
   };
   nav: { beginMysteryEvent: () => void };
   shop: Pick<ShopActions, "initialize">;
@@ -45,23 +46,23 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
     deps.navigateTo(screen);
   }
 
-  function handleLabyrinthNodeEnter(row: number, col: number): boolean {
-    return deps.labyrinth.enterNode(row, col, {
-      onStartBattleWithModifiers: (enemyType, modifiers, rewardModifiers) => {
+  function handleLabyrinthNodeEnter(): boolean {
+    return deps.labyrinth.enterSelectedNode({
+      onStartBattleWithModifiers: (enemyType, modifiers, rewardModifiers, enemyId) => {
         enterLabyrinthNodeScreen(
           ROUTE_SCREENS.BATTLE,
           () => {
-            deps.battle.startBattle(undefined, undefined, enemyType, []);
+            deps.battle.startBattle(undefined, undefined, enemyType, [], enemyId);
           },
           modifiers,
           rewardModifiers,
         );
       },
-      onStartBossBattleWithModifiers: (modifiers, rewardModifiers) => {
+      onStartBossBattleWithModifiers: (modifiers, rewardModifiers, enemyId) => {
         enterLabyrinthNodeScreen(
           ROUTE_SCREENS.BATTLE,
           () => {
-            deps.battle.startBossBattle([]);
+            deps.battle.startBossBattle([], enemyId);
           },
           modifiers,
           rewardModifiers,

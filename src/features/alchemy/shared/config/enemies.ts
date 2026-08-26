@@ -20,6 +20,8 @@ function withoutEncountered(pool: readonly BestiaryEntry[], encounteredEnemyIds:
   return pool.filter((enemy) => !encountered.has(enemy.id));
 }
 
+export { enemyById, isEnemyId };
+
 export function getCurrentEnemy(
   enemyType?: EnemyType,
   encounteredEnemyIds: readonly string[] = [],

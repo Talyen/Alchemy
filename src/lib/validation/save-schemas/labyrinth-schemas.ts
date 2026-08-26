@@ -1,10 +1,11 @@
 // Zod schemas for labyrinth map persistence.
 import { z } from "zod";
-import { LABYRINTH_MIN_CONNECTIONS, LABYRINTH_MAX_CONNECTIONS } from "@/lib/game-constants";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import { LabyrinthNodeStateSchema, LabyrinthNodeTypeSchema } from "./schema-enums";
+import { LabyrinthNodeTypeSchema } from "./schema-enums";
 import { sanitizeEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
+import { isHexInBounds, hexKey } from "@/lib/content-systems/labyrinth/hex-grid";
+import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
 
 export const EncounterCombatTraitArraySchema = z
   .array(z.string())
@@ -15,110 +16,91 @@ export const EncounterRewardTraitArraySchema = z
   .transform((values): EncounterRewardTraitId[] => sanitizeEncounterTraitIds(values, "reward"))
   .catch([] as EncounterRewardTraitId[]);
 
+const LabyrinthGridPositionSchema = z.object({
+  row: z.number().int().catch(0),
+  col: z.number().int().catch(0),
+});
+
 const LabyrinthNodeSchema = z
   .object({
+    id: z.string().min(1),
     type: LabyrinthNodeTypeSchema,
+    floor: z.number().int().nonnegative().catch(0),
+    gridPosition: LabyrinthGridPositionSchema,
     modifiers: EncounterCombatTraitArraySchema,
     rewardModifiers: EncounterRewardTraitArraySchema,
-    connections: z
-      .array(
-        z.object({
-          row: z.number().int().nonnegative().catch(0),
-          col: z.number().int().nonnegative().catch(0),
-        }),
-      )
-      .catch([]),
-    state: LabyrinthNodeStateSchema,
+    outgoingIds: z.array(z.string()).catch([]),
+    cleared: z.boolean().catch(false),
     enemyId: z.string().optional(),
   })
   .transform((node): LabyrinthNode => {
     const { enemyId, ...rest } = node;
     return enemyId === undefined ? rest : { ...rest, enemyId };
-  })
-  .nullable()
-  .catch(null);
+  });
+
+const LabyrinthFloorSchema = z.object({
+  id: z.string().min(1),
+  depth: z.number().int().nonnegative().catch(0),
+  nodeIds: z.array(z.string().min(1)).min(1),
+});
 
 interface LabyrinthMapShape {
-  rows: number;
-  cols: number;
-  grid: Array<Array<z.infer<typeof LabyrinthNodeSchema> | null>>;
-  currentNode: { row: number; col: number };
-}
-
-function hasValidGridDimensions(map: LabyrinthMapShape): boolean {
-  if (map.rows <= 0 || map.cols <= 0) return false;
-  if (map.grid.length !== map.rows) return false;
-  return !map.grid.some((row) => row.length !== map.cols);
-}
-
-function isAdjacentNeighbor(a: { row: number; col: number }, b: { row: number; col: number }): boolean {
-  const dr = Math.abs(a.row - b.row);
-  const dc = Math.abs(a.col - b.col);
-  return (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
-}
-
-function validateNodeConnections(
-  map: LabyrinthMapShape,
-  node: NonNullable<LabyrinthMapShape["grid"][number][number]>,
-  r: number,
-  c: number,
-): boolean {
-  if (node.connections.length < LABYRINTH_MIN_CONNECTIONS || node.connections.length > LABYRINTH_MAX_CONNECTIONS)
-    return false;
-  for (const conn of node.connections) {
-    const target = map.grid[conn.row]?.[conn.col];
-    if (!target) return false;
-    if (!isAdjacentNeighbor(conn, { row: r, col: c })) return false;
-  }
-  return true;
-}
-
-function countNodeTypes(
-  map: LabyrinthMapShape,
-): { entranceCount: number; bossCount: number; currentCount: number } | null {
-  let entranceCount = 0;
-  let bossCount = 0;
-  let currentCount = 0;
-  for (let r = 0; r < map.rows; r++) {
-    const row = map.grid[r];
-    if (!row) return null;
-    for (let c = 0; c < map.cols; c++) {
-      const node = row[c];
-      if (!node) continue;
-      if (node.type === "entrance") entranceCount++;
-      if (node.type === "boss") bossCount++;
-      if (node.state === "current") {
-        currentCount++;
-        if (map.currentNode.row !== r || map.currentNode.col !== c) return null;
-      }
-      if (!validateNodeConnections(map, node, r, c)) return null;
-    }
-  }
-  return { entranceCount, bossCount, currentCount };
+  floors: Array<{ id: string; depth: number; nodeIds: string[] }>;
+  nodes: Record<string, LabyrinthNode>;
+  currentFloor: number;
 }
 
 function isValidLabyrinthMap(map: LabyrinthMapShape): boolean {
-  if (!hasValidGridDimensions(map)) return false;
-  const current = map.grid[map.currentNode.row]?.[map.currentNode.col];
-  if (!current) return false;
-  const counts = countNodeTypes(map);
-  if (!counts) return false;
-  return counts.entranceCount === 1 && counts.bossCount === 1 && counts.currentCount === 1;
+  if (map.floors.length < 2) return false;
+  const floorDepths = new Set<number>();
+  const seenNodeIds = new Set<string>();
+  let entranceCount = 0;
+
+  for (const floor of map.floors) {
+    if (floorDepths.has(floor.depth)) return false;
+    floorDepths.add(floor.depth);
+    const occupied = new Set<string>();
+    let bossCount = 0;
+    for (const nodeId of floor.nodeIds) {
+      const node = map.nodes[nodeId];
+      if (!node || node.id !== nodeId) return false;
+      if (node.floor !== floor.depth) return false;
+      if (seenNodeIds.has(nodeId)) return false;
+      seenNodeIds.add(nodeId);
+      if (!isHexInBounds(node.gridPosition) && floor.depth > 0) return false;
+      const key = hexKey(node.gridPosition);
+      if (occupied.has(key)) return false;
+      occupied.add(key);
+      if (node.type === "entrance") entranceCount += 1;
+      if (node.type === "boss") bossCount += 1;
+      for (const outgoingId of node.outgoingIds) {
+        if (!map.nodes[outgoingId]) return false;
+      }
+    }
+    if (floor.depth === 0) {
+      if (floor.nodeIds.length !== 1 || map.nodes[floor.nodeIds[0]!]?.type !== "entrance") return false;
+    } else if (bossCount !== 1) {
+      return false;
+    }
+  }
+
+  if (entranceCount !== 1) return false;
+  const extraNodes = Object.keys(map.nodes).some((id) => !seenNodeIds.has(id));
+  if (extraNodes) return false;
+  if (!floorDepths.has(map.currentFloor) || map.currentFloor < 1) return false;
+  const entrance = map.nodes[LABYRINTH_ENTRANCE_NODE_ID];
+  return Boolean(entrance?.cleared && entrance.type === "entrance");
 }
 
 export const LabyrinthMapSchema = z
   .object({
-    grid: z.array(z.array(LabyrinthNodeSchema)),
-    rows: z.number().int().nonnegative().catch(0),
-    cols: z.number().int().nonnegative().catch(0),
-    currentNode: z
-      .object({
-        row: z.number().int().nonnegative().catch(0),
-        col: z.number().int().nonnegative().catch(0),
-      })
-      .catch({ row: 0, col: 0 }),
+    floors: z.array(LabyrinthFloorSchema),
+    nodes: z.record(z.string(), LabyrinthNodeSchema),
+    currentFloor: z.number().int().positive().catch(1),
   })
   .refine(isValidLabyrinthMap, { message: "Invalid labyrinth map structure" })
   .transform((map): LabyrinthMap => map)
   .nullable()
   .catch(null);
+
+export const LabyrinthPendingNodeSchema = z.string().min(1).nullable().catch(null);

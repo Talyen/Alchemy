@@ -4,6 +4,7 @@ import { defaultBattleState } from "@/lib/battle";
 import { getStartingDeck } from "@/lib/game-data";
 import { type ActiveRunData } from "@/lib/active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
+import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
 import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
 import type { Screen } from "@/lib/routing";
 import {
@@ -14,7 +15,7 @@ import {
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
 import { useRunBattleDomainStore } from "../../../../helpers/gameplay-store-test";
-import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../stores/active-run-data-fixture";
+import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/active-run-data-fixture";
 
 /** Encode the live store through the canonical resume codec. */
 function encodeState(screen?: Screen): ActiveRunData {
@@ -37,7 +38,7 @@ describe("encodeRunResumeSnapshot", () => {
       currentAct: 2,
       destinationIndexInAct: 1,
       completedDestinations: ["Normal Combat", "Campfire"],
-      lastOfferedDestinations: ["Mystery", "Campfire", "Merchant's Shop"],
+      lastOfferedDestinations: ["Mystery", "Campfire", "Card Shop"],
       destinationRoundsSinceOffered: { Mystery: 2 },
       runBoons: ["bone-charm"],
       encounteredRunEnemyIds: ["goblin"],
@@ -58,7 +59,7 @@ describe("encodeRunResumeSnapshot", () => {
       currentAct: 2,
       destinationIndexInAct: 1,
       completedDestinations: ["Normal Combat", "Campfire"],
-      lastOfferedDestinations: ["Mystery", "Campfire", "Merchant's Shop"],
+      lastOfferedDestinations: ["Mystery", "Campfire", "Card Shop"],
       destinationRoundsSinceOffered: { Mystery: 2 },
       runBoons: ["bone-charm"],
       encounteredRunEnemyIds: ["goblin"],
@@ -190,7 +191,7 @@ describe("encodeRunResumeSnapshot", () => {
   it("persists labyrinth pending node and modifiers during combat", () => {
     setRunProgress({ contentSystemType: "labyrinth" });
     setRunSession({
-      activeLabyrinthPendingNode: { row: 1, col: 2 },
+      activeLabyrinthPendingNode: "labyrinth-floor-1-n0",
       activeLabyrinthModifiers: ["tempered"],
       activeLabyrinthRewardModifiers: ["generous"],
     });
@@ -198,7 +199,7 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState();
 
-    expect(result.labyrinthPendingNode).toEqual({ row: 1, col: 2 });
+    expect(result.labyrinthPendingNode).toBe("labyrinth-floor-1-n0");
     expect(result.activeCombat?.activeLabyrinthModifiers).toEqual(["tempered"]);
     expect(result.activeCombat?.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });
@@ -240,15 +241,29 @@ describe("encodeRunResumeSnapshot", () => {
     expect(result.runTalentXP).toEqual(runTalentXP);
   });
 
+  it("remaps Merchant's Shop onto Card Shop when hydrating destination history", () => {
+    const fields = createInitialActiveRunFields(
+      makeActiveRunData({
+        lastOfferedDestinations: ["Merchant's Shop"],
+        completedDestinations: ["Merchant's Shop"],
+        destinationRoundsSinceOffered: { "Merchant's Shop": 2 },
+      }),
+    );
+
+    expect(fields.lastOfferedDestinations).toEqual(["Card Shop"]);
+    expect(fields.completedDestinations).toEqual(["Card Shop"]);
+    expect(fields.destinationRoundsSinceOffered).toEqual({ "Card Shop": 2 });
+  });
+
   it("persists destination resume fields", () => {
-    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["Campfire", "Merchant's Shop"] }));
+    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] }));
 
     const result = encodeState("destination");
 
     expect(result.currentScreen).toBe("destination");
     expect(result.interruptedFlow).toEqual({
       kind: "destination",
-      destinations: ["Campfire", "Merchant's Shop"],
+      destinations: ["Campfire", "Card Shop"],
       selectedBossId: null,
       lastVictoryEnemyType: null,
       lastVictoryContentSystem: null,

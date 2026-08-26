@@ -223,7 +223,7 @@ If an async battle flow persists an intermediate state, commit `activeCombat.pen
 | 4. (Optional) Register card sound                                 | `src/lib/sound-registry.ts` (`cardSounds` record)                                                                                                                                                         |
 | 5. Update `descriptionLines` to match effects; context-aware text | same entry; pure text `src/lib/game-data/card-description.ts`, UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`) |
 
-Cards in `cardLibrary` are automatically included in merchant shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
+Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
 
 ---
 
@@ -359,6 +359,11 @@ Campaign, labyrinth, and Wildwood differ at setup and resume. Read the
 changing the navigation seam. Keep each content system’s persisted draft and
 resume path in its existing owner, then cover the changed setup/resume route
 with the focused tests selected by `verify:changed`.
+
+Labyrinth maps persist on `activeRun.labyrinthMap` as hex floors (`floors` +
+`nodes`). Resume still returns to `labyrinth-map`. In-progress 8×9 grid maps
+cannot be converted; schema 14 keeps the run and regenerates floor 1 from the
+run seed. See [MIGRATIONS.md](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
 ## Change battle playback
 

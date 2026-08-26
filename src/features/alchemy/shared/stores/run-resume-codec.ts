@@ -14,7 +14,7 @@ import {
   type AlchemistState,
   type EquipmentShopState,
   type InterruptedFlow,
-  type LabyrinthNodePosition,
+  type LabyrinthPendingNodeId,
   type PersistedAlchemistState,
   type PersistedBattleTransition,
   type PersistedEquipmentShopState,
@@ -39,7 +39,7 @@ import { encodePersistedShops } from "./encode-shops";
 
 export interface DecodedRunResumeSession {
   labyrinthMap: LabyrinthMap | null;
-  labyrinthPendingNode: LabyrinthNodePosition | null;
+  labyrinthPendingNode: LabyrinthPendingNodeId | null;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   wildwoodDraft: WildwoodDraftState | null;

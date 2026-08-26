@@ -82,7 +82,7 @@ test.describe("Save Persistence & Resume", () => {
   test("resume restores saved destination choices", async ({ page }) => {
     await seedRandom(page, 42);
     await injectDestinationAtIndex(page, {
-      destinations: ["Campfire", "Mystery", "Merchant's Shop"],
+      destinations: ["Campfire", "Mystery", "Card Shop"],
       destinationIndexInAct: 1,
       roomsEncountered: 2,
       completedDestinations: ["Normal Combat"],
@@ -94,7 +94,7 @@ test.describe("Save Persistence & Resume", () => {
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Campfire" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Mystery" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Merchant's Shop" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Card Shop" })).toBeVisible();
   });
 
   test("mid-battle reload returns to destination not battle", critical, async ({ page }) => {

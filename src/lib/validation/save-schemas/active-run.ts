@@ -18,6 +18,7 @@ import {
   TalentXPSchema,
   BattleCardSchema,
   LabyrinthMapSchema,
+  LabyrinthPendingNodeSchema,
   EncounterCombatTraitArraySchema,
   EncounterRewardTraitArraySchema,
   MaterialInventorySchema,
@@ -113,11 +114,6 @@ const RunRngStateSchema = z.object({
     world: z.number().int().nonnegative().catch(0).default(0),
   }),
 });
-
-const LabyrinthNodePositionSchema = z
-  .object({ row: z.number().int().nonnegative(), col: z.number().int().nonnegative() })
-  .nullable()
-  .catch(null);
 
 const PersistedBattleTransitionSchema = z
   .union([
@@ -294,7 +290,7 @@ export const ActiveRunDataSchema = z
     contentSystemType: ContentSystemIdSchema.catch("campaign"),
     rng: RunRngStateSchema.default(() => createRunRngState()),
     labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
-    labyrinthPendingNode: LabyrinthNodePositionSchema,
+    labyrinthPendingNode: LabyrinthPendingNodeSchema,
     wildwoodDraft: WildwoodDraftStateSchema.default(null),
     starterDraftChoices: z.array(BattleCardSchema).nullable().catch(null).default(null),
     activeCombat: ActiveCombatDataSchema.catch(null).default(null),

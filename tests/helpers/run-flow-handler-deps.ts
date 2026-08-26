@@ -4,7 +4,6 @@ import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 
 export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> &
   Partial<RunFlowShellActions> & {
-    onLabyrinthFailNode?: () => void;
     onLabyrinthClearNode?: () => void;
     onInitShop?: () => void;
     onInitAlchemist?: () => void;
@@ -32,7 +31,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     actions: actionsOverride,
     navigateTo = () => {},
     transition = () => {},
-    labyrinthFailNode,
     labyrinthClearNode,
     initializeShop,
     startBattle,
@@ -40,7 +38,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     commitWildwoodVictory,
     beginMysteryEvent = () => {},
     wildwoodRewardComplete,
-    onLabyrinthFailNode = () => {},
     onLabyrinthClearNode = () => {},
     onInitShop = () => {},
     onInitAlchemist = () => {},
@@ -56,7 +53,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
   const actions: RunFlowShellActions = actionsOverride ?? {
     navigateTo,
     transition,
-    labyrinthFailNode: labyrinthFailNode ?? onLabyrinthFailNode,
     labyrinthClearNode: labyrinthClearNode ?? onLabyrinthClearNode,
     initializeShop:
       initializeShop ??

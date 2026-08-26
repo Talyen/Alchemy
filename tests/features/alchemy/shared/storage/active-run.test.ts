@@ -4,6 +4,8 @@ import { normalizeSaveData } from "../../../../helpers/parse-save-for-tests";
 import { defaultBattleState, repairPersistedBattleBoonManifest } from "@/lib/battle";
 import { cardLibrary } from "@/lib/game-data";
 import { makeRunCandidate } from "../../../../fixtures/active-run";
+import { createMinimalLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
+import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
 import { makeTestCard } from "../../../../fixtures/cards";
 
 describe("parseActiveRun", () => {
@@ -282,14 +284,6 @@ describe("parseActiveRun", () => {
 });
 
 describe("parseActiveRun with labyrinth map", () => {
-  // A minimal valid 1x2 grid: entrance(0,0) → boss(0,1)
-  const valid1x2Grid = [
-    [
-      { type: "entrance", state: "current", connections: [{ row: 0, col: 1 }], modifiers: [], rewardModifiers: [] },
-      { type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] },
-    ],
-  ];
-
   function makeLabyrinthRun(labyrinthMap: Record<string, unknown>) {
     return makeRunCandidate({
       contentSystemType: "labyrinth",
@@ -297,135 +291,47 @@ describe("parseActiveRun with labyrinth map", () => {
     });
   }
 
-  it("parses a valid labyrinth map", () => {
-    const result = parseActiveRun(
-      makeLabyrinthRun({
-        rows: 1,
-        cols: 2,
-        currentNode: { row: 0, col: 0 },
-        grid: valid1x2Grid,
-      }),
-    );
+  it("parses a valid hex labyrinth map", () => {
+    const result = parseActiveRun(makeLabyrinthRun(createMinimalLabyrinthMap() as unknown as Record<string, unknown>));
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).not.toBeNull();
-    expect(result!.labyrinthMap!.rows).toBe(1);
-    expect(result!.labyrinthMap!.cols).toBe(2);
+    expect(result!.labyrinthMap!.currentFloor).toBe(1);
+    expect(result!.labyrinthMap!.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
   });
 
-  it("drops labyrinth runs when grid dimension mismatches rows", () => {
-    const result = parseActiveRun(
-      makeLabyrinthRun({
-        rows: 2,
-        cols: 2,
-        currentNode: { row: 0, col: 0 },
-        grid: valid1x2Grid,
-      }),
-    );
+  it("drops labyrinth runs when the map has no entrance", () => {
+    const map = createMinimalLabyrinthMap();
+    delete map.nodes[LABYRINTH_ENTRANCE_NODE_ID];
+    map.floors = map.floors.filter((floor) => floor.depth !== 0);
+    const result = parseActiveRun(makeLabyrinthRun(map as unknown as Record<string, unknown>));
     expect(result).toBeNull();
   });
 
-  it("drops labyrinth runs when map has no entrance", () => {
-    const result = parseActiveRun(
-      makeLabyrinthRun({
-        rows: 1,
-        cols: 2,
-        currentNode: { row: 0, col: 0 },
-        grid: [
-          [
-            { type: "combat", state: "current", connections: [{ row: 0, col: 1 }], modifiers: [], rewardModifiers: [] },
-            { type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] },
-          ],
-        ],
-      }),
-    );
-    expect(result).toBeNull();
-  });
-
-  it("drops labyrinth runs when currentNode is out of bounds", () => {
-    const result = parseActiveRun(
-      makeLabyrinthRun({
-        rows: 1,
-        cols: 2,
-        currentNode: { row: 99, col: 0 },
-        grid: valid1x2Grid,
-      }),
-    );
-    expect(result).toBeNull();
-  });
-
-  it("drops labyrinth runs when a node has 0 connections", () => {
-    const result = parseActiveRun(
-      makeLabyrinthRun({
-        rows: 1,
-        cols: 2,
-        currentNode: { row: 0, col: 0 },
-        grid: [
-          [
-            { type: "entrance", state: "current", connections: [], modifiers: [], rewardModifiers: [] },
-            { type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] },
-          ],
-        ],
-      }),
-    );
-    expect(result).toBeNull();
-  });
-
-  it("drops labyrinth runs when connections are non-adjacent (dr=2)", () => {
-    const result = parseActiveRun(
-      makeLabyrinthRun({
-        rows: 3,
-        cols: 1,
-        currentNode: { row: 0, col: 0 },
-        grid: [
-          [
-            {
-              type: "entrance",
-              state: "current",
-              connections: [{ row: 2, col: 0 }],
-              modifiers: [],
-              rewardModifiers: [],
-            },
-          ],
-          [{ type: "combat", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] }],
-          [{ type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] }],
-        ],
-      }),
-    );
-    // entrance(0,0)→boss(2,0) is non-adjacent (dr=2)
+  it("drops labyrinth runs when a floor is missing its boss", () => {
+    const map = createMinimalLabyrinthMap();
+    const boss = Object.values(map.nodes).find((node) => node.type === "boss")!;
+    map.nodes[boss.id] = { ...boss, type: "combat" };
+    const result = parseActiveRun(makeLabyrinthRun(map as unknown as Record<string, unknown>));
     expect(result).toBeNull();
   });
 
   it("filters unknown labyrinth modifier kinds", () => {
-    const result = parseActiveRun(
-      makeLabyrinthRun({
-        rows: 1,
-        cols: 2,
-        currentNode: { row: 0, col: 0 },
-        grid: [
-          [
-            {
-              type: "entrance",
-              state: "current",
-              connections: [{ row: 0, col: 1 }],
-              modifiers: ["unknown-mod"],
-              rewardModifiers: [],
-            },
-            { type: "boss", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] },
-          ],
-        ],
-      }),
-    );
+    const map = createMinimalLabyrinthMap();
+    const combat = Object.values(map.nodes).find((node) => node.type === "combat")!;
+    map.nodes[combat.id] = { ...combat, modifiers: ["unknown-mod" as never] };
+    const result = parseActiveRun(makeLabyrinthRun(map as unknown as Record<string, unknown>));
     expect(result).not.toBeNull();
-    expect(result!.labyrinthMap).not.toBeNull();
-    expect(result!.labyrinthMap!.grid[0][0]!.modifiers).toEqual([]);
+    expect(result!.labyrinthMap!.nodes[combat.id]?.modifiers).toEqual([]);
   });
 
-  it("normalizes labyrinth combat pending node and modifiers", () => {
+  it("normalizes labyrinth combat pending node id and modifiers", () => {
+    const map = createMinimalLabyrinthMap();
+    const combat = Object.values(map.nodes).find((node) => node.type === "combat")!;
     const result = parseActiveRun(
       makeRunCandidate({
         contentSystemType: "labyrinth",
-        labyrinthMap: { rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: valid1x2Grid },
-        labyrinthPendingNode: { row: 0, col: 1 },
+        labyrinthMap: map as unknown as Record<string, unknown>,
+        labyrinthPendingNode: combat.id,
         activeCombat: {
           battleState: defaultBattleState(),
           activeLabyrinthModifiers: ["tempered", "unknown"],
@@ -434,7 +340,7 @@ describe("parseActiveRun with labyrinth map", () => {
       }),
     );
 
-    expect(result!.labyrinthPendingNode).toEqual({ row: 0, col: 1 });
+    expect(result!.labyrinthPendingNode).toBe(combat.id);
     expect(result!.activeCombat?.activeLabyrinthModifiers).toEqual(["tempered"]);
     expect(result!.activeCombat?.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });

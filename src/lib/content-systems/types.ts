@@ -19,22 +19,37 @@ export type LabyrinthNodeType =
   | "equipment-shop"
   | "boss";
 
-type LabyrinthNodeState = "hidden" | "visible" | "current" | "cleared" | "failed";
+/** Derived map chrome. Persisted nodes store `cleared` only. */
+export type LabyrinthNodeVisualState = "locked" | "reachable" | "cleared";
+
+export interface LabyrinthGridPosition {
+  row: number;
+  col: number;
+}
 
 export interface LabyrinthNode {
+  id: string;
   type: LabyrinthNodeType;
+  floor: number;
+  gridPosition: LabyrinthGridPosition;
   modifiers: EncounterCombatTraitId[];
   rewardModifiers: EncounterRewardTraitId[];
-  connections: Array<{ row: number; col: number }>;
-  state: LabyrinthNodeState;
+  /** Cross-floor links only. Same-floor travel is hex adjacency. */
+  outgoingIds: string[];
+  cleared: boolean;
   enemyId?: string;
 }
 
+export interface LabyrinthFloor {
+  id: string;
+  depth: number;
+  nodeIds: string[];
+}
+
 export interface LabyrinthMap {
-  grid: Array<Array<LabyrinthNode | null>>;
-  rows: number;
-  cols: number;
-  currentNode: { row: number; col: number };
+  floors: LabyrinthFloor[];
+  nodes: Record<string, LabyrinthNode>;
+  currentFloor: number;
 }
 
 // ============ Wildwood ============

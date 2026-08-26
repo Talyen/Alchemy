@@ -63,10 +63,7 @@ export interface PersistedMysteryVisit {
   resolvedTrinketIds: string[];
 }
 
-export interface LabyrinthNodePosition {
-  row: number;
-  col: number;
-}
+export type LabyrinthPendingNodeId = string;
 
 export type PersistedBattleTransition =
   | {
@@ -112,7 +109,7 @@ export interface ActiveRunData {
   contentSystemType: ContentSystemId;
   rng: RunRngState;
   labyrinthMap: LabyrinthMap | null;
-  labyrinthPendingNode: LabyrinthNodePosition | null;
+  labyrinthPendingNode: LabyrinthPendingNodeId | null;
   wildwoodDraft: WildwoodDraftState | null;
   /** Campaign/labyrinth Wildcard pick set; null when the starter draft is finished or unused. */
   starterDraftChoices: BattleCard[] | null;

@@ -9,8 +9,9 @@ interface BattleLauncherDeps {
     gold?: number,
     enemyType?: "normal" | "elite",
     modifiers?: DifficultyModifier[],
+    enemyId?: string,
   ) => void;
-  onStartBossBattle: () => void;
+  onStartBossBattle: (modifiers?: DifficultyModifier[], enemyId?: string) => void;
   onStartBossById: (
     bossId: string,
     modifiers?: DifficultyModifier[],
@@ -26,5 +27,4 @@ export interface RunNavigationDeps {
   battle: BattleLauncherDeps;
   initializeShop: (kind: ShopKind) => void;
   labyrinthClearNode: () => void;
-  labyrinthFailNode: () => void;
 }

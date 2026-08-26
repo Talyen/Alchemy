@@ -88,6 +88,8 @@ const sessionCommands = {
   setActiveLabyrinthModifiers: command(sessionPort.setActiveLabyrinthModifiers),
   setActiveLabyrinthRewardModifiers: command(sessionPort.setActiveLabyrinthRewardModifiers),
   setActiveLabyrinthPendingNode: command(sessionPort.setActiveLabyrinthPendingNode),
+  setSelectedLabyrinthNodeId: command(sessionPort.setSelectedLabyrinthNodeId),
+  setRunEndLabyrinthFloor: command(sessionPort.setRunEndLabyrinthFloor),
   setRewardState: command(sessionPort.setRewardState),
   setCompanionRewardCards: command(sessionPort.setCompanionRewardCards),
   setRunEndMaterials: command(sessionPort.setRunEndMaterials),
@@ -142,6 +144,7 @@ const profileCommands = {
   setDiscoveredCardIds: command(profilePort.setDiscoveredCardIds),
   setEncounteredEnemyIds: command(profilePort.setEncounteredEnemyIds),
   setDiscoveredTrinketIds: command(profilePort.setDiscoveredTrinketIds),
+  setDiscoveredUniqueIds: command(profilePort.setDiscoveredUniqueIds),
   setCompletedDifficulties: command(profilePort.setCompletedDifficulties),
   setFinishedRunCharacters: command(profilePort.setFinishedRunCharacters),
   setCollectionPage: command(profilePort.setCollectionPage),
@@ -380,6 +383,7 @@ export const useProfileStore = createFacade<TestProfileStore>(profileStoreView, 
   state.profile.discoveredCardIds = next.discoveredCardIds;
   state.profile.encounteredEnemyIds = next.encounteredEnemyIds;
   state.profile.discoveredTrinketIds = next.discoveredTrinketIds;
+  state.profile.discoveredUniqueIds = next.discoveredUniqueIds;
   state.profile.completedDifficulties = next.completedDifficulties;
   state.profile.finishedRunCharacters = next.finishedRunCharacters;
   state.profile.collectionTab = next.collectionTab;

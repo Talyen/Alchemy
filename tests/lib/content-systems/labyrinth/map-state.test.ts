@@ -1,128 +1,90 @@
 import { describe, expect, it } from "vitest";
 import {
   canEnterLabyrinthNode,
-  failNode,
-  setCurrentNode,
-  withCurrentNode,
-  withFailedNode,
+  cloneLabyrinthMap,
+  isNodeReachable,
+  labyrinthNodeVisualState,
+  withClearedNode,
 } from "@/lib/content-systems/labyrinth/map-state";
-import { LABYRINTH_START_COL, LABYRINTH_START_ROW } from "@/lib/content-systems/labyrinth/data";
+import { LABYRINTH_ENTRANCE_NODE_ID, LABYRINTH_ENTRANCE_FLOOR_ID } from "@/lib/content-systems/labyrinth/data";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 
-function makeNode(
-  type: LabyrinthNode["type"],
-  state: LabyrinthNode["state"],
-  connections: LabyrinthNode["connections"] = [],
+function node(
+  partial: Partial<LabyrinthNode> & Pick<LabyrinthNode, "id" | "type" | "floor" | "gridPosition">,
 ): LabyrinthNode {
-  return { type, state, connections, modifiers: [], rewardModifiers: [] };
+  return {
+    modifiers: [],
+    rewardModifiers: [],
+    outgoingIds: [],
+    cleared: false,
+    ...partial,
+  };
 }
 
-function makeMap(grid: Array<Array<LabyrinthNode | null>>, currentNode: { row: number; col: number }): LabyrinthMap {
-  return { grid, rows: grid.length, cols: grid[0]?.length ?? 0, currentNode };
+function makeMap(nodes: LabyrinthNode[], currentFloor = 1): LabyrinthMap {
+  const byFloor = new Map<number, string[]>();
+  for (const entry of nodes) {
+    const list = byFloor.get(entry.floor) ?? [];
+    list.push(entry.id);
+    byFloor.set(entry.floor, list);
+  }
+  return {
+    currentFloor,
+    floors: [...byFloor.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([depth, nodeIds]) => ({
+        id: depth === 0 ? LABYRINTH_ENTRANCE_FLOOR_ID : `labyrinth-floor-${depth}`,
+        depth,
+        nodeIds,
+      })),
+    nodes: Object.fromEntries(nodes.map((entry) => [entry.id, entry])),
+  };
 }
 
-describe("canEnterLabyrinthNode", () => {
-  it("returns true for a visible node connected to the current node", () => {
-    const map = makeMap(
-      [
-        [makeNode("entrance", "current", [{ row: 1, col: 1 }]), null],
-        [null, makeNode("combat", "visible", [{ row: 0, col: 0 }])],
-      ],
-      { row: 0, col: 0 },
-    );
-    expect(canEnterLabyrinthNode(map, 1, 1)).toBe(true);
+describe("labyrinth reachability", () => {
+  const entrance = node({
+    id: LABYRINTH_ENTRANCE_NODE_ID,
+    type: "entrance",
+    floor: 0,
+    gridPosition: { row: 0, col: 0 },
+    cleared: true,
+    outgoingIds: ["f1-n0"],
+  });
+  const combat = node({
+    id: "f1-n0",
+    type: "combat",
+    floor: 1,
+    gridPosition: { row: 0, col: 0 },
+  });
+  const rest = node({
+    id: "f1-n1",
+    type: "rest",
+    floor: 1,
+    gridPosition: { row: 1, col: 0 },
+  });
+  const map = makeMap([entrance, combat, rest]);
+
+  it("marks the floor entry reachable via the cleared entrance outgoing link", () => {
+    expect(canEnterLabyrinthNode(map, "f1-n0")).toBe(true);
+    expect(labyrinthNodeVisualState(map, "f1-n0")).toBe("reachable");
   });
 
-  it("returns false when the node is not connected to current", () => {
-    const map = makeMap(
-      [
-        [makeNode("entrance", "current"), makeNode("combat", "visible")],
-        [null, null],
-      ],
-      { row: 0, col: 0 },
-    );
-    expect(canEnterLabyrinthNode(map, 0, 1)).toBe(false);
+  it("keeps hex neighbors locked until the adjacent node is cleared", () => {
+    expect(isNodeReachable(map, "f1-n1")).toBe(false);
+    const next = withClearedNode(map, "f1-n0");
+    expect(isNodeReachable(next, "f1-n1")).toBe(true);
+    expect(labyrinthNodeVisualState(next, "f1-n0")).toBe("cleared");
   });
 
-  it("returns false for hidden nodes", () => {
-    const map = makeMap(
-      [
-        [makeNode("entrance", "current", [{ row: 1, col: 0 }]), null],
-        [makeNode("combat", "hidden", [{ row: 0, col: 0 }]), null],
-      ],
-      { row: 0, col: 0 },
-    );
-    expect(canEnterLabyrinthNode(map, 1, 0)).toBe(false);
+  it("does not mutate the original map when clearing", () => {
+    const original = cloneLabyrinthMap(map);
+    withClearedNode(map, "f1-n0");
+    expect(map.nodes["f1-n0"]?.cleared).toBe(false);
+    expect(original.nodes["f1-n0"]?.cleared).toBe(false);
   });
 
-  it("returns false for out-of-bounds coordinates", () => {
-    const map = makeMap([[makeNode("entrance", "current")]], { row: 0, col: 0 });
-    expect(canEnterLabyrinthNode(map, 2, 0)).toBe(false);
-  });
-});
-
-describe("setCurrentNode", () => {
-  it("clears the previous current node and marks the target as current", () => {
-    const map = makeMap(
-      [
-        [makeNode("entrance", "current", [{ row: 1, col: 0 }]), null],
-        [makeNode("combat", "visible", [{ row: 0, col: 0 }]), null],
-      ],
-      { row: 0, col: 0 },
-    );
-    setCurrentNode(map, 1, 0);
-    expect(map.grid[0][0]?.state).toBe("cleared");
-    expect(map.grid[1][0]?.state).toBe("current");
-    expect(map.currentNode).toEqual({ row: 1, col: 0 });
-  });
-});
-
-describe("withCurrentNode", () => {
-  it("returns a new map without mutating the input", () => {
-    const original = makeMap(
-      [
-        [makeNode("entrance", "current", [{ row: 1, col: 0 }]), null],
-        [makeNode("combat", "visible", [{ row: 0, col: 0 }]), null],
-      ],
-      { row: 0, col: 0 },
-    );
-    const next = withCurrentNode(original, 1, 0);
-    expect(original.grid[0][0]?.state).toBe("current");
-    expect(next.grid[0][0]?.state).toBe("cleared");
-    expect(next.grid[1][0]?.state).toBe("current");
-    expect(next).not.toBe(original);
-  });
-});
-
-describe("failNode", () => {
-  it("marks the node failed and resets start to current", () => {
-    const cols = 5;
-    const row0 = Array.from({ length: cols }, (_, col) =>
-      col === LABYRINTH_START_COL ? makeNode("entrance", "cleared") : null,
-    );
-    const row1: Array<LabyrinthNode | null> = Array.from({ length: cols }, () => null);
-    row1[3] = makeNode("combat", "current");
-    const map = makeMap([row0, row1], { row: 1, col: 3 });
-    failNode(map, 1, 3);
-    expect(map.grid[1][3]?.state).toBe("failed");
-    expect(map.grid[LABYRINTH_START_ROW][LABYRINTH_START_COL]?.state).toBe("current");
-    expect(map.currentNode).toEqual({ row: LABYRINTH_START_ROW, col: LABYRINTH_START_COL });
-  });
-});
-
-describe("withFailedNode", () => {
-  it("returns a cloned map with failNode semantics", () => {
-    const cols = 5;
-    const row0 = Array.from({ length: cols }, (_, col) =>
-      col === LABYRINTH_START_COL ? makeNode("entrance", "cleared") : null,
-    );
-    const row1: Array<LabyrinthNode | null> = Array.from({ length: cols }, () => null);
-    row1[3] = makeNode("elite", "current");
-    const original = makeMap([row0, row1], { row: 1, col: 3 });
-    const next = withFailedNode(original, { row: 1, col: 3 });
-    expect(original.grid[1][3]?.state).toBe("current");
-    expect(next.grid[1][3]?.state).toBe("failed");
-    expect(next.grid[LABYRINTH_START_ROW][LABYRINTH_START_COL]?.state).toBe("current");
-    expect(next).not.toBe(original);
+  it("rejects already-cleared and unknown nodes", () => {
+    expect(canEnterLabyrinthNode(map, LABYRINTH_ENTRANCE_NODE_ID)).toBe(false);
+    expect(canEnterLabyrinthNode(map, "missing")).toBe(false);
   });
 });

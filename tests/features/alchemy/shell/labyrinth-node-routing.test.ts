@@ -9,7 +9,7 @@ function makeRoutingDeps(enterImpl: (handlers: LabyrinthNodeHandlers) => void) {
     applyLabyrinthRewardModifiers: vi.fn(),
     navigateTo: vi.fn(),
     labyrinth: {
-      enterNode: (_row: number, _col: number, handlers: LabyrinthNodeHandlers) => {
+      enterSelectedNode: (handlers: LabyrinthNodeHandlers) => {
         enterImpl(handlers);
         return true;
       },
@@ -30,7 +30,7 @@ describe("createLabyrinthNodeRouting", () => {
     const deps = makeRoutingDeps((handlers) => handlers.onStartMystery());
     const routing = createLabyrinthNodeRouting(deps);
 
-    routing.handleLabyrinthNodeEnter(0, 0);
+    routing.handleLabyrinthNodeEnter();
 
     expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
     expect(deps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith([]);
@@ -40,17 +40,17 @@ describe("createLabyrinthNodeRouting", () => {
 
   it("applies combat modifiers then starts battle, and initializes shops after empty modifiers", () => {
     const combatDeps = makeRoutingDeps((handlers) =>
-      handlers.onStartBattleWithModifiers("elite", ["tempered"], ["generous"]),
+      handlers.onStartBattleWithModifiers("elite", ["tempered"], ["generous"], "goblin"),
     );
-    createLabyrinthNodeRouting(combatDeps).handleLabyrinthNodeEnter(0, 0);
+    createLabyrinthNodeRouting(combatDeps).handleLabyrinthNodeEnter();
 
     expect(combatDeps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith(["tempered"]);
     expect(combatDeps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith(["generous"]);
-    expect(combatDeps.battle.startBattle).toHaveBeenCalledWith(undefined, undefined, "elite", []);
+    expect(combatDeps.battle.startBattle).toHaveBeenCalledWith(undefined, undefined, "elite", [], "goblin");
     expect(combatDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
 
     const shopDeps = makeRoutingDeps((handlers) => handlers.onStartShop());
-    createLabyrinthNodeRouting(shopDeps).handleLabyrinthNodeEnter(0, 0);
+    createLabyrinthNodeRouting(shopDeps).handleLabyrinthNodeEnter();
 
     expect(shopDeps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
     expect(shopDeps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith([]);

@@ -44,6 +44,7 @@ export interface HomesteadSaveFixture {
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
+  discoveredUniqueIds: string[];
   talentXP: Record<string, number>;
   unlockedTalents: Record<string, unknown>;
   finishedRunCharacters: string[];
@@ -122,6 +123,7 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
   discoveredCardIds: ["slash"],
   encounteredEnemyIds: [],
   discoveredTrinketIds: [],
+  discoveredUniqueIds: [],
   talentXP: {},
   unlockedTalents: {},
 };

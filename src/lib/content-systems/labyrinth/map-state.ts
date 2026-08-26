@@ -1,61 +1,67 @@
 /**
- * Labyrinth map traversal state: enter checks and current/failed node updates.
+ * Labyrinth traversal: hex-frontier reachability and immutable clears.
  */
-import type { LabyrinthMap } from "../types";
-import { LABYRINTH_START_COL, LABYRINTH_START_ROW } from "./data";
+import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeVisualState } from "../types";
+import { areHexesAdjacent } from "./hex-grid";
 
-export function canEnterLabyrinthNode(map: LabyrinthMap, row: number, col: number): boolean {
-  const node = map.grid[row]?.[col];
-  if (!node) return false;
-  const current = map.grid[map.currentNode.row]?.[map.currentNode.col];
-  const connectedToCurrent = Boolean(
-    current?.connections.some((connection) => connection.row === row && connection.col === col),
-  );
-  return node.state === "visible" && connectedToCurrent;
+export function labyrinthNode(map: LabyrinthMap, nodeId: string): LabyrinthNode | undefined {
+  return map.nodes[nodeId];
 }
 
-export function setCurrentNode(map: LabyrinthMap, row: number, col: number): void {
-  const prev = map.grid[map.currentNode.row]?.[map.currentNode.col];
-  if (prev && prev.state === "current") {
-    prev.state = "cleared";
-  }
-
-  const node = map.grid[row]?.[col];
-  if (node) {
-    node.state = "current";
-    map.currentNode = { row, col };
-  }
+export function floorNodes(map: LabyrinthMap, depth: number): LabyrinthNode[] {
+  const floor = map.floors.find((entry) => entry.depth === depth);
+  if (!floor) return [];
+  return floor.nodeIds.map((id) => map.nodes[id]).filter((node): node is LabyrinthNode => Boolean(node));
 }
 
-export function withCurrentNode(map: LabyrinthMap, row: number, col: number): LabyrinthMap {
-  const grid = map.grid.map((r) => r.map((n) => (n ? { ...n } : n)));
-  const next: LabyrinthMap = { ...map, grid };
-  setCurrentNode(next, row, col);
-  return next;
+export function deepestFloorDepth(map: LabyrinthMap): number {
+  return map.floors.reduce((max, floor) => Math.max(max, floor.depth), 0);
 }
 
-export function failNode(map: LabyrinthMap, row: number, col: number): void {
-  for (const r of map.grid) {
-    for (const node of r) {
-      if (node?.state === "current") {
-        node.state = "cleared";
-      }
-    }
+export function isNodeReachable(map: LabyrinthMap, nodeId: string): boolean {
+  const node = map.nodes[nodeId];
+  if (!node || node.cleared) return false;
+
+  for (const candidate of Object.values(map.nodes)) {
+    if (!candidate.cleared) continue;
+    if (candidate.outgoingIds.includes(nodeId)) return true;
+    if (candidate.floor === node.floor && areHexesAdjacent(candidate.gridPosition, node.gridPosition)) return true;
   }
-  const node = map.grid[row]?.[col];
-  if (node) {
-    node.state = "failed";
-  }
-  const start = map.grid[LABYRINTH_START_ROW]?.[LABYRINTH_START_COL];
-  if (start && start.state !== "failed") {
-    start.state = "current";
-    map.currentNode = { row: LABYRINTH_START_ROW, col: LABYRINTH_START_COL };
-  }
+  return false;
 }
 
-export function withFailedNode(map: LabyrinthMap, pending: { row: number; col: number }): LabyrinthMap {
-  const grid = map.grid.map((r) => r.map((n) => (n ? { ...n, connections: [...n.connections] } : n)));
-  const next: LabyrinthMap = { ...map, grid };
-  failNode(next, pending.row, pending.col);
+export function labyrinthNodeVisualState(map: LabyrinthMap, nodeId: string): LabyrinthNodeVisualState {
+  const node = map.nodes[nodeId];
+  if (!node || node.cleared) return "cleared";
+  return isNodeReachable(map, nodeId) ? "reachable" : "locked";
+}
+
+export function canEnterLabyrinthNode(map: LabyrinthMap, nodeId: string): boolean {
+  return labyrinthNodeVisualState(map, nodeId) === "reachable";
+}
+
+export function cloneLabyrinthMap(map: LabyrinthMap): LabyrinthMap {
+  return {
+    currentFloor: map.currentFloor,
+    floors: map.floors.map((floor) => ({ ...floor, nodeIds: [...floor.nodeIds] })),
+    nodes: Object.fromEntries(
+      Object.entries(map.nodes).map(([id, node]) => [
+        id,
+        {
+          ...node,
+          outgoingIds: [...node.outgoingIds],
+          modifiers: [...node.modifiers],
+          rewardModifiers: [...node.rewardModifiers],
+        },
+      ]),
+    ),
+  };
+}
+
+export function withClearedNode(map: LabyrinthMap, nodeId: string): LabyrinthMap {
+  const next = cloneLabyrinthMap(map);
+  const node = next.nodes[nodeId];
+  if (!node || node.cleared) return next;
+  next.nodes[nodeId] = { ...node, cleared: true };
   return next;
 }

@@ -67,6 +67,8 @@ export {
   setActiveLabyrinthModifiers,
   setActiveLabyrinthPendingNode,
   setActiveLabyrinthRewardModifiers,
+  setSelectedLabyrinthNodeId,
+  setRunEndLabyrinthFloor,
   setAlchemistState,
   setCompanionRewardCards,
   setCorruptionResult,

@@ -5,6 +5,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { SAVE_KEY } from "@/lib/game-constants";
 import { baseHomesteadSave, ALL_PLAYABLE_CHARACTERS, DEFAULT_DISCOVERED_CARD_IDS } from "../fixtures/saves";
 import type { InjectedBattleState } from "../fixtures/battle-state";
+import { hexLabyrinthMapFixture } from "../fixtures/labyrinth-hex-map";
 import { makeHighDamageCard } from "./cards";
 
 /** Persisted destination claim surface for E2E / performance save injection. */
@@ -75,39 +76,6 @@ const DEFAULT_PRIMARY_REWARD_PENDING = {
   lastVictoryContentSystem: "campaign",
 };
 
-function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
-  const rows = options?.rows ?? 8;
-  const cols = options?.cols ?? 9;
-  const grid: Array<
-    Array<{
-      type: string;
-      modifiers: string[];
-      rewardModifiers: string[];
-      connections: Array<{ row: number; col: number }>;
-      state: string;
-    } | null>
-  > = Array.from({ length: rows }, () => Array.from({ length: cols }, () => null));
-  for (let r = 0; r < rows - 1; r++) {
-    const col = Math.floor(cols / 2);
-    grid[r][col] = {
-      type: r === 0 ? "entrance" : "combat",
-      modifiers: [],
-      rewardModifiers: [],
-      connections: [{ row: r + 1, col }],
-      state: r === 0 ? "current" : r === 1 ? "visible" : "hidden",
-    };
-  }
-  const lastCol = Math.floor(cols / 2);
-  grid[rows - 1][lastCol] = {
-    type: "boss",
-    modifiers: [],
-    rewardModifiers: [],
-    connections: [{ row: rows - 2, col: lastCol }],
-    state: "hidden",
-  };
-  return { grid, rows, cols, currentNode: { row: 0, col: Math.floor(cols / 2) } };
-}
-
 async function isDesktopPage(page: Page): Promise<boolean> {
   return page.evaluate(() => Boolean(window.alchemyDesktop?.isDesktop)).catch(() => false);
 }
@@ -165,6 +133,7 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     discoveredCardIds,
     encounteredEnemyIds,
     discoveredTrinketIds,
+    discoveredUniqueIds,
     autoEndTurn,
     selectedAspectRatio,
     ...activeRunData
@@ -192,6 +161,7 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
   };
   if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
   if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
+  if (Array.isArray(discoveredUniqueIds)) save.discoveredUniqueIds = discoveredUniqueIds;
   // Earlier-registered init scripts (injectTalentUnlocks) own this key at
   // navigation time; the fixture's empty default must not clobber them.
   delete save.unlockedTalents;
@@ -304,7 +274,7 @@ export async function injectLabyrinthRun(
     resume?: boolean;
   } = {},
 ) {
-  const map = createMinimalLabyrinthMap();
+  const map = hexLabyrinthMapFixture();
   await page.addInitScript(
     (data) => {
       const save: Record<string, unknown> = {};

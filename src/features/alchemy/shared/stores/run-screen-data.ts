@@ -45,6 +45,7 @@ interface EquipmentShopScreenData {
 
 interface LabyrinthMapScreenData {
   labyrinthMap: LabyrinthMap;
+  selectedLabyrinthNodeId: string | null;
 }
 
 interface RewardsScreenData {
@@ -80,6 +81,7 @@ interface RunEndScreenData {
   talentXP: TalentXP;
   runEndMaterials: MaterialInventory;
   runEndItems: RunObtainedItem[];
+  runEndLabyrinthFloor: number | null;
 }
 
 interface WildwoodRemovalScreenData {

@@ -67,7 +67,6 @@ export const LabyrinthNodeTypeSchema = z.enum([
   "equipment-shop",
   "boss",
 ]);
-export const LabyrinthNodeStateSchema = z.enum(["hidden", "visible", "current", "cleared", "failed"]);
 export const AspectRatioOptionSchema = z.enum(["auto", "16:9", "16:10", "21:9"]);
 export const DisplayModeSchema = z.enum(["windowed", "borderless-fullscreen", "fullscreen"]);
 

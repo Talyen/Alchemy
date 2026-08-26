@@ -12,7 +12,8 @@ import {
 import { defaultBattleState } from "@/lib/battle";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear";
 import { createSeededRng } from "@/lib/utils";
-import { generateLabyrinthMap, withCurrentNode } from "@/lib/content-systems/labyrinth/map-generation";
+import { generateLabyrinthMap, withClearedLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
+import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
 import { baseHomesteadSave } from "../../fixtures/saves";
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
 
@@ -100,10 +101,12 @@ describe("SaveDataSchema", () => {
       discoveredCardIds: ["slash", 123, "not-in-catalog", "slash", null],
       encounteredEnemyIds: ["goblin", {}, "future-enemy", "goblin"],
       discoveredTrinketIds: ["bone-charm", false, "future-boon", "bone-charm"],
+      discoveredUniqueIds: ["wardbreaker", false, "future-unique", "wardbreaker"],
     });
     expect(result.discoveredCardIds).toEqual(["slash", "not-in-catalog"]);
     expect(result.encounteredEnemyIds).toEqual(["goblin", "future-enemy"]);
     expect(result.discoveredTrinketIds).toEqual(["bone-charm", "future-boon"]);
+    expect(result.discoveredUniqueIds).toEqual(["wardbreaker", "future-unique"]);
   });
 
   it("preserves valid field values", () => {
@@ -545,31 +548,25 @@ describe("LabyrinthMapSchema", () => {
     if (result.success) expect(result.data).toBeNull();
   });
 
-  it("parses a freshly generated map (one current node)", () => {
+  it("parses a freshly generated map", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
     const result = LabyrinthMapSchema.safeParse(map);
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
   });
 
-  it("parses a map after a node transition (one current node)", () => {
+  it("parses a map after a node is cleared", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    const entrance = map.grid[0][Math.floor(9 / 2)]!;
-    const target = entrance.connections[0];
-    const next = withCurrentNode(map, target.row, target.col);
+    const entryId = map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!.outgoingIds[0]!;
+    const next = withClearedLabyrinthNode(map, entryId, createSeededRng(1));
     const result = LabyrinthMapSchema.safeParse(next);
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
   });
 
-  it("catches a map with zero current nodes", () => {
+  it("catches a map with no entrance", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    // Simulate the bug: remove all "current" state from the grid.
-    for (const row of map.grid) {
-      for (const node of row) {
-        if (node && node.state === "current") node.state = "cleared";
-      }
-    }
+    delete map.nodes[LABYRINTH_ENTRANCE_NODE_ID];
+    map.floors = map.floors.filter((floor) => floor.depth !== 0);
     const result = LabyrinthMapSchema.safeParse(map);
-    // Schema uses .catch(null), so failures produce null instead of throwing.
     expect(result.success).toBe(true);
     expect(result.data).toBeNull();
   });

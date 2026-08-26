@@ -2,7 +2,7 @@ export type {
   ActiveRunData,
   ParkedRunsMap,
   InterruptedFlow,
-  LabyrinthNodePosition,
+  LabyrinthPendingNodeId,
   PersistedPendingReward,
   RunObtainedItem,
   PersistedShopState,

@@ -41,7 +41,6 @@ describe("useRunFlowEngine", () => {
         },
         initializeShop: vi.fn(),
         labyrinthClearNode: vi.fn(),
-        labyrinthFailNode: vi.fn(),
       }),
     );
 
@@ -86,7 +85,6 @@ describe("useRunFlowEngine", () => {
         },
         initializeShop: vi.fn(),
         labyrinthClearNode: vi.fn(),
-        labyrinthFailNode: vi.fn(),
       }),
     );
 
@@ -132,7 +130,6 @@ describe("useRunFlowEngine", () => {
         },
         initializeShop: vi.fn(),
         labyrinthClearNode: vi.fn(),
-        labyrinthFailNode: vi.fn(),
       }),
     );
 
@@ -183,7 +180,6 @@ describe("useRunFlowEngine", () => {
         },
         initializeShop: vi.fn(),
         labyrinthClearNode: vi.fn(),
-        labyrinthFailNode: vi.fn(),
       }),
     );
 
@@ -229,7 +225,6 @@ describe("useRunFlowEngine", () => {
         },
         initializeShop: vi.fn(),
         labyrinthClearNode: vi.fn(),
-        labyrinthFailNode: vi.fn(),
       }),
     );
 
@@ -268,7 +263,6 @@ describe("useRunFlowEngine", () => {
         },
         initializeShop: vi.fn(),
         labyrinthClearNode: vi.fn(),
-        labyrinthFailNode: vi.fn(),
       }),
     );
 

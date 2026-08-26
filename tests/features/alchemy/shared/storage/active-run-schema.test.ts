@@ -64,55 +64,44 @@ describe("active run field parsing and normalization", () => {
 
   it("drops unknown labyrinth modifiers from persisted maps", () => {
     const labyrinthMap = cloneSeededLabyrinthMap();
-    const firstCombat = labyrinthMap.grid.flat().find((node) => node?.type === "combat");
+    const firstCombat = Object.values(labyrinthMap.nodes).find((node) => node.type === "combat");
     expect(firstCombat).not.toBeUndefined();
     firstCombat!.modifiers = ["tempered", "missing-modifier" as never];
     firstCombat!.rewardModifiers = ["generous", "old-reward" as never];
 
     const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap }));
 
-    const normalizedCombat = result?.labyrinthMap?.grid.flat().find((node) => node?.type === "combat");
+    const normalizedCombat = result?.labyrinthMap
+      ? Object.values(result.labyrinthMap.nodes).find((node) => node.type === "combat")
+      : undefined;
     expect(normalizedCombat?.modifiers).toEqual(["tempered"]);
     expect(normalizedCombat?.rewardModifiers).toEqual(["generous"]);
   });
 
   it("drops runs with malformed labyrinth maps", () => {
-    const mismatchedRows = cloneSeededLabyrinthMap();
-    mismatchedRows.rows += 1;
+    const missingFloors = cloneSeededLabyrinthMap();
+    missingFloors.floors = [];
 
-    const invalidConnection = cloneSeededLabyrinthMap();
-    const firstNode = invalidConnection.grid.flat().find(Boolean);
-    firstNode!.connections = [{ row: 999, col: 999 }];
+    const danglingOutgoing = cloneSeededLabyrinthMap();
+    danglingOutgoing.nodes[Object.keys(danglingOutgoing.nodes)[0]!]!.outgoingIds = ["missing-node"];
 
     expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows })),
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingFloors })),
     ).toBeNull();
     expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection })),
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: danglingOutgoing })),
     ).toBeNull();
   });
 
-  it("drops runs with labyrinth maps that have impossible current or endpoint state", () => {
-    const multipleCurrent = cloneSeededLabyrinthMap();
-    const firstVisible = multipleCurrent.grid.flat().find((node) => node?.state === "visible");
-    firstVisible!.state = "current";
-
-    const mismatchedCurrent = cloneSeededLabyrinthMap();
-    mismatchedCurrent.currentNode = { row: 1, col: 4 };
-
+  it("drops runs with labyrinth maps that have impossible endpoint state", () => {
     const missingEntrance = cloneSeededLabyrinthMap();
-    missingEntrance.grid[0][4]!.type = "combat";
+    delete missingEntrance.nodes["labyrinth-entrance"];
+    missingEntrance.floors = missingEntrance.floors.filter((floor) => floor.depth !== 0);
 
     const missingBoss = cloneSeededLabyrinthMap();
-    const boss = missingBoss.grid.flat().find((node) => node?.type === "boss");
+    const boss = Object.values(missingBoss.nodes).find((node) => node.type === "boss");
     boss!.type = "combat";
 
-    expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent })),
-    ).toBeNull();
-    expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent })),
-    ).toBeNull();
     expect(
       parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance })),
     ).toBeNull();

@@ -103,7 +103,6 @@ export function useAlchemyRunController() {
     battle: battleLauncher,
     initializeShop: shop.initialize,
     labyrinthClearNode: labyrinth.onNodeCleared,
-    labyrinthFailNode: labyrinth.onNodeFailed,
   });
 
   useLayoutEffect(() => {
@@ -185,6 +184,8 @@ export function useAlchemyRunController() {
       },
       runLoop: {
         labyrinth: {
+          handleNodeSelect: labyrinth.selectNode,
+          handleNodeDeselect: labyrinth.deselectNode,
           handleNodeEnter: nodeRouting.handleLabyrinthNodeEnter,
         },
         rewards: {

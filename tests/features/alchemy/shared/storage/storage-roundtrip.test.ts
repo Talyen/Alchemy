@@ -85,7 +85,7 @@ describe("save JSON round trips", () => {
         currentScreen: "destination",
         interruptedFlow: {
           kind: "destination",
-          destinations: ["Campfire", "Mystery", "Merchant's Shop"],
+          destinations: ["Campfire", "Mystery", "Card Shop"],
           selectedBossId: null,
           lastVictoryEnemyType: null,
           lastVictoryContentSystem: null,
@@ -97,7 +97,7 @@ describe("save JSON round trips", () => {
     expect(reParsed.activeRun?.currentScreen).toBe("destination");
     expect(reParsed.activeRun?.interruptedFlow).toEqual({
       kind: "destination",
-      destinations: ["Campfire", "Mystery", "Merchant's Shop"],
+      destinations: ["Campfire", "Mystery", "Card Shop"],
       selectedBossId: null,
       lastVictoryEnemyType: null,
       lastVictoryContentSystem: null,
@@ -131,7 +131,8 @@ describe("save JSON round trips", () => {
     const deserialized = JSON.parse(serialized);
     const reParsed = parseSave(deserialized);
     expect(reParsed).toEqual(original);
-    expect(reParsed.activeRun?.labyrinthMap?.currentNode).toEqual({ row: 0, col: 4 });
+    expect(reParsed.activeRun?.labyrinthMap?.currentFloor).toBe(1);
+    expect(reParsed.activeRun?.labyrinthMap?.nodes["labyrinth-entrance"]?.type).toBe("entrance");
   });
 
   it("full save with all fields round-trips through JSON serialize/deserialize", () => {

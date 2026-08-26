@@ -20,8 +20,13 @@ function RunEndScreenRoute({
   commands: RunEndCommands;
   onOpenBattleMenu: RunEndRouteCtx["onOpenBattleMenu"];
 }) {
-  const { characterId, runEndTalentXP, talentXP, runEndMaterials, runEndItems } = useRunEndScreenData();
-  const { title, subtitle } = RUN_END_COPY[outcome];
+  const { characterId, runEndTalentXP, talentXP, runEndMaterials, runEndItems, runEndLabyrinthFloor } =
+    useRunEndScreenData();
+  const { title } = RUN_END_COPY[outcome];
+  const subtitle =
+    outcome === "defeat" && runEndLabyrinthFloor
+      ? `Your descent reached floor ${runEndLabyrinthFloor}.`
+      : RUN_END_COPY[outcome].subtitle;
   return (
     <RunEndScreen
       title={title}

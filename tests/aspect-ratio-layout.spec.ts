@@ -160,9 +160,9 @@ test.describe("high-DPR layout", slow, () => {
 
 test.describe("Card Selection Grid Layout", slow, () => {
   test("cards are centered within the viewport", async ({ page }) => {
-    await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Merchant's Shop" });
-    await page.getByRole("button", { name: "Merchant's Shop" }).click();
-    await expect(page.getByRole("heading", { name: "Merchant's Shop" })).toBeVisible();
+    await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Card Shop" });
+    await page.getByRole("button", { name: "Card Shop" }).click();
+    await expect(page.getByRole("heading", { name: "Card Shop" })).toBeVisible();
 
     const removeBtn = page.getByRole("button", { name: /Remove Card/ });
     await expect(removeBtn).toBeVisible();
@@ -196,17 +196,21 @@ test.describe("Labyrinth map stage fitting", slow, () => {
     const fit = await page.evaluate(() => {
       const stage = document.querySelector('[data-testid="vr-stage"]');
       const map = document.querySelector('[aria-label="Labyrinth map"]');
-      if (!stage || !map) return { ok: false as const, reason: "missing-nodes" };
+      const inspector = document.querySelector('[aria-label="Chamber details"]');
+      if (!stage || !map || !inspector) return { ok: false as const, reason: "missing-nodes" };
       const stageRect = stage.getBoundingClientRect();
       const mapRect = map.getBoundingClientRect();
+      const inspectorRect = inspector.getBoundingClientRect();
+      const within = (rect: DOMRect) =>
+        rect.top >= stageRect.top - 2 &&
+        rect.bottom <= stageRect.bottom + 2 &&
+        rect.left >= stageRect.left - 2 &&
+        rect.right <= stageRect.right + 2;
       return {
-        ok:
-          mapRect.top >= stageRect.top - 2 &&
-          mapRect.bottom <= stageRect.bottom + 2 &&
-          mapRect.left >= stageRect.left - 2 &&
-          mapRect.right <= stageRect.right + 2,
+        ok: within(mapRect) && within(inspectorRect),
         stageBottom: stageRect.bottom,
         mapBottom: mapRect.bottom,
+        inspectorBottom: inspectorRect.bottom,
       };
     });
     expect(fit, JSON.stringify(fit)).toMatchObject({ ok: true });

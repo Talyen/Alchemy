@@ -10,13 +10,19 @@ import { useUiStore } from "./ui-store";
 import { getRunSession } from "./run-session-model";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
-import { initializeActiveBattle, setHasActiveBattle, setRunEndItems } from "./run-session-write-port";
+import {
+  initializeActiveBattle,
+  setHasActiveBattle,
+  setRunEndItems,
+  setRunEndLabyrinthFloor,
+} from "./run-session-write-port";
 import { cloneRunObtainedItem, resetNavigation, resetProgress, setRunPlayerHealth } from "./write-port-run";
 import { clearTransientSession, setHasActiveRun } from "./write-port-session";
 import { applyTalentState, setFinishedRunCharacters } from "./write-port-profile";
 import { applyRestoreRunToDraft, clearModeSlotInDraft } from "./run-park-restore";
 import { touchRunRecency, type ParkedRunsMap } from "./parked-runs";
 import type { ContentSystemId } from "@/lib/content-systems/types";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 /** Apply persisted active-run data across the run-lifetime stores atomically. */
@@ -149,6 +155,9 @@ function finalizeRunEndSessionState(
   const materials = options.awardRunEndMaterials(draft, options.displayMaterials);
   options.finalizeRunXP(draft);
   setRunEndItems(draft, draft.run.activeRun.runObtainedItems.map(cloneRunObtainedItem));
+  if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {
+    setRunEndLabyrinthFloor(draft, draft.session.labyrinthMap.currentFloor);
+  }
 
   clearModeSlotInDraft(draft, draft.run.activeRun.contentSystemType);
   setHasActiveRun(draft, false);

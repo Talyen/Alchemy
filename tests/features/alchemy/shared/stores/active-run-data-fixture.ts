@@ -1,4 +1,5 @@
 import { defaultBattleState } from "@/lib/battle";
+import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { getStartingDeck } from "@/lib/game-data";
 import type { ActiveRunData, PersistedMysteryVisit } from "@/lib/active-run-session";
@@ -70,6 +71,9 @@ export function createCompleteActiveRunData(): ActiveRunData {
     hand: [],
   };
 
+  const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
+  const labyrinthPendingNode = labyrinthMap.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.outgoingIds[0] ?? null;
+
   return {
     characterId: "knight",
     runDeck: [slash, block],
@@ -80,15 +84,15 @@ export function createCompleteActiveRunData(): ActiveRunData {
     currentAct: 2,
     destinationIndexInAct: 3,
     completedDestinations: ["Normal Combat", "Campfire"],
-    lastOfferedDestinations: ["Mystery", "Merchant's Shop"],
+    lastOfferedDestinations: ["Mystery", "Card Shop"],
     destinationRoundsSinceOffered: { Mystery: 2, Campfire: 1 },
     runBoons: ["bone-charm"],
     encounteredRunEnemyIds: ["goblin"],
     selectedDifficulty: "difficulty-2",
     contentSystemType: "labyrinth",
     rng: createRunRngState(() => 123 / 0x1_0000_0000),
-    labyrinthMap: generateLabyrinthMap(createSeededRng(42)),
-    labyrinthPendingNode: { row: 1, col: 1 },
+    labyrinthMap,
+    labyrinthPendingNode,
     wildwoodDraft: null,
     starterDraftChoices: null,
     activeCombat: {
@@ -106,7 +110,7 @@ export function createCompleteActiveRunData(): ActiveRunData {
     currentScreen: "destination",
     interruptedFlow: {
       kind: "destination",
-      destinations: ["Mystery", "Merchant's Shop"],
+      destinations: ["Mystery", "Card Shop"],
       selectedBossId: null,
       lastVictoryEnemyType: "elite",
       lastVictoryContentSystem: "labyrinth",

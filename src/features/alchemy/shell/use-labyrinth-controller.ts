@@ -6,9 +6,8 @@ import { useCallback, useMemo } from "react";
 import { current } from "immer";
 import {
   canEnterLabyrinthNode,
-  withCurrentNode,
-  withFailedNode,
   generateLabyrinthMap,
+  withClearedLabyrinthNode,
 } from "@/lib/content-systems/labyrinth/map-generation";
 import type {
   EncounterCombatTraitId,
@@ -21,12 +20,14 @@ import {
   createDraftRunRandomSource,
   setActiveLabyrinthPendingNode,
   setLabyrinthMap,
+  setSelectedLabyrinthNodeId,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 export interface LabyrinthController {
-  enterNode: (row: number, col: number, handlers: LabyrinthNodeHandlers) => boolean;
+  selectNode: (nodeId: string) => void;
+  deselectNode: () => void;
+  enterSelectedNode: (handlers: LabyrinthNodeHandlers) => boolean;
   onNodeCleared: () => void;
-  onNodeFailed: () => void;
   resetMap: () => void;
 }
 
@@ -35,10 +36,12 @@ export interface LabyrinthNodeHandlers {
     enemyType: "normal" | "elite",
     modifiers: EncounterCombatTraitId[],
     rewardModifiers: EncounterRewardTraitId[],
+    enemyId?: string,
   ) => void;
   onStartBossBattleWithModifiers: (
     modifiers: EncounterCombatTraitId[],
     rewardModifiers: EncounterRewardTraitId[],
+    enemyId?: string,
   ) => void;
   onStartRest: () => void;
   onStartMystery: () => void;
@@ -51,9 +54,11 @@ export interface LabyrinthNodeHandlers {
 type NodeAction = (node: LabyrinthNode, handlers: LabyrinthNodeHandlers) => void;
 
 const NODE_ACTIONS: Record<LabyrinthNodeType, NodeAction> = {
-  combat: (node, handlers) => handlers.onStartBattleWithModifiers("normal", node.modifiers, node.rewardModifiers),
-  elite: (node, handlers) => handlers.onStartBattleWithModifiers("elite", node.modifiers, node.rewardModifiers),
-  boss: (node, handlers) => handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers),
+  combat: (node, handlers) =>
+    handlers.onStartBattleWithModifiers("normal", node.modifiers, node.rewardModifiers, node.enemyId),
+  elite: (node, handlers) =>
+    handlers.onStartBattleWithModifiers("elite", node.modifiers, node.rewardModifiers, node.enemyId),
+  boss: (node, handlers) => handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers, node.enemyId),
   entrance: () => {},
   rest: (_, handlers) => handlers.onStartRest(),
   mystery: (_, handlers) => handlers.onStartMystery(),
@@ -72,20 +77,32 @@ export function useLabyrinthController(): LabyrinthController {
   const resetMap = useCallback(() => {
     dispatchRunSessionCommand((draft) => {
       setActiveLabyrinthPendingNode(draft, null);
+      setSelectedLabyrinthNodeId(draft, null);
       setLabyrinthMap(draft, generateLabyrinthMap(createDraftRunRandomSource(draft, "world")));
     });
   }, []);
 
-  const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers): boolean => {
+  const selectNode = useCallback((nodeId: string) => {
+    dispatchRunSessionCommand((draft) => {
+      const map = draft.session.labyrinthMap;
+      if (!canEnterLabyrinthNode(map, nodeId)) return;
+      setSelectedLabyrinthNodeId(draft, nodeId);
+    });
+  }, []);
+
+  const deselectNode = useCallback(() => {
+    dispatchRunSessionCommand((draft) => setSelectedLabyrinthNodeId(draft, null));
+  }, []);
+
+  const enterSelectedNode = useCallback((handlers: LabyrinthNodeHandlers): boolean => {
     const node = dispatchRunSessionCommand((draft) => {
       const session = draft.session;
       if (session.activeLabyrinthPendingNode) return null;
-
-      const map = session.labyrinthMap;
-      const node = map.grid[row]?.[col];
-      if (!node || !canEnterLabyrinthNode(map, row, col)) return null;
-
-      setActiveLabyrinthPendingNode(draft, { row, col });
+      const nodeId = session.selectedLabyrinthNodeId;
+      if (!nodeId) return null;
+      const node = session.labyrinthMap.nodes[nodeId];
+      if (!node || !canEnterLabyrinthNode(session.labyrinthMap, nodeId)) return null;
+      setActiveLabyrinthPendingNode(draft, nodeId);
       return current(node);
     });
     if (!node) return false;
@@ -102,8 +119,11 @@ export function useLabyrinthController(): LabyrinthController {
     const pending = dispatchRunSessionCommand((draft) => {
       const pendingNode = draft.session.activeLabyrinthPendingNode;
       setActiveLabyrinthPendingNode(draft, null);
-      if (pendingNode)
-        setLabyrinthMap(draft, (previous) => withCurrentNode(previous, pendingNode.row, pendingNode.col));
+      setSelectedLabyrinthNodeId(draft, null);
+      if (pendingNode) {
+        const rng = createDraftRunRandomSource(draft, "world");
+        setLabyrinthMap(draft, (previous) => withClearedLabyrinthNode(previous, pendingNode, rng));
+      }
       return pendingNode;
     });
     if (!pending) {
@@ -111,20 +131,8 @@ export function useLabyrinthController(): LabyrinthController {
     }
   }, []);
 
-  const onNodeFailed = useCallback(() => {
-    const pending = dispatchRunSessionCommand((draft) => {
-      const pendingNode = draft.session.activeLabyrinthPendingNode;
-      setActiveLabyrinthPendingNode(draft, null);
-      if (pendingNode) setLabyrinthMap(draft, withFailedNode(current(draft.session.labyrinthMap), pendingNode));
-      return pendingNode;
-    });
-    if (!pending) {
-      console.warn("[useLabyrinthController] onNodeFailed called without a pending node");
-    }
-  }, []);
-
   return useMemo(
-    () => ({ enterNode, onNodeCleared, onNodeFailed, resetMap }),
-    [enterNode, onNodeCleared, onNodeFailed, resetMap],
+    () => ({ selectNode, deselectNode, enterSelectedNode, onNodeCleared, resetMap }),
+    [selectNode, deselectNode, enterSelectedNode, onNodeCleared, resetMap],
   );
 }

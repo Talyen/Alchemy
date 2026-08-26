@@ -63,7 +63,7 @@ describe("session facade API", () => {
       runMaxHealth: 24,
       contentSystemType: "campaign",
     });
-    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["Campfire", "Merchant's Shop"] }));
+    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] }));
     const snapshot = snapshotRun(ROUTE_SCREENS.DESTINATION);
     expect(snapshot).toMatchObject({
       characterId: "knight",
@@ -74,7 +74,7 @@ describe("session facade API", () => {
       currentScreen: ROUTE_SCREENS.DESTINATION,
       interruptedFlow: {
         kind: "destination",
-        destinations: ["Campfire", "Merchant's Shop"],
+        destinations: ["Campfire", "Card Shop"],
         selectedBossId: null,
         lastVictoryEnemyType: null,
         lastVictoryContentSystem: null,
@@ -164,7 +164,7 @@ describe("session facade API", () => {
     const primary = cardLibrary.find((card) => card.id === "slash")!;
     const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
     getRunSessionStoreView().setRewardState({
-      ...createEmptyRewardState(["Merchant's Shop"]),
+      ...createEmptyRewardState(["Card Shop"]),
       rewardType: "card",
       choices: [primary],
     });
