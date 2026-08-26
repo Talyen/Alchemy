@@ -85,7 +85,7 @@ function getStageScale(viewportWidth: number, viewportHeight: number, stageWidth
 /**
  * Maps an arbitrary aspect ratio to standard, narrow, or ultrawide aspectModes.
  */
-export function getAspectModeFromRatio(aspectRatio: number): "standard" | "narrow" | "ultrawide" {
+function getAspectModeFromRatio(aspectRatio: number): "standard" | "narrow" | "ultrawide" {
   if (aspectRatio < 1.68) {
     return "narrow";
   }

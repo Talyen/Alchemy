@@ -2,7 +2,7 @@
 // Depends on battle state, game-data status IDs, alchemy config, and shared UI types.
 // Used by battle controller and widgets to keep presentation derivation out of combat logic.
 import type { BattleState, CombatTextEvent, CcState } from "@/lib/battle";
-import { hasActiveCc, isStunFreezeBuildupBlocked } from "@/lib/battle";
+import { isPlayerCcControlled, isStunFreezeBuildupBlocked } from "@/lib/battle";
 import {
   DAMAGE_TYPES,
   ENEMY_STATUS_DISPLAY_ORDER,
@@ -63,7 +63,7 @@ function buildActiveCcChips(cc: CcState): StatusChip[] {
 }
 
 function buildCcImmunityChip(cc: CcState): StatusChip[] {
-  if (hasActiveCc(cc) || cc.cooldown <= 0) return [];
+  if (isPlayerCcControlled(cc) || cc.cooldown <= 0) return [];
   return [{ id: "ccImmunity", value: cc.cooldown, hideValue: true }];
 }
 

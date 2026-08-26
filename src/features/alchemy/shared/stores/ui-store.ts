@@ -5,7 +5,7 @@ import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 type ShimmerState = { cardId: string; token: number } | null;
 
-export interface PlasmaRegistration {
+interface PlasmaRegistration {
   ownerId: string;
   colorPair: PlasmaColorPair;
 }

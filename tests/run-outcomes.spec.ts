@@ -96,6 +96,9 @@ test.describe("Run Outcomes", critical, () => {
         // Knight Death's Door would otherwise absorb the lethal hit.
         deathsDoorUsed: true,
         deathsDoorActive: false,
+        // Keep the lethal hit deterministic across CI runners.
+        gearEffects: { dodgeChance: 0 },
+        talentEffects: { dodgeChanceBelowHalfHealth: 0 },
       });
 
       await injectActiveBattle(page, battleState, {

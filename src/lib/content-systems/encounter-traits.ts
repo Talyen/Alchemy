@@ -76,7 +76,6 @@ export const ENCOUNTER_TRAITS = defineEncounterTraits({
   companion: reward("Companion", "Choose a free Companion card after the battle", ["labyrinth", "wildwood"]),
 });
 
-export type EncounterTraitDefinition = (typeof ENCOUNTER_TRAITS)[keyof typeof ENCOUNTER_TRAITS];
 export type EncounterTraitId = keyof typeof ENCOUNTER_TRAITS;
 type EncounterTraitIdFor<Category extends EncounterTraitCategory> = {
   [Id in EncounterTraitId]: (typeof ENCOUNTER_TRAITS)[Id]["category"] extends Category ? Id : never;

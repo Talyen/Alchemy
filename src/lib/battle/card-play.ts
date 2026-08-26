@@ -344,6 +344,6 @@ export function isAttackCard(card: Pick<BattleCard, "effects">): boolean {
 }
 
 /** True when any enemy attack packet deals hit damage rather than status-only. */
-export function enemyAttackDealsDamage(effects: readonly EnemyAttackEffect[]): boolean {
-  return effects.some((effect) => effect.kind === "damage");
+export function enemyAttackDealsDamage(effects: readonly EnemyAttackEffect[] | null | undefined): boolean {
+  return (effects ?? []).some((effect) => effect.kind === "damage");
 }

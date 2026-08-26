@@ -30,7 +30,7 @@ export function combatantStatusProgress(elapsedMs: number): number {
   return elapsedMs / COMBATANT_STATUS_EFFECT_PHASE_MS;
 }
 
-export function combatantCardEffectNoise(index: number, salt: number): number {
+function combatantCardEffectNoise(index: number, salt: number): number {
   const n = Math.sin(index * 12989 + salt * 78433) * 43758.5453;
   return n - Math.floor(n);
 }

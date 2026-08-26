@@ -19,11 +19,11 @@ export function lookupTrinketEntries(ids: string[]): TrinketEntry[] {
   });
 }
 
-export function resolveGearChoices(gearChoices: GearInstance[]): GearInstance[] | null {
+function resolveGearChoices(gearChoices: GearInstance[]): GearInstance[] | null {
   return gearChoices.length === 0 ? null : gearChoices;
 }
 
-export function resolveCardChoices(choiceIds: string[]): BattleCard[] | null {
+function resolveCardChoices(choiceIds: string[]): BattleCard[] | null {
   const choices = choiceIds
     .map((id) => getOfferableCardPool().find((entry) => entry.id === id))
     .filter((entry): entry is BattleCard => Boolean(entry));
@@ -39,7 +39,7 @@ function resolveCompanionChoices(choiceIds: string[]): BattleCard[] | null {
   return choices.length === 0 ? null : choices;
 }
 
-export function resolveTrinketChoices(choiceIds: string[]): TrinketEntry[] | null {
+function resolveTrinketChoices(choiceIds: string[]): TrinketEntry[] | null {
   const choices = lookupTrinketEntries(choiceIds);
   return choices.length === 0 ? null : choices;
 }

@@ -58,8 +58,6 @@ export function getTrinketKeywords(trinketId: string): KeywordId[] {
 export type {
   BattleCard,
   BestiaryEntry,
-  BossEnemyId,
-  EnemyId,
   CharacterDefinition,
   CharacterId,
   CompanionDefinition,

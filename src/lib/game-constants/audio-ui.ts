@@ -103,7 +103,6 @@ export const HAND_FAN_ROTATION_DEGREES = 4.2;
 export const HAND_REST_DROP_PX = 12;
 export const HAND_HOVER_LIFT_PX = 26;
 export const HAND_HOVER_ROTATION_DEGREES = 2.6;
-export const HAND_HOVER_SCALE = 1.03;
 /** Gap between a hovered hand card and its detail tooltip (PortaledTooltip padding). */
 export const HAND_HOVER_TOOLTIP_PADDING_PX = 16;
 /** Delay before clearing hand hover so a sibling card can claim it first. */

@@ -15,7 +15,6 @@ import {
   type BattleState,
   type CcState,
   type CombatTextEvent,
-  hasActiveCc,
 } from "./types";
 
 export type ActiveCcKeyword = "stun" | "freeze";
@@ -32,9 +31,8 @@ export function isPlayerCcControlled(cc: CcState): boolean {
   return cc.stunSkipTurns > 0 || cc.freezeSkipTurns > 0;
 }
 
-export { hasActiveCc, isStunFreezeBuildupBlocked } from "./types/state-types";
 export function finalizeCcSkipTurnDecrement(prev: CcState, next: CcState): CcState {
-  if (hasActiveCc(prev) && !hasActiveCc(next)) {
+  if (isPlayerCcControlled(prev) && !isPlayerCcControlled(next)) {
     return { ...next, cooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION };
   }
   return next;

@@ -11,11 +11,13 @@ import {
 
 const soundsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../public/sounds");
 const rawSoundsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../Raw Assets/Sound Effects");
+// CI sparse-checkouts omit Raw Assets except in the assets drift job.
+const hasRawSounds = existsSync(rawSoundsDir);
 const declaredSounds = new Set([...generatedSoundAssets.map(({ target }) => target), ...curatedSoundFiles]);
 
 describe("registered SFX assets", () => {
   it("keeps generated and curated ownership structurally valid", async () => {
-    await expect(validateSoundAssetRegistry({ sourceDir: rawSoundsDir })).resolves.toBeUndefined();
+    await expect(validateSoundAssetRegistry(hasRawSounds ? { sourceDir: rawSoundsDir } : {})).resolves.toBeUndefined();
   });
 
   it("declares every runtime sound and keeps every declared OGG on disk", () => {

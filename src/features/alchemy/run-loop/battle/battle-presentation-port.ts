@@ -6,7 +6,7 @@ import { useBattlePresentationStore } from "./battle-presentation-store";
 import type { PortraitFeedback } from "./battle-feedback";
 import type { HiddenHandCardKeys } from "./playable-hand";
 
-export type CombatantAttackSide = "player" | "enemy" | "companion";
+type CombatantAttackSide = "player" | "enemy" | "companion";
 
 export interface BattlePresentationPort extends PortraitFeedback {
   hiddenHandCardKeys: HiddenHandCardKeys;

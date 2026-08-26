@@ -6,7 +6,7 @@ export type WildwoodBossId = (typeof WILDWOOD_BOSS_IDS)[number];
 
 const wildwoodBossIds = new Set<string>(WILDWOOD_BOSS_IDS);
 
-export function isWildwoodBossId(value: string): value is WildwoodBossId {
+function isWildwoodBossId(value: string): value is WildwoodBossId {
   return wildwoodBossIds.has(value);
 }
 

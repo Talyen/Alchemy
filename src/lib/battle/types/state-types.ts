@@ -49,7 +49,7 @@ export interface CcState {
   cooldown: number;
 }
 
-export function hasActiveCc(cc: CcState): boolean {
+function hasActiveCc(cc: CcState): boolean {
   return cc.stunSkipTurns > 0 || cc.freezeSkipTurns > 0;
 }
 

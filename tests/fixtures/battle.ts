@@ -109,7 +109,7 @@ export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
   };
 }
 
-export function dodgeThenMissRng() {
+function dodgeThenMissRng() {
   let calls = 0;
   return () => {
     calls += 1;

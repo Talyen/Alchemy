@@ -28,14 +28,7 @@ export {
   emptyTrinketShopState,
 } from "./shop-session-types";
 export { parseActiveRun, toActiveRunData } from "./parse";
-export {
-  restorePendingReward,
-  restorePendingRewardBundle,
-  serializePendingReward,
-  resolveCardChoices,
-  resolveGearChoices,
-  resolveTrinketChoices,
-} from "./pending-reward-persistence";
+export { restorePendingReward, restorePendingRewardBundle, serializePendingReward } from "./pending-reward-persistence";
 export {
   serializeShopState,
   hydrateShopState,

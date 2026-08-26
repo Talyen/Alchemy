@@ -12,4 +12,4 @@ export {
 export { DEFAULT_TILT_STRENGTH, getCardRect, setTiltFromEvent, clearTiltFromEvent } from "./dom";
 export { formatEnemyAttackLines } from "./enemy";
 export { isAlchemyDevBuild, shouldSkipStartupLoadingGate } from "./dev-mode";
-export { getActiveCcKeyword, isPlayerCcControlled, type ActiveCcKeyword } from "./cc-presentation";
+export { getActiveCcKeyword, type ActiveCcKeyword } from "./cc-presentation";

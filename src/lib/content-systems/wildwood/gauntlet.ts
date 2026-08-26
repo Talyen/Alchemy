@@ -27,7 +27,7 @@ export interface WildwoodDraftState {
   currentRewardTraitIds: EncounterRewardTraitId[];
 }
 
-export function createWildwoodDraftChoices(
+function createWildwoodDraftChoices(
   characterId: CharacterId,
   draftedCards: BattleCard[],
   rng: () => number,
@@ -174,11 +174,11 @@ export function enterWildwoodReward(state: WildwoodDraftState): WildwoodDraftSta
   return state.phase === "battle" ? { ...state, phase: "reward", currentCombatTraitIds: [] } : null;
 }
 
-export function pickWildwoodModifier(rng: () => number): WildwoodModifierId {
+function pickWildwoodModifier(rng: () => number): WildwoodModifierId {
   return pickEncounterTrait("wildwood", "combat", rng);
 }
 
-export function pickWildwoodRewardTrait(rng: () => number): EncounterRewardTraitId {
+function pickWildwoodRewardTrait(rng: () => number): EncounterRewardTraitId {
   return pickEncounterTrait("wildwood", "reward", rng);
 }
 

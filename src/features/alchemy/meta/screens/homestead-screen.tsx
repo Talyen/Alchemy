@@ -79,7 +79,11 @@ export function HomesteadScreen({
 
   return (
     <PageLayout>
-      <ScreenShell maxWidthClass="max-w-7xl" minHeightClass="min-h-0" className="relative">
+      <ScreenShell
+        maxWidthClass="max-w-7xl"
+        minHeightClass="min-h-0"
+        className="alchemy-shell relative rounded-shell-screen"
+      >
         <ScreenHeaderRow
           title="Homestead"
           trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open homestead menu" />}
