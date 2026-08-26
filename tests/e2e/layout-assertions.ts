@@ -44,10 +44,17 @@ export async function assertHorizontalNeighborGap(
   const count = await locator.count();
   expect(count).toBeGreaterThanOrEqual(minCount);
 
-  const first = await locator.nth(0).boundingBox();
-  const second = await locator.nth(1).boundingBox();
-  expect(first).toBeTruthy();
-  expect(second).toBeTruthy();
+  let first: { x: number; y: number; width: number; height: number } | null = null;
+  let second: { x: number; y: number; width: number; height: number } | null = null;
+  // FadeSlot / tab swaps can leave a brief frame where tiles exist but are not
+  // laid out yet; wait until both neighbors report a stable box.
+  await expect(async () => {
+    first = await locator.nth(0).boundingBox();
+    second = await locator.nth(1).boundingBox();
+    expect(first).toBeTruthy();
+    expect(second).toBeTruthy();
+  }).toPass({ timeout: 5_000 });
+
   const gap = second!.x - (first!.x + first!.width);
   expect(gap).toBeGreaterThanOrEqual(minGap);
 }
