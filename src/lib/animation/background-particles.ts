@@ -126,6 +126,7 @@ export function startBackgroundParticles(
   variant: ParticleVariant,
   colors?: readonly string[],
   alphaMultiplier?: number,
+  particleCount?: number,
   onStop?: () => void,
 ): () => void {
   const canvas = canvasRef.current;
@@ -154,6 +155,7 @@ export function startBackgroundParticles(
     colors: resolvedColors,
     minAlpha: config.minAlpha * mult,
     maxAlpha: config.maxAlpha * mult,
+    particleCount: particleCount ?? config.particleCount,
   };
 
   function resize() {
@@ -174,7 +176,7 @@ export function startBackgroundParticles(
     activeCanvas.height = Math.max(1, Math.floor(h * backingScale));
     activeCtx.setTransform(activeCanvas.width / w, 0, 0, activeCanvas.height / h, 0, 0);
     if (particles.length === 0 || logicalWidth <= 0 || logicalHeight <= 0) {
-      particles = Array.from({ length: config.particleCount }, () => spawnParticle(w, h, patchedConfig));
+      particles = Array.from({ length: patchedConfig.particleCount }, () => spawnParticle(w, h, patchedConfig));
     } else if (w !== logicalWidth || h !== logicalHeight) {
       const scaleX = w / logicalWidth;
       const scaleY = h / logicalHeight;

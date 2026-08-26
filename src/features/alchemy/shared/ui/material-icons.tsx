@@ -58,8 +58,8 @@ const SIZE_CLASSES: Record<ResourceArtworkSize, string> = {
   xs: "h-3.5 w-3.5",
   sm: "h-4 w-4",
   md: "h-6 w-6",
-  lg: "h-9 w-9",
-  xl: "h-11 w-11",
+  lg: "h-10 w-10",
+  xl: "h-12 w-12",
 };
 
 /** High-resolution raster artwork for Homestead resources and currencies. */
@@ -129,7 +129,7 @@ function TrinketWalletResourcePill({
     <div
       className={cn(
         "flex items-center rounded-xl border border-border/60 bg-card/65 shadow-sm backdrop-blur-sm transition-colors",
-        large ? "min-h-[56px] gap-3 px-4 py-2.5" : "min-h-[46px] gap-2.5 px-3 py-2",
+        large ? "min-h-[64px] gap-3.5 px-5 py-3" : "min-h-[52px] gap-3 px-3.5 py-2.5",
         fillsAvailableWidth ? "w-full" : "w-auto",
         className,
       )}
@@ -139,12 +139,12 @@ function TrinketWalletResourcePill({
         <span
           className={cn(
             "truncate font-medium tracking-wider text-muted-foreground uppercase",
-            large ? "text-sm" : "text-xs",
+            large ? "text-base" : "text-sm",
           )}
         >
           {displayTitle}
         </span>
-        <span className={cn("truncate font-bold text-foreground tabular-nums", large ? "text-lg" : "text-base")}>
+        <span className={cn("truncate font-bold text-foreground tabular-nums", large ? "text-xl" : "text-lg")}>
           {displayedValue}
         </span>
       </div>
@@ -220,7 +220,7 @@ export function MaterialPill({
       showsIncreasePrefix={showsIncreasePrefix}
       fillsAvailableWidth={false}
       size={size}
-      className={size === "lg" ? "min-w-[140px]" : "min-w-[120px]"}
+      className={size === "lg" ? "min-w-[160px]" : "min-w-[136px]"}
     />
   );
 }
@@ -242,7 +242,7 @@ export function GoldPill({
       showsIncreasePrefix={showsIncreasePrefix}
       fillsAvailableWidth={false}
       size={size}
-      className={size === "lg" ? "min-w-[140px]" : "min-w-[120px]"}
+      className={size === "lg" ? "min-w-[160px]" : "min-w-[136px]"}
     />
   );
 }

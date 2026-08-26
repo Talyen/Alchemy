@@ -1,4 +1,4 @@
-import { BATTLE_PARTICLE_ALPHA_BOSS, BATTLE_PARTICLE_ALPHA_NORMAL } from "@/lib/game-constants";
+import { BATTLE_PARTICLE_ALPHA_BOSS, BATTLE_PARTICLE_ALPHA_NORMAL, BATTLE_PARTICLE_COUNT } from "@/lib/game-constants";
 import type { Screen } from "@/lib/routing";
 
 const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
@@ -16,5 +16,6 @@ const SCREEN_PARTICLE_ALPHA: Partial<Record<Screen, number>> = {
 export function getScreenParticleConfig(renderedScreen: Screen, isBossBattle: boolean) {
   const particleColors = SCREEN_PARTICLE_COLORS[renderedScreen];
   const particleAlphaMultiplier = isBossBattle ? BATTLE_PARTICLE_ALPHA_BOSS : SCREEN_PARTICLE_ALPHA[renderedScreen];
-  return { particleColors, particleAlphaMultiplier };
+  const particleCount = renderedScreen === "battle" ? BATTLE_PARTICLE_COUNT : undefined;
+  return { particleColors, particleAlphaMultiplier, particleCount };
 }

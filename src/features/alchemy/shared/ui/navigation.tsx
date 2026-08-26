@@ -4,10 +4,6 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-const NAVIGATION_CONFIG = {
-  paginationMinHeightClass: "min-h-[4.88cqh]", // 1.2× former 4.07cqh
-} as const;
-
 export function PaginationControls({
   page,
   totalPages,
@@ -23,44 +19,39 @@ export function PaginationControls({
   reserveSpace?: boolean;
   className?: string;
 }) {
+  const showControls = totalPages > 1;
   const buttonClass = size === "sm" ? "h-11 w-11" : "h-14 w-14";
   const widthClass = size === "sm" ? "max-w-28" : "max-w-36";
+  const minHeightClass = size === "sm" ? "min-h-11" : "min-h-14";
 
-  if (totalPages <= 1) {
-    return reserveSpace ? (
-      <div className={cn("mt-4 w-full", NAVIGATION_CONFIG.paginationMinHeightClass, widthClass, className)} />
-    ) : null;
-  }
+  if (!showControls && !reserveSpace) return null;
 
   return (
-    <div
-      className={cn(
-        "mt-4 flex w-full items-center justify-center gap-4",
-        NAVIGATION_CONFIG.paginationMinHeightClass,
-        widthClass,
-        className,
-      )}
-    >
-      <Button
-        aria-label="Previous page"
-        className={buttonClass}
-        variant="outline"
-        size="icon"
-        disabled={page === 0}
-        onClick={() => onPageChange(page - 1)}
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </Button>
-      <Button
-        aria-label="Next page"
-        className={buttonClass}
-        variant="outline"
-        size="icon"
-        disabled={page >= totalPages - 1}
-        onClick={() => onPageChange(page + 1)}
-      >
-        <ChevronRight className="h-5 w-5" />
-      </Button>
+    <div className={cn("mt-4 flex w-full items-center justify-center gap-4", minHeightClass, widthClass, className)}>
+      {showControls ? (
+        <>
+          <Button
+            aria-label="Previous page"
+            className={buttonClass}
+            variant="outline"
+            size="icon"
+            disabled={page === 0}
+            onClick={() => onPageChange(page - 1)}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <Button
+            aria-label="Next page"
+            className={buttonClass}
+            variant="outline"
+            size="icon"
+            disabled={page >= totalPages - 1}
+            onClick={() => onPageChange(page + 1)}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </>
+      ) : null}
     </div>
   );
 }

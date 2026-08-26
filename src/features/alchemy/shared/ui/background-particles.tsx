@@ -6,10 +6,12 @@ export function BackgroundParticles({
   variant = "embers",
   colors,
   alphaMultiplier,
+  particleCount,
 }: {
   variant?: ParticleVariant;
   colors?: readonly string[];
   alphaMultiplier?: number;
+  particleCount?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -17,10 +19,10 @@ export function BackgroundParticles({
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mql.matches) return;
 
-    const stop = startBackgroundParticles(canvasRef, variant, colors, alphaMultiplier);
+    const stop = startBackgroundParticles(canvasRef, variant, colors, alphaMultiplier, particleCount);
 
     return () => stop();
-  }, [variant, colors, alphaMultiplier]);
+  }, [variant, colors, alphaMultiplier, particleCount]);
 
   return <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-0" />;
 }

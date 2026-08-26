@@ -58,7 +58,7 @@ export function BattleScreen(props: BattleScreenProps) {
   const displayState = useMemo(() => ({ ...battleState, ...displayOverrides }), [battleState, displayOverrides]);
 
   const isBossBattle = battleState.currentEnemy.enemyType === "boss";
-  const { particleColors, particleAlphaMultiplier } = getScreenParticleConfig("battle", isBossBattle);
+  const { particleColors, particleAlphaMultiplier, particleCount } = getScreenParticleConfig("battle", isBossBattle);
   const particleAlpha = particleAlphaMultiplier ?? 1;
 
   const playerStatusChips = useMemo(() => getPlayerStatusChips(displayState), [displayState]);
@@ -114,6 +114,7 @@ export function BattleScreen(props: BattleScreenProps) {
           variant="embers"
           {...(particleColors ? { colors: particleColors } : {})}
           alphaMultiplier={particleAlpha}
+          {...(particleCount ? { particleCount } : {})}
         />
       </div>
 

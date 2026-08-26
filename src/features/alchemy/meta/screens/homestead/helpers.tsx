@@ -87,7 +87,7 @@ function renderMaterialPills(text: string, key: number): ReactNode {
       <span
         key={`${key}-${index}`}
         className={cn(
-          "mx-1 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 align-baseline shadow-xs",
+          "mx-1 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 align-middle shadow-xs",
           tooltipChipClass,
           "leading-none",
           matPillStyle[mat],

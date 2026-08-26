@@ -31,7 +31,7 @@ const chipPillClass = (ctx: BadgeCtx) =>
   cn(
     "inline-flex items-center gap-1 rounded-full border shadow-xs",
     ctx.tooltip
-      ? cn("mx-0.5 px-1.5 py-0.5 align-baseline", tooltipChipClass, "leading-none")
+      ? cn("mx-0.5 px-1.5 py-0.5 align-middle", tooltipChipClass, "leading-none")
       : "px-3 py-1 text-xs leading-none font-semibold",
   );
 
@@ -122,7 +122,7 @@ const renderTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainTrin
       <ShineText colors={colors} {...mysteryShineTextProps}>
         {title}
       </ShineText>{" "}
-      <TooltipChip className="mx-0.5 mt-0 align-baseline">Boon • This Run</TooltipChip>
+      <TooltipChip className="mx-0.5 mt-0 align-baseline">Boon</TooltipChip>
     </span>
   ) : (
     <span className="text-sm text-balance text-muted-foreground">Add {title} for this run</span>
@@ -252,7 +252,7 @@ export function MysteryEffectList({
               : null;
 
         return (
-          <div key={i} className="flex items-center gap-1.5 text-sm">
+          <div key={i} className="flex items-center gap-1.5 text-sm leading-none">
             {prefix && <span className="text-muted-foreground">{prefix}</span>}
             <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} tooltip />
           </div>

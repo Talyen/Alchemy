@@ -229,4 +229,22 @@ describe("startBackgroundParticles", () => {
 
     rafSpy.mockRestore();
   });
+
+  it("draws the requested particleCount on the first frame", () => {
+    const { canvas, ctx } = makeMockCanvas();
+    const ref = { current: canvas };
+    let calls = 0;
+    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+      calls++;
+      if (calls <= 1) cb(performance.now());
+      return 1;
+    });
+
+    startBackgroundParticles(ref as never, "embers", undefined, undefined, 7);
+
+    expect(ctx.arc).toHaveBeenCalledTimes(7);
+    expect(ctx.fill).toHaveBeenCalledTimes(7);
+
+    rafSpy.mockRestore();
+  });
 });

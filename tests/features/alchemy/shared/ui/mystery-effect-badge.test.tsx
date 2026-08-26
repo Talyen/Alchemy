@@ -106,7 +106,7 @@ describe("MysteryEffectBadge", () => {
     expect(title.style.backgroundImage).toContain("linear-gradient");
     expect(container.querySelector("svg")).toBeNull();
     expect(screen.getByText(/Gain/)).toBeTruthy();
-    expect(screen.getByText("Boon • This Run")).toBeTruthy();
+    expect(screen.getByText("Boon")).toBeTruthy();
     expect(screen.queryByText(/for this run/)).toBeNull();
   });
 

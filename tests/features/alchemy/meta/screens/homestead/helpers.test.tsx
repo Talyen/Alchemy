@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { renderTextWithMaterials } from "@/features/alchemy/meta/screens/homestead/helpers";
 
 describe("renderTextWithMaterials", () => {
-  it("renders inline material chips with proper compact size, margin, and baseline alignment", () => {
+  it("renders inline material chips with proper compact size, margin, and middle alignment", () => {
     render(<div>{renderTextWithMaterials("Produces 5 Wood and 2 Iron each turn.")}</div>);
 
     const woodText = screen.getByText("Wood");
@@ -16,7 +16,7 @@ describe("renderTextWithMaterials", () => {
     expect(woodChip?.classList.contains("inline-flex")).toBe(true);
     expect(woodChip?.classList.contains("text-xs")).toBe(true);
     expect(woodChip?.classList.contains("mx-1")).toBe(true);
-    expect(woodChip?.classList.contains("align-baseline")).toBe(true);
+    expect(woodChip?.classList.contains("align-middle")).toBe(true);
     expect(woodChip?.classList.contains("leading-none")).toBe(true);
 
     const ironText = screen.getByText("Iron");
