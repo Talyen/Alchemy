@@ -139,15 +139,13 @@ export function TalentTree({
   onHoverTalent,
 }: TalentLayoutProps) {
   const [unlockingTalentId, setUnlockingTalentId] = useState<string | null>(null);
-  const mountedRef = useRef(true);
   const unlockTimerRef = useRef<number | null>(null);
+  const unlockingTalentIdRef = useRef<string | null>(null);
   const rows = useMemo(() => chunkRows(allTalents), [allTalents]);
-
-  const activeUnlockingId = unlockingTalentId && unlockedIds.includes(unlockingTalentId) ? unlockingTalentId : null;
 
   useEffect(() => {
     return () => {
-      mountedRef.current = false;
+      unlockingTalentIdRef.current = null;
       if (unlockTimerRef.current !== null) {
         window.clearTimeout(unlockTimerRef.current);
       }
@@ -156,8 +154,11 @@ export function TalentTree({
 
   const handleUnlock = useCallback(
     (talentId: string) => {
-      if (!onUnlock || unlockingTalentId) return;
+      if (!onUnlock) return;
+      if (unlockedIds.includes(talentId) || !allocatableIds.has(talentId)) return;
+      if (unlockingTalentIdRef.current === talentId) return;
 
+      unlockingTalentIdRef.current = talentId;
       onUnlockBegin?.(talentId);
       setUnlockingTalentId(talentId);
       onUnlock(talentId);
@@ -166,12 +167,12 @@ export function TalentTree({
         window.clearTimeout(unlockTimerRef.current);
       }
       unlockTimerRef.current = window.setTimeout(() => {
-        if (!mountedRef.current) return;
+        unlockingTalentIdRef.current = null;
         setUnlockingTalentId(null);
         unlockTimerRef.current = null;
       }, TALENT_UNLOCK_ANIMATION_MS);
     },
-    [onUnlock, onUnlockBegin, unlockingTalentId],
+    [allocatableIds, onUnlock, onUnlockBegin, unlockedIds],
   );
 
   if (allTalents.length === 0) {
@@ -191,7 +192,7 @@ export function TalentTree({
                 isUnlocked={unlockedIds.includes(talent.id)}
                 isAllocatable={allocatableIds.has(talent.id)}
                 canAfford={hasUnspentPoints}
-                isUnlocking={activeUnlockingId === talent.id}
+                isUnlocking={unlockingTalentId === talent.id}
                 onUnlock={handleUnlock}
                 onHoverTalent={onHoverTalent}
               />
