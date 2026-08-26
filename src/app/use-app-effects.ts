@@ -70,7 +70,6 @@ export function useAppAudioEffects({
   const screenRef = useRef(screen);
   const gestureFiredRef = useRef(false);
   const muteInBackgroundRef = useRef(muteInBackground);
-  muteInBackgroundRef.current = muteInBackground;
 
   useEffect(() => {
     setMasterVolume(masterVolume / 100);
@@ -83,6 +82,7 @@ export function useAppAudioEffects({
   }, [sfxVolume]);
 
   useEffect(() => {
+    muteInBackgroundRef.current = muteInBackground;
     function applyBackgroundMute(event?: Event) {
       setMuted(isNonPlayerAudioHost() || (muteInBackground && isAppInBackground(event)));
     }

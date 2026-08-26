@@ -1,7 +1,7 @@
 /**
  * Labyrinth hex-floor map with a desktop side inspector.
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/shared-ui";
 import { settingsPanelShellClass } from "@/features/alchemy/shared/config";
@@ -36,16 +36,11 @@ export function LabyrinthMapScreen({
     [labyrinthMap],
   );
   const [viewedFloor, setViewedFloor] = useState(labyrinthMap?.currentFloor ?? 1);
-
-  useEffect(() => {
-    if (!labyrinthMap) return;
-    const depths = new Set(labyrinthMap.floors.filter((floor) => floor.depth > 0).map((floor) => floor.depth));
-    setViewedFloor((current) => {
-      if (labyrinthMap.currentFloor > current) return labyrinthMap.currentFloor;
-      if (!depths.has(current)) return labyrinthMap.currentFloor;
-      return current;
-    });
-  }, [labyrinthMap]);
+  const currentFloor = labyrinthMap?.currentFloor ?? 1;
+  const playableDepths = useMemo(() => new Set(playableFloors.map((floor) => floor.depth)), [playableFloors]);
+  if (currentFloor > viewedFloor || (labyrinthMap !== null && !playableDepths.has(viewedFloor))) {
+    setViewedFloor(currentFloor);
+  }
 
   const mapCanvasRef = useRef<HTMLDivElement>(null);
   const [mapWidth, setMapWidth] = useState(0);

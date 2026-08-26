@@ -263,7 +263,7 @@ export function useAlchemyRunController() {
         continueFromRunEnd: nav.continueFromRunEnd,
       },
     }),
-    [nav, handleBeginLabyrinth, nodeRouting, shop, battle],
+    [nav, handleBeginLabyrinth, nodeRouting, shop, battle, labyrinth.selectNode, labyrinth.deselectNode],
   );
 
   return {
