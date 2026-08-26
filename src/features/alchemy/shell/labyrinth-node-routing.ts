@@ -26,14 +26,21 @@ interface LabyrinthNodeRoutingDeps {
 }
 
 export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
+  function applyNodeModifiers(
+    battleModifiers: EncounterCombatTraitId[] = [],
+    rewardModifiers: EncounterRewardTraitId[] = [],
+  ) {
+    deps.applyLabyrinthBattleModifiers(battleModifiers);
+    deps.applyLabyrinthRewardModifiers(rewardModifiers);
+  }
+
   function enterLabyrinthNodeScreen(
     screen: Screen,
     init?: () => void,
     battleModifiers?: EncounterCombatTraitId[],
     rewardModifiers?: EncounterRewardTraitId[],
   ) {
-    deps.applyLabyrinthBattleModifiers(battleModifiers ?? []);
-    deps.applyLabyrinthRewardModifiers(rewardModifiers ?? []);
+    applyNodeModifiers(battleModifiers ?? [], rewardModifiers ?? []);
     init?.();
     deps.navigateTo(screen);
   }
@@ -61,7 +68,10 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
         );
       },
       onStartRest: () => enterLabyrinthNodeScreen(ROUTE_SCREENS.CAMPFIRE),
-      onStartMystery: () => deps.nav.beginMysteryEvent(),
+      onStartMystery: () => {
+        applyNodeModifiers();
+        deps.nav.beginMysteryEvent();
+      },
       onStartShop: () => enterLabyrinthNodeScreen(ROUTE_SCREENS.SHOP, () => deps.shop.initialize("merchant")),
       onStartAlchemist: () =>
         enterLabyrinthNodeScreen(ROUTE_SCREENS.ALCHEMIST, () => deps.shop.initialize("alchemist")),

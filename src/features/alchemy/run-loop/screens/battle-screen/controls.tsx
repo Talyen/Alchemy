@@ -1,5 +1,4 @@
 // Bottom-row battle resource controls and dev shortcut.
-// Depends on battle resource widgets, hand rendering, and the shared Button primitive.
 // Used only by BattleScreen to keep control layout separate from actor layout.
 import type { RefObject } from "react";
 import { Coins } from "lucide-react";

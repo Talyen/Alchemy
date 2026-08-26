@@ -2,7 +2,7 @@
 // missing keys by treating them as 0. subtractInventory clamps to 0.
 import { MATERIAL_IDS, type MaterialId, type MaterialInventory } from "./types";
 
-function materialAmount(inventory: MaterialInventory, materialId: MaterialId): number {
+export function materialAmount(inventory: MaterialInventory, materialId: MaterialId): number {
   return (inventory as Partial<Record<MaterialId, number>>)[materialId] ?? 0;
 }
 

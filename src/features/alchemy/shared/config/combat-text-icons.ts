@@ -1,5 +1,4 @@
 // Combat text presentation classes for battle feedback.
-// Depends on Lucide icons used by floating text renderers.
 // Colors are read from keywordDefinitions (keywords.ts) — only non-keyword overrides live here.
 import type { LucideIcon } from "lucide-react";
 import { Sparkles } from "lucide-react";

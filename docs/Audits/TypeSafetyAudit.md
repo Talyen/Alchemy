@@ -39,7 +39,7 @@ Confirm unsafe escapes, unsound generics, broad records, non-exhaustive unions, 
 
 - **Trend counts:** `node scripts/audit-type-escapes.mjs` (also via `npm run audit:all`) — per-category counts and top files; compare against the previous run to keep the directional targets ratcheting downward. Never a gate.
 - **`any`:** `\bany\b` in non-test `src`.
-- **Suppressions & double casts:** `@ts-ignore` / `@ts-expect-error` / `eslint-disable` / `as unknown as`.
+- **Suppressions & double casts:** `@ts-expect-error` / `eslint-disable` / `as unknown as`. `@ts-ignore` in `src` is an ESLint error (`@typescript-eslint/ban-ts-comment`).
 - **Non-null assertions:** `!.` in non-test `src`.
 - **Unsafe assertions on persistence/battle:** hits in `shared/storage/`, `save-schemas/`, `run-transitions.ts`, `src/lib/battle`.
 - **Raw enum / string decoding:** stringly unions without Zod or exhaustive checks at hydrate boundaries.

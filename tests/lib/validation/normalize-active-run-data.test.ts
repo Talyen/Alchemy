@@ -130,4 +130,33 @@ describe("normalizeActiveRunData", () => {
     const state = (result.activeCombat as Record<string, unknown>).battleState as Record<string, unknown>;
     expect(state.wishQueue).toEqual([[live]]);
   });
+
+  it("nulls mysteryVisit when currentScreen is not mystery", () => {
+    const result = normalizeActiveRunData({
+      ...baseInput(),
+      currentScreen: "shop",
+      mysteryVisit: { eventId: "cardless-shrine", cardChoices: [{ id: "slash" }] },
+    });
+    expect(result.mysteryVisit).toBeNull();
+  });
+
+  it("keeps mysteryVisit when currentScreen is mystery", () => {
+    const visit = { eventId: "cardless-shrine", cardChoices: [{ id: "slash" }] };
+    const result = normalizeActiveRunData({
+      ...baseInput(),
+      currentScreen: "mystery",
+      mysteryVisit: visit,
+    });
+    expect(result.mysteryVisit).toMatchObject(visit);
+  });
+
+  it("keeps mysteryVisit when currentScreen is missing so resume can infer mystery", () => {
+    const visit = { eventId: "cardless-shrine", cardChoices: [{ id: "slash" }] };
+    const result = normalizeActiveRunData({
+      ...baseInput(),
+      mysteryVisit: visit,
+    });
+    expect(result.currentScreen).toBeUndefined();
+    expect(result.mysteryVisit).toMatchObject(visit);
+  });
 });

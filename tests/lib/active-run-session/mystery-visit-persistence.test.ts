@@ -113,6 +113,23 @@ describe("hydrateMysteryVisit", () => {
     if (trinket?.kind !== "gainTrinket") return;
     expect(["bone-charm", "sin-eaters-lantern"]).toContain(trinket.trinketId);
   });
+
+  it("applies astral fallback gear substitution when resolvedTrinketIds contains empty string", () => {
+    const hydrated = hydrateMysteryVisit({
+      eventId: "enchanted-spring",
+      chosenChoice: null,
+      cardChoices: null,
+      grantedTrinketIds: [],
+      grantedGear: [],
+      chosenCardId: null,
+      resolvedTrinketIds: ["", "merchants-favor"],
+    });
+
+    const moss = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Gather the Moss");
+    const charm = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Take the Charm");
+    expect(moss?.effects).toContainEqual(expect.objectContaining({ kind: "gainGeneratedGear", astral: true }));
+    expect(charm?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "merchants-favor" });
+  });
 });
 
 describe("hydratePersistedMysteryChoice", () => {

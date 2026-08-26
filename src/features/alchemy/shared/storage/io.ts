@@ -1,6 +1,4 @@
 // Browser localStorage IO for alchemy save data.
-// Depends on: SAVE_KEY (game-constants), Zod validation schemas (lib/validation), save defaults.
-// Used by: use-app-save-state.ts (loadAlchemySaveState), App.tsx (loadAlchemySaveState).
 import { SAVE_KEY } from "@/lib/game-constants";
 import { createPlatformSaveBackend, type SaveBackend } from "@/lib/platform-save-backend";
 

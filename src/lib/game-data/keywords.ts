@@ -1,5 +1,4 @@
 // Keyword definitions (visual config per keyword) and shared card-to-keyword extraction.
-// Depends on card/type shapes. Used by talent XP and reward affinity scoring.
 import type { BattleCard, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
 import { collectKeywordsFromBattleEffect } from "./effect-metadata";
 

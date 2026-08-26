@@ -1,5 +1,5 @@
 // Character class definitions — starting decks, gold multipliers, and keyword XP preferences.
-// Depends on card library and type contracts. Each character is a play-style preset.
+// Each character is a play-style preset.
 import type { BattleCard } from "./types";
 import { cardById } from "./cards";
 import type { KeywordId } from "./types";
@@ -134,7 +134,6 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
   },
 };
 
-// Starting decks are cloned for each run so run mutations never alter static character data.
 export function getStartingDeck(characterId: CharacterId): BattleCard[] {
   return [...characters[characterId].startingDeck];
 }

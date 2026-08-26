@@ -7,7 +7,6 @@ import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/vali
 import {
   clearAlchemySaveData,
   loadAlchemySaveState,
-  resetStorageIoForTests,
   saveAlchemySaveData,
   saveAlchemySaveDataForExit,
   configureSaveBackend,
@@ -18,6 +17,7 @@ import {
   setupMockWindowDesktop,
   teardownMockWindow,
 } from "../../../../helpers/desktop-save-mock-helper";
+import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
 
 const globalWithWindow = globalThis as unknown as { window?: object };
 const mockStorage: Record<string, string> = {};
@@ -30,6 +30,8 @@ const mockLocalStorage = {
     delete mockStorage[key];
   },
 } as Storage;
+
+installStorageIoTestHooks();
 
 function setupDesktopSaveCandidates(candidates: string[]) {
   const desktop = setupMockWindowDesktop({ saveCandidates: candidates, steamName: null });
@@ -63,8 +65,7 @@ const futureSaveCases = [
 ];
 
 describe("storage io", () => {
-  beforeEach(async () => {
-    await resetStorageIoForTests();
+  beforeEach(() => {
     Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
     setupMockWindowBrowser(mockLocalStorage);
   });
@@ -77,6 +78,30 @@ describe("storage io", () => {
     const data = (await loadAlchemySaveState()).data;
     expect(data.selectedAspectRatio).toBe("auto");
     expect(data.activeRun).toBeNull();
+  });
+
+  it("warns when a card effect is corrupt but the rest of the save loads", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const campaign = currentSchemaCampaignSave();
+    mockStorage[SAVE_KEY] = JSON.stringify({
+      ...campaign,
+      activeRun: {
+        ...campaign.activeRun,
+        runDeck: [
+          {
+            ...campaign.activeRun!.runDeck[0],
+            effects: [{ kind: "not-a-real-effect" }],
+          },
+        ],
+      },
+    });
+    const loaded = await loadAlchemySaveState();
+    expect(loaded.status.kind).toBe("ok");
+    expect(loaded.status.kind === "ok" ? loaded.status.warnings : undefined).toEqual(
+      expect.arrayContaining([expect.stringMatching(/Field "effects\[0\]" was corrupt/)]),
+    );
+    expect(loaded.data.activeRun?.runDeck[0]?.id).toBe("slash");
+    expect(loaded.data.activeRun?.runDeck[0]?.effects.length).toBeGreaterThan(0);
   });
 
   it("loadAlchemySaveState returns defaults on corrupt JSON", async () => {

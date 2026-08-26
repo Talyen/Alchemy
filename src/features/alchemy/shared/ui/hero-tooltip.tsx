@@ -1,5 +1,4 @@
 // Hover popup for hero roster entries on character select and Collection.
-// Depends on character definitions, keyword pills, and the shared portaled tooltip panel.
 // Used by CharacterSelectScreen and CompendiumTile so both surfaces share one tooltip body.
 import type { RefObject } from "react";
 import type { CharacterDefinition } from "@/features/alchemy/shared/config/game-data-catalog";

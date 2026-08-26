@@ -1,6 +1,5 @@
 /**
  * Battle state factory: wires defaults, enemy setup, and createBattleState.
- * Depends on: ./battle-setup-defaults, ./battle-enemy-setup, ./draw, @/lib/game-data, ../game-constants.
  */
 import {
   companionLibrary,

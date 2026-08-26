@@ -1,9 +1,9 @@
 // Enemy material loot tables and end-of-run bonus calculations.
 // Each enemy drops thematic materials based on its identity.
 
-import type { MaterialId, MaterialInventory } from "./types";
+import { MATERIAL_IDS, type MaterialId, type MaterialInventory } from "./types";
 import type { HomesteadEffectManifest } from "./types";
-import { emptyInventory, addInventory } from "./inventory";
+import { addInventory, emptyInventory, materialAmount } from "./inventory";
 import { materialCost } from "./costs";
 import { HOMESTEAD_LOOT_CONFIG } from "../game-constants";
 
@@ -107,8 +107,8 @@ function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): Materi
         : enemyTypeMultipliers.normal;
   if (multiplier === enemyTypeMultipliers.normal) return loot;
   const result = { ...loot };
-  for (const mat of Object.keys(result) as MaterialId[]) {
-    result[mat] = Math.floor(result[mat] * multiplier);
+  for (const mat of MATERIAL_IDS) {
+    result[mat] = Math.floor(materialAmount(result, mat) * multiplier);
   }
   return result;
 }

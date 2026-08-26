@@ -52,14 +52,22 @@ export const REWARD_CARD_CHOICES = 3;
 export const REWARD_RANDOM_CHANCE = 0.5;
 export const DESTINATION_CHOICES = 3;
 export const DEFAULT_DESTINATION_WEIGHT = 10;
-// Semantic alias: corruption uses the same weight as normal routes; separate name documents intent at call sites.
-export const CORRUPTION_DESTINATION_WEIGHT = 10;
 export const LAST_OFFERED_DESTINATION_WEIGHT = 3;
 export const DESTINATION_PITY_WEIGHT_PER_ROUND = 3;
 export const DESTINATION_PITY_WEIGHT_CAP = 30;
 export const DESTINATION_POST_OFFER_DAMPEN = 0;
+
+// ============ Corruption ============
+export const CORRUPTION_TRANSFORM_CHANCE = 0.2;
+export const CORRUPTION_DELTA_CHANCE = 0.2; // P(nerf): 20%; otherwise corruption buffs (+1).
 export const CORRUPTION_MUTATION_DELTA = 1;
 export const CORRUPTION_MIN_VALUE = 0;
+export const CORRUPTION_TEXT_PATTERNS = {
+  authoredNumber: /\d+/g,
+  leadingNumber: /^\d+/,
+} as const;
+// Semantic alias: corruption uses the same weight as normal routes; separate name documents intent at call sites.
+export const CORRUPTION_DESTINATION_WEIGHT = 10;
 export const DESTINATIONS_PER_ACT = 8; // Slot 8 is the boss.
 export const ACTS_PER_RUN = 3;
 export const DEFAULT_CAMPAIGN_DIFFICULTY_ID = "difficulty-1";

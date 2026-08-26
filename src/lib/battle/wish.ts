@@ -1,7 +1,5 @@
 /**
  * Wish card generation and wish effect resolution.
- * Depends on: @/lib/game-data, ../game-constants, ./draw, ./types, ./combat-text, ./status-player, ./status-helpers.
- * Depended on by: ./effect-handlers, ./damage-riders.
  */
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";

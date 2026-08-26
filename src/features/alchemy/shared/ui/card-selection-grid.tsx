@@ -1,6 +1,4 @@
 // Shared paginated card-selection layout for deck pickers.
-// Depends on battle card data, collection sizing, and pagination controls.
-// Used by corruption, card removal, and potion-mixing flows so selection rows cap at four centered cards.
 import type { ReactNode } from "react";
 
 import type { BattleCard } from "@/lib/game-data";

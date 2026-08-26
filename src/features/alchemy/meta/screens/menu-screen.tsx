@@ -8,8 +8,8 @@ import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cn } from "@/lib/utils";
 import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
 import {
+  getProgressionFeatureUnlockMessage,
   isProgressionFeatureUnlocked,
-  KNIGHT_UNLOCK_MESSAGE,
   type CharacterId,
 } from "../../shared/config/game-data-catalog";
 
@@ -53,7 +53,8 @@ export function MenuScreen({
   const [variantIdx, setVariantIdx] = useState(() => Math.min(1, variants.length - 1));
   const [flipped, setFlipped] = useState(false);
 
-  const isKnightGatedLocked = !isProgressionFeatureUnlocked("talents", finishedRunCharacters);
+  const isTalentsLocked = !isProgressionFeatureUnlocked("talents", finishedRunCharacters);
+  const isHomesteadLocked = !isProgressionFeatureUnlocked("homestead", finishedRunCharacters);
 
   const handleLogoClick = useCallback(() => {
     if (!flipped && variants.length > 2) {
@@ -99,8 +100,8 @@ export function MenuScreen({
         <MenuNavButton>
           <LockedMenuItem
             title="Talents"
-            message={KNIGHT_UNLOCK_MESSAGE}
-            locked={isKnightGatedLocked}
+            message={getProgressionFeatureUnlockMessage("talents")}
+            locked={isTalentsLocked}
             onSelect={onTalents}
             icon={<WandSparkles className="h-7 w-7" />}
             wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
@@ -111,15 +112,15 @@ export function MenuScreen({
           >
             Talents
           </LockedMenuItem>
-          {hasUnspentTalents && !isKnightGatedLocked && (
+          {hasUnspentTalents && !isTalentsLocked && (
             <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
         </MenuNavButton>
         <MenuNavButton>
           <LockedMenuItem
             title="Homestead"
-            message={KNIGHT_UNLOCK_MESSAGE}
-            locked={isKnightGatedLocked}
+            message={getProgressionFeatureUnlockMessage("homestead")}
+            locked={isHomesteadLocked}
             onSelect={onHomestead}
             icon={<TreePine className="h-7 w-7" />}
             wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
@@ -130,7 +131,7 @@ export function MenuScreen({
           >
             Homestead
           </LockedMenuItem>
-          {hasAffordableHomestead && !isKnightGatedLocked && (
+          {hasAffordableHomestead && !isHomesteadLocked && (
             <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
         </MenuNavButton>

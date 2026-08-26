@@ -310,4 +310,53 @@ describe("encounter trait card events", () => {
     expect(result.enemyMitigation.armor).toBe(2);
     expect(result.enemyMitigation.block).toBe(4);
   });
+
+  it("activates Divine Aegis when physical bleed detonation crosses half health", () => {
+    const currentEnemy = enemyWith("divine-aegis");
+    const base = makeTestBattleState();
+    const played = card({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
+    const result = playBattleCardResolved(
+      makeTestBattleState({
+        currentEnemy,
+        enemyHealth: 10,
+        enemyMaxHealth: 10,
+        enemyStatuses: { ...base.enemyStatuses, bleed: 6 },
+        talentEffects: { ...base.talentEffects, physicalDetonatesBleed: true },
+        hand: [played],
+        mana: 1,
+        turnPhase: "player",
+      }),
+      played.id,
+      0,
+    ).state;
+    expect(result.flags.divineAegisTriggered).toBe(true);
+    expect(result.enemyMitigation.armor).toBe(2);
+    expect(result.enemyMitigation.block).toBe(4);
+  });
+
+  it("activates Divine Aegis when archery bleed/poison detonation crosses half health", () => {
+    const currentEnemy = enemyWith("divine-aegis");
+    const base = makeTestBattleState();
+    const played = card({
+      tags: ["archery"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
+    });
+    const result = playBattleCardResolved(
+      makeTestBattleState({
+        currentEnemy,
+        enemyHealth: 10,
+        enemyMaxHealth: 10,
+        enemyStatuses: { ...base.enemyStatuses, bleed: 6 },
+        gearEffects: { ...base.gearEffects, archeryDetonateBleedPoison: 1 },
+        hand: [played],
+        mana: 1,
+        turnPhase: "player",
+      }),
+      played.id,
+      0,
+    ).state;
+    expect(result.flags.divineAegisTriggered).toBe(true);
+    expect(result.enemyMitigation.armor).toBe(2);
+    expect(result.enemyMitigation.block).toBe(4);
+  });
 });

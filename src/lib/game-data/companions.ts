@@ -1,4 +1,3 @@
-// Companion data used by battle state and summon effects; depends on optimized art assets.
 import {
   bearCompanion,
   goldenRetrieverCompanion,

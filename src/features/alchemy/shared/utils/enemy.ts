@@ -1,5 +1,4 @@
 // Enemy formatting helpers for tooltip display and bestiary entries.
-// Depends on game-data enemy types only.
 // Used by EnemyTooltip and collection UI to render structured enemy data as text.
 import { capitalizeWord } from "@/lib/utils";
 import type { EnemyAttackEffect } from "@/lib/game-data";

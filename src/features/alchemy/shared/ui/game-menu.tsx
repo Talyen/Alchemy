@@ -1,7 +1,7 @@
 // In-game navigation menu overlay and anchored popover.
 import { BookOpen, Cog, House, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Fragment } from "react";
-import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data";
+import { getProgressionFeatureUnlockMessage } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { Screen } from "@/lib/routing";
 import { useHeldWhile } from "./fade-presence";
@@ -222,8 +222,8 @@ export function GameMenu({
       })}
       locks={{ talents: isTalentsLocked, homestead: isHomesteadLocked, armory: isArmoryLocked }}
       messages={{
-        talents: KNIGHT_UNLOCK_MESSAGE,
-        homestead: KNIGHT_UNLOCK_MESSAGE,
+        talents: getProgressionFeatureUnlockMessage("talents"),
+        homestead: getProgressionFeatureUnlockMessage("homestead"),
         armory: "Find Gear to unlock",
       }}
     />

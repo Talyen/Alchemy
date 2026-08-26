@@ -14,7 +14,12 @@ export function paginateRows<T>(items: readonly T[], page: number, pageSize: num
 }
 
 /** Self-owned clamped page state for overlays that keep their own pagination. */
-export function usePaginatedRows<T>(items: readonly T[], pageSize: number, columns: number) {
+export function usePaginatedRows<T>(items: readonly T[], pageSize: number, columns: number, resetKey?: unknown) {
   const [page, setPage] = useState(0);
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (!Object.is(resetKey, prevResetKey)) {
+    setPrevResetKey(resetKey);
+    setPage(0);
+  }
   return { setPage, ...paginateRows(items, page, pageSize, columns) };
 }

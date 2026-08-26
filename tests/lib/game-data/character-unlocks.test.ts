@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   getCharacterUnlockMessage,
   getGameModeUnlockMessage,
+  getProgressionFeatureUnlockMessage,
   isCharacterUnlocked,
   isGameModeUnlocked,
   isProgressionFeatureUnlocked,
+  KNIGHT_UNLOCK_MESSAGE,
   type CharacterId,
   type GameModeId,
 } from "@/lib/game-data";
@@ -68,6 +70,12 @@ describe("feature unlock policy", () => {
     ["homestead", ["knight"] as CharacterId[], true],
   ] as const)("resolves %s from completed characters", (feature, finished, unlocked) => {
     expect(isProgressionFeatureUnlocked(feature, finished)).toBe(unlocked);
+  });
+
+  it("returns unlock message for progression features", () => {
+    expect(getProgressionFeatureUnlockMessage("talents")).toBe("Finish a Run as the Knight to unlock");
+    expect(getProgressionFeatureUnlockMessage("homestead")).toBe("Finish a Run as the Knight to unlock");
+    expect(KNIGHT_UNLOCK_MESSAGE).toBe("Finish a Run as the Knight to unlock");
   });
 
   it.each<{

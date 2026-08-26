@@ -1,5 +1,4 @@
 // Top-level alchemy controller composition hook.
-// Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";

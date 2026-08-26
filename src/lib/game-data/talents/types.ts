@@ -1,7 +1,5 @@
 ﻿/**
  * Talent definitions, pools, UI filter/sampling helpers, and default manifests.
- * Depends on: src/lib/game-data/types.ts
- * Depended on by: src/lib/game-data/talents.ts, homestead, and the battle state machine
  */
 import type { KeywordId } from "../types";
 import type { TalentEffectManifest } from "../talent-effect-manifest";

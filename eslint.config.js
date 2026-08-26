@@ -6,6 +6,7 @@ import prettierConfig from "eslint-config-prettier";
 import reactCompiler from "eslint-plugin-react-compiler";
 import playwright from "eslint-plugin-playwright";
 import { BOUNDARY_CONFIGS } from "./eslint/boundaries.js";
+import { alchemyPlugin } from "./eslint/plugin.js";
 import {
   BATTLE_NO_MATH_FLOOR,
   BATTLE_NO_MATH_RANDOM,
@@ -90,6 +91,16 @@ export default tseslint.config(
       "@typescript-eslint/switch-exhaustiveness-check": ["error", { considerDefaultExhaustiveForUnions: true }],
       "@typescript-eslint/prefer-nullish-coalescing": "error",
       "no-console": ["error", { allow: ["warn", "error"] }],
+      "@typescript-eslint/ban-ts-comment": [
+        "error",
+        {
+          "ts-expect-error": "allow-with-description",
+          "ts-ignore": true,
+          "ts-nocheck": true,
+          "ts-check": false,
+          minimumDescriptionLength: 3,
+        },
+      ],
     },
   },
 
@@ -147,6 +158,35 @@ export default tseslint.config(
   },
 
   // ── Convention enforcement rules ──────────────────────────────────────────
+
+  {
+    plugins: { alchemy: alchemyPlugin },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"],
+    rules: {
+      "alchemy/no-dependency-graph-comments": "error",
+    },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "alchemy/no-run-earned-add-materials": "error",
+      "alchemy/no-unowned-web-storage": "error",
+    },
+  },
+  {
+    files: ["src/lib/**/*.{ts,tsx}"],
+    rules: {
+      "alchemy/no-lib-fetch": "error",
+    },
+  },
+  {
+    files: ["src/**/*.tsx"],
+    rules: {
+      "alchemy/no-render-math-random": "error",
+    },
+  },
 
   // Ban React.FC / React.FunctionComponent — use plain function components with explicit Props.
   {
@@ -313,7 +353,7 @@ export default tseslint.config(
 
   // Node.js scripts (CommonJS + ESM) — after base rules so overrides take effect.
   {
-    files: ["scripts/**/*.mjs"],
+    files: ["scripts/**/*.mjs", "eslint/**/*.js"],
     languageOptions: {
       globals: {
         console: "readable",

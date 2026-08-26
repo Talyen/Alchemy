@@ -1,6 +1,4 @@
 // Card text rendering for titles, keyword popups, and corrupted value highlights.
-// Depends on game-data keyword metadata, description tokenization, and card text helpers.
-// Used by card popups, enemy tooltips, battle cards, shops, and collection previews.
 /* eslint-disable react-refresh/only-export-components -- co-located card description components and bare-token utility */
 import { Fragment, type ReactNode } from "react";
 

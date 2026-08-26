@@ -54,7 +54,7 @@ For non-trivial work, choose the primary owner that matches the task. Read an ad
 ## High-risk invariants
 
 - **Run state:** feature code outside `shared/stores/` uses capability ports and domain stores, never `run-transitions` directly. Gameplay writes go through `run-session-write-port.ts` and commit through `dispatchRunSessionCommand()`. See [ARCHITECTURE](./docs/ARCHITECTURE.md#run-state).
-- **Controllers:** screens receive run/battle bindings through route or shell controller props, not React context.
+- **Controllers:** screens receive run/battle bindings through route or shell controller props, not React context. Allowed presentation contexts: `AppScreenChromeProvider`, `CardDescriptionProvider`, and `ui-store`.
 - **Battle:** treat `BattleState` as immutable and use the supplied RNG; follow [REFERENCE](./docs/REFERENCE.md#battle-implementation-rules) for arithmetic and engine rules. Tuning belongs in topical files under `src/lib/game-constants/`.
 - **Content:** `descriptionLines` must match effects. Run-earned materials use `awardMaterialsDuringRun()`, not progress `addMaterials()`.
 - **Persistence:** change schemas, normalization/migrations, defaults, hydration/snapshots, and legacy fixtures together as applicable. Follow [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md).
@@ -65,7 +65,8 @@ For non-trivial work, choose the primary owner that matches the task. Read an ad
 
 - **Existing boundaries:** before modifying a shared store/port, save contract, core constant, or routing policy, identify the invariant being changed and search the touched subsystem first; expand to consumers only for a public symbol, never repository-scan private helpers.
 - **Intent recovery:** if the owner-doc section and nearest assertions leave an established gameplay/persistence rule ambiguous, recover intent from the nearest tests and at most five relevant commits before editing; record the recovered invariant. Never trigger this from a path alone.
-- **Post-edit review:** review only the changed diff for speculative abstraction, copied logic, and accidental fan-out; never scan unrelated dirty work. Prefer delete → reuse → local simplify → parameterizing proven duplication → abstraction. Comments restate nothing that names/types already say.
+- **Post-edit review:** review only the changed diff for speculative abstraction, copied logic, and accidental fan-out; never scan unrelated dirty work. Prefer delete → reuse → local simplify → parameterizing proven duplication → abstraction.
+- **Comments:** keep why, ordering, non-obvious invariants, layout/math traps, and eslint/type gaps. Do not restate the next identifier or type, and do not add file banners that only name the module. Never record `Depends on` / `Depended on by` / `Used by:` graphs — imports and search already answer that, and they go stale. Do not require a comment on every export. Load-bearing rules belong in tests.
 - New or structurally revised cross-boundary contracts additionally use the `architect` skill before implementation.
 
 ## UI

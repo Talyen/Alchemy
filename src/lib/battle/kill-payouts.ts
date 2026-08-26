@@ -3,7 +3,7 @@
  * typed hits, CC procs, DoT ticks, bleed detonation, mana-crystal burn, wish
  * triggers) so a kill via any source pays the same rewards exactly once per
  * health transition.
- * Depends only on leaf modules to stay import-cycle-free.
+ * Leaf-module imports only, so this file stays import-cycle-free.
  */
 import { addGoldWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { applyBoneCharmHeal } from "./trinket-effects";

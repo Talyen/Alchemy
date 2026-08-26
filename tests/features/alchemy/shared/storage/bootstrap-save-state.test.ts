@@ -3,8 +3,11 @@ import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-he
 import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage/bootstrap-save-state";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { saveAlchemySaveData } from "@/features/alchemy/shared/storage/io";
+import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
 
 const globalWithWindow = globalThis as unknown as { window?: object };
+
+installStorageIoTestHooks();
 
 describe("bootstrapAlchemySaveState", () => {
   afterEach(() => {

@@ -1,5 +1,4 @@
 // Keyword text matching metadata for card description highlighting.
-// Depends on game-data keyword identifiers only.
 import type { KeywordId } from "@/lib/game-data";
 
 // Maps display-friendly strings like "Physical" to their KeywordId.
@@ -51,3 +50,12 @@ export const keywordPattern = new RegExp(
     .join("|")})\\b`,
   "gi",
 );
+
+export function extractKeywordIds(text: string): KeywordId[] {
+  const keywords = new Set<KeywordId>();
+  for (const match of text.matchAll(keywordPattern)) {
+    const keywordId = keywordAliasMap.get(match[0].toLowerCase());
+    if (keywordId) keywords.add(keywordId);
+  }
+  return Array.from(keywords);
+}

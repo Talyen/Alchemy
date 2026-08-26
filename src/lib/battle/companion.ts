@@ -1,7 +1,6 @@
 /**
  * Companion turn-start resolution: builds a synthetic 0-cost card from the companion's
- * turnStartEffects and applies it as if played. Depends on: effect-handlers, types, game-data.
- * Depended on by: battle start and post-draw companion follow-up (player turn start).
+ * turnStartEffects and applies it as if played.
  */
 import { applyCardEffects } from "./effect-handlers";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";

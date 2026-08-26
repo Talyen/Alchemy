@@ -6,15 +6,15 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 
 ## Directory layout (`src/features/alchemy/`)
 
-| Path         | Role                                                                       |
-| ------------ | -------------------------------------------------------------------------- |
-| `shared/`    | `stores/`, `storage/`, `ui/`, `config/`, `utils/`, `run-flow/`, `types.ts` |
-| `meta/`      | Menu, collection, homestead, talents, armory screens                       |
-| `run-setup/` | Character, difficulty, draft screens                                       |
-| `run-loop/`  | Battle glue, navigation, shop, in-run screens                              |
-| `shell/`     | Controller hooks                                                           |
+| Path         | Role                                                                                   |
+| ------------ | -------------------------------------------------------------------------------------- |
+| `shared/`    | `stores/`, `storage/`, `ui/`, `config/`, `context/`, `utils/`, `run-flow/`, `types.ts` |
+| `meta/`      | Menu, collection, homestead, talents, armory screens                                   |
+| `run-setup/` | Character, difficulty, draft screens                                                   |
+| `run-loop/`  | Battle glue, navigation, shop, in-run screens                                          |
+| `shell/`     | Controller hooks                                                                       |
 
-Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-session-react-ports`).
+Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-session-react-ports`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts); keep that module off the token `config/` barrel so layout/token imports stay catalog-free.
 
 `shared/run-flow/` is the neutral seam for destination sampling and campaign-start helpers so `run-setup` and `run-loop` do not import each other (ESLint-enforced).
 
@@ -123,7 +123,7 @@ BattleScreenRoute → useBattleScreenRouteData (committed battle display)
 
 - `useAlchemyRunController` exposes battle **commands** on `routeCommands.battle`. Battle **display** is local to `BattleScreenRoute` via `useBattleScreenRouteData`.
 - Autoplay / auto-end-turn **ticks** live in `useBattlePlayback` on that route. Session autoplay on/off lives in `useBattleController`. Playback how-to: [WORKFLOWS § Change battle playback](./WORKFLOWS.md#change-battle-playback).
-- Presentation leaves subscribe to `battle-presentation-store`. Teardown follows committed store `screen !== "battle"` (not `renderedScreen`). `App.tsx` passes `routeCommands` through `RenderAlchemyScreen` — no React context.
+- Presentation leaves subscribe to `battle-presentation-store`. Teardown follows committed store `screen !== "battle"` (not `renderedScreen`). `App.tsx` passes `routeCommands` through `RenderAlchemyScreen`. Run/battle bindings stay on props; allowed React contexts are `AppScreenChromeProvider`, `CardDescriptionProvider`, and presentation `ui-store`. See [WORKFLOWS § Add a new card](./WORKFLOWS.md#add-a-new-card) for card-description context.
 
 ### Data flow
 

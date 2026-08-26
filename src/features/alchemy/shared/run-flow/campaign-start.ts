@@ -1,5 +1,4 @@
 // Shared run-navigation helpers for destination history and campaign novice starts.
-// Depends on game constants and alchemy route types.
 // Used by useRunFlowEngine and victory-flow to avoid duplicated ternaries and start blocks.
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";

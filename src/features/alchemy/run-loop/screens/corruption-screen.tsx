@@ -1,5 +1,4 @@
 // Altar of Corruption screen — choose a deck card, corrupt it, and reveal the altered card.
-// Depends on card UI primitives, placeholder destination art, and corruption result shape.
 // Used by run navigation as a free rare route event with possible upside or downside.
 import { useMemo, useState } from "react";
 import { Dices, MoveRight } from "lucide-react";

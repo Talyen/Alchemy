@@ -1,5 +1,4 @@
 // Combat text aggregation tests for filtering UI-only floating number events.
-// Depends on the battle combat-text helper and type contracts.
 import { describe, expect, it } from "vitest";
 
 import {

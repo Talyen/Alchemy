@@ -92,4 +92,19 @@ describe("BattleBoonInspectOverlay", () => {
     expect(screen.queryByRole("img", { name: trinketLibrary[0]!.title })).toBeNull();
     expect(screen.getAllByRole("img")).toHaveLength(1);
   });
+
+  it("returns to the first page when the overlay closes", async () => {
+    const user = userEvent.setup();
+    const ids = trinketLibrary.slice(0, TRINKET_PAGE_SIZE + 1).map((entry) => entry.id);
+    const { rerender } = render(<BattleBoonInspectOverlay open trinketIds={ids} onClose={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+    expect(await screen.findByRole("img", { name: trinketLibrary[TRINKET_PAGE_SIZE]!.title })).toBeTruthy();
+
+    rerender(<BattleBoonInspectOverlay open={false} trinketIds={ids} onClose={vi.fn()} />);
+    rerender(<BattleBoonInspectOverlay open trinketIds={ids} onClose={vi.fn()} />);
+
+    expect(await screen.findByRole("img", { name: trinketLibrary[0]!.title })).toBeTruthy();
+    expect(screen.queryByRole("img", { name: trinketLibrary[TRINKET_PAGE_SIZE]!.title })).toBeNull();
+  });
 });

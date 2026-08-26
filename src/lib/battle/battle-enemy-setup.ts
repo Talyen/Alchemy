@@ -1,6 +1,5 @@
 /**
  * Enemy scaling, difficulty attack modifiers, and battle-start enemy setup.
- * Depends on: @/lib/game-data, ../game-constants, ./types.
  */
 import type { BestiaryEntry, DifficultyModifier, EnemyAttackEffect } from "@/lib/game-data";
 import {

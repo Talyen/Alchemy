@@ -1,5 +1,4 @@
 // Enemy selection helpers for alchemy run rooms and act bosses.
-// Depends on game-data enemies and shared random selection utilities.
 import {
   bossEnemies,
   encounterEnemies,

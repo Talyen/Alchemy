@@ -1,5 +1,5 @@
 // Presentation feedback predicates for battle card and enemy resolution.
-// Depends only on battle/game-data types so feedback decisions remain easy to test.
+// Uses only battle/game-data types so feedback decisions stay easy to test.
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 

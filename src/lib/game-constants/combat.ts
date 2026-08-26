@@ -1,6 +1,6 @@
 // ============ Combat Constants ============
 // All tuning values centralized here so balance changes don't require hunting
-// through game-logic code. These are imported by battle/effects.ts and battle/turns.ts.
+// through game-logic code.
 
 export const GLOBAL_CRIT_CHANCE = 5;
 /** Chance for the player to Dodge an enemy attack damage packet, before Block and Armor. */

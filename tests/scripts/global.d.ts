@@ -231,6 +231,7 @@ interface VerificationCommand {
 
 declare module "*/change-routes.mjs" {
   export const E2E_NAMES: ReadonlySet<string>;
+  export const E2E_ESCALATIONS: Readonly<Record<string, string>>;
   export function validateRouteCatalog(options?: { rootDir?: string }): string[];
   export function resolveRoutes(paths: string[]): VerificationRoute[];
   export function resolveRoutePlan(
@@ -492,9 +493,31 @@ declare module "*/show-runs.mjs" {
 }
 
 declare module "*/check-ci-routing.mjs" {
+  export const FOCUSED_E2E_ROUTE_IDS: readonly string[];
   export function checkCiRouting(source: string): string[];
+  export function checkChangeRoutePatternsInCi(
+    source: string,
+    routes?: ReadonlyArray<{ id: string; patterns: readonly string[] }>,
+  ): string[];
   export function checkJobBoundaries(source: string): string[];
   export function checkDiagnosticRetention(sources: Record<string, string>): string[];
+}
+
+declare module "*/check-test-owners.mjs" {
+  export function isCheckableSourceFile(relativePath: string): boolean;
+  export function hasTestOwner(relativePath: string, rootDir?: string): boolean;
+  export function unownedAddedSourceFiles(addedPaths: readonly string[], rootDir?: string): string[];
+  export function parseTestOwnerArgs(argv: string[]): { base: string | null; head: string; help: boolean };
+  export function gitAddedPaths(base: string, head: string, rootDir?: string): string[] | null;
+}
+
+declare module "*/route-hints.mjs" {
+  export function routeHintForPath(filePath: string, rootDir?: string): { routes: string[]; focusedE2E: string[] };
+  export function formatRouteHintLine(hint: { routes: string[]; focusedE2E: string[] }): string;
+}
+
+declare module "*/plugin.js" {
+  export const alchemyPlugin: import("eslint").ESLint.Plugin;
 }
 
 declare module "*/electron-path.mjs" {

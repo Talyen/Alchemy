@@ -1,6 +1,4 @@
 // Interactive battle-card button with hover scale, shimmer, selection, and detail popup behavior.
-// Depends on card description context and shared card-surface styling.
-// Used by hand cards, shop cards, rewards, and collection-adjacent selection flows.
 import {
   type CSSProperties,
   type MouseEvent,

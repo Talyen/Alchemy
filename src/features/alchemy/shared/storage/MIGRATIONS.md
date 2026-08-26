@@ -50,7 +50,7 @@ For a schema bump from `N` to `N + 1`:
 4. Update Zod schemas in `src/lib/validation/save-schemas/` and `defaults.ts`.
 5. Add a fixture to `CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION` in `tests/fixtures/legacy-saves.ts` (CI fails if any source version `LAUNCH … N-1` is missing).
 6. If the change touches `activeRun` nested state, add or extend a scenario in `MIGRATION_SCENARIO_FIXTURES` and assert gameplay outcomes in `save-migration-guard.test.ts`.
-7. Run `npm run check:ship` — tests use `normalizeSaveData` → `SaveDataSchema.parse` (test wrapper around the same Zod schema). Production load uses `safeParseWithErrors(SaveDataSchema, …)` in `io.ts`.
+7. Run `npm run check:ship` — tests use `normalizeSaveData` from `tests/helpers/parse-save-for-tests.ts` (`SaveDataSchema.parse`). Production load uses `safeParseWithErrors(SaveDataSchema, …)` in `io.ts`.
 
 ## `saveSchemaVersion` vs `contentVersion`
 
@@ -72,7 +72,7 @@ Migration tests must verify gameplay progress, not just field presence:
 - Active and parked runs preserve Boons, pending reward meaning, and battle Trinket manifests across the schema-11 to schema-12 rename.
 - Schema-13 Wildwood rewards resume from `interruptedFlow` (card, Boon, Gear, selection, companion handoff) after nested draft reward fields are lifted from a reward-phase draft or dropped.
 - Schema-11 jewelry loadouts map left Ring to left Accessory and Amulet to right Accessory; the old middle right Ring is unequipped but remains in inventory. Permanent Trinket ownership starts empty because discovery does not imply ownership.
-- Every fixture is **idempotent** after `normalizeSaveData`.
+- Every fixture is **idempotent** after `normalizeSaveData` (`tests/helpers/parse-save-for-tests.ts`).
 
 ## Future schema saves
 
@@ -120,7 +120,7 @@ The schema-12 migration reinterprets a saved Trinket Shop as a permanent vendor.
 
 ## Mystery visit (`activeRun.mysteryVisit`)
 
-Mystery visit blobs persist only while `currentScreen` is mystery. New choices use random card removal and do not set `pendingRemoval`. A loaded visit with legacy `pendingRemoval: true` keeps that flag until the player finishes the already-open picker; encode writes it only while unresolved so repeated saves cannot bypass the removal.
+Mystery visit blobs persist only while `currentScreen` is mystery. Load nulls a leftover visit when `currentScreen` is set to any other screen. A missing `currentScreen` keeps the visit so resume can still infer the mystery screen. New choices use random card removal and do not set `pendingRemoval`. A loaded visit with legacy `pendingRemoval: true` keeps that flag until the player finishes the already-open picker; encode writes it only while unresolved so repeated saves cannot bypass the removal.
 
 ## Interrupted flow (`activeRun.interruptedFlow`)
 

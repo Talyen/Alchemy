@@ -1,5 +1,4 @@
 // Companion card panel and tooltip for active battle allies.
-// Depends on companion game-data types and shared card styling.
 // Used by the battle actor section.
 import { formatCompanionTurnStartLine, type CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";

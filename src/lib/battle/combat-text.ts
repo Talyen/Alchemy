@@ -1,8 +1,5 @@
 /**
  * Aggregates and merges floating combat text events for UI rendering.
- * Depends on: types.ts.
- * Depended on by: effect-handlers, card-play, damage, status-player, status-cc,
- * status-stun-resolve, damage-status-riders, status-ticks, enemy-turn, trinket-effects, wish.
  */
 import { harmfulPlayerStatusIds, type PlayerStatusId } from "@/lib/game-data";
 import {

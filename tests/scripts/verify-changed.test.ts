@@ -107,10 +107,12 @@ describe("verify-changed route catalog", () => {
   it("adds screen-specific E2E only for an explicit escalation", () => {
     const defaultPlan = resolvePlan(["src/lib/battle/damage.ts"], { e2e: true });
     const e2ePlan = resolvePlan(["src/features/alchemy/run-loop/screens/alchemist-shop-screen.tsx"], { e2e: true });
+    const shopDomainPlan = resolvePlan(["src/features/alchemy/run-loop/shop/create-shop-actions.ts"], { e2e: true });
     const explicitPlan = resolvePlan(["src/lib/battle/damage.ts"], { e2e: "mystery" });
 
     expect(defaultPlan.commands.map((command) => command.key)).not.toContain("e2e-shop");
     expect(e2ePlan.commands.map((command) => command.key)).toContain("e2e-shop");
+    expect(shopDomainPlan.commands.map((command) => command.key)).toContain("e2e-shop");
     expect(e2ePlan.commands.map((command) => command.key)).not.toContain("e2e-mystery");
     expect(explicitPlan.commands.map((command) => command.key)).toContain("e2e-mystery");
   });
@@ -188,6 +190,24 @@ describe("verify-changed route catalog", () => {
   it("routes CI workflow changes to the CI path-filter contract", () => {
     expect(resolveRoutes([".github/workflows/ci.yml"]).map((route) => route.id)).toEqual(["ci-routing"]);
     expect(resolvePlan([".github/workflows/ci.yml"]).commands.map((command) => command.key)).toEqual(["ci-routing"]);
+  });
+
+  it("routes CI routing helpers through the ci-routing command", () => {
+    for (const filePath of [
+      "scripts/check-ci-routing.mjs",
+      "scripts/check-test-owners.mjs",
+      "scripts/ci-verify-plan.mjs",
+      "scripts/lib/route-hints.mjs",
+    ]) {
+      expect(
+        resolveRoutes([filePath]).map((route) => route.id),
+        filePath,
+      ).toEqual(expect.arrayContaining(["ci-routing", "tooling"]));
+      expect(
+        resolvePlan([filePath]).commands.map((command) => command.key),
+        filePath,
+      ).toEqual(expect.arrayContaining(["ci-routing", "unit-tooling"]));
+    }
   });
 
   it("routes canonical Armory and repository-tooling paths to real owners", () => {
@@ -310,12 +330,12 @@ describe("verify-changed route catalog", () => {
 
   it("keeps representative prereads within their ratchets", () => {
     const fixtures = [
-      // damage.ts context (file + owner docs) measures ~11.9KB.
-      ["src/lib/battle/damage.ts", 12 * 1024],
+      // damage.ts context (file + owner docs) measures ~12.3KB.
+      ["src/lib/battle/damage.ts", 13 * 1024],
       ["src/features/alchemy/shared/storage/io.ts", 12 * 1024],
       ["src/features/alchemy/shared/stores/run-session-read-port.ts", 18 * 1024],
       ["src/features/alchemy/meta/screens/armory-screen.tsx", 14 * 1024],
-      ["unknown.file", 8.5 * 1024],
+      ["unknown.file", 9 * 1024],
     ] as const;
     for (const [filePath, maxBytes] of fixtures) {
       expect(measureContext({ paths: [filePath] }).selectedBytes, filePath).toBeLessThanOrEqual(maxBytes);

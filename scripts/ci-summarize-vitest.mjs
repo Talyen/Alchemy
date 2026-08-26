@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { publishCiSummary } from "./lib/ci-summary.mjs";
+import { formatRouteHintLine, routeHintForPath } from "./lib/route-hints.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const DEFAULT_REPORT = "reports/vitest-timings.json";
@@ -10,7 +11,7 @@ const MAX_FAILURES = 5;
 const MESSAGE_CHARS = 240;
 
 /**
- * @typedef {{ file: string, title: string, message: string }} VitestFailure
+ * @typedef {{ file: string, title: string, message: string, routeHint: string }} VitestFailure
  * @typedef {{
  *   numTotalTests: number,
  *   numPassedTests: number,
@@ -22,11 +23,12 @@ const MESSAGE_CHARS = 240;
 
 /**
  * @param {unknown} report
- * @param {{ maxFailures?: number }} [options]
+ * @param {{ maxFailures?: number, rootDir?: string }} [options]
  * @returns {VitestSummary}
  */
 export function summarizeVitestReport(report, options = {}) {
   const maxFailures = options.maxFailures ?? MAX_FAILURES;
+  const rootDir = options.rootDir ?? process.cwd();
   const root = report && typeof report === "object" ? /** @type {Record<string, unknown>} */ (report) : {};
   const testResults = Array.isArray(root.testResults) ? root.testResults : [];
 
@@ -51,6 +53,7 @@ export function summarizeVitestReport(report, options = {}) {
         title:
           typeof row.fullName === "string" ? row.fullName : typeof row.title === "string" ? row.title : "failed test",
         message: firstLine.slice(0, MESSAGE_CHARS),
+        routeHint: formatRouteHintLine(routeHintForPath(fileName, rootDir)),
       });
     }
   }
@@ -90,6 +93,7 @@ export function formatVitestSummaryMarkdown(summary) {
   for (const failure of summary.failures) {
     const rel = failure.file.replaceAll("\\", "/");
     lines.push(`- \`${rel}\` — **${failure.title}**`);
+    if (failure.routeHint) lines.push(`  - ${failure.routeHint}`);
     if (failure.message) lines.push(`  - ${failure.message}`);
   }
   if (summary.numFailedTests > summary.failures.length) {

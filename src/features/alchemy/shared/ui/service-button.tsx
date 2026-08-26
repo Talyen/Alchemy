@@ -1,6 +1,4 @@
 // Shop/service action buttons with disabled explanatory tooltips.
-// Depends on the shared Button primitive, gold display element, and tooltip panel.
-// Used by merchant, alchemist, and service-like destination screens.
 import type { ComponentType, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

@@ -5,12 +5,6 @@ import { pickRandom } from "@/lib/utils";
 
 import type { MysteryEffect, MysteryEvent } from "./types";
 
-function isMysteryTrinketEffect(
-  effect: MysteryEffect,
-): effect is Extract<MysteryEffect, { kind: "gainTrinket" | "gainRandomTrinket" }> {
-  return effect.kind === "gainTrinket" || effect.kind === "gainRandomTrinket";
-}
-
 function stableHashSeed(seed: string): number {
   let hash = 2166136261;
   for (let i = 0; i < seed.length; i += 1) {
@@ -94,7 +88,8 @@ export function collectResolvedMysteryTrinketIds(event: MysteryEvent): string[] 
     for (const effect of choice.effects) {
       if (effect.kind === "gainTrinket") ids.push(effect.trinketId);
       else if (effect.kind === "gainRandomTrinket") ids.push("");
-      // "" keeps the positional contract for trinket slots replaced by the astral-gear fallback.
+      // Fallback-only: authored gear never sets astral. "" keeps the positional
+      // contract when a trinket slot was replaced by mysteryTrinketFallbackEffect.
       else if (effect.kind === "gainGeneratedGear" && effect.astral) ids.push("");
     }
   }
@@ -115,6 +110,10 @@ export function repairUnresolvedMysteryTrinkets(
   return resolveMysteryEventTrinkets(event, ownedTrinketIds, rng);
 }
 
+function isMysteryTrinketSlotEffect(effect: MysteryEffect): boolean {
+  return effect.kind === "gainTrinket" || effect.kind === "gainRandomTrinket";
+}
+
 export function applyResolvedMysteryTrinketIds(
   event: MysteryEvent,
   resolvedTrinketIds: readonly string[],
@@ -126,7 +125,7 @@ export function applyResolvedMysteryTrinketIds(
     choices: event.choices.map((choice, choiceIndex) => ({
       label: choice.label,
       effects: choice.effects.map((effect, effectIndex) => {
-        if (!isMysteryTrinketEffect(effect)) return effect;
+        if (!isMysteryTrinketSlotEffect(effect)) return effect;
         const id = resolvedTrinketIds[index++];
         if (id === undefined) return effect;
         if (id === "") return mysteryTrinketFallbackEffect(`${event.id}:${choiceIndex}:${effectIndex}`);

@@ -75,6 +75,37 @@ describe("SaveDataSchema", () => {
     }
   });
 
+  it("normalizes homestead arrays into tier records", () => {
+    const result = SaveDataSchema.parse({
+      constructedBuildings: ["blacksmiths-forge"],
+      plantedFarms: ["pasture"],
+    });
+    expect(result.constructedBuildings["blacksmiths-forge"]).toBe(1);
+    expect(result.plantedFarms.pasture).toBe(1);
+  });
+
+  it("ignores character-only active run fragments", () => {
+    const result = SaveDataSchema.parse({ activeRun: { characterId: "knight" } });
+    expect(result.activeRun).toBeNull();
+  });
+
+  it("strips legacy uiScale without wiping other settings", () => {
+    const result = SaveDataSchema.parse({ displayMode: "fullscreen", uiScale: "120" });
+    expect(result.displayMode).toBe("fullscreen");
+    expect(result).not.toHaveProperty("uiScale");
+  });
+
+  it("normalizes corrupt discovery arrays while preserving unknown string ids", () => {
+    const result = SaveDataSchema.parse({
+      discoveredCardIds: ["slash", 123, "not-in-catalog", "slash", null],
+      encounteredEnemyIds: ["goblin", {}, "future-enemy", "goblin"],
+      discoveredTrinketIds: ["bone-charm", false, "future-boon", "bone-charm"],
+    });
+    expect(result.discoveredCardIds).toEqual(["slash", "not-in-catalog"]);
+    expect(result.encounteredEnemyIds).toEqual(["goblin", "future-enemy"]);
+    expect(result.discoveredTrinketIds).toEqual(["bone-charm", "future-boon"]);
+  });
+
   it("preserves valid field values", () => {
     const result = SaveDataSchema.safeParse({
       musicVolume: 50,
@@ -104,6 +135,39 @@ describe("SaveDataSchema", () => {
     if (result.success) {
       expect(result.data.selectedAspectRatio).toBe("auto");
     }
+  });
+
+  it("passes through a valid aspect ratio", () => {
+    expect(SaveDataSchema.parse({ selectedAspectRatio: "16:9" }).selectedAspectRatio).toBe("16:9");
+  });
+
+  it("falls back for an invalid aspect ratio", () => {
+    expect(SaveDataSchema.parse({ selectedAspectRatio: "99:99" }).selectedAspectRatio).toBe("auto");
+  });
+
+  it.each(["windowed", "borderless-fullscreen", "fullscreen"] as const)("passes through display mode %s", (mode) => {
+    expect(SaveDataSchema.parse({ displayMode: mode }).displayMode).toBe(mode);
+  });
+
+  it("falls back for an invalid display mode", () => {
+    expect(SaveDataSchema.parse({ displayMode: "fake-mode" }).displayMode).toBe("borderless-fullscreen");
+  });
+
+  it("passes through valid talent XP", () => {
+    const result = SaveDataSchema.parse({ talentXP: { burn: 100, block: 50 } });
+    expect(result.talentXP.burn).toBe(100);
+    expect(result.talentXP.block).toBe(50);
+  });
+
+  it("filters negative talent XP and floors fractional values", () => {
+    const result = SaveDataSchema.parse({ talentXP: { burn: -10, block: 10.7, poison: Number.NaN } });
+    expect(result.talentXP.burn).toBeUndefined();
+    expect(result.talentXP.block).toBe(10);
+    expect(result.talentXP.poison).toBeUndefined();
+  });
+
+  it("falls back to an empty talent XP map for non-object input", () => {
+    expect(SaveDataSchema.parse({ talentXP: null }).talentXP).toEqual({});
   });
 
   it("filters invalid finishedRunCharacters without wiping valid IDs", () => {
@@ -549,6 +613,22 @@ describe("UnlockedTalentsSchema", () => {
       });
     }
   });
+
+  it("filters non-array entries", () => {
+    const result = UnlockedTalentsSchema.safeParse({ burn: "bad" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.burn).toBeUndefined();
+    }
+  });
+
+  it("falls back for non-object input", () => {
+    const result = UnlockedTalentsSchema.safeParse(null);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual({});
+    }
+  });
 });
 
 describe("CompletedDifficultiesSchema", () => {
@@ -560,6 +640,10 @@ describe("CompletedDifficultiesSchema", () => {
       expect(result.data.rogue).toEqual([]);
       expect(result.data.wizard).toEqual([]);
       expect(result.data.ranger).toEqual([]);
+      expect(result.data.alchemist).toEqual([]);
+      expect(result.data.warlock).toEqual([]);
+      expect(result.data.druid).toEqual([]);
+      expect(result.data.wildcard).toEqual([]);
     }
   });
 });

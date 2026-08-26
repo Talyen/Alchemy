@@ -1,6 +1,4 @@
 // Small display primitives for gold.
-// Depends on Lucide icons and class-name utilities.
-// Used by shop, rewards, and battle-adjacent screens.
 import { Coins } from "lucide-react";
 
 import { cn, formatLargeAmount } from "@/lib/utils";

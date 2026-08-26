@@ -32,6 +32,8 @@ describe("createLabyrinthNodeRouting", () => {
 
     routing.handleLabyrinthNodeEnter(0, 0);
 
+    expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
+    expect(deps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith([]);
     expect(deps.nav.beginMysteryEvent).toHaveBeenCalledOnce();
     expect(deps.navigateTo).not.toHaveBeenCalledWith(ROUTE_SCREENS.MYSTERY, expect.anything());
   });

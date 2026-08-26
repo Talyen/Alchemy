@@ -1,6 +1,4 @@
 // Shared hand draw lifecycle: detect new cards, hide until dealt, animate, cleanup.
-// Depends on battle card types and optional draw animation hook.
-// Used by play card, wish, end turn, and enemy phase flows in the battle controller.
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";

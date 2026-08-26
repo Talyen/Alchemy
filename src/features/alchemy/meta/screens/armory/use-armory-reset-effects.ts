@@ -10,6 +10,7 @@ export function useArmoryResetEffects({
   characterId,
   inventoryById,
   salvagePending,
+  salvageMode,
   setSalvageMode,
   setSalvagePending,
   setActiveCurrencyId,
@@ -20,31 +21,23 @@ export function useArmoryResetEffects({
   characterId: CharacterId;
   inventoryById: Map<string, GearInstance>;
   salvagePending: ArmorySalvagePending | null;
+  salvageMode: boolean;
   setSalvageMode: React.Dispatch<React.SetStateAction<boolean>>;
   setSalvagePending: React.Dispatch<React.SetStateAction<ArmorySalvagePending | null>>;
   setActiveCurrencyId: React.Dispatch<React.SetStateAction<CraftingCurrencyId | null>>;
 }) {
-  useEffect(() => {
-    if (editable) return;
-    const timer = setTimeout(() => {
-      setSalvageMode(false);
-      setSalvagePending(null);
+  if (!editable) {
+    if (salvageMode) setSalvageMode(false);
+    if (salvagePending !== null) setSalvagePending(null);
+    if (activeCurrencyId !== null) setActiveCurrencyId(null);
+  } else {
+    if (activeCurrencyId !== null && craftingCurrencies[activeCurrencyId] <= 0) {
       setActiveCurrencyId(null);
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [editable, setSalvageMode, setSalvagePending, setActiveCurrencyId]);
-
-  useEffect(() => {
-    if (!activeCurrencyId || craftingCurrencies[activeCurrencyId] > 0) return;
-    const timer = setTimeout(() => setActiveCurrencyId(null), 0);
-    return () => clearTimeout(timer);
-  }, [activeCurrencyId, craftingCurrencies, setActiveCurrencyId]);
-
-  useEffect(() => {
-    if (!salvagePending || inventoryById.has(salvagePending.instance.instanceId)) return;
-    const timer = setTimeout(() => setSalvagePending(null), 0);
-    return () => clearTimeout(timer);
-  }, [salvagePending, inventoryById, setSalvagePending]);
+    }
+    if (salvagePending !== null && !inventoryById.has(salvagePending.instance.instanceId)) {
+      setSalvagePending(null);
+    }
+  }
 
   useEffect(() => {
     if (!editable && document.activeElement instanceof HTMLElement) {

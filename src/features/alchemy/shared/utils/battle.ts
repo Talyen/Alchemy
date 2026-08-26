@@ -1,5 +1,4 @@
 // Battle UI formatting helpers for combat text colors/icons and status chip ordering.
-// Depends on battle state, game-data status IDs, alchemy config, and shared UI types.
 // Used by battle controller and widgets to keep presentation derivation out of combat logic.
 import type { BattleState, CombatTextEvent, CcState } from "@/lib/battle";
 import { isPlayerCcControlled, isStunFreezeBuildupBlocked } from "@/lib/battle";
@@ -7,13 +6,13 @@ import {
   DAMAGE_TYPES,
   ENEMY_STATUS_DISPLAY_ORDER,
   PLAYER_STATUS_DISPLAY_ORDER,
-  type BattleCard,
   type BattleCardEffect,
   type DamageType,
   type KeywordId,
   keywordDefinitions,
 } from "@/lib/game-data";
-import { combatTextIconClasses, keywordIcons } from "../config";
+import { combatTextIconClasses } from "../config/combat-text-icons";
+import { keywordIcons } from "../config/metadata";
 import { augmentDefinitions } from "../augment-definitions";
 import type { CombatImpactCue, StatusChip } from "../types";
 
@@ -157,55 +156,4 @@ export function getEnemyStatusChips(state: BattleState | null | undefined): Stat
   const pendingChips = buildPendingEnemyChips(state);
   const ccChips = [...buildActiveCcChips(state.enemyCC), ...buildCcImmunityChip(state.enemyCC)];
   return [...mitigationChips, ...statusChips, ...pendingChips, ...ccChips];
-}
-
-function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
-  switch (effect.kind) {
-    case "damage":
-    case "random-damage":
-    case "enemy-status":
-    case "remove-enemy-armor":
-    case "multiply-enemy-status":
-    case "cleanse-player-status-to-damage":
-      return "enemy";
-    case "player-status":
-    case "heal":
-    case "restore-mana":
-    case "lose-mana":
-    case "lose-max-mana":
-    case "gain-max-mana":
-    case "gain-gold":
-    case "wish":
-    case "summon-companion":
-    case "buff-companion":
-    case "lose-health":
-    case "draw-cards":
-    case "remove-harmful-status":
-    case "remove-player-status":
-    case "self-damage":
-    case "next-hit-crit":
-    case "play-next-card-twice":
-    case "next-hit-poison":
-      return "player";
-    case "chance":
-      for (const nested of effect.successEffects) {
-        const target = effectTarget(nested);
-        if (target) return target;
-      }
-      return null;
-    case "repeat-over-turns":
-      for (const nested of effect.effects) {
-        const target = effectTarget(nested);
-        if (target) return target;
-      }
-      return null;
-  }
-}
-
-export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {
-  for (const effect of card.effects) {
-    const target = effectTarget(effect);
-    if (target) return target;
-  }
-  return "enemy";
 }

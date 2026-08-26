@@ -1,5 +1,4 @@
 // Floating combat text widgets for battle feedback.
-// Depends on motion, combat text UI types, and presentation formatting helpers.
 // Used by BattleScreen actor rails.
 import { createElement } from "react";
 import { AnimatePresence, motion } from "motion/react";

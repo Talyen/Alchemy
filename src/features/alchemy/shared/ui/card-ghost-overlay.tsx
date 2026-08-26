@@ -1,5 +1,4 @@
 // Absolute card ghost overlay for draw, discard, activate, and play-travel animations.
-// Depends on captured card rect animation data and CSS keyframe classes.
 // Used by BattleScreen animation overlays.
 import { cn } from "@/lib/utils";
 

@@ -1,5 +1,5 @@
 // Short radial red spark burst for player hurt feedback on battle portraits.
-// Depends only on Canvas APIs and requestAnimationFrame; no battle state.
+// Canvas + requestAnimationFrame only; no battle state.
 import { animateParticleLoop } from "./particle-loop";
 
 interface HurtSpark {

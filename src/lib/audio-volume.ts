@@ -1,5 +1,4 @@
 // Volume and mute controls shared by SFX and streamed music.
-// Depends on shared audio state and music volume application.
 // Used by options UI through the public lib/audio facade.
 import { audioState } from "./audio-state";
 import { applyMusicVolume } from "./audio-music";

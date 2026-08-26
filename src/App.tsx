@@ -1,5 +1,4 @@
 // Root app shell for save data, audio/display side effects, routing, and global layout.
-// Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
 import { useCallback, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Screen } from "@/lib/routing";

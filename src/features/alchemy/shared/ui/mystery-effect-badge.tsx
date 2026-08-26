@@ -1,5 +1,4 @@
 // Renders consistent badge indicators and text descriptions for mystery effects.
-// Depends on utility libraries, Lucide icons, homestead material maps, and keyword definitions.
 // Consumed by tooltip builders and outcome summary screens.
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { getCardKeywords, keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";

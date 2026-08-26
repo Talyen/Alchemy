@@ -54,12 +54,14 @@ describe("MenuScreen logo variants", () => {
     expect(screen.getAllByAltText("Alchemy logo")[1]?.getAttribute("src")).toBe("logo-back.png");
   });
 
-  it("respects finishedRunCharacters prop for knight-gated unlocks", () => {
+  it("unlocks talents and homestead independently from finished run characters", () => {
     const { rerender } = render(<MenuScreen {...defaultProps} finishedRunCharacters={[]} />);
     expect(screen.getByRole("button", { name: /talents/i }).getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByRole("button", { name: /homestead/i }).getAttribute("aria-disabled")).toBe("true");
 
     rerender(<MenuScreen {...defaultProps} finishedRunCharacters={["knight"]} />);
     expect(screen.getByRole("button", { name: /talents/i }).getAttribute("aria-disabled")).toBe("false");
+    expect(screen.getByRole("button", { name: /homestead/i }).getAttribute("aria-disabled")).toBe("false");
   });
 
   it("keeps every navigation button at the shared menu width", () => {

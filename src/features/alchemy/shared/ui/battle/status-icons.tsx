@@ -1,5 +1,4 @@
 // Battle status icon popups for keyword statuses and Death's Door.
-// Depends on keyword metadata/icons and shared tooltip panel.
 // Used by ArtPanel to keep actor layout separate from status tooltip details.
 import { type ReactNode } from "react";
 import { Skull, Sparkles } from "lucide-react";

@@ -1,6 +1,5 @@
 /**
  * Enemy stun threshold resolution and stun-triggered talent/gear/boon effects.
- * Depends on: ./status-cc, ./talent-effects, ./trinket-effects, ./types, ./combat-text.
  */
 import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { addGoldWithCombatText, mergeCombatText } from "./combat-text";

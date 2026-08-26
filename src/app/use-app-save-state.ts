@@ -1,6 +1,4 @@
 // App-level autosave wiring.
-// Depends on: saveAlchemySaveData (storage), isAnimationDisabled (game-constants).
-// Used by: App.tsx.
 import { useEffect } from "react";
 import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";

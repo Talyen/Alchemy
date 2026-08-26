@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tokenizeDescription, getHoverId } from "@/features/alchemy/shared/utils/string";
+import { tokenizeDescription, extractKeywordIds, getHoverId } from "@/features/alchemy/shared/utils/string";
 
 describe("tokenizeDescription", () => {
   it("returns a plain text part for a sentence with no keywords", () => {
@@ -24,6 +24,16 @@ describe("tokenizeDescription", () => {
   it("handles an empty string", () => {
     const result = tokenizeDescription("");
     expect(result).toEqual([{ text: "" }]);
+  });
+});
+
+describe("extractKeywordIds", () => {
+  it("returns unique keyword ids in description order of first appearance", () => {
+    expect(extractKeywordIds("Gain 5 Block and 2 Armor")).toEqual(["block", "armor"]);
+  });
+
+  it("returns an empty array when no keywords match", () => {
+    expect(extractKeywordIds("Just some text")).toEqual([]);
   });
 });
 

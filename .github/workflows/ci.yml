@@ -18,6 +18,10 @@ jobs:
     timeout-minutes: 5
     outputs:
       save: ${{ steps.filter.outputs.save }}
+      shop: ${{ steps.filter.outputs.shop }}
+      gear: ${{ steps.filter.outputs.gear }}
+      mystery: ${{ steps.filter.outputs.mystery }}
+      audio: ${{ steps.filter.outputs.audio }}
       desktop: ${{ steps.filter.outputs.desktop }}
       desktop_renderer: ${{ steps.filter.outputs.desktop_renderer }}
       assets: ${{ steps.filter.outputs.assets }}
@@ -47,6 +51,31 @@ jobs:
               - "tests/fixtures/legacy-saves*"
               - "tests/e2e/mid-combat-save*"
               - "tests/save-*"
+            shop:
+              - "src/features/alchemy/run-loop/shop/**"
+              - "src/features/alchemy/run-loop/screens/*shop*"
+              - "src/features/alchemy/shell/use-shop-controller.ts"
+              - "src/lib/alchemist/**"
+              - "tests/shop-and-rewards.spec.ts"
+            gear:
+              - "src/lib/gear/**"
+              - "src/features/alchemy/meta/screens/armory/**"
+              - "src/features/alchemy/meta/screens/armory-screen.tsx"
+              - "src/features/alchemy/shared/stores/gear-*.ts"
+              - "tests/armory.spec.ts"
+            mystery:
+              - "src/lib/mystery/**"
+              - "src/lib/active-run-session/mystery-visit-persistence.ts"
+              - "src/features/alchemy/run-loop/navigation/*mystery*"
+              - "src/features/alchemy/run-loop/screens/mystery/**"
+              - "src/app/screen-routes/mystery-screen-route.tsx"
+              - "src/features/alchemy/shell/use-mystery-event-navigation.ts"
+              - "tests/destination-progression.spec.ts"
+            audio:
+              - "src/lib/audio*.ts"
+              - "src/lib/sound-registry.ts"
+              - "public/sounds/**"
+              - "tests/audio-sfx.spec.ts"
             desktop:
               - "desktop/**"
               - "index.html"
@@ -120,6 +149,12 @@ jobs:
         run: npm run docs:check
       - name: CI routing contract
         run: npm run ci:routing
+      - name: Changed-path verification plan
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: npm run ci:verify-plan -- --base ${{ github.event.before }} --head ${{ github.sha }}
+      - name: Test owners for new source files
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: npm run check:test-owners -- --base ${{ github.event.before }} --head ${{ github.sha }}
       - name: Generated outputs check
         run: npm run check:generated
       - name: Format check
@@ -320,6 +355,198 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report-save-gate
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+
+  shop-gate:
+    needs: [changes, build]
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.shop == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !Raw Assets
+          sparse-checkout-cone-mode: false
+
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Setup Playwright Chromium
+        uses: ./.github/actions/setup-playwright
+        with:
+          install-deps: "false"
+
+      - run: mkdir -p reports
+
+      - name: Run shop Playwright flow
+        run: npm run test:e2e:shop
+        env:
+          PLAYWRIGHT_VITE_MODE: preview
+
+      - name: Summarize shop e2e
+        if: always()
+        run: node scripts/ci-summarize-playwright.mjs
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-shop-gate
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+
+  gear-gate:
+    needs: [changes, build]
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.gear == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !Raw Assets
+          sparse-checkout-cone-mode: false
+
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Setup Playwright Chromium
+        uses: ./.github/actions/setup-playwright
+        with:
+          install-deps: "false"
+
+      - run: mkdir -p reports
+
+      - name: Run gear Playwright flow
+        run: npm run test:e2e:gear
+        env:
+          PLAYWRIGHT_VITE_MODE: preview
+
+      - name: Summarize gear e2e
+        if: always()
+        run: node scripts/ci-summarize-playwright.mjs
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-gear-gate
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+
+  mystery-gate:
+    needs: [changes, build]
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.mystery == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !Raw Assets
+          sparse-checkout-cone-mode: false
+
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Setup Playwright Chromium
+        uses: ./.github/actions/setup-playwright
+        with:
+          install-deps: "false"
+
+      - run: mkdir -p reports
+
+      - name: Run mystery Playwright flow
+        run: npm run test:e2e:mystery
+        env:
+          PLAYWRIGHT_VITE_MODE: preview
+
+      - name: Summarize mystery e2e
+        if: always()
+        run: node scripts/ci-summarize-playwright.mjs
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-mystery-gate
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+
+  audio-gate:
+    needs: [changes, build]
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.audio == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !Raw Assets
+          sparse-checkout-cone-mode: false
+
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Setup Playwright Chromium
+        uses: ./.github/actions/setup-playwright
+        with:
+          install-deps: "false"
+
+      - run: mkdir -p reports
+
+      - name: Run audio Playwright flow
+        run: npm run test:e2e:audio
+        env:
+          PLAYWRIGHT_VITE_MODE: preview
+
+      - name: Summarize audio e2e
+        if: always()
+        run: node scripts/ci-summarize-playwright.mjs
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-audio-gate
           path: |
             playwright-report/
             test-results/

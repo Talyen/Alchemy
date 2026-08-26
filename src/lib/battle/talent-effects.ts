@@ -1,7 +1,5 @@
 /**
  * Crowd-control on-trigger bonuses from talents and gear.
- * Depends on: ./draw, ./combat-text, ./types, ./status-forge, ../game-constants.
- * Depended on by: ./status-stun-resolve, ./damage-status-riders.
  */
 import { drawFromState, applyDrawResult } from "./draw";
 import { addPlayerStatusWithCombatText, gainManaWithCombatText } from "./combat-text";

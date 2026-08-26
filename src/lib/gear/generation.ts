@@ -6,7 +6,7 @@ import {
   GEAR_AFFIX_COUNT_MIN_WEIGHT,
   GEAR_REWARD_RARITY_CHANCE,
 } from "@/lib/game-constants";
-import { clamp, createInstanceId, pickRandom, sampleItems } from "@/lib/utils";
+import { clamp, createInstanceId, pickRandom, sampleItems, takeRandomItem } from "@/lib/utils";
 import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";
@@ -277,9 +277,8 @@ export function rollAffixes(definition: GearDefinition, count: number, rng: () =
   const remaining = [...pool];
   const rarity = definition.rarity ?? "basic";
 
-  for (let pick = 0; pick < effectiveCount && remaining.length > 0; pick += 1) {
-    const chosenIndex = Math.floor(rng() * remaining.length);
-    const [chosen] = remaining.splice(chosenIndex, 1);
+  for (let pick = 0; pick < effectiveCount; pick += 1) {
+    const chosen = takeRandomItem(remaining, rng);
     if (!chosen) break;
     selected.push({ id: chosen.id, value: rollAffixValue(chosen, rarity, rng) });
   }

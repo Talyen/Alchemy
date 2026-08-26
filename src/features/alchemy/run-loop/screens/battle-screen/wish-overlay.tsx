@@ -1,5 +1,5 @@
 // Wish selection overlay for battle.
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
@@ -10,6 +10,7 @@ import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { ScreenHeader } from "../../../shared/ui/shared-ui";
 import { handCardWidthClass, BUTTON_WIDTH_ACTION, bodyTextClass } from "@/features/alchemy/shared/config";
+import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import { cn } from "@/lib/utils";
 import type { BattleActionsProps, BattleScreenState } from "./types";
 import { useBattleDescriptionContext } from "./use-battle-description-context";
@@ -48,35 +49,21 @@ function WishCardItem({
   );
 }
 
-export function WishOverlay({
+function WishOverlayPanel({
   open,
-  battleState,
-  actions,
+  displayState,
+  onWishChoice,
 }: {
   open: boolean;
-  battleState: BattleScreenState;
-  actions: BattleActionsProps;
+  displayState: BattleScreenState;
+  onWishChoice: (card: BattleCard | null) => void;
 }) {
-  const displayState = useHeldWhile(open, battleState);
-  const { onWishChoice } = actions;
   const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
   const [isResolving, setIsResolving] = useState(false);
   const resolvingRef = useRef(false);
-  const onWishChoiceRef = useRef(onWishChoice);
+  const onWishChoiceRef = useLatestRef(onWishChoice);
   const handWidthClass = handCardWidthClass;
   const descriptionContext = useBattleDescriptionContext(displayState);
-
-  useEffect(() => {
-    onWishChoiceRef.current = onWishChoice;
-  }, [onWishChoice]);
-
-  useEffect(() => {
-    if (!open) return;
-    resolvingRef.current = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset wish selection when the overlay opens again
-    setIsResolving(false);
-    setWishSelectedCard(null);
-  }, [open]);
 
   function resolveWish(card: BattleCard | null) {
     if (resolvingRef.current) return;
@@ -132,5 +119,30 @@ export function WishOverlay({
         </div>
       </div>
     </ModalOverlayShell>
+  );
+}
+
+export function WishOverlay({
+  open,
+  battleState,
+  actions,
+}: {
+  open: boolean;
+  battleState: BattleScreenState;
+  actions: BattleActionsProps;
+}) {
+  const displayState = useHeldWhile(open, battleState);
+  const [openSession, setOpenSession] = useState({ open, id: 0 });
+  if (open !== openSession.open) {
+    setOpenSession({ open, id: open ? openSession.id + 1 : openSession.id });
+  }
+
+  return (
+    <WishOverlayPanel
+      key={openSession.id}
+      open={open}
+      displayState={displayState}
+      onWishChoice={actions.onWishChoice}
+    />
   );
 }

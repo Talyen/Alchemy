@@ -1,6 +1,5 @@
 /**
  * Default placeholder battle state and empty status/flag factories.
- * Depends on: @/lib/game-data, ../game-constants, ./types, ../trinkets.
  */
 import { createEmptyTalentEffectManifest, type TalentEffectManifest } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";

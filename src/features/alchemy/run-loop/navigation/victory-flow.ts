@@ -43,8 +43,6 @@ import {
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 // Pure victory reward computation for run-flow victory handlers.
-// Depends on: reward-flow, destination-flow, game data, game constants, homestead loot.
-// Depended on by: useRunFlowEngine for computing battle victory outcomes.
 
 interface VictoryGoldRoll {
   gold: number;

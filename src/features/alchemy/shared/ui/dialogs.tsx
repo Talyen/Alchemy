@@ -1,5 +1,4 @@
 // Modal confirmation overlays for destructive or blocking game actions.
-// Depends on the shared Button primitive and Lucide icons.
 // Used by menus and screens that need explicit player confirmation.
 import type { ComponentType, ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";

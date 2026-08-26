@@ -76,7 +76,7 @@ describe("mysteryPool", () => {
     }
   });
 
-  it("gainGeneratedGear effects reference valid base items", () => {
+  it("gainGeneratedGear effects reference valid base items and never author astral rarity", () => {
     for (const event of mysteryPool) {
       for (const choice of event.choices) {
         for (const effect of choice.effects) {
@@ -85,6 +85,7 @@ describe("mysteryPool", () => {
               effect.baseItemId in gearBaseItems,
               `Event "${event.id}" references unknown gear base "${effect.baseItemId}"`,
             ).toBe(true);
+            expect(effect.astral, `Event "${event.id}" authored astral gear`).toBeUndefined();
           }
         }
       }

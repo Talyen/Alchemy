@@ -8,7 +8,7 @@ import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { payKillPayouts } from "./kill-payouts";
 import { mergeCombatText } from "./combat-text";
-import { decayArmorAfterDamage } from "./status-helpers";
+import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
 import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 
@@ -43,4 +43,10 @@ export function dealPlayerTypedHit(
   }
   nextState = processEncounterTraitHealthThreshold(preHitHealth, nextState, combatTexts);
   return payKillPayouts(nextState, enemyWasAlive, combatTexts);
+}
+
+export function tryPoisonStunProc(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
+  if (damage <= 0) return state;
+  if (!rollTalentChance(state.talentEffects.poisonStunChance, state)) return state;
+  return dealPlayerTypedHit(state, "stun", damage, combatTexts);
 }

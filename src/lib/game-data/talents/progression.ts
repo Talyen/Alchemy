@@ -1,6 +1,5 @@
 /**
  * Mathematical formulas and mapping functions for keyword Talent XP progression.
- * Depends on: src/lib/game-constants.ts and src/lib/game-data/types.ts.
  */
 import {
   MAX_HEALTH_PER_TALENT_POINT,

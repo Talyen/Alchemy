@@ -1,5 +1,4 @@
 // Difficulty selection screen shown after choosing a hero, before the run begins.
-// Depends on character game data, difficulty definitions, keyword tags, shared UI, and hover effects.
 import { Fragment, useState } from "react";
 import { Swords } from "lucide-react";
 

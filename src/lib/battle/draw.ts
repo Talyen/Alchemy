@@ -1,7 +1,5 @@
 /**
  * Deck draw and shuffle helpers.
- * Depends on: ../utils, ../game-constants, @/lib/game-data.
- * Depended on by: ./battle-setup, ./card-play, ./wish, ./talent-effects.
  *
  * Callers must supply an explicit `rng` (production: `state.rng`; tests: a seeded
  * function). The previous `= Math.random` default was a footgun — AGENTS.md forbids

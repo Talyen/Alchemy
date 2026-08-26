@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseActiveRun } from "@/lib/active-run-session";
-import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
+import { normalizeSaveData } from "../../../../helpers/parse-save-for-tests";
 import { defaultBattleState, repairPersistedBattleBoonManifest } from "@/lib/battle";
 import { cardLibrary } from "@/lib/game-data";
 import { makeRunCandidate } from "../../../../fixtures/active-run";

@@ -1,7 +1,5 @@
 /**
  * Player damage calculation: per-type base amounts, first-card modifiers, crit, block, and armor mitigation.
- * Depends on: ./status-helpers, ./gear-effects, ./combat-text, ./trinket-effects, ./wish, ./types, ../game-constants.
- * Depended on by: ./damage, ./damage-riders, ./player-typed-hit.
  */
 import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier, getBattleRng } from "./status-helpers";
 import { gearFrozenDamageMultiplier } from "./gear-effects";

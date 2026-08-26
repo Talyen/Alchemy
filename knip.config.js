@@ -52,5 +52,7 @@ export default {
     "electron-builder",
     // Invoked via npx in scripts/lib/release-runner.mjs; knip cannot trace it.
     "commit-and-tag-version",
+    // Bundled in @stryker-mutator/core; knip infers it from testRunner: "command".
+    "@stryker-mutator/command-runner",
   ],
 };

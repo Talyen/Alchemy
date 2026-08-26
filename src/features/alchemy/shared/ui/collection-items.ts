@@ -1,5 +1,4 @@
 // Pure collection item shaping for heroes, cards, enemies, and trinkets.
-// Depends on game-data libraries and collection page size tuning.
 // Used by collection UI layout and tests without owning rendering concerns.
 import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import {

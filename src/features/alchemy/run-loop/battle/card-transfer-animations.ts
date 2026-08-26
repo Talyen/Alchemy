@@ -8,8 +8,9 @@ import {
   GHOST_TARGET_Y_RATIO,
   GHOST_TRAVEL_SCALE,
 } from "@/lib/game-constants";
+import { getBattleCardPlayTarget } from "@/lib/battle";
 import type { CardGhost, CardRect } from "../../shared/types";
-import { getBattleCardPlayTarget, getCardRect } from "../../shared/utils";
+import { getCardRect } from "../../shared/utils";
 import { CARD_TRANSFER_CONFIG, HAND_FAN_ROTATION_DEGREES } from "@/lib/game-constants";
 import type { CardTransfer } from "../../shared/types";
 import {

@@ -7,8 +7,9 @@ import { TEST_SUITES, testFilesUnder } from "./test-suites.mjs";
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-const E2E_ESCALATIONS = Object.freeze({
+export const E2E_ESCALATIONS = Object.freeze({
   save: "e2e-save",
+  shop: "e2e-shop",
   "shop-screen": "e2e-shop",
   audio: "e2e-audio",
   gear: "e2e-gear",
@@ -451,6 +452,8 @@ export const ROUTES = Object.freeze([
       "package.json",
       "tsconfig*.json",
       "eslint.config.js",
+      "eslint/**",
+      "stryker.config.mjs",
       "dependency-cruiser.config.mjs",
       "knip.config.js",
       "vite.config.ts",
@@ -497,7 +500,13 @@ export const ROUTES = Object.freeze([
   },
   {
     id: "ci-routing",
-    patterns: [".github/workflows/**", "scripts/check-ci-routing.mjs"],
+    patterns: [
+      ".github/workflows/**",
+      "scripts/check-ci-routing.mjs",
+      "scripts/check-test-owners.mjs",
+      "scripts/ci-verify-plan.mjs",
+      "scripts/lib/route-hints.mjs",
+    ],
     commands: ["ci-routing"],
     docs: [],
     fixture: ".github/workflows/ci.yml",
@@ -514,6 +523,7 @@ export const ROUTES = Object.freeze([
       "docs/**",
       "tests/e2e/README.md",
       ".agents/skills/**",
+      ".cursor/**",
       "scripts/archive-plans.mjs",
       "scripts/check-documentation-contract.mjs",
       "scripts/check-docs.mjs",

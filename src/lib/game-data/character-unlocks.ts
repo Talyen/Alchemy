@@ -11,7 +11,6 @@ const UNLOCK_CHAIN: CharacterId[] = [
   "wildcard",
 ];
 
-export const KNIGHT_UNLOCK_MESSAGE = "Finish a Run as the Knight to unlock";
 export type ProgressionFeatureId = "talents" | "homestead";
 export type GameModeId = "campaign" | "labyrinth" | "wildwood";
 
@@ -29,6 +28,8 @@ const GAME_MODE_REQUIREMENTS: Record<GameModeId, CharacterId | null> = {
 export function getUnlockMessage(requiredCharacterId: CharacterId): string {
   return `Finish a Run as the ${characters[requiredCharacterId].name} to unlock`;
 }
+
+export const KNIGHT_UNLOCK_MESSAGE = getUnlockMessage("knight");
 
 export const characterUnlockRequirements: Record<
   CharacterId,
@@ -59,6 +60,10 @@ export function isProgressionFeatureUnlocked(
   finishedRunCharacters: readonly CharacterId[],
 ): boolean {
   return finishedRunCharacters.includes(FEATURE_REQUIREMENTS[featureId]);
+}
+
+export function getProgressionFeatureUnlockMessage(featureId: ProgressionFeatureId): string {
+  return getUnlockMessage(FEATURE_REQUIREMENTS[featureId]);
 }
 
 export function getGameModeUnlockRequirement(modeId: GameModeId): CharacterId | null {

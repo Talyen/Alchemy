@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
+import { normalizeSaveData } from "../helpers/parse-save-for-tests";
 import { migrateSaveDataToCurrent } from "@/lib/validation/migration";
 import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { cardLibrary } from "@/lib/game-data/cards";
@@ -134,7 +134,7 @@ describe("save migration guard", () => {
     expect(run?.shopState?.purchasedSlotKeys).toEqual(["slot-0"]);
     expect(run?.alchemistState?.potions.map((card) => card.id)).toEqual(["slash"]);
     expect(run?.alchemistState?.mixUsed).toBe(true);
-    expect(run?.mysteryVisit?.cardChoices?.map((card) => card.id)).toEqual(["slash"]);
+    expect(run?.mysteryVisit).toBeNull();
 
     // Mid-combat snapshot stays resumable: live deck, filtered wish queue.
     const battle = run?.activeCombat?.battleState;

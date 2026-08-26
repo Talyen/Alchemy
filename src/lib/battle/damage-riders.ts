@@ -13,22 +13,14 @@ import {
   applyHolyTithe,
   applyLifestealAndPlayerHitTriggers,
   applyNatureLeech,
-  payPendingBleedLeech,
 } from "./damage-rider-leech";
-import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
+import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
+import { dealPlayerTypedHit, tryPoisonStunProc } from "./player-typed-hit";
+import { detonateEnemyStatuses } from "./dot-resolve";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import {
-  addEnemyStatus,
-  addPlayerStatus,
-  clampHealth,
-  setEnemyStatus,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+import { addEnemyStatus, addPlayerStatus, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { BATTLE_CONFIG, HALF_DIVISOR } from "../game-constants";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
-import { decayArmorAfterDamage } from "./status-helpers";
-import { dealPlayerTypedHit } from "./player-typed-hit";
 
 function applyBurnDamageRiders(
   state: BattleState,
@@ -129,31 +121,7 @@ function consumeForgeAfterDamage(
 
 function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.gearEffects.archeryDetonateBleedPoison <= 0 || state.enemyHealth <= 0) return state;
-  const bleedAmount = state.enemyStatuses.bleed;
-  const poisonAmount = state.enemyStatuses.poison;
-  if (bleedAmount <= 0 && poisonAmount <= 0) return state;
-
-  const enemyWasAlive = state.enemyHealth > 0;
-  const bleedDamage = Math.round(bleedAmount * getEnemyDamageMultiplier(state, "bleed"));
-  const poisonDamage = Math.round(poisonAmount * getEnemyDamageMultiplier(state, "poison"));
-  const finalDamage = bleedDamage + poisonDamage;
-  const preDetonateHealth = state.enemyHealth;
-
-  let nextState: BattleState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-  };
-  nextState = payKillPayouts(nextState, enemyWasAlive, combatTexts);
-  nextState = setEnemyStatus(nextState, "bleed", 0);
-  nextState = setEnemyStatus(nextState, "poison", 0);
-  if (bleedDamage > 0) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: bleedDamage });
-  }
-  if (poisonDamage > 0) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "poison", amount: poisonDamage });
-  }
-  nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy");
-  return payPendingBleedLeech(preDetonateHealth, nextState, combatTexts);
+  return detonateEnemyStatuses(state, ["bleed", "poison"], combatTexts);
 }
 
 export function applyDamageRiders(
@@ -191,10 +159,8 @@ export function applyDamageRiders(
       nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
     }
   }
-  if (effect.damageType === "poison" && modifiedDamage > 0) {
-    if (rollTalentChance(nextState.talentEffects.poisonStunChance, nextState)) {
-      nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
-    }
+  if (effect.damageType === "poison") {
+    nextState = tryPoisonStunProc(nextState, modifiedDamage, combatTexts);
   }
 
   if (effect.damageType === "burn" && modifiedDamage > 0) {

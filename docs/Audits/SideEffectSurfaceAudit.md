@@ -40,12 +40,12 @@ Fix confirmed ownership or quality defects across the complete rule → controll
 
 ## Known signals
 
-- **Unseeded entropy outside seams:** `Math.random` / `Date.now` / `new Date(` / `fetch(` / `localStorage` / `sessionStorage` outside allowlisted owners.
-- **Battle entropy leaks:** unseeded entropy under `src/lib/battle` — target 0.
-- **Direct storage from screens:** `localStorage` / persist calls outside `shared/storage` and boot/hydrate.
+- **Unseeded entropy outside seams:** `Date.now` / `new Date(` / non-UI `Math.random` outside allowlisted owners. `fetch(` under `src/lib` is `alchemy/no-lib-fetch`; `localStorage` / `sessionStorage` in `src` are `alchemy/no-unowned-web-storage`.
+- **Battle entropy leaks:** unseeded entropy under `src/lib/battle` — target 0 (ESLint `Math.random` / `Math.floor` bans).
+- **Direct storage from screens:** remaining persist-call leaks that are not `localStorage` / `sessionStorage` identifiers (those are lint).
 - **Global mutable access in pure logic:** `getState()` inside `src/lib` rule handlers — prefer injected state.
 - **Desktop IPC in pure lib:** Electron/Steam APIs imported from `src/lib` battle/game-data paths.
-- **UI re-roll:** `Math.random` inside render bodies without lazy state init.
+- **UI re-roll:** remaining render entropy that is not `Math.random()` (`alchemy/no-render-math-random` covers that call).
 - **Browser/global access:** `window`, `document`, clipboard, observers, visibility/focus, environment, or location APIs inside pure rules or unowned module initialization.
 - **Unowned lifetime:** timers, observers, object URLs, subscriptions, or global style/body mutations without a creator responsible for teardown.
 - **Duplicate effect orchestration:** multiple callers independently persist, emit, play, synchronize, or retry the same semantic event.

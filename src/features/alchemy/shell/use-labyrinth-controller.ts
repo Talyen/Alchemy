@@ -1,7 +1,5 @@
 /**
  * Hook for managing Labyrinth map navigation, state mutations, and node entry.
- * Depends on: map-generation.ts, run-session-read-port, src/lib/content-systems/types.ts
- * Depended on by: use-alchemy-run-controller.ts, tests
  */
 
 import { useCallback, useMemo } from "react";

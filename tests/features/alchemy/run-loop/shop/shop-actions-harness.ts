@@ -26,7 +26,7 @@ export const setAlchemistState = createRunSessionCommand(mutateAlchemistState);
 export const setTrinketShopState = createRunSessionCommand(mutateTrinketShopState);
 export const setEquipmentShopState = createRunSessionCommand(mutateEquipmentShopState);
 
-export const testRng = () => 0.5;
+const testRng = () => 0.5;
 const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();
 
 export const createInitialShopState = (deck: BattleCard[] = []) => createInitialShopStateImpl(deck, testRng);

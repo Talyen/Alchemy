@@ -1,5 +1,4 @@
 // Battle resource widgets for draw/discard piles, mana, and gold.
-// Depends on game-data pile art, card styling, and value-change animation tokens.
 // Used by BattleScreen controls.
 import { Coins, Gem } from "lucide-react";
 

@@ -1,5 +1,4 @@
 // Player hand fan for battle cards.
-// Depends on battle controller playability props and hand layout constants.
 // Used by BattleBottomBar to render playable cards and animation refs.
 import { type MouseEvent, type RefObject, memo, useLayoutEffect, useMemo, useRef } from "react";
 

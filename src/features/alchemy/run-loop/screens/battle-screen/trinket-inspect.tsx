@@ -1,5 +1,5 @@
 // Battle trinket inspect: sack chrome toggle plus a fading full-art overlay.
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { ShoppingBag, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -41,12 +41,12 @@ export function BattleBoonInspectOverlay({
   onClose: () => void;
 }) {
   const trinkets = useMemo(() => uniqueRunBoons(trinketIds), [trinketIds]);
-  const { page: safePage, totalPages, rows, setPage } = usePaginatedRows(trinkets, TRINKET_PAGE_SIZE, INSPECT_COLUMNS);
-
-  // Restart at the first page each time the overlay opens.
-  useEffect(() => {
-    if (!open) setPage(0);
-  }, [open, setPage]);
+  const {
+    page: safePage,
+    totalPages,
+    rows,
+    setPage,
+  } = usePaginatedRows(trinkets, TRINKET_PAGE_SIZE, INSPECT_COLUMNS, open);
 
   return (
     <ModalOverlayShell

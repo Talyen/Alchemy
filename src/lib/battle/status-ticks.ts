@@ -2,52 +2,30 @@
  * Player and enemy DoT ticks. Enemy DoTs run at enemy phase start; player DoTs during enemy resolution.
  * Player stun/freeze threshold-check normally runs when buildup is applied; tick-time
  * resolution remains as a fallback for pre-existing stacks.
- * Depends on: ./status-cc, ./status-helpers, ./damage-status-riders, ./combat-text, ./types, ../game-constants.
- * Depended on by: ./enemy-turn.
  */
 import {
   applyPlayerCombatDamage,
-  clampHealth,
   scaleReceivedPlayerDamage,
-  setEnemyStatus,
   setPlayerStatus,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { getEnemyDamageMultiplier, getBurnBonusToBleedingMultiplier } from "./status-helpers";
+import {
+  decayArmorAfterDamage,
+  decayHalvedStatus,
+  decayPoisonStacks,
+  getBurnBonusToBleedingMultiplier,
+  getEnemyDamageMultiplier,
+  rollPercent,
+} from "./status-helpers";
+import { computeLeechHeal, HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import { decayArmorAfterDamage, decayHalvedStatus, decayPoisonStacks, rollPercent } from "./status-helpers";
-import { computeLeechHeal, HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
-import { payKillPayouts } from "./kill-payouts";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 import { applyEnemyLeechHealing } from "./enemy-turn-attack";
-import { dealPlayerTypedHit } from "./player-typed-hit";
+import { tryPoisonStunProc } from "./player-typed-hit";
 import { payPendingBleedLeech } from "./damage-rider-leech";
-
-/** Shared enemy DoT tail: clamp health, apply next stacks, optional riders, armor decay, trait threshold. */
-function dealEnemyDotTick(
-  state: BattleState,
-  status: "burn" | "poison" | "bleed",
-  finalDamage: number,
-  nextStacks: number,
-  combatTexts: CombatTextEvent[],
-  applyRiders?: (state: BattleState) => BattleState,
-): BattleState {
-  const previousHealth = state.enemyHealth;
-  let nextState: BattleState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-  };
-  // Paid before stack decay so a lethal burn tick still counts as "defeated
-  // while burning" for healOnBurnEnemyDefeated.
-  nextState = payKillPayouts(nextState, previousHealth > 0, combatTexts);
-  nextState = setEnemyStatus(nextState, status, nextStacks);
-  if (applyRiders) nextState = applyRiders(nextState);
-  nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
-  return processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
-}
+import { dealEnemyDotTick } from "./dot-resolve";
 
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.burn;
@@ -97,15 +75,12 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     }
   }
   return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState) => {
-    let afterRiders = applyPoisonTalentRiders(
+    const afterRiders = applyPoisonTalentRiders(
       applyParasiticBloomLeech(nextState, finalDamage, combatTexts),
       finalDamage,
       combatTexts,
     );
-    if (finalDamage > 0 && rollPercent(afterRiders.talentEffects.poisonStunChance, afterRiders.rng)) {
-      afterRiders = dealPlayerTypedHit(afterRiders, "stun", finalDamage, combatTexts);
-    }
-    return afterRiders;
+    return tryPoisonStunProc(afterRiders, finalDamage, combatTexts);
   });
 }
 

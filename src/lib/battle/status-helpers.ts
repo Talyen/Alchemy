@@ -1,6 +1,4 @@
 // Shared status math: halved decay, armor decay after damage, percent rolls, damage multipliers.
-// Depends on game-constants and battle types. Used by status-ticks, status-player,
-// damage-status-riders, and the damage calc.
 import {
   BATTLE_CONFIG,
   HALF_DIVISOR,

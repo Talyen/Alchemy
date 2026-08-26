@@ -1,5 +1,4 @@
-// Headless balance simulations for battle tuning reports.
-// Depends on the pure battle engine and static game data; no React or browser APIs.
+// Headless balance simulations for battle tuning reports. No React or browser APIs.
 import {
   canPlayCard,
   chooseWishCard,

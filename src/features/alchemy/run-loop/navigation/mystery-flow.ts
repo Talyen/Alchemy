@@ -1,5 +1,4 @@
 // Dispatches and applies mystery event consequences to the run state.
-// Depends on game libraries, audio triggers, utility helpers, and mystery types.
 // Consumed by the run navigation flow and `useMysteryEventNavigation`.
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { cardById, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";

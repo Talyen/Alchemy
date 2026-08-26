@@ -1,5 +1,4 @@
 // Hero selection screen with character art, keyword previews, shine frames, and shimmer feedback.
-// Depends on character game data, shared alchemy UI, and hover shimmer hooks.
 // Used when beginning a fresh run before destination routing starts.
 import { useMemo, useState } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";

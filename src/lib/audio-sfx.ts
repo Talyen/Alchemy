@@ -79,6 +79,9 @@ function playHtmlSfx(name: string, volume: number, trackForCleanup: boolean) {
   el.onended = () => {
     activeHtmlSfx.delete(entry);
   };
+  el.onerror = () => {
+    activeHtmlSfx.delete(entry);
+  };
   void Promise.resolve(el.play()).catch(() => {
     activeHtmlSfx.delete(entry);
   });

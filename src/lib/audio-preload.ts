@@ -93,11 +93,14 @@ function preloadSoundsWhenIdle(names: string[]) {
 }
 
 function schedulePreloadBatch(callback: () => void, retries = 0) {
-  if ("requestIdleCallback" in window) {
+  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
     window.requestIdleCallback(
       () => {
-        const scheduling = navigator as Navigator & { scheduling?: { isInputPending?: () => boolean } };
-        if (retries < 3 && scheduling.scheduling?.isInputPending?.()) {
+        const nav =
+          typeof navigator !== "undefined"
+            ? (navigator as Navigator & { scheduling?: { isInputPending?: () => boolean } })
+            : undefined;
+        if (retries < 3 && nav?.scheduling?.isInputPending?.()) {
           schedulePreloadBatch(callback, retries + 1);
           return;
         }

@@ -1,5 +1,5 @@
 // Shared tier-record helpers for Homestead persistence and runtime state.
-// Depends only on item IDs and tier counts so storage and React state use one normalization path.
+// Item IDs and tier counts only, so storage and React state share one normalization path.
 
 export interface TieredItem<T extends string = string> {
   id: T;

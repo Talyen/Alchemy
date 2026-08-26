@@ -119,11 +119,13 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
     shopState: normalizeOptionalShopInventory(data.shopState, "cards"),
     alchemistState: normalizeOptionalShopInventory(data.alchemistState, "potions"),
     mysteryVisit:
-      data.mysteryVisit && typeof data.mysteryVisit === "object"
-        ? {
-            ...(data.mysteryVisit as Record<string, unknown>),
-            cardChoices: nullableCardArray((data.mysteryVisit as Record<string, unknown>).cardChoices),
-          }
-        : data.mysteryVisit,
+      data.currentScreen != null && data.currentScreen !== "mystery"
+        ? null
+        : data.mysteryVisit && typeof data.mysteryVisit === "object"
+          ? {
+              ...(data.mysteryVisit as Record<string, unknown>),
+              cardChoices: nullableCardArray((data.mysteryVisit as Record<string, unknown>).cardChoices),
+            }
+          : data.mysteryVisit,
   };
 }

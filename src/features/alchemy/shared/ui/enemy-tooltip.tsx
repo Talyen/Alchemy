@@ -1,5 +1,4 @@
 // Structured hover popup for enemy data in battle and bestiary collection.
-// Depends on enemy formatting utilities and the shared portaled tooltip panel.
 // Used by ArtPanel (battle) and CompendiumTile (collection) to show attacks and traits.
 import type { RefObject } from "react";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";

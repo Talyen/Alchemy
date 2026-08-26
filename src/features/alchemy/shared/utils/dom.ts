@@ -1,5 +1,4 @@
 // DOM helpers for card rect capture and tilt effects.
-// Depends on React mouse events and alchemy geometry types.
 // Used by card UI and ghost animation code where viewport coordinates matter.
 import type { MouseEvent } from "react";
 import type { CardRect } from "../types";

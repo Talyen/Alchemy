@@ -1,10 +1,8 @@
 /**
  * Procedural map generator for Labyrinth mode using a seeded PRNG.
- * Depends on: data.ts, map-graph.ts, modifiers.ts
- * Depended on by: use-labyrinth-controller.ts, run-session-read-port, tests
  */
 
-import { shuffle as shuffleWithRng } from "@/lib/utils";
+import { shuffle } from "@/lib/utils";
 
 import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_COLS, LABYRINTH_MAP_CONFIG, LABYRINTH_ROWS, LABYRINTH_START_COL, type LabyrinthPoint } from "./data";
@@ -121,15 +119,19 @@ function distributeNodeTypes(count: number, rng: () => number, combatPct = 0.45,
   const pool = Object.entries(counts).flatMap(([type, amount]) =>
     Array.from({ length: amount }, () => type as LabyrinthNodeType),
   );
-  return shuffleWithRng(pool, rng);
+  return shuffle(pool, rng);
+}
+
+function isCombatType(type: LabyrinthNodeType): type is "combat" | "elite" | "boss" {
+  return type === "combat" || type === "elite" || type === "boss";
 }
 
 function makeNode(type: LabyrinthNodeType, rng: () => number, state: LabyrinthNode["state"]): LabyrinthNode {
+  const isCombat = isCombatType(type);
   return {
     type,
-    modifiers: type === "combat" || type === "elite" || type === "boss" ? getEnemyModifiersForNodeType(type, rng) : [],
-    rewardModifiers:
-      type === "combat" || type === "elite" || type === "boss" ? getRewardModifiersForNodeType(type, rng) : [],
+    modifiers: isCombat ? getEnemyModifiersForNodeType(type, rng) : [],
+    rewardModifiers: isCombat ? getRewardModifiersForNodeType(type, rng) : [],
     connections: [],
     state,
   };

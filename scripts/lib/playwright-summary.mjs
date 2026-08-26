@@ -2,12 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { ensureRunId } from "./current-run.mjs";
 import { diagnosticIdentity, failureDigestRelativePath } from "./playwright-diagnostics.mjs";
+import { formatRouteHintLine, routeHintForPath } from "./route-hints.mjs";
 
 const MAX_FAILURES = 5;
 const MESSAGE_CHARS = 240;
 
 /**
- * @typedef {{ file: string, line: number, title: string, message: string, status: string, digestPath: string|null }} PlaywrightFailure
+ * @typedef {{ file: string, line: number, title: string, message: string, status: string, digestPath: string|null, routeHint: string }} PlaywrightFailure
  * @typedef {{ total: number, expected: number, unexpected: number, flaky: number, skipped: number, failures: PlaywrightFailure[] }} PlaywrightSummary
  */
 
@@ -151,6 +152,7 @@ export function summarizePlaywrightReport(report, options = {}) {
               status: typeof status === "string" ? status : "unexpected",
               message: firstErrorMessage(spec),
               digestPath: fs.existsSync(path.resolve(rootDir, digestPath)) ? digestPath : null,
+              routeHint: formatRouteHintLine(routeHintForPath(file, rootDir)),
             });
           }
         }
@@ -196,6 +198,7 @@ export function formatPlaywrightSummaryMarkdown(summary) {
     const rel = failure.file.replaceAll("\\", "/");
     const tag = failure.status === "flaky" ? "flaky" : "failed";
     lines.push(`- \`${rel}:${failure.line}\` — **${failure.title}** (${tag})`);
+    if (failure.routeHint) lines.push(`  - ${failure.routeHint}`);
     if (failure.message) lines.push(`  - ${failure.message}`);
     if (failure.digestPath) lines.push(`  - Diagnostic: \`${failure.digestPath}\``);
   }

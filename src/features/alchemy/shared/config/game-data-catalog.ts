@@ -19,8 +19,8 @@ export {
   getCompanionKeywords,
   getCharacterUnlockMessage,
   getGameModeUnlockMessage,
+  getProgressionFeatureUnlockMessage,
   getRequiredPreviousCharacter,
-  KNIGHT_UNLOCK_MESSAGE,
   getTalentKeywordProgress,
   isCharacterUnlocked,
   isGameModeUnlocked,
@@ -38,21 +38,12 @@ export {
 } from "@/lib/game-data";
 
 import { trinketById, type KeywordId } from "@/lib/game-data";
-import { keywordAliasMap, keywordPattern } from "./keywords";
+import { extractKeywordIds } from "./keywords";
 
 export function getTrinketKeywords(trinketId: string): KeywordId[] {
   const trinket = trinketById[trinketId];
   if (!trinket) return [];
-  const text = trinket.descriptionLines.join(" ");
-  const matches = text.matchAll(keywordPattern);
-  const keywords = new Set<KeywordId>();
-  for (const match of matches) {
-    const keywordId = keywordAliasMap.get(match[0].toLowerCase());
-    if (keywordId) {
-      keywords.add(keywordId);
-    }
-  }
-  return Array.from(keywords);
+  return extractKeywordIds(trinket.descriptionLines.join(" "));
 }
 
 export type {

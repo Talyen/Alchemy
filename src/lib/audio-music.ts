@@ -1,5 +1,4 @@
 // Streaming MP3 music playback and transitions.
-// Depends on shared audio state and music path constants.
 // Used by App/controllers through the public lib/audio facade.
 import {
   FADE_IN_DELAY,

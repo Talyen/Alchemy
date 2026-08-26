@@ -1,5 +1,4 @@
 // Visual metadata for destinations, collection tabs, and keyword iconography.
-// Depends on Lucide icons, game-data image assets, and alchemy UI types.
 import type { LucideIcon } from "lucide-react";
 import {
   Beaker,

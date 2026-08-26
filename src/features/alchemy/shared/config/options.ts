@@ -1,5 +1,4 @@
 // Display and audio-facing option lists for the options screen.
-// Depends only on alchemy option types.
 import type { AspectRatioOption, DisplayMode } from "../types";
 
 // Aspect ratio choices determine virtual canvas width (height is fixed at 1080).

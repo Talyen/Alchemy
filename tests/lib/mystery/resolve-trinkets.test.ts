@@ -128,6 +128,32 @@ describe("collect and apply resolved mystery trinket ids", () => {
     expect(hydrated.choices).toEqual(resolved.choices);
   });
 
+  it("does not rewrite authored astral gear when applying resolved trinket ids", () => {
+    const event = {
+      id: "authored-astral",
+      title: "Authored Astral",
+      art: "test-art",
+      narrative: "Test",
+      choices: [
+        {
+          label: "A",
+          effects: [
+            { kind: "gainGeneratedGear" as const, baseItemId: "staff", astral: true as const },
+            { kind: "gainTrinket" as const, trinketId: "icy-heart" },
+          ],
+        },
+      ],
+    };
+
+    const hydrated = applyResolvedMysteryTrinketIds(event, ["merchants-favor"]);
+    expect(hydrated.choices[0]?.effects[0]).toEqual({
+      kind: "gainGeneratedGear",
+      baseItemId: "staff",
+      astral: true,
+    });
+    expect(hydrated.choices[0]?.effects[1]).toEqual({ kind: "gainTrinket", trinketId: "merchants-favor" });
+  });
+
   it("repairs a legacy visit that still has gainRandomTrinket", () => {
     const event = findMysteryEvent("overgrown-temple");
     expect(event).not.toBeNull();

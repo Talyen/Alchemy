@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkCiRouting, checkDiagnosticRetention, checkJobBoundaries } from "../../scripts/check-ci-routing.mjs";
+import {
+  checkChangeRoutePatternsInCi,
+  checkCiRouting,
+  checkDiagnosticRetention,
+  checkJobBoundaries,
+} from "../../scripts/check-ci-routing.mjs";
 
 const root = path.resolve(__dirname, "../..");
 
@@ -9,6 +14,13 @@ describe("CI routing contract", () => {
   it("keeps high-cost path filters present in the workflow", () => {
     const source = fs.readFileSync(path.join(root, ".github/workflows/ci.yml"), "utf8");
     expect(checkCiRouting(source)).toEqual([]);
+    expect(checkChangeRoutePatternsInCi(source)).toEqual([]);
+  });
+
+  it("identifies a change-route pattern missing from the CI filter", () => {
+    expect(checkChangeRoutePatternsInCi("shop:\n")).toContain(
+      'shop: CI filter missing "src/features/alchemy/run-loop/shop/**"',
+    );
   });
 
   it("identifies a removed filter marker", () => {

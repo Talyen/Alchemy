@@ -2,6 +2,15 @@
 export const DEFAULT_MUSIC_VOLUME = 0.0875;
 export const MUSIC_BASE_PATH = "Music/";
 
+export const MUSIC_KEYS = {
+  MENU: "menu",
+  BATTLE: "battle",
+  BOSS_FORGE_GOLEM: "boss-forge-golem",
+  BOSS_FROSTWARDEN: "boss-frostwarden",
+  BOSS_BLIGHT_TREANT: "boss-blight-treant",
+  BOSS_IRON_BEAR: "boss-iron-bear",
+} as const;
+
 // Music transition timing and gain staging. MUSIC_MASTER_GAIN is an additional layer
 // on top of user music volume and master volume — the final volume is userMusic * master * MUSIC_MASTER_GAIN.
 export const FADE_OUT_DURATION = 300;

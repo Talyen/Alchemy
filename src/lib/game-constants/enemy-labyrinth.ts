@@ -97,14 +97,6 @@ export const COMPANION_SOUND_CARD_IDS: Record<string, string> = {
   "lizard-scout": "lizard-scout-companion",
 };
 
-// ============ Corruption ============
-export const CORRUPTION_TRANSFORM_CHANCE = 0.2;
-export const CORRUPTION_DELTA_CHANCE = 0.2; // P(nerf): 20%; otherwise corruption buffs (+1).
-export const CORRUPTION_TEXT_PATTERNS = {
-  authoredNumber: /\d+/g,
-  leadingNumber: /^\d+/,
-} as const;
-
 // ============ Homestead Loot ============
 export const HOMESTEAD_LOOT_CONFIG = {
   enemyTypeMultipliers: {
@@ -112,13 +104,4 @@ export const HOMESTEAD_LOOT_CONFIG = {
     elite: 1.3,
     boss: 3,
   },
-} as const;
-
-export const MUSIC_KEYS = {
-  MENU: "menu",
-  BATTLE: "battle",
-  BOSS_FORGE_GOLEM: "boss-forge-golem",
-  BOSS_FROSTWARDEN: "boss-frostwarden",
-  BOSS_BLIGHT_TREANT: "boss-blight-treant",
-  BOSS_IRON_BEAR: "boss-iron-bear",
 } as const;

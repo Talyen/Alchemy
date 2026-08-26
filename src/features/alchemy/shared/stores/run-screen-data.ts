@@ -74,7 +74,7 @@ interface CorruptionScreenData {
   corruptionResult: CorruptionResult | null;
 }
 
-export interface RunEndScreenData {
+interface RunEndScreenData {
   characterId: CharacterId;
   runEndTalentXP: TalentXP;
   talentXP: TalentXP;

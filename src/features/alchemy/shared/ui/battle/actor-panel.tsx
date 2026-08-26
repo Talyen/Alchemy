@@ -1,5 +1,4 @@
 // Battle actor panels for hero/enemy art, health, status rows, and death effects.
-// Depends on actor subcomponents, enemy tooltips, and shared card styling.
 // Used by BattleScreen through the battle UI barrel.
 import { type ReactNode, type Ref } from "react";
 

@@ -3,8 +3,6 @@
  * Stun/freeze resolve when buildup crosses the threshold for either side.
  * Enemy triggers funnel through tryTriggerEnemyCc; the caller applies any
  * post-trigger payload (stun talents/gear or frozen-heart/gear freeze damage).
- * Depends on: ./combat-text, ./types, ../game-constants.
- * Depended on by: ./status-stun-resolve, ./damage-status-riders, ./status-ticks, ./enemy-turn-attack.
  */
 import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";

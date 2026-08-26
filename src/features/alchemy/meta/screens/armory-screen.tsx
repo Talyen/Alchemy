@@ -96,6 +96,7 @@ export function ArmoryScreen({
     characterId,
     inventoryById,
     salvagePending,
+    salvageMode,
     setSalvageMode,
     setSalvagePending,
     setActiveCurrencyId,

@@ -1,5 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
-import { clamp, shuffle, pickRandom, appendUnique, appendUniqueMany } from "@/lib/utils";
+import {
+  appendUnique,
+  appendUniqueMany,
+  capitalizeWord,
+  clamp,
+  createInstanceId,
+  createSeededRng,
+  formatLargeAmount,
+  lerp,
+  pickRandom,
+  sampleItems,
+  shuffle,
+  takeRandomItem,
+} from "@/lib/utils";
 
 vi.spyOn(Math, "random").mockReturnValue(0.5);
 
@@ -26,6 +39,37 @@ describe("clamp", () => {
   });
 });
 
+describe("lerp", () => {
+  it("interpolates linearly between values", () => {
+    expect(lerp(0, 10, 0.5)).toBe(5);
+    expect(lerp(0, 10, 0)).toBe(0);
+    expect(lerp(0, 10, 1)).toBe(10);
+    expect(lerp(10, 20, 0.25)).toBe(12.5);
+  });
+});
+
+describe("capitalizeWord", () => {
+  it("capitalizes the first letter of words", () => {
+    expect(capitalizeWord("hello")).toBe("Hello");
+    expect(capitalizeWord("alchemy")).toBe("Alchemy");
+    expect(capitalizeWord("a")).toBe("A");
+    expect(capitalizeWord("")).toBe("");
+  });
+});
+
+describe("formatLargeAmount", () => {
+  it("formats standard amounts using locale formatting", () => {
+    expect(formatLargeAmount(500)).toBe((500).toLocaleString());
+    expect(formatLargeAmount(99999)).toBe((99999).toLocaleString());
+  });
+
+  it("formats amounts >= 100,000 in compact k notation", () => {
+    expect(formatLargeAmount(100000)).toBe("100.0k");
+    expect(formatLargeAmount(150500)).toBe("150.5k");
+    expect(formatLargeAmount(1000000)).toBe("1000.0k");
+  });
+});
+
 describe("shuffle", () => {
   it("returns all items", () => {
     const result = shuffle([1, 2, 3, 4]);
@@ -48,6 +92,25 @@ describe("shuffle", () => {
   });
 });
 
+describe("sampleItems", () => {
+  it("samples up to count items without replacement", () => {
+    const items = [1, 2, 3, 4, 5] as const;
+    const sampled = sampleItems(items, 3, () => 0.5);
+    expect(sampled).toHaveLength(3);
+    expect(new Set(sampled).size).toBe(3);
+  });
+
+  it("caps sample count at array length", () => {
+    const items = [10, 20];
+    const sampled = sampleItems(items, 5, () => 0.5);
+    expect(sampled).toHaveLength(2);
+  });
+
+  it("returns empty array when count is zero", () => {
+    expect(sampleItems([1, 2, 3], 0, () => 0.5)).toEqual([]);
+  });
+});
+
 describe("pickRandom", () => {
   it("returns the item at the selected index", () => {
     vi.spyOn(Math, "random").mockReturnValueOnce(0);
@@ -62,6 +125,50 @@ describe("pickRandom", () => {
 
   it("returns the only element for single-element array", () => {
     expect(pickRandom([7])).toBe(7);
+  });
+});
+
+describe("takeRandomItem", () => {
+  it("returns undefined for empty array", () => {
+    expect(takeRandomItem([])).toBeUndefined();
+  });
+
+  it("removes and returns an item from the array", () => {
+    const list = ["a", "b", "c"];
+    const removed = takeRandomItem(list, () => 0);
+    expect(removed).toBe("a");
+    expect(list).toEqual(["b", "c"]);
+  });
+});
+
+describe("createSeededRng", () => {
+  it("produces deterministic pseudo-random sequences for a seed", () => {
+    const rng1 = createSeededRng(12345);
+    const rng2 = createSeededRng(12345);
+
+    const seq1 = [rng1(), rng1(), rng1(), rng1()];
+    const seq2 = [rng2(), rng2(), rng2(), rng2()];
+
+    expect(seq1).toEqual(seq2);
+    expect(seq1.every((v) => v >= 0 && v < 1)).toBe(true);
+  });
+
+  it("produces different sequences for different seeds", () => {
+    const rng1 = createSeededRng(111);
+    const rng2 = createSeededRng(222);
+
+    expect(rng1()).not.toBe(rng2());
+  });
+});
+
+describe("createInstanceId", () => {
+  it("generates non-empty unique string identifiers", () => {
+    const id1 = createInstanceId();
+    const id2 = createInstanceId();
+
+    expect(typeof id1).toBe("string");
+    expect(id1.length).toBeGreaterThan(0);
+    expect(id1).not.toBe(id2);
   });
 });
 

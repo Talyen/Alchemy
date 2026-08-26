@@ -1,5 +1,4 @@
 // Flying card transfer overlay for exact draw-pile and discard-pile handoffs in Battle.
-// Depends on motion, shared card surfaces, card-back art, and feature transfer geometry.
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 

@@ -79,4 +79,26 @@ describe("WishOverlay", () => {
     expect(onWishChoice).toHaveBeenCalledTimes(1);
     expect(onWishChoice).toHaveBeenCalledWith(null);
   });
+
+  it("accepts a new choice after the overlay reopens", async () => {
+    const user = userEvent.setup();
+    const onWishChoice = vi.fn();
+    const battleState = {
+      wishOptions: [wishCard],
+      talentEffects: {},
+      trinketEffects: { companionDamageBonus: 0 },
+      companionDamageBuff: 0,
+    } as unknown as BattleScreenState;
+    const actions = { onWishChoice } as unknown as BattleActionsProps;
+    const { rerender } = render(<WishOverlay open battleState={battleState} actions={actions} />);
+
+    await user.click(screen.getByRole("button", { name: "Skip" }));
+    expect(onWishChoice).toHaveBeenCalledTimes(1);
+
+    rerender(<WishOverlay open={false} battleState={battleState} actions={actions} />);
+    rerender(<WishOverlay open battleState={battleState} actions={actions} />);
+
+    await user.click(screen.getByRole("button", { name: "Skip" }));
+    expect(onWishChoice).toHaveBeenCalledTimes(2);
+  });
 });

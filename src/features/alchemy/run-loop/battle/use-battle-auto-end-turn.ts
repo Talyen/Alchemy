@@ -1,5 +1,4 @@
 // Auto-end-turn scheduler for battle when the player has no playable actions.
-// Depends on battle cost prediction, React timers, and screen/turn state.
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 
 import { type BattleState } from "@/lib/battle";

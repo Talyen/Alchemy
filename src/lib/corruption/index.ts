@@ -1,5 +1,4 @@
 // Card corruption helpers for altar events: mutate numeric card text/effects or transform into another card.
-// Depends on card game data, random selection, and corruption tuning constants.
 // Used by run navigation and tests so corrupted cards remain normal playable BattleCard objects.
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import {

@@ -1,7 +1,6 @@
 /**
  * Player status application (card effects and enemy-attack statuses), harmful
  * status removal, and incoming damage statuses.
- * Depends on: ./status-forge, ./types, ./combat-text, ./status-helpers, @/lib/game-data, ../game-constants.
  */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";

@@ -1,8 +1,9 @@
 // Description tokenization for keyword-highlighted rules text.
-// Depends on keyword alias metadata and description part types.
 // Used by card/detail UI so keyword matching stays consistent across descriptions.
-import { keywordAliasMap, keywordPattern } from "../config";
+import { keywordAliasMap, keywordPattern } from "../config/keywords";
 import type { DescriptionPart } from "../types";
+
+export { extractKeywordIds } from "../config/keywords";
 
 export function tokenizeDescription(line: string) {
   // Match aliases with the pre-sorted regex from config so multi-word keywords win before

@@ -89,16 +89,6 @@ export function getGearDefinitionShineGradient(definition: GearDefinition): stri
   return buildSmoothShineBorderGradient(getGearDefinitionShineColors(definition));
 }
 
-function getGearAffixShineColors(affix: { keywordId: KeywordId; secondaryKeywordId?: KeywordId }): readonly string[] {
-  const colors: string[] = [];
-
-  colors.push(...keywordDefinitions[affix.keywordId].shineColors);
-  if (affix.secondaryKeywordId) {
-    colors.push(...keywordDefinitions[affix.secondaryKeywordId].shineColors);
-  }
-  return colors.length > 0 ? colors : [...ASTRAL_SHINE_FALLBACK];
-}
-
 export function getGearAffixTextShineColors(affix: {
   keywordId: KeywordId;
   secondaryKeywordId?: KeywordId;
@@ -106,12 +96,4 @@ export function getGearAffixTextShineColors(affix: {
   return getKeywordTextShineColors(
     affix.secondaryKeywordId ? [affix.keywordId, affix.secondaryKeywordId] : [affix.keywordId],
   );
-}
-
-export function getGearAffixShineGradient(affix: {
-  keywordId: KeywordId;
-  secondaryKeywordId?: KeywordId;
-}): string | null {
-  const colors = getGearAffixShineColors(affix);
-  return buildSmoothShineBorderGradient(colors);
 }

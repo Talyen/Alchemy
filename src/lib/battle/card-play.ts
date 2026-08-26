@@ -1,7 +1,5 @@
 /**
  * Resolves card play validation, cost reduction, and effect application during combat.
- * Depends on: ./draw, ./effect-handlers, ./combat-text, ../game-constants, @/lib/game-data, ./types.
- * Depended on by: features/alchemy controllers.
  */
 import { drawFromState, applyDrawResult } from "./draw";
 import { applyCardEffects } from "./effect-handlers";

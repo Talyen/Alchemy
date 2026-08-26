@@ -1,7 +1,7 @@
 // Centralized error logger with pluggable sinks.
 // Sinks are registered by the app layer (main.tsx) after stores initialize.
 // During early boot errors fall through to console.error only.
-// Depends on: nothing from features to avoid circular deps.
+// Kept free of features/ imports to avoid circular deps.
 
 export type ErrorSource =
   | "react"

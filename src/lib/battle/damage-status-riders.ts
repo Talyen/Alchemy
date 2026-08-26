@@ -1,15 +1,11 @@
 /**
  * Applies per-damage-type status riders (burn/poison/bleed/stun/freeze/physical)
  * when a damage hit lands, and resolves the freeze CC trigger.
- * Depends on: ./types, ./combat-text, ./talent-effects, ./status-cc, ./status-stun-resolve,
- * ./status-helpers, ./gear-effects, ./trinket-effects, ../game-constants.
- * Depended on by: ./status-ticks, ./damage-riders, ./effect-handlers, ./status-player.
  */
 import type { BattleCardEffect } from "@/lib/game-data";
 import {
   addEnemyStatus,
   addPlayerStatus,
-  clampHealth,
   reduceEnemyArmor,
   setEnemyStatus,
   setFlag,
@@ -20,25 +16,41 @@ import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } fr
 import { applyCrowdControlTriggerBonuses } from "./talent-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
-import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
-import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, computeLeechHeal, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
+import { getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
+import {
+  BLEED_STATUS_MULTIPLIER,
+  BATTLE_CONFIG,
+  computeLeechHeal,
+  FREEZE_THRESHOLD_FRACTION,
+  HALF_DIVISOR,
+} from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
 import { payKillPayouts } from "./kill-payouts";
-import { payPendingBleedLeech } from "./damage-rider-leech";
+import { detonateEnemyStatuses } from "./dot-resolve";
+
+const BURN_BLEED_MIRROR_CHANCE = 20;
+
+function applyGearBurnBleedMirrorLeech(
+  state: BattleState,
+  actualDamage: number,
+  mirrorTarget: "bleed" | "burn",
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (state.gearEffects.burnBleedMirrorAndLeech <= 0 || actualDamage <= 0) return state;
+  let nextState = state;
+  if (rollPercent(BURN_BLEED_MIRROR_CHANCE, nextState.rng)) {
+    nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
+  }
+  const healAmount = Math.max(1, Math.round(actualDamage / HALF_DIVISOR));
+  return applyHealingWithCombatText(nextState, healAmount, combatTexts, { skipFightPacing: true });
+}
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = addEnemyStatus(state, "burn", actualDamage);
   if (nextState.talentEffects.burnRemovesEnemyArmor) {
     nextState = reduceEnemyArmor(nextState, actualDamage);
   }
-  if (nextState.gearEffects.burnBleedMirrorAndLeech > 0 && actualDamage > 0) {
-    if (rollPercent(20, nextState.rng)) {
-      nextState = addEnemyStatus(nextState, "bleed", actualDamage);
-    }
-    const healAmount = Math.max(1, Math.round(actualDamage * 0.5));
-    nextState = applyHealingWithCombatText(nextState, healAmount, combatTexts, { skipFightPacing: true });
-  }
-  return nextState;
+  return applyGearBurnBleedMirrorLeech(nextState, actualDamage, "bleed", combatTexts);
 }
 
 function applyPoisonStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -121,13 +133,7 @@ function applyBleedStatusRider(
   let nextState = stackBleed(state, actualDamage);
   nextState = queueBleedLeech(nextState, effect, bleedAmount);
   nextState = procBleedPoison(nextState, actualDamage, bleedAmount);
-  if (nextState.gearEffects.burnBleedMirrorAndLeech > 0 && actualDamage > 0) {
-    if (rollPercent(20, nextState.rng)) {
-      nextState = addEnemyStatus(nextState, "burn", actualDamage);
-    }
-    const healAmount = Math.max(1, Math.round(actualDamage * 0.5));
-    nextState = applyHealingWithCombatText(nextState, healAmount, combatTexts, { skipFightPacing: true });
-  }
+  nextState = applyGearBurnBleedMirrorLeech(nextState, actualDamage, "burn", combatTexts);
   return awardCutpurseGold(nextState, bleedAmount, combatTexts);
 }
 
@@ -223,20 +229,7 @@ function applyPhysicalBleedChance(state: BattleState, actualDamage: number): Bat
 
 function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (!state.talentEffects.physicalDetonatesBleed || state.enemyStatuses.bleed <= 0) return state;
-  const bleedDamage = state.enemyStatuses.bleed;
-  const multiplier = getEnemyDamageMultiplier(state, "bleed");
-  const finalDamage = Math.round(bleedDamage * multiplier);
-  let nextState: BattleState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-  };
-  // Same placement as dealEnemyDotTick: payouts fire right after the health
-  // transition, ahead of any follow-up riders.
-  nextState = payKillPayouts(nextState, state.enemyHealth > 0, combatTexts);
-  nextState = setEnemyStatus(nextState, "bleed", 0);
-  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: finalDamage });
-  nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
-  return payPendingBleedLeech(state.enemyHealth, nextState, combatTexts);
+  return detonateEnemyStatuses(state, ["bleed"], combatTexts);
 }
 
 function applyPhysicalStatusRider(

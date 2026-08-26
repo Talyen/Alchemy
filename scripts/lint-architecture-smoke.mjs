@@ -140,6 +140,37 @@ assert.ok(
   "screen-only run-loop/run restriction must not leak into shops",
 );
 
+function alchemyRule(config, ruleId) {
+  return config.rules?.[`alchemy/${ruleId}`];
+}
+
+function ruleIsError(setting) {
+  return (
+    setting === "error" || setting === 2 || (Array.isArray(setting) && (setting[0] === "error" || setting[0] === 2))
+  );
+}
+
+const destinationConfig = await getConfig("src/features/alchemy/run-loop/screens/destination-screen.tsx");
+assert.ok(
+  ruleIsError(alchemyRule(destinationConfig, "no-unowned-web-storage")),
+  "screens must ban unowned localStorage",
+);
+assert.ok(
+  ruleIsError(alchemyRule(destinationConfig, "no-dependency-graph-comments")),
+  "screens must ban import/consumer graph comments",
+);
+assert.ok(
+  ruleIsError(alchemyRule(destinationConfig, "no-run-earned-add-materials")),
+  "screens must ban progress addMaterials",
+);
+assert.ok(
+  ruleIsError(alchemyRule(destinationConfig, "no-render-math-random")),
+  "screens must ban render-time Math.random",
+);
+
+const libConfig = await getConfig("src/lib/battle/card-play.ts");
+assert.ok(ruleIsError(alchemyRule(libConfig, "no-lib-fetch")), "src/lib must ban fetch");
+
 const results = await eslint.lintFiles(ARCHITECTURE_SMOKE_FILES);
 const errors = results.flatMap((r) =>
   r.messages.filter((m) => m.severity === 2).map((m) => `${r.filePath}:${m.line}:${m.column} ${m.message}`),

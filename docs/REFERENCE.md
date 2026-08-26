@@ -60,7 +60,7 @@ Verification and audit commands keep full artifacts on disk but print a bounded 
 Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI derives the same identity from its run, attempt, job, and optional matrix variant. Do not change it within one invocation.
 
 - Unit failures: rerun the exact path from the report, then inspect the first assertion and its nearest fixture. `reports/vitest-timings.json` is timing data, not default context.
-- Playwright failures: read the compact failure summary and `test-results/failures/<run-id>/<name>.md` first. Its bounded accessibility snapshot shows the roles, names, and hierarchy present at failure; open a trace ZIP only when that and the console evidence cannot explain the failure.
+- Playwright failures: read the compact failure summary and `test-results/failures/<run-id>/<name>.md` first. Its bounded accessibility snapshot shows the roles, names, and hierarchy present at failure; open a trace ZIP only when that and the console evidence cannot explain the failure. CI summaries add the changed-path route and any path-filtered focused E2E gate for the failing file.
 - Changed-path failures: open the run-specific Markdown digest named by `reports/current-run.md`; the sibling `.log` is secondary evidence when its bounded failure tail is insufficient.
 - E2E audit: `npm run test:e2e:audit` writes `reports/e2e-audit-report.md` and keeps the full JSON report. Use `--verbose` only when the child runner's complete stream is needed.
 - Measurable audits: `npm run audit:all` reports one line per passing probe and a bounded failure tail. Full step output is under `reports/audit-all/` after a failure; pass `--verbose` to stream it deliberately.
@@ -118,10 +118,10 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Haste** — extra turns skip the enemy phase; both blocks hold until a real attack window resolves, then halve once each.
 - **Death's Door** — [Domain Glossary](#domain-glossary).
 - **Fight pacing** — hidden combat scaler, not a player-facing status. Paces damage, block, forge, mana, and healing magnitudes; armor and gold grants bypass it at every site (pinned by `tests/lib/battle/fight-pacing.test.ts`). [Domain Glossary](#domain-glossary). Balance simulator: `ALCHEMY_BALANCE_PACING=off` measures raw kit.
-- **Lethality payouts** — a kill via any damage source (main hits, follow-up typed hits, stun/freeze procs, wish triggers, DoT ticks, bleed detonation, mana-crystal burn) pays the same rewards exactly once per health transition: Bone Charm heal + gear kill rewards via `payKillPayouts` (`src/lib/battle/kill-payouts.ts`). Documented exceptions stay source-specific (e.g. Lucky Clover gold is off freeze-proc kills).
+- **Lethality payouts** — a kill via any damage source (main hits, follow-up typed hits, stun/freeze procs, wish triggers, DoT ticks, bleed/poison detonation, mana-crystal burn) pays the same rewards exactly once per health transition: Bone Charm heal + gear kill rewards via `payKillPayouts` (`src/lib/battle/kill-payouts.ts`). Enemy DoT ticks and detonates share `applyEnemyDotDamage` in `src/lib/battle/dot-resolve.ts` so Divine Aegis and armor decay cannot skip a source. Documented exceptions stay source-specific (e.g. Lucky Clover gold is off freeze-proc kills).
 - **State and arithmetic** — treat `BattleState` as immutable. Combat magnitudes use nearest-integer `Math.round()`, never `Math.floor()`; the battle-engine lint boundary enforces this convention.
 - **Battle RNG** — live combat draws the persisted `world` run stream (`withDraftWorldBattleRng` inside a command). Pure engine code uses `state.rng` / `getBattleRng(state)`, never `Math.random()`. Tests and the balance simulator use `createRunStreamRng` (same mixer as `nextRunRngValue`). `createBattleState` may pass explicit RNG in unit tests.
-- **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types.ts`; `braced` enemy trait halves incoming stun.
+- **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types/state-helpers.ts` (re-exported from `src/lib/battle/types.ts`); `braced` enemy trait halves incoming stun.
 - **Static enemy actions** — `enemyAttackEffects` resolve sequentially every turn; no randomized intents.
 
 ---

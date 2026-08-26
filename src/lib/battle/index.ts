@@ -32,3 +32,4 @@ export {
 } from "./fight-pacing";
 export { repairPersistedBattleBoonManifest } from "./repair-persisted-trinket-manifest";
 export { getActiveCcKeyword, isPlayerCcControlled, type ActiveCcKeyword } from "./status-cc";
+export { getBattleCardPlayTarget } from "./card-play-target";

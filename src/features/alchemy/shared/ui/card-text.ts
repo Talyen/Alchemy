@@ -1,5 +1,4 @@
 // Pure card-text helpers for highlighted card descriptions.
-// Depends only on card data types.
 // Used by Card UI components and tests to keep corruption highlighting deterministic.
 import type { BattleCard } from "@/lib/game-data";
 

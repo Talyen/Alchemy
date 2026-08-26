@@ -1,5 +1,4 @@
 // Pure alchemist potion-combining logic.
-// Depends only on battle card shapes and the Mixed Potion art/data shell.
 // Used by shop controller and UI previews so mixing behavior stays testable outside React.
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { isMixedPotionCard, mixedPotion } from "@/lib/game-data";

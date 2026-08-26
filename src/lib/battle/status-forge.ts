@@ -1,6 +1,5 @@
 /**
  * Forge threshold bursts and player forge application.
- * Depends on: ./types, ./combat-text, ./status-helpers, ../game-constants.
  */
 import { addEnemyStatus, addPlayerStatus, stripEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";

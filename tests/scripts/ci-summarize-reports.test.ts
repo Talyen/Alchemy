@@ -54,6 +54,7 @@ describe("ci-summarize-vitest", () => {
     expect(md).toContain("## Vitest");
     expect(md).toContain("Failed: 1");
     expect(md).toContain("eslint-boundary-stacking.test.ts");
+    expect(md).toContain("routes:");
   });
 
   it("reports missing files without throwing", () => {
@@ -156,6 +157,7 @@ describe("ci-summarize-playwright", () => {
     const md = formatPlaywrightSummaryMarkdown(summary);
     expect(md).toContain("## Playwright");
     expect(md).toContain("boots to menu");
+    expect(md).toContain("routes:");
     expect(md).toContain("(flaky)");
   });
 

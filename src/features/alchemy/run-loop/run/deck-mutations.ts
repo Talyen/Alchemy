@@ -1,5 +1,4 @@
 // Shared run deck/trinket mutations with compendium discovery tracking.
-// Depends on game-data types and profile discovery helpers.
 import type { BattleCard } from "@/lib/game-data";
 import { discoverCardIds, discoverTrinketIds } from "../../shared/stores/profile-store";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";

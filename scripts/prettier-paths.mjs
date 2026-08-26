@@ -5,7 +5,7 @@
 export const PRETTIER_GLOBS = Object.freeze([
   "*.{js,json,md,ts,yml,yaml}",
   ".prettierrc",
-  "{src,tests,scripts,desktop,docs,performance}/**/*.{ts,tsx,css,mjs,cjs,md}",
+  "{src,tests,scripts,desktop,docs,performance,eslint}/**/*.{ts,tsx,css,mjs,cjs,js,md}",
 ]);
 
 /** Extensions / basenames Prettier should format when given explicit file paths (hooks). */

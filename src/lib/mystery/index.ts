@@ -6,5 +6,4 @@ export {
   eventHasUnresolvedRandomTrinket,
   pickMysteryTrinketGrantId,
   repairUnresolvedMysteryTrinkets,
-  resolveMysteryEventTrinkets,
 } from "./resolve-trinkets";
