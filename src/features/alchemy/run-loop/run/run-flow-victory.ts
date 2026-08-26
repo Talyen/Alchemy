@@ -8,7 +8,6 @@ import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards } from "../navigation/victory-flow";
 import type { CommitVictoryRewardsDeps, VictoryRewardsResult } from "../navigation/victory-flow-types";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
-import { CONSTANTS } from "../../shared/types";
 import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
@@ -21,6 +20,8 @@ import {
   setRunMaxHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { getCompanionCardChoices, shouldGrantCompanionReward } from "../navigation/reward-flow";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
 export type { CommitVictoryRewardsDeps };
 
@@ -30,7 +31,7 @@ export function commitVictoryRewards(
   deps: CommitVictoryRewardsDeps,
   rng: () => number,
 ): boolean {
-  if (deps.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {
+  if (deps.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {
     awardMaterialsDuringRun(draft, deps.battleState.pendingMaterials);
   }
 
@@ -61,7 +62,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
     const runProfile = draft.runProfile;
     const battleState = draft.battle.battleState;
     const rewardTraits =
-      runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+      runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD
         ? (draft.session.wildwoodDraft?.currentRewardTraitIds ?? [])
         : draft.session.activeLabyrinthRewardModifiers;
     return computeVictoryRewards(
@@ -111,7 +112,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
           },
           createDraftRunRandomSource(draft, "rewards"),
         );
-        if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+        if (runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
           deps.actions.commitWildwoodVictory(draft, committedResult);
         }
       },
@@ -133,7 +134,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
     stopAllSfx();
     playVictory();
     if (readRunSession().hasActiveRun) {
-      const nextScreen = CONSTANTS.SCREENS.REWARDS;
+      const nextScreen = ROUTE_SCREENS.REWARDS;
       deps.actions.transition(nextScreen, {
         delayMs: resolveGameDelay(VICTORY_TRANSITION_DELAY),
         guard: () => readRunSession().hasActiveRun,

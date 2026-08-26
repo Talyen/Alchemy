@@ -78,6 +78,7 @@ beforeEach(() => {
   presentation.shakeEnemy.mockClear();
   presentation.shakeCompanion.mockClear();
   presentation.telegraphAttack.mockClear();
+  presentation.telegraphCast.mockClear();
   beginBattleTransition.mockClear();
   commitBattleTransition.mockClear();
   clearBattleTransition.mockClear();
@@ -275,6 +276,21 @@ describe("executeEnemyPhase", () => {
     expect(commitBattleTransition).toHaveBeenCalledTimes(1);
     expect(orch.scheduleCompanionFollowUp).toHaveBeenCalledWith(result, 1);
     expect(orch.scheduleAutoEndTurn).toHaveBeenCalledWith(result);
+    expect(presentation.telegraphAttack).not.toHaveBeenCalled();
+    expect(presentation.telegraphCast).not.toHaveBeenCalled();
+  });
+
+  it("telegraphs a cast when a status-only enemy acts", async () => {
+    const current = defaultBattleState();
+    current.currentEnemy = {
+      ...current.currentEnemy,
+      attackEffects: [{ kind: "player-status", status: "bleed", amount: 3 }],
+    };
+    const result = { ...current, playerHealth: 5 };
+
+    await executeEnemyPhase(result, current, [], 1, false, true, makeBattleTurnSession(), makeOrch(), resolveEndTurn);
+
+    expect(presentation.telegraphCast).toHaveBeenCalledWith("enemy");
     expect(presentation.telegraphAttack).not.toHaveBeenCalled();
   });
 });

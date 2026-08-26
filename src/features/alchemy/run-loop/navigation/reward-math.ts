@@ -2,9 +2,8 @@ import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import type { BattleState } from "@/lib/battle";
-import { CONSTANTS } from "../../shared/types";
-import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 
 interface VictoryGoldInput {
   battleState: Pick<BattleState, "gold">;
@@ -46,7 +45,7 @@ export function getActiveRewardModifiersForContentSystem(
   contentSystemType: ContentSystemId,
   modifiers: EncounterRewardTraitId[],
 ): EncounterRewardTraitId[] {
-  return contentSystemType === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN ? [] : modifiers;
+  return contentSystemType === CONTENT_SYSTEMS.CAMPAIGN ? [] : modifiers;
 }
 
 export function getGenerousGoldBonus(modifiers: EncounterRewardTraitId[], gold: number): number {

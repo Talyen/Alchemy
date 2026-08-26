@@ -1,5 +1,4 @@
 // Talent definitions for keyword: poison.
-import { Biohazard, Droplets, FlaskRound, Shield, Coins, Skull, Lock, TrendingUp, Moon, Syringe } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { setEffect } from "../types";
 
@@ -9,7 +8,7 @@ export const poisonTalents: TalentDefinition[] = [
     keywordId: "poison",
     name: "Hemotoxin",
     description: "Poison has a 10% chance to Leech",
-    icon: Biohazard,
+    icon: "Biohazard",
     effects: [setEffect("poisonLeechChance", 10)],
   },
   {
@@ -17,7 +16,7 @@ export const poisonTalents: TalentDefinition[] = [
     keywordId: "poison",
     name: "Corrosive",
     description: "Poisoned enemies take +1 Physical damage",
-    icon: Droplets,
+    icon: "Droplets",
     effects: [setEffect("poisonPhysicalBonus", 1)],
   },
   {
@@ -25,7 +24,7 @@ export const poisonTalents: TalentDefinition[] = [
     keywordId: "poison",
     name: "Caustic",
     description: "Poison removes 1 Armor",
-    icon: FlaskRound,
+    icon: "FlaskRound",
     effects: [setEffect("poisonStripArmor", true)],
   },
   {
@@ -33,7 +32,7 @@ export const poisonTalents: TalentDefinition[] = [
     keywordId: "poison",
     name: "Toxin Resistance",
     description: "Receive half Poison damage",
-    icon: Shield,
+    icon: "Shield",
     effects: [setEffect("receiveHalfPoisonDamage", true)],
   },
   {
@@ -41,7 +40,7 @@ export const poisonTalents: TalentDefinition[] = [
     keywordId: "poison",
     name: "Toxic Profit",
     description: "The first time you Poison each combat, gain 4 Gold",
-    icon: Coins,
+    icon: "Coins",
     effects: [setEffect("goldOnFirstPoison", 4)],
   },
   {
@@ -49,7 +48,7 @@ export const poisonTalents: TalentDefinition[] = [
     keywordId: "poison",
     name: "Necrosis",
     description: "Poison reduces enemy healing by half",
-    icon: Skull,
+    icon: "Skull",
     effects: [setEffect("poisonHalvesHealing", true)],
   },
   {
@@ -57,7 +56,7 @@ export const poisonTalents: TalentDefinition[] = [
     keywordId: "poison",
     name: "Paralytic Venom",
     description: "Poison damage and ticks have a 10% chance to deal Stun damage",
-    icon: Lock,
+    icon: "Lock",
     effects: [setEffect("poisonStunChance", 10)],
   },
   {
@@ -65,7 +64,7 @@ export const poisonTalents: TalentDefinition[] = [
     keywordId: "poison",
     name: "Virulent",
     description: "Poison has a 10% chance to gain instead of lose a stack",
-    icon: TrendingUp,
+    icon: "TrendingUp",
     effects: [setEffect("poisonGainChance", 10)],
   },
   {
@@ -73,7 +72,7 @@ export const poisonTalents: TalentDefinition[] = [
     keywordId: "poison",
     name: "Torpor",
     description: "Poisoned enemies cannot Dodge",
-    icon: Moon,
+    icon: "Moon",
     effects: [setEffect("poisonPreventsEnemyDodge", true)],
   },
   {
@@ -81,7 +80,7 @@ export const poisonTalents: TalentDefinition[] = [
     keywordId: "poison",
     name: "Venom Strike",
     description: "Your first Poison card each combat is free",
-    icon: Syringe,
+    icon: "Syringe",
     effects: [setEffect("firstPoisonCardFree", true)],
   },
 ];

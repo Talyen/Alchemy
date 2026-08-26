@@ -1,17 +1,32 @@
-import type { BattleCard } from "@/lib/game-data";
+import { useMemo, useState } from "react";
+import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 
 import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION, bodyTextClass, collectionTileWidthClass } from "@/features/alchemy/shared/config";
+import {
+  BUTTON_WIDTH_ACTION,
+  bodyTextClass,
+  collectionTileWidthClass,
+  getPlasmaColorPair,
+} from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { SelectableCard } from "../../shared/ui/selectable-card";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { TitledScreenShell } from "../../shared/ui/shared-ui";
+import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
-function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
+function DraftedCardItem({
+  card,
+  index,
+  onHoverChange,
+}: {
+  card: BattleCard;
+  index: number;
+  onHoverChange: (hovered: boolean) => void;
+}) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     "drafted-" + String(index),
     card.id,
@@ -21,8 +36,14 @@ function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
     <BattleCardButton
       card={card}
       hovered={isHovered}
-      onHoverStart={onHoverStart}
-      onHoverEnd={onHoverEnd}
+      onHoverStart={() => {
+        onHoverStart();
+        onHoverChange(true);
+      }}
+      onHoverEnd={() => {
+        onHoverEnd();
+        onHoverChange(false);
+      }}
       ariaLabel={getCardDisplayTitle(card)}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
@@ -44,6 +65,13 @@ interface Props {
 export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick, onOpenMenu }: Props) {
   const round = draftedCards.length;
   const isComplete = draftedCards.length >= DRAFT_ROUNDS;
+  const [hoveredCard, setHoveredCard] = useState<BattleCard | null>(null);
+
+  const plasmaKeywordIds = useMemo(() => {
+    if (!hoveredCard) return null;
+    return getCardKeywords(hoveredCard);
+  }, [hoveredCard]);
+  usePlasmaInteraction(plasmaKeywordIds ? getPlasmaColorPair(plasmaKeywordIds) : null, plasmaKeywordIds !== null);
 
   return (
     <TitledScreenShell
@@ -62,7 +90,12 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
         {isComplete ? (
           <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
             {draftedCards.map((card, index) => (
-              <DraftedCardItem key={"drafted-" + String(index) + "-" + card.id} card={card} index={index} />
+              <DraftedCardItem
+                key={"drafted-" + String(index) + "-" + card.id}
+                card={card}
+                index={index}
+                onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
+              />
             ))}
           </div>
         ) : (
@@ -74,6 +107,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
                 isSelected={false}
                 onSelect={() => onPick(card)}
                 interactionKey={"draft-choice-" + String(index)}
+                onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
               />
             ))}
           </div>

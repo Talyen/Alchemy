@@ -11,20 +11,16 @@ import {
   getAllocatableTalentChoices,
   getTalentTreeKeywordIds,
   keywordDefinitions,
+  type TalentDefinition,
   type UnlockedTalents,
   type TalentXP,
 } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { TalentOverviewGrid } from "../talents/talent-overview-grid";
-import {
-  ConfirmationDialog,
-  HamburgerTrigger,
-  PageLayout,
-  ScreenHeaderRow,
-  ScreenShell,
-} from "../../shared/ui/shared-ui";
-import { BUTTON_WIDTH_DIALOG } from "../../shared/config";
+import { ConfirmationDialog, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
+import { BUTTON_WIDTH_DIALOG, getPlasmaColorPair, getPlasmaKeywordsForTalent } from "../../shared/config";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
@@ -48,6 +44,8 @@ export function TalentsScreen({
   onResetTalents: () => void;
 }) {
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId | null>(null);
+  const [hoveredOverviewKeyword, setHoveredOverviewKeyword] = useState<KeywordId | null>(null);
+  const [hoveredTalent, setHoveredTalent] = useState<TalentDefinition | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const keywordIds = useMemo(() => getTalentTreeKeywordIds(), []);
   const hasAllocatedTalents = Object.values(unlockedTalents).some((talents) => (talents?.length ?? 0) > 0);
@@ -77,6 +75,17 @@ export function TalentsScreen({
     );
   }, [selectedKeyword, talentXP, unlockedIds.length]);
 
+  const plasmaKeywordIds = useMemo(() => {
+    if (selectedKeyword === null) {
+      return hoveredOverviewKeyword ? [hoveredOverviewKeyword] : null;
+    }
+    if (hoveredTalent) {
+      return getPlasmaKeywordsForTalent(hoveredTalent);
+    }
+    return null;
+  }, [hoveredOverviewKeyword, hoveredTalent, selectedKeyword]);
+  usePlasmaInteraction(plasmaKeywordIds ? getPlasmaColorPair(plasmaKeywordIds) : null, plasmaKeywordIds !== null);
+
   function handleUnlockTalent(talentId: string) {
     if (selectedKeyword) {
       onUnlockTalent(selectedKeyword, talentId);
@@ -95,60 +104,65 @@ export function TalentsScreen({
   const title = selectedKeywordDef ? selectedKeywordDef.label : "Talents";
 
   return (
-    <PageLayout align="center">
-      <ScreenShell maxWidthClass="max-w-[90rem]" minHeightClass="min-h-[76cqh]" className="flex flex-col">
-        <ScreenHeaderRow
-          title={title}
-          trailing={
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 text-muted-foreground"
-                disabled={!hasAllocatedTalents}
-                onClick={() => setShowResetConfirm(true)}
-                aria-label="Reset talents"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-              <HamburgerTrigger onClick={onOpenMenu} label="Open talents menu" />
-            </div>
-          }
-        />
-
-        <FadeSlot swapKey={selectedKeyword ?? "overview"} className="mt-4 flex w-full flex-1 flex-col justify-center">
-          {selectedKeyword === null ? (
-            <div className={TALENT_PANE_CLASS}>
-              <TalentOverviewGrid
-                keywordIds={keywordIds}
-                talentXP={talentXP}
-                unlockedTalents={unlockedTalents}
-                onSelectKeyword={setSelectedKeyword}
-              />
-            </div>
-          ) : (
-            <div className={cn(TALENT_PANE_CLASS, "gap-4")}>
-              <TalentTree
-                key={selectedKeyword}
-                allTalents={allTalentsForKeyword}
-                unlockedIds={unlockedIds}
-                allocatableIds={allocatableIds}
-                hasUnspentPoints={(progress?.unspentPoints ?? 0) > 0}
-                onUnlock={handleUnlockTalent}
-                onUnlockBegin={handleUnlockTalentBegin}
-              />
-              <Button
-                size="lg"
-                variant="outline"
-                className={BUTTON_WIDTH_DIALOG}
-                onClick={() => setSelectedKeyword(null)}
-              >
-                Back
-              </Button>
-            </div>
-          )}
-        </FadeSlot>
-      </ScreenShell>
+    <TitledScreenShell
+      title={title}
+      onOpenMenu={onOpenMenu}
+      menuLabel="Open talents menu"
+      maxWidthClass="max-w-[90rem]"
+      minHeightClass="min-h-[76cqh]"
+      headerActions={
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 text-muted-foreground"
+          disabled={!hasAllocatedTalents}
+          onClick={() => setShowResetConfirm(true)}
+          aria-label="Reset talents"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </Button>
+      }
+    >
+      <FadeSlot swapKey={selectedKeyword ?? "overview"} className="mt-4 flex w-full flex-1 flex-col justify-center">
+        {selectedKeyword === null ? (
+          <div className={TALENT_PANE_CLASS}>
+            <TalentOverviewGrid
+              keywordIds={keywordIds}
+              talentXP={talentXP}
+              unlockedTalents={unlockedTalents}
+              onSelectKeyword={(kw) => {
+                setHoveredOverviewKeyword(null);
+                setSelectedKeyword(kw);
+              }}
+              onHoverKeyword={setHoveredOverviewKeyword}
+            />
+          </div>
+        ) : (
+          <div className={cn(TALENT_PANE_CLASS, "gap-4")}>
+            <TalentTree
+              key={selectedKeyword}
+              allTalents={allTalentsForKeyword}
+              unlockedIds={unlockedIds}
+              allocatableIds={allocatableIds}
+              hasUnspentPoints={(progress?.unspentPoints ?? 0) > 0}
+              onUnlock={handleUnlockTalent}
+              onUnlockBegin={handleUnlockTalentBegin}
+              onHoverTalent={setHoveredTalent}
+            />
+            <Button
+              size="lg"
+              variant="outline"
+              className={BUTTON_WIDTH_DIALOG}
+              onClick={() => {
+                setHoveredTalent(null);
+                setSelectedKeyword(null);
+              }}
+            >
+              Back
+            </Button>
+          </div>
+        )}
+      </FadeSlot>
 
       <ConfirmationDialog
         open={showResetConfirm}
@@ -160,6 +174,6 @@ export function TalentsScreen({
         onConfirm={handleReset}
         onCancel={() => setShowResetConfirm(false)}
       />
-    </PageLayout>
+    </TitledScreenShell>
   );
 }

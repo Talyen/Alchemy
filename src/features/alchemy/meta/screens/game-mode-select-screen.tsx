@@ -50,6 +50,7 @@ function GameModeTile({
       label={meta.title}
       ariaLabel={ariaLabel}
       accentClassName={meta.accentClassName}
+      plasmaColorPair={isLocked ? null : meta.plasmaColorPair}
       widthClass={gameModeArtWidthClass}
       paddedTileClass={gameModePaddedTileClass}
       disabled={isLocked}

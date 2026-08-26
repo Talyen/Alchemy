@@ -1,17 +1,16 @@
 // Destination routing helpers and reward selection utilities for run flow.
-import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import { recordRunObtainedItem } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { RewardState } from "@/lib/active-run-session";
-import type { Destination } from "@/lib/routing";
-import { CONSTANTS } from "../../shared/types";
 import { getRandomPotionCard } from "../navigation/reward-flow";
 import { appendCardToRunWithDiscovery, appendBoonToRunWithDiscovery } from "./deck-mutations";
 import { discoverTrinketIds } from "../../shared/stores/profile-store";
 import type { RunFlowShellActions } from "./run-flow-shell-actions";
+import { DESTINATIONS, ROUTE_SCREENS, type Destination } from "@/lib/routing";
+import { ENEMY_TYPES, type BattleCard } from "@/lib/game-data";
 
 export type DestinationRouteDeps = Pick<
   RunFlowShellActions,
@@ -19,44 +18,44 @@ export type DestinationRouteDeps = Pick<
 > & { resetCorruption: () => void };
 
 const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps) => void> = {
-  [CONSTANTS.DESTINATIONS.CAMPFIRE]: (deps) => deps.navigateTo(CONSTANTS.SCREENS.CAMPFIRE),
-  [CONSTANTS.DESTINATIONS.MERCHANT_SHOP]: (deps) => {
+  [DESTINATIONS.CAMPFIRE]: (deps) => deps.navigateTo(ROUTE_SCREENS.CAMPFIRE),
+  [DESTINATIONS.MERCHANT_SHOP]: (deps) => {
     deps.initializeShop("merchant");
-    deps.navigateTo(CONSTANTS.SCREENS.SHOP);
+    deps.navigateTo(ROUTE_SCREENS.SHOP);
   },
-  [CONSTANTS.DESTINATIONS.ALCHEMIST_SHOP]: (deps) => {
+  [DESTINATIONS.ALCHEMIST_SHOP]: (deps) => {
     deps.initializeShop("alchemist");
-    deps.navigateTo(CONSTANTS.SCREENS.ALCHEMIST);
+    deps.navigateTo(ROUTE_SCREENS.ALCHEMIST);
   },
-  [CONSTANTS.DESTINATIONS.TRINKET_SHOP]: (deps) => {
+  [DESTINATIONS.TRINKET_SHOP]: (deps) => {
     deps.initializeShop("trinket");
-    deps.navigateTo(CONSTANTS.SCREENS.TRINKET_SHOP);
+    deps.navigateTo(ROUTE_SCREENS.TRINKET_SHOP);
   },
-  [CONSTANTS.DESTINATIONS.EQUIPMENT_SHOP]: (deps) => {
+  [DESTINATIONS.EQUIPMENT_SHOP]: (deps) => {
     deps.initializeShop("equipment");
-    deps.navigateTo(CONSTANTS.SCREENS.EQUIPMENT_SHOP);
+    deps.navigateTo(ROUTE_SCREENS.EQUIPMENT_SHOP);
   },
-  [CONSTANTS.DESTINATIONS.MYSTERY]: (deps) => deps.beginMysteryEvent(),
-  [CONSTANTS.DESTINATIONS.CORRUPTION]: (deps) => {
+  [DESTINATIONS.MYSTERY]: (deps) => deps.beginMysteryEvent(),
+  [DESTINATIONS.CORRUPTION]: (deps) => {
     deps.resetCorruption();
-    deps.navigateTo(CONSTANTS.SCREENS.CORRUPTION);
+    deps.navigateTo(ROUTE_SCREENS.CORRUPTION);
   },
-  [CONSTANTS.DESTINATIONS.ELITE_COMBAT]: (deps) => {
-    deps.startBattle({ enemyType: CONSTANTS.ENEMY_TYPES.ELITE });
-    deps.navigateTo(CONSTANTS.SCREENS.BATTLE);
+  [DESTINATIONS.ELITE_COMBAT]: (deps) => {
+    deps.startBattle({ enemyType: ENEMY_TYPES.ELITE });
+    deps.navigateTo(ROUTE_SCREENS.BATTLE);
   },
-  [CONSTANTS.DESTINATIONS.BOSS_COMBAT]: (deps) => {
+  [DESTINATIONS.BOSS_COMBAT]: (deps) => {
     deps.startBoss();
-    deps.navigateTo(CONSTANTS.SCREENS.BATTLE);
+    deps.navigateTo(ROUTE_SCREENS.BATTLE);
   },
-  [CONSTANTS.DESTINATIONS.NORMAL_COMBAT]: (deps) => {
-    deps.startBattle({ enemyType: CONSTANTS.ENEMY_TYPES.NORMAL });
-    deps.navigateTo(CONSTANTS.SCREENS.BATTLE);
+  [DESTINATIONS.NORMAL_COMBAT]: (deps) => {
+    deps.startBattle({ enemyType: ENEMY_TYPES.NORMAL });
+    deps.navigateTo(ROUTE_SCREENS.BATTLE);
   },
 };
 
 export function routeDestinationChoice(destination: Destination, deps: DestinationRouteDeps) {
-  const handler = DESTINATION_HANDLERS[destination] ?? DESTINATION_HANDLERS[CONSTANTS.DESTINATIONS.NORMAL_COMBAT];
+  const handler = DESTINATION_HANDLERS[destination] ?? DESTINATION_HANDLERS[DESTINATIONS.NORMAL_COMBAT];
   handler(deps);
 }
 

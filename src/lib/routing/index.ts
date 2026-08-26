@@ -17,3 +17,4 @@ export { filterValidDestinations, filterValidDestinationRounds } from "./destina
 export { getAvailableDestinations } from "./destination-availability";
 export { getRunPhase, isRunLoopScreen, SCREEN_PHASE, type RunPhase } from "./run-screen-router";
 export { getSteamRichPresenceLabel } from "./run-phase-presence";
+export { REWARD_ROUTES, type RewardRoute } from "./reward-routes";

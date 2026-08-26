@@ -7,7 +7,7 @@ export function playHandSlotReflow(slot: HTMLElement, deltaX: number, durationMs
   const duration = isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : durationMs;
 
   slot.style.transition = "none";
-  slot.style.transform = `translateX(${deltaX}px)`;
+  slot.style.transform = `translate3d(${deltaX}px, 0, 0)`;
 
   let innerId: number | null = null;
   const outerId = requestAnimationFrame(() => {

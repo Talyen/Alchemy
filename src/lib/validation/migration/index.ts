@@ -25,7 +25,7 @@ export function getRawContentVersion(parsed: unknown): number {
 
 /**
  * Stamp the current schema version onto a parsed payload.
- * Pre-launch floor equals CURRENT — there are no schema step functions.
+ * Schema steps exist from the launch floor (v11) through CURRENT (v13).
  * Older local saves are unsupported; Zod defaults repair the envelope.
  */
 export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {

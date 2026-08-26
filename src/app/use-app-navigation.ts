@@ -210,8 +210,9 @@ export function useAppKeyboardShortcuts({
 
 export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | "unlockAllTalents">) {
   const clearSaveData = useCallback(() => {
-    clearAllPersistentGameData();
-    run.resetRunState();
+    void clearAllPersistentGameData().then((cleared) => {
+      if (cleared) run.resetRunState();
+    });
   }, [run]);
 
   const unlockAllDevMode = useCallback(() => {

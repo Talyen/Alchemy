@@ -23,7 +23,33 @@ describe("battle-presentation-store", () => {
     expect(s.companionShaking).toBe(false);
     expect(s.playerAttackToken).toBe(0);
     expect(s.enemyAttackToken).toBe(0);
-    expect(s.companionAttackToken).toBe(0);
+    expect(s.playerCastToken).toBe(0);
+    expect(s.enemyCastToken).toBe(0);
+  });
+
+  it("telegraphs cast motion and resets on resetPresentation", () => {
+    useBattlePresentationStore.getState().telegraphCast("player");
+    expect(useBattlePresentationStore.getState().playerCastToken).toBe(1);
+    expect(useBattlePresentationStore.getState().enemyCastToken).toBe(0);
+
+    useBattlePresentationStore.getState().telegraphCast("enemy");
+    expect(useBattlePresentationStore.getState().enemyCastToken).toBe(1);
+
+    useBattlePresentationStore.getState().resetPresentation();
+    expect(useBattlePresentationStore.getState().playerCastToken).toBe(0);
+    expect(useBattlePresentationStore.getState().enemyCastToken).toBe(0);
+  });
+
+  it("telegraphAttack maps companion to the player lunge token", () => {
+    useBattlePresentationStore.getState().telegraphAttack("companion");
+    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(1);
+
+    useBattlePresentationStore.getState().telegraphAttack("player");
+    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(2);
+    expect(useBattlePresentationStore.getState().enemyAttackToken).toBe(0);
+
+    useBattlePresentationStore.getState().telegraphAttack("enemy");
+    expect(useBattlePresentationStore.getState().enemyAttackToken).toBe(1);
   });
 
   it("spawnCardGhost and removeCardGhost round-trip", () => {
@@ -43,7 +69,7 @@ describe("battle-presentation-store", () => {
     vi.useFakeTimers();
     useBattlePresentationStore.getState().shakeEnemy();
     expect(useBattlePresentationStore.getState().enemyShaking).toBe(true);
-    await vi.advanceTimersByTimeAsync(500);
+    await vi.advanceTimersByTimeAsync(SHAKE_DURATION);
     expect(useBattlePresentationStore.getState().enemyShaking).toBe(false);
     vi.useRealTimers();
   });
@@ -60,15 +86,14 @@ describe("battle-presentation-store", () => {
     vi.useRealTimers();
   });
 
-  it("telegraphAttack bumps the acting combatant's token", () => {
+  it("telegraphAttack bumps the acting combatant's token and maps companion onto player", () => {
     useBattlePresentationStore.getState().telegraphAttack("player");
     useBattlePresentationStore.getState().telegraphAttack("enemy");
     useBattlePresentationStore.getState().telegraphAttack("companion");
     useBattlePresentationStore.getState().telegraphAttack("player");
     const s = useBattlePresentationStore.getState();
-    expect(s.playerAttackToken).toBe(2);
+    expect(s.playerAttackToken).toBe(3);
     expect(s.enemyAttackToken).toBe(1);
-    expect(s.companionAttackToken).toBe(1);
   });
 
   it("resetPresentation clears VFX state", () => {
@@ -119,7 +144,6 @@ describe("battle-presentation-store", () => {
     expect(s.enemyShaking).toBe(false);
     expect(s.playerAttackToken).toBe(0);
     expect(s.enemyAttackToken).toBe(0);
-    expect(s.companionAttackToken).toBe(0);
     expect(s.floatingCombatTexts).toEqual([]);
   });
 

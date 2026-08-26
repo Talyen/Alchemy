@@ -6,12 +6,11 @@ import {
   setRunPlayerHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { computeTalentEffects } from "@/lib/game-data";
 import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/game-constants";
-import type { Destination } from "@/lib/routing";
-import { CONSTANTS } from "../../shared/types";
 import { routeDestinationChoice } from "./run-destination-handlers";
 import type { AdvanceToNextDestination, RunFlowHandlerDeps } from "./run-flow-handler-deps";
+import { DESTINATIONS, type Destination } from "@/lib/routing";
+import { computeTalentEffects } from "@/lib/game-data";
 
 interface DestinationCallbacks {
   advanceToNextDestination: AdvanceToNextDestination;
@@ -26,7 +25,7 @@ export function createDestinationScreenHandlers(
       const choice = dispatchRunSessionCommand((draft) => {
         if (!beginDestinationClaim(draft, destination)) return null;
         const rewardState = draft.session.rewardState;
-        const selectedBossId = destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
+        const selectedBossId = destination === DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
         return { selectedBossId };
       });
       if (!choice) return;

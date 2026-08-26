@@ -14,10 +14,10 @@ import {
 import { executeRewardRouteTransition } from "@/features/alchemy/run-loop/run/run-flow-rewards";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeRewardRouteDeps } from "../../../../helpers/destination-route-handlers";
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
 describe("reward flow orchestration", () => {
   describe("createEmptyRewardState", () => {
@@ -381,14 +381,14 @@ describe("reward flow orchestration", () => {
     it("routes companion rewards back to the rewards screen with the settle hook", () => {
       const handlers = makeHandlers();
       executeRewardRouteTransition("companion-reward", materials, handlers);
-      expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, handlers.settleClaimSurface);
+      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, handlers.settleClaimSurface);
     });
 
     it("routes labyrinth map rewards to the labyrinth screen", () => {
       const handlers = makeHandlers();
       executeRewardRouteTransition("labyrinth-map", materials, handlers);
       expect(handlers.labyrinthClearNode).toHaveBeenCalledOnce();
-      expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP, handlers.settleClaimSurface);
+      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP, handlers.settleClaimSurface);
     });
 
     it("routes both victory routes through completeRunVictory", () => {
@@ -411,7 +411,7 @@ describe("reward flow orchestration", () => {
     it("routes campaign rewards to destination", () => {
       const handlers = makeHandlers();
       executeRewardRouteTransition("destination", materials, handlers);
-      expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DESTINATION, handlers.settleClaimSurface);
+      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, handlers.settleClaimSurface);
     });
   });
 });

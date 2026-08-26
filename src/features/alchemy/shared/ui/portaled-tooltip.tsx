@@ -8,12 +8,14 @@ import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
+import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 import { tooltipWidthClass } from "../config";
 
 import { getVrStageBounds, usePortaledTooltipPlacement, type PortaledTooltipSide } from "./portaled-tooltip-placement";
 import { getTooltipRoot } from "./tooltip-root";
 import { TooltipPanel } from "./tooltip-panel";
+import { usePlasmaInteraction } from "./use-plasma-source";
 
 export const TOOLTIP_FADE_OUT_MS = 160;
 
@@ -30,6 +32,8 @@ export interface PortaledTooltipProps {
   maxWidthFraction?: number;
   /** Keep the panel mounted for a fade-out after hide. */
   fadeOutMs?: number;
+  /** Optional ambient palette active only while this tooltip is visible. */
+  plasmaColorPair?: PlasmaColorPair | null | undefined;
 }
 
 export function PortaledTooltip({
@@ -42,7 +46,9 @@ export function PortaledTooltip({
   placement = "above",
   maxWidthFraction,
   fadeOutMs = TOOLTIP_FADE_OUT_MS,
+  plasmaColorPair = null,
 }: PortaledTooltipProps) {
+  usePlasmaInteraction(plasmaColorPair, visible);
   const { tooltipRef, placeBelow, tooltipSide, tooltipStyle } = usePortaledTooltipPlacement(
     triggerRef,
     visible,

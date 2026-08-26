@@ -8,7 +8,7 @@ import {
   setRunEndMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { CONSTANTS } from "../../shared/types";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
 /** Clear the persisted battle-active state; presentation cleanup is a post-commit concern. */
 export function clearCombatState(draft: GameplayDraft) {
@@ -24,7 +24,7 @@ export function awardRunEndMaterials(draft: GameplayDraft): ReturnType<typeof em
   const runState = draft.run.activeRun;
   const runProfile = draft.runProfile;
   {
-    if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+    if (runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
       clearRunMaterialsEarned(draft);
       const none = emptyInventory();
       setRunEndMaterials(draft, none);

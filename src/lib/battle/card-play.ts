@@ -12,7 +12,7 @@ import {
   gainManaWithCombatText,
   mergeCombatText,
 } from "./combat-text";
-import { type BattleCard } from "@/lib/game-data";
+import { type BattleCard, type EnemyAttackEffect } from "@/lib/game-data";
 import {
   type BattleResolution,
   type BattleState,
@@ -309,4 +309,41 @@ export function playBattleCardResolved(
   nextState = handlePostPlayCardDestination(nextState, card, playerAlive, combatTexts);
 
   return { state: nextState, combatTexts };
+}
+
+/**
+ * Inspects card effects to determine whether any effect deals damage directly or recursively.
+ */
+export function hasDamageEffect(effects: ReadonlyArray<BattleCard["effects"][number]>): boolean {
+  for (const effect of effects) {
+    if (
+      effect.kind === "damage" ||
+      effect.kind === "random-damage" ||
+      effect.kind === "cleanse-player-status-to-damage"
+    ) {
+      return true;
+    }
+    if (
+      effect.kind === "chance" &&
+      (hasDamageEffect(effect.successEffects) || hasDamageEffect(effect.failureEffects))
+    ) {
+      return true;
+    }
+    if (effect.kind === "repeat-over-turns" && hasDamageEffect(effect.effects)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Checks whether a card has direct or recursive damage-dealing effects (an attack card).
+ */
+export function isAttackCard(card: Pick<BattleCard, "effects">): boolean {
+  return hasDamageEffect(card.effects);
+}
+
+/** True when any enemy attack packet deals hit damage rather than status-only. */
+export function enemyAttackDealsDamage(effects: ReadonlyArray<EnemyAttackEffect>): boolean {
+  return effects.some((effect) => effect.kind === "damage");
 }

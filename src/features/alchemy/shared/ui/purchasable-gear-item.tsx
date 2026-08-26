@@ -15,6 +15,7 @@ interface PurchasableGearItemProps {
 export function PurchasableGearItem({ instance, price, gold, purchased, onBuy }: PurchasableGearItemProps) {
   const title = getGearInstanceTitle(instance);
   const canAfford = gold >= price;
+  const canPurchase = !purchased && canAfford;
   const media = (
     <GearTile
       instance={instance}
@@ -22,8 +23,8 @@ export function PurchasableGearItem({ instance, price, gold, purchased, onBuy }:
       as="button"
       shine={!purchased}
       interactiveChrome={!purchased}
-      disabled={purchased || !canAfford}
-      onClick={!purchased && canAfford ? onBuy : undefined}
+      disabled={!canPurchase}
+      onClick={canPurchase ? onBuy : undefined}
       ariaLabel={purchased ? title : `Buy ${title}`}
     >
       <ShopPriceChip price={price} gold={gold} purchased={purchased} />

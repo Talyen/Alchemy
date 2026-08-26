@@ -12,6 +12,7 @@ import {
   deduplicatedStringArraySchema,
   CharacterIdSchema,
   ContentSystemIdSchema,
+  EnemyTypeSchema,
   DifficultyIdSchema,
   DestinationArraySchema,
   TalentXPSchema,
@@ -222,7 +223,7 @@ const PersistedPendingRewardBaseSchema = {
   materials: MaterialInventorySchema.catch(emptyInventory()),
   destinations: DestinationArraySchema,
   selectedBossId: z.string().nullable().catch(null),
-  lastVictoryEnemyType: z.string().nullable().catch(null),
+  lastVictoryEnemyType: EnemyTypeSchema.nullable().catch(null),
   lastVictoryContentSystem: ContentSystemIdSchema.nullable().catch(null),
 };
 
@@ -255,7 +256,7 @@ const InterruptedFlowDestinationSchema = z.object({
   kind: z.literal("destination"),
   destinations: DestinationArraySchema,
   selectedBossId: z.string().nullable().catch(null),
-  lastVictoryEnemyType: z.string().nullable().catch(null),
+  lastVictoryEnemyType: EnemyTypeSchema.nullable().catch(null),
   lastVictoryContentSystem: ContentSystemIdSchema.nullable().catch(null),
 });
 

@@ -2,7 +2,7 @@
 // Used by run controllers, map generation, modifiers, and screens.
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "./encounter-traits";
 
-export { CONTENT_SYSTEM_IDS, type ContentSystemId } from "./content-system-ids";
+export { CONTENT_SYSTEMS, CONTENT_SYSTEM_IDS, type ContentSystemId } from "./content-system-ids";
 export type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-traits";
 
 // ============ Labyrinth ============

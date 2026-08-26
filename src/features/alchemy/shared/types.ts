@@ -6,7 +6,6 @@ import type { CSSProperties, RefObject } from "react";
 import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle";
 import type { ArmedFlagChipId, PendingPulseChipId } from "./augment-definitions";
-import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 
 type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
 
@@ -62,35 +61,6 @@ export type FloatingCombatText = CombatTextEvent & {
 export type AspectRatioOption = "auto" | "16:9" | "16:10" | "21:9";
 
 export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
-
-const CONTENT_SYSTEMS = {
-  CAMPAIGN: "campaign",
-  LABYRINTH: "labyrinth",
-  WILDWOOD: "wildwood",
-} as const;
-
-const ENEMY_TYPES = {
-  NORMAL: "normal",
-  ELITE: "elite",
-  BOSS: "boss",
-} as const;
-
-const REWARD_ROUTES = {
-  COMPANION_REWARD: "companion-reward",
-  LABYRINTH_VICTORY: "labyrinth-victory",
-  LABYRINTH_MAP: "labyrinth-map",
-  WILDWOOD_VICTORY: "wildwood-victory",
-  ACT_COMPLETE: "act-complete",
-  DESTINATION: "destination",
-} as const;
-
-export const CONSTANTS = {
-  SCREENS: ROUTE_SCREENS,
-  DESTINATIONS,
-  CONTENT_SYSTEMS,
-  ENEMY_TYPES,
-  REWARD_ROUTES,
-} as const;
 
 export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets";
 

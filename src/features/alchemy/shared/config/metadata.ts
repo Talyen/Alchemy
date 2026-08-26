@@ -48,6 +48,7 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 
 import type { Destination } from "@/lib/routing";
+import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import type { CollectionTab } from "../types";
 
 // Collection tabs drive the collection navigation labels and icons.
@@ -59,23 +60,82 @@ export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: 
 ];
 
 // Destination visual theming gives each route type an icon, accent color, and art.
-export const destinationMeta: Record<Destination, { icon: LucideIcon; accentClassName: string; art: string }> = {
-  "Normal Combat": { icon: Swords, accentClassName: "text-red-400", art: normalEnemyBg },
-  "Elite Combat": { icon: ShieldAlert, accentClassName: "text-violet-400", art: eliteEnemyBg },
-  "Merchant's Shop": { icon: Coins, accentClassName: "text-amber-400", art: merchantShopBg },
-  "Alchemist's Shop": { icon: WandSparkles, accentClassName: "text-emerald-400", art: alchemistShopBg },
-  "Trinket Shop": { icon: Gem, accentClassName: "text-violet-400", art: alchemistShopBg },
-  "Equipment Shop": { icon: Hammer, accentClassName: "text-slate-300", art: merchantShopBg },
-  Mystery: { icon: Sparkles, accentClassName: "text-zinc-200", art: mysteryBg },
-  Corruption: { icon: Dices, accentClassName: "text-red-400", art: corruptionAltar },
-  Campfire: { icon: Flame, accentClassName: "text-emerald-300", art: campfire },
-  "Boss Combat": { icon: Skull, accentClassName: "text-red-400", art: normalEnemyBg },
+type ThemedChooserMeta = { icon: LucideIcon; accentClassName: string; art: string; plasmaColorPair: PlasmaColorPair };
+
+export const destinationMeta: Record<Destination, ThemedChooserMeta> = {
+  "Normal Combat": {
+    icon: Swords,
+    accentClassName: "text-red-400",
+    art: normalEnemyBg,
+    plasmaColorPair: { primary: "#f87171", secondary: "#7f1d1d" },
+  },
+  "Elite Combat": {
+    icon: ShieldAlert,
+    accentClassName: "text-violet-400",
+    art: eliteEnemyBg,
+    plasmaColorPair: { primary: "#c084fc", secondary: "#581c87" },
+  },
+  "Merchant's Shop": {
+    icon: Coins,
+    accentClassName: "text-amber-400",
+    art: merchantShopBg,
+    plasmaColorPair: { primary: "#fbbf24", secondary: "#78350f" },
+  },
+  "Alchemist's Shop": {
+    icon: WandSparkles,
+    accentClassName: "text-emerald-400",
+    art: alchemistShopBg,
+    plasmaColorPair: { primary: "#34d399", secondary: "#064e3b" },
+  },
+  "Trinket Shop": {
+    icon: Gem,
+    accentClassName: "text-violet-400",
+    art: alchemistShopBg,
+    plasmaColorPair: { primary: "#c084fc", secondary: "#581c87" },
+  },
+  "Equipment Shop": {
+    icon: Hammer,
+    accentClassName: "text-slate-300",
+    art: merchantShopBg,
+    plasmaColorPair: { primary: "#cbd5e1", secondary: "#334155" },
+  },
+  Mystery: {
+    icon: Sparkles,
+    accentClassName: "text-zinc-200",
+    art: mysteryBg,
+    plasmaColorPair: { primary: "#e4e4e7", secondary: "#3f3f46" },
+  },
+  Corruption: {
+    icon: Dices,
+    accentClassName: "text-red-400",
+    art: corruptionAltar,
+    plasmaColorPair: { primary: "#f87171", secondary: "#7f1d1d" },
+  },
+  Campfire: {
+    icon: Flame,
+    accentClassName: "text-emerald-300",
+    art: campfire,
+    plasmaColorPair: { primary: "#6ee7b7", secondary: "#064e3b" },
+  },
+  "Boss Combat": {
+    icon: Skull,
+    accentClassName: "text-red-400",
+    art: normalEnemyBg,
+    plasmaColorPair: { primary: "#f87171", secondary: "#7f1d1d" },
+  },
 };
 
 // Game mode visual theming for the game mode selection screen.
 export const gameModeMeta: Record<
   string,
-  { title: string; description: string; icon: LucideIcon; art: string; accentClassName: string }
+  {
+    title: string;
+    description: string;
+    icon: LucideIcon;
+    art: string;
+    accentClassName: string;
+    plasmaColorPair: PlasmaColorPair;
+  }
 > = {
   campaign: {
     title: "The Campaign",
@@ -83,6 +143,7 @@ export const gameModeMeta: Record<
     icon: Swords,
     art: theCampaign,
     accentClassName: "text-red-400",
+    plasmaColorPair: { primary: "#f87171", secondary: "#7f1d1d" },
   },
   labyrinth: {
     title: "The Labyrinth",
@@ -90,6 +151,7 @@ export const gameModeMeta: Record<
     icon: Map,
     art: theLabyrinth,
     accentClassName: "text-violet-400",
+    plasmaColorPair: { primary: "#c084fc", secondary: "#581c87" },
   },
   wildwood: {
     title: "Wildwood Draft",
@@ -97,6 +159,7 @@ export const gameModeMeta: Record<
     icon: PawPrint,
     art: wildwoodDraft,
     accentClassName: "text-emerald-300",
+    plasmaColorPair: { primary: "#6ee7b7", secondary: "#064e3b" },
   },
 };
 

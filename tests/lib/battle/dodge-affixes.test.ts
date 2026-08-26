@@ -2,28 +2,15 @@ import { describe, expect, it } from "vitest";
 import { defaultGearEffects } from "@/lib/gear";
 import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { dealDamage, makeCombatTexts, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";
+import {
+  dealDamage,
+  incomingPhysical,
+  makeCombatTexts,
+  makeEffect,
+  makeTestCard,
+  patchBattleState,
+} from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-
-function dodgeThenMissRng() {
-  let calls = 0;
-  return () => {
-    calls += 1;
-    return calls === 1 ? 0.01 : 0.99;
-  };
-}
-
-function incomingPhysical(overrides: Parameters<typeof patchBattleState>[0] = {}) {
-  return patchBattleState({
-    playerHealth: 100,
-    playerMaxHealth: 100,
-    enemyHealth: 100,
-    enemyMaxHealth: 100,
-    rng: dodgeThenMissRng(),
-    enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-    ...overrides,
-  });
-}
 
 describe("Dodge gear affixes", () => {
   it("gains Block, Armor, and Health on Dodge", () => {

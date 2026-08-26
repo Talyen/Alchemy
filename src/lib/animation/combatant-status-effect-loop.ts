@@ -34,22 +34,26 @@ export function startCombatantStatusEffectLoop({
   const startTime = performance.now();
   let lastWidth = 0;
   let lastHeight = 0;
+  let lastPixelRatio = 0;
 
   const resize = () => {
     const parent = canvas.parentElement;
     if (!parent) return;
     const w = Math.max(Math.round(parent.clientWidth), 1);
     const h = Math.max(Math.round(parent.clientHeight), 1);
-    if (w === lastWidth && h === lastHeight) return;
+    const pixelRatio = Math.max(window.devicePixelRatio || 1, 1);
+    if (w === lastWidth && h === lastHeight && pixelRatio === lastPixelRatio) return;
     lastWidth = w;
     lastHeight = h;
-    canvas.width = w;
-    canvas.height = h;
+    lastPixelRatio = pixelRatio;
+    canvas.width = Math.round(w * pixelRatio);
+    canvas.height = Math.round(h * pixelRatio);
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   };
 
   const paintStatic = () => {
     resize();
-    drawCombatantStatusEffectStatic(ctx, canvas.width, canvas.height, kind, palette);
+    drawCombatantStatusEffectStatic(ctx, lastWidth, lastHeight, kind, palette);
     onFrame({ progress: 0, wobbleDegrees: 0 });
   };
 
@@ -66,13 +70,12 @@ export function startCombatantStatusEffectLoop({
 
     resize();
     const progress = combatantStatusProgress(now - startTime);
-    drawCombatantStatusEffect(ctx, canvas.width, canvas.height, kind, progress, palette);
+    drawCombatantStatusEffect(ctx, lastWidth, lastHeight, kind, progress, palette);
     onFrame({ progress, wobbleDegrees: combatantStatusWobbleDegrees(kind, progress) });
     rafId = requestAnimationFrame(frame);
   };
 
-  resize();
-  rafId = requestAnimationFrame(frame);
+  frame(startTime);
 
   let observer: ResizeObserver | null = null;
   if (typeof ResizeObserver !== "undefined" && canvas.parentElement) {

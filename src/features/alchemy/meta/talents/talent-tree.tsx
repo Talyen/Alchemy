@@ -11,7 +11,7 @@ import {
   cardInteractiveGlowClass,
   cardShineFrameClass,
   getKeywordShineColors,
-  keywordIcons,
+  getTalentIcon,
 } from "@/features/alchemy/shared/config";
 import { TALENT_UNLOCK_ANIMATION_MS } from "@/lib/game-constants";
 import { keywordDefinitions, isTalentPlaceholder, TALENT_ROW_SIZES } from "@/lib/game-data";
@@ -26,8 +26,9 @@ export interface TalentLayoutProps {
   /** Real talents on an unlocked row that have not been allocated yet. */
   allocatableIds: Set<string>;
   hasUnspentPoints: boolean;
-  onUnlock?: (talentId: string) => void;
-  onUnlockBegin?: (talentId: string) => void;
+  onUnlock?: ((talentId: string) => void) | undefined;
+  onUnlockBegin?: ((talentId: string) => void) | undefined;
+  onHoverTalent?: ((talent: TalentDefinition | null) => void) | undefined;
 }
 
 function chunkRows(talents: TalentDefinition[]): TalentDefinition[][] {
@@ -47,6 +48,7 @@ function TalentCard({
   canAfford,
   isUnlocking,
   onUnlock,
+  onHoverTalent,
 }: {
   talent: TalentDefinition;
   isUnlocked: boolean;
@@ -54,11 +56,12 @@ function TalentCard({
   canAfford: boolean;
   isUnlocking: boolean;
   onUnlock: ((talentId: string) => void) | undefined;
+  onHoverTalent?: ((talent: TalentDefinition | null) => void) | undefined;
 }) {
   const def = keywordDefinitions[talent.keywordId];
   const shineColors = getKeywordShineColors(talent.keywordId);
   const accentColor = shineColors[0];
-  const Icon = talent.icon ?? keywordIcons[talent.keywordId];
+  const Icon = getTalentIcon(talent);
   const isPlaceholder = isTalentPlaceholder(talent);
   const interactive = isAllocatable && canAfford && !isUnlocking;
   const showShine = interactive;
@@ -70,6 +73,10 @@ function TalentCard({
     <div
       role={interactive ? "button" : undefined}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
+      onMouseEnter={() => onHoverTalent?.(talent)}
+      onMouseLeave={() => onHoverTalent?.(null)}
+      onFocus={() => onHoverTalent?.(talent)}
+      onBlur={() => onHoverTalent?.(null)}
       className={cn(
         "talent-node relative h-[10.5rem] w-[20.5rem] shrink-0 rounded-lg bg-stone-900",
         showShine && "talent-card-available",
@@ -128,6 +135,7 @@ export function TalentTree({
   hasUnspentPoints,
   onUnlock,
   onUnlockBegin,
+  onHoverTalent,
 }: TalentLayoutProps) {
   const [unlockingTalentId, setUnlockingTalentId] = useState<string | null>(null);
   const mountedRef = useRef(true);
@@ -184,6 +192,7 @@ export function TalentTree({
                 canAfford={hasUnspentPoints}
                 isUnlocking={activeUnlockingId === talent.id}
                 onUnlock={handleUnlock}
+                onHoverTalent={onHoverTalent}
               />
             );
           })}

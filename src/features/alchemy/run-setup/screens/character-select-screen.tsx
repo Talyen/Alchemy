@@ -13,9 +13,8 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { CyclingShineBorder } from "../../shared/ui/cycling-shine-border";
 import { HeroTooltip } from "../../shared/ui/hero-tooltip";
-import { KeywordPlasmaBackground } from "../../shared/ui/keyword-plasma-background";
-import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
-import { HamburgerTrigger } from "../../shared/ui/navigation";
+import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
+import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
@@ -27,6 +26,7 @@ import {
   chooserHeroRowShellWidthClass,
   chooserLockedSurfaceClass,
   getCharacterShineColors,
+  getPlasmaColorPair,
   getPlasmaKeywordsForCharacter,
   WILDCARD_KEYWORD_SHINE_COLORS,
   WILDCARD_SHINE_CYCLE_MS,
@@ -141,10 +141,6 @@ function CharacterCard({
   );
 }
 
-function defaultPlasmaCharacterId(charIds: CharacterId[], finishedRunCharacters: CharacterId[]): CharacterId {
-  return charIds.find((id) => isCharacterUnlocked(id, finishedRunCharacters)) ?? charIds[0] ?? "knight";
-}
-
 export function CharacterSelectScreen({
   onSelect,
   onOpenMenu,
@@ -157,43 +153,38 @@ export function CharacterSelectScreen({
   const charIds = Object.keys(characters) as CharacterId[];
   const [hoveredCharacterId, setHoveredCharacterId] = useState<CharacterId | null>(null);
 
-  const plasmaCharacterId = useMemo(() => {
+  const plasmaKeywordIds = useMemo(() => {
     if (hoveredCharacterId && isCharacterUnlocked(hoveredCharacterId, finishedRunCharacters)) {
-      return hoveredCharacterId;
+      return getPlasmaKeywordsForCharacter(hoveredCharacterId);
     }
-    return defaultPlasmaCharacterId(charIds, finishedRunCharacters);
-  }, [charIds, finishedRunCharacters, hoveredCharacterId]);
-
-  const plasmaKeywordIds = getPlasmaKeywordsForCharacter(plasmaCharacterId);
+    return null;
+  }, [finishedRunCharacters, hoveredCharacterId]);
+  usePlasmaInteraction(plasmaKeywordIds ? getPlasmaColorPair(plasmaKeywordIds) : null, plasmaKeywordIds !== null);
 
   return (
-    <PageLayout>
-      <ScreenShell maxWidthClass={chooserHeroRowShellWidthClass} className="relative overflow-hidden">
-        <KeywordPlasmaBackground keywordIds={plasmaKeywordIds} />
-        <div className="relative z-10">
-          <ScreenHeaderRow
-            title="Choose Your Hero"
-            trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open character select menu" />}
-          />
-          <div className={cn("mt-6 grid w-full grid-cols-4 justify-items-center gap-y-6", chooserHeroRowGapClass)}>
-            {charIds.map((id) => {
-              const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
-              const unlockRequirementText = isLocked ? getCharacterUnlockMessage(id) : "";
+    <TitledScreenShell
+      title="Choose Your Hero"
+      onOpenMenu={onOpenMenu}
+      menuLabel="Open character select menu"
+      maxWidthClass={chooserHeroRowShellWidthClass}
+    >
+      <div className={cn("mt-6 grid w-full grid-cols-4 justify-items-center gap-y-6", chooserHeroRowGapClass)}>
+        {charIds.map((id) => {
+          const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
+          const unlockRequirementText = isLocked ? getCharacterUnlockMessage(id) : "";
 
-              return (
-                <CharacterCard
-                  key={id}
-                  id={id}
-                  onSelect={onSelect}
-                  isLocked={isLocked}
-                  unlockRequirementText={unlockRequirementText}
-                  onHoverChange={setHoveredCharacterId}
-                />
-              );
-            })}
-          </div>
-        </div>
-      </ScreenShell>
-    </PageLayout>
+          return (
+            <CharacterCard
+              key={id}
+              id={id}
+              onSelect={onSelect}
+              isLocked={isLocked}
+              unlockRequirementText={unlockRequirementText}
+              onHoverChange={setHoveredCharacterId}
+            />
+          );
+        })}
+      </div>
+    </TitledScreenShell>
   );
 }

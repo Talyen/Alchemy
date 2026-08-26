@@ -120,11 +120,12 @@ function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
       className="absolute left-1/2"
       // Lane offset is per floating entry — static utilities can't encode the runtime stack index.
       // Horizontal center lives on this wrapper so Framer y/scale on the bubble do not fight CSS transform.
-      style={{ top: `${entry.lane * 56}px`, transform: "translateX(-50%)" }}
+      style={{ top: `${entry.lane * 56}px`, transform: "translate3d(-50%, 0, 0)" }}
     >
       <motion.div
         className={cn(
           "inline-flex items-center gap-1.5 font-bold tracking-wide whitespace-nowrap",
+          "transform-gpu will-change-transform [backface-visibility:hidden]",
           "[filter:drop-shadow(0_0_1.5px_rgba(0,0,0,0.95))_drop-shadow(0_2px_4px_rgba(0,0,0,0.85))]",
           colorClass,
         )}

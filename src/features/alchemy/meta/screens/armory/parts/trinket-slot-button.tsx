@@ -8,6 +8,7 @@ import {
   collectionGridTileWidthClass,
   gearArtAspectClass,
   getTrinketShineColors,
+  getPlasmaColorPairForTrinket,
   trinketArtFillClass,
   trinketArtImageClass,
 } from "@/features/alchemy/shared/config";
@@ -60,6 +61,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
           descriptionLines={trinket.descriptionLines}
           visible={isHovered}
           triggerRef={wrapperRef}
+          plasmaColorPair={getPlasmaColorPairForTrinket(trinket)}
         />
       ) : null}
       <TiltSurface

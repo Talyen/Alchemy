@@ -10,6 +10,7 @@ import {
   layerImportsWithPaths,
   LIB_BARREL_PATTERNS,
   LIB_NO_FEATURES,
+  LIB_NO_FRAMEWORK_PATHS,
   META_NO_RUN_LOOP,
   ORCHESTRATION_NO_SCREENS,
   restrictedSyntax,
@@ -41,7 +42,12 @@ export const BOUNDARY_CONFIGS = [
   {
     files: ["src/lib/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": layerImports(LIB_BARREL_PATTERNS, LIB_NO_FEATURES, DOMAIN_STORE_PATTERNS),
+      "no-restricted-imports": layerImportsWithPaths(
+        LIB_NO_FRAMEWORK_PATHS,
+        LIB_BARREL_PATTERNS,
+        LIB_NO_FEATURES,
+        DOMAIN_STORE_PATTERNS,
+      ),
     },
   },
 
@@ -49,7 +55,8 @@ export const BOUNDARY_CONFIGS = [
   {
     files: ["src/lib/game-data/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": layerImports(
+      "no-restricted-imports": layerImportsWithPaths(
+        LIB_NO_FRAMEWORK_PATHS,
         [{ group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." }],
         GAME_DATA_NO_BATTLE,
         LIB_NO_FEATURES,

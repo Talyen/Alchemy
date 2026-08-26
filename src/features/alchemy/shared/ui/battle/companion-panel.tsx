@@ -4,14 +4,19 @@
 import { formatCompanionTurnStartLine, type CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { battleCompanionWidthClass, cardSurfaceClass } from "../../config";
+import {
+  battleCompanionWidthClass,
+  cardSurfaceClass,
+  getCompanionShineColors,
+  getPlasmaColorPairForCompanion,
+} from "../../config";
 import { TooltipHeader } from "../tooltip-panel";
 import { PortaledTooltip } from "../portaled-tooltip";
 import { useHoverVisible } from "../use-hover-visible";
 import { DescriptionLines } from "../card-description-ui";
 import { TiltSurface } from "../tilt-surface";
+import { ArtTurnActiveBorder } from "./actor-panel-helpers";
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
-import { CombatantAttackLunge } from "./combatant-attack-lunge";
 import type { ActiveCcKeyword } from "../../utils/cc-presentation";
 
 function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonus: number): string[] {
@@ -29,16 +34,19 @@ export function CompanionPanel({
   shaking = false,
   damageBonus = 0,
   ccKeyword = null,
-  attackToken = 0,
+  turnActive = false,
+  turnShineColors,
 }: {
   companion: CompanionDefinition;
   compact?: boolean;
   shaking?: boolean;
   damageBonus?: number;
   ccKeyword?: ActiveCcKeyword | null;
-  attackToken?: number;
+  turnActive?: boolean;
+  turnShineColors?: readonly string[];
 }) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
+  const resolvedShineColors = turnShineColors ?? getCompanionShineColors(companion);
 
   return (
     <div
@@ -49,25 +57,36 @@ export function CompanionPanel({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <CombatantAttackLunge attackToken={attackToken} aim={1}>
-        <CombatantStatusEffectPresentation keyword={ccKeyword}>
-          <TiltSurface
-            className={cn(
-              cardSurfaceClass,
-              compact ? "w-[clamp(10.71cqh,21cqh,16.46cqh)]" : battleCompanionWidthClass,
-              shaking && "animate-shake",
-            )}
-          >
-            <img
-              src={companion.art}
-              alt={companion.title}
-              className="block aspect-[3/4] w-full rounded-shell-hero"
-              loading="eager"
-            />
-          </TiltSurface>
-        </CombatantStatusEffectPresentation>
-      </CombatantAttackLunge>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible}>
+      <CombatantStatusEffectPresentation keyword={ccKeyword}>
+        <TiltSurface
+          clipContents={false}
+          className={cn(
+            "relative",
+            cardSurfaceClass,
+            compact ? "w-[clamp(10.71cqh,21cqh,16.46cqh)]" : battleCompanionWidthClass,
+            "border border-border/80",
+            shaking && "animate-shake",
+          )}
+        >
+          <ArtTurnActiveBorder
+            side="player"
+            testId="turn-badge-companion"
+            active={turnActive}
+            shineColor={resolvedShineColors}
+          />
+          <img
+            src={companion.art}
+            alt={companion.title}
+            className="block aspect-[3/4] w-full rounded-shell-hero"
+            loading="eager"
+          />
+        </TiltSurface>
+      </CombatantStatusEffectPresentation>
+      <PortaledTooltip
+        triggerRef={triggerRef}
+        visible={visible}
+        plasmaColorPair={getPlasmaColorPairForCompanion(companion)}
+      >
         <TooltipHeader>{companion.title}</TooltipHeader>
         <DescriptionLines
           lines={getCompanionDescriptionLines(companion, damageBonus)}

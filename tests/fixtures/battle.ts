@@ -109,6 +109,26 @@ export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
   };
 }
 
+export function dodgeThenMissRng() {
+  let calls = 0;
+  return () => {
+    calls += 1;
+    return calls === 1 ? 0.01 : 0.99;
+  };
+}
+
+export function incomingPhysical(overrides: Parameters<typeof patchBattleState>[0] = {}) {
+  return patchBattleState({
+    playerHealth: 100,
+    playerMaxHealth: 100,
+    enemyHealth: 100,
+    enemyMaxHealth: 100,
+    rng: dodgeThenMissRng(),
+    enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+    ...overrides,
+  });
+}
+
 export function slashDeck(count: number): BattleCard[] {
   return Array.from({ length: count }, (_, index) =>
     makeTestCard({

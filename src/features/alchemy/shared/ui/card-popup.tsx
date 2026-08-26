@@ -4,6 +4,7 @@
 import { type ReactNode, type RefObject } from "react";
 
 import type { BattleCard } from "@/lib/game-data";
+import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 import { DescriptionLines } from "./card-description-ui";
 import { PortaledTooltip } from "./portaled-tooltip";
@@ -20,6 +21,7 @@ export function DetailPopup({
   triggerRef,
   visible,
   padding,
+  plasmaColorPair,
 }: {
   idPrefix: string;
   title: ReactNode;
@@ -31,12 +33,14 @@ export function DetailPopup({
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
   padding?: number | undefined;
+  plasmaColorPair?: PlasmaColorPair | null | undefined;
 }) {
   return (
     <PortaledTooltip
       triggerRef={triggerRef}
       visible={visible}
       className="rounded-shell-tooltip"
+      plasmaColorPair={plasmaColorPair}
       {...(padding !== undefined ? { padding } : {})}
     >
       <TooltipHeader>{title}</TooltipHeader>

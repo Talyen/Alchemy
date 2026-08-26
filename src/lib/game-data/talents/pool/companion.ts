@@ -1,5 +1,4 @@
 // Talent definitions for keyword: companion.
-import { Bone, Trash, HeartPulse, Link2, Eye, Hand, PawPrint, ShieldAlert, Ban, Bell } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -9,7 +8,7 @@ export const companionTalents: TalentDefinition[] = [
     keywordId: "companion",
     name: "Feral Strength",
     description: "Increase Companion damage by 1",
-    icon: Bone,
+    icon: "Bone",
     effects: [addEffect("companionDamage", 1)],
   },
   {
@@ -17,7 +16,7 @@ export const companionTalents: TalentDefinition[] = [
     keywordId: "companion",
     name: "Scavenger",
     description: "Companions sometimes find Gold after combat",
-    icon: Trash,
+    icon: "Trash",
     effects: [setEffect("companionGoldFindActive", true)],
   },
   {
@@ -25,7 +24,7 @@ export const companionTalents: TalentDefinition[] = [
     keywordId: "companion",
     name: "Leech Companion",
     description: "Companions have a 10% chance to Leech",
-    icon: HeartPulse,
+    icon: "HeartPulse",
     effects: [setEffect("companionLeechChance", 10)],
   },
   {
@@ -33,7 +32,7 @@ export const companionTalents: TalentDefinition[] = [
     keywordId: "companion",
     name: "Hunter's Bond",
     description: "When you play a Companion card, draw a card",
-    icon: Link2,
+    icon: "Link2",
     effects: [setEffect("drawOnCompanionCard", 1)],
   },
   {
@@ -41,7 +40,7 @@ export const companionTalents: TalentDefinition[] = [
     keywordId: "companion",
     name: "Predator's Instinct",
     description: "Companions deal double damage against enemies below 30% Health",
-    icon: Eye,
+    icon: "Eye",
     effects: [setEffect("companionDoubledVsLowHealth", true)],
   },
   {
@@ -49,7 +48,7 @@ export const companionTalents: TalentDefinition[] = [
     keywordId: "companion",
     name: "Tame",
     description: "Companions deal 1 additional damage each turn",
-    icon: Hand,
+    icon: "Hand",
     effects: [addEffect("companionDamage", 1)],
   },
   {
@@ -57,7 +56,7 @@ export const companionTalents: TalentDefinition[] = [
     keywordId: "companion",
     name: "Pack Weave",
     description: "When you Dodge, your Companion attacks",
-    icon: PawPrint,
+    icon: "PawPrint",
     effects: [setEffect("companionAttacksOnDodge", true)],
   },
   {
@@ -65,7 +64,7 @@ export const companionTalents: TalentDefinition[] = [
     keywordId: "companion",
     name: "Watchdog",
     description: "When your Companion deals damage, gain 2 Block",
-    icon: ShieldAlert,
+    icon: "ShieldAlert",
     effects: [setEffect("blockOnCompanionDamage", 2)],
   },
   {
@@ -73,7 +72,7 @@ export const companionTalents: TalentDefinition[] = [
     keywordId: "companion",
     name: "Takedown",
     description: "Companion damage has a 10% chance to deal Stun damage",
-    icon: Ban,
+    icon: "Ban",
     effects: [setEffect("companionStunChance", 10)],
   },
   {
@@ -81,7 +80,7 @@ export const companionTalents: TalentDefinition[] = [
     keywordId: "companion",
     name: "Whistle",
     description: "Your first Companion card each combat is free",
-    icon: Bell,
+    icon: "Bell",
     effects: [setEffect("firstCompanionCardFree", true)],
   },
 ];

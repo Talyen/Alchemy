@@ -66,6 +66,7 @@ interface ArtPanelProps {
   artCorner?: ReactNode;
   ccKeyword?: ActiveCcKeyword | null;
   attackToken?: number;
+  castToken?: number;
   children?: ReactNode;
 }
 
@@ -98,6 +99,7 @@ export function ArtPanel({
   artCorner,
   ccKeyword = null,
   attackToken = 0,
+  castToken = 0,
   children,
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
@@ -110,8 +112,13 @@ export function ArtPanel({
 
   return (
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
-      <div className={artWrapClass}>
-        <CombatantAttackLunge attackToken={attackToken} aim={side === "player" ? 1 : -1}>
+      <CombatantAttackLunge
+        attackToken={attackToken}
+        castToken={castToken}
+        aim={side === "player" ? 1 : -1}
+        className="relative flex flex-col items-center gap-3"
+      >
+        <div className={artWrapClass}>
           <div
             ref={artWrapperRef}
             className="group/art-wrapper relative"
@@ -151,21 +158,21 @@ export function ArtPanel({
               </div>
             ) : null}
           </div>
-        </CombatantAttackLunge>
-        {artCorner}
-      </div>
-      <ActorStatsPanel
-        side={side}
-        title={title}
-        health={health}
-        maxHealth={maxHealth}
-        healthPercent={healthPercent}
-        healthToken={healthToken}
-        statuses={statuses}
-        isDead={isDead}
-        cardWidthClass={resolvedCardWidthClass}
-        deathsDoorActive={deathsDoorActive}
-      />
+          {artCorner}
+        </div>
+        <ActorStatsPanel
+          side={side}
+          title={title}
+          health={health}
+          maxHealth={maxHealth}
+          healthPercent={healthPercent}
+          healthToken={healthToken}
+          statuses={statuses}
+          isDead={isDead}
+          cardWidthClass={resolvedCardWidthClass}
+          deathsDoorActive={deathsDoorActive}
+        />
+      </CombatantAttackLunge>
     </div>
   );
 }
@@ -208,7 +215,7 @@ function ActorArtFrame({
   const { pulse, sparksOverflow } = useHurtPulse(hurtFlashToken);
 
   return (
-    <CombatantStatusEffectPresentation keyword={ccKeyword}>
+    <CombatantStatusEffectPresentation keyword={isDead ? null : ccKeyword}>
       <TiltSurface
         surfaceRef={surfaceRef}
         testId={`battle-${side}-art-panel`}

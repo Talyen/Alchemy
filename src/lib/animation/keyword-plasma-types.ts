@@ -11,7 +11,8 @@ export interface PlasmaRendererOptions {
   canvas: HTMLCanvasElement;
   colorsRef: { current: PlasmaColorState };
   focalYOffset: number;
-  active: boolean;
+  active: () => boolean;
+  onWakeReady?: (wake: () => void) => void;
 }
 
 export type StartPlasmaRenderer = (options: PlasmaRendererOptions) => () => void;

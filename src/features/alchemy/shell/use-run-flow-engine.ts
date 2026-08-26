@@ -1,7 +1,7 @@
 // Consolidated Run Flow Engine hook for Alchemy shell navigation and sub-system flow routing.
 import { useMemo, useCallback } from "react";
 import {
-  useRunOrchestrationPort,
+  useContentNavigationRunPort,
   useContentNavigationTalentPort,
   useTalentEffects,
   useTalentProgressSlice,
@@ -31,7 +31,7 @@ export function useRunFlowEngine({
   labyrinthClearNode,
   labyrinthFailNode,
 }: RunNavigationDeps) {
-  const orchestration = useRunOrchestrationPort();
+  const orchestration = useContentNavigationRunPort();
   const talentEffects = useTalentEffects();
   const { talentXP } = useTalentProgressSlice();
   const contentTalents = useContentNavigationTalentPort(talentEffects, talentXP);

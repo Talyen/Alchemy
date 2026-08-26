@@ -1,16 +1,4 @@
 // Talent definitions for keyword: burn.
-import {
-  Thermometer,
-  WavesArrowUp,
-  Shield,
-  Bomb,
-  TrendingUp,
-  Droplets,
-  TrendingDown,
-  Sparkles,
-  Wind,
-  ShieldCheck,
-} from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -20,7 +8,7 @@ export const burnTalents: TalentDefinition[] = [
     keywordId: "burn",
     name: "Flashpoint",
     description: "Increase Burn damage by 1",
-    icon: Thermometer,
+    icon: "Thermometer",
     effects: [addEffect("flatBurnDamage", 1)],
   },
   {
@@ -28,7 +16,7 @@ export const burnTalents: TalentDefinition[] = [
     keywordId: "burn",
     name: "Thermal Vent",
     description: "When you deal Burn damage, gain 1 Forge",
-    icon: WavesArrowUp,
+    icon: "WavesArrowUp",
     effects: [addEffect("forgeOnBurnDealt", 1)],
   },
   {
@@ -36,7 +24,7 @@ export const burnTalents: TalentDefinition[] = [
     keywordId: "burn",
     name: "Flaming Shield",
     description: "Burn damage is increased by 10% of your Block",
-    icon: Shield,
+    icon: "Shield",
     effects: [setEffect("blockToBurnDamage", true)],
   },
   {
@@ -44,7 +32,7 @@ export const burnTalents: TalentDefinition[] = [
     keywordId: "burn",
     name: "Combustible",
     description: "Cards with Consume deal 20% more Burn damage",
-    icon: Bomb,
+    icon: "Bomb",
     effects: [setEffect("consumeBurnDamageBonusPercent", 20)],
   },
   {
@@ -52,7 +40,7 @@ export const burnTalents: TalentDefinition[] = [
     keywordId: "burn",
     name: "Wildfire",
     description: "Your first Burn card each combat deals 50% more damage",
-    icon: TrendingUp,
+    icon: "TrendingUp",
     effects: [setEffect("firstBurnCardBonusMultiplier", 1.5)],
   },
   {
@@ -60,7 +48,7 @@ export const burnTalents: TalentDefinition[] = [
     keywordId: "burn",
     name: "Melting Point",
     description: "Burn damage removes that amount of enemy Armor",
-    icon: Droplets,
+    icon: "Droplets",
     effects: [setEffect("burnRemovesEnemyArmor", true)],
   },
   {
@@ -68,7 +56,7 @@ export const burnTalents: TalentDefinition[] = [
     keywordId: "burn",
     name: "Heat Exhaustion",
     description: "Burn damage has a 10% chance to deal Stun damage",
-    icon: TrendingDown,
+    icon: "TrendingDown",
     effects: [setEffect("burnStunChance", 10)],
   },
   {
@@ -76,7 +64,7 @@ export const burnTalents: TalentDefinition[] = [
     keywordId: "burn",
     name: "Burning Wish",
     description: "When you play a Wish, deal 2 Burn damage to the enemy",
-    icon: Sparkles,
+    icon: "Sparkles",
     effects: [setEffect("burnOnWish", 2)],
   },
   {
@@ -84,7 +72,7 @@ export const burnTalents: TalentDefinition[] = [
     keywordId: "burn",
     name: "Smoldering",
     description: "Burn stacks have a 5% chance to double instead of halve",
-    icon: Wind,
+    icon: "Wind",
     effects: [setEffect("burnDoubleChance", 5)],
   },
   {
@@ -92,7 +80,7 @@ export const burnTalents: TalentDefinition[] = [
     keywordId: "burn",
     name: "Fire Resistance",
     description: "Receive half Burn damage",
-    icon: ShieldCheck,
+    icon: "ShieldCheck",
     effects: [setEffect("receiveHalfBurnDamage", true)],
   },
 ];

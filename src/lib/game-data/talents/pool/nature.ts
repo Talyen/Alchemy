@@ -1,5 +1,4 @@
 // Talent definitions for keyword: nature.
-import { TrendingUp, Wind, Triangle, RotateCw, Network, Shield, Link, Hexagon, Feather, Leaf } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -9,7 +8,7 @@ export const natureTalents: TalentDefinition[] = [
     keywordId: "nature",
     name: "Overgrowth",
     description: "Increase Nature damage dealt by 1",
-    icon: TrendingUp,
+    icon: "TrendingUp",
     effects: [addEffect("flatNatureDamage", 1)],
   },
   {
@@ -17,7 +16,7 @@ export const natureTalents: TalentDefinition[] = [
     keywordId: "nature",
     name: "Toxic Pollen",
     description: "Nature damage has a 10% chance to Poison",
-    icon: Wind,
+    icon: "Wind",
     effects: [setEffect("naturePoisonChance", 10)],
   },
   {
@@ -25,7 +24,7 @@ export const natureTalents: TalentDefinition[] = [
     keywordId: "nature",
     name: "Briar Patch",
     description: "Nature damage has a 10% chance to Bleed",
-    icon: Triangle,
+    icon: "Triangle",
     effects: [setEffect("natureBleedChance", 10)],
   },
   {
@@ -33,7 +32,7 @@ export const natureTalents: TalentDefinition[] = [
     keywordId: "nature",
     name: "Verdant Cycle",
     description: "Nature damage has a 10% chance to Leech",
-    icon: RotateCw,
+    icon: "RotateCw",
     effects: [addEffect("natureLeechChance", 10)],
   },
   {
@@ -41,7 +40,7 @@ export const natureTalents: TalentDefinition[] = [
     keywordId: "nature",
     name: "Ecosystem",
     description: "Deal +1 Nature damage against Poisoned enemies",
-    icon: Network,
+    icon: "Network",
     effects: [setEffect("natureBonusVsPoisoned", 1)],
   },
   {
@@ -49,7 +48,7 @@ export const natureTalents: TalentDefinition[] = [
     keywordId: "nature",
     name: "Natural Armor",
     description: "Nature damage taken is reduced by half",
-    icon: Shield,
+    icon: "Shield",
     effects: [setEffect("receiveHalfNatureDamage", true)],
   },
   {
@@ -57,7 +56,7 @@ export const natureTalents: TalentDefinition[] = [
     keywordId: "nature",
     name: "Entangle",
     description: "Nature damage has a 10% chance to deal Stun damage",
-    icon: Link,
+    icon: "Link",
     effects: [setEffect("natureStunChance", 10)],
   },
   {
@@ -65,7 +64,7 @@ export const natureTalents: TalentDefinition[] = [
     keywordId: "nature",
     name: "Thornskin",
     description: "Nature damage is increased by your Armor",
-    icon: Hexagon,
+    icon: "Hexagon",
     effects: [setEffect("armorToNatureDamage", true)],
   },
   {
@@ -73,7 +72,7 @@ export const natureTalents: TalentDefinition[] = [
     keywordId: "nature",
     name: "Windstep",
     description: "When you Dodge, your next Nature card is free",
-    icon: Feather,
+    icon: "Feather",
     effects: [setEffect("nextNatureCardFreeOnDodge", true)],
   },
   {
@@ -81,7 +80,7 @@ export const natureTalents: TalentDefinition[] = [
     keywordId: "nature",
     name: "Photosynthesis",
     description: "Restore 1 Health when you play a Nature card",
-    icon: Leaf,
+    icon: "Leaf",
     effects: [setEffect("healOnNatureCard", 1)],
   },
 ];

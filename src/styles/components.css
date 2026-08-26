@@ -80,7 +80,8 @@
     );
     filter: blur(1px);
     mix-blend-mode: screen;
-    transform: translateX(-165%) skewX(-18deg);
+    transform: translate3d(-165%, 0, 0) skewX(-18deg);
+    will-change: transform, opacity;
     opacity: 0;
   }
 
@@ -286,10 +287,21 @@
 }
 
 /* Animated corruption-red gradient for corrupted card values and title prefixes.
-   Palette mirrors SHINE_PALETTES.corruption (shared/config/shine-palettes.ts). */
+   Repeats its color band around the shared foreground highlight for a seamless loop. */
 .text-shine-corruption {
-  background-image: linear-gradient(105deg, #f87171, #dc2626 30%, #7f1d1d 50%, #dc2626 70%, #f87171);
-  background-size: 300% 100%;
+  background-image: linear-gradient(
+    in oklab 105deg,
+    #f87171,
+    #dc2626,
+    #7f1d1d,
+    var(--color-foreground),
+    #f87171,
+    #dc2626,
+    #7f1d1d,
+    var(--color-foreground),
+    #f87171
+  );
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -330,6 +342,7 @@
 
 .card-hover-scale {
   transition: scale 200ms ease-out;
+  backface-visibility: hidden;
 }
 
 .card-hover-scale:hover:not(:disabled),
@@ -346,6 +359,7 @@
 
 .card-interactive-glow {
   border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+  backface-visibility: hidden;
   transition:
     scale 200ms ease-out,
     border-color 200ms ease-out,
@@ -379,6 +393,7 @@
 
 .menu-nav-button {
   position: relative;
+  backface-visibility: hidden;
   transition: scale 200ms ease-out;
 }
 

@@ -1,13 +1,17 @@
-// Hex palettes for ShineBorder gradients and boss/map accent effects — keep full strings for Tailwind JIT safety.
 import {
   characters,
   getCardKeywords,
+  getCompanionKeywords,
   getTrinketKeywords,
   keywordDefinitions,
   type BattleCard,
   type CharacterId,
+  type CompanionDefinition,
   type KeywordId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
+import { buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
+
+export { buildSmoothShineBorderGradient, buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
 
 export const SHINE_PALETTES = {
   talentDefault: ["#fcd34d", "#d97706", "#fcd34d"],
@@ -58,6 +62,12 @@ export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
   return getKeywordListShineColors(getCardKeywords(card));
 }
 
+/** Keyword shine for a companion's turn start effects; companion palette when none resolve. */
+export function getCompanionShineColors(companion: CompanionDefinition): readonly string[] {
+  const colors = getKeywordListShineColors(getCompanionKeywords(companion));
+  return colors.length > 0 ? colors : keywordDefinitions.companion.shineColors;
+}
+
 /** Keyword shine for a trinket's description; boon palette when none resolve. */
 export function getTrinketShineColors(trinketId: string): readonly string[] {
   const colors = getKeywordListShineColors(getTrinketKeywords(trinketId));
@@ -85,13 +95,4 @@ export function getShineColorsForKeywords(keywordIds: readonly KeywordId[]): rea
 
 export function getCharacterShineColors(characterId: CharacterId): readonly string[] {
   return getShineColorsForKeywords(characters[characterId].keywords);
-}
-
-/** Builds a seamless, mirrored linear gradient using in oklab color space to prevent harsh wipe boundaries. */
-export function buildSmoothShineGradient(colors: readonly string[]): string | null {
-  if (colors.length === 0) return null;
-  if (colors.length === 1) return `linear-gradient(in oklab 90deg, ${colors[0]}, ${colors[0]})`;
-
-  const mirrored = [...colors, ...colors.slice(1, -1).reverse(), colors[0]];
-  return `linear-gradient(in oklab 90deg, ${mirrored.join(", ")})`;
 }

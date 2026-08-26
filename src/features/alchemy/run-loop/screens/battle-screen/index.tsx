@@ -108,46 +108,48 @@ export function BattleScreen(props: BattleScreenProps) {
   const inspectUiOpen = trinketInspectOpen && inspectBoons.length > 0 && !battleState.wishOptions;
 
   return (
-    <PageLayout>
-      <div className="alchemy-shell relative flex w-full max-w-[100rem] flex-1 flex-col rounded-shell-screen p-7 pb-1">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-shell-screen">
-          <BackgroundParticles
-            variant="embers"
-            {...(particleColors ? { colors: particleColors } : {})}
-            alphaMultiplier={particleAlpha}
-          />
-        </div>
-
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-          <div className="absolute top-0 right-0 z-30 flex items-center gap-2">
-            <BattleAutoplayToggle enabled={actions.isAutoplayEnabled} onToggle={actions.onToggleAutoplay} />
-            {inspectBoons.length > 0 ? (
-              <BattleTrinketInspectButton
-                open={inspectUiOpen}
-                onToggle={() => setTrinketInspectOpen((open) => !open)}
-              />
-            ) : null}
-            <HamburgerTrigger onClick={actions.onOpenMenu} label="Open battle menu" />
-          </div>
-
-          <div
-            ref={sceneRef}
-            data-testid="battle-scene"
-            className="[container-type:size] absolute inset-0 overflow-hidden"
-          >
-            <BattleActors view={view} feedback={feedback} refs={refs} />
-
-            <BattleBottomBar view={view} refs={refs} actions={actions} playabilityState={battleState} />
-
-            <WishOverlay open={Boolean(battleState.wishOptions)} battleState={displayState} actions={actions} />
-
-            <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={closeTrinketInspect} />
-
-            <CardGhostLayer />
-            <CardTransferLayer />
-          </div>
-        </div>
+    <div className="relative h-full w-full overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <BackgroundParticles
+          variant="embers"
+          {...(particleColors ? { colors: particleColors } : {})}
+          alphaMultiplier={particleAlpha}
+        />
       </div>
-    </PageLayout>
+
+      <PageLayout>
+        <div className="relative flex w-full max-w-[100rem] flex-1 flex-col p-7 pb-1">
+          <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+            <div className="absolute top-0 right-0 z-30 flex items-center gap-2">
+              <BattleAutoplayToggle enabled={actions.isAutoplayEnabled} onToggle={actions.onToggleAutoplay} />
+              {inspectBoons.length > 0 ? (
+                <BattleTrinketInspectButton
+                  open={inspectUiOpen}
+                  onToggle={() => setTrinketInspectOpen((open) => !open)}
+                />
+              ) : null}
+              <HamburgerTrigger onClick={actions.onOpenMenu} label="Open battle menu" />
+            </div>
+
+            <div
+              ref={sceneRef}
+              data-testid="battle-scene"
+              className="[container-type:size] absolute inset-0 overflow-hidden"
+            >
+              <BattleActors view={view} feedback={feedback} refs={refs} />
+
+              <BattleBottomBar view={view} refs={refs} actions={actions} playabilityState={battleState} />
+
+              <WishOverlay open={Boolean(battleState.wishOptions)} battleState={displayState} actions={actions} />
+
+              <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={closeTrinketInspect} />
+
+              <CardGhostLayer />
+              <CardTransferLayer />
+            </div>
+          </div>
+        </div>
+      </PageLayout>
+    </div>
   );
 }

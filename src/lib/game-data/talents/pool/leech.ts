@@ -1,16 +1,4 @@
 // Talent definitions for keyword: leech.
-import {
-  Sword,
-  HeartCrack,
-  CircleDollarSign,
-  Droplets,
-  Skull,
-  Gem,
-  Wrench,
-  FlaskConical,
-  Hash,
-  Utensils,
-} from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -20,7 +8,7 @@ export const leechTalents: TalentDefinition[] = [
     keywordId: "leech",
     name: "First Siphon",
     description: "Your first Leech card each combat heals for double",
-    icon: Sword,
+    icon: "Sword",
     effects: [setEffect("firstLeechCardDoubled", true)],
   },
   {
@@ -28,7 +16,7 @@ export const leechTalents: TalentDefinition[] = [
     keywordId: "leech",
     name: "Desperate Siphon",
     description: "Leech is 20% more effective while below 50% Health",
-    icon: HeartCrack,
+    icon: "HeartCrack",
     effects: [setEffect("leechDesperateMultiplier", 20)],
   },
   {
@@ -36,7 +24,7 @@ export const leechTalents: TalentDefinition[] = [
     keywordId: "leech",
     name: "Blood Debt",
     description: "Leech heals for 1 more per 8 missing Health",
-    icon: CircleDollarSign,
+    icon: "CircleDollarSign",
     effects: [setEffect("leechMissingHealthStep", 8)],
   },
   {
@@ -44,7 +32,7 @@ export const leechTalents: TalentDefinition[] = [
     keywordId: "leech",
     name: "Hemorrhage",
     description: "Leech has a 10% chance to Bleed",
-    icon: Droplets,
+    icon: "Droplets",
     effects: [setEffect("leechBleedChance", 10)],
   },
   {
@@ -52,7 +40,7 @@ export const leechTalents: TalentDefinition[] = [
     keywordId: "leech",
     name: "Cull the Weak",
     description: "Leech is 20% more effective against enemies below 50% Health",
-    icon: Skull,
+    icon: "Skull",
     effects: [setEffect("leechExecuteMultiplier", 20)],
   },
   {
@@ -60,7 +48,7 @@ export const leechTalents: TalentDefinition[] = [
     keywordId: "leech",
     name: "Mana Siphon",
     description: "Leech has a 10% chance to gain 1 Mana",
-    icon: Gem,
+    icon: "Gem",
     effects: [setEffect("manaOnLeechChance", 10)],
   },
   {
@@ -68,7 +56,7 @@ export const leechTalents: TalentDefinition[] = [
     keywordId: "leech",
     name: "Trinket Siphon",
     description: "Leech has a 20% chance to steal 1 Forge, Armor, or Block",
-    icon: Wrench,
+    icon: "Wrench",
     effects: [setEffect("trinketSiphonChance", 20)],
   },
   {
@@ -76,7 +64,7 @@ export const leechTalents: TalentDefinition[] = [
     keywordId: "leech",
     name: "Virulent Leech",
     description: "Leech has a 10% chance to Poison",
-    icon: FlaskConical,
+    icon: "FlaskConical",
     effects: [setEffect("leechPoisonChance", 10)],
   },
   {
@@ -84,7 +72,7 @@ export const leechTalents: TalentDefinition[] = [
     keywordId: "leech",
     name: "Blood Type",
     description: "Enemies cannot restore Health when they Leech",
-    icon: Hash,
+    icon: "Hash",
     effects: [setEffect("blockEnemyLeech", true)],
   },
   {
@@ -92,7 +80,7 @@ export const leechTalents: TalentDefinition[] = [
     keywordId: "leech",
     name: "Carnivorous Nature",
     description: "Nature damage has a 10% chance to Leech",
-    icon: Utensils,
+    icon: "Utensils",
     effects: [addEffect("natureLeechChance", 10)],
   },
 ];

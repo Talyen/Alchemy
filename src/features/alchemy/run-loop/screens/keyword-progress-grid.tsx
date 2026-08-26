@@ -19,7 +19,7 @@ export function KeywordProgressGrid({
 }: {
   entries: KeywordProgressEntry[];
   size?: "md" | "lg";
-  columns?: 3;
+  columns?: 3 | 4 | 5;
   className?: string;
 }) {
   const [animate, setAnimate] = useState(false);
@@ -31,11 +31,13 @@ export function KeywordProgressGrid({
 
   if (entries.length === 0) return null;
 
-  if (columns === 3) {
+  if (columns) {
     return (
-      <div className={cn("grid w-full grid-cols-3 gap-3", className)}>
+      <div className={cn("mx-auto flex w-full max-w-[73rem] flex-wrap justify-center gap-3", className)}>
         {entries.map(({ kw, runXP, totalXP }) => (
-          <KeywordProgressCard key={kw} kw={kw} runXP={runXP} totalXP={totalXP} animate={animate} size={size} />
+          <div key={kw} className="w-56 flex-none">
+            <KeywordProgressCard kw={kw} runXP={runXP} totalXP={totalXP} animate={animate} size={size} />
+          </div>
         ))}
       </div>
     );

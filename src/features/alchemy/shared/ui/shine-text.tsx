@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-const shineTextClass = "boss-title-shine [background-size:300%_300%] bg-clip-text text-transparent";
+const shineTextClass = "boss-title-shine [background-size:200%_100%] bg-clip-text text-transparent";
 
 export function ShineText({
   children,

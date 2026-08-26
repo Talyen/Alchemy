@@ -1,16 +1,25 @@
 // Shared run-end shell for victory and defeat — title, subtitle, progress, continue.
 import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION, bodyTextClass } from "@/features/alchemy/shared/config";
-import type { TalentXP } from "@/lib/game-data";
+import {
+  BUTTON_WIDTH_ACTION,
+  bodyTextClass,
+  DEATHS_DOOR_PLASMA_PAIR,
+  getPlasmaColorPair,
+  getPlasmaKeywordsForCharacter,
+} from "@/features/alchemy/shared/config";
+import type { CharacterId, TalentXP } from "@/lib/game-data";
 import type { RunObtainedItem } from "@/lib/active-run-session";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 import { TitledScreenShell } from "../../shared/ui/shared-ui";
+import { usePlasmaBaseline } from "../../shared/ui/use-plasma-source";
 import { RunEndProgressSection } from "./run-end-progress-section";
 
 export function RunEndScreen({
   title,
   subtitle,
+  outcome,
+  characterId,
   runEndTalentXP,
   talentXP,
   runEndMaterials,
@@ -20,6 +29,8 @@ export function RunEndScreen({
 }: {
   title: string;
   subtitle: string;
+  outcome: "victory" | "defeat";
+  characterId: CharacterId;
   runEndTalentXP: TalentXP;
   talentXP: TalentXP;
   runEndMaterials: MaterialInventory;
@@ -27,6 +38,10 @@ export function RunEndScreen({
   onContinue: () => void;
   onOpenMenu: (rect?: DOMRect) => void;
 }) {
+  const plasmaColorPair =
+    outcome === "defeat" ? DEATHS_DOOR_PLASMA_PAIR : getPlasmaColorPair(getPlasmaKeywordsForCharacter(characterId));
+  usePlasmaBaseline(plasmaColorPair);
+
   return (
     <TitledScreenShell
       title={title}

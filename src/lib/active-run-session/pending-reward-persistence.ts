@@ -51,7 +51,7 @@ interface PersistedRewardSharedFields {
   materials: RewardState["materials"];
   destinations: Destination[];
   selectedBossId: string | null;
-  lastVictoryEnemyType: string | null;
+  lastVictoryEnemyType: RewardState["lastVictoryEnemyType"];
   lastVictoryContentSystem: RewardState["lastVictoryContentSystem"];
 }
 

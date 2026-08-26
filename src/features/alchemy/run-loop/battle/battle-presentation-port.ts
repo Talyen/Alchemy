@@ -15,6 +15,7 @@ export interface BattlePresentationPort extends PortraitFeedback {
   showCombatTexts: (events: CombatTextEvent[]) => void;
   shakeCompanion: () => void;
   telegraphAttack: (side: CombatantAttackSide) => void;
+  telegraphCast: (side: CombatantAttackSide) => void;
   resetHandTransferUi: () => void;
   resetCardTransfers: () => void;
   clearCardGhosts: () => void;

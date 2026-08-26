@@ -10,8 +10,8 @@ import { usePaginatedRows } from "../../shared/ui/use-paginated-rows";
 import { KeywordProgressGrid } from "./keyword-progress-grid";
 import { RunEndObtainedItems } from "./run-end-obtained-items";
 
-const XP_PAGE_SIZE = 6;
-const XP_COLUMNS = 3;
+const XP_PAGE_SIZE = 10;
+const XP_COLUMNS = 5;
 
 export function RunEndProgressSection({
   runEndTalentXP,
@@ -40,12 +40,7 @@ export function RunEndProgressSection({
       {entries.length > 0 ? (
         <FlankingPagination page={xpPages.page} totalPages={xpPages.totalPages} onPageChange={xpPages.setPage}>
           <FadeSlot swapKey={`run-end-xp-${xpPages.page}`} className={xpPaging ? "min-h-[24cqh]" : undefined}>
-            <KeywordProgressGrid
-              entries={xpPages.pageItems}
-              size="lg"
-              columns={3}
-              {...(xpPaging ? { className: "grid-rows-2" } : {})}
-            />
+            <KeywordProgressGrid entries={xpPages.pageItems} size="lg" columns={XP_COLUMNS} />
           </FadeSlot>
         </FlankingPagination>
       ) : null}

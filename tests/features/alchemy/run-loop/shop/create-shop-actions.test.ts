@@ -332,7 +332,7 @@ describe("createShopActions", () => {
     it("deducts gold, replaces two cards with mixed potion, marks mixUsed", () => {
       setRunProgress({
         runGold: 999,
-        runDeck: [makeCard({ id: "a", title: "Potion A" }), makeCard({ id: "b", title: "Potion B" })],
+        runDeck: [makeCard({ id: "a-potion", title: "Potion A" }), makeCard({ id: "b-potion", title: "Potion B" })],
       });
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions();
@@ -349,8 +349,8 @@ describe("createShopActions", () => {
       setRunProgress({
         runGold: 999,
         runDeck: [
-          makeCard({ id: "a", title: "Potion A", effects: [makeEffect("holy", 5)] }),
-          makeCard({ id: "b", title: "Potion B", effects: [makeEffect("holy", 5)] }),
+          makeCard({ id: "a-potion", title: "Potion A", effects: [makeEffect("holy", 5)] }),
+          makeCard({ id: "b-potion", title: "Potion B", effects: [makeEffect("holy", 5)] }),
         ],
       });
       setAlchemistState(createInitialAlchemistState());
@@ -379,7 +379,10 @@ describe("createShopActions", () => {
     it("does not charge gold or consume the mix slot when the mix fails", () => {
       setRunProgress({
         runGold: 999,
-        runDeck: [makeCard({ id: MIXED_POTION_CARD_ID, title: "Mixed" }), makeCard({ id: "b", title: "Potion" })],
+        runDeck: [
+          makeCard({ id: MIXED_POTION_CARD_ID, title: "Mixed" }),
+          makeCard({ id: "b-potion", title: "Potion" }),
+        ],
       });
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions({ talentEffects: { potionMixPotency: 0 } });
@@ -395,7 +398,7 @@ describe("createShopActions", () => {
     it("prevents a second mix attempt after first succeeds", () => {
       setRunProgress({
         runGold: 999,
-        runDeck: [makeCard({ id: "a", title: "Potion A" }), makeCard({ id: "b", title: "Potion B" })],
+        runDeck: [makeCard({ id: "a-potion", title: "Potion A" }), makeCard({ id: "b-potion", title: "Potion B" })],
       });
       setAlchemistState(createInitialAlchemistState());
       const firstActions = buildActions({ talentEffects: { potionMixPotency: 0 } });
@@ -414,10 +417,10 @@ describe("createShopActions", () => {
       setRunProgress({
         runGold: 999,
         runDeck: [
-          makeCard({ id: "a", title: "Potion A" }),
-          makeCard({ id: "b", title: "Potion B" }),
-          makeCard({ id: "c", title: "Potion C" }),
-          makeCard({ id: "d", title: "Potion D" }),
+          makeCard({ id: "a-potion", title: "Potion A" }),
+          makeCard({ id: "b-potion", title: "Potion B" }),
+          makeCard({ id: "c-potion", title: "Potion C" }),
+          makeCard({ id: "d-potion", title: "Potion D" }),
         ],
       });
       setAlchemistState(createInitialAlchemistState());
@@ -431,7 +434,7 @@ describe("createShopActions", () => {
   });
 
   describe("trinket shop", () => {
-    it("deducts 80 gold and adds a permanent trinket on purchase", () => {
+    it("deducts 100 gold and adds a permanent trinket on purchase", () => {
       setRunProgress({ runGold: 999 });
       setTrinketShopState(createInitialTrinketShopState(() => 0));
       const actions = buildActions();
@@ -441,7 +444,7 @@ describe("createShopActions", () => {
 
       expect(result).toBe(true);
       expect(getRunProgressStoreView().runGold).toBe(999 - TRINKET_SHOP_TRINKET_PRICE);
-      expect(TRINKET_SHOP_TRINKET_PRICE).toBe(80);
+      expect(TRINKET_SHOP_TRINKET_PRICE).toBe(100);
       expect(useGearStore.getState().ownedTrinketIds).toContain(trinket.id);
       expect(getRunProgressStoreView().runBoons).not.toContain(trinket.id);
       expect(getRunProgressStoreView().runObtainedItems).toEqual([{ kind: "trinket", trinketId: trinket.id }]);

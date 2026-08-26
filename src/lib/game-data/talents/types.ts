@@ -3,7 +3,6 @@
  * Depends on: src/lib/game-data/types.ts
  * Depended on by: src/lib/game-data/talents.ts, homestead, and the battle state machine
  */
-import type { LucideIcon } from "lucide-react";
 import type { KeywordId } from "../types";
 import type { TalentEffectManifest } from "../talent-effect-manifest";
 
@@ -14,7 +13,8 @@ export interface TalentDefinition {
   keywordId: KeywordId;
   name?: string;
   description: string;
-  icon?: LucideIcon;
+  /** Lucide export name resolved by the feature talent-icon registry. */
+  icon?: string;
   effects?: TalentEffectOperation[];
   /** NYI pool slots — excluded from unlock choices and spendable point caps. */
   isPlaceholder?: boolean;

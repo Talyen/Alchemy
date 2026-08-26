@@ -11,3 +11,4 @@ export * from "./options";
 export * from "./shine-palettes";
 export * from "./plasma-palettes";
 export * from "./typography";
+export * from "./talent-icons";

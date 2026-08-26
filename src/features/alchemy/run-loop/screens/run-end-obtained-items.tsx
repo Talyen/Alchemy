@@ -8,6 +8,7 @@ import { usePaginatedRows } from "../../shared/ui/use-paginated-rows";
 
 const ITEM_PAGE_SIZE = 4;
 const ITEM_COLUMNS = 4;
+const RUN_END_ITEM_WIDTH = "w-[clamp(20.16cqh,20.49cqh,30.51cqh)]";
 
 export function RunEndObtainedItems({ items }: { items: readonly RunObtainedItem[] }) {
   const { page, totalPages, pageItems, setPage } = usePaginatedRows(items, ITEM_PAGE_SIZE, ITEM_COLUMNS);
@@ -33,10 +34,13 @@ function obtainedItemKey(item: RunObtainedItem): string {
 }
 
 function RunEndObtainedItemTile({ item }: { item: RunObtainedItem }) {
+  let tile;
   if (item.kind === "gear") {
-    return <GearTile instance={item.instance} interactionKey="run-end-item" />;
+    tile = <GearTile instance={item.instance} interactionKey="run-end-item" />;
+  } else {
+    const trinket = trinketById[item.trinketId];
+    if (!trinket) return null;
+    tile = <TrinketTile trinket={trinket} interactionKey="run-end-item" />;
   }
-  const trinket = trinketById[item.trinketId];
-  if (!trinket) return null;
-  return <TrinketTile trinket={trinket} interactionKey="run-end-item" />;
+  return <div className={`${RUN_END_ITEM_WIDTH} [&>*>*]:!w-full`}>{tile}</div>;
 }

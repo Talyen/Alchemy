@@ -13,6 +13,7 @@ interface PurchasableTrinketItemProps {
 
 export function PurchasableTrinketItem({ trinket, price, gold, purchased, onBuy }: PurchasableTrinketItemProps) {
   const canAfford = gold >= price;
+  const canPurchase = !purchased && canAfford;
   const media = (
     <TrinketTile
       trinket={trinket}
@@ -20,8 +21,8 @@ export function PurchasableTrinketItem({ trinket, price, gold, purchased, onBuy 
       as="button"
       shine={!purchased}
       interactiveChrome={!purchased}
-      disabled={purchased || !canAfford}
-      onClick={!purchased && canAfford ? onBuy : undefined}
+      disabled={!canPurchase}
+      onClick={canPurchase ? onBuy : undefined}
       ariaLabel={purchased ? trinket.title : `Buy ${trinket.title}`}
     >
       <ShopPriceChip price={price} gold={gold} purchased={purchased} />

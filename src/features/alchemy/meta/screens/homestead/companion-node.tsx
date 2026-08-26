@@ -11,6 +11,7 @@ import { type BattleCard, type CompanionId, getEffectiveCardDescriptionLines } f
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { HOMESTEAD_CONFIG, MaterialCost } from "./helpers";
 import { HomesteadTileCompletedFooter, HomesteadTileFrame } from "./homestead-tile-node";
+import { getPlasmaColorPairForCard } from "@/features/alchemy/shared/config";
 
 function getCompanionFooter(
   discovered: boolean,
@@ -67,6 +68,7 @@ function getCompanionTooltip(
       }
       visible={visible}
       triggerRef={triggerRef}
+      plasmaColorPair={discovered ? getPlasmaColorPairForCard(card) : null}
     />
   );
 }

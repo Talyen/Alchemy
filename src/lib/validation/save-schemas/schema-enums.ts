@@ -8,11 +8,13 @@ import {
   type DifficultyId,
   type UnlockedTalents,
   DAMAGE_TYPES,
+  ENEMY_TYPE_VALUES,
   PLAYER_STATUS_DISPLAY_ORDER,
   ENEMY_STATUS_DISPLAY_ORDER,
   type PlayerStatusId,
   type EnemyStatusId,
 } from "@/lib/game-data";
+import { CONTENT_SYSTEM_IDS } from "@/lib/content-systems/types";
 import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/gear/crafting";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { filterValidDestinations } from "@/lib/routing";
@@ -40,7 +42,8 @@ function createMaterialInventoryShape() {
 
 export const CharacterIdSchema = z.enum(CHARACTER_IDS);
 export const DifficultyIdSchema = z.enum(DIFFICULTY_IDS);
-export const ContentSystemIdSchema = z.enum(["campaign", "labyrinth", "wildwood"]);
+export const ContentSystemIdSchema = z.enum(CONTENT_SYSTEM_IDS);
+export const EnemyTypeSchema = z.enum(ENEMY_TYPE_VALUES);
 
 export const DestinationArraySchema = z
   .array(z.string())

@@ -18,29 +18,7 @@ const LAYOUT_CONFIG = {
     "16:10": { width: 1920, height: 1200 },
     "21:9": { width: 2560, height: 1080 },
   } as Record<Exclude<AspectRatioOption, "auto">, { width: number; height: number }>,
-  PRESET_ASPECT_VALUES: {
-    "16:9": 1920 / 1080,
-    "16:10": 1920 / 1200,
-    "21:9": 2560 / 1080,
-  } as Record<Exclude<AspectRatioOption, "auto">, number>,
 } as const;
-
-/**
- * Resolves the closest preset aspect ratio based on the current CSS viewport dimensions.
- */
-export function resolveAutoAspectRatio(
-  viewportWidth: number,
-  viewportHeight: number,
-): Exclude<AspectRatioOption, "auto"> {
-  const viewportAspect = viewportWidth / viewportHeight;
-  const aspectKeys = Object.keys(LAYOUT_CONFIG.PRESET_ASPECT_VALUES) as Array<Exclude<AspectRatioOption, "auto">>;
-  return aspectKeys.reduce((best, key) =>
-    Math.abs(viewportAspect - LAYOUT_CONFIG.PRESET_ASPECT_VALUES[key]) <
-    Math.abs(viewportAspect - LAYOUT_CONFIG.PRESET_ASPECT_VALUES[best])
-      ? key
-      : best,
-  );
-}
 
 /**
  * Custom hook to track the browser viewport dimensions reactively.
@@ -105,7 +83,20 @@ function getStageScale(viewportWidth: number, viewportHeight: number, stageWidth
 }
 
 /**
- * Maps the resolved aspect ratio to standard, narrow, or ultrawide aspectModes.
+ * Maps an arbitrary aspect ratio to standard, narrow, or ultrawide aspectModes.
+ */
+export function getAspectModeFromRatio(aspectRatio: number): "standard" | "narrow" | "ultrawide" {
+  if (aspectRatio < 1.68) {
+    return "narrow";
+  }
+  if (aspectRatio > 2.05) {
+    return "ultrawide";
+  }
+  return "standard";
+}
+
+/**
+ * Maps the resolved preset aspect ratio to standard, narrow, or ultrawide aspectModes.
  */
 function getAspectMode(resolvedAspect: Exclude<AspectRatioOption, "auto">): "standard" | "narrow" | "ultrawide" {
   if (resolvedAspect === "16:10") {
@@ -129,10 +120,36 @@ export function getVirtualResolutionLayout(
   viewportWidth: number,
   viewportHeight: number,
 ) {
-  const resolvedAspect =
-    selectedAspectRatio === "auto" ? resolveAutoAspectRatio(viewportWidth, viewportHeight) : selectedAspectRatio;
-  const dims = getVirtualStageDimensions(resolvedAspect);
-  const scale = getStageScale(viewportWidth, viewportHeight, dims.stageWidth, dims.stageHeight);
+  const availableWidth = Math.max(0, viewportWidth);
+  const availableHeight = Math.max(0, viewportHeight);
+
+  if (selectedAspectRatio === "auto") {
+    const viewportAspect = availableHeight > 0 ? availableWidth / availableHeight : 16 / 9;
+    const stageWidth = Math.round(STAGE_HEIGHT * viewportAspect);
+    const stageHeight = STAGE_HEIGHT;
+    const rawScale = availableHeight > 0 ? availableHeight / STAGE_HEIGHT : 1;
+    const scale = Math.max(MIN_STAGE_SCALE, Math.min(MAX_STAGE_SCALE, rawScale));
+
+    const frameWidth = availableWidth;
+    const frameHeight = availableHeight;
+
+    return {
+      frameStyle: { width: `${frameWidth}px`, height: `${frameHeight}px` },
+      stageStyle: {
+        width: `${stageWidth}px`,
+        height: `${stageHeight}px`,
+        transform: `scale(${scale})`,
+        transformOrigin: "top left",
+        left: 0,
+        top: 0,
+      },
+      aspectMode: getAspectModeFromRatio(viewportAspect),
+      stagePixelRatio: LAYOUT_CONFIG.STAGE_PIXEL_RATIO_DEFAULT,
+    };
+  }
+
+  const dims = getVirtualStageDimensions(selectedAspectRatio);
+  const scale = getStageScale(availableWidth, availableHeight, dims.stageWidth, dims.stageHeight);
   const frameWidth = dims.stageWidth * scale;
   const frameHeight = dims.stageHeight * scale;
 
@@ -146,7 +163,7 @@ export function getVirtualResolutionLayout(
       left: 0,
       top: 0,
     },
-    aspectMode: getAspectMode(resolvedAspect),
+    aspectMode: getAspectMode(selectedAspectRatio),
     stagePixelRatio: LAYOUT_CONFIG.STAGE_PIXEL_RATIO_DEFAULT,
   };
 }

@@ -1,5 +1,4 @@
 // Talent definitions for keyword: stun.
-import { Flame, TrendingUp, Shield, Clock, ShieldOff, Bolt, Gift, Waves, Eye, PlugZap } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -9,7 +8,7 @@ export const stunTalents: TalentDefinition[] = [
     keywordId: "stun",
     name: "Riled Up",
     description: "When you Stun an enemy, gain 2 Forge",
-    icon: Flame,
+    icon: "Flame",
     effects: [setEffect("forgeOnStun", 2)],
   },
   {
@@ -17,7 +16,7 @@ export const stunTalents: TalentDefinition[] = [
     keywordId: "stun",
     name: "Exploit Weakness",
     description: "Stunned enemies take double damage",
-    icon: TrendingUp,
+    icon: "TrendingUp",
     effects: [setEffect("stunDoubleDamage", true)],
   },
   {
@@ -25,7 +24,7 @@ export const stunTalents: TalentDefinition[] = [
     keywordId: "stun",
     name: "Guarded Counter",
     description: "When you Stun an enemy, gain 3 Block",
-    icon: Shield,
+    icon: "Shield",
     effects: [setEffect("blockOnStun", 3)],
   },
   {
@@ -33,7 +32,7 @@ export const stunTalents: TalentDefinition[] = [
     keywordId: "stun",
     name: "Extended Stun",
     description: "Stun effects last 1 turn longer",
-    icon: Clock,
+    icon: "Clock",
     effects: [setEffect("stunDurationExtension", 1)],
   },
   {
@@ -41,7 +40,7 @@ export const stunTalents: TalentDefinition[] = [
     keywordId: "stun",
     name: "Shatter Guard",
     description: "Stunned enemies lose all Armor",
-    icon: ShieldOff,
+    icon: "ShieldOff",
     effects: [setEffect("stunStripArmor", true)],
   },
   {
@@ -49,7 +48,7 @@ export const stunTalents: TalentDefinition[] = [
     keywordId: "stun",
     name: "Jarring Blow",
     description: "Increase Stun damage by 1",
-    icon: Bolt,
+    icon: "Bolt",
     effects: [addEffect("flatStunDamage", 1)],
   },
   {
@@ -57,7 +56,7 @@ export const stunTalents: TalentDefinition[] = [
     keywordId: "stun",
     name: "Free Follow-up",
     description: "When you Stun an enemy, your next card is free",
-    icon: Gift,
+    icon: "Gift",
     effects: [setEffect("nextCardFreeOnStun", true)],
   },
   {
@@ -65,7 +64,7 @@ export const stunTalents: TalentDefinition[] = [
     keywordId: "stun",
     name: "Concussive Force",
     description: "Stun threshold reduced by 10%",
-    icon: Waves,
+    icon: "Waves",
     effects: [setEffect("stunThresholdReduction", 0.1)],
   },
   {
@@ -73,7 +72,7 @@ export const stunTalents: TalentDefinition[] = [
     keywordId: "stun",
     name: "Stun Insight",
     description: "When you Stun an enemy, draw a card",
-    icon: Eye,
+    icon: "Eye",
     effects: [setEffect("drawOnStun", 1)],
   },
   {
@@ -81,7 +80,7 @@ export const stunTalents: TalentDefinition[] = [
     keywordId: "stun",
     name: "Stun Surge",
     description: "When you Stun an enemy, gain 1 Mana",
-    icon: PlugZap,
+    icon: "PlugZap",
     effects: [setEffect("manaOnStun", 1)],
   },
 ];

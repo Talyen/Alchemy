@@ -1,7 +1,7 @@
 // Exact display contracts for run-loop and run-end screens.
 // Each screen owns the smallest read model it needs; there is intentionally no
 // all-screens field bag because absent fields must be a type error, not undefined.
-import type { BattleCard, TalentXP } from "@/lib/game-data";
+import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
@@ -75,6 +75,7 @@ interface CorruptionScreenData {
 }
 
 export interface RunEndScreenData {
+  characterId: CharacterId;
   runEndTalentXP: TalentXP;
   talentXP: TalentXP;
   runEndMaterials: MaterialInventory;

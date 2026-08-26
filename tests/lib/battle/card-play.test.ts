@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
+import {
+  canPlayCard,
+  enemyAttackDealsDamage,
+  hasDamageEffect,
+  isAttackCard,
+  playBattleCardResolved,
+} from "@/lib/battle/card-play";
 import { cardHasDamageType } from "@/lib/battle/card-cost-rules";
 import { defaultBattleState } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
@@ -422,5 +428,37 @@ describe("canPlayCard", () => {
     });
     const state = makeState({ mana: 4, playerHealth: 20, hand: [card] });
     expect(canPlayCard(state, card, 0)).toBe(true);
+  });
+});
+
+describe("isAttackCard / hasDamageEffect", () => {
+  it("treats recursive damage as an attack", () => {
+    const card = makeTestCard({
+      effects: [
+        {
+          kind: "chance",
+          chance: 50,
+          successEffects: [{ kind: "damage", damageType: "physical", amount: 3 }],
+          failureEffects: [{ kind: "heal", amount: 2 }],
+        },
+      ],
+    });
+    expect(hasDamageEffect(card.effects)).toBe(true);
+    expect(isAttackCard(card)).toBe(true);
+  });
+
+  it("treats status-only cards as casts", () => {
+    const card = makeTestCard({
+      effects: [{ kind: "player-status", status: "block", amount: 5 }],
+    });
+    expect(hasDamageEffect(card.effects)).toBe(false);
+    expect(isAttackCard(card)).toBe(false);
+  });
+});
+
+describe("enemyAttackDealsDamage", () => {
+  it("is true for hit packets and false for status-only packets", () => {
+    expect(enemyAttackDealsDamage([{ kind: "damage", damageType: "physical", amount: 4 }])).toBe(true);
+    expect(enemyAttackDealsDamage([{ kind: "player-status", status: "bleed", amount: 2 }])).toBe(false);
   });
 });

@@ -1,5 +1,4 @@
 // Talent definitions for keyword: wish.
-import { Gem, Compass, Heart, Sparkle, Gift, Eye, Bolt, CloudRain, Coins, HeartCrack } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -9,7 +8,7 @@ export const wishTalents: TalentDefinition[] = [
     keywordId: "wish",
     name: "Wishful Trinket",
     description: "Gain 1 Forge or Armor when you Wish",
-    icon: Gem,
+    icon: "Gem",
     effects: [setEffect("wishTrinketChoice", true)],
   },
   {
@@ -17,7 +16,7 @@ export const wishTalents: TalentDefinition[] = [
     keywordId: "wish",
     name: "Discovery",
     description: "Wish can offer cards not yet in your collection",
-    icon: Compass,
+    icon: "Compass",
     effects: [setEffect("wishUndiscoveredCards", true)],
   },
   {
@@ -25,7 +24,7 @@ export const wishTalents: TalentDefinition[] = [
     keywordId: "wish",
     name: "Vital Wish",
     description: "Gain 2 Health when you Wish",
-    icon: Heart,
+    icon: "Heart",
     effects: [setEffect("healthOnWish", 2)],
   },
   {
@@ -33,7 +32,7 @@ export const wishTalents: TalentDefinition[] = [
     keywordId: "wish",
     name: "Purifying Wish",
     description: "Cleanse a harmful status effect when you Wish",
-    icon: Sparkle,
+    icon: "Sparkle",
     effects: [setEffect("removeHarmfulStatusOnWish", true)],
   },
   {
@@ -41,7 +40,7 @@ export const wishTalents: TalentDefinition[] = [
     keywordId: "wish",
     name: "Generous Wish",
     description: "Wish has a 20% chance to offer an extra card choice",
-    icon: Gift,
+    icon: "Gift",
     effects: [setEffect("wishExtraChoiceChance", 20)],
   },
   {
@@ -49,7 +48,7 @@ export const wishTalents: TalentDefinition[] = [
     keywordId: "wish",
     name: "Insight",
     description: "Wish also draws a card",
-    icon: Eye,
+    icon: "Eye",
     effects: [setEffect("wishDrawsCard", true)],
   },
   {
@@ -57,7 +56,7 @@ export const wishTalents: TalentDefinition[] = [
     keywordId: "wish",
     name: "Powerful Wish",
     description: "Wish card numeric values are increased by 1",
-    icon: Bolt,
+    icon: "Bolt",
     effects: [setEffect("wishCardsUpgraded", true)],
   },
   {
@@ -65,7 +64,7 @@ export const wishTalents: TalentDefinition[] = [
     keywordId: "wish",
     name: "Mana from Heaven",
     description: "Gain 1 Mana when you Wish",
-    icon: CloudRain,
+    icon: "CloudRain",
     effects: [addEffect("manaOnWish", 1)],
   },
   {
@@ -73,7 +72,7 @@ export const wishTalents: TalentDefinition[] = [
     keywordId: "wish",
     name: "Golden Opportunity",
     description: "Gain 2 Gold when you Wish",
-    icon: Coins,
+    icon: "Coins",
     effects: [addEffect("goldOnWish", 2)],
   },
   {
@@ -81,7 +80,7 @@ export const wishTalents: TalentDefinition[] = [
     keywordId: "wish",
     name: "Desperate Wish",
     description: "Gain 6 Block when you Wish below 30% Health",
-    icon: HeartCrack,
+    icon: "HeartCrack",
     effects: [setEffect("wishBlockBelowHealthPct", 30), setEffect("wishBlockAmount", 6)],
   },
 ];

@@ -12,6 +12,7 @@ import {
   gearArtAspectClass,
   gearArtFillClass,
   getTrinketShineColors,
+  getPlasmaColorPairForTrinket,
   trinketArtFillClass,
   trinketArtImageClass,
   trinketArtTileClass,
@@ -40,6 +41,8 @@ export interface TrinketTileProps {
   shine?: boolean | undefined;
   temporary?: boolean | undefined;
   children?: ReactNode | undefined;
+  /** Optional side-effect on hover entry/exit; does not override internal hover control. */
+  onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
 export function TrinketTile({
@@ -57,6 +60,7 @@ export function TrinketTile({
   shine = true,
   temporary = false,
   children,
+  onHoverChange,
 }: TrinketTileProps) {
   return (
     <InteractiveArtTile
@@ -73,6 +77,7 @@ export function TrinketTile({
       interactiveChrome={interactiveChrome}
       onClick={onClick}
       ariaLabel={ariaLabel}
+      onHoverChange={onHoverChange}
       popup={({ visible, triggerRef }) => (
         <DetailPopup
           idPrefix={idPrefix}
@@ -81,6 +86,7 @@ export function TrinketTile({
           descriptionLines={trinket.descriptionLines}
           visible={visible}
           triggerRef={triggerRef}
+          plasmaColorPair={getPlasmaColorPairForTrinket(trinket)}
         />
       )}
     >
@@ -101,6 +107,8 @@ export interface GearTileProps {
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
   children?: ReactNode | undefined;
+  /** Optional side-effect on hover entry/exit; does not override internal hover control. */
+  onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
 export function GearTile({
@@ -114,6 +122,7 @@ export function GearTile({
   onClick,
   ariaLabel,
   children,
+  onHoverChange,
 }: GearTileProps) {
   const definition = gearDefinitions[instance.definitionId];
   const title = getGearInstanceTitle(instance);
@@ -132,6 +141,7 @@ export function GearTile({
       interactiveChrome={interactiveChrome}
       onClick={onClick}
       ariaLabel={ariaLabel}
+      onHoverChange={onHoverChange}
       // Same rich content everywhere so gear exposes rarity and rolled affixes,
       // not just base description lines.
       popup={({ visible, triggerRef }) => (

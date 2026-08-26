@@ -1,5 +1,4 @@
 // Talent definitions for keyword: armor.
-import { HeartCrack, Shield, Flame, ShieldPlus, Square, Hexagon, Lock, Anchor, Sparkles, Plus } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -9,7 +8,7 @@ export const armorTalents: TalentDefinition[] = [
     keywordId: "armor",
     name: "Last Stand",
     description: "Armor gained is doubled when Health is below 50%",
-    icon: HeartCrack,
+    icon: "HeartCrack",
     effects: [setEffect("armorDoubledBelowHalfHealth", true)],
   },
   {
@@ -17,7 +16,7 @@ export const armorTalents: TalentDefinition[] = [
     keywordId: "armor",
     name: "Armored Surge",
     description: "When you reach 4 Armor, gain 8 Block",
-    icon: Shield,
+    icon: "Shield",
     effects: [setEffect("armorBlockThreshold", 4), setEffect("armorBlockAmount", 8)],
   },
   {
@@ -25,7 +24,7 @@ export const armorTalents: TalentDefinition[] = [
     keywordId: "armor",
     name: "Fireward",
     description: "Armor now mitigates Burn damage taken",
-    icon: Flame,
+    icon: "Flame",
     effects: [setEffect("armorMitigatesBurn", true)],
   },
   {
@@ -33,7 +32,7 @@ export const armorTalents: TalentDefinition[] = [
     keywordId: "armor",
     name: "Reactive Guard",
     description: "When Armor breaks, gain 5 Block",
-    icon: ShieldPlus,
+    icon: "ShieldPlus",
     effects: [setEffect("armorBreakBlock", 5)],
   },
   {
@@ -41,7 +40,7 @@ export const armorTalents: TalentDefinition[] = [
     keywordId: "armor",
     name: "Bulwark",
     description: "Start each combat with 2 Armor",
-    icon: Square,
+    icon: "Square",
     effects: [setEffect("startArmor", 2)],
   },
   {
@@ -49,7 +48,7 @@ export const armorTalents: TalentDefinition[] = [
     keywordId: "armor",
     name: "Thick Hide",
     description: "Armor now mitigates Bleed damage taken",
-    icon: Hexagon,
+    icon: "Hexagon",
     effects: [setEffect("armorMitigatesBleed", true)],
   },
   {
@@ -57,7 +56,7 @@ export const armorTalents: TalentDefinition[] = [
     keywordId: "armor",
     name: "Iron Guard",
     description: "Your first Armor card each combat is doubled",
-    icon: Lock,
+    icon: "Lock",
     effects: [setEffect("firstArmorCardDoubled", true)],
   },
   {
@@ -65,7 +64,7 @@ export const armorTalents: TalentDefinition[] = [
     keywordId: "armor",
     name: "Steadfast",
     description: "When Health falls below 50%, gain 5 Armor",
-    icon: Anchor,
+    icon: "Anchor",
     effects: [setEffect("healthThresholdArmor", [{ threshold: 50, amount: 5 }])],
   },
   {
@@ -73,7 +72,7 @@ export const armorTalents: TalentDefinition[] = [
     keywordId: "armor",
     name: "Purification",
     description: "When you reach 6 Armor, cleanse all harmful status effects",
-    icon: Sparkles,
+    icon: "Sparkles",
     effects: [setEffect("armorCleanseThreshold", 6)],
   },
   {
@@ -81,7 +80,7 @@ export const armorTalents: TalentDefinition[] = [
     keywordId: "armor",
     name: "Reinforced",
     description: "Increase Armor gained by 1",
-    icon: Plus,
+    icon: "Plus",
     effects: [addEffect("flatArmorAmount", 1)],
   },
 ];

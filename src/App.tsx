@@ -40,6 +40,8 @@ import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profi
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
+import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 
 type GameMenuState = ReturnType<typeof useGameMenuState>;
 
@@ -107,6 +109,9 @@ function AppMainContent({
   );
 
   const { particleColors, particleAlphaMultiplier } = getScreenParticleConfig(renderedScreen, false);
+  const plasmaColorPair = useUiStore(
+    (state) => state.plasmaInteraction?.colorPair ?? state.plasmaBaseline?.colorPair ?? null,
+  );
 
   const [deletingUnsupportedSave, setDeletingUnsupportedSave] = useState(false);
   const handleDeleteUnsupportedSave = useCallback(() => {
@@ -160,6 +165,7 @@ function AppMainContent({
           particleColors={particleColors}
           particleAlphaMultiplier={particleAlphaMultiplier}
         />
+        <KeywordPlasmaBackground colorPair={plasmaColorPair} />
         {content}
         <div
           className="pointer-events-none absolute inset-0 z-[90] bg-black"

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createLabyrinthNodeRouting } from "@/features/alchemy/shell/labyrinth-node-routing";
 import type { LabyrinthNodeHandlers } from "@/features/alchemy/shell/use-labyrinth-controller";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
+import { ROUTE_SCREENS } from "@/lib/routing";
 
 function makeRoutingDeps(enterImpl: (handlers: LabyrinthNodeHandlers) => void) {
   return {
@@ -33,7 +33,7 @@ describe("createLabyrinthNodeRouting", () => {
     routing.handleLabyrinthNodeEnter(0, 0);
 
     expect(deps.nav.beginMysteryEvent).toHaveBeenCalledOnce();
-    expect(deps.navigateTo).not.toHaveBeenCalledWith(CONSTANTS.SCREENS.MYSTERY, expect.anything());
+    expect(deps.navigateTo).not.toHaveBeenCalledWith(ROUTE_SCREENS.MYSTERY, expect.anything());
   });
 
   it("applies combat modifiers then starts battle, and initializes shops after empty modifiers", () => {
@@ -45,7 +45,7 @@ describe("createLabyrinthNodeRouting", () => {
     expect(combatDeps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith(["tempered"]);
     expect(combatDeps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith(["generous"]);
     expect(combatDeps.battle.startBattle).toHaveBeenCalledWith(undefined, undefined, "elite", []);
-    expect(combatDeps.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.BATTLE);
+    expect(combatDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
 
     const shopDeps = makeRoutingDeps((handlers) => handlers.onStartShop());
     createLabyrinthNodeRouting(shopDeps).handleLabyrinthNodeEnter(0, 0);
@@ -53,6 +53,6 @@ describe("createLabyrinthNodeRouting", () => {
     expect(shopDeps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
     expect(shopDeps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith([]);
     expect(shopDeps.shop.initialize).toHaveBeenCalledWith("merchant");
-    expect(shopDeps.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.SHOP);
+    expect(shopDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.SHOP);
   });
 });

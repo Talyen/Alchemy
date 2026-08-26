@@ -9,7 +9,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
-import { isMixedPotionCard, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
+import { isStandardPotionCard, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { computeAlchemistPotionBuyPrice, computeAlchemistRefreshPrice, computeMixPotionPrice } from "./shop-pricing";
@@ -80,7 +80,7 @@ export function createAlchemistShopCommands({
 
       const cardA = run.runDeck[indexA];
       const cardB = run.runDeck[indexB];
-      if (!cardA || !cardB || isMixedPotionCard(cardA) || isMixedPotionCard(cardB)) {
+      if (!cardA || !cardB || !isStandardPotionCard(cardA) || !isStandardPotionCard(cardB)) {
         return { committed: false, price, value: null };
       }
       const mixed = tryCreateMixedPotion(

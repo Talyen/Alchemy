@@ -1,4 +1,10 @@
-import { isPlayerDefeated, type BattleState, type CombatTextEvent, type EndPlayerTurnResolution } from "@/lib/battle";
+import {
+  enemyAttackDealsDamage,
+  isPlayerDefeated,
+  type BattleState,
+  type CombatTextEvent,
+  type EndPlayerTurnResolution,
+} from "@/lib/battle";
 import { playBattleEvent, playEnemyAttack } from "@/lib/audio";
 import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
@@ -99,7 +105,11 @@ export async function executeEnemyPhase(
   const vfx = orch.getPresentation();
   if (enemyPerformedAttack) {
     playEnemyAttack(currentState.currentEnemy.id);
-    vfx.telegraphAttack("enemy");
+    if (enemyAttackDealsDamage(currentState.currentEnemy.attackEffects)) {
+      vfx.telegraphAttack("enemy");
+    } else {
+      vfx.telegraphCast("enemy");
+    }
   }
   if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
   if (combatTexts.length > 0) vfx.showCombatTexts(combatTexts);

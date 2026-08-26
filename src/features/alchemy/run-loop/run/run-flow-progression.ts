@@ -20,8 +20,9 @@ import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
-import { CONSTANTS } from "../../shared/types";
 import type { CompleteRunVictory, RunFlowHandlerDeps } from "./run-flow-handler-deps";
+import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
 interface ProgressionCallbacks {
   completeRunVictory: CompleteRunVictory;
@@ -53,7 +54,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
 
   function prepareDestinationScreen() {
     const state = readRunSession().rewardState;
-    const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
+    const bossOnly = state.destinations.length === 1 && state.destinations[0] === DESTINATIONS.BOSS_COMBAT;
     if (!bossOnly) return;
     if (state.selectedBossId && getBossById(state.selectedBossId)) return;
     dispatchRunSessionCommand((draft) => {
@@ -63,7 +64,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
   }
 
   function prepareNextDestination(destinationIndexInAct?: number, onCommitted?: () => void) {
-    deps.actions.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
+    deps.actions.navigateTo(ROUTE_SCREENS.DESTINATION, () => {
       dispatchRunSessionCommand((draft) => {
         setNextDestinationState(draft, destinationIndexInAct);
       });
@@ -110,7 +111,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
   }
 
   function returnToCurrentDestination() {
-    deps.actions.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
+    deps.actions.navigateTo(ROUTE_SCREENS.DESTINATION, () => {
       dispatchRunSessionCommand((draft) => {
         abandonCorruptionDestinationVisit(draft);
       });
@@ -119,8 +120,8 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
   }
 
   function advanceToNextDestination() {
-    const labyrinth = readActiveRun().contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH;
-    const nextScreen = labyrinth ? CONSTANTS.SCREENS.LABYRINTH_MAP : CONSTANTS.SCREENS.DESTINATION;
+    const labyrinth = readActiveRun().contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
+    const nextScreen = labyrinth ? ROUTE_SCREENS.LABYRINTH_MAP : ROUTE_SCREENS.DESTINATION;
 
     deps.actions.navigateTo(nextScreen, () => {
       dispatchRunSessionCommand((draft) => {

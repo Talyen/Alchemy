@@ -15,10 +15,9 @@ import * as mystery from "@/lib/mystery";
 import { resolveMysteryEventTrinkets } from "@/lib/mystery/resolve-trinkets";
 import { gearDefinitions } from "@/lib/gear";
 import { useGearStore } from "../../../helpers/gameplay-store-test";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
-import type { Screen } from "@/lib/routing";
 
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 
 function renderMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.())) {
   const hook = renderHook(() => useMysteryEventNavigation({ navigateTo }));
@@ -44,7 +43,7 @@ describe("useMysteryEventNavigation", () => {
     expect(getRunSessionStoreView().mysteryGrantedGearInstances).toEqual([]);
     expect(getRunSessionStoreView().mysteryChosenCardId).toBeNull();
     expect(getRunSessionStoreView().mysteryChosenChoice).toBeNull();
-    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.MYSTERY, undefined);
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.MYSTERY, undefined);
     expect(playUISound).toHaveBeenCalledWith("musicBoxMystery");
   });
 

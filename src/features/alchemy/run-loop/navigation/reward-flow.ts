@@ -1,10 +1,7 @@
 // Reward state, gold math, and combat/boss reward builders.
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
-import { cardLibrary, selectRewardCards, trinketLibrary, type BattleCard } from "@/lib/game-data";
 import { DROP_RATES_BOSS, LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import { pickRandom, sampleItems } from "@/lib/utils";
-import { CONSTANTS } from "../../shared/types";
-import type { ContentSystemId } from "@/lib/content-systems/types";
 import { generateGearRewardChoices } from "@/lib/gear";
 import {
   createEmptyRewardState,
@@ -33,6 +30,9 @@ import type {
   FinalizeRewardResult,
   FinalizeRewardRoute,
 } from "./reward-flow-types";
+import { REWARD_ROUTES } from "@/lib/routing";
+import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
+import { ENEMY_TYPES, cardLibrary, selectRewardCards, trinketLibrary, type BattleCard } from "@/lib/game-data";
 
 export function createNextRewardState(rewardState: RewardState): CardRewardState {
   return {
@@ -57,17 +57,13 @@ export function getCompanionCardChoices(rng: () => number): BattleCard[] {
 }
 
 function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType: string): FinalizeRewardRoute {
-  if (contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
-    return currentEnemyType === CONSTANTS.ENEMY_TYPES.BOSS
-      ? CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY
-      : CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP;
+  if (contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {
+    return currentEnemyType === ENEMY_TYPES.BOSS ? REWARD_ROUTES.LABYRINTH_VICTORY : REWARD_ROUTES.LABYRINTH_MAP;
   }
-  if (contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-    return CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY;
+  if (contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
+    return REWARD_ROUTES.WILDWOOD_VICTORY;
   }
-  return currentEnemyType === CONSTANTS.ENEMY_TYPES.BOSS
-    ? CONSTANTS.REWARD_ROUTES.ACT_COMPLETE
-    : CONSTANTS.REWARD_ROUTES.DESTINATION;
+  return currentEnemyType === ENEMY_TYPES.BOSS ? REWARD_ROUTES.ACT_COMPLETE : REWARD_ROUTES.DESTINATION;
 }
 
 export function finalizeRewardState({ rewardState, companionRewardCards }: FinalizeRewardInput): FinalizeRewardResult {
@@ -85,12 +81,12 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
         choices: companionRewardCards,
       },
       clearCompanionRewardCards: true,
-      route: CONSTANTS.REWARD_ROUTES.COMPANION_REWARD,
+      route: REWARD_ROUTES.COMPANION_REWARD,
     };
   }
 
-  const contentSystemType = rewardState.lastVictoryContentSystem ?? CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN;
-  const currentEnemyType = rewardState.lastVictoryEnemyType ?? CONSTANTS.ENEMY_TYPES.NORMAL;
+  const contentSystemType = rewardState.lastVictoryContentSystem ?? CONTENT_SYSTEMS.CAMPAIGN;
+  const currentEnemyType = rewardState.lastVictoryEnemyType ?? ENEMY_TYPES.NORMAL;
   const route = resolveRewardRoute(contentSystemType, currentEnemyType);
 
   return {
@@ -215,7 +211,7 @@ export function createCombatRewardState({
     trinketIds,
     goldMultiplier,
   });
-  if (battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE) {
+  if (battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE) {
     const excluded = new Set(excludedBoonIds);
     return {
       ...createEmptyRewardState(destinations),

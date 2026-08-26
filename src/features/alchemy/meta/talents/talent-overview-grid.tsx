@@ -23,6 +23,7 @@ interface TalentPortraitCardProps {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   onSelectKeyword: (keywordId: KeywordId) => void;
+  onHoverKeyword?: ((keywordId: KeywordId | null) => void) | undefined;
 }
 
 const TalentPortraitCard = memo(function TalentPortraitCard({
@@ -30,6 +31,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
   talentXP,
   unlockedTalents,
   onSelectKeyword,
+  onHoverKeyword,
 }: TalentPortraitCardProps) {
   const definition = keywordDefinitions[keywordId];
   const art = talentArt[keywordId];
@@ -49,10 +51,22 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
       <button
         type="button"
         aria-label={`Select ${definition.label} Talents`}
-        onMouseEnter={onHoverStart}
-        onMouseLeave={onHoverEnd}
-        onFocus={onHoverStart}
-        onBlur={onHoverEnd}
+        onMouseEnter={() => {
+          onHoverStart();
+          onHoverKeyword?.(keywordId);
+        }}
+        onMouseLeave={() => {
+          onHoverEnd();
+          onHoverKeyword?.(null);
+        }}
+        onFocus={() => {
+          onHoverStart();
+          onHoverKeyword?.(keywordId);
+        }}
+        onBlur={() => {
+          onHoverEnd();
+          onHoverKeyword?.(null);
+        }}
         onClick={() => {
           onSelectKeyword(keywordId);
         }}
@@ -95,6 +109,7 @@ export interface TalentOverviewGridProps {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   onSelectKeyword: (keywordId: KeywordId) => void;
+  onHoverKeyword?: ((keywordId: KeywordId | null) => void) | undefined;
 }
 
 function layoutKeywordRows(keywordIds: KeywordId[]): KeywordId[][] {
@@ -110,6 +125,7 @@ export function TalentOverviewGrid({
   talentXP,
   unlockedTalents,
   onSelectKeyword,
+  onHoverKeyword,
 }: TalentOverviewGridProps) {
   const rows = useMemo(() => layoutKeywordRows(keywordIds), [keywordIds]);
 
@@ -124,6 +140,7 @@ export function TalentOverviewGrid({
               talentXP={talentXP}
               unlockedTalents={unlockedTalents}
               onSelectKeyword={onSelectKeyword}
+              onHoverKeyword={onHoverKeyword}
             />
           ))}
         </div>

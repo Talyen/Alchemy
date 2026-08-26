@@ -53,8 +53,10 @@ export function createPlasmaLifecycle({
   function resize() {
     const w = activeParent.clientWidth;
     const h = activeParent.clientHeight;
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
+    const cssWidth = `${w}px`;
+    const cssHeight = `${h}px`;
+    if (canvas.style.width !== cssWidth) canvas.style.width = cssWidth;
+    if (canvas.style.height !== cssHeight) canvas.style.height = cssHeight;
     if (w <= 0 || h <= 0) {
       canvas.width = 1;
       canvas.height = 1;
@@ -64,8 +66,10 @@ export function createPlasmaLifecycle({
     }
 
     const backingScale = resolvePlasmaBackingScale(w, h);
-    canvas.width = Math.max(1, Math.floor(w * backingScale));
-    canvas.height = Math.max(1, Math.floor(h * backingScale));
+    const backingWidth = Math.max(1, Math.floor(w * backingScale));
+    const backingHeight = Math.max(1, Math.floor(h * backingScale));
+    if (canvas.width !== backingWidth) canvas.width = backingWidth;
+    if (canvas.height !== backingHeight) canvas.height = backingHeight;
     lifecycle.logicalWidth = w;
     lifecycle.logicalHeight = h;
     scheduleFrame();

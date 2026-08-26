@@ -1,5 +1,4 @@
 // Talent definitions for keyword: physical.
-import { Anvil, HandFist, Hammer, Skull, Split, Scissors, Droplets, ShieldCheck, Shield, Swords } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -9,7 +8,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Expert Blacksmith",
     description: "Physical damage bonus from Forge is increased by 50%",
-    icon: Anvil,
+    icon: "Anvil",
     effects: [setEffect("forgeToPhysicalDamageMultiplier", 1.5)],
   },
   {
@@ -17,7 +16,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Shield Bash",
     description: "Physical damage is increased by 30% of your Block",
-    icon: Shield,
+    icon: "Shield",
     effects: [addEffect("blockToPhysicalDamageMultiplier", 0.3)],
   },
   {
@@ -25,7 +24,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Armored Fists",
     description: "Physical damage is increased by your Armor",
-    icon: HandFist,
+    icon: "HandFist",
     effects: [setEffect("armorToPhysicalDamage", true)],
   },
   {
@@ -33,7 +32,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Heavy Blows",
     description: "Physical damage has a 10% chance to deal Stun damage",
-    icon: Hammer,
+    icon: "Hammer",
     effects: [setEffect("physicalStunChance", 10)],
   },
   {
@@ -41,7 +40,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Finish Him",
     description: "Physical damage is doubled against Stunned enemies",
-    icon: Skull,
+    icon: "Skull",
     effects: [setEffect("physicalDoubledVsStunned", true)],
   },
   {
@@ -49,7 +48,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Shatter",
     description: "Physical damage is doubled against Frozen enemies",
-    icon: Split,
+    icon: "Split",
     effects: [setEffect("physicalDoubledVsFrozen", true)],
   },
   {
@@ -57,7 +56,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Lacerate",
     description: "Physical damage has a 10% chance to Bleed",
-    icon: Scissors,
+    icon: "Scissors",
     effects: [setEffect("physicalBleedChance", 10)],
   },
   {
@@ -65,7 +64,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Hemorrhage",
     description: "Physical damage detonates Bleed",
-    icon: Droplets,
+    icon: "Droplets",
     effects: [setEffect("physicalDetonatesBleed", true)],
   },
   {
@@ -73,7 +72,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Riposte",
     description: "When you Dodge, deal Physical damage equal to the dodged attack",
-    icon: Swords,
+    icon: "Swords",
     effects: [setEffect("physicalOnDodgeEqualToAttack", true)],
   },
   {
@@ -81,7 +80,7 @@ export const physicalTalents: TalentDefinition[] = [
     keywordId: "physical",
     name: "Unrelenting",
     description: "You deal double Physical damage while below 50% Health",
-    icon: ShieldCheck,
+    icon: "ShieldCheck",
     effects: [setEffect("physicalDoubledBelowHalfHealth", true)],
   },
 ];

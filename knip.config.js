@@ -1,9 +1,9 @@
 /**
  * Knip dead-code policy
  * ---------------------
- * Barrels are **thin convenience entries**, not public API dumps:
- * only re-export what callers import from the barrel path itself.
- * Deep imports (`shared/run-flow/destination-flow`) are preferred inside features.
+ * Barrels for `@/lib/game-data`, `@/lib/battle`, and `@/lib/validation` are the
+ * eslint-enforced public surface. Feature stores and screens still use on-disk
+ * paths (`shared/run-flow/destination-flow`).
  *
  * Prefer removing unused exports over growing `ignoreIssues`.
  * Entries listed under `ignoreIssues` must be intentional seams, generated

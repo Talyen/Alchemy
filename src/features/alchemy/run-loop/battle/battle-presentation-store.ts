@@ -35,7 +35,8 @@ interface BattlePresentationStore {
   enemyHurtFlashToken: number;
   playerAttackToken: number;
   enemyAttackToken: number;
-  companionAttackToken: number;
+  playerCastToken: number;
+  enemyCastToken: number;
   cardTransfers: CardTransfer[];
   hiddenHandCardKeys: HiddenHandCardKeys;
   cardTransferInProgress: boolean;
@@ -49,6 +50,7 @@ interface BattlePresentationStore {
   hurtPlayer: () => void;
   hurtEnemy: () => void;
   telegraphAttack: (side: "player" | "enemy" | "companion") => void;
+  telegraphCast: (side: "player" | "enemy" | "companion") => void;
   resetPortraitHurtTokens: () => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
   clearFloatingCombatTexts: () => void;
@@ -110,7 +112,8 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
     enemyHurtFlashToken: 0,
     playerAttackToken: 0,
     enemyAttackToken: 0,
-    companionAttackToken: 0,
+    playerCastToken: 0,
+    enemyCastToken: 0,
     cardTransfers: [],
     hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
     cardTransferInProgress: false,
@@ -143,9 +146,19 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
     hurtEnemy: () => set((s) => ({ enemyHurtFlashToken: s.enemyHurtFlashToken + 1 })),
 
     telegraphAttack: (side) => {
-      if (side === "player") set((s) => ({ playerAttackToken: s.playerAttackToken + 1 }));
-      else if (side === "enemy") set((s) => ({ enemyAttackToken: s.enemyAttackToken + 1 }));
-      else set((s) => ({ companionAttackToken: s.companionAttackToken + 1 }));
+      if (side === "player" || side === "companion") {
+        set((s) => ({ playerAttackToken: s.playerAttackToken + 1 }));
+      } else {
+        set((s) => ({ enemyAttackToken: s.enemyAttackToken + 1 }));
+      }
+    },
+
+    telegraphCast: (side) => {
+      if (side === "player" || side === "companion") {
+        set((s) => ({ playerCastToken: s.playerCastToken + 1 }));
+      } else {
+        set((s) => ({ enemyCastToken: s.enemyCastToken + 1 }));
+      }
     },
 
     resetPortraitHurtTokens: () => set({ playerHurtFlashToken: 0, enemyHurtFlashToken: 0 }),
@@ -237,7 +250,8 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
         enemyHurtFlashToken: 0,
         playerAttackToken: 0,
         enemyAttackToken: 0,
-        companionAttackToken: 0,
+        playerCastToken: 0,
+        enemyCastToken: 0,
         cardTransfers: [],
         hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
         cardTransferInProgress: false,

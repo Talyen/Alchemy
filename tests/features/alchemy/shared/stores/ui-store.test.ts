@@ -25,3 +25,26 @@ describe("clearCardHover", () => {
     expect(useUiStore.getState().hoveredCardId).toBeNull();
   });
 });
+
+describe("plasma registrations", () => {
+  const red = { primary: "#ff0000", secondary: "#440000" };
+  const blue = { primary: "#0000ff", secondary: "#000044" };
+
+  it("only lets the current owner clear a source", () => {
+    const store = useUiStore.getState();
+    store.setPlasmaInteraction({ ownerId: "new", colorPair: blue });
+    store.clearPlasmaInteraction("old");
+    expect(useUiStore.getState().plasmaInteraction).toEqual({ ownerId: "new", colorPair: blue });
+    store.clearPlasmaInteraction("new");
+    expect(useUiStore.getState().plasmaInteraction).toBeNull();
+  });
+
+  it("keeps baseline and interaction sources independent", () => {
+    const store = useUiStore.getState();
+    store.setPlasmaBaseline({ ownerId: "screen", colorPair: red });
+    store.setPlasmaInteraction({ ownerId: "tooltip", colorPair: blue });
+    expect(useUiStore.getState().plasmaInteraction?.colorPair).toEqual(blue);
+    store.clearPlasmaInteraction("tooltip");
+    expect(useUiStore.getState().plasmaBaseline?.colorPair).toEqual(red);
+  });
+});

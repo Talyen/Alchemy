@@ -22,16 +22,17 @@ interface PurchasableCardItemProps {
 export function PurchasableCardItem(props: PurchasableCardItemProps) {
   const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass } = props;
   const canAfford = gold >= price;
+  const canPurchase = !purchased && canAfford;
 
   const media = (
     <BattleCardButton
       card={card}
-      onClick={!purchased && canAfford ? onBuy : undefined}
-      disabled={purchased || !canAfford}
+      onClick={canPurchase ? onBuy : undefined}
+      disabled={!canPurchase}
       ariaLabel={purchased ? getCardDisplayTitle(card) : `Buy ${getCardDisplayTitle(card)}`}
       shimmerActive={false}
       shimmerToken={undefined}
-      className={cn(widthClass, !purchased && canAfford && cardInteractiveGlowClass)}
+      className={cn(widthClass, canPurchase && cardInteractiveGlowClass)}
     >
       <ShopPriceChip price={price} gold={gold} purchased={purchased} />
     </BattleCardButton>

@@ -14,7 +14,10 @@ import {
   trinketLibrary,
   type BattleCardEffect,
 } from "@/lib/game-data";
-import { hasKind, hasLifesteal, validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
+import {
+  validateCardDescriptionParity,
+  validateEnemyTraitDescriptionParity,
+} from "@/lib/content-validation/card-parity";
 
 // ─────────────────────────── Cards ───────────────────────────
 
@@ -86,96 +89,6 @@ describe("card descriptions vs effects", () => {
       }
     }
   });
-
-  it("special keywords match their corresponding effects", () => {
-    for (const card of cardLibrary) {
-      const { descriptionLines, effects } = card;
-
-      if (card.tags?.includes("archery")) {
-        expect(
-          descriptionLines.some((l) => l === "Archery"),
-          `${card.id} has archery tag but no 'Archery' line`,
-        ).toBe(true);
-      }
-
-      if (descriptionLines.some((l) => l === "Archery")) {
-        expect(card.tags?.includes("archery"), `${card.id} has 'Archery' line but no archery tag`).toBe(true);
-      }
-
-      if (hasLifesteal(effects)) {
-        expect(
-          descriptionLines.some((l) => l === "Leech"),
-          `${card.id} has lifesteal but no 'Leech' line`,
-        ).toBe(true);
-      }
-
-      if ("consume" in card && card.consume === true) {
-        const hasConsume = descriptionLines.some((l) => l === "Consume");
-        const hasCompanion =
-          hasKind(card.effects, "summon-companion") && descriptionLines.some((l) => l === "Companion");
-        expect(hasConsume || hasCompanion, `${card.id} has consume:true but no 'Consume' or 'Companion' line`).toBe(
-          true,
-        );
-      }
-
-      if (hasKind(effects, "summon-companion")) {
-        expect(descriptionLines.some((l) => l.includes("Companion"))).toBe(true);
-      }
-
-      if (hasKind(effects, "lose-max-mana")) {
-        expect(
-          descriptionLines.some((l) => l.includes("Mana Crystal")),
-          `${card.id} has lose-max-mana but no 'Mana Crystal' line`,
-        ).toBe(true);
-      }
-
-      if (hasKind(effects, "lose-health")) {
-        expect(
-          descriptionLines.some((l) => l.startsWith("Lose ") && l.includes("Health")),
-          `${card.id} has lose-health but no 'Lose ... Health' line`,
-        ).toBe(true);
-      }
-
-      if (hasKind(effects, "draw-cards")) {
-        expect(
-          descriptionLines.some((l) => l.startsWith("Draw ")),
-          `${card.id} has draw-cards but no 'Draw' line`,
-        ).toBe(true);
-      }
-
-      if (hasKind(effects, "remove-enemy-armor")) {
-        expect(
-          descriptionLines.some((l) => l.startsWith("Strip ")),
-          `${card.id} has remove-enemy-armor but no 'Strip' line`,
-        ).toBe(true);
-      }
-
-      if (hasKind(effects, "multiply-enemy-status")) {
-        expect(
-          descriptionLines.some((l) => l.startsWith("Double ")),
-          `${card.id} has multiply-enemy-status but no 'Double' line`,
-        ).toBe(true);
-      }
-
-      if (hasKind(effects, "remove-player-status")) {
-        expect(
-          descriptionLines.some((l) => l.startsWith("Cleanse ")),
-          `${card.id} has remove-player-status but no 'Cleanse' line`,
-        ).toBe(true);
-      }
-
-      if (hasKind(effects, "buff-companion")) {
-        expect(descriptionLines.some((l) => l.includes("Companion damage"))).toBe(true);
-      }
-
-      if (hasKind(effects, "self-damage")) {
-        expect(
-          descriptionLines.some((l) => l.includes("yourself") || l.startsWith("Receive ")),
-          `${card.id} has self-damage but no matching description`,
-        ).toBe(true);
-      }
-    }
-  });
 });
 
 // ─────────────────────────── Enemies ───────────────────────────
@@ -201,50 +114,10 @@ describe("enemy descriptions vs attack effects", () => {
     expect(usedTraitIds.has("forge-regeneration")).toBe(false);
   });
 
-  it.each(enemyBestiary.map((e) => [e.id, e.title] as const))(
-    "%s — trait descriptions mention the trait's key effect",
-    (_id, title) => {
-      const enemy = enemyBestiary.find((e) => e.title === title)!;
-      for (const trait of enemy.traits) {
-        const desc = trait.description.toLowerCase();
-        switch (trait.id) {
-          case "iron-hide":
-            expect(desc).toMatch(/armor/);
-            break;
-          case "rusting-carapace":
-            expect(desc).toMatch(/forge/);
-            break;
-          case "glacial-shell":
-            expect(desc).toMatch(/freeze|burn/);
-            break;
-          case "regeneration":
-            expect(desc).toMatch(/health|heal/);
-            break;
-          case "brittle-bones":
-            expect(desc).toMatch(/holy|stun/);
-            break;
-          case "trinket-hoarder":
-            expect(desc).toMatch(/burn|trinket/);
-            break;
-          case "burn-resistance":
-            expect(desc).toMatch(/burn/);
-            break;
-          case "poison-resistance":
-            expect(desc).toMatch(/poison/);
-            break;
-          case "holy-vulnerability":
-            expect(desc).toMatch(/holy/);
-            break;
-          case "living-armor":
-            expect(desc).toMatch(/bleed|armor/);
-            break;
-          case "gold-trove":
-            expect(desc).toMatch(/gold/);
-            break;
-        }
-      }
-    },
-  );
+  it("trait descriptions match content-validation parity", () => {
+    const issues = enemyBestiary.flatMap((enemy) => validateEnemyTraitDescriptionParity(enemy));
+    expect(issues).toEqual([]);
+  });
 });
 
 // ─────────────────────────── Boons ───────────────────────────

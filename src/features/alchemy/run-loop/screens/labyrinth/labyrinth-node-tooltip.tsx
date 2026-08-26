@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { renderColoredKeywords } from "../../../shared/ui/card-description-ui";
 import { TooltipBody, TooltipHeader, TooltipSection } from "../../../shared/ui/tooltip-panel";
 import { PortaledTooltip } from "../../../shared/ui/portaled-tooltip";
-import { tooltipBodyClass } from "@/features/alchemy/shared/config";
+import { getPlasmaColorPairFromColors, LABYRINTH_NODE_META, tooltipBodyClass } from "@/features/alchemy/shared/config";
 
 interface Props {
   type: LabyrinthNodeType;
@@ -44,7 +44,13 @@ export function LabyrinthNodeTooltip({ type, modifiers, rewardModifiers, trigger
   const hasModifiers = enemyModifiers.length > 0 || rewardModifiers.length > 0;
 
   return (
-    <PortaledTooltip triggerRef={triggerRef} visible={visible} maxWidthFraction={0.4} className="rounded-shell-tooltip">
+    <PortaledTooltip
+      triggerRef={triggerRef}
+      visible={visible}
+      maxWidthFraction={0.4}
+      className="rounded-shell-tooltip"
+      plasmaColorPair={getPlasmaColorPairFromColors(LABYRINTH_NODE_META[type].shineColors)}
+    >
       <TooltipHeader>{NODE_TYPE_LABELS[type]}</TooltipHeader>
       <TooltipBody>
         <p>{renderColoredKeywords(NODE_TYPE_TOOLTIPS[type])}</p>

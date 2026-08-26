@@ -2,6 +2,7 @@ import { useRef } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { BestiaryEntry } from "@/lib/game-data";
+import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
 import { cn } from "@/lib/utils";
 import {
@@ -38,7 +39,7 @@ export function DestinationChoices({
       )}
     >
       {destinationOptions.map((destination) => {
-        const { icon, accentClassName, art: defaultArt } = destinationMeta[destination];
+        const { icon, accentClassName, art: defaultArt, plasmaColorPair } = destinationMeta[destination];
         const art = destination === DESTINATIONS.BOSS_COMBAT && selectedBoss?.art ? selectedBoss.art : defaultArt;
 
         return (
@@ -48,6 +49,7 @@ export function DestinationChoices({
             art={art}
             icon={icon}
             accentClassName={accentClassName}
+            plasmaColorPair={plasmaColorPair}
             tooltipEntry={tooltipEntry}
             padded={!bossOnly}
             onChoose={onChoose}
@@ -63,6 +65,7 @@ function DestinationChoiceTile({
   art,
   icon,
   accentClassName,
+  plasmaColorPair,
   tooltipEntry,
   padded,
   onChoose,
@@ -71,6 +74,7 @@ function DestinationChoiceTile({
   art: string;
   icon: LucideIcon;
   accentClassName: string;
+  plasmaColorPair: PlasmaColorPair;
   tooltipEntry: BestiaryEntry | null;
   padded: boolean;
   onChoose: (destination: Destination) => void;
@@ -85,6 +89,7 @@ function DestinationChoiceTile({
       icon={icon}
       label={destination}
       accentClassName={accentClassName}
+      plasmaColorPair={plasmaColorPair}
       widthClass={tooltipEntry ? battleEnemyCardWidthClass : chooserArtWidthClass}
       paddedTileClass={padded ? chooserPaddedTileClass : undefined}
       overlay={

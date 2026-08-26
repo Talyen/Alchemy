@@ -331,5 +331,6 @@ describe("createBattleCardPlay", () => {
     clickCard(handleCardClick, { ...guard, uid: 8 }, 0);
 
     expect(useBattlePresentationStore.getState().playerAttackToken).toBe(0);
+    expect(useBattlePresentationStore.getState().playerCastToken).toBe(1);
   });
 });

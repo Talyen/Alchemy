@@ -1,16 +1,4 @@
 // Talent definitions for keyword: consume.
-import {
-  Apple,
-  Gift,
-  Flame,
-  FlaskConical,
-  Wine,
-  Cookie,
-  Package,
-  CopyPlus,
-  FlaskRound,
-  CookingPot,
-} from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -20,7 +8,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Gourmand",
     description: "Consume cards heal 20% more",
-    icon: Apple,
+    icon: "Apple",
     effects: [setEffect("consumeHealMultiplier", 0.2)],
   },
   {
@@ -28,7 +16,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Last Supper",
     description: "Your first Consume card each combat is free",
-    icon: Gift,
+    icon: "Gift",
     effects: [setEffect("firstConsumeCardFree", true)],
   },
   {
@@ -36,7 +24,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Volatility",
     description: "Consume cards deal 20% more damage",
-    icon: Flame,
+    icon: "Flame",
     effects: [setEffect("consumeDamageBonusPercent", 20)],
   },
   {
@@ -44,7 +32,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Distillation",
     description: "Potions are 20% more potent",
-    icon: FlaskConical,
+    icon: "FlaskConical",
     effects: [addEffect("potionPotency", 0.2)],
   },
   {
@@ -52,7 +40,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Brewmaster",
     description: "Mixed Potion potency is increased by 1",
-    icon: Wine,
+    icon: "Wine",
     effects: [addEffect("potionMixPotency", 1)],
   },
   {
@@ -60,7 +48,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Aftertaste",
     description: "When you Consume a card, restore 1 Health",
-    icon: Cookie,
+    icon: "Cookie",
     effects: [setEffect("healOnConsume", 1)],
   },
   {
@@ -68,7 +56,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Leftovers",
     description: "When you Consume a card, gain 1 Gold",
-    icon: Package,
+    icon: "Package",
     effects: [setEffect("goldOnConsume", 1)],
   },
   {
@@ -76,7 +64,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Second Helping",
     description: "Once per turn, when you Consume a card, draw a card",
-    icon: CopyPlus,
+    icon: "CopyPlus",
     effects: [setEffect("drawOnConsume", 1)],
   },
   {
@@ -84,7 +72,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Rotgut",
     description: "When you Consume a card, apply 1 Poison",
-    icon: FlaskRound,
+    icon: "FlaskRound",
     effects: [setEffect("poisonOnConsume", 1)],
   },
   {
@@ -92,7 +80,7 @@ export const consumeTalents: TalentDefinition[] = [
     keywordId: "consume",
     name: "Feast",
     description: "When you Consume a card, gain 2 Block",
-    icon: CookingPot,
+    icon: "CookingPot",
     effects: [setEffect("blockOnConsume", 2)],
   },
 ];

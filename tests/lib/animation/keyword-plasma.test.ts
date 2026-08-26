@@ -36,7 +36,7 @@ describe("startKeywordPlasma", () => {
       canvas,
       colorsRef,
       focalYOffset: 75,
-      active: true,
+      active: () => true,
     });
     expect(() => cleanup()).not.toThrow();
   });
@@ -54,7 +54,7 @@ describe("startKeywordPlasma", () => {
       canvas,
       colorsRef,
       focalYOffset: 75,
-      active: true,
+      active: () => true,
     });
 
     expect(() => cleanup()).not.toThrow();
@@ -77,12 +77,32 @@ describe("startKeywordPlasma", () => {
       canvas,
       colorsRef: { current: { primary: "#ff8040", secondary: "#4080ff" } },
       focalYOffset: 75,
-      active: true,
+      active: () => true,
     });
 
     expect(raf).not.toHaveBeenCalled();
     cleanup();
     parent.remove();
     localStorage.removeItem("alchemy-disable-animations");
+  });
+
+  it("starts and stops webgl renderer (falling back gracefully without throwing in jsdom)", () => {
+    const parent = document.createElement("div");
+    Object.defineProperty(parent, "clientWidth", { value: 800, configurable: true });
+    Object.defineProperty(parent, "clientHeight", { value: 600, configurable: true });
+    const canvas = document.createElement("canvas");
+    parent.appendChild(canvas);
+    document.body.appendChild(parent);
+
+    const colorsRef = { current: { primary: "#ff8040", secondary: "#4080ff" } };
+    const cleanup = startKeywordPlasma("webgl", {
+      canvas,
+      colorsRef,
+      focalYOffset: 75,
+      active: () => true,
+    });
+
+    expect(() => cleanup()).not.toThrow();
+    parent.remove();
   });
 });

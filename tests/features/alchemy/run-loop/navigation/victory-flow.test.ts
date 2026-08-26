@@ -477,6 +477,18 @@ describe("computeVictoryRewards", () => {
     });
     expect(result.rewardState.destinations).toEqual(["Normal Combat", "Campfire", "Mystery"]);
   });
+
+  it("skips campaign destination sampling for labyrinth victories", () => {
+    const getAvailableDestinations = vi.fn();
+    const destinationOfferState = { lastOfferedDestinations: [], roundsSinceOffered: {} };
+    const result = computeVictoryRewards(
+      baseInput({ contentSystemType: "labyrinth", getAvailableDestinations, destinationOfferState }),
+      testRng,
+    );
+    expect(getAvailableDestinations).not.toHaveBeenCalled();
+    expect(result.rewardState.destinations).toEqual([]);
+    expect(result.destinationOfferState).toEqual(destinationOfferState);
+  });
 });
 
 describe("commitVictoryRewards", () => {

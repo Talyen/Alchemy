@@ -1,16 +1,4 @@
 // Talent definitions for keyword: freeze.
-import {
-  ThermometerSnowflake,
-  Split,
-  MountainSnow,
-  Snowflake,
-  CloudSnow,
-  ShieldOff,
-  Thermometer,
-  FlaskConical,
-  Hexagon,
-  Lock,
-} from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -20,7 +8,7 @@ export const freezeTalents: TalentDefinition[] = [
     keywordId: "freeze",
     name: "Bitter Cold",
     description: "Freeze threshold reduced by 10%",
-    icon: ThermometerSnowflake,
+    icon: "ThermometerSnowflake",
     effects: [setEffect("freezeThresholdReduction", 0.1)],
   },
   {
@@ -28,7 +16,7 @@ export const freezeTalents: TalentDefinition[] = [
     keywordId: "freeze",
     name: "Shatter",
     description: "Frozen enemies take double damage",
-    icon: Split,
+    icon: "Split",
     effects: [setEffect("freezeDoubleDamage", true)],
   },
   {
@@ -36,7 +24,7 @@ export const freezeTalents: TalentDefinition[] = [
     keywordId: "freeze",
     name: "Winter's Grasp",
     description: "Start each combat by dealing 4 Freeze damage",
-    icon: MountainSnow,
+    icon: "MountainSnow",
     effects: [setEffect("startFreeze", 4)],
   },
   {
@@ -44,7 +32,7 @@ export const freezeTalents: TalentDefinition[] = [
     keywordId: "freeze",
     name: "Icebound",
     description: "Frozen enemies lose all Block and cannot Dodge",
-    icon: Snowflake,
+    icon: "Snowflake",
     effects: [setEffect("freezeStripBlock", true), setEffect("freezePreventsEnemyDodge", true)],
   },
   {
@@ -52,7 +40,7 @@ export const freezeTalents: TalentDefinition[] = [
     keywordId: "freeze",
     name: "Snow Pack",
     description: "Your Companion deals 1 additional damage to Frozen enemies",
-    icon: CloudSnow,
+    icon: "CloudSnow",
     effects: [addEffect("companionVsFrozenBonus", 1)],
   },
   {
@@ -60,7 +48,7 @@ export const freezeTalents: TalentDefinition[] = [
     keywordId: "freeze",
     name: "Brittle Armor",
     description: "Frozen enemies lose all Armor",
-    icon: ShieldOff,
+    icon: "ShieldOff",
     effects: [setEffect("freezeStripArmor", true)],
   },
   {
@@ -68,7 +56,7 @@ export const freezeTalents: TalentDefinition[] = [
     keywordId: "freeze",
     name: "Cold Resistance",
     description: "Receive half Freeze damage",
-    icon: Thermometer,
+    icon: "Thermometer",
     effects: [setEffect("receiveHalfFreezeDamage", true)],
   },
   {
@@ -76,7 +64,7 @@ export const freezeTalents: TalentDefinition[] = [
     keywordId: "freeze",
     name: "Cryo-preservation",
     description: "Poison stacks on Frozen enemies cannot decay",
-    icon: FlaskConical,
+    icon: "FlaskConical",
     effects: [setEffect("freezePreventsPoisonDecay", true)],
   },
   {
@@ -84,7 +72,7 @@ export const freezeTalents: TalentDefinition[] = [
     keywordId: "freeze",
     name: "Glacial Encasement",
     description: "Frozen enemies cannot gain Forge or Armor",
-    icon: Hexagon,
+    icon: "Hexagon",
     effects: [setEffect("freezePreventsEnemyScaling", true)],
   },
   {
@@ -92,7 +80,7 @@ export const freezeTalents: TalentDefinition[] = [
     keywordId: "freeze",
     name: "Permafrost",
     description: "Frozen enemies cannot restore Health",
-    icon: Lock,
+    icon: "Lock",
     effects: [setEffect("freezeBlocksRegen", true)],
   },
 ];

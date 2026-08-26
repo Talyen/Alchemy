@@ -1,22 +1,22 @@
 // ============ Shop ============
 export const SHOP_CARD_PRICE = 30;
-export const SHOP_REMOVE_PRICE = 50;
+export const SHOP_REMOVE_PRICE = 40;
 export const SHOP_REFRESH_PRICE = 20;
 
 // ============ Alchemist's Shop ============
-export const ALCHEMIST_POTION_PRICE = 20;
+export const ALCHEMIST_POTION_PRICE = 30;
 export const ALCHEMIST_REFRESH_PRICE = 20;
 export const ALCHEMIST_MIX_PRICE = 40;
 
 // ============ Trinket Shop ============
-export const TRINKET_SHOP_TRINKET_PRICE = 80;
+export const TRINKET_SHOP_TRINKET_PRICE = 100;
 export const TRINKET_SHOP_OFFERED = 3;
 export const TRINKET_SHOP_REFRESHES = 1;
 
 // ============ Equipment Shop ============
-export const EQUIPMENT_SHOP_BASIC_PRICE = 60;
+export const EQUIPMENT_SHOP_BASIC_PRICE = 40;
 export const EQUIPMENT_SHOP_ASTRAL_PRICE = 80;
-export const EQUIPMENT_SHOP_UNIQUE_PRICE = 150;
+export const EQUIPMENT_SHOP_UNIQUE_PRICE = 100;
 export const EQUIPMENT_SHOP_OFFERED = 3;
 export const EQUIPMENT_SHOP_REFRESHES = 1;
 export const EQUIPMENT_SHOP_DROP_RATES = {

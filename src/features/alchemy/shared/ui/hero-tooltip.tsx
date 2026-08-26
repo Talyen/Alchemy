@@ -3,6 +3,7 @@
 // Used by CharacterSelectScreen and CompendiumTile so both surfaces share one tooltip body.
 import type { RefObject } from "react";
 import type { CharacterDefinition } from "@/features/alchemy/shared/config/game-data-catalog";
+import { getPlasmaColorPairForCharacter } from "@/features/alchemy/shared/config";
 
 import { renderColoredKeywords } from "./card-description-ui";
 import { KeywordTag } from "./keyword-tag";
@@ -23,7 +24,11 @@ export function HeroTooltip({
   visible: boolean;
 }) {
   return (
-    <PortaledTooltip triggerRef={triggerRef} visible={visible}>
+    <PortaledTooltip
+      triggerRef={triggerRef}
+      visible={visible}
+      plasmaColorPair={isLocked ? null : getPlasmaColorPairForCharacter(character.id)}
+    >
       <TooltipHeader>{character.name}</TooltipHeader>
 
       {isLocked ? (

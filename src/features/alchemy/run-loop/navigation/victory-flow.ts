@@ -1,6 +1,14 @@
-import { computeTalentEffects, getGoldMultiplier } from "@/lib/game-data";
+import {
+  computeTalentEffects,
+  ENEMY_TYPES,
+  getGoldMultiplier,
+  type BattleCard,
+  type CharacterId,
+  type DifficultyId,
+  type UnlockedTalents,
+  type TalentEffectManifest,
+} from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
-import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents, TalentEffectManifest } from "@/lib/game-data";
 import type { VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
 export type { VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
 import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
@@ -17,10 +25,9 @@ import {
 import { getGenerousGoldBonus } from "./reward-flow";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RewardState } from "@/lib/active-run-session";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
-import type { Destination } from "@/lib/routing";
-import type { ContentSystemId } from "@/lib/content-systems/types";
+import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import type { Destination } from "@/lib/routing";
 import {
   getActiveRewardModifiersForContentSystem,
   applyLabyrinthRewardMaterialModifiers,
@@ -65,11 +72,10 @@ function rollVictoryGold(
 
   const eliteFraction =
     ELITE_GOLD_BONUS_FRACTION +
-    (battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? talentEffects.eliteGoldDropBonus : 0);
-  const eliteBonus =
-    battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? Math.floor(gold * eliteFraction) : 0;
+    (battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? talentEffects.eliteGoldDropBonus : 0);
+  const eliteBonus = battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? Math.floor(gold * eliteFraction) : 0;
   const bossBonus =
-    battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
+    battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
   const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
 
   return { gold, eliteBonus, bossBonus, generousBonus };
@@ -106,7 +112,7 @@ export function computeVictoryRewardState(
   const gearAstralChanceBonus = input.gearAstralChanceBonus ?? 0;
   const activeTrinketEffectIds = combineTrinketEffectIds(input.runBoons, input.equippedTrinketId ?? null);
 
-  if (input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS) {
+  if (input.battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS) {
     return createBossRewardStateFromFlow({
       gold: input.gold,
       bossBonus: input.bossBonus,
@@ -154,7 +160,7 @@ export function computeVictoryRewards(
   );
 
   const talentEffects = computeTalentEffects(input.unlockedTalents);
-  if (input.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+  if (input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
     const goldEarned = Math.max(0, input.battleState.gold - input.runGold);
     return {
       rewardState: createWildwoodRewardState(
@@ -206,13 +212,18 @@ export function computeVictoryRewards(
     labyrinthRewardModifiers,
   );
 
-  const eligibleDestinations = input.getAvailableDestinations({
-    currentHealth: input.battleState.playerHealth,
-    currentGold: newGold,
-    destinationIndexInAct: input.destinationIndexInAct,
-    maxHealth: input.runMaxHealth,
-  });
-  const sampled = sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
+  const skipDestinationSampling = input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
+  const eligibleDestinations = skipDestinationSampling
+    ? []
+    : input.getAvailableDestinations({
+        currentHealth: input.battleState.playerHealth,
+        currentGold: newGold,
+        destinationIndexInAct: input.destinationIndexInAct,
+        maxHealth: input.runMaxHealth,
+      });
+  const sampled = skipDestinationSampling
+    ? { choices: [] as Destination[], offerState: input.destinationOfferState }
+    : sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
   const destinations = sampled.choices;
 
   const rewardState = computeVictoryRewardState(

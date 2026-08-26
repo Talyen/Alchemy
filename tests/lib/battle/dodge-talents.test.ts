@@ -4,28 +4,15 @@ import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { companionLibrary } from "@/lib/game-data";
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
-import { dealDamage, makeCombatTexts, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";
+import {
+  dealDamage,
+  incomingPhysical,
+  makeCombatTexts,
+  makeEffect,
+  makeTestCard,
+  patchBattleState,
+} from "../../fixtures/battle";
 import { defaultEnemyStatusValues, defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-
-function dodgeThenMissRng() {
-  let calls = 0;
-  return () => {
-    calls += 1;
-    return calls === 1 ? 0.01 : 0.99;
-  };
-}
-
-function incomingPhysical(overrides: Parameters<typeof patchBattleState>[0] = {}) {
-  return patchBattleState({
-    playerHealth: 100,
-    playerMaxHealth: 100,
-    enemyHealth: 100,
-    enemyMaxHealth: 100,
-    rng: dodgeThenMissRng(),
-    enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-    ...overrides,
-  });
-}
 
 describe("Dodge talent rewrites", () => {
   it("Riposte deals Physical equal to the dodged attack", () => {

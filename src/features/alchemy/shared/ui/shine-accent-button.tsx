@@ -1,9 +1,15 @@
-import type { ElementType, ReactNode } from "react";
+import { useState, type ElementType, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
-import { BUTTON_SHAPE, BUTTON_WIDTH_TIER_CLASS, type ButtonWidthTier } from "@/features/alchemy/shared/config";
+import {
+  BUTTON_SHAPE,
+  BUTTON_WIDTH_TIER_CLASS,
+  getPlasmaColorPairFromColors,
+  type ButtonWidthTier,
+} from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
+import { usePlasmaInteraction } from "./use-plasma-source";
 
 interface ShineAccentButtonProps {
   children: ReactNode;
@@ -26,8 +32,18 @@ export function ShineAccentButton({
   className,
   onClick,
 }: ShineAccentButtonProps) {
+  const [active, setActive] = useState(false);
+  const colors = typeof shineColor === "string" ? [shineColor] : shineColor;
+  usePlasmaInteraction(getPlasmaColorPairFromColors(colors), active && !disabled);
+
   return (
-    <div className={cn("relative", BUTTON_SHAPE, disabled && "opacity-50", className)}>
+    <div
+      className={cn("relative", BUTTON_SHAPE, disabled && "opacity-50", className)}
+      onMouseEnter={() => setActive(true)}
+      onMouseLeave={() => setActive(false)}
+      onFocusCapture={() => setActive(true)}
+      onBlurCapture={() => setActive(false)}
+    >
       <Button
         size="lg"
         variant="outline"

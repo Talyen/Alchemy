@@ -16,7 +16,7 @@ export function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {
   return (
     <motion.div
       data-flying-card
-      className="pointer-events-none absolute z-[90]"
+      className="pointer-events-none absolute z-[90] transform-gpu will-change-transform [backface-visibility:hidden]"
       initial={{ x: 0, y: 0, rotateY: transfer.rotateY[0]! }}
       style={{
         left: transfer.from.x,

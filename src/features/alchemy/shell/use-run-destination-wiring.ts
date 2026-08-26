@@ -14,8 +14,7 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { hydrateModeRunInDraft } from "@/features/alchemy/shared/stores/run-park-restore";
 import { mostRecentResumableMode } from "@/features/alchemy/shared/stores/parked-runs";
 import { resolveAvailableDestinations, type DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
-import type { Screen } from "@/lib/routing";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 
 export function useRunDestinationWiring({
   navigateTo,
@@ -49,7 +48,7 @@ export function useRunDestinationWiring({
       });
     }
     if (readBattle().hasActiveBattle) {
-      navigateTo(CONSTANTS.SCREENS.BATTLE);
+      navigateTo(ROUTE_SCREENS.BATTLE);
       return;
     }
     if (readHasActiveRun()) {

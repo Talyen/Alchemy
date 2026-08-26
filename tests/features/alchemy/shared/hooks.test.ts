@@ -1,28 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  getVirtualResolutionLayout,
-  resolveAutoAspectRatio,
-  useLatestRef,
-  useVirtualResolution,
-} from "@/features/alchemy/shared/hooks";
-
-describe("resolveAutoAspectRatio", () => {
-  it.each([
-    [1920, 1080, "16:9"],
-    [1920, 1200, "16:10"],
-    [1280, 800, "16:10"],
-    [2560, 1080, "21:9"],
-    [3440, 1440, "21:9"],
-    [2560, 1600, "16:10"],
-    [3840, 2160, "16:9"],
-    [1366, 768, "16:9"],
-    [1600, 900, "16:9"],
-  ] as const)("resolves %ix%i to %s", (width, height, expected) => {
-    expect(resolveAutoAspectRatio(width, height)).toBe(expected);
-  });
-});
+import { getVirtualResolutionLayout, useLatestRef, useVirtualResolution } from "@/features/alchemy/shared/hooks";
 
 describe("getVirtualResolutionLayout", () => {
   it("keeps native 16:9 windows at scale 1", () => {
@@ -60,14 +39,21 @@ describe("getVirtualResolutionLayout", () => {
     expect(fixedRemToFrameHeight(ultraHd)).toBeCloseTo(fixedRemToFrameHeight(standard), 8);
   });
 
-  it("selects and fits a MacBook-shaped 16:10 stage", () => {
-    const layout = getVirtualResolutionLayout("auto", 1512, 982);
-    const transformScale = Number(layout.stageStyle.transform.match(/^scale\(([^)]+)\)$/)?.[1]);
+  it("fits arbitrary browser viewports fluidly with zero letterbox in auto mode", () => {
+    const macbook = getVirtualResolutionLayout("auto", 1512, 982);
+    expect(macbook.aspectMode).toBe("narrow");
+    expect(parseFloat(macbook.frameStyle.width)).toBe(1512);
+    expect(parseFloat(macbook.frameStyle.height)).toBe(982);
 
-    expect(layout.aspectMode).toBe("narrow");
-    expect(parseFloat(layout.frameStyle.width)).toBe(1512);
-    expect(parseFloat(layout.frameStyle.height)).toBeLessThanOrEqual(982);
-    expect(transformScale).toBeLessThan(1);
+    const ultrawide = getVirtualResolutionLayout("auto", 3440, 1440);
+    expect(ultrawide.aspectMode).toBe("ultrawide");
+    expect(parseFloat(ultrawide.frameStyle.width)).toBe(3440);
+    expect(parseFloat(ultrawide.frameStyle.height)).toBe(1440);
+
+    const standard = getVirtualResolutionLayout("auto", 1920, 1080);
+    expect(standard.aspectMode).toBe("standard");
+    expect(parseFloat(standard.frameStyle.width)).toBe(1920);
+    expect(parseFloat(standard.frameStyle.height)).toBe(1080);
   });
 });
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildSmoothShineBorderGradient,
+  buildSmoothShineGradient,
   getCardKeywordShineColors,
   getCharacterShineColors,
   getShineColorsForKeywords,
@@ -72,6 +74,32 @@ describe("getTrinketShineColors", () => {
   it("falls back to the boon palette when no keywords resolve", () => {
     expect(getTrinketShineColors("tattered-pages")).toEqual([...SHINE_PALETTES.boon]);
     expect(getTrinketShineColors("missing-trinket")).toEqual([...SHINE_PALETTES.boon]);
+  });
+});
+
+describe("buildSmoothShineGradient", () => {
+  it("repeats a color band with a foreground highlight for a seamless traveling blend", () => {
+    expect(buildSmoothShineGradient(["#111111", "#222222"])).toBe(
+      "linear-gradient(in oklab 90deg, #111111, #222222, var(--color-foreground), #111111, #222222, var(--color-foreground), #111111)",
+    );
+  });
+
+  it("adds a traveling highlight to single-color palettes", () => {
+    expect(buildSmoothShineGradient(["#111111"])).toBe(
+      "linear-gradient(in oklab 90deg, #111111, var(--color-foreground), #111111, var(--color-foreground), #111111)",
+    );
+  });
+});
+
+describe("buildSmoothShineBorderGradient", () => {
+  it("mirrors palette stops without the text highlight", () => {
+    expect(buildSmoothShineBorderGradient(["#111111", "#222222"])).toBe(
+      "linear-gradient(in oklab 90deg, #111111, #222222, #111111)",
+    );
+  });
+
+  it("repeats a single color for a seamless loop", () => {
+    expect(buildSmoothShineBorderGradient(["#111111"])).toBe("linear-gradient(in oklab 90deg, #111111, #111111)");
   });
 });
 

@@ -1,14 +1,23 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DEATHS_DOOR_PLASMA_PAIR,
   getPlasmaColorPair,
+  getPlasmaColorPairFromColors,
+  getPlasmaColorPairForCard,
   getPlasmaColorPairForCharacter,
+  getPlasmaColorPairForGear,
+  getPlasmaColorPairForTalent,
+  getPlasmaColorPairForTrinket,
   getPlasmaKeywordsForCharacter,
+  getPlasmaKeywordsForGear,
+  getPlasmaKeywordsForTalent,
   lerpPlasmaColor,
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import { parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
-import { WILDCARD_KEYWORD_SHINE_COLORS } from "@/features/alchemy/shared/config";
-import { characters, keywordDefinitions } from "@/lib/game-data";
+import { SHINE_PALETTES, WILDCARD_KEYWORD_SHINE_COLORS } from "@/features/alchemy/shared/config";
+import { cardById, characters, getCardKeywords, keywordDefinitions, trinketById } from "@/lib/game-data";
+import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
 
 describe("getPlasmaColorPair", () => {
   it("uses first keyword bright stop as primary and second keyword bright stop as secondary", () => {
@@ -33,6 +42,15 @@ describe("getPlasmaColorPair", () => {
   });
 });
 
+describe("getPlasmaColorPairFromColors", () => {
+  it("uses the first two distinct palette stops", () => {
+    expect(getPlasmaColorPairFromColors(["#111111", "#111111", "#222222"])).toEqual({
+      primary: "#111111",
+      secondary: "#222222",
+    });
+  });
+});
+
 describe("getPlasmaKeywordsForCharacter", () => {
   it("returns knight affinity keywords in catalog order", () => {
     expect(getPlasmaKeywordsForCharacter("knight")).toEqual(characters.knight.keywords);
@@ -48,6 +66,61 @@ describe("getPlasmaColorPairForCharacter", () => {
     expect(getPlasmaColorPairForCharacter("knight")).toEqual({
       primary: keywordDefinitions.block.shineColors[0],
       secondary: keywordDefinitions.armor.shineColors[0],
+    });
+  });
+});
+
+describe("getPlasmaColorPairForCard", () => {
+  it("maps card keywords to plasma color pair", () => {
+    const card = Object.values(cardById).find((c) => getCardKeywords(c).length > 0);
+    if (card) {
+      expect(getPlasmaColorPairForCard(card)).toEqual(getPlasmaColorPair(getCardKeywords(card)));
+    }
+  });
+});
+
+describe("getPlasmaColorPairForTrinket", () => {
+  it("maps trinket description keywords to plasma color pair", () => {
+    const trinket = Object.values(trinketById)[0];
+    if (trinket) {
+      const keywords = getTrinketKeywords(trinket.id);
+      expect(getPlasmaColorPairForTrinket(trinket)).toEqual(getPlasmaColorPair(keywords));
+    }
+  });
+});
+
+describe("getPlasmaKeywordsForGear", () => {
+  it("extracts keywords from gear affixes and definition", () => {
+    const gear = {
+      instanceId: "test-gear",
+      definitionId: "broadsword-basic",
+      affixes: [{ id: "flat-physical" as const, value: 5 }],
+    };
+    const keywords = getPlasmaKeywordsForGear(gear);
+    expect(Array.isArray(keywords)).toBe(true);
+    expect(keywords).toContain("physical");
+    expect(getPlasmaColorPairForGear(gear)).toEqual(getPlasmaColorPair(keywords));
+  });
+});
+
+describe("getPlasmaKeywordsForTalent", () => {
+  it("uses the talent's keyword only", () => {
+    const talent = {
+      id: "test-talent",
+      keywordId: "burn" as const,
+      description: "When you apply Burn, also apply 2 Bleed.",
+    };
+    const keywords = getPlasmaKeywordsForTalent(talent);
+    expect(keywords).toEqual(["burn"]);
+    expect(getPlasmaColorPairForTalent(talent)).toEqual(getPlasmaColorPair(["burn"]));
+  });
+});
+
+describe("DEATHS_DOOR_PLASMA_PAIR", () => {
+  it("uses death's door shine colors for defeat", () => {
+    expect(DEATHS_DOOR_PLASMA_PAIR).toEqual({
+      primary: SHINE_PALETTES.deathsDoorArt[1],
+      secondary: SHINE_PALETTES.deathsDoorArt[0],
     });
   });
 });

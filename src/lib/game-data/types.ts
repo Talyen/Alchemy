@@ -162,7 +162,15 @@ export interface BattleCard {
   excludeFromOfferPool?: boolean;
 }
 
-export type EnemyType = "normal" | "elite" | "boss";
+export const ENEMY_TYPES = {
+  NORMAL: "normal",
+  ELITE: "elite",
+  BOSS: "boss",
+} as const;
+
+export const ENEMY_TYPE_VALUES = [ENEMY_TYPES.NORMAL, ENEMY_TYPES.ELITE, ENEMY_TYPES.BOSS] as const;
+
+export type EnemyType = (typeof ENEMY_TYPE_VALUES)[number];
 
 export interface BestiaryEntry {
   id: string;

@@ -16,6 +16,8 @@ import {
   collectionCardGridTileWidthClass,
   collectionGridBestiaryWidthClass,
   getTrinketShineColors,
+  getPlasmaColorPairForCard,
+  getPlasmaColorPairForTrinket,
   landscapeArtImageClass,
   trinketArtImageClass,
 } from "../config";
@@ -142,6 +144,15 @@ function CollectionTilePopup({
       descriptionLines={descriptionLines}
       triggerRef={triggerRef}
       visible={hovered}
+      plasmaColorPair={
+        !item.discovered
+          ? null
+          : item.card
+            ? getPlasmaColorPairForCard(item.card)
+            : item.frameType === "trinket"
+              ? getPlasmaColorPairForTrinket(item.id)
+              : null
+      }
     />
   );
 }

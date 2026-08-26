@@ -15,10 +15,10 @@ import {
 } from "../navigation/reward-flow";
 import type { FinalizeRewardResult } from "../navigation/reward-flow-types";
 import { applyAlchemistPotion, applyRewardSelection } from "./run-destination-handlers";
-import { CONSTANTS } from "../../shared/types";
 import type { CompleteRunVictory, HandleActComplete, RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { Screen } from "@/lib/routing";
+import { REWARD_ROUTES, ROUTE_SCREENS, type Screen } from "@/lib/routing";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
 export interface RewardRouteDeps {
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
@@ -37,24 +37,24 @@ export function executeRewardRouteTransition(
   deps: RewardRouteDeps,
 ) {
   switch (route) {
-    case CONSTANTS.REWARD_ROUTES.COMPANION_REWARD:
-      deps.navigateTo(CONSTANTS.SCREENS.REWARDS, deps.settleClaimSurface);
+    case REWARD_ROUTES.COMPANION_REWARD:
+      deps.navigateTo(ROUTE_SCREENS.REWARDS, deps.settleClaimSurface);
       break;
-    case CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY:
-    case CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY:
+    case REWARD_ROUTES.LABYRINTH_VICTORY:
+    case REWARD_ROUTES.WILDWOOD_VICTORY:
       deps.completeRunVictory(materials, deps.settleClaimSurface);
       break;
-    case CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP:
+    case REWARD_ROUTES.LABYRINTH_MAP:
       deps.labyrinthClearNode();
-      deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, deps.settleClaimSurface);
+      deps.navigateTo(ROUTE_SCREENS.LABYRINTH_MAP, deps.settleClaimSurface);
       break;
-    case CONSTANTS.REWARD_ROUTES.ACT_COMPLETE:
+    case REWARD_ROUTES.ACT_COMPLETE:
       // prepareNextDestination / victory commit overwrite offer state;
       // only the claim lock must be released here.
       deps.handleActComplete(materials, deps.releaseClaim);
       break;
-    case CONSTANTS.REWARD_ROUTES.DESTINATION:
-      deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, deps.settleClaimSurface);
+    case REWARD_ROUTES.DESTINATION:
+      deps.navigateTo(ROUTE_SCREENS.DESTINATION, deps.settleClaimSurface);
       break;
   }
 }
@@ -84,7 +84,7 @@ export function createRewardHandlers(
         const grantAlchemistReward = shouldGrantAlchemistReward(
           getActiveRewardModifiersForContentSystem(
             contentSystemType,
-            contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+            contentSystemType === CONTENT_SYSTEMS.WILDWOOD
               ? (session.wildwoodDraft?.currentRewardTraitIds ?? [])
               : session.activeLabyrinthRewardModifiers,
           ),
@@ -98,7 +98,7 @@ export function createRewardHandlers(
         // hollow during NAVIGATION_DELAY_MS + PAGE_EXIT_MS. Mid-claim autosave
         // persists companion handoff or destination continuation (not the claimed primary).
 
-        const isWildwood = contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
+        const isWildwood = contentSystemType === CONTENT_SYSTEMS.WILDWOOD;
         if (!isWildwood) awardMaterialsDuringRun(draft, result.materials);
 
         if (result.selectedChoice) {
@@ -139,7 +139,7 @@ export function createRewardHandlers(
 
           if (result.selectedChoice) playUISound("talentUnlock");
           deps.actions.clearCardHover();
-          if (isWildwood && result.route !== CONSTANTS.REWARD_ROUTES.COMPANION_REWARD) {
+          if (isWildwood && result.route !== REWARD_ROUTES.COMPANION_REWARD) {
             deps.actions.wildwoodRewardComplete(settleClaimSurface);
             return;
           }

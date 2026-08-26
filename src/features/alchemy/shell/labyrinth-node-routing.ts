@@ -1,10 +1,9 @@
 // Labyrinth map node entry: apply modifiers, run screen init, then navigate.
-import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
-import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
-import type { Screen } from "@/lib/routing";
 import type { LabyrinthNodeHandlers } from "./use-labyrinth-controller";
 import type { ShopActions } from "@/features/alchemy/run-loop/shop/shop-action-types";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
+import { type EncounterCombatTraitId, type EncounterRewardTraitId } from "@/lib/content-systems/types";
+import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
 
 interface LabyrinthNodeRoutingDeps {
   applyLabyrinthBattleModifiers: (modifiers: EncounterCombatTraitId[]) => void;
@@ -43,7 +42,7 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
     return deps.labyrinth.enterNode(row, col, {
       onStartBattleWithModifiers: (enemyType, modifiers, rewardModifiers) => {
         enterLabyrinthNodeScreen(
-          CONSTANTS.SCREENS.BATTLE,
+          ROUTE_SCREENS.BATTLE,
           () => {
             deps.battle.startBattle(undefined, undefined, enemyType, []);
           },
@@ -53,7 +52,7 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
       },
       onStartBossBattleWithModifiers: (modifiers, rewardModifiers) => {
         enterLabyrinthNodeScreen(
-          CONSTANTS.SCREENS.BATTLE,
+          ROUTE_SCREENS.BATTLE,
           () => {
             deps.battle.startBossBattle([]);
           },
@@ -61,15 +60,15 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
           rewardModifiers,
         );
       },
-      onStartRest: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.CAMPFIRE),
+      onStartRest: () => enterLabyrinthNodeScreen(ROUTE_SCREENS.CAMPFIRE),
       onStartMystery: () => deps.nav.beginMysteryEvent(),
-      onStartShop: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.SHOP, () => deps.shop.initialize("merchant")),
+      onStartShop: () => enterLabyrinthNodeScreen(ROUTE_SCREENS.SHOP, () => deps.shop.initialize("merchant")),
       onStartAlchemist: () =>
-        enterLabyrinthNodeScreen(CONSTANTS.SCREENS.ALCHEMIST, () => deps.shop.initialize("alchemist")),
+        enterLabyrinthNodeScreen(ROUTE_SCREENS.ALCHEMIST, () => deps.shop.initialize("alchemist")),
       onStartTrinketShop: () =>
-        enterLabyrinthNodeScreen(CONSTANTS.SCREENS.TRINKET_SHOP, () => deps.shop.initialize("trinket")),
+        enterLabyrinthNodeScreen(ROUTE_SCREENS.TRINKET_SHOP, () => deps.shop.initialize("trinket")),
       onStartEquipmentShop: () =>
-        enterLabyrinthNodeScreen(CONSTANTS.SCREENS.EQUIPMENT_SHOP, () => deps.shop.initialize("equipment")),
+        enterLabyrinthNodeScreen(ROUTE_SCREENS.EQUIPMENT_SHOP, () => deps.shop.initialize("equipment")),
     });
   }
 

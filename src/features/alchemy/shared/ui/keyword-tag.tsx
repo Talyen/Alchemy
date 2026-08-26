@@ -2,7 +2,7 @@ import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
-import { keywordIcons, tooltipHeaderClass } from "../config";
+import { getPlasmaColorPair, keywordIcons, tooltipHeaderClass } from "../config";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { TooltipBody } from "./tooltip-panel";
 import { useHoverVisible } from "./use-hover-visible";
@@ -57,7 +57,7 @@ export function KeywordTag({
       onBlurCapture={onBlurCapture}
     >
       <span className="cursor-help">{tag}</span>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible}>
+      <PortaledTooltip triggerRef={triggerRef} visible={visible} plasmaColorPair={getPlasmaColorPair([keywordId])}>
         <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
           <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" showIcon />
         </span>

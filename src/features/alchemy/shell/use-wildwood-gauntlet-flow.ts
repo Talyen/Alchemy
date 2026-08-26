@@ -10,10 +10,7 @@ import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecy
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
-import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
 import { logError } from "@/lib/error-logger";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
-import type { Screen } from "@/lib/routing";
 import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
 import {
   canOfferWildwoodRemoval,
@@ -30,6 +27,9 @@ import {
   type WildwoodModifierId,
 } from "@/lib/content-systems/wildwood/gauntlet";
 import type { VictoryRewardsResult } from "@/features/alchemy/run-loop/navigation/victory-flow";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
 
 interface UseWildwoodGauntletFlowOptions {
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
@@ -87,10 +87,10 @@ export function useWildwoodGauntletFlow({
               bossTransitionPendingRef.current = false;
               logError("[useWildwoodGauntletFlow] startNextWildwoodBoss: failed to start boss battle", "other");
               onRenderedScreenCommit?.();
-              navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
+              navigateTo(ROUTE_SCREENS.MENU, teardownRun);
               return;
             }
-            navigateTo(CONSTANTS.SCREENS.BATTLE, () => {
+            navigateTo(ROUTE_SCREENS.BATTLE, () => {
               dispatchRunSessionCommand((draft) => {
                 outgoing?.commit(draft);
                 const state = draft.session.wildwoodDraft;
@@ -102,7 +102,7 @@ export function useWildwoodGauntletFlow({
                 bossTransitionPendingRef.current = false;
                 logError("[useWildwoodGauntletFlow] startNextWildwoodBoss: failed to start boss battle", "other");
                 onRenderedScreenCommit?.();
-                navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
+                navigateTo(ROUTE_SCREENS.MENU, teardownRun);
                 return;
               }
               setHasActiveBattle(true);
@@ -120,30 +120,30 @@ export function useWildwoodGauntletFlow({
   const resumeWildwoodRun = useCallback(() => {
     const state = readRunSession().wildwoodDraft;
     if (!state) {
-      navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
+      navigateTo(ROUTE_SCREENS.MENU, teardownRun);
       return;
     }
     if (state.phase === "battle" && state.currentBossId && state.currentCombatTraitIds[0]) {
       if (onStartBossById(state.currentBossId, undefined, state.currentCombatTraitIds[0])) {
-        navigateTo(CONSTANTS.SCREENS.BATTLE);
+        navigateTo(ROUTE_SCREENS.BATTLE);
       } else {
         logError("[useWildwoodGauntletFlow] resumeWildwoodRun: failed to resume boss battle", "other");
-        navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
+        navigateTo(ROUTE_SCREENS.MENU, teardownRun);
       }
       return;
     }
     if (state.phase === "battle") {
-      navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
+      navigateTo(ROUTE_SCREENS.MENU, teardownRun);
       return;
     }
-    navigateTo(wildwoodPhaseToScreen(state.phase) ?? CONSTANTS.SCREENS.MENU);
+    navigateTo(wildwoodPhaseToScreen(state.phase) ?? ROUTE_SCREENS.MENU);
   }, [navigateTo, onStartBossById]);
 
   const handleDraftPick = useCallback((card: BattleCard) => {
     dispatchRunSessionCommand((draft) => {
       const state = draft.session.wildwoodDraft;
       const activeRun = draft.run.activeRun;
-      if (activeRun.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || !state) return;
+      if (activeRun.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD || !state) return;
       if (!offeredWildwoodDraftCard(state, activeRun.runDeck, card.id)) return;
       const pick = pickWildwoodDraftCard(
         state,
@@ -184,7 +184,7 @@ export function useWildwoodGauntletFlow({
         return;
       }
       if (canOfferWildwoodRemoval(readActiveRun().runDeck.length)) {
-        navigateTo(CONSTANTS.SCREENS.WILDWOOD_REMOVAL, () => {
+        navigateTo(ROUTE_SCREENS.WILDWOOD_REMOVAL, () => {
           dispatchRunSessionCommand((draft) => {
             const current = draft.session.wildwoodDraft;
             if (!current) return;

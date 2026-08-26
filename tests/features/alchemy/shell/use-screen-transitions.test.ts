@@ -2,10 +2,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
-import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 import { resetRunNavigationSlice } from "../../../helpers/run-domain-store-test";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -22,9 +21,9 @@ describe("useScreenTransitions.transition", () => {
     const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
     const onCommit = vi.fn();
 
-    result.current.transition(CONSTANTS.SCREENS.GAME_OVER, { immediate: true, onCommit });
+    result.current.transition(ROUTE_SCREENS.GAME_OVER, { immediate: true, onCommit });
 
-    expect(setScreen).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER);
+    expect(setScreen).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER);
     expect(onCommit).toHaveBeenCalledOnce();
   });
 
@@ -32,11 +31,11 @@ describe("useScreenTransitions.transition", () => {
     const setScreen = vi.fn();
     const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
 
-    result.current.transition(CONSTANTS.SCREENS.REWARDS, { delayMs: 250 });
+    result.current.transition(ROUTE_SCREENS.REWARDS, { delayMs: 250 });
     expect(setScreen).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(250);
-    expect(setScreen).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS);
+    expect(setScreen).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS);
   });
 
   it("skips delayed transitions when guard returns false at apply time", () => {
@@ -44,16 +43,16 @@ describe("useScreenTransitions.transition", () => {
     const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
     let hasActiveRun = true;
 
-    result.current.transition(CONSTANTS.SCREENS.REWARDS, {
+    result.current.transition(ROUTE_SCREENS.REWARDS, {
       delayMs: 250,
       guard: () => hasActiveRun,
     });
     vi.advanceTimersByTime(250);
-    expect(setScreen).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS);
+    expect(setScreen).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS);
 
     setScreen.mockClear();
     hasActiveRun = false;
-    result.current.transition(CONSTANTS.SCREENS.REWARDS, {
+    result.current.transition(ROUTE_SCREENS.REWARDS, {
       delayMs: 250,
       guard: () => hasActiveRun,
     });

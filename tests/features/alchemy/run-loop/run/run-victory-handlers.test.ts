@@ -6,7 +6,6 @@ import { awardRunEndMaterials, clearCombatState } from "@/features/alchemy/run-l
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { addRunMaterialsEarned } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useRunProfileStore, resetAllTestStores } from "../../../../helpers/gameplay-store-test";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
 import {
   getBattleStoreView,
   getRunProgressStoreView,
@@ -30,6 +29,8 @@ vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (im
 import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { playGoldGain } from "@/lib/audio";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -75,7 +76,7 @@ describe("createRunFlowHandlers victory paths", () => {
   });
 
   it("Wildwood Draft run end grants no materials", () => {
-    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
     useRunProfileStore.setState((profile) => {
       profile.effects.endRunHerbsPerRoom = 2;
     });
@@ -94,7 +95,7 @@ describe("createRunFlowHandlers victory paths", () => {
   });
 
   it("handleBattleDefeat invokes applyRunDefeatTeardown for campaign", () => {
-    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN });
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const handlers = makeHandlers();
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
@@ -107,16 +108,16 @@ describe("createRunFlowHandlers victory paths", () => {
   });
 
   it("handleBattleDefeat routes labyrinth to map without teardown", () => {
-    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     const navigateTo = vi.fn();
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
-    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP);
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
   });
 
   it("handleBattleDefeat clears battle presentation for labyrinth", () => {
-    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     useBattlePresentationStore.getState().spawnCardGhost({
       art: "test.webp",
       rect: { x: 0, y: 0, width: 10, height: 10 },
@@ -129,7 +130,7 @@ describe("createRunFlowHandlers victory paths", () => {
   });
 
   it("handleAbandonRun invokes applyRunDefeatTeardown for campaign", () => {
-    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN });
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const transition = vi.fn();
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ transition }));
     handlers.handleAbandonRun();
@@ -140,38 +141,38 @@ describe("createRunFlowHandlers victory paths", () => {
         clearCombatState,
       }),
     );
-    expect(transition).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
+    expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
   });
 
   it("handleAbandonRun abandons labyrinth run without failing the current node", () => {
-    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     const navigateTo = vi.fn();
     const onLabyrinthFailNode = vi.fn();
     const transition = vi.fn();
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, onLabyrinthFailNode, transition }));
     handlers.handleAbandonRun();
     expect(onLabyrinthFailNode).not.toHaveBeenCalled();
-    expect(navigateTo).not.toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP);
+    expect(navigateTo).not.toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
     expect(applyRunDefeatTeardown).toHaveBeenCalled();
-    expect(transition).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
+    expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
   });
 
   it("endLabyrinthRun uses live content system, not a stale handler port", () => {
-    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN });
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const transition = vi.fn();
     const handlers = createRunFlowHandlers(
       makeFlowHandlerDeps({
         transition,
       }),
     );
-    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     handlers.endLabyrinthRun();
     expect(applyRunDefeatTeardown).toHaveBeenCalled();
-    expect(transition).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
+    expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
   });
 
   it("routes Wildwood Companion rewards before completing the boss reward", () => {
-    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.WILDWOOD });
     const companion = {
       id: "wolf-companion",
       uid: 1,
@@ -209,13 +210,13 @@ describe("createRunFlowHandlers victory paths", () => {
 
     createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete })).finishRewards();
 
-    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, expect.any(Function));
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
     expect(onWildwoodRewardComplete).not.toHaveBeenCalled();
   });
 
   it("commits Wildwood reward handoff in the victory command draft", () => {
     setRunProgress({
-      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD,
+      contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
       runDeck: [],
       runPlayerHealth: 20,
       runMaxHealth: 20,
@@ -245,7 +246,7 @@ describe("createRunFlowHandlers victory paths", () => {
 
   it("plays gold gain SFX when Wildwood victory persists in-combat gold", () => {
     setRunProgress({
-      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD,
+      contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
       runGold: 10,
       runDeck: [],
       runPlayerHealth: 20,
@@ -283,7 +284,7 @@ describe("createRunFlowHandlers victory paths", () => {
       effects: [],
     };
     setRunProgress({
-      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+      contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
       runDeck: [],
     });
     setRunSession({
@@ -292,7 +293,7 @@ describe("createRunFlowHandlers victory paths", () => {
         gold: 0,
         materials: emptyInventory(),
         selectedId: card.id,
-        destinations: [CONSTANTS.DESTINATIONS.NORMAL_COMBAT],
+        destinations: [DESTINATIONS.NORMAL_COMBAT],
         rewardType: "card",
         selectedBossId: null,
         lastVictoryEnemyType: "normal",
@@ -310,7 +311,7 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(navigateTo).toHaveBeenCalledTimes(1);
     expect(getRunSessionStoreView().rewardClaimInFlight).toBe(true);
     // Offer UI stays populated until navigation commits (no hollow Victory exit).
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual([CONSTANTS.DESTINATIONS.NORMAL_COMBAT]);
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
     expect(getRunSessionStoreView().rewardState.choices).toEqual([card]);
 
     const onCommit = navigateTo.mock.calls[0][1] as () => void;
@@ -339,7 +340,7 @@ describe("createRunFlowHandlers victory paths", () => {
       effects: [],
     };
     setRunProgress({
-      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+      contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
       runDeck: [],
     });
     setRunSession({
@@ -348,7 +349,7 @@ describe("createRunFlowHandlers victory paths", () => {
         gold: 5,
         materials: emptyInventory(),
         selectedId: primary.id,
-        destinations: [CONSTANTS.DESTINATIONS.NORMAL_COMBAT],
+        destinations: [DESTINATIONS.NORMAL_COMBAT],
         rewardType: "card",
         selectedBossId: null,
         lastVictoryEnemyType: "normal",
@@ -361,7 +362,7 @@ describe("createRunFlowHandlers victory paths", () => {
 
     handlers.finishRewards();
 
-    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, expect.any(Function));
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
     expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual([primary.id]);
     expect(getRunSessionStoreView().rewardClaimInFlight).toBe(true);
     // Primary offer stays visible until commit (no hollow / early companion swap).
@@ -382,7 +383,7 @@ describe("createRunFlowHandlers victory paths", () => {
 
   it("handleDestinationChoice ignores a second call after destinations are cleared", () => {
     setRunProgress({
-      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+      contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
       completedDestinations: [],
       destinationIndexInAct: 0,
     });
@@ -392,7 +393,7 @@ describe("createRunFlowHandlers victory paths", () => {
         gold: 0,
         materials: emptyInventory(),
         selectedId: null,
-        destinations: [CONSTANTS.DESTINATIONS.CAMPFIRE, CONSTANTS.DESTINATIONS.MERCHANT_SHOP],
+        destinations: [DESTINATIONS.CAMPFIRE, DESTINATIONS.MERCHANT_SHOP],
         rewardType: "card",
         selectedBossId: null,
         lastVictoryEnemyType: null,
@@ -402,26 +403,26 @@ describe("createRunFlowHandlers victory paths", () => {
     const navigateTo = vi.fn();
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
 
-    handlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.CAMPFIRE);
+    handlers.handleDestinationChoice(DESTINATIONS.CAMPFIRE);
     const remountedHandlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
-    remountedHandlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.CAMPFIRE);
-    remountedHandlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.MERCHANT_SHOP);
+    remountedHandlers.handleDestinationChoice(DESTINATIONS.CAMPFIRE);
+    remountedHandlers.handleDestinationChoice(DESTINATIONS.MERCHANT_SHOP);
 
     expect(navigateTo).toHaveBeenCalledTimes(1);
-    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.CAMPFIRE, expect.any(Function));
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CAMPFIRE, expect.any(Function));
     // Progress commits only after the navigation callback runs.
     expect(getRunProgressStoreView().completedDestinations).toEqual([]);
     expect(getRunProgressStoreView().destinationIndexInAct).toBe(0);
-    expect(getRunSessionStoreView().pendingDestinationClaim).toBe(CONSTANTS.DESTINATIONS.CAMPFIRE);
+    expect(getRunSessionStoreView().pendingDestinationClaim).toBe(DESTINATIONS.CAMPFIRE);
     expect(getRunSessionStoreView().rewardState.destinations).toEqual([
-      CONSTANTS.DESTINATIONS.CAMPFIRE,
-      CONSTANTS.DESTINATIONS.MERCHANT_SHOP,
+      DESTINATIONS.CAMPFIRE,
+      DESTINATIONS.MERCHANT_SHOP,
     ]);
 
     const onCommit = navigateTo.mock.calls[0][1] as () => void;
     onCommit();
 
-    expect(getRunProgressStoreView().completedDestinations).toEqual([CONSTANTS.DESTINATIONS.CAMPFIRE]);
+    expect(getRunProgressStoreView().completedDestinations).toEqual([DESTINATIONS.CAMPFIRE]);
     expect(getRunProgressStoreView().destinationIndexInAct).toBe(1);
     expect(getRunSessionStoreView().rewardState.destinations).toEqual([]);
     expect(getRunSessionStoreView().pendingDestinationClaim).toBeNull();
@@ -429,7 +430,7 @@ describe("createRunFlowHandlers victory paths", () => {
 
   it("handleDestinationChoice defers mystery destination commit until screen commit", () => {
     setRunProgress({
-      contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
+      contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
       completedDestinations: [],
       destinationIndexInAct: 0,
     });
@@ -439,7 +440,7 @@ describe("createRunFlowHandlers victory paths", () => {
         gold: 0,
         materials: emptyInventory(),
         selectedId: null,
-        destinations: [CONSTANTS.DESTINATIONS.MYSTERY, CONSTANTS.DESTINATIONS.CAMPFIRE],
+        destinations: [DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
         rewardType: "card",
         selectedBossId: null,
         lastVictoryEnemyType: null,
@@ -449,21 +450,18 @@ describe("createRunFlowHandlers victory paths", () => {
     const beginMysteryEvent = vi.fn();
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ beginMysteryEvent }));
 
-    handlers.handleDestinationChoice(CONSTANTS.DESTINATIONS.MYSTERY);
+    handlers.handleDestinationChoice(DESTINATIONS.MYSTERY);
 
     expect(beginMysteryEvent).toHaveBeenCalledTimes(1);
     expect(beginMysteryEvent).toHaveBeenCalledWith(expect.any(Function));
-    expect(getRunSessionStoreView().pendingDestinationClaim).toBe(CONSTANTS.DESTINATIONS.MYSTERY);
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual([
-      CONSTANTS.DESTINATIONS.MYSTERY,
-      CONSTANTS.DESTINATIONS.CAMPFIRE,
-    ]);
+    expect(getRunSessionStoreView().pendingDestinationClaim).toBe(DESTINATIONS.MYSTERY);
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE]);
     expect(getRunProgressStoreView().completedDestinations).toEqual([]);
 
     const onCommit = beginMysteryEvent.mock.calls[0]![0] as () => void;
     onCommit();
 
-    expect(getRunProgressStoreView().completedDestinations).toEqual([CONSTANTS.DESTINATIONS.MYSTERY]);
+    expect(getRunProgressStoreView().completedDestinations).toEqual([DESTINATIONS.MYSTERY]);
     expect(getRunSessionStoreView().rewardState.destinations).toEqual([]);
     expect(getRunSessionStoreView().pendingDestinationClaim).toBeNull();
   });

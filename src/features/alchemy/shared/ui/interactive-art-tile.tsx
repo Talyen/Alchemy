@@ -32,6 +32,8 @@ interface InteractiveArtTileProps {
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
   children?: ReactNode | undefined;
+  /** Optional side-effect on hover entry/exit; does not override internal hover control. */
+  onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
 export function InteractiveArtTile({
@@ -51,13 +53,26 @@ export function InteractiveArtTile({
   onClick,
   ariaLabel,
   children,
+  onHoverChange,
 }: InteractiveArtTileProps) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, id);
+  const wrappedHoverStart = onHoverChange
+    ? () => {
+        onHoverStart();
+        onHoverChange(true);
+      }
+    : onHoverStart;
+  const wrappedHoverEnd = onHoverChange
+    ? () => {
+        onHoverEnd();
+        onHoverChange(false);
+      }
+    : onHoverEnd;
   const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useTileHoverPopup({
     interactive,
     isHovered,
-    onHoverStart,
-    onHoverEnd,
+    onHoverStart: wrappedHoverStart,
+    onHoverEnd: wrappedHoverEnd,
   });
   const shineColors = shineColor == null ? [] : Array.isArray(shineColor) ? shineColor : [shineColor];
   // Sold-out/purchased tiles remain interactive for their detail popup, but

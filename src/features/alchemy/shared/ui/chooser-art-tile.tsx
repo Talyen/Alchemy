@@ -4,10 +4,12 @@ import { useState, type ReactNode, type RefObject } from "react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 import { cardInteractiveGlowClass } from "../config";
 import { TiltSurface } from "./tilt-surface";
 import { useInteractiveCard } from "./use-interactive-card";
+import { usePlasmaInteraction } from "./use-plasma-source";
 
 interface ChooserArtTileProps {
   interactionKey: string;
@@ -27,6 +29,7 @@ interface ChooserArtTileProps {
   /** Attached to the art button so portal tooltips can position from it. */
   tooltipTriggerRef?: RefObject<HTMLButtonElement | null> | undefined;
   renderTooltip?: ((visible: boolean) => ReactNode) | undefined;
+  plasmaColorPair?: PlasmaColorPair | null | undefined;
 }
 
 export function ChooserArtTile({
@@ -45,18 +48,20 @@ export function ChooserArtTile({
   onClick,
   tooltipTriggerRef,
   renderTooltip,
+  plasmaColorPair = null,
 }: ChooserArtTileProps) {
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, interactionId);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const trackTooltip = renderTooltip !== undefined;
+  usePlasmaInteraction(plasmaColorPair, tooltipVisible);
   // One show/hide pair drives both pointer and keyboard focus so the surface,
   // tooltip, and hover shimmer stay in sync.
   const hoverIn = () => {
-    if (trackTooltip) setTooltipVisible(true);
+    setTooltipVisible(true);
     onHoverStart();
   };
   const hoverOut = () => {
-    if (trackTooltip) setTooltipVisible(false);
+    setTooltipVisible(false);
     onHoverEnd();
   };
 

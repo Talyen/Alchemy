@@ -1,6 +1,6 @@
 // Keyword definitions (visual config per keyword) and shared card-to-keyword extraction.
 // Depends on card/type shapes. Used by talent XP and reward affinity scoring.
-import type { BattleCard, KeywordDefinition, KeywordId } from "./types";
+import type { BattleCard, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
 import { collectKeywordsFromBattleEffect } from "./effect-metadata";
 
 export function getCardKeywords(card: BattleCard): KeywordId[] {
@@ -16,6 +16,18 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
 
   for (const tag of card.tags ?? []) {
     keywords.add(tag);
+  }
+
+  return Array.from(keywords);
+}
+
+export function getCompanionKeywords(companion: CompanionDefinition): KeywordId[] {
+  const keywords = new Set<KeywordId>();
+
+  for (const effect of companion.turnStartEffects) {
+    for (const keyword of collectKeywordsFromBattleEffect(effect)) {
+      keywords.add(keyword);
+    }
   }
 
   return Array.from(keywords);

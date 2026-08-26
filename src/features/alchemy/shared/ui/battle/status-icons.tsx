@@ -7,7 +7,14 @@ import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
-import { keywordIcons } from "../../config";
+import {
+  DEATHS_DOOR_PLASMA_PAIR,
+  getPlasmaColorPair,
+  getPlasmaKeywordsForText,
+  HASTE_PLASMA_PAIR,
+  keywordIcons,
+} from "../../config";
+import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { augmentDefinitions } from "../../augment-definitions";
 import type { StatusChip } from "../../types";
 import { renderColoredKeywords } from "../card-description-ui";
@@ -21,11 +28,13 @@ function StatusChipShell({
   buttonClassName,
   icon,
   tooltip,
+  plasmaColorPair,
 }: {
   ariaLabel: string;
   buttonClassName?: string;
   icon: ReactNode;
   tooltip: ReactNode;
+  plasmaColorPair?: PlasmaColorPair | null;
 }) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLButtonElement>();
@@ -44,7 +53,7 @@ function StatusChipShell({
       >
         {icon}
       </button>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible}>
+      <PortaledTooltip triggerRef={triggerRef} visible={visible} plasmaColorPair={plasmaColorPair}>
         {tooltip}
       </PortaledTooltip>
     </div>
@@ -118,6 +127,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
           description={renderColoredKeywords(definition.description)}
         />
       }
+      plasmaColorPair={getPlasmaColorPair([kw])}
     />
   );
 }
@@ -130,6 +140,7 @@ function AugmentStatusIcon({
   augment: (typeof augmentDefinitions)[keyof typeof augmentDefinitions];
 }) {
   const Icon = augment.icon;
+  const plasmaColorPair = getPlasmaColorPair(getPlasmaKeywordsForText(`${augment.label} ${augment.description}`));
   return (
     <StatusChipShell
       ariaLabel={chip.hideValue ? augment.label : `${augment.label} ${chip.value}`}
@@ -143,6 +154,7 @@ function AugmentStatusIcon({
           description={augment.description}
         />
       }
+      plasmaColorPair={plasmaColorPair}
     />
   );
 }
@@ -160,6 +172,7 @@ function HasteStatusIcon({ value }: { value: number }) {
           description="Skips the next enemy phase and grants another player turn."
         />
       }
+      plasmaColorPair={HASTE_PLASMA_PAIR}
     />
   );
 }
@@ -182,6 +195,7 @@ export function DeathsDoorStatusIcon() {
           </TooltipBody>
         </>
       }
+      plasmaColorPair={DEATHS_DOOR_PLASMA_PAIR}
     />
   );
 }

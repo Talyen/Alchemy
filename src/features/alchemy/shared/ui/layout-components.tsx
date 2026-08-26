@@ -66,13 +66,7 @@ export function ScreenShell({
 }) {
   return (
     <div
-      className={cn(
-        "alchemy-shell mx-auto flex w-full flex-col rounded-shell-screen",
-        screenShellPaddingClass,
-        minHeightClass,
-        maxWidthClass,
-        className,
-      )}
+      className={cn("mx-auto flex w-full flex-col", screenShellPaddingClass, minHeightClass, maxWidthClass, className)}
     >
       {children}
     </div>
@@ -88,6 +82,7 @@ export function TitledScreenShell({
   maxWidthClass,
   minHeightClass,
   align,
+  headerActions,
 }: {
   title: ReactNode;
   onOpenMenu: (rect?: DOMRect) => void;
@@ -97,18 +92,30 @@ export function TitledScreenShell({
   maxWidthClass?: string;
   minHeightClass?: string;
   align?: "center" | "start";
+  headerActions?: ReactNode;
 }) {
+  const trailing = headerActions ? (
+    <div className="flex items-center gap-2">
+      {headerActions}
+      <HamburgerTrigger onClick={onOpenMenu} label={menuLabel} />
+    </div>
+  ) : (
+    <HamburgerTrigger onClick={onOpenMenu} label={menuLabel} />
+  );
+
   return (
-    <PageLayout {...(align ? { align } : {})}>
-      <ScreenShell
-        {...(maxWidthClass ? { maxWidthClass } : {})}
-        {...(minHeightClass ? { minHeightClass } : {})}
-        {...(className ? { className } : {})}
-      >
-        <ScreenHeaderRow title={title} trailing={<HamburgerTrigger onClick={onOpenMenu} label={menuLabel} />} />
-        {children}
-      </ScreenShell>
-    </PageLayout>
+    <div className="relative h-full w-full overflow-hidden">
+      <PageLayout {...(align ? { align } : {})}>
+        <ScreenShell
+          className={cn("relative z-10", className)}
+          {...(maxWidthClass ? { maxWidthClass } : {})}
+          {...(minHeightClass ? { minHeightClass } : {})}
+        >
+          <ScreenHeaderRow title={title} trailing={trailing} />
+          {children}
+        </ScreenShell>
+      </PageLayout>
+    </div>
   );
 }
 

@@ -1,5 +1,6 @@
-// Victory reward screen — pick a card or trinket to add or skip.
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
+import { useMemo } from "react";
+import { useUiStore } from "../../shared/stores/ui-store";
+import { getCardKeywords, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
@@ -8,8 +9,10 @@ import { GearTile, TrinketTile } from "../../shared/ui/collection-art-tiles";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
 import { SelectableCard } from "../../shared/ui/selectable-card";
 import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { usePlasmaBaseline, usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { FadeSlot } from "../../shared/ui/fade-slot";
-import { sectionTitleClass } from "@/features/alchemy/shared/config";
+import { getPlasmaKeywordsForGear, getPlasmaColorPair, sectionTitleClass } from "@/features/alchemy/shared/config";
+import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
   getRewardChoiceId,
   type GearRewardState,
@@ -151,10 +154,39 @@ export function RewardsScreen({
       : isBoon
         ? "Choose a Boon for this Run"
         : "Add a Card to your Deck";
+
+  // Read which reward choice is hovered directly from the ui-store hover ID.
+  // Cards register under scope "reward" so their hover ID is "reward-{choiceId}".
+  // Reading from the store avoids the leave/enter callback ordering race that
+  // causes the local state to momentarily clear between card transitions.
+  const hoveredCardId = useUiStore((s) => s.hoveredCardId);
+  const hoveredRewardId = useMemo(() => {
+    if (!hoveredCardId) return null;
+    for (const item of rewardChoices) {
+      const choiceId = getRewardChoiceId(item);
+      if (hoveredCardId === `reward-${choiceId}`) return choiceId;
+    }
+    return null;
+  }, [hoveredCardId, rewardChoices]);
+
+  const hoveredRewardItem = hoveredRewardId
+    ? (rewardChoices.find((item) => getRewardChoiceId(item) === hoveredRewardId) ?? null)
+    : null;
   const selectedRewardItem = selectedRewardId
     ? (rewardChoices.find((item) => getRewardChoiceId(item) === selectedRewardId) ?? null)
     : null;
   const claimLocked = claimInFlight || rewardChoices.length === 0;
+  const getRewardColorPair = (item: BattleCard | TrinketEntry | GearInstance | null) => {
+    if (!item) return null;
+    const keywords = isGear
+      ? getPlasmaKeywordsForGear(item as GearInstance)
+      : isTrinket || isBoon
+        ? getTrinketKeywords((item as TrinketEntry).id)
+        : getCardKeywords(item as BattleCard);
+    return getPlasmaColorPair(keywords);
+  };
+  usePlasmaBaseline(getRewardColorPair(selectedRewardItem));
+  usePlasmaInteraction(getRewardColorPair(hoveredRewardItem), hoveredRewardItem !== null);
 
   return (
     <TitledScreenShell title="Victory" onOpenMenu={onOpenMenu} menuLabel="Open rewards menu" maxWidthClass="max-w-6xl">

@@ -1,10 +1,12 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { playUISound } from "@/lib/audio";
-import type { BattleCard, TalentXP, TrinketEntry } from "@/lib/game-data";
+import type { BattleCard, KeywordId, TalentXP, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 
 import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/shared-ui";
+import { usePlasmaBaseline } from "../../../shared/ui/use-plasma-source";
+import { getPlasmaColorPair } from "@/features/alchemy/shared/config";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { RemoveCardPanel } from "../../../shared/ui/remove-card-panel";
 
@@ -14,6 +16,7 @@ import { MysteryEventIntro } from "./mystery-event-intro";
 import {
   choiceHasDisplayableSummary,
   choiceOffersCardSelection,
+  getPlasmaKeywordsForMysteryReward,
   hasPositiveMysteryEffect,
 } from "./mystery-choice-utils";
 
@@ -63,7 +66,11 @@ export function MysteryScreen({
 
   function handleCardChoiceConfirm(cardId: string) {
     onChooseCard(cardId);
-    playUISound("talentUnlock");
+    if (mysteryChosenChoice && choiceHasDisplayableSummary(mysteryChosenChoice)) {
+      if (hasPositiveMysteryEffect(mysteryChosenChoice.effects)) playUISound("talentUnlock");
+    } else {
+      onContinue();
+    }
   }
 
   function handleRemoveConfirm(index: number) {
@@ -90,8 +97,26 @@ export function MysteryScreen({
         ? "Reward"
         : event.title;
 
+  const plasmaKeywordIds = useMemo(() => {
+    if (phase !== "summary" || !mysteryChosenChoice) return null;
+    return getPlasmaKeywordsForMysteryReward({
+      choice: mysteryChosenChoice,
+      findCard,
+      grantedTrinketIds: mysteryGrantedTrinketIds,
+      grantedGearInstances: mysteryGrantedGearInstances,
+      chosenCardId: mysteryChosenCardId,
+    });
+  }, [
+    phase,
+    mysteryChosenChoice,
+    findCard,
+    mysteryGrantedTrinketIds,
+    mysteryGrantedGearInstances,
+    mysteryChosenCardId,
+  ]);
+
   return (
-    <MysteryScreenShell title={title} onOpenMenu={onOpenMenu}>
+    <MysteryScreenShell title={title} onOpenMenu={onOpenMenu} keywordIds={plasmaKeywordIds}>
       <FadeSlot swapKey={phase} className="mt-6 flex min-h-[56cqh] w-full flex-col">
         {mysteryCardChoices ? (
           <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
@@ -124,12 +149,15 @@ export function MysteryScreen({
 export function MysteryScreenShell({
   title = "Mystery",
   onOpenMenu,
+  keywordIds,
   children,
 }: {
-  title?: string;
+  title?: string | undefined;
   onOpenMenu: (rect?: DOMRect) => void;
-  children?: ReactNode;
+  keywordIds?: readonly KeywordId[] | null | undefined;
+  children?: ReactNode | undefined;
 }) {
+  usePlasmaBaseline(keywordIds ? getPlasmaColorPair(keywordIds) : null);
   return (
     <TitledScreenShell title={title} onOpenMenu={onOpenMenu} menuLabel="Open mystery menu">
       {children}

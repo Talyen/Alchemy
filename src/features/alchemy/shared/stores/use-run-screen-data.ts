@@ -99,6 +99,7 @@ export function useCorruptionScreenData(): ScreenData<"corruption"> {
 export function useRunEndScreenData(): RunEndScreenData {
   return useGameplayStateStore(
     useShallow((state) => ({
+      characterId: state.run.activeRun.characterId,
       runEndMaterials: state.session.runEndMaterials,
       runEndTalentXP: state.session.runEndTalentXP,
       runEndItems: state.session.runEndItems,

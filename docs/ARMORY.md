@@ -54,12 +54,12 @@ contract and controller seams.
 
 There is no external `useGearStore` hook. Gear mutations run against a `GearStore` view of the aggregate state and commit through session commands:
 
-- `dispatchGearMutationWithRunHealthSync({ characterId, mutate })` — for HP-affecting ops (`equip`, `unequip`, `salvage`, `applyCurrency`, `addInstance`) when the caller is **not** already inside `dispatchRunSessionCommand`. Inside an existing command (shop buy, rewards, mystery), call `mutateGearWithRunHealthSync(draft, { characterId, mutate })` instead. `characterId` is the **active-run hero** whose max HP is re-synced from before/after gear snapshots. `mutate` may edit a different loadout (for example Armory browsing another hero while a run is in progress): `mutate` is called with a `GearStore` handle such as `(state) => state.equip(loadoutCharacterId, slot, instance)`.
+- `dispatchGearMutationWithRunHealthSync({ mutate, syncRunHealth? })` — for HP-affecting ops (`equip`, `unequip`, `applyCurrency`, `addInstance`) when the caller is **not** already inside `dispatchRunSessionCommand`. Inside an existing command (shop buy, rewards, mystery), call `mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth? })` instead. HP sync runs through `rebindLiveRunMeta` when `syncRunHealth ?? draft.session.hasActiveRun`. `mutate` receives a `GearStore` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
-1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ characterId, mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
-2. **Salvage** — preview rolls `computeSalvageYield` (definition `salvageValue` homestead materials + `rollSalvageYield` crafting currencies). Confirm passes that frozen yield into `(state) => state.salvage(instanceId, { yield })`, which removes the item from inventory + loadouts and adds crafting currencies. Homestead materials are granted in the same session command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta).
+1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
+2. **Salvage** — preview rolls `computeSalvageYield` (definition `salvageValue` homestead materials + `rollSalvageYield` crafting currencies). Confirm passes that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta).
 3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`.
-4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ characterId, mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { characterId, mutate: (gear) => gear.addInstance(instance, characterId) })`.
+4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addInstance(instance, characterId) })`.
 5. **Permanent Trinkets** — use `addTrinket`, `equipTrinket`, and `unequipTrinket` on the Gear aggregate. Rewards and the Trinket Shop add ownership inside their existing run-session command; acquisition never auto-equips or creates a Boon.
 
 ### `useArmoryController` facade
@@ -69,9 +69,9 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear
 - Reads `inventories`, `loadouts`, and `craftingCurrencies` from `useGearArmorySlice`.
 - Routes `equip`/`unequip` through `dispatchGearMutationWithRunHealthSync` (HP-sync side effect).
 - Routes `applyCurrency` through `dispatchGearMutationWithRunHealthSync` and flushes the save on success.
-- Routes `salvage` through one session command (`mutateGearWithRunHealthSync` plus homestead material grant) and flushes the save on success.
+- Routes `salvage` through `dispatchGearSalvageWithMaterialGrant` and flushes the save on success.
 - Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` through `dispatchGearMutationWithRunHealthSync` and flushes the save.
-- Reports `browseOnly = hasActiveBattle` and `finishedRunCharacters` for the screen.
+- Reports `browseOnly: false` (combat does not lock the Armory) and `finishedRunCharacters` for the screen.
 
 ## Battle integration
 

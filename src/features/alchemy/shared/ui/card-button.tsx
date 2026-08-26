@@ -18,7 +18,13 @@ import { HAND_HOVER_HANDOFF_MS } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardArtImageClass, cardHoverScaleClass, cardShineFrameClass, cardSurfaceClass } from "../config";
+import {
+  cardArtImageClass,
+  cardHoverScaleClass,
+  cardShineFrameClass,
+  cardSurfaceClass,
+  getPlasmaColorPairForCard,
+} from "../config";
 import { useCardDescriptionContext } from "@/features/alchemy/shared/context/card-description-context";
 import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "@/lib/game-data";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
@@ -147,6 +153,7 @@ function CardHoverPopup({
       descriptionLines={descriptionLines}
       visible={visible}
       triggerRef={triggerRef}
+      plasmaColorPair={getPlasmaColorPairForCard(card)}
       {...(padding !== undefined ? { padding } : {})}
       {...(card.corrupted ? { card } : {})}
     />

@@ -30,6 +30,8 @@ interface SelectableCardBaseProps {
    * track its own hover.
    */
   interactionKey?: string;
+  /** Optional side-effect fired on hover entry/exit without taking over hover control. */
+  onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
 export type SelectableCardProps = SelectableCardBaseProps &
@@ -54,10 +56,26 @@ export function SelectableCard(props: SelectableCardProps) {
 }
 
 function KeyedSelectableCard(props: SelectableCardBaseProps & { interactionKey: string }) {
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    props.interactionKey,
-    props.card.id,
-  );
+  const {
+    isHovered,
+    onHoverStart: baseHoverStart,
+    onHoverEnd: baseHoverEnd,
+    shimmerActive,
+    shimmerToken,
+  } = useInteractiveCard(props.interactionKey, props.card.id);
+  const { onHoverChange } = props;
+  const onHoverStart = onHoverChange
+    ? () => {
+        baseHoverStart();
+        onHoverChange(true);
+      }
+    : baseHoverStart;
+  const onHoverEnd = onHoverChange
+    ? () => {
+        baseHoverEnd();
+        onHoverChange(false);
+      }
+    : baseHoverEnd;
   return (
     <SelectableCardSurface
       {...props}

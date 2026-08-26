@@ -1,6 +1,5 @@
 // Mystery event navigation: begin + choice handlers with screen transition + sound.
 import { useCallback, useMemo } from "react";
-import { cardById } from "@/lib/game-data";
 import { pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
@@ -16,9 +15,9 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
-import { CONSTANTS } from "@/features/alchemy/shared/types";
-import type { Screen } from "@/lib/routing";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
+import { cardById } from "@/lib/game-data";
 
 export function useMysteryEventNavigation({
   navigateTo,
@@ -44,7 +43,7 @@ export function useMysteryEventNavigation({
         },
         {
           afterCommit: () => {
-            navigateTo(CONSTANTS.SCREENS.MYSTERY, onRenderedScreenCommit);
+            navigateTo(ROUTE_SCREENS.MYSTERY, onRenderedScreenCommit);
             playUISound("musicBoxMystery");
           },
         },

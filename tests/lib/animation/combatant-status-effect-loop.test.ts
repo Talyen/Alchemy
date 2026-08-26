@@ -20,6 +20,7 @@ function attachCanvas(): HTMLCanvasElement {
   canvas.getContext = (() =>
     ({
       clearRect: vi.fn(),
+      setTransform: vi.fn(),
     }) as unknown as CanvasRenderingContext2D) as unknown as typeof canvas.getContext;
   parent.appendChild(canvas);
   document.body.appendChild(parent);

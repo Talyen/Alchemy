@@ -1,5 +1,4 @@
 // Talent definitions for keyword: archery.
-import { Move, CloudRain, Eye, ScanEye, ArrowRight, Aperture, Zap, Crosshair, Diamond, Award } from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -9,7 +8,7 @@ export const archeryTalents: TalentDefinition[] = [
     keywordId: "archery",
     name: "Arrow Dance",
     description: "When you Dodge, your next Archery card is free",
-    icon: Move,
+    icon: "Move",
     effects: [setEffect("nextArcheryCardFreeOnDodge", true)],
   },
   {
@@ -17,7 +16,7 @@ export const archeryTalents: TalentDefinition[] = [
     keywordId: "archery",
     name: "Hail of Arrows",
     description: "Archery cards have a 10% chance to deal 50% of their damage a second time",
-    icon: CloudRain,
+    icon: "CloudRain",
     effects: [setEffect("archeryPlayTwiceChance", 10)],
   },
   {
@@ -25,7 +24,7 @@ export const archeryTalents: TalentDefinition[] = [
     keywordId: "archery",
     name: "Eagle Eye",
     description: "Archery cards deal double damage against Stunned enemies",
-    icon: Eye,
+    icon: "Eye",
     effects: [setEffect("archeryDoubledVsStunned", true)],
   },
   {
@@ -33,7 +32,7 @@ export const archeryTalents: TalentDefinition[] = [
     keywordId: "archery",
     name: "Hawk Eye",
     description: "Archery cards deal double damage against Frozen enemies",
-    icon: ScanEye,
+    icon: "ScanEye",
     effects: [setEffect("archeryDoubledVsFrozen", true)],
   },
   {
@@ -41,7 +40,7 @@ export const archeryTalents: TalentDefinition[] = [
     keywordId: "archery",
     name: "Longshot",
     description: "Archery cards deal double damage against enemies above 75% Health",
-    icon: ArrowRight,
+    icon: "ArrowRight",
     effects: [setEffect("archeryDoubledVsHighHealth", true)],
   },
   {
@@ -49,7 +48,7 @@ export const archeryTalents: TalentDefinition[] = [
     keywordId: "archery",
     name: "Piercing Shot",
     description: "Archery cards ignore 1 Armor",
-    icon: Aperture,
+    icon: "Aperture",
     effects: [addEffect("archeryArmorPiercing", 1)],
   },
   {
@@ -57,7 +56,7 @@ export const archeryTalents: TalentDefinition[] = [
     keywordId: "archery",
     name: "Quickdraw",
     description: "Your first Archery card each combat is free",
-    icon: Zap,
+    icon: "Zap",
     effects: [setEffect("firstArcheryCardFree", true)],
   },
   {
@@ -65,7 +64,7 @@ export const archeryTalents: TalentDefinition[] = [
     keywordId: "archery",
     name: "Kill Shot",
     description: "Archery cards deal double damage against enemies below 30% Health",
-    icon: Crosshair,
+    icon: "Crosshair",
     effects: [setEffect("archeryDoubledVsLowHealth", true)],
   },
   {
@@ -73,7 +72,7 @@ export const archeryTalents: TalentDefinition[] = [
     keywordId: "archery",
     name: "Broadhead",
     description: "Archery cards have a 10% chance to Bleed",
-    icon: Diamond,
+    icon: "Diamond",
     effects: [setEffect("archeryBleedChance", 10)],
   },
   {
@@ -81,7 +80,7 @@ export const archeryTalents: TalentDefinition[] = [
     keywordId: "archery",
     name: "Trophy Shot",
     description: "Gain 2 Gold when an Archery card defeats an enemy",
-    icon: Award,
+    icon: "Award",
     effects: [setEffect("goldOnArcheryKill", 2)],
   },
 ];

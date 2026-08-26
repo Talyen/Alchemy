@@ -1,8 +1,6 @@
 // Content-system Play routing: begin/resume, character select, draft, and difficulty.
 import { logError } from "@/lib/error-logger";
-import { getDifficultyModifiers, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
-import type { ContentSystemId } from "@/lib/content-systems/types";
 import {
   setPendingCharacterId,
   setPendingContentSystemType,
@@ -33,7 +31,9 @@ import {
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
 import { createContentSystemRunInit } from "./content-system-run-init";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
-import { CONSTANTS } from "../../shared/types";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
+import { getDifficultyModifiers, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
   const { initializeRunForDifficulty, initializeLabyrinthRun, initializeWildwoodRun, initializeStarterDraftRun } =
@@ -46,7 +46,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     onStartBattle: deps.onStartBattle,
     // Mirror handleDifficultySelect: the started run supersedes any pending character.
     navigateToBattle: () =>
-      deps.navigateTo(CONSTANTS.SCREENS.BATTLE, () =>
+      deps.navigateTo(ROUTE_SCREENS.BATTLE, () =>
         dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, null)),
       ),
   });
@@ -61,17 +61,17 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       starterDraftChoices: readRunSession().starterDraftChoices,
     });
     if (starterResume === "draft-deck") {
-      deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
+      deps.navigateTo(ROUTE_SCREENS.DRAFT_DECK);
       return;
     }
     if (starterResume === "difficulty-select") {
-      deps.navigateTo(CONSTANTS.SCREENS.DIFFICULTY_SELECT);
+      deps.navigateTo(ROUTE_SCREENS.DIFFICULTY_SELECT);
       return;
     }
-    if (systemId === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
-      deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
-    } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
-      deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
+    if (systemId === CONTENT_SYSTEMS.LABYRINTH) {
+      deps.navigateTo(ROUTE_SCREENS.LABYRINTH_MAP);
+    } else if (systemId === CONTENT_SYSTEMS.CAMPAIGN) {
+      deps.navigateTo(ROUTE_SCREENS.DESTINATION, () => {
         dispatchRunSessionCommand((draft) => {
           const active = draft.run.activeRun;
           setRewardState(draft, (prev) =>
@@ -93,7 +93,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
           );
         });
       });
-    } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+    } else if (systemId === CONTENT_SYSTEMS.WILDWOOD) {
       deps.onResumeWildwood();
     }
   }
@@ -121,59 +121,59 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       }
       setPendingContentSystemType(draft, systemId);
     });
-    deps.navigateTo(CONSTANTS.SCREENS.CHARACTER_SELECT);
+    deps.navigateTo(ROUTE_SCREENS.CHARACTER_SELECT);
   }
 
   function beginCampaign() {
-    beginContentSystem(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
+    beginContentSystem(CONTENT_SYSTEMS.CAMPAIGN);
   }
 
   function beginLabyrinth() {
-    beginContentSystem(CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
+    beginContentSystem(CONTENT_SYSTEMS.LABYRINTH);
   }
 
   function beginWildwood() {
-    beginContentSystem(CONSTANTS.CONTENT_SYSTEMS.WILDWOOD);
+    beginContentSystem(CONTENT_SYSTEMS.WILDWOOD);
   }
 
   function handleCharacterSelect(selectedId: CharacterId) {
     const systemType = deps.pendingContentSystemType;
 
-    if (systemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+    if (systemType === CONTENT_SYSTEMS.WILDWOOD) {
       initializeWildwoodRun(selectedId);
       return;
     }
 
     if (selectedId === "wildcard") {
-      if (systemType !== CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN && systemType !== CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+      if (systemType !== CONTENT_SYSTEMS.CAMPAIGN && systemType !== CONTENT_SYSTEMS.LABYRINTH) {
         logError(`[content-system-navigation] handleCharacterSelect: unhandled content system ${systemType}`, "other");
-        deps.navigateTo(CONSTANTS.SCREENS.MENU);
+        deps.navigateTo(ROUTE_SCREENS.MENU);
         return;
       }
       initializeStarterDraftRun(systemType);
       return;
     }
 
-    if (systemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+    if (systemType === CONTENT_SYSTEMS.LABYRINTH) {
       initializeLabyrinthRun(selectedId);
       return;
     }
-    if (systemType !== CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
+    if (systemType !== CONTENT_SYSTEMS.CAMPAIGN) {
       logError(`[content-system-navigation] handleCharacterSelect: unhandled content system ${systemType}`, "other");
-      deps.navigateTo(CONSTANTS.SCREENS.MENU);
+      deps.navigateTo(ROUTE_SCREENS.MENU);
       return;
     }
 
     afterCampaignCharacterResolved(selectedId, noviceCampaignDeps(), () => {
       dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, selectedId));
-      deps.navigateTo(CONSTANTS.SCREENS.DIFFICULTY_SELECT);
+      deps.navigateTo(ROUTE_SCREENS.DIFFICULTY_SELECT);
     });
   }
 
   function handleStarterDraftPick(card: BattleCard) {
     dispatchRunSessionCommand((draft) => {
       const choices = draft.session.starterDraftChoices;
-      if (draft.run.activeRun.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || !choices?.length) return;
+      if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.WILDWOOD || !choices?.length) return;
       if (draft.run.activeRun.runDeck.length >= DRAFT_ROUNDS) return;
       if (!choices.some((choice) => choice.id === card.id)) return;
       const nextDeck = [...draft.run.activeRun.runDeck, card];
@@ -191,17 +191,17 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   function handleStandardDraftComplete(draftedCards: BattleCard[]) {
     const systemType = deps.pendingContentSystemType;
 
-    if (systemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+    if (systemType === CONTENT_SYSTEMS.WILDWOOD) {
       logError("[content-system-navigation] handleStandardDraftComplete: unexpected Wildwood draft", "other");
       return;
     }
 
-    if (systemType !== CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN && systemType !== CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+    if (systemType !== CONTENT_SYSTEMS.CAMPAIGN && systemType !== CONTENT_SYSTEMS.LABYRINTH) {
       logError(
         `[content-system-navigation] handleStandardDraftComplete: unhandled content system ${systemType}`,
         "other",
       );
-      deps.navigateTo(CONSTANTS.SCREENS.MENU);
+      deps.navigateTo(ROUTE_SCREENS.MENU);
       return;
     }
 
@@ -222,13 +222,13 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       setStarterDraftChoices(draft, null);
     });
 
-    if (systemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+    if (systemType === CONTENT_SYSTEMS.LABYRINTH) {
       initializeLabyrinthRun("wildcard");
       return;
     }
 
     afterCampaignCharacterResolved("wildcard", noviceCampaignDeps(), () =>
-      deps.navigateTo(CONSTANTS.SCREENS.DIFFICULTY_SELECT),
+      deps.navigateTo(ROUTE_SCREENS.DIFFICULTY_SELECT),
     );
   }
 
@@ -236,23 +236,23 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     const selectedId = readRunSession().pendingCharacterId ?? readActiveRun().characterId;
     if (!selectedId) {
       logError("[content-system-navigation] handleDifficultySelect: no pending character", "other");
-      deps.navigateTo(CONSTANTS.SCREENS.MENU);
+      deps.navigateTo(ROUTE_SCREENS.MENU);
       return;
     }
     const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);
     const modifiers = getDifficultyModifiers(selectedId, difficultyId);
     deps.onStartBattle(freshDeck, totalStartGold, DEFAULT_BATTLE_ENEMY_TYPE, modifiers);
-    deps.navigateTo(CONSTANTS.SCREENS.BATTLE, () =>
+    deps.navigateTo(ROUTE_SCREENS.BATTLE, () =>
       dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, null)),
     );
   }
 
   function handleBackFromDifficultySelect() {
     if (readHasActiveRun() && readActiveRun().characterId === "wildcard") {
-      deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
+      deps.navigateTo(ROUTE_SCREENS.DRAFT_DECK);
       return;
     }
-    deps.navigateTo(CONSTANTS.SCREENS.CHARACTER_SELECT);
+    deps.navigateTo(ROUTE_SCREENS.CHARACTER_SELECT);
   }
 
   return {

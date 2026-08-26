@@ -1,16 +1,4 @@
 // Talent definitions for keyword: gold.
-import {
-  Tag,
-  RefreshCw,
-  Sprout,
-  CircleDollarSign,
-  Beaker,
-  ShoppingCart,
-  HandCoins,
-  Sparkles,
-  FlaskConical,
-  Trophy,
-} from "lucide-react";
 import type { TalentDefinition } from "../types";
 import { addEffect, setEffect } from "../types";
 
@@ -20,7 +8,7 @@ export const goldTalents: TalentDefinition[] = [
     keywordId: "gold",
     name: "Haggle",
     description: "Shop purchases cost 5 less Gold",
-    icon: Tag,
+    icon: "Tag",
     effects: [setEffect("shopCardDiscount", 5)],
   },
   {
@@ -28,7 +16,7 @@ export const goldTalents: TalentDefinition[] = [
     keywordId: "gold",
     name: "Restock",
     description: "Shop refresh is free once per visit",
-    icon: RefreshCw,
+    icon: "RefreshCw",
     effects: [setEffect("shopFreeRefresh", true)],
   },
   {
@@ -36,7 +24,7 @@ export const goldTalents: TalentDefinition[] = [
     keywordId: "gold",
     name: "Seed Money",
     description: "Start each run with 20 Gold",
-    icon: Sprout,
+    icon: "Sprout",
     effects: [setEffect("startGold", 20)],
   },
   {
@@ -44,7 +32,7 @@ export const goldTalents: TalentDefinition[] = [
     keywordId: "gold",
     name: "Lucky Foot",
     description: "Gain 1 Gold when you Dodge",
-    icon: CircleDollarSign,
+    icon: "CircleDollarSign",
     effects: [setEffect("goldOnDodge", 1)],
   },
   {
@@ -52,7 +40,7 @@ export const goldTalents: TalentDefinition[] = [
     keywordId: "gold",
     name: "Apothecary Bargain",
     description: "Potions cost 5 less Gold",
-    icon: Beaker,
+    icon: "Beaker",
     effects: [setEffect("potionDiscount", 5)],
   },
   {
@@ -60,7 +48,7 @@ export const goldTalents: TalentDefinition[] = [
     keywordId: "gold",
     name: "Buyout",
     description: "Card removal costs 10 less Gold",
-    icon: ShoppingCart,
+    icon: "ShoppingCart",
     effects: [setEffect("removeCardDiscount", 10)],
   },
   {
@@ -68,7 +56,7 @@ export const goldTalents: TalentDefinition[] = [
     keywordId: "gold",
     name: "Plunder",
     description: "Enemies drop 10% more Gold",
-    icon: HandCoins,
+    icon: "HandCoins",
     effects: [setEffect("enemyGoldDropBonus", 0.1)],
   },
   {
@@ -76,7 +64,7 @@ export const goldTalents: TalentDefinition[] = [
     keywordId: "gold",
     name: "Golden Wish",
     description: "Gain 3 Gold when you Wish",
-    icon: Sparkles,
+    icon: "Sparkles",
     effects: [addEffect("goldOnWish", 3)],
   },
   {
@@ -84,7 +72,7 @@ export const goldTalents: TalentDefinition[] = [
     keywordId: "gold",
     name: "Alchemy Discount",
     description: "Mix Potions costs 10 less Gold",
-    icon: FlaskConical,
+    icon: "FlaskConical",
     effects: [setEffect("mixPotionDiscount", 10)],
   },
   {
@@ -92,7 +80,7 @@ export const goldTalents: TalentDefinition[] = [
     keywordId: "gold",
     name: "Spoils of War",
     description: "Elites drop 10% more Gold",
-    icon: Trophy,
+    icon: "Trophy",
     effects: [setEffect("eliteGoldDropBonus", 0.1)],
   },
 ];

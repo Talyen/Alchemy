@@ -145,7 +145,7 @@ export function ArmoryScreen({
       <div
         data-testid="armory-screen"
         className={cn(
-          "alchemy-shell my-auto flex w-full max-w-[96rem] flex-1 flex-col rounded-shell-screen pb-1",
+          "my-auto flex w-full max-w-[96rem] flex-1 flex-col pb-1",
           screenShellPaddingClass,
           salvageMode && "armory-salvage-cursor",
         )}

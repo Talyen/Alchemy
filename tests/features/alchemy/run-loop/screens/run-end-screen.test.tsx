@@ -33,6 +33,8 @@ function renderRunEnd({
     <RunEndScreen
       title="Defeat"
       subtitle="Your run has ended."
+      outcome="defeat"
+      characterId="knight"
       runEndTalentXP={runEndTalentXP}
       talentXP={talentXP}
       runEndMaterials={runEndMaterials}
@@ -67,23 +69,50 @@ describe("RunEndScreen", () => {
     expect(screen.getByRole("button", { name: /continue/i }).isConnected).toBe(true);
   });
 
-  it("pages talent XP after six types", async () => {
-    const user = userEvent.setup();
-    const keywords = getTalentTreeKeywordIds().slice(0, 7);
-    expect(keywords).toHaveLength(7);
+  it.each([1, 2, 3])("centers %i talent XP cards at a stable width", (count) => {
+    const keywords = getTalentTreeKeywordIds().slice(0, count);
     const runEndTalentXP = Object.fromEntries(keywords.map((kw) => [kw, 1]));
     renderRunEnd({ runEndTalentXP, talentXP: runEndTalentXP });
 
-    const firstSix = keywords.slice(0, 6).map((kw) => keywordDefinitions[kw]!.label);
-    const seventh = keywordDefinitions[keywords[6]!]!.label;
-    for (const label of firstSix) {
+    const row = screen.getByText(keywordDefinitions[keywords[0]!]!.label).closest(".justify-center");
+    expect(row?.className).toContain("flex");
+    expect(row?.children).toHaveLength(count);
+    for (const card of row?.children ?? []) {
+      expect(card.className).toContain("w-56");
+    }
+  });
+
+  it("shows ten stable-width talent XP cards without paging", () => {
+    const keywords = getTalentTreeKeywordIds().slice(0, 10);
+    expect(keywords).toHaveLength(10);
+    const runEndTalentXP = Object.fromEntries(keywords.map((kw) => [kw, 1]));
+    renderRunEnd({ runEndTalentXP, talentXP: runEndTalentXP });
+
+    const firstLabel = keywordDefinitions[keywords[0]!]!.label;
+    const grid = screen.getByText(firstLabel).closest(".justify-center");
+    expect(grid?.children).toHaveLength(10);
+    expect(grid?.className).toContain("max-w-[73rem]");
+    expect(grid?.firstElementChild?.className).toContain("w-56");
+    expect(screen.queryByRole("button", { name: "Next page" })).toBeNull();
+  });
+
+  it("pages talent XP beginning with the eleventh type", async () => {
+    const user = userEvent.setup();
+    const keywords = getTalentTreeKeywordIds().slice(0, 11);
+    expect(keywords).toHaveLength(11);
+    const runEndTalentXP = Object.fromEntries(keywords.map((kw) => [kw, 1]));
+    renderRunEnd({ runEndTalentXP, talentXP: runEndTalentXP });
+
+    const firstTen = keywords.slice(0, 10).map((kw) => keywordDefinitions[kw]!.label);
+    const eleventh = keywordDefinitions[keywords[10]!]!.label;
+    for (const label of firstTen) {
       expect(screen.getByText(label).isConnected).toBe(true);
     }
-    expect(screen.queryByText(seventh)).toBeNull();
+    expect(screen.queryByText(eleventh)).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Next page" }));
-    expect(await screen.findByText(seventh)).toBeTruthy();
-    expect(screen.queryByText(firstSix[0]!)).toBeNull();
+    expect(await screen.findByText(eleventh)).toBeTruthy();
+    expect(screen.queryByText(firstTen[0]!)).toBeNull();
   });
 
   it("hides obtained items when the recap is empty", () => {
@@ -95,7 +124,11 @@ describe("RunEndScreen", () => {
     const items = [0, 1, 2, 3].map((index) => gearItem(`armor-${index}`));
     renderRunEnd({ runEndItems: items });
 
-    expect(screen.getAllByRole("img", { name: "Leather Armor" })).toHaveLength(4);
+    const portraits = screen.getAllByRole("img", { name: "Leather Armor" });
+    expect(portraits).toHaveLength(4);
+    const sizeWrapper = portraits[0]!.parentElement?.parentElement?.parentElement?.parentElement;
+    expect(sizeWrapper?.className).toContain("w-[clamp(20.16cqh,20.49cqh,30.51cqh)]");
+    expect(sizeWrapper?.className).toContain("[&>*>*]:!w-full");
     expect(screen.queryByRole("button", { name: "Next page" })).toBeNull();
   });
 

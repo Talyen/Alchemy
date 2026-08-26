@@ -60,16 +60,19 @@ export function ArtTurnActiveBorder({
   active,
   urgentHide = false,
   shineColor,
+  testId,
 }: {
   side: "player" | "enemy";
   active: boolean;
   urgentHide?: boolean;
   shineColor?: readonly string[];
+  testId?: string;
 }) {
   const palette = shineColor ?? SHINE_PALETTES.turnEnemy;
+  const resolvedTestId = testId ?? (side === "player" ? "turn-badge-player" : "turn-badge-enemy");
   return (
     <ShineBorder
-      data-testid={side === "player" ? "turn-badge-player" : "turn-badge-enemy"}
+      data-testid={resolvedTestId}
       data-active={active ? "true" : "false"}
       borderWidth={ACTOR_PANEL_CONFIG.turnActiveArtBorderWidth}
       duration={ACTOR_PANEL_CONFIG.turnActiveShineDurationSeconds}

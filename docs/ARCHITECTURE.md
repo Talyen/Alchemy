@@ -14,7 +14,7 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 | `run-loop/`  | Battle glue, navigation, shop, in-run screens                              |
 | `shell/`     | Controller hooks                                                           |
 
-Import using on-disk paths (for example `@/features/alchemy/shared/stores/run-session-react-ports`).
+Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-session-react-ports`).
 
 `shared/run-flow/` is the neutral seam for destination sampling and campaign-start helpers so `run-setup` and `run-loop` do not import each other (ESLint-enforced).
 
@@ -28,7 +28,7 @@ Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/
 | `session`        | Rewards, shops, labyrinth, mystery visits, corruption results, pending selections, and run-flow claims | Transient per live run; shops, mystery visits, and corruption results persist on `ActiveRunData` via the resume codec |
 | `battle`         | Combat snapshot, battle-start state, and display overrides                                             | Transient per battle; rebound from live meta on hydrate                                                               |
 | `runProfile`     | Homestead, talent XP / unlocks, derived effects, and the shared gold purse                             | Profile lifetime                                                                                                      |
-| `profile`        | Compendium discoveries and collection browsing state                                                   | Profile lifetime                                                                                                      |
+| `profile`        | Compendium discoveries (collection tab/page UI is transient in-memory, not in `ProfileSaveFields`)     | Profile lifetime                                                                                                      |
 | `gear`           | Permanent inventories, loadouts, and crafting currencies                                               | Profile lifetime                                                                                                      |
 
 Cross-concern writes go through `run-session-write-port.ts`. Multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing reads (`run-session-read-port`, `profile-store` / `gear-store` slices, and the React ports) are data-only; command-backed write ports own every gameplay mutation. React orchestration uses narrow ports from `run-session-react-ports.ts`; screens use exact screen-data hooks (battle display via `useBattleScreenRouteData`).

@@ -1,15 +1,8 @@
+import { buildSmoothShineBorderGradient } from "@/lib/animation/shine-gradient";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { gearAffixCatalog } from "./affix-catalog";
 import { gearDefinitions, type GearDefinition } from "./definitions";
 import type { GearInstance } from "./types";
-
-/** Builds a seamless mirrored gradient in oklab space so the loop has no visible wipe edge. */
-function buildSmoothShineGradient(colors: readonly string[]): string | null {
-  if (colors.length === 0) return null;
-  if (colors.length === 1) return `linear-gradient(in oklab 90deg, ${colors[0]}, ${colors[0]})`;
-  const mirrored = [...colors, ...colors.slice(1, -1).reverse(), colors[0]];
-  return `linear-gradient(in oklab 90deg, ${mirrored.join(", ")})`;
-}
 
 const ASTRAL_SHINE_FALLBACK = ["#cbd5e1", "#64748b", "#cbd5e1"] as const;
 const UNIQUE_SHINE_COLORS = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"] as const;
@@ -60,11 +53,11 @@ export function getAstralShineColors(instance: GearInstance): readonly string[] 
 
 export function getGearInstanceShineGradient(instance: GearInstance): string | null {
   const colors = getGearInstanceShineColors(instance);
-  return buildSmoothShineGradient(colors);
+  return buildSmoothShineBorderGradient(colors);
 }
 
 export function getGearDefinitionShineGradient(definition: GearDefinition): string | null {
-  return buildSmoothShineGradient(getGearDefinitionShineColors(definition));
+  return buildSmoothShineBorderGradient(getGearDefinitionShineColors(definition));
 }
 
 function getGearAffixShineColors(affix: { keywordId: KeywordId; secondaryKeywordId?: KeywordId }): readonly string[] {
@@ -82,5 +75,5 @@ export function getGearAffixShineGradient(affix: {
   secondaryKeywordId?: KeywordId;
 }): string | null {
   const colors = getGearAffixShineColors(affix);
-  return buildSmoothShineGradient(colors);
+  return buildSmoothShineBorderGradient(colors);
 }

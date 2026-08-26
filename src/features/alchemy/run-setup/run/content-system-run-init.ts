@@ -1,7 +1,5 @@
 // Content-system run start snapshots: campaign, labyrinth, wildwood, and Wildcard starter draft.
 import { playGoldGain } from "@/lib/audio";
-import { type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
-import type { ContentSystemId } from "@/lib/content-systems/types";
 import {
   setPendingCharacterId,
   setWildwoodDraft,
@@ -16,9 +14,11 @@ import { createInitialDestinationResult } from "@/features/alchemy/shared/run-fl
 import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
-import { CONSTANTS } from "../../shared/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { applyRunStartToDraft, createConfiguredRunStartSnapshot } from "./run-start-command";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
+import { type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 
 export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
   // Gold jingle plays only when this start is a fresh start for the system, matching grantStartGold.
@@ -44,8 +44,8 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
   }
 
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
-    const startSnapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN, difficultyId);
-    const playStartGold = isFreshSystemStart(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
+    const startSnapshot = createStartSnapshot(characterId, CONTENT_SYSTEMS.CAMPAIGN, difficultyId);
+    const playStartGold = isFreshSystemStart(CONTENT_SYSTEMS.CAMPAIGN);
     return dispatchRunSessionCommand(
       (draft) => {
         applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
@@ -79,8 +79,8 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
   }
 
   function initializeLabyrinthRun(characterId: CharacterId) {
-    const snapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
-    const playStartGold = isFreshSystemStart(CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
+    const snapshot = createStartSnapshot(characterId, CONTENT_SYSTEMS.LABYRINTH);
+    const playStartGold = isFreshSystemStart(CONTENT_SYSTEMS.LABYRINTH);
     dispatchRunSessionCommand(
       (draft) => {
         applyRunStartToDraft(draft, snapshot, { discoverDeck: true });
@@ -90,15 +90,15 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
         afterCommit: () => {
           if (playStartGold && snapshot.startGoldGrant > 0) playGoldGain();
           deps.clearCardHover();
-          deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
+          deps.navigateTo(ROUTE_SCREENS.LABYRINTH_MAP);
         },
       },
     );
   }
 
   function initializeWildwoodRun(characterId: CharacterId) {
-    const startSnapshot = createStartSnapshot(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, null, []);
-    const playStartGold = isFreshSystemStart(CONSTANTS.CONTENT_SYSTEMS.WILDWOOD);
+    const startSnapshot = createStartSnapshot(characterId, CONTENT_SYSTEMS.WILDWOOD, null, []);
+    const playStartGold = isFreshSystemStart(CONTENT_SYSTEMS.WILDWOOD);
     dispatchRunSessionCommand(
       (draft) => {
         applyRunStartToDraft(draft, startSnapshot);
@@ -113,7 +113,7 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
         afterCommit: () => {
           if (playStartGold && startSnapshot.startGoldGrant > 0) playGoldGain();
           deps.clearCardHover();
-          deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
+          deps.navigateTo(ROUTE_SCREENS.DRAFT_DECK);
         },
       },
     );
@@ -131,7 +131,7 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
         afterCommit: () => {
           if (startSnapshot.startGoldGrant > 0) playGoldGain();
           deps.clearCardHover();
-          deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
+          deps.navigateTo(ROUTE_SCREENS.DRAFT_DECK);
         },
       },
     );

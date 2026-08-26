@@ -21,6 +21,7 @@ import { useGameplayStateStore } from "./gameplay-state-store";
 import type {
   BattleRunPort,
   BattleTalentPort,
+  ContentNavigationRunPort,
   ContentNavigationTalentPort,
   RunOrchestrationPort,
 } from "./run-port-types";
@@ -41,6 +42,16 @@ export function useRunOrchestrationPort(): RunOrchestrationPort {
     useShallow((state) => ({
       ...pickActiveRunFields(state.run.activeRun),
       runGold: state.runProfile.gold,
+    })),
+  );
+}
+
+export function useContentNavigationRunPort(): ContentNavigationRunPort {
+  return useGameplayStateStore(
+    useShallow((state) => ({
+      contentSystemType: state.run.activeRun.contentSystemType,
+      lastOfferedDestinations: state.run.activeRun.lastOfferedDestinations,
+      destinationRoundsSinceOffered: state.run.activeRun.destinationRoundsSinceOffered,
     })),
   );
 }
