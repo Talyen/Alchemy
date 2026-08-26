@@ -21,6 +21,9 @@ describe("battle-presentation-store", () => {
     expect(s.enemyShaking).toBe(false);
     expect(s.playerShaking).toBe(false);
     expect(s.companionShaking).toBe(false);
+    expect(s.playerAttackToken).toBe(0);
+    expect(s.enemyAttackToken).toBe(0);
+    expect(s.companionAttackToken).toBe(0);
   });
 
   it("spawnCardGhost and removeCardGhost round-trip", () => {
@@ -57,8 +60,20 @@ describe("battle-presentation-store", () => {
     vi.useRealTimers();
   });
 
+  it("telegraphAttack bumps the acting combatant's token", () => {
+    useBattlePresentationStore.getState().telegraphAttack("player");
+    useBattlePresentationStore.getState().telegraphAttack("enemy");
+    useBattlePresentationStore.getState().telegraphAttack("companion");
+    useBattlePresentationStore.getState().telegraphAttack("player");
+    const s = useBattlePresentationStore.getState();
+    expect(s.playerAttackToken).toBe(2);
+    expect(s.enemyAttackToken).toBe(1);
+    expect(s.companionAttackToken).toBe(1);
+  });
+
   it("resetPresentation clears VFX state", () => {
     useBattlePresentationStore.getState().hurtPlayer();
+    useBattlePresentationStore.getState().telegraphAttack("player");
     useBattlePresentationStore.getState().spawnCardGhost({
       art: "test.webp",
       rect: { x: 0, y: 0, width: 10, height: 10 },
@@ -69,6 +84,7 @@ describe("battle-presentation-store", () => {
     useBattlePresentationStore.getState().resetPresentation();
     const s = useBattlePresentationStore.getState();
     expect(s.playerHurtFlashToken).toBe(0);
+    expect(s.playerAttackToken).toBe(0);
     expect(s.cardGhosts).toEqual([]);
   });
 
@@ -88,6 +104,7 @@ describe("battle-presentation-store", () => {
   it.each([clearBattlePresentationUi, clearCombatPresentation])("%s resets full presentation VFX", (clear) => {
     useBattlePresentationStore.getState().hurtPlayer();
     useBattlePresentationStore.getState().shakeEnemy();
+    useBattlePresentationStore.getState().telegraphAttack("enemy");
     useBattlePresentationStore.getState().spawnCardGhost({
       art: "test.webp",
       rect: { x: 0, y: 0, width: 10, height: 10 },
@@ -100,6 +117,9 @@ describe("battle-presentation-store", () => {
     expect(s.cardGhosts).toEqual([]);
     expect(s.playerHurtFlashToken).toBe(0);
     expect(s.enemyShaking).toBe(false);
+    expect(s.playerAttackToken).toBe(0);
+    expect(s.enemyAttackToken).toBe(0);
+    expect(s.companionAttackToken).toBe(0);
     expect(s.floatingCombatTexts).toEqual([]);
   });
 

@@ -14,12 +14,14 @@ test.describe("Collection", critical, () => {
       await new MenuPage(page).gotoCollection({ discoveredCardIds: ["anvil"] });
     });
 
-    test("collection shows all three tabs with content and card inspection works", async ({ page }) => {
+    test("collection shows all four tabs with content and card inspection works", async ({ page }) => {
+      await expect(page.getByRole("button", { name: "Heroes" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Cards" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Bestiary" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Trinkets" })).toBeVisible();
       await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
 
+      await page.getByRole("button", { name: "Cards" }).click();
       const inspectBtn = page.getByRole("button", { name: /Inspect Anvil/ });
       await expect(inspectBtn).toBeVisible({ timeout: 5000 });
       await inspectBtn.hover();
@@ -27,7 +29,27 @@ test.describe("Collection", critical, () => {
     });
 
     test("collection card tiles keep horizontal gaps between neighbors", async ({ page }) => {
+      await page.getByRole("button", { name: "Cards" }).click();
       await assertHorizontalNeighborGap(page.getByRole("button", { name: /Inspect/ }));
+    });
+  });
+
+  test.describe("heroes tab", () => {
+    test("defaults to Heroes and shows the starting-deck tooltip for unlocked heroes", async ({ page }) => {
+      await new MenuPage(page).gotoCollection();
+      await expect(page.getByRole("button", { name: "Inspect Knight" })).toBeVisible();
+
+      await page.getByRole("button", { name: "Inspect Knight" }).hover();
+      await expect(page.getByText("Starting Deck")).toBeVisible();
+      await expect(page.getByText(/Anvil/)).toBeVisible();
+    });
+
+    test("locked heroes keep their name and unlock tooltip", async ({ page }) => {
+      await new MenuPage(page).gotoCollection({ finishedRunCharacters: [] });
+      const rogue = page.getByRole("button", { name: "Inspect Rogue (Locked)" });
+      await expect(rogue).toBeVisible();
+      await rogue.hover();
+      await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
     });
   });
 

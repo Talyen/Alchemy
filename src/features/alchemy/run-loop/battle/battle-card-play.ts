@@ -7,7 +7,7 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { playCardSound, playGoldGain, playUISound } from "@/lib/audio";
 import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { animateCardActivation } from "./card-transfer-animations";
@@ -29,6 +29,28 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { discoverCardIds } from "../run/deck-mutations";
+
+function hasDamageEffect(effects: BattleCardEffect[]): boolean {
+  for (const effect of effects) {
+    if (
+      effect.kind === "damage" ||
+      effect.kind === "random-damage" ||
+      effect.kind === "cleanse-player-status-to-damage"
+    ) {
+      return true;
+    }
+    if (
+      effect.kind === "chance" &&
+      (hasDamageEffect(effect.successEffects) || hasDamageEffect(effect.failureEffects))
+    ) {
+      return true;
+    }
+    if (effect.kind === "repeat-over-turns" && hasDamageEffect(effect.effects)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export function createBattleCardPlay(
   ctx: BattleControllerContext,
@@ -127,6 +149,9 @@ export function createBattleCardPlay(
       return false;
     }
     ctx.cardPlayInProgressRef.current = true;
+    if (hasDamageEffect(card.effects)) {
+      getPresentation().telegraphAttack("player");
+    }
     animatePlayedCard(card, index, sourceRect, currentState.hand.length);
     playCardSound(card.id);
     ctx.setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));

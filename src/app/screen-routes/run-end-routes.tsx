@@ -20,7 +20,7 @@ function RunEndScreenRoute({
   commands: RunEndCommands;
   onOpenBattleMenu: RunEndRouteCtx["onOpenBattleMenu"];
 }) {
-  const { runEndTalentXP, talentXP, runEndMaterials } = useRunEndScreenData();
+  const { runEndTalentXP, talentXP, runEndMaterials, runEndItems } = useRunEndScreenData();
   const { title, subtitle } = RUN_END_COPY[outcome];
   return (
     <RunEndScreen
@@ -29,6 +29,7 @@ function RunEndScreenRoute({
       runEndTalentXP={runEndTalentXP}
       talentXP={talentXP}
       runEndMaterials={runEndMaterials}
+      runEndItems={runEndItems}
       onContinue={commands.continueFromRunEnd}
       onOpenMenu={onOpenBattleMenu}
     />

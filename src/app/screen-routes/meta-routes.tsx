@@ -98,6 +98,7 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenB
   const profile = useProfileCollectionSlice();
   const collectionActions = useCollectionActions();
   const bondedCompanions = useBondedCompanions();
+  const finishedRunCharacters = useFinishedRunCharacters();
 
   return (
     <CollectionScreen
@@ -109,6 +110,7 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenB
       discoveredCardIds={profile.discoveredCardIds}
       encounteredEnemyIds={profile.encounteredEnemyIds}
       discoveredTrinketIds={profile.discoveredTrinketIds}
+      finishedRunCharacters={finishedRunCharacters}
       collectionPages={profile.collectionPages}
     />
   );

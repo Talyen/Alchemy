@@ -109,6 +109,7 @@ function TrinketWalletResourcePill({
   amount,
   showsIncreasePrefix = false,
   fillsAvailableWidth = true,
+  size = "md",
   className,
 }: {
   resource: HomesteadResource;
@@ -116,26 +117,36 @@ function TrinketWalletResourcePill({
   amount: number;
   showsIncreasePrefix?: boolean | undefined;
   fillsAvailableWidth?: boolean | undefined;
+  size?: "md" | "lg" | undefined;
   className?: string | undefined;
 }) {
   const displayTitle = title ?? RESOURCE_LABELS[resource] ?? resource;
   const formattedAmount = formatLargeAmount(amount);
   const displayedValue = showsIncreasePrefix ? `+${formattedAmount}` : formattedAmount;
+  const large = size === "lg";
 
   return (
     <div
       className={cn(
-        "flex min-h-[46px] items-center gap-2.5 rounded-xl border border-border/60 bg-card/65 px-3 py-2 shadow-sm backdrop-blur-sm transition-colors",
+        "flex items-center rounded-xl border border-border/60 bg-card/65 shadow-sm backdrop-blur-sm transition-colors",
+        large ? "min-h-[56px] gap-3 px-4 py-2.5" : "min-h-[46px] gap-2.5 px-3 py-2",
         fillsAvailableWidth ? "w-full" : "w-auto",
         className,
       )}
     >
-      <HomesteadResourceArtwork resource={resource} size="lg" className="drop-shadow-sm" />
+      <HomesteadResourceArtwork resource={resource} size={large ? "xl" : "lg"} className="drop-shadow-sm" />
       <div className="flex min-w-0 flex-col text-left leading-tight">
-        <span className="truncate text-xs font-medium tracking-wider text-muted-foreground uppercase">
+        <span
+          className={cn(
+            "truncate font-medium tracking-wider text-muted-foreground uppercase",
+            large ? "text-sm" : "text-xs",
+          )}
+        >
           {displayTitle}
         </span>
-        <span className="truncate text-base font-bold text-foreground tabular-nums">{displayedValue}</span>
+        <span className={cn("truncate font-bold text-foreground tabular-nums", large ? "text-lg" : "text-base")}>
+          {displayedValue}
+        </span>
       </div>
     </div>
   );
@@ -195,10 +206,12 @@ export function MaterialPill({
   material,
   amount,
   showsIncreasePrefix = false,
+  size = "md",
 }: {
   material: MaterialId;
   amount: number;
   showsIncreasePrefix?: boolean | undefined;
+  size?: "md" | "lg" | undefined;
 }) {
   return (
     <TrinketWalletResourcePill
@@ -206,7 +219,8 @@ export function MaterialPill({
       amount={amount}
       showsIncreasePrefix={showsIncreasePrefix}
       fillsAvailableWidth={false}
-      className="min-w-[120px]"
+      size={size}
+      className={size === "lg" ? "min-w-[140px]" : "min-w-[120px]"}
     />
   );
 }
@@ -215,9 +229,11 @@ export function MaterialPill({
 export function GoldPill({
   amount,
   showsIncreasePrefix = false,
+  size = "md",
 }: {
   amount: number;
   showsIncreasePrefix?: boolean | undefined;
+  size?: "md" | "lg" | undefined;
 }) {
   return (
     <TrinketWalletResourcePill
@@ -225,7 +241,8 @@ export function GoldPill({
       amount={amount}
       showsIncreasePrefix={showsIncreasePrefix}
       fillsAvailableWidth={false}
-      className="min-w-[120px]"
+      size={size}
+      className={size === "lg" ? "min-w-[140px]" : "min-w-[120px]"}
     />
   );
 }

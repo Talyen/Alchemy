@@ -93,8 +93,31 @@ describe("BattleHand", () => {
 
     expect(affordable.classList.contains("grayscale")).toBe(false);
     expect(affordable.classList.contains("cursor-default")).toBe(true);
-    expect(affordable.getAttribute("data-scale-on-hover")).toBe("false");
     expect(expensive.classList.contains("grayscale")).toBe(true);
-    expect(expensive.getAttribute("data-scale-on-hover")).toBe("false");
+  });
+
+  it("overlays stun presentation on hand cards while the player is crowd-controlled", () => {
+    const battleState = {
+      ...defaultBattleState(),
+      turnPhase: "player" as const,
+      mana: 2,
+      wishOptions: null,
+      hand: [affordableCard, expensiveCard],
+      playerCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
+    };
+    const view = {
+      battleState,
+      stagePixelRatio: 1,
+    } as unknown as RequiredBattleViewProps;
+    const refs = {
+      handCardRefs: { current: {} },
+    } as unknown as BattleRefsProps;
+    const actions = {
+      onCardClick: vi.fn(),
+    } as unknown as BattleActionsProps;
+
+    render(<BattleHand view={view} refs={refs} actions={actions} playabilityState={battleState} />);
+
+    expect(screen.getAllByTestId("combatant-status-effect")).toHaveLength(2);
   });
 });

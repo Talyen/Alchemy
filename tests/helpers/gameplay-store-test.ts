@@ -65,6 +65,7 @@ const runCommands = {
   awardMysteryXP: command(runPort.awardMysteryXP),
   addRunMaterialsEarned: command(runPort.addRunMaterialsEarned),
   clearRunMaterialsEarned: command(runPort.clearRunMaterialsEarned),
+  recordRunObtainedItem: command(runPort.recordRunObtainedItem),
   initialize: command(
     (
       draft: GameplayDraft,
@@ -90,6 +91,7 @@ const sessionCommands = {
   setRewardState: command(sessionPort.setRewardState),
   setCompanionRewardCards: command(sessionPort.setCompanionRewardCards),
   setRunEndMaterials: command(sessionPort.setRunEndMaterials),
+  setRunEndItems: command(sessionPort.setRunEndItems),
   setCorruptionResult: command(sessionPort.setCorruptionResult),
   setPendingCharacterId: command(sessionPort.setPendingCharacterId),
   setPendingContentSystemType: command(sessionPort.setPendingContentSystemType),

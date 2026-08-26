@@ -56,6 +56,7 @@ const ACTIVE_RUN_PROGRESS_KEYS = [
   "rng",
   "runTalentXP",
   "runMaterialsEarned",
+  "runObtainedItems",
 ] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
 
 const PERMANENT_PROGRESS_KEYS = [

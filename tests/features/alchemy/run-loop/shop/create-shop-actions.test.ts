@@ -444,6 +444,7 @@ describe("createShopActions", () => {
       expect(TRINKET_SHOP_TRINKET_PRICE).toBe(80);
       expect(useGearStore.getState().ownedTrinketIds).toContain(trinket.id);
       expect(getRunProgressStoreView().runBoons).not.toContain(trinket.id);
+      expect(getRunProgressStoreView().runObtainedItems).toEqual([{ kind: "trinket", trinketId: trinket.id }]);
       expect(getRunSessionStoreView().trinketShopState.firstPurchaseUsed).toBe(true);
     });
 
@@ -502,6 +503,7 @@ describe("createShopActions", () => {
       expect(getRunProgressStoreView().runGold).toBe(999 - actions.equipment.getBuyPrice(instance));
       expect(getRunSessionStoreView().equipmentShopState.purchasedSlotKeys).toEqual([instance.instanceId]);
       expect(useGearStore.getState().inventories.knight).toContainEqual(instance);
+      expect(getRunProgressStoreView().runObtainedItems).toEqual([{ kind: "gear", instance }]);
       // Shop buy adds to inventory without equipping, so max-health affixes do not apply yet.
       // mutateGearWithRunHealthSync still runs in the same commit (delta 0).
       expect(getRunProgressStoreView().runMaxHealth).toBe(30);

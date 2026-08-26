@@ -46,7 +46,11 @@ export function playCompanionSound(companionId: string) {
 // multi-hit cards from stacking identical impact sounds too rapidly.
 export function playCombatTextSounds(combatTexts: CombatTextEvent[]) {
   for (const ct of combatTexts) {
-    if (ct.kind === "notice") continue;
+    if (ct.kind === "notice") {
+      if (ct.stat === "stun") playBattleEvent("stunProc");
+      else if (ct.stat === "freeze") playBattleEvent("freezeProc");
+      continue;
+    }
     if (ct.kind === "damage" && ct.target === "enemy") {
       playBattleEvent("enemyHit");
     } else if (ct.kind === "damage" && ct.target === "player" && ct.stat === "block") {

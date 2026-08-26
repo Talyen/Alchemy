@@ -1,7 +1,11 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import {
+  restoreRun,
+  snapshotRun,
+  finalizeRunEndSession,
+} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
   applyRunStartSnapshot as mutateRunStartSnapshot,
   finalizeRunXP as mutateFinalizeRunXP,
@@ -13,6 +17,7 @@ import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-se
 import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 
+import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
 
 const syncGearRunHealth = createRunSessionCommand(rebindLiveRunMeta);
@@ -152,6 +157,7 @@ describe("initialize", () => {
       labyrinthPendingNode: activeRun.labyrinthPendingNode,
       runTalentXP: activeRun.runTalentXP,
       runMaterialsEarned: activeRun.runMaterialsEarned,
+      runObtainedItems: activeRun.runObtainedItems,
       currentScreen: activeRun.currentScreen,
       interruptedFlow: activeRun.interruptedFlow,
       shopState: null,
@@ -465,10 +471,12 @@ describe("finalizeRunXP", () => {
 });
 
 describe("applyRunStartSnapshot", () => {
-  it("clears runTalentXP and runEndTalentXP when starting a fresh run", () => {
+  it("clears runTalentXP and run-end snapshots when starting a fresh run", () => {
     getRunProgressStoreView().awardMysteryXP("burn", 5);
     applyGameplayStateUpdate((state) => {
       state.session.runEndTalentXP = { burn: 5 };
+      state.session.runEndItems = [{ kind: "trinket", trinketId: "bone-charm" }];
+      state.run.activeRun.runObtainedItems = [{ kind: "trinket", trinketId: "bone-charm" }];
     });
     applyRunStartSnapshot({
       characterId: "knight",
@@ -486,7 +494,35 @@ describe("applyRunStartSnapshot", () => {
       hasActiveRun: true,
     });
     expect(getRunProgressStoreView().runTalentXP).toEqual({});
+    expect(getRunProgressStoreView().runObtainedItems).toEqual([]);
     expect(getRunSessionStoreView().runEndTalentXP).toEqual({});
+    expect(getRunSessionStoreView().runEndItems).toEqual([]);
     expect(getRunSessionStoreView().hasActiveRun).toBe(true);
+  });
+});
+
+describe("finalizeRunEndSession", () => {
+  it("copies obtained items onto the run-end session snapshot", () => {
+    const obtained = [
+      {
+        kind: "gear" as const,
+        instance: { instanceId: "end-armor", definitionId: "leather-armor-basic", affixes: [] },
+      },
+      { kind: "trinket" as const, trinketId: "bone-charm" },
+    ];
+    setRunSession({ hasActiveRun: true });
+    applyGameplayStateUpdate((state) => {
+      state.run.activeRun.runObtainedItems = obtained;
+    });
+
+    finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP });
+
+    const recap = getRunSessionStoreView().runEndItems;
+    expect(recap).toEqual(obtained);
+    expect(recap[0]).not.toBe(obtained[0]);
+    if (recap[0]?.kind === "gear" && obtained[0]?.kind === "gear") {
+      expect(recap[0].instance).not.toBe(obtained[0].instance);
+    }
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
   });
 });

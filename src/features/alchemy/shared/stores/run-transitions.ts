@@ -10,8 +10,8 @@ import { useUiStore } from "./ui-store";
 import { getRunSession } from "./run-session-model";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
-import { initializeActiveBattle, setHasActiveBattle } from "./run-session-write-port";
-import { resetNavigation, resetProgress, setRunPlayerHealth } from "./write-port-run";
+import { initializeActiveBattle, setHasActiveBattle, setRunEndItems } from "./run-session-write-port";
+import { cloneRunObtainedItem, resetNavigation, resetProgress, setRunPlayerHealth } from "./write-port-run";
 import { clearTransientSession, setHasActiveRun } from "./write-port-session";
 import { applyTalentState, setFinishedRunCharacters } from "./write-port-profile";
 import { applyRestoreRunToDraft, clearModeSlotInDraft } from "./run-park-restore";
@@ -148,6 +148,7 @@ function finalizeRunEndSessionState(
 
   const materials = options.awardRunEndMaterials(draft, options.displayMaterials);
   options.finalizeRunXP(draft);
+  setRunEndItems(draft, draft.run.activeRun.runObtainedItems.map(cloneRunObtainedItem));
 
   clearModeSlotInDraft(draft, draft.run.activeRun.contentSystemType);
   setHasActiveRun(draft, false);

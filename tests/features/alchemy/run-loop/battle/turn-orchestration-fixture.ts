@@ -20,6 +20,7 @@ export function makePresentationPort(overrides: Partial<MockBattlePresentationPo
     hurtEnemy: vi.fn(),
     shakeEnemy: vi.fn(),
     shakeCompanion: vi.fn(),
+    telegraphAttack: vi.fn(),
     resetHandTransferUi: vi.fn(),
     resetCardTransfers: vi.fn(),
     clearCardGhosts: vi.fn(),

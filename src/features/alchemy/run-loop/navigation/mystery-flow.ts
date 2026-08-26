@@ -19,6 +19,7 @@ import {
   addRunGold,
   awardMaterialsDuringRun,
   awardMysteryXP,
+  recordRunObtainedItem,
   setMysteryCardChoices,
   setMysteryGrantedGearInstances,
   setMysteryGrantedTrinketIds,
@@ -145,6 +146,7 @@ function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectCont
   mutateGearWithRunHealthSync(context.draft, {
     mutate: (gear) => gear.addInstance(instance, context.draft.run.activeRun.characterId),
   });
+  recordRunObtainedItem(context.draft, { kind: "gear", instance });
   setMysteryGrantedGearInstances(context.draft, (previous) => [...previous, instance]);
   return { followUp: null };
 }

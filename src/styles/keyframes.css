@@ -204,6 +204,22 @@
   }
 }
 
+@keyframes combatant-attack-lunge {
+  0% {
+    transform: scale(1, 1) rotate(0deg) translateX(0);
+  }
+  40% {
+    transform: scale(0.98, 1.02) rotate(calc(var(--attack-aim, 1) * -4deg))
+      translateX(calc(var(--attack-aim, 1) * -12px));
+  }
+  55% {
+    transform: scale(1.05, 0.94) rotate(calc(var(--attack-aim, 1) * 3deg)) translateX(calc(var(--attack-aim, 1) * 28px));
+  }
+  100% {
+    transform: scale(1, 1) rotate(0deg) translateX(0);
+  }
+}
+
 @keyframes shake {
   0% {
     transform: translateX(0);

@@ -18,6 +18,9 @@ import type { RunRngState } from "@/lib/run-rng";
 
 export type { InterruptedFlow, PersistedPendingReward };
 
+/** Permanent Gear or Armory Trinket granted during the live run, in obtain order. */
+export type RunObtainedItem = { kind: "gear"; instance: GearInstance } | { kind: "trinket"; trinketId: string };
+
 export interface PersistedShopState {
   cards: BattleCard[];
   removeUsed: boolean;
@@ -116,6 +119,7 @@ export interface ActiveRunData {
   activeCombat: ActiveCombatData | null;
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;
+  runObtainedItems: RunObtainedItem[];
   currentScreen: Screen | null;
   interruptedFlow: InterruptedFlow;
   shopState: PersistedShopState | null;

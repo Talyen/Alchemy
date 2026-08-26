@@ -191,6 +191,7 @@ function CardButtonSurface({
       disabled={disabled}
       dragging={dragging}
       baseTransform={baseTransform}
+      hoverScaleActive={Boolean(scaleOnHover && hovered && !dragging)}
       onClick={onClick}
       onPointerDown={onPointerDown}
       onFocus={onHoverStart}

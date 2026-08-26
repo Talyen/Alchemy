@@ -7,10 +7,12 @@ import { GoldPill, MaterialPill } from "./material-icons";
 export function FoundResourcesRow({
   gold = 0,
   materials,
+  size = "md",
   className,
 }: {
   gold?: number;
   materials?: Partial<Record<MaterialId, number>>;
+  size?: "md" | "lg";
   className?: string;
 }) {
   const earnedMaterials = MATERIAL_IDS.filter((mat) => (materials?.[mat] ?? 0) > 0);
@@ -18,9 +20,9 @@ export function FoundResourcesRow({
 
   return (
     <div className={cn("flex flex-wrap items-center justify-center gap-3", className)}>
-      {gold > 0 ? <GoldPill amount={gold} showsIncreasePrefix /> : null}
+      {gold > 0 ? <GoldPill amount={gold} showsIncreasePrefix size={size} /> : null}
       {earnedMaterials.map((mat) => (
-        <MaterialPill key={mat} material={mat} amount={materials![mat]!} showsIncreasePrefix />
+        <MaterialPill key={mat} material={mat} amount={materials![mat]!} showsIncreasePrefix size={size} />
       ))}
     </div>
   );

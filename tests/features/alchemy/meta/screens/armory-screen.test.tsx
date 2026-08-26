@@ -2,7 +2,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { createEmptyGearLoadouts } from "@/lib/gear";
+import { createEmptyEquippedTrinkets, createEmptyGearLoadouts } from "@/lib/gear";
 import {
   createArmoryInventories,
   installArmoryScreenTestHooks,
@@ -77,11 +77,19 @@ describe("ArmoryScreen core", () => {
     expect(screen.getByRole("button", { name: "Wizard (Locked)" })).toHaveProperty("disabled", true);
   });
 
-  it("shows browse-only feedback", () => {
+  it("shows browse-only feedback", async () => {
+    const user = userEvent.setup();
     const onUnequip = vi.fn();
-    renderArmoryScreen({ browseOnly: true, onUnequip });
+    renderArmoryScreen({
+      browseOnly: true,
+      onUnequip,
+      ownedTrinketIds: ["brass-censer"],
+    });
 
     expect(screen.getByText("Equipment can be changed after combat.")).toBeTruthy();
+
+    await user.click(screen.getByLabelText("Trinket equipment slot"));
+    expect(screen.getByRole("button", { name: "Equip Brass Censer" })).toHaveProperty("disabled", true);
   });
 
   it("renders the development gear-spawn action when provided", async () => {
@@ -153,6 +161,25 @@ describe("ArmoryScreen core", () => {
     expect(armorSlot.className).toMatch(/card-interactive-selected/);
     expect(armorSlot.className).toMatch(/has-shine-border/);
     expect(armorSlot.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("shows shine borders on equipped and inventory trinkets", async () => {
+    const user = userEvent.setup();
+    const equippedTrinkets = createEmptyEquippedTrinkets();
+    equippedTrinkets.knight = "meteorite";
+    renderArmoryScreen({
+      ownedTrinketIds: ["meteorite", "brass-censer"],
+      equippedTrinkets,
+    });
+
+    const trinketSlot = screen.getByLabelText("Trinket equipment slot");
+    expect(trinketSlot.querySelector(".shine-border")).not.toBeNull();
+    expect(trinketSlot.className).toMatch(/has-shine-border/);
+
+    await user.click(trinketSlot);
+    const inventoryTrinket = screen.getByRole("button", { name: "Equip Brass Censer" });
+    expect(inventoryTrinket.querySelector(".shine-border")).not.toBeNull();
+    expect(inventoryTrinket.className).toMatch(/has-shine-border/);
   });
 
   it("keeps a 2×3 inventory footprint when the selected slot has no items", async () => {

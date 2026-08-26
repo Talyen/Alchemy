@@ -70,6 +70,8 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 
 **Do not** call `addMaterials()` on the run profile store directly from run-loop or mystery code for player loot.
 
+Permanent Gear and Armory Trinkets use `recordRunObtainedItem()` at each grant site (reward Gear/Trinket picks, equipment shop, trinket shop, mystery generated Gear). `finalizeRunEndSession` copies `activeRun.runObtainedItems` into `session.runEndItems` for the run-end recap. Do not record Boons or cards.
+
 ---
 
 ## Screen fade motion
@@ -138,11 +140,12 @@ the trigger (locked menu items).
 
 Build tooltips with `PortaledTooltip` (`src/features/alchemy/shared/ui/portaled-tooltip.tsx`):
 
-| Need                         | Prop / helper                                                                           |
-| ---------------------------- | --------------------------------------------------------------------------------------- |
-| Basic hover tooltip          | `triggerRef` + `visible`; drive hover with `useHoverVisible()` (`use-hover-visible.ts`) |
-| Placement beside the trigger | `placement="side-start"` / `"side-end"` (flips to the other side when clipped)          |
-| Small-window guard           | `maxWidthFraction` — cap against a fraction of the vr-stage width                       |
+| Need                         | Prop / helper                                                                                                              |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Basic hover tooltip          | `triggerRef` + `visible`; drive hover with `useHoverVisible()` (`use-hover-visible.ts`)                                    |
+| Placement beside the trigger | `placement="side-start"` / `"side-end"` (flips to the other side when clipped)                                             |
+| Small-window guard           | `maxWidthFraction` — cap against a fraction of the vr-stage width                                                          |
+| Item name shine              | Astral, Unique, and Trinket titles use shine gradient text (`GearItemTitle` / `TrinketItemTitle`). Basic gear stays plain. |
 
 Panels are `pointer-events-none`; visibility follows the trigger only. Nested
 keyword tooltips inside a panel are not supported. State-driven triggers (mount
@@ -150,10 +153,11 @@ on hover) render `PortaledTooltip` only while hovered; CSS-hover converts use
 `useHoverVisible()` and always mount, letting `PortaledTooltip` keep the panel
 mounted through a short fade-out.
 
-`EnemyTooltip`, `GearTooltipPortal`, `DetailPopup`, and `GearDetailPopup` wrap
+`EnemyTooltip`, `HeroTooltip`, `GearTooltipPortal`, `DetailPopup`, and `GearDetailPopup` wrap
 `PortaledTooltip` with their own content. Placement helpers live in
 `src/features/alchemy/shared/ui/portaled-tooltip-placement.ts`; content slots
 (`TooltipHeader` / `TooltipBody` / `TooltipSection`) live in `tooltip-panel.tsx`.
+Astral, Unique, and Trinket names in those panels use shine gradient text; Basic gear titles do not.
 
 ---
 
@@ -363,6 +367,7 @@ Layout and ownership: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-
 - Keep playback ticks on the battle route and session autoplay preferences in the controller so route remounts do not lose the setting.
 - Reuse the presentation gate and idle-input predicate for autoplay, auto-end-turn, manual card play, and End Turn. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks.
 - Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
+- Attacker lunge is presentation-only: nest it outside shake so hit VFX still compose; do not retime playback delays for it. Player lunge fires only for cards with a damage effect and moves the portrait, not the HP/status column.
 - Run the focused battle playback tests and the route selected by `verify:changed`; use the raw Playwright path for animation coverage.
 
 ## Adding a new screen
@@ -405,6 +410,7 @@ Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect
 | 5. Wire follow-up UI in mystery screen                        | `run-loop/screens/mystery/mystery-screen.tsx` (exported via screens barrel)                                                         |
 | 5b. Route-held fade / empty-visit continue                    | `app/screen-routes/mystery-screen-route.tsx`                                                                                        |
 | 6. Persist new visit fields if the kind stores rolled results | Mystery visit schema in `src/lib/validation/save-schemas/active-run.ts` + `src/lib/active-run-session/mystery-visit-persistence.ts` |
+| 7. Author choice `effects` in display order                   | `src/lib/mystery/pool.ts`: portrait reward → XP → gold → materials per choice                                                       |
 
 ---
 

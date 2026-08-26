@@ -96,9 +96,12 @@ export async function executeEnemyPhase(
   const playerTexts = combatTexts.filter((ct) => ct.target === "player");
   await delay(ENEMY_PHASE_DELAY);
   if (!battleSession.isCurrentBattleSession(sessionNum)) return;
-  if (enemyPerformedAttack) playEnemyAttack(currentState.currentEnemy.id);
-  if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
   const vfx = orch.getPresentation();
+  if (enemyPerformedAttack) {
+    playEnemyAttack(currentState.currentEnemy.id);
+    vfx.telegraphAttack("enemy");
+  }
+  if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
   if (combatTexts.length > 0) vfx.showCombatTexts(combatTexts);
   applyCombatTextPortraitFeedback(playerTexts, vfx);
   playCombatTextSounds(playerTexts);

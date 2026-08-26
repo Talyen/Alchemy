@@ -11,6 +11,7 @@ import {
   collectionTileWidthClass,
   gearArtAspectClass,
   gearArtFillClass,
+  getTrinketShineColors,
   trinketArtFillClass,
   trinketArtImageClass,
   trinketArtTileClass,
@@ -18,7 +19,7 @@ import {
 import { DetailPopup } from "./card-popup";
 import { GearDetailPopup } from "./gear-detail-popup";
 import { InteractiveArtTile } from "./interactive-art-tile";
-import { SHINE_PALETTES } from "../config/shine-palettes";
+import { TrinketItemTitle } from "./trinket-item-title";
 
 export interface TrinketTileProps {
   trinket: TrinketEntry;
@@ -31,8 +32,12 @@ export interface TrinketTileProps {
   interactiveChrome?: boolean | undefined;
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
-  /** Popup footer label; pass null to omit. Defaults to "This Run". */
+  /** Popup footer label; pass null to omit. Defaults to "Boon" for temporary trinkets. */
   footerChip?: string | null | undefined;
+  /** Merged after the default tile classes; Armory inventory uses this to shrink to the grid cell. */
+  className?: string | undefined;
+  /** Keyword shine; pass false for sold-out/purchased states. */
+  shine?: boolean | undefined;
   temporary?: boolean | undefined;
   children?: ReactNode | undefined;
 }
@@ -48,6 +53,8 @@ export function TrinketTile({
   onClick,
   ariaLabel,
   footerChip,
+  className,
+  shine = true,
   temporary = false,
   children,
 }: TrinketTileProps) {
@@ -57,9 +64,9 @@ export function TrinketTile({
       interactionKey={interactionKey}
       title={trinket.title}
       art={trinket.art}
-      className={trinketArtTileClass}
+      className={cn(trinketArtTileClass, className)}
       imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
-      shineColor={temporary ? SHINE_PALETTES.boon : undefined}
+      shineColor={shine ? getTrinketShineColors(trinket.id) : undefined}
       as={as}
       selected={selected}
       disabled={disabled}
@@ -69,8 +76,8 @@ export function TrinketTile({
       popup={({ visible, triggerRef }) => (
         <DetailPopup
           idPrefix={idPrefix}
-          title={trinket.title}
-          footerChip={footerChip === null ? undefined : (footerChip ?? (temporary ? "Boon • This Run" : "Trinket"))}
+          title={<TrinketItemTitle trinket={trinket} />}
+          footerChip={footerChip === null ? undefined : (footerChip ?? (temporary ? "Boon" : undefined))}
           descriptionLines={trinket.descriptionLines}
           visible={visible}
           triggerRef={triggerRef}
@@ -89,7 +96,7 @@ export interface GearTileProps {
   selected?: boolean | undefined;
   disabled?: boolean | undefined;
   interactiveChrome?: boolean | undefined;
-  /** Astral shine derived from affixes; pass false for sold-out/purchased states. */
+  /** Astral/unique shine derived from rarity; pass false for sold-out/purchased states. */
   shine?: boolean | undefined;
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;

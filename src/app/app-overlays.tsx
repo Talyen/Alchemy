@@ -21,7 +21,7 @@ export function AppBackgroundParticles({
   particleColors: readonly string[] | undefined;
   particleAlphaMultiplier: number | undefined;
 }) {
-  if (renderedScreen === "battle") return null;
+  if (renderedScreen === "battle" || renderedScreen === "character-select") return null;
   return (
     <BackgroundParticles
       variant="embers"

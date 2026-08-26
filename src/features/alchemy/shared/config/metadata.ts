@@ -26,6 +26,7 @@ import {
   Sparkles,
   Sun,
   Swords,
+  User,
   WandSparkles,
   Wind,
   Zap,
@@ -51,6 +52,7 @@ import type { CollectionTab } from "../types";
 
 // Collection tabs drive the collection navigation labels and icons.
 export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: LucideIcon }> = [
+  { id: "heroes", label: "Heroes", icon: User },
   { id: "cards", label: "Cards", icon: BookOpen },
   { id: "bestiary", label: "Bestiary", icon: ShieldAlert },
   { id: "trinkets", label: "Trinkets", icon: Trophy },

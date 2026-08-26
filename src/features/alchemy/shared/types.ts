@@ -92,10 +92,18 @@ export const CONSTANTS = {
   REWARD_ROUTES,
 } as const;
 
-export type CollectionTab = "cards" | "bestiary" | "trinkets";
+export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets";
 
 export interface StatusChip {
-  id: PlayerStatusId | EnemyStatusId | ArmedFlagChipId | "echo" | "ccImmunity" | PendingPulseChipId;
+  id:
+    | PlayerStatusId
+    | EnemyStatusId
+    | ArmedFlagChipId
+    | "echo"
+    | "ccImmunity"
+    | "stunned"
+    | "frozen"
+    | PendingPulseChipId;
   value: number;
   /** Binary effects (e.g. Phoenix Feather or Control Immunity) omit the numeric badge in their tooltip. */
   hideValue?: boolean;

@@ -3,13 +3,17 @@ import type { TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import {
   cardInteractiveGlowClass,
+  cardShineFrameClass,
   cardSurfaceClass,
   collectionGridTileWidthClass,
   gearArtAspectClass,
+  getTrinketShineColors,
   trinketArtFillClass,
   trinketArtImageClass,
 } from "@/features/alchemy/shared/config";
+import { ShineBorder } from "@/components/ui/shine-border";
 import { DetailPopup } from "@/features/alchemy/shared/ui/card-popup";
+import { TrinketItemTitle } from "@/features/alchemy/shared/ui/trinket-item-title";
 import { TiltSurface } from "@/features/alchemy/shared/ui/tilt-surface";
 import { useInteractiveCard } from "@/features/alchemy/shared/ui/use-interactive-card";
 import { useTileHoverPopup } from "@/features/alchemy/shared/ui/use-tile-hover-popup";
@@ -37,6 +41,9 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
     onHoverEnd,
   });
 
+  const shineColors = trinket ? getTrinketShineColors(trinket.id) : [];
+  const showShine = shineColors.length > 0;
+
   return (
     <div
       ref={wrapperRef}
@@ -49,8 +56,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
       {trinket && showPopup ? (
         <DetailPopup
           idPrefix={`armory-slot-${trinket.id}`}
-          title={trinket.title}
-          footerChip="Armory"
+          title={<TrinketItemTitle trinket={trinket} />}
           descriptionLines={trinket.descriptionLines}
           visible={isHovered}
           triggerRef={wrapperRef}
@@ -69,7 +75,9 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
           cardSurfaceClass,
           collectionGridTileWidthClass,
           gearArtAspectClass,
-          "group border border-border/80 shadow-md",
+          "group shadow-md",
+          showShine && cardShineFrameClass,
+          !showShine && "border border-border/80",
           cardInteractiveGlowClass,
           editable ? "cursor-pointer" : "cursor-default",
         )}
@@ -79,6 +87,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
         }}
       >
         <GearSlotArt definition={undefined} slot="trinket" />
+        {showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
         {trinket?.art ? (
           <img
             src={trinket.art}

@@ -140,6 +140,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
           if (companionId) {
             playCompanionSound(companionId);
             presentationStore.shakeCompanion();
+            presentationStore.telegraphAttack("companion");
           }
           if (startingTexts.length > 0) {
             presentationStore.showCombatTexts(startingTexts);

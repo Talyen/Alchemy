@@ -8,7 +8,7 @@ import {
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { type Destination } from "@/lib/routing";
-import type { ActiveRunData } from "@/lib/active-run-session";
+import type { ActiveRunData, RunObtainedItem } from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { DifficultyId, TalentXP } from "@/lib/game-data";
@@ -41,6 +41,7 @@ export interface ActiveRunProgressFields {
   rng: RunRngState;
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;
+  runObtainedItems: RunObtainedItem[];
 }
 
 /** Permanent meta lifetime fields (homestead, talents, derived effects). */
@@ -112,6 +113,7 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
     rng: createRunRngState(),
     runTalentXP: {},
     runMaterialsEarned: emptyInventory(),
+    runObtainedItems: [],
   };
 }
 
@@ -135,6 +137,7 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
     rng: activeRun.rng ?? createRunRngState(),
     runTalentXP: activeRun.runTalentXP ?? {},
     runMaterialsEarned: activeRun.runMaterialsEarned ?? emptyInventory(),
+    runObtainedItems: [...(activeRun.runObtainedItems ?? [])],
   };
 }
 

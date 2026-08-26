@@ -1,28 +1,32 @@
-import { getGearInstanceShineGradient, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
+import {
+  getGearDefinitionShineGradient,
+  getGearDefinitionTitle,
+  getGearInstanceShineGradient,
+  getGearInstanceTitle,
+  type GearDefinition,
+  type GearInstance,
+} from "@/lib/gear";
 import { cn } from "@/lib/utils";
 
+import { ShineText } from "./shine-text";
+
 interface Props {
-  instance: GearInstance;
-  className?: string;
+  instance?: GearInstance | undefined;
+  definition?: GearDefinition | undefined;
+  className?: string | undefined;
 }
 
-export function GearItemTitle({ instance, className }: Props) {
-  const title = getGearInstanceTitle(instance);
-  const gradient = getGearInstanceShineGradient(instance);
+export function GearItemTitle({ instance, definition, className }: Props) {
+  const title = instance ? getGearInstanceTitle(instance) : definition ? getGearDefinitionTitle(definition) : "Gear";
+  const gradient = instance
+    ? getGearInstanceShineGradient(instance)
+    : definition
+      ? getGearDefinitionShineGradient(definition)
+      : null;
 
-  if (gradient) {
-    return (
-      <span
-        className={cn(
-          "boss-title-shine [background-size:300%_300%] bg-clip-text whitespace-nowrap text-transparent",
-          className,
-        )}
-        style={{ backgroundImage: gradient }}
-      >
-        {title}
-      </span>
-    );
-  }
-
-  return <span className={cn("whitespace-nowrap text-stone-100", className)}>{title}</span>;
+  return (
+    <ShineText gradient={gradient} className={cn("whitespace-nowrap", className)}>
+      {title}
+    </ShineText>
+  );
 }

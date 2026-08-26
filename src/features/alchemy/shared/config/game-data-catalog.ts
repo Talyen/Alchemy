@@ -59,6 +59,7 @@ export type {
   BestiaryEntry,
   BossEnemyId,
   EnemyId,
+  CharacterDefinition,
   CharacterId,
   CompanionId,
   EnemyType,

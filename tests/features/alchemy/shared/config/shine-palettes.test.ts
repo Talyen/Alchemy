@@ -4,6 +4,8 @@ import {
   getCardKeywordShineColors,
   getCharacterShineColors,
   getShineColorsForKeywords,
+  getTrinketShineColors,
+  getTrinketShineGradient,
   SHINE_PALETTES,
   WILDCARD_KEYWORD_SHINE_COLORS,
 } from "@/features/alchemy/shared/config";
@@ -57,6 +59,19 @@ describe("getCardKeywordShineColors", () => {
     expect(getCardKeywordShineColors(fireArrow!)).toEqual([
       ...new Set([...keywordDefinitions.burn.shineColors, ...keywordDefinitions.archery.shineColors]),
     ]);
+  });
+});
+
+describe("getTrinketShineColors", () => {
+  it("uses description keywords when the trinket names them", () => {
+    const colors = getTrinketShineColors("meteorite");
+    expect(colors).toEqual(expect.arrayContaining([...keywordDefinitions.burn.shineColors]));
+    expect(getTrinketShineGradient("meteorite")).toMatch(/^linear-gradient\(in oklab/);
+  });
+
+  it("falls back to the boon palette when no keywords resolve", () => {
+    expect(getTrinketShineColors("tattered-pages")).toEqual([...SHINE_PALETTES.boon]);
+    expect(getTrinketShineColors("missing-trinket")).toEqual([...SHINE_PALETTES.boon]);
   });
 });
 

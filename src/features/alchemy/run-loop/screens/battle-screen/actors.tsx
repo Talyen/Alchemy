@@ -12,6 +12,7 @@ import {
   getCharacterShineColors,
 } from "@/features/alchemy/shared/config";
 import { CombatTextRailSide, ShakingArtPanel, ShakingCompanionPanel } from "../../battle/presentation/actor-vfx";
+import { getActiveCcKeyword } from "@/features/alchemy/shared/utils";
 import type { BattleFeedbackProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 
 export function BattleActors({
@@ -30,6 +31,8 @@ export function BattleActors({
   const enemyDead = battleState.enemyHealth <= 0;
   const hasCompanion = Boolean(battleState.activeCompanion);
   const isBoss = battleState.currentEnemy.enemyType === "boss";
+  const playerCcKeyword = getActiveCcKeyword(battleState.playerCC);
+  const enemyCcKeyword = getActiveCcKeyword(battleState.enemyCC);
 
   return (
     <section
@@ -55,11 +58,13 @@ export function BattleActors({
             surfaceRef={playerPanelRef}
             turnActive={isPlayerTurn}
             turnShineColors={getCharacterShineColors(characterId)}
+            ccKeyword={playerCcKeyword}
             artCorner={
               battleState.activeCompanion ? (
                 <div className={battleCompanionCornerClass}>
                   <ShakingCompanionPanel
                     companion={battleState.activeCompanion}
+                    ccKeyword={playerCcKeyword}
                     damageBonus={
                       battleState.companionDamageBuff +
                       battleState.talentEffects.companionDamage +
@@ -93,6 +98,7 @@ export function BattleActors({
           isBoss={isBoss}
           turnActive={!isPlayerTurn && !enemyDead}
           turnUrgentHide={enemyDead}
+          ccKeyword={enemyCcKeyword}
           {...(isBoss ? { turnShineColors: getBossShineColors(battleState.currentEnemy) } : {})}
         >
           <CombatTextRailSide side="enemy" />

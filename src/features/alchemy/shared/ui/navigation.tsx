@@ -1,5 +1,6 @@
 // Navigation controls for pagination and menu triggers.
 import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -56,6 +57,54 @@ export function PaginationControls({
         variant="outline"
         size="icon"
         disabled={page >= totalPages - 1}
+        onClick={() => onPageChange(page + 1)}
+      >
+        <ChevronRight className="h-5 w-5" />
+      </Button>
+    </div>
+  );
+}
+
+/** Previous/next arrows flanking a row so tile size stays stable when paging appears. */
+export function FlankingPagination({
+  page,
+  totalPages,
+  onPageChange,
+  children,
+  className,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  const showControls = totalPages > 1;
+  const buttonClass = "h-11 w-11";
+
+  return (
+    <div className={cn("flex w-full items-center justify-center gap-3", className)}>
+      <Button
+        aria-label="Previous page"
+        aria-hidden={!showControls}
+        tabIndex={showControls ? undefined : -1}
+        className={cn(buttonClass, !showControls && "pointer-events-none invisible")}
+        variant="outline"
+        size="icon"
+        disabled={!showControls || page === 0}
+        onClick={() => onPageChange(page - 1)}
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </Button>
+      <div className="min-w-0 flex-1">{children}</div>
+      <Button
+        aria-label="Next page"
+        aria-hidden={!showControls}
+        tabIndex={showControls ? undefined : -1}
+        className={cn(buttonClass, !showControls && "pointer-events-none invisible")}
+        variant="outline"
+        size="icon"
+        disabled={!showControls || page >= totalPages - 1}
         onClick={() => onPageChange(page + 1)}
       >
         <ChevronRight className="h-5 w-5" />

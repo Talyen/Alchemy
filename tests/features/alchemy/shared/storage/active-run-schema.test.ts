@@ -190,4 +190,27 @@ describe("active run field parsing and normalization", () => {
     expect(result?.runDeck[0]?.effects[0]).toMatchObject({ doubleIfEnemyBurning: true });
     expect(result?.runDeck[1]?.effects[0]).toMatchObject({ ifEnemyFrozen: true });
   });
+
+  it("defaults missing runObtainedItems to an empty list and drops invalid entries", () => {
+    expect(parseActiveRun(makeMinimalActiveRunInput())?.runObtainedItems).toEqual([]);
+
+    const result = parseActiveRun(
+      makeMinimalActiveRunInput({
+        runObtainedItems: [
+          { kind: "trinket", trinketId: "bone-charm" },
+          { kind: "gear", instance: { instanceId: "g1", definitionId: "missing-def", affixes: [] } },
+          { kind: "boon", trinketId: "bone-charm" },
+          {
+            kind: "gear",
+            instance: { instanceId: "g2", definitionId: "ruby-ring-basic", affixes: [] },
+          },
+        ],
+      }),
+    );
+
+    expect(result?.runObtainedItems).toEqual([
+      { kind: "trinket", trinketId: "bone-charm" },
+      { kind: "gear", instance: { instanceId: "g2", definitionId: "ruby-ring-basic", affixes: [] } },
+    ]);
+  });
 });

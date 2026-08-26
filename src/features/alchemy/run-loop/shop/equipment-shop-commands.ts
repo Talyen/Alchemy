@@ -1,6 +1,7 @@
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
   createDraftRunRandomSource,
+  recordRunObtainedItem,
   setEquipmentShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest } from "@/lib/game-data";
@@ -59,6 +60,7 @@ export function createEquipmentShopCommands({
           mutateGearWithRunHealthSync(draft, {
             mutate: (gear) => gear.addInstance(instance, characterId),
           });
+          recordRunObtainedItem(draft, { kind: "gear", instance });
         },
       });
     }).committed;

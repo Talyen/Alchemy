@@ -18,11 +18,11 @@ export function PurchasableTrinketItem({ trinket, price, gold, purchased, onBuy 
       trinket={trinket}
       interactionKey="shop"
       as="button"
+      shine={!purchased}
       interactiveChrome={!purchased}
       disabled={purchased || !canAfford}
       onClick={!purchased && canAfford ? onBuy : undefined}
       ariaLabel={purchased ? trinket.title : `Buy ${trinket.title}`}
-      footerChip="Armory"
     >
       <ShopPriceChip price={price} gold={gold} purchased={purchased} />
     </TrinketTile>

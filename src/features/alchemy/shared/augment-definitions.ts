@@ -34,6 +34,8 @@ export type AugmentId =
   | "onAttackBleed"
   | "echo"
   | "ccImmunity"
+  | "stunned"
+  | "frozen"
   | ArmedFlagChipId
   | PendingPulseChipId;
 
@@ -82,9 +84,23 @@ export const augmentDefinitions: Record<AugmentId, AugmentDefinition> = {
   ccImmunity: {
     id: "ccImmunity",
     label: "Control Immunity",
-    description: "Stun and Freeze build-up has no effect while immune.",
+    description: "Immune to Stun and Freeze while active.",
     icon: ShieldCheck,
     colorClass: "text-zinc-400",
+  },
+  stunned: {
+    id: "stunned",
+    label: "Stunned",
+    description: "Loses their next turn.",
+    icon: keywordIcons.stun,
+    colorClass: keywordDefinitions.stun.colorClass,
+  },
+  frozen: {
+    id: "frozen",
+    label: "Frozen",
+    description: "Loses their next turn.",
+    icon: keywordIcons.freeze,
+    colorClass: keywordDefinitions.freeze.colorClass,
   },
   playNextCardTwice: {
     id: "playNextCardTwice",

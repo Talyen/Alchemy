@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { keywordDefinitions } from "@/lib/game-data";
+import { gearDefinitions } from "@/lib/gear/definitions";
 import {
   getAstralShineColors,
+  getGearDefinitionShineColors,
+  getGearDefinitionShineGradient,
   getGearInstanceKeywordIds,
   getGearInstanceShineColors,
   getGearInstanceShineGradient,
@@ -88,5 +91,25 @@ describe("gear shine", () => {
         }),
       ),
     ).toEqual(expect.arrayContaining(["#cbd5e1"]));
+  });
+
+  it("uses the gold uniqueness palette for unique gear", () => {
+    const unique = instance({
+      instanceId: "unique-1",
+      definitionId: "wardbreaker",
+      affixes: [{ id: "flat-stun", value: 4 }],
+    });
+    const colors = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"];
+    expect(getGearInstanceShineColors(unique)).toEqual(colors);
+    expect(getAstralShineColors(unique)).toEqual(colors);
+    expect(getGearDefinitionShineColors(gearDefinitions.wardbreaker!)).toEqual(colors);
+  });
+
+  it("shines definition-only astral titles from affinity keywords and leaves basic plain", () => {
+    expect(getGearDefinitionShineGradient(gearDefinitions["longsword-basic"]!)).toBeNull();
+    const astral = getGearDefinitionShineGradient(gearDefinitions["longsword-astral"]!);
+    expect(astral).toMatch(/^linear-gradient\(in oklab/);
+    expect(astral).toContain(keywordDefinitions.physical.shineColors[0]!);
+    expect(astral).toContain(keywordDefinitions.forge.shineColors[0]!);
   });
 });

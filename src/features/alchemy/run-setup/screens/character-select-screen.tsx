@@ -1,6 +1,7 @@
 // Hero selection screen with character art, keyword previews, shine frames, and shimmer feedback.
 // Depends on character game data, shared alchemy UI, and hover shimmer hooks.
 // Used when beginning a fresh run before destination routing starts.
+import { useMemo, useState } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import {
@@ -10,13 +11,12 @@ import {
   isCharacterUnlocked,
   type CharacterId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-import { KeywordTag } from "../../shared/ui/keyword-tag";
-import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
 import { CyclingShineBorder } from "../../shared/ui/cycling-shine-border";
-import { TitledScreenShell } from "../../shared/ui/shared-ui";
+import { HeroTooltip } from "../../shared/ui/hero-tooltip";
+import { KeywordPlasmaBackground } from "../../shared/ui/keyword-plasma-background";
+import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
+import { HamburgerTrigger } from "../../shared/ui/navigation";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
-import { TooltipBody, TooltipHeader, TooltipSubheader } from "../../shared/ui/tooltip-panel";
-import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 import {
@@ -27,6 +27,7 @@ import {
   chooserHeroRowShellWidthClass,
   chooserLockedSurfaceClass,
   getCharacterShineColors,
+  getPlasmaKeywordsForCharacter,
   WILDCARD_KEYWORD_SHINE_COLORS,
   WILDCARD_SHINE_CYCLE_MS,
 } from "@/features/alchemy/shared/config";
@@ -54,11 +55,13 @@ function CharacterCard({
   onSelect,
   isLocked,
   unlockRequirementText,
+  onHoverChange,
 }: {
   id: CharacterId;
   onSelect: (id: CharacterId) => void;
   isLocked: boolean;
   unlockRequirementText: string;
+  onHoverChange: (id: CharacterId | null) => void;
 }) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLDivElement>();
@@ -68,8 +71,16 @@ function CharacterCard({
   const shineColors = isLocked ? [] : id === "wildcard" ? WILDCARD_KEYWORD_SHINE_COLORS : getCharacterShineColors(id);
 
   function handleEnter() {
-    if (!isLocked) onHoverStart();
+    if (!isLocked) {
+      onHoverStart();
+      onHoverChange(id);
+    }
     onMouseEnter();
+  }
+
+  function handleLeave() {
+    onMouseLeave();
+    onHoverChange(null);
   }
 
   return (
@@ -78,7 +89,7 @@ function CharacterCard({
         ref={triggerRef}
         className={cn("relative min-w-0", chooserHeroArtWidthClass)}
         onMouseEnter={handleEnter}
-        onMouseLeave={onMouseLeave}
+        onMouseLeave={handleLeave}
         onFocusCapture={onFocusCapture}
         onBlurCapture={onBlurCapture}
       >
@@ -114,51 +125,13 @@ function CharacterCard({
           />
         </TiltSurface>
         {visible ? (
-          <PortaledTooltip triggerRef={triggerRef} visible>
-            <TooltipHeader>{char.name}</TooltipHeader>
-
-            {isLocked ? (
-              <TooltipBody>
-                <p>{unlockRequirementText}</p>
-              </TooltipBody>
-            ) : (
-              <>
-                <TooltipBody>
-                  <p>{renderColoredKeywords(char.description)}</p>
-                </TooltipBody>
-
-                {char.startingDeck.length > 0 ? (
-                  <>
-                    <TooltipSubheader>Starting Deck</TooltipSubheader>
-                    <TooltipBody>
-                      <p>{char.startingDeck.map((c) => c.title).join(", ")}</p>
-                    </TooltipBody>
-                  </>
-                ) : (
-                  <>
-                    <TooltipSubheader>Draft a Deck</TooltipSubheader>
-                    <TooltipBody>
-                      <p>Choose your own fate</p>
-                    </TooltipBody>
-                  </>
-                )}
-
-                {char.keywords.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {char.keywords.map((kw) => (
-                      <KeywordTag key={kw} keywordId={kw} pill />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-2 flex">
-                    <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs leading-none font-semibold text-amber-100/90">
-                      All Keywords
-                    </span>
-                  </div>
-                )}
-              </>
-            )}
-          </PortaledTooltip>
+          <HeroTooltip
+            character={char}
+            isLocked={isLocked}
+            unlockRequirementText={unlockRequirementText}
+            triggerRef={triggerRef}
+            visible
+          />
         ) : null}
       </div>
       <p className={cn("font-sans text-2xl font-bold text-amber-100/90", isLocked && "text-muted-foreground/60")}>
@@ -166,6 +139,10 @@ function CharacterCard({
       </p>
     </div>
   );
+}
+
+function defaultPlasmaCharacterId(charIds: CharacterId[], finishedRunCharacters: CharacterId[]): CharacterId {
+  return charIds.find((id) => isCharacterUnlocked(id, finishedRunCharacters)) ?? charIds[0] ?? "knight";
 }
 
 export function CharacterSelectScreen({
@@ -178,30 +155,45 @@ export function CharacterSelectScreen({
   finishedRunCharacters: CharacterId[];
 }) {
   const charIds = Object.keys(characters) as CharacterId[];
+  const [hoveredCharacterId, setHoveredCharacterId] = useState<CharacterId | null>(null);
+
+  const plasmaCharacterId = useMemo(() => {
+    if (hoveredCharacterId && isCharacterUnlocked(hoveredCharacterId, finishedRunCharacters)) {
+      return hoveredCharacterId;
+    }
+    return defaultPlasmaCharacterId(charIds, finishedRunCharacters);
+  }, [charIds, finishedRunCharacters, hoveredCharacterId]);
+
+  const plasmaKeywordIds = getPlasmaKeywordsForCharacter(plasmaCharacterId);
 
   return (
-    <TitledScreenShell
-      title="Choose Your Hero"
-      onOpenMenu={onOpenMenu}
-      menuLabel="Open character select menu"
-      maxWidthClass={chooserHeroRowShellWidthClass}
-    >
-      <div className={cn("mt-6 grid w-full grid-cols-4 justify-items-center gap-y-6", chooserHeroRowGapClass)}>
-        {charIds.map((id) => {
-          const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
-          const unlockRequirementText = isLocked ? getCharacterUnlockMessage(id) : "";
+    <PageLayout>
+      <ScreenShell maxWidthClass={chooserHeroRowShellWidthClass} className="relative overflow-hidden">
+        <KeywordPlasmaBackground keywordIds={plasmaKeywordIds} />
+        <div className="relative z-10">
+          <ScreenHeaderRow
+            title="Choose Your Hero"
+            trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open character select menu" />}
+          />
+          <div className={cn("mt-6 grid w-full grid-cols-4 justify-items-center gap-y-6", chooserHeroRowGapClass)}>
+            {charIds.map((id) => {
+              const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
+              const unlockRequirementText = isLocked ? getCharacterUnlockMessage(id) : "";
 
-          return (
-            <CharacterCard
-              key={id}
-              id={id}
-              onSelect={onSelect}
-              isLocked={isLocked}
-              unlockRequirementText={unlockRequirementText}
-            />
-          );
-        })}
-      </div>
-    </TitledScreenShell>
+              return (
+                <CharacterCard
+                  key={id}
+                  id={id}
+                  onSelect={onSelect}
+                  isLocked={isLocked}
+                  unlockRequirementText={unlockRequirementText}
+                  onHoverChange={setHoveredCharacterId}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </ScreenShell>
+    </PageLayout>
   );
 }

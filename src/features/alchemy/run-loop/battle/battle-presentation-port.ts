@@ -6,12 +6,15 @@ import { useBattlePresentationStore } from "./battle-presentation-store";
 import type { PortraitFeedback } from "./battle-feedback";
 import type { HiddenHandCardKeys } from "./playable-hand";
 
+export type CombatantAttackSide = "player" | "enemy" | "companion";
+
 export interface BattlePresentationPort extends PortraitFeedback {
   hiddenHandCardKeys: HiddenHandCardKeys;
   cardTransferInProgress: boolean;
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
   shakeCompanion: () => void;
+  telegraphAttack: (side: CombatantAttackSide) => void;
   resetHandTransferUi: () => void;
   resetCardTransfers: () => void;
   clearCardGhosts: () => void;

@@ -10,6 +10,9 @@ import { PortaledTooltip } from "../portaled-tooltip";
 import { useHoverVisible } from "../use-hover-visible";
 import { DescriptionLines } from "../card-description-ui";
 import { TiltSurface } from "../tilt-surface";
+import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
+import { CombatantAttackLunge } from "./combatant-attack-lunge";
+import type { ActiveCcKeyword } from "../../utils/cc-presentation";
 
 function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonus: number): string[] {
   const turnEffect = companion.turnStartEffects[0];
@@ -25,11 +28,15 @@ export function CompanionPanel({
   compact = false,
   shaking = false,
   damageBonus = 0,
+  ccKeyword = null,
+  attackToken = 0,
 }: {
   companion: CompanionDefinition;
   compact?: boolean;
   shaking?: boolean;
   damageBonus?: number;
+  ccKeyword?: ActiveCcKeyword | null;
+  attackToken?: number;
 }) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
 
@@ -42,20 +49,24 @@ export function CompanionPanel({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <TiltSurface
-        className={cn(
-          cardSurfaceClass,
-          compact ? "w-[clamp(10.71cqh,21cqh,16.46cqh)]" : battleCompanionWidthClass,
-          shaking && "animate-shake",
-        )}
-      >
-        <img
-          src={companion.art}
-          alt={companion.title}
-          className="block aspect-[3/4] w-full rounded-shell-hero"
-          loading="eager"
-        />
-      </TiltSurface>
+      <CombatantAttackLunge attackToken={attackToken} aim={1}>
+        <CombatantStatusEffectPresentation keyword={ccKeyword}>
+          <TiltSurface
+            className={cn(
+              cardSurfaceClass,
+              compact ? "w-[clamp(10.71cqh,21cqh,16.46cqh)]" : battleCompanionWidthClass,
+              shaking && "animate-shake",
+            )}
+          >
+            <img
+              src={companion.art}
+              alt={companion.title}
+              className="block aspect-[3/4] w-full rounded-shell-hero"
+              loading="eager"
+            />
+          </TiltSurface>
+        </CombatantStatusEffectPresentation>
+      </CombatantAttackLunge>
       <PortaledTooltip triggerRef={triggerRef} visible={visible}>
         <TooltipHeader>{companion.title}</TooltipHeader>
         <DescriptionLines

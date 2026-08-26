@@ -10,7 +10,10 @@ import {
   emptyTrinketShopState,
   type AlchemistState,
   type EquipmentShopState,
+  type LabyrinthNodePosition,
+  type PersistedBattleTransition,
   type RewardState,
+  type RunObtainedItem,
   type ShopState,
   type TrinketShopState,
 } from "@/lib/active-run-session";
@@ -19,7 +22,6 @@ import {
   createInitialActiveRunFields,
   type ActiveRunProgressFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
-import type { LabyrinthNodePosition, PersistedBattleTransition } from "@/lib/active-run-session";
 import type { Destination, Screen } from "@/lib/routing";
 import type {
   ContentSystemId,
@@ -81,6 +83,7 @@ export function createInitialSessionFields(): RunSessionFields {
     companionRewardCards: null,
     runEndMaterials: emptyInventory(),
     runEndTalentXP: {},
+    runEndItems: [],
     corruptionResult: null,
     pendingCharacterId: null,
     pendingContentSystemType: "campaign",
@@ -133,6 +136,7 @@ export interface RunSessionFields {
   companionRewardCards: BattleCard[] | null;
   runEndMaterials: MaterialInventory;
   runEndTalentXP: TalentXP;
+  runEndItems: RunObtainedItem[];
   corruptionResult: CorruptionResult | null;
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;

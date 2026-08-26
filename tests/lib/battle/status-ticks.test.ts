@@ -588,7 +588,6 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("CC immunity suppresses second stun trigger within cooldown", () => {
-    // First trigger: stun exceeds threshold, sets skip + cooldown.
     const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
@@ -597,19 +596,22 @@ describe("tickPlayerStatuses", () => {
     const texts = makeTexts();
     const afterFirst = tickPlayerStatuses(state, texts);
     expect(afterFirst.playerCC.stunSkipTurns).toBe(1);
-    expect(afterFirst.playerCC.cooldown).toBe(2);
+    expect(afterFirst.playerCC.cooldown).toBe(0);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
 
-    // Second trigger: cooldown active, stun cleared silently, no extra skip.
+    const immuneState = {
+      ...afterFirst,
+      playerCC: defaultCcState({ ...afterFirst.playerCC, stunSkipTurns: 0, cooldown: 2 }),
+      playerStatuses: defaultPlayerStatusValues({ stun: 20 }),
+    };
     const texts2 = makeTexts();
-    const afterSecond = tickPlayerStatuses(afterFirst, texts2);
-    expect(afterSecond.playerCC.stunSkipTurns).toBe(1); // unchanged
+    const afterSecond = tickPlayerStatuses(immuneState, texts2);
+    expect(afterSecond.playerCC.stunSkipTurns).toBe(0);
     expect(afterSecond.playerStatuses.stun).toBe(0);
     expect(texts2).not.toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
   });
 
   it("CC immunity cooldown expires and allows another stun", () => {
-    // Trigger stun, tick down cooldown to 1, then 0, then trigger again.
     const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
@@ -617,18 +619,17 @@ describe("tickPlayerStatuses", () => {
     });
     const texts = makeTexts();
     const afterTrigger = tickPlayerStatuses(state, texts);
-    expect(afterTrigger.playerCC.cooldown).toBe(2);
+    expect(afterTrigger.playerCC.cooldown).toBe(0);
 
-    // Simulate two turn advances by manually decrementing cooldown to 0.
     const cooledDown = {
       ...afterTrigger,
-      playerCC: defaultCcState({ ...afterTrigger.playerCC, cooldown: 0 }),
+      playerCC: defaultCcState({ ...afterTrigger.playerCC, stunSkipTurns: 0, cooldown: 0 }),
       playerStatuses: defaultPlayerStatusValues({ ...afterTrigger.playerStatuses, stun: 20 }),
     };
     const texts3 = makeTexts();
     const afterReTrigger = tickPlayerStatuses(cooledDown, texts3);
-    expect(afterReTrigger.playerCC.stunSkipTurns).toBe(2); // triggered again
-    expect(afterReTrigger.playerCC.cooldown).toBe(2); // refreshed
+    expect(afterReTrigger.playerCC.stunSkipTurns).toBe(1);
+    expect(afterReTrigger.playerCC.cooldown).toBe(0);
   });
 
   it("skips ticks when all statuses are 0", () => {

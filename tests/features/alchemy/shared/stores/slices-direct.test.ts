@@ -162,6 +162,17 @@ describe("progress slice", () => {
     expect(getRunDomainStore().activeRun.runMaterialsEarned).toEqual(emptyInventory());
   });
 
+  it("recordRunObtainedItem appends gear and trinket grants in order", () => {
+    const run = getRunDomainStore();
+    const instance = { instanceId: "obtained-armor", definitionId: "leather-armor-basic" as const, affixes: [] };
+    run.recordRunObtainedItem({ kind: "gear", instance });
+    run.recordRunObtainedItem({ kind: "trinket", trinketId: "bone-charm" });
+    expect(getRunDomainStore().activeRun.runObtainedItems).toEqual([
+      { kind: "gear", instance },
+      { kind: "trinket", trinketId: "bone-charm" },
+    ]);
+  });
+
   it("resetProgress preserves character while clearing run-scoped tallies", () => {
     const run = getRunDomainStore();
     applyGameplayStateUpdate((state) => {

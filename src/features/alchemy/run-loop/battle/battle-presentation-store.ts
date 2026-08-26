@@ -33,6 +33,9 @@ interface BattlePresentationStore {
   companionShaking: boolean;
   playerHurtFlashToken: number;
   enemyHurtFlashToken: number;
+  playerAttackToken: number;
+  enemyAttackToken: number;
+  companionAttackToken: number;
   cardTransfers: CardTransfer[];
   hiddenHandCardKeys: HiddenHandCardKeys;
   cardTransferInProgress: boolean;
@@ -45,6 +48,7 @@ interface BattlePresentationStore {
   shakeCompanion: () => void;
   hurtPlayer: () => void;
   hurtEnemy: () => void;
+  telegraphAttack: (side: "player" | "enemy" | "companion") => void;
   resetPortraitHurtTokens: () => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
   clearFloatingCombatTexts: () => void;
@@ -104,6 +108,9 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
     companionShaking: false,
     playerHurtFlashToken: 0,
     enemyHurtFlashToken: 0,
+    playerAttackToken: 0,
+    enemyAttackToken: 0,
+    companionAttackToken: 0,
     cardTransfers: [],
     hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
     cardTransferInProgress: false,
@@ -134,6 +141,12 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
 
     hurtPlayer: () => set((s) => ({ playerHurtFlashToken: s.playerHurtFlashToken + 1 })),
     hurtEnemy: () => set((s) => ({ enemyHurtFlashToken: s.enemyHurtFlashToken + 1 })),
+
+    telegraphAttack: (side) => {
+      if (side === "player") set((s) => ({ playerAttackToken: s.playerAttackToken + 1 }));
+      else if (side === "enemy") set((s) => ({ enemyAttackToken: s.enemyAttackToken + 1 }));
+      else set((s) => ({ companionAttackToken: s.companionAttackToken + 1 }));
+    },
 
     resetPortraitHurtTokens: () => set({ playerHurtFlashToken: 0, enemyHurtFlashToken: 0 }),
 
@@ -222,6 +235,9 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
         companionShaking: false,
         playerHurtFlashToken: 0,
         enemyHurtFlashToken: 0,
+        playerAttackToken: 0,
+        enemyAttackToken: 0,
+        companionAttackToken: 0,
         cardTransfers: [],
         hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
         cardTransferInProgress: false,

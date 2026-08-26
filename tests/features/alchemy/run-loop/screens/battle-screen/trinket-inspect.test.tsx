@@ -33,7 +33,7 @@ describe("BattleBoonInspectOverlay", () => {
     resetEscapeStackForTests();
   });
 
-  it("lists unique Boon art and shows a This Run tooltip on hover", () => {
+  it("lists unique Boon art and shows a Boon tooltip on hover", () => {
     render(
       <BattleBoonInspectOverlay open trinketIds={["brass-censer", "brass-censer", "meteorite"]} onClose={vi.fn()} />,
     );
@@ -49,7 +49,7 @@ describe("BattleBoonInspectOverlay", () => {
     fireEvent.mouseEnter(tileWrapper!);
 
     expect(screen.getByText("Brass Censer")).toBeTruthy();
-    expect(screen.getByText("Boon • This Run")).toBeTruthy();
+    expect(screen.getByText("Boon")).toBeTruthy();
     expect(screen.getByText(/Holy/)).toBeTruthy();
   });
 

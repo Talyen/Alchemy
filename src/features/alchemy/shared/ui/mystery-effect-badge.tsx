@@ -2,14 +2,11 @@
 // Depends on utility libraries, Lucide icons, homestead material maps, and keyword definitions.
 // Consumed by tooltip builders and outcome summary screens.
 import type { BattleCard, KeywordId } from "@/lib/game-data";
-import {
-  getCardKeywords,
-  getTrinketKeywords,
-  keywordDefinitions,
-} from "@/features/alchemy/shared/config/game-data-catalog";
+import { getCardKeywords, keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
   buildSmoothShineGradient,
-  getKeywordShineColors,
+  getKeywordListShineColors,
+  getTrinketShineGradient,
   SHINE_PALETTES,
 } from "@/features/alchemy/shared/config/shine-palettes";
 import { tooltipChipClass } from "@/features/alchemy/shared/config";
@@ -17,7 +14,8 @@ import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import { materialLabels } from "@/lib/homestead/types";
 import { HomesteadResourceArtwork, goldPillStyle, goldTextColor, matPillStyle, matTextColor } from "./material-icons";
-import { TooltipHeader } from "./tooltip-panel";
+import { ShineText } from "./shine-text";
+import { TooltipChip, TooltipHeader } from "./tooltip-panel";
 import type { MysteryEffect } from "@/lib/mystery";
 import { gearBaseItems, getUniqueItemDefinition } from "@/lib/gear";
 
@@ -40,35 +38,10 @@ const chipPillClass = (ctx: BadgeCtx) =>
   );
 
 function getKeywordsGradient(keywords: readonly KeywordId[]): string | null {
-  const colors: string[] = [];
-  const seen = new Set<string>();
-
-  for (const keywordId of keywords) {
-    for (const color of getKeywordShineColors(keywordId)) {
-      if (!seen.has(color)) {
-        seen.add(color);
-        colors.push(color);
-      }
-    }
-  }
-
-  return buildSmoothShineGradient(colors);
+  return buildSmoothShineGradient(getKeywordListShineColors(keywords));
 }
 
-function ShineText({ children, gradient }: { children: React.ReactNode; gradient: string | null }) {
-  if (!gradient) {
-    return <span className="font-bold text-foreground">{children}</span>;
-  }
-
-  return (
-    <span
-      className="boss-title-shine [background-size:300%_300%] bg-clip-text font-bold text-transparent"
-      style={{ backgroundImage: gradient }}
-    >
-      {children}
-    </span>
-  );
-}
+const mysteryShineTextProps = { className: "font-bold", fallbackClassName: "text-foreground" } as const;
 
 const renderGoldBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainGold" | "loseGold" }>> = (effect, ctx) => (
   <span className={cn(chipPillClass(ctx), goldPillStyle, goldTextColor)}>
@@ -118,7 +91,11 @@ const renderAddCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "addCard"
 
   return ctx.tooltip ? (
     <span className="text-sm text-balance text-muted-foreground">
-      Add <ShineText gradient={gradient}>{title}</ShineText> card to your deck
+      Add{" "}
+      <ShineText gradient={gradient} {...mysteryShineTextProps}>
+        {title}
+      </ShineText>{" "}
+      to your deck
     </span>
   ) : (
     <span className="text-sm text-balance text-muted-foreground">Add {title}</span>
@@ -139,13 +116,15 @@ const renderChooseCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "choos
 
 const renderTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainTrinket" }>> = (effect, ctx) => {
   const title = ctx.findTrinket?.(effect.trinketId)?.title ?? "a boon";
-  const keywords = getTrinketKeywords(effect.trinketId);
-  const gradient =
-    keywords.length > 0 ? getKeywordsGradient(keywords) : buildSmoothShineGradient([...SHINE_PALETTES.boon]);
+  const gradient = getTrinketShineGradient(effect.trinketId);
 
   return ctx.tooltip ? (
     <span className="text-sm text-balance text-muted-foreground">
-      Add <ShineText gradient={gradient}>{title}</ShineText> for this run
+      Gain{" "}
+      <ShineText gradient={gradient} {...mysteryShineTextProps}>
+        {title}
+      </ShineText>{" "}
+      <TooltipChip className="mx-0.5 mt-0 align-baseline">Boon • This Run</TooltipChip>
     </span>
   ) : (
     <span className="text-sm text-balance text-muted-foreground">Add {title} for this run</span>
@@ -156,13 +135,18 @@ const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
   effect,
   ctx,
 ) => {
-  const keywords = effect.fromIds && effect.fromIds.length === 1 ? getTrinketKeywords(effect.fromIds[0]!) : [];
   const gradient =
-    keywords.length > 0 ? getKeywordsGradient(keywords) : buildSmoothShineGradient([...SHINE_PALETTES.boon]);
+    effect.fromIds && effect.fromIds.length === 1
+      ? getTrinketShineGradient(effect.fromIds[0]!)
+      : buildSmoothShineGradient([...SHINE_PALETTES.boon]);
 
   return ctx.tooltip ? (
     <span className="text-sm text-balance text-muted-foreground">
-      Gain a random <ShineText gradient={gradient}>Boon</ShineText> for this run
+      Gain a random{" "}
+      <ShineText gradient={gradient} {...mysteryShineTextProps}>
+        Boon
+      </ShineText>{" "}
+      for this run
     </span>
   ) : (
     <span className="text-sm text-balance text-muted-foreground">Gain a random Boon for this run</span>
@@ -187,7 +171,11 @@ const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
 
   return ctx.tooltip ? (
     <span className="text-sm text-balance text-muted-foreground">
-      Add <ShineText gradient={gradient}>{title}</ShineText> to your Armory
+      Add{" "}
+      <ShineText gradient={gradient} {...mysteryShineTextProps}>
+        {title}
+      </ShineText>{" "}
+      to your Armory
     </span>
   ) : (
     <span className="text-sm text-balance text-muted-foreground">Add {title} to your Armory</span>

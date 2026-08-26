@@ -1,6 +1,6 @@
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { gearAffixCatalog } from "./affix-catalog";
-import { gearDefinitions } from "./definitions";
+import { gearDefinitions, type GearDefinition } from "./definitions";
 import type { GearInstance } from "./types";
 
 /** Builds a seamless mirrored gradient in oklab space so the loop has no visible wipe edge. */
@@ -28,19 +28,26 @@ export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
   return [...keywordIds].sort();
 }
 
-export function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
-  const rarity = gearDefinitions[instance.definitionId]?.rarity;
-  if (rarity === "unique") {
-    return [...UNIQUE_SHINE_COLORS];
-  }
-  if (rarity !== "astral") return [];
-
+function getAstralKeywordShineColors(keywordIds: readonly KeywordId[]): readonly string[] {
   const colors: string[] = [];
-  for (const keywordId of getGearInstanceKeywordIds(instance)) {
+  for (const keywordId of keywordIds) {
     colors.push(...keywordDefinitions[keywordId].shineColors);
   }
-
   return colors.length > 0 ? colors : [...ASTRAL_SHINE_FALLBACK];
+}
+
+export function getGearDefinitionShineColors(definition: GearDefinition): readonly string[] {
+  if (definition.rarity === "unique") return [...UNIQUE_SHINE_COLORS];
+  if (definition.rarity !== "astral") return [];
+  return getAstralKeywordShineColors(definition.affinityKeywords);
+}
+
+export function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
+  const definition = gearDefinitions[instance.definitionId];
+  if (!definition) return [];
+  if (definition.rarity === "unique") return [...UNIQUE_SHINE_COLORS];
+  if (definition.rarity !== "astral") return [];
+  return getAstralKeywordShineColors(getGearInstanceKeywordIds(instance));
 }
 
 /** Shine overlay thickness for astral gear tiles. Hover/select grows to 3px via `.has-shine-border`. */
@@ -54,6 +61,10 @@ export function getAstralShineColors(instance: GearInstance): readonly string[] 
 export function getGearInstanceShineGradient(instance: GearInstance): string | null {
   const colors = getGearInstanceShineColors(instance);
   return buildSmoothShineGradient(colors);
+}
+
+export function getGearDefinitionShineGradient(definition: GearDefinition): string | null {
+  return buildSmoothShineGradient(getGearDefinitionShineColors(definition));
 }
 
 function getGearAffixShineColors(affix: { keywordId: KeywordId; secondaryKeywordId?: KeywordId }): readonly string[] {

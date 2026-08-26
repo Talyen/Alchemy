@@ -160,16 +160,15 @@ describe("resolveStunTrigger", () => {
     };
     const result = resolveStunTrigger(state);
     expect(result.enemyCC.stunSkipTurns).toBe(1);
-    expect(result.enemyCC.cooldown).toBe(2);
+    expect(result.enemyCC.cooldown).toBe(0);
 
-    // Second trigger with cooldown active: clears stun but no extra skip.
     const state2 = {
       ...result,
-      enemyCC: { ...result.enemyCC, cooldown: 1 },
+      enemyCC: { ...result.enemyCC, stunSkipTurns: 0, cooldown: 2 },
       enemyStatuses: defaultEnemyStatusValues({ ...result.enemyStatuses, stun: 20 }),
     };
     const result2 = resolveStunTrigger(state2);
-    expect(result2.enemyCC.stunSkipTurns).toBe(1); // unchanged
+    expect(result2.enemyCC.stunSkipTurns).toBe(0);
     expect(result2.enemyStatuses.stun).toBe(0);
   });
 

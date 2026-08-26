@@ -2,6 +2,7 @@ import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/ge
 import { discoverTrinketIds } from "@/features/alchemy/shared/stores/profile-store";
 import {
   createDraftRunRandomSource,
+  recordRunObtainedItem,
   setTrinketShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
@@ -50,6 +51,7 @@ export function createTrinketShopCommands({
         acquire: () => {
           mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addTrinket(trinket.id) });
           discoverTrinketIds(draft, [trinket.id]);
+          recordRunObtainedItem(draft, { kind: "trinket", trinketId: trinket.id });
         },
       });
     }).committed;

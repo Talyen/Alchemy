@@ -101,6 +101,7 @@ export function useRunEndScreenData(): RunEndScreenData {
     useShallow((state) => ({
       runEndMaterials: state.session.runEndMaterials,
       runEndTalentXP: state.session.runEndTalentXP,
+      runEndItems: state.session.runEndItems,
       talentXP: state.runProfile.talentXP,
     })),
   );

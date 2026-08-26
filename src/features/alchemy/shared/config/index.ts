@@ -9,4 +9,5 @@ export * from "./layout";
 export * from "./metadata";
 export * from "./options";
 export * from "./shine-palettes";
+export * from "./plasma-palettes";
 export * from "./typography";

@@ -6,6 +6,7 @@ import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { GearInstance } from "@/lib/gear";
+import type { RunObtainedItem } from "@/lib/active-run-session";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type {
   AlchemistState,
@@ -77,6 +78,7 @@ export interface RunEndScreenData {
   runEndTalentXP: TalentXP;
   talentXP: TalentXP;
   runEndMaterials: MaterialInventory;
+  runEndItems: RunObtainedItem[];
 }
 
 interface WildwoodRemovalScreenData {

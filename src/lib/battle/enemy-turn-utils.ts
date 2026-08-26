@@ -6,6 +6,7 @@ import { deathsDoorGraceTurns, type BattleState, type CombatTextEvent, withPrese
 import { CARDS_PER_TURN, PERCENT_DENOMINATOR } from "../game-constants";
 import { applyCardEffects } from "./effect-handlers";
 import { applyPlayerStatusEffect } from "./status-player";
+import { finalizeCcSkipTurnDecrement } from "./status-cc";
 import type { BattleCard } from "@/lib/game-data";
 
 export const ENEMY_TURN_CONSTANTS = {
@@ -97,14 +98,16 @@ export function resetEnemyTurnState(state: BattleState): BattleState {
 
 function handleCCSkipTurn(state: BattleState, options?: { preserveBlock?: boolean }): BattleState {
   const nextState = resetPlayerTurnState(state, options);
+  const prevCc = state.playerCC;
+  const decrementedCc = {
+    ...nextState.playerCC,
+    stunSkipTurns: Math.max(0, prevCc.stunSkipTurns - 1),
+    freezeSkipTurns: Math.max(0, prevCc.freezeSkipTurns - 1),
+  };
   return {
     ...nextState,
     turnPhase: "enemy",
-    playerCC: {
-      ...nextState.playerCC,
-      stunSkipTurns: Math.max(0, state.playerCC.stunSkipTurns - 1),
-      freezeSkipTurns: Math.max(0, state.playerCC.freezeSkipTurns - 1),
-    },
+    playerCC: finalizeCcSkipTurnDecrement(prevCc, decrementedCc),
   };
 }
 
@@ -191,13 +194,15 @@ export function checkHealthThresholds(
 }
 
 export function reduceSkipTurns(state: BattleState): BattleState {
+  const prevCc = state.enemyCC;
+  const decrementedCc = {
+    ...prevCc,
+    stunSkipTurns: Math.max(0, prevCc.stunSkipTurns - 1),
+    freezeSkipTurns: Math.max(0, prevCc.freezeSkipTurns - 1),
+  };
   return {
     ...state,
-    enemyCC: {
-      ...state.enemyCC,
-      stunSkipTurns: Math.max(0, state.enemyCC.stunSkipTurns - 1),
-      freezeSkipTurns: Math.max(0, state.enemyCC.freezeSkipTurns - 1),
-    },
+    enemyCC: finalizeCcSkipTurnDecrement(prevCc, decrementedCc),
   };
 }
 

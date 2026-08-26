@@ -212,6 +212,8 @@ describe("scheduleCompanionFollowUp", () => {
     made.session.clearBattleTimeoutsKeepCompanion();
     vi.advanceTimersByTime(COMPANION_ATTACK_DELAY);
     expect(made.companionScheduledRef.current).toBe(false);
+    expect(useBattlePresentationStore.getState().companionAttackToken).toBe(1);
+    expect(useBattlePresentationStore.getState().companionShaking).toBe(true);
   });
 
   it("allows a later turn to schedule after full teardown", () => {

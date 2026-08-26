@@ -15,6 +15,7 @@ import {
   collectionTabMeta,
   collectionTrinketGridClass,
 } from "../config";
+import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import type { CollectionTab } from "../types";
 import { TabBar } from "./tab-bar";
 import { CompendiumTile } from "./collection-tile";
@@ -27,6 +28,7 @@ export function CollectionGrid({
   discoveredCardIds,
   encounteredEnemyIds,
   discoveredTrinketIds,
+  finishedRunCharacters,
   page,
   bondedCompanions,
 }: {
@@ -34,6 +36,7 @@ export function CollectionGrid({
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
+  finishedRunCharacters: CharacterId[];
   page: number;
   bondedCompanions: Record<string, number>;
 }) {
@@ -44,17 +47,26 @@ export function CollectionGrid({
         discoveredCardIds,
         encounteredEnemyIds,
         discoveredTrinketIds,
+        finishedRunCharacters,
         bondedCompanions,
         page,
       }),
-    [collectionTab, discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, bondedCompanions, page],
+    [
+      collectionTab,
+      discoveredCardIds,
+      encounteredEnemyIds,
+      discoveredTrinketIds,
+      finishedRunCharacters,
+      bondedCompanions,
+      page,
+    ],
   );
 
   const gridClass =
-    collectionTab === "trinkets"
-      ? collectionTrinketGridClass
-      : collectionTab === "bestiary"
-        ? collectionBestiaryGridClass
+    collectionTab === "bestiary"
+      ? collectionBestiaryGridClass
+      : collectionTab === "trinkets"
+        ? collectionTrinketGridClass
         : collectionCardGridClass;
   const fillerClass =
     collectionTab === "bestiary"

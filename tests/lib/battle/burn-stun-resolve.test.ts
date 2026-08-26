@@ -36,7 +36,7 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
     // Stun should clear to 0, enemyCCCooldown should set, and enemyStunSkipTurns should increase.
     expect(result.enemyStatuses.stun).toBe(0);
     expect(result.enemyCC.stunSkipTurns).toBe(1);
-    expect(result.enemyCC.cooldown).toBe(2);
+    expect(result.enemyCC.cooldown).toBe(0);
     expect(texts).toContainEqual({
       target: "enemy",
       kind: "notice",

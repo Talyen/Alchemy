@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   applyEnemyCcImmunityClear,
   assignEnemyCrowdControlSkip,
+  finalizeCcSkipTurnDecrement,
   resolvePlayerCrowdControlTrigger,
 } from "@/lib/battle/status-cc";
+import { addEnemyStatus, addPlayerStatus } from "@/lib/battle";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STUN_THRESHOLD_FRACTION } from "@/lib/game-constants";
 import { makeTestBattleState } from "../../fixtures/battle";
 import {
@@ -45,7 +47,7 @@ describe("resolvePlayerCrowdControlTrigger", () => {
     });
     expect(result.playerCC.stunSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
     expect(result.playerStatuses.stun).toBe(0);
-    expect(result.playerCC.cooldown).toBe(BATTLE_CONFIG.CC_IMMUNITY_DURATION);
+    expect(result.playerCC.cooldown).toBe(0);
   });
 
   it("stun triggers at exactly half max health (>= boundary, even health)", () => {
@@ -153,5 +155,40 @@ describe("enemy CC helpers", () => {
     });
     expect(result.enemyCC.freezeSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
     expect(result.enemyStatuses.freeze).toBe(0);
+    expect(result.enemyCC.cooldown).toBe(0);
+  });
+});
+
+describe("finalizeCcSkipTurnDecrement", () => {
+  it("starts immunity when the last skip turn is consumed", () => {
+    const prev = defaultCcState({ stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 });
+    const next = defaultCcState({ stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 0 });
+    expect(finalizeCcSkipTurnDecrement(prev, next).cooldown).toBe(BATTLE_CONFIG.CC_IMMUNITY_DURATION);
+  });
+
+  it("does not start immunity while skip turns remain", () => {
+    const prev = defaultCcState({ stunSkipTurns: 2, freezeSkipTurns: 0, cooldown: 0 });
+    const next = defaultCcState({ stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 });
+    expect(finalizeCcSkipTurnDecrement(prev, next).cooldown).toBe(0);
+  });
+});
+
+describe("stun/freeze buildup gate", () => {
+  it("blocks enemy stun buildup during active CC", () => {
+    const state = makeTestBattleState({
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
+      enemyStatuses: defaultEnemyStatusValues({ stun: 0 }),
+    });
+    const next = addEnemyStatus(state, "stun", 10);
+    expect(next.enemyStatuses.stun).toBe(0);
+  });
+
+  it("blocks player freeze buildup during CC immunity", () => {
+    const state = makeTestBattleState({
+      playerCC: defaultCcState({ cooldown: 2 }),
+      playerStatuses: defaultPlayerStatusValues({ freeze: 0 }),
+    });
+    const next = addPlayerStatus(state, "freeze", 10);
+    expect(next.playerStatuses.freeze).toBe(0);
   });
 });

@@ -1,7 +1,9 @@
 // Shared typography role classes for screen chrome, body copy, and tooltips.
 // Keep sizes consistent across screens; bump roles here instead of per-screen one-offs.
-// `text-balance` belongs on short, width-constrained copy (tooltips, screen blurbs).
-// Do not add it to every className — chips, nowrap titles, and long documents skip it.
+// `text-balance` belongs on short, width-constrained prose (titles, tooltip headers, blurbs).
+// Repeated tooltip list lines use `tooltipBodyLineClass` (`text-pretty`) instead — balance
+// only runs when text wraps, so per-line balance in a list looks uneven next to one-liners.
+// Chips, nowrap titles, and long documents skip both.
 
 /** Screen title (ScreenHeader). */
 export const screenTitleClass =
@@ -29,8 +31,11 @@ export const tooltipHeaderClass = "mb-1 font-sans text-sm font-bold text-foregro
 export const tooltipSubheaderClass =
   "mt-2.5 mb-1 text-xs font-semibold tracking-widest text-amber-100/80 uppercase text-balance";
 
-/** Tooltip body copy. */
+/** Tooltip body container / paragraph copy. */
 export const tooltipBodyClass = "mt-1 space-y-1 text-sm leading-relaxed text-muted-foreground text-balance";
+
+/** Single line inside a tooltip list (card rules, gear affixes, enemy traits). */
+export const tooltipBodyLineClass = "text-sm leading-relaxed text-muted-foreground text-pretty";
 
 /** Compact pill text inside a tooltip (materials, gold, status values). */
 export const tooltipChipClass = "text-xs font-semibold";

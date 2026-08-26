@@ -77,6 +77,7 @@ beforeEach(() => {
   presentation.hurtEnemy.mockClear();
   presentation.shakeEnemy.mockClear();
   presentation.shakeCompanion.mockClear();
+  presentation.telegraphAttack.mockClear();
   beginBattleTransition.mockClear();
   commitBattleTransition.mockClear();
   clearBattleTransition.mockClear();
@@ -237,6 +238,7 @@ describe("executeEnemyPhase", () => {
     expect(presentation.shakePlayer).toHaveBeenCalledOnce();
     expect(presentation.hurtPlayer).toHaveBeenCalledOnce();
     expect(presentation.showCombatTexts).toHaveBeenCalled();
+    expect(presentation.telegraphAttack).toHaveBeenCalledWith("enemy");
   });
 
   it("does not hurt the player when only block absorb damage is present", async () => {
@@ -273,6 +275,7 @@ describe("executeEnemyPhase", () => {
     expect(commitBattleTransition).toHaveBeenCalledTimes(1);
     expect(orch.scheduleCompanionFollowUp).toHaveBeenCalledWith(result, 1);
     expect(orch.scheduleAutoEndTurn).toHaveBeenCalledWith(result);
+    expect(presentation.telegraphAttack).not.toHaveBeenCalled();
   });
 });
 

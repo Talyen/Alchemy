@@ -94,7 +94,6 @@ function TrinketRewardButton({
       as="button"
       selected={selected}
       temporary={temporary}
-      footerChip={temporary ? "Boon • This Run" : "Armory"}
       onClick={onClick}
       ariaLabel={`Select ${trinket.title}`}
     />

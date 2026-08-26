@@ -49,6 +49,15 @@ export interface CcState {
   cooldown: number;
 }
 
+export function hasActiveCc(cc: CcState): boolean {
+  return cc.stunSkipTurns > 0 || cc.freezeSkipTurns > 0;
+}
+
+/** Stun/freeze stacks cannot accumulate during active CC or post-CC immunity. */
+export function isStunFreezeBuildupBlocked(cc: CcState): boolean {
+  return hasActiveCc(cc) || cc.cooldown > 0;
+}
+
 // Pre-computed bonuses from boons acquired during the run. Follows the same
 // pattern as TalentEffectManifest — computed once at battle start, immutable for
 // the duration of the battle. Type lives in game-data next to the trinket rows

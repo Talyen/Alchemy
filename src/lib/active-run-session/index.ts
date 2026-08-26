@@ -4,6 +4,7 @@ export type {
   InterruptedFlow,
   LabyrinthNodePosition,
   PersistedPendingReward,
+  RunObtainedItem,
   PersistedShopState,
   PersistedAlchemistState,
   PersistedTrinketShopState,

@@ -27,6 +27,9 @@ import { DeathsDoorStatusIcon, StatusIcon } from "./status-icons";
 import { useChangeToken } from "./use-change-token";
 
 import { ActorTooltip, ArtDeathDoorBorder, ArtTurnActiveBorder, StatsDeathDoorBorder } from "./actor-panel-helpers";
+import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
+import { CombatantAttackLunge } from "./combatant-attack-lunge";
+import type { ActiveCcKeyword } from "../../utils/cc-presentation";
 
 const ACTOR_PANEL_CONFIG = {
   fullHealthPercent: 100,
@@ -61,6 +64,8 @@ interface ArtPanelProps {
   turnUrgentHide?: boolean;
   turnShineColors?: readonly string[];
   artCorner?: ReactNode;
+  ccKeyword?: ActiveCcKeyword | null;
+  attackToken?: number;
   children?: ReactNode;
 }
 
@@ -91,6 +96,8 @@ export function ArtPanel({
   turnUrgentHide = false,
   turnShineColors,
   artCorner,
+  ccKeyword = null,
+  attackToken = 0,
   children,
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
@@ -104,44 +111,47 @@ export function ArtPanel({
   return (
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
       <div className={artWrapClass}>
-        <div
-          ref={artWrapperRef}
-          className="group/art-wrapper relative"
-          onMouseEnter={tooltipHandlers.onMouseEnter}
-          onMouseLeave={tooltipHandlers.onMouseLeave}
-        >
-          <ActorTooltip
-            title={title}
-            descriptionLines={descriptionLines}
-            currentEnemy={currentEnemy}
-            currentEnemyAttackEffects={currentEnemyAttackEffects}
-            activeLabyrinthModifiers={activeLabyrinthModifiers}
-            triggerRef={artWrapperRef}
-            visible={tooltipVisible}
-          />
-          <ActorArtFrame
-            side={side}
-            title={title}
-            art={art}
-            shimmerId={shimmerId}
-            shimmerActive={shimmerActive}
-            shimmerToken={shimmerToken}
-            onHoverShimmer={onHoverShimmer}
-            surfaceRef={surfaceRef}
-            isDead={isDead}
-            cardWidthClass={resolvedCardWidthClass}
-            deathsDoorActive={deathsDoorActive}
-            hurtFlashToken={hurtFlashToken}
-            turnActive={turnActive}
-            turnUrgentHide={turnUrgentHide}
-            {...(turnShineColors === undefined ? {} : { turnShineColors })}
-          />
-          {children ? (
-            <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center overflow-visible">
-              {children}
-            </div>
-          ) : null}
-        </div>
+        <CombatantAttackLunge attackToken={attackToken} aim={side === "player" ? 1 : -1}>
+          <div
+            ref={artWrapperRef}
+            className="group/art-wrapper relative"
+            onMouseEnter={tooltipHandlers.onMouseEnter}
+            onMouseLeave={tooltipHandlers.onMouseLeave}
+          >
+            <ActorTooltip
+              title={title}
+              descriptionLines={descriptionLines}
+              currentEnemy={currentEnemy}
+              currentEnemyAttackEffects={currentEnemyAttackEffects}
+              activeLabyrinthModifiers={activeLabyrinthModifiers}
+              triggerRef={artWrapperRef}
+              visible={tooltipVisible}
+            />
+            <ActorArtFrame
+              side={side}
+              title={title}
+              art={art}
+              shimmerId={shimmerId}
+              shimmerActive={shimmerActive}
+              shimmerToken={shimmerToken}
+              onHoverShimmer={onHoverShimmer}
+              surfaceRef={surfaceRef}
+              isDead={isDead}
+              cardWidthClass={resolvedCardWidthClass}
+              deathsDoorActive={deathsDoorActive}
+              hurtFlashToken={hurtFlashToken}
+              turnActive={turnActive}
+              turnUrgentHide={turnUrgentHide}
+              ccKeyword={ccKeyword}
+              {...(turnShineColors === undefined ? {} : { turnShineColors })}
+            />
+            {children ? (
+              <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center overflow-visible">
+                {children}
+              </div>
+            ) : null}
+          </div>
+        </CombatantAttackLunge>
         {artCorner}
       </div>
       <ActorStatsPanel
@@ -176,6 +186,7 @@ function ActorArtFrame({
   turnActive = false,
   turnUrgentHide = false,
   turnShineColors,
+  ccKeyword = null,
 }: {
   side: "player" | "enemy";
   title: string;
@@ -192,52 +203,55 @@ function ActorArtFrame({
   turnActive?: boolean;
   turnUrgentHide?: boolean;
   turnShineColors?: readonly string[];
+  ccKeyword?: ActiveCcKeyword | null;
 }) {
   const { pulse, sparksOverflow } = useHurtPulse(hurtFlashToken);
 
   return (
-    <TiltSurface
-      surfaceRef={surfaceRef}
-      testId={`battle-${side}-art-panel`}
-      clipContents={false}
-      className={cn(
-        "relative",
-        cardSurfaceClass,
-        !isDead && cardHoverScaleClass,
-        cardWidthClass ?? battleCardWidthClass,
-        "border",
-        isDead ? "border-transparent transition-[border-color] duration-150" : "border-border/80",
-        sparksOverflow && "overflow-visible",
-        isDead && "overflow-visible !bg-transparent",
-      )}
-      shimmerActive={shimmerActive}
-      shimmerToken={shimmerToken}
-      shimmerRounded="rounded-shell-hero"
-      onMouseEnter={() => onHoverShimmer(shimmerId)}
-    >
-      <ArtTurnActiveBorder
-        side={side}
-        active={turnActive && !isDead}
-        urgentHide={turnUrgentHide}
-        {...(turnShineColors === undefined ? {} : { shineColor: turnShineColors })}
-      />
-      {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
-      {isDead ? (
-        <SliceDeath
-          imageUrl={art}
-          alt={title}
-          imageClassName={side === "enemy" ? landscapeArtImageClass : cardArtImageClass}
+    <CombatantStatusEffectPresentation keyword={ccKeyword}>
+      <TiltSurface
+        surfaceRef={surfaceRef}
+        testId={`battle-${side}-art-panel`}
+        clipContents={false}
+        className={cn(
+          "relative",
+          cardSurfaceClass,
+          !isDead && cardHoverScaleClass,
+          cardWidthClass ?? battleCardWidthClass,
+          "border",
+          isDead ? "border-transparent" : "border-border/80",
+          sparksOverflow && "overflow-visible",
+          isDead && "overflow-visible !bg-transparent",
+        )}
+        shimmerActive={shimmerActive}
+        shimmerToken={shimmerToken}
+        shimmerRounded="rounded-shell-hero"
+        onMouseEnter={() => onHoverShimmer(shimmerId)}
+      >
+        <ArtTurnActiveBorder
+          side={side}
+          active={turnActive && !isDead}
+          urgentHide={turnUrgentHide}
+          {...(turnShineColors === undefined ? {} : { shineColor: turnShineColors })}
         />
-      ) : (
-        <img
-          src={art}
-          alt={title}
-          className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
-          loading="eager"
-        />
-      )}
-      {!isDead ? <PortraitHurtVfx pulse={pulse} /> : null}
-    </TiltSurface>
+        {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
+        {isDead ? (
+          <SliceDeath
+            imageUrl={art}
+            alt={title}
+            imageClassName={side === "enemy" ? landscapeArtImageClass : cardArtImageClass}
+          />
+        ) : (
+          <img
+            src={art}
+            alt={title}
+            className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
+            loading="eager"
+          />
+        )}
+        {!isDead ? <PortraitHurtVfx pulse={pulse} /> : null}
+      </TiltSurface>
+    </CombatantStatusEffectPresentation>
   );
 }
 

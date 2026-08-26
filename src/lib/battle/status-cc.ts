@@ -8,9 +8,37 @@
  */
 import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
-import { setEnemyStatus, setPlayerStatus, addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
+import {
+  setEnemyStatus,
+  setPlayerStatus,
+  addPlayerStatus,
+  type BattleState,
+  type CcState,
+  type CombatTextEvent,
+  hasActiveCc,
+} from "./types";
 
-type CcStat = "stun" | "freeze";
+export type ActiveCcKeyword = "stun" | "freeze";
+type CcStat = ActiveCcKeyword;
+
+/** Overlay keyword while skip turns are active; stun wins when both are set. */
+export function getActiveCcKeyword(cc: CcState): ActiveCcKeyword | null {
+  if (cc.stunSkipTurns > 0) return "stun";
+  if (cc.freezeSkipTurns > 0) return "freeze";
+  return null;
+}
+
+export function isPlayerCcControlled(cc: CcState): boolean {
+  return cc.stunSkipTurns > 0 || cc.freezeSkipTurns > 0;
+}
+
+export { hasActiveCc, isStunFreezeBuildupBlocked } from "./types/state-types";
+export function finalizeCcSkipTurnDecrement(prev: CcState, next: CcState): CcState {
+  if (hasActiveCc(prev) && !hasActiveCc(next)) {
+    return { ...next, cooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION };
+  }
+  return next;
+}
 
 function clearPlayerCcStack(state: BattleState, stat: CcStat): BattleState {
   return setPlayerStatus(state, stat, 0);
@@ -51,7 +79,6 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
       ...(stat === "stun"
         ? { stunSkipTurns: state.playerCC.stunSkipTurns + BATTLE_CONFIG.BASE_CC_DURATION }
         : { freezeSkipTurns: state.playerCC.freezeSkipTurns + BATTLE_CONFIG.BASE_CC_DURATION }),
-      cooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
     },
   };
 
@@ -118,7 +145,6 @@ export function assignEnemyCrowdControlSkip(input: EnemyCcTriggerInput): BattleS
       ...(stat === "stun"
         ? { stunSkipTurns: nextState.enemyCC.stunSkipTurns + skipDuration }
         : { freezeSkipTurns: nextState.enemyCC.freezeSkipTurns + skipDuration }),
-      cooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
     },
   };
   mergeCombatText(combatTexts, {

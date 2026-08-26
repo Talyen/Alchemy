@@ -56,10 +56,11 @@ export function clearTransientSession(draft: GameplayDraft): void {
   Object.assign(draft.session, createInitialSessionFields());
 }
 
-/** Start a fresh run: seed active-run progress, drop the previous run-end XP snapshot, flag the run active. */
+/** Start a fresh run: seed active-run progress, drop the previous run-end snapshots, flag the run active. */
 export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
   hydrateFromSnapshot(draft, snapshot);
   draft.session.runEndTalentXP = {};
+  draft.session.runEndItems = [];
   draft.session.hasActiveRun = snapshot.hasActiveRun;
 }
 
@@ -69,6 +70,8 @@ export const setCompanionRewardCards = (draft: GameplayDraft, cards: RunSessionF
   setSessionField(draft, "companionRewardCards", cards);
 export const setRunEndMaterials = (draft: GameplayDraft, materials: RunSessionFields["runEndMaterials"]) =>
   setSessionField(draft, "runEndMaterials", materials);
+export const setRunEndItems = (draft: GameplayDraft, items: RunSessionFields["runEndItems"]) =>
+  setSessionField(draft, "runEndItems", items);
 export const setCorruptionResult = (draft: GameplayDraft, result: RunSessionFields["corruptionResult"]) =>
   setSessionField(draft, "corruptionResult", result);
 

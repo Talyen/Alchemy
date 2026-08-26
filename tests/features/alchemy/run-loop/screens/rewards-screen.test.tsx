@@ -227,4 +227,32 @@ describe("RewardsScreen", () => {
     expect(astral.className).toMatch(/card-interactive-glow/);
     expect(astral.className).toMatch(/has-shine-border/);
   });
+
+  it("shows shine on trinket rewards", () => {
+    render(
+      <RewardsScreen
+        rewardState={{
+          ...createEmptyRewardState(),
+          rewardType: "trinket",
+          choices: [
+            {
+              id: "meteorite",
+              title: "Meteorite",
+              descriptionLines: ["Your first Burn damage each combat is doubled."],
+              art: "",
+              effects: {},
+            },
+          ],
+        }}
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={vi.fn()}
+        onOpenMenu={vi.fn()}
+      />,
+    );
+
+    const trinket = screen.getByRole("button", { name: "Select Meteorite" });
+    expect(trinket.querySelector(".shine-border")).not.toBeNull();
+    expect(trinket.className).toMatch(/has-shine-border/);
+  });
 });

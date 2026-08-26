@@ -4,6 +4,7 @@ import type { GearInstance } from "@/lib/gear";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { recordRunObtainedItem } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { RewardState } from "@/lib/active-run-session";
 import type { Destination } from "@/lib/routing";
 import { CONSTANTS } from "../../shared/types";
@@ -74,11 +75,14 @@ export function applyRewardSelection({ choice, type, draft }: RewardSelectionInp
     const trinketId = (choice as { id: string }).id;
     mutateGearWithRunHealthSync(draft, { mutate: (gear: GearStore) => gear.addTrinket(trinketId) });
     discoverTrinketIds(draft, [trinketId]);
+    recordRunObtainedItem(draft, { kind: "trinket", trinketId });
   } else if (type === "gear") {
     const characterId = draft.run.activeRun.characterId;
+    const instance = choice as GearInstance;
     mutateGearWithRunHealthSync(draft, {
-      mutate: (gear: GearStore) => gear.addInstance(choice as GearInstance, characterId),
+      mutate: (gear: GearStore) => gear.addInstance(instance, characterId),
     });
+    recordRunObtainedItem(draft, { kind: "gear", instance });
   }
 }
 

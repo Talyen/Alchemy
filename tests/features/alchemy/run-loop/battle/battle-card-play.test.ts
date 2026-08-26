@@ -140,6 +140,7 @@ describe("createBattleCardPlay", () => {
     expect(playBattleEvent).toHaveBeenCalledWith("enemyHit");
     expect(playUISound).not.toHaveBeenCalled();
     expect(logError).not.toHaveBeenCalled();
+    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(1);
   });
 
   it("rejects plays when mana is insufficient", () => {
@@ -162,6 +163,7 @@ describe("createBattleCardPlay", () => {
     expect(ctx.scheduleAutoEndTurnRef.current).not.toHaveBeenCalled();
     expect(awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
+    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(0);
   });
 
   it("rejects plays when the player is defeated", () => {
@@ -308,5 +310,26 @@ describe("createBattleCardPlay", () => {
     const drawn = getBattleStoreView().battleState.hand.find((card) => card.id === "slash");
     expect(drawn).toBeDefined();
     expect(hidden).toContain(`${drawn!.id}-${drawn!.uid}`);
+    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(0);
+  });
+
+  it("does not telegraph a player lunge for non-damage cards", () => {
+    const guard = makeTestCard({
+      id: "guard",
+      cost: 1,
+      effects: [{ kind: "player-status", status: "block", amount: 5 }],
+    });
+    const state = makeTestBattleState({
+      hand: [{ ...guard, uid: 8 }],
+      mana: 3,
+      enemyHealth: 30,
+    });
+    getBattleStoreView().setSyncedBattleState(state);
+
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
+    clickCard(handleCardClick, { ...guard, uid: 8 }, 0);
+
+    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(0);
   });
 });

@@ -51,6 +51,7 @@
   --animate-shine-text-corruption: shine 6s linear infinite;
 
   --animate-shake: shake 380ms ease-out;
+  --animate-attack-lunge: combatant-attack-lunge var(--attack-lunge-ms, 1000ms) ease-out;
   --animate-hurt-flash: hurtFlash 280ms ease-out forwards;
   --animate-frame-fade: frameFade 900ms ease-out forwards;
   --animate-boss-title-shine: boss-title-shine 10s linear infinite;

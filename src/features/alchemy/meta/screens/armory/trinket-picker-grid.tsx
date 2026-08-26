@@ -51,9 +51,10 @@ export function TrinketPickerGrid({
                   trinket={trinket}
                   interactionKey="armory-trinket"
                   as="button"
-                  footerChip="Armory"
+                  className={collectionGridTileWidthClass}
                   disabled={!editable}
-                  onClick={() => onEquip(trinket.id)}
+                  interactiveChrome={editable}
+                  onClick={editable ? () => onEquip(trinket.id) : undefined}
                   ariaLabel={`Equip ${trinket.title}${equippedBy ? ` from ${equippedBy}` : ""}`}
                 />
               </div>

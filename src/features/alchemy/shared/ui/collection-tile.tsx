@@ -1,27 +1,31 @@
-// Single interactive collection tile for card, bestiary, and boon entries.
+// Single interactive collection tile for hero, card, bestiary, and boon entries.
 // Depends on tile item data, card flipping, tooltip components, audio, and shared surface styling.
 // Used by CollectionGrid to keep grid layout separate from tile behavior.
 import { memo, useState, type RefObject } from "react";
 
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
-import { cardBack } from "@/lib/game-data";
+import { cardBack, getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
+import { ShineBorder } from "@/components/ui/shine-border";
 
 import {
   cardArtImageClass,
   cardInteractiveGlowClass,
+  cardShineFrameClass,
   cardSurfaceClass,
   collectionCardGridTileWidthClass,
   collectionGridBestiaryWidthClass,
+  getTrinketShineColors,
   landscapeArtImageClass,
   trinketArtImageClass,
 } from "../config";
-import { getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { CardFlip } from "./card-flip";
 import { DetailPopup } from "./card-popup";
 import type { CollectionTileItem } from "./collection-items";
 import { EnemyTooltip } from "./enemy-tooltip";
+import { HeroTooltip } from "./hero-tooltip";
 import { TiltSurface } from "./tilt-surface";
+import { TrinketItemTitle } from "./trinket-item-title";
 import { useInteractiveCard } from "./use-interactive-card";
 import { useTileHoverPopup } from "./use-tile-hover-popup";
 
@@ -42,6 +46,9 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
     onHoverEnd,
   });
 
+  const shineColors = item.frameType === "trinket" && item.discovered ? getTrinketShineColors(item.id) : [];
+  const showShine = shineColors.length > 0;
+
   return (
     <div
       ref={wrapperRef}
@@ -52,13 +59,15 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
       {showPopup ? <CollectionTilePopup item={item} hovered={isHovered} triggerRef={wrapperRef} /> : null}
       <TiltSurface
         as="button"
-        ariaLabel={item.discovered ? `Inspect ${item.title}` : "Inspect Undiscovered Entry"}
+        ariaLabel={inspectAriaLabel(item)}
         onFocus={handleHoverStart}
         onBlur={handleBlur}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
         className={cn(
-          "group border border-border/80 shadow-md",
+          "group shadow-md",
+          showShine && cardShineFrameClass,
+          !showShine && "border border-border/80",
           cardSurfaceClass,
           cardInteractiveGlowClass,
           item.frameType === "trinket"
@@ -77,10 +86,18 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
         }}
       >
         <CollectionTileMedia item={item} flipped={flipped} />
+        {showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
       </TiltSurface>
     </div>
   );
 });
+
+function inspectAriaLabel(item: CollectionTileItem): string {
+  if (item.frameType === "hero") {
+    return item.discovered ? `Inspect ${item.title}` : `Inspect ${item.title} (Locked)`;
+  }
+  return item.discovered ? `Inspect ${item.title}` : "Inspect Undiscovered Entry";
+}
 
 function CollectionTilePopup({
   item,
@@ -91,6 +108,17 @@ function CollectionTilePopup({
   hovered: boolean;
   triggerRef: RefObject<HTMLElement | null>;
 }) {
+  if (item.frameType === "hero" && item.character) {
+    return (
+      <HeroTooltip
+        character={item.character}
+        isLocked={!item.discovered}
+        unlockRequirementText={item.unlockRequirementText ?? ""}
+        triggerRef={triggerRef}
+        visible={hovered}
+      />
+    );
+  }
   if (item.frameType === "bestiary" && item.enemyEntry) {
     return (
       <EnemyTooltip entry={item.enemyEntry} discovered={item.discovered} triggerRef={triggerRef} visible={hovered} />
@@ -100,10 +128,16 @@ function CollectionTilePopup({
     item.card && hovered
       ? getEffectiveCardDescriptionLines(item.card, { companionBondLevels: item.companionBondLevels ?? {} })
       : item.descriptionLines;
+  const title =
+    item.frameType === "trinket" && item.discovered ? (
+      <TrinketItemTitle trinket={{ id: item.id, title: item.title }} />
+    ) : (
+      item.title
+    );
   return (
     <DetailPopup
       idPrefix={item.id}
-      title={item.title}
+      title={title}
       subtitle={item.subtitle}
       descriptionLines={descriptionLines}
       triggerRef={triggerRef}

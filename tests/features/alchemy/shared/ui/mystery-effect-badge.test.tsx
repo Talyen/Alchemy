@@ -104,7 +104,9 @@ describe("MysteryEffectBadge", () => {
     expect(title.classList.contains("boss-title-shine")).toBe(true);
     expect(title.style.backgroundImage).toContain("linear-gradient");
     expect(container.querySelector("svg")).toBeNull();
-    expect(screen.getByText(/for this run/)).toBeTruthy();
+    expect(screen.getByText(/Gain/)).toBeTruthy();
+    expect(screen.getByText("Boon • This Run")).toBeTruthy();
+    expect(screen.queryByText(/for this run/)).toBeNull();
   });
 
   it("renders random boon as bold shine text", () => {
@@ -146,7 +148,8 @@ describe("MysteryEffectBadge", () => {
     expect(title.classList.contains("boss-title-shine")).toBe(true);
     expect(title.style.backgroundImage).toContain("linear-gradient");
     expect(container.querySelector("svg")).toBeNull();
-    expect(screen.getByText(/card to your deck/)).toBeTruthy();
+    expect(screen.getByText(/to your deck/)).toBeTruthy();
+    expect(screen.queryByText(/card to your deck/)).toBeNull();
   });
 });
 
@@ -168,7 +171,7 @@ describe("MysteryEffectList", () => {
     expect(screen.getByText("Harvest").classList.contains("text-sm")).toBe(true);
     expect(screen.getByText("Harvest").classList.contains("font-bold")).toBe(true);
     expect(screen.getByText("Mana Berries")).toBeTruthy();
-    expect(screen.getByText(/card to your deck/).classList.contains("text-sm")).toBe(true);
+    expect(screen.getByText(/to your deck/).classList.contains("text-sm")).toBe(true);
     expect(screen.getByText(/2 Herbs/).parentElement?.classList.contains("text-xs")).toBe(true);
     expect(screen.queryByText("Add Mana Berries to your deck")).toBeNull();
   });

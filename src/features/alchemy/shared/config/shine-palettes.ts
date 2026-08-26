@@ -2,6 +2,7 @@
 import {
   characters,
   getCardKeywords,
+  getTrinketKeywords,
   keywordDefinitions,
   type BattleCard,
   type CharacterId,
@@ -36,12 +37,12 @@ export function getKeywordShineColors(keywordId: KeywordId): readonly string[] {
   return keywordDefinitions[keywordId]?.shineColors ?? SHINE_PALETTES.talentDefault;
 }
 
-/** Unique shine stops for every mechanical keyword on a battle card. Empty when the card has none. */
-export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
+/** Unique shine stops across the given keywords. Empty when none resolve. */
+export function getKeywordListShineColors(keywordIds: readonly KeywordId[]): readonly string[] {
   const seen = new Set<string>();
   const colors: string[] = [];
 
-  for (const keywordId of getCardKeywords(card)) {
+  for (const keywordId of keywordIds) {
     for (const color of getKeywordShineColors(keywordId)) {
       if (seen.has(color)) continue;
       seen.add(color);
@@ -50,6 +51,21 @@ export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
   }
 
   return colors;
+}
+
+/** Unique shine stops for every mechanical keyword on a battle card. Empty when the card has none. */
+export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
+  return getKeywordListShineColors(getCardKeywords(card));
+}
+
+/** Keyword shine for a trinket's description; boon palette when none resolve. */
+export function getTrinketShineColors(trinketId: string): readonly string[] {
+  const colors = getKeywordListShineColors(getTrinketKeywords(trinketId));
+  return colors.length > 0 ? colors : [...SHINE_PALETTES.boon];
+}
+
+export function getTrinketShineGradient(trinketId: string): string | null {
+  return buildSmoothShineGradient(getTrinketShineColors(trinketId));
 }
 
 /** First shine stop of every keyword, cycled one-at-a-time on Wildcard hero select. */

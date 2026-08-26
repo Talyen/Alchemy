@@ -41,6 +41,8 @@ interface TiltSurfaceProps {
    * whose hurt sparks must paint outside the frame.
    */
   clipContents?: boolean | undefined;
+  /** When true, sets data-hovered for controlled card-hover-scale surfaces. */
+  hoverScaleActive?: boolean | undefined;
   /** Painted above the clip layer so frame chrome can cover the 3px glow border. */
   overlay?: ReactNode | undefined;
 }
@@ -136,6 +138,7 @@ function TiltSurfaceButton({
   tiltEnabled,
   clipContents = true,
   overlay,
+  hoverScaleActive,
 }: TiltSurfaceInner) {
   const canTilt = tiltEnabled !== false && !disabled;
   const { handleMouseMove, handleMouseLeave } = useTiltHandlers(canTilt, onMouseLeave);
@@ -156,6 +159,7 @@ function TiltSurfaceButton({
       onMouseLeave={handleMouseLeave}
       data-testid={testId}
       data-tilt-strength={canTilt ? String(DEFAULT_TILT_STRENGTH) : undefined}
+      data-hovered={hoverScaleActive ? "true" : undefined}
       className={surfaceClassName(selected, dragging, disabled, className)}
       style={surfaceStyle}
     >

@@ -126,6 +126,7 @@ describe("applyMysteryEffect", () => {
     expect(useGearStore.getState().inventories.knight.some((item) => item.instanceId === granted[0]!.instanceId)).toBe(
       true,
     );
+    expect(getRunProgressStoreView().runObtainedItems).toEqual([{ kind: "gear", instance: granted[0] }]);
   });
 
   it("gainMaterial awards the material during the run", () => {

@@ -138,7 +138,9 @@ function resolveCompanionFollowUpTexts(
         afterCommit: (companionId) => {
           if (!companionId) return;
           playCompanionSound(companionId);
-          getPresentation().shakeCompanion();
+          const vfx = getPresentation();
+          vfx.shakeCompanion();
+          vfx.telegraphAttack("companion");
         },
       },
     );

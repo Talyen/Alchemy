@@ -5,6 +5,7 @@ import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { sanitizeWildwoodBossId, sanitizeWildwoodBossIds } from "@/lib/content-systems/wildwood/bosses";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
 import { GearInstanceArraySchema, GearInstanceSchema, normalizeGearInstanceArray } from "./gear-schemas";
+import { normalizeGearInstance } from "@/lib/gear/operations";
 import { PersistedBattleStateSchema } from "./persisted-battle-state";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import {
@@ -24,6 +25,36 @@ import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { createRunRngState } from "@/lib/run-rng";
 
 const MaterialIdPersistSchema = z.enum(MATERIAL_IDS as [MaterialId, ...MaterialId[]]);
+
+const RunObtainedGearItemSchema = z.object({
+  kind: z.literal("gear"),
+  instance: GearInstanceSchema,
+});
+const RunObtainedTrinketItemSchema = z.object({
+  kind: z.literal("trinket"),
+  trinketId: z.string().min(1),
+});
+const RunObtainedItemSchema = z.discriminatedUnion("kind", [RunObtainedGearItemSchema, RunObtainedTrinketItemSchema]);
+
+function normalizeRunObtainedItems(raw: unknown): Array<z.infer<typeof RunObtainedItemSchema>> {
+  if (!Array.isArray(raw)) return [];
+  const items: Array<z.infer<typeof RunObtainedItemSchema>> = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const record = entry as { kind?: unknown; instance?: unknown; trinketId?: unknown };
+    if (record.kind === "gear") {
+      const instance = normalizeGearInstance(record.instance);
+      if (instance) items.push({ kind: "gear", instance });
+      continue;
+    }
+    if (record.kind === "trinket" && typeof record.trinketId === "string" && record.trinketId.length > 0) {
+      items.push({ kind: "trinket", trinketId: record.trinketId });
+    }
+  }
+  return items;
+}
+
+const RunObtainedItemArraySchema = z.preprocess(normalizeRunObtainedItems, z.array(RunObtainedItemSchema));
 
 const MysteryEffectSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("addCard"), cardId: z.string() }),
@@ -269,6 +300,7 @@ export const ActiveRunDataSchema = z
     // Defaults match normalizeActiveRunData — required on Zod output without a post-cast.
     runTalentXP: TalentXPSchema.default({}),
     runMaterialsEarned: MaterialInventorySchema.default(emptyInventory()),
+    runObtainedItems: RunObtainedItemArraySchema.default([]),
     currentScreen: z.preprocess(
       (value) => (value === "wildwood-recovery" ? "rewards" : value),
       z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null).default(null),

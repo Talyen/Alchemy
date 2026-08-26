@@ -1,4 +1,4 @@
-// Actor VFX leaves: combat text, shake, hurt flash. Isolated so BattleActors layout does not
+// Actor VFX leaves: combat text, shake, hurt flash, attacker lunge. Isolated so BattleActors layout does not
 // re-render on every presentation tick.
 import type { ComponentProps } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -15,17 +15,18 @@ export function CombatTextRailSide({ side }: { side: "player" | "enemy" }) {
 
 type ShakingArtPanelProps = Omit<
   ComponentProps<typeof ArtPanel>,
-  "shaking" | "hurtFlashToken" | "shimmerActive" | "shimmerToken" | "onHoverShimmer"
+  "shaking" | "hurtFlashToken" | "attackToken" | "shimmerActive" | "shimmerToken" | "onHoverShimmer"
 > & {
   side: "player" | "enemy";
   shimmerId: string;
 };
 
 export function ShakingArtPanel({ side, shimmerId, ...props }: ShakingArtPanelProps) {
-  const { shaking, hurtFlashToken } = useBattlePresentationStore(
+  const { shaking, hurtFlashToken, attackToken } = useBattlePresentationStore(
     useShallow((s) => ({
       shaking: side === "player" ? s.playerShaking : s.enemyShaking,
       hurtFlashToken: side === "player" ? s.playerHurtFlashToken : s.enemyHurtFlashToken,
+      attackToken: side === "player" ? s.playerAttackToken : s.enemyAttackToken,
     })),
   );
   const { shimmerActive, shimmerToken, onHoverShimmer } = useUiStore(
@@ -42,6 +43,7 @@ export function ShakingArtPanel({ side, shimmerId, ...props }: ShakingArtPanelPr
       shimmerId={shimmerId}
       shaking={shaking}
       hurtFlashToken={hurtFlashToken}
+      attackToken={attackToken}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       onHoverShimmer={onHoverShimmer}
@@ -49,7 +51,12 @@ export function ShakingArtPanel({ side, shimmerId, ...props }: ShakingArtPanelPr
   );
 }
 
-export function ShakingCompanionPanel(props: ComponentProps<typeof CompanionPanel>) {
-  const shaking = useBattlePresentationStore((s) => s.companionShaking);
-  return <CompanionPanel {...props} shaking={shaking} />;
+export function ShakingCompanionPanel(props: Omit<ComponentProps<typeof CompanionPanel>, "shaking" | "attackToken">) {
+  const { shaking, attackToken } = useBattlePresentationStore(
+    useShallow((s) => ({
+      shaking: s.companionShaking,
+      attackToken: s.companionAttackToken,
+    })),
+  );
+  return <CompanionPanel {...props} shaking={shaking} attackToken={attackToken} />;
 }

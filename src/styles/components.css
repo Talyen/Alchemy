@@ -333,8 +333,15 @@
 }
 
 .card-hover-scale:hover:not(:disabled),
-.group:hover .card-hover-scale:not(:disabled) {
+.group:hover .card-hover-scale:not(:disabled),
+.card-hover-scale[data-hovered="true"]:not(:disabled) {
   scale: 1.035;
+}
+
+.tilt-surface.hand-card-motion.card-hover-scale {
+  transition:
+    transform 220ms ease-out,
+    scale 200ms ease-out;
 }
 
 .card-interactive-glow {

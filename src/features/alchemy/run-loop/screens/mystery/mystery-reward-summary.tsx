@@ -14,11 +14,13 @@ import {
   viewCardWidthClass,
 } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
-import { getGearInstanceTitle, type GearInstance } from "@/lib/gear";
+import type { GearInstance } from "@/lib/gear";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { GearTile, TrinketTile } from "../../../shared/ui/collection-art-tiles";
+import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { MysteryEffectBadge } from "../../../shared/ui/mystery-effect-badge";
+import { TrinketItemTitle } from "../../../shared/ui/trinket-item-title";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { KeywordProgressGrid } from "../keyword-progress-grid";
 
@@ -65,7 +67,9 @@ function MysteryTrinketRewardItem({ boon }: { boon: TrinketEntry }) {
   return (
     <div className="flex flex-col items-center gap-3">
       <TrinketTile trinket={boon} interactionKey="mystery-reward" temporary />
-      <p className={controlLabelClass}>{boon.title}</p>
+      <p className={controlLabelClass}>
+        <TrinketItemTitle trinket={boon} />
+      </p>
     </div>
   );
 }
@@ -74,7 +78,9 @@ function MysteryGearRewardItem({ instance }: { instance: GearInstance }) {
   return (
     <div className="flex flex-col items-center gap-3">
       <GearTile instance={instance} interactionKey="mystery-reward" />
-      <p className={controlLabelClass}>{getGearInstanceTitle(instance)}</p>
+      <p className={controlLabelClass}>
+        <GearItemTitle instance={instance} />
+      </p>
     </div>
   );
 }

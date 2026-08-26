@@ -7,6 +7,7 @@ import {
 } from "../../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import type { BattleState, CombatFlags, EnemyMitigation, FirstTimeFlagKey } from "./state-types";
+import { isStunFreezeBuildupBlocked } from "./state-types";
 
 const FIRST_TIME_FLAG_USED_VALUES: { [K in FirstTimeFlagKey]: CombatFlags[K] } = {
   firstHolyCardFreeUsed: true,
@@ -70,6 +71,9 @@ export function playerStatusDelta(state: BattleState, status: PlayerStatusId, de
 }
 
 export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delta: number): BattleState {
+  if ((status === "stun" || status === "freeze") && isStunFreezeBuildupBlocked(state.playerCC)) {
+    return state;
+  }
   return {
     ...state,
     playerStatuses: {
@@ -79,11 +83,15 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
   };
 }
 
+/** Clears or ticks a status. Positive stun/freeze buildup must go through `addPlayerStatus`. */
 export function setPlayerStatus(state: BattleState, status: PlayerStatusId, value: number): BattleState {
   return { ...state, playerStatuses: { ...state.playerStatuses, [status]: value } };
 }
 
 export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {
+  if ((status === "stun" || status === "freeze") && isStunFreezeBuildupBlocked(state.enemyCC)) {
+    return state;
+  }
   const traitAdjustedDelta =
     status === "stun" && state.currentEnemy.traits.some((trait) => trait.id === "braced")
       ? Math.round(delta / HALF_DIVISOR)
@@ -107,6 +115,7 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
   return nextState;
 }
 
+/** Clears or ticks a status. Positive stun/freeze buildup must go through `addEnemyStatus`. */
 export function setEnemyStatus(state: BattleState, status: EnemyStatusId, value: number): BattleState {
   return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: value } };
 }

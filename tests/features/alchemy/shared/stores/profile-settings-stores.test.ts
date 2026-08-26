@@ -20,7 +20,7 @@ describe("profile store", () => {
     expect(profile.discoveredCardIds).toEqual([]);
     expect(profile.encounteredEnemyIds).toEqual([]);
     expect(profile.discoveredTrinketIds).toEqual([]);
-    expect(profile.collectionTab).toBe("cards");
+    expect(profile.collectionTab).toBe("heroes");
     expect(profile.completedDifficulties.knight).toEqual([]);
   });
 
@@ -55,7 +55,7 @@ describe("profile store", () => {
     expect(useProfileStore.getState()).toMatchObject({
       discoveredCardIds: ["card-a"],
       collectionTab: "bestiary",
-      collectionPages: { cards: 0, bestiary: 2, trinkets: 0 },
+      collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0 },
     });
   });
 
@@ -66,7 +66,7 @@ describe("profile store", () => {
     profile.resetToDefaults();
 
     expect(useProfileStore.getState().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
-    expect(useProfileStore.getState().collectionTab).toBe("cards");
+    expect(useProfileStore.getState().collectionTab).toBe("heroes");
   });
 
   it("setState from getInitialState only writes data fields onto the aggregate", () => {

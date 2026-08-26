@@ -8,7 +8,7 @@ import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
-import { tooltipHeaderClass } from "../config";
+import { tooltipBodyLineClass, tooltipHeaderClass } from "../config";
 import { tokenizeDescription } from "../utils";
 import { KeywordTag } from "./keyword-tag";
 import { TooltipBody } from "./tooltip-panel";
@@ -90,7 +90,7 @@ export function DescriptionLines({
         });
 
         return (
-          <div key={`${idPrefix}-${lineIndex}-${line}`}>
+          <div key={`${idPrefix}-${lineIndex}-${line}`} className={tooltipBodyLineClass}>
             {parts.map((part, index) => {
               if (part.keywordId) {
                 return (

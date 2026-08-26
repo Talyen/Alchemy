@@ -1,7 +1,8 @@
 // Battle UI formatting helpers for combat text colors/icons and status chip ordering.
 // Depends on battle state, game-data status IDs, alchemy config, and shared UI types.
 // Used by battle controller and widgets to keep presentation derivation out of combat logic.
-import type { BattleState, CombatTextEvent } from "@/lib/battle";
+import type { BattleState, CombatTextEvent, CcState } from "@/lib/battle";
+import { hasActiveCc, isStunFreezeBuildupBlocked } from "@/lib/battle";
 import {
   DAMAGE_TYPES,
   ENEMY_STATUS_DISPLAY_ORDER,
@@ -40,15 +41,30 @@ export function getCombatTextIcon(event: CombatTextEvent) {
 function buildStatusChips(
   order: ReadonlyArray<StatusChip["id"]>,
   statuses: Record<string, number> | undefined,
+  cc?: CcState,
 ): StatusChip[] {
   if (!statuses) return [];
+  const blockBuildup = cc ? isStunFreezeBuildupBlocked(cc) : false;
   return order.reduce<StatusChip[]>((chips, id) => {
+    if (blockBuildup && (id === "stun" || id === "freeze")) return chips;
     const value = statuses[id];
     if ((value ?? 0) > 0) {
       chips.push({ id, value: value!, ...(id === "phoenixFeather" ? { hideValue: true } : {}) });
     }
     return chips;
   }, []);
+}
+
+function buildActiveCcChips(cc: CcState): StatusChip[] {
+  const chips: StatusChip[] = [];
+  if (cc.stunSkipTurns > 0) chips.push({ id: "stunned", value: cc.stunSkipTurns, hideValue: true });
+  if (cc.freezeSkipTurns > 0) chips.push({ id: "frozen", value: cc.freezeSkipTurns, hideValue: true });
+  return chips;
+}
+
+function buildCcImmunityChip(cc: CcState): StatusChip[] {
+  if (hasActiveCc(cc) || cc.cooldown <= 0) return [];
+  return [{ id: "ccImmunity", value: cc.cooldown, hideValue: true }];
 }
 
 // Buff-tier player chips precede armed-effect chips, which precede harmful DoT build-ups.
@@ -67,10 +83,7 @@ function isDamageEffect(effect: BattleCardEffect): effect is Extract<BattleCardE
   return effect.kind === "damage";
 }
 
-// Armed one-shot buffs keyed by their CombatFlags field, plus repeat-over-turns pulses
-// split by audience: anything granting the player an effect reads as a hero Echo
-// (purely-offensive pulses surface under the enemy via buildPendingEnemyChips).
-// CC immunity surfaces on whichever side holds the post-trigger cooldown.
+// CC immunity surfaces only after active Stun/Freeze skip turns are consumed.
 function buildArmedPlayerChips(state: BattleState): StatusChip[] {
   const chips: StatusChip[] = [];
   const { flags } = state;
@@ -92,9 +105,8 @@ function buildArmedPlayerChips(state: BattleState): StatusChip[] {
   }
   if (echoCount > 0) chips.push({ id: "echo", value: echoCount });
 
-  if (state.playerCC.cooldown > 0) {
-    chips.push({ id: "ccImmunity", value: state.playerCC.cooldown, hideValue: true });
-  }
+  chips.push(...buildActiveCcChips(state.playerCC));
+  chips.push(...buildCcImmunityChip(state.playerCC));
 
   return chips;
 }
@@ -118,7 +130,7 @@ function buildPendingEnemyChips(state: BattleState): StatusChip[] {
 export function getPlayerStatusChips(state: BattleState | null | undefined): StatusChip[] {
   if (!state) return [];
   return insertAfterBuffTier(
-    buildStatusChips(PLAYER_STATUS_DISPLAY_ORDER, state.playerStatuses),
+    buildStatusChips(PLAYER_STATUS_DISPLAY_ORDER, state.playerStatuses, state.playerCC),
     buildArmedPlayerChips(state),
   );
 }
@@ -130,11 +142,10 @@ export function getEnemyStatusChips(state: BattleState | null | undefined): Stat
     const value = state.enemyMitigation[key];
     if (value > 0) mitigationChips.push({ id: key, value });
   }
-  const statusChips = buildStatusChips(ENEMY_STATUS_DISPLAY_ORDER, state.enemyStatuses);
+  const statusChips = buildStatusChips(ENEMY_STATUS_DISPLAY_ORDER, state.enemyStatuses, state.enemyCC);
   const pendingChips = buildPendingEnemyChips(state);
-  const immunityChips: StatusChip[] =
-    state.enemyCC.cooldown > 0 ? [{ id: "ccImmunity", value: state.enemyCC.cooldown, hideValue: true }] : [];
-  return [...mitigationChips, ...statusChips, ...pendingChips, ...immunityChips];
+  const ccChips = [...buildActiveCcChips(state.enemyCC), ...buildCcImmunityChip(state.enemyCC)];
+  return [...mitigationChips, ...statusChips, ...pendingChips, ...ccChips];
 }
 
 function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {

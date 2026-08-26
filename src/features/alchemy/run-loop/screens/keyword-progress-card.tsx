@@ -13,35 +13,40 @@ export function KeywordProgressCard({
   runXP,
   totalXP,
   animate,
+  size = "md",
 }: {
   kw: KeywordId;
   runXP: number;
   totalXP: number;
   animate: boolean;
+  size?: "md" | "lg";
 }) {
   const { progressPercent, xpForNext, xpRemaining } = getTalentKeywordProgress(totalXP, 0);
   const Icon = keywordIcons[kw];
   const def = keywordDefinitions[kw];
+  const large = size === "lg";
 
   return (
-    <div className="rounded-shell-compact border border-border/70 p-3 text-left surface-muted">
+    <div className={cn("rounded-shell-compact border border-border/70 text-left surface-muted", large ? "p-4" : "p-3")}>
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          {Icon ? <Icon className={cn("h-5 w-5", def?.colorClass)} /> : null}
-          <span className={cn("text-base font-semibold", def?.colorClass)}>{def?.label ?? kw}</span>
+        <div className={cn("flex items-center", large ? "gap-2" : "gap-1.5")}>
+          {Icon ? <Icon className={cn(large ? "h-6 w-6" : "h-5 w-5", def?.colorClass)} /> : null}
+          <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>
+            {def?.label ?? kw}
+          </span>
         </div>
-        <span className="text-base font-semibold text-muted-foreground">+{runXP}</span>
+        <span className={cn(large ? "text-lg" : "text-base", "font-semibold text-muted-foreground")}>+{runXP}</span>
       </div>
       <Progress
         size="sm"
         value={animate ? progressPercent : 0}
-        className="mt-2"
+        className={large ? "mt-2.5" : "mt-2"}
         fillStyle={{
           transition: animate ? "width 1000ms ease-out" : "none",
           backgroundColor: def?.shineColors?.[0] ?? undefined,
         }}
       />
-      <p className="mt-1 text-right text-base font-semibold text-muted-foreground">
+      <p className={cn("mt-1 text-right font-semibold text-muted-foreground", large ? "text-lg" : "text-base")}>
         {xpForNext - xpRemaining}/{xpForNext}
       </p>
     </div>

@@ -1,12 +1,18 @@
-// Pure collection item shaping for cards, enemies, and trinkets.
+// Pure collection item shaping for heroes, cards, enemies, and trinkets.
 // Depends on game-data libraries and collection page size tuning.
 // Used by collection UI layout and tests without owning rendering concerns.
 import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import {
   cardLibrary,
+  characterArt,
+  characters,
   enemyBestiary,
+  getCharacterUnlockMessage,
+  isCharacterUnlocked,
   trinketLibrary,
   type BestiaryEntry,
+  type CharacterDefinition,
+  type CharacterId,
   type TrinketEntry,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import type { BattleCard } from "@/lib/game-data";
@@ -29,11 +35,13 @@ export interface CollectionTileItem {
   art: string;
   discovered: boolean;
   hoverScope: string;
-  frameType: "card" | "bestiary" | "trinket";
+  frameType: "hero" | "card" | "bestiary" | "trinket";
   enemyEntry?: BestiaryEntry;
   /** Discovered cards: format description lines in the hover popup, not while paging. */
   card?: BattleCard;
   companionBondLevels?: Record<string, number>;
+  character?: CharacterDefinition;
+  unlockRequirementText?: string;
 }
 
 function getCollectionPageSize(tab: CollectionTab): number {
@@ -42,15 +50,21 @@ function getCollectionPageSize(tab: CollectionTab): number {
   return COLLECTION_PAGE_SIZE;
 }
 
-export function getCollectionTotalPages(collectionTab: CollectionTab) {
-  const itemCount =
-    collectionTab === "cards"
-      ? cardLibrary.length
-      : collectionTab === "bestiary"
-        ? enemyBestiary.length
-        : trinketLibrary.length;
+function getCollectionLibraryLength(collectionTab: CollectionTab): number {
+  switch (collectionTab) {
+    case "heroes":
+      return heroRoster.length;
+    case "cards":
+      return cardLibrary.length;
+    case "bestiary":
+      return enemyBestiary.length;
+    case "trinkets":
+      return trinketLibrary.length;
+  }
+}
 
-  return Math.max(1, Math.ceil(itemCount / getCollectionPageSize(collectionTab)));
+export function getCollectionTotalPages(collectionTab: CollectionTab) {
+  return Math.max(1, Math.ceil(getCollectionLibraryLength(collectionTab) / getCollectionPageSize(collectionTab)));
 }
 
 export function getCollectionPageItems({
@@ -58,6 +72,7 @@ export function getCollectionPageItems({
   discoveredCardIds,
   encounteredEnemyIds,
   discoveredTrinketIds,
+  finishedRunCharacters = [],
   bondedCompanions = {},
   page,
 }: {
@@ -65,6 +80,7 @@ export function getCollectionPageItems({
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
+  finishedRunCharacters?: readonly CharacterId[];
   bondedCompanions?: Record<string, number>;
   page: number;
 }) {
@@ -72,6 +88,9 @@ export function getCollectionPageItems({
   const totalPages = getCollectionTotalPages(collectionTab);
   const safePage = Math.min(Math.max(0, page), totalPages - 1);
   const start = safePage * pageSize;
+  if (collectionTab === "heroes") {
+    return getHeroItems(finishedRunCharacters, start, pageSize);
+  }
   if (collectionTab === "cards") {
     return getCardItems(discoveredCardIds, bondedCompanions, start, pageSize);
   }
@@ -93,6 +112,7 @@ function sortByTitle<T extends { title: string }>(entries: T[]): T[] {
 const sortedCardLibrary = sortByTitle(cardLibrary);
 const sortedEnemyBestiary = sortByTitle(enemyBestiary);
 const sortedTrinketLibrary = sortByTitle(trinketLibrary);
+const heroRoster = Object.values(characters);
 
 function shapeCardItem(
   card: (typeof cardLibrary)[number],
@@ -122,6 +142,29 @@ function getCardItems(
   return sortedCardLibrary
     .slice(start, start + pageSize)
     .map((card) => shapeCardItem(card, discoveredSet.has(card.id), bondedCompanions));
+}
+
+function getHeroItems(
+  finishedRunCharacters: readonly CharacterId[],
+  start: number,
+  pageSize: number,
+): CollectionTileItem[] {
+  return heroRoster.slice(start, start + pageSize).map((character) => {
+    const discovered = isCharacterUnlocked(character.id, finishedRunCharacters);
+    const unlockRequirementText = discovered ? "" : getCharacterUnlockMessage(character.id);
+    return {
+      id: character.id,
+      title: character.name,
+      subtitle: undefined,
+      descriptionLines: discovered ? [] : [unlockRequirementText],
+      art: characterArt[character.id],
+      discovered,
+      hoverScope: "collection-hero",
+      frameType: "hero" as const,
+      character,
+      unlockRequirementText,
+    };
+  });
 }
 
 function getBestiaryItems(encounteredEnemyIds: string[], start: number, pageSize: number): CollectionTileItem[] {

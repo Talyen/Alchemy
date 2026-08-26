@@ -104,10 +104,28 @@ describe("getPlayerStatusChips", () => {
     expect(getPlayerStatusChips(state)).toEqual([]);
   });
 
-  it("surfaces the player's CC immunity cooldown with turns remaining", () => {
+  it("surfaces the player's CC immunity cooldown only after active CC ends", () => {
     const state = makeProductionBattleState();
     state.playerCC.cooldown = 2;
     expect(getPlayerStatusChips(state)).toEqual([{ id: "ccImmunity", value: 2, hideValue: true }]);
+  });
+
+  it("surfaces Stunned and Frozen chips while skip turns are active", () => {
+    const state = makeProductionBattleState();
+    state.playerCC.stunSkipTurns = 1;
+    state.playerCC.freezeSkipTurns = 1;
+    expect(getPlayerStatusChips(state)).toEqual([
+      { id: "stunned", value: 1, hideValue: true },
+      { id: "frozen", value: 1, hideValue: true },
+    ]);
+  });
+
+  it("prefers active CC chips over immunity and buildup stacks", () => {
+    const state = makeProductionBattleState();
+    state.playerCC.stunSkipTurns = 1;
+    state.playerCC.cooldown = 2;
+    state.playerStatuses.stun = 8;
+    expect(getPlayerStatusChips(state)).toEqual([{ id: "stunned", value: 1, hideValue: true }]);
   });
 
   it("surfaces Phoenix Feather as a badge-less binary effect", () => {
@@ -186,14 +204,18 @@ describe("getEnemyStatusChips", () => {
     expect(getEnemyStatusChips(state)).toEqual([{ id: "onAttackBleed", value: 2 }]);
   });
 
-  it("surfaces the enemy's CC immunity cooldown with turns remaining", () => {
+  it("surfaces the enemy's CC immunity cooldown only after active CC ends", () => {
     const state = makeProductionBattleState();
     state.enemyStatuses.stun = 1;
     state.enemyCC.cooldown = 2;
-    expect(getEnemyStatusChips(state)).toEqual([
-      { id: "stun", value: 1 },
-      { id: "ccImmunity", value: 2, hideValue: true },
-    ]);
+    expect(getEnemyStatusChips(state)).toEqual([{ id: "ccImmunity", value: 2, hideValue: true }]);
+  });
+
+  it("surfaces enemy Stunned chip while skip turns are active", () => {
+    const state = makeProductionBattleState();
+    state.enemyCC.stunSkipTurns = 1;
+    state.enemyCC.cooldown = 2;
+    expect(getEnemyStatusChips(state)).toEqual([{ id: "stunned", value: 1, hideValue: true }]);
   });
 });
 

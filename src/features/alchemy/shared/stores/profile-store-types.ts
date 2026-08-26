@@ -37,7 +37,7 @@ export interface ProfileStateFields extends ProfileSaveFields {
 export function createInitialProfileState(): ProfileStateFields {
   return {
     ...createDefaultProfileSaveFields(),
-    collectionTab: "cards",
-    collectionPages: { cards: 0, bestiary: 0, trinkets: 0 },
+    collectionTab: "heroes",
+    collectionPages: { heroes: 0, cards: 0, bestiary: 0, trinkets: 0 },
   };
 }

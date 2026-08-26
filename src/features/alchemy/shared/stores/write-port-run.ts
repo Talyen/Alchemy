@@ -9,7 +9,7 @@ import type { GameplayDraft } from "./run-session-command";
 import { addProfileGold, setProfileGold } from "./gold-purse";
 import { createInitialActiveRunFields, runFieldsFromSnapshot, type ActiveRunProgressFields } from "./run-state-init";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
-import type { ActiveRunData } from "@/lib/active-run-session";
+import type { ActiveRunData, RunObtainedItem } from "@/lib/active-run-session";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { Screen } from "@/lib/routing";
@@ -109,6 +109,19 @@ export function clearRunMaterialsEarned(draft: GameplayDraft): void {
   draft.run.activeRun.runMaterialsEarned = emptyInventory();
 }
 
+export function cloneRunObtainedItem(item: RunObtainedItem): RunObtainedItem {
+  if (item.kind === "trinket") return { kind: "trinket", trinketId: item.trinketId };
+  return {
+    kind: "gear",
+    instance: { ...item.instance, affixes: item.instance.affixes.map((affix) => ({ ...affix })) },
+  };
+}
+
+/** Append a permanent Gear or Armory Trinket grant to the run-end recap accumulator. */
+export function recordRunObtainedItem(draft: GameplayDraft, item: RunObtainedItem): void {
+  draft.run.activeRun.runObtainedItems = [...draft.run.activeRun.runObtainedItems, cloneRunObtainedItem(item)];
+}
+
 export function initializeActiveRun(
   draft: GameplayDraft,
   activeRun: ActiveRunData | null,
@@ -128,6 +141,7 @@ export function hydrateFromSnapshot(draft: GameplayDraft, snapshot: RunStartSnap
   Object.assign(draft.run.activeRun, runFieldsFromSnapshot(snapshot), {
     runTalentXP: {},
     runMaterialsEarned: emptyInventory(),
+    runObtainedItems: [],
     lastOfferedDestinations: [],
     destinationRoundsSinceOffered: {},
   });

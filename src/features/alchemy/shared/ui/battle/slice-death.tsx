@@ -10,6 +10,8 @@ import { playSliceDeath } from "@/lib/audio";
 import { SLICE_DEATH_DURATION_MS } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
+const SLICE_HALF_FRAME_CLASS = "border border-border/80";
+
 interface SliceDeathProps {
   imageUrl: string;
   alt: string;
@@ -118,7 +120,7 @@ export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
         ref={leftRef}
         src={imageUrl}
         alt={alt}
-        className={cn("block w-full", imageClassName)}
+        className={cn("block w-full", SLICE_HALF_FRAME_CLASS, imageClassName)}
         style={{ clipPath: SLICE_PRIMARY_CLIP_PATH, transformOrigin: "center center" }}
         loading="eager"
       />
@@ -126,7 +128,7 @@ export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
         ref={rightRef}
         src={imageUrl}
         alt=""
-        className={cn("absolute inset-0 block w-full", imageClassName)}
+        className={cn("absolute inset-0 block w-full", SLICE_HALF_FRAME_CLASS, imageClassName)}
         style={{ clipPath: SLICE_SECONDARY_CLIP_PATH, transformOrigin: "center center" }}
         loading="eager"
       />
