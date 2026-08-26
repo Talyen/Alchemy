@@ -1,5 +1,6 @@
 // Streaming MP3 music playback and transitions.
 // Used by App/controllers through the public lib/audio facade.
+import { isNonPlayerAudioHost } from "./audio-host";
 import {
   FADE_IN_DELAY,
   FADE_IN_DURATION,
@@ -68,12 +69,28 @@ export function invalidateCacheForKey(key: string): void {
   musicCache.delete(key);
 }
 
+export function pauseAllMusic() {
+  for (const el of musicCache.values()) {
+    el.muted = true;
+    el.pause();
+  }
+  if (audioState.currentMusic) {
+    audioState.currentMusic.muted = true;
+    audioState.currentMusic.pause();
+  }
+}
+
 // Global counter tracking active scene music transitions to prevent concurrent crossfades
 // from racing or playing overlapping tracks.
 let musicTransitionToken = 0;
 
 // Play wrapper handling browser autoplay blocking policies.
 function playElement(el: HTMLAudioElement) {
+  if (isNonPlayerAudioHost()) {
+    el.muted = true;
+    el.pause();
+    return;
+  }
   el.play().catch(() => {
     console.warn("Music playback blocked until user interaction");
   });

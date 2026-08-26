@@ -13,10 +13,12 @@ export const MUSIC_KEYS = {
 
 // Music transition timing and gain staging. MUSIC_MASTER_GAIN is an additional layer
 // on top of user music volume and master volume — the final volume is userMusic * master * MUSIC_MASTER_GAIN.
+// 0.7 keeps music a bit under combat SFX at equal sliders: music stems sit hotter (~-14 LUFS)
+// than loudnorm'd SFX (~-16) and a continuous bed reads louder than equal-peak hits.
 export const FADE_OUT_DURATION = 300;
 export const FADE_IN_DELAY = 600;
 export const FADE_IN_DURATION = 1400;
-export const MUSIC_MASTER_GAIN = 0.2;
+export const MUSIC_MASTER_GAIN = 0.7;
 
 // ============ SFX Volume ============
 export const DEFAULT_SFX_VOLUME = 0.35;
@@ -95,8 +97,9 @@ export const GHOST_TARGET_Y_RATIO = 0.82;
 export const GHOST_FALLBACK_WIDTH_PX = 160;
 export const GHOST_FALLBACK_HEIGHT_PX = 220;
 export const GHOST_FALLBACK_CENTER_Y_RATIO = 0.3;
-export const BATTLE_PARTICLE_ALPHA_NORMAL = 1.7;
-export const BATTLE_PARTICLE_ALPHA_BOSS = 2.5;
+export const BATTLE_PARTICLE_COUNT = 80;
+export const BATTLE_PARTICLE_ALPHA_NORMAL = 2.0;
+export const BATTLE_PARTICLE_ALPHA_BOSS = 2.9;
 export const STAGE_HEIGHT = 1080;
 export const MIN_STAGE_SCALE = 0.3;
 export const MAX_STAGE_SCALE = 2.0;

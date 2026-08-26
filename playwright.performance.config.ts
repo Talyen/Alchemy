@@ -53,7 +53,7 @@ export default defineConfig({
             viewport: { ...PERF_VIEWPORT },
             deviceScaleFactor: 1,
             launchOptions: {
-              args: ["--disable-background-timer-throttling", "--disable-renderer-backgrounding"],
+              args: ["--mute-audio", "--disable-background-timer-throttling", "--disable-renderer-backgrounding"],
             },
           },
         },

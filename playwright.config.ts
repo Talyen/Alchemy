@@ -34,6 +34,8 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${port}`,
     trace: isPrepush ? "off" : "retain-on-failure",
     actionTimeout: isCi ? 15_000 : 10_000,
+    // OS mute so headed local runs stay silent; Audio.play() still runs for SFX assertions.
+    launchOptions: { args: ["--mute-audio"] },
     storageState: {
       cookies: [],
       origins: [

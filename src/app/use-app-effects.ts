@@ -13,6 +13,7 @@ import {
   getBossMusicKey,
   invalidateCacheForKey,
   isMusicPaused,
+  isNonPlayerAudioHost,
   playMusic,
   playMusicImmediate,
   preloadAllSounds,
@@ -41,6 +42,15 @@ interface AppAudioEffectsOptions {
   screen: Screen;
 }
 
+/** Hidden tabs, unfocused windows, and zero-size Recents panes. A focused game plays immediately. */
+export function isAppInBackground(event?: Pick<Event, "type">): boolean {
+  if (document.hidden) return true;
+  if (event?.type === "blur") return true;
+  if (event?.type === "focus") return false;
+  if (window.innerWidth < 2 || window.innerHeight < 2) return true;
+  return !document.hasFocus();
+}
+
 function pickMusicKey(screen: Screen): string {
   if (screen !== "battle") return MUSIC_KEYS.MENU;
   const battleStore = readBattle();
@@ -59,6 +69,8 @@ export function useAppAudioEffects({
 }: AppAudioEffectsOptions) {
   const screenRef = useRef(screen);
   const gestureFiredRef = useRef(false);
+  const muteInBackgroundRef = useRef(muteInBackground);
+  muteInBackgroundRef.current = muteInBackground;
 
   useEffect(() => {
     setMasterVolume(masterVolume / 100);
@@ -71,19 +83,21 @@ export function useAppAudioEffects({
   }, [sfxVolume]);
 
   useEffect(() => {
-    function applyBackgroundMute() {
-      setMuted(muteInBackground && document.hidden);
+    function applyBackgroundMute(event?: Event) {
+      setMuted(isNonPlayerAudioHost() || (muteInBackground && isAppInBackground(event)));
     }
 
     applyBackgroundMute();
     document.addEventListener("visibilitychange", applyBackgroundMute);
     window.addEventListener("blur", applyBackgroundMute);
     window.addEventListener("focus", applyBackgroundMute);
+    window.addEventListener("resize", applyBackgroundMute);
     return () => {
       document.removeEventListener("visibilitychange", applyBackgroundMute);
       window.removeEventListener("blur", applyBackgroundMute);
       window.removeEventListener("focus", applyBackgroundMute);
-      setMuted(false);
+      window.removeEventListener("resize", applyBackgroundMute);
+      setMuted(isNonPlayerAudioHost());
     };
   }, [muteInBackground]);
 
@@ -112,7 +126,9 @@ export function useAppAudioEffects({
     preloadAllSounds();
 
     function resumeOnGesture() {
-      if (!document.hidden) setMuted(false);
+      if (isNonPlayerAudioHost()) return;
+      if (muteInBackgroundRef.current && isAppInBackground()) return;
+      setMuted(false);
       if (gestureFiredRef.current) return;
       gestureFiredRef.current = true;
       if (isMusicPaused()) {

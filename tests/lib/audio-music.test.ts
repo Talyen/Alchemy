@@ -176,3 +176,31 @@ it("cancels prior transition when rapid playMusic is invoked", () => {
 
   vi.useRealTimers();
 });
+
+it("does not start playback in a non-player host", () => {
+  class MockAudio {
+    src = "";
+    currentTime = 0;
+    paused = true;
+    volume = 1;
+    muted = false;
+    loop = false;
+    play = vi.fn(() => {
+      this.paused = false;
+      return Promise.resolve();
+    });
+    pause() {
+      this.paused = true;
+    }
+    constructor(src?: string) {
+      this.src = src ?? "";
+    }
+  }
+  vi.stubGlobal("Audio", MockAudio);
+  vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Electron/28.0.0" });
+
+  playMusicImmediate(MUSIC_KEYS.MENU);
+  expect(audioState.currentMusic?.play).not.toHaveBeenCalled();
+  expect(audioState.currentMusic?.paused).toBe(true);
+  expect(audioState.currentMusic?.muted).toBe(true);
+});

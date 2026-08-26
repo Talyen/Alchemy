@@ -25,6 +25,17 @@ describe("setMuted", () => {
     setMuted(true);
     expect(el.muted).toBe(true);
   });
+
+  it("keeps a non-player host muted when unmute is requested", () => {
+    vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Electron/28.0.0" });
+    const el = { muted: false, pause: vi.fn() } as Partial<HTMLAudioElement>;
+    audioState.currentMusic = el as HTMLAudioElement;
+    setMuted(false);
+    expect(audioState.muted).toBe(true);
+    expect(el.muted).toBe(true);
+    expect(el.pause).toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
 });
 
 describe("setSfxVolume", () => {
