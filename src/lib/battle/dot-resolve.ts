@@ -11,11 +11,11 @@ import { payPendingBleedLeech } from "./damage-rider-leech";
 
 export type EnemyDotStatus = "burn" | "poison" | "bleed";
 
-export type EnemyDotPulse = {
+export interface EnemyDotPulse {
   status: EnemyDotStatus;
   finalDamage: number;
   nextStacks: number;
-};
+}
 
 /** Clamp health once, pay lethality, apply stack updates, riders, armor decay, trait threshold. */
 export function applyEnemyDotDamage(
@@ -58,7 +58,7 @@ export function dealEnemyDotTick(
  */
 export function detonateEnemyStatuses(
   state: BattleState,
-  statuses: readonly ("bleed" | "poison")[],
+  statuses: ReadonlyArray<"bleed" | "poison">,
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const pulses: EnemyDotPulse[] = [];
