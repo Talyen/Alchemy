@@ -3,9 +3,15 @@ import {
   createEmptyGearInventories,
   createEmptyGearLoadouts,
   flattenGearInventories,
+  generateUniqueGearInstance,
+  getUniqueItemDefinition,
   type GearInstance,
 } from "@/lib/gear";
-import { useGearStore } from "../../../../helpers/gameplay-store-test";
+import { useGearStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
+import {
+  dispatchGearMutationWithRunHealthSync,
+  dispatchGearSalvageWithMaterialGrant,
+} from "@/features/alchemy/shared/stores/gear-session-command";
 
 function knightInventories(...items: GearInstance[]) {
   const inventories = createEmptyGearInventories();
@@ -74,5 +80,23 @@ describe("gear-store", () => {
     useGearStore.getState().reset();
     expect(useGearStore.getState().addTrinket("missing-trinket")).toBe(false);
     expect(useGearStore.getState().equipTrinket("knight", "bone-charm")).toBe(false);
+  });
+
+  it("records unique discovery on obtain and keeps it after salvage", () => {
+    useGearStore.getState().reset();
+    useProfileStore.setState(useProfileStore.getInitialState());
+    const uniqueDef = getUniqueItemDefinition("wardbreaker");
+    if (!uniqueDef) throw new Error("missing wardbreaker unique");
+    const unique = generateUniqueGearInstance(uniqueDef);
+
+    dispatchGearMutationWithRunHealthSync({
+      mutate: (gear) => gear.addInstance(unique, "knight"),
+    });
+    expect(useProfileStore.getState().discoveredUniqueIds).toEqual(["wardbreaker"]);
+
+    dispatchGearSalvageWithMaterialGrant((gear) => gear.salvage(unique.instanceId, { rng: () => 0 }));
+    expect(flattenGearInventories(useGearStore.getState().inventories)).toEqual([]);
+    expect(useProfileStore.getState().discoveredUniqueIds).toEqual(["wardbreaker"]);
+    useGearStore.getState().reset();
   });
 });

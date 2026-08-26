@@ -124,6 +124,7 @@ export const SaveDataSchema = z.preprocess(
       discoveredCardIds: deduplicatedStringArraySchema(),
       encounteredEnemyIds: deduplicatedStringArraySchema(),
       discoveredTrinketIds: deduplicatedStringArraySchema(),
+      discoveredUniqueIds: deduplicatedStringArraySchema(),
       gearInventories: GearInventoriesSchema.catch(emptyGearInventories),
       gearLoadouts: GearLoadoutsSchema.catch(emptyGearLoadouts),
       ownedTrinketIds: deduplicatedStringArraySchema(),

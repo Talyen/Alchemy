@@ -5,6 +5,7 @@ export interface ProfileSaveFields {
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
+  discoveredUniqueIds: string[];
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
   finishedRunCharacters: CharacterId[];
 }
@@ -14,6 +15,7 @@ export function createDefaultProfileSaveFields(): ProfileSaveFields {
     discoveredCardIds: [],
     encounteredEnemyIds: [],
     discoveredTrinketIds: [],
+    discoveredUniqueIds: [],
     completedDifficulties: {
       knight: [],
       rogue: [],
@@ -38,6 +40,6 @@ export function createInitialProfileState(): ProfileStateFields {
   return {
     ...createDefaultProfileSaveFields(),
     collectionTab: "heroes",
-    collectionPages: { heroes: 0, cards: 0, bestiary: 0, trinkets: 0 },
+    collectionPages: { heroes: 0, cards: 0, bestiary: 0, trinkets: 0, uniques: 0 },
   };
 }

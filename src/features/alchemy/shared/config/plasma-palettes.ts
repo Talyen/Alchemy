@@ -12,7 +12,12 @@ import {
   type TalentDefinition,
   type TrinketEntry,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-import { gearDefinitions, getGearInstanceKeywordIds, type GearInstance } from "@/lib/gear";
+import {
+  gearDefinitions,
+  getGearInstanceKeywordIds,
+  getUniqueGearTextShineColors,
+  type GearInstance,
+} from "@/lib/gear";
 import { keywordAliasMap, keywordPattern } from "./keywords";
 import {
   getCompanionShineColors,
@@ -107,6 +112,10 @@ export function getPlasmaColorPairForTrinket(trinket: TrinketEntry | string): Pl
 
 export function getPlasmaColorPairForGear(gear: GearInstance): PlasmaColorPair | null {
   return getPlasmaColorPair(getPlasmaKeywordsForGear(gear));
+}
+
+export function getPlasmaColorPairForUnique(): PlasmaColorPair | null {
+  return getPlasmaColorPairFromColors(getUniqueGearTextShineColors());
 }
 
 export function getPlasmaColorPairForTalent(talent: Pick<TalentDefinition, "keywordId">): PlasmaColorPair | null {

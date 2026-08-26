@@ -14,11 +14,12 @@ test.describe("Collection", critical, () => {
       await new MenuPage(page).gotoCollection({ discoveredCardIds: ["anvil"] });
     });
 
-    test("collection shows all four tabs with content and card inspection works", async ({ page }) => {
+    test("collection shows all five tabs with content and card inspection works", async ({ page }) => {
       await expect(page.getByRole("button", { name: "Heroes" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Cards" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Bestiary" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Trinkets" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Uniques" })).toBeVisible();
       await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
 
       await page.getByRole("button", { name: "Cards" }).click();
@@ -31,6 +32,17 @@ test.describe("Collection", critical, () => {
     test("collection card tiles keep horizontal gaps between neighbors", async ({ page }) => {
       await page.getByRole("button", { name: "Cards" }).click();
       await assertHorizontalNeighborGap(page.getByRole("button", { name: /Inspect/ }));
+    });
+  });
+
+  test.describe("with a discovered unique", () => {
+    test("uniques tab reveals the unique name and signature", async ({ page }) => {
+      await new MenuPage(page).gotoCollection({ discoveredUniqueIds: ["wardbreaker"] });
+      await page.getByRole("button", { name: "Uniques" }).click();
+      const inspectBtn = page.getByRole("button", { name: /Inspect Wardbreaker/ });
+      await expect(inspectBtn).toBeVisible({ timeout: 5000 });
+      await inspectBtn.hover();
+      await expect(page.getByText(/Purge enemy Armor/)).toBeVisible();
     });
   });
 
@@ -76,11 +88,31 @@ test.describe("Collection", critical, () => {
       return ratios;
     }
 
+    test("heroes to cards keeps the collection heading still when pagination appears", async ({ page }) => {
+      const heading = page.getByRole("heading", { name: "Collection" });
+      await expect(heading).toBeVisible();
+      await expect(page.getByRole("button", { name: "Previous page" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Next page" })).toHaveCount(0);
+
+      const heroesY = await heading.evaluate((el) => el.getBoundingClientRect().y);
+
+      await page.getByRole("button", { name: "Cards" }).click();
+      await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
+      await expect(page.getByRole("button", { name: "Previous page" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Next page" })).toBeVisible();
+
+      const cardsY = await heading.evaluate((el) => el.getBoundingClientRect().y);
+      expect(Math.abs(cardsY - heroesY)).toBeLessThan(0.5);
+    });
+
     test("collection tab navigation shows bestiary and boon undiscovered entries", async ({ page }) => {
       await page.getByRole("button", { name: "Bestiary" }).click();
       await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
 
       await page.getByRole("button", { name: "Trinkets" }).click();
+      await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
+
+      await page.getByRole("button", { name: "Uniques" }).click();
       await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
 
       await page.getByRole("button", { name: "Cards" }).click();
@@ -113,6 +145,19 @@ test.describe("Collection", critical, () => {
       }
 
       await assertNoOverflow(page, "collection trinkets");
+    });
+
+    test("unique tiles use portrait art without collection overflow", async ({ page }) => {
+      await page.getByRole("button", { name: "Uniques" }).click();
+      const uniqueImages = page.locator('button[aria-label="Inspect Undiscovered Entry"] img');
+      await expect(uniqueImages.first()).toBeVisible();
+
+      const ratios = await settledAspectRatios(uniqueImages);
+      for (const ratio of ratios) {
+        expect(ratio).toBeCloseTo(3 / 4, 2);
+      }
+
+      await assertNoOverflow(page, "collection uniques");
     });
   });
 });

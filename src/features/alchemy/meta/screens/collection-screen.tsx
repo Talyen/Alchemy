@@ -1,6 +1,6 @@
-// Collection screen with tabs (heroes / cards / bestiary / trinkets) and paginated grid.
+// Collection screen with tabs (heroes / cards / bestiary / trinkets / uniques) and paginated grid.
 // The active grid alone is mounted. Art remains globally predecoded at boot, so
-// tab switches stay instant without retaining four grids of interactive DOM.
+// tab switches stay instant without retaining five grids of interactive DOM.
 import { collectionShellWidthClass } from "../../shared/config";
 import { HamburgerTrigger, PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
 import {
@@ -19,6 +19,7 @@ export function CollectionScreen({
   discoveredCardIds,
   encounteredEnemyIds,
   discoveredTrinketIds,
+  discoveredUniqueIds,
   finishedRunCharacters,
   collectionPages,
   onPageChange,
@@ -30,6 +31,7 @@ export function CollectionScreen({
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
+  discoveredUniqueIds: string[];
   finishedRunCharacters: CharacterId[];
   collectionPages: Record<CollectionTab, number>;
   onPageChange: (tab: CollectionTab, page: number) => void;
@@ -58,6 +60,7 @@ export function CollectionScreen({
               discoveredCardIds={discoveredCardIds}
               encounteredEnemyIds={encounteredEnemyIds}
               discoveredTrinketIds={discoveredTrinketIds}
+              discoveredUniqueIds={discoveredUniqueIds}
               finishedRunCharacters={finishedRunCharacters}
               page={activePage}
               bondedCompanions={bondedCompanions}

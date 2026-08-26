@@ -15,9 +15,11 @@ import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-sequential-fade-swap";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
+import { uniqueItemList } from "@/lib/gear";
 import {
   discoverCardIds,
   discoverTrinketIds,
+  discoverUniqueIds,
   setEncounteredEnemyIds,
   setFinishedRunCharacters,
 } from "@/features/alchemy/shared/stores/profile-store";
@@ -229,6 +231,10 @@ export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | 
       discoverTrinketIds(
         draft,
         trinketLibrary.map((boon) => boon.id),
+      );
+      discoverUniqueIds(
+        draft,
+        uniqueItemList.map((unique) => unique.id),
       );
       setFinishedRunCharacters(draft, ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
       setMaterials(draft, { wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });

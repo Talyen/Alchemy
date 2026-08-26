@@ -9,6 +9,7 @@ import {
   setCompletedDifficulties as setCompletedDifficultiesInDraft,
   setDiscoveredCardIds as setDiscoveredCardIdsInDraft,
   setDiscoveredTrinketIds as setDiscoveredTrinketIdsInDraft,
+  setDiscoveredUniqueIds as setDiscoveredUniqueIdsInDraft,
   setEncounteredEnemyIds as setEncounteredEnemyIdsInDraft,
   setFinishedRunCharacters as setFinishedRunCharactersInDraft,
 } from "./write-port-profile";
@@ -20,6 +21,7 @@ function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
     discoveredCardIds: [...fields.discoveredCardIds],
     encounteredEnemyIds: [...fields.encounteredEnemyIds],
     discoveredTrinketIds: [...fields.discoveredTrinketIds],
+    discoveredUniqueIds: [...fields.discoveredUniqueIds],
     completedDifficulties: Object.fromEntries(
       Object.entries(fields.completedDifficulties).map(([characterId, difficulties]) => [
         characterId,
@@ -45,6 +47,7 @@ export type ProfileReadView = Pick<
   | "discoveredCardIds"
   | "encounteredEnemyIds"
   | "discoveredTrinketIds"
+  | "discoveredUniqueIds"
   | "completedDifficulties"
   | "finishedRunCharacters"
 >;
@@ -57,6 +60,7 @@ export function readProfileStore(): ProfileReadView {
     discoveredCardIds: profile.discoveredCardIds,
     encounteredEnemyIds: profile.encounteredEnemyIds,
     discoveredTrinketIds: profile.discoveredTrinketIds,
+    discoveredUniqueIds: profile.discoveredUniqueIds,
     completedDifficulties: profile.completedDifficulties,
     finishedRunCharacters: profile.finishedRunCharacters,
   };
@@ -68,6 +72,7 @@ export function useProfileDiscoverySlice() {
       discoveredCardIds: state.profile.discoveredCardIds,
       encounteredEnemyIds: state.profile.encounteredEnemyIds,
       discoveredTrinketIds: state.profile.discoveredTrinketIds,
+      discoveredUniqueIds: state.profile.discoveredUniqueIds,
     })),
   );
 }
@@ -79,6 +84,7 @@ export function useProfileCollectionSlice() {
       discoveredCardIds: state.profile.discoveredCardIds,
       encounteredEnemyIds: state.profile.encounteredEnemyIds,
       discoveredTrinketIds: state.profile.discoveredTrinketIds,
+      discoveredUniqueIds: state.profile.discoveredUniqueIds,
       collectionPages: state.profile.collectionPages,
     })),
   );
@@ -100,6 +106,11 @@ export function discoverCardIds(draft: GameplayDraft, ids: readonly string[]): v
 export function discoverTrinketIds(draft: GameplayDraft, ids: readonly string[]): void {
   if (ids.length === 0) return;
   setDiscoveredTrinketIdsInDraft(draft, (current) => appendUniqueMany(current, ids));
+}
+
+export function discoverUniqueIds(draft: GameplayDraft, ids: readonly string[]): void {
+  if (ids.length === 0) return;
+  setDiscoveredUniqueIdsInDraft(draft, (current) => appendUniqueMany(current, ids));
 }
 
 export const setEncounteredEnemyIds = setEncounteredEnemyIdsInDraft;

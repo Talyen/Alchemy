@@ -27,6 +27,7 @@ export function CollectionGrid({
   discoveredCardIds,
   encounteredEnemyIds,
   discoveredTrinketIds,
+  discoveredUniqueIds,
   finishedRunCharacters,
   page,
   bondedCompanions,
@@ -35,6 +36,7 @@ export function CollectionGrid({
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
+  discoveredUniqueIds: string[];
   finishedRunCharacters: CharacterId[];
   page: number;
   bondedCompanions: Record<string, number>;
@@ -46,6 +48,7 @@ export function CollectionGrid({
         discoveredCardIds,
         encounteredEnemyIds,
         discoveredTrinketIds,
+        discoveredUniqueIds,
         finishedRunCharacters,
         bondedCompanions,
         page,
@@ -55,6 +58,7 @@ export function CollectionGrid({
       discoveredCardIds,
       encounteredEnemyIds,
       discoveredTrinketIds,
+      discoveredUniqueIds,
       finishedRunCharacters,
       bondedCompanions,
       page,
@@ -64,7 +68,7 @@ export function CollectionGrid({
   const gridClass =
     collectionTab === "bestiary"
       ? collectionBestiaryGridClass
-      : collectionTab === "trinkets"
+      : collectionTab === "trinkets" || collectionTab === "uniques"
         ? collectionTrinketGridClass
         : collectionCardGridClass;
   const fillerClass =

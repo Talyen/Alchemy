@@ -22,14 +22,14 @@ Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@
 
 Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/gameplay-state-store.ts`. Its `run`, `session`, `battle`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: every mutation is a draft-first mutator in the `write-port-*.ts` modules (plus `homestead-actions.ts` / `gear-actions.ts`), so commands cannot accidentally read or write another domain's fields. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed persistence/adapter modules; they do not own shadow state. The capability ports are the feature-facing seams.
 
-| Aggregate region | Concern                                                                                                | Lifetime                                                                                                              |
-| ---------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| `run`            | Active-run progression, navigation, parked mode snapshots (`parkedRuns`, `runRecency`)                 | Live run resets on teardown of that mode; other parked slots remain                                                   |
-| `session`        | Rewards, shops, labyrinth, mystery visits, corruption results, pending selections, and run-flow claims | Transient per live run; shops, mystery visits, and corruption results persist on `ActiveRunData` via the resume codec |
-| `battle`         | Combat snapshot, battle-start state, and display overrides                                             | Transient per battle; rebound from live meta on hydrate                                                               |
-| `runProfile`     | Homestead, talent XP / unlocks, derived effects, and the shared gold purse                             | Profile lifetime                                                                                                      |
-| `profile`        | Compendium discoveries (collection tab/page UI is transient in-memory, not in `ProfileSaveFields`)     | Profile lifetime                                                                                                      |
-| `gear`           | Permanent inventories, loadouts, and crafting currencies                                               | Profile lifetime                                                                                                      |
+| Aggregate region | Concern                                                                                                                               | Lifetime                                                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `run`            | Active-run progression, navigation, parked mode snapshots (`parkedRuns`, `runRecency`)                                                | Live run resets on teardown of that mode; other parked slots remain                                                   |
+| `session`        | Rewards, shops, labyrinth, mystery visits, corruption results, pending selections, and run-flow claims                                | Transient per live run; shops, mystery visits, and corruption results persist on `ActiveRunData` via the resume codec |
+| `battle`         | Combat snapshot, battle-start state, and display overrides                                                                            | Transient per battle; rebound from live meta on hydrate                                                               |
+| `runProfile`     | Homestead, talent XP / unlocks, derived effects, and the shared gold purse                                                            | Profile lifetime                                                                                                      |
+| `profile`        | Compendium discoveries (cards, enemies, trinkets, uniques; collection tab/page UI is transient in-memory, not in `ProfileSaveFields`) | Profile lifetime                                                                                                      |
+| `gear`           | Permanent inventories, loadouts, and crafting currencies                                                                              | Profile lifetime                                                                                                      |
 
 Cross-concern writes go through `run-session-write-port.ts`. Multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing reads (`run-session-read-port`, `profile-store` / `gear-store` slices, and the React ports) are data-only; command-backed write ports own every gameplay mutation. React orchestration uses narrow ports from `run-session-react-ports.ts`; screens use exact screen-data hooks (battle display via `useBattleScreenRouteData`).
 
@@ -155,7 +155,7 @@ BattleScreenRoute → useBattleScreenRouteData (committed battle display)
 ## Settings and meta profile
 
 - `settings-store` owns display, audio, and gameplay preferences. It does not contain gameplay progression.
-- `profile-store` owns compendium discoveries, completed difficulties, finished-run characters, and transient collection browsing state.
+- `profile-store` owns compendium discoveries (cards, encountered enemies, trinkets, and uniques), completed difficulties, finished-run characters, and transient collection browsing state.
 - `gameplay-state-store.runProfile` owns homestead and talent progression. Run reward finalization writes through `run-session-write-port` (`finalizeRunXP`, `awardMaterialsDuringRun`, …) and lifecycle ports — do not merge this into `profile`.
 - `gear-store` owns the permanent Gear subdomain and its invariants.
 

@@ -1,6 +1,7 @@
 // Aggregate command for permanent Gear mutations that affect the active run.
 // Keeping the invariant here prevents Armory, shops, and reward flows from
 // each implementing their own partial Gear → run-health synchronization.
+import { gearDefinitions } from "@/lib/gear";
 import type { GearStore } from "./gear-store-types";
 import {
   addGearCurrencies,
@@ -15,6 +16,7 @@ import {
   unequipGearInstance,
   unequipPermanentTrinket,
 } from "./gear-actions";
+import { discoverUniqueIds } from "./profile-store";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
 import { addMaterials, awardMaterialsDuringRun } from "./run-session-write-port";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
@@ -25,7 +27,12 @@ function gearCommandView(state: GameplayDraft): GearStore {
     ...gear,
     initialize: (inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets) =>
       initializeGear(gear, inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets),
-    addInstance: (instance, characterId) => addGearInstance(gear, instance, characterId),
+    addInstance: (instance, characterId) => {
+      addGearInstance(gear, instance, characterId);
+      if (gearDefinitions[instance.definitionId]?.rarity === "unique") {
+        discoverUniqueIds(state, [instance.definitionId]);
+      }
+    },
     equip: (characterId, slot, instance) => equipGearInstance(gear, characterId, slot, instance),
     unequip: (characterId, slot) => unequipGearInstance(gear, characterId, slot),
     addTrinket: (trinketId) => addPermanentTrinket(gear, trinketId),

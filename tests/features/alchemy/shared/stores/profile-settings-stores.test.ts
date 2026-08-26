@@ -20,6 +20,7 @@ describe("profile store", () => {
     expect(profile.discoveredCardIds).toEqual([]);
     expect(profile.encounteredEnemyIds).toEqual([]);
     expect(profile.discoveredTrinketIds).toEqual([]);
+    expect(profile.discoveredUniqueIds).toEqual([]);
     expect(profile.collectionTab).toBe("heroes");
     expect(profile.completedDifficulties.knight).toEqual([]);
   });
@@ -55,7 +56,7 @@ describe("profile store", () => {
     expect(useProfileStore.getState()).toMatchObject({
       discoveredCardIds: ["card-a"],
       collectionTab: "bestiary",
-      collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0 },
+      collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0, uniques: 0 },
     });
   });
 
@@ -76,6 +77,7 @@ describe("profile store", () => {
       discoveredCardIds: [],
       encounteredEnemyIds: [],
       discoveredTrinketIds: [],
+      discoveredUniqueIds: [],
       completedDifficulties: expect.any(Object),
       finishedRunCharacters: [],
     });

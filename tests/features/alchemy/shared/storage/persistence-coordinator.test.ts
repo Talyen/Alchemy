@@ -17,6 +17,7 @@ import {
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
 import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { createEmptyGearInventories, generateUniqueGearInstance, getUniqueItemDefinition } from "@/lib/gear";
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
@@ -104,5 +105,21 @@ describe("persistence coordinator", () => {
 
     expect(listener).toHaveBeenCalledOnce();
     unsubscribe();
+  });
+
+  it("unions currently owned uniques into collection discovery on hydrate", () => {
+    const uniqueDef = getUniqueItemDefinition("wardbreaker");
+    if (!uniqueDef) throw new Error("missing wardbreaker unique");
+    const unique = generateUniqueGearInstance(uniqueDef);
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [unique];
+
+    hydrateAlchemyPersistenceFields({
+      ...defaultSaveData,
+      discoveredUniqueIds: [],
+      gearInventories: inventories,
+    });
+
+    expect(useProfileStore.getState().discoveredUniqueIds).toEqual(["wardbreaker"]);
   });
 });

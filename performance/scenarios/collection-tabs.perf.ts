@@ -20,7 +20,7 @@ test.describe("collection-tabs", () => {
         await menu.openCollection();
       },
       interact: async (page, phase) => {
-        const tabs = ["Bestiary", "Trinkets", "Cards", "Heroes"];
+        const tabs = ["Bestiary", "Trinkets", "Uniques", "Cards", "Heroes"];
         const deadline = Date.now() + MEASURE_MS;
         let index = 0;
         while (Date.now() < deadline) {

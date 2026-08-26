@@ -163,6 +163,15 @@ export const setDiscoveredTrinketIds = (
   assignProfileField(draft, "discoveredTrinketIds", action);
 };
 
+export const setDiscoveredUniqueIds = (
+  draft: GameplayDraft,
+  action:
+    | ProfileStateFields["discoveredUniqueIds"]
+    | ((prev: ProfileStateFields["discoveredUniqueIds"]) => ProfileStateFields["discoveredUniqueIds"]),
+): void => {
+  assignProfileField(draft, "discoveredUniqueIds", action);
+};
+
 export const setCompletedDifficulties = (
   draft: GameplayDraft,
   action:

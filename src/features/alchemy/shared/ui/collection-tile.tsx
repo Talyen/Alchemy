@@ -1,9 +1,10 @@
-// Single interactive collection tile for hero, card, bestiary, and boon entries.
+// Single interactive collection tile for hero, card, bestiary, trinket, and unique entries.
 // Used by CollectionGrid to keep grid layout separate from tile behavior.
 import { memo, useState, type RefObject } from "react";
 
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
 import { cardBack, getEffectiveCardDescriptionLines } from "@/lib/game-data";
+import { gearDefinitions, getGearDefinitionShineColors } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { ShineBorder } from "@/components/ui/shine-border";
 
@@ -17,6 +18,7 @@ import {
   getTrinketShineColors,
   getPlasmaColorPairForCard,
   getPlasmaColorPairForTrinket,
+  getPlasmaColorPairForUnique,
   landscapeArtImageClass,
   trinketArtImageClass,
 } from "../config";
@@ -24,6 +26,7 @@ import { CardFlip } from "./card-flip";
 import { DetailPopup } from "./card-popup";
 import type { CollectionTileItem } from "./collection-items";
 import { EnemyTooltip } from "./enemy-tooltip";
+import { GearItemTitle } from "./gear-item-title";
 import { HeroTooltip } from "./hero-tooltip";
 import { TiltSurface } from "./tilt-surface";
 import { TrinketItemTitle } from "./trinket-item-title";
@@ -47,7 +50,7 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
     onHoverEnd,
   });
 
-  const shineColors = item.frameType === "trinket" && item.discovered ? getTrinketShineColors(item.id) : [];
+  const shineColors = collectionTileShineColors(item);
   const showShine = shineColors.length > 0;
 
   return (
@@ -71,11 +74,7 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
           !showShine && "border border-border/80",
           cardSurfaceClass,
           cardInteractiveGlowClass,
-          item.frameType === "trinket"
-            ? collectionCardGridTileWidthClass
-            : item.frameType === "bestiary"
-              ? collectionGridBestiaryWidthClass
-              : collectionCardGridTileWidthClass,
+          item.frameType === "bestiary" ? collectionGridBestiaryWidthClass : collectionCardGridTileWidthClass,
         )}
         onClick={() => {
           if (item.hoverScope === "collection-card") {
@@ -92,6 +91,16 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
     </div>
   );
 });
+
+function collectionTileShineColors(item: CollectionTileItem): readonly string[] {
+  if (!item.discovered) return [];
+  if (item.frameType === "trinket") return getTrinketShineColors(item.id);
+  if (item.frameType === "unique") {
+    const definition = gearDefinitions[item.id];
+    return definition ? getGearDefinitionShineColors(definition) : [];
+  }
+  return [];
+}
 
 function inspectAriaLabel(item: CollectionTileItem): string {
   if (item.frameType === "hero") {
@@ -129,9 +138,12 @@ function CollectionTilePopup({
     item.card && hovered
       ? getEffectiveCardDescriptionLines(item.card, { companionBondLevels: item.companionBondLevels ?? {} })
       : item.descriptionLines;
+  const uniqueDefinition = item.frameType === "unique" ? gearDefinitions[item.id] : undefined;
   const title =
     item.frameType === "trinket" && item.discovered ? (
       <TrinketItemTitle trinket={{ id: item.id, title: item.title }} />
+    ) : item.frameType === "unique" && item.discovered && uniqueDefinition ? (
+      <GearItemTitle definition={uniqueDefinition} />
     ) : (
       item.title
     );
@@ -150,7 +162,9 @@ function CollectionTilePopup({
             ? getPlasmaColorPairForCard(item.card)
             : item.frameType === "trinket"
               ? getPlasmaColorPairForTrinket(item.id)
-              : null
+              : item.frameType === "unique"
+                ? getPlasmaColorPairForUnique()
+                : null
       }
     />
   );
@@ -172,7 +186,7 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
     <TileImage
       item={item}
       className={cn(
-        item.frameType === "trinket"
+        item.frameType === "trinket" || item.frameType === "unique"
           ? trinketArtImageClass
           : item.frameType === "bestiary"
             ? landscapeArtImageClass

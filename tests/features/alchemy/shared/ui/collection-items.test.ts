@@ -7,11 +7,13 @@ import {
 } from "@/features/alchemy/shared/ui/collection-items";
 import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { cardLibrary, characters, enemyBestiary, KNIGHT_UNLOCK_MESSAGE, trinketLibrary } from "@/lib/game-data";
+import { uniqueItemList } from "@/lib/gear";
 
 const emptyDiscoveries = {
   discoveredCardIds: [] as string[],
   encounteredEnemyIds: [] as string[],
   discoveredTrinketIds: [] as string[],
+  discoveredUniqueIds: [] as string[],
 };
 
 describe("collection item helpers", () => {
@@ -22,6 +24,7 @@ describe("collection item helpers", () => {
     expect(getCollectionTotalPages("cards")).toBe(Math.max(1, Math.ceil(cardLibrary.length / COLLECTION_PAGE_SIZE)));
     expect(getCollectionTotalPages("bestiary")).toBe(Math.max(1, Math.ceil(enemyBestiary.length / BESTIARY_PAGE_SIZE)));
     expect(getCollectionTotalPages("trinkets")).toBe(Math.max(1, Math.ceil(trinketLibrary.length / TRINKET_PAGE_SIZE)));
+    expect(getCollectionTotalPages("uniques")).toBe(Math.max(1, Math.ceil(uniqueItemList.length / TRINKET_PAGE_SIZE)));
   });
 
   it("returns hidden card copy when a card has not been discovered", () => {
@@ -41,6 +44,7 @@ describe("collection item helpers", () => {
       discoveredCardIds: cardLibrary.map((card) => card.id),
       encounteredEnemyIds: [],
       discoveredTrinketIds: [],
+      discoveredUniqueIds: [],
       page: 0,
     });
 
@@ -105,5 +109,43 @@ describe("collection item helpers", () => {
     expect(getCollectionFillerCount(0, "cards")).toBe(COLLECTION_PAGE_SIZE);
     expect(getCollectionFillerCount(COLLECTION_PAGE_SIZE - 1, "cards")).toBe(1);
     expect(getCollectionFillerCount(COLLECTION_PAGE_SIZE, "cards")).toBe(0);
+    expect(getCollectionFillerCount(0, "uniques")).toBe(TRINKET_PAGE_SIZE);
+    expect(getCollectionFillerCount(uniqueItemList.length, "uniques")).toBe(
+      Math.max(0, TRINKET_PAGE_SIZE - uniqueItemList.length),
+    );
+  });
+
+  it("returns hidden unique copy until the unique is discovered", () => {
+    const items = getCollectionPageItems({
+      collectionTab: "uniques",
+      ...emptyDiscoveries,
+      page: 0,
+    });
+    const wardbreaker = items.find((item) => item.id === "wardbreaker");
+    expect(wardbreaker).toMatchObject({
+      title: "Undiscovered",
+      discovered: false,
+      frameType: "unique",
+      descriptionLines: ["Find this unique to reveal its effect."],
+    });
+  });
+
+  it("reveals unique name and signature when discovered", () => {
+    const unique = uniqueItemList.find((entry) => entry.id === "wardbreaker");
+    if (!unique) throw new Error("missing wardbreaker unique");
+    const item = getCollectionPageItems({
+      collectionTab: "uniques",
+      ...emptyDiscoveries,
+      discoveredUniqueIds: ["wardbreaker"],
+      page: 0,
+    }).find((entry) => entry.id === "wardbreaker");
+
+    expect(item).toMatchObject({
+      title: unique.displayName,
+      discovered: true,
+      frameType: "unique",
+      descriptionLines: [unique.description],
+    });
+    expect(item?.art).toBeTruthy();
   });
 });

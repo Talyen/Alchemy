@@ -1,4 +1,4 @@
-// Pure collection item shaping for heroes, cards, enemies, and trinkets.
+// Pure collection item shaping for heroes, cards, enemies, trinkets, and uniques.
 // Used by collection UI layout and tests without owning rendering concerns.
 import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import {
@@ -15,6 +15,7 @@ import {
   type TrinketEntry,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import type { BattleCard } from "@/lib/game-data";
+import { gearDefinitions, uniqueItemList } from "@/lib/gear";
 
 import type { CollectionTab } from "../types";
 
@@ -24,6 +25,7 @@ const COLLECTION_ITEMS_CONFIG = {
   hiddenCardDescription: "Discover this card during a run to reveal it here.",
   hiddenEnemyDescription: "Encounter this enemy to record its details.",
   hiddenTrinketDescription: "Find this trinket to reveal its effect.",
+  hiddenUniqueDescription: "Find this unique to reveal its effect.",
 } as const;
 
 export interface CollectionTileItem {
@@ -34,7 +36,7 @@ export interface CollectionTileItem {
   art: string;
   discovered: boolean;
   hoverScope: string;
-  frameType: "hero" | "card" | "bestiary" | "trinket";
+  frameType: "hero" | "card" | "bestiary" | "trinket" | "unique";
   enemyEntry?: BestiaryEntry;
   /** Discovered cards: format description lines in the hover popup, not while paging. */
   card?: BattleCard;
@@ -44,7 +46,7 @@ export interface CollectionTileItem {
 }
 
 function getCollectionPageSize(tab: CollectionTab): number {
-  if (tab === "trinkets") return TRINKET_PAGE_SIZE;
+  if (tab === "trinkets" || tab === "uniques") return TRINKET_PAGE_SIZE;
   if (tab === "bestiary") return BESTIARY_PAGE_SIZE;
   return COLLECTION_PAGE_SIZE;
 }
@@ -59,6 +61,8 @@ function getCollectionLibraryLength(collectionTab: CollectionTab): number {
       return enemyBestiary.length;
     case "trinkets":
       return trinketLibrary.length;
+    case "uniques":
+      return uniqueItemList.length;
   }
 }
 
@@ -71,6 +75,7 @@ export function getCollectionPageItems({
   discoveredCardIds,
   encounteredEnemyIds,
   discoveredTrinketIds,
+  discoveredUniqueIds,
   finishedRunCharacters = [],
   bondedCompanions = {},
   page,
@@ -79,6 +84,7 @@ export function getCollectionPageItems({
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
+  discoveredUniqueIds: string[];
   finishedRunCharacters?: readonly CharacterId[];
   bondedCompanions?: Record<string, number>;
   page: number;
@@ -96,6 +102,9 @@ export function getCollectionPageItems({
   if (collectionTab === "bestiary") {
     return getBestiaryItems(encounteredEnemyIds, start, pageSize);
   }
+  if (collectionTab === "uniques") {
+    return getUniqueItems(discoveredUniqueIds, start, pageSize);
+  }
   return getTrinketItems(discoveredTrinketIds, start, pageSize);
 }
 
@@ -111,6 +120,7 @@ function sortByTitle<T extends { title: string }>(entries: T[]): T[] {
 const sortedCardLibrary = sortByTitle(cardLibrary);
 const sortedEnemyBestiary = sortByTitle(enemyBestiary);
 const sortedTrinketLibrary = sortByTitle(trinketLibrary);
+const sortedUniqueLibrary = [...uniqueItemList].sort((a, b) => a.displayName.localeCompare(b.displayName));
 const heroRoster = Object.values(characters);
 
 function shapeCardItem(
@@ -197,6 +207,23 @@ function getTrinketItems(discoveredTrinketIds: string[], start: number, pageSize
       discovered,
       hoverScope: "collection-trinket" as const,
       frameType: "trinket" as const,
+    };
+  });
+}
+
+function getUniqueItems(discoveredUniqueIds: string[], start: number, pageSize: number): CollectionTileItem[] {
+  const discoveredSet = new Set(discoveredUniqueIds);
+  return sortedUniqueLibrary.slice(start, start + pageSize).map((entry) => {
+    const discovered = discoveredSet.has(entry.id);
+    return {
+      id: entry.id,
+      title: discovered ? entry.displayName : COLLECTION_ITEMS_CONFIG.hiddenTitle,
+      subtitle: undefined,
+      descriptionLines: discovered ? [entry.description] : [COLLECTION_ITEMS_CONFIG.hiddenUniqueDescription],
+      art: gearDefinitions[entry.id]?.art ?? "",
+      discovered,
+      hoverScope: "collection-unique" as const,
+      frameType: "unique" as const,
     };
   });
 }

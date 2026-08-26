@@ -66,7 +66,7 @@ export type AspectRatioOption = "auto" | "16:9" | "16:10" | "21:9";
 
 export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
 
-export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets";
+export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets" | "uniques";
 
 export interface StatusChip {
   id:

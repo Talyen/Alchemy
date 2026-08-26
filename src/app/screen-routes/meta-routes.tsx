@@ -110,6 +110,7 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenB
       discoveredCardIds={profile.discoveredCardIds}
       encounteredEnemyIds={profile.encounteredEnemyIds}
       discoveredTrinketIds={profile.discoveredTrinketIds}
+      discoveredUniqueIds={profile.discoveredUniqueIds}
       finishedRunCharacters={finishedRunCharacters}
       collectionPages={profile.collectionPages}
     />
