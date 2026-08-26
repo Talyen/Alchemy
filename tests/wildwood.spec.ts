@@ -2,7 +2,7 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
-import { critical, prepush, slow } from "./playwright-tags";
+import { critical, slow } from "./playwright-tags";
 import { injectSaveState, makeCard, makeHighDamageCard, SAVE_KEY, seedRandom } from "./helpers";
 
 async function pickDraftCard(page: import("@playwright/test").Page) {
@@ -78,7 +78,7 @@ function wildwoodRewardFlow(overrides: Record<string, unknown> = {}) {
   };
 }
 
-test.describe("Wildwood Draft", prepush, () => {
+test.describe("Wildwood Draft", () => {
   test("drafts six cards and starts a modified boss battle", slow, async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
@@ -179,32 +179,32 @@ test.describe("Wildwood Draft", prepush, () => {
     },
   );
 
-  test("reloading a Wildwood reward save keeps interruptedFlow choices", async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await injectSaveState(page, wildwoodRewardFlow());
-    await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
+  test(
+    "reloading a Wildwood reward save keeps interruptedFlow choices",
+    critical,
+    async ({ page, fastBattle, runtimeErrors }) => {
+      void fastBattle;
+      void runtimeErrors;
+      await injectSaveState(page, wildwoodRewardFlow());
+      await page.goto("/");
+      await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
 
-    const choiceIdsBefore = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.interruptedFlow?.pending?.choiceIds ?? [];
-    }, SAVE_KEY);
-    expect(choiceIdsBefore).toEqual(["slash", "bash", "block"]);
+      const choiceIdsBefore = await page.evaluate((saveKey) => {
+        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+        return save.activeRun?.interruptedFlow?.pending?.choiceIds ?? [];
+      }, SAVE_KEY);
+      expect(choiceIdsBefore).toEqual(["slash", "bash", "block"]);
 
-    await page.reload();
-    await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
+      await page.reload();
+      await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
 
-    const choiceIdsAfter = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.interruptedFlow?.pending?.choiceIds ?? [];
-    }, SAVE_KEY);
-    expect(choiceIdsAfter).toEqual(["slash", "bash", "block"]);
-  });
+      const choiceIdsAfter = await page.evaluate((saveKey) => {
+        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+        return save.activeRun?.interruptedFlow?.pending?.choiceIds ?? [];
+      }, SAVE_KEY);
+      expect(choiceIdsAfter).toEqual(["slash", "bash", "block"]);
+    },
+  );
 });
 
 test.describe("Wildwood Traits", slow, () => {

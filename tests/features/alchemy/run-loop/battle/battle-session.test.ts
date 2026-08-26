@@ -97,13 +97,15 @@ describe("createBattleSession", () => {
     expect(cancel).toHaveBeenCalled();
   });
 
-  it("resetBattleSession clears portrait hurt tokens", () => {
-    useBattlePresentationStore.getState().hurtPlayer();
-    useBattlePresentationStore.getState().hurtEnemy();
+  it("resetBattleSession clears portrait impact cues", () => {
+    useBattlePresentationStore.setState({
+      playerImpactCue: { sequence: 1, colors: ["#fff"], healthLost: true },
+      enemyImpactCue: { sequence: 2, colors: ["#fff"], healthLost: true },
+    });
     const { session } = makeSession();
     session.resetBattleSession();
-    expect(useBattlePresentationStore.getState().playerHurtFlashToken).toBe(0);
-    expect(useBattlePresentationStore.getState().enemyHurtFlashToken).toBe(0);
+    expect(useBattlePresentationStore.getState().playerImpactCue).toBeNull();
+    expect(useBattlePresentationStore.getState().enemyImpactCue).toBeNull();
   });
 
   it("resetBattleSession clears floating combat texts", async () => {

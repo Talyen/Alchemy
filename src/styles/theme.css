@@ -48,14 +48,14 @@
   --text-xl--line-height: calc(1.75 / 1.375);
 
   --animate-shine: shine 14s linear infinite;
-  --animate-shine-text-corruption: boss-title-shine 9s linear infinite;
+  --animate-shine-text-corruption: boss-title-shine 4.8s linear infinite;
 
   --animate-shake: shake 380ms linear 340ms;
   --animate-attack-lunge: combatant-attack-lunge var(--attack-lunge-ms, 950ms) linear;
   --animate-cast-brace: combatant-cast-brace var(--cast-brace-ms, 520ms) linear;
   --animate-hurt-flash: hurtFlash 280ms ease-out forwards;
   --animate-frame-fade: frameFade 900ms ease-out forwards;
-  --animate-boss-title-shine: boss-title-shine 15s linear infinite;
+  --animate-boss-title-shine: boss-title-shine 4.8s linear infinite;
 
   --shadow-deaths-door-glow: 0 0 30px rgba(127, 29, 29, 0.45);
   --shadow-labyrinth-current-glow: 0 0 10px rgba(251, 191, 36, 0.5);

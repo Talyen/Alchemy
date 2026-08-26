@@ -3,17 +3,9 @@ import { CAMPFIRE_HEALTH_THRESHOLD, ELITE_HEALTH_THRESHOLD, SHOP_MIN_GOLD } from
 
 import { DESTINATIONS, isShopDestination, type Destination } from "./destinations";
 
-const destinationPool: Destination[] = [
-  DESTINATIONS.NORMAL_COMBAT,
-  DESTINATIONS.ELITE_COMBAT,
-  DESTINATIONS.MERCHANT_SHOP,
-  DESTINATIONS.ALCHEMIST_SHOP,
-  DESTINATIONS.TRINKET_SHOP,
-  DESTINATIONS.EQUIPMENT_SHOP,
-  DESTINATIONS.MYSTERY,
-  DESTINATIONS.CORRUPTION,
-  DESTINATIONS.CAMPFIRE,
-];
+const nonBossDestinationPool: Destination[] = (Object.values(DESTINATIONS) as Destination[]).filter(
+  (destination) => destination !== DESTINATIONS.BOSS_COMBAT,
+);
 
 export function getAvailableDestinations(
   currentHealth: number,
@@ -22,7 +14,7 @@ export function getAvailableDestinations(
   hasAnyOwnedGear = true,
   hasUnownedTrinkets = true,
 ): Destination[] {
-  return destinationPool.filter((destination) => {
+  return nonBossDestinationPool.filter((destination) => {
     if (destination === DESTINATIONS.CAMPFIRE && currentHealth >= Math.floor(maxHealth * CAMPFIRE_HEALTH_THRESHOLD))
       return false;
     if (isShopDestination(destination) && currentGold < SHOP_MIN_GOLD) return false;

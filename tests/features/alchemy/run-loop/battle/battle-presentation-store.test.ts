@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
+import { keywordDefinitions } from "@/lib/game-data";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { clearCombatPresentation } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
@@ -21,6 +22,8 @@ describe("battle-presentation-store", () => {
     expect(s.enemyShaking).toBe(false);
     expect(s.playerShaking).toBe(false);
     expect(s.companionShaking).toBe(false);
+    expect(s.playerImpactCue).toBeNull();
+    expect(s.enemyImpactCue).toBeNull();
     expect(s.playerAttackToken).toBe(0);
     expect(s.enemyAttackToken).toBe(0);
     expect(s.playerCastToken).toBe(0);
@@ -97,7 +100,9 @@ describe("battle-presentation-store", () => {
   });
 
   it("resetPresentation clears VFX state", () => {
-    useBattlePresentationStore.getState().hurtPlayer();
+    useBattlePresentationStore.setState({
+      playerImpactCue: { sequence: 1, colors: keywordDefinitions.burn.shineColors, healthLost: true },
+    });
     useBattlePresentationStore.getState().telegraphAttack("player");
     useBattlePresentationStore.getState().spawnCardGhost({
       art: "test.webp",
@@ -108,7 +113,7 @@ describe("battle-presentation-store", () => {
     });
     useBattlePresentationStore.getState().resetPresentation();
     const s = useBattlePresentationStore.getState();
-    expect(s.playerHurtFlashToken).toBe(0);
+    expect(s.playerImpactCue).toBeNull();
     expect(s.playerAttackToken).toBe(0);
     expect(s.cardGhosts).toEqual([]);
   });
@@ -127,7 +132,9 @@ describe("battle-presentation-store", () => {
   });
 
   it.each([clearBattlePresentationUi, clearCombatPresentation])("%s resets full presentation VFX", (clear) => {
-    useBattlePresentationStore.getState().hurtPlayer();
+    useBattlePresentationStore.setState({
+      playerImpactCue: { sequence: 1, colors: keywordDefinitions.freeze.shineColors, healthLost: true },
+    });
     useBattlePresentationStore.getState().shakeEnemy();
     useBattlePresentationStore.getState().telegraphAttack("enemy");
     useBattlePresentationStore.getState().spawnCardGhost({
@@ -140,7 +147,7 @@ describe("battle-presentation-store", () => {
     clear();
     const s = useBattlePresentationStore.getState();
     expect(s.cardGhosts).toEqual([]);
-    expect(s.playerHurtFlashToken).toBe(0);
+    expect(s.playerImpactCue).toBeNull();
     expect(s.enemyShaking).toBe(false);
     expect(s.playerAttackToken).toBe(0);
     expect(s.enemyAttackToken).toBe(0);
@@ -158,6 +165,43 @@ describe("battle-presentation-store", () => {
     useBattlePresentationStore.getState().clearFloatingCombatTexts();
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS);
     expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
+    expect(useBattlePresentationStore.getState().enemyImpactCue).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it("emits typed impact cues per target in combat-text lane order", async () => {
+    vi.useFakeTimers();
+    getBattleStoreView().setHasActiveBattle(true);
+    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+
+    useBattlePresentationStore.getState().showCombatTexts([
+      { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
+      { target: "player", kind: "damage", stat: "block", amount: 4 },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 3 },
+      { target: "player", kind: "heal", stat: "health", amount: 2 },
+      { target: "enemy", kind: "damage", stat: "freeze", amount: 2 },
+      { target: "player", kind: "damage", stat: "mana", amount: 1 },
+    ]);
+
+    await vi.advanceTimersByTimeAsync(0);
+    const firstEnemyCue = useBattlePresentationStore.getState().enemyImpactCue;
+    expect(firstEnemyCue).toMatchObject({ colors: keywordDefinitions.physical.shineColors, healthLost: true });
+    expect(useBattlePresentationStore.getState().playerImpactCue).toMatchObject({
+      colors: keywordDefinitions.block.shineColors,
+      healthLost: false,
+    });
+
+    await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LANE_DELAY_MS);
+    const burnCue = useBattlePresentationStore.getState().enemyImpactCue;
+    expect(burnCue).toMatchObject({ colors: keywordDefinitions.burn.shineColors, healthLost: true });
+    expect(burnCue!.sequence).toBeGreaterThan(firstEnemyCue!.sequence);
+
+    await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LANE_DELAY_MS);
+    expect(useBattlePresentationStore.getState().enemyImpactCue).toMatchObject({
+      colors: keywordDefinitions.freeze.shineColors,
+      healthLost: true,
+    });
+    expect(useBattlePresentationStore.getState().playerImpactCue?.colors).toBe(keywordDefinitions.block.shineColors);
     vi.useRealTimers();
   });
 

@@ -4,7 +4,7 @@ import { ShopPage } from "./pages/shop-page";
 import { RewardPage } from "./pages/reward-page";
 import { DestinationPage } from "./pages/destination-page";
 import { enterPrimaryRewardScreen, SAVE_KEY } from "./helpers";
-import { critical } from "./playwright-tags";
+import { critical, slow } from "./playwright-tags";
 
 test.describe("Merchant Shop", critical, () => {
   test.describe("with sufficient gold", () => {
@@ -24,9 +24,13 @@ test.describe("Merchant Shop", critical, () => {
       expect(await shop.gold()).toBeLessThan(goldBefore);
     });
   });
+});
 
+test.describe("Shop fade-out", () => {
   for (const destination of ["Merchant's Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"] as const) {
-    test(`keeps ${destination} offerings mounted through route fade-out`, async ({ page, runtimeErrors }) => {
+    const gate = destination === "Merchant's Shop" ? critical : slow;
+
+    test(`keeps ${destination} offerings mounted through route fade-out`, gate, async ({ page, runtimeErrors }) => {
       void runtimeErrors;
       const shop = new ShopPage(page);
       await shop.enterFromDestination(9999, destination);

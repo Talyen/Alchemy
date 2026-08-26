@@ -32,10 +32,10 @@ export {
 export function getRunProgressStoreView() {
   const active = getActiveRunStoreView();
   const profile = getRunProfileStoreView();
-  return { ...active, ...profile, runGold: profile.gold };
+  return { ...active, ...profile };
 }
 
-type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean; runGold?: number };
+type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
 
 const ACTIVE_RUN_PROGRESS_KEYS = [
   "characterId",
@@ -92,9 +92,6 @@ export function setRunProgress(partial: Partial<RunStateFields>, replace = false
       if (key in partial && partial[key] !== undefined) {
         (state.run.activeRun as unknown as Record<string, unknown>)[key] = partial[key];
       }
-    }
-    if (partial.runGold !== undefined) {
-      state.runProfile.gold = partial.runGold;
     }
     for (const key of PERMANENT_PROGRESS_KEYS) {
       if (key in partial && partial[key] !== undefined) {

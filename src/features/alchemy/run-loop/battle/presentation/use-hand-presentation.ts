@@ -12,11 +12,11 @@ export function useCardTransferInProgress() {
   return useBattlePresentationStore((s) => s.cardTransferInProgress);
 }
 
-export function useInteractiveHandCardKeys(battleState: BattleState) {
+export function useInteractiveHandCardKeys(battleState: BattleState, playableKeys?: Set<string>) {
   const hiddenHandCardKeys = useHiddenHandCardKeys();
   const cardTransferInProgress = useCardTransferInProgress();
   return useMemo(
-    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys, cardTransferInProgress),
-    [battleState, hiddenHandCardKeys, cardTransferInProgress],
+    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys, cardTransferInProgress, playableKeys),
+    [battleState, hiddenHandCardKeys, cardTransferInProgress, playableKeys],
   );
 }

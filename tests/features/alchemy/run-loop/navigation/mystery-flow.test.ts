@@ -65,17 +65,17 @@ describe("applyMysteryEffect", () => {
   });
 
   it("gainGold credits gold with the gain sound", () => {
-    setRunProgress({ runGold: 20 });
+    setRunProgress({ gold: 20 });
     const result = apply({ kind: "gainGold", amount: 10 });
     expect(result.goldSound).toBe("gain");
-    expect(getRunProgressStoreView().runGold).toBe(30);
+    expect(getRunProgressStoreView().gold).toBe(30);
   });
 
   it("loseGold spends gold with the spend sound", () => {
-    setRunProgress({ runGold: 20 });
+    setRunProgress({ gold: 20 });
     const result = apply({ kind: "loseGold", amount: 5 });
     expect(result.goldSound).toBe("spend");
-    expect(getRunProgressStoreView().runGold).toBe(15);
+    expect(getRunProgressStoreView().gold).toBe(15);
   });
 
   it("gainXP awards run talent XP for the keyword", () => {

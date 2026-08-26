@@ -1,13 +1,10 @@
-// Shop card controls for purchasing cards.
-// Depends on card button/title rendering and shared gold/disabled controls.
-// Used by merchant, alchemist, corruption, mystery, and remove panels.
-// Card *selection* chrome lives in selectable-card.tsx.
 import { type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { cardInteractiveGlowClass, collectionTileWidthClass } from "../config";
 import { BattleCardButton } from "./card-button";
 import { getCardDisplayTitle } from "./card-description-ui";
+import { getShopItemAriaLabel, getShopPurchaseState } from "./purchasable-shop-helpers";
 import { PurchasableShopTile, ShopPriceChip } from "./purchasable-shop-tile";
 
 interface PurchasableCardItemProps {
@@ -21,15 +18,15 @@ interface PurchasableCardItemProps {
 
 export function PurchasableCardItem(props: PurchasableCardItemProps) {
   const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass } = props;
-  const canAfford = gold >= price;
-  const canPurchase = !purchased && canAfford;
+  const { canPurchase } = getShopPurchaseState(price, gold, purchased);
+  const cardTitle = getCardDisplayTitle(card);
 
   const media = (
     <BattleCardButton
       card={card}
       onClick={canPurchase ? onBuy : undefined}
       disabled={!canPurchase}
-      ariaLabel={purchased ? getCardDisplayTitle(card) : `Buy ${getCardDisplayTitle(card)}`}
+      ariaLabel={getShopItemAriaLabel(cardTitle, purchased)}
       shimmerActive={false}
       shimmerToken={undefined}
       className={cn(widthClass, canPurchase && cardInteractiveGlowClass)}

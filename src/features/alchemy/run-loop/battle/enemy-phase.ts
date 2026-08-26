@@ -11,7 +11,7 @@ import { delay } from "@/lib/animation/game-timer";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { beginBattleTransition, commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { applyCombatTextPortraitFeedback, shouldHurtEnemyFromCombatTexts } from "./battle-feedback";
+import { applyCombatTextShakeFeedback } from "./battle-feedback";
 import { playCombatTextSounds } from "./controller-utils";
 import { runHandDrawSequence } from "./draw-sequence";
 import {
@@ -64,13 +64,11 @@ export function resolveNormalEnemyTurn(
 
   if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
     if (dotTexts.length > 0) vfx.showCombatTexts(dotTexts);
-    if (shouldHurtEnemyFromCombatTexts(dotTexts)) vfx.hurtEnemy();
     battleSession.handleVictoryDefeat(result.state.enemyHealth <= 0 ? "victory" : "defeat");
     return;
   }
 
   if (dotTexts.length > 0) vfx.showCombatTexts(dotTexts);
-  if (shouldHurtEnemyFromCombatTexts(dotTexts)) vfx.hurtEnemy();
 
   if (battleSession.checkBattleEnd(result.state, sessionNum)) return;
 
@@ -113,7 +111,7 @@ export async function executeEnemyPhase(
   }
   if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
   if (combatTexts.length > 0) vfx.showCombatTexts(combatTexts);
-  applyCombatTextPortraitFeedback(playerTexts, vfx);
+  applyCombatTextShakeFeedback(playerTexts, vfx);
   playCombatTextSounds(playerTexts);
   await delay(ENEMY_ATTACK_RECOVERY_DELAY);
   if (!battleSession.isCurrentBattleSession(sessionNum)) return;

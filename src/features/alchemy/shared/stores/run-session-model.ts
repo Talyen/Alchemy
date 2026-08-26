@@ -15,7 +15,7 @@ import { readGameplayState, useGameplayStateStore, type GameplayState } from "./
 type RunSessionRunSlice = ActiveRunReadView & {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
-  runGold: number;
+  gold: number;
 };
 
 type RunSessionTransientSlice = RunSessionFields;
@@ -116,7 +116,7 @@ export function getRunSessionFromState(state: GameplayState, screen?: Screen): R
   return {
     screen: resolvedScreen,
     phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
-    run: { ...pickActiveRunView(state.run), talentXP, unlockedTalents, runGold: state.runProfile.gold },
+    run: { ...pickActiveRunView(state.run), talentXP, unlockedTalents, gold: state.runProfile.gold },
     session: { ...state.session },
     battle,
   };

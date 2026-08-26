@@ -3,12 +3,12 @@
 import type { CombatTextEvent } from "@/lib/battle";
 import type { CardGhost, CardTransfer } from "../../shared/types";
 import { useBattlePresentationStore } from "./battle-presentation-store";
-import type { PortraitFeedback } from "./battle-feedback";
+import type { CombatTextShakeFeedback } from "./battle-feedback";
 import type { HiddenHandCardKeys } from "./playable-hand";
 
 type CombatantAttackSide = "player" | "enemy" | "companion";
 
-export interface BattlePresentationPort extends PortraitFeedback {
+export interface BattlePresentationPort extends CombatTextShakeFeedback {
   hiddenHandCardKeys: HiddenHandCardKeys;
   cardTransferInProgress: boolean;
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void;
@@ -19,7 +19,6 @@ export interface BattlePresentationPort extends PortraitFeedback {
   resetHandTransferUi: () => void;
   resetCardTransfers: () => void;
   clearCardGhosts: () => void;
-  resetPortraitHurtTokens: () => void;
   clearFloatingCombatTexts: () => void;
   setCardTransfers: (transfers: CardTransfer[] | ((prev: CardTransfer[]) => CardTransfer[])) => void;
   setHiddenHandCardKeys: (update: (prev: HiddenHandCardKeys) => Iterable<string>) => void;

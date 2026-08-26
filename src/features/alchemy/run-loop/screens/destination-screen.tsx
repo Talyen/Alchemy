@@ -6,9 +6,10 @@ import {
   chooserRowShellWidthClass,
   getBossById,
   getBossEnemy,
-  getBossShineGradient,
+  getBossTextShineColors,
 } from "@/features/alchemy/shared/config";
 import { DestinationChoices, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { ShineText } from "../../shared/ui/shine-text";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
 import type { RewardState } from "@/lib/active-run-session";
 
@@ -40,15 +41,10 @@ export function DestinationScreen({
   );
 
   const bossForShine = useMemo(() => boss ?? (bossOnly ? getBossEnemy() : null), [boss, bossOnly]);
-  const bossTextGradient = bossForShine ? getBossShineGradient(bossForShine) : "";
+  const bossTextShineColors = bossForShine ? getBossTextShineColors(bossForShine) : [];
 
   const title = bossOnly ? (
-    <span
-      className="boss-title-shine [background-size:200%_100%] bg-clip-text text-transparent"
-      style={{ backgroundImage: bossTextGradient }}
-    >
-      {bossForShine?.title ?? getBossEnemy().title}
-    </span>
+    <ShineText colors={bossTextShineColors}>{bossForShine?.title ?? getBossEnemy().title}</ShineText>
   ) : (
     "Choose Destination"
   );

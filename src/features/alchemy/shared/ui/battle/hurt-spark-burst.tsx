@@ -1,4 +1,4 @@
-// Canvas red spark burst when the player portrait takes HP damage.
+// Canvas spark burst around a combatant portrait, colored by the resolved impact event.
 // Depends on hurt-sparks animation helpers and game timing constants.
 // Used by PortraitHurtVfx during each hurt pulse.
 import { useLayoutEffect, useRef } from "react";
@@ -10,7 +10,7 @@ const HURT_SPARK_BURST_CONFIG = {
   canvasScale: 2,
 } as const;
 
-export function HurtSparkBurst({ flashToken }: { flashToken: number }) {
+export function HurtSparkBurst({ flashToken, colors }: { flashToken: number; colors: readonly string[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useLayoutEffect(() => {
@@ -40,7 +40,7 @@ export function HurtSparkBurst({ flashToken }: { flashToken: number }) {
 
     const artX = (cw - w) / 2;
     const artY = (ch - h) / 2;
-    const particles = createHurtSparks(cw, ch, HURT_SPARK_COUNT, undefined, {
+    const particles = createHurtSparks(cw, ch, HURT_SPARK_COUNT, colors, {
       x: artX,
       y: artY,
       width: w,
@@ -51,7 +51,7 @@ export function HurtSparkBurst({ flashToken }: { flashToken: number }) {
     return () => {
       stop();
     };
-  }, [flashToken]);
+  }, [colors, flashToken]);
 
   return (
     <canvas ref={canvasRef} className="pointer-events-none absolute -top-[50%] -left-[50%] z-30 h-[200%] w-[200%]" />

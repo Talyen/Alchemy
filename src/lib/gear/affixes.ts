@@ -8,7 +8,7 @@ function isGearAffixId(value: string): value is GearAffixId {
   return value in gearAffixCatalog;
 }
 
-function formatAffixDescription(def: GearAffixDefinition, roll: GearAffixRoll): string {
+export function formatAffixDescription(def: GearAffixDefinition, roll: GearAffixRoll): string {
   return def.descriptionTemplate.replace("{value}", String(roll.value));
 }
 

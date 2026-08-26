@@ -1,10 +1,11 @@
 import type { RawSaveData } from "./types";
+import { emptyInventory } from "@/lib/homestead/inventory";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-const EMPTY_MATERIALS = { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 };
+const EMPTY_MATERIALS = emptyInventory();
 
 function isNoneInterruptedFlow(value: unknown): boolean {
   return !isRecord(value) || value.kind === "none" || value.kind == null;

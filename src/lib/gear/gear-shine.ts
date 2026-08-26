@@ -6,6 +6,7 @@ import type { GearInstance } from "./types";
 
 const ASTRAL_SHINE_FALLBACK = ["#cbd5e1", "#64748b", "#cbd5e1"] as const;
 const UNIQUE_SHINE_COLORS = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"] as const;
+const UNIQUE_TEXT_SHINE_COLORS = ["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"] as const;
 
 export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
   const keywordIds = new Set<KeywordId>();
@@ -29,6 +30,20 @@ function getAstralKeywordShineColors(keywordIds: readonly KeywordId[]): readonly
   return colors.length > 0 ? colors : [...ASTRAL_SHINE_FALLBACK];
 }
 
+function getKeywordTextShineColors(keywordIds: readonly KeywordId[]): readonly string[] {
+  const colors: string[] = [];
+  for (const keywordId of keywordIds) {
+    const [primary, secondary = primary] = keywordDefinitions[keywordId].shineColors;
+    if (primary) colors.push(primary);
+    if (secondary && secondary !== primary) colors.push(secondary);
+  }
+  return colors.length > 0 ? colors : ASTRAL_SHINE_FALLBACK.slice(0, 2);
+}
+
+export function getUniqueGearTextShineColors(): readonly string[] {
+  return UNIQUE_TEXT_SHINE_COLORS;
+}
+
 export function getGearDefinitionShineColors(definition: GearDefinition): readonly string[] {
   if (definition.rarity === "unique") return [...UNIQUE_SHINE_COLORS];
   if (definition.rarity !== "astral") return [];
@@ -41,6 +56,20 @@ export function getGearInstanceShineColors(instance: GearInstance): readonly str
   if (definition.rarity === "unique") return [...UNIQUE_SHINE_COLORS];
   if (definition.rarity !== "astral") return [];
   return getAstralKeywordShineColors(getGearInstanceKeywordIds(instance));
+}
+
+export function getGearDefinitionTextShineColors(definition: GearDefinition): readonly string[] {
+  if (definition.rarity === "unique") return getUniqueGearTextShineColors();
+  if (definition.rarity !== "astral") return [];
+  return getKeywordTextShineColors(definition.affinityKeywords);
+}
+
+export function getGearInstanceTextShineColors(instance: GearInstance): readonly string[] {
+  const definition = gearDefinitions[instance.definitionId];
+  if (!definition) return [];
+  if (definition.rarity === "unique") return getUniqueGearTextShineColors();
+  if (definition.rarity !== "astral") return [];
+  return getKeywordTextShineColors(getGearInstanceKeywordIds(instance));
 }
 
 /** Shine overlay thickness for astral gear tiles. Hover/select grows to 3px via `.has-shine-border`. */
@@ -68,6 +97,15 @@ function getGearAffixShineColors(affix: { keywordId: KeywordId; secondaryKeyword
     colors.push(...keywordDefinitions[affix.secondaryKeywordId].shineColors);
   }
   return colors.length > 0 ? colors : [...ASTRAL_SHINE_FALLBACK];
+}
+
+export function getGearAffixTextShineColors(affix: {
+  keywordId: KeywordId;
+  secondaryKeywordId?: KeywordId;
+}): readonly string[] {
+  return getKeywordTextShineColors(
+    affix.secondaryKeywordId ? [affix.keywordId, affix.secondaryKeywordId] : [affix.keywordId],
+  );
 }
 
 export function getGearAffixShineGradient(affix: {

@@ -24,7 +24,7 @@ import { readProfileStore, setEncounteredEnemyIds } from "../../shared/stores/pr
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { preloadBattleSounds } from "@/lib/audio";
-import { applyCombatTextPortraitFeedback } from "./battle-feedback";
+import { applyCombatTextShakeFeedback } from "./battle-feedback";
 import { playCompanionSound, playCombatTextSounds } from "./controller-utils";
 import { readEquippedTrinketId, readGearManifestForCharacter } from "../../shared/stores/gear-store";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
@@ -144,7 +144,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
           }
           if (startingTexts.length > 0) {
             presentationStore.showCombatTexts(startingTexts);
-            applyCombatTextPortraitFeedback(startingTexts, presentationStore);
+            applyCombatTextShakeFeedback(startingTexts, presentationStore);
             playCombatTextSounds(startingTexts);
           }
           if (outcome) session.handleVictoryDefeat?.(outcome);

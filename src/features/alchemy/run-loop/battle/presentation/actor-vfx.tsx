@@ -15,17 +15,17 @@ export function CombatTextRailSide({ side }: { side: "player" | "enemy" }) {
 
 type ShakingArtPanelProps = Omit<
   ComponentProps<typeof ArtPanel>,
-  "shaking" | "hurtFlashToken" | "attackToken" | "castToken" | "shimmerActive" | "shimmerToken" | "onHoverShimmer"
+  "shaking" | "impactCue" | "attackToken" | "castToken" | "shimmerActive" | "shimmerToken" | "onHoverShimmer"
 > & {
   side: "player" | "enemy";
   shimmerId: string;
 };
 
 export function ShakingArtPanel({ side, shimmerId, ...props }: ShakingArtPanelProps) {
-  const { shaking, hurtFlashToken, attackToken, castToken } = useBattlePresentationStore(
+  const { shaking, impactCue, attackToken, castToken } = useBattlePresentationStore(
     useShallow((s) => ({
       shaking: side === "player" ? s.playerShaking : s.enemyShaking,
-      hurtFlashToken: side === "player" ? s.playerHurtFlashToken : s.enemyHurtFlashToken,
+      impactCue: side === "player" ? s.playerImpactCue : s.enemyImpactCue,
       attackToken: side === "player" ? s.playerAttackToken : s.enemyAttackToken,
       castToken: side === "player" ? s.playerCastToken : s.enemyCastToken,
     })),
@@ -43,7 +43,7 @@ export function ShakingArtPanel({ side, shimmerId, ...props }: ShakingArtPanelPr
       side={side}
       shimmerId={shimmerId}
       shaking={shaking}
-      hurtFlashToken={hurtFlashToken}
+      impactCue={impactCue}
       attackToken={attackToken}
       castToken={castToken}
       shimmerActive={shimmerActive}

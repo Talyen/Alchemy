@@ -119,6 +119,23 @@ describe("getPlayableHandCardKeysExcludingHidden", () => {
     expect(playable.has("draw-3")).toBe(false);
   });
 
+  it("does not mutate a shared playable-keys set", () => {
+    const drawingCard: BattleCard = { ...affordableCard, id: "draw", uid: 3 };
+    const state = {
+      ...defaultBattleState(),
+      turnPhase: "player" as const,
+      mana: 2,
+      wishOptions: null,
+      hand: [affordableCard, drawingCard],
+    };
+    const shared = getPlayableHandCardKeys(state);
+    const playable = getPlayableHandCardKeysExcludingHidden(state, ["draw-3"], false, shared);
+
+    expect(shared.has("draw-3")).toBe(true);
+    expect(playable.has("draw-3")).toBe(false);
+    expect(playable).not.toBe(shared);
+  });
+
   it("returns empty while a card transfer is in progress", () => {
     const state = {
       ...defaultBattleState(),

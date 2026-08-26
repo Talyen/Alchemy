@@ -20,7 +20,7 @@ export function makeRunController(): BattleRunPort & ContentNavigationRunPort {
     runBoons: state.activeRun.runBoons,
     encounteredRunEnemyIds: state.activeRun.encounteredRunEnemyIds,
     runDeck: state.activeRun.runDeck,
-    runGold: getRunProgressStoreView().runGold,
+    gold: getRunProgressStoreView().gold,
     lastOfferedDestinations: state.activeRun.lastOfferedDestinations,
     destinationRoundsSinceOffered: state.activeRun.destinationRoundsSinceOffered,
   };

@@ -15,8 +15,8 @@ describe("shared gold purse", () => {
     expect(readRunProfile().gold).toBe(45);
   });
 
-  it("applies the character gold multiplier when earning", () => {
-    setRunProgress({ runGold: 10 });
+  it("adds earned gold onto the purse", () => {
+    setRunProgress({ gold: 10 });
     dispatchRunSessionCommand((draft) => addRunGold(draft, 5));
     expect(readRunProfile().gold).toBe(15);
   });

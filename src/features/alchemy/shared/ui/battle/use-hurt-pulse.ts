@@ -1,22 +1,24 @@
-// Shared hurt pulse timing for portrait flash, sparks, and overflow-visible on the art frame.
+// Shared impact pulse timing for portrait flash, sparks, and overflow-visible on the art frame.
 import { useEffect, useRef, useState } from "react";
 
+import type { CombatImpactCue } from "../../types";
 import { HURT_FLASH_DURATION_MS, HURT_SPARK_DURATION_MS } from "@/lib/game-constants";
 
 const HURT_VFX_DURATION_MS = Math.max(HURT_FLASH_DURATION_MS, HURT_SPARK_DURATION_MS);
 
-export function useHurtPulse(hurtFlashToken: number) {
-  const [pulse, setPulse] = useState<number | null>(null);
-  const prevTokenRef = useRef(hurtFlashToken);
+export function useImpactPulse(impactCue: CombatImpactCue | null) {
+  const [pulse, setPulse] = useState<CombatImpactCue | null>(null);
+  const prevSequenceRef = useRef(impactCue?.sequence ?? 0);
 
   useEffect(() => {
-    const prev = prevTokenRef.current;
-    prevTokenRef.current = hurtFlashToken;
-    if (hurtFlashToken <= prev) return;
-    setPulse(hurtFlashToken);
+    if (!impactCue) return;
+    if (impactCue.sequence <= prevSequenceRef.current) return;
+    prevSequenceRef.current = impactCue.sequence;
+    setPulse(impactCue);
     const timer = window.setTimeout(() => setPulse(null), HURT_VFX_DURATION_MS);
     return () => clearTimeout(timer);
-  }, [hurtFlashToken]);
+  }, [impactCue]);
 
-  return { pulse, sparksOverflow: pulse !== null };
+  const activePulse = impactCue ? pulse : null;
+  return { pulse: activePulse, sparksOverflow: activePulse !== null };
 }

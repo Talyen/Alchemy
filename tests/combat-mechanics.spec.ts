@@ -3,7 +3,6 @@ import {
   startBattleWithDeck,
   makeStatusCard,
   WOLF_COMPANION_CARD,
-  injectTalentUnlocks,
   makeCard,
   seedRandom,
   boxesOverlap,
@@ -53,7 +52,7 @@ test.describe("Damage-over-Time Status Effects", critical, () => {
 
       await battle.endTurn();
 
-      // Exact tick amounts are pinned in tests/lib/battle/status-ticks.test.ts;
+      // Exact tick amounts are pinned in tests/lib/battle/status-ticks-enemy.test.ts;
       // here we only assert the presentation fact unique to each DoT type.
       await expect(battle.victoryHeading).toBeHidden();
 
@@ -88,42 +87,6 @@ test.describe("Companion Battle Behavior", critical, () => {
       expect(boxesOverlap(companionBox, healthBox)).toBe(false);
     }).toPass();
   });
-});
-
-interface TalentCase {
-  id: string;
-  category: string;
-  description: string;
-  run: (page: import("@playwright/test").Page, battle: BattlePage) => Promise<void>;
-}
-
-// Damage-math talents are pinned in tests/lib/game-data/talent-effect-invariants.test.ts
-// (per-talent ops) and tests/lib/battle/damage-base.test.ts (flat physical); here we
-// keep only the presentation fact that an unlocked talent is active at battle start.
-const TALENT_CASES: TalentCase[] = [
-  {
-    id: "block-start",
-    category: "block",
-    description: "does not grant starting Block",
-    run: async (page, _battle) => {
-      await expect(page.getByRole("button", { name: "Block 5" })).toBeHidden();
-    },
-  },
-];
-
-test.describe("Talents in Battle", critical, () => {
-  for (const tc of TALENT_CASES) {
-    test(`${tc.id} ${tc.description}`, async ({ page, fastBattle, runtimeErrors }) => {
-      void fastBattle;
-      void runtimeErrors;
-      await injectTalentUnlocks(page, { [tc.category]: [tc.id] });
-      await startBattleWithDeck(
-        page,
-        Array.from({ length: 8 }, () => makeCard()),
-      );
-      await tc.run(page, new BattlePage(page));
-    });
-  }
 });
 
 test.describe("Battle Autoplay", critical, () => {

@@ -161,7 +161,7 @@ export function computeVictoryRewards(
 
   const talentEffects = computeTalentEffects(input.unlockedTalents);
   if (input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
-    const goldEarned = Math.max(0, input.battleState.gold - input.runGold);
+    const goldEarned = Math.max(0, input.battleState.gold - input.purseGold);
     return {
       rewardState: createWildwoodRewardState(
         input.runDeck,
@@ -173,6 +173,7 @@ export function computeVictoryRewards(
       ),
       labyrinthRewardModifiers,
       goldEarned,
+      persistedGold: Math.max(input.purseGold, input.battleState.gold),
       playerHealth: input.battleState.playerHealth,
       maxHealthDelta: talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0,
       destinationOfferState: input.destinationOfferState,
@@ -187,7 +188,7 @@ export function computeVictoryRewards(
 
   const goldResult = computeVictoryGold({
     battleState: input.battleState,
-    runGold: input.runGold,
+    purseGold: input.purseGold,
     runBoons: activeTrinketEffectIds,
     gold,
     eliteBonus,
@@ -196,8 +197,6 @@ export function computeVictoryRewards(
     talentGoldPerCombat: talentEffects.goldPerCombat,
     goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
   });
-
-  const newGold = goldResult.persistedRunGold;
 
   const playerHealth = input.battleState.playerHealth;
   const maxHealthDelta = talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0;
@@ -217,7 +216,7 @@ export function computeVictoryRewards(
     ? []
     : input.getAvailableDestinations({
         currentHealth: input.battleState.playerHealth,
-        currentGold: newGold,
+        currentGold: goldResult.persistedGold,
         destinationIndexInAct: input.destinationIndexInAct,
         maxHealth: input.runMaxHealth,
       });
@@ -256,6 +255,7 @@ export function computeVictoryRewards(
     rewardState,
     labyrinthRewardModifiers,
     goldEarned: goldResult.earnedBeforeMultiplier,
+    persistedGold: goldResult.persistedGold,
     playerHealth,
     maxHealthDelta,
     destinationOfferState: sampled.offerState,

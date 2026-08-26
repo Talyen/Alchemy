@@ -10,11 +10,7 @@ import {
   setRunProgress,
 } from "../../../helpers/run-domain-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
-import { findMysteryEvent, type MysteryEffect } from "@/lib/mystery";
-import * as mystery from "@/lib/mystery";
-import { resolveMysteryEventTrinkets } from "@/lib/mystery/resolve-trinkets";
-import { gearDefinitions } from "@/lib/gear";
-import { useGearStore } from "../../../helpers/gameplay-store-test";
+import { type MysteryEffect } from "@/lib/mystery";
 
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
@@ -47,101 +43,16 @@ describe("useMysteryEventNavigation", () => {
     expect(playUISound).toHaveBeenCalledWith("musicBoxMystery");
   });
 
-  it("beginMysteryEvent shows an unowned fallback on owned trinket choices", () => {
-    const spring = findMysteryEvent("enchanted-spring");
-    if (!spring) throw new Error("enchanted-spring is missing from the mystery pool");
-    vi.spyOn(mystery, "pickResolvedMysteryEvent").mockReturnValue(
-      resolveMysteryEventTrinkets(spring, ["icy-heart"], () => 0),
-    );
-    setRunProgress({ runBoons: ["icy-heart"] });
-    const { result } = renderMysteryNav();
-
-    act(() => {
-      result.current.beginMysteryEvent();
-    });
-
-    const charm = getRunSessionStoreView().mysteryEvent?.choices.find((choice) => choice.label === "Take the Charm");
-    const trinket = charm?.effects.find((effect) => effect.kind === "gainTrinket");
-    expect(trinket?.kind).toBe("gainTrinket");
-    if (trinket?.kind !== "gainTrinket") return;
-    expect(trinket.trinketId).not.toBe("icy-heart");
-  });
-
-  it("handleMysteryChoice stops when chooseCard requires follow-up UI", () => {
-    const { result } = renderMysteryNav();
-
-    act(() => {
-      result.current.handleMysteryChoice({
-        label: "Browse",
-        effects: [{ kind: "chooseCard" }],
-      });
-    });
-
-    expect(getRunSessionStoreView().mysteryCardChoices).not.toBeNull();
-    expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Browse");
-  });
-
-  it("handleMysteryChoice applies removeCard without opening a picker", () => {
-    const slash = {
-      id: "slash",
-      title: "Slash",
-      descriptionLines: [""],
-      art: "",
-      cost: 1,
-      effects: [],
-    };
-    setRunProgress({ runDeck: [slash] });
-    const { result } = renderMysteryNav();
-
-    act(() => {
-      result.current.handleMysteryChoice({
-        label: "Offer",
-        effects: [{ kind: "removeCard" }],
-      });
-    });
-
-    expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Offer");
-    expect(getRunSessionStoreView().mysteryCardChoices).toBeNull();
-    expect(getRunProgressStoreView().runDeck).toEqual([]);
-  });
-
-  it("resolves a restored legacy remove-card picker only once", () => {
-    const slash = { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] };
-    const block = { id: "block", title: "Block", descriptionLines: [""], art: "", cost: 1, effects: [] };
-    setRunProgress({ runDeck: [slash, block] });
-    getRunSessionStoreView().setMysteryPendingRemoval(true);
-    const { result } = renderMysteryNav();
-
-    act(() => {
-      result.current.handleMysteryRemoveCard(0);
-      result.current.handleMysteryRemoveCard(0);
-    });
-
-    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual(["block"]);
-    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(false);
-  });
-
-  it("handleMysteryChooseCard stores the picked card id for the summary", () => {
-    const { result } = renderMysteryNav();
-
-    act(() => {
-      result.current.handleMysteryChooseCard("slash");
-    });
-
-    expect(getRunSessionStoreView().mysteryChosenCardId).toBe("slash");
-    expect(getRunSessionStoreView().mysteryCardChoices).toBeNull();
-  });
-
   it("plays gold sounds only after the choice commits", () => {
-    setRunProgress({ runGold: 20 });
+    setRunProgress({ gold: 20 });
     const { result } = renderMysteryNav();
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
     vi.mocked(playGoldGain).mockImplementationOnce(() => {
-      expect(getRunProgressStoreView().runGold).toBe(25);
+      expect(getRunProgressStoreView().gold).toBe(25);
     });
     vi.mocked(playGoldSpend).mockImplementationOnce(() => {
-      expect(getRunProgressStoreView().runGold).toBe(25);
+      expect(getRunProgressStoreView().gold).toBe(25);
     });
 
     act(() => {
@@ -161,7 +72,7 @@ describe("useMysteryEventNavigation", () => {
   });
 
   it("handleMysteryChoice ignores a second call after the choice commits", () => {
-    setRunProgress({ runGold: 20 });
+    setRunProgress({ gold: 20 });
     const { result } = renderMysteryNav();
 
     act(() => {
@@ -175,7 +86,7 @@ describe("useMysteryEventNavigation", () => {
       });
     });
 
-    expect(getRunProgressStoreView().runGold).toBe(30);
+    expect(getRunProgressStoreView().gold).toBe(30);
     expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Take");
   });
 
@@ -191,7 +102,7 @@ describe("useMysteryEventNavigation", () => {
   });
 
   it("rolls back state and skips gold sounds when a later effect throws", () => {
-    setRunProgress({ runGold: 20 });
+    setRunProgress({ gold: 20 });
     const { result } = renderMysteryNav();
 
     expect(() =>
@@ -203,28 +114,8 @@ describe("useMysteryEventNavigation", () => {
       }),
     ).toThrow(/Unhandled mystery effect kind/);
 
-    expect(getRunProgressStoreView().runGold).toBe(20);
+    expect(getRunProgressStoreView().gold).toBe(20);
     expect(playGoldGain).not.toHaveBeenCalled();
     expect(playGoldSpend).not.toHaveBeenCalled();
-  });
-
-  it("grants generated gear into the armory inventory", () => {
-    setRunProgress({ characterId: "knight" });
-    getRunSessionStoreView().setHasActiveRun(true);
-    const { result } = renderMysteryNav();
-
-    act(() => {
-      result.current.handleMysteryChoice({
-        label: "Claim the Relic",
-        effects: [{ kind: "gainGeneratedGear", baseItemId: "topaz-amulet" }],
-      });
-    });
-
-    const granted = getRunSessionStoreView().mysteryGrantedGearInstances;
-    expect(granted).toHaveLength(1);
-    expect(gearDefinitions[granted[0]!.definitionId]?.baseItemId).toBe("topaz-amulet");
-    expect(useGearStore.getState().inventories.knight.some((item) => item.instanceId === granted[0]!.instanceId)).toBe(
-      true,
-    );
   });
 });

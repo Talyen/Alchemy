@@ -16,7 +16,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
-import { applyCombatTextPortraitFeedback } from "./battle-feedback";
+import { applyCombatTextShakeFeedback } from "./battle-feedback";
 import { logBattleError, playCombatTextSounds, playCompanionSound } from "./controller-utils";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
@@ -49,7 +49,7 @@ export function createTurnOrchestration(
         if (texts.length > 0) {
           const vfx = getPresentation();
           vfx.showCombatTexts(texts);
-          applyCombatTextPortraitFeedback(texts, vfx);
+          applyCombatTextShakeFeedback(texts, vfx);
           playCombatTextSounds(texts);
         }
       });

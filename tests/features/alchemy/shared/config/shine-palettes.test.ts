@@ -80,13 +80,13 @@ describe("getTrinketShineColors", () => {
 describe("buildSmoothShineGradient", () => {
   it("repeats a color band with a foreground highlight for a seamless traveling blend", () => {
     expect(buildSmoothShineGradient(["#111111", "#222222"])).toBe(
-      "linear-gradient(in oklab 90deg, #111111, #222222, var(--color-foreground), #111111, #222222, var(--color-foreground), #111111)",
+      "linear-gradient(in oklab 90deg, #111111, #222222, #ffffff, #111111, #222222, #ffffff, #111111)",
     );
   });
 
   it("adds a traveling highlight to single-color palettes", () => {
     expect(buildSmoothShineGradient(["#111111"])).toBe(
-      "linear-gradient(in oklab 90deg, #111111, var(--color-foreground), #111111, var(--color-foreground), #111111)",
+      "linear-gradient(in oklab 90deg, #111111, #ffffff, #111111, #ffffff, #111111)",
     );
   });
 });

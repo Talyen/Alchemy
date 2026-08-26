@@ -1,5 +1,5 @@
 import type { TrinketEntry } from "@/lib/game-data";
-import { getTrinketShineGradient } from "@/features/alchemy/shared/config";
+import { getTrinketShineColors } from "@/features/alchemy/shared/config";
 
 import { ShineText } from "./shine-text";
 
@@ -10,7 +10,7 @@ interface Props {
 
 export function TrinketItemTitle({ trinket, className }: Props) {
   return (
-    <ShineText gradient={getTrinketShineGradient(trinket.id)} className={className}>
+    <ShineText colors={getTrinketShineColors(trinket.id)} className={className}>
       {trinket.title}
     </ShineText>
   );

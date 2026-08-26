@@ -16,6 +16,7 @@ import {
 } from "@/lib/game-data";
 import { CONTENT_SYSTEM_IDS } from "@/lib/content-systems/types";
 import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/gear/crafting";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { filterValidDestinations } from "@/lib/routing";
 import { deduplicateStrings } from "./validation-utils";
@@ -28,10 +29,7 @@ function toNonEmptyTuple<T extends string>(values: readonly T[], label: string):
 export const CHARACTER_IDS = toNonEmptyTuple(Object.keys(characters) as CharacterId[], "Character IDs");
 const DIFFICULTY_IDS = toNonEmptyTuple(DIFFICULTY_ORDER as readonly DifficultyId[], "Difficulty IDs");
 
-export const MATERIAL_ZERO_INVENTORY = Object.fromEntries(MATERIAL_IDS.map((id) => [id, 0])) as Record<
-  MaterialId,
-  number
->;
+export const MATERIAL_ZERO_INVENTORY = emptyInventory();
 
 function createMaterialInventoryShape() {
   return MATERIAL_IDS.reduce(

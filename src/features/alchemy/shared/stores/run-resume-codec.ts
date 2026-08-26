@@ -96,13 +96,13 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
     initialized: _initialized,
     talentXP: _talentXP,
     unlockedTalents: _unlockedTalents,
-    runGold: _runGold,
+    gold: _gold,
     ...activeRunProgress
   } = run;
   void _initialized;
   void _talentXP;
   void _unlockedTalents;
-  void _runGold;
+  void _gold;
   const progress = pickActiveRunFields(activeRunProgress);
   const activeCombat =
     battle.hasActiveBattle && battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)

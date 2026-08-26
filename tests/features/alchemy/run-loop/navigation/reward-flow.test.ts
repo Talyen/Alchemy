@@ -51,9 +51,9 @@ describe("reward flow orchestration", () => {
   });
 
   describe("computeVictoryGold unmultiplied total", () => {
-    // Identity params (runGold 0, multiplier 1) make persistedRunGold equal the unmultiplied total.
-    function unmultipliedTotal(input: Omit<Parameters<typeof computeVictoryGold>[0], "runGold" | "goldMultiplier">) {
-      return computeVictoryGold({ ...input, runGold: 0, goldMultiplier: 1 }).persistedRunGold;
+    // Identity params (purseGold 0, multiplier 1) make persistedGold equal the unmultiplied total.
+    function unmultipliedTotal(input: Omit<Parameters<typeof computeVictoryGold>[0], "purseGold" | "goldMultiplier">) {
+      return computeVictoryGold({ ...input, purseGold: 0, goldMultiplier: 1 }).persistedGold;
     }
 
     it("sums all gold sources", () => {
@@ -360,7 +360,7 @@ describe("reward flow orchestration", () => {
     it("applies gold multiplier to earned gold only", () => {
       const result = computeVictoryGold({
         battleState: { currentEnemy: { enemyType: "normal" }, gold: 20 } as never,
-        runGold: 10,
+        purseGold: 10,
         runBoons: [],
         gold: 15,
         eliteBonus: 0,
@@ -370,7 +370,7 @@ describe("reward flow orchestration", () => {
         goldMultiplier: 2,
       });
       expect(result.earnedBeforeMultiplier).toBe(25);
-      expect(result.persistedRunGold).toBe(10 + Math.floor(25 * 2));
+      expect(result.persistedGold).toBe(10 + Math.floor(25 * 2));
     });
   });
 

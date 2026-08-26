@@ -1,6 +1,6 @@
-// Shop gear tile with buy button and sold-out state.
 import type { GearInstance } from "@/lib/gear";
 import { getGearInstanceTitle } from "@/lib/gear";
+import { getShopItemAriaLabel, getShopPurchaseState } from "./purchasable-shop-helpers";
 import { PurchasableShopTile, ShopPriceChip } from "./purchasable-shop-tile";
 import { GearTile } from "./collection-art-tiles";
 
@@ -14,8 +14,7 @@ interface PurchasableGearItemProps {
 
 export function PurchasableGearItem({ instance, price, gold, purchased, onBuy }: PurchasableGearItemProps) {
   const title = getGearInstanceTitle(instance);
-  const canAfford = gold >= price;
-  const canPurchase = !purchased && canAfford;
+  const { canPurchase } = getShopPurchaseState(price, gold, purchased);
   const media = (
     <GearTile
       instance={instance}
@@ -25,7 +24,7 @@ export function PurchasableGearItem({ instance, price, gold, purchased, onBuy }:
       interactiveChrome={!purchased}
       disabled={!canPurchase}
       onClick={canPurchase ? onBuy : undefined}
-      ariaLabel={purchased ? title : `Buy ${title}`}
+      ariaLabel={getShopItemAriaLabel(title, purchased)}
     >
       <ShopPriceChip price={price} gold={gold} purchased={purchased} />
     </GearTile>

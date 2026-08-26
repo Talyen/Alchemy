@@ -247,7 +247,7 @@ describe("createRunFlowHandlers victory paths", () => {
   it("plays gold gain SFX when Wildwood victory persists in-combat gold", () => {
     setRunProgress({
       contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
-      runGold: 10,
+      gold: 10,
       runDeck: [],
       runPlayerHealth: 20,
       runMaxHealth: 20,

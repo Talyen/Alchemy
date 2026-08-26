@@ -1,4 +1,4 @@
-const SHINE_TEXT_HIGHLIGHT = "var(--color-foreground)";
+const SHINE_TEXT_HIGHLIGHT = "#ffffff";
 
 /** Builds a seamless repeated text gradient with perceptually smooth color interpolation. */
 export function buildSmoothShineGradient(colors: readonly string[]): string | null {

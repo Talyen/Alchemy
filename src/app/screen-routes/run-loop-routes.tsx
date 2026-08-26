@@ -183,7 +183,7 @@ function ShopScreenRoute({
   const r = useShopScreenData();
   return (
     <MerchantShopScreen
-      gold={r.runGold}
+      gold={r.gold}
       runDeck={r.runDeck}
       shopCards={r.shopState.cards}
       refreshesLeft={r.shopState.refreshesLeft}
@@ -211,7 +211,7 @@ function AlchemistScreenRoute({
   const r = useAlchemistScreenData();
   return (
     <AlchemistShopScreen
-      gold={r.runGold}
+      gold={r.gold}
       runDeck={r.runDeck}
       potionCards={r.alchemistState.potions}
       refreshesLeft={r.alchemistState.refreshesLeft}
@@ -239,7 +239,7 @@ function TrinketShopScreenRoute({
   const r = useTrinketShopScreenData();
   return (
     <TrinketShopScreen
-      gold={r.runGold}
+      gold={r.gold}
       trinkets={r.trinketShopState.trinkets}
       refreshesLeft={r.trinketShopState.refreshesLeft}
       purchasedSlotKeys={r.trinketShopState.purchasedSlotKeys}
@@ -263,7 +263,7 @@ function EquipmentShopScreenRoute({
   const r = useEquipmentShopScreenData();
   return (
     <EquipmentShopScreen
-      gold={r.runGold}
+      gold={r.gold}
       gear={r.equipmentShopState.gear}
       refreshesLeft={r.equipmentShopState.refreshesLeft}
       purchasedSlotKeys={r.equipmentShopState.purchasedSlotKeys}

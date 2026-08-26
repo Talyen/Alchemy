@@ -29,7 +29,7 @@ export function useRunDestinationWiring({
       destinationIndexInAct: active.destinationIndexInAct,
       completedDestinations: active.completedDestinations,
       runPlayerHealth: active.runPlayerHealth,
-      runGold: readRunProfile().gold,
+      gold: readRunProfile().gold,
       runMaxHealth: active.runMaxHealth,
       hasAnyOwnedGear: readHasAnyOwnedGear(),
       hasUnownedTrinkets: readHasUnownedTrinkets(),

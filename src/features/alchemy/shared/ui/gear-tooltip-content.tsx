@@ -5,7 +5,8 @@ import {
   type GearDefinition,
   type GearInstance,
   gearAffixCatalog,
-  getGearAffixShineGradient,
+  getGearAffixTextShineColors,
+  getGearDefinitionTextShineColors,
 } from "@/lib/gear";
 import { GearItemTitle } from "./gear-item-title";
 import { ShineText } from "./shine-text";
@@ -39,12 +40,16 @@ export function GearTooltipContent({
             const def = roll ? gearAffixCatalog[roll.id] : undefined;
             const isMaxAstral =
               (rarity === "astral" || rarity === "unique") && def && roll && roll.value === def.roll[rarity].max;
-            const gradient = isMaxAstral ? getGearAffixShineGradient(def) : null;
+            const colors = isMaxAstral
+              ? rarity === "unique"
+                ? getGearDefinitionTextShineColors(definition)
+                : getGearAffixTextShineColors(def)
+              : [];
 
             return (
               <div key={entry.key}>
                 <TooltipSubheader>
-                  <ShineText gradient={gradient} fallbackClassName="text-inherit">
+                  <ShineText colors={colors} fallbackClassName="text-inherit">
                     {entry.name}
                   </ShineText>
                 </TooltipSubheader>

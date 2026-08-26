@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  applyCombatTextPortraitFeedback,
-  shouldHurtEnemyFromCombatTexts,
-  shouldHurtPlayerFromCombatTexts,
+  applyCombatTextShakeFeedback,
   shouldPlayCardGoldGain,
   shouldShakeEnemyFromCombatTexts,
   shouldShakePlayerFromCombatTexts,
@@ -97,70 +95,14 @@ describe("shouldShakePlayerFromCombatTexts", () => {
   });
 });
 
-describe("shouldHurtPlayerFromCombatTexts", () => {
-  it("returns true for player health damage", () => {
-    expect(shouldHurtPlayerFromCombatTexts([{ target: "player", kind: "damage", stat: "health", amount: 5 }])).toBe(
-      true,
-    );
-  });
-
-  it("returns true for player burn damage", () => {
-    expect(shouldHurtPlayerFromCombatTexts([{ target: "player", kind: "damage", stat: "burn", amount: 3 }])).toBe(true);
-  });
-
-  it("returns false for block absorb only", () => {
-    expect(shouldHurtPlayerFromCombatTexts([{ target: "player", kind: "damage", stat: "block", amount: 5 }])).toBe(
-      false,
-    );
-  });
-
-  it("returns false for mana loss", () => {
-    expect(shouldHurtPlayerFromCombatTexts([{ target: "player", kind: "damage", stat: "mana", amount: 2 }])).toBe(
-      false,
-    );
-  });
-
-  it("returns false for enemy damage only", () => {
-    expect(shouldHurtPlayerFromCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }])).toBe(
-      false,
-    );
-  });
-
-  it("returns false for empty array", () => {
-    expect(shouldHurtPlayerFromCombatTexts([])).toBe(false);
-  });
-});
-
-describe("shouldHurtEnemyFromCombatTexts", () => {
-  it("returns true for enemy physical damage", () => {
-    expect(shouldHurtEnemyFromCombatTexts([{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }])).toBe(
-      true,
-    );
-  });
-
-  it("returns false for enemy heal only", () => {
-    expect(shouldHurtEnemyFromCombatTexts([{ target: "enemy", kind: "heal", stat: "health", amount: 5 }])).toBe(false);
-  });
-
-  it("returns false for player damage only", () => {
-    expect(shouldHurtEnemyFromCombatTexts([{ target: "player", kind: "damage", stat: "health", amount: 5 }])).toBe(
-      false,
-    );
-  });
-});
-
-describe("applyCombatTextPortraitFeedback", () => {
-  it("triggers enemy hurt and shake for enemy damage texts", () => {
+describe("applyCombatTextShakeFeedback", () => {
+  it("triggers only the damaged target's shake", () => {
     const feedback = {
       shakeEnemy: vi.fn(),
       shakePlayer: vi.fn(),
-      hurtEnemy: vi.fn(),
-      hurtPlayer: vi.fn(),
     };
-    applyCombatTextPortraitFeedback([{ target: "enemy", kind: "damage", stat: "burn", amount: 3 }], feedback);
+    applyCombatTextShakeFeedback([{ target: "enemy", kind: "damage", stat: "burn", amount: 3 }], feedback);
     expect(feedback.shakeEnemy).toHaveBeenCalledOnce();
-    expect(feedback.hurtEnemy).toHaveBeenCalledOnce();
     expect(feedback.shakePlayer).not.toHaveBeenCalled();
-    expect(feedback.hurtPlayer).not.toHaveBeenCalled();
   });
 });

@@ -6,11 +6,11 @@ import {
   GEAR_AFFIX_COUNT_MIN_WEIGHT,
   GEAR_REWARD_RARITY_CHANCE,
 } from "@/lib/game-constants";
-import { createInstanceId, pickRandom, sampleItems } from "@/lib/utils";
+import { clamp, createInstanceId, pickRandom, sampleItems } from "@/lib/utils";
 import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";
-import { gearDefinitionId, gearDefinitions, getGearDefinitionsByRarity } from "./definitions";
+import { gearDefinitionId, gearDefinitions } from "./definitions";
 import { GEAR_RARITIES, type ItemDropTier } from "./types-core";
 import { uniqueItemList, type UniqueItemDefinition } from "./unique-catalog";
 import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity, GearSlot } from "./types";
@@ -165,8 +165,28 @@ interface GenerateGearOfferingsOptions {
   rollTier: () => "unique" | "astral" | "basic";
   ownedUniqueIds?: ReadonlySet<string>;
   fillFallback?: boolean;
-  astralChanceBonus?: number;
-  isBoss?: boolean;
+}
+
+function rollOfferingInstance(
+  tier: "unique" | "astral" | "basic",
+  ownedUniqueIds: ReadonlySet<string>,
+  offeredUniqueIds: Set<string>,
+  usedBaseIds: Set<string>,
+  remainingBases: Array<(typeof gearBaseItemList)[number]>,
+  rng: () => number,
+  baseItemSupplier: () => (typeof gearBaseItemList)[number] | undefined,
+): GearInstance | null {
+  if (tier === "unique") {
+    const uniqueInstance = tryOfferUnique(ownedUniqueIds, offeredUniqueIds, usedBaseIds, remainingBases, rng);
+    if (uniqueInstance) return uniqueInstance;
+    tier = "astral";
+  }
+
+  const rarity: GearRarity = tier === "basic" ? "basic" : "astral";
+  const baseItem = baseItemSupplier();
+  if (!baseItem) return null;
+  const definition = gearDefinitions[gearDefinitionId(baseItem.id, rarity)];
+  return definition ? rollAndCreateInstance(definition, rarity, rng) : null;
 }
 
 function generateGearOfferings({
@@ -175,8 +195,6 @@ function generateGearOfferings({
   rollTier,
   ownedUniqueIds = new Set(),
   fillFallback = false,
-  astralChanceBonus = 0,
-  isBoss = false,
 }: GenerateGearOfferingsOptions): GearInstance[] {
   const offeredUniqueIds = new Set<string>();
   const usedBaseIds = new Set<string>();
@@ -184,36 +202,39 @@ function generateGearOfferings({
   const choices: GearInstance[] = [];
 
   for (let index = 0; index < count; index += 1) {
-    let tier = rollTier();
-
-    if (tier === "unique") {
-      const uniqueInstance = tryOfferUnique(ownedUniqueIds, offeredUniqueIds, usedBaseIds, remainingBases, rng);
-      if (uniqueInstance) {
-        choices.push(uniqueInstance);
-        continue;
-      }
-      tier = "astral";
-    }
-
-    const rarity: GearRarity = tier === "basic" ? "basic" : "astral";
-    const baseItem = takeUnusedBaseItem(remainingBases, usedBaseIds, rng);
-    if (!baseItem) break;
-    const definition = gearDefinitions[gearDefinitionId(baseItem.id, rarity)];
-    if (definition) {
-      choices.push(rollAndCreateInstance(definition, rarity, rng));
-    }
+    const instance = rollOfferingInstance(
+      rollTier(),
+      ownedUniqueIds,
+      offeredUniqueIds,
+      usedBaseIds,
+      remainingBases,
+      rng,
+      () => takeUnusedBaseItem(remainingBases, usedBaseIds, rng),
+    );
+    if (!instance) break;
+    choices.push(instance);
   }
 
-  if (fillFallback) {
+  if (fillFallback && choices.length < count) {
     let fillAttempts = 0;
     while (choices.length < count && fillAttempts < count * 8) {
       fillAttempts += 1;
-      const instance = generateGearInstance(rng, astralChanceBonus, isBoss);
-      if (!instance) break;
-      const baseItemId = gearDefinitions[instance.definitionId]?.baseItemId;
-      if (baseItemId && usedBaseIds.has(baseItemId)) continue;
-      if (baseItemId) usedBaseIds.add(baseItemId);
-      choices.push(instance);
+      const instance = rollOfferingInstance(
+        rollTier(),
+        ownedUniqueIds,
+        offeredUniqueIds,
+        usedBaseIds,
+        remainingBases,
+        rng,
+        () => {
+          const baseItem = pickRandom(gearBaseItemList, rng);
+          if (!baseItem) return undefined;
+          if (usedBaseIds.has(baseItem.id) && usedBaseIds.size < gearBaseItemList.length) return undefined;
+          usedBaseIds.add(baseItem.id);
+          return baseItem;
+        },
+      );
+      if (instance) choices.push(instance);
     }
   }
 
@@ -231,11 +252,12 @@ export function generateEquipmentShopOfferings(
     rng,
     rollTier: () => rollEquipmentShopDropTier(astralChanceBonus, rng, true),
     ownedUniqueIds,
+    fillFallback: true,
   });
 }
 
 function gearBasicRarityChance(astralChanceBonus = 0): number {
-  return Math.max(0, Math.min(1, GEAR_REWARD_RARITY_CHANCE - astralChanceBonus));
+  return clamp(GEAR_REWARD_RARITY_CHANCE - astralChanceBonus, 0, 1);
 }
 
 export function rollGearRewardRarity(rng: () => number, astralChanceBonus = 0): GearRarity {
@@ -305,15 +327,6 @@ export function generateDevRandomGearInstance(rng: () => number): GearInstance {
   return rollAndCreateInstance(definition, rarity, rng);
 }
 
-function generateGearInstance(rng: () => number, astralChanceBonus = 0, isBoss = false): GearInstance | null {
-  const rarity: GearRarity = isBoss ? "astral" : rollGearRewardRarity(rng, astralChanceBonus);
-  const pool = getGearDefinitionsByRarity(rarity);
-  if (pool.length === 0) return null;
-  const definition = pickRandom(pool, rng);
-  if (!definition) return null;
-  return rollAndCreateInstance(definition, rarity, rng);
-}
-
 export function generateGearRewardChoices(
   count: number,
   rng: () => number,
@@ -331,7 +344,5 @@ export function generateGearRewardChoices(
     },
     ownedUniqueIds,
     fillFallback: true,
-    astralChanceBonus,
-    isBoss,
   });
 }

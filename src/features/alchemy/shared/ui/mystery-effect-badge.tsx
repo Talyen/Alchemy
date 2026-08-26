@@ -4,9 +4,8 @@
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { getCardKeywords, keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
-  buildSmoothShineGradient,
   getKeywordListShineColors,
-  getTrinketShineGradient,
+  getTrinketShineColors,
   SHINE_PALETTES,
 } from "@/features/alchemy/shared/config/shine-palettes";
 import { tooltipChipClass } from "@/features/alchemy/shared/config";
@@ -17,7 +16,7 @@ import { HomesteadResourceArtwork, goldPillStyle, goldTextColor, matPillStyle, m
 import { ShineText } from "./shine-text";
 import { TooltipChip, TooltipHeader } from "./tooltip-panel";
 import type { MysteryEffect } from "@/lib/mystery";
-import { gearBaseItems, getUniqueItemDefinition } from "@/lib/gear";
+import { gearBaseItems, getUniqueGearTextShineColors, getUniqueItemDefinition } from "@/lib/gear";
 
 const PERCENTAGE_MULTIPLIER = 100;
 
@@ -37,8 +36,8 @@ const chipPillClass = (ctx: BadgeCtx) =>
       : "px-3 py-1 text-xs leading-none font-semibold",
   );
 
-function getKeywordsGradient(keywords: readonly KeywordId[]): string | null {
-  return buildSmoothShineGradient(getKeywordListShineColors(keywords));
+function getKeywordsShineColors(keywords: readonly KeywordId[]): readonly string[] {
+  return getKeywordListShineColors(keywords);
 }
 
 const mysteryShineTextProps = { className: "font-bold", fallbackClassName: "text-foreground" } as const;
@@ -87,12 +86,12 @@ const renderAddCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "addCard"
   const card = ctx.findCard?.(effect.cardId);
   const title = card?.title ?? "a card";
   const keywords = card && "effects" in card ? getCardKeywords(card) : [];
-  const gradient = getKeywordsGradient(keywords);
+  const colors = getKeywordsShineColors(keywords);
 
   return ctx.tooltip ? (
     <span className="text-sm text-balance text-muted-foreground">
       Add{" "}
-      <ShineText gradient={gradient} {...mysteryShineTextProps}>
+      <ShineText colors={colors} {...mysteryShineTextProps}>
         {title}
       </ShineText>{" "}
       to your deck
@@ -116,12 +115,12 @@ const renderChooseCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "choos
 
 const renderTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainTrinket" }>> = (effect, ctx) => {
   const title = ctx.findTrinket?.(effect.trinketId)?.title ?? "a boon";
-  const gradient = getTrinketShineGradient(effect.trinketId);
+  const colors = getTrinketShineColors(effect.trinketId);
 
   return ctx.tooltip ? (
     <span className="text-sm text-balance text-muted-foreground">
       Gain{" "}
-      <ShineText gradient={gradient} {...mysteryShineTextProps}>
+      <ShineText colors={colors} {...mysteryShineTextProps}>
         {title}
       </ShineText>{" "}
       <TooltipChip className="mx-0.5 mt-0 align-baseline">Boon • This Run</TooltipChip>
@@ -135,15 +134,13 @@ const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
   effect,
   ctx,
 ) => {
-  const gradient =
-    effect.fromIds && effect.fromIds.length === 1
-      ? getTrinketShineGradient(effect.fromIds[0]!)
-      : buildSmoothShineGradient([...SHINE_PALETTES.boon]);
+  const colors =
+    effect.fromIds && effect.fromIds.length === 1 ? getTrinketShineColors(effect.fromIds[0]!) : SHINE_PALETTES.boon;
 
   return ctx.tooltip ? (
     <span className="text-sm text-balance text-muted-foreground">
       Gain a random{" "}
-      <ShineText gradient={gradient} {...mysteryShineTextProps}>
+      <ShineText colors={colors} {...mysteryShineTextProps}>
         Boon
       </ShineText>{" "}
       for this run
@@ -167,12 +164,12 @@ const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
       : "Gear";
 
   const keywords = baseItem?.affinityKeywords ?? [];
-  const gradient = getKeywordsGradient(keywords);
+  const colors = uniqueItem ? getUniqueGearTextShineColors() : getKeywordsShineColors(keywords);
 
   return ctx.tooltip ? (
     <span className="text-sm text-balance text-muted-foreground">
       Add{" "}
-      <ShineText gradient={gradient} {...mysteryShineTextProps}>
+      <ShineText colors={colors} {...mysteryShineTextProps}>
         {title}
       </ShineText>{" "}
       to your Armory

@@ -3,11 +3,15 @@ import { keywordDefinitions } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear/definitions";
 import {
   getAstralShineColors,
+  getGearAffixTextShineColors,
   getGearDefinitionShineColors,
   getGearDefinitionShineGradient,
+  getGearDefinitionTextShineColors,
   getGearInstanceKeywordIds,
   getGearInstanceShineColors,
   getGearInstanceShineGradient,
+  getGearInstanceTextShineColors,
+  getUniqueGearTextShineColors,
 } from "@/lib/gear/gear-shine";
 import type { GearInstance } from "@/lib/gear/types";
 
@@ -104,6 +108,16 @@ describe("gear shine", () => {
     expect(getGearInstanceShineColors(unique)).toEqual(colors);
     expect(getAstralShineColors(unique)).toEqual(colors);
     expect(getGearDefinitionShineColors(gearDefinitions.wardbreaker!)).toEqual(colors);
+    expect(getGearInstanceTextShineColors(unique)).toEqual(["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"]);
+    expect(getGearDefinitionTextShineColors(gearDefinitions.wardbreaker!)).toEqual([
+      "#fbbf24",
+      "color-mix(in srgb, #fbbf24 55%, transparent)",
+    ]);
+    expect(getUniqueGearTextShineColors()).toEqual(["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"]);
+  });
+
+  it("uses two text stops per keyword while leaving border palettes unchanged", () => {
+    expect(getGearAffixTextShineColors({ keywordId: "burn" })).toEqual(keywordDefinitions.burn.shineColors.slice(0, 2));
   });
 
   it("shines definition-only astral titles from affinity keywords and leaves basic plain", () => {

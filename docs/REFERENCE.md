@@ -185,10 +185,10 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | Image preload helper                   | `src/lib/image-preload.ts`                                                                               |
 | Potion mixing                          | `src/lib/alchemist/potion-mixer.ts`                                                                      |
 | Platform / Steam                       | `src/lib/platform.ts`, `src/lib/platform-save-backend.ts`, `desktop/`                                    |
-| Reward card sampling                   | `run-loop/navigation/reward-flow.ts`                                                                     |
+| Reward card sampling                   | `src/features/alchemy/run-loop/navigation/reward-flow.ts`                                                |
 | Run lifecycle / capability ports       | [ARCHITECTURE.md](./ARCHITECTURE.md)                                                                     |
 | Run screen taxonomy                    | `src/lib/routing/run-screen-router.ts`                                                                   |
-| Save migrations doc                    | `shared/storage/MIGRATIONS.md`                                                                           |
+| Save migrations doc                    | `src/features/alchemy/shared/storage/MIGRATIONS.md`                                                      |
 | Sound ↔ card registry                  | `src/lib/sound-registry.ts`                                                                              |
 | Startup validation                     | `src/lib/validate-startup.ts`                                                                            |
 | Talent XP math vs talent data          | `src/lib/game-data/talents/progression.ts` vs `src/lib/game-data/talents/`                               |

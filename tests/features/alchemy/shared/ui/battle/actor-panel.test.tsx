@@ -2,6 +2,12 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/features/alchemy/shared/ui/battle/hurt-spark-burst", () => ({
+  HurtSparkBurst: ({ colors }: { colors: readonly string[] }) => (
+    <div data-testid="portrait-impact-sparks" data-colors={colors.join(",")} />
+  ),
+}));
+
 import { ArtPanel } from "@/features/alchemy/shared/ui/battle/actor-panel";
 import { installDisabledAnimationsForTests } from "../../../../../helpers/animation-test";
 
@@ -58,5 +64,34 @@ describe("ArtPanel hover motion", () => {
     rerender(<ArtPanel {...baseProps} ccKeyword="freeze" isDead />);
 
     expect(screen.queryByTestId("combatant-status-effect")).toBeNull();
+  });
+
+  it("renders a lethal impact burst over the death slice without a Health-loss flash", () => {
+    const { rerender } = render(<ArtPanel {...baseProps} />);
+
+    rerender(
+      <ArtPanel {...baseProps} isDead impactCue={{ sequence: 1, colors: ["#67e8f9", "#06b6d4"], healthLost: true }} />,
+    );
+
+    expect(screen.getByTestId("portrait-impact-sparks").getAttribute("data-colors")).toBe("#67e8f9,#06b6d4");
+    expect(screen.queryByTestId("portrait-health-loss-flash")).toBeNull();
+  });
+
+  it("keeps the red Health-loss flash for a living combatant", () => {
+    const { rerender } = render(<ArtPanel {...baseProps} />);
+
+    rerender(<ArtPanel {...baseProps} impactCue={{ sequence: 1, colors: ["#fb923c"], healthLost: true }} />);
+
+    expect(screen.getByTestId("portrait-impact-sparks")).toBeTruthy();
+    expect(screen.getByTestId("portrait-health-loss-flash")).toBeTruthy();
+  });
+
+  it("renders Block sparks without a Health-loss flash", () => {
+    const { rerender } = render(<ArtPanel {...baseProps} />);
+
+    rerender(<ArtPanel {...baseProps} impactCue={{ sequence: 1, colors: ["#7dd3fc"], healthLost: false }} />);
+
+    expect(screen.getByTestId("portrait-impact-sparks")).toBeTruthy();
+    expect(screen.queryByTestId("portrait-health-loss-flash")).toBeNull();
   });
 });

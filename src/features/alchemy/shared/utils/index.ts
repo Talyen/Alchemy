@@ -4,6 +4,7 @@
 export { tokenizeDescription, getHoverId } from "./string";
 export {
   getCombatTextColorClass,
+  getCombatImpactVisual,
   getCombatTextIcon,
   getPlayerStatusChips,
   getEnemyStatusChips,

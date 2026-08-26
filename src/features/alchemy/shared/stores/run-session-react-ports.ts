@@ -41,7 +41,7 @@ export function useRunOrchestrationPort(): RunOrchestrationPort {
   return useGameplayStateStore(
     useShallow((state) => ({
       ...pickActiveRunFields(state.run.activeRun),
-      runGold: state.runProfile.gold,
+      gold: state.runProfile.gold,
     })),
   );
 }
@@ -67,7 +67,7 @@ export function useBattleRunPort(): BattleRunPort {
       contentSystemType: state.run.activeRun.contentSystemType,
       encounteredRunEnemyIds: state.run.activeRun.encounteredRunEnemyIds,
       runDeck: state.run.activeRun.runDeck,
-      runGold: state.runProfile.gold,
+      gold: state.runProfile.gold,
     })),
   );
 }

@@ -7,7 +7,7 @@ export interface ResolveAvailableDestinationsInput {
   destinationIndexInAct: number;
   completedDestinations: Destination[];
   runPlayerHealth: number;
-  runGold: number;
+  gold: number;
   runMaxHealth: number;
   hasAnyOwnedGear: boolean;
   hasUnownedTrinkets?: boolean;
@@ -22,7 +22,7 @@ export function resolveAvailableDestinations(input: ResolveAvailableDestinations
   return getRunAvailableDestinations({
     destinationIndexInAct,
     currentHealth: options.currentHealth ?? input.runPlayerHealth,
-    currentGold: options.currentGold ?? input.runGold,
+    currentGold: options.currentGold ?? input.gold,
     maxHealth: options.maxHealth ?? input.runMaxHealth,
     previousDestination,
     hasAnyOwnedGear: options.hasAnyOwnedGear ?? input.hasAnyOwnedGear,

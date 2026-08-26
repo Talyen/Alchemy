@@ -1,6 +1,6 @@
-// Shop trinket tile with buy button and sold-out state.
 import type { TrinketEntry } from "@/lib/game-data";
-import { ShopPriceChip, PurchasableShopTile } from "./purchasable-shop-tile";
+import { getShopItemAriaLabel, getShopPurchaseState } from "./purchasable-shop-helpers";
+import { PurchasableShopTile, ShopPriceChip } from "./purchasable-shop-tile";
 import { TrinketTile } from "./collection-art-tiles";
 
 interface PurchasableTrinketItemProps {
@@ -12,8 +12,7 @@ interface PurchasableTrinketItemProps {
 }
 
 export function PurchasableTrinketItem({ trinket, price, gold, purchased, onBuy }: PurchasableTrinketItemProps) {
-  const canAfford = gold >= price;
-  const canPurchase = !purchased && canAfford;
+  const { canPurchase } = getShopPurchaseState(price, gold, purchased);
   const media = (
     <TrinketTile
       trinket={trinket}
@@ -23,7 +22,7 @@ export function PurchasableTrinketItem({ trinket, price, gold, purchased, onBuy 
       interactiveChrome={!purchased}
       disabled={!canPurchase}
       onClick={canPurchase ? onBuy : undefined}
-      ariaLabel={purchased ? trinket.title : `Buy ${trinket.title}`}
+      ariaLabel={getShopItemAriaLabel(trinket.title, purchased)}
     >
       <ShopPriceChip price={price} gold={gold} purchased={purchased} />
     </TrinketTile>

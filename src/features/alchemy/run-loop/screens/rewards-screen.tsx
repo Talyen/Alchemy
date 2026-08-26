@@ -13,13 +13,7 @@ import { usePlasmaBaseline, usePlasmaInteraction } from "../../shared/ui/use-pla
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { getPlasmaKeywordsForGear, getPlasmaColorPair, sectionTitleClass } from "@/features/alchemy/shared/config";
 import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
-import {
-  getRewardChoiceId,
-  type GearRewardState,
-  type BoonRewardState,
-  type RewardState,
-  type TrinketRewardState,
-} from "@/lib/active-run-session";
+import { getRewardChoiceId, type RewardState } from "@/lib/active-run-session";
 
 function RewardChoiceItems({
   choices,
@@ -37,25 +31,32 @@ function RewardChoiceItems({
   const isGear = rewardType === "gear";
   return choices.map((item) => {
     const choiceId = getRewardChoiceId(item);
+    const selected = selectedRewardId === choiceId;
     return (
       <div key={choiceId}>
         {isGear ? (
-          <GearRewardButton
-            instance={item as GearRewardState["choices"][number]}
+          <GearTile
+            instance={item as GearInstance}
+            interactionKey="reward"
+            as="button"
+            selected={selected}
             onClick={() => onSelectReward(choiceId)}
-            selected={selectedRewardId === choiceId}
+            ariaLabel={`Select ${getGearInstanceTitle(item as GearInstance)}`}
           />
         ) : isTrinket || isBoon ? (
-          <TrinketRewardButton
-            trinket={item as (TrinketRewardState | BoonRewardState)["choices"][number]}
+          <TrinketTile
+            trinket={item as TrinketEntry}
+            interactionKey="reward"
+            as="button"
+            selected={selected}
             temporary={isBoon}
             onClick={() => onSelectReward(choiceId)}
-            selected={selectedRewardId === choiceId}
+            ariaLabel={`Select ${(item as TrinketEntry).title}`}
           />
         ) : (
           <SelectableCard
             card={item as BattleCard}
-            isSelected={selectedRewardId === choiceId}
+            isSelected={selected}
             onSelect={() => onSelectReward(choiceId)}
             interactionKey="reward"
           />
@@ -77,51 +78,6 @@ function RewardsFound({
     return <div className="min-h-[2.5rem]" />;
   }
   return <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />;
-}
-
-function TrinketRewardButton({
-  trinket,
-  onClick,
-  selected,
-  temporary,
-}: {
-  trinket: TrinketEntry;
-  onClick: () => void;
-  selected: boolean;
-  temporary: boolean;
-}) {
-  return (
-    <TrinketTile
-      trinket={trinket}
-      interactionKey="reward"
-      as="button"
-      selected={selected}
-      temporary={temporary}
-      onClick={onClick}
-      ariaLabel={`Select ${trinket.title}`}
-    />
-  );
-}
-
-function GearRewardButton({
-  instance,
-  onClick,
-  selected,
-}: {
-  instance: GearInstance;
-  onClick: () => void;
-  selected: boolean;
-}) {
-  return (
-    <GearTile
-      instance={instance}
-      interactionKey="reward"
-      as="button"
-      selected={selected}
-      onClick={onClick}
-      ariaLabel={`Select ${getGearInstanceTitle(instance)}`}
-    />
-  );
 }
 
 export function RewardsScreen({
@@ -160,21 +116,17 @@ export function RewardsScreen({
   // Reading from the store avoids the leave/enter callback ordering race that
   // causes the local state to momentarily clear between card transitions.
   const hoveredCardId = useUiStore((s) => s.hoveredCardId);
-  const hoveredRewardId = useMemo(() => {
-    if (!hoveredCardId) return null;
+  const { hoveredRewardItem, selectedRewardItem } = useMemo(() => {
+    let hovered: RewardState["choices"][number] | null = null;
+    let selected: RewardState["choices"][number] | null = null;
     for (const item of rewardChoices) {
       const choiceId = getRewardChoiceId(item);
-      if (hoveredCardId === `reward-${choiceId}`) return choiceId;
+      if (hoveredCardId === `reward-${choiceId}`) hovered = item;
+      if (selectedRewardId === choiceId) selected = item;
     }
-    return null;
-  }, [hoveredCardId, rewardChoices]);
+    return { hoveredRewardItem: hovered, selectedRewardItem: selected };
+  }, [hoveredCardId, selectedRewardId, rewardChoices]);
 
-  const hoveredRewardItem = hoveredRewardId
-    ? (rewardChoices.find((item) => getRewardChoiceId(item) === hoveredRewardId) ?? null)
-    : null;
-  const selectedRewardItem = selectedRewardId
-    ? (rewardChoices.find((item) => getRewardChoiceId(item) === selectedRewardId) ?? null)
-    : null;
   const claimLocked = claimInFlight || rewardChoices.length === 0;
   const getRewardColorPair = (item: BattleCard | TrinketEntry | GearInstance | null) => {
     if (!item) return null;

@@ -7,7 +7,7 @@ import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/typ
 
 interface VictoryGoldInput {
   battleState: Pick<BattleState, "gold">;
-  runGold: number;
+  purseGold: number;
   runBoons: string[];
   gold: number;
   eliteBonus: number;
@@ -19,7 +19,7 @@ interface VictoryGoldInput {
 
 interface VictoryGoldResult {
   earnedBeforeMultiplier: number;
-  persistedRunGold: number;
+  persistedGold: number;
 }
 
 interface RewardGoldInput {
@@ -88,7 +88,7 @@ export function computeRewardGold(input: RewardGoldInput): number {
 
 export function computeVictoryGold({
   battleState,
-  runGold,
+  purseGold,
   runBoons,
   gold,
   eliteBonus,
@@ -101,9 +101,9 @@ export function computeVictoryGold({
     battleState.gold +
     gold +
     sumGoldBonuses(eliteBonus + bossBonus, generousBonus, talentGoldPerCombat, runBoons) -
-    runGold;
+    purseGold;
   return {
     earnedBeforeMultiplier,
-    persistedRunGold: runGold + Math.floor(earnedBeforeMultiplier * goldMultiplier),
+    persistedGold: purseGold + Math.floor(earnedBeforeMultiplier * goldMultiplier),
   };
 }

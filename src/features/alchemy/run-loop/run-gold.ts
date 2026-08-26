@@ -1,4 +1,4 @@
-// Pure run-gold spend helper used by shops, mystery, and other run-loop spenders.
-export function spendRunGold(price: number, setRunGold: (fn: (g: number) => number) => void): void {
-  setRunGold((g) => Math.max(0, g - price));
+// Spend helper used by shops and mystery. The purse clamps at 0.
+export function spendRunGold(price: number, setGold: (fn: (g: number) => number) => void): void {
+  setGold((g) => Math.max(0, g - price));
 }

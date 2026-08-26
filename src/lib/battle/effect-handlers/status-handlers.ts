@@ -90,23 +90,13 @@ export const applyMultiplyEnemyStatusEffect: EffectHandler = (state, _card, effe
   return resolveEnemyStatusCcTrigger(state, nextState, effect.status, combatTexts);
 };
 
-export const applyCleansePlayerStatusToDamageEffect: EffectHandler = (
-  state,
-  card,
-  effect,
-  _potionMult,
-  combatTexts,
-) => {
+export const applyCleansePlayerStatusToDamageEffect: EffectHandler = (state, card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "cleanse-player-status-to-damage") return state;
   const stacks = state.playerStatuses[effect.status];
   if (stacks <= 0) return state;
 
   const cleansed = applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
+  const amount = potionMult !== 1 ? Math.round(stacks * potionMult) : stacks;
 
-  return dealDamageToEnemy(
-    cleansed,
-    card,
-    { kind: "damage", damageType: effect.damageType, amount: stacks },
-    combatTexts,
-  );
+  return dealDamageToEnemy(cleansed, card, { kind: "damage", damageType: effect.damageType, amount }, combatTexts);
 };

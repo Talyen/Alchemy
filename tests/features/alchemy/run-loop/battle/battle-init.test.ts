@@ -113,7 +113,7 @@ describe("createBattleInit", () => {
     const templateCard = getRunProgressStoreView().runDeck[0]!;
     setRunProgress({
       runDeck: [{ ...templateCard, id: "stale-card" }],
-      runGold: 3,
+      gold: 3,
       roomsEncountered: 1,
       runPlayerHealth: 30,
       runMaxHealth: 30,
@@ -121,7 +121,7 @@ describe("createBattleInit", () => {
     const init = makeInit();
     const freshCard = { ...templateCard, id: "fresh-card" };
 
-    setRunProgress({ runDeck: [freshCard], runGold: 27, roomsEncountered: 4 });
+    setRunProgress({ runDeck: [freshCard], gold: 27, roomsEncountered: 4 });
     init.startBossById("forge-golem");
 
     const battle = getBattleStoreView().battleState;
@@ -148,7 +148,7 @@ describe("createBattleInit", () => {
 
   it("plays combat-text sounds and portrait feedback for companion damage at battle start", () => {
     const sounds = vi.spyOn(controllerUtils, "playCombatTextSounds");
-    const feedback = vi.spyOn(battleFeedback, "applyCombatTextPortraitFeedback");
+    const feedback = vi.spyOn(battleFeedback, "applyCombatTextShakeFeedback");
     setRunProgress({
       roomsEncountered: 0,
       runPlayerHealth: 30,

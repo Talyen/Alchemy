@@ -354,7 +354,7 @@ export function computeCardDamageToEnemy(
     finalDamage,
   );
   const stateWithCritCleared = stateAfterBlock.flags.nextHitCrit
-    ? { ...stateAfterBlock, flags: { ...stateAfterBlock.flags, nextHitCrit: false } }
+    ? setFlag(stateAfterBlock, "nextHitCrit", false)
     : stateAfterBlock;
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   const nextState = applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun, card);

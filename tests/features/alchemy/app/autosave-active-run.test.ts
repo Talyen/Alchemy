@@ -19,7 +19,7 @@ beforeEach(() => {
 
 describe("resolveActiveRunForSave", () => {
   it("returns null when hasActiveRun is false even if run progress remains populated", () => {
-    setRunProgress({ runGold: 42, runPlayerHealth: 10, initialized: true });
+    setRunProgress({ gold: 42, runPlayerHealth: 10, initialized: true });
     getRunSessionStoreView().setHasActiveRun(false);
     getNavigationStoreView().setScreen(ROUTE_SCREENS.GAME_OVER);
 
@@ -31,7 +31,7 @@ describe("resolveActiveRunForSave", () => {
   });
 
   it("snapshots active run when hasActiveRun is true", () => {
-    setRunProgress({ runGold: 15, initialized: true });
+    setRunProgress({ gold: 15, initialized: true });
     getRunSessionStoreView().setHasActiveRun(true);
     getNavigationStoreView().setScreen(ROUTE_SCREENS.DESTINATION);
 
@@ -45,11 +45,11 @@ describe("resolveActiveRunForSave", () => {
   });
 
   it("does not resurrect active run after defeat when a later store write occurs on game-over", () => {
-    setRunProgress({ runGold: 99, initialized: true });
+    setRunProgress({ gold: 99, initialized: true });
     getRunSessionStoreView().setHasActiveRun(false);
     getNavigationStoreView().setScreen(ROUTE_SCREENS.GAME_OVER);
 
-    setRunProgress({ runGold: 100 });
+    setRunProgress({ gold: 100 });
 
     const save = buildAlchemySaveDataFromStores(resolveActiveRunForSave(getRunSessionStoreView().hasActiveRun));
     expect(save.activeRun).toBeNull();

@@ -22,24 +22,24 @@ interface CampfireScreenData {
 }
 
 interface ShopScreenData {
-  runGold: number;
+  gold: number;
   runDeck: BattleCard[];
   shopState: ShopState;
 }
 
 interface AlchemistScreenData {
-  runGold: number;
+  gold: number;
   runDeck: BattleCard[];
   alchemistState: AlchemistState;
 }
 
 interface TrinketShopScreenData {
-  runGold: number;
+  gold: number;
   trinketShopState: TrinketShopState;
 }
 
 interface EquipmentShopScreenData {
-  runGold: number;
+  gold: number;
   equipmentShopState: EquipmentShopState;
 }
 

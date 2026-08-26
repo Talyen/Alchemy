@@ -17,11 +17,11 @@ import {
   landscapeArtImageClass,
   sectionTitleClass,
 } from "../../config";
-import type { StatusChip } from "../../types";
+import type { CombatImpactCue, StatusChip } from "../../types";
 import { TiltSurface } from "../tilt-surface";
 import { useHoverVisible } from "../use-hover-visible";
-import { PortraitHurtVfx } from "./portrait-hurt-vfx";
-import { useHurtPulse } from "./use-hurt-pulse";
+import { PortraitImpactVfx } from "./portrait-hurt-vfx";
+import { useImpactPulse } from "./use-hurt-pulse";
 import { SliceDeath } from "./slice-death";
 import { DeathsDoorStatusIcon, StatusIcon } from "./status-icons";
 import { useChangeToken } from "./use-change-token";
@@ -59,7 +59,7 @@ interface ArtPanelProps {
   activeLabyrinthModifiers?: EncounterCombatTraitId[];
   deathsDoorActive?: boolean;
   isBoss?: boolean;
-  hurtFlashToken?: number;
+  impactCue?: CombatImpactCue | null;
   turnActive?: boolean;
   turnUrgentHide?: boolean;
   turnShineColors?: readonly string[];
@@ -92,7 +92,7 @@ export function ArtPanel({
   activeLabyrinthModifiers = [],
   deathsDoorActive = false,
   isBoss = false,
-  hurtFlashToken = 0,
+  impactCue = null,
   turnActive = false,
   turnUrgentHide = false,
   turnShineColors,
@@ -146,7 +146,7 @@ export function ArtPanel({
               isDead={isDead}
               cardWidthClass={resolvedCardWidthClass}
               deathsDoorActive={deathsDoorActive}
-              hurtFlashToken={hurtFlashToken}
+              impactCue={impactCue}
               turnActive={turnActive}
               turnUrgentHide={turnUrgentHide}
               ccKeyword={ccKeyword}
@@ -189,7 +189,7 @@ function ActorArtFrame({
   isDead,
   cardWidthClass = battleCardWidthClass,
   deathsDoorActive,
-  hurtFlashToken = 0,
+  impactCue = null,
   turnActive = false,
   turnUrgentHide = false,
   turnShineColors,
@@ -206,13 +206,13 @@ function ActorArtFrame({
   isDead: boolean;
   cardWidthClass?: string;
   deathsDoorActive: boolean;
-  hurtFlashToken?: number;
+  impactCue?: CombatImpactCue | null;
   turnActive?: boolean;
   turnUrgentHide?: boolean;
   turnShineColors?: readonly string[];
   ccKeyword?: ActiveCcKeyword | null;
 }) {
-  const { pulse, sparksOverflow } = useHurtPulse(hurtFlashToken);
+  const { pulse, sparksOverflow } = useImpactPulse(impactCue);
 
   return (
     <CombatantStatusEffectPresentation keyword={isDead ? null : ccKeyword}>
@@ -256,7 +256,7 @@ function ActorArtFrame({
             loading="eager"
           />
         )}
-        {!isDead ? <PortraitHurtVfx pulse={pulse} /> : null}
+        <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
       </TiltSurface>
     </CombatantStatusEffectPresentation>
   );

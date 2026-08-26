@@ -11,11 +11,11 @@ beforeEach(() => {
 
 describe("screen-specific run data hooks", () => {
   it("returns only the exact fields owned by the shop screen", () => {
-    setRunProgress({ runGold: 42, runDeck: [] });
+    setRunProgress({ gold: 42, runDeck: [] });
     const { result } = renderHook(() => useShopScreenData());
 
     expect(result.current).toEqual({
-      runGold: 42,
+      gold: 42,
       runDeck: [],
       shopState: getRunSessionStoreView().shopState,
     });

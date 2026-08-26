@@ -13,7 +13,7 @@ import { playCardSound, playGoldGain, playUISound } from "@/lib/audio";
 import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
-import { applyCombatTextPortraitFeedback, shouldPlayCardGoldGain } from "./battle-feedback";
+import { applyCombatTextShakeFeedback, shouldPlayCardGoldGain } from "./battle-feedback";
 import { playCombatTextSounds, logBattleError } from "./controller-utils";
 import { PLAYABLE_HAND_OPTIONS, getHandCardKey } from "./playable-hand";
 import { isBattlePlayInputBusy } from "./autoplay-driver";
@@ -99,7 +99,7 @@ export function createBattleCardPlay(
     combatTexts: CombatTextEvent[],
   ) {
     if (shouldPlayCardGoldGain(prePlayState, postPlayState, card)) playGoldGain();
-    applyCombatTextPortraitFeedback(combatTexts, getPresentation());
+    applyCombatTextShakeFeedback(combatTexts, getPresentation());
     playCombatTextSounds(combatTexts);
   }
 

@@ -15,7 +15,7 @@ import {
 } from "@/lib/game-data";
 import { combatTextIconClasses, keywordIcons } from "../config";
 import { augmentDefinitions } from "../augment-definitions";
-import type { StatusChip } from "../types";
+import type { CombatImpactCue, StatusChip } from "../types";
 
 const ENEMY_MITIGATION_DISPLAY_ORDER: ReadonlyArray<keyof BattleState["enemyMitigation"]> = ["block", "armor", "forge"];
 
@@ -27,6 +27,17 @@ export function getCombatTextColorClass(event: CombatTextEvent): string {
   if (kw) return kw.colorClass;
   if (event.stat === "haste") return "text-fuchsia-300";
   return "text-muted-foreground";
+}
+
+export function getCombatImpactVisual(event: CombatTextEvent): Omit<CombatImpactCue, "sequence"> | null {
+  if (event.kind !== "damage") return null;
+  const isDamageType = DAMAGE_TYPES.includes(event.stat as DamageType);
+  if (event.stat !== "health" && event.stat !== "block" && !isDamageType) return null;
+  const keyword = keywordDefinitions[event.stat as KeywordId] ?? keywordDefinitions.health;
+  return {
+    colors: keyword.shineColors,
+    healthLost: event.stat !== "block",
+  };
 }
 
 export function getCombatTextIcon(event: CombatTextEvent) {

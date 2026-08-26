@@ -100,7 +100,7 @@ describe("run transitions", () => {
     vi.clearAllMocks();
     resetRunDomainStore();
     teardownRun();
-    setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, runGold: 40, initialized: true });
+    setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, gold: 40, initialized: true });
     getBattleStoreView().setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
     getRunSessionStoreView().setHasActiveRun(true);
   });

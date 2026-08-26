@@ -6,6 +6,7 @@ import {
   type VictoryRewardsResult,
 } from "@/features/alchemy/run-loop/navigation/victory-flow";
 import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/run-flow-victory";
+import { computeVictoryGold } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
@@ -55,7 +56,7 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
     contentSystemType: "campaign",
     activeLabyrinthRewardModifiers: [],
     battleState: baseBattleState(),
-    runGold: 5,
+    purseGold: 5,
     runPlayerHealth: 30,
     runMaxHealth: 30,
     destinationIndexInAct: 2,
@@ -299,9 +300,10 @@ describe("computeVictoryRewards", () => {
   });
 
   it("awards no gold or materials for Wildwood Draft victories", () => {
-    const result = computeVictoryRewards(baseInput({ contentSystemType: "wildwood", runGold: 7 }), () => 0.25);
+    const result = computeVictoryRewards(baseInput({ contentSystemType: "wildwood", purseGold: 7 }), () => 0.25);
 
     expect(result.goldEarned).toBe(0);
+    expect(result.persistedGold).toBe(7);
     expect(result.rewardState.materials).toEqual(emptyInventory());
     expect(result.rewardState.gold).toBe(0);
     expect(result.rewardState.choices).toHaveLength(3);
@@ -311,19 +313,35 @@ describe("computeVictoryRewards", () => {
     const result = computeVictoryRewards(
       baseInput({
         contentSystemType: "wildwood",
-        runGold: 10,
+        purseGold: 10,
         battleState: baseBattleState({ gold: 15 }),
       }),
       () => 0.25,
     );
 
     expect(result.goldEarned).toBe(5);
+    expect(result.persistedGold).toBe(15);
     expect(result.rewardState.materials).toEqual(emptyInventory());
+  });
+
+  it("does not shrink the purse when Wildwood combat gold is below the purse", () => {
+    const result = computeVictoryRewards(
+      baseInput({
+        contentSystemType: "wildwood",
+        purseGold: 10,
+        battleState: baseBattleState({ gold: 4 }),
+      }),
+      () => 0.25,
+    );
+
+    expect(result.goldEarned).toBe(0);
+    expect(result.persistedGold).toBe(10);
   });
 
   it("computes combat victory rewards for normal enemy", () => {
     const result = computeVictoryRewards(baseInput(), testRng);
     expect(result.goldEarned).toBe(15);
+    expect(result.persistedGold).toBe(20);
     expect(result.rewardState.rewardType).toBe("card");
     expect(result.playerHealth).toBe(30);
     expect(result.maxHealthDelta).toBe(0);
@@ -468,13 +486,14 @@ describe("computeVictoryRewards", () => {
   it("computes destinations via getAvailableDestinations", () => {
     const getAvailableDestinations = vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]);
     const result = computeVictoryRewards(baseInput({ getAvailableDestinations }), testRng);
-    // Persisted gold: runGold 5 + earned 15.
+    // Persisted gold: purse 5 + earned 15.
     expect(getAvailableDestinations).toHaveBeenCalledWith({
       currentHealth: 30,
       currentGold: 20,
       destinationIndexInAct: 2,
       maxHealth: 30,
     });
+    expect(result.persistedGold).toBe(20);
     expect(result.rewardState.destinations).toEqual(["Normal Combat", "Campfire", "Mystery"]);
   });
 
@@ -495,6 +514,7 @@ describe("commitVictoryRewards", () => {
   function victoryResult(overrides: Partial<VictoryRewardsResult> = {}): VictoryRewardsResult {
     return {
       goldEarned: 20,
+      persistedGold: 20,
       rewardState: createEmptyRewardState(),
       labyrinthRewardModifiers: [],
       playerHealth: 30,
@@ -558,15 +578,39 @@ describe("commitVictoryRewards", () => {
     expect(readGameplayState().runProfile.materialInventory.crystal).toBe(0);
   });
 
-  it("persists in-combat gold into runGold for wildwood victories", () => {
-    setRunProgress({ runGold: 10 });
+  it("persists in-combat gold into the purse for wildwood victories", () => {
+    setRunProgress({ gold: 10 });
     const battleState = baseBattleState({ gold: 15, pendingMaterials: emptyInventory() });
     const result = computeVictoryRewards(
-      baseInput({ contentSystemType: "wildwood", runGold: 10, battleState }),
+      baseInput({ contentSystemType: "wildwood", purseGold: 10, battleState }),
       testRng,
     );
     const goldGained = commit(result, commitDeps({ battleState, contentSystemType: "wildwood" }));
     expect(readGameplayState().runProfile.gold).toBe(15);
+    expect(goldGained).toBe(true);
+  });
+
+  it("writes persistedGold without re-applying the gold multiplier", () => {
+    setRunProgress({ gold: 10 });
+    const goldResult = computeVictoryGold({
+      battleState: { gold: 10 },
+      purseGold: 10,
+      runBoons: [],
+      gold: 15,
+      eliteBonus: 0,
+      generousBonus: 0,
+      bossBonus: 0,
+      talentGoldPerCombat: 0,
+      goldMultiplier: 2,
+    });
+    const goldGained = commit(
+      victoryResult({
+        goldEarned: goldResult.earnedBeforeMultiplier,
+        persistedGold: goldResult.persistedGold,
+      }),
+    );
+    expect(goldResult.persistedGold).toBe(40);
+    expect(readGameplayState().runProfile.gold).toBe(goldResult.persistedGold);
     expect(goldGained).toBe(true);
   });
 

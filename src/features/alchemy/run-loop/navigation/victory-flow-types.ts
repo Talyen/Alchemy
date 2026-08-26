@@ -22,7 +22,7 @@ export interface VictoryRewardsInput {
   contentSystemType: ContentSystemId;
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   battleState: BattleState;
-  runGold: number;
+  purseGold: number;
   runPlayerHealth: number;
   runMaxHealth: number;
   destinationIndexInAct: number;
@@ -36,7 +36,10 @@ export interface VictoryRewardsInput {
 export interface VictoryRewardsResult {
   rewardState: RewardState;
   labyrinthRewardModifiers: EncounterRewardTraitId[];
+  /** Presentation/SFX signal: unmultiplied gold gained this victory. */
   goldEarned: number;
+  /** Purse total after this victory; commit writes this value, it does not re-add goldEarned. */
+  persistedGold: number;
   playerHealth: number;
   maxHealthDelta: number;
   destinationOfferState: DestinationOfferState;

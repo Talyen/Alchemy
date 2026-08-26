@@ -31,7 +31,6 @@ describe("encodeRunResumeSnapshot", () => {
     setRunProgress({
       characterId: "knight",
       runDeck,
-      runGold: 42,
       runPlayerHealth: 18,
       runMaxHealth: 32,
       roomsEncountered: 4,

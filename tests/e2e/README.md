@@ -51,7 +51,7 @@ Page objects: `BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPa
 
 ## Tags
 
-- `@prepush` — fast local hook subset: boot plus battle canary.
+- `@prepush` — fast local hook subset: boot, battle animation canary, and SFX smoke. Tag tests individually; describe-level tags are inherited by every child.
 - `@critical` — every-push CI coverage for representative core gameplay and adjacent flows.
 - `@slow` — animation canaries and viewport loops; release/full-suite tier.
 

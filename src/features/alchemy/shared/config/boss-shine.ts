@@ -27,6 +27,10 @@ export function getBossShineColors(boss: BestiaryEntry): readonly string[] {
   return colors.length > 0 ? colors : [...SHINE_PALETTES.bossVictoryFallback];
 }
 
+export function getBossTextShineColors(boss: BestiaryEntry): readonly string[] {
+  return [...new Set(getBossShineColors(boss))];
+}
+
 export function getBossShineGradient(boss: BestiaryEntry): string {
   return (
     buildSmoothShineGradient(getBossShineColors(boss)) ??

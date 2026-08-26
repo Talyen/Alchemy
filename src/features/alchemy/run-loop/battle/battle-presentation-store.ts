@@ -10,7 +10,8 @@ import {
   SHAKE_DURATION,
 } from "@/lib/game-constants";
 import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
-import type { CardGhost, CardTransfer, FloatingCombatText } from "../../shared/types";
+import type { CardGhost, CardTransfer, CombatImpactCue, FloatingCombatText } from "../../shared/types";
+import { getCombatImpactVisual } from "../../shared/utils";
 import {
   canonicalizeHiddenHandCardKeys,
   EMPTY_HIDDEN_HAND_KEYS,
@@ -31,8 +32,8 @@ interface BattlePresentationStore {
   enemyShaking: boolean;
   playerShaking: boolean;
   companionShaking: boolean;
-  playerHurtFlashToken: number;
-  enemyHurtFlashToken: number;
+  playerImpactCue: CombatImpactCue | null;
+  enemyImpactCue: CombatImpactCue | null;
   playerAttackToken: number;
   enemyAttackToken: number;
   playerCastToken: number;
@@ -47,11 +48,8 @@ interface BattlePresentationStore {
   shakeEnemy: () => void;
   shakePlayer: () => void;
   shakeCompanion: () => void;
-  hurtPlayer: () => void;
-  hurtEnemy: () => void;
   telegraphAttack: (side: "player" | "enemy" | "companion") => void;
   telegraphCast: (side: "player" | "enemy" | "companion") => void;
-  resetPortraitHurtTokens: () => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
   clearFloatingCombatTexts: () => void;
   setCardTransfers: (transfers: CardTransfer[] | ((prev: CardTransfer[]) => CardTransfer[])) => void;
@@ -67,6 +65,7 @@ const combatTextLifetimeMs = COMBAT_TEXT_LIFETIME_MS;
 const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
 let combatTextSequence = 0;
+let combatImpactSequence = 0;
 const combatTextTimers = new TimerGroup();
 const shakeTimers = new TimerGroup();
 type ShakeTarget = "enemy" | "player" | "companion";
@@ -108,8 +107,8 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
     enemyShaking: false,
     playerShaking: false,
     companionShaking: false,
-    playerHurtFlashToken: 0,
-    enemyHurtFlashToken: 0,
+    playerImpactCue: null,
+    enemyImpactCue: null,
     playerAttackToken: 0,
     enemyAttackToken: 0,
     playerCastToken: 0,
@@ -142,9 +141,6 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
       scheduleShakeReset("companion", () => set({ companionShaking: false }));
     },
 
-    hurtPlayer: () => set((s) => ({ playerHurtFlashToken: s.playerHurtFlashToken + 1 })),
-    hurtEnemy: () => set((s) => ({ enemyHurtFlashToken: s.enemyHurtFlashToken + 1 })),
-
     telegraphAttack: (side) => {
       if (side === "player" || side === "companion") {
         set((s) => ({ playerAttackToken: s.playerAttackToken + 1 }));
@@ -160,8 +156,6 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
         set((s) => ({ enemyCastToken: s.enemyCastToken + 1 }));
       }
     },
-
-    resetPortraitHurtTokens: () => set({ playerHurtFlashToken: 0, enemyHurtFlashToken: 0 }),
 
     showCombatTexts: (events) => {
       if (events.length === 0) return;
@@ -192,6 +186,15 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
           if (!shouldShowFloatingCombatText(sequence)) return;
           set((s) => {
             let next = [...s.floatingCombatTexts, ...entries];
+            let playerImpactCue: CombatImpactCue | undefined;
+            let enemyImpactCue: CombatImpactCue | undefined;
+            for (const entry of entries) {
+              const visual = getCombatImpactVisual(entry);
+              if (!visual) continue;
+              const cue = { ...visual, sequence: ++combatImpactSequence } satisfies CombatImpactCue;
+              if (entry.target === "player") playerImpactCue = cue;
+              else enemyImpactCue = cue;
+            }
             for (const side of ["player", "enemy"] as const) {
               const sideEntries = next.filter((entry) => entry.target === side);
               const overflow = sideEntries.length - COMBAT_TEXT_MAX_VISIBLE_PER_RAIL;
@@ -199,7 +202,11 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
               const drop = new Set(sideEntries.slice(0, overflow).map((entry) => entry.id));
               next = next.filter((entry) => !drop.has(entry.id));
             }
-            return { floatingCombatTexts: next };
+            return {
+              floatingCombatTexts: next,
+              ...(playerImpactCue ? { playerImpactCue } : {}),
+              ...(enemyImpactCue ? { enemyImpactCue } : {}),
+            };
           });
           const ids = new Set(entries.map((entry) => entry.id));
           combatTextTimers.setTimeout(() => {
@@ -213,7 +220,7 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
     clearFloatingCombatTexts: () => {
       invalidateCombatTextSequence();
       combatTextTimers.clearAll();
-      set({ floatingCombatTexts: [] });
+      set({ floatingCombatTexts: [], playerImpactCue: null, enemyImpactCue: null });
     },
 
     setCardTransfers: (transfers) =>
@@ -246,8 +253,8 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
         enemyShaking: false,
         playerShaking: false,
         companionShaking: false,
-        playerHurtFlashToken: 0,
-        enemyHurtFlashToken: 0,
+        playerImpactCue: null,
+        enemyImpactCue: null,
         playerAttackToken: 0,
         enemyAttackToken: 0,
         playerCastToken: 0,

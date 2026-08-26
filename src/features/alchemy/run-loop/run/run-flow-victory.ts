@@ -11,12 +11,12 @@ import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
-  addRunGold,
   awardMaterialsDuringRun,
   setCompanionRewardCards,
   setDestinationOfferState,
   setHasActiveBattle,
   setRewardState,
+  setRunGold,
   setRunMaxHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { getCompanionCardChoices, shouldGrantCompanionReward } from "../navigation/reward-flow";
@@ -35,7 +35,7 @@ export function commitVictoryRewards(
     awardMaterialsDuringRun(draft, deps.battleState.pendingMaterials);
   }
 
-  addRunGold(draft, result.goldEarned);
+  setRunGold(draft, result.persistedGold);
   syncBattleToRun(draft, { playerHealth: result.playerHealth });
   if (result.maxHealthDelta > 0) {
     setRunMaxHealth(draft, (prev) => prev + result.maxHealthDelta);
@@ -78,7 +78,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
         contentSystemType: runState.contentSystemType,
         activeLabyrinthRewardModifiers: rewardTraits,
         battleState,
-        runGold: draft.runProfile.gold,
+        purseGold: draft.runProfile.gold,
         runPlayerHealth: runState.runPlayerHealth,
         runMaxHealth: runState.runMaxHealth,
         destinationIndexInAct: runState.destinationIndexInAct,

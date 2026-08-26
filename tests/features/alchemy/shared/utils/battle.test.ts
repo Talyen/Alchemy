@@ -4,11 +4,12 @@ import {
   getPlayerStatusChips,
   getEnemyStatusChips,
   getCombatTextColorClass,
+  getCombatImpactVisual,
   getCombatTextIcon,
   getBattleCardPlayTarget,
 } from "@/features/alchemy/shared/utils/battle";
 import { keywordIcons } from "@/features/alchemy/shared/config";
-import { enemyBestiary } from "@/lib/game-data";
+import { enemyBestiary, keywordDefinitions } from "@/lib/game-data";
 import { makeTestCard } from "../../../../fixtures/battle";
 
 const skeleton = enemyBestiary.find((enemy) => enemy.id === "skeleton")!;
@@ -236,6 +237,31 @@ describe("getCombatTextColorClass", () => {
     expect(getCombatTextColorClass({ target: "player", kind: "heal", stat: "health", amount: 5 })).toBe(
       "text-green-400",
     );
+  });
+});
+
+describe("getCombatImpactVisual", () => {
+  it.each(["physical", "burn", "freeze"] as const)("uses the %s keyword palette for damage", (stat) => {
+    expect(getCombatImpactVisual({ target: "enemy", kind: "damage", stat, amount: 5 })).toEqual({
+      colors: keywordDefinitions[stat].shineColors,
+      healthLost: true,
+    });
+  });
+
+  it("uses Block blue without marking Health loss", () => {
+    expect(getCombatImpactVisual({ target: "player", kind: "damage", stat: "block", amount: 5 })).toEqual({
+      colors: keywordDefinitions.block.shineColors,
+      healthLost: false,
+    });
+  });
+
+  it.each([
+    { target: "player", kind: "heal", stat: "health", amount: 5 },
+    { target: "player", kind: "status", stat: "block", amount: 5 },
+    { target: "player", kind: "damage", stat: "mana", amount: 2 },
+    { target: "player", kind: "notice", stat: "dodge", text: "Dodge" },
+  ] as const)("does not create an impact for $kind $stat text", (event) => {
+    expect(getCombatImpactVisual(event)).toBeNull();
   });
 });
 

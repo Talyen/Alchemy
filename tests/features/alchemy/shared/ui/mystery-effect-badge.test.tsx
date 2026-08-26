@@ -87,6 +87,7 @@ describe("MysteryEffectBadge", () => {
     expect(title.classList.contains("font-bold")).toBe(true);
     expect(title.classList.contains("boss-title-shine")).toBe(true);
     expect(title.style.backgroundImage).toContain("linear-gradient");
+    expect(title.style.getPropertyValue("--shine-text-glow-color")).toBe("#fbbf24");
   });
 
   it("renders trinkets as bold shine text with keyword gradient", () => {

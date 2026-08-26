@@ -1,26 +1,34 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
+import { buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
 import { cn } from "@/lib/utils";
 
 const shineTextClass = "boss-title-shine [background-size:200%_100%] bg-clip-text text-transparent";
 
 export function ShineText({
   children,
-  gradient,
+  colors,
   className,
   fallbackClassName = "text-stone-100",
 }: {
   children: ReactNode;
-  gradient: string | null;
+  colors: readonly string[];
   className?: string | undefined;
   fallbackClassName?: string | undefined;
 }) {
-  if (!gradient) {
+  const gradient = buildSmoothShineGradient(colors);
+  const glowColor = colors[0];
+  if (!gradient || !glowColor) {
     return <span className={cn(fallbackClassName, className)}>{children}</span>;
   }
 
+  const style: CSSProperties & { "--shine-text-glow-color": string } = {
+    "--shine-text-glow-color": glowColor,
+    backgroundImage: gradient,
+  };
+
   return (
-    <span className={cn(shineTextClass, className)} style={{ backgroundImage: gradient }}>
+    <span className={cn(shineTextClass, className)} style={style}>
       {children}
     </span>
   );

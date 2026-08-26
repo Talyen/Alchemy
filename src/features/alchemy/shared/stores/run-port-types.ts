@@ -20,7 +20,7 @@ export interface RunOrchestrationPort extends ActiveRunCorePort {
   currentAct: number;
   runDeck: BattleCard[];
   runPlayerHealth: number;
-  runGold: number;
+  gold: number;
   destinationIndexInAct: number;
   completedDestinations: Destination[];
   lastOfferedDestinations: Destination[];
@@ -30,7 +30,7 @@ export interface RunOrchestrationPort extends ActiveRunCorePort {
 /** Destination availability reads; the resolver stays pure and receives this port. */
 export type DestinationRunPort = Pick<
   RunOrchestrationPort,
-  "destinationIndexInAct" | "completedDestinations" | "runPlayerHealth" | "runGold" | "runMaxHealth"
+  "destinationIndexInAct" | "completedDestinations" | "runPlayerHealth" | "gold" | "runMaxHealth"
 >;
 
 /** Content-system start/resume reads. */
@@ -49,7 +49,7 @@ export interface BattleRunPort extends ActiveRunCorePort {
   runBoons: string[];
   encounteredRunEnemyIds: string[];
   runDeck: BattleCard[];
-  runGold: number;
+  gold: number;
 }
 
 export interface BattleTalentPort {

@@ -1,3 +1,4 @@
+import { clamp } from "@/lib/utils";
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
 import {
   CAMPFIRE_HEAL_FRACTION,
@@ -6,6 +7,7 @@ import {
   PERCENT_DENOMINATOR,
 } from "../../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
+import { rollPercent } from "../rng";
 import type { BattleState, CombatFlags, EnemyMitigation, FirstTimeFlagKey } from "./state-types";
 import { isStunFreezeBuildupBlocked } from "./state-types";
 
@@ -45,15 +47,17 @@ const PRESERVED_NON_CARD_FLAG_VALUES = {
 };
 
 type PreservedNonCardFlagKey = keyof typeof PRESERVED_NON_CARD_FLAG_VALUES;
+const PRESERVED_NON_CARD_FLAG_KEYS = Object.keys(PRESERVED_NON_CARD_FLAG_VALUES) as PreservedNonCardFlagKey[];
 
 /**
  * Snapshot first-time-per-combat flags before a non-card action (e.g., companion attack),
  * set them to their "used" sentinel values, run the mutate callback, then restore.
  */
 export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) => BattleState): BattleState {
-  const saved = Object.fromEntries(
-    (Object.keys(PRESERVED_NON_CARD_FLAG_VALUES) as PreservedNonCardFlagKey[]).map((key) => [key, state.flags[key]]),
-  ) as Partial<Pick<CombatFlags, PreservedNonCardFlagKey>>;
+  const saved: Partial<Pick<CombatFlags, PreservedNonCardFlagKey>> = {};
+  for (const key of PRESERVED_NON_CARD_FLAG_KEYS) {
+    saved[key] = state.flags[key] as never;
+  }
   const blockedState: BattleState = {
     ...state,
     flags: { ...state.flags, ...PRESERVED_NON_CARD_FLAG_VALUES },
@@ -106,8 +110,7 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
   if (
     status === "poison" &&
     traitAdjustedDelta > 0 &&
-    nextState.gearEffects.poisonArmorShredChance > 0 &&
-    nextState.rng() * PERCENT_DENOMINATOR < nextState.gearEffects.poisonArmorShredChance
+    rollPercent(nextState.gearEffects.poisonArmorShredChance, nextState.rng)
   ) {
     nextState = reduceEnemyArmor(nextState, 1);
   }
@@ -157,7 +160,7 @@ export function setFlag<K extends keyof CombatFlags>(state: BattleState, flag: K
 
 // Adds delta (positive or negative) to current, clamped to [0, max]. NOT an absolute setter.
 export function clampHealth(current: number, delta: number, max: number): number {
-  return Math.max(0, Math.min(max, current + delta));
+  return clamp(current + delta, 0, max);
 }
 
 /** Adds mana clamped at maxMana — overcap is discarded, never carried into later turns. */

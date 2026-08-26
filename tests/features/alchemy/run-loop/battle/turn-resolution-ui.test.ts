@@ -73,8 +73,6 @@ beforeEach(() => {
   domain = { battleState: defaultBattleState(), pendingBattleTransition: null };
   presentation.showCombatTexts.mockClear();
   presentation.shakePlayer.mockClear();
-  presentation.hurtPlayer.mockClear();
-  presentation.hurtEnemy.mockClear();
   presentation.shakeEnemy.mockClear();
   presentation.shakeCompanion.mockClear();
   presentation.telegraphAttack.mockClear();
@@ -237,12 +235,11 @@ describe("executeEnemyPhase", () => {
     );
 
     expect(presentation.shakePlayer).toHaveBeenCalledOnce();
-    expect(presentation.hurtPlayer).toHaveBeenCalledOnce();
     expect(presentation.showCombatTexts).toHaveBeenCalled();
     expect(presentation.telegraphAttack).toHaveBeenCalledWith("enemy");
   });
 
-  it("does not hurt the player when only block absorb damage is present", async () => {
+  it("still shakes the player when only block absorb damage is present", async () => {
     const current = defaultBattleState();
     const result = { ...current, playerHealth: 5 };
 
@@ -258,7 +255,6 @@ describe("executeEnemyPhase", () => {
       resolveEndTurn,
     );
 
-    expect(presentation.hurtPlayer).not.toHaveBeenCalled();
     expect(presentation.shakePlayer).toHaveBeenCalledOnce();
   });
 

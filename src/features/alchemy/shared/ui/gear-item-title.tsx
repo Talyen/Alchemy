@@ -1,7 +1,7 @@
 import {
-  getGearDefinitionShineGradient,
+  getGearDefinitionTextShineColors,
   getGearDefinitionTitle,
-  getGearInstanceShineGradient,
+  getGearInstanceTextShineColors,
   getGearInstanceTitle,
   type GearDefinition,
   type GearInstance,
@@ -18,14 +18,14 @@ interface Props {
 
 export function GearItemTitle({ instance, definition, className }: Props) {
   const title = instance ? getGearInstanceTitle(instance) : definition ? getGearDefinitionTitle(definition) : "Gear";
-  const gradient = instance
-    ? getGearInstanceShineGradient(instance)
+  const colors = instance
+    ? getGearInstanceTextShineColors(instance)
     : definition
-      ? getGearDefinitionShineGradient(definition)
-      : null;
+      ? getGearDefinitionTextShineColors(definition)
+      : [];
 
   return (
-    <ShineText gradient={gradient} className={cn("whitespace-nowrap", className)}>
+    <ShineText colors={colors} className={cn("whitespace-nowrap", className)}>
       {title}
     </ShineText>
   );

@@ -38,7 +38,7 @@ describe("refreshShopOfferings", () => {
   const newItems = [makeCard("b"), makeCard("c")];
 
   it("commits gold and refreshed state atomically", () => {
-    setRunProgress({ runGold: 10 });
+    setRunProgress({ gold: 10 });
     setShopState({ ...createInitialShopState([], () => 0.5), refreshesLeft: 1 });
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
@@ -57,17 +57,17 @@ describe("refreshShopOfferings", () => {
 
     expect(refreshed).toMatchObject({ committed: true, price: 5, value: newItems });
     expect(commits).toHaveLength(1);
-    expect(getRunProgressStoreView().runGold).toBe(5);
+    expect(getRunProgressStoreView().gold).toBe(5);
     expect(getRunSessionStoreView().shopState.cards).toEqual(newItems);
     expect(getRunSessionStoreView().shopState.refreshesLeft).toBe(0);
     expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toEqual([]);
   });
 
   it.each([
-    { name: "no refreshes remain", runGold: 10, refreshesLeft: 0 },
-    { name: "gold is insufficient", runGold: 2, refreshesLeft: 1 },
-  ])("does not publish a revision when $name", ({ runGold, refreshesLeft }) => {
-    setRunProgress({ runGold });
+    { name: "no refreshes remain", gold: 10, refreshesLeft: 0 },
+    { name: "gold is insufficient", gold: 2, refreshesLeft: 1 },
+  ])("does not publish a revision when $name", ({ gold, refreshesLeft }) => {
+    setRunProgress({ gold });
     setShopState({ ...createInitialShopState([], () => 0.5), refreshesLeft });
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
@@ -86,7 +86,7 @@ describe("refreshShopOfferings", () => {
 
     expect(refreshed).toMatchObject({ committed: false, price: 5, value: null });
     expect(commits).toHaveLength(0);
-    expect(getRunProgressStoreView().runGold).toBe(runGold);
+    expect(getRunProgressStoreView().gold).toBe(gold);
   });
 });
 
@@ -97,7 +97,7 @@ describe("refreshCardShopOfferings", () => {
     const currentItems = [makeCard("a")];
     const newItems = [makeCard("b")];
     const rng = () => 0.5;
-    setRunProgress({ runGold: 10, runDeck: deck });
+    setRunProgress({ gold: 10, runDeck: deck });
     setShopState({ ...createInitialShopState([], rng), cards: currentItems, refreshesLeft: 1 });
     vi.mocked(selectRewardCards).mockClear();
     vi.mocked(selectRewardCards).mockImplementation((actualDeck, actualPool, count, excluded, actualRng) => {
@@ -131,7 +131,7 @@ describe("refreshCardShopOfferings", () => {
 
 describe("purchaseShopOffering", () => {
   it("does not spend gold when the payload is not the live offering", () => {
-    setRunProgress({ runGold: 10 });
+    setRunProgress({ gold: 10 });
     setShopState({ ...emptyShopState(), purchasedSlotKeys: [] });
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
@@ -153,6 +153,6 @@ describe("purchaseShopOffering", () => {
 
     expect(result).toMatchObject({ committed: false, price: 5 });
     expect(commits).toHaveLength(0);
-    expect(getRunProgressStoreView().runGold).toBe(10);
+    expect(getRunProgressStoreView().gold).toBe(10);
   });
 });

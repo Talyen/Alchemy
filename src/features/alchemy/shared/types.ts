@@ -58,6 +58,12 @@ export type FloatingCombatText = CombatTextEvent & {
   displayText: string;
 };
 
+export interface CombatImpactCue {
+  sequence: number;
+  colors: readonly string[];
+  healthLost: boolean;
+}
+
 export type AspectRatioOption = "auto" | "16:9" | "16:10" | "21:9";
 
 export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";

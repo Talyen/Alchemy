@@ -1,5 +1,5 @@
-// Canvas particle system for ember/dust background effects behind game screens.
-// Depends on React refs for canvas mount. Used by BackgroundParticles React wrapper.
+import { clamp, lerp, pickRandom } from "@/lib/utils";
+
 export type ParticleVariant = "embers" | "dust" | "hand_glow";
 
 interface BackgroundParticle {
@@ -69,16 +69,12 @@ function resolveParticleBackingScale(width: number, height: number, requestedSca
   const safeWidth = Math.max(1, width);
   const safeHeight = Math.max(1, height);
   const pixelLimitedScale = Math.sqrt(MAX_PARTICLE_BACKING_PIXELS / (safeWidth * safeHeight));
-  return Math.min(Math.max(requestedScale, MIN_PARTICLE_BACKING_SCALE), MAX_PARTICLE_BACKING_SCALE, pixelLimitedScale);
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
+  return clamp(Math.min(requestedScale, pixelLimitedScale), MIN_PARTICLE_BACKING_SCALE, MAX_PARTICLE_BACKING_SCALE);
 }
 
 function spawnParticle(width: number, height: number, config: BackgroundParticleConfig): BackgroundParticle {
   const alpha = lerp(config.minAlpha, config.maxAlpha, Math.random());
-  const rawColor = config.colors[Math.floor(Math.random() * config.colors.length)];
+  const rawColor = pickRandom(config.colors);
   const y = config.spawnBottomWeight
     ? height - Math.random() * height * (1 - config.spawnBottomWeight)
     : Math.random() * height;

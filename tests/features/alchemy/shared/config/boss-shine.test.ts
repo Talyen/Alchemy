@@ -4,6 +4,7 @@ import {
   getBossById,
   getBossShineColors,
   getBossShineGradient,
+  getBossTextShineColors,
   SHINE_PALETTES,
 } from "@/features/alchemy/shared/config";
 import { keywordDefinitions, type BestiaryEntry } from "@/lib/game-data";
@@ -38,10 +39,14 @@ describe("getBossShineColors", () => {
     const colors = getBossShineColors(makeBoss());
     expect(colors).toEqual([...SHINE_PALETTES.bossVictoryFallback]);
   });
+
+  it("removes repeated palette stops for broader text bands", () => {
+    expect(getBossTextShineColors(makeBoss())).toEqual(["#cbd5e1", "#64748b"]);
+  });
 });
 
 describe("getBossShineGradient", () => {
-  it("builds a 60deg linear gradient from boss shine colors", () => {
+  it("builds a horizontal linear gradient from boss shine colors", () => {
     const boss = makeBoss();
     const gradient = getBossShineGradient(boss);
 

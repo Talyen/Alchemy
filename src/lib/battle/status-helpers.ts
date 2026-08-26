@@ -39,9 +39,11 @@ export function getEnemyDamageMultiplier(
   state: Pick<BattleState, "currentEnemy" | "enemyCC" | "talentEffects">,
   damageType: string,
 ): number {
-  const traitIds = state.currentEnemy.traits.map((t) => t.id);
+  const traits = state.currentEnemy.traits;
   for (const rule of TRAIT_DAMAGE_RULES) {
-    if (traitIds.includes(rule.traitId) && damageType === rule.damageType) return rule.multiplier;
+    if (damageType === rule.damageType && traits.some((t) => t.id === rule.traitId)) {
+      return rule.multiplier;
+    }
   }
   let multiplier = 1;
   if (state.enemyCC.stunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
@@ -49,10 +51,9 @@ export function getEnemyDamageMultiplier(
   return multiplier;
 }
 
-/** Rolls a 0–100 talent/boon chance. Safe-guards against null rng. */
-export function rollPercent(chance: number, rng: () => number) {
-  return chance > 0 && rng() * PERCENT_DENOMINATOR < chance;
-}
+import { rollPercent } from "./rng";
+
+export { rollPercent };
 
 /** Extracts rng from battle state. Missing rng is a programming error. */
 export function getBattleRng(state: { rng?: () => number }): () => number {

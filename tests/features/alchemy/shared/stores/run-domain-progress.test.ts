@@ -48,7 +48,7 @@ describe("run-domain progress: initial state", () => {
   });
 
   it("starts with zero gold", () => {
-    expect(getRunProgressStoreView().runGold).toBe(0);
+    expect(getRunProgressStoreView().gold).toBe(0);
   });
 
   it("starts with full health", () => {
@@ -95,7 +95,7 @@ describe("initialize", () => {
     getRunProgressStoreView().initialize(activeRun);
     useRunProfileStore.getState().applyTalentState({ physical: 100 }, { physical: ["talent-1"] });
     expect(getRunProgressStoreView().characterId).toBe("rogue");
-    expect(getRunProgressStoreView().runGold).toBe(0);
+    expect(getRunProgressStoreView().gold).toBe(0);
     expect(getRunProgressStoreView().runPlayerHealth).toBe(25);
     expect(getRunProgressStoreView().talentXP.physical).toBe(100);
     expect(getRunProgressStoreView().unlockedTalents.physical).toEqual(["talent-1"]);
@@ -386,12 +386,12 @@ describe("reset", () => {
     getRunProgressStoreView().awardMysteryXP("burn", 50);
     finalizeRunXP();
     getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
-    setRunProgress({ runGold: 100, runPlayerHealth: 15 });
+    setRunProgress({ gold: 100, runPlayerHealth: 15 });
     getRunProgressStoreView().reset();
     expect(getRunProgressStoreView().talentXP.burn).toBe(50);
     expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
     expect(getRunProgressStoreView().runTalentXP).toEqual({});
-    expect(getRunProgressStoreView().runGold).toBe(100);
+    expect(getRunProgressStoreView().gold).toBe(100);
     expect(getRunProgressStoreView().runPlayerHealth).toBeGreaterThan(0);
   });
 });

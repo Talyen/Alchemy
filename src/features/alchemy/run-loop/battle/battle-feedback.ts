@@ -19,30 +19,13 @@ export function shouldShakePlayerFromCombatTexts(combatTexts: CombatTextEvent[])
   return combatTexts.some((ct) => ct.kind === "damage" && ct.target === "player");
 }
 
-// Portrait hurt VFX (flash + sparks) only on real HP loss — not block absorb or mana loss.
-function isPortraitHurtCombatText(event: CombatTextEvent) {
-  return event.kind === "damage" && event.stat !== "block" && event.stat !== "mana";
-}
-
-export function shouldHurtPlayerFromCombatTexts(combatTexts: CombatTextEvent[]) {
-  return combatTexts.some((ct) => ct.target === "player" && isPortraitHurtCombatText(ct));
-}
-
-export function shouldHurtEnemyFromCombatTexts(combatTexts: CombatTextEvent[]) {
-  return combatTexts.some((ct) => ct.target === "enemy" && isPortraitHurtCombatText(ct));
-}
-
-export interface PortraitFeedback {
+export interface CombatTextShakeFeedback {
   shakeEnemy: () => void;
   shakePlayer: () => void;
-  hurtEnemy: () => void;
-  hurtPlayer: () => void;
 }
 
-// Applies shake + hurt portrait feedback from resolved combat text batches.
-export function applyCombatTextPortraitFeedback(combatTexts: CombatTextEvent[], feedback: PortraitFeedback) {
+// Applies batch-level shake feedback; per-event impact cues are synchronized by showCombatTexts.
+export function applyCombatTextShakeFeedback(combatTexts: CombatTextEvent[], feedback: CombatTextShakeFeedback) {
   if (shouldShakeEnemyFromCombatTexts(combatTexts)) feedback.shakeEnemy();
   if (shouldShakePlayerFromCombatTexts(combatTexts)) feedback.shakePlayer();
-  if (shouldHurtEnemyFromCombatTexts(combatTexts)) feedback.hurtEnemy();
-  if (shouldHurtPlayerFromCombatTexts(combatTexts)) feedback.hurtPlayer();
 }

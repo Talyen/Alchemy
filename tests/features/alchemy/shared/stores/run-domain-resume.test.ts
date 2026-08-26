@@ -29,7 +29,7 @@ describe("session facade API", () => {
   beforeEach(() => {
     teardownRun();
     getRunProgressStoreView().reset();
-    setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, runGold: 40, initialized: true });
+    setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, gold: 40, initialized: true });
     getBattleStoreView().setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
     getRunSessionStoreView().setHasActiveRun(true);
   });
@@ -37,14 +37,14 @@ describe("session facade API", () => {
   it("getRunSession aggregates run, battle, and session fields for orchestration", () => {
     const session = getRunSession(ROUTE_SCREENS.MENU);
     expect(session.run.runPlayerHealth).toBe(18);
-    expect(session.run.runGold).toBe(40);
+    expect(session.run.gold).toBe(40);
     expect(session.battle.battleState.playerHealth).toBe(10);
     expect(session.session.hasActiveRun).toBe(true);
     expect(session.phase).toBe("meta");
   });
 
   it("reads gold from the shared purse", () => {
-    expect(getRunSession(ROUTE_SCREENS.MENU).run.runGold).toBe(40);
+    expect(getRunSession(ROUTE_SCREENS.MENU).run.gold).toBe(40);
   });
 
   it("getCurrentRunPhase reflects battle screen and hasActiveBattle", () => {
@@ -58,7 +58,7 @@ describe("session facade API", () => {
     setRunProgress({
       characterId: "knight",
       runDeck: [],
-      runGold: 12,
+      gold: 12,
       runPlayerHealth: 18,
       runMaxHealth: 24,
       contentSystemType: "campaign",

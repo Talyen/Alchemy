@@ -2,7 +2,7 @@
 // fields required by its screen, and its return type describes exactly that data.
 import { useShallow } from "zustand/react/shallow";
 import { useGameplayStateStore } from "./gameplay-state-store";
-import type { RunEndScreenData, RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
+import type { RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
 
 type ScreenData<S extends RunDataScreen> = RunScreenDataByScreen[S];
 
@@ -18,7 +18,7 @@ export function useCampfireScreenData(): ScreenData<"campfire"> {
 export function useShopScreenData(): ScreenData<"shop"> {
   return useGameplayStateStore(
     useShallow((state) => ({
-      runGold: state.runProfile.gold,
+      gold: state.runProfile.gold,
       runDeck: state.run.activeRun.runDeck,
       shopState: state.session.shopState,
     })),
@@ -28,7 +28,7 @@ export function useShopScreenData(): ScreenData<"shop"> {
 export function useAlchemistScreenData(): ScreenData<"alchemist"> {
   return useGameplayStateStore(
     useShallow((state) => ({
-      runGold: state.runProfile.gold,
+      gold: state.runProfile.gold,
       runDeck: state.run.activeRun.runDeck,
       alchemistState: state.session.alchemistState,
     })),
@@ -38,7 +38,7 @@ export function useAlchemistScreenData(): ScreenData<"alchemist"> {
 export function useTrinketShopScreenData(): ScreenData<"trinket-shop"> {
   return useGameplayStateStore(
     useShallow((state) => ({
-      runGold: state.runProfile.gold,
+      gold: state.runProfile.gold,
       trinketShopState: state.session.trinketShopState,
     })),
   );
@@ -47,7 +47,7 @@ export function useTrinketShopScreenData(): ScreenData<"trinket-shop"> {
 export function useEquipmentShopScreenData(): ScreenData<"equipment-shop"> {
   return useGameplayStateStore(
     useShallow((state) => ({
-      runGold: state.runProfile.gold,
+      gold: state.runProfile.gold,
       equipmentShopState: state.session.equipmentShopState,
     })),
   );
@@ -96,7 +96,7 @@ export function useCorruptionScreenData(): ScreenData<"corruption"> {
   );
 }
 
-export function useRunEndScreenData(): RunEndScreenData {
+export function useRunEndScreenData(): ScreenData<"game-over"> {
   return useGameplayStateStore(
     useShallow((state) => ({
       characterId: state.run.activeRun.characterId,
