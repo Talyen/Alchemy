@@ -83,13 +83,15 @@ describe("storage io", () => {
   it("warns when a card effect is corrupt but the rest of the save loads", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const campaign = currentSchemaCampaignSave();
+    const activeRun = campaign.activeRun as { runDeck: Array<Record<string, unknown>> } | null;
+    if (!activeRun) throw new Error("campaign fixture is missing activeRun");
     mockStorage[SAVE_KEY] = JSON.stringify({
       ...campaign,
       activeRun: {
-        ...campaign.activeRun,
+        ...activeRun,
         runDeck: [
           {
-            ...campaign.activeRun!.runDeck[0],
+            ...activeRun.runDeck[0],
             effects: [{ kind: "not-a-real-effect" }],
           },
         ],

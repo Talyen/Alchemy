@@ -4,7 +4,7 @@ import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import { useArmoryResetEffects } from "@/features/alchemy/meta/screens/armory/use-armory-reset-effects";
 import type { ArmorySalvagePending } from "@/features/alchemy/meta/screens/armory/armory-screen-types";
-import { EMPTY_CRAFTING_CURRENCIES, type GearInstance } from "@/lib/gear";
+import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId, type GearInstance } from "@/lib/gear";
 
 const instance = { instanceId: "gear-sword" } as GearInstance;
 const pending = {
@@ -23,7 +23,7 @@ function useHarness({
 }) {
   const [salvageMode, setSalvageMode] = useState(true);
   const [salvagePending, setSalvagePending] = useState<ArmorySalvagePending | null>(pending);
-  const [activeCurrencyId, setActiveCurrencyId] = useState<"voidstone" | null>("voidstone");
+  const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>("voidstone");
   const inventoryById = new Map<string, GearInstance>(inventoryHasItem ? [["gear-sword", instance]] : []);
 
   useArmoryResetEffects({

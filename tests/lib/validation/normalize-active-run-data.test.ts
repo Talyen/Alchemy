@@ -156,7 +156,7 @@ describe("normalizeActiveRunData", () => {
       ...baseInput(),
       mysteryVisit: visit,
     });
-    expect(result.currentScreen).toBeUndefined();
+    expect("currentScreen" in result).toBe(false);
     expect(result.mysteryVisit).toMatchObject(visit);
   });
 });
