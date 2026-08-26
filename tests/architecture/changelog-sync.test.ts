@@ -19,4 +19,20 @@ describe("changelog release-time ownership", () => {
     expect(existsSync(join(ROOT, "scripts/sync-changelog-post-commit.mjs"))).toBe(false);
     expect(existsSync(join(ROOT, "scripts/sync-changelog-commit.mjs"))).toBe(false);
   });
+
+  it("generates player patch notes from git, not CHANGELOG.md", () => {
+    const source = readFileSync(join(ROOT, "scripts/generate-patch-notes.mjs"), "utf8");
+    expect(source).not.toContain("readChangelog");
+    expect(source).not.toContain("parseChangelogCommits");
+    expect(source).toContain("getCommitsSinceTag");
+  });
+
+  it("previews player notes before tagging and supports --dry-run", () => {
+    const runner = readFileSync(join(ROOT, "scripts/lib/release-runner.mjs"), "utf8");
+    expect(runner).toContain("generate:patch-notes");
+    expect(runner).toContain("--dry-run");
+    expect(runner).toContain("previewPatchNotes");
+    const release = readFileSync(join(ROOT, "scripts/release.mjs"), "utf8");
+    expect(release).toContain("parseReleaseArgs");
+  });
 });

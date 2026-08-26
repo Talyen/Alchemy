@@ -13,6 +13,54 @@ const TYPE_METADATA = [
 const PLAYER_TYPES = new Set(TYPE_METADATA.filter(({ hidden }) => !hidden).map(({ type }) => type));
 const CHANGELOG_BODY_MAX_LINES = 6;
 const CHANGELOG_BODY_MAX_CHARS = 800;
+const USER_FACING_TRAILER = /^User-Facing:\s*(yes|no)\s*$/imu;
+const IMPLEMENTATION_BULLET = /^(update|add|fix) tests\b/iu;
+const TECHNICAL_TERMS = [
+  "ESLint",
+  "knip",
+  "lefthook",
+  "commitlint",
+  "tsconfig",
+  "vite.config",
+  "TypeScript",
+  "electron-builder",
+  "GitHub Actions",
+  "noUnusedLocals",
+  "noUnusedParameters",
+  "as unknown",
+];
+const INFRA_PREFIXES = [
+  "scripts/",
+  "docs/",
+  ".github/",
+  ".agents/",
+  ".cursor/",
+  "tests/",
+  "eslint/",
+  "reports/",
+  "steam/",
+];
+const INFRA_NAMES = new Set([
+  "CHANGELOG.md",
+  "package-lock.json",
+  "package.json",
+  "knip.config.js",
+  "eslint.config.js",
+  "lefthook.yml",
+  "AGENTS.md",
+  "CONTRIBUTING.md",
+  ".gitignore",
+  ".commitlintrc.json",
+  ".versionrc.json",
+  "tsconfig.json",
+  "tsconfig.test.json",
+  "vite.config.ts",
+  "playwright.config.ts",
+  "playwright.electron.config.ts",
+  "playwright.performance.config.ts",
+  "vercel.json",
+]);
+const PRODUCT_PREFIXES = ["src/", "public/", "Raw Assets/", "desktop/"];
 
 export const CHANGELOG_SECTION_ORDER = TYPE_METADATA.map(({ section }) => section);
 const TYPE_TO_CHANGELOG_SECTION = Object.fromEntries(TYPE_METADATA.map(({ type, section }) => [type, section]));
@@ -42,8 +90,49 @@ export function cleanCommitBody(body) {
   return (body ?? "")
     .split("\n")
     .filter((line) => !line.startsWith("Co-authored-by:"))
+    .filter((line) => !/^User-Facing:\s*(yes|no)\s*$/iu.test(line.trim()))
     .join("\n")
     .trim();
+}
+
+export function userFacingTrailer(body) {
+  const match = USER_FACING_TRAILER.exec(body ?? "");
+  return match ? match[1].toLowerCase() : null;
+}
+
+export function isInfraPath(filePath) {
+  if (INFRA_NAMES.has(filePath) || filePath.endsWith(".md") || filePath.endsWith(".generated.ts")) {
+    return true;
+  }
+  if (filePath.includes("/tests/") || filePath.endsWith(".test.ts") || filePath.endsWith(".spec.ts")) {
+    return true;
+  }
+  return INFRA_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+}
+
+export function isProductPath(filePath) {
+  return !isInfraPath(filePath) && PRODUCT_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+}
+
+export function isUserFacing(commit) {
+  const subject = (commit.subject ?? "").trim();
+  if (subject.startsWith("Merge ") || subject.startsWith("Revert ")) return false;
+
+  const trailer = userFacingTrailer(commit.body);
+  if (trailer === "no") return false;
+  if (trailer === "yes") return true;
+
+  const files = commit.files ?? [];
+  if (files.length > 0 && files.every((filePath) => isInfraPath(filePath))) return false;
+
+  const parsed = parseConventionalCommit(subject);
+  return PLAYER_TYPES.has(parsed.type);
+}
+
+function isImplementationLine(line) {
+  const text = line.replace(/^\*\*[^*]+\*\*\s*/u, "").trim();
+  if (IMPLEMENTATION_BULLET.test(text)) return true;
+  return TECHNICAL_TERMS.some((term) => text.includes(term));
 }
 
 function firstSentence(paragraph) {
@@ -68,11 +157,11 @@ function sentencesFromParagraph(paragraph) {
   return sentence ? [sentence] : [];
 }
 
-export function extractPlayerFacingLines({ subject, body }) {
-  const parsed = parseConventionalCommit(subject);
-  if (!parsed.include) return [];
+export function extractPlayerFacingLines(commit) {
+  if (!isUserFacing(commit)) return [];
 
-  const cleaned = cleanCommitBody(body);
+  const parsed = parseConventionalCommit(commit.subject);
+  const cleaned = cleanCommitBody(commit.body);
   const scopePrefix = parsed.scope ? `**${parsed.scope}:** ` : "";
   const lines = [];
 
@@ -83,24 +172,27 @@ export function extractPlayerFacingLines({ subject, body }) {
         const text = line.replace(/^\s*-\s+/, "").trim();
         if (text.length >= 15) lines.push(`${scopePrefix}${text}`);
       }
-      if (lines.length > 0) return lines;
-    }
-
-    const paragraphs = cleaned.split(/\n\s*\n/u).filter(Boolean);
-    for (const paragraph of paragraphs) {
-      for (const sentence of sentencesFromParagraph(paragraph)) {
-        lines.push(`${scopePrefix}${sentence}`);
+    } else {
+      const paragraphs = cleaned.split(/\n\s*\n/u).filter(Boolean);
+      for (const paragraph of paragraphs) {
+        for (const sentence of sentencesFromParagraph(paragraph)) {
+          lines.push(`${scopePrefix}${sentence}`);
+        }
       }
     }
-    if (lines.length > 0) return lines;
   }
+
+  const playerLines = lines.filter((line) => !isImplementationLine(line));
+  if (playerLines.length > 0) return playerLines;
 
   return [`${scopePrefix}${parsed.description}`];
 }
 
 export function normalizeCommits(commits) {
   return commits.map((commit) =>
-    typeof commit === "string" ? { subject: commit, body: "" } : { subject: commit.subject, body: commit.body ?? "" },
+    typeof commit === "string"
+      ? { subject: commit, body: "", files: [] }
+      : { subject: commit.subject, body: commit.body ?? "", files: commit.files ?? [] },
   );
 }
 
@@ -162,11 +254,12 @@ export function buildPatchNotesMarkdown(version, commits, knownIssues = []) {
   };
 
   for (const commit of normalizeCommits(commits)) {
+    if (!isUserFacing(commit)) continue;
     const parsed = parseConventionalCommit(commit.subject);
-    if (!parsed.include) continue;
-    const target = TYPE_TO_PATCH_SECTION[parsed.type];
-    if (!target) continue;
-    sections[target].push(...extractPlayerFacingLines(commit));
+    const target = TYPE_TO_PATCH_SECTION[parsed.type] ?? "Features";
+    const lines = extractPlayerFacingLines(commit);
+    if (lines.length === 0) continue;
+    sections[target].push(...lines);
   }
 
   const lines = [`# Alchemy v${version.replace(/^v/, "")}`, ""];

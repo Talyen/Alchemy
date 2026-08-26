@@ -1,9 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { execSync } from "node:child_process";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { generatePatchNotesMarkdown, parseGeneratePatchNotesArgs } from "../../scripts/generate-patch-notes.mjs";
+import { parseReleaseArgs } from "../../scripts/lib/release-runner.mjs";
 import {
   buildChangelogUnreleased,
   buildPatchNotesMarkdown,
   extractChangelogSection,
   extractPlayerFacingLines,
+  isInfraPath,
+  isProductPath,
+  isUserFacing,
   parseChangelogCommits,
   parseConventionalCommit,
   promoteUnreleasedSection,
@@ -174,5 +183,121 @@ describe("generate-patch-notes", () => {
   it("extracts versioned changelog sections with release dates", () => {
     const content = ["## [0.1.0] (2026-06-11)", "", "### Features", "", "- Initial release"].join("\n");
     expect(extractChangelogSection(content, "## [0.1.0]")).toContain("Initial release");
+  });
+
+  it("drops infra-only feat commits from player notes", () => {
+    expect(
+      isUserFacing({
+        subject: "feat(ci): enable strict test config",
+        body: "",
+        files: ["scripts/check-docs.mjs", ".github/workflows/ci.yml"],
+      }),
+    ).toBe(false);
+    const markdown = buildPatchNotesMarkdown("1.2.3", [
+      {
+        subject: "feat(ci): enable strict test config",
+        body: "",
+        files: ["scripts/check-docs.mjs", ".github/workflows/ci.yml"],
+      },
+      {
+        subject: "feat(cards): add meteor shower",
+        body: "- Rain meteors across a chosen enemy row.",
+        files: ["src/lib/game-data/cards.ts"],
+      },
+    ]);
+    expect(markdown).toContain("Rain meteors across a chosen enemy row.");
+    expect(markdown).not.toContain("strict test config");
+  });
+
+  it("honors User-Facing trailers over type and path inference", () => {
+    expect(
+      isUserFacing({
+        subject: "feat(content): reshuffle internal catalog ids",
+        body: "User-Facing: no",
+        files: ["src/lib/game-data/cards.ts"],
+      }),
+    ).toBe(false);
+    expect(
+      isUserFacing({
+        subject: "chore: surface a player-visible options default",
+        body: "User-Facing: yes",
+        files: ["scripts/release.mjs"],
+      }),
+    ).toBe(true);
+
+    const markdown = buildPatchNotesMarkdown("1.2.3", [
+      {
+        subject: "feat(content): reshuffle internal catalog ids",
+        body: "User-Facing: no",
+        files: ["src/lib/game-data/cards.ts"],
+      },
+      {
+        subject: "chore: surface a player-visible options default",
+        body: "- Options now default to windowed mode.\n\nUser-Facing: yes",
+        files: ["scripts/release.mjs"],
+      },
+    ]);
+    expect(markdown).toContain("Options now default to windowed mode.");
+    expect(markdown).not.toContain("catalog ids");
+  });
+
+  it("prefers body bullets over the subject and skips implementation lines", () => {
+    const lines = extractPlayerFacingLines({
+      subject: "feat(battle): retarget when a hero dies mid-turn",
+      body: "- Enemies now pick a new target if the current one dies mid-turn.\n- update tests for retarget coverage",
+      files: ["src/lib/battle/retarget.ts"],
+    });
+    expect(lines).toEqual(["**battle:** Enemies now pick a new target if the current one dies mid-turn."]);
+  });
+
+  it("classifies product vs infra paths", () => {
+    expect(isProductPath("src/lib/battle/damage-calc.ts")).toBe(true);
+    expect(isProductPath("Raw Assets/cards/meteor.png")).toBe(true);
+    expect(isInfraPath("scripts/generate-patch-notes.mjs")).toBe(true);
+    expect(isInfraPath("src/lib/game-data/assets.generated.ts")).toBe(true);
+    expect(isProductPath("src/lib/game-data/assets.generated.ts")).toBe(false);
+  });
+
+  it("parses generate and release dry-run flags", () => {
+    expect(parseGeneratePatchNotesArgs(["--dry-run"], { RELEASE_VERSION: "v1.4.0" })).toEqual({
+      dryRun: true,
+      releaseVersion: "1.4.0",
+    });
+    expect(parseReleaseArgs(["--dry-run"])).toEqual({ dryRun: true });
+    expect(parseReleaseArgs([])).toEqual({ dryRun: false });
+  });
+});
+
+describe("generate-patch-notes from git", () => {
+  const tempDirs: string[] = [];
+
+  afterEach(() => {
+    for (const dir of tempDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("writes sectioned notes from git commits and omits infra-only feats", () => {
+    const root = mkdtempSync(join(tmpdir(), "alchemy-patch-notes-"));
+    tempDirs.push(root);
+    execSync("git init -q && git config user.email test@example.com && git config user.name test", {
+      cwd: root,
+      shell: "/bin/sh",
+    });
+    mkdirSync(join(root, "src"), { recursive: true });
+    mkdirSync(join(root, "scripts"), { recursive: true });
+    writeFileSync(join(root, "src/game.ts"), "seed\n", "utf8");
+    execSync("git add . && git commit -qm 'chore: seed' && git tag v0.1.0", { cwd: root, shell: "/bin/sh" });
+    writeFileSync(join(root, "src/game.ts"), "meteor\n", "utf8");
+    execSync("git add . && git commit -qm 'feat(cards): add meteor shower'", { cwd: root, shell: "/bin/sh" });
+    writeFileSync(join(root, "scripts/lint.mjs"), "export {}\n", "utf8");
+    execSync("git add . && git commit -qm 'feat(ci): enable strict test config'", { cwd: root, shell: "/bin/sh" });
+
+    const result = generatePatchNotesMarkdown(root);
+    expect(result.version).toBe("Unreleased");
+    expect(result.markdown).toContain("# Alchemy vUnreleased");
+    expect(result.markdown).toContain("## Features");
+    expect(result.markdown).toContain("add meteor shower");
+    expect(result.markdown).not.toContain("strict test config");
   });
 });

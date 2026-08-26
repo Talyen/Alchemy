@@ -32,6 +32,15 @@ function parseGithubRepoPath(remoteUrl) {
   return match ? `${match[1]}/${match[2]}` : null;
 }
 
+export function parseReleaseArgs(argv) {
+  return { dryRun: argv.includes("--dry-run") };
+}
+
+function previewPatchNotes() {
+  console.log("\n═══ Player-facing patch notes (draft) ═══\n");
+  run(npm, ["run", "generate:patch-notes", "--", "--dry-run"]);
+}
+
 function assertReleaseHead() {
   if (capture("git", ["status", "--porcelain"])) {
     throw new Error("Working tree is not clean. Commit or stash changes first.");
@@ -99,9 +108,15 @@ async function watchRelease({ label, tag }) {
 
 /**
  * Run the shared release sequence with mode-specific gates and bump args.
- * @param {{ label: string, gates: string[][], bumpArgs?: string[] }} options
+ * @param {{ label: string, gates: string[][], bumpArgs?: string[], dryRun?: boolean }} options
  */
-export async function runRelease({ label, gates, bumpArgs = [] }) {
+export async function runRelease({ label, gates, bumpArgs = [], dryRun = false }) {
+  if (dryRun) {
+    console.log(`\n═══ ${label} dry run ═══\n`);
+    previewPatchNotes();
+    return;
+  }
+
   assertReleaseHead();
 
   console.log(`\n═══ ${label} pre-flight gate ═══\n`);
@@ -110,6 +125,8 @@ export async function runRelease({ label, gates, bumpArgs = [] }) {
   } catch {
     throw new Error("Pre-flight gate failed. Fix issues before releasing.");
   }
+
+  previewPatchNotes();
 
   const oldVersion = packageVersion();
   console.log(`\n═══ Bumping version${bumpArgs.length > 0 ? ` (${bumpArgs.join(" ")})` : ""} ═══\n`);

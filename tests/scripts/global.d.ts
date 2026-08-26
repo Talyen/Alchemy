@@ -10,11 +10,20 @@ declare module "*/assets/asset-manifest.mjs" {
   ): Promise<Array<{ source: string; target: string }>>;
 }
 
+interface PatchNoteCommit {
+  subject: string;
+  body: string;
+  files?: string[];
+}
+
 declare module "*/patch-notes-core.mjs" {
   export function buildChangelogUnreleased(commits: Array<{ subject: string; body: string }>): string;
-  export function buildPatchNotesMarkdown(tag: string, commits: Array<{ subject: string; body: string }>): string;
+  export function buildPatchNotesMarkdown(tag: string, commits: PatchNoteCommit[], knownIssues?: string[]): string;
   export function extractChangelogSection(content: string, heading: string): string;
-  export function extractPlayerFacingLines(commit: { subject: string; body: string }): string[];
+  export function extractPlayerFacingLines(commit: PatchNoteCommit): string[];
+  export function isInfraPath(filePath: string): boolean;
+  export function isProductPath(filePath: string): boolean;
+  export function isUserFacing(commit: PatchNoteCommit): boolean;
   export function parseChangelogCommits(section: string): Array<{ subject: string; body: string }>;
   export function parseConventionalCommit(header: string): {
     type: string;
@@ -23,6 +32,44 @@ declare module "*/patch-notes-core.mjs" {
   };
   export function promoteUnreleasedSection(source: string, version: string, date: string): string;
   export function replaceChangelogUnreleased(source: string, newSection: string): string;
+  export function userFacingTrailer(body: string): "yes" | "no" | null;
+}
+
+declare module "*/git-release.mjs" {
+  export function listVersionTags(root: string): string[];
+  export function latestVersionTag(root: string): string | null;
+  export function previousVersionTag(root: string, currentTag: string): string | null;
+  export function latestCommitHash(root: string, short?: boolean): string;
+  export function resolvePatchNoteRange(
+    root: string,
+    releaseTag?: string | null,
+  ): { since: string | null; until: string };
+  export function getCommitsSinceTag(
+    root: string,
+    tag: string | null,
+    options?: { until?: string },
+  ): Array<{ subject: string; body: string; files: string[] }> | null;
+}
+
+declare module "*/generate-patch-notes.mjs" {
+  export function parseGeneratePatchNotesArgs(
+    argv: string[],
+    env?: NodeJS.ProcessEnv,
+  ): { dryRun: boolean; releaseVersion: string };
+  export function generatePatchNotesMarkdown(
+    rootDir: string,
+    options?: { releaseVersion?: string },
+  ): { version: string; outputName: string; commits: PatchNoteCommit[]; markdown: string };
+}
+
+declare module "*/release-runner.mjs" {
+  export function parseReleaseArgs(argv: string[]): { dryRun: boolean };
+  export function runRelease(options: {
+    label: string;
+    gates: string[][];
+    bumpArgs?: string[];
+    dryRun?: boolean;
+  }): Promise<void>;
 }
 
 declare module "*/desktop-artifact.mjs" {
