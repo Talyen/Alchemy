@@ -202,7 +202,10 @@ describe("reward flow orchestration", () => {
 
     function stampedRewardState(
       overrides: Partial<ReturnType<typeof createEmptyRewardState>> = {},
-      victory: { enemyType: string; contentSystem: "campaign" | "labyrinth" | "wildwood" } = {
+      victory: {
+        enemyType: "normal" | "elite" | "boss";
+        contentSystem: "campaign" | "labyrinth" | "wildwood";
+      } = {
         enemyType: "normal",
         contentSystem: "campaign",
       },

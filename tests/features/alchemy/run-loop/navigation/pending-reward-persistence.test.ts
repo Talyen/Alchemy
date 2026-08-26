@@ -22,7 +22,7 @@ describe("pending reward persistence", () => {
       choices: [instance],
       gold: 12,
       selectedId: instance.instanceId,
-      lastVictoryEnemyType: "elite",
+      lastVictoryEnemyType: "elite" as const,
       lastVictoryContentSystem: "campaign" as const,
     };
 

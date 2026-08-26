@@ -437,7 +437,7 @@ describe("isAttackCard / hasDamageEffect", () => {
       effects: [
         {
           kind: "chance",
-          chance: 50,
+          probability: 0.5,
           successEffects: [{ kind: "damage", damageType: "physical", amount: 3 }],
           failureEffects: [{ kind: "heal", amount: 2 }],
         },
