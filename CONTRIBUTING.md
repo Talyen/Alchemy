@@ -89,4 +89,4 @@ Cursor Bugbot is not a required GitHub check on `main`; use it as a post-push re
 
 ## Changelog and patch notes
 
-Changelog updates happen at release only; `CHANGELOG.md` is never hand-edited. Release-time promotion, patch notes, and `sync:changelog`: [RELEASE.md](./docs/RELEASE.md).
+Changelog updates happen at release only; `CHANGELOG.md` is never hand-edited. Player patch notes are generated from git using `feat` / `fix` / `balance` / `perf`, changed paths, and an optional `User-Facing: yes` or `User-Facing: no` commit-body trailer. Release-time changelog promotion, `sync:changelog`, and `generate:patch-notes`: [RELEASE.md](./docs/RELEASE.md).

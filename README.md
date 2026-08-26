@@ -1,13 +1,26 @@
 # Alchemy
 
-**Alchemy** is a fantasy roguelite deckbuilder for the browser and desktop. Build a deck, survive encounters, unlock talents between runs, and push through to the final boss.
+**Alchemy** is a fantasy roguelite deckbuilder for the browser and desktop. Pick a
+mode, build a deck, and fight 1v1 card battles — then spend what you earned on
+Talents, Homestead upgrades, and Armory Gear that persist between runs.
 
-## Features
+## Play
 
-- **Turn-based card combat** — spend Mana to play cards that deal damage, gain Block, apply statuses, and summon allies
-- **Roguelite progression** — each Run is unique; Talent XP and Homestead upgrades persist across runs
-- **Rich status system** — Protective (Block, Armor), Empowering (Forge, Haste), Damage-over-Time (Burn, Poison, Bleed), and Crowd Control (Freeze, Stun) effects
-- **8 damage types** — Physical, Stun, Holy, Burn, Poison, Bleed, Freeze, and Nature; enemies have unique resistances and vulnerabilities
+**Modes.** Campaign is three acts. Labyrinth is a branching maze of encounters.
+Wildwood Draft is a drafted deck against an endless boss gauntlet.
+
+**Combat.** Spend Mana to play cards. Eight damage types — Physical, Stun, Holy,
+Burn, Poison, Bleed, Freeze, and Nature — meet enemy resists and
+vulnerabilities. Block and Armor absorb hits; Forge boosts Physical and Stun;
+Burn, Poison, and Bleed tick; Stun and Freeze skip turns. Companions fight at
+the start of your turn and cannot die.
+
+**Between runs.** Keyword Talent XP unlocks talents. Materials fund Homestead
+upgrades. Gear and Trinkets live in the Armory. Characters, modes, and
+Collection entries unlock as you finish runs.
+
+A run's map mixes combat with shops, Mystery events, Corruption altars, and
+Campfires.
 
 ## Prerequisites
 
@@ -24,56 +37,50 @@ npm run dev
 ```
 
 `npm run dev` starts the Vite dev server and opens the browser automatically.
+Desktop local development is `npm run dev:desktop`.
 
-## Key Scripts
+## Develop
 
-| Command            | Action                          |
-| ------------------ | ------------------------------- |
-| `npm run dev`      | Start Vite dev server           |
-| `npm test`         | Run Vitest unit tests           |
-| `npm run test:e2e` | Run Playwright end-to-end tests |
-| `npm run lint`     | Lint all source files           |
+| Command                            | Action                                |
+| ---------------------------------- | ------------------------------------- |
+| `npm run dev`                      | Start Vite dev server                 |
+| `npm run dev:desktop`              | Start the Electron shell              |
+| `npm test`                         | Run Vitest unit tests                 |
+| `npm run test:e2e`                 | Run Playwright end-to-end tests       |
+| `npm run lint`                     | Lint all source files                 |
+| `npm run verify:changed -- --diff` | Route checks to the paths you changed |
 
-Full command catalog (build, desktop, gates, balance sim, perf, clean): [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands).
-
-## Desktop Build
-
-The game also has an Electron shell for local desktop builds. Use
-`npm run dev:desktop` for local development; desktop builds and installers are
-listed in the [command reference](./docs/REFERENCE.md#script-command-reference).
-
-## Testing
-
-Unit tests run with Vitest:
-
-```sh
-npm test
-```
-
-End-to-end tests run with Playwright. Install the browser dependency once before the first local run:
+Install Playwright's browser once before the first local E2E run:
 
 ```sh
 npx playwright install chromium
-npm run test:e2e
 ```
 
-Path-specific tests, local gates, and CI parity live in
-[`CONTRIBUTING.md`](./CONTRIBUTING.md).
+Full command catalog (build, desktop, gates, balance sim, perf, clean):
+[`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Path-specific
+tests, local gates, and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+Headless balance simulation (`npm run balance:sim`):
+[`docs/REFERENCE.md` § Balance simulation](./docs/REFERENCE.md#balance-simulation).
 
-Headless balance simulation (`npm run balance:sim`) runs the real battle engine without a browser. Usage and environment variables: [`docs/REFERENCE.md` § Balance simulation](./docs/REFERENCE.md#balance-simulation).
+Web deploys through Vercel ([`vercel.json`](./vercel.json)). Desktop builds,
+installers, and Steam shipping:
+[`docs/RELEASE.md`](./docs/RELEASE.md) and the
+[command reference](./docs/REFERENCE.md#script-command-reference).
 
-## Project Structure
+## Layout
+
+Feature layout and run-state ownership:
+[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
 - `desktop/` — Electron main/preload
-- `scripts/` — build, assets, release
-- `public/` — static sounds and music
 - `src/app/` — boot, screen routes, save-state
-- `src/lib/` — React-free game logic (battle, game-data, homestead, validation)
+- `src/lib/` — React-free game logic (battle, game-data, gear, content-systems, homestead)
 - `src/features/alchemy/` — React UI (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
-- `src/components/ui/` — design-system primitives
 - `tests/` — Vitest unit tests and Playwright specs
 
-Feature layout and run-state ownership: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+Asset preparation runs automatically before development and production builds.
+Do not hand-edit generated outputs; authoring lives in
+[`docs/WORKFLOWS-ASSETS.md`](./docs/WORKFLOWS-ASSETS.md).
 
 ## Documentation
 
@@ -86,18 +93,6 @@ Feature layout and run-state ownership: [`docs/ARCHITECTURE.md`](./docs/ARCHITEC
 | Saves and migrations                  | [Save migration guide](./src/features/alchemy/shared/storage/MIGRATIONS.md)                              |
 | Gear and profiling                    | [Armory](./docs/ARMORY.md) · [Performance](./docs/PERFORMANCE.md)                                        |
 | Shipping and player notices           | [Release](./docs/RELEASE.md) · [Privacy](./PRIVACY.md) · [Third-party notices](./THIRD_PARTY_NOTICES.md) |
-
-## Assets
-
-Asset preparation runs automatically before development and production builds.
-The authoring and regeneration checklist is
-[`docs/WORKFLOWS-ASSETS.md`](./docs/WORKFLOWS-ASSETS.md); generated outputs are
-not hand-edited.
-
-## Deployment
-
-The web build targets Vercel; its build command and rewrites are owned by
-[`vercel.json`](./vercel.json).
 
 ## License
 

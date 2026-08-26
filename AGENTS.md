@@ -44,6 +44,7 @@ For non-trivial work, choose the primary owner that matches the task. Read an ad
 ## Verification
 
 - After edits, use the `verifier` skill for changed-path verification and the final handoff gate. [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) owns exact commands and route policy; treat lint, test, flake, and React Compiler failures as real problems.
+- After any IDE browser use, close all tabs before stopping; unlock is not teardown.
 
 ## Branch and commits
 

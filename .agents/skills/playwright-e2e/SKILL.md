@@ -83,6 +83,16 @@ test("representative battle flow", { tag: [critical.tag, prepush.tag] }, async (
 });
 ```
 
+## Cursor IDE browser teardown
+
+After any `cursor-ide-browser` use, including failed checks:
+
+1. `browser_tabs` with action `list`
+2. `close` each listed tab until the list is empty
+3. Do not stop at `browser_lock` unlock — that leaves a live document
+
+Playwright Test already destroys its own Chromium; this protocol is for the Cursor IDE browser only.
+
 ## Running & triaging E2E tests
 
 1. **Targeted spec:**
