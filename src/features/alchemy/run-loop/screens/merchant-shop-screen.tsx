@@ -45,7 +45,7 @@ export function MerchantShopScreen({
   const [removeMode, setRemoveMode] = useState(false);
 
   return (
-    <ShopBrowseShell title="Merchant's Shop" gold={gold} onOpenMenu={onOpenMenu}>
+    <ShopBrowseShell title="Card Shop" gold={gold} onOpenMenu={onOpenMenu}>
       <FadeSlot swapKey={removeMode ? "remove" : "browse"} className="w-full">
         {!removeMode ? (
           <ShopBrowseOfferings

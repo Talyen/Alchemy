@@ -6,11 +6,11 @@ import { DestinationPage } from "./pages/destination-page";
 import { enterPrimaryRewardScreen, SAVE_KEY } from "./helpers";
 import { critical, slow } from "./playwright-tags";
 
-test.describe("Merchant Shop", critical, () => {
+test.describe("Card Shop", critical, () => {
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page, runtimeErrors }) => {
       void runtimeErrors;
-      await new ShopPage(page).enterFromDestination(9999, "Merchant's Shop");
+      await new ShopPage(page).enterFromDestination(9999, "Card Shop");
     });
 
     test("buying a card deducts gold and marks as purchased", critical, async ({ page }) => {
@@ -27,8 +27,8 @@ test.describe("Merchant Shop", critical, () => {
 });
 
 test.describe("Shop fade-out", () => {
-  for (const destination of ["Merchant's Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"] as const) {
-    const gate = destination === "Merchant's Shop" ? critical : slow;
+  for (const destination of ["Card Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"] as const) {
+    const gate = destination === "Card Shop" ? critical : slow;
 
     test(`keeps ${destination} offerings mounted through route fade-out`, gate, async ({ page, runtimeErrors }) => {
       void runtimeErrors;

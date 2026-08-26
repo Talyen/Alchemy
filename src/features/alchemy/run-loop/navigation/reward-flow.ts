@@ -58,7 +58,7 @@ export function getCompanionCardChoices(rng: () => number): BattleCard[] {
 
 function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType: string): FinalizeRewardRoute {
   if (contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {
-    return currentEnemyType === ENEMY_TYPES.BOSS ? REWARD_ROUTES.LABYRINTH_VICTORY : REWARD_ROUTES.LABYRINTH_MAP;
+    return REWARD_ROUTES.LABYRINTH_MAP;
   }
   if (contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
     return REWARD_ROUTES.WILDWOOD_VICTORY;

@@ -312,13 +312,13 @@ describe("reward flow orchestration", () => {
       expect(result.route).toBe("labyrinth-map");
     });
 
-    it("routes labyrinth boss rewards to run victory", () => {
+    it("routes labyrinth boss rewards back to the map", () => {
       const result = finalizeRewardState({
         rewardState: stampedRewardState({}, { enemyType: "boss", contentSystem: "labyrinth" }),
         companionRewardCards: null,
       });
 
-      expect(result.route).toBe("labyrinth-victory");
+      expect(result.route).toBe("labyrinth-map");
     });
 
     it("routes campaign boss rewards to act completion", () => {
@@ -394,13 +394,11 @@ describe("reward flow orchestration", () => {
       expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP, handlers.settleClaimSurface);
     });
 
-    it("routes both victory routes through completeRunVictory", () => {
-      for (const route of ["labyrinth-victory", "wildwood-victory"] as const) {
-        const handlers = makeHandlers();
-        executeRewardRouteTransition(route, materials, handlers);
-        expect(handlers.completeRunVictory).toHaveBeenCalledWith(materials, handlers.settleClaimSurface);
-        expect(handlers.navigateTo).not.toHaveBeenCalled();
-      }
+    it("routes wildwood victory through completeRunVictory", () => {
+      const handlers = makeHandlers();
+      executeRewardRouteTransition("wildwood-victory", materials, handlers);
+      expect(handlers.completeRunVictory).toHaveBeenCalledWith(materials, handlers.settleClaimSurface);
+      expect(handlers.navigateTo).not.toHaveBeenCalled();
     });
 
     it("routes act completion without navigation, releasing only the claim", () => {

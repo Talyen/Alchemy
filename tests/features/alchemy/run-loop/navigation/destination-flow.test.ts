@@ -25,7 +25,7 @@ vi.mock("@/lib/routing", async () => {
     getAvailableDestinations: vi.fn(() => [
       actual.DESTINATIONS.NORMAL_COMBAT,
       actual.DESTINATIONS.ELITE_COMBAT,
-      actual.DESTINATIONS.MERCHANT_SHOP,
+      actual.DESTINATIONS.CARD_SHOP,
       actual.DESTINATIONS.ALCHEMIST_SHOP,
       actual.DESTINATIONS.MYSTERY,
       actual.DESTINATIONS.CORRUPTION,
@@ -37,7 +37,7 @@ vi.mock("@/lib/routing", async () => {
 const FULL_POOL = [
   DESTINATIONS.NORMAL_COMBAT,
   DESTINATIONS.ELITE_COMBAT,
-  DESTINATIONS.MERCHANT_SHOP,
+  DESTINATIONS.CARD_SHOP,
   DESTINATIONS.ALCHEMIST_SHOP,
   DESTINATIONS.TRINKET_SHOP,
   DESTINATIONS.EQUIPMENT_SHOP,
@@ -151,7 +151,7 @@ describe("restoreOrCreateDestinationRewardState", () => {
     const onSampled = vi.fn();
     const prev = createEmptyRewardState();
     const result = restoreOrCreateDestinationRewardState(prev, {
-      availableDestinations: [DESTINATIONS.MERCHANT_SHOP, DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY],
+      availableDestinations: [DESTINATIONS.CARD_SHOP, DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY],
       offerState: createEmptyDestinationOfferState(),
       bossEnemyId: "skeleton",
       rng: () => 0.5,
@@ -179,7 +179,7 @@ describe("sampleDestinationChoices", () => {
 
   it("allows zero combats when the previous screen offered combat", () => {
     const result = sampleDestinationChoices(
-      [DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.MERCHANT_SHOP, DESTINATIONS.ALCHEMIST_SHOP],
+      [DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP, DESTINATIONS.ALCHEMIST_SHOP],
       {
         lastOfferedDestinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
         roundsSinceOffered: {},
@@ -187,14 +187,14 @@ describe("sampleDestinationChoices", () => {
       () => 0,
     );
 
-    expect(result.choices).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.MERCHANT_SHOP]);
+    expect(result.choices).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP]);
   });
 
   it("never offers more than one shop when the remaining pool is all shops", () => {
     const result = sampleDestinationChoices(
       [
         DESTINATIONS.NORMAL_COMBAT,
-        DESTINATIONS.MERCHANT_SHOP,
+        DESTINATIONS.CARD_SHOP,
         DESTINATIONS.ALCHEMIST_SHOP,
         DESTINATIONS.TRINKET_SHOP,
         DESTINATIONS.EQUIPMENT_SHOP,
@@ -223,12 +223,12 @@ describe("sampleDestinationChoices", () => {
 
   it("applies the shop cap even when the input has fewer than three unique destinations", () => {
     const result = sampleDestinationChoices(
-      [DESTINATIONS.MERCHANT_SHOP, DESTINATIONS.ALCHEMIST_SHOP, DESTINATIONS.TRINKET_SHOP],
+      [DESTINATIONS.CARD_SHOP, DESTINATIONS.ALCHEMIST_SHOP, DESTINATIONS.TRINKET_SHOP],
       { lastOfferedDestinations: [DESTINATIONS.NORMAL_COMBAT], roundsSinceOffered: {} },
       () => 0,
     );
 
-    expect(result.choices).toEqual([DESTINATIONS.MERCHANT_SHOP]);
+    expect(result.choices).toEqual([DESTINATIONS.CARD_SHOP]);
   });
 
   it("deduplicates malformed input before sampling", () => {

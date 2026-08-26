@@ -33,7 +33,7 @@ test.describe("Destination Progression", () => {
 
   test("completed destinations do not appear in subsequent choices", critical, async ({ page }) => {
     await injectDestinationAtIndex(page, {
-      destinations: ["Campfire", "Mystery", "Merchant's Shop"],
+      destinations: ["Campfire", "Mystery", "Card Shop"],
       destinationIndexInAct: 1,
       roomsEncountered: 1,
       completedDestinations: ["Normal Combat"],

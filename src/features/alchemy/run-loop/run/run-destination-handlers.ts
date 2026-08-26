@@ -19,7 +19,7 @@ export type DestinationRouteDeps = Pick<
 
 const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps) => void> = {
   [DESTINATIONS.CAMPFIRE]: (deps) => deps.navigateTo(ROUTE_SCREENS.CAMPFIRE),
-  [DESTINATIONS.MERCHANT_SHOP]: (deps) => {
+  [DESTINATIONS.CARD_SHOP]: (deps) => {
     deps.initializeShop("merchant");
     deps.navigateTo(ROUTE_SCREENS.SHOP);
   },

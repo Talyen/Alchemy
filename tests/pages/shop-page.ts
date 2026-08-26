@@ -21,7 +21,7 @@ export class ShopPage {
   constructor(page: Page) {
     this.page = page;
     this.stage = new GameStage(page);
-    this.heading = this.page.getByRole("heading", { name: /(Merchant|Alchemist|Trinket|Equipment)/ });
+    this.heading = this.page.getByRole("heading", { name: /(Card Shop|Alchemist|Trinket|Equipment)/ });
     this.buyBtn = this.page.getByRole("button", { name: /^Buy/ });
     this.removeCardBtn = this.page.getByRole("button", { name: /Remove Card/ });
     this.refreshBtn = this.page.getByRole("button", { name: /Refresh/ });

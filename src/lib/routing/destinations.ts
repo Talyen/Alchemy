@@ -2,7 +2,7 @@
 export const DESTINATIONS = {
   NORMAL_COMBAT: "Normal Combat",
   ELITE_COMBAT: "Elite Combat",
-  MERCHANT_SHOP: "Merchant's Shop",
+  CARD_SHOP: "Card Shop",
   ALCHEMIST_SHOP: "Alchemist's Shop",
   TRINKET_SHOP: "Trinket Shop",
   EQUIPMENT_SHOP: "Equipment Shop",
@@ -21,7 +21,7 @@ export const COMBAT_DESTINATIONS = [
 ] as const satisfies readonly Destination[];
 
 export const SHOP_DESTINATIONS = [
-  DESTINATIONS.MERCHANT_SHOP,
+  DESTINATIONS.CARD_SHOP,
   DESTINATIONS.ALCHEMIST_SHOP,
   DESTINATIONS.TRINKET_SHOP,
   DESTINATIONS.EQUIPMENT_SHOP,

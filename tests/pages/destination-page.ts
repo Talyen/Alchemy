@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 // Every destination choice button names one of these map nodes.
-const DESTINATION_NAME = /Combat|Campfire|Merchant|Alchemist|Mystery|Corruption|Trinket Shop|Equipment Shop/;
+const DESTINATION_NAME = /Combat|Campfire|Card Shop|Alchemist|Mystery|Corruption|Trinket Shop|Equipment Shop/;
 
 export class DestinationPage {
   private page: Page;

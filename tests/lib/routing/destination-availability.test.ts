@@ -38,14 +38,14 @@ describe("getAvailableDestinations", () => {
   });
 
   it("excludes shops when gold is just below the shop minimum", () => {
-    for (const shop of ["Merchant's Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"]) {
+    for (const shop of ["Card Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"]) {
       const destinations = getAvailableDestinations(MAX_HEALTH, SHOP_MIN_GOLD - 1, MAX_HEALTH);
       expect(destinations).not.toContain(shop);
     }
   });
 
   it("includes shops when gold meets the shop minimum", () => {
-    for (const shop of ["Merchant's Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"]) {
+    for (const shop of ["Card Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"]) {
       const destinations = getAvailableDestinations(MAX_HEALTH, SHOP_MIN_GOLD, MAX_HEALTH, true);
       expect(destinations).toContain(shop);
     }

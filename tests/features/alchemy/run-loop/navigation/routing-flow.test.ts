@@ -13,7 +13,7 @@ const ROUTE_CASES: Array<{
   bossBattle?: boolean;
 }> = [
   { destination: DESTINATIONS.CAMPFIRE, expectedScreen: "campfire" },
-  { destination: DESTINATIONS.MERCHANT_SHOP, expectedScreen: "shop", shopKind: "merchant" },
+  { destination: DESTINATIONS.CARD_SHOP, expectedScreen: "shop", shopKind: "merchant" },
   { destination: DESTINATIONS.ALCHEMIST_SHOP, expectedScreen: "alchemist", shopKind: "alchemist" },
   { destination: DESTINATIONS.TRINKET_SHOP, expectedScreen: "trinket-shop", shopKind: "trinket" },
   { destination: DESTINATIONS.EQUIPMENT_SHOP, expectedScreen: "equipment-shop", shopKind: "equipment" },

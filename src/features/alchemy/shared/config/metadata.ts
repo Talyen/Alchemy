@@ -56,6 +56,7 @@ export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: 
   { id: "cards", label: "Cards", icon: BookOpen },
   { id: "bestiary", label: "Bestiary", icon: ShieldAlert },
   { id: "trinkets", label: "Trinkets", icon: Trophy },
+  { id: "uniques", label: "Uniques", icon: Gem },
 ];
 
 // Destination visual theming gives each route type an icon, accent color, and art.
@@ -79,7 +80,7 @@ export const destinationMeta: Record<Destination, ThemedChooserMeta> = {
     art: eliteEnemyBg,
     plasmaColorPair: { primary: "#c084fc", secondary: "#581c87" },
   },
-  "Merchant's Shop": {
+  "Card Shop": {
     icon: Coins,
     accentClassName: "text-amber-400",
     art: merchantShopBg,
