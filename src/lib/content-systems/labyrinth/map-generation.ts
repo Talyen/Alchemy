@@ -18,16 +18,7 @@ import { generateFloorLayout } from "./hex-layout";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
 import { cloneLabyrinthMap, withClearedNode } from "./map-state";
 
-export {
-  canEnterLabyrinthNode,
-  cloneLabyrinthMap,
-  deepestFloorDepth,
-  floorNodes,
-  isNodeReachable,
-  labyrinthNode,
-  labyrinthNodeVisualState,
-  withClearedNode,
-} from "./map-state";
+export { canEnterLabyrinthNode } from "./map-state";
 
 const COMBAT_NODE_TYPES = new Set<LabyrinthNodeType>(["combat", "elite", "boss"]);
 

@@ -4,18 +4,10 @@
 import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeVisualState } from "../types";
 import { areHexesAdjacent } from "./hex-grid";
 
-export function labyrinthNode(map: LabyrinthMap, nodeId: string): LabyrinthNode | undefined {
-  return map.nodes[nodeId];
-}
-
 export function floorNodes(map: LabyrinthMap, depth: number): LabyrinthNode[] {
   const floor = map.floors.find((entry) => entry.depth === depth);
   if (!floor) return [];
   return floor.nodeIds.map((id) => map.nodes[id]).filter((node): node is LabyrinthNode => Boolean(node));
-}
-
-export function deepestFloorDepth(map: LabyrinthMap): number {
-  return map.floors.reduce((max, floor) => Math.max(max, floor.depth), 0);
 }
 
 export function isNodeReachable(map: LabyrinthMap, nodeId: string): boolean {
