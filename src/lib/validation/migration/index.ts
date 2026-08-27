@@ -45,12 +45,8 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
     if (schemaVersion <= from) next = migrate(next);
   }
   const contentVersion = getRawContentVersion(next);
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- content migrators take Record, next is RawSaveData intersection
-  if (contentVersion < 2)
-    next = migrateContentV1ToV2(next as unknown as Record<string, unknown>) as unknown as RawSaveData;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- same
-  if (contentVersion < 3)
-    next = migrateContentV2ToV3(next as unknown as Record<string, unknown>) as unknown as RawSaveData;
+  if (contentVersion < 2) next = migrateContentV1ToV2(next);
+  if (contentVersion < 3) next = migrateContentV2ToV3(next);
   return {
     ...next,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,

@@ -10,11 +10,11 @@ function runBatchInternal(config: BalanceBatchConfig, retainResults: boolean): B
   let healthTotal = 0;
   let cardsPlayedTotal = 0;
   const cardPlayCounts: Record<string, number> = {};
-  const results = retainResults ? [] : undefined;
+  const results: BalanceBatchResult["results"] | undefined = retainResults ? [] : undefined;
 
   for (let index = 0; index < config.iterations; index += 1) {
     const result = simulateBattle({ ...config, seed: baseSeed + index });
-    if (retainResults) (results as NonNullable<BalanceBatchResult["results"]>).push(result);
+    if (results) results.push(result);
     if (result.outcome === "win") wins += 1;
     else if (result.outcome === "loss") losses += 1;
     else timeouts += 1;
@@ -40,7 +40,7 @@ function runBatchInternal(config: BalanceBatchConfig, retainResults: boolean): B
     averageHealthRemaining: healthTotal / iterations,
     averageCardsPlayed: cardsPlayedTotal / iterations,
     cardPlayCounts,
-    results: (results ?? []) as BalanceBatchResult["results"],
+    results: results ?? [],
   };
 }
 

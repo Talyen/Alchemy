@@ -27,7 +27,7 @@ Decisions locked 2026-08-27: (1) pacing keep as-is, document only (2) mystery fa
 
 - Dirty tree at start had ~57 modified/untracked files — preserve in-flight work.
 - Architect skill for any cross-boundary contract change (flags, codecs, kinds).
-- Pacing intent stays invisible to player; tuning in `src/lib/game-constants/combat-rules.ts:55`.
+- Pacing intent stays invisible to player; tuning in `src/lib/game-constants/combat-rules.ts`.
 - Mystery fallback stays generous by default; make explicit `fallback: "any-unowned"` per event.
 - Node latest-stable only; Steam updates before launch.
 - Keep durable policy in canonical owners (`docs/ARCHITECTURE.md`, `docs/WORKFLOWS.md`, `docs/REFERENCE.md`, `BATTLE_HANDLERS.md`, `MIGRATIONS.md`) at handoff.
