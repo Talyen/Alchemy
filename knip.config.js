@@ -21,6 +21,7 @@
 export default {
   entry: [
     "src/lib/game-data/index.ts",
+    "src/lib/game-constants/index.ts",
     "playwright.config.ts",
     "playwright.electron.config.ts",
     "playwright.performance.config.ts",
@@ -46,8 +47,19 @@ export default {
     // Shared active-run orchestration contract enforced by architecture tests; consumed via Pick aliases.
     "src/features/alchemy/shared/stores/run-port-types.ts": ["types"],
     "src/features/alchemy/shell/shell-types.ts": ["types"],
+    // Registry is internal but exported for envelope-key derivation tests; not yet imported as entry.
+    "src/features/alchemy/shared/storage/codec-registry.ts": ["exports"],
+    // Orchestration port is consumed via type-level architecture contract; knip cannot trace test-d import when file is ignored.
+    "src/features/alchemy/shared/stores/run-session-react-ports.ts": ["exports"],
+    // Semantic alias: corruption weight mirrors default for now, intentional duplicate.
+    "src/lib/game-constants/run-rewards.ts": ["duplicates"],
   },
-  ignore: ["tests/environment.d.ts", "tests/scripts/global.d.ts", "tests/electron-environment.d.ts"],
+  ignore: [
+    "tests/environment.d.ts",
+    "tests/scripts/global.d.ts",
+    "tests/electron-environment.d.ts",
+    "tests/types/run-architecture-contracts.test-d.ts",
+  ],
   ignoreDependencies: [
     // Loaded via node_modules path string in scripts/dist-desktop.mjs; knip cannot trace it.
     "electron-builder",
