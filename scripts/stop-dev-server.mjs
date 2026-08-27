@@ -80,6 +80,7 @@ export async function stopOwnedListeners({
   }
 
   let stoppedAny = false;
+  let ownedFound = false;
 
   for (const pid of pids) {
     const commandLine = await getCommandLine(pid);
@@ -89,13 +90,15 @@ export async function stopOwnedListeners({
       continue;
     }
 
+    ownedFound = true;
     log(`Stopping stale dev server PID ${pid} on port ${port}.`);
     await stopPid(pid);
     stoppedAny = true;
   }
 
   if (stoppedAny) return;
-  log(`No project-owned dev server found on port ${port}.`);
+  // Distinguish "no owned listeners" from "owned listeners vanished between lsof and ps"
+  if (!ownedFound) log(`No project-owned dev server found on port ${port}.`);
 }
 
 async function getUnixListeningPids(port) {

@@ -315,10 +315,11 @@ jobs:
       - name: Assert committed outputs match preparation
         run: npm run assets:check
 
-  # NOTE: The 5 path-gated e2e gates below (save/shop/gear/mystery/audio) share
-  # identical checkout → setup → download-artifact → setup-playwright → run → summarize → upload
-  # steps and can be collapsed to a reusable workflow (workflow_call with `gate` + `npm script` inputs)
-  # when churn justifies it. Kept duplicated for now as low-risk safe change.
+  # The 5 path-gated e2e gates below (save/shop/gear/mystery/audio) share
+  # identical checkout → setup → download-artifact → setup-playwright → run
+  # → summarize → upload steps. Tracked for future consolidation via reusable
+  # workflow (workflow_call with `gate` + `npm script` inputs) when churn
+  # justifies it — see docs/Plans/simplification-consolidation.md Phase 3.
   save-gate:
     needs: [changes, build]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.save == 'true'

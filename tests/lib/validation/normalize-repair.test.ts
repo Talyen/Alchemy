@@ -24,15 +24,15 @@ describe("normalizeActiveRunData empty-choice repair", () => {
       rng,
       starterDraftChoices: [tombstoned, tombstoned2, tombstoned],
     };
-    const result = normalizeActiveRunData(input);
+    const result = normalizeActiveRunData(input) as typeof input & { rng: typeof rng };
     const repaired = result.starterDraftChoices as Array<{ id: string }>;
     expect(Array.isArray(repaired)).toBe(true);
     expect(repaired.length).toBe(3);
     for (const card of repaired) expect(isTombstonedCardId(card.id)).toBe(false);
-    expect(rng.counters.rewards).toBeGreaterThan(0);
+    expect(result.rng.counters.rewards).toBeGreaterThan(0);
     // Not drawn from wildwood or events streams
-    expect(rng.counters.world).toBe(0);
-    expect(rng.counters.events).toBe(0);
+    expect(result.rng.counters.world).toBe(0);
+    expect(result.rng.counters.events).toBe(0);
   });
 
   it("re-offers starter draft choices for labyrinth", () => {
@@ -46,10 +46,10 @@ describe("normalizeActiveRunData empty-choice repair", () => {
       rng,
       starterDraftChoices: [tombstoned, tombstoned, tombstoned],
     };
-    const result = normalizeActiveRunData(input);
+    const result = normalizeActiveRunData(input) as typeof input & { rng: typeof rng };
     const repaired = result.starterDraftChoices as Array<{ id: string }>;
     expect(repaired.length).toBe(3);
-    expect(rng.counters.rewards).toBeGreaterThan(0);
+    expect(result.rng.counters.rewards).toBeGreaterThan(0);
   });
 
   it("does not re-offer starter draft when already complete", () => {
@@ -62,10 +62,10 @@ describe("normalizeActiveRunData empty-choice repair", () => {
       rng,
       starterDraftChoices: [tombstoned, tombstoned, tombstoned],
     };
-    const result = normalizeActiveRunData(input);
+    const result = normalizeActiveRunData(input) as typeof input & { rng: typeof rng };
     const repaired = result.starterDraftChoices as Array<{ id: string }>;
     expect(repaired).toEqual([]);
-    expect(rng.counters.rewards).toBe(0);
+    expect(result.rng.counters.rewards).toBe(0);
   });
 
   it("does not re-offer when original was null", () => {
@@ -77,9 +77,9 @@ describe("normalizeActiveRunData empty-choice repair", () => {
       rng,
       starterDraftChoices: null,
     };
-    const result = normalizeActiveRunData(input);
+    const result = normalizeActiveRunData(input) as typeof input & { rng: typeof rng };
     expect(result.starterDraftChoices).toBeNull();
-    expect(rng.counters.rewards).toBe(0);
+    expect(result.rng.counters.rewards).toBe(0);
   });
 
   it("re-offers wildwood draft choices when all tombstoned", () => {
@@ -100,12 +100,12 @@ describe("normalizeActiveRunData empty-choice repair", () => {
         currentRewardTraitIds: [],
       },
     };
-    const result = normalizeActiveRunData(input);
+    const result = normalizeActiveRunData(input) as typeof input & { rng: typeof rng };
     const draft = result.wildwoodDraft as { draftChoices: Array<{ id: string }> };
     expect(draft.draftChoices.length).toBe(3);
     for (const card of draft.draftChoices) expect(isTombstonedCardId(card.id)).toBe(false);
-    expect(rng.counters.world).toBeGreaterThan(0);
-    expect(rng.counters.rewards).toBe(0);
+    expect(result.rng.counters.world).toBeGreaterThan(0);
+    expect(result.rng.counters.rewards).toBe(0);
   });
 
   it("does not re-offer wildwood when phase is not draft", () => {
@@ -125,10 +125,10 @@ describe("normalizeActiveRunData empty-choice repair", () => {
         currentRewardTraitIds: [],
       },
     };
-    const result = normalizeActiveRunData(input);
+    const result = normalizeActiveRunData(input) as typeof input & { rng: typeof rng };
     const draft = result.wildwoodDraft as { draftChoices: Array<{ id: string }> };
     expect(draft.draftChoices).toEqual([]);
-    expect(rng.counters.world).toBe(0);
+    expect(result.rng.counters.world).toBe(0);
   });
 
   it("re-offers mystery cardChoices when all tombstoned and awaiting pick", () => {
@@ -148,11 +148,11 @@ describe("normalizeActiveRunData empty-choice repair", () => {
         resolvedTrinketIds: [],
       },
     };
-    const result = normalizeActiveRunData(input);
+    const result = normalizeActiveRunData(input) as typeof input & { rng: typeof rng };
     const visit = result.mysteryVisit as { cardChoices: Array<{ id: string }> };
     expect(visit.cardChoices.length).toBe(3);
     for (const card of visit.cardChoices) expect(isTombstonedCardId(card.id)).toBe(false);
-    expect(rng.counters.events).toBeGreaterThan(0);
+    expect(result.rng.counters.events).toBeGreaterThan(0);
   });
 
   it("does not re-offer mystery when already picked", () => {
@@ -172,10 +172,10 @@ describe("normalizeActiveRunData empty-choice repair", () => {
         resolvedTrinketIds: [],
       },
     };
-    const result = normalizeActiveRunData(input);
+    const result = normalizeActiveRunData(input) as typeof input & { rng: typeof rng };
     const visit = result.mysteryVisit as { cardChoices: Array<{ id: string }> };
     expect(visit.cardChoices).toEqual([]);
-    expect(rng.counters.events).toBe(0);
+    expect(result.rng.counters.events).toBe(0);
   });
 
   it("re-offered cards are drawn from the live offerable pool", () => {

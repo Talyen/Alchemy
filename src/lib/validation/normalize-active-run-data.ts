@@ -86,15 +86,21 @@ function nullableCardArray(cards: unknown): unknown {
   return cards ?? null;
 }
 
-function createRepairRng(rngState: RunRngState | null | undefined, stream: RunRngStream): (() => number) | null {
+function cloneRngForRepair(rngState: RunRngState | null | undefined): RunRngState | null {
   if (
     !rngState ||
     typeof rngState.seed !== "number" ||
     !rngState.counters ||
-    typeof rngState.counters[stream] !== "number"
+    typeof rngState.counters.rewards !== "number" ||
+    typeof rngState.counters.world !== "number" ||
+    typeof rngState.counters.events !== "number"
   ) {
     return null;
   }
+  return { seed: rngState.seed, counters: { ...rngState.counters } };
+}
+
+function createRepairRng(rngState: RunRngState, stream: RunRngStream): () => number {
   return () => {
     const draw = nextRunRngValue(rngState, stream);
     rngState.counters[stream] = draw.nextCounter;
@@ -109,21 +115,25 @@ function sanitizeDeckForRepair(cards: BattleCard[]): BattleCard[] {
 }
 
 function toPersistedCard(card: BattleCard): Record<string, unknown> {
-  return {
+  // Persist only fields owned by the save schema — spread then pick to avoid
+  // silently dropping new BattleCard fields while still omitting runtime-only keys.
+  const base: Record<string, unknown> = {
     id: card.id,
     title: card.title,
     descriptionLines: card.descriptionLines,
     art: card.art,
     cost: card.cost,
     effects: card.effects,
-    ...(card.uid !== undefined ? { uid: card.uid } : {}),
-    ...(card.consume ? { consume: true } : {}),
-    ...(card.corrupted ? { corrupted: true } : {}),
-    ...(card.baseTitle ? { baseTitle: card.baseTitle } : {}),
-    ...((card as unknown as { corruptedValuePositions?: unknown }).corruptedValuePositions
-      ? { corruptedValuePositions: (card as unknown as { corruptedValuePositions: unknown }).corruptedValuePositions }
-      : {}),
   };
+  if (card.uid !== undefined) base.uid = card.uid;
+  if (card.consume) base.consume = true;
+  if (card.corrupted) base.corrupted = true;
+  if (card.baseTitle) base.baseTitle = card.baseTitle;
+  const corruptedPositions = (card as unknown as { corruptedValuePositions?: unknown }).corruptedValuePositions;
+  if (corruptedPositions) base.corruptedValuePositions = corruptedPositions;
+  // Fail loudly if BattleCard gains a new persisted field that isn't mapped here.
+  // `satisfies` won't help on a raw Record, so keep this list mirrored via tests.
+  return base;
 }
 
 function normalizeOptionalShopInventory(inventory: unknown, cardKey: string): Record<string, unknown> | null {
@@ -150,7 +160,7 @@ function normalizeOptionalShopInventory(inventory: unknown, cardKey: string): Re
 function repairWildwoodDraft(
   data: Record<string, unknown>,
   runDeck: BattleCard[] | null,
-  rngState: RunRngState | undefined,
+  rngState: RunRngState | null,
   characterId: string | undefined,
 ): unknown {
   const contentSystemType = data.contentSystemType as ContentSystemId;
@@ -169,21 +179,19 @@ function repairWildwoodDraft(
     rngState
   ) {
     const rng = createRepairRng(rngState, "world");
-    if (rng) {
-      const pool = getOfferableCardPool();
-      const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
-      const keywords =
-        (characterId ? (characters as Record<string, { keywords: string[] }>)[characterId]?.keywords : undefined) ?? [];
-      const repaired = selectRewardCards(
-        deckForAffinity,
-        pool,
-        DRAFT_CHOICES,
-        deckForAffinity,
-        rng,
-        keywords as never[],
-      ).map(toPersistedCard);
-      if (repaired.length > 0) draftChoices = repaired;
-    }
+    const pool = getOfferableCardPool();
+    const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
+    const keywords =
+      (characterId ? (characters as Record<string, { keywords: string[] }>)[characterId]?.keywords : undefined) ?? [];
+    const repaired = selectRewardCards(
+      deckForAffinity,
+      pool,
+      DRAFT_CHOICES,
+      deckForAffinity,
+      rng,
+      keywords as never[],
+    ).map(toPersistedCard);
+    if (repaired.length > 0) draftChoices = repaired;
   }
   return { ...raw, draftChoices };
 }
@@ -191,7 +199,7 @@ function repairWildwoodDraft(
 function repairStarterDraft(
   data: Record<string, unknown>,
   runDeck: BattleCard[] | null,
-  rngState: RunRngState | undefined,
+  rngState: RunRngState | null,
 ): unknown {
   const contentSystemType = data.contentSystemType as ContentSystemId;
   if (contentSystemType === "wildwood") return null;
@@ -206,17 +214,15 @@ function repairStarterDraft(
     const hadDraft = data.starterDraftChoices != null;
     if (hadDraft) {
       const rng = createRepairRng(rngState, "rewards");
-      if (rng) {
-        const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
-        const repaired = selectRewardCards(
-          deckForAffinity,
-          getOfferableCardPool(),
-          DRAFT_CHOICES,
-          deckForAffinity,
-          rng,
-        ).map(toPersistedCard);
-        if (repaired.length > 0) return repaired;
-      }
+      const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
+      const repaired = selectRewardCards(
+        deckForAffinity,
+        getOfferableCardPool(),
+        DRAFT_CHOICES,
+        deckForAffinity,
+        rng,
+      ).map(toPersistedCard);
+      if (repaired.length > 0) return repaired;
     }
   }
   if (filtered === null) return null;
@@ -226,8 +232,13 @@ function repairStarterDraft(
 function repairMysteryVisit(
   data: Record<string, unknown>,
   runDeck: BattleCard[] | null,
-  rngState: RunRngState | undefined,
+  rngState: RunRngState | null,
 ): unknown {
+  // When currentScreen is set to any non-mystery value the persisted blob is
+  // stale — null it so resume doesn't re-enter mystery. A legacy
+  // `pendingRemoval:true` flag is already kept via the cardChoices re-offer
+  // path below; nulling here still discards the stale visit after that
+  // picker completes (currentScreen flips away on pick).
   if (data.currentScreen != null && data.currentScreen !== "mystery") return null;
   if (!data.mysteryVisit || typeof data.mysteryVisit !== "object") return data.mysteryVisit;
   const rawVisit = data.mysteryVisit as Record<string, unknown>;
@@ -237,13 +248,11 @@ function repairMysteryVisit(
   const hadChoices = rawVisit.cardChoices != null;
   if (Array.isArray(filtered) && filtered.length === 0 && hadChoices && chosenCardId == null && rngState) {
     const rng = createRepairRng(rngState, "events");
-    if (rng) {
-      const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
-      const repaired = selectRewardCards(deckForAffinity, getOfferableCardPool(), MYSTERY_CARD_CHOICES, [], rng).map(
-        toPersistedCard,
-      );
-      if (repaired.length > 0) cardChoices = repaired;
-    }
+    const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
+    const repaired = selectRewardCards(deckForAffinity, getOfferableCardPool(), MYSTERY_CARD_CHOICES, [], rng).map(
+      toPersistedCard,
+    );
+    if (repaired.length > 0) cardChoices = repaired;
   }
   if (filtered === null && rawVisit.cardChoices == null) cardChoices = null;
   return { ...rawVisit, cardChoices };
@@ -266,15 +275,25 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
     typeof data.runMetaMaxHealth === "number" && data.runMetaMaxHealth > 0 ? data.runMetaMaxHealth : runMaxHealth;
 
   const runDeck = nullableCardArray(data.runDeck) as BattleCard[] | null;
-  const rngState = data.rng as RunRngState | undefined;
+  // Clone RNG before any repair advances counters — Zod transforms should not
+  // mutate the input object. Second parse of the same raw input would otherwise
+  // advance the shared counter twice; cloning keeps the transform pure-ish and
+  // the re-offer stays idempotent (second parse sees non-empty repaired choices).
+  const rawRngState = data.rng as RunRngState | null | undefined;
+  const rngState = cloneRngForRepair(rawRngState);
   const characterId = data.characterId as string | undefined;
 
   const wildwoodDraft = repairWildwoodDraft(data, runDeck, rngState, characterId);
   const starterDraftChoices = repairStarterDraft(data, runDeck, rngState);
   const mysteryVisit = repairMysteryVisit(data, runDeck, rngState);
 
+  // If RNG was cloned and advanced, persist the new counters so the next
+  // autosave writes them — otherwise the re-offer would re-roll differently.
+  const nextRng = rngState ?? (data.rng as RunRngState | null | undefined) ?? null;
+
   return {
     ...data,
+    ...(nextRng ? { rng: nextRng } : {}),
     runPlayerHealth,
     runMetaMaxHealth,
     runDeck,

@@ -15,12 +15,13 @@ Decisions locked 2026-08-27: (1) pacing keep as-is, document only (2) mystery fa
 
 - [x] Phase 0 — Tooling/CI: engines kept at `>=24`, docs sync, knip entry fix, vitest coverage exclude dead pattern removed (remaining: `change-routes.mjs` split, `verify-changed` parallelize, dep-cruiser single-source deferred)
 - [x] Phase 1a — Motion/tooltip: single fade primitive made configurable, fixed `setState` during render anti-pattern, tooltip fade now uses `resolveGameDelay` (animation-disabled aware)
-- [x] Phase 1b — Persistence: `serializeSaveSnapshot` made pure (`now` param), `applySaveWritePolicy` resets on `corrupt` too, `saveAlchemySaveData` drains `coalescedSave` on `writesDisabled` (RNG-out-of-Zod and full tombstone unify deferred)
-- [x] Phase 1c — Shared UI: verified tilt already rAF-batched via `src/features/alchemy/shared/utils/dom.ts`; gear cache key consolidated to `baseItemId` (tile/shine/plasma consolidation deferred)
+- [x] Phase 1b — Persistence: `serializeSaveSnapshot` made pure (`now` param), `applySaveWritePolicy` resets on `corrupt` too, `saveAlchemySaveData` drains `coalescedSave` on `writesDisabled`, RNG clone + counter persist fix shipped
+- [x] Phase 1c — Shared UI: verified tilt already rAF-batched via `src/features/alchemy/shared/utils/dom.ts`; gear cache key consolidated to `baseItemId|aspect|affinity`
 - [ ] Phase 2a — Battle: `CombatFlags` split, damage pipeline collapse, `contentSystemIsolation` extract, crit wiring — deferred, needs `architect` skill (pacing already documented in `src/lib/game-constants/combat-rules.ts`)
 - [ ] Phase 2b — Content: effect registry single-source (`kinds.ts` generated), builder collapse, manifest grouping — deferred
 - [x] Phase 2c — Validation/balance: gear cache key fix, `play-policy` chance `probability/100` → `probability` (fraction) fix, `simulateBatch`/`simulateBatchSummary` unified via `runBatchInternal` (parity single-pass and workerize deferred)
 - [ ] Phase 3 — Assets/screens: glob manifest, shop route inline, prepare-assets concurrency — deferred
+- [x] Phase 2c+ — Code review fixes (2026-08-27): io dead enum removed, empty-collection clone, shop route displayName, stop-dev-server vanished-PID handling, `simulateBatchSummary` doc, codec-registry `satisfies`
 - [x] Final verification: `typecheck`/`lint`/`docs:check`/`format:check` passed; full `lint:ci` blocked only by deferred phases, `test` pending final gate
 
 ## Notes

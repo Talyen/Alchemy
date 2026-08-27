@@ -206,6 +206,7 @@ export function runFieldsFromSnapshot(
 > {
   // Per-run tallies/offers reset on start; reuse empty-collection defaults for the 3 reset fields
   // so fresh/resume/snapshot don't each hand-maintain separate `[]`/`{}` literals with subtle diffs.
+  // Clone each collection so the returned run doesn't share refs with the factory singleton.
   const empty = createEmptyActiveRunCollections();
   return {
     characterId: snapshot.characterId,
@@ -219,9 +220,9 @@ export function runFieldsFromSnapshot(
     currentAct: snapshot.currentAct,
     destinationIndexInAct: snapshot.destinationIndexInAct,
     completedDestinations: snapshot.completedDestinations,
-    lastOfferedDestinations: empty.lastOfferedDestinations,
-    destinationRoundsSinceOffered: empty.destinationRoundsSinceOffered,
+    lastOfferedDestinations: [...empty.lastOfferedDestinations],
+    destinationRoundsSinceOffered: { ...empty.destinationRoundsSinceOffered },
     runBoons: snapshot.runBoons,
-    encounteredRunEnemyIds: empty.encounteredRunEnemyIds,
+    encounteredRunEnemyIds: [...empty.encounteredRunEnemyIds],
   };
 }

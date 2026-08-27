@@ -37,8 +37,14 @@ function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
 
 const eligibleAffixPoolCache = new Map<string, GearAffixDefinition[]>();
 
+function eligibleAffixCacheKey(definition: GearDefinition): string {
+  const affinityKey = [...definition.affinityKeywords].sort().join(",");
+  const aspectKey = allowedAspectsForDefinition(definition).join(",");
+  return `${definition.baseItemId}|${aspectKey}|${affinityKey}`;
+}
+
 export function buildEligibleAffixPool(definition: GearDefinition): GearAffixDefinition[] {
-  const cacheKey = definition.baseItemId;
+  const cacheKey = eligibleAffixCacheKey(definition);
   const cached = eligibleAffixPoolCache.get(cacheKey);
   if (cached) return cached;
   const allowedAspects = new Set(allowedAspectsForDefinition(definition));

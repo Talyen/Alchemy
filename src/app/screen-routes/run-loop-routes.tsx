@@ -61,6 +61,7 @@ function BattleScreenRoute({
     currentBind(bind);
     return () => currentBind(null);
   }, [bind, bindPlaybackRef]);
+  // bindPlaybackRef is stable (useLatestRef contract) — effect re-binds only when `bind` identity changes.
 
   return (
     <BattleScreen
@@ -186,7 +187,7 @@ function createShopScreenRoute<TData, TCommands>(
   useData: () => TData,
   render: (data: TData, commands: TCommands, onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"]) => ReactNode,
 ) {
-  return function ShopScreenRoute({
+  function ShopScreenRoute({
     commands,
     onOpenBattleMenu,
   }: {
@@ -195,7 +196,9 @@ function createShopScreenRoute<TData, TCommands>(
   }) {
     const data = useData();
     return render(data, commands, onOpenBattleMenu);
-  };
+  }
+  ShopScreenRoute.displayName = "ShopScreenRoute";
+  return ShopScreenRoute;
 }
 
 const ShopScreenRoute = createShopScreenRoute(
