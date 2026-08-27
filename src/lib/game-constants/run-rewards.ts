@@ -73,7 +73,7 @@ export const CORRUPTION_TEXT_PATTERNS = {
   leadingNumber: /^\d+/,
 } as const;
 // Semantic alias: corruption uses the same weight as normal routes; separate name documents intent at call sites.
-export const CORRUPTION_DESTINATION_WEIGHT = DEFAULT_DESTINATION_WEIGHT;
+export const CORRUPTION_DESTINATION_WEIGHT = 10;
 export const DESTINATIONS_PER_ACT = 8; // Slot 8 is the boss.
 export const ACTS_PER_RUN = 3;
 export const DEFAULT_CAMPAIGN_DIFFICULTY_ID = "difficulty-1";

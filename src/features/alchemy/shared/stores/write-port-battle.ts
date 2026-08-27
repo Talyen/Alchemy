@@ -75,7 +75,7 @@ export function setBattleState(draft: GameplayDraft, action: BattleState | ((pre
   syncPurseFromBattleGold(draft);
 }
 
-export function setPendingBattleTransition(draft: GameplayDraft, transition: PersistedBattleTransition | null): void {
+function setPendingBattleTransition(draft: GameplayDraft, transition: PersistedBattleTransition | null): void {
   draft.battle.pendingBattleTransition = transition;
 }
 
@@ -85,10 +85,6 @@ export function clearPendingTransitionResumeRequired(draft: GameplayDraft): void
 
 export function setDisplayOverrides(draft: GameplayDraft, overrides: DisplayOverrides): void {
   draft.battle.displayOverrides = overrides;
-}
-
-export function clearDisplayOverrides(draft: GameplayDraft): void {
-  draft.battle.displayOverrides = {};
 }
 
 export function setBattleStartState(draft: GameplayDraft, state: BattleState | null): void {

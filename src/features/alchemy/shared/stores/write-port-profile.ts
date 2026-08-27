@@ -97,7 +97,7 @@ export function applyTalentState(draft: GameplayDraft, talentXP: TalentXP, unloc
  * Merge the finished run's talent XP into permanent progression and return the
  * run-end snapshot for the game-over / victory screens.
  */
-export function mergeRunTalentXPIntoProfile(draft: GameplayDraft, runTalentXP: TalentXP, multiplier: number): TalentXP {
+function mergeRunTalentXPIntoProfile(draft: GameplayDraft, runTalentXP: TalentXP, multiplier: number): TalentXP {
   const snapshot = computeRunEndTalentXPSnapshot(runTalentXP, multiplier);
   draft.runProfile.talentXP = mergeRunTalentXPIntoPermanent(runTalentXP, draft.runProfile.talentXP, multiplier);
   return snapshot;
