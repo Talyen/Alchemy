@@ -11,12 +11,12 @@ import {
 import type { Screen } from "@/lib/routing";
 import type { RunSession } from "./run-session-model";
 
-type PersistedShops = {
+interface PersistedShops {
   shopState: PersistedShopState | null;
   alchemistState: PersistedAlchemistState | null;
   trinketShopState: PersistedTrinketShopState | null;
   equipmentShopState: PersistedEquipmentShopState | null;
-};
+}
 
 const EMPTY_PERSISTED_SHOPS: PersistedShops = {
   shopState: null,
