@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getCardKeywords, selectRewardCards } from "@/lib/game-data";
 import { sampleItems } from "@/lib/utils";
 import type { BattleCard } from "@/lib/game-data";
@@ -145,29 +145,26 @@ describe("selectRewardCards", () => {
       card({ id: "slash", effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
       card({ id: "fireball", effects: [{ kind: "damage", damageType: "burn", amount: 3 }] }),
     ];
-    const result = selectRewardCards(deck, allCards, 1);
+    const result = selectRewardCards(deck, allCards, 1, [], () => 0.5);
     expect(result).toHaveLength(1);
     expect(["slash", "fireball"]).toContain(result[0].id);
   });
 
   it("returns requested count of cards", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const deck: BattleCard[] = [card({ id: "stab", effects: [{ kind: "damage", damageType: "physical", amount: 4 }] })];
     const allCards: BattleCard[] = [
       card({ id: "a", effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
       card({ id: "b", effects: [{ kind: "damage", damageType: "burn", amount: 3 }] }),
       card({ id: "c", effects: [{ kind: "heal", amount: 5 }] }),
     ];
-    const result = selectRewardCards(deck, allCards, 2);
+    const result = selectRewardCards(deck, allCards, 2, [], () => 0.99);
     expect(result).toHaveLength(2);
   });
 
   it("handles all-random rolls correctly and returns unique cards", () => {
-    // Mock Math.random to return 0.0, which is always < 0.5 (random)
-    vi.spyOn(Math, "random").mockReturnValue(0.0);
     const deck: BattleCard[] = [card({ id: "stab", effects: [{ kind: "damage", damageType: "physical", amount: 4 }] })];
     const allCards: BattleCard[] = [card({ id: "a" }), card({ id: "b" }), card({ id: "c" })];
-    const result = selectRewardCards(deck, allCards, 3);
+    const result = selectRewardCards(deck, allCards, 3, [], () => 0.0);
     expect(result).toHaveLength(3);
     const ids = result.map((c) => c.id);
     expect(ids).toContain("a");
@@ -176,15 +173,13 @@ describe("selectRewardCards", () => {
   });
 
   it("handles all-affinity rolls correctly and prioritizes deck keywords", () => {
-    // Mock Math.random to return 0.9, which is always >= 0.5 (affinity)
-    vi.spyOn(Math, "random").mockReturnValue(0.9);
     const deck: BattleCard[] = [card({ id: "stab", effects: [{ kind: "damage", damageType: "physical", amount: 4 }] })];
     const allCards: BattleCard[] = [
       card({ id: "a", effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }), // has matching keyword
       card({ id: "b", effects: [{ kind: "damage", damageType: "physical", amount: 3 }] }), // has matching keyword
       card({ id: "c", effects: [{ kind: "damage", damageType: "burn", amount: 1 }] }), // no matching keyword
     ];
-    const result = selectRewardCards(deck, allCards, 2);
+    const result = selectRewardCards(deck, allCards, 2, [], () => 0.9);
     expect(result).toHaveLength(2);
     expect(result.some((c) => c.id === "a" || c.id === "b")).toBe(true);
   });
@@ -208,7 +203,6 @@ describe("selectRewardCards", () => {
 
 describe("sampleItems for boon rewards", () => {
   it("returns requested number of boons", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const boons = [
       { id: "bone-charm", title: "Bone Charm", description: "", art: "" },
       { id: "brass-censer", title: "Brass Censer", description: "", art: "" },
@@ -220,7 +214,6 @@ describe("sampleItems for boon rewards", () => {
   });
 
   it("handles requesting more boons than available", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const boons = [{ id: "bone-charm", title: "Bone Charm", description: "", art: "" }];
     const result = sampleItems(boons, 5, () => 0.5);
     expect(result).toHaveLength(1);

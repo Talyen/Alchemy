@@ -1,5 +1,6 @@
 // Core card selection helper using keyword deck affinity and tie-breaking randomness.
 // Fits within src/lib/ boundaries (no imports from features/).
+// Gameplay callers must supply a seeded RNG (run stream); Math.random is not used for rewards.
 import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "../game-constants";
 import { pickRandom, shuffle } from "../utils";
 import { getCardKeywords } from "./keywords";
@@ -54,10 +55,10 @@ export function selectRewardCards(
   allCards: BattleCard[],
   count: number,
   exclude: BattleCard[] = [],
-  rng?: () => number,
+  rng: () => number,
   seedKeywords: KeywordId[] = [],
 ): BattleCard[] {
-  const activeRng = rng ?? Math.random;
+  const activeRng = rng;
   const candidates = allCards.filter((c) => !exclude.some((ex) => ex.id === c.id));
   const shuffledCandidates = shuffle(candidates, activeRng);
   const selected: BattleCard[] = [];
