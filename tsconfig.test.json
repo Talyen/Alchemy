@@ -1,8 +1,9 @@
 {
-  // Strictness relaxations are intentional: the ~330 exactOptionalPropertyTypes /
-  // noUncheckedIndexedAccess violations across tests/ and performance/ are spread
-  // over fixture and helper code, not contract mismatches. Tighten only alongside
-  // a dedicated fixture-cleanup pass.
+  // Strictness relaxations: ~220 noUncheckedIndexedAccess / exactOptionalPropertyTypes
+  // violations remain across tests/ and performance/ fixture helpers (gear, persistence,
+  // UI mocks, browser helpers). WS1 hydration drift (wildwoodDraft) is fixed and
+  // covered by parse.test; remaining groups to be tightened in staged passes with
+  // small typed fixture helpers. Re-enable only alongside that cleanup.
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["vitest/globals", "vite/client", "node"],
