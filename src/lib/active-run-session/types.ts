@@ -16,39 +16,29 @@ import type { GearInstance } from "@/lib/gear";
 import type { InterruptedFlow, PersistedPendingReward } from "@/lib/validation";
 import type { RunRngState } from "@/lib/run-rng";
 
-export type { InterruptedFlow, PersistedPendingReward };
+import type { RefreshableShopFields } from "./shop-session-types";
+
+export type { InterruptedFlow, PersistedPendingReward, RefreshableShopFields };
 
 /** Permanent Gear or Armory Trinket granted during the live run, in obtain order. */
 export type RunObtainedItem = { kind: "gear"; instance: GearInstance } | { kind: "trinket"; trinketId: string };
 
-export interface PersistedShopState {
+export interface PersistedShopState extends RefreshableShopFields {
   cards: BattleCard[];
   removeUsed: boolean;
-  refreshesLeft: number;
-  firstPurchaseUsed: boolean;
-  purchasedSlotKeys: string[];
 }
 
-export interface PersistedAlchemistState {
+export interface PersistedAlchemistState extends RefreshableShopFields {
   potions: BattleCard[];
   mixUsed: boolean;
-  refreshesLeft: number;
-  firstPurchaseUsed: boolean;
-  purchasedSlotKeys: string[];
 }
 
-export interface PersistedTrinketShopState {
+export interface PersistedTrinketShopState extends RefreshableShopFields {
   trinketIds: string[];
-  refreshesLeft: number;
-  firstPurchaseUsed: boolean;
-  purchasedSlotKeys: string[];
 }
 
-export interface PersistedEquipmentShopState {
+export interface PersistedEquipmentShopState extends RefreshableShopFields {
   gear: GearInstance[];
-  refreshesLeft: number;
-  firstPurchaseUsed: boolean;
-  purchasedSlotKeys: string[];
 }
 
 export interface PersistedMysteryVisit {

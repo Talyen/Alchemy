@@ -11,7 +11,11 @@ export type EnemyId = EnemyEntry["id"];
 export type BossEnemyEntry = Extract<EnemyEntry, { enemyType: "boss" }>;
 export type BossEnemyId = BossEnemyEntry["id"];
 
-type EnemyById = { [Entry in EnemyEntry as Entry["id"]]: Entry };
+export type TrinketCatalogEntry = (typeof trinketLibrary)[number];
+export type TrinketId = TrinketCatalogEntry["id"];
+
+type EnemyById = { [Entry in EnemyEntry as Entry["id"]]: Entry } & Record<string, EnemyEntry | undefined>;
+type TrinketById = { [Entry in TrinketCatalogEntry as Entry["id"]]: Entry } & Record<string, TrinketEntry | undefined>;
 
 /** Derived catalog views — keep selection code from rebuilding or scanning static pools. */
 export const enemyById = Object.fromEntries(enemyBestiary.map((enemy) => [enemy.id, enemy])) as EnemyById;
@@ -33,6 +37,8 @@ export const bossEnemies = enemiesByType.boss;
 export const encounterEnemies = enemyBestiary.filter((enemy) => enemy.id !== "skeleton");
 
 /** Id-keyed view of the trinket library — prefer this over scanning `trinketLibrary` by id. */
-export const trinketById: Record<string, TrinketEntry> = Object.fromEntries(
-  trinketLibrary.map((trinket) => [trinket.id, trinket]),
-);
+export const trinketById = Object.fromEntries(trinketLibrary.map((trinket) => [trinket.id, trinket])) as TrinketById;
+
+export function isTrinketId(value: string): value is TrinketId {
+  return Object.hasOwn(trinketById, value);
+}

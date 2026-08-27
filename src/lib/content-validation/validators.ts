@@ -19,7 +19,12 @@ import {
   REWARD_ENCOUNTER_TRAIT_IDS,
   ENCOUNTER_TRAITS,
 } from "../content-systems/encounter-traits";
-import { flattenEffects, validateCardDescriptionParity, validateEnemyTraitDescriptionParity } from "./card-parity";
+import {
+  flattenEffects,
+  validateCardDescriptionParity,
+  validateEnemyTraitDescriptionParity,
+  validateTrinketDescriptionParity,
+} from "./card-parity";
 import {
   CardContentSchema,
   EnemyContentSchema,
@@ -181,6 +186,9 @@ export function validateTrinkets(collector: ReturnType<typeof createCollector>):
     validateArt("trinkets", trinket.id, trinket.art, collector.error, collector.warning);
     for (const issue of collectTrinketParityIssues(trinket)) {
       collector.error("trinkets", trinket.id, issue);
+    }
+    for (const issue of validateTrinketDescriptionParity(trinket)) {
+      collector.error(issue.area, issue.id, issue.message);
     }
   }
 }

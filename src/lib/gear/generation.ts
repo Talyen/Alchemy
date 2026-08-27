@@ -280,7 +280,7 @@ export function rollAffixes(definition: GearDefinition, count: number, rng: () =
   return selected;
 }
 
-export function createGearInstance(definition: GearDefinition, affixes: GearAffixRoll[]): GearInstance {
+export function createGearInstance(definition: GearDefinition, affixes: GearAffixRoll[] = []): GearInstance {
   return {
     instanceId: createInstanceId(),
     definitionId: definition.id,

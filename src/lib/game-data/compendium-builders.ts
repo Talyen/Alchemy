@@ -31,12 +31,12 @@ export function defineEnemy<const T extends EnemyDefinition>(entry: T): Bestiary
   };
 }
 
-export function trinket(
-  id: TrinketEntry["id"],
+export function trinket<const Id extends string>(
+  id: Id,
   title: string,
   description: string,
   art: string,
   effects: TrinketEntry["effects"] = {},
-): TrinketEntry {
+): TrinketEntry & { id: Id } {
   return { id, title, descriptionLines: [description], art, effects };
 }

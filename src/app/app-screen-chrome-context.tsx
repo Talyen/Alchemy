@@ -26,10 +26,27 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { Screen } from "@/lib/routing";
 
+interface CompanionCardEntry {
+  id: string;
+  companionId: CompanionId;
+}
+
+const COMPANION_CARDS: readonly CompanionCardEntry[] = cardLibrary.flatMap((c) => {
+  const effect = c.effects.find(
+    (e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion",
+  );
+  return effect ? [{ id: c.id, companionId: effect.companionId }] : [];
+});
+
+const TALENT_TREE_KEYWORD_IMPLEMENTED_COUNTS = getTalentTreeKeywordIds().map((kwId) => ({
+  kwId,
+  count: countImplementedTalents(kwId),
+}));
+
 function hasUnspentTalents(talentXP: TalentXP, unlockedTalents: UnlockedTalents): boolean {
-  return getTalentTreeKeywordIds().some((kwId) => {
+  return TALENT_TREE_KEYWORD_IMPLEMENTED_COUNTS.some(({ kwId, count }) => {
     const xp = talentXP[kwId] ?? 0;
-    return getTalentKeywordProgress(xp, (unlockedTalents[kwId] ?? []).length, countImplementedTalents(kwId)).hasUnspent;
+    return getTalentKeywordProgress(xp, (unlockedTalents[kwId] ?? []).length, count).hasUnspent;
   });
 }
 
@@ -74,13 +91,9 @@ function hasAffordableHomesteadUpgrade(input: {
     return canAfford(materialInventory, tier.cost);
   });
 
-  const affordableBond = cardLibrary.some((c) => {
-    const effect = c.effects.find(
-      (e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion",
-    );
-    if (!effect) return false;
-    if (!discoveredCardIds.includes(c.id)) return false;
-    const currentLevel = bondedCompanions[effect.companionId] ?? 0;
+  const affordableBond = COMPANION_CARDS.some(({ id, companionId }) => {
+    if (!discoveredCardIds.includes(id)) return false;
+    const currentLevel = bondedCompanions[companionId] ?? 0;
     if (currentLevel >= COMPANION_MAX_TIER) return false;
     const bondTier = COMPANION_BOND_TIERS[currentLevel];
     if (!bondTier) return false;

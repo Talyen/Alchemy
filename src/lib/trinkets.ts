@@ -34,13 +34,16 @@ export const defaultTrinketEffects: TrinketManifest = {
   luckyCloverGoldChance: 0,
 };
 
+const DEFAULT_TRINKET_MANIFEST_KEYS = Object.keys(defaultTrinketEffects) as Array<keyof TrinketManifest>;
+
 /** Authored effect per trinket id, derived from the compendium rows. */
 const trinketEffects: Record<string, Partial<TrinketManifest>> = Object.fromEntries(
   trinketLibrary.map((entry) => [entry.id, entry.effects]),
 );
 
-export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
+export function computeTrinketManifest(trinketIds: readonly string[]): TrinketManifest {
   const manifest = { ...defaultTrinketEffects };
+  if (trinketIds.length === 0) return manifest;
 
   for (const id of trinketIds) {
     const effects = trinketEffects[id];
@@ -55,7 +58,5 @@ export function combineTrinketEffectIds(runBoons: readonly string[], equippedTri
 }
 
 export function isDefaultTrinketManifest(manifest: TrinketManifest): boolean {
-  return (Object.keys(defaultTrinketEffects) as Array<keyof TrinketManifest>).every(
-    (key) => manifest[key] === defaultTrinketEffects[key],
-  );
+  return DEFAULT_TRINKET_MANIFEST_KEYS.every((key) => manifest[key] === defaultTrinketEffects[key]);
 }

@@ -17,6 +17,7 @@ import {
   isCharacterUnlocked,
   type CharacterId,
   trinketLibrary,
+  trinketById,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { PageLayout } from "../../shared/ui/shared-ui";
@@ -79,7 +80,8 @@ export function ArmoryScreen({
     const equippedId = equippedTrinkets[characterId];
     return trinketLibrary.filter((entry) => owned.has(entry.id) && entry.id !== equippedId);
   }, [ownedTrinketIds, equippedTrinkets, characterId]);
-  const equippedTrinket = trinketLibrary.find((entry) => entry.id === equippedTrinkets[characterId]);
+  const equippedTrinketId = equippedTrinkets[characterId];
+  const equippedTrinket = equippedTrinketId ? trinketById[equippedTrinketId] : undefined;
 
   const handleSelectCharacter = useCallback(
     (id: CharacterId) => {

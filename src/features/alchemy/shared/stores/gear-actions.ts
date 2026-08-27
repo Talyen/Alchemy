@@ -26,7 +26,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Draft } from "immer";
 import { initialState } from "./gear-store-initial-state";
 import type { GearStateFields } from "./gear-store-types";
-import { trinketLibrary } from "@/lib/game-data";
+import { isTrinketId } from "@/lib/game-data";
 
 /** Mutations over the aggregate's gear region; each takes the gear draft directly. */
 
@@ -40,8 +40,7 @@ export function initializeGear(
 ): void {
   gear.inventories = inventories;
   gear.loadouts = loadouts;
-  const validIds = new Set(trinketLibrary.map((entry) => entry.id));
-  gear.ownedTrinketIds = [...new Set(ownedTrinketIds.filter((id) => validIds.has(id)))];
+  gear.ownedTrinketIds = [...new Set(ownedTrinketIds.filter(isTrinketId))];
   const owned = new Set(gear.ownedTrinketIds);
   const normalized = normalizeEquippedTrinkets(equippedTrinkets);
   const seen = new Set<string>();
@@ -76,7 +75,7 @@ export function unequipGearInstance(gear: Draft<GearStateFields>, characterId: C
 }
 
 export function addPermanentTrinket(gear: Draft<GearStateFields>, trinketId: string): boolean {
-  if (!trinketLibrary.some((entry) => entry.id === trinketId) || gear.ownedTrinketIds.includes(trinketId)) return false;
+  if (!isTrinketId(trinketId) || gear.ownedTrinketIds.includes(trinketId)) return false;
   gear.ownedTrinketIds.push(trinketId);
   return true;
 }

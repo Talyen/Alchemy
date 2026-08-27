@@ -35,6 +35,8 @@ export {
   theLabyrinth,
   wildwoodDraft,
   trinketLibrary,
+  trinketById,
+  isTrinketId,
 } from "@/lib/game-data";
 
 import { trinketById, type KeywordId } from "@/lib/game-data";
@@ -58,4 +60,5 @@ export type {
   KeywordId,
   TalentDefinition,
   TrinketEntry,
+  TrinketId,
 } from "@/lib/game-data";

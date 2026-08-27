@@ -126,12 +126,21 @@ export function useAppAudioEffects({
   useEffect(() => {
     preloadAllSounds();
 
+    function removeGestureListeners() {
+      window.removeEventListener("pointerdown", resumeOnGesture, true);
+      window.removeEventListener("keydown", resumeOnGesture, true);
+    }
+
     function resumeOnGesture() {
       if (isNonPlayerAudioHost()) return;
       if (muteInBackgroundRef.current && isAppInBackground()) return;
       setMuted(false);
-      if (gestureFiredRef.current) return;
+      if (gestureFiredRef.current) {
+        removeGestureListeners();
+        return;
+      }
       gestureFiredRef.current = true;
+      removeGestureListeners();
       if (isMusicPaused()) {
         playMusicImmediate(pickMusicKey(screenRef.current));
       }
@@ -140,8 +149,7 @@ export function useAppAudioEffects({
     window.addEventListener("pointerdown", resumeOnGesture, { capture: true });
     window.addEventListener("keydown", resumeOnGesture, { capture: true });
     return () => {
-      window.removeEventListener("pointerdown", resumeOnGesture, true);
-      window.removeEventListener("keydown", resumeOnGesture, true);
+      removeGestureListeners();
     };
   }, []);
 }

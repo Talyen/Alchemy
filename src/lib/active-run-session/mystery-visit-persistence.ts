@@ -34,15 +34,7 @@ export function emptyHydratedMysteryVisit(): HydratedMysteryVisit {
   };
 }
 
-export function serializeMysteryVisit(visit: {
-  mysteryEvent: MysteryEvent | null;
-  mysteryChosenChoice: MysteryChoice | null;
-  mysteryPendingRemoval: boolean;
-  mysteryCardChoices: BattleCard[] | null;
-  mysteryGrantedTrinketIds: string[];
-  mysteryGrantedGearInstances: GearInstance[];
-  mysteryChosenCardId: string | null;
-}): PersistedMysteryVisit | null {
+export function serializeMysteryVisit(visit: HydratedMysteryVisit): PersistedMysteryVisit | null {
   const event = visit.mysteryEvent;
   if (!event) return null;
   return {
@@ -79,15 +71,20 @@ export function hydrateMysteryVisit(
   };
 }
 
-export function hydratePersistedMysteryChoice(
-  choice: { label: string; effects: readonly MysteryEffect[] } | null,
-): MysteryChoice | null {
+export interface PersistedMysteryChoiceInput {
+  label: string;
+  effects: ReadonlyArray<MysteryEffect | { kind: string; [key: string]: unknown }>;
+}
+
+export function hydratePersistedMysteryChoice(choice: PersistedMysteryChoiceInput | null): MysteryChoice | null {
   if (!choice) return null;
   return {
     label: choice.label,
     effects: choice.effects.map((effect): MysteryEffect => {
-      if (effect.kind !== "chooseCard") return effect;
-      return "tag" in effect && effect.tag ? { kind: "chooseCard", tag: effect.tag } : { kind: "chooseCard" };
+      if (effect.kind !== "chooseCard") return effect as MysteryEffect;
+      return "tag" in effect && typeof effect.tag === "string" && effect.tag
+        ? { kind: "chooseCard", tag: effect.tag as import("@/lib/game-data").KeywordId }
+        : { kind: "chooseCard" };
     }),
   };
 }

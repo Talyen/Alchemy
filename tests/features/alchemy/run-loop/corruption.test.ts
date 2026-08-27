@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { corruptCard, corruptDeckCard, getEditableCorruptionTargets, isSpecialCorruptionCard } from "@/lib/corruption";
-import type { BattleCard } from "@/lib/game-data";
+import {
+  corruptCard,
+  corruptDeckCard,
+  getEditableCorruptionTargets,
+  isSpecialCorruptionCard,
+  replaceNumberAt,
+} from "@/lib/corruption";
 import { makeTestCard } from "../../../fixtures/cards";
 import { makeEffect } from "../../../fixtures/battle";
+import type { BattleCard } from "@/lib/game-data";
 
 function makeRng(values: number[]): () => number {
   let index = 0;
@@ -166,5 +172,47 @@ describe("card corruption", () => {
 
     expect(corruptCard(cleanse, [cleanse, mixed], rng)).toBeNull();
     expect(corruptDeckCard([cleanse], 0, [cleanse, mixed], rng)).toEqual({ deck: [cleanse], result: null });
+  });
+
+  it("handles multi-number lines with multiple matching effects accurately", () => {
+    const multiCard = makeCard({
+      id: "split-strike",
+      title: "Split Strike",
+      descriptionLines: ["Deal 3 Physical damage and 5 Bleed"],
+      effects: [makeEffect("physical", 3), { kind: "damage", damageType: "bleed", amount: 5 }],
+    });
+
+    const targets = getEditableCorruptionTargets(multiCard);
+    expect(targets).toHaveLength(2);
+    expect(targets[0]).toMatchObject({ lineIndex: 0, value: 3, effectIndex: 0 });
+    expect(targets[1]).toMatchObject({ lineIndex: 0, value: 5, effectIndex: 1 });
+  });
+
+  it("skips numbers in description lines that have no corresponding mechanical effect amount", () => {
+    const attackEnemiesCard = makeCard({
+      id: "cleave",
+      title: "Cleave",
+      descriptionLines: ["Deal 6 Physical damage to 2 enemies"],
+      effects: [makeEffect("physical", 6)],
+    });
+
+    const targets = getEditableCorruptionTargets(attackEnemiesCard);
+    expect(targets).toHaveLength(1);
+    expect(targets[0]).toMatchObject({ lineIndex: 0, value: 6, effectIndex: 0 });
+  });
+});
+
+describe("replaceNumberAt", () => {
+  it("replaces leading number at exact offset without disturbing other numbers", () => {
+    const line = "Deal 5 Physical damage and 10 Holy damage";
+    expect(replaceNumberAt(line, 5, 6)).toBe("Deal 6 Physical damage and 10 Holy damage");
+    expect(replaceNumberAt(line, 27, 11)).toBe("Deal 5 Physical damage and 11 Holy damage");
+  });
+
+  it("returns unchanged line if matchIndex is out of bounds or points to non-number", () => {
+    const line = "Deal 5 damage";
+    expect(replaceNumberAt(line, -1, 9)).toBe("Deal 5 damage");
+    expect(replaceNumberAt(line, 50, 9)).toBe("Deal 5 damage");
+    expect(replaceNumberAt(line, 0, 9)).toBe("Deal 5 damage");
   });
 });

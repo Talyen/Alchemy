@@ -1,5 +1,4 @@
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { cardById, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { cardById, trinketById, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { filterValidDestinations, type Destination } from "@/lib/routing";
 import type { PersistedPendingReward } from "./types";
@@ -13,10 +12,7 @@ import {
 } from "./reward-types";
 
 export function lookupTrinketEntries(ids: string[]): TrinketEntry[] {
-  return ids.flatMap((id) => {
-    const trinket = trinketLibrary.find((entry) => entry.id === id);
-    return trinket ? [trinket] : [];
-  });
+  return ids.map((id) => trinketById[id]).filter((trinket): trinket is TrinketEntry => Boolean(trinket));
 }
 
 function resolveGearChoices(gearChoices: GearInstance[]): GearInstance[] | null {
@@ -24,9 +20,7 @@ function resolveGearChoices(gearChoices: GearInstance[]): GearInstance[] | null 
 }
 
 function resolveCardChoices(choiceIds: string[]): BattleCard[] | null {
-  const choices = choiceIds
-    .map((id) => getOfferableCardPool().find((entry) => entry.id === id))
-    .filter((entry): entry is BattleCard => Boolean(entry));
+  const choices = choiceIds.map((id) => cardById[id]).filter((entry): entry is BattleCard => Boolean(entry));
   return choices.length === 0 ? null : choices;
 }
 

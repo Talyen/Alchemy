@@ -17,6 +17,9 @@ import {
 import {
   validateCardDescriptionParity,
   validateEnemyTraitDescriptionParity,
+  validateTrinketDescriptionParity,
+  TRAIT_REQUIRED_PATTERNS,
+  TRINKET_REQUIRED_PATTERNS,
 } from "@/lib/content-validation/card-parity";
 
 // ─────────────────────────── Cards ───────────────────────────
@@ -109,9 +112,15 @@ describe("enemy descriptions vs attack effects", () => {
     }
   });
 
-  it("no enemy references a trait ID not in its trait list", () => {
-    const usedTraitIds = new Set(enemyBestiary.flatMap((e) => e.traits.map((t) => t.id)));
-    expect(usedTraitIds.has("forge-regeneration")).toBe(false);
+  it("every enemy trait is registered in TRAIT_REQUIRED_PATTERNS with valid text", () => {
+    for (const enemy of enemyBestiary) {
+      for (const trait of enemy.traits) {
+        expect(trait.id.length).toBeGreaterThan(0);
+        expect(trait.title.length).toBeGreaterThan(0);
+        expect(trait.description.length).toBeGreaterThan(0);
+        expect(TRAIT_REQUIRED_PATTERNS[trait.id]).toBeDefined();
+      }
+    }
   });
 
   it("trait descriptions match content-validation parity", () => {
@@ -123,115 +132,16 @@ describe("enemy descriptions vs attack effects", () => {
 // ─────────────────────────── Boons ───────────────────────────
 
 describe("boon descriptions vs manifest effects", () => {
-  const knownBoonMap: Record<string, { description: string; check: (desc: string) => void }> = {
-    "brass-censer": {
-      description: "first Holy damage each combat is doubled",
-      check: (desc) => expect(desc).toContain("holy"),
-    },
-    "tattered-pages": {
-      description: "draws 1 extra card at start of combat",
-      check: (desc) => expect(desc).toMatch(/draw|additional|card/),
-    },
-    meteorite: {
-      description: "first Burn damage each combat is doubled",
-      check: (desc) => expect(desc).toContain("burn"),
-    },
-    "bone-charm": {
-      description: "heal on kill",
-      check: (desc) => expect(desc).toMatch(/health|heal/),
-    },
-    "obsidian-hammer": {
-      description: "Forge stun rider",
-      check: (desc) => expect(desc).toMatch(/forge.*stun|stun.*forge/),
-    },
-    "icy-heart": {
-      description: "deal 6 damage on freeze",
-      check: (desc) => expect(desc).toMatch(/freeze.*damage|damage.*freeze/),
-    },
-    "ironwood-buckler": {
-      description: "block to armor at threshold",
-      check: (desc) => expect(desc).toMatch(/block.*armor|armor.*block/),
-    },
-    "runic-quill": {
-      description: "draw on consume",
-      check: (desc) => expect(desc).toMatch(/consume|draw/),
-    },
-    "sin-eaters-lantern": {
-      description: "heal on status removal",
-      check: (desc) => expect(desc).toMatch(/health|heal/),
-    },
-    "vanguards-crest": {
-      description: "forge on block absorb",
-      check: (desc) => expect(desc).toMatch(/forge|block/),
-    },
-    "parasitic-bloom": {
-      description: "poison leech chance",
-      check: (desc) => expect(desc).toMatch(/poison|leech/),
-    },
-    "cutpurse-knife": {
-      description: "gold on bleed",
-      check: (desc) => expect(desc).toMatch(/bleed.*gold|gold.*bleed/),
-    },
-    "wishing-well-coin": {
-      description: "gold on wish",
-      check: (desc) => expect(desc).toMatch(/wish.*gold|gold.*wish/),
-    },
-    "merchants-favor": {
-      description: "discount at shops",
-      check: (desc) => expect(desc).toMatch(/purchase|shop|gold|less/),
-    },
-    "plague-doctors-mask": {
-      description: "first status immunity",
-      check: (desc) => expect(desc).toMatch(/immune|harmful.*status/),
-    },
-    "mortar-and-pestle": {
-      description: "first potion free",
-      check: (desc) => expect(desc).toMatch(/potion|free/),
-    },
-    "sundering-charm": {
-      description: "remove armor on physical and stun",
-      check: (desc) => expect(desc).toMatch(/armor/),
-    },
-    "resonant-chimes": {
-      description: "mana on 3+ cards",
-      check: (desc) => expect(desc).toMatch(/cards.*mana|mana.*cards/),
-    },
-    "smugglers-map": {
-      description: "bonus gold from combat",
-      check: (desc) => expect(desc).toMatch(/gold/),
-    },
-    "groves-favor": {
-      description: "start of battle heal",
-      check: (desc) => expect(desc).toMatch(/health|heal|restore/),
-    },
-    "companions-collar": {
-      description: "companion damage bonus",
-      check: (desc) => expect(desc).toMatch(/companion.*damage|damage.*companion/),
-    },
-    "frozen-pocketwatch": {
-      description: "freeze lasts longer",
-      check: (desc) => expect(desc).toMatch(/freeze/),
-    },
-    thunderstone: {
-      description: "nature damage on stun",
-      check: (desc) => expect(desc).toMatch(/stun/),
-    },
-    "lucky-clover": {
-      description: "nature damage gold chance",
-      check: (desc) => expect(desc).toMatch(/nature|gold|chance/),
-    },
-  };
-
-  it("every boon has a known description check", () => {
+  it("every boon has a registered description check in TRINKET_REQUIRED_PATTERNS", () => {
     for (const boon of trinketLibrary) {
-      expect(knownBoonMap[boon.id]).toBeDefined();
+      expect(TRINKET_REQUIRED_PATTERNS[boon.id]).toBeDefined();
     }
   });
 
-  it("every known boon check has a matching compendium entry", () => {
-    for (const id of Object.keys(knownBoonMap)) {
-      const entry = trinketLibrary.find((t) => t.id === id);
-      expect(entry).toBeDefined();
+  it("every registered trinket pattern has a matching compendium entry", () => {
+    const libraryIds: Set<string> = new Set(trinketLibrary.map((t) => t.id));
+    for (const id of Object.keys(TRINKET_REQUIRED_PATTERNS)) {
+      expect(libraryIds.has(id)).toBe(true);
     }
   });
 
@@ -239,9 +149,8 @@ describe("boon descriptions vs manifest effects", () => {
     "%s — description mentions key mechanic",
     (_id, title) => {
       const boon = trinketLibrary.find((t) => t.title === title)!;
-      const check = knownBoonMap[boon.id];
-      if (!check) return;
-      check.check(boon.descriptionLines.join(" ").toLowerCase());
+      const issues = validateTrinketDescriptionParity(boon);
+      expect(issues, issues.map((i) => i.message).join("; ")).toEqual([]);
     },
   );
 

@@ -1,49 +1,41 @@
 // Runtime validation before hydration (returns ActiveRunData | null).
 // Save-file legacy fixes during load use normalizeActiveRunData in @/lib/validation.
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
-import type { BattleCard } from "@/lib/game-data";
 import { ActiveRunDataSchema, type ParsedActiveRunData } from "@/lib/validation";
-import type { MysteryChoice } from "@/lib/mystery";
 
 import type { ActiveRunData } from "./types";
 import { hydratePersistedMysteryChoice } from "./mystery-visit-persistence";
-
-type ParsedBattleCard = ParsedActiveRunData["runDeck"][number];
-
-function hydrateParsedCard(card: ParsedBattleCard): BattleCard {
-  return hydrateCard(card);
-}
 
 /** Maps Zod-parsed active-run output to the hydrated runtime ActiveRunData contract. */
 export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
   return {
     ...parsed,
-    runDeck: parsed.runDeck.map(hydrateParsedCard),
+    runDeck: parsed.runDeck.map(hydrateCard),
     wildwoodDraft: parsed.wildwoodDraft
       ? {
           ...parsed.wildwoodDraft,
-          draftChoices: parsed.wildwoodDraft.draftChoices.map(hydrateParsedCard),
+          draftChoices: parsed.wildwoodDraft.draftChoices.map(hydrateCard),
         }
       : null,
-    starterDraftChoices: parsed.starterDraftChoices?.map(hydrateParsedCard) ?? null,
+    starterDraftChoices: parsed.starterDraftChoices?.map(hydrateCard) ?? null,
     shopState: parsed.shopState
       ? {
           ...parsed.shopState,
-          cards: parsed.shopState.cards.map(hydrateParsedCard),
+          cards: parsed.shopState.cards.map(hydrateCard),
         }
       : null,
     alchemistState: parsed.alchemistState
       ? {
           ...parsed.alchemistState,
-          potions: parsed.alchemistState.potions.map(hydrateParsedCard),
+          potions: parsed.alchemistState.potions.map(hydrateCard),
         }
       : null,
     mysteryVisit: parsed.mysteryVisit
       ? {
           eventId: parsed.mysteryVisit.eventId,
-          chosenChoice: hydratePersistedMysteryChoice(parsed.mysteryVisit.chosenChoice as MysteryChoice | null),
+          chosenChoice: hydratePersistedMysteryChoice(parsed.mysteryVisit.chosenChoice),
           ...(parsed.mysteryVisit.pendingRemoval ? { pendingRemoval: true } : {}),
-          cardChoices: parsed.mysteryVisit.cardChoices?.map(hydrateParsedCard) ?? null,
+          cardChoices: parsed.mysteryVisit.cardChoices?.map(hydrateCard) ?? null,
           grantedTrinketIds: parsed.mysteryVisit.grantedTrinketIds,
           grantedGear: parsed.mysteryVisit.grantedGear,
           chosenCardId: parsed.mysteryVisit.chosenCardId,
@@ -53,8 +45,8 @@ export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
     corruptionResult: parsed.corruptionResult
       ? {
           ...parsed.corruptionResult,
-          originalCard: hydrateParsedCard(parsed.corruptionResult.originalCard),
-          corruptedCard: hydrateParsedCard(parsed.corruptionResult.corruptedCard),
+          originalCard: hydrateCard(parsed.corruptionResult.originalCard),
+          corruptedCard: hydrateCard(parsed.corruptionResult.corruptedCard),
         }
       : null,
   };

@@ -1,16 +1,10 @@
-/* eslint-disable react-refresh/only-export-components -- overlay components and tiny route helpers are colocated here. */
 import { GameMenu } from "@/features/alchemy/shared/ui/shared-ui";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
 import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import type { useReturnToRunNavigation } from "@/app/use-app-navigation";
-import { renderAlchemyScreenRoute, type RenderAlchemyScreenProps } from "@/app/screen-routes";
 import { isProgressionFeatureUnlocked, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
-
-export function RenderAlchemyScreen(props: RenderAlchemyScreenProps) {
-  return renderAlchemyScreenRoute(props);
-}
 
 export function AppBackgroundParticles({
   renderedScreen,
@@ -47,8 +41,6 @@ export function UnsupportedSaveOverlay({
     />
   );
 }
-
-export { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
 
 export function GameMenuOverlay({
   saveBlockedByNewerVersion,

@@ -115,14 +115,28 @@ describe("pending reward persistence", () => {
     expect(restored.companionRewardCards?.map((choice) => choice.id)).toEqual([companion!.id]);
   });
 
-  it("keeps companion-only handoffs claimable when the primary reward is already drained", () => {
-    const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"));
-    expect(companion).toBeDefined();
+  it("restores cards excluded from the general offer pool", () => {
+    const excludedCard = cardLibrary.find((card) => card.excludeFromOfferPool);
+    expect(excludedCard).toBeDefined();
 
-    const persisted = serializePendingReward(createEmptyRewardState(), [companion!]);
-    const restored = restorePendingRewardBundle(persisted!);
+    const rewardState = {
+      ...createEmptyRewardState(),
+      rewardType: "card" as const,
+      choices: [excludedCard!],
+    };
 
-    expect(restored.rewardState?.choices).toEqual([]);
-    expect(restored.companionRewardCards?.map((choice) => choice.id)).toEqual([companion!.id]);
+    const persisted = serializePendingReward(rewardState);
+    if (persisted?.rewardType === "card") {
+      expect(persisted.choiceIds).toEqual([excludedCard!.id]);
+    } else {
+      expect.fail("Expected persisted reward to be of type card");
+    }
+
+    const restored = restorePendingReward(persisted!);
+    expect(restored?.rewardType).toBe("card");
+    if (restored?.rewardType === "card") {
+      expect(restored.choices[0]?.id).toBe(excludedCard!.id);
+      expect(restored.choices[0]?.title).toBe(excludedCard!.title);
+    }
   });
 });

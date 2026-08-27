@@ -46,6 +46,7 @@ export {
   serializeEquipmentShopState,
   hydrateEquipmentShopState,
 } from "./shop-persistence";
+export type { HydratedMysteryVisit } from "./mystery-visit-persistence";
 export {
   emptyHydratedMysteryVisit,
   hydrateMysteryVisit,

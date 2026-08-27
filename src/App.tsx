@@ -6,7 +6,6 @@ import {
   AppBackgroundParticles,
   AppScreenChromeProvider,
   GameMenuOverlay,
-  RenderAlchemyScreen,
   StartupLoadingScreen,
   UnsupportedSaveOverlay,
   useAlchemyAutosaveFromStores,
@@ -17,11 +16,12 @@ import {
   useGameMenuState,
   useGlobalErrorHandlers,
   useInitialLoadReady,
-  useIsArmoryLocked,
   useRenderedScreenTransition,
   useReturnToRunNavigation,
   getScreenParticleConfig,
 } from "@/app/app-shell";
+import { renderAlchemyScreenRoute } from "@/app/screen-routes";
+import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltip-root";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
@@ -132,15 +132,15 @@ function AppMainContent({
           stagePixelRatio={stagePixelRatio}
           returnToRunScreen={nav.returnToRunScreen}
         >
-          <RenderAlchemyScreen
-            screen={renderedScreen}
-            routeCommands={run.routeCommands}
-            onOpenBattleMenu={gameMenu.openBattleMenu}
-            onClearSaveData={dev.clearSaveData}
-            onUnlockAllDevMode={dev.unlockAllDevMode}
-            onBackFromOptions={nav.backFromOptions}
-            gameMenuOpen={gameMenu.gameMenuOpen}
-          />
+          {renderAlchemyScreenRoute({
+            screen: renderedScreen,
+            routeCommands: run.routeCommands,
+            onOpenBattleMenu: gameMenu.openBattleMenu,
+            onClearSaveData: dev.clearSaveData,
+            onUnlockAllDevMode: dev.unlockAllDevMode,
+            onBackFromOptions: nav.backFromOptions,
+            gameMenuOpen: gameMenu.gameMenuOpen,
+          })}
         </AppScreenChromeProvider>
       </CardDescriptionProvider>
     </div>
