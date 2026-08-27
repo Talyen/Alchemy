@@ -96,12 +96,12 @@ assert.ok(
 const runLoopBattleImports = await calculateImports(
   "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
 );
-for (const restriction of ["run-domain-store", "run-transitions", "run-profile-store", "screens"]) {
+for (const restriction of ["run-transitions", "gameplay-state-store", "screens"]) {
   assertImportGroup(runLoopBattleImports, restriction, "run-loop/battle");
 }
 
 const metaScreenImports = await calculateImports("src/features/alchemy/meta/screens/menu-screen.tsx");
-for (const restriction of ["run-domain-store", "run-loop", "@/lib/battle/*", "run-loop/run"]) {
+for (const restriction of ["gameplay-state-store", "run-loop", "@/lib/battle/*", "run-loop/run"]) {
   assertImportGroup(metaScreenImports, restriction, "meta screen");
 }
 const metaNonScreenImports = await calculateImports("src/features/alchemy/meta/talents/talent-tree.tsx");
@@ -120,14 +120,14 @@ assert.ok(
   routeImports?.paths?.some((entry) => entry.name === "react" && entry.importNames?.includes("lazy")),
   "screen routes must restrict React.lazy",
 );
-assertImportGroup(routeImports, "run-domain-store", "screen routes");
+assertImportGroup(routeImports, "gameplay-state-store", "screen routes");
 
 const runSetupImports = await calculateImports("src/features/alchemy/run-setup/run/content-system-navigation.ts");
 assertImportGroup(runSetupImports, "run-loop", "run setup");
-assertImportGroup(runSetupImports, "run-domain-store", "run setup");
+assertImportGroup(runSetupImports, "gameplay-state-store", "run setup");
 
 const runLoopImports = await calculateImports("src/features/alchemy/run-loop/battle/battle-init.ts");
-for (const restriction of ["run-setup", "screens", "run-domain-store"]) {
+for (const restriction of ["run-setup", "screens", "gameplay-state-store"]) {
   assertImportGroup(runLoopImports, restriction, "run-loop battle");
 }
 
