@@ -82,6 +82,25 @@ describe("useLabyrinthController hook", () => {
     expect(onStartBattle).toHaveBeenCalledOnce();
   });
 
+  it("selects a locked chamber without allowing enter", () => {
+    const { result } = renderHook(() => useLabyrinthController());
+    const map = getRunSessionStoreView().labyrinthMap;
+    const locked = Object.values(map.nodes).find(
+      (node) => node.floor > 0 && node.id !== firstReachableId() && !node.cleared,
+    );
+    expect(locked).toBeDefined();
+
+    let entered = true;
+    act(() => {
+      result.current.selectNode(locked!.id);
+      entered = result.current.enterSelectedNode(stubNodeHandlers());
+    });
+
+    expect(getRunSessionStoreView().selectedLabyrinthNodeId).toBe(locked!.id);
+    expect(entered).toBe(false);
+    expect(getRunSessionStoreView().activeLabyrinthPendingNode).toBeNull();
+  });
+
   it("resetMap clears pending selection and rebuilds the map", () => {
     const { result } = renderHook(() => useLabyrinthController());
     act(() => {

@@ -1,7 +1,6 @@
-// Side inspector for the selected labyrinth hex: art, traits, and Enter CTA.
+// Floating chamber card for a selected labyrinth hex: art, traits, and Enter when reachable.
 import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
-import { LABYRINTH_NODE_META, tooltipBodyClass } from "@/features/alchemy/shared/config";
+import { BUTTON_WIDTH_ACTION, LABYRINTH_NODE_META, tooltipBodyClass } from "@/features/alchemy/shared/config";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { renderColoredKeywords } from "@/features/alchemy/shared/ui/card-description-ui";
 import { cn } from "@/lib/utils";
@@ -15,8 +14,13 @@ import type {
 } from "@/lib/content-systems/types";
 
 interface Props {
-  node: LabyrinthNode | null;
+  node: LabyrinthNode;
+  canEnter: boolean;
   onEnter: () => void;
+  left: number;
+  top: number;
+  side: "left" | "right";
+  width: number;
 }
 
 function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; variant: "enemy" | "reward" }) {
@@ -34,18 +38,7 @@ function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; varia
   );
 }
 
-export function LabyrinthNodeInspector({ node, onEnter }: Props) {
-  if (!node) {
-    return (
-      <aside
-        aria-label="Chamber details"
-        className="flex h-full min-h-0 w-full flex-col justify-center rounded-xl border border-white/10 bg-black/30 px-5 py-6 text-center"
-      >
-        <p className="text-sm text-amber-100/70">Choose a reachable chamber</p>
-      </aside>
-    );
-  }
-
+export function LabyrinthNodeInspector({ node, canEnter, onEnter, left, top, side, width }: Props) {
   const meta = LABYRINTH_NODE_META[node.type];
   const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : null;
   const title = enemy?.title ?? NODE_TYPE_LABELS[node.type];
@@ -56,10 +49,13 @@ export function LabyrinthNodeInspector({ node, onEnter }: Props) {
   return (
     <aside
       aria-label="Chamber details"
-      className="flex h-full min-h-0 w-full flex-col gap-4 overflow-y-auto rounded-xl border border-white/10 bg-black/40 p-4"
+      data-side={side}
+      className="labyrinth-inspector-in absolute z-30 flex max-h-[min(100%,32rem)] -translate-y-1/2 flex-col gap-3 overflow-y-auto rounded-xl border border-white/10 bg-black/80 p-3 shadow-[0_12px_32px_rgba(0,0,0,0.55)]"
+      style={{ left, top, width }}
+      onClick={(event) => event.stopPropagation()}
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-white/15">
-        <img src={art} alt="" className="h-full w-full object-cover" />
+        <img src={art} alt="" className="h-full w-full object-cover object-top" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
           <p className="text-xs font-bold tracking-wide text-amber-100/80 uppercase">{NODE_TYPE_LABELS[node.type]}</p>
           <p className="text-lg font-semibold text-amber-50">{title}</p>
@@ -78,9 +74,11 @@ export function LabyrinthNodeInspector({ node, onEnter }: Props) {
           ))}
         </div>
       ) : null}
-      <Button size="lg" variant="primary" className={cn(BUTTON_WIDTH_ACTION, "mt-auto w-full")} onClick={onEnter}>
-        {meta.actionLabel}
-      </Button>
+      {canEnter ? (
+        <Button size="lg" variant="primary" className={cn(BUTTON_WIDTH_ACTION, "mt-auto w-full")} onClick={onEnter}>
+          {meta.actionLabel}
+        </Button>
+      ) : null}
     </aside>
   );
 }

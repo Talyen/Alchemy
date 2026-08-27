@@ -15,6 +15,7 @@ npm run perf
 npm run perf -- --all
 npm run perf:trace -- --scenario battle-effects
 npm run perf -- --electron --scenario battle-end-turn
+npm run perf -- --electron --cold --scenario startup-first-use
 npm run perf:compare -- reports/performance/<before> reports/performance/<after>
 npm run perf -- --help
 ```
@@ -65,10 +66,15 @@ Collected via `requestAnimationFrame` timestamps and `PerformanceObserver` long 
 | Max / worst frame gaps             | Largest individual stalls                          |
 | Event duration / input delay       | Browser Event Timing for sampled user interactions |
 | Before/after runtime snapshot      | Heap, DOM/media nodes, and Electron working set    |
+| Startup observations               | Renderer-ready and Electron launch-to-ready time   |
 
 Phases (`play-card`, `damage-feedback`, `enemy-turn`, `draw-hand`) label long tasks in the report.
 
-Invalid runs (too few frames, empty samples) **fail the harness**. Missing an advisory target does **not**.
+Invalid runs (too few frames, empty samples, or missing/non-positive startup observations) **fail the harness**. Missing an advisory target does **not**.
+
+The `startup-first-use` report includes `rendererStartupReadyMs`; Electron runs also include
+`electronLaunchToReadyMs`. Use `--electron --cold` for the player-facing cold-start value.
+Startup observations are wall-clock diagnostics and are not mixed into frame-time targets.
 
 ### Reading the numbers
 

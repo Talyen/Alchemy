@@ -454,3 +454,49 @@
   inherits: false;
   initial-value: #fbbf24;
 }
+
+@keyframes labyrinth-reachable-pulse {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.labyrinth-hex-pulse {
+  animation: labyrinth-reachable-pulse 350ms ease-out 1;
+}
+
+@keyframes labyrinth-inspector-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+.labyrinth-inspector-in {
+  animation: labyrinth-inspector-in 200ms ease-out;
+}
+
+.labyrinth-inspector-in[data-side="left"] {
+  animation-name: labyrinth-inspector-in-left;
+}
+
+@keyframes labyrinth-inspector-in-left {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}

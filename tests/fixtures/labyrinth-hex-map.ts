@@ -1,4 +1,13 @@
 /** Deterministic hex Labyrinth map for save fixtures and E2E inject. Keep this module free of game-data art imports. */
+import {
+  LABYRINTH_ENTRANCE_FLOOR_ID,
+  LABYRINTH_ENTRANCE_NODE_ID,
+  labyrinthFloorId,
+  labyrinthNodeId,
+} from "@/lib/content-systems/labyrinth/data";
+import { generateFloorLayout } from "@/lib/content-systems/labyrinth/hex-layout";
+import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "@/lib/content-systems/types";
+
 export function hexLabyrinthMapFixture() {
   const combatId = "labyrinth-floor-1-n0";
   const restId = "labyrinth-floor-1-n1";
@@ -54,5 +63,78 @@ export function hexLabyrinthMapFixture() {
         enemyId: "forge-golem",
       },
     },
+  };
+}
+
+const PRODUCTION_FLOOR_SIZE = 12;
+const PRODUCTION_FLOOR_TYPES: LabyrinthNodeType[] = [
+  "combat",
+  "combat",
+  "rest",
+  "elite",
+  "mystery",
+  "shop",
+  "combat",
+  "alchemist",
+  "rest",
+  "trinket-shop",
+  "elite",
+  "boss",
+];
+
+function combatEnemyId(type: LabyrinthNodeType): string | undefined {
+  if (type === "boss") return "forge-golem";
+  if (type === "combat" || type === "elite") return "goblin";
+  return undefined;
+}
+
+function playableFloorNodes(
+  depth: number,
+  cleared: (index: number, type: LabyrinthNodeType) => boolean,
+): LabyrinthNode[] {
+  const positions = generateFloorLayout(PRODUCTION_FLOOR_SIZE, () => 0);
+  return PRODUCTION_FLOOR_TYPES.map((type, index) => {
+    const node: LabyrinthNode = {
+      id: labyrinthNodeId(depth, index),
+      type,
+      floor: depth,
+      gridPosition: positions[index]!,
+      modifiers: [],
+      rewardModifiers: [],
+      outgoingIds: [],
+      cleared: cleared(index, type),
+    };
+    const enemyId = combatEnemyId(type);
+    if (enemyId) node.enemyId = enemyId;
+    return node;
+  });
+}
+
+/** Two playable production-sized floors for Labyrinth perf and floor-switch E2E. */
+export function productionHexLabyrinthMapFixture(): LabyrinthMap {
+  const floor1 = playableFloorNodes(1, (index, type) => index < 5 || type === "boss");
+  const floor2 = playableFloorNodes(2, () => false);
+  const floor1Linked = floor1.map((node, index) =>
+    index === floor1.length - 1 ? { ...node, outgoingIds: [floor2[0]!.id] } : node,
+  );
+  const entrance: LabyrinthNode = {
+    id: LABYRINTH_ENTRANCE_NODE_ID,
+    type: "entrance",
+    floor: 0,
+    gridPosition: { row: 0, col: 0 },
+    modifiers: [],
+    rewardModifiers: [],
+    outgoingIds: [floor1Linked[0]!.id],
+    cleared: true,
+  };
+  const nodes = [entrance, ...floor1Linked, ...floor2];
+  return {
+    currentFloor: 2,
+    floors: [
+      { id: LABYRINTH_ENTRANCE_FLOOR_ID, depth: 0, nodeIds: [entrance.id] },
+      { id: labyrinthFloorId(1), depth: 1, nodeIds: floor1Linked.map((node) => node.id) },
+      { id: labyrinthFloorId(2), depth: 2, nodeIds: floor2.map((node) => node.id) },
+    ],
+    nodes: Object.fromEntries(nodes.map((node) => [node.id, node])),
   };
 }

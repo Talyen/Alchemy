@@ -133,7 +133,7 @@ Definitions of common terms used in the Alchemy codebase.
 ### Content systems
 
 - **Content System** — `campaign`, `labyrinth`, or `wildwood`; owns map generation and encounter rules. Implementations live under `src/lib/content-systems/`.
-  - **Labyrinth** — infinite hex floors during a run. Each floor is a small hex map (one floor on screen). Reachable rooms are hex-adjacent to a cleared room, or the next floor entry after that floor's boss. Select a hex, then confirm from the side inspector. HP carries between rooms. Dying ends the run (game over with XP/items); the next Labyrinth start generates a fresh map. There is no single Labyrinth victory screen.
+  - **Labyrinth** — infinite hex floors during a run. Each floor is a small hex map (one floor on screen). Reachable rooms are hex-adjacent to a cleared room, or the next floor entry after that floor's boss. Hover a hex for its name and type; click any chamber to pin a floating card, then confirm Enter when that room is reachable. HP carries between rooms. Dying ends the run (game over with XP/items); the next Labyrinth start generates a fresh map. There is no single Labyrinth victory screen.
 
 ### Shared battle and progression terms
 

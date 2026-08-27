@@ -3,6 +3,7 @@ import { expect } from "@playwright/test";
 import type { BattlePage } from "../tests/pages/battle-page";
 import { battleStageMarkName, type BattleStageMarkName } from "./battle-stage-mark-names";
 import { delay } from "./delay";
+import { battleProgressState, type BattleProgressState } from "./scenario-contracts";
 
 export async function playHandCard(page: Page, index = 0): Promise<void> {
   const card = page.locator('[aria-label^="Play "]').nth(index);
@@ -95,16 +96,40 @@ async function battleStageMarkCount(page: Page, stage: BattleStageMarkName): Pro
 /** Wait until mark count for a stage exceeds a pre-click baseline. */
 export async function waitForNextBattleStageMark(
   page: Page,
+  battle: BattlePage,
   stage: BattleStageMarkName,
   beforeCount: number,
   timeoutMs = 20_000,
-): Promise<void> {
-  const markName = battleStageMarkName(stage);
-  await page.waitForFunction(
-    ({ name, before }) => performance.getEntriesByName(name, "mark").length > before,
-    { name: markName, before: beforeCount },
-    { timeout: timeoutMs },
-  );
+): Promise<Exclude<BattleProgressState, "pending">> {
+  let result: BattleProgressState = "pending";
+  await expect
+    .poll(
+      async () => {
+        result = battleProgressState(await battle.isBattleOver(), await battleStageMarkCount(page, stage), beforeCount);
+        return result;
+      },
+      { timeout: timeoutMs, intervals: [50, 100, 200] },
+    )
+    .not.toBe("pending");
+  return result as Exclude<BattleProgressState, "pending">;
+}
+
+async function waitForPlayerTurnOrBattleEnd(
+  battle: BattlePage,
+  timeoutMs = 20_000,
+): Promise<"player-turn-ready" | "battle-over"> {
+  let result: "pending" | "player-turn-ready" | "battle-over" = "pending";
+  await expect
+    .poll(
+      async () => {
+        if (await battle.isBattleOver()) result = "battle-over";
+        else if (await battle.endTurnBtn.isEnabled().catch(() => false)) result = "player-turn-ready";
+        return result;
+      },
+      { timeout: timeoutMs, intervals: [50, 100, 200] },
+    )
+    .not.toBe("pending");
+  return result as "player-turn-ready" | "battle-over";
 }
 
 /**
@@ -134,25 +159,28 @@ export async function runMeasuredEndTurn(
   await phase("end-turn-click");
   await endTurn.click({ force: true });
   await phase("discard-hand");
-  await waitForNextBattleStageMark(page, "discard-start", beforeDiscardStart).catch(() => undefined);
-  await waitForNextBattleStageMark(page, "discard-end", beforeDiscardEnd);
+  await waitForNextBattleStageMark(page, battle, "discard-start", beforeDiscardStart).catch(() => undefined);
+  if ((await waitForNextBattleStageMark(page, battle, "discard-end", beforeDiscardEnd)) === "battle-over") return;
 
   await phase("enemy-resolve");
-  await waitForNextBattleStageMark(page, "resolve-start", beforeResolveStart);
-  await waitForNextBattleStageMark(page, "resolve-end", beforeResolveEnd);
-  await waitForNextBattleStageMark(page, "enemy-start", beforeEnemyStart, 3_000).catch(() => undefined);
-  await waitForNextBattleStageMark(page, "enemy-end", beforeEnemyEnd, 15_000).catch(() => undefined);
+  if ((await waitForNextBattleStageMark(page, battle, "resolve-start", beforeResolveStart)) === "battle-over") return;
+  if ((await waitForNextBattleStageMark(page, battle, "resolve-end", beforeResolveEnd)) === "battle-over") return;
+  await waitForNextBattleStageMark(page, battle, "enemy-start", beforeEnemyStart, 3_000).catch(() => undefined);
+  if (await battle.isBattleOver()) return;
+  await waitForNextBattleStageMark(page, battle, "enemy-end", beforeEnemyEnd, 15_000).catch(() => undefined);
+  if (await battle.isBattleOver()) return;
 
   await phase("draw-hand");
-  const sawDraw = await waitForNextBattleStageMark(page, "draw-start", beforeDrawStart, 5_000)
-    .then(() => true)
+  const drawState = await waitForNextBattleStageMark(page, battle, "draw-start", beforeDrawStart, 5_000)
+    .then((state) => state)
     .catch(() => false);
-  if (sawDraw) {
-    await waitForNextBattleStageMark(page, "draw-end", beforeDrawEnd);
+  if (drawState === "battle-over") return;
+  if (drawState === "stage-ready") {
+    if ((await waitForNextBattleStageMark(page, battle, "draw-end", beforeDrawEnd)) === "battle-over") return;
   }
 
   await phase("player-turn-ready");
-  await expect(endTurn).toBeEnabled({ timeout: 20_000 });
+  if ((await waitForPlayerTurnOrBattleEnd(battle)) === "battle-over") return;
   await waitForHandPlayable(page, 20_000);
   await delay(150);
 }

@@ -1,6 +1,16 @@
 {
   "defaultScenario": "battle-effects",
-  "metricScenarios": ["battle-effects", "battle-end-turn", "talents-effects", "collection-tabs", "options-brightness"],
+  "metricScenarios": [
+    "battle-effects",
+    "battle-end-turn",
+    "talents-effects",
+    "collection-tabs",
+    "options-brightness",
+    "labyrinth-interactions",
+    "armory-homestead",
+    "shop-interactions",
+    "startup-first-use"
+  ],
   "diagnosticScenarios": ["memory-soak", "battle-art-diag"],
   "metrics": [
     { "key": "averageFps", "label": "Average FPS", "higherIsBetter": true },

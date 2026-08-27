@@ -76,13 +76,11 @@ describe("generateLabyrinthMap", () => {
 });
 
 describe("hex floor layouts", () => {
-  it("generated floor positions are valid trees or single-loop graphs", () => {
+  it("generated floor positions branch and merge without dead-end rooms", () => {
     for (const seed of [1, 8, 15, 22, 29, 36, 43, 50]) {
       const map = generateLabyrinthMap(createSeededRng(seed));
       const positions = floorNodes(map, 1).map((node) => node.gridPosition);
-      const treeValid = isValidFloorLayout(positions, false);
-      const loopValid = isValidFloorLayout(positions, true);
-      expect(treeValid || loopValid).toBe(true);
+      expect(isValidFloorLayout(positions)).toBe(true);
     }
   });
 });

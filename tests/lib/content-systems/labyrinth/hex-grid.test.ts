@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   areHexesAdjacent,
+  hexAt,
   hexKey,
   hexNeighbors,
   hexRadius,
@@ -24,7 +25,8 @@ describe("hex grid", () => {
     expect(isHexInBounds({ row: 0, col: 3 })).toBe(true);
     expect(isHexInBounds({ row: 0, col: 4 })).toBe(false);
     expect(isHexInBounds({ row: 5, col: 0 })).toBe(true);
-    expect(isHexInBounds({ row: 6, col: 0 })).toBe(false);
+    expect(isHexInBounds(hexAt(8, 0))).toBe(true);
+    expect(isHexInBounds(hexAt(9, 0))).toBe(false);
     expect(hexRadius(400)).toBeGreaterThan(0);
   });
 });

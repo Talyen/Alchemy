@@ -9,9 +9,7 @@ export const ENEMY_STARTING_BLOCK = 4;
 
 // ============ Labyrinth ============
 export const LABYRINTH_MAP_UI = {
-  inspectorWidthPx: 380,
-  shineDuration: 10,
-  shineBorderWidth: 2,
+  inspectorWidthPx: 320,
 } as const;
 export const FALLBACK_ENEMY_ATTACK = 8;
 

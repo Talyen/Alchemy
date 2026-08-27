@@ -7,6 +7,7 @@ export const ESCAPE_PRIORITY = {
   DIALOG: 100,
   MODAL: 90,
   ARMORY_TRANSIENT: 80,
+  SCREEN_OVERLAY: 10,
   APP_MENU: 0,
 } as const;
 

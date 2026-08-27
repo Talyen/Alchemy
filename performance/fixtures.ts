@@ -25,6 +25,8 @@ import {
   type ScenarioRunResult,
 } from "./report";
 import { PERF_VIEWPORT } from "./viewport";
+import { STARTUP_READY_MARK } from "../src/lib/performance/startup-marks";
+import { requirePositiveFiniteObservation } from "./scenario-contracts";
 
 // Literal tuple, not a JSON spread: a spread of catalog.json arrays widens
 // ScenarioId to string. Parity with catalog.json is asserted in
@@ -35,6 +37,10 @@ export const SCENARIO_IDS = [
   "talents-effects",
   "collection-tabs",
   "options-brightness",
+  "labyrinth-interactions",
+  "armory-homestead",
+  "shop-interactions",
+  "startup-first-use",
   "memory-soak",
   "battle-art-diag",
 ] as const;
@@ -53,10 +59,13 @@ interface PerfFixtures {
     minFrames?: number;
     setup: (page: Page) => Promise<void>;
     interact: (page: Page, phase: (name: string) => Promise<void>) => Promise<void>;
+    collectObservations?: (page: Page) => Promise<Record<string, number>>;
+    captureElectronLaunchTiming?: boolean;
   }) => Promise<void>;
 }
 
 let electronApp: ElectronApplication | null = null;
+let electronLaunchObservations: Record<string, number> = {};
 
 function electronRendererOrigin(): string {
   const port = Number.parseInt(
@@ -77,12 +86,30 @@ function patchElectronGoto(page: Page): void {
 }
 
 async function launchElectronPage(): Promise<Page> {
+  const launchStarted = performance.now();
   const { launchElectronApp, getElectronMainWindow } = await import("../tests/electron-helpers");
   const previewPort = previewPortFromEnv("PLAYWRIGHT_PERF_PORT", PERF_PREVIEW_PORT);
   process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT = String(previewPort);
   electronApp = await launchElectronApp({ enableGpu: true });
   const page = await getElectronMainWindow(electronApp);
   patchElectronGoto(page);
+  await page.waitForFunction((mark) => performance.getEntriesByName(mark, "mark").length > 0, STARTUP_READY_MARK, {
+    timeout: 30_000,
+  });
+  const rendererStartupReadyMs = await page.evaluate(
+    (mark) => performance.getEntriesByName(mark, "mark").at(-1)?.startTime,
+    STARTUP_READY_MARK,
+  );
+  if (rendererStartupReadyMs === undefined) {
+    throw new Error(`Missing performance mark ${STARTUP_READY_MARK}`);
+  }
+  electronLaunchObservations = {
+    electronLaunchToReadyMs: requirePositiveFiniteObservation(
+      "electronLaunchToReadyMs",
+      performance.now() - launchStarted,
+    ),
+    rendererStartupReadyMs: requirePositiveFiniteObservation("rendererStartupReadyMs", rendererStartupReadyMs),
+  };
   return page;
 }
 
@@ -123,112 +150,127 @@ export const test = base.extend<PerfFixtures>({
   },
 
   measureScenario: async ({ perfPage }, use, testInfo) => {
-    await use(async ({ scenario, profile, minFrames, setup, interact }) => {
-      testInfo.setTimeout(isTrace ? 180_000 : 300_000);
-      ensureOutputDirs();
-
-      const measuredSamples: FrameSampleRaw[] = [];
-      const runResults: ScenarioRunResult[] = [];
-      // Ordinary profiles include a warm-up. Cold mode intentionally measures first use.
-      const totalLoops = runsPerScenario + (isCold ? 0 : 1);
-      let activePage = perfPage;
-
-      for (let i = 0; i < totalLoops; i++) {
-        const isWarmup = !isCold && i === 0;
-        const runIndex = isCold ? i + 1 : i;
-        const measured = !isWarmup;
-
-        if (isCold && isElectron && i > 0) {
-          await electronApp?.close().catch(() => undefined);
-          electronApp = null;
-          activePage = await launchElectronPage();
-        }
-
-        // Fresh navigation context per repetition via setup.
-        await setup(activePage);
-        await assertBattleCardArtIfPresent(activePage);
-        await installFrameSampler(activePage);
-
-        // Capture display metadata once.
-        if (i === 0) {
-          await captureDisplayEnv(activePage);
-        }
-
-        let tracePath: string | undefined;
-        let cdpSession: Awaited<ReturnType<typeof startCdpTrace>> | null = null;
-        if (isTrace && measured) {
-          cdpSession = await startCdpTrace(activePage);
-        }
-
-        const runtimeBefore = measured ? await collectRuntimeSnapshot(activePage) : undefined;
-        if (measured) {
-          await startFrameSampler(activePage);
-        }
-
-        const phase = async (name: string) => {
-          if (measured) await setPerfPhase(activePage, name);
-        };
-
-        await interact(activePage, phase);
-
-        let sample: FrameSampleRaw = {
-          frameTimes: [],
-          longTasks: [],
-          durationMs: 0,
-          phaseMarks: [],
-        };
-        if (measured) {
-          sample = await stopFrameSampler(activePage);
-          measuredSamples.push(sample);
-        }
-
-        if (cdpSession) {
-          tracePath = await stopCdpTrace(cdpSession, scenario, runIndex);
-          const insight = summarizeTraceFile(tracePath);
-          const insightPath = path.join(ensureOutputDirs().traces, `${scenario}-${runIndex}-insight.json`);
-          fs.writeFileSync(insightPath, JSON.stringify(insight, null, 2));
-        }
-
-        if (measured) {
-          const metrics = computeMetrics(sample, { minFrames });
-          const runtimeAfter = await collectRuntimeSnapshot(activePage);
-          const targets = classifyTargets(metrics, profile);
-          const result: ScenarioRunResult = {
-            scenario,
-            runIndex,
-            measured: true,
-            profile,
-            metrics,
-            targets,
-            ...(tracePath ? { tracePath } : {}),
-            ...(metrics.valid ? {} : { notes: [metrics.invalidReason ?? "invalid"] }),
-            ...(runtimeBefore ? { runtimeBefore } : {}),
-            runtimeAfter,
-            inputEvents: sample.inputEvents ?? [],
-          };
-          writeRunResult(result);
-          runResults.push(result);
-
-          if (!metrics.valid) {
-            throw new Error(`Invalid performance sample for ${scenario} run ${runIndex}: ${metrics.invalidReason}`);
-          }
-        }
-      }
-
-      const aggregate = aggregateRawSamples(measuredSamples, { minFrames });
-      const targets = classifyTargets(aggregate, profile);
-      const scenarioAggregate: ScenarioAggregate = {
+    await use(
+      async ({
         scenario,
         profile,
-        aggregate,
-        targets,
-        runs: runResults,
-      };
+        minFrames,
+        setup,
+        interact,
+        collectObservations,
+        captureElectronLaunchTiming = false,
+      }) => {
+        testInfo.setTimeout(isTrace ? 180_000 : 300_000);
+        ensureOutputDirs();
 
-      const aggregatesPath = path.join(ensureOutputDirs().root, "aggregates");
-      fs.mkdirSync(aggregatesPath, { recursive: true });
-      fs.writeFileSync(path.join(aggregatesPath, `${scenario}.json`), JSON.stringify(scenarioAggregate, null, 2));
-    });
+        const measuredSamples: FrameSampleRaw[] = [];
+        const runResults: ScenarioRunResult[] = [];
+        // Ordinary profiles include a warm-up. Cold mode intentionally measures first use.
+        const totalLoops = runsPerScenario + (isCold ? 0 : 1);
+        let activePage = perfPage;
+
+        for (let i = 0; i < totalLoops; i++) {
+          const isWarmup = !isCold && i === 0;
+          const runIndex = isCold ? i + 1 : i;
+          const measured = !isWarmup;
+
+          if (isCold && isElectron && i > 0) {
+            await electronApp?.close().catch(() => undefined);
+            electronApp = null;
+            activePage = await launchElectronPage();
+          }
+
+          // Fresh navigation context per repetition via setup.
+          await setup(activePage);
+          await assertBattleCardArtIfPresent(activePage);
+          await installFrameSampler(activePage);
+
+          // Capture display metadata once.
+          if (i === 0) {
+            await captureDisplayEnv(activePage);
+          }
+
+          let tracePath: string | undefined;
+          let cdpSession: Awaited<ReturnType<typeof startCdpTrace>> | null = null;
+          if (isTrace && measured) {
+            cdpSession = await startCdpTrace(activePage);
+          }
+
+          const runtimeBefore = measured ? await collectRuntimeSnapshot(activePage) : undefined;
+          if (measured) {
+            await startFrameSampler(activePage);
+          }
+
+          const phase = async (name: string) => {
+            if (measured) await setPerfPhase(activePage, name);
+          };
+
+          await interact(activePage, phase);
+
+          let sample: FrameSampleRaw = {
+            frameTimes: [],
+            longTasks: [],
+            durationMs: 0,
+            phaseMarks: [],
+          };
+          if (measured) {
+            sample = await stopFrameSampler(activePage);
+            measuredSamples.push(sample);
+          }
+
+          if (cdpSession) {
+            tracePath = await stopCdpTrace(cdpSession, scenario, runIndex);
+            const insight = summarizeTraceFile(tracePath);
+            const insightPath = path.join(ensureOutputDirs().traces, `${scenario}-${runIndex}-insight.json`);
+            fs.writeFileSync(insightPath, JSON.stringify(insight, null, 2));
+          }
+
+          if (measured) {
+            const metrics = computeMetrics(sample, { minFrames });
+            const runtimeAfter = await collectRuntimeSnapshot(activePage);
+            const targets = classifyTargets(metrics, profile);
+            const observations = {
+              ...(captureElectronLaunchTiming && isElectron ? electronLaunchObservations : {}),
+              ...(collectObservations ? await collectObservations(activePage) : {}),
+            };
+            const result: ScenarioRunResult = {
+              scenario,
+              runIndex,
+              measured: true,
+              profile,
+              metrics,
+              targets,
+              ...(tracePath ? { tracePath } : {}),
+              ...(metrics.valid ? {} : { notes: [metrics.invalidReason ?? "invalid"] }),
+              ...(runtimeBefore ? { runtimeBefore } : {}),
+              runtimeAfter,
+              inputEvents: sample.inputEvents ?? [],
+              ...(Object.keys(observations).length > 0 ? { observations } : {}),
+            };
+            writeRunResult(result);
+            runResults.push(result);
+
+            if (!metrics.valid) {
+              throw new Error(`Invalid performance sample for ${scenario} run ${runIndex}: ${metrics.invalidReason}`);
+            }
+          }
+        }
+
+        const aggregate = aggregateRawSamples(measuredSamples, { minFrames });
+        const targets = classifyTargets(aggregate, profile);
+        const scenarioAggregate: ScenarioAggregate = {
+          scenario,
+          profile,
+          aggregate,
+          targets,
+          runs: runResults,
+        };
+
+        const aggregatesPath = path.join(ensureOutputDirs().root, "aggregates");
+        fs.mkdirSync(aggregatesPath, { recursive: true });
+        fs.writeFileSync(path.join(aggregatesPath, `${scenario}.json`), JSON.stringify(scenarioAggregate, null, 2));
+      },
+    );
   },
 });
 

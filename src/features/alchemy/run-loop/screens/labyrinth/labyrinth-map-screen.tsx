@@ -1,16 +1,17 @@
 /**
- * Labyrinth hex-floor map with a desktop side inspector.
+ * Labyrinth hex-floor map with a node-anchored chamber inspector.
  */
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
+import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
+import { FadeSlot } from "../../../shared/ui/fade-slot";
 import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/shared-ui";
-import { settingsPanelShellClass } from "@/features/alchemy/shared/config";
 import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
-import { floorNodes } from "@/lib/content-systems/labyrinth/map-state";
+import { floorNodes, labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
 
-import { layoutFloorNodes } from "./labyrinth-map-layout";
+import { inspectorPlacement, layoutFloorNodes } from "./labyrinth-map-layout";
 import { LabyrinthNodeInspector } from "./labyrinth-node-inspector";
 import { LabyrinthNodeSeal } from "./labyrinth-node-seal";
 
@@ -42,6 +43,12 @@ export function LabyrinthMapScreen({
     setViewedFloor(currentFloor);
   }
 
+  useEffect(() => {
+    if (!selectedNodeId || !labyrinthMap) return;
+    const node = labyrinthMap.nodes[selectedNodeId];
+    if (!node || node.floor !== viewedFloor) onNodeDeselect();
+  }, [selectedNodeId, viewedFloor, labyrinthMap, onNodeDeselect]);
+
   const mapCanvasRef = useRef<HTMLDivElement>(null);
   const [mapWidth, setMapWidth] = useState(0);
   useLayoutEffect(() => {
@@ -55,7 +62,33 @@ export function LabyrinthMapScreen({
 
   const nodes = labyrinthMap ? floorNodes(labyrinthMap, viewedFloor) : [];
   const layout = mapWidth > 0 ? layoutFloorNodes(nodes, mapWidth) : null;
-  const selectedNode = selectedNodeId && labyrinthMap ? (labyrinthMap.nodes[selectedNodeId] ?? null) : null;
+  const selectedNode =
+    selectedNodeId && labyrinthMap && layout?.positions.has(selectedNodeId)
+      ? (labyrinthMap.nodes[selectedNodeId] ?? null)
+      : null;
+  const selectedPoint = selectedNode ? layout?.positions.get(selectedNode.id) : undefined;
+  const selectedCanEnter =
+    selectedNode && labyrinthMap ? labyrinthNodeVisualState(labyrinthMap, selectedNode.id) === "reachable" : false;
+  const inspector =
+    selectedNode && selectedPoint && layout
+      ? inspectorPlacement(selectedPoint.x, selectedPoint.y, layout.metrics.width, mapWidth)
+      : null;
+  const inspectorNodeId = selectedNode?.id ?? null;
+
+  useEffect(() => {
+    if (!inspectorNodeId) return;
+    return pushEscapeHandler({
+      id: "labyrinth-inspector",
+      priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
+      onEscape: () => {
+        // GameMenu stays mounted while fading out (`pointer-events-none`). Only decline when it is actually open.
+        const menu = document.querySelector("[data-testid=game-menu]");
+        if (menu instanceof HTMLElement && !menu.closest(".pointer-events-none")) return false;
+        onNodeDeselect();
+        return true;
+      },
+    });
+  }, [inspectorNodeId, onNodeDeselect]);
 
   return (
     <TitledScreenShell
@@ -89,67 +122,64 @@ export function LabyrinthMapScreen({
         ) : undefined
       }
     >
-      <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-4">
         <ScreenDescription className="max-w-xl shrink-0 text-amber-100/75">
           Choose your path through the depths
         </ScreenDescription>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-          <section
-            aria-label="Labyrinth map"
-            className={cn(settingsPanelShellClass, "relative min-h-0 min-w-0 flex-1")}
+        <section aria-label="Labyrinth map" className="relative min-w-0">
+          <div
+            ref={mapCanvasRef}
+            className="relative w-full"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if ((event.key === "Enter" || event.key === " ") && selectedCanEnter) {
+                event.preventDefault();
+                onNodeEnter();
+              }
+            }}
           >
-            <div className="relative h-full w-full overflow-hidden p-4">
-              <div
-                ref={mapCanvasRef}
-                className="relative h-full w-full"
-                tabIndex={0}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    onNodeDeselect();
-                    return;
-                  }
-                  if ((event.key === "Enter" || event.key === " ") && selectedNodeId) {
-                    event.preventDefault();
-                    onNodeEnter();
-                  }
-                }}
-              >
-                {labyrinthMap && layout ? (
-                  <div
-                    className="relative mx-auto"
-                    style={{ width: "100%", height: layout.height }}
-                    onClick={onNodeDeselect}
-                  >
-                    {nodes.map((node) => {
-                      const point = layout.positions.get(node.id);
-                      if (!point) return null;
-                      return (
-                        <LabyrinthNodeSeal
-                          key={node.id}
-                          node={node}
-                          map={labyrinthMap}
-                          selected={selectedNodeId === node.id}
-                          x={point.x}
-                          y={point.y}
-                          width={layout.metrics.width}
-                          height={layout.metrics.height}
-                          onSelect={onNodeSelect}
-                          onDeselect={onNodeDeselect}
-                          onEnter={onNodeEnter}
-                        />
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </section>
-
-          <div className="min-h-0 shrink-0" style={{ width: LABYRINTH_MAP_UI.inspectorWidthPx }}>
-            <LabyrinthNodeInspector node={selectedNode} onEnter={onNodeEnter} />
+            {labyrinthMap && layout ? (
+              <FadeSlot swapKey={viewedFloor} className="relative w-full">
+                <div
+                  className="relative mx-auto"
+                  style={{ width: "100%", height: layout.height }}
+                  onClick={onNodeDeselect}
+                >
+                  {nodes.map((node) => {
+                    const point = layout.positions.get(node.id);
+                    if (!point) return null;
+                    return (
+                      <LabyrinthNodeSeal
+                        key={node.id}
+                        node={node}
+                        map={labyrinthMap}
+                        selected={selectedNodeId === node.id}
+                        x={point.x}
+                        y={point.y}
+                        width={layout.metrics.width}
+                        height={layout.metrics.height}
+                        onSelect={onNodeSelect}
+                      />
+                    );
+                  })}
+                  {selectedNode && inspector ? (
+                    <LabyrinthNodeInspector
+                      key={selectedNode.id}
+                      node={selectedNode}
+                      canEnter={selectedCanEnter}
+                      onEnter={onNodeEnter}
+                      left={inspector.left}
+                      top={inspector.top}
+                      side={inspector.side}
+                      width={LABYRINTH_MAP_UI.inspectorWidthPx}
+                    />
+                  ) : null}
+                </div>
+              </FadeSlot>
+            ) : null}
           </div>
-        </div>
+        </section>
       </div>
     </TitledScreenShell>
   );

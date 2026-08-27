@@ -16,6 +16,7 @@ export interface ScenarioRunResult {
   runtimeBefore?: RuntimeSnapshot;
   runtimeAfter?: RuntimeSnapshot;
   inputEvents?: InputEventSample[];
+  observations?: Record<string, number>;
 }
 
 export interface RuntimeSnapshot {
@@ -198,6 +199,25 @@ export function renderSummaryMarkdown(options: {
       lines.push("| ---: | ---: | --- |");
       for (const task of agg.aggregate.longTasks.slice(0, 20)) {
         lines.push(`| ${fmt(task.startTime, 0)} | ${fmt(task.duration, 1)} | ${task.phase} |`);
+      }
+      lines.push("");
+    }
+
+    const observationKeys = Array.from(new Set(agg.runs.flatMap((run) => Object.keys(run.observations ?? {})))).sort();
+    if (observationKeys.length > 0) {
+      lines.push("### Additional observations");
+      lines.push("");
+      lines.push("| Observation | Mean | Min | Max |");
+      lines.push("| --- | ---: | ---: | ---: |");
+      for (const key of observationKeys) {
+        const values = agg.runs
+          .map((run) => run.observations?.[key])
+          .filter((value): value is number => value !== undefined && Number.isFinite(value));
+        if (values.length === 0) continue;
+        const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+        lines.push(
+          `| ${key} | ${fmt(average, 1)} ms | ${fmt(Math.min(...values), 1)} ms | ${fmt(Math.max(...values), 1)} ms |`,
+        );
       }
       lines.push("");
     }

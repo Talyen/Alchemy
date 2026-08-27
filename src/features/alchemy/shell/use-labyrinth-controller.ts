@@ -84,8 +84,8 @@ export function useLabyrinthController(): LabyrinthController {
 
   const selectNode = useCallback((nodeId: string) => {
     dispatchRunSessionCommand((draft) => {
-      const map = draft.session.labyrinthMap;
-      if (!canEnterLabyrinthNode(map, nodeId)) return;
+      const node = draft.session.labyrinthMap.nodes[nodeId];
+      if (!node || node.cleared) return;
       setSelectedLabyrinthNodeId(draft, nodeId);
     });
   }, []);

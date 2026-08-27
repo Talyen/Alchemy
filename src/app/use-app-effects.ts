@@ -31,6 +31,7 @@ import type { Screen } from "@/lib/routing";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
+import { markStartupReady } from "@/lib/performance/startup-marks";
 
 // ── Audio Effects ──
 
@@ -238,6 +239,7 @@ export function useInitialLoadReady({
     let cancelled = false;
 
     if (skipGate) {
+      markStartupReady();
       void preloadImagesInBatches(allGameArt, IMAGE_PRELOAD_BATCH_SIZE);
       void waitForFonts();
       return () => {
@@ -279,6 +281,7 @@ export function useInitialLoadReady({
       }
       if (complete && minElapsed && display >= STARTUP_BAR_REVEAL_THRESHOLD) {
         setProgress(1);
+        markStartupReady();
         setReady(true);
         return;
       }

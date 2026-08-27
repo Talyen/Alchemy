@@ -1,6 +1,7 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { LABYRINTH_HEX } from "@/lib/content-systems/labyrinth/hex-grid";
 import {
   aggregateRawSamples,
   classifyTargets,
@@ -16,6 +17,12 @@ import { compareMetrics, meetsOptimizationRule } from "../../performance/compare
 import { renderSummaryMarkdown, type EnvironmentInfo, type ScenarioAggregate } from "../../performance/report";
 import performanceCatalog from "../../performance/catalog.json";
 import { SCENARIO_IDS } from "../../performance/fixtures";
+import {
+  battleProgressState,
+  requirePositiveFiniteObservation,
+  talentCategoryButtonName,
+} from "../../performance/scenario-contracts";
+import { productionHexLabyrinthMapFixture } from "../fixtures/labyrinth-hex-map";
 
 function sample(frameTimes: number[], extras: Partial<FrameSampleRaw> = {}): FrameSampleRaw {
   return {
@@ -40,6 +47,35 @@ describe("performance catalog", () => {
     expect(compareMetrics(baseline, baseline).map(({ key }) => key)).toEqual(
       performanceCatalog.metrics.map(({ key }) => key),
     );
+  });
+});
+
+describe("performance scenario contracts", () => {
+  it("uses the talent overview button accessible name", () => {
+    expect(talentCategoryButtonName("Physical")).toBe("Select Physical Talents");
+  });
+
+  it("treats battle completion as terminal while waiting for a stage mark", () => {
+    expect(battleProgressState(true, 0, 0)).toBe("battle-over");
+    expect(battleProgressState(false, 2, 1)).toBe("stage-ready");
+    expect(battleProgressState(false, 1, 1)).toBe("pending");
+  });
+
+  it("requires startup observations to be finite and greater than zero", () => {
+    expect(requirePositiveFiniteObservation("rendererStartupReadyMs", 12.5)).toBe(12.5);
+    for (const value of [undefined, 0, Number.NaN, Number.POSITIVE_INFINITY, -1]) {
+      expect(() => requirePositiveFiniteObservation("rendererStartupReadyMs", value)).toThrow(/rendererStartupReadyMs/);
+    }
+  });
+
+  it("uses a production-sized multi-floor Labyrinth fixture", () => {
+    const map = productionHexLabyrinthMapFixture();
+    const playable = map.floors.filter((floor) => floor.depth > 0);
+    expect(playable.length).toBeGreaterThanOrEqual(2);
+    for (const floor of playable) {
+      expect(floor.nodeIds.length).toBeGreaterThanOrEqual(LABYRINTH_HEX.minNodesPerFloor);
+      expect(floor.nodeIds.length).toBeLessThanOrEqual(LABYRINTH_HEX.maxNodesPerFloor);
+    }
   });
 });
 
@@ -214,6 +250,7 @@ describe("renderSummaryMarkdown", () => {
             profile: "continuous",
             metrics,
             targets: classifyTargets(metrics, "continuous"),
+            observations: { rendererStartupReadyMs: 2400 },
           },
         ],
       },
@@ -223,5 +260,6 @@ describe("renderSummaryMarkdown", () => {
     expect(md).toContain("battle-effects");
     expect(md).toContain("GREEN");
     expect(md).toContain("abc123");
+    expect(md).toContain("rendererStartupReadyMs");
   });
 });

@@ -16,7 +16,11 @@ test.describe("battle-effects", () => {
       minFrames: Number.parseInt(process.env.PERF_MIN_FRAMES ?? "300", 10),
       setup: async (page) => {
         await seedRandom(page, 42);
-        await startPerfBattle(page, effectHeavyDeck());
+        await startPerfBattle(page, effectHeavyDeck(), {
+          roomsEncountered: 100,
+          runPlayerHealth: 999,
+          runMaxHealth: 999,
+        });
       },
       interact: async (page, phase) => {
         const battle = new BattlePage(page);

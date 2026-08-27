@@ -1,6 +1,7 @@
 import { MenuPage } from "../../tests/pages/menu-page";
 import { delay } from "../delay";
 import { expect, test } from "../fixtures";
+import { talentCategoryButtonName } from "../scenario-contracts";
 
 const MEASURE_MS = Number.parseInt(process.env.PERF_MEASURE_MS ?? "15000", 10);
 
@@ -21,12 +22,22 @@ test.describe("talents-effects", () => {
         let index = 0;
         while (Date.now() < deadline) {
           await phase("talent-keyword-swap");
-          await page.getByRole("button", { name: keywords[index % keywords.length]!, exact: true }).click();
+          await page
+            .getByRole("button", { name: talentCategoryButtonName(keywords[index % keywords.length]!), exact: true })
+            .click();
           const talent = page.locator('[role="button"][aria-label^="Unlock talent:"]').first();
           if (await talent.isVisible().catch(() => false)) {
             await phase("talent-hover");
             await talent.hover();
           }
+          await phase("talent-overview-return");
+          await page.getByRole("button", { name: "Back", exact: true }).click();
+          await expect(
+            page.getByRole("button", {
+              name: talentCategoryButtonName(keywords[(index + 1) % keywords.length]!),
+              exact: true,
+            }),
+          ).toBeVisible();
           index += 1;
           await delay(250);
         }

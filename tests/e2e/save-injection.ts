@@ -1,6 +1,7 @@
 // localStorage save injection for fast E2E bootstrap.
 // Desktop (Electron) boots from the native save bridge — write there and reload instead.
 import { expect, type Page } from "@playwright/test";
+import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import { SAVE_KEY } from "@/lib/game-constants";
 import { baseHomesteadSave, ALL_PLAYABLE_CHARACTERS, DEFAULT_DISCOVERED_CARD_IDS } from "../fixtures/saves";
@@ -272,48 +273,31 @@ export async function injectLabyrinthRun(
     deck?: BattleCard[];
     discoveredCardIds?: string[];
     resume?: boolean;
+    labyrinthMap?: LabyrinthMap;
   } = {},
 ) {
-  const map = hexLabyrinthMapFixture();
-  await page.addInitScript(
-    (data) => {
-      const save: Record<string, unknown> = {};
-      save.activeRun = {
-        characterId: "knight",
-        runDeck: [],
-        runGold: 0,
-        runPlayerHealth: 30,
-        runMaxHealth: 30,
-        roomsEncountered: 0,
-        currentAct: 1,
-        destinationIndexInAct: 0,
-        completedDestinations: [],
-        runBoons: [],
-        selectedDifficulty: null,
-        currentScreen: "labyrinth-map",
-        contentSystemType: "labyrinth",
-        labyrinthMap: data.map,
-      };
-      if (data.deck) (save.activeRun as Record<string, unknown>).runDeck = data.deck;
-      if (data.runOverrides) {
-        Object.assign(save.activeRun as Record<string, unknown>, data.runOverrides);
-      }
-      save.discoveredCardIds = data.discoveredCardIds || ["slash"];
-      if (!Array.isArray(save.finishedRunCharacters)) {
-        save.finishedRunCharacters = data.playableCharacters;
-      }
-      localStorage.setItem(data.saveKey, JSON.stringify(save));
-    },
-    {
-      saveKey: SAVE_KEY,
-      map,
-      deck: options.deck ?? null,
-      discoveredCardIds: options.discoveredCardIds ?? null,
-      runOverrides: options.runOverrides ?? null,
-      playableCharacters: ALL_PLAYABLE_CHARACTERS,
-    },
-  );
-  await page.goto("/");
+  const map = options.labyrinthMap ?? hexLabyrinthMapFixture();
+  const desktop = await isDesktopPage(page);
+  await injectSaveState(page, {
+    characterId: "knight",
+    runDeck: options.deck ?? [],
+    runGold: 0,
+    runPlayerHealth: 30,
+    runMaxHealth: 30,
+    roomsEncountered: 0,
+    currentAct: 1,
+    destinationIndexInAct: 0,
+    completedDestinations: [],
+    runBoons: [],
+    selectedDifficulty: null,
+    currentScreen: "labyrinth-map",
+    contentSystemType: "labyrinth",
+    labyrinthMap: map,
+    discoveredCardIds: options.discoveredCardIds ?? ["slash"],
+    finishedRunCharacters: [...ALL_PLAYABLE_CHARACTERS],
+    ...options.runOverrides,
+  });
+  if (!desktop) await page.goto("/");
   await expect(page.getByRole("heading", { name: /Labyrinth|Map/i })).toBeVisible({ timeout: 20000 });
 }
 

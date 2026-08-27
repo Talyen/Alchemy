@@ -26,6 +26,19 @@ describe("escape-stack", () => {
     expect(menu).not.toHaveBeenCalled();
   });
 
+  it("runs a screen overlay before the app menu", () => {
+    const overlay = vi.fn();
+    const menu = vi.fn();
+
+    pushEscapeHandler({ id: "menu", priority: ESCAPE_PRIORITY.APP_MENU, onEscape: menu });
+    pushEscapeHandler({ id: "overlay", priority: ESCAPE_PRIORITY.SCREEN_OVERLAY, onEscape: overlay });
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+
+    expect(overlay).toHaveBeenCalledTimes(1);
+    expect(menu).not.toHaveBeenCalled();
+  });
+
   it("falls through to armory-transient before app-menu", () => {
     const armory = vi.fn();
     const menu = vi.fn();

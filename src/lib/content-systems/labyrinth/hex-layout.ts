@@ -1,10 +1,18 @@
 /**
- * Valid hex floor layouts: connected path, leaf entry/boss, max degree 3, optional loop.
+ * Lane floor layouts: 2–3 paths that merge at least once, leaf entry/boss, no dead ends.
  */
 import { pickRandom } from "@/lib/utils";
 
 import type { LabyrinthGridPosition } from "../types";
-import { LABYRINTH_HEX, areHexesAdjacent, hexKey, hexNeighbors, isHexInBounds, compareHexPositions } from "./hex-grid";
+import {
+  LABYRINTH_HEX,
+  areHexesAdjacent,
+  compareHexPositions,
+  hexAt,
+  hexKey,
+  hexVisualColumn,
+  isHexInGenerationBounds,
+} from "./hex-grid";
 
 export function hexDegree(positions: readonly LabyrinthGridPosition[], index: number): number {
   const source = positions[index];
@@ -15,12 +23,31 @@ export function hexDegree(positions: readonly LabyrinthGridPosition[], index: nu
   }, 0);
 }
 
-export function isValidFloorLayout(positions: readonly LabyrinthGridPosition[], closesLoop: boolean): boolean {
-  if (positions.length < 3) return false;
+export function floorLayoutCycleCount(positions: readonly LabyrinthGridPosition[]): number {
   const degrees = positions.map((_, index) => hexDegree(positions, index));
+  const edgeCount = degrees.reduce((sum, degree) => sum + degree, 0) / 2;
+  return edgeCount - positions.length + 1;
+}
+
+export function isValidFloorLayout(positions: readonly LabyrinthGridPosition[]): boolean {
+  if (positions.length < 3) return false;
+  if (positions.some((position) => !isHexInGenerationBounds(position))) return false;
+  const seen = new Set<string>();
+  for (const position of positions) {
+    const key = hexKey(position);
+    if (seen.has(key)) return false;
+    seen.add(key);
+  }
+
+  const degrees = positions.map((_, index) => hexDegree(positions, index));
+  const leaves = degrees.filter((degree) => degree === 1);
   if (degrees[0] !== 1 || degrees[degrees.length - 1] !== 1) return false;
+  if (leaves.length !== 2) return false;
   if (degrees.some((degree) => degree > LABYRINTH_HEX.maxNodeDegree)) return false;
   if (!degrees.includes(LABYRINTH_HEX.maxNodeDegree)) return false;
+
+  const visualColumns = positions.map(hexVisualColumn);
+  if (Math.max(...visualColumns) - Math.min(...visualColumns) < 2) return false;
 
   const reached = new Set([hexKey(positions[0]!)]);
   const frontier = [positions[0]!];
@@ -35,139 +62,73 @@ export function isValidFloorLayout(positions: readonly LabyrinthGridPosition[], 
   }
   if (reached.size !== positions.length) return false;
 
-  const edgeCount = degrees.reduce((sum, degree) => sum + degree, 0) / 2;
-  const cycleCount = edgeCount - positions.length + 1;
-  return cycleCount === (closesLoop ? 1 : 0);
+  return floorLayoutCycleCount(positions) >= 1;
 }
 
-function unusedInBoundsNeighbors(
-  positions: readonly LabyrinthGridPosition[],
-  used: ReadonlySet<string>,
-): LabyrinthGridPosition[] {
-  const candidates: LabyrinthGridPosition[] = [];
-  const seen = new Set<string>();
-  for (const position of positions) {
-    for (const neighbor of hexNeighbors(position)) {
-      const key = hexKey(neighbor);
-      if (seen.has(key) || used.has(key) || !isHexInBounds(neighbor)) continue;
-      seen.add(key);
-      candidates.push(neighbor);
-    }
-  }
-  return candidates;
-}
-
-function orderLayout(positions: LabyrinthGridPosition[], bossIndex: number): LabyrinthGridPosition[] {
+function orderLayout(positions: LabyrinthGridPosition[]): LabyrinthGridPosition[] {
   const entrance = positions[0]!;
-  const boss = positions[bossIndex]!;
-  const middle = positions.filter((_, index) => index !== 0 && index !== bossIndex).sort(compareHexPositions);
+  const boss = positions[positions.length - 1]!;
+  const middle = positions.slice(1, -1).sort(compareHexPositions);
   return [entrance, ...middle, boss];
 }
 
-function tryGrowLayout(nodeCount: number, closesLoop: boolean, rng: () => number): LabyrinthGridPosition[] | null {
-  const entrance: LabyrinthGridPosition = { row: 0, col: 0 };
-  const firstNeighbors = hexNeighbors(entrance).filter(
-    (neighbor) => isHexInBounds(neighbor) && neighbor.row >= entrance.row,
-  );
-  const first = pickRandom(firstNeighbors, rng);
-  if (!first) return null;
+/**
+ * Two lanes (visual 0 and 2) from a top split, merge at row 5, then a vis-2 tail.
+ * The join sits one row below the parallel section so the merge hex stays degree 3.
+ */
+const TWO_PATH_STEM: LabyrinthGridPosition[] = [
+  hexAt(0, 0),
+  hexAt(1, 0),
+  hexAt(1, 1),
+  hexAt(2, 0),
+  hexAt(2, 2),
+  hexAt(3, 0),
+  hexAt(3, 2),
+  hexAt(4, 0),
+  hexAt(4, 2),
+  hexAt(5, 0),
+  hexAt(5, 1),
+];
 
-  const positions: LabyrinthGridPosition[] = [entrance, first];
-  const used = new Set([hexKey(entrance), hexKey(first)]);
+/**
+ * Two lanes that meet a three-wide join, creating a second cycle / third route,
+ * then a vis-2 tail. Distinct from the two-route delayed merge at row 5.
+ */
+const THREE_PATH_STEM: LabyrinthGridPosition[] = [
+  hexAt(0, 0),
+  hexAt(1, 0),
+  hexAt(1, 1),
+  hexAt(2, 0),
+  hexAt(2, 2),
+  hexAt(3, 0),
+  hexAt(3, 2),
+  hexAt(4, 0),
+  hexAt(4, 1),
+  hexAt(4, 2),
+];
 
-  while (positions.length < nodeCount) {
-    const growFrom = positions.slice(1);
-    const candidates = unusedInBoundsNeighbors(growFrom, used).filter(
-      (candidate) => !areHexesAdjacent(candidate, entrance),
-    );
-    if (candidates.length === 0) return null;
-    candidates.sort((a, b) => b.row - a.row || a.col - b.col);
-    const window = Math.max(1, Math.ceil(candidates.length / 2));
-    const pick = candidates[Math.floor(rng() * window)]!;
-    positions.push(pick);
-    used.add(hexKey(pick));
+const TAIL_VISUAL_COLUMN = 2;
+
+function withTail(stem: LabyrinthGridPosition[], nodeCount: number): LabyrinthGridPosition[] {
+  const tailCount = nodeCount - stem.length;
+  const tailStartRow = Math.max(...stem.map((position) => position.row)) + 1;
+  const tail: LabyrinthGridPosition[] = [];
+  for (let index = 0; index < tailCount; index += 1) {
+    tail.push(hexAt(tailStartRow + index, TAIL_VISUAL_COLUMN));
   }
-
-  const degrees = positions.map((_, index) => hexDegree(positions, index));
-  if (degrees[0] !== 1) return null;
-
-  let bossIndex = -1;
-  let bossRow = -1;
-  for (let index = 1; index < positions.length; index += 1) {
-    if (degrees[index] !== 1) continue;
-    const row = positions[index]!.row;
-    if (row >= bossRow) {
-      bossRow = row;
-      bossIndex = index;
-    }
-  }
-  if (bossIndex < 0) return null;
-
-  const ordered = orderLayout(positions, bossIndex);
-  return isValidFloorLayout(ordered, closesLoop) ? ordered : null;
+  return orderLayout([...stem, ...tail]);
 }
 
-const FALLBACK_LAYOUTS: Record<number, LabyrinthGridPosition[]> = {
-  9: [
-    { row: 0, col: 0 },
-    { row: 1, col: 0 },
-    { row: 2, col: -1 },
-    { row: 3, col: -1 },
-    { row: 3, col: 0 },
-    { row: 4, col: -2 },
-    { row: 5, col: -2 },
-    { row: 5, col: -1 },
-    { row: 5, col: 0 },
-  ],
-  10: [
-    { row: 0, col: 0 },
-    { row: 1, col: 0 },
-    { row: 2, col: -1 },
-    { row: 3, col: -1 },
-    { row: 3, col: 0 },
-    { row: 4, col: -2 },
-    { row: 5, col: -2 },
-    { row: 5, col: -1 },
-    { row: 5, col: 0 },
-    { row: 5, col: 1 },
-  ],
-  11: [
-    { row: 0, col: 0 },
-    { row: 1, col: 0 },
-    { row: 2, col: -1 },
-    { row: 3, col: -1 },
-    { row: 3, col: 0 },
-    { row: 3, col: 1 },
-    { row: 4, col: -2 },
-    { row: 5, col: -2 },
-    { row: 5, col: -1 },
-    { row: 5, col: 0 },
-    { row: 5, col: 1 },
-  ],
-  12: [
-    { row: 0, col: 0 },
-    { row: 1, col: 0 },
-    { row: 2, col: -1 },
-    { row: 3, col: -1 },
-    { row: 3, col: 0 },
-    { row: 3, col: 1 },
-    { row: 3, col: 2 },
-    { row: 4, col: -2 },
-    { row: 5, col: -2 },
-    { row: 5, col: -1 },
-    { row: 5, col: 0 },
-    { row: 5, col: 1 },
-  ],
-};
+function templatesForCount(nodeCount: number): LabyrinthGridPosition[][] {
+  return [withTail(TWO_PATH_STEM, nodeCount), withTail(THREE_PATH_STEM, nodeCount)];
+}
 
 export function generateFloorLayout(nodeCount: number, rng: () => number): LabyrinthGridPosition[] {
-  const closesLoop = rng() < LABYRINTH_HEX.loopChance;
-  for (const wantLoop of [closesLoop, !closesLoop]) {
-    for (let attempt = 0; attempt < LABYRINTH_HEX.layoutAttempts; attempt += 1) {
-      const layout = tryGrowLayout(nodeCount, wantLoop, rng);
-      if (layout) return layout;
-    }
+  const clamped = Math.min(LABYRINTH_HEX.maxNodesPerFloor, Math.max(LABYRINTH_HEX.minNodesPerFloor, nodeCount));
+  const valid = templatesForCount(clamped).filter(isValidFloorLayout);
+  const selected = pickRandom(valid, rng) ?? valid[0];
+  if (!selected) {
+    throw new Error(`Labyrinth floor constraints must produce a layout for ${clamped} chambers`);
   }
-  const fallback = FALLBACK_LAYOUTS[nodeCount] ?? FALLBACK_LAYOUTS[9]!;
-  return fallback.map((position) => ({ ...position }));
+  return selected.map((position) => ({ ...position }));
 }

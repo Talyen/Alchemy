@@ -1,6 +1,7 @@
-// Hex projection and seal sizing for the labyrinth map screen.
+// Hex projection, seal sizing, and inspector anchoring for the labyrinth map screen.
 import type { LabyrinthGridPosition, LabyrinthNode } from "@/lib/content-systems/types";
 import { hexMetrics, hexRadius, projectedX } from "@/lib/content-systems/labyrinth/hex-grid";
+import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
 
 export function layoutFloorNodes(nodes: LabyrinthNode[], availableWidth: number) {
   const packedWidth = hexMetrics(hexRadius(availableWidth)).width;
@@ -20,4 +21,23 @@ export function layoutFloorNodes(nodes: LabyrinthNode[], availableWidth: number)
     });
   }
   return { metrics, height, positions };
+}
+
+export function inspectorPlacement(
+  x: number,
+  y: number,
+  hexWidth: number,
+  mapWidth: number,
+): { left: number; top: number; side: "left" | "right" } {
+  const gap = 12;
+  const inspectorWidth = LABYRINTH_MAP_UI.inspectorWidthPx;
+  const right = x + hexWidth / 2 + gap;
+  if (right + inspectorWidth <= mapWidth) {
+    return { left: right, top: y, side: "right" };
+  }
+  return {
+    left: Math.max(0, x - hexWidth / 2 - gap - inspectorWidth),
+    top: y,
+    side: "left",
+  };
 }
