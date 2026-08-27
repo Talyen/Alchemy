@@ -132,7 +132,7 @@ function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
 function applySaveWritePolicy(result: SaveLoadState): SaveLoadState {
   if (result.status.kind === "unsupported-newer-schema" || result.status.kind === "unsupported-newer-content") {
     writesDisabledForSession = true;
-  } else if (result.status.kind === "ok") {
+  } else {
     writesDisabledForSession = false;
   }
   return result;
@@ -203,8 +203,8 @@ async function writeSaveSnapshot(data: SaveData): Promise<void> {
   }
 }
 
-function serializeSaveSnapshot(data: SaveData): string {
-  const payload: SaveData = { ...data, lastSavedAt: Date.now() };
+function serializeSaveSnapshot(data: SaveData, now: number = Date.now()): string {
+  const payload: SaveData = { ...data, lastSavedAt: now };
   return JSON.stringify(payload);
 }
 
@@ -213,7 +213,10 @@ export async function saveAlchemySaveData(data: SaveData) {
   if (typeof window === "undefined") {
     return;
   }
-  if (writesDisabledForSession) return;
+  if (writesDisabledForSession) {
+    coalescedSave = null;
+    return;
+  }
 
   coalescedSave = data;
   saveChainTasks += 1;
