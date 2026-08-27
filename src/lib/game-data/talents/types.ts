@@ -5,7 +5,7 @@ import type { KeywordId } from "../types";
 import type { TalentEffectManifest } from "../talent-effect-manifest";
 
 // A talent definition — ID, keyword, optional short name for UI tooltips, and
-// description (rules text). Pool entries live in talents/pool/{keyword}.ts.
+// description (rules text). Pool entries live in talents/talent-pool-definitions.ts.
 export interface TalentDefinition {
   id: string;
   keywordId: KeywordId;

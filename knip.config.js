@@ -53,6 +53,12 @@ export default {
     "src/features/alchemy/shared/stores/run-session-react-ports.ts": ["exports"],
     // Semantic alias: corruption weight mirrors default for now, intentional duplicate.
     "src/lib/game-constants/run-rewards.ts": ["duplicates"],
+    // Compat barrel: talentPool is single source, per-keyword arrays are filtered views for legacy imports.
+    "src/lib/game-data/talents/pool/index.ts": ["exports"],
+    // Backward-compat re-exports for verify:changed consumers; canonical source is scripts/lib/test-commands.mjs.
+    "scripts/lib/change-routes.mjs": ["exports"],
+    // Shared Vite alias / SSR list — consumed by vite.config.ts and vitest.config.ts sync guard.
+    "scripts/lib/vite-aliases.mjs": ["exports"],
   },
   ignore: [
     "tests/environment.d.ts",

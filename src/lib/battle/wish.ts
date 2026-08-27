@@ -16,6 +16,7 @@ import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-p
 import { getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
+import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-content";
 import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
 import { payKillPayouts } from "./kill-payouts";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
@@ -93,9 +94,7 @@ function applyWishCrystalGoldTrigger(state: BattleState, combatTexts: CombatText
   if (state.rng() < WISH_CRYSTAL_GOLD_CHANCE) {
     return addGoldWithCombatText(state, amount, combatTexts);
   }
-  if (state.contentSystemType === "wildwood") {
-    // Wildwood does not pay run materials (see commitVictoryRewards guard); the
-    // crystal wish outcome is granted as gold instead of being silently dropped.
+  if (shouldConvertCrystalWishToGold(state.contentSystemType)) {
     return addGoldWithCombatText(state, amount, combatTexts);
   }
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "crystal", amount });

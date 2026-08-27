@@ -64,14 +64,14 @@ export function isStunFreezeBuildupBlocked(cc: CcState): boolean {
 // that author their effect values; re-exported here for battle consumers.
 
 // Threshold-driven combat flags that reset each battle.
-export interface CombatFlags {
+// Split into logical groups so new flags land in the right bucket and preservation
+// logic stays obvious. Wire shape stays flat (one `flags` object) for persistence compat.
+export interface FirstTimeFlags {
   firstHolyCardFreeUsed: boolean;
   firstBurnCardDoubledUsed: boolean;
   firstArmorCardDoubledUsed: boolean;
   firstPoisonCardFreeUsed: boolean;
   firstBleedCardFreeUsed: boolean;
-  nextCardCostReduction: number; // temporary mana discount on next card played
-  goldOnFirstPoisonThisCombat: boolean;
   firstHolyDamageBonusUsed: boolean;
   firstBurnTrinketDoubledUsed: boolean;
   firstHarmfulStatusPrevented: boolean;
@@ -80,10 +80,14 @@ export interface CombatFlags {
   firstConsumeCardFreeUsed: boolean;
   firstCompanionCardFreeUsed: boolean;
   firstArcheryCardFreeUsed: boolean;
+  nextCardCostReduction: number; // temporary mana discount on next card played
+  goldOnFirstPoisonThisCombat: boolean;
   resonantChimeUsedThisTurn: boolean;
   runicQuillUsedThisTurn: boolean;
   consumeDrawUsedThisTurn: boolean;
-  divineAegisTriggered: boolean;
+}
+
+export interface NextHitFlags {
   nextHitCrit: boolean;
   playNextCardTwice: boolean;
   nextHitPoison: boolean;
@@ -91,8 +95,14 @@ export interface CombatFlags {
   nextPhysicalDealsBleed: boolean;
   nextArcheryCardFree: boolean;
   nextNatureCardFree: boolean;
+}
+
+export interface BattleLifecycleFlags {
+  divineAegisTriggered: boolean;
   saintfallRetributionTriggered: boolean;
 }
+
+export type CombatFlags = FirstTimeFlags & NextHitFlags & BattleLifecycleFlags;
 
 // Subset of CombatFlags consumed by card play — companion actions must not consume these.
 // When adding a new flag here, also add its "used" sentinel to

@@ -23,31 +23,30 @@ function setRunField<K extends keyof ActiveRunProgressFields>(
   setDraftField(draft.run.activeRun, field, action);
 }
 
+function createRunFieldSetter<K extends keyof ActiveRunProgressFields>(field: K) {
+  return (
+    draft: GameplayDraft,
+    action: ActiveRunProgressFields[K] | ((prev: ActiveRunProgressFields[K]) => ActiveRunProgressFields[K]),
+  ): void => setRunField(draft, field, action);
+}
+
 export function setRunDeck(draft: GameplayDraft, action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])): void {
   setRunField(draft, "runDeck", action);
 }
+// Gold is a profile purse, not an active-run field — see run-resume-codec and MIGRATIONS.md.
+// These wrappers deliberately delegate to gold-purse rather than setRunField.
 export function setRunGold(draft: GameplayDraft, action: number | ((prev: number) => number)): void {
   setProfileGold(draft, action);
 }
 export function addRunGold(draft: GameplayDraft, amount: number): void {
   addProfileGold(draft, amount);
 }
-export const setRunPlayerHealth = (draft: GameplayDraft, action: number | ((prev: number) => number)) =>
-  setRunField(draft, "runPlayerHealth", action);
-export const setRunMaxHealth = (draft: GameplayDraft, action: number | ((prev: number) => number)) =>
-  setRunField(draft, "runMaxHealth", action);
-export const setRoomsEncountered = (draft: GameplayDraft, action: number | ((prev: number) => number)) =>
-  setRunField(draft, "roomsEncountered", action);
-export const setCurrentAct = (draft: GameplayDraft, action: number | ((prev: number) => number)) =>
-  setRunField(draft, "currentAct", action);
-export const setDestinationIndexInAct = (draft: GameplayDraft, action: number | ((prev: number) => number)) =>
-  setRunField(draft, "destinationIndexInAct", action);
-export const setCompletedDestinations = (
-  draft: GameplayDraft,
-  action:
-    | ActiveRunProgressFields["completedDestinations"]
-    | ((prev: ActiveRunProgressFields["completedDestinations"]) => ActiveRunProgressFields["completedDestinations"]),
-) => setRunField(draft, "completedDestinations", action);
+export const setRunPlayerHealth = createRunFieldSetter("runPlayerHealth");
+export const setRunMaxHealth = createRunFieldSetter("runMaxHealth");
+export const setRoomsEncountered = createRunFieldSetter("roomsEncountered");
+export const setCurrentAct = createRunFieldSetter("currentAct");
+export const setDestinationIndexInAct = createRunFieldSetter("destinationIndexInAct");
+export const setCompletedDestinations = createRunFieldSetter("completedDestinations");
 export function setDestinationOfferState(
   draft: GameplayDraft,
   offerState: {
@@ -58,16 +57,9 @@ export function setDestinationOfferState(
   draft.run.activeRun.lastOfferedDestinations = [...offerState.lastOfferedDestinations];
   draft.run.activeRun.destinationRoundsSinceOffered = { ...offerState.roundsSinceOffered };
 }
-export const setRunBoons = (draft: GameplayDraft, action: string[] | ((prev: string[]) => string[])) =>
-  setRunField(draft, "runBoons", action);
-export const setEncounteredRunEnemyIds = (draft: GameplayDraft, action: string[] | ((prev: string[]) => string[])) =>
-  setRunField(draft, "encounteredRunEnemyIds", action);
-export const setContentSystemType = (
-  draft: GameplayDraft,
-  action:
-    | ActiveRunProgressFields["contentSystemType"]
-    | ((prev: ActiveRunProgressFields["contentSystemType"]) => ActiveRunProgressFields["contentSystemType"]),
-) => setRunField(draft, "contentSystemType", action);
+export const setRunBoons = createRunFieldSetter("runBoons");
+export const setEncounteredRunEnemyIds = createRunFieldSetter("encounteredRunEnemyIds");
+export const setContentSystemType = createRunFieldSetter("contentSystemType");
 
 /** Clear run-scoped tallies while keeping the chosen character. */
 export function resetProgress(draft: GameplayDraft): void {

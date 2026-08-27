@@ -1,4 +1,5 @@
 // Status-related card effect apply handlers.
+import { applyPotionMultiplier } from "../amount-helpers";
 import { addEnemyStatus, type BattleState, type CombatTextEvent } from "../types";
 import { mergeCombatText } from "../combat-text";
 import type { EffectHandler } from "./handler-types";
@@ -42,15 +43,13 @@ export const applyPlayerStatusEffectHandler: EffectHandler = (
   } else if (effect.perManaCrystal) {
     adjustedAmount = effect.perManaCrystal * state.maxMana;
   }
-  if (potionMult !== 1) {
-    adjustedAmount = Math.round(adjustedAmount * potionMult);
-  }
+  adjustedAmount = applyPotionMultiplier(adjustedAmount, potionMult);
   return applyPlayerStatusEffect(nextState, { ...effect, amount: adjustedAmount }, combatTexts);
 };
 
 export const applyEnemyStatusEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "enemy-status") return state;
-  const amount = potionMult !== 1 ? Math.round(effect.amount * potionMult) : effect.amount;
+  const amount = applyPotionMultiplier(effect.amount, potionMult);
   if (effect.status === "stun" || effect.status === "freeze") {
     return dealPlayerTypedHit(state, effect.status, amount, combatTexts);
   }
@@ -63,7 +62,9 @@ export const applyEnemyStatusEffect: EffectHandler = (state, _card, effect, poti
 
 export const applyRemoveHarmfulStatusEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "remove-harmful-status") return state;
-  const adjustedRemove = effect.removeAll ? harmfulPlayerStatusIds.length : Math.round(effect.amount * potionMult);
+  const adjustedRemove = effect.removeAll
+    ? harmfulPlayerStatusIds.length
+    : applyPotionMultiplier(effect.amount, potionMult);
   return removeHarmfulPlayerStatuses(state, adjustedRemove, combatTexts);
 };
 
@@ -96,7 +97,7 @@ export const applyCleansePlayerStatusToDamageEffect: EffectHandler = (state, car
   if (stacks <= 0) return state;
 
   const cleansed = applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
-  const amount = potionMult !== 1 ? Math.round(stacks * potionMult) : stacks;
+  const amount = applyPotionMultiplier(stacks, potionMult);
 
   return dealDamageToEnemy(cleansed, card, { kind: "damage", damageType: effect.damageType, amount }, combatTexts);
 };

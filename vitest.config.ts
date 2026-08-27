@@ -17,6 +17,7 @@ export default defineConfig({
     deps: {
       optimizer: {
         ssr: {
+          // Keep in sync with scripts/lib/vite-aliases.mjs SSR_OPTIMIZE_INCLUDE.
           include: [
             "@/lib/game-data",
             "@/lib/battle",

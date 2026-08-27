@@ -3,6 +3,7 @@
  */
 import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier, getBattleRng } from "./status-helpers";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
+import { scaleBlockBonus } from "./amount-helpers";
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
@@ -153,7 +154,7 @@ function applyBleedDamageModifiers(state: BattleState, rawAmount: number): numbe
 }
 
 function getBlockScaledDamageBonus(state: BattleState, percent = BLOCK_SCALED_DAMAGE_PERCENT): number {
-  return Math.round((state.playerStatuses.block * percent) / PERCENT_DENOMINATOR);
+  return scaleBlockBonus(state.playerStatuses.block, percent, PERCENT_DENOMINATOR);
 }
 
 function applyStunDamageModifiers(state: BattleState, rawAmount: number): number {
@@ -208,7 +209,7 @@ function applyPoisonDamageModifiers(state: BattleState, rawAmount: number): numb
 
 type DamageTypeHandler = (state: BattleState, rawAmount: number, card?: BattleCard) => number;
 
-const DAMAGE_TYPE_HANDLERS: Record<string, DamageTypeHandler> = {
+const DAMAGE_TYPE_HANDLERS: Record<DamageType, DamageTypeHandler> = {
   physical: applyPhysicalDamageModifiers,
   holy: applyHolyDamageModifiers,
   bleed: applyBleedDamageModifiers,
@@ -217,7 +218,7 @@ const DAMAGE_TYPE_HANDLERS: Record<string, DamageTypeHandler> = {
   freeze: applyFreezeDamageModifiers,
   nature: applyNatureDamageModifiers,
   poison: applyPoisonDamageModifiers,
-};
+} satisfies Record<DamageType, DamageTypeHandler>;
 
 function computeBaseDamage(
   state: BattleState,
@@ -225,7 +226,20 @@ function computeBaseDamage(
   card?: BattleCard,
 ) {
   const rawAmount = computeBaseRawAmount(state, effect, card);
-  const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType] ?? ((_s, r) => r);
+  // Option B: equalTo* is raw stat + forge only so card text matches tooltip.
+  // Per-type flat/scaling bonuses (flatPhysical, armorTo*, blockTo* etc.) only apply to
+  // explicit `amount` effects. See card-description.ts early-return for these flags.
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean flags; || is correct for false vs undefined.
+  const isEqualTo = Boolean(effect.equalToBlock || effect.equalToArmor || effect.equalToGoldPercent);
+  if (isEqualTo) {
+    let amount = rawAmount;
+    if (card?.consume && state.talentEffects.consumeDamageBonusPercent > 0) {
+      amount = Math.round(amount * (1 + state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR));
+    }
+    return Math.max(0, amount);
+  }
+  const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType];
+  if (!modifier) throw new Error(`Missing DamageType handler: ${effect.damageType}`);
   let amount = modifier(state, rawAmount, card);
   if (card?.consume && state.talentEffects.consumeDamageBonusPercent > 0) {
     amount = Math.round(amount * (1 + state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR));

@@ -1,5 +1,6 @@
 // Damage-related card effect apply handlers.
 import { DAMAGE_TYPES } from "@/lib/game-data";
+import { applyPotionMultiplier } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
 import { dealSelfDamage, getBattleRng } from "../status-helpers";
 import { addPlayerStatus, reduceEnemyArmor } from "../types";
@@ -7,7 +8,8 @@ import type { EffectHandler } from "./handler-types";
 
 export const applyDamageEffect: EffectHandler = (state, card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "damage") return state;
-  const adjustedEffect = potionMult !== 1 ? { ...effect, amount: Math.round(effect.amount * potionMult) } : effect;
+  const adjustedEffect =
+    potionMult !== 1 ? { ...effect, amount: applyPotionMultiplier(effect.amount, potionMult) } : effect;
   return dealDamageToEnemy(state, card, adjustedEffect, combatTexts);
 };
 
@@ -21,10 +23,10 @@ export const applyRandomDamageEffect: EffectHandler = (state, card, effect, poti
   if (effect.kind !== "random-damage") return state;
   const rng = getBattleRng(state);
   const damageType = DAMAGE_TYPES[Math.trunc(rng() * DAMAGE_TYPES.length)]!;
-  const minAmount = potionMult !== 1 ? Math.round(effect.minAmount * potionMult) : effect.minAmount;
-  const maxAmount = potionMult !== 1 ? Math.round(effect.maxAmount * potionMult) : effect.maxAmount;
-  const span = maxAmount - minAmount + 1;
-  const amount = minAmount + Math.trunc(rng() * span);
+  // Apply potion potency once after rolling so fractional multipliers don't bias the distribution.
+  const span = effect.maxAmount - effect.minAmount + 1;
+  const rolled = effect.minAmount + Math.trunc(rng() * span);
+  const amount = applyPotionMultiplier(rolled, potionMult);
   return dealDamageToEnemy(state, card, { kind: "damage", damageType, amount }, combatTexts);
 };
 

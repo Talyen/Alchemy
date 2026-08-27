@@ -1,4 +1,5 @@
 // Utility card effect apply handlers.
+import { applyPotionMultiplier } from "../amount-helpers";
 import { addGoldWithCombatText } from "../combat-text";
 import { applyWishEffect } from "../wish";
 import { drawFromState, applyDrawResult } from "../draw";
@@ -6,13 +7,13 @@ import type { EffectHandler } from "./handler-types";
 
 export const applyGainGoldEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "gain-gold") return state;
-  const adjustedGold = Math.round(effect.amount * potionMult);
+  const adjustedGold = applyPotionMultiplier(effect.amount, potionMult);
   return addGoldWithCombatText(state, adjustedGold, combatTexts);
 };
 
 export const applyWishEffectHandler: EffectHandler = (state, card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "wish") return state;
-  const adjustedWish = Math.round(effect.amount * potionMult);
+  const adjustedWish = applyPotionMultiplier(effect.amount, potionMult);
   return applyWishEffect(state, card, adjustedWish, combatTexts);
 };
 
