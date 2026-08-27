@@ -39,7 +39,7 @@ import {
   type PairedDelta,
   type RateCell,
 } from "./report-rankings";
-import { simulateBatch } from "./simulator-batch";
+import { simulateBatch, simulateBatchSummary } from "./simulator-batch";
 import type { BalanceBatchResult, BalancePlayPolicy } from "./simulator-types";
 import {
   buildPresetUnlockedTalents,
@@ -149,6 +149,52 @@ function runBatch(
     ...(config.trinketIds ? { trinketIds: config.trinketIds } : {}),
     ...(config.talentEffects ? { talentEffects: config.talentEffects } : {}),
   });
+}
+
+function runBatchSummary(
+  options: ReportRunOptions,
+  config: {
+    characterId: CharacterId;
+    enemyId: string;
+    depth: number;
+    preset: TalentPreset;
+    seed: number;
+    deck?: BattleCard[];
+    trinketIds?: string[];
+    talentEffects?: BalanceBatchResult["config"]["talentEffects"];
+    iterations?: number;
+  },
+): BalanceBatchResult {
+  return simulateBatchSummary({
+    characterId: config.characterId,
+    enemyId: config.enemyId,
+    depth: config.depth,
+    talentPreset: config.preset,
+    difficultyModifiers: REPORT_TIERS.find((tier) => tier.preset === config.preset)?.difficultyModifiers ?? [],
+    loadoutMode: options.loadoutMode,
+    iterations: config.iterations ?? options.iterations,
+    seed: config.seed,
+    maxTurns: 30,
+    policy: options.policy,
+    ...(options.appliesFightPacing === undefined ? {} : { appliesFightPacing: options.appliesFightPacing }),
+    ...(config.deck ? { deck: config.deck } : {}),
+    ...(config.trinketIds ? { trinketIds: config.trinketIds } : {}),
+    ...(config.talentEffects ? { talentEffects: config.talentEffects } : {}),
+  });
+}
+
+function shouldLogBalanceProgress(): boolean {
+  return Boolean(process.env.ALCHEMY_BALANCE_VERBOSE) || Boolean(process.env.ALCHEMY_BALANCE_PROGRESS);
+}
+
+function withPhaseTiming<T>(label: string, fn: () => T): T {
+  if (!shouldLogBalanceProgress()) return fn();
+  const start = Date.now();
+  process.stdout.write(`[balance] ${label}… `);
+  const result = fn();
+  const ms = Date.now() - start;
+  process.stdout.write(`done ${ms}ms\n`);
+  return result;
 }
 
 interface CoreRow {
@@ -278,9 +324,9 @@ function runTrinketSweep(options: ReportRunOptions): ReturnType<typeof mergePair
           deck,
           iterations: options.trinketIterations,
         };
-        const baseline = runBatch(options, { ...shared, trinketIds: [] });
+        const baseline = runBatchSummary(options, { ...shared, trinketIds: [] });
         for (const trinket of trinketLibrary) {
-          const treatment = runBatch(options, { ...shared, trinketIds: [trinket.id] });
+          const treatment = runBatchSummary(options, { ...shared, trinketIds: [trinket.id] });
           pushDelta(
             byId,
             tier.label,
@@ -305,7 +351,7 @@ function runCardSweepIsolated(options: ReportRunOptions, enemyId: string): Retur
       const characterId = ids[idx % ids.length]!;
       const deckSeed = 200_000 + idx;
       const baselineDeck = buildRandomDeck(deckSeed);
-      const baseline = runBatch(options, {
+      const baseline = runBatchSummary(options, {
         characterId,
         enemyId,
         depth: tier.depthOffset + 2,
@@ -316,7 +362,7 @@ function runCardSweepIsolated(options: ReportRunOptions, enemyId: string): Retur
         iterations: battleIterations,
       });
       for (const card of cardLibrary) {
-        const treatment = runBatch(options, {
+        const treatment = runBatchSummary(options, {
           characterId,
           enemyId,
           depth: tier.depthOffset + 2,
@@ -354,7 +400,7 @@ function runCardSweepInClass(options: ReportRunOptions): ReturnType<typeof merge
         const alreadyIn = baseDeck.some((entry) => entry.id === card.id);
         const baselineDeck = alreadyIn ? removeCardIdFromDeck(baseDeck, card.id) : baseDeck;
         const treatmentDeck = alreadyIn ? baseDeck : insertCardIntoDeck(baseDeck, card);
-        const baseline = runBatch(options, {
+        const baseline = runBatchSummary(options, {
           characterId,
           enemyId: "skeleton",
           depth: tier.depthOffset + 2,
@@ -364,7 +410,7 @@ function runCardSweepInClass(options: ReportRunOptions): ReturnType<typeof merge
           trinketIds: [],
           iterations: battleIterations,
         });
-        const treatment = runBatch(options, {
+        const treatment = runBatchSummary(options, {
           characterId,
           enemyId: "skeleton",
           depth: tier.depthOffset + 2,
@@ -413,8 +459,8 @@ function runTalentSweep(options: ReportRunOptions): ReturnType<typeof mergePaire
             deck,
             iterations,
           };
-          const baseline = runBatch(options, { ...shared, talentEffects: baseEffects });
-          const treatment = runBatch(options, { ...shared, talentEffects: treatEffects });
+          const baseline = runBatchSummary(options, { ...shared, talentEffects: baseEffects });
+          const treatment = runBatchSummary(options, { ...shared, talentEffects: treatEffects });
           pushDelta(
             byId,
             tier.label,
@@ -469,8 +515,8 @@ function runCompanionSweep(options: ReportRunOptions): ReturnType<typeof mergePa
             seed,
             iterations,
           };
-          const baseline = runBatch(options, { ...shared, deck: baselineDeck });
-          const treatment = runBatch(options, { ...shared, deck: treatmentDeck });
+          const baseline = runBatchSummary(options, { ...shared, deck: baselineDeck });
+          const treatment = runBatchSummary(options, { ...shared, deck: treatmentDeck });
           pushDelta(
             byId,
             tier.label,
@@ -560,8 +606,8 @@ function buildClassMatchups(rows: CoreRow[]): ClassMatchupRow[] {
 }
 
 export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
-  const core = runCoreScenarios(options);
-  const { anomalies, metrics } = collectAnomalies(core);
+  const core = withPhaseTiming("core scenarios", () => runCoreScenarios(options));
+  const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
 
   const enemyRows = [...new Set(core.map((row) => row.enemyId))].map((id) => {
     const forId = core.filter((row) => row.enemyId === id);
@@ -609,13 +655,21 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
     },
     enemies: enemyRows.sort((a, b) => a.late.winRate - b.late.winRate),
     classes: classRows.sort((a, b) => a.late.winRate - b.late.winRate),
-    classMatchups: buildClassMatchups(core),
-    boons: runTrinketSweep(options).sort((a, b) => a.late.delta - b.late.delta),
-    cardsIsolatedSkeleton: runCardSweepIsolated(options, "skeleton").sort((a, b) => a.late.delta - b.late.delta),
-    cardsIsolatedElite: runCardSweepIsolated(options, "mimic").sort((a, b) => a.late.delta - b.late.delta),
-    cardsInClass: runCardSweepInClass(options).sort((a, b) => a.late.delta - b.late.delta),
-    talents: runTalentSweep(options).sort((a, b) => a.late.delta - b.late.delta),
-    companions: runCompanionSweep(options).sort((a, b) => a.late.delta - b.late.delta),
+    classMatchups: withPhaseTiming("class matchups", () => buildClassMatchups(core)),
+    boons: withPhaseTiming("boon sweep", () => runTrinketSweep(options).sort((a, b) => a.late.delta - b.late.delta)),
+    cardsIsolatedSkeleton: withPhaseTiming("card isolated (skeleton)", () =>
+      runCardSweepIsolated(options, "skeleton").sort((a, b) => a.late.delta - b.late.delta),
+    ),
+    cardsIsolatedElite: withPhaseTiming("card isolated (elite)", () =>
+      runCardSweepIsolated(options, "mimic").sort((a, b) => a.late.delta - b.late.delta),
+    ),
+    cardsInClass: withPhaseTiming("card in-class", () =>
+      runCardSweepInClass(options).sort((a, b) => a.late.delta - b.late.delta),
+    ),
+    talents: withPhaseTiming("talent sweep", () => runTalentSweep(options).sort((a, b) => a.late.delta - b.late.delta)),
+    companions: withPhaseTiming("companion sweep", () =>
+      runCompanionSweep(options).sort((a, b) => a.late.delta - b.late.delta),
+    ),
     anomalies,
     anomalyMetrics: metrics,
   };
