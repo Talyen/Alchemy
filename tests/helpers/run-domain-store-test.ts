@@ -1,26 +1,22 @@
 // Test helpers for run-lifetime reads/writes against the authoritative aggregate.
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { createInitialSessionFields, type RunSessionFields } from "@/features/alchemy/shared/stores/run-domain-types";
-import type { ActiveRunProgressFields, PermanentProgressFields } from "@/features/alchemy/shared/stores/run-state-init";
 import {
-  getActiveRunStoreView,
-  getBattleStoreView,
-  getNavigationStoreView,
-  getRunProfileStoreView,
-  getRunSessionStoreView,
-  applyGameplayStateUpdate,
+  createInitialActiveRunFields,
+  createInitialPermanentFields,
+  type ActiveRunProgressFields,
+  type PermanentProgressFields,
+} from "@/features/alchemy/shared/stores/run-state-init";
+import {
   resetAllTestStores,
   resetRunBattleSlice,
   resetRunDomainStore,
   resetRunNavigationSlice,
   resetRunProgressSlice,
   resetRunSessionSlice,
-  useRunTransientStore,
 } from "./gameplay-store-test";
 
 export {
-  getBattleStoreView,
-  getNavigationStoreView,
-  getRunSessionStoreView,
   resetAllTestStores,
   resetRunBattleSlice,
   resetRunDomainStore,
@@ -28,12 +24,6 @@ export {
   resetRunProgressSlice,
   resetRunSessionSlice,
 };
-
-export function getRunProgressStoreView() {
-  const active = getActiveRunStoreView();
-  const profile = getRunProfileStoreView();
-  return { ...active, ...profile };
-}
 
 type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
 
@@ -71,41 +61,79 @@ const PERMANENT_PROGRESS_KEYS = [
   "effects",
 ] as const satisfies ReadonlyArray<keyof PermanentProgressFields>;
 
+const SESSION_KEYS = [
+  "hasActiveRun",
+  "rewardClaimInFlight",
+  "pendingDestinationClaim",
+  "activeLabyrinthModifiers",
+  "activeLabyrinthRewardModifiers",
+  "activeLabyrinthPendingNode",
+  "selectedLabyrinthNodeId",
+  "runEndLabyrinthFloor",
+  "rewardState",
+  "companionRewardCards",
+  "runEndMaterials",
+  "runEndTalentXP",
+  "runEndItems",
+  "corruptionResult",
+  "pendingCharacterId",
+  "pendingContentSystemType",
+  "labyrinthMap",
+  "wildwoodDraft",
+  "starterDraftChoices",
+  "shopState",
+  "alchemistState",
+  "trinketShopState",
+  "equipmentShopState",
+  "mysteryEvent",
+  "mysteryChosenChoice",
+  "mysteryPendingRemoval",
+  "mysteryCardChoices",
+  "mysteryGrantedTrinketIds",
+  "mysteryGrantedGearInstances",
+  "mysteryChosenCardId",
+] as const satisfies ReadonlyArray<keyof RunSessionFields>;
+
 // Compile-time guards: these lists must cover every field of their source type, so
-// adding a field to ActiveRunProgressFields/PermanentProgressFields without listing
-// it here becomes a type error instead of silently weakening setRunProgress(). The
-// record asserts each list is exhaustive: a missing key resolves the field to
-// `never`, so assigning `true` stops compiling. Referenced via void so noUnusedLocals
-// stays quiet without an unused export that knip would flag.
+// adding a field without listing it here becomes a type error instead of silently
+// weakening the patch helpers. Referenced via void so noUnusedLocals stays quiet.
 type AssertKeysCover<T, K extends ReadonlyArray<keyof T>> = [keyof T] extends [K[number]] ? true : never;
 
 const runProgressKeyGuards: Readonly<{
   activeRun: AssertKeysCover<ActiveRunProgressFields, typeof ACTIVE_RUN_PROGRESS_KEYS>;
   permanent: AssertKeysCover<PermanentProgressFields, typeof PERMANENT_PROGRESS_KEYS>;
-}> = { activeRun: true, permanent: true };
+  session: AssertKeysCover<RunSessionFields, typeof SESSION_KEYS>;
+}> = { activeRun: true, permanent: true, session: true };
 void runProgressKeyGuards;
 
 export function setRunProgress(partial: Partial<RunStateFields>, replace = false): void {
-  if (replace) resetRunProgressSlice();
-  applyGameplayStateUpdate((state) => {
+  dispatchRunSessionCommand((draft) => {
+    if (replace) {
+      draft.run.activeRun = createInitialActiveRunFields(null);
+      draft.run.initialized = false;
+      draft.runProfile = createInitialPermanentFields();
+    }
     for (const key of ACTIVE_RUN_PROGRESS_KEYS) {
       if (key in partial && partial[key] !== undefined) {
-        (state.run.activeRun as unknown as Record<string, unknown>)[key] = partial[key];
+        (draft.run.activeRun as unknown as Record<string, unknown>)[key] = partial[key];
       }
     }
     for (const key of PERMANENT_PROGRESS_KEYS) {
       if (key in partial && partial[key] !== undefined) {
-        (state.runProfile as unknown as Record<string, unknown>)[key] = partial[key];
+        (draft.runProfile as unknown as Record<string, unknown>)[key] = partial[key];
       }
     }
-    if (partial.initialized !== undefined) state.run.initialized = partial.initialized;
+    if (partial.initialized !== undefined) draft.run.initialized = partial.initialized;
   });
 }
 
 export function setRunSession(partial: Partial<RunSessionFields>, replace = false): void {
-  if (replace) {
-    useRunTransientStore.setState({ ...createInitialSessionFields(), ...partial }, true);
-    return;
-  }
-  useRunTransientStore.setState(partial);
+  dispatchRunSessionCommand((draft) => {
+    if (replace) Object.assign(draft.session, createInitialSessionFields());
+    for (const key of SESSION_KEYS) {
+      if (key in partial && partial[key] !== undefined) {
+        (draft.session as unknown as Record<string, unknown>)[key] = partial[key];
+      }
+    }
+  });
 }

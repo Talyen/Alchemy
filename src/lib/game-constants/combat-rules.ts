@@ -1,6 +1,4 @@
-// ============ Combat Constants ============
-// All tuning values centralized here so balance changes don't require hunting
-// through game-logic code.
+// Combat rule tuning — balance changes belong here, not in battle engine code.
 
 export const GLOBAL_CRIT_CHANCE = 5;
 /** Chance for the player to Dodge an enemy attack damage packet, before Block and Armor. */
@@ -14,7 +12,6 @@ export const FREEZE_THRESHOLD_FRACTION = 0.5; // Freeze when stacks reach this f
 export const WISH_CHOICE_COUNT = 3;
 export const MIN_MAX_MANA_FLOOR = 1; // Prevents 0 maxMana softlock.
 
-// ============ Battle / Rooms ============
 export const ROOM_SCALING_INCREMENT = 0.07; // +7% enemy HP/attack per room (multiplicative).
 export const ELITE_HP_MULTIPLIER = 1.3;
 export const STARTING_TURN = 1;
@@ -26,13 +23,9 @@ export const LOW_HEALTH_THRESHOLD_PERCENT = 30;
 export const ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT = 75;
 export const PERCENT_DENOMINATOR = 100;
 export const HALF_DIVISOR = 2;
-const LEECH_HEAL_FRACTION = 0.5;
+/** Leech keyword: heal fraction of triggering damage (before round). */
+export const LEECH_HEAL_FRACTION = 0.5;
 
-/** Leech keyword: heal for half the triggering damage (rounded). */
-export function computeLeechHeal(damageDealt: number): number {
-  if (damageDealt <= 0) return 0;
-  return Math.round(damageDealt * LEECH_HEAL_FRACTION);
-}
 export const FIRST_EFFECT_MULTIPLIER = 2;
 /** Manaburn: burn bonus as a percent of Mana Crystals. Combat stores this percent on the talent manifest. */
 export const MANABURN_DAMAGE_PERCENT = 35;
@@ -47,7 +40,6 @@ export const BLOCK_SCALED_DAMAGE_PERCENT = 30;
 export const BURN_BLOCK_SCALED_DAMAGE_PERCENT = 10;
 export const GOLD_TROVE_REWARD_MULTIPLIER = 2;
 
-// ============ Battle Tuning ============
 export const CARDS_PER_TURN = 4; // Drawn each turn after hand is discarded; overflow draws are skipped (not discarded).
 /** Death's Door recovery player turns after the first lethal save. Talent extension adds on top. */
 export const DEATHS_DOOR_GRACE_TURNS = 2;
@@ -57,6 +49,7 @@ export const MAX_HEALTH_PER_TALENT_POINT = 1;
 export const BASE_ENEMY_HEALTH = 30;
 export const BASE_PLAYER_MANA = 4;
 export const DEFAULT_BATTLE_ENEMY_TYPE = "normal";
+export const FALLBACK_ENEMY_ATTACK = 8;
 
 /** Hidden fight pacing: comeback (behind side) × clock (both sides). Live battles default on. */
 export const FIGHT_PACING = {
@@ -77,48 +70,25 @@ export const FIGHT_PACING = {
   },
 } as const;
 
-// ============ Timing (ms) ============
-export const AUTO_END_TURN_DELAY = 1220;
-export const AUTOPLAY_RETRY_DELAY_MS = 50;
-export const AUTOPLAY_POST_PLAY_DELAY_MS = 1000;
-export const SLICE_DEATH_DURATION_MS = 1250;
-export const VICTORY_TRANSITION_DELAY = 1300;
-export const ENEMY_PHASE_DELAY = 900;
-export const ENEMY_ATTACK_RECOVERY_DELAY = 500;
-/** Hit shake starts at the attack lunge's contact pose, then gets a small reset buffer. */
-export const HIT_SHAKE_DELAY_MS = 340;
-export const SHAKE_DURATION = HIT_SHAKE_DELAY_MS + 420;
-export const ATTACK_LUNGE_DURATION_MS = 950;
-export const CAST_BRACE_DURATION_MS = 520;
-export const HURT_FLASH_DURATION_MS = 280;
-export const HURT_SPARK_DURATION_MS = 450;
-export const HURT_SPARK_COUNT = 32;
-export const COMPANION_ATTACK_DELAY = 1000;
-export const NAVIGATION_DELAY_MS = 100;
-export const CAMPFIRE_ANIMATION_MS = 900;
-export const CAMPFIRE_CONTINUE_DELAY = 400;
+/** Restores 30% of max Health — meaningful but not full recovery. */
+export const CAMPFIRE_HEAL_FRACTION = 0.3;
 
-// ============ Campfire ============
-export const CAMPFIRE_HEAL_FRACTION = 0.3; // Restores 30% of max Health — meaningful but not full recovery.
+export const WISH_CRYSTAL_GOLD_CHANCE = 0.5;
 
-/** Effective campfire heal fraction including talent bonus. */
-export function getCampfireHealFraction(campfireHealBonus = 0): number {
-  return CAMPFIRE_HEAL_FRACTION + campfireHealBonus;
-}
+export const BATTLE_CONFIG = {
+  CC_IMMUNITY_DURATION: 2, // Turns of status immunity after Stun/Freeze wears off.
+  BASE_CC_DURATION: 1,
+  ARMOR_DECAY_AMOUNT: 1, // Armor lost when taking health damage.
+  FORGE_DECAY_AMOUNT: 1, // Forge consumed when playing physical attacks.
+} as const;
 
-/** Restored Health after a campfire rest, clamped to max. */
-export function getCampfireRestHealth(
-  currentHealth: number,
-  maxHealth: number,
-  healFraction: number = CAMPFIRE_HEAL_FRACTION,
-): number {
-  return Math.min(maxHealth, currentHealth + Math.floor(maxHealth * healFraction));
-}
+/** Poison stacks lost after each tick: max(1, round(stacks * percent / 100)). */
+export const POISON_DECAY_PERCENT = 20;
+export const POISON_GAIN_AMOUNT = 1;
 
-// ============ Talents / XP ============
-export const XP_BASE_PER_POINT = 10; // Point n costs n×10 XP (triangular total).
-export const XP_TRIANGULAR_MULTIPLIER = 5; // Total XP for n points: n(n+1)/2 × 5.
-export const XP_MIN_THRESHOLD = 10;
-export const XP_ROOT_DIVISOR = 0.8; // Inverse formula: sqrt(1 + 0.8×XP).
-export const TALENT_UNLOCK_ANIMATION_MS = 300;
-export const TALENT_UNLOCK_SPARK_COUNT = 16;
+export const STATUS_CONFIG = {
+  MIN_STACK_AMOUNT: 1,
+  CC_NOTICE_STUN: "Stunned",
+  CC_NOTICE_FREEZE: "Frozen",
+  DODGE_NOTICE: "Dodge",
+} as const;

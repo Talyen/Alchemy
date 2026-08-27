@@ -115,9 +115,16 @@ Active runs persist a seed and counters for named run-outcome streams. This is a
 
 ## Shop offerings (`activeRun` shop fields)
 
-Shop inventories (`shopState`, `alchemistState`, `trinketShopState`, `equipmentShopState`) persist only while `currentScreen` is that shop. Leaving a shop clears in-memory offerings in the same command as destination advance, so autosave and session state agree. No schema bump: absent shop fields already default to empty.
+Shop inventories (`shopState`, `alchemistState`, `trinketShopState`, `equipmentShopState`) persist only while `currentScreen` is that shop (`encodePersistedShops`). Leaving a shop clears in-memory offerings in the same command as destination advance, so autosave and session state agree. No schema bump: absent shop fields already default to empty.
 
-The schema-12 migration reinterprets a saved Trinket Shop as a permanent vendor. Restore filters its offerings against permanent ownership; an exhausted restored shop is a sold-out state that can still be left safely.
+Resume repair (same pass drops offerings and remaps `purchasedSlotKeys`):
+
+- Normalize strips tombstoned cards from merchant/alchemist shelves.
+- Trinket hydrate drops IDs missing from the live catalog.
+- Equipment hydrate drops gear whose `definitionId` is missing from `gearDefinitions` (Zod preprocess already strips many of these; hydrate clears leftover purchase keys).
+- `restoreRunSession` filters owned trinkets and owned unique gear against live `draft.gear` (parked Campaign + live Labyrinth share profile ownership).
+
+An exhausted restored shelf is a sold-out state that can still be left safely. Schema-12 reinterpreted a saved Trinket Shop as a permanent vendor; ownership filtering above is the restore seam that keeps that contract honest.
 
 ## Mystery visit (`activeRun.mysteryVisit`)
 

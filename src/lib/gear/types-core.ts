@@ -11,4 +11,5 @@ export type GearRarity = "basic" | "astral" | "unique";
 
 export const GEAR_RARITIES = ["basic", "astral", "unique"] as const satisfies readonly GearRarity[];
 
-export type ItemDropTier = "basic" | "astral" | "trinket" | "unique";
+/** Gear reward rarity tiers (permanent Trinkets use a separate reward-flow gate). */
+export type ItemDropTier = GearRarity;

@@ -6,7 +6,10 @@ import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-scree
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { getRunSessionStoreView, resetRunSessionSlice } from "../../../../helpers/run-domain-store-test";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { resetRunSessionSlice } from "../../../../helpers/run-domain-store-test";
 
 const testCard: BattleCard = {
   id: "slash",
@@ -19,11 +22,13 @@ const testCard: BattleCard = {
 
 beforeEach(() => {
   resetRunSessionSlice();
-  getRunSessionStoreView().setRewardState({
-    ...createEmptyRewardState(),
-    rewardType: "card",
-    choices: [testCard],
-  });
+  dispatchRunSessionCommand((draft) =>
+    setRewardState(draft, {
+      ...createEmptyRewardState(),
+      rewardType: "card",
+      choices: [testCard],
+    }),
+  );
 });
 
 afterEach(() => {
@@ -37,7 +42,7 @@ describe("RewardsScreen", () => {
 
     render(
       <RewardsScreen
-        rewardState={getRunSessionStoreView().rewardState}
+        rewardState={readRunSession().rewardState}
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={onSelectReward}
@@ -48,14 +53,14 @@ describe("RewardsScreen", () => {
     await user.click(screen.getByRole("button", { name: /select slash/i }));
 
     expect(onSelectReward).toHaveBeenCalledWith("slash");
-    expect(getRunSessionStoreView().rewardState.selectedId).toBeNull();
+    expect(readRunSession().rewardState.selectedId).toBeNull();
   });
 
   it("disables claim actions while a reward claim is in flight", () => {
     render(
       <RewardsScreen
         rewardState={{
-          ...getRunSessionStoreView().rewardState,
+          ...readRunSession().rewardState,
           selectedId: "slash",
         }}
         claimInFlight
@@ -101,7 +106,7 @@ describe("RewardsScreen", () => {
   it("places the hamburger menu trigger in the screen header", () => {
     render(
       <RewardsScreen
-        rewardState={getRunSessionStoreView().rewardState}
+        rewardState={readRunSession().rewardState}
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
@@ -115,7 +120,7 @@ describe("RewardsScreen", () => {
   it("prompts with the reward kind instead of a generic choose label", () => {
     const { rerender } = render(
       <RewardsScreen
-        rewardState={getRunSessionStoreView().rewardState}
+        rewardState={readRunSession().rewardState}
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
@@ -190,7 +195,7 @@ describe("RewardsScreen", () => {
   it("keeps Add Card disabled until a reward is selected", () => {
     render(
       <RewardsScreen
-        rewardState={getRunSessionStoreView().rewardState}
+        rewardState={readRunSession().rewardState}
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}

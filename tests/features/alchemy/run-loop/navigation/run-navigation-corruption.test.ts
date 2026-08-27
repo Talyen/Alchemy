@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setCorruptionResult } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { makeTestCard } from "../../../../fixtures/cards";
-import { getRunSessionStoreView } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   resetTransientRunUi();
@@ -24,12 +25,14 @@ describe("corruption destination exit", () => {
 
   it("handleCorruptionExit advances after a corruption result", () => {
     const card = makeTestCard({ id: "slash" });
-    getRunSessionStoreView().setCorruptionResult({
-      originalCard: card,
-      corruptedCard: { ...card, corrupted: true },
-      transformed: false,
-      delta: -1,
-    });
+    dispatchRunSessionCommand((draft) =>
+      setCorruptionResult(draft, {
+        originalCard: card,
+        corruptedCard: { ...card, corrupted: true },
+        transformed: false,
+        delta: -1,
+      }),
+    );
 
     const advanceToNextDestination = vi.fn();
     const returnToCurrentDestination = vi.fn();
@@ -45,12 +48,14 @@ describe("corruption destination exit", () => {
 
   it("handleCorruptCard ignores a second pick after a result is stored", () => {
     const original = makeTestCard({ id: "slash" });
-    getRunSessionStoreView().setCorruptionResult({
-      originalCard: original,
-      corruptedCard: { ...original, corrupted: true },
-      transformed: false,
-      delta: -1,
-    });
+    dispatchRunSessionCommand((draft) =>
+      setCorruptionResult(draft, {
+        originalCard: original,
+        corruptedCard: { ...original, corrupted: true },
+        transformed: false,
+        delta: -1,
+      }),
+    );
 
     const updateRunDeck = vi.fn();
     createCorruptionFlowHandlers({

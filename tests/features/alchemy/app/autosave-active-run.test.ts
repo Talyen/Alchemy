@@ -2,8 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readHasActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import { resetAllTestStores } from "../../../helpers/gameplay-store-test";
-import { getNavigationStoreView, getRunSessionStoreView, setRunProgress } from "../../../helpers/run-domain-store-test";
+import { setRunProgress } from "../../../helpers/run-domain-store-test";
 
 vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/storage")>();
@@ -20,10 +24,12 @@ beforeEach(() => {
 describe("resolveActiveRunForSave", () => {
   it("returns null when hasActiveRun is false even if run progress remains populated", () => {
     setRunProgress({ gold: 42, runPlayerHealth: 10, initialized: true });
-    getRunSessionStoreView().setHasActiveRun(false);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.GAME_OVER);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveRun(draft, false);
+      setScreen(draft, ROUTE_SCREENS.GAME_OVER);
+    });
 
-    const activeRun = resolveActiveRunForSave(getRunSessionStoreView().hasActiveRun);
+    const activeRun = resolveActiveRunForSave(readHasActiveRun());
     const save = buildAlchemySaveDataFromStores(activeRun);
 
     expect(activeRun).toBeNull();
@@ -32,10 +38,12 @@ describe("resolveActiveRunForSave", () => {
 
   it("snapshots active run when hasActiveRun is true", () => {
     setRunProgress({ gold: 15, initialized: true });
-    getRunSessionStoreView().setHasActiveRun(true);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.DESTINATION);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveRun(draft, true);
+      setScreen(draft, ROUTE_SCREENS.DESTINATION);
+    });
 
-    const activeRun = resolveActiveRunForSave(getRunSessionStoreView().hasActiveRun);
+    const activeRun = resolveActiveRunForSave(readHasActiveRun());
     const save = buildAlchemySaveDataFromStores(activeRun);
 
     expect(activeRun).not.toBeNull();
@@ -46,12 +54,14 @@ describe("resolveActiveRunForSave", () => {
 
   it("does not resurrect active run after defeat when a later store write occurs on game-over", () => {
     setRunProgress({ gold: 99, initialized: true });
-    getRunSessionStoreView().setHasActiveRun(false);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.GAME_OVER);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveRun(draft, false);
+      setScreen(draft, ROUTE_SCREENS.GAME_OVER);
+    });
 
     setRunProgress({ gold: 100 });
 
-    const save = buildAlchemySaveDataFromStores(resolveActiveRunForSave(getRunSessionStoreView().hasActiveRun));
+    const save = buildAlchemySaveDataFromStores(resolveActiveRunForSave(readHasActiveRun()));
     expect(save.activeRun).toBeNull();
   });
 });

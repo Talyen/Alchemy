@@ -29,7 +29,7 @@ import {
   useWildwoodRemovalScreenData,
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { useTalentEffects } from "@/features/alchemy/shared/stores/run-session-react-ports";
-import { getCampfireHealFraction } from "@/lib/game-constants";
+import { getCampfireHealFraction } from "@/lib/campfire-heal";
 import type { BattleCommands, BattleRouteCtx, RunLoopCommands, RunLoopRouteCtx } from "./route-ctx";
 
 function BattleScreenRoute({

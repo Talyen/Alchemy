@@ -4,11 +4,12 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
-  getBattleStoreView,
-  getNavigationStoreView,
-  getRunSessionStoreView,
   resetRunBattleSlice,
   resetRunNavigationSlice,
   resetRunProgressSlice,
@@ -43,9 +44,11 @@ describe("useAlchemyRunController", () => {
 
   it("resetRunState tears down run stores when navigating to menu", () => {
     vi.useFakeTimers();
-    getRunSessionStoreView().setHasActiveRun(true);
-    getBattleStoreView().setHasActiveBattle(true);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveRun(draft, true);
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
     const { result } = renderController();
 
     act(() => {
@@ -59,8 +62,8 @@ describe("useAlchemyRunController", () => {
     });
     vi.useRealTimers();
 
-    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
-    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+    expect(readHasActiveRun()).toBe(false);
+    expect(readBattle().hasActiveBattle).toBe(false);
   });
 
   it("keeps routeCommands identity across a no-op rerender", () => {

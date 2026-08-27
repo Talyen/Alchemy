@@ -5,8 +5,9 @@ import { keywordDefinitions } from "@/lib/game-data";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { clearCombatPresentation } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
-import { getBattleStoreView, getNavigationStoreView } from "../../../../helpers/run-domain-store-test";
 
 describe("battle-presentation-store", () => {
   beforeEach(resetBattlePresentationAndRun);
@@ -156,8 +157,10 @@ describe("battle-presentation-store", () => {
 
   it("clearFloatingCombatTexts invalidates pending showCombatTexts timers", async () => {
     vi.useFakeTimers();
-    getBattleStoreView().setHasActiveBattle(true);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
 
     useBattlePresentationStore
       .getState()
@@ -171,8 +174,10 @@ describe("battle-presentation-store", () => {
 
   it("emits typed impact cues per target in combat-text lane order", async () => {
     vi.useFakeTimers();
-    getBattleStoreView().setHasActiveBattle(true);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
 
     useBattlePresentationStore.getState().showCombatTexts([
       { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
@@ -207,8 +212,10 @@ describe("battle-presentation-store", () => {
 
   it("showCombatTexts does not add entries when not on battle screen", async () => {
     vi.useFakeTimers();
-    getBattleStoreView().setHasActiveBattle(true);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.COLLECTION);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.COLLECTION);
+    });
 
     useBattlePresentationStore
       .getState()
@@ -220,8 +227,10 @@ describe("battle-presentation-store", () => {
 
   it("batches same-lane combat texts into one store write", async () => {
     vi.useFakeTimers();
-    getBattleStoreView().setHasActiveBattle(true);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
     const writes: number[] = [];
     const unsubscribe = useBattlePresentationStore.subscribe((state, prev) => {
       if (state.floatingCombatTexts !== prev.floatingCombatTexts) {
@@ -242,8 +251,10 @@ describe("battle-presentation-store", () => {
 
   it("caps visible combat texts per rail", async () => {
     vi.useFakeTimers();
-    getBattleStoreView().setHasActiveBattle(true);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
 
     useBattlePresentationStore.getState().showCombatTexts([
       { target: "enemy", kind: "damage", stat: "health", amount: 1 },

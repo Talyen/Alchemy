@@ -25,18 +25,24 @@ export const EQUIPMENT_SHOP_DROP_RATES = {
   basic: 0.6,
 } as const;
 
-// Unified Scarcity Drop Rates
+/** Boss gear rarity table (permanent Trinket gate is separate — see GEAR_REWARD_PERMANENT_TRINKET_CHANCE). */
 export const DROP_RATES_BOSS = {
   unique: 0.3,
-  trinket: 0.3,
-  astral: 0.4,
-  basic: 0.0,
 } as const;
 
+/** Normal gear rarity table; remainder after unique+astral is basic. */
 export const DROP_RATES_NORMAL = {
   unique: 0.05,
-  trinket: 0.07,
   astral: 0.08,
+} as const;
+
+/**
+ * Chance that a Gear reward surface becomes an unowned permanent Trinket reward instead.
+ * Used by reward-flow only — gear generation never rolls permanent Trinkets.
+ */
+export const GEAR_REWARD_PERMANENT_TRINKET_CHANCE = {
+  normal: 1 / 3,
+  boss: 0.3,
 } as const;
 
 // ============ Draft ============
@@ -67,7 +73,7 @@ export const CORRUPTION_TEXT_PATTERNS = {
   leadingNumber: /^\d+/,
 } as const;
 // Semantic alias: corruption uses the same weight as normal routes; separate name documents intent at call sites.
-export const CORRUPTION_DESTINATION_WEIGHT = 10;
+export const CORRUPTION_DESTINATION_WEIGHT = DEFAULT_DESTINATION_WEIGHT;
 export const DESTINATIONS_PER_ACT = 8; // Slot 8 is the boss.
 export const ACTS_PER_RUN = 3;
 export const DEFAULT_CAMPAIGN_DIFFICULTY_ID = "difficulty-1";

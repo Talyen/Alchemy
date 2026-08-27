@@ -1,13 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
-import {
-  getBattleStoreView,
-  getRunProgressStoreView,
-  resetRunDomainStore,
-  setRunProgress,
-  setRunSession,
-} from "../../../../helpers/run-domain-store-test";
+import { setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
+import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { defaultBattleState } from "@/lib/battle";
 
 beforeEach(() => {
@@ -23,12 +20,14 @@ describe("live meta rebind", () => {
       runMetaMaxHealth: 30,
     });
     setRunSession({ hasActiveRun: true });
-    getBattleStoreView().setHasActiveBattle(true);
-    getBattleStoreView().setSyncedBattleState({
-      ...defaultBattleState(),
-      playerHealth: 20,
-      playerMaxHealth: 30,
-      gold: 0,
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, true);
+      setSyncedBattleState(draft, {
+        ...defaultBattleState(),
+        playerHealth: 20,
+        playerMaxHealth: 30,
+        gold: 0,
+      });
     });
 
     dispatchRunSessionCommand((draft) => {
@@ -36,8 +35,8 @@ describe("live meta rebind", () => {
       rebindLiveRunMeta(draft);
     });
 
-    expect(getRunProgressStoreView().runMaxHealth).toBe(35);
-    expect(getRunProgressStoreView().runPlayerHealth).toBe(20);
-    expect(getBattleStoreView().battleState.playerMaxHealth).toBe(35);
+    expect(readActiveRun().runMaxHealth).toBe(35);
+    expect(readActiveRun().runPlayerHealth).toBe(20);
+    expect(readBattle().battleState.playerMaxHealth).toBe(35);
   });
 });

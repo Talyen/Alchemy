@@ -5,8 +5,10 @@ import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-genera
 import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
 import { createSeededRng } from "@/lib/utils";
 import { useLabyrinthController, type LabyrinthNodeHandlers } from "@/features/alchemy/shell/use-labyrinth-controller";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setLabyrinthMap } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { getRunSessionStoreView } from "../../../helpers/run-domain-store-test";
 
 function stubNodeHandlers(overrides: Partial<LabyrinthNodeHandlers> = {}): LabyrinthNodeHandlers {
   return {
@@ -23,13 +25,13 @@ function stubNodeHandlers(overrides: Partial<LabyrinthNodeHandlers> = {}): Labyr
 }
 
 function firstReachableId() {
-  const map = getRunSessionStoreView().labyrinthMap;
+  const map = readRunSession().labyrinthMap;
   return map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!.outgoingIds[0]!;
 }
 
 beforeEach(() => {
   resetTransientRunUi();
-  getRunSessionStoreView().setLabyrinthMap(generateLabyrinthMap(createSeededRng(42)));
+  dispatchRunSessionCommand((draft) => setLabyrinthMap(draft, generateLabyrinthMap(createSeededRng(42))));
 });
 
 describe("useLabyrinthController hook", () => {
@@ -45,7 +47,7 @@ describe("useLabyrinthController hook", () => {
     });
 
     expect(entered).toBe(true);
-    expect(getRunSessionStoreView().activeLabyrinthPendingNode).toBe(target);
+    expect(readRunSession().activeLabyrinthPendingNode).toBe(target);
     expect(onStartBattle).toHaveBeenCalledOnce();
   });
 
@@ -59,8 +61,8 @@ describe("useLabyrinthController hook", () => {
       result.current.onNodeCleared();
     });
 
-    expect(getRunSessionStoreView().activeLabyrinthPendingNode).toBeNull();
-    expect(getRunSessionStoreView().labyrinthMap.nodes[target]?.cleared).toBe(true);
+    expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
+    expect(readRunSession().labyrinthMap.nodes[target]?.cleared).toBe(true);
   });
 
   it("enterSelectedNode rejects a second enter while a node is pending", () => {
@@ -84,7 +86,7 @@ describe("useLabyrinthController hook", () => {
 
   it("selects a locked chamber without allowing enter", () => {
     const { result } = renderHook(() => useLabyrinthController());
-    const map = getRunSessionStoreView().labyrinthMap;
+    const map = readRunSession().labyrinthMap;
     const locked = Object.values(map.nodes).find(
       (node) => node.floor > 0 && node.id !== firstReachableId() && !node.cleared,
     );
@@ -96,9 +98,9 @@ describe("useLabyrinthController hook", () => {
       entered = result.current.enterSelectedNode(stubNodeHandlers());
     });
 
-    expect(getRunSessionStoreView().selectedLabyrinthNodeId).toBe(locked!.id);
+    expect(readRunSession().selectedLabyrinthNodeId).toBe(locked!.id);
     expect(entered).toBe(false);
-    expect(getRunSessionStoreView().activeLabyrinthPendingNode).toBeNull();
+    expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
   });
 
   it("resetMap clears pending selection and rebuilds the map", () => {
@@ -107,8 +109,8 @@ describe("useLabyrinthController hook", () => {
       result.current.selectNode(firstReachableId());
       result.current.resetMap();
     });
-    expect(getRunSessionStoreView().activeLabyrinthPendingNode).toBeNull();
-    expect(getRunSessionStoreView().selectedLabyrinthNodeId).toBeNull();
-    expect(getRunSessionStoreView().labyrinthMap.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
+    expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
+    expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
+    expect(readRunSession().labyrinthMap.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
   });
 });

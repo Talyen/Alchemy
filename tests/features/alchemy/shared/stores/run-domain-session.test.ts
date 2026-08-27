@@ -15,20 +15,33 @@ import {
   createRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { setHasActiveBattle } from "@/features/alchemy/shared/stores/write-port-battle";
+import {
+  initializeActiveBattle as mutateInitializeActiveBattle,
+  setHasActiveBattle as mutateHasActiveBattle,
+  setRewardState as mutateRewardState,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
+import { setHasActiveRun as mutateHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import {
+  readActiveRun,
+  readActiveRunScreen,
+  readBattle,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-session-read-port";
 
 const syncBattleToRun = createRunSessionCommand(mutateBattleToRun);
 const syncRunToBattleStart = createRunSessionCommand(mutateRunToBattleStart);
+const initializeActiveBattle = createRunSessionCommand(mutateInitializeActiveBattle);
+const setSyncedBattleState = createRunSessionCommand(mutateSyncedBattleState);
+const setHasActiveBattle = createRunSessionCommand(mutateHasActiveBattle);
+const setHasActiveRun = createRunSessionCommand(mutateHasActiveRun);
+const setRewardState = createRunSessionCommand(mutateRewardState);
 
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import {
-  getBattleStoreView,
-  getNavigationStoreView,
-  getRunProgressStoreView,
-  getRunSessionStoreView,
   resetRunBattleSlice,
   resetRunDomainStore,
   resetRunSessionSlice,
@@ -45,20 +58,20 @@ describe("session slice", () => {
   });
 
   it("has empty shop and alchemist state", () => {
-    expect(getRunSessionStoreView().shopState.cards).toEqual([]);
-    expect(getRunSessionStoreView().alchemistState.potions).toEqual([]);
+    expect(readRunSession().shopState.cards).toEqual([]);
+    expect(readRunSession().alchemistState.potions).toEqual([]);
   });
 
   it("starts with empty reward state and no active run", () => {
-    expect(getRunSessionStoreView().rewardState).toEqual(createEmptyRewardState());
-    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(readRunSession().rewardState).toEqual(createEmptyRewardState());
+    expect(readRunSession().hasActiveRun).toBe(false);
   });
 
   it("setRewardState accepts direct values and updaters", () => {
-    getRunSessionStoreView().setRewardState({ ...createEmptyRewardState(), gold: 50 });
-    expect(getRunSessionStoreView().rewardState.gold).toBe(50);
-    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, gold: prev.gold + 25 }));
-    expect(getRunSessionStoreView().rewardState.gold).toBe(75);
+    setRewardState({ ...createEmptyRewardState(), gold: 50 });
+    expect(readRunSession().rewardState.gold).toBe(50);
+    setRewardState((prev) => ({ ...prev, gold: prev.gold + 25 }));
+    expect(readRunSession().rewardState.gold).toBe(75);
   });
 });
 
@@ -68,26 +81,26 @@ describe("battle slice", () => {
   });
 
   it("initializes battleState and hasActiveBattle defaults", () => {
-    expect(getBattleStoreView().battleState).not.toBeNull();
-    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+    expect(readBattle().battleState).not.toBeNull();
+    expect(readBattle().hasActiveBattle).toBe(false);
   });
 
   it("hydrates and resets active battle", () => {
-    getBattleStoreView().initializeActiveBattle({ ...defaultBattleState(), turn: 4, playerHealth: 9 });
-    expect(getBattleStoreView().hasActiveBattle).toBe(true);
-    expect(getBattleStoreView().pendingTransitionResumeRequired).toBe(false);
-    getBattleStoreView().initializeActiveBattle(null);
-    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+    initializeActiveBattle({ ...defaultBattleState(), turn: 4, playerHealth: 9 });
+    expect(readBattle().hasActiveBattle).toBe(true);
+    expect(readBattle().pendingTransitionResumeRequired).toBe(false);
+    initializeActiveBattle(null);
+    expect(readBattle().hasActiveBattle).toBe(false);
   });
 
   it("requires resume only when hydrating with a pending transition", () => {
     const resultState = { ...defaultBattleState(), turn: 2 };
-    getBattleStoreView().initializeActiveBattle(
+    initializeActiveBattle(
       { ...defaultBattleState(), turnPhase: "enemy", hand: [] },
       { kind: "enemy-turn", resultState, playerTurnSkipped: false },
     );
-    expect(getBattleStoreView().pendingTransitionResumeRequired).toBe(true);
-    expect(getBattleStoreView().pendingBattleTransition).toEqual({
+    expect(readBattle().pendingTransitionResumeRequired).toBe(true);
+    expect(readBattle().pendingBattleTransition).toEqual({
       kind: "enemy-turn",
       resultState: { ...resultState, rng: expect.any(Function) },
       playerTurnSkipped: false,
@@ -101,42 +114,42 @@ describe("run transitions", () => {
     resetRunDomainStore();
     teardownRun();
     setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, gold: 40, initialized: true });
-    getBattleStoreView().setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
-    getRunSessionStoreView().setHasActiveRun(true);
+    setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
+    setHasActiveRun(true);
   });
 
   it("syncRunToBattleStart clamps and persists run HP", () => {
     const health = syncRunToBattleStart();
     expect(health).toBeGreaterThan(0);
-    expect(getRunProgressStoreView().runPlayerHealth).toBe(health);
+    expect(readActiveRun().runPlayerHealth).toBe(health);
   });
 
   it("syncBattleToRun copies battle HP to the run store", () => {
     syncBattleToRun({ playerHealth: 14 });
-    expect(getRunProgressStoreView().runPlayerHealth).toBe(14);
+    expect(readActiveRun().runPlayerHealth).toBe(14);
   });
 
   it("teardownRun clears session flags and returns to menu", () => {
     teardownRun();
-    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
-    expect(getBattleStoreView().hasActiveBattle).toBe(false);
-    expect(getNavigationStoreView().screen).toBe(ROUTE_SCREENS.MENU);
+    expect(readRunSession().hasActiveRun).toBe(false);
+    expect(readBattle().hasActiveBattle).toBe(false);
+    expect(readActiveRunScreen()).toBe(ROUTE_SCREENS.MENU);
   });
 
   it("finalizeRunEndSession clears hasActiveRun", async () => {
-    getRunSessionStoreView().setHasActiveRun(true);
+    setHasActiveRun(true);
     finalizeRunEndSession({
       awardRunEndMaterials: vi.fn(() => emptyInventory()),
       finalizeRunXP: vi.fn(),
     });
-    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(readRunSession().hasActiveRun).toBe(false);
     await vi.waitFor(() => {
       expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
     });
   });
 
   it("finalizeRunEndSession ignores a second call after hasActiveRun is cleared", () => {
-    getRunSessionStoreView().setHasActiveRun(true);
+    setHasActiveRun(true);
     const awardRunEndMaterials = vi.fn(() => emptyInventory());
     finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: vi.fn() });
     finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: vi.fn() });
@@ -144,17 +157,17 @@ describe("run transitions", () => {
   });
 
   it("applyRunDefeatTeardown commits run and combat teardown together", async () => {
-    getRunSessionStoreView().setHasActiveRun(true);
-    getBattleStoreView().setHasActiveBattle(true);
+    setHasActiveRun(true);
+    setHasActiveBattle(true);
     const awardRunEndMaterials = vi.fn(() => emptyInventory());
     const finalizeRunXP = vi.fn();
-    const clearCombatState = (draft: GameplayDraft) => setHasActiveBattle(draft, false);
+    const clearCombatState = (draft: GameplayDraft) => mutateHasActiveBattle(draft, false);
     const clearCombatPresentation = vi.fn();
     const commits: Array<{ hasActiveRun: boolean; hasActiveBattle: boolean }> = [];
     const unsubscribe = subscribeRunSessionCommits(() => {
       commits.push({
-        hasActiveRun: getRunSessionStoreView().hasActiveRun,
-        hasActiveBattle: getBattleStoreView().hasActiveBattle,
+        hasActiveRun: readRunSession().hasActiveRun,
+        hasActiveBattle: readBattle().hasActiveBattle,
       });
     });
 
@@ -173,8 +186,8 @@ describe("run transitions", () => {
     });
     expect(commits).toEqual([{ hasActiveRun: false, hasActiveBattle: false }]);
     expect(clearCombatPresentation).toHaveBeenCalledOnce();
-    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
-    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+    expect(readRunSession().hasActiveRun).toBe(false);
+    expect(readBattle().hasActiveBattle).toBe(false);
     expect(stopAllSfx).toHaveBeenCalledOnce();
     expect(playDefeat).toHaveBeenCalledOnce();
   });

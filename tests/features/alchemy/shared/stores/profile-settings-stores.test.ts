@@ -1,22 +1,28 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { profilePersistenceCodec } from "@/features/alchemy/shared/stores/profile-store";
-import { useProfileStore } from "../../../../helpers/gameplay-store-test";
+import { profilePersistenceCodec, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { resetProfileForTest } from "../../../../helpers/gameplay-store-test";
 import { settingsPersistenceCodec, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  handleCollectionTabChange,
+  resetToDefaults,
+  setCollectionPage,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/write-port-profile";
 
 function makeSave(overrides: Partial<SaveData> = {}): SaveData {
   return { ...defaultSaveData, ...overrides };
 }
 
 beforeEach(() => {
-  useProfileStore.setState(useProfileStore.getInitialState());
+  resetProfileForTest();
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
 });
 
 describe("profile store", () => {
   it("owns persistent discoveries, completion, and collection view state", () => {
-    const profile = useProfileStore.getState();
+    const profile = readProfileStore();
     expect(profile.discoveredCardIds).toEqual([]);
     expect(profile.encounteredEnemyIds).toEqual([]);
     expect(profile.discoveredTrinketIds).toEqual([]);
@@ -40,20 +46,21 @@ describe("profile store", () => {
       ),
     );
 
-    const profile = useProfileStore.getState();
+    const profile = readProfileStore();
     expect(profile.discoveredCardIds).toEqual(["card-a"]);
     expect(profile.encounteredEnemyIds).toEqual(["goblin"]);
     expect(profile.completedDifficulties.knight).toEqual(["difficulty-1"]);
   });
 
   it("supports functional discovery updates and collection navigation", () => {
-    const profile = useProfileStore.getState();
-    profile.setDiscoveredCardIds((previous) => [...previous, "card-a"]);
-    profile.setCollectionPage("bestiary", 2);
-    profile.setCollectionPage("cards", -1);
-    profile.handleCollectionTabChange("bestiary");
+    dispatchRunSessionCommand((draft) => {
+      setDiscoveredCardIds(draft, (previous) => [...previous, "card-a"]);
+      setCollectionPage(draft, "bestiary", 2);
+      setCollectionPage(draft, "cards", -1);
+      handleCollectionTabChange(draft, "bestiary");
+    });
 
-    expect(useProfileStore.getState()).toMatchObject({
+    expect(readProfileStore()).toMatchObject({
       discoveredCardIds: ["card-a"],
       collectionTab: "bestiary",
       collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0, uniques: 0 },
@@ -61,17 +68,18 @@ describe("profile store", () => {
   });
 
   it("resets persisted and transient profile state", () => {
-    const profile = useProfileStore.getState();
-    profile.setDiscoveredCardIds(["card-a"]);
-    profile.handleCollectionTabChange("trinkets");
-    profile.resetToDefaults();
+    dispatchRunSessionCommand((draft) => {
+      setDiscoveredCardIds(draft, ["card-a"]);
+      handleCollectionTabChange(draft, "trinkets");
+      resetToDefaults(draft);
+    });
 
-    expect(useProfileStore.getState().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
-    expect(useProfileStore.getState().collectionTab).toBe("heroes");
+    expect(readProfileStore().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
+    expect(readProfileStore().collectionTab).toBe("heroes");
   });
 
   it("setState from getInitialState only writes data fields onto the aggregate", () => {
-    useProfileStore.setState(useProfileStore.getInitialState());
+    resetProfileForTest();
     const encoded = profilePersistenceCodec.encode();
     expect(encoded).toEqual({
       discoveredCardIds: [],
@@ -81,7 +89,7 @@ describe("profile store", () => {
       completedDifficulties: expect.any(Object),
       finishedRunCharacters: [],
     });
-    expect(typeof useProfileStore.getState().setDiscoveredCardIds).toBe("function");
+    expect(readProfileStore()).not.toHaveProperty("setDiscoveredCardIds");
   });
 });
 
@@ -116,7 +124,7 @@ describe("settings store", () => {
   });
 
   it("updates and resets preferences independently from profile state", () => {
-    useProfileStore.getState().setDiscoveredCardIds(["card-a"]);
+    dispatchRunSessionCommand((draft) => setDiscoveredCardIds(draft, ["card-a"]));
     const settings = useSettingsStore.getState();
     settings.setBrightness(120);
     settings.setMasterVolume(75);
@@ -126,7 +134,7 @@ describe("settings store", () => {
     expect(useSettingsStore.getState().brightness).toBe(defaultSaveData.brightness);
     expect(useSettingsStore.getState().masterVolume).toBe(defaultSaveData.masterVolume);
     expect(useSettingsStore.getState().showClearSaveConfirm).toBe(false);
-    expect(useProfileStore.getState().discoveredCardIds).toEqual(["card-a"]);
+    expect(readProfileStore().discoveredCardIds).toEqual(["card-a"]);
   });
 
   it("clears stored autoplay when remember is turned off", () => {

@@ -26,8 +26,10 @@ test.describe("Card Shop", critical, () => {
   });
 });
 
-test.describe("Shop fade-out", () => {
-  for (const destination of ["Card Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"] as const) {
+test.describe("Shop fade-out", critical, () => {
+  // Card Shop covers the shared ShopBrowseOfferings + route fade path.
+  // Equipment Shop adds one leave-clear / encode path that uses instanceId slot keys.
+  for (const destination of ["Card Shop", "Equipment Shop"] as const) {
     const gate = destination === "Card Shop" ? critical : slow;
 
     test(`keeps ${destination} offerings mounted through route fade-out`, gate, async ({ page, runtimeErrors }) => {

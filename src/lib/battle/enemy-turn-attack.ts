@@ -22,7 +22,8 @@ import {
   type CombatTextEvent,
   type CombatTextStat,
 } from "./types";
-import { BATTLE_CONFIG, computeLeechHeal, PERCENT_DENOMINATOR } from "../game-constants";
+import { BATTLE_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
+import { computeLeechHeal } from "./leech-heal";
 import { checkHealthThresholds, isFreezeActiveForAspect } from "./enemy-turn-utils";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";

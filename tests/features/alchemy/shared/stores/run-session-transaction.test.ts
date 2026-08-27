@@ -3,13 +3,8 @@ import {
   dispatchRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  getRunDomainStore,
-  getRunProfileStore,
-  getRunTransientStore,
-  resetRunDomainStore,
-} from "../../../../helpers/gameplay-store-test";
-import { useGearStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
+import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+import { mutateGearForTest } from "../../../../helpers/gameplay-store-test";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
@@ -30,16 +25,21 @@ import {
 } from "@/features/alchemy/shared/stores/write-port-profile";
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
 import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
+import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
+import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import {
+  readActiveRun,
+  readActiveRunScreen,
+  readHasActiveRun,
+  readRunProfile,
+} from "@/features/alchemy/shared/stores/run-session-read-port";
 import { defaultBattleState } from "@/lib/battle";
 import { placeholderRng } from "@/lib/battle/rng";
 import { createRunRngState } from "@/lib/run-rng";
-import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 
 beforeEach(() => {
   resetRunDomainStore();
-  useProfileStore.setState(useProfileStore.getInitialState());
-  useGearStore.setState(useGearStore.getInitialState());
 });
 
 describe("run-session transaction coordinator", () => {
@@ -81,8 +81,8 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => {
       commits.push({
         revision,
-        gold: getRunProfileStore().gold,
-        hasActiveRun: getRunTransientStore().hasActiveRun,
+        gold: readRunProfile().gold,
+        hasActiveRun: readHasActiveRun(),
       });
     });
 
@@ -276,7 +276,7 @@ describe("run-session transaction coordinator", () => {
 
     expect(commits).toHaveLength(1);
     expect(readGameplayState().revision).toBeGreaterThanOrEqual(commits[0]);
-    expect(getRunProfileStore().gold).toBe(20);
+    expect(readRunProfile().gold).toBe(20);
   });
 
   it("publishes a direct store mutation as one commit", () => {
@@ -302,8 +302,8 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
-    expect(getRunProfileStore().gold).toBe(7);
-    expect(getRunDomainStore().activeRun.rng.counters.rewards).toBe(1);
+    expect(readRunProfile().gold).toBe(7);
+    expect(readActiveRun().rng.counters.rewards).toBe(1);
   });
 
   it("rolls back command-backed RNG together with gameplay state", () => {
@@ -320,8 +320,8 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(0);
-    expect(getRunProfileStore().gold).toBe(0);
-    expect(getRunDomainStore().activeRun.rng.counters.rewards).toBe(0);
+    expect(readRunProfile().gold).toBe(0);
+    expect(readActiveRun().rng.counters.rewards).toBe(0);
   });
 
   it("does not publish a commit for an unchanged transaction", () => {
@@ -352,11 +352,11 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
-    expect(getRunProfileStore().gold).toBe(125);
-    expect(getRunTransientStore().hasActiveRun).toBe(true);
-    expect(getRunProfileStore().materialInventory.wood).toBe(1);
-    expect(useProfileStore.getState().discoveredCardIds).toEqual(["slash"]);
-    expect(useGearStore.getState().craftingCurrencies.voidstone).toBe(1);
+    expect(readRunProfile().gold).toBe(125);
+    expect(readHasActiveRun()).toBe(true);
+    expect(readRunProfile().materialInventory.wood).toBe(1);
+    expect(readProfileStore().discoveredCardIds).toEqual(["slash"]);
+    expect(readGearState().craftingCurrencies.voidstone).toBe(1);
   });
 
   it("publishes Gear and active-run health changes as one aggregate commit", () => {
@@ -367,10 +367,9 @@ describe("run-session transaction coordinator", () => {
     };
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
-    useGearStore.getState().initialize(inventories, createEmptyGearLoadouts());
-    getRunDomainStore().setRunMaxHealth(30);
-    getRunDomainStore().setRunPlayerHealth(30);
-    getRunTransientStore().setHasActiveRun(true);
+    mutateGearForTest((gear) => gear.initialize(inventories, createEmptyGearLoadouts()));
+    setRunProgress({ runMaxHealth: 30, runPlayerHealth: 30 });
+    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, true));
 
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
@@ -382,13 +381,13 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(1);
-    expect(getRunDomainStore().activeRun.runMaxHealth).toBe(37);
-    expect(getRunDomainStore().activeRun.runPlayerHealth).toBe(30);
-    expect(useGearStore.getState().loadouts.knight.body).toBe(armor.instanceId);
+    expect(readActiveRun().runMaxHealth).toBe(37);
+    expect(readActiveRun().runPlayerHealth).toBe(30);
+    expect(readGearState().loadouts.knight.body).toBe(armor.instanceId);
   });
 
   it("restores every gameplay store and publishes no commit when work throws", () => {
-    const initialVoidstone = useGearStore.getState().craftingCurrencies.voidstone;
+    const initialVoidstone = readGearState().craftingCurrencies.voidstone;
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
@@ -406,11 +405,11 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toHaveLength(0);
-    expect(getRunProfileStore().gold).toBe(0);
-    expect(getRunTransientStore().hasActiveRun).toBe(false);
-    expect(getRunProfileStore().materialInventory.wood).toBe(0);
-    expect(useProfileStore.getState().discoveredCardIds).toEqual([]);
-    expect(useGearStore.getState().craftingCurrencies.voidstone).toBe(initialVoidstone);
+    expect(readRunProfile().gold).toBe(0);
+    expect(readHasActiveRun()).toBe(false);
+    expect(readRunProfile().materialInventory.wood).toBe(0);
+    expect(readProfileStore().discoveredCardIds).toEqual([]);
+    expect(readGearState().craftingCurrencies.voidstone).toBe(initialVoidstone);
     expect(readGameplayState().runProfile.gold).toBe(0);
     expect(readGameplayState().session.hasActiveRun).toBe(false);
   });
@@ -423,9 +422,9 @@ describe("run-session transaction coordinator", () => {
     const commits: Array<{ gold: number; hasActiveRun: boolean; screen: string }> = [];
     const unsubscribe = subscribeRunSessionCommits(() => {
       commits.push({
-        gold: getRunProfileStore().gold,
-        hasActiveRun: getRunTransientStore().hasActiveRun,
-        screen: getRunDomainStore().navigation.screen,
+        gold: readRunProfile().gold,
+        hasActiveRun: readHasActiveRun(),
+        screen: readActiveRunScreen(),
       });
     });
 
@@ -433,5 +432,23 @@ describe("run-session transaction coordinator", () => {
     unsubscribe();
 
     expect(commits).toEqual([{ gold: 0, hasActiveRun: true, screen: "shop" }]);
+  });
+
+  it("keeps committed session, profile, and gear regions free of command functions", () => {
+    setRunProgress({ gold: 11, roomsEncountered: 3 });
+    setRunSession({ hasActiveRun: true });
+    mutateGearForTest((gear) => gear.addTrinket("bone-charm"));
+
+    const root = readGameplayState();
+    for (const [label, region] of [
+      ["session", root.session],
+      ["runProfile", root.runProfile],
+      ["profile", root.profile],
+      ["gear", root.gear],
+    ] as const) {
+      for (const [key, value] of Object.entries(region)) {
+        expect(typeof value, `${label}.${key}`).not.toBe("function");
+      }
+    }
   });
 });

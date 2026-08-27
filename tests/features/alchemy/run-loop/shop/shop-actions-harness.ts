@@ -2,14 +2,17 @@ import "../../../../helpers/mock-audio";
 import { expect, beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { createEmptyTalentEffectManifest, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
-import { getRunProgressStoreView } from "../../../../helpers/run-domain-store-test";
-import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { useGearStore, resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import {
+  dispatchRunSessionCommand,
+  createRunSessionCommand,
+} from "@/features/alchemy/shared/stores/run-session-command";
+import { resetAllTestStores, resetGearForTest } from "../../../../helpers/gameplay-store-test";
 import {
   setShopState as mutateShopState,
   setAlchemistState as mutateAlchemistState,
   setTrinketShopState as mutateTrinketShopState,
   setEquipmentShopState as mutateEquipmentShopState,
+  setRunBoons,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   createInitialShopState as createInitialShopStateImpl,
@@ -53,7 +56,7 @@ export function buildActions(
   }>,
 ) {
   if (overrides?.trinketIds) {
-    getRunProgressStoreView().setRunBoons(() => overrides.trinketIds!);
+    dispatchRunSessionCommand((draft) => setRunBoons(draft, overrides.trinketIds!));
   }
   const talentEffects = { ...defaultTalentEffects, ...overrides?.talentEffects } as TalentEffectManifest;
   return createShopActions({
@@ -68,5 +71,5 @@ export function buildActions(
 
 beforeEach(() => {
   resetAllTestStores();
-  useGearStore.getState().reset();
+  resetGearForTest();
 });

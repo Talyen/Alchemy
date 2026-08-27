@@ -13,8 +13,10 @@ export type GameplayDraft = Draft<GameplayState>;
 
 /**
  * Execute one synchronous gameplay command and publish one committed revision.
- * The recipe runs against one Immer draft. A thrown recipe discards that draft;
- * successful recipes publish one revision before `afterCommit` effects run.
+ * The recipe runs against one Immer draft. A thrown recipe discards that draft
+ * and skips `afterCommit`. Successful recipes run `afterCommit` after produce
+ * completes: mutations publish one revision first; no-op recipes still run
+ * `afterCommit` without a new revision.
  */
 export function dispatchRunSessionCommand<T>(
   execute: (draft: GameplayDraft) => T,

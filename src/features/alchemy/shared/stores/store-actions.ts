@@ -64,13 +64,23 @@ export function useCollectionActions(): CollectionActions {
   return collectionActions;
 }
 
-export function useHomesteadActions() {
-  return {
-    constructBuilding: commandConstructBuilding,
-    plantFarm: commandPlantFarm,
-    completeResearch: commandCompleteResearch,
-    bondCompanion: commandBondCompanion,
-  } as const;
+export interface HomesteadActions {
+  constructBuilding: typeof commandConstructBuilding;
+  plantFarm: typeof commandPlantFarm;
+  completeResearch: typeof commandCompleteResearch;
+  bondCompanion: typeof commandBondCompanion;
+}
+
+const homesteadActions: HomesteadActions = {
+  constructBuilding: commandConstructBuilding,
+  plantFarm: commandPlantFarm,
+  completeResearch: commandCompleteResearch,
+  bondCompanion: commandBondCompanion,
+};
+
+/** Homestead commands, bound once so references are stable across renders. */
+export function useHomesteadActions(): HomesteadActions {
+  return homesteadActions;
 }
 
 export interface AppSettings {

@@ -12,6 +12,7 @@ import { ScreenHeader } from "../../../shared/ui/shared-ui";
 import { handCardWidthClass, BUTTON_WIDTH_ACTION, bodyTextClass } from "@/features/alchemy/shared/config";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import { cn } from "@/lib/utils";
+import { WISH_OVERLAY_Z_INDEX } from "@/lib/game-constants";
 import type { BattleActionsProps, BattleScreenState } from "./types";
 import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
@@ -78,7 +79,7 @@ function WishOverlayPanel({
       open={open}
       escapeId="wish-overlay"
       onClose={() => resolveWish(null)}
-      zIndex={90}
+      zIndex={WISH_OVERLAY_Z_INDEX}
       className="wish-overlay-backdrop flex items-center justify-center px-6"
     >
       <div className="wish-overlay-panel alchemy-shell w-full max-w-5xl rounded-shell-screen border border-border/80 px-6 py-6">

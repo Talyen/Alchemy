@@ -7,7 +7,9 @@ import { defaultBattleState } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
 import { COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import { getBattleStoreView, getNavigationStoreView } from "../../../../helpers/run-domain-store-test";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
@@ -58,8 +60,10 @@ function makeSession() {
 
 beforeEach(() => {
   resetBattlePresentationAndRun();
-  getBattleStoreView().setHasActiveBattle(true);
-  getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+  dispatchRunSessionCommand((draft) => {
+    setHasActiveBattle(draft, true);
+    setScreen(draft, ROUTE_SCREENS.BATTLE);
+  });
 });
 
 describe("createBattleSession", () => {
@@ -125,8 +129,10 @@ describe("createBattleSession", () => {
   it("runIfSessionActive succeeds during victory grace when hasActiveBattle is false", () => {
     const { session, victoryDefeatHandledRef } = makeSession();
     victoryDefeatHandledRef.current = true;
-    getBattleStoreView().setHasActiveBattle(false);
-    getBattleStoreView().setSyncedBattleState({ ...defaultBattleState(), enemyHealth: 0 });
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, false);
+      setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
+    });
 
     const fn = vi.fn(() => "ok");
     const result = session.runIfSessionActive(1, fn);
@@ -200,11 +206,13 @@ describe("scheduleCompanionFollowUp", () => {
   it("still fires after end-turn clears battle timeouts", () => {
     vi.useFakeTimers();
     const made = makeSession();
-    getBattleStoreView().setSyncedBattleState({
-      ...defaultBattleState(),
-      activeCompanion: companionLibrary.wolf,
-      enemyHealth: 20,
-    });
+    dispatchRunSessionCommand((draft) =>
+      setSyncedBattleState(draft, {
+        ...defaultBattleState(),
+        activeCompanion: companionLibrary.wolf,
+        enemyHealth: 20,
+      }),
+    );
     const orch = makeCompanionOrchestration(made);
     orch.scheduleCompanionFollowUp(
       { ...defaultBattleState(), activeCompanion: companionLibrary.wolf, enemyHealth: 20 },

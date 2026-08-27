@@ -348,6 +348,8 @@ New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
 
 Ownership: [ARCHITECTURE.md § Shop commands](./ARCHITECTURE.md#shop-commands).
 
+Kind `"merchant"` maps to the player-facing **Card Shop**. Persist only the active shop screen through `encodePersistedShops`.
+
 1. Keep `create-shop-actions.ts` as composition; put shop behavior in the matching `*-shop-commands.ts` module and draft recipes in `shop-transactions.ts`.
 2. Dispatch purchases/refreshes through the existing shop command seam so paid effects and SFX run after a successful commit. Keep slot identity helpers separate from command/audio modules.
 3. Preserve the per-visit `firstPurchaseUsed` reset and use `mutateGearWithRunHealthSync` inside an open command draft; use the dispatching gear wrapper only at the outer boundary ([ARMORY.md § Write paths](./ARMORY.md#write-paths)).

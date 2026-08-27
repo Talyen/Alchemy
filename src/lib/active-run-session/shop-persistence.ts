@@ -8,16 +8,13 @@ import type {
 import {
   type AlchemistState,
   type EquipmentShopState,
+  type RefreshableShopFields,
   type ShopState,
   type TrinketShopState,
 } from "./shop-session-types";
+import { gearDefinitions } from "@/lib/gear/definitions";
 import { lookupTrinketEntries } from "./pending-reward-persistence";
-
-interface RefreshableShopFields {
-  refreshesLeft: number;
-  firstPurchaseUsed: boolean;
-  purchasedSlotKeys: string[];
-}
+import { repairShopOfferings, shopItemSlotKey } from "./shop-offering-repair";
 
 type RefreshablePersistedFields = Pick<
   RefreshableShopFields,
@@ -82,7 +79,17 @@ export function serializeTrinketShopState(state: TrinketShopState): PersistedTri
 }
 
 export function hydrateTrinketShopState(data: PersistedTrinketShopState): TrinketShopState {
-  return hydrateRefreshableShopState(data, { trinkets: lookupTrinketEntries(data.trinketIds) });
+  const knownIds = new Set(lookupTrinketEntries(data.trinketIds).map((entry) => entry.id));
+  const repaired = repairShopOfferings(
+    data.trinketIds,
+    data.purchasedSlotKeys ?? [],
+    (id) => knownIds.has(id),
+    shopItemSlotKey,
+  );
+  return hydrateRefreshableShopState(
+    { ...data, purchasedSlotKeys: repaired.purchasedSlotKeys },
+    { trinkets: lookupTrinketEntries(repaired.items) },
+  );
 }
 
 export function serializeEquipmentShopState(state: EquipmentShopState): PersistedEquipmentShopState {
@@ -93,5 +100,15 @@ export function serializeEquipmentShopState(state: EquipmentShopState): Persiste
 }
 
 export function hydrateEquipmentShopState(data: PersistedEquipmentShopState): EquipmentShopState {
-  return hydrateRefreshableShopState(data, { gear: data.gear });
+  // Zod preprocess drops unknown defs; hydrate still remaps so orphan purchase keys cannot linger.
+  const repaired = repairShopOfferings(
+    data.gear,
+    data.purchasedSlotKeys ?? [],
+    (instance) => gearDefinitions[instance.definitionId] != null,
+    (instance) => instance.instanceId,
+  );
+  return hydrateRefreshableShopState(
+    { ...data, purchasedSlotKeys: repaired.purchasedSlotKeys },
+    { gear: repaired.items },
+  );
 }

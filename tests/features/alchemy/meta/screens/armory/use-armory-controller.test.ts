@@ -2,13 +2,18 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
-import { useGearStore } from "../../../../../helpers/gameplay-store-test";
+import { mutateGearForTest, resetGearForTest } from "../../../../../helpers/gameplay-store-test";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  getRunDomainStore,
-  getRunProfileStore,
-  getRunTransientStore,
-} from "../../../../../helpers/gameplay-store-test";
-import { getBattleStoreView } from "../../../../../helpers/run-domain-store-test";
+  setHasActiveBattle,
+  setMaterials,
+  setRunMaxHealth,
+  setRunPlayerHealth,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
+import { initializeActiveRun } from "@/features/alchemy/shared/stores/write-port-run";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { computeSalvageYield, createEmptyGearInventories, type GearInstance } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
@@ -27,7 +32,7 @@ vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (im
 
 describe("useArmoryController", () => {
   beforeEach(() => {
-    useGearStore.getState().reset();
+    resetGearForTest();
     vi.clearAllMocks();
   });
 
@@ -35,19 +40,19 @@ describe("useArmoryController", () => {
     const armor: GearInstance = { instanceId: "armor-a", definitionId: "leather-armor-basic", affixes: [] };
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
-    useGearStore.getState().initialize(inventories, useGearStore.getState().loadouts);
+    mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
     const { result } = renderHook(() => useArmoryController());
     const salvageYield = computeSalvageYield(armor, () => 0);
 
     act(() => {
-      getRunProfileStore().setMaterials(emptyInventory());
+      dispatchRunSessionCommand((draft) => setMaterials(draft, emptyInventory()));
       expect(result.current.onSalvage(armor.instanceId, salvageYield)).toBe(true);
     });
 
     expect(flushSaveAfterGearMutation).toHaveBeenCalledWith(null);
-    expect(getRunProfileStore().materialInventory.herbs).toBe(6);
-    expect(getRunDomainStore().activeRun.runMaterialsEarned.herbs).toBe(0);
+    expect(readRunProfile().materialInventory.herbs).toBe(6);
+    expect(readActiveRun().runMaterialsEarned.herbs).toBe(0);
   });
 
   it("syncs health for the active-run character when editing another loadout", () => {
@@ -58,11 +63,13 @@ describe("useArmoryController", () => {
     };
     const inventories = createEmptyGearInventories();
     inventories.rogue = [armor];
-    useGearStore.getState().initialize(inventories, useGearStore.getState().loadouts);
-    getRunDomainStore().initialize(null, "knight");
-    getRunDomainStore().setRunMaxHealth(30);
-    getRunDomainStore().setRunPlayerHealth(30);
-    getRunTransientStore().setHasActiveRun(true);
+    mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
+    dispatchRunSessionCommand((draft) => {
+      initializeActiveRun(draft, null, "knight");
+      setRunMaxHealth(draft, 30);
+      setRunPlayerHealth(draft, 30);
+      setHasActiveRun(draft, true);
+    });
 
     const { result } = renderHook(() => useArmoryController());
 
@@ -70,20 +77,22 @@ describe("useArmoryController", () => {
       result.current.onEquip("rogue", "body", armor);
     });
 
-    expect(getRunDomainStore().activeRun.runMaxHealth).toBe(30);
-    expect(getRunDomainStore().activeRun.runPlayerHealth).toBe(30);
+    expect(readActiveRun().runMaxHealth).toBe(30);
+    expect(readActiveRun().runPlayerHealth).toBe(30);
 
-    getRunTransientStore().setHasActiveRun(false);
+    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, false));
   });
 
   it("counts homestead salvage toward run-earned materials during an active run", () => {
     const armor: GearInstance = { instanceId: "armor-run", definitionId: "leather-armor-basic", affixes: [] };
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
-    useGearStore.getState().initialize(inventories, useGearStore.getState().loadouts);
-    getRunDomainStore().initialize(null, "knight");
-    getRunTransientStore().setHasActiveRun(true);
-    getRunProfileStore().setMaterials(emptyInventory());
+    mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
+    dispatchRunSessionCommand((draft) => {
+      initializeActiveRun(draft, null, "knight");
+      setHasActiveRun(draft, true);
+      setMaterials(draft, emptyInventory());
+    });
 
     const { result } = renderHook(() => useArmoryController());
     const salvageYield = computeSalvageYield(armor, () => 0);
@@ -92,15 +101,15 @@ describe("useArmoryController", () => {
       expect(result.current.onSalvage(armor.instanceId, salvageYield)).toBe(true);
     });
 
-    expect(getRunProfileStore().materialInventory.herbs).toBe(6);
-    expect(getRunDomainStore().activeRun.runMaterialsEarned.herbs).toBe(6);
+    expect(readRunProfile().materialInventory.herbs).toBe(6);
+    expect(readActiveRun().runMaterialsEarned.herbs).toBe(6);
 
-    getRunTransientStore().setHasActiveRun(false);
+    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, false));
   });
 
   it("spawns dev gear through the HP-sync command path", () => {
     const inventories = createEmptyGearInventories();
-    useGearStore.getState().initialize(inventories, useGearStore.getState().loadouts);
+    mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
     const { result } = renderHook(() => useArmoryController());
     expect(result.current.onSpawnDevGear).toEqual(expect.any(Function));
@@ -109,7 +118,7 @@ describe("useArmoryController", () => {
       result.current.onSpawnDevGear?.("knight");
     });
 
-    expect(useGearStore.getState().inventories.knight).toHaveLength(1);
+    expect(readGearState().inventories.knight).toHaveLength(1);
     expect(flushSaveAfterGearMutation).toHaveBeenCalled();
   });
 
@@ -117,8 +126,8 @@ describe("useArmoryController", () => {
     const armor: GearInstance = { instanceId: "armor-locked", definitionId: "leather-armor-basic", affixes: [] };
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
-    useGearStore.getState().initialize(inventories, useGearStore.getState().loadouts);
-    getBattleStoreView().setHasActiveBattle(true);
+    mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
+    dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, true));
 
     const { result } = renderHook(() => useArmoryController());
     expect(result.current.browseOnly).toBe(false);
@@ -127,9 +136,9 @@ describe("useArmoryController", () => {
       result.current.onEquip("knight", "body", armor);
     });
 
-    expect(useGearStore.getState().loadouts.knight.body).toBe(armor.instanceId);
+    expect(readGearState().loadouts.knight.body).toBe(armor.instanceId);
     expect(flushSaveAfterGearMutation).toHaveBeenCalled();
 
-    getBattleStoreView().setHasActiveBattle(false);
+    dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, false));
   });
 });

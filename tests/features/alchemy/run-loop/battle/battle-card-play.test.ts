@@ -6,7 +6,9 @@ import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
-import { getBattleStoreView } from "../../../../helpers/run-domain-store-test";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
@@ -125,14 +127,14 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    getBattleStoreView().setSyncedBattleState(state);
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 1 }, 0);
 
-    expect(getBattleStoreView().battleState.hand.length).toBe(0);
-    expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
+    expect(readBattle().battleState.hand.length).toBe(0);
+    expect(readBattle().battleState.enemyHealth).toBeLessThan(30);
     await vi.waitFor(() => {
       expect(ctx.scheduleAutoEndTurnRef.current).toHaveBeenCalled();
     });
@@ -153,13 +155,13 @@ describe("createBattleCardPlay", () => {
       hand: [{ ...expensive, uid: 2 }],
       mana: 1,
     });
-    getBattleStoreView().setSyncedBattleState(state);
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...expensive, uid: 2 }, 0);
 
-    expect(getBattleStoreView().battleState).toEqual(state);
+    expect(readBattle().battleState).toEqual(state);
     expect(ctx.scheduleAutoEndTurnRef.current).not.toHaveBeenCalled();
     expect(awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
@@ -178,13 +180,13 @@ describe("createBattleCardPlay", () => {
       playerHealth: 0,
       deathsDoorActive: false,
     });
-    getBattleStoreView().setSyncedBattleState(state);
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
 
     const { ctx, session, transferDeps } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 3 }, 0);
 
-    expect(getBattleStoreView().battleState.enemyHealth).toBe(state.enemyHealth);
+    expect(readBattle().battleState.enemyHealth).toBe(state.enemyHealth);
     expect(playUISound).toHaveBeenCalledWith("error");
   });
 
@@ -199,14 +201,14 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    getBattleStoreView().setSyncedBattleState(state);
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
     useBattlePresentationStore.getState().setCardTransferInProgress(true);
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
 
-    expect(getBattleStoreView().battleState).toEqual(state);
+    expect(readBattle().battleState).toEqual(state);
     expect(awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
   });
@@ -222,7 +224,7 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    getBattleStoreView().setSyncedBattleState(state);
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
     useBattlePresentationStore.getState().setCardTransferInProgress(true);
     useBattlePresentationStore.getState().setHiddenHandCardKeys(() => ["slash-6"]);
 
@@ -230,7 +232,7 @@ describe("createBattleCardPlay", () => {
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 6 }, 0);
 
-    expect(getBattleStoreView().battleState).toEqual(state);
+    expect(readBattle().battleState).toEqual(state);
     expect(awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
   });
@@ -246,15 +248,15 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 0,
     });
-    getBattleStoreView().setSyncedBattleState(state);
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 4 }, 0);
 
-    expect(getBattleStoreView().battleState.hand.length).toBe(0);
-    expect(getBattleStoreView().battleState.discard).toHaveLength(1);
-    expect(getBattleStoreView().battleState.mana).toBe(2);
+    expect(readBattle().battleState.hand.length).toBe(0);
+    expect(readBattle().battleState.discard).toHaveLength(1);
+    expect(readBattle().battleState.mana).toBe(2);
     expectAwardedCard(awardCardXP, "slash");
     expect(logError).not.toHaveBeenCalled();
   });
@@ -270,14 +272,14 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    getBattleStoreView().setSyncedBattleState(state);
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
 
     const { ctx, session, transferDeps, awardCardXP } = makeDeps();
     const { handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
     const played = handleAutoplayCard({ ...slash, uid: 7 }, 0);
 
     expect(played).toBe(true);
-    expect(getBattleStoreView().battleState.hand.length).toBe(0);
+    expect(readBattle().battleState.hand.length).toBe(0);
     expectAwardedCard(awardCardXP, "slash");
     expect(playUISound).not.toHaveBeenCalled();
   });
@@ -295,7 +297,7 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    getBattleStoreView().setSyncedBattleState(state);
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
 
     const { ctx, session, transferDeps } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
@@ -307,7 +309,7 @@ describe("createBattleCardPlay", () => {
     };
     expect(deps.setHiddenHandCardKeys).toHaveBeenCalled();
     const hidden = [...deps.setHiddenHandCardKeys.mock.calls[0]![0]([])];
-    const drawn = getBattleStoreView().battleState.hand.find((card) => card.id === "slash");
+    const drawn = readBattle().battleState.hand.find((card) => card.id === "slash");
     expect(drawn).toBeDefined();
     expect(hidden).toContain(`${drawn!.id}-${drawn!.uid}`);
     expect(useBattlePresentationStore.getState().playerAttackToken).toBe(0);
@@ -324,7 +326,7 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    getBattleStoreView().setSyncedBattleState(state);
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
 
     const { ctx, session, transferDeps } = makeDeps();
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);

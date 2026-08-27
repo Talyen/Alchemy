@@ -6,24 +6,23 @@ import {
 } from "@/features/alchemy/shared/storage/persistence-coordinator";
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { useGearStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
-import { getRunProfileStore, useRunProfileStore } from "../../../../helpers/gameplay-store-test";
+import { mutateGearForTest, resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import {
+  handleCollectionTabChange,
   setDiscoveredCardIds,
   setMaterials as setRunProfileMaterials,
 } from "@/features/alchemy/shared/stores/write-port-profile";
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
 import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { createEmptyGearInventories, generateUniqueGearInstance, getUniqueItemDefinition } from "@/lib/gear";
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
-  useProfileStore.setState(useProfileStore.getInitialState());
-  useGearStore.setState(useGearStore.getInitialState());
-  useRunProfileStore.setState(useRunProfileStore.getInitialState(), true);
+  resetRunDomainStore();
 });
 
 describe("persistence coordinator", () => {
@@ -37,7 +36,7 @@ describe("persistence coordinator", () => {
     });
 
     useSettingsStore.getState().setShowClearSaveConfirm(true);
-    useProfileStore.getState().handleCollectionTabChange("bestiary");
+    dispatchRunSessionCommand((draft) => handleCollectionTabChange(draft, "bestiary"));
 
     const encoded = encodeAlchemyPersistenceFields();
 
@@ -58,7 +57,7 @@ describe("persistence coordinator", () => {
       },
     });
 
-    expect(getRunProfileStore().effects.flatPhysicalDamage).toBeGreaterThan(0);
+    expect(readRunProfile().effects.flatPhysicalDamage).toBeGreaterThan(0);
   });
 
   it("subscribes to every persistence owner through one cleanup", () => {
@@ -66,9 +65,11 @@ describe("persistence coordinator", () => {
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
     useSettingsStore.getState().setMusicVolume(42);
-    useProfileStore.getState().setDiscoveredCardIds(["slash"]);
-    useGearStore.getState().addCurrencies({ voidstone: 1 });
-    getRunProfileStore().setMaterials({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
+    dispatchRunSessionCommand((draft) => setDiscoveredCardIds(draft, ["slash"]));
+    mutateGearForTest((gear) => gear.addCurrencies({ voidstone: 1 }));
+    dispatchRunSessionCommand((draft) =>
+      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 }),
+    );
 
     expect(listener).toHaveBeenCalledTimes(4);
 
@@ -120,6 +121,6 @@ describe("persistence coordinator", () => {
       gearInventories: inventories,
     });
 
-    expect(useProfileStore.getState().discoveredUniqueIds).toEqual(["wardbreaker"]);
+    expect(readProfileStore().discoveredUniqueIds).toEqual(["wardbreaker"]);
   });
 });

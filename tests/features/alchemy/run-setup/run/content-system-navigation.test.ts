@@ -1,22 +1,18 @@
 import "../../../../helpers/mock-audio";
 import { describe, expect, it, beforeEach, vi, type Mock } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import {
-  getNavigationStoreView,
-  getRunDomainStore,
-  useProfileStore,
-  resetAllTestStores,
-} from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import { makeRunController, makeTalentController } from "../../../../helpers/run-controller";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
 import { makeTestCard } from "../../../../fixtures/battle";
+import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import {
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  setRunProgress,
-  setRunSession,
-} from "../../../../helpers/run-domain-store-test";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+  dispatchRunSessionCommand,
+  subscribeRunSessionCommits,
+} from "@/features/alchemy/shared/stores/run-session-command";
+import { readActiveRun, readParkedRuns, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getStartingDeck } from "@/lib/game-data";
@@ -31,7 +27,6 @@ vi.mock("@/features/alchemy/shared/run-flow/campaign-start", async (importOrigin
 
 beforeEach(() => {
   resetAllTestStores();
-  useProfileStore.setState({ discoveredCardIds: [], discoveredTrinketIds: [] });
 });
 
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
@@ -62,7 +57,7 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.beginCampaign();
-    expect(getRunSessionStoreView().pendingContentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
+    expect(readRunSession().pendingContentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT);
   });
 
@@ -72,7 +67,7 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
-    expect(getRunProgressStoreView().contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
+    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
   });
 
   it("initializeWildwoodRun creates a resumable draft and navigates to draft deck", () => {
@@ -81,10 +76,10 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
-    expect(getRunProgressStoreView().contentSystemType).toBe(CONTENT_SYSTEMS.WILDWOOD);
-    expect(getRunProgressStoreView().runDeck).toEqual([]);
-    expect(getRunSessionStoreView().hasActiveRun).toBe(true);
-    expect(getRunSessionStoreView().wildwoodDraft?.draftChoices).toHaveLength(3);
+    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.WILDWOOD);
+    expect(readActiveRun().runDeck).toEqual([]);
+    expect(readRunSession().hasActiveRun).toBe(true);
+    expect(readRunSession().wildwoodDraft?.draftChoices).toHaveLength(3);
   });
 
   it("returns to battle when resuming the same content system with an active battle", () => {
@@ -107,7 +102,7 @@ describe("createContentSystemNavigation", () => {
 
     nav.initializeRunForDifficulty("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
-    expect(useProfileStore.getState().discoveredCardIds).toEqual(knightStarterIds);
+    expect(readProfileStore().discoveredCardIds).toEqual(knightStarterIds);
   });
 
   it("commits the initial destination offer and reward together", () => {
@@ -131,8 +126,8 @@ describe("createContentSystemNavigation", () => {
       destinationIndexInAct: 0,
       maxHealth: expect.any(Number),
     });
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(getRunProgressStoreView().lastOfferedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readActiveRun().lastOfferedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
   });
 
   it("initializeWildwoodRun does not discover the normal starter deck", () => {
@@ -141,7 +136,7 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
 
-    expect(useProfileStore.getState().discoveredCardIds).toEqual([]);
+    expect(readProfileStore().discoveredCardIds).toEqual([]);
   });
 
   it("starts a resumable campaign Wildcard draft with seeded choices", () => {
@@ -149,11 +144,11 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("wildcard");
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
-    expect(getRunSessionStoreView().pendingCharacterId).toBe("wildcard");
-    expect(getRunSessionStoreView().hasActiveRun).toBe(true);
-    expect(getRunProgressStoreView().characterId).toBe("wildcard");
-    expect(getRunProgressStoreView().runDeck).toEqual([]);
-    expect(getRunSessionStoreView().starterDraftChoices).toHaveLength(3);
+    expect(readRunSession().pendingCharacterId).toBe("wildcard");
+    expect(readRunSession().hasActiveRun).toBe(true);
+    expect(readActiveRun().characterId).toBe("wildcard");
+    expect(readActiveRun().runDeck).toEqual([]);
+    expect(readRunSession().starterDraftChoices).toHaveLength(3);
   });
 
   it("resumes an incomplete campaign Wildcard draft to the draft screen", () => {
@@ -181,13 +176,13 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("wildcard");
-    const firstChoices = getRunSessionStoreView().starterDraftChoices;
+    const firstChoices = readRunSession().starterDraftChoices;
     expect(firstChoices).toHaveLength(3);
     const picked = firstChoices![0]!;
     nav.handleStarterDraftPick(picked);
-    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual([picked.id]);
-    expect(getRunSessionStoreView().starterDraftChoices).toHaveLength(3);
-    expect(getRunSessionStoreView().starterDraftChoices?.some((card) => card.id === picked.id)).toBe(false);
+    expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([picked.id]);
+    expect(readRunSession().starterDraftChoices).toHaveLength(3);
+    expect(readRunSession().starterDraftChoices?.some((card) => card.id === picked.id)).toBe(false);
   });
 
   it("rejects starter-draft picks that are not in the current offer", () => {
@@ -196,7 +191,7 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("wildcard");
     nav.handleStarterDraftPick(makeTestCard({ id: "not-offered" }));
-    expect(getRunProgressStoreView().runDeck).toEqual([]);
+    expect(readActiveRun().runDeck).toEqual([]);
   });
 
   it("keeps an empty starter-draft offer after the final pick so labyrinth can resume to draft confirm", () => {
@@ -205,12 +200,12 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("wildcard");
     for (let round = 0; round < DRAFT_ROUNDS; round += 1) {
-      const choices = getRunSessionStoreView().starterDraftChoices;
+      const choices = readRunSession().starterDraftChoices;
       expect(choices?.length).toBeGreaterThan(0);
       nav.handleStarterDraftPick(choices![0]!);
     }
-    expect(getRunProgressStoreView().runDeck).toHaveLength(DRAFT_ROUNDS);
-    expect(getRunSessionStoreView().starterDraftChoices).toEqual([]);
+    expect(readActiveRun().runDeck).toHaveLength(DRAFT_ROUNDS);
+    expect(readRunSession().starterDraftChoices).toEqual([]);
   });
 
   it("resumes a completed labyrinth Wildcard draft to the draft screen until run init", () => {
@@ -244,15 +239,15 @@ describe("createContentSystemNavigation", () => {
     nav.handleStandardDraftComplete(draftedCards);
     nav.handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
-    expect(getRunProgressStoreView().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
-    expect(getRunProgressStoreView().runDeck).toEqual(draftedCards);
+    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
+    expect(readActiveRun().runDeck).toEqual(draftedCards);
     expect(deps.onStartBattle).toHaveBeenCalledOnce();
   });
 
   it("parks the live campaign when beginning another mode", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, characterId: "knight" });
     setRunSession({ hasActiveRun: true });
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.DESTINATION);
+    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DESTINATION));
     const deps = makeDeps({
       hasActiveRun: true,
       pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH,
@@ -260,14 +255,14 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.beginLabyrinth();
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT);
-    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
-    expect(getRunDomainStore().parkedRuns.campaign?.contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
+    expect(readRunSession().hasActiveRun).toBe(false);
+    expect(readParkedRuns().campaign?.contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
   });
 
   it("resumes a parked campaign instead of opening character select", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, characterId: "knight" });
     setRunSession({ hasActiveRun: true });
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.DESTINATION);
+    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DESTINATION));
     const deps = makeDeps({
       hasActiveRun: true,
       pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH,
@@ -278,8 +273,8 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(resume);
     nav.beginCampaign();
     expect(resume.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, expect.any(Function));
-    expect(getRunSessionStoreView().hasActiveRun).toBe(true);
-    expect(getRunProgressStoreView().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
+    expect(readRunSession().hasActiveRun).toBe(true);
+    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
   });
 
   it("samples resumed campaign destinations from the hydrated run", () => {
@@ -292,7 +287,7 @@ describe("createContentSystemNavigation", () => {
       runMaxHealth: 30,
     });
     setRunSession({ hasActiveRun: true });
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.DESTINATION);
+    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DESTINATION));
     createContentSystemNavigation(
       makeDeps({ hasActiveRun: true, pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH }),
     ).beginLabyrinth();

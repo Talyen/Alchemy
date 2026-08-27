@@ -8,65 +8,77 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
   applyRunStartSnapshot as mutateRunStartSnapshot,
+  awardCardXP as mutateAwardCardXP,
+  awardMysteryXP as mutateAwardMysteryXP,
+  clearPermanentData as mutateClearPermanentData,
   finalizeRunXP as mutateFinalizeRunXP,
   unlockAllTalents as mutateUnlockAllTalents,
+  unlockTalent as mutateUnlockTalent,
+  resetUnlockedTalents as mutateResetUnlockedTalents,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { applyGameplayStateUpdate, useGearStore, useRunProfileStore } from "../../../../helpers/gameplay-store-test";
+import {
+  initializeActiveRun as mutateInitializeActiveRun,
+  resetProgress as mutateResetProgress,
+  resetRunXP as mutateResetRunXP,
+} from "@/features/alchemy/shared/stores/write-port-run";
+import { applyTalentState as mutateApplyTalentState } from "@/features/alchemy/shared/stores/write-port-profile";
+import { mutateGearForTest } from "../../../../helpers/gameplay-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
+import {
+  readActiveRun,
+  readActiveRunScreen,
+  readRunProfile,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-session-read-port";
 
 import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
+import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 
 const syncGearRunHealth = createRunSessionCommand(rebindLiveRunMeta);
 const applyRunStartSnapshot = createRunSessionCommand(mutateRunStartSnapshot);
 const finalizeRunXP = createRunSessionCommand(mutateFinalizeRunXP);
 const unlockAllTalents = createRunSessionCommand(mutateUnlockAllTalents);
-
-import {
-  getNavigationStoreView,
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  resetRunDomainStore,
-  setRunProgress,
-  setRunSession,
-} from "../../../../helpers/run-domain-store-test";
+const initializeActiveRun = createRunSessionCommand(mutateInitializeActiveRun);
+const applyTalentState = createRunSessionCommand(mutateApplyTalentState);
+const awardCardXP = createRunSessionCommand(mutateAwardCardXP);
+const awardMysteryXP = createRunSessionCommand(mutateAwardMysteryXP);
+const unlockTalent = createRunSessionCommand(mutateUnlockTalent);
+const resetUnlockedTalents = createRunSessionCommand(mutateResetUnlockedTalents);
+const resetRunXP = createRunSessionCommand(mutateResetRunXP);
+const resetProgress = createRunSessionCommand(mutateResetProgress);
+const clearPermanentData = createRunSessionCommand(mutateClearPermanentData);
 
 beforeEach(() => {
   resetRunDomainStore();
 });
 
 describe("run-domain progress: initial state", () => {
-  it("defaults to knight character", () => {
-    expect(getRunProgressStoreView().characterId).toBe("knight");
-  });
-
-  it("has a starting deck", () => {
-    expect(getRunProgressStoreView().runDeck.length).toBeGreaterThan(0);
-  });
-
-  it("starts with zero gold", () => {
-    expect(getRunProgressStoreView().gold).toBe(0);
-  });
-
-  it("starts with full health", () => {
-    expect(getRunProgressStoreView().runPlayerHealth).toBeGreaterThan(0);
-    expect(getRunProgressStoreView().runMaxHealth).toBeGreaterThanOrEqual(getRunProgressStoreView().runPlayerHealth);
-  });
-
-  it("starts at act 1", () => {
-    expect(getRunProgressStoreView().currentAct).toBe(1);
-  });
-
-  it("has empty talent XP", () => {
-    expect(getRunProgressStoreView().talentXP).toEqual({});
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
-  });
-
-  it("has empty unlocked talents", () => {
-    expect(getRunProgressStoreView().unlockedTalents).toEqual({});
+  it.each([
+    ["defaults to knight character", () => expect(readActiveRun().characterId).toBe("knight")],
+    ["has a starting deck", () => expect(readActiveRun().runDeck.length).toBeGreaterThan(0)],
+    ["starts with zero gold", () => expect(readRunProfile().gold).toBe(0)],
+    [
+      "starts with full health",
+      () => {
+        expect(readActiveRun().runPlayerHealth).toBeGreaterThan(0);
+        expect(readActiveRun().runMaxHealth).toBeGreaterThanOrEqual(readActiveRun().runPlayerHealth);
+      },
+    ],
+    ["starts at act 1", () => expect(readActiveRun().currentAct).toBe(1)],
+    [
+      "has empty talent XP",
+      () => {
+        expect(readRunProfile().talentXP).toEqual({});
+        expect(readActiveRun().runTalentXP).toEqual({});
+      },
+    ],
+    ["has empty unlocked talents", () => expect(readRunProfile().unlockedTalents).toEqual({})],
+  ] as const)("%s", (_name, assert) => {
+    assert();
   });
 });
 
@@ -90,15 +102,15 @@ describe("initialize", () => {
       roomsEncountered: 3,
       destinationIndexInAct: 2,
       completedDestinations: ["combat"],
-      rng: getRunProgressStoreView().rng,
+      rng: readActiveRun().rng,
     });
-    getRunProgressStoreView().initialize(activeRun);
-    useRunProfileStore.getState().applyTalentState({ physical: 100 }, { physical: ["talent-1"] });
-    expect(getRunProgressStoreView().characterId).toBe("rogue");
-    expect(getRunProgressStoreView().gold).toBe(0);
-    expect(getRunProgressStoreView().runPlayerHealth).toBe(25);
-    expect(getRunProgressStoreView().talentXP.physical).toBe(100);
-    expect(getRunProgressStoreView().unlockedTalents.physical).toEqual(["talent-1"]);
+    initializeActiveRun(activeRun);
+    applyTalentState({ physical: 100 }, { physical: ["talent-1"] });
+    expect(readActiveRun().characterId).toBe("rogue");
+    expect(readRunProfile().gold).toBe(0);
+    expect(readActiveRun().runPlayerHealth).toBe(25);
+    expect(readRunProfile().talentXP.physical).toBe(100);
+    expect(readRunProfile().unlockedTalents.physical).toEqual(["talent-1"]);
   });
 
   it("restores valid completed destination labels", () => {
@@ -111,25 +123,25 @@ describe("initialize", () => {
       completedDestinations: ["Normal Combat", "Corruption"],
     });
 
-    getRunProgressStoreView().initialize(activeRun);
+    initializeActiveRun(activeRun);
 
-    expect(getRunProgressStoreView().completedDestinations).toEqual(["Normal Combat", "Corruption"]);
+    expect(readActiveRun().completedDestinations).toEqual(["Normal Combat", "Corruption"]);
   });
 
   it("uses fallback character when no active run", () => {
-    getRunProgressStoreView().initialize(null, "wizard");
-    expect(getRunProgressStoreView().characterId).toBe("wizard");
+    initializeActiveRun(null, "wizard");
+    expect(readActiveRun().characterId).toBe("wizard");
   });
 
   it("uses knight as default fallback", () => {
-    getRunProgressStoreView().initialize(null);
-    expect(getRunProgressStoreView().characterId).toBe("knight");
+    initializeActiveRun(null);
+    expect(readActiveRun().characterId).toBe("knight");
   });
 
   it("restores navigation screen via restoreRun", () => {
     const activeRun = makeActiveRunData({ currentScreen: "shop" });
     restoreRun(activeRun, {}, {});
-    expect(getNavigationStoreView().screen).toBe("shop");
+    expect(readActiveRunScreen()).toBe("shop");
   });
 
   it("round-trips every active-run persistence region through the aggregate", () => {
@@ -193,7 +205,7 @@ describe("gear max health sync", () => {
     inventories.knight = [maxHealthArmor];
     const loadouts = createEmptyGearLoadouts();
     loadouts.knight.body = maxHealthArmor.instanceId;
-    useGearStore.getState().initialize(inventories, loadouts);
+    mutateGearForTest((gear) => gear.initialize(inventories, loadouts));
     setRunProgress({
       characterId: "knight",
       runMaxHealth: 30,
@@ -204,12 +216,12 @@ describe("gear max health sync", () => {
 
     syncGearRunHealth();
 
-    expect(getRunProgressStoreView().runMaxHealth).toBe(37);
-    expect(getRunProgressStoreView().runPlayerHealth).toBe(30);
+    expect(readActiveRun().runMaxHealth).toBe(37);
+    expect(readActiveRun().runPlayerHealth).toBe(30);
   });
 
   it("rebinds max health when equipped gear is removed", () => {
-    useGearStore.getState().initialize(createEmptyGearInventories(), createEmptyGearLoadouts());
+    mutateGearForTest((gear) => gear.initialize(createEmptyGearInventories(), createEmptyGearLoadouts()));
     setRunProgress({
       characterId: "knight",
       runMaxHealth: 37,
@@ -220,8 +232,8 @@ describe("gear max health sync", () => {
 
     syncGearRunHealth();
 
-    expect(getRunProgressStoreView().runMaxHealth).toBe(30);
-    expect(getRunProgressStoreView().runPlayerHealth).toBe(30);
+    expect(readActiveRun().runMaxHealth).toBe(30);
+    expect(readActiveRun().runPlayerHealth).toBe(30);
   });
 });
 
@@ -235,9 +247,9 @@ describe("awardCardXP", () => {
       cost: 3,
       effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
     };
-    getRunProgressStoreView().awardCardXP(card);
-    expect(getRunProgressStoreView().runTalentXP.burn).toBeGreaterThan(0);
-    expect(getRunProgressStoreView().talentXP.burn).toBeUndefined();
+    awardCardXP(card);
+    expect(readActiveRun().runTalentXP.burn).toBeGreaterThan(0);
+    expect(readRunProfile().talentXP.burn).toBeUndefined();
   });
 
   it("does nothing for card with no keywords", () => {
@@ -249,9 +261,9 @@ describe("awardCardXP", () => {
       cost: 0,
       effects: [],
     };
-    getRunProgressStoreView().awardCardXP(card);
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
-    expect(getRunProgressStoreView().talentXP).toEqual({});
+    awardCardXP(card);
+    expect(readActiveRun().runTalentXP).toEqual({});
+    expect(readRunProfile().talentXP).toEqual({});
   });
 
   it("accumulates XP across multiple cards", () => {
@@ -271,77 +283,77 @@ describe("awardCardXP", () => {
       cost: 1,
       effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
     };
-    getRunProgressStoreView().awardCardXP(burnCard);
-    getRunProgressStoreView().awardCardXP(physCard);
-    expect(getRunProgressStoreView().runTalentXP.burn).toBeGreaterThan(0);
-    expect(getRunProgressStoreView().runTalentXP.physical).toBeGreaterThan(0);
-    expect(getRunProgressStoreView().talentXP.burn).toBeUndefined();
-    expect(getRunProgressStoreView().talentXP.physical).toBeUndefined();
+    awardCardXP(burnCard);
+    awardCardXP(physCard);
+    expect(readActiveRun().runTalentXP.burn).toBeGreaterThan(0);
+    expect(readActiveRun().runTalentXP.physical).toBeGreaterThan(0);
+    expect(readRunProfile().talentXP.burn).toBeUndefined();
+    expect(readRunProfile().talentXP.physical).toBeUndefined();
   });
 });
 
 describe("awardMysteryXP", () => {
   it("awards XP directly to a keyword runTalentXP", () => {
-    getRunProgressStoreView().awardMysteryXP("burn", 50);
-    expect(getRunProgressStoreView().runTalentXP.burn).toBe(50);
-    expect(getRunProgressStoreView().talentXP.burn).toBeUndefined();
+    awardMysteryXP("burn", 50);
+    expect(readActiveRun().runTalentXP.burn).toBe(50);
+    expect(readRunProfile().talentXP.burn).toBeUndefined();
   });
 
   it("accumulates with existing runTalentXP", () => {
-    getRunProgressStoreView().awardMysteryXP("burn", 30);
-    getRunProgressStoreView().awardMysteryXP("burn", 20);
-    expect(getRunProgressStoreView().runTalentXP.burn).toBe(50);
+    awardMysteryXP("burn", 30);
+    awardMysteryXP("burn", 20);
+    expect(readActiveRun().runTalentXP.burn).toBe(50);
   });
 
   it("awards XP to all visible keywords", () => {
-    getRunProgressStoreView().awardMysteryXP("consume", 50);
-    expect(getRunProgressStoreView().runTalentXP.consume).toBe(50);
+    awardMysteryXP("consume", 50);
+    expect(readActiveRun().runTalentXP.consume).toBe(50);
   });
 });
 
 describe("unlockTalent", () => {
   it("appends the next eligible talent when points are available", () => {
     setRunProgress({ talentXP: { burn: 10 } });
-    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
-    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
+    unlockTalent("burn", "burn-dmg-1");
+    expect(readRunProfile().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
   });
 
   it("preserves existing unlocks for sequential choices", () => {
     setRunProgress({ talentXP: { burn: 30 } });
-    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
-    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-2");
-    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-dmg-1", "burn-dmg-2"]);
+    unlockTalent("burn", "burn-dmg-1");
+    unlockTalent("burn", "burn-dmg-2");
+    expect(readRunProfile().unlockedTalents.burn).toEqual(["burn-dmg-1", "burn-dmg-2"]);
   });
 
   it("ignores duplicate unlock of the same talentId", () => {
     setRunProgress({ talentXP: { burn: 10 } });
-    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
-    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
-    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
+    unlockTalent("burn", "burn-dmg-1");
+    unlockTalent("burn", "burn-dmg-1");
+    expect(readRunProfile().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
   });
 
   it("rejects unlock without unspent points", () => {
-    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
-    expect(getRunProgressStoreView().unlockedTalents.burn).toBeUndefined();
+    unlockTalent("burn", "burn-dmg-1");
+    expect(readRunProfile().unlockedTalents.burn).toBeUndefined();
   });
 
   it("rejects out-of-order unlocks", () => {
     setRunProgress({ talentXP: { burn: 10 } });
-    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-5");
-    expect(getRunProgressStoreView().unlockedTalents.burn).toBeUndefined();
+    unlockTalent("burn", "burn-dmg-5");
+    expect(readRunProfile().unlockedTalents.burn).toBeUndefined();
   });
 
   it("rejects unknown talent ids", () => {
     setRunProgress({ talentXP: { nature: 100 } });
-    getRunProgressStoreView().unlockTalent("nature", "nature-not-a-real-talent");
-    expect(getRunProgressStoreView().unlockedTalents.nature).toBeUndefined();
+    unlockTalent("nature", "nature-not-a-real-talent");
+    expect(readRunProfile().unlockedTalents.nature).toBeUndefined();
   });
 });
 
 describe("unlockAllTalents", () => {
   it("unlocks every talent from the pool", () => {
     unlockAllTalents();
-    const unlocked = getRunProgressStoreView().unlockedTalents;
+    const unlocked = readRunProfile().unlockedTalents;
     const allKeywordIds = Object.keys(unlocked);
     expect(allKeywordIds.length).toBeGreaterThan(0);
     for (const talents of Object.values(unlocked)) {
@@ -353,46 +365,46 @@ describe("unlockAllTalents", () => {
 
 describe("resetUnlockedTalents", () => {
   it("clears all unlocked talents", () => {
-    getRunProgressStoreView().unlockTalent("burn", "talent-1");
-    getRunProgressStoreView().resetUnlockedTalents();
-    expect(getRunProgressStoreView().unlockedTalents).toEqual({});
+    unlockTalent("burn", "talent-1");
+    resetUnlockedTalents();
+    expect(readRunProfile().unlockedTalents).toEqual({});
   });
 });
 
 describe("resetRunXP", () => {
   it("clears runTalentXP but preserves talentXP after finalize", () => {
-    getRunProgressStoreView().awardMysteryXP("burn", 50);
+    awardMysteryXP("burn", 50);
     finalizeRunXP();
-    getRunProgressStoreView().resetRunXP();
-    expect(getRunProgressStoreView().talentXP.burn).toBe(50);
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
+    resetRunXP();
+    expect(readRunProfile().talentXP.burn).toBe(50);
+    expect(readActiveRun().runTalentXP).toEqual({});
   });
 });
 
 describe("clearPermanentData", () => {
   it("clears talentXP, runTalentXP, and unlockedTalents", () => {
-    getRunProgressStoreView().awardMysteryXP("burn", 50);
+    awardMysteryXP("burn", 50);
     finalizeRunXP();
-    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
-    getRunProgressStoreView().clearPermanentData();
-    expect(getRunProgressStoreView().talentXP).toEqual({});
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
-    expect(getRunProgressStoreView().unlockedTalents).toEqual({});
+    unlockTalent("burn", "burn-dmg-1");
+    clearPermanentData();
+    expect(readRunProfile().talentXP).toEqual({});
+    expect(readActiveRun().runTalentXP).toEqual({});
+    expect(readRunProfile().unlockedTalents).toEqual({});
   });
 });
 
 describe("reset", () => {
   it("preserves talentXP and unlockedTalents while clearing run state", () => {
-    getRunProgressStoreView().awardMysteryXP("burn", 50);
+    awardMysteryXP("burn", 50);
     finalizeRunXP();
-    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
+    unlockTalent("burn", "burn-dmg-1");
     setRunProgress({ gold: 100, runPlayerHealth: 15 });
-    getRunProgressStoreView().reset();
-    expect(getRunProgressStoreView().talentXP.burn).toBe(50);
-    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
-    expect(getRunProgressStoreView().gold).toBe(100);
-    expect(getRunProgressStoreView().runPlayerHealth).toBeGreaterThan(0);
+    resetProgress();
+    expect(readRunProfile().talentXP.burn).toBe(50);
+    expect(readRunProfile().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
+    expect(readActiveRun().runTalentXP).toEqual({});
+    expect(readRunProfile().gold).toBe(100);
+    expect(readActiveRun().runPlayerHealth).toBeGreaterThan(0);
   });
 });
 
@@ -409,75 +421,73 @@ describe("talent XP accumulation through run end", () => {
     setRunProgress({ selectedDifficulty: "difficulty-1" });
 
     for (let i = 0; i < 10; i++) {
-      getRunProgressStoreView().awardCardXP(card);
+      awardCardXP(card);
     }
-    expect(getRunProgressStoreView().runTalentXP.physical).toBe(10);
-    expect(computeTalentPoints(getRunProgressStoreView().talentXP.physical ?? 0)).toBe(0);
+    expect(readActiveRun().runTalentXP.physical).toBe(10);
+    expect(computeTalentPoints(readRunProfile().talentXP.physical ?? 0)).toBe(0);
 
     finalizeRunXP();
 
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
-    expect(getRunProgressStoreView().talentXP.physical).toBe(10);
-    expect(computeTalentPoints(getRunProgressStoreView().talentXP.physical ?? 0)).toBe(1);
-    expect(getRunSessionStoreView().runEndTalentXP.physical).toBe(10);
+    expect(readActiveRun().runTalentXP).toEqual({});
+    expect(readRunProfile().talentXP.physical).toBe(10);
+    expect(computeTalentPoints(readRunProfile().talentXP.physical ?? 0)).toBe(1);
+    expect(readRunSession().runEndTalentXP.physical).toBe(10);
   });
 });
 
 describe("finalizeRunXP", () => {
   it("applies no multiplier for difficulty-1", () => {
     setRunProgress({ selectedDifficulty: "difficulty-1" });
-    getRunProgressStoreView().awardMysteryXP("burn", 10);
+    awardMysteryXP("burn", 10);
     finalizeRunXP();
-    expect(getRunProgressStoreView().talentXP.burn).toBe(10);
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
-    expect(getRunSessionStoreView().runEndTalentXP.burn).toBe(10);
+    expect(readRunProfile().talentXP.burn).toBe(10);
+    expect(readActiveRun().runTalentXP).toEqual({});
+    expect(readRunSession().runEndTalentXP.burn).toBe(10);
   });
 
   it("applies 1.3x multiplier for difficulty-2", () => {
     setRunProgress({ selectedDifficulty: "difficulty-2" });
-    getRunProgressStoreView().awardMysteryXP("burn", 10);
+    awardMysteryXP("burn", 10);
     finalizeRunXP();
-    expect(getRunProgressStoreView().talentXP.burn).toBe(13);
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
-    expect(getRunSessionStoreView().runEndTalentXP.burn).toBe(13);
+    expect(readRunProfile().talentXP.burn).toBe(13);
+    expect(readActiveRun().runTalentXP).toEqual({});
+    expect(readRunSession().runEndTalentXP.burn).toBe(13);
   });
 
   it("applies 1.6x multiplier for difficulty-3", () => {
     setRunProgress({ selectedDifficulty: "difficulty-3" });
-    getRunProgressStoreView().awardMysteryXP("burn", 10);
+    awardMysteryXP("burn", 10);
     finalizeRunXP();
-    expect(getRunProgressStoreView().talentXP.burn).toBe(16);
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
+    expect(readRunProfile().talentXP.burn).toBe(16);
+    expect(readActiveRun().runTalentXP).toEqual({});
   });
 
   it("is idempotent — second call does not double-count XP", () => {
     setRunProgress({ selectedDifficulty: "difficulty-2" });
-    getRunProgressStoreView().awardMysteryXP("burn", 10);
+    awardMysteryXP("burn", 10);
     finalizeRunXP();
-    expect(getRunSessionStoreView().runEndTalentXP.burn).toBe(13);
+    expect(readRunSession().runEndTalentXP.burn).toBe(13);
     finalizeRunXP();
-    expect(getRunProgressStoreView().talentXP.burn).toBe(13);
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
-    expect(getRunSessionStoreView().runEndTalentXP).toEqual({});
+    expect(readRunProfile().talentXP.burn).toBe(13);
+    expect(readActiveRun().runTalentXP).toEqual({});
+    expect(readRunSession().runEndTalentXP).toEqual({});
   });
 
   it("clears runEndTalentXP snapshot when there is no run XP to merge", () => {
-    applyGameplayStateUpdate((state) => {
-      state.session.runEndTalentXP = { burn: 99 };
-    });
+    setRunSession({ runEndTalentXP: { burn: 99 } });
     finalizeRunXP();
-    expect(getRunSessionStoreView().runEndTalentXP).toEqual({});
+    expect(readRunSession().runEndTalentXP).toEqual({});
   });
 });
 
 describe("applyRunStartSnapshot", () => {
   it("clears runTalentXP and run-end snapshots when starting a fresh run", () => {
-    getRunProgressStoreView().awardMysteryXP("burn", 5);
-    applyGameplayStateUpdate((state) => {
-      state.session.runEndTalentXP = { burn: 5 };
-      state.session.runEndItems = [{ kind: "trinket", trinketId: "bone-charm" }];
-      state.run.activeRun.runObtainedItems = [{ kind: "trinket", trinketId: "bone-charm" }];
+    awardMysteryXP("burn", 5);
+    setRunSession({
+      runEndTalentXP: { burn: 5 },
+      runEndItems: [{ kind: "trinket", trinketId: "bone-charm" }],
     });
+    setRunProgress({ runObtainedItems: [{ kind: "trinket", trinketId: "bone-charm" }] });
     applyRunStartSnapshot({
       characterId: "knight",
       contentSystemType: "campaign",
@@ -493,11 +503,11 @@ describe("applyRunStartSnapshot", () => {
       runBoons: [],
       hasActiveRun: true,
     });
-    expect(getRunProgressStoreView().runTalentXP).toEqual({});
-    expect(getRunProgressStoreView().runObtainedItems).toEqual([]);
-    expect(getRunSessionStoreView().runEndTalentXP).toEqual({});
-    expect(getRunSessionStoreView().runEndItems).toEqual([]);
-    expect(getRunSessionStoreView().hasActiveRun).toBe(true);
+    expect(readActiveRun().runTalentXP).toEqual({});
+    expect(readActiveRun().runObtainedItems).toEqual([]);
+    expect(readRunSession().runEndTalentXP).toEqual({});
+    expect(readRunSession().runEndItems).toEqual([]);
+    expect(readRunSession().hasActiveRun).toBe(true);
   });
 });
 
@@ -511,18 +521,16 @@ describe("finalizeRunEndSession", () => {
       { kind: "trinket" as const, trinketId: "bone-charm" },
     ];
     setRunSession({ hasActiveRun: true });
-    applyGameplayStateUpdate((state) => {
-      state.run.activeRun.runObtainedItems = obtained;
-    });
+    setRunProgress({ runObtainedItems: obtained });
 
     finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP });
 
-    const recap = getRunSessionStoreView().runEndItems;
+    const recap = readRunSession().runEndItems;
     expect(recap).toEqual(obtained);
     expect(recap[0]).not.toBe(obtained[0]);
     if (recap[0]?.kind === "gear" && obtained[0]?.kind === "gear") {
       expect(recap[0].instance).not.toBe(obtained[0].instance);
     }
-    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(readRunSession().hasActiveRun).toBe(false);
   });
 });

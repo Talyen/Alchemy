@@ -10,7 +10,7 @@ import {
 } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
-import { useGearStore } from "../../../../../helpers/gameplay-store-test";
+import { resetGearForTest } from "../../../../../helpers/gameplay-store-test";
 import { installDisabledAnimationsForTests } from "../../../../../helpers/animation-test";
 
 const DEFAULT_ARMORY_INVENTORY: GearInstance[] = [
@@ -54,7 +54,7 @@ export function renderArmoryScreen(overrides: Partial<ArmoryScreenProps> = {}) {
 export function installArmoryScreenTestHooks() {
   beforeEach(() => {
     resetEscapeStackForTests();
-    useGearStore.getState().reset();
+    resetGearForTest();
     localStorage.clear();
     vi.clearAllMocks();
   });

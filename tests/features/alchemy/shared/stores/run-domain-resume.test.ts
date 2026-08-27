@@ -11,15 +11,37 @@ import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecy
 import { cardLibrary, getStartingDeck } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ANCIENT_ALTAR_MYSTERY_VISIT } from "./active-run-data-fixture";
-
+import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  getBattleStoreView,
-  getNavigationStoreView,
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  resetRunDomainStore,
-  setRunProgress,
-} from "../../../../helpers/run-domain-store-test";
+  beginRewardClaim as mutateBeginRewardClaim,
+  initializeActiveBattle as mutateInitializeActiveBattle,
+  releaseRewardClaim as mutateReleaseRewardClaim,
+  setCompanionRewardCards as mutateCompanionRewardCards,
+  setHasActiveBattle as mutateHasActiveBattle,
+  setRewardState as mutateRewardState,
+  setScreen as mutateSetScreen,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
+import { setHasActiveRun as mutateHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
+import { resetProgress as mutateResetProgress } from "@/features/alchemy/shared/stores/write-port-run";
+import {
+  readActiveRun,
+  readActiveRunScreen,
+  readBattle,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-session-read-port";
+import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
+
+const resetProgress = createRunSessionCommand(mutateResetProgress);
+const setSyncedBattleState = createRunSessionCommand(mutateSyncedBattleState);
+const setHasActiveRun = createRunSessionCommand(mutateHasActiveRun);
+const setHasActiveBattle = createRunSessionCommand(mutateHasActiveBattle);
+const setRewardState = createRunSessionCommand(mutateRewardState);
+const beginRewardClaim = createRunSessionCommand(mutateBeginRewardClaim);
+const setCompanionRewardCards = createRunSessionCommand(mutateCompanionRewardCards);
+const releaseRewardClaim = createRunSessionCommand(mutateReleaseRewardClaim);
+const initializeActiveBattle = createRunSessionCommand(mutateInitializeActiveBattle);
+const setScreen = createRunSessionCommand(mutateSetScreen);
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -28,10 +50,10 @@ beforeEach(() => {
 describe("session facade API", () => {
   beforeEach(() => {
     teardownRun();
-    getRunProgressStoreView().reset();
+    resetProgress();
     setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, gold: 40, initialized: true });
-    getBattleStoreView().setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
-    getRunSessionStoreView().setHasActiveRun(true);
+    setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
+    setHasActiveRun(true);
   });
 
   it("getRunSession aggregates run, battle, and session fields for orchestration", () => {
@@ -48,9 +70,9 @@ describe("session facade API", () => {
   });
 
   it("getCurrentRunPhase reflects battle screen and hasActiveBattle", () => {
-    getBattleStoreView().setHasActiveBattle(true);
+    setHasActiveBattle(true);
     expect(getCurrentRunPhase(ROUTE_SCREENS.BATTLE)).toBe("battle");
-    getBattleStoreView().setHasActiveBattle(false);
+    setHasActiveBattle(false);
     expect(getCurrentRunPhase(ROUTE_SCREENS.BATTLE)).toBe("runLoop");
   });
 
@@ -63,7 +85,7 @@ describe("session facade API", () => {
       runMaxHealth: 24,
       contentSystemType: "campaign",
     });
-    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] }));
+    setRewardState((prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] }));
     const snapshot = snapshotRun(ROUTE_SCREENS.DESTINATION);
     expect(snapshot).toMatchObject({
       characterId: "knight",
@@ -84,7 +106,7 @@ describe("session facade API", () => {
 
   it("snapshots pending rewards on the rewards screen whenever choices are present", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
-    getRunSessionStoreView().setRewardState({
+    setRewardState({
       ...createEmptyRewardState(),
       rewardType: "gear",
       choices: [instance],
@@ -105,13 +127,13 @@ describe("session facade API", () => {
 
   it("omits primary reward choices while a claim is in flight but keeps destinations", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
-    getRunSessionStoreView().setRewardState({
+    setRewardState({
       ...createEmptyRewardState(["Campfire"]),
       rewardType: "gear",
       choices: [instance],
       gold: 5,
     });
-    getRunSessionStoreView().beginRewardClaim();
+    beginRewardClaim();
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
     expect(snap.interruptedFlow).toEqual({
       kind: "destination",
@@ -124,7 +146,7 @@ describe("session facade API", () => {
   });
 
   it("encodes destination interruptedFlow for hollow boss mid-claim without destinations", () => {
-    getRunSessionStoreView().setRewardState({
+    setRewardState({
       ...createEmptyRewardState(),
       rewardType: "gear",
       choices: [],
@@ -143,33 +165,33 @@ describe("session facade API", () => {
     });
 
     restoreRun(snap, {}, {});
-    expect(getNavigationStoreView().screen).toBe("destination");
-    expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
+    expect(readActiveRunScreen()).toBe("destination");
+    expect(readRunSession().rewardState.choices).toEqual([]);
   });
 
   it("marks enemy-phase combat without a transition for boot recovery", () => {
     const enemyPhase = { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] };
-    getBattleStoreView().initializeActiveBattle(enemyPhase, null);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    initializeActiveBattle(enemyPhase, null);
+    setScreen(ROUTE_SCREENS.BATTLE);
     const snap = snapshotRun(ROUTE_SCREENS.BATTLE);
     expect(snap.activeCombat?.battleState.turnPhase).toBe("enemy");
     expect(snap.activeCombat?.pendingBattleTransition).toBeNull();
 
     restoreRun(snap, {}, {});
-    expect(getBattleStoreView().pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
-    expect(getBattleStoreView().battleState.turnPhase).toBe("enemy");
+    expect(readBattle().pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
+    expect(readBattle().battleState.turnPhase).toBe("enemy");
   });
 
   it("persists companion handoff during mid-claim and restores companion as the offer", () => {
     const primary = cardLibrary.find((card) => card.id === "slash")!;
     const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
-    getRunSessionStoreView().setRewardState({
+    setRewardState({
       ...createEmptyRewardState(["Card Shop"]),
       rewardType: "card",
       choices: [primary],
     });
-    getRunSessionStoreView().setCompanionRewardCards([companion]);
-    getRunSessionStoreView().beginRewardClaim();
+    setCompanionRewardCards([companion]);
+    beginRewardClaim();
 
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
     expect(snap.interruptedFlow.kind).toBe("companion-reward");
@@ -182,22 +204,22 @@ describe("session facade API", () => {
     }
     expect(snap.currentScreen).toBe("rewards");
 
-    getRunSessionStoreView().setRewardState(createEmptyRewardState());
-    getRunSessionStoreView().setCompanionRewardCards(null);
-    getRunSessionStoreView().releaseRewardClaim();
+    setRewardState(createEmptyRewardState());
+    setCompanionRewardCards(null);
+    releaseRewardClaim();
     restoreRun(snap, {}, {});
 
-    const restored = getRunSessionStoreView().rewardState;
+    const restored = readRunSession().rewardState;
     expect(restored.rewardType).toBe("card");
     if (restored.rewardType === "card") {
       expect(restored.choices.map((choice) => choice.id)).toEqual([companion.id]);
     }
-    expect(getRunSessionStoreView().companionRewardCards).toBeNull();
-    expect(getNavigationStoreView().screen).toBe("rewards");
+    expect(readRunSession().companionRewardCards).toBeNull();
+    expect(readActiveRunScreen()).toBe("rewards");
   });
 
   it("avoids soft-locking hollow boss rewards on resume", () => {
-    getRunSessionStoreView().setRewardState({
+    setRewardState({
       ...createEmptyRewardState(),
       rewardType: "gear",
       choices: [],
@@ -205,12 +227,12 @@ describe("session facade API", () => {
     });
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
     restoreRun(snap, {}, {});
-    expect(getNavigationStoreView().screen).toBe("destination");
+    expect(readActiveRunScreen()).toBe("destination");
   });
 
   it("snapshots and restores pending gear rewards on the rewards screen", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
-    getRunSessionStoreView().setRewardState({
+    setRewardState({
       ...createEmptyRewardState(),
       rewardType: "gear",
       choices: [instance],
@@ -228,21 +250,21 @@ describe("session facade API", () => {
       }),
     );
 
-    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+    setRewardState(createEmptyRewardState());
     restoreRun(snap, {}, {});
-    expect(getRunSessionStoreView().rewardState.rewardType).toBe("gear");
-    expect(getRunSessionStoreView().rewardState.choices).toEqual([instance]);
+    expect(readRunSession().rewardState.rewardType).toBe("gear");
+    expect(readRunSession().rewardState.choices).toEqual([instance]);
   });
 
   it("snapshots and restores companion reward handoffs", () => {
     const primary = cardLibrary.find((card) => card.id === "slash")!;
     const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
-    getRunSessionStoreView().setRewardState({
+    setRewardState({
       ...createEmptyRewardState(),
       rewardType: "card",
       choices: [primary],
     });
-    getRunSessionStoreView().setCompanionRewardCards([companion]);
+    setCompanionRewardCards([companion]);
 
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
     expect(snap.interruptedFlow.kind).toBe("primary-reward");
@@ -254,16 +276,16 @@ describe("session facade API", () => {
       expect(snap.interruptedFlow.pending.companionChoiceIds).toEqual([companion.id]);
     }
 
-    getRunSessionStoreView().setRewardState(createEmptyRewardState());
-    getRunSessionStoreView().setCompanionRewardCards(null);
+    setRewardState(createEmptyRewardState());
+    setCompanionRewardCards(null);
     restoreRun(snap, {}, {});
 
-    const restoredRewardState = getRunSessionStoreView().rewardState;
+    const restoredRewardState = readRunSession().rewardState;
     expect(restoredRewardState.rewardType).toBe("card");
     if (restoredRewardState.rewardType === "card") {
       expect(restoredRewardState.choices.map((choice) => choice.id)).toEqual([primary.id]);
     }
-    expect(getRunSessionStoreView().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
+    expect(readRunSession().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
   });
 
   it("restores wildwood gear rewards from interruptedFlow", () => {
@@ -297,10 +319,10 @@ describe("session facade API", () => {
       },
     };
 
-    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+    setRewardState(createEmptyRewardState());
     restoreRun(activeRun, {}, {});
-    expect(getRunSessionStoreView().rewardState.rewardType).toBe("gear");
-    expect(getRunSessionStoreView().rewardState.choices).toEqual([instance]);
+    expect(readRunSession().rewardState.rewardType).toBe("gear");
+    expect(readRunSession().rewardState.choices).toEqual([instance]);
   });
 
   it("resumes a Wildwood card reward onto the Victory screen from interruptedFlow", () => {
@@ -338,10 +360,10 @@ describe("session facade API", () => {
       {},
     );
 
-    expect(getNavigationStoreView().screen).toBe(ROUTE_SCREENS.REWARDS);
-    expect(getRunProgressStoreView().contentSystemType).toBe("wildwood");
-    expect(getRunSessionStoreView().wildwoodDraft?.phase).toBe("reward");
-    const rewardState = getRunSessionStoreView().rewardState;
+    expect(readActiveRunScreen()).toBe(ROUTE_SCREENS.REWARDS);
+    expect(readActiveRun().contentSystemType).toBe("wildwood");
+    expect(readRunSession().wildwoodDraft?.phase).toBe("reward");
+    const rewardState = readRunSession().rewardState;
     expect(rewardState.rewardType).toBe("card");
     if (rewardState.rewardType === "card") {
       expect(rewardState.choices.map((choice) => choice.id)).toEqual(["slash", "bash", "block"]);
@@ -368,10 +390,10 @@ describe("session facade API", () => {
       },
     };
 
-    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+    setRewardState(createEmptyRewardState());
     restoreRun(activeRun, {}, {});
 
-    expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
+    expect(readRunSession().rewardState.choices).toEqual([]);
   });
 
   it("restores a mystery visit including the chosen summary phase", () => {
@@ -384,9 +406,9 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    expect(getNavigationStoreView().screen).toBe("mystery");
-    expect(getRunSessionStoreView().mysteryEvent?.id).toBe("ancient-altar");
-    expect(getRunSessionStoreView().mysteryChosenChoice?.label).toBe("Take the Offering");
+    expect(readActiveRunScreen()).toBe("mystery");
+    expect(readRunSession().mysteryEvent?.id).toBe("ancient-altar");
+    expect(readRunSession().mysteryChosenChoice?.label).toBe("Take the Offering");
   });
 
   it("restores a mid-visit mystery card picker", () => {
@@ -409,12 +431,12 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    expect(getNavigationStoreView().screen).toBe("mystery");
-    expect(getRunSessionStoreView().mysteryEvent?.id).toBe("ancient-altar");
-    expect(getRunSessionStoreView().mysteryCardChoices).toEqual([slash]);
-    expect(getRunSessionStoreView().mysteryGrantedTrinketIds).toEqual(["bone-charm"]);
-    expect(getRunSessionStoreView().mysteryGrantedGearInstances).toEqual([]);
-    expect(getRunSessionStoreView().mysteryChosenCardId).toBe("slash");
+    expect(readActiveRunScreen()).toBe("mystery");
+    expect(readRunSession().mysteryEvent?.id).toBe("ancient-altar");
+    expect(readRunSession().mysteryCardChoices).toEqual([slash]);
+    expect(readRunSession().mysteryGrantedTrinketIds).toEqual(["bone-charm"]);
+    expect(readRunSession().mysteryGrantedGearInstances).toEqual([]);
+    expect(readRunSession().mysteryChosenCardId).toBe("slash");
   });
 
   it("restores a pending legacy mystery card removal", () => {
@@ -436,7 +458,7 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    expect(getRunSessionStoreView().mysteryPendingRemoval).toBe(true);
+    expect(readRunSession().mysteryPendingRemoval).toBe(true);
     expect(snapshotRun().mysteryVisit?.pendingRemoval).toBe(true);
   });
 
@@ -450,8 +472,8 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    expect(getNavigationStoreView().screen).toBe("mystery");
-    expect(getRunSessionStoreView().mysteryEvent).not.toBeNull();
+    expect(readActiveRunScreen()).toBe("mystery");
+    expect(readRunSession().mysteryEvent).not.toBeNull();
   });
 
   it("repairs unresolved overgrown-temple random trinkets on restore", () => {
@@ -472,7 +494,7 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    const search = getRunSessionStoreView().mysteryEvent?.choices.find((choice) => choice.label === "Search the Crypt");
+    const search = readRunSession().mysteryEvent?.choices.find((choice) => choice.label === "Search the Crypt");
     const trinket = search?.effects.find((effect) => effect.kind === "gainTrinket");
     expect(trinket?.kind).toBe("gainTrinket");
     if (trinket?.kind !== "gainTrinket") return;
@@ -495,12 +517,12 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    expect(getNavigationStoreView().screen).toBe("destination");
-    expect(getRunSessionStoreView().mysteryEvent).toBeNull();
-    expect(getRunSessionStoreView().mysteryChosenChoice).toBeNull();
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual(["Mystery", "Campfire", "Normal Combat"]);
-    expect(getRunProgressStoreView().completedDestinations).toEqual([]);
-    expect(getRunProgressStoreView().destinationIndexInAct).toBe(0);
+    expect(readActiveRunScreen()).toBe("destination");
+    expect(readRunSession().mysteryEvent).toBeNull();
+    expect(readRunSession().mysteryChosenChoice).toBeNull();
+    expect(readRunSession().rewardState.destinations).toEqual(["Mystery", "Campfire", "Normal Combat"]);
+    expect(readActiveRun().completedDestinations).toEqual([]);
+    expect(readActiveRun().destinationIndexInAct).toBe(0);
   });
 
   it("infers battle screen when currentScreen is null and combat is active", () => {
@@ -518,7 +540,7 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    expect(getNavigationStoreView().screen).toBe("battle");
+    expect(readActiveRunScreen()).toBe("battle");
   });
 
   it("restores a corruption result so the altar cannot re-roll", () => {
@@ -538,7 +560,7 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    expect(getRunSessionStoreView().corruptionResult).toMatchObject({
+    expect(readRunSession().corruptionResult).toMatchObject({
       originalCard: { id: slash.id },
       corruptedCard: { id: slash.id, corrupted: true },
       transformed: false,

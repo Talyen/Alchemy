@@ -3,16 +3,16 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
 import { awardRunEndMaterials, clearCombatState } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { addRunMaterialsEarned } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useRunProfileStore, resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import {
-  getBattleStoreView,
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  setRunSession,
-  setRunProgress,
-} from "../../../../helpers/run-domain-store-test";
+  readActiveRun,
+  readBattle,
+  readRunProfile,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-session-read-port";
+import { addRunMaterialsEarned, setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
+import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import { setRunSession, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -42,16 +42,16 @@ function makeHandlers() {
 describe("createRunFlowHandlers victory paths", () => {
   it("awardRunEndMaterials applies homestead end-of-run per-room bonuses", () => {
     setRunProgress({ roomsEncountered: 4, currentAct: 1 });
-    useRunProfileStore.setState((profile) => {
-      profile.effects.endRunHerbsPerRoom = 1;
+    dispatchRunSessionCommand((draft) => {
+      draft.runProfile.effects.endRunHerbsPerRoom = 1;
     });
-    const herbsBefore = useRunProfileStore.getState().materialInventory.herbs;
+    const herbsBefore = readRunProfile().materialInventory.herbs;
 
     const mats = dispatchRunSessionCommand(awardRunEndMaterials);
 
     expect(mats.herbs).toBe(4);
-    expect(useRunProfileStore.getState().materialInventory.herbs).toBe(herbsBefore + 4);
-    expect(getRunSessionStoreView().runEndMaterials.herbs).toBe(4);
+    expect(readRunProfile().materialInventory.herbs).toBe(herbsBefore + 4);
+    expect(readRunSession().runEndMaterials.herbs).toBe(4);
   });
 
   it("awardRunEndMaterials includes materials collected during the run on the summary", () => {
@@ -60,8 +60,8 @@ describe("createRunFlowHandlers victory paths", () => {
 
     dispatchRunSessionCommand(awardRunEndMaterials);
 
-    expect(getRunSessionStoreView().runEndMaterials.wood).toBe(5);
-    expect(getRunSessionStoreView().runEndMaterials.herbs).toBe(2);
+    expect(readRunSession().runEndMaterials.wood).toBe(5);
+    expect(readRunSession().runEndMaterials.herbs).toBe(2);
     expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
   });
 
@@ -71,13 +71,13 @@ describe("createRunFlowHandlers victory paths", () => {
     const mats = dispatchRunSessionCommand(awardRunEndMaterials);
 
     expect(mats).toEqual(emptyInventory());
-    expect(getRunSessionStoreView().runEndMaterials).toEqual(emptyInventory());
+    expect(readRunSession().runEndMaterials).toEqual(emptyInventory());
   });
 
   it("Wildwood Draft run end grants no materials", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
-    useRunProfileStore.setState((profile) => {
-      profile.effects.endRunHerbsPerRoom = 2;
+    dispatchRunSessionCommand((draft) => {
+      draft.runProfile.effects.endRunHerbsPerRoom = 2;
     });
     dispatchRunSessionCommand((draft) => addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 }));
 
@@ -88,9 +88,9 @@ describe("createRunFlowHandlers victory paths", () => {
   });
 
   it("clearCombatState clears battle flag", () => {
-    getBattleStoreView().setHasActiveBattle(true);
+    dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, true));
     dispatchRunSessionCommand(clearCombatState);
-    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+    expect(readBattle().hasActiveBattle).toBe(false);
   });
 
   it("handleBattleDefeat invokes applyRunDefeatTeardown for campaign", () => {
@@ -242,10 +242,12 @@ describe("createRunFlowHandlers victory paths", () => {
       runPlayerHealth: 20,
       runMaxHealth: 20,
     });
-    getBattleStoreView().setSyncedBattleState({
-      ...getBattleStoreView().battleState,
-      gold: 15,
-    });
+    dispatchRunSessionCommand((draft) =>
+      setSyncedBattleState(draft, {
+        ...readBattle().battleState,
+        gold: 15,
+      }),
+    );
     setRunSession({
       wildwoodDraft: {
         phase: "battle",
@@ -297,17 +299,17 @@ describe("createRunFlowHandlers victory paths", () => {
     handlers.finishRewards();
     createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).finishRewards();
 
-    expect(getRunProgressStoreView().runDeck).toHaveLength(1);
+    expect(readActiveRun().runDeck).toHaveLength(1);
     expect(navigateTo).toHaveBeenCalledTimes(1);
-    expect(getRunSessionStoreView().rewardClaimInFlight).toBe(true);
+    expect(readRunSession().rewardClaimInFlight).toBe(true);
     // Offer UI stays populated until navigation commits (no hollow Victory exit).
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(getRunSessionStoreView().rewardState.choices).toEqual([card]);
+    expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readRunSession().rewardState.choices).toEqual([card]);
 
     const onCommit = navigateTo.mock.calls[0][1] as () => void;
     onCommit();
-    expect(getRunSessionStoreView().rewardClaimInFlight).toBe(false);
-    expect(getRunSessionStoreView().rewardState.choices).toEqual([]);
+    expect(readRunSession().rewardClaimInFlight).toBe(false);
+    expect(readRunSession().rewardState.choices).toEqual([]);
   });
 
   it("finishRewards defers companion handoff until navigation commit", () => {
@@ -353,22 +355,22 @@ describe("createRunFlowHandlers victory paths", () => {
     handlers.finishRewards();
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
-    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual([primary.id]);
-    expect(getRunSessionStoreView().rewardClaimInFlight).toBe(true);
+    expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([primary.id]);
+    expect(readRunSession().rewardClaimInFlight).toBe(true);
     // Primary offer stays visible until commit (no hollow / early companion swap).
-    expect(getRunSessionStoreView().rewardState.choices).toEqual([primary]);
-    expect(getRunSessionStoreView().companionRewardCards).toEqual([companion]);
+    expect(readRunSession().rewardState.choices).toEqual([primary]);
+    expect(readRunSession().companionRewardCards).toEqual([companion]);
 
     const onCommit = navigateTo.mock.calls[0]![1] as () => void;
     onCommit();
 
-    expect(getRunSessionStoreView().rewardClaimInFlight).toBe(false);
-    expect(getRunSessionStoreView().companionRewardCards).toBeNull();
-    const companionChoices = getRunSessionStoreView().rewardState.choices;
+    expect(readRunSession().rewardClaimInFlight).toBe(false);
+    expect(readRunSession().companionRewardCards).toBeNull();
+    const companionChoices = readRunSession().rewardState.choices;
     expect(companionChoices.every((card) => "id" in card)).toBe(true);
     expect(companionChoices.map((card) => ("id" in card ? card.id : card.instanceId))).toEqual([companion.id]);
-    expect(getRunSessionStoreView().rewardState.selectedId).toBeNull();
-    expect(getRunSessionStoreView().rewardState.gold).toBe(0);
+    expect(readRunSession().rewardState.selectedId).toBeNull();
+    expect(readRunSession().rewardState.gold).toBe(0);
   });
 
   it("handleDestinationChoice ignores a second call after destinations are cleared", () => {
@@ -401,18 +403,18 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(navigateTo).toHaveBeenCalledTimes(1);
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CAMPFIRE, expect.any(Function));
     // Progress commits only after the navigation callback runs.
-    expect(getRunProgressStoreView().completedDestinations).toEqual([]);
-    expect(getRunProgressStoreView().destinationIndexInAct).toBe(0);
-    expect(getRunSessionStoreView().pendingDestinationClaim).toBe(DESTINATIONS.CAMPFIRE);
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP]);
+    expect(readActiveRun().completedDestinations).toEqual([]);
+    expect(readActiveRun().destinationIndexInAct).toBe(0);
+    expect(readRunSession().pendingDestinationClaim).toBe(DESTINATIONS.CAMPFIRE);
+    expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP]);
 
     const onCommit = navigateTo.mock.calls[0][1] as () => void;
     onCommit();
 
-    expect(getRunProgressStoreView().completedDestinations).toEqual([DESTINATIONS.CAMPFIRE]);
-    expect(getRunProgressStoreView().destinationIndexInAct).toBe(1);
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual([]);
-    expect(getRunSessionStoreView().pendingDestinationClaim).toBeNull();
+    expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.CAMPFIRE]);
+    expect(readActiveRun().destinationIndexInAct).toBe(1);
+    expect(readRunSession().rewardState.destinations).toEqual([]);
+    expect(readRunSession().pendingDestinationClaim).toBeNull();
   });
 
   it("handleDestinationChoice defers mystery destination commit until screen commit", () => {
@@ -441,15 +443,15 @@ describe("createRunFlowHandlers victory paths", () => {
 
     expect(beginMysteryEvent).toHaveBeenCalledTimes(1);
     expect(beginMysteryEvent).toHaveBeenCalledWith(expect.any(Function));
-    expect(getRunSessionStoreView().pendingDestinationClaim).toBe(DESTINATIONS.MYSTERY);
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE]);
-    expect(getRunProgressStoreView().completedDestinations).toEqual([]);
+    expect(readRunSession().pendingDestinationClaim).toBe(DESTINATIONS.MYSTERY);
+    expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE]);
+    expect(readActiveRun().completedDestinations).toEqual([]);
 
     const onCommit = beginMysteryEvent.mock.calls[0]![0] as () => void;
     onCommit();
 
-    expect(getRunProgressStoreView().completedDestinations).toEqual([DESTINATIONS.MYSTERY]);
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual([]);
-    expect(getRunSessionStoreView().pendingDestinationClaim).toBeNull();
+    expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.MYSTERY]);
+    expect(readRunSession().rewardState.destinations).toEqual([]);
+    expect(readRunSession().pendingDestinationClaim).toBeNull();
   });
 });

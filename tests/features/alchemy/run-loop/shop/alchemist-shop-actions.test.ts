@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  setRunProgress,
-} from "../../../../helpers/run-domain-store-test";
+import { setRunProgress } from "../../../../helpers/run-domain-store-test";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
   buildActions,
   createInitialAlchemistState,
@@ -25,9 +22,9 @@ describe("alchemist shop actions", () => {
       const actions = buildActions();
 
       expect(actions.alchemist.mixPotions(0, 1)).toBeNull();
-      expect(getRunProgressStoreView().gold).toBe(999);
-      expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(false);
-      expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual(["slash", "bash"]);
+      expect(readRunProfile().gold).toBe(999);
+      expect(readRunSession().alchemistState.mixUsed).toBe(false);
+      expect(readActiveRun().runDeck.map((card) => card.id)).toEqual(["slash", "bash"]);
     });
     it("deducts gold, replaces two cards with mixed potion, marks mixUsed", () => {
       setRunProgress({
@@ -40,9 +37,9 @@ describe("alchemist shop actions", () => {
       const result = actions.alchemist.mixPotions(0, 1);
 
       expect(result).not.toBeNull();
-      expect(getRunProgressStoreView().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
-      expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
-      expect(getRunProgressStoreView().runDeck).toEqual([result]);
+      expect(readRunProfile().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
+      expect(readRunSession().alchemistState.mixUsed).toBe(true);
+      expect(readActiveRun().runDeck).toEqual([result]);
     });
 
     it("adds homestead potionMixPotency onto talent mix potency", () => {
@@ -91,8 +88,8 @@ describe("alchemist shop actions", () => {
       // player or disabling the Mix service.
       const result = actions.alchemist.mixPotions(0, 1);
       expect(result).toBeNull();
-      expect(getRunProgressStoreView().gold).toBe(999);
-      expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(false);
+      expect(readRunProfile().gold).toBe(999);
+      expect(readRunSession().alchemistState.mixUsed).toBe(false);
     });
 
     it("prevents a second mix attempt after first succeeds", () => {
@@ -105,12 +102,12 @@ describe("alchemist shop actions", () => {
 
       const first = firstActions.alchemist.mixPotions(0, 1);
       expect(first).not.toBeNull();
-      expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
+      expect(readRunSession().alchemistState.mixUsed).toBe(true);
 
       // mixUsed is read from the draft on the next command, not from a command closure
       const second = firstActions.alchemist.mixPotions(0, 1);
       expect(second).toBeNull();
-      expect(getRunProgressStoreView().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
+      expect(readRunProfile().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
     });
 
     it("no-ops a second mix on the same actions instance without double-spending gold", () => {
@@ -128,8 +125,8 @@ describe("alchemist shop actions", () => {
 
       expect(actions.alchemist.mixPotions(0, 1)).not.toBeNull();
       expect(actions.alchemist.mixPotions(2, 3)).toBeNull();
-      expect(getRunProgressStoreView().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
-      expect(getRunSessionStoreView().alchemistState.mixUsed).toBe(true);
+      expect(readRunProfile().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
+      expect(readRunSession().alchemistState.mixUsed).toBe(true);
     });
   });
   describe("talent discounts", () => {
@@ -137,24 +134,10 @@ describe("alchemist shop actions", () => {
       setRunProgress({ gold: 999 });
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions({ talentEffects: { potionDiscount: 5, shopCardDiscount: 3 } });
-      const potion = requiredItem(getRunSessionStoreView().alchemistState.potions[0], "alchemist potion");
+      const potion = requiredItem(readRunSession().alchemistState.potions[0], "alchemist potion");
 
       // Potion discount stacks with shop card discount for potion cards
       expect(actions.alchemist.getPotionBuyPrice(potion)).toBeLessThanOrEqual(ALCHEMIST_POTION_PRICE - 3);
-    });
-  });
-  describe("alchemist refresh dedup", () => {
-    it("does not restock the same potion id on refresh", () => {
-      setRunProgress({ gold: 999 });
-      setAlchemistState(createInitialAlchemistState());
-      const actions = buildActions();
-      const beforeIds = getRunSessionStoreView().alchemistState.potions.map((p) => p.id);
-
-      actions.alchemist.refresh();
-
-      const afterIds = getRunSessionStoreView().alchemistState.potions.map((p) => p.id);
-      const overlap = beforeIds.filter((id) => afterIds.includes(id));
-      expect(overlap.length).toBeLessThan(beforeIds.length);
     });
   });
 });

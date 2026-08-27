@@ -1,35 +1,34 @@
 // Test helpers — build run/talent controller shapes from the live run store.
-import { getRunDomainStore } from "./gameplay-store-test";
 import type {
   BattleRunPort,
   BattleTalentPort,
   ContentNavigationRunPort,
   ContentNavigationTalentPort,
 } from "@/features/alchemy/shared/stores/run-port-types";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { computeTalentEffects } from "@/lib/game-data/talents";
-import { getRunProgressStoreView } from "./run-domain-store-test";
 
 export function makeRunController(): BattleRunPort & ContentNavigationRunPort {
-  const state = getRunDomainStore();
+  const run = readActiveRun();
   return {
-    characterId: state.activeRun.characterId,
-    selectedDifficulty: state.activeRun.selectedDifficulty,
-    runMaxHealth: state.activeRun.runMaxHealth,
-    contentSystemType: state.activeRun.contentSystemType,
-    roomsEncountered: state.activeRun.roomsEncountered,
-    runBoons: state.activeRun.runBoons,
-    encounteredRunEnemyIds: state.activeRun.encounteredRunEnemyIds,
-    runDeck: state.activeRun.runDeck,
-    gold: getRunProgressStoreView().gold,
-    lastOfferedDestinations: state.activeRun.lastOfferedDestinations,
-    destinationRoundsSinceOffered: state.activeRun.destinationRoundsSinceOffered,
+    characterId: run.characterId,
+    selectedDifficulty: run.selectedDifficulty,
+    runMaxHealth: run.runMaxHealth,
+    contentSystemType: run.contentSystemType,
+    roomsEncountered: run.roomsEncountered,
+    runBoons: run.runBoons,
+    encounteredRunEnemyIds: run.encounteredRunEnemyIds,
+    runDeck: run.runDeck,
+    gold: readRunProfile().gold,
+    lastOfferedDestinations: run.lastOfferedDestinations,
+    destinationRoundsSinceOffered: run.destinationRoundsSinceOffered,
   };
 }
 
 export function makeTalentController(): BattleTalentPort & ContentNavigationTalentPort {
-  const base = getRunProgressStoreView();
+  const profile = readRunProfile();
   return {
-    talentXP: base.talentXP,
-    talentEffects: computeTalentEffects(base.unlockedTalents),
+    talentXP: profile.talentXP,
+    talentEffects: computeTalentEffects(profile.unlockedTalents),
   };
 }

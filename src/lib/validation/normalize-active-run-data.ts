@@ -3,6 +3,7 @@
 // Scalar defaults and contentSystemType are owned by the Zod schema (.catch / .default).
 // Tombstoned card stripping lives here so every parse path (active run, parked runs)
 // drops removed content before it can reach runtime state.
+import { repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { isTombstonedCardId } from "./migration/tombstoned-content-ids";
 
@@ -74,9 +75,22 @@ function nullableCardArray(cards: unknown): unknown {
 
 function normalizeOptionalShopInventory(inventory: unknown, cardKey: string): Record<string, unknown> | null {
   if (!inventory || typeof inventory !== "object") return null;
+  const record = inventory as Record<string, unknown>;
+  const cards = record[cardKey];
+  if (!Array.isArray(cards)) {
+    return { ...record, [cardKey]: cards ?? null };
+  }
+  const purchased = Array.isArray(record.purchasedSlotKeys) ? (record.purchasedSlotKeys as string[]) : [];
+  const repaired = repairShopOfferings(
+    cards as SavedCard[],
+    purchased,
+    (card) => !isTombstonedCardId(card.id),
+    (card, index) => shopItemSlotKey(card.id, index),
+  );
   return {
-    ...(inventory as Record<string, unknown>),
-    [cardKey]: nullableCardArray((inventory as Record<string, unknown>)[cardKey]),
+    ...record,
+    [cardKey]: repaired.items,
+    purchasedSlotKeys: repaired.purchasedSlotKeys,
   };
 }
 

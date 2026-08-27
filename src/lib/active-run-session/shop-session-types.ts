@@ -1,4 +1,4 @@
-// Runtime shop session types + empty factories (no hydrate/serialize — those stay in run-loop).
+// Runtime shop session types + empty factories. Serialize/hydrate live in shop-persistence.ts.
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import {
@@ -8,7 +8,7 @@ import {
   EQUIPMENT_SHOP_REFRESHES,
 } from "@/lib/game-constants";
 
-interface RefreshableShopFields {
+export interface RefreshableShopFields {
   refreshesLeft: number;
   firstPurchaseUsed: boolean;
   purchasedSlotKeys: string[];

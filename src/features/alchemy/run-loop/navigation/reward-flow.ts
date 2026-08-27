@@ -1,6 +1,10 @@
 // Reward state, gold math, and combat/boss reward builders.
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
-import { DROP_RATES_BOSS, LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
+import {
+  GEAR_REWARD_PERMANENT_TRINKET_CHANCE,
+  LABYRINTH_REWARD_CONFIG,
+  REWARD_CARD_CHOICES,
+} from "@/lib/game-constants";
 import { pickRandom, sampleItems } from "@/lib/utils";
 import { generateGearRewardChoices } from "@/lib/gear";
 import {
@@ -136,7 +140,9 @@ function createGearOrPermanentTrinketReward(
 ): GearRewardState | TrinketRewardState {
   const owned = new Set(ownedTrinketIds);
   const unowned = trinketLibrary.filter((entry) => !owned.has(entry.id));
-  const trinketChance = isBoss ? DROP_RATES_BOSS.trinket : 1 / 3;
+  const trinketChance = isBoss
+    ? GEAR_REWARD_PERMANENT_TRINKET_CHANCE.boss
+    : GEAR_REWARD_PERMANENT_TRINKET_CHANCE.normal;
   if (unowned.length > 0 && rng() < trinketChance) {
     return {
       ...createEmptyRewardState(),

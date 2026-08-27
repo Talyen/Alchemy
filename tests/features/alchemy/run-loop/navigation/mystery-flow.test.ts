@@ -8,13 +8,12 @@ import {
 import { cardLibrary, getCardKeywords } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
-import { resetAllTestStores, useGearStore, useProfileStore } from "../../../../helpers/gameplay-store-test";
-import {
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  setRunProgress,
-} from "../../../../helpers/run-domain-store-test";
+import { resetAllTestStores, resetProfileForTest } from "../../../../helpers/gameplay-store-test";
+import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 
 function makeContext(rng: () => number = () => 0.5): MysteryEffectContext {
   let context!: MysteryEffectContext;
@@ -36,102 +35,100 @@ const slash = cardLibrary.find((card) => card.id === "slash")!;
 
 beforeEach(() => {
   resetAllTestStores();
-  useProfileStore.setState(useProfileStore.getInitialState());
+  resetProfileForTest();
 });
 
 describe("applyMysteryEffect", () => {
   it("addCard appends the library card and tracks discovery", () => {
     apply({ kind: "addCard", cardId: "slash" });
-    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toContain("slash");
+    expect(readActiveRun().runDeck.map((card) => card.id)).toContain("slash");
   });
 
   it("chooseCard opens the picker and pauses evaluation", () => {
     const result = apply({ kind: "chooseCard" });
     expect(result.followUp).toBe("choose-card");
-    expect(getRunSessionStoreView().mysteryCardChoices).not.toBeNull();
+    expect(readRunSession().mysteryCardChoices).not.toBeNull();
   });
 
   it("healHealth heals up to max health", () => {
     setRunProgress({ runPlayerHealth: 20, runMaxHealth: 30 });
     const result = apply({ kind: "healHealth", amount: 5 });
     expect(result.followUp).toBeNull();
-    expect(getRunProgressStoreView().runPlayerHealth).toBe(25);
+    expect(readActiveRun().runPlayerHealth).toBe(25);
   });
 
   it("damageHealth never drops health below zero", () => {
     setRunProgress({ runPlayerHealth: 2 });
     apply({ kind: "damageHealth", amount: 3 });
-    expect(getRunProgressStoreView().runPlayerHealth).toBe(0);
+    expect(readActiveRun().runPlayerHealth).toBe(0);
   });
 
   it("gainGold credits gold with the gain sound", () => {
     setRunProgress({ gold: 20 });
     const result = apply({ kind: "gainGold", amount: 10 });
     expect(result.goldSound).toBe("gain");
-    expect(getRunProgressStoreView().gold).toBe(30);
+    expect(readRunProfile().gold).toBe(30);
   });
 
   it("loseGold spends gold with the spend sound", () => {
     setRunProgress({ gold: 20 });
     const result = apply({ kind: "loseGold", amount: 5 });
     expect(result.goldSound).toBe("spend");
-    expect(getRunProgressStoreView().gold).toBe(15);
+    expect(readRunProfile().gold).toBe(15);
   });
 
   it("gainXP awards run talent XP for the keyword", () => {
     apply({ kind: "gainXP", keyword: "nature", amount: 1 });
-    expect(getRunProgressStoreView().runTalentXP.nature).toBeGreaterThanOrEqual(1);
+    expect(readActiveRun().runTalentXP.nature).toBeGreaterThanOrEqual(1);
   });
 
   it("removeCard removes one deck card at random without opening a picker", () => {
     setRunProgress({ runDeck: [slash] });
     const result = apply({ kind: "removeCard" });
     expect(result.followUp).toBeNull();
-    expect(getRunProgressStoreView().runDeck).toEqual([]);
+    expect(readActiveRun().runDeck).toEqual([]);
   });
 
   it("gainTrinket appends unowned trinkets exactly once", () => {
     apply({ kind: "gainTrinket", trinketId: "bone-charm" });
     apply({ kind: "gainTrinket", trinketId: "bone-charm" });
-    expect(getRunProgressStoreView().runBoons).toEqual(["bone-charm"]);
+    expect(readActiveRun().runBoons).toEqual(["bone-charm"]);
   });
 
   it("gainRandomTrinket grants an unowned pick and records it", () => {
     const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }, () => 0.5);
     expect(result.followUp).toBeNull();
-    const granted = getRunSessionStoreView().mysteryGrantedTrinketIds;
+    const granted = readRunSession().mysteryGrantedTrinketIds;
     expect(granted).toHaveLength(1);
     expect(["bone-charm", "sin-eaters-lantern"]).toContain(granted[0]);
-    expect(getRunProgressStoreView().runBoons).toEqual(granted);
+    expect(readActiveRun().runBoons).toEqual(granted);
   });
 
   it("gainRandomTrinket falls back outside fromIds when every candidate is owned", () => {
     setRunProgress({ runBoons: ["bone-charm", "sin-eaters-lantern"] });
     const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }, () => 0.5);
     expect(result.followUp).toBeNull();
-    const granted = getRunSessionStoreView().mysteryGrantedTrinketIds;
+    const granted = readRunSession().mysteryGrantedTrinketIds;
     expect(granted).toHaveLength(1);
     expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(granted[0]);
   });
 
   it("gainGeneratedGear adds the instance to the armory and records it", () => {
     setRunProgress({ characterId: "knight" });
-    getRunSessionStoreView().setHasActiveRun(true);
+    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, true));
 
     apply({ kind: "gainGeneratedGear", baseItemId: "emerald-ring" });
 
-    const granted = getRunSessionStoreView().mysteryGrantedGearInstances;
+    const granted = readRunSession().mysteryGrantedGearInstances;
     expect(granted).toHaveLength(1);
     expect(granted[0]!.definitionId).toMatch(/^emerald-ring-(basic|astral)$/);
-    expect(useGearStore.getState().inventories.knight.some((item) => item.instanceId === granted[0]!.instanceId)).toBe(
-      true,
-    );
-    expect(getRunProgressStoreView().runObtainedItems).toEqual([{ kind: "gear", instance: granted[0] }]);
+    expect(readGearState().inventories.knight.some((item) => item.instanceId === granted[0]!.instanceId)).toBe(true);
+    expect(readActiveRun().runObtainedItems).toEqual([{ kind: "gear", instance: granted[0] }]);
   });
 
   it("gainMaterial awards the material during the run", () => {
     apply({ kind: "gainMaterial", material: "wood", amount: 1 });
-    expect(getRunProgressStoreView().materialInventory.wood).toBeGreaterThanOrEqual(1);
+    expect(readRunProfile().materialInventory.wood).toBeGreaterThanOrEqual(1);
   });
 
   it("throws for unknown effect kinds", () => {
@@ -144,7 +141,7 @@ describe("applyMysteryEffect", () => {
 describe("chooseCard tag filtering", () => {
   it("offers only cards matching the tag", () => {
     apply({ kind: "chooseCard", tag: "archery" });
-    const offered = getRunSessionStoreView().mysteryCardChoices!;
+    const offered = readRunSession().mysteryCardChoices!;
     expect(offered.length).toBeGreaterThan(0);
     for (const card of offered) {
       const libraryCard = cardLibrary.find((c) => c.id === card.id);
@@ -154,7 +151,7 @@ describe("chooseCard tag filtering", () => {
 
   it("can offer non-tagged cards when no tag is given", () => {
     apply({ kind: "chooseCard" });
-    const offered = getRunSessionStoreView().mysteryCardChoices!;
+    const offered = readRunSession().mysteryCardChoices!;
     expect(offered.some((card) => !getCardKeywords(card).includes("archery"))).toBe(true);
   });
 
@@ -166,7 +163,7 @@ describe("chooseCard tag filtering", () => {
     const poolSpy = vi.spyOn(cardPools, "getOfferableCardPool").mockReturnValue(slashOnly);
     try {
       apply({ kind: "chooseCard", tag: "archery" });
-      const offered = getRunSessionStoreView().mysteryCardChoices!;
+      const offered = readRunSession().mysteryCardChoices!;
       expect(offered.length).toBeGreaterThan(0);
       expect(offered.every((card) => card.id === "slash")).toBe(true);
     } finally {

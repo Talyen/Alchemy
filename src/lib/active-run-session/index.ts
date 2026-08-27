@@ -20,13 +20,20 @@ export type {
   TrinketRewardState,
 } from "./reward-types";
 export { createEmptyRewardState, getRewardChoiceId } from "./reward-types";
-export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState } from "./shop-session-types";
+export type {
+  AlchemistState,
+  EquipmentShopState,
+  RefreshableShopFields,
+  ShopState,
+  TrinketShopState,
+} from "./shop-session-types";
 export {
   emptyAlchemistState,
   emptyEquipmentShopState,
   emptyShopState,
   emptyTrinketShopState,
 } from "./shop-session-types";
+export { repairShopOfferings, shopItemSlotKey } from "./shop-offering-repair";
 export { parseActiveRun, toActiveRunData } from "./parse";
 export { restorePendingReward, restorePendingRewardBundle, serializePendingReward } from "./pending-reward-persistence";
 export {

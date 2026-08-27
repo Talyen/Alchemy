@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { normalizeSaveData } from "../../../../helpers/parse-save-for-tests";
-import { useGearStore } from "../../../../helpers/gameplay-store-test";
+import { mutateGearForTest, resetGearForTest } from "../../../../helpers/gameplay-store-test";
 
 function knightInventories(...items: GearInstance[]) {
   const inventories = createEmptyGearInventories();
@@ -18,7 +18,7 @@ import {
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 
 afterEach(() => {
-  useGearStore.getState().reset();
+  resetGearForTest();
 });
 
 describe("gear save normalization", () => {
@@ -134,7 +134,7 @@ describe("gear save normalization", () => {
       "smiths-whetstone": 0,
     };
 
-    useGearStore.getState().initialize(knightInventories(body, ring), loadouts, craftingCurrencies);
+    mutateGearForTest((gear) => gear.initialize(knightInventories(body, ring), loadouts, craftingCurrencies));
 
     const save = buildAlchemySaveDataFromStores(null);
     const normalized = normalizeSaveData(save);

@@ -110,6 +110,53 @@ describe("reward flow selection", () => {
       });
       expect(result.gold).toBe(17);
     });
+
+    it("replaces boss gear with a permanent Trinket below the boss gate chance", () => {
+      const result = createBossRewardState({
+        gold: 10,
+        bossBonus: 5,
+        generousBonus: 0,
+        talentGoldPerCombat: 2,
+        materials: emptyInventory(),
+        trinketIds: [],
+        ownedTrinketIds: [],
+        rng: () => 0,
+      });
+      expect(result.rewardType).toBe("trinket");
+      expect(result.choices.length).toBeGreaterThan(0);
+    });
+
+    it("keeps boss gear when the Trinket roll misses", () => {
+      const result = createBossRewardState({
+        gold: 10,
+        bossBonus: 5,
+        generousBonus: 0,
+        talentGoldPerCombat: 2,
+        materials: emptyInventory(),
+        trinketIds: [],
+        ownedTrinketIds: [],
+        rng: () => 0.5,
+      });
+      expect(result.rewardType).toBe("gear");
+    });
+  });
+
+  describe("permanent Trinket gate on Wildwood gear", () => {
+    it("replaces Wildwood gear with a permanent Trinket below the normal gate chance", () => {
+      let call = 0;
+      const rng = () => {
+        call += 1;
+        // First draw selects gear (high third); second draw hits the 1/3 Trinket gate.
+        return call === 1 ? 0.9 : 0.1;
+      };
+      const result = createWildwoodRewardState(getStartingDeck("knight"), rng, 0, [], []);
+      expect(result.rewardType).toBe("trinket");
+    });
+
+    it("keeps Wildwood gear when the Trinket roll misses", () => {
+      const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.9);
+      expect(result.rewardType).toBe("gear");
+    });
   });
 
   describe("createCombatRewardState", () => {

@@ -5,7 +5,8 @@
 import { applyCardEffects } from "./effect-handlers";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
-import { LOW_HEALTH_THRESHOLD_PERCENT, computeLeechHeal, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { LOW_HEALTH_THRESHOLD_PERCENT, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { computeLeechHeal } from "./leech-heal";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollPercent, getBattleRng, rollTalentChance } from "./status-helpers";

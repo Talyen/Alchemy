@@ -17,14 +17,9 @@ import { applyCrowdControlTriggerBonuses } from "./talent-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
 import { getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
-import {
-  BLEED_STATUS_MULTIPLIER,
-  BATTLE_CONFIG,
-  computeLeechHeal,
-  FREEZE_THRESHOLD_FRACTION,
-  HALF_DIVISOR,
-} from "../game-constants";
+import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, HALF_DIVISOR } from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
+import { computeLeechHeal } from "./leech-heal";
 import { payKillPayouts } from "./kill-payouts";
 import { detonateEnemyStatuses } from "./dot-resolve";
 

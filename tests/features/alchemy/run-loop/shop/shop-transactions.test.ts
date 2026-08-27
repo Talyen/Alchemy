@@ -17,11 +17,8 @@ import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { emptyShopState, type ShopState } from "@/lib/active-run-session";
 import { makeEffect, makeTestCardWithId } from "../../../../fixtures/battle";
 import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
-import {
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  setRunProgress,
-} from "../../../../helpers/run-domain-store-test";
+import { setRunProgress } from "../../../../helpers/run-domain-store-test";
+import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 
 vi.mock("@/lib/game-data", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/game-data")>();
@@ -57,10 +54,10 @@ describe("refreshShopOfferings", () => {
 
     expect(refreshed).toMatchObject({ committed: true, price: 5, value: newItems });
     expect(commits).toHaveLength(1);
-    expect(getRunProgressStoreView().gold).toBe(5);
-    expect(getRunSessionStoreView().shopState.cards).toEqual(newItems);
-    expect(getRunSessionStoreView().shopState.refreshesLeft).toBe(0);
-    expect(getRunSessionStoreView().shopState.purchasedSlotKeys).toEqual([]);
+    expect(readRunProfile().gold).toBe(5);
+    expect(readRunSession().shopState.cards).toEqual(newItems);
+    expect(readRunSession().shopState.refreshesLeft).toBe(0);
+    expect(readRunSession().shopState.purchasedSlotKeys).toEqual([]);
   });
 
   it.each([
@@ -86,7 +83,7 @@ describe("refreshShopOfferings", () => {
 
     expect(refreshed).toMatchObject({ committed: false, price: 5, value: null });
     expect(commits).toHaveLength(0);
-    expect(getRunProgressStoreView().gold).toBe(gold);
+    expect(readRunProfile().gold).toBe(gold);
   });
 });
 
@@ -125,7 +122,7 @@ describe("refreshCardShopOfferings", () => {
 
     expect(refreshed).toMatchObject({ committed: true, price: 5, value: newItems });
     expect(selectRewardCards).toHaveBeenCalledOnce();
-    expect(getRunSessionStoreView().shopState.cards).toEqual(newItems);
+    expect(readRunSession().shopState.cards).toEqual(newItems);
   });
 });
 
@@ -153,6 +150,6 @@ describe("purchaseShopOffering", () => {
 
     expect(result).toMatchObject({ committed: false, price: 5 });
     expect(commits).toHaveLength(0);
-    expect(getRunProgressStoreView().gold).toBe(10);
+    expect(readRunProfile().gold).toBe(10);
   });
 });

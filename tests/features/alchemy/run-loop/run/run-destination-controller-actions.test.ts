@@ -6,12 +6,24 @@ import { createEmptyRewardState } from "@/lib/active-run-session";
 import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/campaign-start";
 import { makeTestCard } from "../../../../fixtures/cards";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
 import {
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  setRunProgress,
-} from "../../../../helpers/run-domain-store-test";
+  beginDestinationClaim,
+  setAlchemistState,
+  setCorruptionResult,
+  setMysteryCardChoices,
+  setMysteryChosenCardId,
+  setMysteryChosenChoice,
+  setMysteryEvent,
+  setMysteryGrantedGearInstances,
+  setMysteryGrantedTrinketIds,
+  setMysteryPendingRemoval,
+  setRewardState,
+  setShopState,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
+import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
@@ -21,23 +33,25 @@ beforeEach(() => {
 
 describe("run destination controller actions", () => {
   it("selectRewardChoice updates reward selection through the handler", () => {
-    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+    dispatchRunSessionCommand((draft) => setRewardState(draft, createEmptyRewardState()));
 
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps());
     handlers.selectRewardChoice("slash");
-    expect(getRunSessionStoreView().rewardState.selectedId).toBe("slash");
+    expect(readRunSession().rewardState.selectedId).toBe("slash");
   });
 
   it("prepareDestinationScreen sets boss id for boss-only destinations", () => {
     vi.spyOn(config, "rollFreshBossId").mockReturnValue("mimic");
 
-    getRunSessionStoreView().setRewardState({
-      ...createEmptyRewardState(),
-      destinations: [DESTINATIONS.BOSS_COMBAT],
-    });
+    dispatchRunSessionCommand((draft) =>
+      setRewardState(draft, {
+        ...createEmptyRewardState(),
+        destinations: [DESTINATIONS.BOSS_COMBAT],
+      }),
+    );
 
     createRunFlowHandlers(makeFlowHandlerDeps()).prepareDestinationScreen();
-    expect(getRunSessionStoreView().rewardState.selectedBossId).toBe("mimic");
+    expect(readRunSession().rewardState.selectedBossId).toBe("mimic");
   });
 
   it("continues from campfire through the progression handler", () => {
@@ -50,11 +64,11 @@ describe("run destination controller actions", () => {
     handlers.handleCampfireContinue();
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, expect.any(Function));
-    expect(getRunProgressStoreView().roomsEncountered).toBe(0);
+    expect(readActiveRun().roomsEncountered).toBe(0);
 
     commit?.();
 
-    expect(getRunProgressStoreView().roomsEncountered).toBe(1);
+    expect(readActiveRun().roomsEncountered).toBe(1);
   });
 
   it("advanceToNextDestination samples the next picker at the live destination index after a non-combat continue", () => {
@@ -79,7 +93,7 @@ describe("run destination controller actions", () => {
     handlers.advanceToNextDestination();
 
     expect(captured.at(-1)?.destinationIndexInAct).toBe(7);
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual([DESTINATIONS.BOSS_COMBAT]);
+    expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.BOSS_COMBAT]);
   });
 
   it("advanceToNextDestination carries the live index so Corruption suppression applies after a non-combat continue", () => {
@@ -101,7 +115,7 @@ describe("run destination controller actions", () => {
             hasAnyOwnedGear: true,
             previousDestination: getPreviousDestination(
               opts?.destinationIndexInAct ?? 0,
-              getRunProgressStoreView().completedDestinations,
+              readActiveRun().completedDestinations,
             ),
           }),
       }),
@@ -109,7 +123,7 @@ describe("run destination controller actions", () => {
 
     handlers.advanceToNextDestination();
 
-    const offered = getRunSessionStoreView().rewardState.destinations;
+    const offered = readRunSession().rewardState.destinations;
     expect(offered.length).toBeGreaterThan(0);
     expect(offered).not.toContain(DESTINATIONS.CORRUPTION);
   });
@@ -131,36 +145,33 @@ describe("run destination controller actions", () => {
     "advanceToNextDestination clears leftover mystery visit state ($name)",
     ({ contentSystemType, expectedScreen, expectLabyrinthClear }) => {
       setRunProgress({ contentSystemType });
-      const session = getRunSessionStoreView();
-      session.setMysteryEvent({
-        id: "stale-event",
-        title: "Stale Event",
-        art: "",
-        narrative: "Should be cleared on continue.",
-        choices: [{ label: "Leave", effects: [] }],
-      });
-      session.setMysteryCardChoices([
-        { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
-      ]);
-      session.setMysteryGrantedTrinketIds(["bone-charm"]);
-      session.setMysteryGrantedGearInstances([{ instanceId: "stale-gear", definitionId: "dagger-basic", affixes: [] }]);
-      session.setMysteryChosenCardId("slash");
-      session.setMysteryChosenChoice({ label: "Leave", effects: [] });
-      session.setMysteryPendingRemoval(true);
       const stale = makeTestCard({ id: "slash" });
-      session.setShopState({
-        ...session.shopState,
-        cards: [stale],
-      });
-      session.setAlchemistState({
-        ...session.alchemistState,
-        potions: [stale],
-      });
-      session.setCorruptionResult({
-        originalCard: stale,
-        corruptedCard: { ...stale, corrupted: true },
-        transformed: false,
-        delta: -1,
+      dispatchRunSessionCommand((draft) => {
+        setMysteryEvent(draft, {
+          id: "stale-event",
+          title: "Stale Event",
+          art: "",
+          narrative: "Should be cleared on continue.",
+          choices: [{ label: "Leave", effects: [] }],
+        });
+        setMysteryCardChoices(draft, [
+          { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
+        ]);
+        setMysteryGrantedTrinketIds(draft, ["bone-charm"]);
+        setMysteryGrantedGearInstances(draft, [
+          { instanceId: "stale-gear", definitionId: "dagger-basic", affixes: [] },
+        ]);
+        setMysteryChosenCardId(draft, "slash");
+        setMysteryChosenChoice(draft, { label: "Leave", effects: [] });
+        setMysteryPendingRemoval(draft, true);
+        setShopState(draft, { ...draft.session.shopState, cards: [stale] });
+        setAlchemistState(draft, { ...draft.session.alchemistState, potions: [stale] });
+        setCorruptionResult(draft, {
+          originalCard: stale,
+          corruptedCard: { ...stale, corrupted: true },
+          transformed: false,
+          delta: -1,
+        });
       });
 
       const labyrinthClearNode = vi.fn();
@@ -168,20 +179,20 @@ describe("run destination controller actions", () => {
       const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => {
         commit = onCommitted;
       });
-      const roomsBeforeExit = getRunProgressStoreView().roomsEncountered;
+      const roomsBeforeExit = readActiveRun().roomsEncountered;
       createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, labyrinthClearNode })).advanceToNextDestination();
 
-      const outgoing = getRunSessionStoreView();
+      const outgoing = readRunSession();
       expect(outgoing.mysteryEvent?.id).toBe("stale-event");
       expect(outgoing.shopState.cards).toEqual([stale]);
       expect(outgoing.alchemistState.potions).toEqual([stale]);
       expect(outgoing.corruptionResult?.originalCard.id).toBe("slash");
-      expect(getRunProgressStoreView().roomsEncountered).toBe(roomsBeforeExit);
+      expect(readActiveRun().roomsEncountered).toBe(roomsBeforeExit);
       expect(labyrinthClearNode).not.toHaveBeenCalled();
 
       commit?.();
 
-      const cleared = getRunSessionStoreView();
+      const cleared = readRunSession();
       expect(cleared.mysteryEvent).toBeNull();
       expect(cleared.mysteryCardChoices).toBeNull();
       expect(cleared.mysteryGrantedTrinketIds).toEqual([]);
@@ -194,7 +205,7 @@ describe("run destination controller actions", () => {
       expect(cleared.alchemistState.potions).toEqual([]);
       expect(cleared.trinketShopState.trinkets).toEqual([]);
       expect(cleared.equipmentShopState.gear).toEqual([]);
-      expect(getRunProgressStoreView().roomsEncountered).toBe(roomsBeforeExit + 1);
+      expect(readActiveRun().roomsEncountered).toBe(roomsBeforeExit + 1);
       expect(navigateTo.mock.calls[0]?.[0]).toBe(expectedScreen);
       if (expectLabyrinthClear) expect(labyrinthClearNode).toHaveBeenCalledOnce();
       else expect(labyrinthClearNode).not.toHaveBeenCalled();
@@ -210,18 +221,18 @@ describe("run destination controller actions", () => {
       lastOfferedDestinations: offered,
       destinationRoundsSinceOffered: { [DESTINATIONS.CAMPFIRE]: 0 },
     });
-    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+    dispatchRunSessionCommand((draft) => setRewardState(draft, createEmptyRewardState()));
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
     createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
 
-    expect(getRunProgressStoreView().roomsEncountered).toBe(3);
-    expect(getRunProgressStoreView().destinationIndexInAct).toBe(1);
-    expect(getRunProgressStoreView().completedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(getRunProgressStoreView().destinationRoundsSinceOffered).toEqual({
+    expect(readActiveRun().roomsEncountered).toBe(3);
+    expect(readActiveRun().destinationIndexInAct).toBe(1);
+    expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readActiveRun().destinationRoundsSinceOffered).toEqual({
       [DESTINATIONS.CAMPFIRE]: 0,
     });
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual(offered);
+    expect(readRunSession().rewardState.destinations).toEqual(offered);
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, expect.any(Function));
   });
 
@@ -233,18 +244,17 @@ describe("run destination controller actions", () => {
       completedDestinations: [DESTINATIONS.NORMAL_COMBAT],
       lastOfferedDestinations: offered,
     });
-    const session = getRunSessionStoreView();
-    session.setRewardState({ ...createEmptyRewardState(), destinations: offered });
-    expect(session.beginDestinationClaim(DESTINATIONS.CORRUPTION)).toBe(true);
+    dispatchRunSessionCommand((draft) => setRewardState(draft, { ...createEmptyRewardState(), destinations: offered }));
+    expect(dispatchRunSessionCommand((draft) => beginDestinationClaim(draft, DESTINATIONS.CORRUPTION))).toBe(true);
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
     createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
 
-    expect(getRunSessionStoreView().pendingDestinationClaim).toBeNull();
-    expect(getRunProgressStoreView().roomsEncountered).toBe(3);
-    expect(getRunProgressStoreView().destinationIndexInAct).toBe(1);
-    expect(getRunProgressStoreView().completedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual(offered);
+    expect(readRunSession().pendingDestinationClaim).toBeNull();
+    expect(readActiveRun().roomsEncountered).toBe(3);
+    expect(readActiveRun().destinationIndexInAct).toBe(1);
+    expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readRunSession().rewardState.destinations).toEqual(offered);
   });
 
   it("commitDestinationClaim seeds lastOfferedDestinations so Leave can restore an injected picker", () => {
@@ -255,18 +265,18 @@ describe("run destination controller actions", () => {
       completedDestinations: [],
       lastOfferedDestinations: [],
     });
-    getRunSessionStoreView().setRewardState({ ...createEmptyRewardState(), destinations: offered });
+    dispatchRunSessionCommand((draft) => setRewardState(draft, { ...createEmptyRewardState(), destinations: offered }));
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
     createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).handleDestinationChoice(DESTINATIONS.CORRUPTION);
 
-    expect(getRunProgressStoreView().lastOfferedDestinations).toEqual(offered);
-    expect(getRunProgressStoreView().completedDestinations).toEqual([DESTINATIONS.CORRUPTION]);
+    expect(readActiveRun().lastOfferedDestinations).toEqual(offered);
+    expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.CORRUPTION]);
 
     createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
 
-    expect(getRunSessionStoreView().rewardState.destinations).toEqual(offered);
-    expect(getRunProgressStoreView().destinationIndexInAct).toBe(0);
-    expect(getRunProgressStoreView().completedDestinations).toEqual([]);
+    expect(readRunSession().rewardState.destinations).toEqual(offered);
+    expect(readActiveRun().destinationIndexInAct).toBe(0);
+    expect(readActiveRun().completedDestinations).toEqual([]);
   });
 });

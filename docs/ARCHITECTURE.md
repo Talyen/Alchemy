@@ -84,7 +84,7 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 | Reads (React, orchestration) | `run-session-model.ts`                                                         | `useRunSessionNavigationSlice`; `useRunSessionBattleContext` is a display composable, not a shell command source         |
 | Reads (React, meta/setup)    | `run-session-react-ports.ts`                                                   | Homestead/talent/draft slices, `useRunOrchestrationPort`, `useBattleRunPort`                                             |
 | React action selectors       | `store-actions.ts`                                                             | Settings, collection, and homestead command selectors for App chrome                                                     |
-| Writes                       | `run-session-write-port.ts` + `dispatchRunSessionCommand`                      | Draft mutators; first argument is `GameplayDraft`. `update*` = functional, `set*` = value                                |
+| Writes                       | `run-session-write-port.ts` + `dispatchRunSessionCommand`                      | Draft mutators; first argument is `GameplayDraft`. `set*` accepts a value or `(prev) => next` updater                    |
 | Battle writes                | `run-session-write-port.ts`                                                    | `setBattleState`, `beginBattleTransition`, `commitBattleTransition`; `readBattle()` is data-only                         |
 | Lifecycle                    | `run-session-lifecycle-port.ts`                                                | Public seam over `run-transitions.ts`                                                                                    |
 | Commit                       | `run-session-command.ts`                                                       | One Immer draft, one published revision; no second read store                                                            |
@@ -150,7 +150,7 @@ BattleScreenRoute → useBattleScreenRouteData (committed battle display)
 
 ## Shop commands
 
-`create-shop-actions.ts` is composition only. Each shop's initialization, purchases, services, refreshes, and live price selectors belong to its matching `*-shop-commands.ts` module. Draft recipes live in `shop-transactions.ts`; `runShopTransaction` / `commitShopInitialize` are the dispatch seam. Nested `dispatchRunSessionCommand` is illegal — gear HP-sync inside an open shop command uses `mutateGearWithRunHealthSync` ([ARMORY.md § Write paths](./ARMORY.md#write-paths)). How-to: [WORKFLOWS § Change a shop](./WORKFLOWS.md#change-a-shop).
+`create-shop-actions.ts` is composition only. Each shop's initialization, purchases, services, refreshes, and live price selectors belong to its matching `*-shop-commands.ts` module. Draft recipes live in `shop-transactions.ts`; `runShopTransaction` / `commitShopInitialize` are the dispatch seam. Nested `dispatchRunSessionCommand` is illegal — gear HP-sync inside an open shop command uses `mutateGearWithRunHealthSync` ([ARMORY.md § Write paths](./ARMORY.md#write-paths)). Kind `"merchant"` is the player-facing **Card Shop** screen. Screen-gated save encode lives in `encodePersistedShops`. How-to: [WORKFLOWS § Change a shop](./WORKFLOWS.md#change-a-shop).
 
 ## Settings and meta profile
 

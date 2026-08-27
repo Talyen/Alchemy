@@ -523,15 +523,16 @@ function currentSchemaTombstonedPilesSave() {
       contentSystemType: "campaign",
       currentScreen: "shop",
       shopState: {
-        cards: [FIXTURE_LIVE_SLASH, FIXTURE_TOMBSTONED_ANTIVENOM],
+        cards: [FIXTURE_TOMBSTONED_ANTIVENOM, FIXTURE_LIVE_SLASH],
         removeUsed: false,
         refreshesLeft: 1,
-        purchasedSlotKeys: ["slot-0"],
+        purchasedSlotKeys: ["slash-1"],
       },
       alchemistState: {
         potions: [FIXTURE_TOMBSTONED_ANTIVENOM, FIXTURE_LIVE_SLASH],
         mixUsed: true,
         refreshesLeft: 2,
+        purchasedSlotKeys: ["slash-1"],
       },
       mysteryVisit: {
         eventId: "cardless-shrine",

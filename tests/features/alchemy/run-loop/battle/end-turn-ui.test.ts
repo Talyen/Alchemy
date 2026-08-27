@@ -4,7 +4,8 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
 import { makeTestBattleState } from "../../../../fixtures/battle";
-import { getBattleStoreView } from "../../../../helpers/run-domain-store-test";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 
@@ -43,7 +44,7 @@ describe("createBattleEndTurnUi handleEndTurn", () => {
       enemyHealth: 20,
       playerHealth: 30,
     });
-    getBattleStoreView().setSyncedBattleState(battleState);
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, battleState));
 
     const ctx = {
       screen: "battle" as const,

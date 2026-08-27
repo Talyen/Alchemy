@@ -1,25 +1,35 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { defaultBattleState } from "@/lib/battle";
-import { getStartingDeck } from "@/lib/game-data";
-import { type ActiveRunData } from "@/lib/active-run-session";
+import { defaultBattleState, type BattleState } from "@/lib/battle";
+import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
+import { type ActiveRunData, type PersistedBattleTransition } from "@/lib/active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
 import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
 import type { Screen } from "@/lib/routing";
-import {
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  resetRunDomainStore,
-  setRunProgress,
-  setRunSession,
-} from "../../../../helpers/run-domain-store-test";
-import { useRunBattleDomainStore } from "../../../../helpers/gameplay-store-test";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/active-run-data-fixture";
 
 /** Encode the live store through the canonical resume codec. */
 function encodeState(screen?: Screen): ActiveRunData {
   return encodeRunResumeSnapshot(getRunSession(screen), screen);
+}
+
+function writeBattle(partial: {
+  hasActiveBattle?: boolean;
+  battleState?: BattleState;
+  pendingBattleTransition?: PersistedBattleTransition | null;
+}) {
+  dispatchRunSessionCommand((draft) => {
+    if (partial.hasActiveBattle !== undefined) draft.battle.hasActiveBattle = partial.hasActiveBattle;
+    if (partial.battleState !== undefined) draft.battle.battleState = partial.battleState;
+    if (partial.pendingBattleTransition !== undefined) {
+      draft.battle.pendingBattleTransition = partial.pendingBattleTransition;
+    }
+  });
 }
 
 beforeEach(() => {
@@ -54,7 +64,7 @@ describe("encodeRunResumeSnapshot", () => {
       runDeck,
       runPlayerHealth: 18,
       runMaxHealth: 32,
-      runMetaMaxHealth: getRunProgressStoreView().runMetaMaxHealth,
+      runMetaMaxHealth: readActiveRun().runMetaMaxHealth,
       roomsEncountered: 4,
       currentAct: 2,
       destinationIndexInAct: 1,
@@ -66,7 +76,7 @@ describe("encodeRunResumeSnapshot", () => {
       runTalentXP: {},
       selectedDifficulty: null,
       contentSystemType: "campaign",
-      rng: getRunProgressStoreView().rng,
+      rng: readActiveRun().rng,
       labyrinthMap: null,
       labyrinthPendingNode: null,
       activeCombat: null,
@@ -95,13 +105,76 @@ describe("encodeRunResumeSnapshot", () => {
     const card = getStartingDeck("knight")[0]!;
     setRunSession({
       shopState: {
-        ...getRunSessionStoreView().shopState,
+        ...readRunSession().shopState,
         cards: [card],
       },
     });
 
     expect(encodeState("shop").shopState?.cards).toHaveLength(1);
     expect(encodeState("destination").shopState).toBeNull();
+  });
+
+  it.each([
+    {
+      screen: "shop" as const,
+      seed: () => {
+        const card = getStartingDeck("knight")[0]!;
+        setRunSession({
+          shopState: { ...readRunSession().shopState, cards: [card] },
+          alchemistState: { ...readRunSession().alchemistState, potions: [card] },
+        });
+      },
+      active: (encoded: ActiveRunData) => encoded.shopState?.cards?.length === 1,
+      idle: (encoded: ActiveRunData) =>
+        encoded.alchemistState === null && encoded.trinketShopState === null && encoded.equipmentShopState === null,
+    },
+    {
+      screen: "alchemist" as const,
+      seed: () => {
+        const card = getStartingDeck("knight")[0]!;
+        setRunSession({
+          shopState: { ...readRunSession().shopState, cards: [card] },
+          alchemistState: { ...readRunSession().alchemistState, potions: [card] },
+        });
+      },
+      active: (encoded: ActiveRunData) => encoded.alchemistState?.potions?.length === 1,
+      idle: (encoded: ActiveRunData) =>
+        encoded.shopState === null && encoded.trinketShopState === null && encoded.equipmentShopState === null,
+    },
+    {
+      screen: "trinket-shop" as const,
+      seed: () => {
+        const trinket = trinketLibrary[0]!;
+        setRunSession({
+          trinketShopState: {
+            ...readRunSession().trinketShopState,
+            trinkets: [trinket],
+          },
+        });
+      },
+      active: (encoded: ActiveRunData) => encoded.trinketShopState?.trinketIds?.length === 1,
+      idle: (encoded: ActiveRunData) =>
+        encoded.shopState === null && encoded.alchemistState === null && encoded.equipmentShopState === null,
+    },
+    {
+      screen: "equipment-shop" as const,
+      seed: () => {
+        setRunSession({
+          equipmentShopState: {
+            ...readRunSession().equipmentShopState,
+            gear: [{ instanceId: "shelf-1", definitionId: "leather-armor-basic", affixes: [] }],
+          },
+        });
+      },
+      active: (encoded: ActiveRunData) => encoded.equipmentShopState?.gear?.length === 1,
+      idle: (encoded: ActiveRunData) =>
+        encoded.shopState === null && encoded.alchemistState === null && encoded.trinketShopState === null,
+    },
+  ])("encodePersistedShops keeps only $screen offerings", ({ screen, seed, active, idle }) => {
+    seed();
+    const encoded = encodeState(screen);
+    expect(active(encoded)).toBe(true);
+    expect(idle(encoded)).toBe(true);
   });
 
   it("can set contentSystemType to labyrinth", () => {
@@ -114,7 +187,7 @@ describe("encodeRunResumeSnapshot", () => {
 
   it("persists active campaign combat state", () => {
     const battleState = { ...defaultBattleState(), turn: 3, playerHealth: 12 };
-    useRunBattleDomainStore.setState({ hasActiveBattle: true, battleState });
+    writeBattle({ hasActiveBattle: true, battleState });
 
     const result = encodeState();
 
@@ -123,7 +196,7 @@ describe("encodeRunResumeSnapshot", () => {
 
   it("persists the current state during enemy phase instead of reverting to battle start", () => {
     const enemyPhaseState = { ...defaultBattleState(), turn: 2, turnPhase: "enemy" as const, hand: [] };
-    useRunBattleDomainStore.setState({ hasActiveBattle: true, battleState: enemyPhaseState });
+    writeBattle({ hasActiveBattle: true, battleState: enemyPhaseState });
 
     const result = encodeState();
 
@@ -135,7 +208,7 @@ describe("encodeRunResumeSnapshot", () => {
   it("persists the computed enemy-turn continuation with the intermediate state", () => {
     const resultState = { ...defaultBattleState(), turn: 3, playerHealth: 20, turnPhase: "player" as const };
     const enemyPhaseState = { ...defaultBattleState(), turn: 2, turnPhase: "enemy" as const, hand: [] };
-    useRunBattleDomainStore.setState({
+    writeBattle({
       hasActiveBattle: true,
       battleState: enemyPhaseState,
       pendingBattleTransition: {
@@ -158,7 +231,7 @@ describe("encodeRunResumeSnapshot", () => {
     const deck = getStartingDeck("knight");
     const openingState = { ...defaultBattleState(), deck, hand: [] };
     const resultState = { ...openingState, deck: deck.slice(4), hand: deck.slice(0, 4) };
-    useRunBattleDomainStore.setState({
+    writeBattle({
       hasActiveBattle: true,
       battleState: openingState,
       pendingBattleTransition: { kind: "opening-draw", resultState },
@@ -176,7 +249,7 @@ describe("encodeRunResumeSnapshot", () => {
   });
 
   it("marks enemy-phase saves without a pending transition for boot recovery", () => {
-    useRunBattleDomainStore.setState({
+    writeBattle({
       hasActiveBattle: true,
       battleState: { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] },
     });
@@ -195,7 +268,7 @@ describe("encodeRunResumeSnapshot", () => {
       activeLabyrinthModifiers: ["tempered"],
       activeLabyrinthRewardModifiers: ["generous"],
     });
-    useRunBattleDomainStore.setState({ hasActiveBattle: true });
+    writeBattle({ hasActiveBattle: true });
 
     const result = encodeState();
 
@@ -205,7 +278,7 @@ describe("encodeRunResumeSnapshot", () => {
   });
 
   it("skips active combat when enemy health is zero", () => {
-    useRunBattleDomainStore.setState({
+    writeBattle({
       hasActiveBattle: true,
       battleState: { ...defaultBattleState(), turn: 5, enemyHealth: 0 },
     });
@@ -216,7 +289,7 @@ describe("encodeRunResumeSnapshot", () => {
   });
 
   it("skips active combat when player is defeated", () => {
-    useRunBattleDomainStore.setState({
+    writeBattle({
       hasActiveBattle: true,
       battleState: {
         ...defaultBattleState(),
@@ -256,7 +329,9 @@ describe("encodeRunResumeSnapshot", () => {
   });
 
   it("persists destination resume fields", () => {
-    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] }));
+    dispatchRunSessionCommand((draft) =>
+      setRewardState(draft, (prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] })),
+    );
 
     const result = encodeState("destination");
 

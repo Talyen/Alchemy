@@ -11,7 +11,7 @@ import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";
 import { gearDefinitionId, gearDefinitions } from "./definitions";
-import { GEAR_RARITIES, type ItemDropTier } from "./types-core";
+import { GEAR_RARITIES } from "./types-core";
 import { uniqueItemList, type UniqueItemDefinition } from "./unique-catalog";
 import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity, GearSlot } from "./types";
 
@@ -116,34 +116,28 @@ export function getOwnedUniqueDefinitionIds(inventories?: Record<string, GearIns
 interface RollItemDropTierOptions {
   isBoss: boolean;
   allowsUnique?: boolean;
-  allowsTrinket?: boolean;
   astralChanceBonus?: number;
 }
 
-function rollItemDropTier(options: RollItemDropTierOptions, rng: () => number): ItemDropTier {
+/** Gear rarity only — permanent Trinkets are gated separately in reward-flow. */
+function rollItemDropTier(options: RollItemDropTierOptions, rng: () => number): GearRarity {
   const allowsUnique = options.allowsUnique !== false;
-  const allowsTrinket = options.allowsTrinket !== false;
   const astralBonus = Math.max(0, options.astralChanceBonus ?? 0);
 
   if (options.isBoss) {
     const uniqueChance = allowsUnique ? DROP_RATES_BOSS.unique : 0;
-    const trinketChance = allowsTrinket ? DROP_RATES_BOSS.trinket : 0;
-
     const draw = rng();
     if (draw < uniqueChance) return "unique";
-    if (draw < uniqueChance + trinketChance) return "trinket";
     return "astral";
   }
 
   const uniqueChance = allowsUnique ? DROP_RATES_NORMAL.unique : 0;
-  const trinketChance = allowsTrinket ? DROP_RATES_NORMAL.trinket : 0;
   let astralChance = DROP_RATES_NORMAL.astral + astralBonus;
   if (!allowsUnique) astralChance += DROP_RATES_NORMAL.unique;
 
   const draw = rng();
   if (draw < uniqueChance) return "unique";
-  if (draw < uniqueChance + trinketChance) return "trinket";
-  if (draw < uniqueChance + trinketChance + astralChance) return "astral";
+  if (draw < uniqueChance + astralChance) return "astral";
   return "basic";
 }
 
@@ -337,7 +331,7 @@ export function generateGearRewardChoices(
     count,
     rng,
     rollTier: () => {
-      const tier = rollItemDropTier({ isBoss, allowsTrinket: false, astralChanceBonus }, rng);
+      const tier = rollItemDropTier({ isBoss, astralChanceBonus }, rng);
       if (tier === "unique") return "unique";
       return tier === "basic" && !isBoss ? "basic" : "astral";
     },

@@ -1,9 +1,9 @@
+import { shopItemSlotKey } from "@/lib/active-run-session";
+
+export { shopItemSlotKey };
+
 export function shopOfferingsSwapKey(slotKeys: readonly string[], refreshesLeft: number): string {
   return `${refreshesLeft}:${slotKeys.join("|")}`;
-}
-
-export function shopItemSlotKey(id: string, index: number): string {
-  return `${id}-${index}`;
 }
 
 export function shopArrayOfferingMatches<T>(

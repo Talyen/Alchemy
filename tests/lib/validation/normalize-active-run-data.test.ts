@@ -120,6 +120,29 @@ describe("normalizeActiveRunData", () => {
     expect((result.mysteryVisit as Record<string, unknown>).cardChoices).toEqual([]);
   });
 
+  it("remaps shop purchasedSlotKeys when a tombstoned offering is dropped", () => {
+    const live = { id: "slash" };
+    const tombstoned = { id: "antivenom-potion" };
+    const result = normalizeActiveRunData({
+      ...baseInput(),
+      shopState: {
+        cards: [tombstoned, live],
+        purchasedSlotKeys: ["slash-1"],
+        refreshesLeft: 1,
+      },
+      alchemistState: {
+        potions: [tombstoned, live],
+        purchasedSlotKeys: ["slash-1"],
+        mixUsed: false,
+      },
+    });
+
+    expect((result.shopState as Record<string, unknown>).cards).toEqual([live]);
+    expect((result.shopState as Record<string, unknown>).purchasedSlotKeys).toEqual(["slash-0"]);
+    expect((result.alchemistState as Record<string, unknown>).potions).toEqual([live]);
+    expect((result.alchemistState as Record<string, unknown>).purchasedSlotKeys).toEqual(["slash-0"]);
+  });
+
   it("drops malformed wishQueue entries instead of aborting the parse", () => {
     const live = { id: "slash" };
     const input = {

@@ -11,7 +11,7 @@ import {
 } from "@/lib/gear";
 import { useShallow } from "zustand/react/shallow";
 import type { PersistenceCodec } from "./persistence-codec";
-import type { GearSaveFields, GearStore } from "./gear-store-types";
+import type { GearSaveFields, GearStateFields, GearStore } from "./gear-store-types";
 import { initializeGear } from "./gear-actions";
 import { readGameplayState, subscribeGameplayCommits, useGameplayStateStore } from "./gameplay-state-store";
 import type { GameplayDraft } from "./run-session-command";
@@ -70,6 +70,18 @@ export function useGearArmorySlice(): GearArmorySlice {
 export function readHasAnyOwnedGear(): boolean {
   const gear = readGameplayState().gear;
   return flattenGearInventories(gear.inventories).length > 0 || gear.ownedTrinketIds.length > 0;
+}
+
+/** Feature-facing gear read — data only, no command methods. */
+export function readGearState(): GearStateFields {
+  const gear = readGameplayState().gear;
+  return {
+    inventories: gear.inventories,
+    loadouts: gear.loadouts,
+    ownedTrinketIds: gear.ownedTrinketIds,
+    equippedTrinkets: gear.equippedTrinkets,
+    craftingCurrencies: gear.craftingCurrencies,
+  };
 }
 
 export function readHasUnownedTrinkets(): boolean {

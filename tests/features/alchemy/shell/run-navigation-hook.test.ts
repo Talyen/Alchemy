@@ -6,15 +6,12 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { useRunFlowEngine } from "@/features/alchemy/shell/use-run-flow-engine";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import { makeTestCard } from "../../../fixtures/battle";
-import {
-  getBattleStoreView,
-  getRunProgressStoreView,
-  getRunSessionStoreView,
-  resetAllTestStores,
-  setRunProgress,
-  setRunSession,
-} from "../../../helpers/run-domain-store-test";
+import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -22,8 +19,10 @@ beforeEach(() => {
 
 describe("useRunFlowEngine", () => {
   it("resetRunState tears down run stores when navigating to menu", () => {
-    getRunSessionStoreView().setHasActiveRun(true);
-    getBattleStoreView().setHasActiveBattle(true);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveRun(draft, true);
+      setHasActiveBattle(draft, true);
+    });
     const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => onCommit?.());
     const transition = vi.fn();
     const cancelPending = vi.fn();
@@ -50,8 +49,8 @@ describe("useRunFlowEngine", () => {
 
     expect(cancelPending).toHaveBeenCalledOnce();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.MENU, expect.any(Function));
-    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
-    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+    expect(readRunSession().hasActiveRun).toBe(false);
+    expect(readBattle().hasActiveBattle).toBe(false);
   });
 
   it("routes completed Wildwood drafts through the Wildwood owner", () => {
@@ -92,15 +91,15 @@ describe("useRunFlowEngine", () => {
       result.current.handleWildwoodDraftComplete(draftedCards);
     });
 
-    expect(getRunProgressStoreView().runDeck).toEqual(draftedCards);
-    expect(getRunSessionStoreView().pendingCharacterId).toBeNull();
-    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "draft" });
+    expect(readActiveRun().runDeck).toEqual(draftedCards);
+    expect(readRunSession().pendingCharacterId).toBeNull();
+    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "draft" });
     expect(onStartBossById).not.toHaveBeenCalled();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
 
     act(() => commit?.());
 
-    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "battle" });
+    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
     expect(onStartBossById).toHaveBeenCalledOnce();
   });
 
@@ -135,13 +134,13 @@ describe("useRunFlowEngine", () => {
 
     act(() => result.current.handleWildwoodRemoveCard(1));
 
-    expect(getRunProgressStoreView().runDeck).toEqual(runDeck);
-    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "removal" });
+    expect(readActiveRun().runDeck).toEqual(runDeck);
+    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "removal" });
     expect(onStartBossById).not.toHaveBeenCalled();
 
     act(() => commit?.());
 
-    expect(getRunProgressStoreView().runDeck.map((card) => card.id)).toEqual([
+    expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([
       "wildwood-removal-0",
       "wildwood-removal-2",
       "wildwood-removal-3",
@@ -150,7 +149,7 @@ describe("useRunFlowEngine", () => {
       "wildwood-removal-6",
       "wildwood-removal-7",
     ]);
-    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "battle" });
+    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
     expect(onStartBossById).toHaveBeenCalledOnce();
   });
 
@@ -188,14 +187,14 @@ describe("useRunFlowEngine", () => {
       result.current.handleWildwoodSkipRemoval();
     });
 
-    expect(getRunProgressStoreView().runDeck).toEqual(runDeck);
-    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "removal" });
+    expect(readActiveRun().runDeck).toEqual(runDeck);
+    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "removal" });
     expect(navigateTo).toHaveBeenCalledOnce();
 
     act(() => commit?.());
 
-    expect(getRunProgressStoreView().runDeck).toEqual(runDeck);
-    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "battle" });
+    expect(readActiveRun().runDeck).toEqual(runDeck);
+    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
     expect(onStartBossById).toHaveBeenCalledOnce();
   });
 
@@ -232,8 +231,8 @@ describe("useRunFlowEngine", () => {
       result.current.handleWildwoodDraftComplete(draftedCards);
     });
 
-    expect(getRunSessionStoreView().pendingCharacterId).toBe("knight");
-    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "draft" });
+    expect(readRunSession().pendingCharacterId).toBe("knight");
+    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "draft" });
     expect(onStartBossById).not.toHaveBeenCalled();
   });
 
@@ -270,8 +269,8 @@ describe("useRunFlowEngine", () => {
       result.current.handleWildwoodDraftComplete([makeTestCard({ id: "mismatched-card" })]);
     });
 
-    expect(getRunSessionStoreView().pendingCharacterId).toBe("knight");
-    expect(getRunSessionStoreView().wildwoodDraft).toMatchObject({ phase: "draft" });
+    expect(readRunSession().pendingCharacterId).toBe("knight");
+    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "draft" });
     expect(onStartBossById).not.toHaveBeenCalled();
   });
 });

@@ -53,6 +53,7 @@ export function createEquipmentShopCommands({
         price,
         state,
         setState: setEquipmentShopState,
+        // instanceId is identity-stable across shelf filters; cards/trinkets use id-index because duplicate IDs are legal.
         slotKey: instance.instanceId,
         offeringMatches: state.gear.some((offered) => offered.instanceId === instance.instanceId),
         acquire: () => {

@@ -8,8 +8,11 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeRunController, makeTalentController } from "../../../helpers/run-controller";
-import { getBattleStoreView, getNavigationStoreView, resetAllTestStores } from "../../../helpers/run-domain-store-test";
+import { resetAllTestStores } from "../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -39,9 +42,9 @@ describe("useBattleController", () => {
       rerender({ screen: ROUTE_SCREENS.BATTLE });
     });
 
-    expect(getBattleStoreView().hasActiveBattle).toBe(true);
-    expect(getBattleStoreView().battleState.playerHealth).toBeGreaterThan(0);
-    expect(getBattleStoreView().battleState).not.toEqual(defaultBattleState());
+    expect(readBattle().hasActiveBattle).toBe(true);
+    expect(readBattle().battleState.playerHealth).toBeGreaterThan(0);
+    expect(readBattle().battleState).not.toEqual(defaultBattleState());
     expect(result.current.hasActiveBattle).toBe(true);
   });
 
@@ -82,8 +85,10 @@ describe("useBattleController", () => {
 
   it("clears floating combat text and other VFX when leaving battle screen with active combat", async () => {
     vi.useFakeTimers();
-    getBattleStoreView().setHasActiveBattle(true);
-    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
 
     const { rerender } = renderBattleController(ROUTE_SCREENS.BATTLE);
 

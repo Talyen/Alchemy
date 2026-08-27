@@ -6,7 +6,7 @@ import {
   setRunPlayerHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/game-constants";
+import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/campfire-heal";
 import { routeDestinationChoice } from "./run-destination-handlers";
 import type { AdvanceToNextDestination, RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { DESTINATIONS, type Destination } from "@/lib/routing";

@@ -4,7 +4,7 @@ import { renderHook, act } from "@testing-library/react";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useRunTransientStore } from "../../../helpers/gameplay-store-test";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 
 const mockStorage: Record<string, string> = {};
 
@@ -61,8 +61,10 @@ describe("useAlchemyAutosaveFromStores", () => {
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
     act(() => {
-      useRunTransientStore.getState().setHasActiveRun(true);
-      dispatchRunSessionCommand((draft) => setRunGold(draft, 91));
+      dispatchRunSessionCommand((draft) => {
+        setHasActiveRun(draft, true);
+        setRunGold(draft, 91);
+      });
       window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
 

@@ -131,9 +131,10 @@ describe("save migration guard", () => {
     // Shop/alchemist/mystery piles lose only the dead cards; sibling fields survive.
     expect(run?.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
     expect(run?.shopState?.refreshesLeft).toBe(1);
-    expect(run?.shopState?.purchasedSlotKeys).toEqual(["slot-0"]);
+    expect(run?.shopState?.purchasedSlotKeys).toEqual(["slash-0"]);
     expect(run?.alchemistState?.potions.map((card) => card.id)).toEqual(["slash"]);
     expect(run?.alchemistState?.mixUsed).toBe(true);
+    expect(run?.alchemistState?.purchasedSlotKeys).toEqual(["slash-0"]);
     expect(run?.mysteryVisit).toBeNull();
 
     // Mid-combat snapshot stays resumable: live deck, filtered wish queue.

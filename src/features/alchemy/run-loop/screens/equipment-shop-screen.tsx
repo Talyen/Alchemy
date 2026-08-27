@@ -32,6 +32,7 @@ export function EquipmentShopScreen({
     <ShopBrowseShell title="Equipment Shop" gold={gold} onOpenMenu={onOpenMenu}>
       <ShopBrowseOfferings
         swapKey={shopOfferingsSwapKey(
+          // instanceId keys stay valid when restore drops owned uniques; do not switch to id-index.
           gear.map((g) => g.instanceId),
           refreshesLeft,
         )}

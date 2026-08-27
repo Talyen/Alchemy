@@ -18,7 +18,8 @@ import {
   getEnemyDamageMultiplier,
   rollPercent,
 } from "./status-helpers";
-import { computeLeechHeal, HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
+import { HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
+import { computeLeechHeal } from "./leech-heal";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
