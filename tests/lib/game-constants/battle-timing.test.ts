@@ -1,0 +1,43 @@
+import { describe, expect, it } from "vitest";
+import {
+  ATTACK_LUNGE_DURATION_MS,
+  AUTO_END_TURN_DELAY,
+  AUTOPLAY_POST_PLAY_DELAY_MS,
+  AUTOPLAY_RETRY_DELAY_MS,
+  CAMPFIRE_ANIMATION_MS,
+  CAMPFIRE_CONTINUE_DELAY,
+  COMPANION_ATTACK_DELAY,
+  ENEMY_ATTACK_RECOVERY_DELAY,
+  ENEMY_PHASE_DELAY,
+  HIT_SHAKE_DELAY_MS,
+  NAVIGATION_DELAY_MS,
+  SHAKE_DURATION,
+  SLICE_DEATH_DURATION_MS,
+  VICTORY_TRANSITION_DELAY,
+} from "@/lib/game-constants/battle-timing";
+
+describe("battle timing constants", () => {
+  it("keeps presentation delays positive and ordered", () => {
+    for (const value of [
+      AUTO_END_TURN_DELAY,
+      AUTOPLAY_RETRY_DELAY_MS,
+      AUTOPLAY_POST_PLAY_DELAY_MS,
+      SLICE_DEATH_DURATION_MS,
+      VICTORY_TRANSITION_DELAY,
+      ENEMY_PHASE_DELAY,
+      ENEMY_ATTACK_RECOVERY_DELAY,
+      HIT_SHAKE_DELAY_MS,
+      ATTACK_LUNGE_DURATION_MS,
+      COMPANION_ATTACK_DELAY,
+      NAVIGATION_DELAY_MS,
+      CAMPFIRE_ANIMATION_MS,
+      CAMPFIRE_CONTINUE_DELAY,
+    ]) {
+      expect(value).toBeGreaterThan(0);
+    }
+
+    expect(VICTORY_TRANSITION_DELAY).toBeGreaterThanOrEqual(SLICE_DEATH_DURATION_MS);
+    expect(SHAKE_DURATION).toBeGreaterThan(HIT_SHAKE_DELAY_MS);
+    expect(ATTACK_LUNGE_DURATION_MS).toBeGreaterThan(HIT_SHAKE_DELAY_MS);
+  });
+});

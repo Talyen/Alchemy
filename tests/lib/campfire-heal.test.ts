@@ -1,4 +1,3 @@
-// Campfire rest heal fraction + clamp (base, talent bonus, max Health).
 import { describe, expect, it } from "vitest";
 import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/campfire-heal";
 import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
