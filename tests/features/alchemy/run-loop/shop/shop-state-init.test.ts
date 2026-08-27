@@ -140,7 +140,7 @@ describe("shop-state-init", () => {
     const live = {
       instanceId: "shelf-basic",
       definitionId: "leather-armor-basic",
-      affixes: [] as const,
+      affixes: [],
     };
     const restored = hydrateEquipmentShopState({
       gear: [{ instanceId: "gone", definitionId: "not-a-real-definition", affixes: [] }, live],
