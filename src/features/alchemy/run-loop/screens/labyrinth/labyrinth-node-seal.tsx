@@ -1,5 +1,4 @@
 // Artwork-first hex seal: clipped art, type-tinted stroke, hover/press/selected motion.
-import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
@@ -37,21 +36,11 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
   const meta = LABYRINTH_NODE_META[node.type];
   const reachable = visual === "reachable";
   const art = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId].art : meta.art;
-  const hover = useHoverVisible<HTMLButtonElement>();
-  const [pulse, setPulse] = useState(false);
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
+    useHoverVisible<HTMLButtonElement>();
   const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : null;
   const typeLabel = NODE_TYPE_LABELS[node.type];
   const hoverTitle = enemy?.title ?? typeLabel;
-
-  useEffect(() => {
-    if (visual !== "reachable") {
-      setPulse(false);
-      return;
-    }
-    setPulse(true);
-    const timeout = window.setTimeout(() => setPulse(false), 350);
-    return () => window.clearTimeout(timeout);
-  }, [visual]);
 
   const zIndex = selected ? 2 : reachable ? 1 : 0;
   const strokeClass =
@@ -66,7 +55,7 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
   return (
     <div className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: x, top: y, width, height, zIndex }}>
       <button
-        ref={hover.triggerRef}
+        ref={triggerRef}
         type="button"
         disabled={visual === "cleared"}
         aria-label={`${typeLabel} chamber, ${visual}${reachable ? ", enterable" : ""}`}
@@ -75,10 +64,10 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
           if (visual === "cleared") return;
           onSelect(node.id);
         }}
-        onMouseEnter={hover.onMouseEnter}
-        onMouseLeave={hover.onMouseLeave}
-        onFocusCapture={hover.onFocusCapture}
-        onBlurCapture={hover.onBlurCapture}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onFocusCapture={onFocusCapture}
+        onBlurCapture={onBlurCapture}
         data-hovered={selected ? "true" : undefined}
         className={cn(
           cardHoverScaleClass,
@@ -105,7 +94,7 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
             stroke="currentColor"
             strokeWidth={reachable || selected ? 3 : 2}
           />
-          {pulse ? (
+          {reachable ? (
             <polygon
               points={HEX_POINTS}
               fill="none"
@@ -120,7 +109,7 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
           <Check className="absolute inset-0 z-10 m-auto h-7 w-7 text-emerald-300 drop-shadow" />
         ) : null}
       </button>
-      <PortaledTooltip triggerRef={hover.triggerRef} visible={hover.visible && !selected}>
+      <PortaledTooltip triggerRef={triggerRef} visible={visible && !selected}>
         <TooltipHeader>{hoverTitle}</TooltipHeader>
         {enemy ? <TooltipSubheader className="mt-1">{typeLabel}</TooltipSubheader> : null}
       </PortaledTooltip>
