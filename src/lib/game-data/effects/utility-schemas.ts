@@ -6,7 +6,7 @@ export const gainGoldEffectDefinition = {
   kind: "gain-gold",
   schema: z.object({
     kind: z.literal("gain-gold"),
-    amount: z.number(),
+    amount: z.number().int().min(0).max(999),
   }),
 } satisfies EffectKindDefinition<"gain-gold">;
 
@@ -14,7 +14,7 @@ export const wishEffectDefinition = {
   kind: "wish",
   schema: z.object({
     kind: z.literal("wish"),
-    amount: z.number(),
+    amount: z.number().int().min(0).max(999),
   }),
 } satisfies EffectKindDefinition<"wish">;
 
@@ -22,6 +22,6 @@ export const drawCardsEffectDefinition = {
   kind: "draw-cards",
   schema: z.object({
     kind: z.literal("draw-cards"),
-    amount: z.number(),
+    amount: z.number().int().min(0).max(999),
   }),
 } satisfies EffectKindDefinition<"draw-cards">;

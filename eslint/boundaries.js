@@ -20,17 +20,42 @@ import {
   UI_NO_SESSION_STORES,
 } from "./fragments.js";
 
+/**
+ * Shared BARREL + DOMAIN facade base. Collapses the 14 repeated
+ * `layerImports(BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, ...extra)` blocks.
+ * @param {string[]} files
+ * @param {...import("./fragments.js").ImportPattern[]} extra
+ */
+function boundaryBlock(files, ...extra) {
+  return {
+    files,
+    rules: {
+      "no-restricted-imports": layerImports(BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, ...extra),
+    },
+  };
+}
+
+/**
+ * Variant for blocks that need `ignores` alongside the common base.
+ * @param {string[]} files
+ * @param {string[]} ignores
+ * @param {...import("./fragments.js").ImportPattern[]} extra
+ */
+function boundaryBlockWithIgnores(files, ignores, ...extra) {
+  return {
+    files,
+    ignores,
+    rules: {
+      "no-restricted-imports": layerImports(BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, ...extra),
+    },
+  };
+}
+
 /** @type {import("eslint").Linter.Config[]} */
 export const BOUNDARY_CONFIGS = [
   // Source files: barrel imports + domain-store facade containment.
   // Later layer blocks must re-include these patterns (flat config replaces the rule).
-  {
-    files: ["src/**/*.{ts,tsx}"],
-    ignores: ["src/features/alchemy/shared/stores/**"],
-    rules: {
-      "no-restricted-imports": layerImports(BARREL_PATTERNS, DOMAIN_STORE_PATTERNS),
-    },
-  },
+  boundaryBlockWithIgnores(["src/**/*.{ts,tsx}"], ["src/features/alchemy/shared/stores/**"]),
   {
     files: ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"],
     rules: {
@@ -94,85 +119,36 @@ export const BOUNDARY_CONFIGS = [
 
   // run-setup — character/difficulty/draft; must not import run-loop (use shared/run-flow).
   // Screens restack below so non-screen setup code is not treated as a screen.
-  {
-    files: ["src/features/alchemy/run-setup/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImports(BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, RUN_SETUP_NO_RUN_LOOP),
-    },
-  },
-  {
-    files: ["src/features/alchemy/run-setup/screens/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImports(
-        BARREL_PATTERNS,
-        DOMAIN_STORE_PATTERNS,
-        RUN_SETUP_NO_RUN_LOOP,
-        SCREENS_NO_ORCHESTRATION,
-      ),
-    },
-  },
+  boundaryBlock(["src/features/alchemy/run-setup/**/*.{ts,tsx}"], RUN_SETUP_NO_RUN_LOOP),
+  boundaryBlock(
+    ["src/features/alchemy/run-setup/screens/**/*.{ts,tsx}"],
+    RUN_SETUP_NO_RUN_LOOP,
+    SCREENS_NO_ORCHESTRATION,
+  ),
 
   // run-loop (general) — must not import run-setup. Screens/battle/navigation restack below.
-  {
-    files: ["src/features/alchemy/run-loop/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImports(BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, RUN_LOOP_NO_RUN_SETUP),
-    },
-  },
-  {
-    files: ["src/features/alchemy/run-loop/screens/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImports(
-        BARREL_PATTERNS,
-        DOMAIN_STORE_PATTERNS,
-        RUN_LOOP_NO_RUN_SETUP,
-        SCREENS_NO_ORCHESTRATION,
-      ),
-    },
-  },
-  {
-    files: ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImports(
-        BARREL_PATTERNS,
-        DOMAIN_STORE_PATTERNS,
-        ORCHESTRATION_NO_SCREENS,
-        RUN_LOOP_NO_RUN_SETUP,
-      ),
-    },
-  },
-  {
-    files: ["src/features/alchemy/run-loop/navigation/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImports(
-        BARREL_PATTERNS,
-        DOMAIN_STORE_PATTERNS,
-        ORCHESTRATION_NO_SCREENS,
-        RUN_LOOP_NO_RUN_SETUP,
-      ),
-    },
-  },
+  boundaryBlock(["src/features/alchemy/run-loop/**/*.{ts,tsx}"], RUN_LOOP_NO_RUN_SETUP),
+  boundaryBlock(
+    ["src/features/alchemy/run-loop/screens/**/*.{ts,tsx}"],
+    RUN_LOOP_NO_RUN_SETUP,
+    SCREENS_NO_ORCHESTRATION,
+  ),
+  boundaryBlock(
+    ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}"],
+    ORCHESTRATION_NO_SCREENS,
+    RUN_LOOP_NO_RUN_SETUP,
+  ),
+  boundaryBlock(
+    ["src/features/alchemy/run-loop/navigation/**/*.{ts,tsx}"],
+    ORCHESTRATION_NO_SCREENS,
+    RUN_LOOP_NO_RUN_SETUP,
+  ),
 
   // Meta — menu/collection/homestead; must not depend on run-loop orchestration.
   // Non-screen meta code does not get screen orchestration bans; meta/screens restacks below
   // because flat config replaces earlier no-restricted-imports.
-  {
-    files: ["src/features/alchemy/meta/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImports(BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, META_NO_RUN_LOOP),
-    },
-  },
-  {
-    files: ["src/features/alchemy/meta/screens/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImports(
-        BARREL_PATTERNS,
-        DOMAIN_STORE_PATTERNS,
-        META_NO_RUN_LOOP,
-        SCREENS_NO_ORCHESTRATION,
-      ),
-    },
-  },
+  boundaryBlock(["src/features/alchemy/meta/**/*.{ts,tsx}"], META_NO_RUN_LOOP),
+  boundaryBlock(["src/features/alchemy/meta/screens/**/*.{ts,tsx}"], META_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION),
 
   // Reusable UI widgets — no run/battle/session store subscriptions (ui-store is OK).
   {

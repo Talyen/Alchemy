@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { waitForHttp } from "./lib/wait-for-http.mjs";
-import { SMOKE_PREVIEW_PORT } from "./lib/dev-port.mjs";
+import { parsePort, SMOKE_PREVIEW_PORT } from "./lib/dev-port.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const viteCli = join(root, "node_modules", "vite", "bin", "vite.js");
@@ -58,53 +58,102 @@ async function verifyBuildResources(html, documentUrl) {
   );
 }
 
+export function watchChildProcess(child) {
+  let exited = false;
+  const exit = new Promise((resolve) => {
+    child.once("error", (error) => {
+      if (exited) return;
+      exited = true;
+      resolve({ kind: "error", error });
+    });
+    child.once("exit", (code, signal) => {
+      if (exited) return;
+      exited = true;
+      resolve({ kind: "exit", code, signal });
+    });
+  });
+  return { exit, hasExited: () => exited };
+}
+
+function earlyExitError(label, outcome) {
+  if (outcome.kind === "error") return outcome.error;
+  const detail = outcome.signal ? `signal ${outcome.signal}` : `code ${outcome.code ?? "unknown"}`;
+  return new Error(`${label} exited before it became ready (${detail})`);
+}
+
+export async function waitForProcessReady(readiness, watcher, label) {
+  const result = await Promise.race([
+    readiness.then((value) => ({ kind: "ready", value })),
+    watcher.exit.then((outcome) => ({ kind: "stopped", outcome })),
+  ]);
+  if (result.kind === "ready") return result.value;
+  throw earlyExitError(label, result.outcome);
+}
+
+function signalChild(child, signal) {
+  try {
+    child.kill(signal);
+  } catch (error) {
+    if (!error || typeof error !== "object" || !("code" in error) || error.code !== "ESRCH") throw error;
+  }
+}
+
+export async function stopChildProcess(child, watcher, { graceMs = 2_000, label = "child process" } = {}) {
+  if (watcher.hasExited()) return;
+
+  signalChild(child, "SIGTERM");
+  const exitedGracefully = await Promise.race([watcher.exit.then(() => true), delay(graceMs, false)]);
+  if (exitedGracefully) return;
+
+  signalChild(child, "SIGKILL");
+  const exitedForcefully = await Promise.race([watcher.exit.then(() => true), delay(graceMs, false)]);
+  if (!exitedForcefully) {
+    throw new Error(`${label} did not exit after SIGKILL`);
+  }
+}
+
 /**
  * @param {{ port?: number }} [options]
  */
 export async function smokePreview(options = {}) {
-  const port = options.port ?? Number.parseInt(process.env.ALCHEMY_SMOKE_PORT ?? String(DEFAULT_PORT), 10);
-  if (!Number.isInteger(port) || port <= 0) {
-    throw new Error(`Invalid preview port: ${port}`);
-  }
+  const port = parsePort(options.port ?? process.env.ALCHEMY_SMOKE_PORT ?? DEFAULT_PORT, "ALCHEMY_SMOKE_PORT");
 
   const child = spawn(
     process.execPath,
     [viteCli, "preview", "--host", "127.0.0.1", "--port", String(port), "--strictPort"],
     { cwd: root, stdio: "ignore" },
   );
-
-  let exitError = null;
-  child.on("error", (error) => {
-    exitError = error;
-  });
-  child.on("exit", (code, signal) => {
-    if (code && code !== 0) {
-      exitError = new Error(`vite preview exited with code ${code}${signal ? ` (${signal})` : ""}`);
-    }
-  });
+  const watcher = watchChildProcess(child);
+  let operationError;
 
   try {
-    await waitForPreview(port);
-    if (exitError) throw exitError;
+    await waitForProcessReady(waitForPreview(port), watcher, "vite preview");
     const documentUrl = `http://127.0.0.1:${port}`;
     const response = await fetch(documentUrl);
     if (!response.ok) {
       throw new Error(`Preview responded with HTTP ${response.status}`);
     }
     await verifyBuildResources(await response.text(), documentUrl);
-  } finally {
-    if (!child.killed) {
-      child.kill("SIGTERM");
-      await Promise.race([new Promise((resolve) => child.once("exit", resolve)), delay(2_000)]);
-      if (!child.killed) {
-        try {
-          child.kill("SIGKILL");
-        } catch {
-          // Process already exited.
-        }
-      }
-    }
+  } catch (error) {
+    operationError = error;
   }
+
+  let teardownError;
+  try {
+    await stopChildProcess(child, watcher, { label: "vite preview" });
+  } catch (error) {
+    teardownError = error;
+  }
+
+  if (operationError) {
+    if (teardownError) {
+      console.error(
+        `Failed to stop vite preview after its primary failure: ${teardownError instanceof Error ? teardownError.message : teardownError}`,
+      );
+    }
+    throw operationError;
+  }
+  if (teardownError) throw teardownError;
 }
 
 if (isMainModule(import.meta.url)) {

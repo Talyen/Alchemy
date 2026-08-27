@@ -1,5 +1,6 @@
 // Dev / preview port contracts shared by vite.config.ts, Playwright configs, and cleanup scripts.
 const DEFAULT_DEV_PORT = 5173;
+const MAX_TCP_PORT = 65_535;
 
 /** Default vite preview ports per E2E surface — one owner for every config, helper, and cleanup list. */
 export const BROWSER_PREVIEW_PORT = 4173;
@@ -15,11 +16,23 @@ export const STALE_TEST_PORTS = Object.freeze([
   PERF_PREVIEW_PORT,
 ]);
 
-export function resolveDevPort(env = process.env) {
-  const raw = env.ALCHEMY_DEV_PORT ?? String(DEFAULT_DEV_PORT);
-  const port = Number.parseInt(raw, 10);
-  if (!Number.isInteger(port) || port <= 0) {
-    throw new Error(`Invalid ALCHEMY_DEV_PORT: ${raw}`);
+export function parsePort(value, label = "port") {
+  const raw = String(value);
+  if (!/^\d+$/u.test(raw)) {
+    throw new Error(`Invalid ${label}: ${raw}`);
+  }
+
+  const port = Number(raw);
+  if (!Number.isInteger(port) || port <= 0 || port > MAX_TCP_PORT) {
+    throw new Error(`Invalid ${label}: ${raw}`);
   }
   return port;
+}
+
+export function resolvePort(envName, fallback, env = process.env) {
+  return parsePort(env[envName] ?? fallback, envName);
+}
+
+export function resolveDevPort(env = process.env) {
+  return resolvePort("ALCHEMY_DEV_PORT", DEFAULT_DEV_PORT, env);
 }

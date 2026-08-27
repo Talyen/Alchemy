@@ -44,10 +44,22 @@ const NON_CARD_INACTIVE_FLAGS = {
 const PRESERVED_NON_CARD_FLAG_VALUES = {
   ...FIRST_TIME_FLAG_USED_VALUES,
   ...NON_CARD_INACTIVE_FLAGS,
-};
+} satisfies Record<FirstTimeFlagKey | keyof typeof NON_CARD_INACTIVE_FLAGS, CombatFlags[keyof CombatFlags]>;
 
 type PreservedNonCardFlagKey = keyof typeof PRESERVED_NON_CARD_FLAG_VALUES;
 const PRESERVED_NON_CARD_FLAG_KEYS = Object.keys(PRESERVED_NON_CARD_FLAG_VALUES) as PreservedNonCardFlagKey[];
+
+// Compile-time exhaustiveness: every FirstTimeFlagKey + NON_CARD_INACTIVE_FLAGS key must be preserved,
+// and no extra keys may appear. Add new card-play flags to both FirstTimeFlagKey and NON_CARD_INACTIVE_FLAGS as needed.
+type _AssertPreservedCompleteness = PreservedNonCardFlagKey extends
+  | FirstTimeFlagKey
+  | keyof typeof NON_CARD_INACTIVE_FLAGS
+  ? FirstTimeFlagKey | keyof typeof NON_CARD_INACTIVE_FLAGS extends PreservedNonCardFlagKey
+    ? true
+    : never
+  : never;
+const _assertPreservedCompleteness: _AssertPreservedCompleteness = true;
+void _assertPreservedCompleteness;
 
 /**
  * Snapshot first-time-per-combat flags before a non-card action (e.g., companion attack),

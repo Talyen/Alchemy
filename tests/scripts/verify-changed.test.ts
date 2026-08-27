@@ -215,6 +215,7 @@ describe("verify-changed route catalog", () => {
       "gear",
     ]);
     expect(resolveRoutes(["tests/fixtures/e2e.ts"]).map((route) => route.id)).toEqual(["e2e-helper"]);
+    expect(resolveRoutes(["tests/playwright-shared.ts"]).map((route) => route.id)).toEqual(["e2e-helper"]);
     expect(resolveRoutes(["playwright.config.ts"]).map((route) => route.id)).toEqual(["e2e-helper"]);
     expect(resolveRoutes(["scripts/measure-agent-context.mjs"]).map((route) => route.id)).toEqual(["tooling"]);
     expect(resolveRoutes(["package.json"]).map((route) => route.id)).toEqual(["tooling"]);

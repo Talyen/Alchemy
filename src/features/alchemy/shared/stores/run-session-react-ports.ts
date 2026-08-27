@@ -15,9 +15,9 @@ import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Screen } from "@/lib/routing";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { DisplayOverrides } from "./run-domain-types";
-import { pickActiveRunFields } from "./run-state-init";
+import type { ActiveRunProgressFields } from "./run-state-init";
 import { mostRecentResumableMode } from "./parked-runs";
-import { useGameplayStateStore } from "./gameplay-state-store";
+import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 import type {
   BattleRunPort,
   BattleTalentPort,
@@ -28,6 +28,52 @@ import type {
 import { createRunSessionCommand } from "./run-session-command";
 import { selectAutosaveAllowed } from "./select-autosave-allowed";
 import { setHasActiveBattle as setHasActiveBattleCommand } from "./run-session-write-port";
+
+// The three run-facing ports intentionally overlap (orchestration is the superset of
+// navigation + part of battle). A shared selector factory centralizes the per-field
+// picking so renaming/adding a field touches one place instead of three hand-maintained
+// object spreads. Overlap is intentional; narrowing is by key list, not by copy-paste.
+function selectRunFields<K extends keyof ActiveRunProgressFields>(
+  ...keys: K[]
+): (state: GameplayState) => Pick<ActiveRunProgressFields, K> {
+  return (state) => {
+    const out = {} as Pick<ActiveRunProgressFields, K>;
+    for (const k of keys) out[k] = state.run.activeRun[k];
+    return out;
+  };
+}
+
+const selectContentNavigationFields = selectRunFields(
+  "contentSystemType",
+  "lastOfferedDestinations",
+  "destinationRoundsSinceOffered",
+);
+
+const selectBattleRunFields = selectRunFields(
+  "characterId",
+  "selectedDifficulty",
+  "runMaxHealth",
+  "runBoons",
+  "roomsEncountered",
+  "contentSystemType",
+  "encounteredRunEnemyIds",
+  "runDeck",
+);
+
+const selectOrchestrationFields = selectRunFields(
+  "characterId",
+  "selectedDifficulty",
+  "runMaxHealth",
+  "contentSystemType",
+  "roomsEncountered",
+  "currentAct",
+  "runDeck",
+  "runPlayerHealth",
+  "destinationIndexInAct",
+  "completedDestinations",
+  "lastOfferedDestinations",
+  "destinationRoundsSinceOffered",
+);
 
 const commandSetHasActiveBattle = createRunSessionCommand(setHasActiveBattleCommand);
 
@@ -40,33 +86,20 @@ export function useTalentEffects(): TalentEffectManifest {
 export function useRunOrchestrationPort(): RunOrchestrationPort {
   return useGameplayStateStore(
     useShallow((state) => ({
-      ...pickActiveRunFields(state.run.activeRun),
+      ...selectOrchestrationFields(state),
       gold: state.runProfile.gold,
     })),
   );
 }
 
 export function useContentNavigationRunPort(): ContentNavigationRunPort {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      contentSystemType: state.run.activeRun.contentSystemType,
-      lastOfferedDestinations: state.run.activeRun.lastOfferedDestinations,
-      destinationRoundsSinceOffered: state.run.activeRun.destinationRoundsSinceOffered,
-    })),
-  );
+  return useGameplayStateStore(useShallow(selectContentNavigationFields));
 }
 
 export function useBattleRunPort(): BattleRunPort {
   return useGameplayStateStore(
     useShallow((state) => ({
-      characterId: state.run.activeRun.characterId,
-      selectedDifficulty: state.run.activeRun.selectedDifficulty,
-      runMaxHealth: state.run.activeRun.runMaxHealth,
-      runBoons: state.run.activeRun.runBoons,
-      roomsEncountered: state.run.activeRun.roomsEncountered,
-      contentSystemType: state.run.activeRun.contentSystemType,
-      encounteredRunEnemyIds: state.run.activeRun.encounteredRunEnemyIds,
-      runDeck: state.run.activeRun.runDeck,
+      ...selectBattleRunFields(state),
       gold: state.runProfile.gold,
     })),
   );

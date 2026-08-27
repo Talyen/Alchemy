@@ -13,14 +13,14 @@ import type { ActiveRunData, RunObtainedItem } from "@/lib/active-run-session";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { Screen } from "@/lib/routing";
+import { setDraftField } from "./store-helpers";
 
-/** Set an active-run field from a direct value or an updater over the previous value. */
 function setRunField<K extends keyof ActiveRunProgressFields>(
   draft: GameplayDraft,
   field: K,
   action: ActiveRunProgressFields[K] | ((prev: ActiveRunProgressFields[K]) => ActiveRunProgressFields[K]),
 ): void {
-  draft.run.activeRun[field] = typeof action === "function" ? action(draft.run.activeRun[field]) : action;
+  setDraftField(draft.run.activeRun, field, action);
 }
 
 export function setRunDeck(draft: GameplayDraft, action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])): void {

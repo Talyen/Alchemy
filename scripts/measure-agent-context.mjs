@@ -20,7 +20,7 @@ export const ROUTE_CONTEXT_BUDGETS = Object.freeze({
   shop: { preread: 10 * 1024, total: 11 * 1024 },
   "shop-screen": { preread: 10 * 1024, total: 18 * 1024 },
   audio: { preread: 9 * 1024, total: 13 * 1024 },
-  routing: { preread: 14 * 1024, total: 24 * 1024 },
+  routing: { preread: 14 * 1024, total: 26 * 1024 },
   gear: { preread: 12 * 1024, total: 22 * 1024 },
   mystery: { preread: 11 * 1024, total: 22 * 1024 },
   integration: { preread: 14 * 1024, total: 24 * 1024 },

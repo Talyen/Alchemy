@@ -64,7 +64,7 @@ only when intentionally shipping; see [RELEASE.md](./docs/RELEASE.md).
 | `npm run ci:verify-plan`          | CI-only informational: print the `verify:changed --plan` for the push range                                                                                                                                                                                                                                         |
 | `npm run test:mutation`           | Nightly Stryker canary on `damage-calc.ts` and `dot-resolve.ts`; not a local gate                                                                                                                                                                                                                                   |
 
-Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clean:all` (also `dist` / `release-desktop` + stale E2E/smoke ports `4173`/`4174`/`4175`). The main Vite port is left alone unless you pass `--include-dev-port`.
+Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clean:all` (also `dist` / `release-desktop` + configured stale test/preview ports). The main Vite port is left alone unless you pass `--include-dev-port`; use `npm run clean -- --help` for the current target list.
 
 ## CI parity
 

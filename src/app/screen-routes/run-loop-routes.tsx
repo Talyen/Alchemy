@@ -1,5 +1,6 @@
 import { useLayoutEffect, type ReactNode } from "react";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
+import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import {
   AlchemistShopScreen,
   BattleScreen,
@@ -54,10 +55,12 @@ function BattleScreenRoute({
     handleAutoplayCard: commands.handleAutoplayCard,
     isCardPlayInProgress: commands.isCardPlayInProgress,
   });
+  const bindPlaybackRef = useLatestRef(commands.bindPlayback);
   useLayoutEffect(() => {
-    commands.bindPlayback(bind);
-    return () => commands.bindPlayback(null);
-  }, [commands, bind]);
+    const currentBind = bindPlaybackRef.current;
+    currentBind(bind);
+    return () => currentBind(null);
+  }, [bind, bindPlaybackRef]);
 
   return (
     <BattleScreen
@@ -176,15 +179,28 @@ function CampfireScreenRoute({
   );
 }
 
-function ShopScreenRoute({
-  commands,
-  onOpenBattleMenu,
-}: {
-  commands: RunLoopCommands["shop"]["merchant"];
-  onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
-}) {
-  const r = useShopScreenData();
-  return (
+// Factory for shop-like screens — eliminates 4× ~15-line duplication.
+// Each shop pairs a data hook with a screen component; the render mapper
+// adapts the hook result + slice commands to the component's props.
+function createShopScreenRoute<TData, TCommands>(
+  useData: () => TData,
+  render: (data: TData, commands: TCommands, onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"]) => ReactNode,
+) {
+  return function ShopScreenRoute({
+    commands,
+    onOpenBattleMenu,
+  }: {
+    commands: TCommands;
+    onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
+  }) {
+    const data = useData();
+    return render(data, commands, onOpenBattleMenu);
+  };
+}
+
+const ShopScreenRoute = createShopScreenRoute(
+  useShopScreenData,
+  (r, commands: RunLoopCommands["shop"]["merchant"], onOpenBattleMenu) => (
     <MerchantShopScreen
       gold={r.gold}
       runDeck={r.runDeck}
@@ -201,18 +217,12 @@ function ShopScreenRoute({
       onContinue={commands.handleContinue}
       onOpenMenu={onOpenBattleMenu}
     />
-  );
-}
+  ),
+);
 
-function AlchemistScreenRoute({
-  commands,
-  onOpenBattleMenu,
-}: {
-  commands: RunLoopCommands["shop"]["alchemist"];
-  onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
-}) {
-  const r = useAlchemistScreenData();
-  return (
+const AlchemistScreenRoute = createShopScreenRoute(
+  useAlchemistScreenData,
+  (r, commands: RunLoopCommands["shop"]["alchemist"], onOpenBattleMenu) => (
     <AlchemistShopScreen
       gold={r.gold}
       runDeck={r.runDeck}
@@ -229,18 +239,12 @@ function AlchemistScreenRoute({
       onContinue={commands.handleContinue}
       onOpenMenu={onOpenBattleMenu}
     />
-  );
-}
+  ),
+);
 
-function TrinketShopScreenRoute({
-  commands,
-  onOpenBattleMenu,
-}: {
-  commands: RunLoopCommands["shop"]["trinket"];
-  onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
-}) {
-  const r = useTrinketShopScreenData();
-  return (
+const TrinketShopScreenRoute = createShopScreenRoute(
+  useTrinketShopScreenData,
+  (r, commands: RunLoopCommands["shop"]["trinket"], onOpenBattleMenu) => (
     <TrinketShopScreen
       gold={r.gold}
       trinkets={r.trinketShopState.trinkets}
@@ -253,18 +257,12 @@ function TrinketShopScreenRoute({
       onContinue={commands.handleContinue}
       onOpenMenu={onOpenBattleMenu}
     />
-  );
-}
+  ),
+);
 
-function EquipmentShopScreenRoute({
-  commands,
-  onOpenBattleMenu,
-}: {
-  commands: RunLoopCommands["shop"]["equipment"];
-  onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
-}) {
-  const r = useEquipmentShopScreenData();
-  return (
+const EquipmentShopScreenRoute = createShopScreenRoute(
+  useEquipmentShopScreenData,
+  (r, commands: RunLoopCommands["shop"]["equipment"], onOpenBattleMenu) => (
     <EquipmentShopScreen
       gold={r.gold}
       gear={r.equipmentShopState.gear}
@@ -277,8 +275,32 @@ function EquipmentShopScreenRoute({
       onContinue={commands.handleContinue}
       onOpenMenu={onOpenBattleMenu}
     />
+  ),
+);
+
+// Data-driven shop route table — single source for wiring screen keys to
+// their hook/component pairs. Add a new shop by adding an entry here and
+// extending RunLoopCommands["shop"]; route generation below loops this table.
+const SHOP_ROUTE_CONFIGS = [
+  { key: "shop" as const, Route: ShopScreenRoute, slice: "merchant" as const },
+  { key: "alchemist" as const, Route: AlchemistScreenRoute, slice: "alchemist" as const },
+  { key: "trinket-shop" as const, Route: TrinketShopScreenRoute, slice: "trinket" as const },
+  { key: "equipment-shop" as const, Route: EquipmentShopScreenRoute, slice: "equipment" as const },
+] as const;
+
+function createShopRoute(
+  Route: (props: { commands: unknown; onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"] }) => ReactNode,
+  slice: keyof RunLoopCommands["shop"],
+) {
+  return ({ routeCommands, onOpenBattleMenu }: RunLoopRouteCtx) => (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unnecessary-type-assertion -- shop slices share shape but differ by key; factory narrows via call-site casts
+    <Route commands={routeCommands.runLoop.shop[slice] as any} onOpenBattleMenu={onOpenBattleMenu} />
   );
 }
+
+const shopRoutes = Object.fromEntries(
+  SHOP_ROUTE_CONFIGS.map(({ key, Route, slice }) => [key, createShopRoute(Route as never, slice)]),
+) as Record<(typeof SHOP_ROUTE_CONFIGS)[number]["key"], (ctx: RunLoopRouteCtx) => ReactNode>;
 
 function CorruptionScreenRoute({
   commands,
@@ -335,18 +357,7 @@ export const runLoopScreenRoutes: {
   campfire: ({ routeCommands, onOpenBattleMenu }) => (
     <CampfireScreenRoute commands={routeCommands.runLoop.destinations} onOpenBattleMenu={onOpenBattleMenu} />
   ),
-  shop: ({ routeCommands, onOpenBattleMenu }) => (
-    <ShopScreenRoute commands={routeCommands.runLoop.shop.merchant} onOpenBattleMenu={onOpenBattleMenu} />
-  ),
-  alchemist: ({ routeCommands, onOpenBattleMenu }) => (
-    <AlchemistScreenRoute commands={routeCommands.runLoop.shop.alchemist} onOpenBattleMenu={onOpenBattleMenu} />
-  ),
-  "trinket-shop": ({ routeCommands, onOpenBattleMenu }) => (
-    <TrinketShopScreenRoute commands={routeCommands.runLoop.shop.trinket} onOpenBattleMenu={onOpenBattleMenu} />
-  ),
-  "equipment-shop": ({ routeCommands, onOpenBattleMenu }) => (
-    <EquipmentShopScreenRoute commands={routeCommands.runLoop.shop.equipment} onOpenBattleMenu={onOpenBattleMenu} />
-  ),
+  ...shopRoutes,
   mystery: ({ routeCommands, onOpenBattleMenu }) => (
     <MysteryScreenRoute commands={routeCommands.runLoop.mystery} onOpenBattleMenu={onOpenBattleMenu} />
   ),

@@ -95,6 +95,8 @@ export interface CombatFlags {
 }
 
 // Subset of CombatFlags consumed by card play — companion actions must not consume these.
+// When adding a new flag here, also add its "used" sentinel to
+// `FIRST_TIME_FLAG_USED_VALUES` in `state-helpers.ts` so `withPreservedFlags` covers it.
 export type FirstTimeFlagKey =
   | "firstHolyCardFreeUsed"
   | "firstBurnCardDoubledUsed"

@@ -38,24 +38,23 @@ export const cursorArt = {
   pointer: pointerCursor,
 } as const;
 
-const mysteryArtModules = import.meta.glob("@/assets/optimized/mystery-*.webp", {
-  eager: true,
-  import: "default",
-});
-
 function mysteryEventArtKey(path: string): string {
   const filename = path.split("/").pop() ?? "";
   return filename.replace(/^mystery-/, "").replace(/\.webp$/, "");
 }
 
-export const mysteryEventArt: Record<string, string> = Object.fromEntries(
-  Object.entries(mysteryArtModules).map(([path, url]) => [mysteryEventArtKey(path), url as string]),
-);
-
 const assetModules = import.meta.glob("@/assets/optimized/*.webp", {
   eager: true,
   import: "default",
 });
+
+// Single eager glob; mystery subset derived via filter to avoid double-counting
+// mystery art in the preload set (previously a second mystery-*.webp glob).
+export const mysteryEventArt: Record<string, string> = Object.fromEntries(
+  Object.entries(assetModules)
+    .filter(([path]) => path.includes("/mystery-"))
+    .map(([path, url]) => [mysteryEventArtKey(path), url as string]),
+);
 export const allGameArt = Object.values(assetModules) as string[];
 
 export const gearSlotBackgroundArt = {

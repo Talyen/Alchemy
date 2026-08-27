@@ -63,22 +63,22 @@ export interface PermanentProgressFields {
  */
 export type ActiveRunReadView = ActiveRunProgressFields & { initialized: boolean };
 
+/** Progress-fields-only projection used by the resume codec and orchestration reads. */
+export function pickActiveRunFields(activeRun: ActiveRunProgressFields): ActiveRunProgressFields {
+  return { ...activeRun };
+}
+
 /**
  * Canonical picker for the full active-run read view (progress fields + initialized),
  * used by the committed read model, the run read port, and the orchestration port.
- * Progress-fields-only callers (persistence codec, snapshot assembly) use
- * {@link pickActiveRunFields} from this module; there is no second hand-maintained projection.
+ * Delegates to {@link pickActiveRunFields} so the progress-field projection stays
+ * canonical; there is no second hand-maintained spread.
  */
 export function pickActiveRunView(run: {
   activeRun: ActiveRunProgressFields;
   initialized: boolean;
 }): ActiveRunReadView {
-  return { ...run.activeRun, initialized: run.initialized };
-}
-
-/** Progress-fields-only projection used by the resume codec and orchestration reads. */
-export function pickActiveRunFields(activeRun: ActiveRunProgressFields): ActiveRunProgressFields {
-  return { ...activeRun };
+  return { ...pickActiveRunFields(run.activeRun), initialized: run.initialized };
 }
 
 function hydrateDestinations(initialActiveRun: ActiveRunData): {
@@ -93,6 +93,30 @@ function hydrateDestinations(initialActiveRun: ActiveRunData): {
   };
 }
 
+/** Common empty collections / tallies shared across all construction paths; call per-instance to avoid shared mutable arrays. */
+function createEmptyActiveRunCollections(): Pick<
+  ActiveRunProgressFields,
+  | "completedDestinations"
+  | "lastOfferedDestinations"
+  | "destinationRoundsSinceOffered"
+  | "runBoons"
+  | "encounteredRunEnemyIds"
+  | "runTalentXP"
+  | "runMaterialsEarned"
+  | "runObtainedItems"
+> {
+  return {
+    completedDestinations: [],
+    lastOfferedDestinations: [],
+    destinationRoundsSinceOffered: {},
+    runBoons: [],
+    encounteredRunEnemyIds: [],
+    runTalentXP: {},
+    runMaterialsEarned: emptyInventory(),
+    runObtainedItems: [],
+  };
+}
+
 function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgressFields {
   return {
     characterId,
@@ -103,22 +127,16 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
     roomsEncountered: 0,
     currentAct: 1,
     destinationIndexInAct: 0,
-    completedDestinations: [],
-    lastOfferedDestinations: [],
-    destinationRoundsSinceOffered: {},
-    runBoons: [],
-    encounteredRunEnemyIds: [],
+    ...createEmptyActiveRunCollections(),
     selectedDifficulty: null,
     contentSystemType: "campaign",
     rng: createRunRngState(),
-    runTalentXP: {},
-    runMaterialsEarned: emptyInventory(),
-    runObtainedItems: [],
   };
 }
 
 /** Resume path: ActiveRunData is already Zod-parsed and hydrated at the persistence boundary. */
 function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgressFields {
+  const empty = createEmptyActiveRunCollections();
   return {
     characterId: activeRun.characterId,
     runDeck: [...activeRun.runDeck],
@@ -135,9 +153,9 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
     selectedDifficulty: activeRun.selectedDifficulty,
     contentSystemType: activeRun.contentSystemType,
     rng: activeRun.rng ?? createRunRngState(),
-    runTalentXP: activeRun.runTalentXP ?? {},
-    runMaterialsEarned: activeRun.runMaterialsEarned ?? emptyInventory(),
-    runObtainedItems: [...(activeRun.runObtainedItems ?? [])],
+    runTalentXP: activeRun.runTalentXP ?? empty.runTalentXP,
+    runMaterialsEarned: activeRun.runMaterialsEarned ?? empty.runMaterialsEarned,
+    runObtainedItems: [...(activeRun.runObtainedItems ?? empty.runObtainedItems)],
   };
 }
 
@@ -186,6 +204,9 @@ export function runFieldsFromSnapshot(
   | "runBoons"
   | "encounteredRunEnemyIds"
 > {
+  // Per-run tallies/offers reset on start; reuse empty-collection defaults for the 3 reset fields
+  // so fresh/resume/snapshot don't each hand-maintain separate `[]`/`{}` literals with subtle diffs.
+  const empty = createEmptyActiveRunCollections();
   return {
     characterId: snapshot.characterId,
     contentSystemType: snapshot.contentSystemType,
@@ -198,9 +219,9 @@ export function runFieldsFromSnapshot(
     currentAct: snapshot.currentAct,
     destinationIndexInAct: snapshot.destinationIndexInAct,
     completedDestinations: snapshot.completedDestinations,
-    lastOfferedDestinations: [],
-    destinationRoundsSinceOffered: {},
+    lastOfferedDestinations: empty.lastOfferedDestinations,
+    destinationRoundsSinceOffered: empty.destinationRoundsSinceOffered,
     runBoons: snapshot.runBoons,
-    encounteredRunEnemyIds: [],
+    encounteredRunEnemyIds: empty.encounteredRunEnemyIds,
   };
 }

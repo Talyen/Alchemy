@@ -8,11 +8,11 @@ export const damageEffectDefinition = {
   schema: z.object({
     kind: z.literal("damage"),
     damageType: DamageTypeSchema,
-    amount: z.number(),
+    amount: z.number().int().min(0).max(999),
     lifesteal: z.boolean().optional(),
     equalToBlock: z.boolean().optional(),
     equalToArmor: z.boolean().optional(),
-    equalToGoldPercent: z.number().optional(),
+    equalToGoldPercent: z.number().int().min(0).max(100).optional(),
     doubleIfEnemyBurning: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"damage">;
@@ -22,7 +22,7 @@ export const selfDamageEffectDefinition = {
   schema: z.object({
     kind: z.literal("self-damage"),
     damageType: EnemyStatusIdSchema,
-    amount: z.number(),
+    amount: z.number().int().min(0).max(999),
   }),
 } satisfies EffectKindDefinition<"self-damage">;
 
@@ -30,8 +30,8 @@ export const randomDamageEffectDefinition = {
   kind: "random-damage",
   schema: z.object({
     kind: z.literal("random-damage"),
-    minAmount: z.number(),
-    maxAmount: z.number(),
+    minAmount: z.number().int().min(0).max(999),
+    maxAmount: z.number().int().min(0).max(999),
   }),
 } satisfies EffectKindDefinition<"random-damage">;
 
@@ -39,6 +39,6 @@ export const removeEnemyArmorEffectDefinition = {
   kind: "remove-enemy-armor",
   schema: z.object({
     kind: z.literal("remove-enemy-armor"),
-    amount: z.number(),
+    amount: z.number().int().min(0).max(999),
   }),
 } satisfies EffectKindDefinition<"remove-enemy-armor">;

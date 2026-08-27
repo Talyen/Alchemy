@@ -1,4 +1,9 @@
 // Content-id remaps for persisted saves. Card/trinket id changes bump contentVersion.
+//
+// `remapContentTree` walks the entire save JSON and rewrites every `id` string.
+// This is intentionally broad (one remap per content bump, cheap walk) but be
+// aware it will also touch `definitionId` neighbors if a future remap collides —
+// keep remap keys scoped to card IDs only.
 const CARD_ID_REMAPS: Record<string, string> = {
   "sunder-armor": "sunder",
 };

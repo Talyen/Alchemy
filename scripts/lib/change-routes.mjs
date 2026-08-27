@@ -433,7 +433,14 @@ export const ROUTES = Object.freeze([
   },
   {
     id: "e2e-helper",
-    patterns: ["tests/e2e/**", "tests/fixtures/e2e.ts", "tests/pages/**", "tests/helpers.ts", "playwright*.config.ts"],
+    patterns: [
+      "tests/e2e/**",
+      "tests/fixtures/e2e.ts",
+      "tests/pages/**",
+      "tests/helpers.ts",
+      "tests/playwright-shared.ts",
+      "playwright*.config.ts",
+    ],
     exclude: ["tests/e2e/README.md"],
     commands: ["e2e-prepush"],
     docs: [doc("tests/e2e/README.md", "E2E helpers", "E2E fixture and page-object contract")],

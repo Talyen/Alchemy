@@ -15,6 +15,6 @@ export const buffCompanionEffectDefinition = {
   kind: "buff-companion",
   schema: z.object({
     kind: z.literal("buff-companion"),
-    amount: z.number(),
+    amount: z.number().int().min(0).max(999),
   }),
 } satisfies EffectKindDefinition<"buff-companion">;

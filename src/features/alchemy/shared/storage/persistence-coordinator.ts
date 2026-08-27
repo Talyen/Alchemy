@@ -1,4 +1,6 @@
 // Thin composition layer over store-owned persistence codecs.
+// The codec list itself is owned by `codec-registry.ts`; this file adds the
+// cross-domain hydration repair (owned-unique → discovered).
 import { settingsPersistenceCodec, type SettingsSaveFields } from "@/features/alchemy/shared/stores/settings-store";
 import {
   discoverUniqueIds,
@@ -11,6 +13,7 @@ import {
   runProfilePersistenceCodec,
   type RunProfileSaveFields,
 } from "@/features/alchemy/shared/stores/run-save-readers";
+import { encodePersistenceFields } from "./codec-registry";
 import {
   subscribeRunSessionCommits,
   dispatchRunSessionCommand,
@@ -28,12 +31,7 @@ function unionOwnedUniquesIntoDiscovered(draft: GameplayDraft): void {
 }
 
 export function encodeAlchemyPersistenceFields(): AlchemyPersistenceFields {
-  return {
-    ...settingsPersistenceCodec.encode(),
-    ...profilePersistenceCodec.encode(),
-    ...gearPersistenceCodec.encode(),
-    ...runProfilePersistenceCodec.encode(),
-  };
+  return encodePersistenceFields();
 }
 
 export function hydrateAlchemyPersistenceFields(fields: AlchemyPersistenceFields): void {

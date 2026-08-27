@@ -172,11 +172,13 @@ export function applyDamageRiders(
   }
 
   if (card.tags?.includes("archery") && modifiedDamage > 0) {
-    if (!isExtraHit && rollTalentChance(state.talentEffects.archeryPlayTwiceChance, state)) {
+    if (!isExtraHit && rollTalentChance(state.talentEffects.archeryPlayTwiceChance, nextState)) {
       const secondHit = Math.round(modifiedDamage / HALF_DIVISOR);
-      nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true);
+      if (secondHit > 0) {
+        nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true);
+      }
     }
-    if (rollTalentChance(state.talentEffects.archeryBleedChance, state)) {
+    if (rollTalentChance(state.talentEffects.archeryBleedChance, nextState)) {
       nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);
     }
     nextState = applyArcheryDetonate(nextState, combatTexts);

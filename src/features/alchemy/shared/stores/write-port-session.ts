@@ -21,14 +21,14 @@ import {
   setDestinationIndexInAct,
   setDestinationOfferState,
 } from "./write-port-run";
+import { setDraftField } from "./store-helpers";
 
-/** Set a session field from a direct value or an updater over the previous value. */
 function setSessionField<K extends keyof RunSessionFields>(
   draft: GameplayDraft,
   field: K,
   action: RunSessionFields[K] | ((prev: RunSessionFields[K]) => RunSessionFields[K]),
 ): void {
-  draft.session[field] = typeof action === "function" ? action(draft.session[field]) : action;
+  setDraftField(draft.session, field, action);
 }
 
 export const setPendingCharacterId = (draft: GameplayDraft, id: RunSessionFields["pendingCharacterId"]) =>

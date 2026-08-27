@@ -21,10 +21,30 @@ const rootDir = path.resolve(path.dirname(currentFile), "..");
  * @param {string[]} argv
  */
 export function parseCleanArgs(argv) {
-  const flags = new Set(argv.filter((arg) => arg.startsWith("--")));
-  const unknown = argv.filter((arg) => !arg.startsWith("--"));
-  if (unknown.length > 0) {
-    throw new Error(`Unexpected arguments: ${unknown.join(", ")}`);
+  const supportedFlags = new Set([
+    "--help",
+    "-h",
+    "--builds",
+    "--all",
+    "--processes",
+    "--include-dev-port",
+    "--dry-run",
+  ]);
+  const flags = new Set();
+  const unknownFlags = [];
+  const unexpectedArgs = [];
+
+  for (const arg of argv) {
+    if (supportedFlags.has(arg)) flags.add(arg);
+    else if (arg.startsWith("-")) unknownFlags.push(arg);
+    else unexpectedArgs.push(arg);
+  }
+
+  if (unknownFlags.length > 0) {
+    throw new Error(`Unknown flags: ${unknownFlags.join(", ")}`);
+  }
+  if (unexpectedArgs.length > 0) {
+    throw new Error(`Unexpected arguments: ${unexpectedArgs.join(", ")}`);
   }
 
   const help = flags.has("--help") || flags.has("-h");
@@ -32,13 +52,6 @@ export function parseCleanArgs(argv) {
   const processes = flags.has("--processes") || flags.has("--all");
   const includeDevPort = flags.has("--include-dev-port");
   const dryRun = flags.has("--dry-run");
-
-  const unsupported = [...flags].filter(
-    (flag) => !["--help", "-h", "--builds", "--all", "--processes", "--include-dev-port", "--dry-run"].includes(flag),
-  );
-  if (unsupported.length > 0) {
-    throw new Error(`Unknown flags: ${unsupported.join(", ")}`);
-  }
 
   return { help, builds, processes, includeDevPort, dryRun };
 }

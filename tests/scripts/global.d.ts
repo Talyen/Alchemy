@@ -1,7 +1,3 @@
-declare module "*/smoke-preview.mjs" {
-  export function extractBuildResourceUrls(html: string, documentUrl: string): string[];
-}
-
 declare module "*/assets/asset-manifest.mjs" {
   export const staticAssets: Array<{ source: string; target: string; width: number; quality: number }>;
   export function validateAssetRegistry(

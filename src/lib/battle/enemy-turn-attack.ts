@@ -378,6 +378,9 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
       if (effect.kind === "damage") {
         nextState = processEnemyDamageEffect(nextState, effect, combatTexts, { canDodge: true });
       } else if (effect.status === "stun" || effect.status === "freeze") {
+        // Stun/freeze as `player-status` in attack data historically routes through
+        // the damage pipeline so armor can mitigate it (see `enemy-turn-attack.test.ts`
+        // "armor reduces direct stun status attacks by default"). Keep that routing.
         nextState = processEnemyDamageEffect(
           nextState,
           { kind: "damage", damageType: effect.status, amount: effect.amount },

@@ -17,6 +17,7 @@ export const ELITE_HP_MULTIPLIER = 1.3;
 export const STARTING_TURN = 1;
 export const ENEMY_BASE_REGENERATION = 1;
 export const ENEMY_BOSS_REGENERATION = 1;
+/** Sentinel `nextCardCostReduction` value that guarantees the next card costs 0 (consumed via `card-cost-rules.ts:computeEffectiveCost`). */
 export const FREE_CARD_SENTINEL = 99; // nextCardCostReduction value that guarantees a card costs 0.
 /** Shared "enemy below 30% health" threshold used by companion and archery low-health doubling. */
 export const LOW_HEALTH_THRESHOLD_PERCENT = 30;
@@ -51,7 +52,12 @@ export const BASE_PLAYER_MANA = 4;
 export const DEFAULT_BATTLE_ENEMY_TYPE = "normal";
 export const FALLBACK_ENEMY_ATTACK = 8;
 
-/** Hidden fight pacing: comeback (behind side) × clock (both sides). Live battles default on. */
+/**
+ * Hidden fight pacing: comeback (behind side) × clock (both sides). Live battles default on.
+ * Stacks multiplicatively to ~44% max (1.2 comeback × 1.2 clock). Applied opt-in via
+ * `paceCombatMagnitude()` (`src/lib/battle/fight-pacing.ts`) which intentionally bypasses
+ * armor/block/gold — only authored combat magnitudes should be paced.
+ */
 export const FIGHT_PACING = {
   evenThreshold: 0.1,
   maxDelta: 0.5,

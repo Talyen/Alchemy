@@ -56,6 +56,10 @@ export function PortaledTooltip({
     placement,
   );
 
+  // TODO: picks its own mount/fade logic (third fade implementation alongside
+  // `fade-presence.ts:useFadePresence` and `use-sequential-fade-swap.ts`).
+  // Extract to shared helper (e.g. reuse `useFadePresence`/`useHeldWhile` with a
+  // configurable `fadeOutMs`) if the tooltip fade converges with the primitive.
   const [mounted, setMounted] = useState(visible);
   if (visible && !mounted) {
     setMounted(true);

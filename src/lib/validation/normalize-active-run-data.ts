@@ -3,6 +3,15 @@
 // Scalar defaults and contentSystemType are owned by the Zod schema (.catch / .default).
 // Tombstoned card stripping lives here so every parse path (active run, parked runs)
 // drops removed content before it can reach runtime state.
+//
+// Structure (one pure helper per concern, called from `normalizeActiveRunData`):
+//   1) health clamping
+//   2) wildwoodDraft repair
+//   3) starterDraft repair
+//   4) mysteryVisit repair
+//   5) content-system isolation + shop normalization
+// RNG-advancing re-offers (draft/mystery) intentionally mutate rngState.counters;
+// see `createRepairRng` — the transform is not idempotent without the autosave rewrite.
 import { repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { isTombstonedCardId } from "./migration/tombstoned-content-ids";
@@ -95,7 +104,7 @@ function createRepairRng(rngState: RunRngState | null | undefined, stream: RunRn
 
 function sanitizeDeckForRepair(cards: BattleCard[]): BattleCard[] {
   return cards.map((card) =>
-    Array.isArray((card as unknown as { effects?: unknown }).effects) ? card : ({ ...card, effects: [] } as BattleCard),
+    Array.isArray((card as unknown as { effects?: unknown }).effects) ? card : { ...card, effects: [] },
   );
 }
 
@@ -138,6 +147,108 @@ function normalizeOptionalShopInventory(inventory: unknown, cardKey: string): Re
   };
 }
 
+function repairWildwoodDraft(
+  data: Record<string, unknown>,
+  runDeck: BattleCard[] | null,
+  rngState: RunRngState | undefined,
+  characterId: string | undefined,
+): unknown {
+  const contentSystemType = data.contentSystemType as ContentSystemId;
+  if (contentSystemType !== "wildwood") return null;
+  if (!data.wildwoodDraft || typeof data.wildwoodDraft !== "object") return data.wildwoodDraft;
+  const raw = data.wildwoodDraft as Record<string, unknown>;
+  const filtered = nullableCardArray(raw.draftChoices) as BattleCard[] | null;
+  let draftChoices: unknown = filtered;
+  const phase = raw.phase as string | undefined;
+  const runDeckLength = Array.isArray(runDeck) ? runDeck.length : 0;
+  if (
+    Array.isArray(filtered) &&
+    filtered.length === 0 &&
+    phase === "draft" &&
+    runDeckLength < DRAFT_ROUNDS &&
+    rngState
+  ) {
+    const rng = createRepairRng(rngState, "world");
+    if (rng) {
+      const pool = getOfferableCardPool();
+      const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
+      const keywords =
+        (characterId ? (characters as Record<string, { keywords: string[] }>)[characterId]?.keywords : undefined) ?? [];
+      const repaired = selectRewardCards(
+        deckForAffinity,
+        pool,
+        DRAFT_CHOICES,
+        deckForAffinity,
+        rng,
+        keywords as never[],
+      ).map(toPersistedCard);
+      if (repaired.length > 0) draftChoices = repaired;
+    }
+  }
+  return { ...raw, draftChoices };
+}
+
+function repairStarterDraft(
+  data: Record<string, unknown>,
+  runDeck: BattleCard[] | null,
+  rngState: RunRngState | undefined,
+): unknown {
+  const contentSystemType = data.contentSystemType as ContentSystemId;
+  if (contentSystemType === "wildwood") return null;
+  const filtered = nullableCardArray(data.starterDraftChoices) as BattleCard[] | null;
+  if (
+    Array.isArray(filtered) &&
+    filtered.length === 0 &&
+    Array.isArray(runDeck) &&
+    runDeck.length < DRAFT_ROUNDS &&
+    rngState
+  ) {
+    const hadDraft = data.starterDraftChoices != null;
+    if (hadDraft) {
+      const rng = createRepairRng(rngState, "rewards");
+      if (rng) {
+        const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
+        const repaired = selectRewardCards(
+          deckForAffinity,
+          getOfferableCardPool(),
+          DRAFT_CHOICES,
+          deckForAffinity,
+          rng,
+        ).map(toPersistedCard);
+        if (repaired.length > 0) return repaired;
+      }
+    }
+  }
+  if (filtered === null) return null;
+  return filtered;
+}
+
+function repairMysteryVisit(
+  data: Record<string, unknown>,
+  runDeck: BattleCard[] | null,
+  rngState: RunRngState | undefined,
+): unknown {
+  if (data.currentScreen != null && data.currentScreen !== "mystery") return null;
+  if (!data.mysteryVisit || typeof data.mysteryVisit !== "object") return data.mysteryVisit;
+  const rawVisit = data.mysteryVisit as Record<string, unknown>;
+  const filtered = nullableCardArray(rawVisit.cardChoices) as BattleCard[] | null;
+  let cardChoices: unknown = filtered;
+  const chosenCardId = rawVisit.chosenCardId as string | null | undefined;
+  const hadChoices = rawVisit.cardChoices != null;
+  if (Array.isArray(filtered) && filtered.length === 0 && hadChoices && chosenCardId == null && rngState) {
+    const rng = createRepairRng(rngState, "events");
+    if (rng) {
+      const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
+      const repaired = selectRewardCards(deckForAffinity, getOfferableCardPool(), MYSTERY_CARD_CHOICES, [], rng).map(
+        toPersistedCard,
+      );
+      if (repaired.length > 0) cardChoices = repaired;
+    }
+  }
+  if (filtered === null && rawVisit.cardChoices == null) cardChoices = null;
+  return { ...rawVisit, cardChoices };
+}
+
 export function normalizeActiveRunData<T extends Record<string, unknown>>(
   data: T,
 ): T & {
@@ -155,112 +266,12 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
     typeof data.runMetaMaxHealth === "number" && data.runMetaMaxHealth > 0 ? data.runMetaMaxHealth : runMaxHealth;
 
   const runDeck = nullableCardArray(data.runDeck) as BattleCard[] | null;
-  const runDeckLength = Array.isArray(runDeck) ? runDeck.length : 0;
   const rngState = data.rng as RunRngState | undefined;
   const characterId = data.characterId as string | undefined;
 
-  // --- Wildwood draftChoices repair (re-offer once with world stream) ---
-  let wildwoodDraft: unknown;
-  if (contentSystemType === "wildwood" && data.wildwoodDraft && typeof data.wildwoodDraft === "object") {
-    const raw = data.wildwoodDraft as Record<string, unknown>;
-    const filtered = nullableCardArray(raw.draftChoices) as BattleCard[] | null;
-    let draftChoices: unknown = filtered;
-    const phase = raw.phase as string | undefined;
-    if (
-      Array.isArray(filtered) &&
-      filtered.length === 0 &&
-      phase === "draft" &&
-      runDeckLength < DRAFT_ROUNDS &&
-      rngState
-    ) {
-      const rng = createRepairRng(rngState, "world");
-      if (rng) {
-        const pool = getOfferableCardPool();
-        const deckForAffinity = sanitizeDeckForRepair((runDeck ?? []) as BattleCard[]);
-        const keywords =
-          (characterId ? (characters as Record<string, { keywords: string[] }>)[characterId]?.keywords : undefined) ??
-          [];
-        const repaired = selectRewardCards(
-          deckForAffinity,
-          pool,
-          DRAFT_CHOICES,
-          deckForAffinity,
-          rng,
-          keywords as never[],
-        ).map(toPersistedCard);
-        if (repaired.length > 0) draftChoices = repaired;
-      }
-    }
-    wildwoodDraft = { ...raw, draftChoices };
-  } else if (contentSystemType === "wildwood") {
-    wildwoodDraft = data.wildwoodDraft;
-  } else {
-    wildwoodDraft = null;
-  }
-
-  // --- Starter draftChoices repair (re-offer once with rewards stream) ---
-  let starterDraftChoices: unknown;
-  if (contentSystemType === "wildwood") {
-    starterDraftChoices = null;
-  } else {
-    const filtered = nullableCardArray(data.starterDraftChoices) as BattleCard[] | null;
-    if (Array.isArray(filtered) && filtered.length === 0 && runDeckLength < DRAFT_ROUNDS && rngState) {
-      // Only repair if the original save had a pending draft (non-null before filtering).
-      // An intentional null means no draft in progress.
-      const hadDraft = data.starterDraftChoices != null;
-      if (hadDraft) {
-        const rng = createRepairRng(rngState, "rewards");
-        if (rng) {
-          const deckForAffinity = sanitizeDeckForRepair((runDeck ?? []) as BattleCard[]);
-          const repaired = selectRewardCards(
-            deckForAffinity,
-            getOfferableCardPool(),
-            DRAFT_CHOICES,
-            deckForAffinity,
-            rng,
-          ).map(toPersistedCard);
-          if (repaired.length > 0) starterDraftChoices = repaired;
-          else starterDraftChoices = filtered;
-        } else {
-          starterDraftChoices = filtered;
-        }
-      } else {
-        starterDraftChoices = filtered;
-      }
-    } else {
-      starterDraftChoices = filtered;
-    }
-    // Preserve null vs [] distinction for completed drafts handled above; normalize keeps [] if repair produced empty.
-    // If filtered was null, nullableCardArray returns null, so we keep null.
-    if (filtered === null) starterDraftChoices = null;
-  }
-
-  // --- Mystery cardChoices repair (re-offer once with events stream) ---
-  let mysteryVisit: unknown;
-  if (data.currentScreen != null && data.currentScreen !== "mystery") {
-    mysteryVisit = null;
-  } else if (data.mysteryVisit && typeof data.mysteryVisit === "object") {
-    const rawVisit = data.mysteryVisit as Record<string, unknown>;
-    const filtered = nullableCardArray(rawVisit.cardChoices) as BattleCard[] | null;
-    let cardChoices: unknown = filtered;
-    const chosenCardId = rawVisit.chosenCardId as string | null | undefined;
-    const hadChoices = rawVisit.cardChoices != null;
-    if (Array.isArray(filtered) && filtered.length === 0 && hadChoices && chosenCardId == null && rngState) {
-      const rng = createRepairRng(rngState, "events");
-      if (rng) {
-        const deckForAffinity = sanitizeDeckForRepair((runDeck ?? []) as BattleCard[]);
-        const repaired = selectRewardCards(deckForAffinity, getOfferableCardPool(), MYSTERY_CARD_CHOICES, [], rng).map(
-          toPersistedCard,
-        );
-        if (repaired.length > 0) cardChoices = repaired;
-      }
-    }
-    // Keep null distinction: if original was null, filtered is null
-    if (filtered === null && rawVisit.cardChoices == null) cardChoices = null;
-    mysteryVisit = { ...rawVisit, cardChoices };
-  } else {
-    mysteryVisit = data.mysteryVisit;
-  }
+  const wildwoodDraft = repairWildwoodDraft(data, runDeck, rngState, characterId);
+  const starterDraftChoices = repairStarterDraft(data, runDeck, rngState);
+  const mysteryVisit = repairMysteryVisit(data, runDeck, rngState);
 
   return {
     ...data,

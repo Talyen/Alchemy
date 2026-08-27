@@ -64,6 +64,10 @@ describe("clean-dev-artifacts helpers", () => {
 });
 
 describe("parseCleanArgs", () => {
+  it.each(["-h", "--help"])("accepts the %s help alias", (flag) => {
+    expect(parseCleanArgs([flag])).toMatchObject({ help: true });
+  });
+
   it("parses --all as builds + processes", () => {
     expect(parseCleanArgs(["--all"])).toMatchObject({
       builds: true,
@@ -75,5 +79,9 @@ describe("parseCleanArgs", () => {
 
   it("rejects unknown flags", () => {
     expect(() => parseCleanArgs(["--browsers"])).toThrow(/Unknown flags/);
+  });
+
+  it("rejects positional arguments separately from flags", () => {
+    expect(() => parseCleanArgs(["reports"])).toThrow(/Unexpected arguments/);
   });
 });

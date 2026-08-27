@@ -170,6 +170,10 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
   }
 
   const trinketEffects = computeTrinketManifest(battleBoons);
+  // placeholderRng always succeeds on percent rolls — forbid silent use in production builds.
+  if (!optionsRng && import.meta.env.PROD) {
+    throw new Error("createBattleStartState requires rng in production; placeholderRng is UI-only.");
+  }
   const activeRng = optionsRng ?? placeholderRng;
   const deck = shuffle(runDeck, activeRng);
 

@@ -166,10 +166,21 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
 // Serializes overlapping saves so desktop IPC tmp writes never interleave.
 // Concurrent callers coalesce to the latest snapshot; each awaiter waits for
 // its place in the chain (which may write a newer snapshot than it submitted).
+//
+// State machine (explicit vs 3 loose booleans):
+//   idle      — no write in flight, coalescedSave === null
+//   coalescing — writes queued while chain runs
+//   clearing  — wipe in progress, new saves suppressed
+enum SaveWriteState {
+  Idle = "idle",
+  Coalescing = "coalescing",
+  Clearing = "clearing",
+}
 let saveWriteChain: Promise<void> = Promise.resolve();
 let coalescedSave: SaveData | null = null;
 let clearPending = false;
 let saveChainTasks = 0;
+void SaveWriteState; // keep enum in type graph even if only documented
 
 /** Test-only isolation for module-scoped write policy and queue state. */
 export async function resetStorageIoForTests(): Promise<void> {

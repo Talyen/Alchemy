@@ -21,6 +21,9 @@ export function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
 type FreezeAspect = "regen" | "scaling";
 
 function computeDeathsDoorGraceRemaining(state: BattleState): number {
+  // Grace-turns-remaining is the single source of truth; triggeredTurn is retained
+  // only for legacy saves. Returning the stored remaining avoids turn-diff drift on
+  // haste-preserved turns (where `turn` still increments but grace is held).
   if (state.deathsDoorGraceTurnsRemaining !== null) return state.deathsDoorGraceTurnsRemaining;
   if (state.deathsDoorTriggeredTurn !== null) {
     const graceTurns = deathsDoorGraceTurns(state.talentEffects.deathsDoorExtension);

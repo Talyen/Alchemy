@@ -2,12 +2,13 @@
 // The performance config is intentionally standalone (on-demand profiling).
 import type { ReporterDescription } from "@playwright/test";
 import { ensureRunId } from "../scripts/lib/current-run.mjs";
+import { resolvePort } from "../scripts/lib/dev-port.mjs";
 
 /** Port contracts live in scripts/lib/dev-port.mjs; re-exported here for TS consumers. */
 export { BROWSER_PREVIEW_PORT, ELECTRON_PREVIEW_PORT, PERF_PREVIEW_PORT } from "../scripts/lib/dev-port.mjs";
 
 export function previewPortFromEnv(envName: string, fallback: number): number {
-  return Number.parseInt(process.env[envName] ?? String(fallback), 10);
+  return resolvePort(envName, fallback);
 }
 
 /** Standard strictPort vite server binding shared by all Playwright surfaces. */

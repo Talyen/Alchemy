@@ -16,6 +16,7 @@ import { createInitialProfileState, type ProfileStateFields } from "./profile-st
 import * as homestead from "./homestead-actions";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { addRunMaterialsEarned, resetRunXP } from "./write-port-run";
+import { setDraftField } from "./store-helpers";
 
 // --- Run-earned materials ---
 
@@ -127,13 +128,12 @@ export function finalizeRunXP(draft: GameplayDraft): void {
 
 // --- Profile (collection/discovery) region ---
 
-/** Set a profile field from a direct value or an updater over the previous value. */
 function assignProfileField<K extends keyof ProfileStateFields>(
   draft: GameplayDraft,
   field: K,
   action: ProfileStateFields[K] | ((prev: ProfileStateFields[K]) => ProfileStateFields[K]),
 ): void {
-  draft.profile[field] = typeof action === "function" ? action(draft.profile[field]) : action;
+  setDraftField(draft.profile, field, action);
 }
 
 export const setDiscoveredCardIds = (

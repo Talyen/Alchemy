@@ -8,9 +8,9 @@ export const playerStatusEffectDefinition = {
   schema: z.object({
     kind: z.literal("player-status"),
     status: z.enum(["block", "armor", "forge", "haste", "phoenixFeather"]),
-    amount: z.number(),
-    perManaCrystal: z.number().optional(),
-    convertCurrentMana: z.number().optional(),
+    amount: z.number().int().min(0).max(999),
+    perManaCrystal: z.number().int().min(0).max(999).optional(),
+    convertCurrentMana: z.number().int().min(0).max(100).optional(),
   }),
 } satisfies EffectKindDefinition<"player-status">;
 
@@ -19,7 +19,7 @@ export const enemyStatusEffectDefinition = {
   schema: z.object({
     kind: z.literal("enemy-status"),
     status: EnemyStatusIdSchema,
-    amount: z.number(),
+    amount: z.number().int().min(0).max(999),
   }),
 } satisfies EffectKindDefinition<"enemy-status">;
 
@@ -27,7 +27,7 @@ export const removeHarmfulStatusEffectDefinition = {
   kind: "remove-harmful-status",
   schema: z.object({
     kind: z.literal("remove-harmful-status"),
-    amount: z.number(),
+    amount: z.number().int().min(0).max(999),
     removeAll: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"remove-harmful-status">;

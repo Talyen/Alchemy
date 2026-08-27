@@ -1,20 +1,28 @@
+// Canonical shop base prices — single source for economy tuning.
+export const SHOP_CONFIG = {
+  shop: { price: 30 },
+  alchemist: { price: 30 },
+  equipment: { price: 40 },
+  trinket: { price: 100 },
+} as const;
+
 // ============ Shop ============
-export const SHOP_CARD_PRICE = 30;
+export const SHOP_CARD_PRICE = SHOP_CONFIG.shop.price;
 export const SHOP_REMOVE_PRICE = 40;
 export const SHOP_REFRESH_PRICE = 20;
 
 // ============ Alchemist's Shop ============
-export const ALCHEMIST_POTION_PRICE = 30;
+export const ALCHEMIST_POTION_PRICE = SHOP_CONFIG.alchemist.price;
 export const ALCHEMIST_REFRESH_PRICE = 20;
 export const ALCHEMIST_MIX_PRICE = 40;
 
 // ============ Trinket Shop ============
-export const TRINKET_SHOP_TRINKET_PRICE = 100;
+export const TRINKET_SHOP_TRINKET_PRICE = SHOP_CONFIG.trinket.price;
 export const TRINKET_SHOP_OFFERED = 3;
 export const TRINKET_SHOP_REFRESHES = 1;
 
 // ============ Equipment Shop ============
-export const EQUIPMENT_SHOP_BASIC_PRICE = 40;
+export const EQUIPMENT_SHOP_BASIC_PRICE = SHOP_CONFIG.equipment.price;
 export const EQUIPMENT_SHOP_ASTRAL_PRICE = 80;
 export const EQUIPMENT_SHOP_UNIQUE_PRICE = 100;
 export const EQUIPMENT_SHOP_OFFERED = 3;
@@ -73,7 +81,7 @@ export const CORRUPTION_TEXT_PATTERNS = {
   leadingNumber: /^\d+/,
 } as const;
 // Semantic alias: corruption uses the same weight as normal routes; separate name documents intent at call sites.
-export const CORRUPTION_DESTINATION_WEIGHT = 10;
+export const CORRUPTION_DESTINATION_WEIGHT = DEFAULT_DESTINATION_WEIGHT;
 export const DESTINATIONS_PER_ACT = 8; // Slot 8 is the boss.
 export const ACTS_PER_RUN = 3;
 export const DEFAULT_CAMPAIGN_DIFFICULTY_ID = "difficulty-1";

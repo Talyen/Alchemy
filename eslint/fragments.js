@@ -112,23 +112,13 @@ export const BATTLE_NO_FEATURES = [
 export const DOMAIN_STORE_PATTERNS = [
   {
     group: [
-      "**/run-domain-store",
-      "@/features/alchemy/shared/stores/run-domain-store",
-      "**/run-profile-store",
-      "@/features/alchemy/shared/stores/run-profile-store",
-      "**/run-transient-store",
-      "@/features/alchemy/shared/stores/run-transient-store",
-      "**/run-battle-domain-store",
-      "@/features/alchemy/shared/stores/run-battle-domain-store",
       "**/run-transitions",
       "@/features/alchemy/shared/stores/run-transitions",
       "**/gameplay-state-store",
       "@/features/alchemy/shared/stores/gameplay-state-store",
-      "**/stores/battle-store",
-      "@/features/alchemy/shared/stores/battle-store",
     ],
     message:
-      "Import a capability-specific run-session port instead of the low-level gameplay aggregate, legacy stores, or run-transitions.",
+      "Import a capability-specific run-session port instead of the low-level gameplay aggregate or run-transitions.",
   },
 ];
 

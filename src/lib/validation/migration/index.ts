@@ -24,6 +24,14 @@ export function getRawContentVersion(parsed: unknown): number {
   return version;
 }
 
+// Table-driven so adding v15 requires one row, not a hand-written `if` with off-by-one risk.
+// Schema uses `<=` (migration applies when floor ≤ version), content uses `<` (last-applied).
+const SCHEMA_MIGRATIONS: Array<{ from: number; migrate: (data: RawSaveData) => RawSaveData }> = [
+  { from: 11, migrate: migrateV11ToV12 },
+  { from: 12, migrate: migrateV12ToV13 },
+  { from: 13, migrate: migrateV13ToV14 },
+];
+
 /**
  * Stamp the current schema version onto a parsed payload.
  * Schema steps exist from the launch floor (v11) through CURRENT (v14).
@@ -33,22 +41,16 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
   if (!parsed || typeof parsed !== "object") return {};
   let next = { ...(parsed as RawSaveData) };
   const schemaVersion = getRawSaveSchemaVersion(next);
-  if (schemaVersion <= 11) {
-    next = migrateV11ToV12(next);
-  }
-  if (schemaVersion <= 12) {
-    next = migrateV12ToV13(next);
-  }
-  if (schemaVersion <= 13) {
-    next = migrateV13ToV14(next);
+  for (const { from, migrate } of SCHEMA_MIGRATIONS) {
+    if (schemaVersion <= from) next = migrate(next);
   }
   const contentVersion = getRawContentVersion(next);
-  if (contentVersion < 2) {
-    next = migrateContentV1ToV2(next);
-  }
-  if (contentVersion < 3) {
-    next = migrateContentV2ToV3(next);
-  }
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- content migrators take Record, next is RawSaveData intersection
+  if (contentVersion < 2)
+    next = migrateContentV1ToV2(next as unknown as Record<string, unknown>) as unknown as RawSaveData;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- same
+  if (contentVersion < 3)
+    next = migrateContentV2ToV3(next as unknown as Record<string, unknown>) as unknown as RawSaveData;
   return {
     ...next,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
