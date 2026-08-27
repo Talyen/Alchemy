@@ -16,7 +16,7 @@ export const TEST_SUITES = Object.freeze({
   save,
   tooling,
   // The ship gate runs save + validation + tooling; composed so renamed paths only change once.
-  shipUnit: Object.freeze([...save, "tests/lib/validation", ...tooling]),
+  shipUnit: Object.freeze([...save, "tests/lib/validation", "tests/lib/active-run-session", ...tooling]),
 });
 
 export function testFilesUnder(rootDir, rootPath) {

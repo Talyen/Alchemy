@@ -59,6 +59,7 @@ describe("toActiveRunData", () => {
   it("hydrates nested draft choices and mystery visit cards", () => {
     const card = cardLibrary[0]!;
     const rawData = makeActiveRunData({
+      contentSystemType: "wildwood",
       wildwoodDraft: {
         phase: "draft",
         draftChoices: [{ id: card.id } as unknown as typeof card],

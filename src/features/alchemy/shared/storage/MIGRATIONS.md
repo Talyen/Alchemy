@@ -130,6 +130,16 @@ An exhausted restored shelf is a sold-out state that can still be left safely. S
 
 Mystery visit blobs persist only while `currentScreen` is mystery. Load nulls a leftover visit when `currentScreen` is set to any other screen. A missing `currentScreen` keeps the visit so resume can still infer the mystery screen. New choices use random card removal and do not set `pendingRemoval`. A loaded visit with legacy `pendingRemoval: true` keeps that flag until the player finishes the already-open picker; encode writes it only while unresolved so repeated saves cannot bypass the removal.
 
+## Draft and mystery choice repair (tombstone recovery)
+
+When tombstoned cards are stripped from a persisted choice list, an in-progress draft or mystery pick could be left empty (0 live choices) and block resume. `normalizeActiveRunData` repairs this once on load by re-offering live choices from the current offerable pool using the run's seeded RNG — then persists the repaired list on the next autosave so the fix is stable.
+
+- **Starter draft** (`starterDraftChoices` for Campaign/Labyrinth Wildcard): re-offer `DRAFT_CHOICES` (3) via the `rewards` stream when `runDeck.length < DRAFT_ROUNDS` and the filtered list is empty but a draft was pending (`starterDraftChoices != null`). If the draft is already complete (`runDeck.length >= DRAFT_ROUNDS`) the empty list is kept.
+- **Wildwood draft** (`wildwoodDraft.draftChoices`): re-offer 3 via the `world` stream (with character keyword affinity) when `phase === "draft"` and `runDeck.length < DRAFT_ROUNDS`.
+- **Mystery** (`mysteryVisit.cardChoices`): re-offer `MYSTERY_CARD_CHOICES` (3) via the `events` stream when the filtered list is empty, the original had choices, and `chosenCardId == null` (still awaiting pick).
+
+No duplicate effects are applied — only the choice list is replaced. Each repair advances the corresponding RNG counter so the sequence stays deterministic and the next autosave writes the new counter value.
+
 ## Interrupted flow (`activeRun.interruptedFlow`)
 
 Discriminated union (`kind: none | primary-reward | companion-reward | destination`) that records which claim surface the run should resume on. Encode maps live session reward/companion/claim state into one arm; decode switches on `kind` with no legacy inference. Reward payloads live under `pending` on the reward arms; destination-only resume carries destinations and victory metadata on the destination arm. Pre-launch floor raise to schema 11 dropped the prior `resumePhase` + `destinationChoices` + top-level `pendingReward` triad.
