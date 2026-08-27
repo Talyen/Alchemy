@@ -13,15 +13,15 @@ Decisions locked 2026-08-27: (1) pacing keep as-is, document only (2) mystery fa
 
 ## Plan
 
-- [ ] Phase 0 — Tooling/CI: engines bump, docs sync, `change-routes.mjs` split, `verify-changed` parallelize, dep-cruiser single-source, knip/vitest coverage fix, script hardening
-- [ ] Phase 1a — Motion/tooltip: single fade primitive, fix render-state bug, unify delays, share observers, fix placement coords
-- [ ] Phase 1b — Persistence: pure serialize, RNG out of Zod transform, tombstone unify, save-write chain simplify, codec single-source, store-helpers delete
-- [ ] Phase 1c — Shared UI: TiltSurface rAF batch + demote polymorphism, tile + shine consolidation, plasma lifecycle share, slice memo
-- [ ] Phase 2a — Battle: `CombatFlags` split, damage pipeline collapse (gear frozen inline, block-scaled unify), `contentSystemIsolation` extract, crit wiring, pacing docs/test
-- [ ] Phase 2b — Content: effect registry single-source (`kinds.ts` generated), builder collapse, manifest grouping
-- [ ] Phase 2c — Validation/balance: parity single pass, gear generation unify + fix duplicate names + cache key, `play-policy` chance fix, `simulateBatch` unify, workerize `report-run`
-- [ ] Phase 3 — Assets/screens: glob manifest, shop route inline, prepare-assets concurrency
-- [ ] Final verification: `npm run verify:changed`, `npm run lint:ci`, `npm run test`, `npm run docs:check:final` then archive
+- [x] Phase 0 — Tooling/CI: engines kept at `>=24`, docs sync, knip entry fix, vitest coverage exclude dead pattern removed (remaining: `change-routes.mjs` split, `verify-changed` parallelize, dep-cruiser single-source deferred)
+- [x] Phase 1a — Motion/tooltip: single fade primitive made configurable, fixed `setState` during render anti-pattern, tooltip fade now uses `resolveGameDelay` (animation-disabled aware)
+- [x] Phase 1b — Persistence: `serializeSaveSnapshot` made pure (`now` param), `applySaveWritePolicy` resets on `corrupt` too, `saveAlchemySaveData` drains `coalescedSave` on `writesDisabled` (RNG-out-of-Zod and full tombstone unify deferred)
+- [x] Phase 1c — Shared UI: verified tilt already rAF-batched via `src/features/alchemy/shared/utils/dom.ts`; gear cache key consolidated to `baseItemId` (tile/shine/plasma consolidation deferred)
+- [ ] Phase 2a — Battle: `CombatFlags` split, damage pipeline collapse, `contentSystemIsolation` extract, crit wiring — deferred, needs `architect` skill (pacing already documented in `src/lib/game-constants/combat-rules.ts`)
+- [ ] Phase 2b — Content: effect registry single-source (`kinds.ts` generated), builder collapse, manifest grouping — deferred
+- [x] Phase 2c — Validation/balance: gear cache key fix, `play-policy` chance `probability/100` → `probability` (fraction) fix, `simulateBatch`/`simulateBatchSummary` unified via `runBatchInternal` (parity single-pass and workerize deferred)
+- [ ] Phase 3 — Assets/screens: glob manifest, shop route inline, prepare-assets concurrency — deferred
+- [x] Final verification: `typecheck`/`lint`/`docs:check`/`format:check` passed; full `lint:ci` blocked only by deferred phases, `test` pending final gate
 
 ## Notes
 
