@@ -32,8 +32,8 @@ function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
       return effect.amount * 3;
     case "chance":
       return (
-        (effect.probability / 100) * scoreEffects(effect.successEffects, state) +
-        (1 - effect.probability / 100) * scoreEffects(effect.failureEffects, state)
+        effect.probability * scoreEffects(effect.successEffects, state) +
+        (1 - effect.probability) * scoreEffects(effect.failureEffects, state)
       );
     case "repeat-over-turns":
       return effect.remainingTurns * scoreEffects(effect.effects, state);

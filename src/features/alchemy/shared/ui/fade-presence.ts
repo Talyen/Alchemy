@@ -1,7 +1,7 @@
-// Fade primitive stack — see also `use-sequential-fade-swap.ts` (swap variant),
-// `fade-slot.tsx` (FadeSlot wrapper), and `portaled-tooltip.tsx:64-70` (standalone
-// tooltip fade — third implementation; TODO: extract to shared helper if fadeOutMs
-// variant converges with this primitive).
+// Fade primitive stack — `useFadePresence` is the boolean primitive,
+// `useSequentialFadeSwap` builds on the same phase + resolveGameDelay pattern for
+// keyed swaps (`fade-slot.tsx`). `portaled-tooltip.tsx` now uses the same
+// resolveGameDelay-aware fade-out via local mount state.
 import { useEffect, useState } from "react";
 
 import { resolveGameDelay } from "@/lib/animation/game-timer";
@@ -34,10 +34,16 @@ export function useHeldWhile<T>(hold: boolean, value: T): T {
 /**
  * Primitive mount/phase controller for a single boolean `open` flag.
  * `useSequentialFadeSwap` builds on the same phase/timeout pattern for keyed
- * swaps; `FadeSlot` wraps that swap. `portaled-tooltip.tsx` keeps a third,
- * inline fade (visible + fadeOutMs) — see TODO there.
+ * swaps; `FadeSlot` wraps that swap. Tooltip keeps a lightweight variant with
+ * configurable fadeOutMs but the same resolveGameDelay semantics.
  */
-export function useFadePresence(open: boolean): { mounted: boolean; phase: "enter" | "exit" } {
+export function useFadePresence(
+  open: boolean,
+  durationMs: number = MOTION_FADE_MS,
+): {
+  mounted: boolean;
+  phase: "enter" | "exit";
+} {
   const [mounted, setMounted] = useState(open);
   const [phase, setPhase] = useState<"enter" | "exit">(open ? "enter" : "exit");
 
@@ -50,9 +56,9 @@ export function useFadePresence(open: boolean): { mounted: boolean; phase: "ente
     }
     if (!mounted) return;
     setPhase("exit");
-    const timeout = window.setTimeout(() => setMounted(false), resolveGameDelay(MOTION_FADE_MS));
+    const timeout = window.setTimeout(() => setMounted(false), resolveGameDelay(durationMs));
     return () => window.clearTimeout(timeout);
-  }, [open, mounted]);
+  }, [open, mounted, durationMs]);
 
   return { mounted, phase };
 }

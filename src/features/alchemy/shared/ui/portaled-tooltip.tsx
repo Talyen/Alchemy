@@ -7,6 +7,7 @@
 import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
+import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { cn } from "@/lib/utils";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
@@ -56,20 +57,20 @@ export function PortaledTooltip({
     placement,
   );
 
-  // TODO: picks its own mount/fade logic (third fade implementation alongside
-  // `fade-presence.ts:useFadePresence` and `use-sequential-fade-swap.ts`).
-  // Extract to shared helper (e.g. reuse `useFadePresence`/`useHeldWhile` with a
-  // configurable `fadeOutMs`) if the tooltip fade converges with the primitive.
   const [mounted, setMounted] = useState(visible);
-  if (visible && !mounted) {
-    setMounted(true);
-  }
+
+  useEffect(() => {
+    if (visible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mount on visible transition, mirrors useFadePresence
+      setMounted(true);
+    }
+  }, [visible]);
 
   const renderPanel = visible || (fadeOutMs > 0 && mounted);
 
   useEffect(() => {
     if (visible || !mounted || fadeOutMs <= 0) return;
-    const timer = window.setTimeout(() => setMounted(false), fadeOutMs);
+    const timer = window.setTimeout(() => setMounted(false), resolveGameDelay(fadeOutMs));
     return () => window.clearTimeout(timer);
   }, [visible, mounted, fadeOutMs]);
 
