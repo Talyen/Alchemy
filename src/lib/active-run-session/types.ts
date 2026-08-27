@@ -18,7 +18,7 @@ import type { RunRngState } from "@/lib/run-rng";
 
 import type { RefreshableShopFields } from "./shop-session-types";
 
-export type { InterruptedFlow, PersistedPendingReward, RefreshableShopFields };
+export type { InterruptedFlow, PersistedPendingReward };
 
 /** Permanent Gear or Armory Trinket granted during the live run, in obtain order. */
 export type RunObtainedItem = { kind: "gear"; instance: GearInstance } | { kind: "trinket"; trinketId: string };
