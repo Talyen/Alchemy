@@ -37,7 +37,6 @@ export default defineConfig({
         "src/features/alchemy/meta/screens/**",
         "src/features/alchemy/run-setup/screens/**",
         "src/features/alchemy/run-loop/screens/**",
-        "src/components/**",
         "tests/**",
         "**/*.md",
       ],

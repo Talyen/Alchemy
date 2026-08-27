@@ -1,12 +1,8 @@
 import { DEFAULT_SEED, simulateBattle } from "./simulator";
 import type { BalanceBatchConfig, BalanceBatchResult } from "./simulator-types";
 
-export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
+function runBatchInternal(config: BalanceBatchConfig, retainResults: boolean): BalanceBatchResult {
   const baseSeed = config.seed ?? DEFAULT_SEED;
-  const results = Array.from({ length: config.iterations }, (_, index) =>
-    simulateBattle({ ...config, seed: baseSeed + index }),
-  );
-
   let wins = 0;
   let losses = 0;
   let timeouts = 0;
@@ -14,8 +10,11 @@ export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
   let healthTotal = 0;
   let cardsPlayedTotal = 0;
   const cardPlayCounts: Record<string, number> = {};
+  const results = retainResults ? [] : undefined;
 
-  for (const result of results) {
+  for (let index = 0; index < config.iterations; index += 1) {
+    const result = simulateBattle({ ...config, seed: baseSeed + index });
+    if (retainResults) (results as NonNullable<BalanceBatchResult["results"]>).push(result);
     if (result.outcome === "win") wins += 1;
     else if (result.outcome === "loss") losses += 1;
     else timeouts += 1;
@@ -41,48 +40,15 @@ export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
     averageHealthRemaining: healthTotal / iterations,
     averageCardsPlayed: cardsPlayedTotal / iterations,
     cardPlayCounts,
-    results,
+    results: (results ?? []) as BalanceBatchResult["results"],
   };
+}
+
+export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
+  return runBatchInternal(config, true);
 }
 
 /** Summary-only path: aggregates while simulating without retaining every BattleSimulationResult. */
 export function simulateBatchSummary(config: BalanceBatchConfig): BalanceBatchResult {
-  const baseSeed = config.seed ?? DEFAULT_SEED;
-  let wins = 0;
-  let losses = 0;
-  let timeouts = 0;
-  let turnTotal = 0;
-  let healthTotal = 0;
-  let cardsPlayedTotal = 0;
-  const cardPlayCounts: Record<string, number> = {};
-
-  for (let index = 0; index < config.iterations; index += 1) {
-    const result = simulateBattle({ ...config, seed: baseSeed + index });
-    if (result.outcome === "win") wins += 1;
-    else if (result.outcome === "loss") losses += 1;
-    else timeouts += 1;
-    turnTotal += result.turns;
-    healthTotal += Math.max(0, result.playerHealth);
-    cardsPlayedTotal += result.totalCardsPlayed;
-    for (const [cardId, count] of Object.entries(result.cardsPlayed)) {
-      cardPlayCounts[cardId] = (cardPlayCounts[cardId] ?? 0) + count;
-    }
-  }
-
-  const iterations = config.iterations;
-  return {
-    config,
-    iterations,
-    wins,
-    losses,
-    timeouts,
-    winRate: wins / iterations,
-    lossRate: losses / iterations,
-    timeoutRate: timeouts / iterations,
-    averageTurns: turnTotal / iterations,
-    averageHealthRemaining: healthTotal / iterations,
-    averageCardsPlayed: cardsPlayedTotal / iterations,
-    cardPlayCounts,
-    results: [],
-  };
+  return runBatchInternal(config, false);
 }

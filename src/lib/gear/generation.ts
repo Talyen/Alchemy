@@ -38,18 +38,15 @@ function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
 const eligibleAffixPoolCache = new Map<string, GearAffixDefinition[]>();
 
 export function buildEligibleAffixPool(definition: GearDefinition): GearAffixDefinition[] {
-  if (definition.id) {
-    const cached = eligibleAffixPoolCache.get(definition.id);
-    if (cached) return cached;
-  }
+  const cacheKey = definition.baseItemId;
+  const cached = eligibleAffixPoolCache.get(cacheKey);
+  if (cached) return cached;
   const allowedAspects = new Set(allowedAspectsForDefinition(definition));
   const pool = gearAffixList.filter(
     (affix) =>
       !affix.uniqueOnly && allowedAspects.has(affix.aspect) && affixMatchesAffinity(affix, definition.affinityKeywords),
   );
-  if (definition.id) {
-    eligibleAffixPoolCache.set(definition.id, pool);
-  }
+  eligibleAffixPoolCache.set(cacheKey, pool);
   return pool;
 }
 

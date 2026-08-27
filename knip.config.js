@@ -21,6 +21,7 @@
 export default {
   entry: [
     "src/lib/game-data/index.ts",
+    "playwright.config.ts",
     "playwright.electron.config.ts",
     "playwright.performance.config.ts",
     "src/lib/battle/index.ts",
