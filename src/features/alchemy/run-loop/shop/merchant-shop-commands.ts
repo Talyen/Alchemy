@@ -19,6 +19,7 @@ import {
   purchaseShopOffering,
   refreshCardShopOfferings,
 } from "./shop-transactions";
+import { isValidDeckIndex } from "@/lib/utils";
 import { shopArrayOfferingMatches } from "./shop-slot-keys";
 import type { MerchantShopCommands } from "./shop-action-types";
 import { createInitialShopState, type ShopState } from "./shop-state-init";
@@ -61,7 +62,7 @@ export function createMerchantShopCommands({
     return runShopTransaction((draft) => {
       const state = draft.session.shopState;
       const run = draft.run.activeRun;
-      if (state.removeUsed || index < 0 || index >= run.runDeck.length || readDraftGold(draft) < price) {
+      if (state.removeUsed || !isValidDeckIndex(index, run.runDeck.length) || readDraftGold(draft) < price) {
         return { committed: false, price, value: undefined };
       }
       spendRunGold(price, (update) => setRunGold(draft, update));

@@ -52,6 +52,10 @@ export function takeRandomItem<T>(items: T[], rng: () => number = Math.random): 
   return removed;
 }
 
+export function isValidDeckIndex(index: number, deckLength: number): boolean {
+  return Number.isInteger(index) && index >= 0 && index < deckLength;
+}
+
 // Mulberry32 seeded PRNG — returns a function that produces deterministic
 // values in [0, 1) for a given integer seed.
 export function createSeededRng(seed: number): () => number {

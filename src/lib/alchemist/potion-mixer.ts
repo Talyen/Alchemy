@@ -8,6 +8,7 @@ import {
   MIXED_POTION_COST,
   MIXED_POTION_TITLE,
 } from "@/lib/game-constants";
+import { isValidDeckIndex } from "@/lib/utils";
 
 const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
@@ -94,7 +95,7 @@ export function tryCreateMixedPotion(
 /** Removes the two cards at the given indices from the deck and appends the mixed potion.
  * Validates indices and safely reconstructs the array. */
 export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: number, mixed: BattleCard): BattleCard[] {
-  if (indexA === indexB || indexA < 0 || indexB < 0 || indexA >= deck.length || indexB >= deck.length) {
+  if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length)) {
     throw new Error("Invalid potion indices for mixing");
   }
   const highIdx = Math.max(indexA, indexB);

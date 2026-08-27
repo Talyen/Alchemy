@@ -18,6 +18,7 @@ import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { cardById } from "@/lib/game-data";
+import { isValidDeckIndex } from "@/lib/utils";
 
 export function useMysteryEventNavigation({
   navigateTo,
@@ -78,23 +79,27 @@ export function useMysteryEventNavigation({
     );
   }, []);
 
-  const handleMysteryChooseCard = useCallback((cardId: string) => {
-    dispatchRunSessionCommand((draft) => {
-      if (draft.session.mysteryChosenCardId !== null) return;
+  const handleMysteryChooseCard = useCallback((cardId: string): boolean => {
+    return dispatchRunSessionCommand((draft) => {
+      if (draft.session.mysteryChosenCardId !== null) return false;
+      const choices = draft.session.mysteryCardChoices;
+      if (!choices || !choices.some((card) => card.id === cardId)) return false;
       const card = cardById[cardId];
-      if (card) {
-        appendCardToRunWithDiscovery(draft, card);
-        setMysteryChosenCardId(draft, cardId);
-      }
+      if (!card) return false;
+      appendCardToRunWithDiscovery(draft, card);
+      setMysteryChosenCardId(draft, cardId);
       setMysteryCardChoices(draft, null);
+      return true;
     });
   }, []);
 
-  const handleMysteryRemoveCard = useCallback((index: number) => {
-    dispatchRunSessionCommand((draft) => {
-      if (!draft.session.mysteryPendingRemoval) return;
+  const handleMysteryRemoveCard = useCallback((index: number): boolean => {
+    return dispatchRunSessionCommand((draft) => {
+      if (!draft.session.mysteryPendingRemoval) return false;
+      if (!isValidDeckIndex(index, draft.run.activeRun.runDeck.length)) return false;
       setRunDeck(draft, (deck) => deck.filter((_, cardIndex) => cardIndex !== index));
       setMysteryPendingRemoval(draft, false);
+      return true;
     });
   }, []);
 

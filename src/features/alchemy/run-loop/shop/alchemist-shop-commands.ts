@@ -10,6 +10,7 @@ import {
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { isStandardPotionCard, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
+import { isValidDeckIndex } from "@/lib/utils";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { computeAlchemistPotionBuyPrice, computeAlchemistRefreshPrice, computeMixPotionPrice } from "./shop-pricing";
@@ -69,11 +70,9 @@ export function createAlchemistShopCommands({
       if (
         readDraftGold(draft) < price ||
         state.mixUsed ||
-        indexA < 0 ||
-        indexB < 0 ||
-        indexA >= run.runDeck.length ||
-        indexB >= run.runDeck.length ||
-        indexA === indexB
+        indexA === indexB ||
+        !isValidDeckIndex(indexA, run.runDeck.length) ||
+        !isValidDeckIndex(indexB, run.runDeck.length)
       ) {
         return { committed: false, price, value: null };
       }

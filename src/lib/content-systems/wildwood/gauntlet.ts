@@ -2,7 +2,7 @@
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { characters, selectRewardCards, type BattleCard, type BestiaryEntry, type CharacterId } from "@/lib/game-data";
 import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
-import { shuffle } from "@/lib/utils";
+import { isValidDeckIndex, shuffle } from "@/lib/utils";
 import { WILDWOOD_BOSS_IDS, type WildwoodBossId } from "./bosses";
 import {
   appendEncounterTraits,
@@ -161,8 +161,8 @@ export function removeWildwoodCard(
   runDeck: readonly BattleCard[],
   index: number,
 ): BattleCard[] | null {
-  if (state.phase !== "removal" || !canOfferWildwoodRemoval(runDeck.length) || !Number.isInteger(index)) return null;
-  if (index < 0 || index >= runDeck.length) return null;
+  if (state.phase !== "removal" || !canOfferWildwoodRemoval(runDeck.length) || !isValidDeckIndex(index, runDeck.length))
+    return null;
   return runDeck.filter((_, cardIndex) => cardIndex !== index);
 }
 
