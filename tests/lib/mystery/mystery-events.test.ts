@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mysteryPool, pickMysteryEvent } from "@/lib/mystery";
+import { getMysteryEffectRank, mysteryPool, pickMysteryEvent } from "@/lib/mystery";
 import { cardLibrary, mysteryEventArt, trinketLibrary } from "@/lib/game-data";
 import { gearBaseItems } from "@/lib/gear";
 
@@ -39,6 +39,16 @@ describe("mysteryPool", () => {
           if (PORTRAIT_EFFECT_KINDS.has(effect.kind)) continue;
           expect(SIDE_LOOT_KINDS.has(effect.kind), `${label} extra ${effect.kind}`).toBe(true);
         }
+      }
+    }
+  });
+
+  it("choice effects are ordered XP → gold → materials → portrait", () => {
+    for (const event of mysteryPool) {
+      for (const choice of event.choices) {
+        const ranks = choice.effects.map((e) => getMysteryEffectRank(e));
+        const sorted = [...ranks].sort((a, b) => a - b);
+        expect(ranks, `${event.id}/${choice.label} order`).toEqual(sorted);
       }
     }
   });

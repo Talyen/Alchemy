@@ -14,6 +14,7 @@ import { materialLabels } from "@/lib/homestead/types";
 import { HomesteadResourceArtwork, goldPillStyle, goldTextColor, matPillStyle, matTextColor } from "./material-icons";
 import { ShineText } from "./shine-text";
 import { TooltipChip, TooltipHeader } from "./tooltip-panel";
+import { sortMysteryEffectsByDisplayOrder } from "@/lib/mystery";
 import type { MysteryEffect } from "@/lib/mystery";
 import { gearBaseItems, getUniqueGearTextShineColors, getUniqueItemDefinition } from "@/lib/gear";
 
@@ -240,10 +241,11 @@ export function MysteryEffectList({
   findTrinket: ((id: string) => { title: string } | undefined) | undefined;
   choiceLabel?: string;
 }) {
+  const sortedEffects = sortMysteryEffectsByDisplayOrder(effects);
   return (
     <div className="flex flex-col items-start gap-1.5">
       <TooltipHeader>{choiceLabel ?? "Outcome"}</TooltipHeader>
-      {effects.map((effect, i) => {
+      {sortedEffects.map((effect, i) => {
         const prefix =
           effect.kind === "gainGold" || effect.kind === "gainMaterial"
             ? "Find "

@@ -184,6 +184,20 @@ export function MysteryRewardSummary({
 
   return (
     <div className="flex min-h-[56cqh] w-full flex-1 flex-col items-center justify-center space-y-6 text-center">
+      <KeywordProgressGrid
+        entries={xpKeywordEntries.map(([kw, amount]) => ({
+          kw,
+          runXP: amount,
+          totalXP: (talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0),
+        }))}
+      />
+
+      {resourceEffects.length > 0 ? (
+        <div>
+          <FoundResourcesRow gold={totalGold} materials={mats} />
+        </div>
+      ) : null}
+
       {otherEffects.map((effect, i) => {
         const grantedTrinketId =
           effect.kind === "gainRandomTrinket" ? grantedTrinketIds[randomTrinketCursor++] : undefined;
@@ -202,20 +216,6 @@ export function MysteryRewardSummary({
           </div>
         );
       })}
-
-      <KeywordProgressGrid
-        entries={xpKeywordEntries.map(([kw, amount]) => ({
-          kw,
-          runXP: amount,
-          totalXP: (talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0),
-        }))}
-      />
-
-      {resourceEffects.length > 0 ? (
-        <div>
-          <FoundResourcesRow gold={totalGold} materials={mats} />
-        </div>
-      ) : null}
 
       <div>
         <Button size="lg" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
