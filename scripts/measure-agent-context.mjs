@@ -30,7 +30,7 @@ export const ROUTE_CONTEXT_BUDGETS = Object.freeze({
   tooling: { preread: 9 * 1024, total: 18 * 1024 },
   assets: { preread: 14 * 1024, total: 18 * 1024 },
   "ci-routing": { preread: 9 * 1024, total: 28 * 1024 },
-  documentation: { preread: 10 * 1024, total: 59 * 1024 },
+  documentation: { preread: 10 * 1024, total: 60 * 1024 },
   "ui-flow": { preread: 14 * 1024, total: 23 * 1024 },
   unknown: { preread: 9 * 1024, total: 9 * 1024 },
 });

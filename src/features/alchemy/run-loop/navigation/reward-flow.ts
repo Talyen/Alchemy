@@ -9,7 +9,7 @@ import { pickRandom, sampleItems } from "@/lib/utils";
 import { generateGearRewardChoices } from "@/lib/gear";
 import {
   createEmptyRewardState,
-  getRewardChoiceId,
+  resolveRewardChoice,
   type CardRewardState,
   type BoonRewardState,
   type GearRewardState,
@@ -71,14 +71,11 @@ function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType
 }
 
 export function finalizeRewardState({ rewardState, companionRewardCards }: FinalizeRewardInput): FinalizeRewardResult {
-  const selectedChoice = rewardState.selectedId
-    ? (rewardState.choices.find((choice) => getRewardChoiceId(choice) === rewardState.selectedId) ?? null)
-    : null;
+  const selectedReward = resolveRewardChoice(rewardState);
 
   if (companionRewardCards && companionRewardCards.length > 0) {
     return {
-      selectedChoice,
-      selectedRewardType: rewardState.rewardType,
+      selectedReward,
       materials: rewardState.materials,
       nextRewardState: {
         ...createNextRewardState(rewardState),
@@ -94,8 +91,7 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
   const route = resolveRewardRoute(contentSystemType, currentEnemyType);
 
   return {
-    selectedChoice,
-    selectedRewardType: rewardState.rewardType,
+    selectedReward,
     materials: rewardState.materials,
     nextRewardState: createNextRewardState(rewardState),
     clearCompanionRewardCards: false,

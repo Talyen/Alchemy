@@ -66,7 +66,11 @@ export function createTrinketShopCommands({
         refreshesLeft: state.refreshesLeft,
         setState: setTrinketShopState,
         resample: () =>
-          resampleTrinketShopOfferings(createDraftRunRandomSource(draft, "shops"), draft.gear.ownedTrinketIds),
+          resampleTrinketShopOfferings(
+            createDraftRunRandomSource(draft, "shops"),
+            draft.gear.ownedTrinketIds,
+            state.trinkets.map((trinket) => trinket.id),
+          ),
         mapState: (previous, trinkets) => mapRefreshedShopOfferings(previous, "trinkets", trinkets),
       });
     }).committed;

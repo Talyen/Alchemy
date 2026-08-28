@@ -12,7 +12,7 @@ import {
   shouldGrantCompanionReward,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { executeRewardRouteTransition } from "@/features/alchemy/run-loop/run/run-flow-rewards";
-import { createEmptyRewardState } from "@/lib/active-run-session";
+import { createEmptyRewardState, type BoonRewardState } from "@/lib/active-run-session";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeRewardRouteDeps } from "../../../../helpers/destination-route-handlers";
@@ -231,8 +231,7 @@ describe("reward flow orchestration", () => {
         companionRewardCards: null,
       });
 
-      expect(result.selectedChoice).toBe(cardChoice);
-      expect(result.selectedRewardType).toBe("card");
+      expect(result.selectedReward).toEqual({ rewardType: "card", choice: cardChoice });
       expect(result.route).toBe("destination");
       expect(result.nextRewardState).toEqual(expect.objectContaining({ choices: [], destinations: ["Campfire"] }));
     });
@@ -255,20 +254,20 @@ describe("reward flow orchestration", () => {
     });
 
     it("returns the selected boon reward", () => {
+      const rewardState = {
+        ...stampedRewardState({}),
+        rewardType: "boon",
+        choices: [boonChoice],
+        gold: 10,
+        materials: emptyInventory(),
+        selectedId: "bone-charm",
+      } satisfies BoonRewardState;
       const result = finalizeRewardState({
-        rewardState: {
-          ...stampedRewardState({}),
-          rewardType: "trinket" as const,
-          choices: [boonChoice] as Array<import("@/lib/game-data/types").TrinketEntry>,
-          gold: 10,
-          materials: emptyInventory(),
-          selectedId: "bone-charm",
-        } as unknown as import("@/lib/active-run-session/reward-types").TrinketRewardState,
+        rewardState,
         companionRewardCards: null,
       });
 
-      expect(result.selectedChoice).toBe(boonChoice);
-      expect(result.selectedRewardType).toBe("trinket");
+      expect(result.selectedReward).toEqual({ rewardType: "boon", choice: boonChoice });
     });
 
     it("creates the companion reward step before routing onward", () => {

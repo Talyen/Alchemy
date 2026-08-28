@@ -7,9 +7,8 @@ import {
   type CombatTextEvent,
 } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
-import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { getBossById, getCurrentEnemy, getBossEnemy, enemyById, isEnemyId } from "@/features/alchemy/shared/config";
-import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   beginBattleTransition,
@@ -20,19 +19,19 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { appendUnique } from "@/lib/utils";
-import { readProfileStore, setEncounteredEnemyIds } from "../../shared/stores/profile-store";
+import { setEncounteredEnemyIds } from "../../shared/stores/profile-store";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { preloadBattleSounds } from "@/lib/audio";
 import { applyCombatTextShakeFeedback } from "./battle-feedback";
 import { playCompanionSound, playCombatTextSounds } from "./controller-utils";
-import { readEquippedTrinketId, readGearManifestForCharacter } from "../../shared/stores/gear-store";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
+import { deriveCombatMeta } from "@/features/alchemy/shared/stores/combat-meta";
 
 export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function createBattleForEnemy(
+    draft: GameplayDraft,
     enemy: BestiaryEntry,
     deck: BattleCard[],
     gold: number,
@@ -41,9 +40,8 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     battleRng: () => number,
     modifiers?: DifficultyModifier[],
   ) {
-    const run = readActiveRun();
-    const gearEffects = readGearManifestForCharacter(run.characterId);
-    const battleEffects = mergeIntoManifest(ctx.talents.talentEffects, ctx.homesteadEffects);
+    const run = draft.run.activeRun;
+    const combatMeta = deriveCombatMeta(draft);
     const activeModifiers =
       modifiers ?? (run.selectedDifficulty ? getDifficultyModifiers(run.characterId, run.selectedDifficulty) : []);
     return createBattleStartState({
@@ -52,11 +50,11 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       totalRooms: roomsEncountered,
       currentEnemy: enemy,
       playerHealth,
-      talentEffects: battleEffects,
-      discoveredCardIds: readProfileStore().discoveredCardIds,
+      talentEffects: combatMeta.talentEffects,
+      discoveredCardIds: draft.profile.discoveredCardIds,
       maxHealth: run.runMaxHealth,
-      trinketIds: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId)),
-      gearEffects,
+      trinketIds: combatMeta.activeTrinketIds,
+      gearEffects: combatMeta.gearEffects,
       difficultyModifiers: activeModifiers,
       contentSystemType: run.contentSystemType,
       rng: battleRng,
@@ -79,6 +77,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
         const encounterTraitIds = run.contentSystemType === "labyrinth" ? draft.session.activeLabyrinthModifiers : [];
         const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
         let nextBattleState = createBattleForEnemy(
+          draft,
           battleEnemy,
           deck ?? run.runDeck,
           gold ?? draft.runProfile.gold,

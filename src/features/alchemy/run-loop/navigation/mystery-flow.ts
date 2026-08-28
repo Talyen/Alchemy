@@ -157,39 +157,38 @@ function gainMysteryMaterial(material: MaterialId, amount: number, context: Myst
   return { followUp: null };
 }
 
-// Applies a single mystery consequence effect to the run state.
-// Returns a result indicating if the navigation flow must pause for follow-up choice UI.
-const mysteryApplyHandlers: {
-  [K in MysteryEffect["kind"]]: (
-    effect: Extract<MysteryEffect, { kind: K }>,
-    context: MysteryEffectContext,
-  ) => MysteryEffectResult;
-} = {
-  addCard: (effect, context) => addSpecificMysteryCard(effect.cardId, context),
-  chooseCard: (effect, context) => offerMysteryCardChoices(effect, context),
-  healHealth: (effect, context) => healFromMystery(effect.amount, effect.chance, context),
-  damageHealth: (effect, context) => damageFromMystery(effect.amount, context),
-  gainGold: (effect, context) => gainMysteryGold(effect.amount, context),
-  loseGold: (effect, context) => loseMysteryGold(effect.amount, context),
-  gainXP: (effect, context) => {
-    awardMysteryXP(context.draft, effect.keyword, effect.amount);
-    return { followUp: null };
-  },
-  removeCard: (_effect, context) => removeMysteryCard(context),
-  gainTrinket: (effect, context) => gainMysteryTrinket(effect.trinketId, context),
-  gainRandomTrinket: (effect, context) => gainRandomMysteryTrinket(effect, context),
-  gainGeneratedGear: (effect, context) => gainMysteryGeneratedGear(effect.baseItemId, context, effect.astral === true),
-  gainMaterial: (effect, context) => gainMysteryMaterial(effect.material, effect.amount, context),
-};
-
 function assertNever(value: never): never {
   throw new Error(`Unhandled mystery effect kind: ${String(value)}`);
 }
 
 export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffectContext): MysteryEffectResult {
-  const handler = mysteryApplyHandlers[effect.kind];
-  if (!handler) {
-    return assertNever(effect.kind as never);
+  switch (effect.kind) {
+    case "addCard":
+      return addSpecificMysteryCard(effect.cardId, context);
+    case "chooseCard":
+      return offerMysteryCardChoices(effect, context);
+    case "healHealth":
+      return healFromMystery(effect.amount, effect.chance, context);
+    case "damageHealth":
+      return damageFromMystery(effect.amount, context);
+    case "gainGold":
+      return gainMysteryGold(effect.amount, context);
+    case "loseGold":
+      return loseMysteryGold(effect.amount, context);
+    case "gainXP":
+      awardMysteryXP(context.draft, effect.keyword, effect.amount);
+      return { followUp: null };
+    case "removeCard":
+      return removeMysteryCard(context);
+    case "gainTrinket":
+      return gainMysteryTrinket(effect.trinketId, context);
+    case "gainRandomTrinket":
+      return gainRandomMysteryTrinket(effect, context);
+    case "gainGeneratedGear":
+      return gainMysteryGeneratedGear(effect.baseItemId, context, effect.astral === true);
+    case "gainMaterial":
+      return gainMysteryMaterial(effect.material, effect.amount, context);
+    default:
+      return assertNever(effect);
   }
-  return handler(effect as never, context);
 }

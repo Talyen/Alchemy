@@ -3,6 +3,7 @@ import { makeDiscoveryCard } from "../../../../helpers/discovery-store-mock";
 import { applyAlchemistPotion, applyRewardSelection } from "@/features/alchemy/run-loop/run/run-destination-handlers";
 import * as rewardGold from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { trinketLibrary } from "@/lib/game-data";
 
 const discoveryMocks = vi.hoisted(() => ({
   discoverCardIds: vi.fn(),
@@ -36,7 +37,7 @@ describe("applyRewardSelection", () => {
   it("appends card rewards with discovery", () => {
     const card = makeDiscoveryCard({ id: "slash", title: "Slash", cost: 1 });
     const draft = {} as GameplayDraft;
-    applyRewardSelection({ choice: card, type: "card", draft });
+    applyRewardSelection({ reward: { rewardType: "card", choice: card }, draft });
 
     const deckUpdater = discoveryMocks.setRunDeck.mock.calls[0][1];
     expect(deckUpdater([])).toEqual([card]);
@@ -45,10 +46,10 @@ describe("applyRewardSelection", () => {
 
   it("appends boon rewards with discovery", () => {
     const draft = {} as GameplayDraft;
+    const boon = trinketLibrary.find((trinket) => trinket.id === "bone-charm")!;
 
     applyRewardSelection({
-      choice: { id: "bone-charm" },
-      type: "boon",
+      reward: { rewardType: "boon", choice: boon },
       draft,
     });
 

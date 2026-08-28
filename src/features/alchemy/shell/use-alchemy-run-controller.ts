@@ -20,8 +20,7 @@ import { useSteamRichPresence } from "./use-steam-rich-presence";
 import {
   useActiveRunCharacterId,
   useActiveRunScreenValue,
-  useBattleRunPort,
-  useBattleTalentPort,
+  useTalentEffects,
   useContentSystemType,
   useHomesteadEffects,
 } from "@/features/alchemy/shared/stores/run-session-react-ports";
@@ -38,8 +37,7 @@ const commandUnlockAllTalents = createRunSessionCommand(unlockAllTalents);
 export function useAlchemyRunController() {
   // The app bootstrap gate restores the aggregate before this controller mounts.
   const homesteadEffects = useHomesteadEffects();
-  const battleRun = useBattleRunPort();
-  const battleTalents = useBattleTalentPort();
+  const talentEffects = useTalentEffects();
   const contentSystemType = useContentSystemType();
   const characterId = useActiveRunCharacterId();
   const screen = useActiveRunScreenValue();
@@ -70,9 +68,6 @@ export function useAlchemyRunController() {
   );
 
   const battle = useBattleController({
-    run: battleRun,
-    talents: battleTalents,
-    homesteadEffects,
     screen,
     setHoveredCardId,
     onBattleVictory: battleCompletionOps.onBattleVictory,
@@ -80,7 +75,7 @@ export function useAlchemyRunController() {
   });
 
   const shop = useShopController({
-    talentEffects: battleTalents.talentEffects,
+    talentEffects,
     homesteadEffects,
   });
 

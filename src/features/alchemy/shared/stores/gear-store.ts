@@ -102,8 +102,7 @@ export function useIsArmoryLocked(): boolean {
   return !useHasAnyOwnedGear();
 }
 
-/** Aggregate gear effects for a character at battle/run-start entry. */
-export function readGearManifestForCharacter(characterId: CharacterId) {
+function readGearManifestForCharacter(characterId: CharacterId) {
   const { inventories, loadouts } = readGameplayState().gear;
   return computeGearManifest(characterId, flattenGearInventories(inventories), loadouts);
 }

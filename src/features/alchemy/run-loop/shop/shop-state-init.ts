@@ -22,13 +22,33 @@ import { sampleItems } from "@/lib/utils";
 
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
 
-export function resampleTrinketShopOfferings(rng: () => number, ownedIds: readonly string[] = []): TrinketEntry[] {
+// Refresh keeps the shelf full while maximizing novelty: when enough unowned
+// alternatives exist outside `currentIds`, the shelf is entirely novel; when the
+// pool is nearly exhausted it fills with whatever remains (may reuse). If fewer
+// than TRINKET_SHOP_OFFERED trinkets are unowned at all, the shelf caps at the
+// available count — sampleItems clamps to the pool size.
+export function resampleTrinketShopOfferings(
+  rng: () => number,
+  ownedIds: readonly string[] = [],
+  currentIds: readonly string[] = [],
+): TrinketEntry[] {
   const owned = new Set(ownedIds);
-  return sampleItems(
-    trinketLibrary.filter((entry) => !owned.has(entry.id)),
+  const current = new Set(currentIds);
+  const available = trinketLibrary.filter((entry) => !owned.has(entry.id));
+  const novel = sampleItems(
+    available.filter((entry) => !current.has(entry.id)),
     TRINKET_SHOP_OFFERED,
     rng,
   );
+  if (novel.length >= TRINKET_SHOP_OFFERED) return novel;
+
+  const selected = new Set(novel.map((entry) => entry.id));
+  const fallback = sampleItems(
+    available.filter((entry) => !selected.has(entry.id)),
+    TRINKET_SHOP_OFFERED - novel.length,
+    rng,
+  );
+  return [...novel, ...fallback];
 }
 
 export function resampleEquipmentShopOfferings(

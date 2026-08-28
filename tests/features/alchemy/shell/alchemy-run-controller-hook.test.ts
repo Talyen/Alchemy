@@ -6,7 +6,7 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setHasActiveBattle, setRunGold, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
@@ -71,5 +71,20 @@ describe("useAlchemyRunController", () => {
     const first = result.current.routeCommands;
     rerender();
     expect(result.current.routeCommands).toBe(first);
+  });
+
+  it("does not subscribe the command controller to battle-start run data", () => {
+    let renders = 0;
+    renderHook(() => {
+      renders += 1;
+      return useAlchemyRunController();
+    });
+    const initialRenders = renders;
+
+    act(() => {
+      dispatchRunSessionCommand((draft) => setRunGold(draft, 17));
+    });
+
+    expect(renders).toBe(initialRenders);
   });
 });

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useUiStore } from "../../shared/stores/ui-store";
-import { getCardKeywords, type BattleCard, type TrinketEntry } from "@/lib/game-data";
-import { getGearInstanceTitle, type GearInstance } from "@/lib/gear";
+import { getCardKeywords } from "@/lib/game-data";
+import { getGearInstanceTitle } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 
@@ -13,57 +13,85 @@ import { usePlasmaBaseline, usePlasmaInteraction } from "../../shared/ui/use-pla
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { getPlasmaKeywordsForGear, getPlasmaColorPair, sectionTitleClass } from "@/features/alchemy/shared/config";
 import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
-import { getRewardChoiceId, type RewardState } from "@/lib/active-run-session";
+import {
+  getRewardChoiceId,
+  resolveRewardChoice,
+  type ResolvedRewardChoice,
+  type RewardState,
+} from "@/lib/active-run-session";
 
 function RewardChoiceItems({
-  choices,
-  rewardType,
+  rewardState,
   selectedRewardId,
   onSelectReward,
 }: {
-  choices: RewardState["choices"];
-  rewardType: string;
+  rewardState: RewardState;
   selectedRewardId: string | null;
   onSelectReward: (id: string) => void;
 }) {
-  const isTrinket = rewardType === "trinket";
-  const isBoon = rewardType === "boon";
-  const isGear = rewardType === "gear";
-  return choices.map((item) => {
-    const choiceId = getRewardChoiceId(item);
-    const selected = selectedRewardId === choiceId;
-    return (
-      <div key={choiceId}>
-        {isGear ? (
-          <GearTile
-            instance={item as GearInstance}
-            interactionKey="reward"
-            as="button"
-            selected={selected}
-            onClick={() => onSelectReward(choiceId)}
-            ariaLabel={`Select ${getGearInstanceTitle(item as GearInstance)}`}
-          />
-        ) : isTrinket || isBoon ? (
-          <TrinketTile
-            trinket={item as TrinketEntry}
-            interactionKey="reward"
-            as="button"
-            selected={selected}
-            temporary={isBoon}
-            onClick={() => onSelectReward(choiceId)}
-            ariaLabel={`Select ${(item as TrinketEntry).title}`}
-          />
-        ) : (
-          <SelectableCard
-            card={item as BattleCard}
-            isSelected={selected}
-            onSelect={() => onSelectReward(choiceId)}
-            interactionKey="reward"
-          />
-        )}
-      </div>
-    );
-  });
+  switch (rewardState.rewardType) {
+    case "gear":
+      return rewardState.choices.map((instance) => {
+        const choiceId = getRewardChoiceId(instance);
+        return (
+          <div key={choiceId}>
+            <GearTile
+              instance={instance}
+              interactionKey="reward"
+              as="button"
+              selected={selectedRewardId === choiceId}
+              onClick={() => onSelectReward(choiceId)}
+              ariaLabel={`Select ${getGearInstanceTitle(instance)}`}
+            />
+          </div>
+        );
+      });
+    case "boon":
+    case "trinket":
+      return rewardState.choices.map((trinket) => {
+        const choiceId = getRewardChoiceId(trinket);
+        return (
+          <div key={choiceId}>
+            <TrinketTile
+              trinket={trinket}
+              interactionKey="reward"
+              as="button"
+              selected={selectedRewardId === choiceId}
+              temporary={rewardState.rewardType === "boon"}
+              onClick={() => onSelectReward(choiceId)}
+              ariaLabel={`Select ${trinket.title}`}
+            />
+          </div>
+        );
+      });
+    case "card":
+      return rewardState.choices.map((card) => {
+        const choiceId = getRewardChoiceId(card);
+        return (
+          <div key={choiceId}>
+            <SelectableCard
+              card={card}
+              isSelected={selectedRewardId === choiceId}
+              onSelect={() => onSelectReward(choiceId)}
+              interactionKey="reward"
+            />
+          </div>
+        );
+      });
+  }
+}
+
+function getRewardColorPair(reward: ResolvedRewardChoice | null) {
+  if (!reward) return null;
+  switch (reward.rewardType) {
+    case "gear":
+      return getPlasmaColorPair(getPlasmaKeywordsForGear(reward.choice));
+    case "boon":
+    case "trinket":
+      return getPlasmaColorPair(getTrinketKeywords(reward.choice.id));
+    case "card":
+      return getPlasmaColorPair(getCardKeywords(reward.choice));
+  }
 }
 
 function RewardsFound({
@@ -78,6 +106,32 @@ function RewardsFound({
     return <div className="min-h-[2.5rem]" />;
   }
   return <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />;
+}
+
+function getRewardPrompt(rewardType: RewardState["rewardType"]): string {
+  switch (rewardType) {
+    case "gear":
+      return "Add Gear to your Armory";
+    case "trinket":
+      return "Choose a Trinket to add to your Armory";
+    case "boon":
+      return "Choose a Boon for this Run";
+    case "card":
+      return "Add a Card to your Deck";
+  }
+}
+
+function getRewardPrimaryLabel(rewardType: RewardState["rewardType"]): string {
+  switch (rewardType) {
+    case "gear":
+      return "Take Gear";
+    case "trinket":
+      return "Take Trinket";
+    case "boon":
+      return "Take Boon";
+    case "card":
+      return "Add Card";
+  }
 }
 
 export function RewardsScreen({
@@ -95,50 +149,28 @@ export function RewardsScreen({
   claimInFlight?: boolean;
   onOpenMenu: (rect?: DOMRect) => void;
 }) {
-  const rewardType = rewardState.rewardType;
   const rewardChoices = rewardState.choices;
   const rewardGold = rewardState.gold;
   const rewardMaterials = rewardState.materials;
   const selectedRewardId = rewardState.selectedId;
-  const isTrinket = rewardType === "trinket";
-  const isBoon = rewardType === "boon";
-  const isGear = rewardType === "gear";
-  const choicePrompt = isGear
-    ? "Add Gear to your Armory"
-    : isTrinket
-      ? "Choose a Trinket to add to your Armory"
-      : isBoon
-        ? "Choose a Boon for this Run"
-        : "Add a Card to your Deck";
+  const choicePrompt = getRewardPrompt(rewardState.rewardType);
 
   // Read which reward choice is hovered directly from the ui-store hover ID.
   // Cards register under scope "reward" so their hover ID is "reward-{choiceId}".
   // Reading from the store avoids the leave/enter callback ordering race that
   // causes the local state to momentarily clear between card transitions.
   const hoveredCardId = useUiStore((s) => s.hoveredCardId);
-  const { hoveredRewardItem, selectedRewardItem } = useMemo(() => {
-    let hovered: RewardState["choices"][number] | null = null;
-    let selected: RewardState["choices"][number] | null = null;
-    for (const item of rewardChoices) {
-      const choiceId = getRewardChoiceId(item);
-      if (hoveredCardId === `reward-${choiceId}`) hovered = item;
-      if (selectedRewardId === choiceId) selected = item;
-    }
-    return { hoveredRewardItem: hovered, selectedRewardItem: selected };
-  }, [hoveredCardId, selectedRewardId, rewardChoices]);
+  const { hoveredReward, selectedReward } = useMemo(() => {
+    const hoveredId = hoveredCardId?.startsWith("reward-") ? hoveredCardId.slice("reward-".length) : null;
+    return {
+      hoveredReward: resolveRewardChoice(rewardState, hoveredId),
+      selectedReward: resolveRewardChoice(rewardState),
+    };
+  }, [hoveredCardId, rewardState]);
 
   const claimLocked = claimInFlight || rewardChoices.length === 0;
-  const getRewardColorPair = (item: BattleCard | TrinketEntry | GearInstance | null) => {
-    if (!item) return null;
-    const keywords = isGear
-      ? getPlasmaKeywordsForGear(item as GearInstance)
-      : isTrinket || isBoon
-        ? getTrinketKeywords((item as TrinketEntry).id)
-        : getCardKeywords(item as BattleCard);
-    return getPlasmaColorPair(keywords);
-  };
-  usePlasmaBaseline(getRewardColorPair(selectedRewardItem));
-  usePlasmaInteraction(getRewardColorPair(hoveredRewardItem), hoveredRewardItem !== null);
+  usePlasmaBaseline(getRewardColorPair(selectedReward));
+  usePlasmaInteraction(getRewardColorPair(hoveredReward), hoveredReward !== null);
 
   return (
     <TitledScreenShell title="Victory" onOpenMenu={onOpenMenu} menuLabel="Open rewards menu" maxWidthClass="max-w-6xl">
@@ -150,8 +182,7 @@ export function RewardsScreen({
       >
         <div className="flex flex-wrap items-start justify-center gap-6">
           <RewardChoiceItems
-            choices={rewardChoices}
-            rewardType={rewardType}
+            rewardState={rewardState}
             selectedRewardId={selectedRewardId}
             onSelectReward={onSelectReward}
           />
@@ -163,7 +194,7 @@ export function RewardsScreen({
       <ActionButtonRow
         className="mt-5"
         width="action"
-        {...(!isTrinket && !isBoon && !isGear
+        {...(rewardState.rewardType === "card"
           ? {
               secondary: {
                 label: "Skip",
@@ -174,8 +205,8 @@ export function RewardsScreen({
             }
           : {})}
         primary={{
-          label: isGear ? "Take Gear" : isTrinket ? "Take Trinket" : isBoon ? "Take Boon" : "Add Card",
-          disabled: !selectedRewardItem || claimLocked,
+          label: getRewardPrimaryLabel(rewardState.rewardType),
+          disabled: !selectedReward || claimLocked,
           onClick: onAddReward,
         }}
       />

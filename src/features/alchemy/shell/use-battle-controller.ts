@@ -14,8 +14,6 @@ import {
 } from "@/features/alchemy/run-loop/battle";
 import type { CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { BattleRunPort, BattleTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useBattleLifetimeFields } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
@@ -24,9 +22,6 @@ import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/batt
 import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 
 interface UseBattleControllerProps {
-  run: BattleRunPort;
-  talents: BattleTalentPort;
-  homesteadEffects: HomesteadEffectManifest;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: () => void;
@@ -36,9 +31,6 @@ interface UseBattleControllerProps {
 }
 
 export function useBattleController({
-  run,
-  talents,
-  homesteadEffects,
   screen,
   setHoveredCardId,
   onBattleVictory,
@@ -73,9 +65,6 @@ export function useBattleController({
   }, [applyPreferredAutoplay]);
 
   const ctx = useBattleControllerContext({
-    run,
-    talents,
-    homesteadEffects,
     screen,
     setHoveredCardId,
     onBattleVictory,

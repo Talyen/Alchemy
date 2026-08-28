@@ -75,6 +75,52 @@ describe("shop-state-init", () => {
     expect(offerings.map((entry) => entry.id).sort()).toEqual([...keep].sort());
   });
 
+  it("excludes the current trinket shelf when enough alternatives remain", () => {
+    const currentIds: string[] = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED).map((entry) => entry.id);
+    const offerings = resampleTrinketShopOfferings(() => 0.5, [], currentIds);
+
+    expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
+    expect(offerings.some((entry) => currentIds.includes(entry.id))).toBe(false);
+  });
+
+  it("maximizes novel trinkets when the remaining pool is smaller than the shelf", () => {
+    const current = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED);
+    const novel = trinketLibrary[TRINKET_SHOP_OFFERED]!;
+    const eligibleIds = new Set<string>([...current.map((entry) => entry.id), novel.id]);
+    const owned = trinketLibrary.filter((entry) => !eligibleIds.has(entry.id)).map((entry) => entry.id);
+    const offerings = resampleTrinketShopOfferings(
+      () => 0.5,
+      owned,
+      current.map((entry) => entry.id),
+    );
+
+    expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
+    expect(offerings.map((entry) => entry.id)).toContain(novel.id);
+  });
+
+  it("caps shelf at available count when almost all trinkets are owned, even with currentIds", () => {
+    const keep = trinketLibrary.slice(0, 2).map((entry) => entry.id);
+    const owned = trinketLibrary.filter((entry) => !keep.includes(entry.id)).map((entry) => entry.id);
+    const offerings = resampleTrinketShopOfferings(() => 0.5, owned, keep);
+
+    expect(offerings).toHaveLength(keep.length);
+    expect(offerings.map((entry) => entry.id).sort()).toEqual([...keep].sort());
+  });
+
+  it("reuses current shelf when no novel alternatives remain", () => {
+    const eligible = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED);
+    const eligibleIds = new Set(eligible.map((entry) => entry.id));
+    const owned = trinketLibrary.filter((entry) => !eligibleIds.has(entry.id)).map((entry) => entry.id);
+    const offerings = resampleTrinketShopOfferings(
+      () => 0.5,
+      owned,
+      eligible.map((entry) => entry.id),
+    );
+
+    expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
+    expect(new Set(offerings.map((entry) => entry.id))).toEqual(eligibleIds);
+  });
+
   it("createInitialEquipmentShopState samples three gear pieces", () => {
     expect(createInitialEquipmentShopState().gear.length).toBe(EQUIPMENT_SHOP_OFFERED);
   });

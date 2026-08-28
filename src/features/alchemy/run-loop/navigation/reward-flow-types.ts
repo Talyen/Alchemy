@@ -1,8 +1,7 @@
 import type { BattleState } from "@/lib/battle";
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { GearInstance } from "@/lib/gear";
-import type { CardRewardState, RewardState } from "@/lib/active-run-session";
+import type { CardRewardState, ResolvedRewardChoice, RewardState } from "@/lib/active-run-session";
 import type { Destination, RewardRoute } from "@/lib/routing";
 
 export type FinalizeRewardRoute = RewardRoute;
@@ -13,8 +12,7 @@ export interface FinalizeRewardInput {
 }
 
 export interface FinalizeRewardResult {
-  selectedChoice: BattleCard | TrinketEntry | GearInstance | null;
-  selectedRewardType: RewardState["rewardType"];
+  selectedReward: ResolvedRewardChoice | null;
   materials: MaterialInventory;
   nextRewardState: CardRewardState;
   clearCompanionRewardCards: boolean;

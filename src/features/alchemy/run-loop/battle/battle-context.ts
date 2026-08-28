@@ -2,8 +2,6 @@ import { useRef, useMemo, useLayoutEffect, type RefObject } from "react";
 import type { BattleState } from "@/lib/battle";
 import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { BattleRunPort, BattleTalentPort } from "@/features/alchemy/shared/stores/run-port-types";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { createTransferCancelRegistry, type TransferCancelRegistry } from "./card-transfer-animations";
 import type { BattlePresentationPort } from "./battle-presentation-port";
@@ -16,9 +14,6 @@ export interface BattlePlaybackBind {
 }
 
 export interface BattleControllerContextProps {
-  run: BattleRunPort;
-  talents: BattleTalentPort;
-  homesteadEffects: HomesteadEffectManifest;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: (() => void) | undefined;
@@ -87,15 +82,6 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       transferIdCounterRef,
 
       // Getters for dynamic props
-      get run() {
-        return propsRef.current.run;
-      },
-      get talents() {
-        return propsRef.current.talents;
-      },
-      get homesteadEffects() {
-        return propsRef.current.homesteadEffects;
-      },
       get screen() {
         return propsRef.current.screen;
       },

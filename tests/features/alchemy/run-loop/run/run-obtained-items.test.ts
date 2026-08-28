@@ -4,6 +4,7 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import type { GearInstance } from "@/lib/gear";
+import { trinketLibrary } from "@/lib/game-data";
 import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import { setRunSession } from "../../../../helpers/run-domain-store-test";
 
@@ -12,6 +13,7 @@ const armor: GearInstance = {
   definitionId: "leather-armor-basic",
   affixes: [],
 };
+const boneCharm = trinketLibrary.find((trinket) => trinket.id === "bone-charm")!;
 
 describe("applyRewardSelection obtained-item recap", () => {
   beforeEach(() => {
@@ -21,7 +23,7 @@ describe("applyRewardSelection obtained-item recap", () => {
 
   it("records permanent trinket rewards", () => {
     dispatchRunSessionCommand((draft) => {
-      applyRewardSelection({ choice: { id: "bone-charm" }, type: "trinket", draft });
+      applyRewardSelection({ reward: { rewardType: "trinket", choice: boneCharm }, draft });
     });
 
     expect(readGearState().ownedTrinketIds).toContain("bone-charm");
@@ -31,7 +33,7 @@ describe("applyRewardSelection obtained-item recap", () => {
 
   it("records gear rewards", () => {
     dispatchRunSessionCommand((draft) => {
-      applyRewardSelection({ choice: armor, type: "gear", draft });
+      applyRewardSelection({ reward: { rewardType: "gear", choice: armor }, draft });
     });
 
     expect(readGearState().inventories.knight).toContainEqual(armor);
@@ -40,7 +42,7 @@ describe("applyRewardSelection obtained-item recap", () => {
 
   it("does not record boon rewards", () => {
     dispatchRunSessionCommand((draft) => {
-      applyRewardSelection({ choice: { id: "bone-charm" }, type: "boon", draft });
+      applyRewardSelection({ reward: { rewardType: "boon", choice: boneCharm }, draft });
     });
 
     expect(readActiveRun().runBoons).toEqual(["bone-charm"]);

@@ -23,10 +23,8 @@ export interface VictoryRewardsInput {
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   battleState: BattleState;
   purseGold: number;
-  runPlayerHealth: number;
   runMaxHealth: number;
   destinationIndexInAct: number;
-  completedDestinations: Destination[];
   homesteadEffects: HomesteadEffectManifest;
   getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
   bossEnemyId?: string | null | undefined;

@@ -101,10 +101,9 @@ export function createRewardHandlers(
         const isWildwood = contentSystemType === CONTENT_SYSTEMS.WILDWOOD;
         if (!isWildwood) awardMaterialsDuringRun(draft, result.materials);
 
-        if (result.selectedChoice) {
+        if (result.selectedReward) {
           applyRewardSelection({
-            choice: result.selectedChoice,
-            type: result.selectedRewardType,
+            reward: result.selectedReward,
             draft,
           });
         }
@@ -137,7 +136,7 @@ export function createRewardHandlers(
             });
           };
 
-          if (result.selectedChoice) playUISound("talentUnlock");
+          if (result.selectedReward) playUISound("talentUnlock");
           deps.actions.clearCardHover();
           if (isWildwood && result.route !== REWARD_ROUTES.COMPANION_REWARD) {
             deps.actions.wildwoodRewardComplete(settleClaimSurface);

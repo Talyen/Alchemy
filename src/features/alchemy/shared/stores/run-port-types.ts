@@ -43,15 +43,3 @@ export interface ContentNavigationTalentPort {
   talentXP: TalentXP;
   talentEffects: Pick<TalentEffectManifest, "startGold">;
 }
-
-/** Battle initialization and combat reads. */
-export interface BattleRunPort extends ActiveRunCorePort {
-  runBoons: string[];
-  encounteredRunEnemyIds: string[];
-  runDeck: BattleCard[];
-  gold: number;
-}
-
-export interface BattleTalentPort {
-  talentEffects: TalentEffectManifest;
-}

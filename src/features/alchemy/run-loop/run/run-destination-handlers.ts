@@ -1,16 +1,15 @@
 // Destination routing helpers and reward selection utilities for run flow.
-import type { GearInstance } from "@/lib/gear";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import { recordRunObtainedItem } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { RewardState } from "@/lib/active-run-session";
+import type { ResolvedRewardChoice } from "@/lib/active-run-session";
 import { getRandomPotionCard } from "../navigation/reward-flow";
 import { appendCardToRunWithDiscovery, appendBoonToRunWithDiscovery } from "./deck-mutations";
 import { discoverTrinketIds } from "../../shared/stores/profile-store";
 import type { RunFlowShellActions } from "./run-flow-shell-actions";
 import { DESTINATIONS, ROUTE_SCREENS, type Destination } from "@/lib/routing";
-import { ENEMY_TYPES, type BattleCard } from "@/lib/game-data";
+import { ENEMY_TYPES } from "@/lib/game-data";
 
 export type DestinationRouteDeps = Pick<
   RunFlowShellActions,
@@ -60,28 +59,32 @@ export function routeDestinationChoice(destination: Destination, deps: Destinati
 }
 
 interface RewardSelectionInput {
-  choice: BattleCard | { id: string } | GearInstance;
-  type: RewardState["rewardType"];
+  reward: ResolvedRewardChoice;
   draft: GameplayDraft;
 }
 
-export function applyRewardSelection({ choice, type, draft }: RewardSelectionInput) {
-  if (type === "card") {
-    appendCardToRunWithDiscovery(draft, choice as BattleCard);
-  } else if (type === "boon") {
-    appendBoonToRunWithDiscovery(draft, (choice as { id: string }).id);
-  } else if (type === "trinket") {
-    const trinketId = (choice as { id: string }).id;
-    mutateGearWithRunHealthSync(draft, { mutate: (gear: GearStore) => gear.addTrinket(trinketId) });
-    discoverTrinketIds(draft, [trinketId]);
-    recordRunObtainedItem(draft, { kind: "trinket", trinketId });
-  } else if (type === "gear") {
-    const characterId = draft.run.activeRun.characterId;
-    const instance = choice as GearInstance;
-    mutateGearWithRunHealthSync(draft, {
-      mutate: (gear: GearStore) => gear.addInstance(instance, characterId),
-    });
-    recordRunObtainedItem(draft, { kind: "gear", instance });
+export function applyRewardSelection({ reward, draft }: RewardSelectionInput) {
+  switch (reward.rewardType) {
+    case "card":
+      appendCardToRunWithDiscovery(draft, reward.choice);
+      return;
+    case "boon":
+      appendBoonToRunWithDiscovery(draft, reward.choice.id);
+      return;
+    case "trinket": {
+      const trinketId = reward.choice.id;
+      mutateGearWithRunHealthSync(draft, { mutate: (gear: GearStore) => gear.addTrinket(trinketId) });
+      discoverTrinketIds(draft, [trinketId]);
+      recordRunObtainedItem(draft, { kind: "trinket", trinketId });
+      return;
+    }
+    case "gear": {
+      const characterId = draft.run.activeRun.characterId;
+      mutateGearWithRunHealthSync(draft, {
+        mutate: (gear: GearStore) => gear.addInstance(reward.choice, characterId),
+      });
+      recordRunObtainedItem(draft, { kind: "gear", instance: reward.choice });
+    }
   }
 }
 

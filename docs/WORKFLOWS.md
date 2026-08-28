@@ -353,6 +353,7 @@ Kind `"merchant"` maps to the player-facing **Card Shop**. Persist only the acti
 1. Keep `create-shop-actions.ts` as composition; put shop behavior in the matching `*-shop-commands.ts` module and draft recipes in `shop-transactions.ts`.
 2. Dispatch purchases/refreshes through the existing shop command seam so paid effects and SFX run after a successful commit. Keep slot identity helpers separate from command/audio modules.
 3. Preserve the per-visit `firstPurchaseUsed` reset and use `mutateGearWithRunHealthSync` inside an open command draft; use the dispatching gear wrapper only at the outer boundary ([ARMORY.md § Write paths](./ARMORY.md#write-paths)).
+4. Refreshes avoid the current offering set when enough eligible alternatives exist. When a pool is nearly exhausted, keep the shelf full while maximizing novel offerings.
 
 ## Content system behavior
 

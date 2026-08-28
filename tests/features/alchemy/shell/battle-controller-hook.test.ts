@@ -4,14 +4,12 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
-import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { makeRunController, makeTalentController } from "../../../helpers/run-controller";
 import { resetAllTestStores } from "../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
@@ -23,9 +21,6 @@ function renderBattleController(screen: Screen = ROUTE_SCREENS.BATTLE) {
   return renderHook(
     ({ screen: currentScreen }) =>
       useBattleController({
-        run: makeRunController(),
-        talents: makeTalentController(),
-        homesteadEffects: defaultHomesteadEffects,
         screen: currentScreen,
         setHoveredCardId: vi.fn(),
       }),

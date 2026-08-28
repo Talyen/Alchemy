@@ -6,14 +6,13 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeTalentEffects } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { enemyBestiary } from "@/lib/game-data";
-import { makeRunController, makeTalentController } from "../../../../helpers/run-controller";
 import { resetRunBattleSlice, resetRunProgressSlice, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createRunRngState } from "@/lib/run-rng";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 beforeEach(() => {
   resetRunBattleSlice();
@@ -23,11 +22,8 @@ beforeEach(() => {
 describe("createBattleInit", () => {
   const resetBattleSession = vi.fn();
 
-  function makeInit(homesteadEffects: HomesteadEffectManifest = defaultHomesteadEffects) {
+  function makeInit() {
     const ctx = {
-      run: makeRunController(),
-      talents: makeTalentController(),
-      homesteadEffects,
       getPresentation: () => useBattlePresentationStore.getState(),
     } as unknown as BattleControllerContext;
 
@@ -38,11 +34,15 @@ describe("createBattleInit", () => {
     return createBattleInit(ctx, session);
   }
 
-  it("merges talent and homestead manifests into battle state", () => {
+  it("derives current talent and homestead manifests from the battle-start draft", () => {
     setRunProgress({ roomsEncountered: 0, runPlayerHealth: 30, runMaxHealth: 30 });
     const testEffects = { ...defaultHomesteadEffects, flatPhysicalDamage: 2 };
+    const init = makeInit();
+    dispatchRunSessionCommand((draft) => {
+      draft.runProfile.effects = testEffects;
+    });
 
-    makeInit(testEffects).startBattle(readActiveRun().runDeck, 0, "normal");
+    init.startBattle(readActiveRun().runDeck, 0, "normal");
 
     const battle = readBattle().battleState;
     const expected = mergeIntoManifest(computeTalentEffects({}), testEffects);

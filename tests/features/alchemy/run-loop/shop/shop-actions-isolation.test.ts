@@ -110,7 +110,7 @@ const shops = [
     refreshPrice: SHOP_REFRESH_PRICE,
     offeringIds: () => readRunSession().trinketShopState.trinkets.map((entry) => entry.id),
     replayIds: () => readRunSession().trinketShopState.trinkets.map((entry) => entry.id),
-    restockDedup: false,
+    restockDedup: true,
     initialize: (actions: Actions) => actions.trinket.initialize(),
     replayRefresh: true,
   },

@@ -1,10 +1,10 @@
 // Rebind live-run HP and in-combat manifests from profile-lifetime meta (gear, talents, homestead).
-import { computeTalentEffects, computeStartingMaxHealth } from "@/lib/game-data";
-import { mergeIntoManifest } from "@/lib/homestead/effects";
+import { computeStartingMaxHealth } from "@/lib/game-data";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import type { GameplayDraft } from "./run-session-command";
 import { syncBattleGoldFromPurse } from "./gold-purse";
-import { combineTrinketEffectIds, computeTrinketManifest } from "@/lib/trinkets";
+import { computeTrinketManifest } from "@/lib/trinkets";
+import { deriveCombatMeta } from "./combat-meta";
 
 function computeDerivedRunMaxHealth(draft: GameplayDraft): number {
   const characterId = draft.run.activeRun.characterId;
@@ -40,23 +40,14 @@ export function rebindLiveRunMeta(
   applyDerivedMaxHealth(draft);
   if (!draft.battle.hasActiveBattle) return;
 
-  const characterId = draft.run.activeRun.characterId;
   const battle = draft.battle.battleState;
+  const combatMeta = deriveCombatMeta(draft);
   if (gearChanged) {
-    battle.gearEffects = computeGearManifest(
-      characterId,
-      flattenGearInventories(draft.gear.inventories),
-      draft.gear.loadouts,
-    );
-    battle.trinketEffects = computeTrinketManifest(
-      combineTrinketEffectIds(draft.run.activeRun.runBoons, draft.gear.equippedTrinkets[characterId]),
-    );
+    battle.gearEffects = combatMeta.gearEffects;
+    battle.trinketEffects = computeTrinketManifest(combatMeta.activeTrinketIds);
   }
   if (talentChanged) {
-    battle.talentEffects = mergeIntoManifest(
-      computeTalentEffects(draft.runProfile.unlockedTalents),
-      draft.runProfile.effects,
-    );
+    battle.talentEffects = combatMeta.talentEffects;
   }
   battle.playerMaxHealth = draft.run.activeRun.runMaxHealth;
   battle.playerHealth = Math.min(battle.playerMaxHealth, battle.playerHealth);

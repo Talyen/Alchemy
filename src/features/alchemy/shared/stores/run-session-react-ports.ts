@@ -20,13 +20,7 @@ import type { DisplayOverrides } from "./run-domain-types";
 import type { ActiveRunProgressFields } from "./run-state-init";
 import { mostRecentResumableMode } from "./parked-runs";
 import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
-import type {
-  BattleRunPort,
-  BattleTalentPort,
-  ContentNavigationRunPort,
-  ContentNavigationTalentPort,
-  RunOrchestrationPort,
-} from "./run-port-types";
+import type { ContentNavigationRunPort, ContentNavigationTalentPort, RunOrchestrationPort } from "./run-port-types";
 import { createRunSessionCommand } from "./run-session-command";
 import { selectAutosaveAllowed } from "./select-autosave-allowed";
 import { setHasActiveBattle as setHasActiveBattleCommand } from "./run-session-write-port";
@@ -49,17 +43,6 @@ const selectContentNavigationFields = selectRunFields(
   "contentSystemType",
   "lastOfferedDestinations",
   "destinationRoundsSinceOffered",
-);
-
-const selectBattleRunFields = selectRunFields(
-  "characterId",
-  "selectedDifficulty",
-  "runMaxHealth",
-  "runBoons",
-  "roomsEncountered",
-  "contentSystemType",
-  "encounteredRunEnemyIds",
-  "runDeck",
 );
 
 const selectOrchestrationFields = selectRunFields(
@@ -96,20 +79,6 @@ export function useRunOrchestrationPort(): RunOrchestrationPort {
 
 export function useContentNavigationRunPort(): ContentNavigationRunPort {
   return useGameplayStateStore(useShallow(selectContentNavigationFields));
-}
-
-export function useBattleRunPort(): BattleRunPort {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      ...selectBattleRunFields(state),
-      gold: state.runProfile.gold,
-    })),
-  );
-}
-
-export function useBattleTalentPort(): BattleTalentPort {
-  const talentEffects = useTalentEffects();
-  return useMemo(() => ({ talentEffects }), [talentEffects]);
 }
 
 export function useContentNavigationTalentPort(

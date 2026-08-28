@@ -19,7 +19,8 @@ export type {
   RewardState,
   TrinketRewardState,
 } from "./reward-types";
-export { createEmptyRewardState, getRewardChoiceId } from "./reward-types";
+export { createEmptyRewardState, getRewardChoiceId, resolveRewardChoice } from "./reward-types";
+export type { ResolvedRewardChoice } from "./reward-types";
 export type {
   AlchemistState,
   EquipmentShopState,
