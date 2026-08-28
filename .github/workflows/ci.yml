@@ -315,208 +315,51 @@ jobs:
       - name: Assert committed outputs match preparation
         run: npm run assets:check
 
-  # The 5 path-gated e2e gates below (save/shop/gear/mystery/audio) share
-  # identical checkout → setup → download-artifact → setup-playwright → run
-  # → summarize → upload steps. Tracked for future consolidation via reusable
-  # workflow (workflow_call with `gate` + `npm script` inputs) when churn
-  # justifies it — see docs/Plans/simplification-consolidation.md Phase 3.
+  # Path-gated E2E gates — consolidated via reusable workflow_call (Initiative 5).
   save-gate:
     needs: [changes, build]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.save == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          sparse-checkout: |
-            /*
-            !Raw Assets
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
-        with:
-          install-deps: "false"
-
-      - run: mkdir -p reports
-
-      - name: Run save persistence e2e
-        run: npm run test:ship:e2e
-        env:
-          PLAYWRIGHT_VITE_MODE: preview
-
-      - name: Summarize save e2e
-        if: always()
-        run: node scripts/ci-summarize-playwright.mjs
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-report-save-gate
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 7
+    uses: ./.github/workflows/gated-e2e.yml
+    with:
+      script: test:ship:e2e
+      report-name: playwright-report-save-gate
 
   shop-gate:
     needs: [changes, build]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.shop == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          sparse-checkout: |
-            /*
-            !Raw Assets
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
-        with:
-          install-deps: "false"
-
-      - run: mkdir -p reports
-
-      - name: Run shop Playwright flow
-        run: npm run test:e2e:shop
-        env:
-          PLAYWRIGHT_VITE_MODE: preview
-
-      - name: Summarize shop e2e
-        if: always()
-        run: node scripts/ci-summarize-playwright.mjs
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-report-shop-gate
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 7
+    uses: ./.github/workflows/gated-e2e.yml
+    with:
+      script: test:e2e:shop
+      report-name: playwright-report-shop-gate
 
   gear-gate:
     needs: [changes, build]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.gear == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          sparse-checkout: |
-            /*
-            !Raw Assets
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
-        with:
-          install-deps: "false"
-
-      - run: mkdir -p reports
-
-      - name: Run gear Playwright flow
-        run: npm run test:e2e:gear
-        env:
-          PLAYWRIGHT_VITE_MODE: preview
-
-      - name: Summarize gear e2e
-        if: always()
-        run: node scripts/ci-summarize-playwright.mjs
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-report-gear-gate
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 7
+    uses: ./.github/workflows/gated-e2e.yml
+    with:
+      script: test:e2e:gear
+      report-name: playwright-report-gear-gate
 
   mystery-gate:
     needs: [changes, build]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.mystery == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          sparse-checkout: |
-            /*
-            !Raw Assets
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
-        with:
-          install-deps: "false"
-
-      - run: mkdir -p reports
-
-      - name: Run mystery Playwright flow
-        run: npm run test:e2e:mystery
-        env:
-          PLAYWRIGHT_VITE_MODE: preview
-
-      - name: Summarize mystery e2e
-        if: always()
-        run: node scripts/ci-summarize-playwright.mjs
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-report-mystery-gate
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 7
+    uses: ./.github/workflows/gated-e2e.yml
+    with:
+      script: test:e2e:mystery
+      report-name: playwright-report-mystery-gate
 
   audio-gate:
     needs: [changes, build]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.audio == 'true'
+    uses: ./.github/workflows/gated-e2e.yml
+    with:
+      script: test:e2e:audio
+      report-name: playwright-report-audio-gate
+
+  bundle-budget:
+    needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5
         with:
@@ -524,41 +367,13 @@ jobs:
             /*
             !Raw Assets
           sparse-checkout-cone-mode: false
-
       - uses: ./.github/actions/setup
       - uses: actions/download-artifact@v8
         with:
           name: dist
           path: dist/
-
-      - name: Setup Playwright Chromium
-        uses: ./.github/actions/setup-playwright
-        with:
-          install-deps: "false"
-
-      - run: mkdir -p reports
-
-      - name: Run audio Playwright flow
-        run: npm run test:e2e:audio
-        env:
-          PLAYWRIGHT_VITE_MODE: preview
-
-      - name: Summarize audio e2e
-        if: always()
-        run: node scripts/ci-summarize-playwright.mjs
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-report-audio-gate
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 7
+      - name: Check bundle budget (index 600k / total 1.55M)
+        run: node scripts/check-bundle-budget.mjs
 
   desktop-build:
     needs: changes

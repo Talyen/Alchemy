@@ -118,6 +118,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     dispatchRunSessionCommand((draft) => {
       if (draft.session.hasActiveRun && draft.run.activeRun.contentSystemType !== systemId) {
         parkAndDeactivateForegroundRunInDraft(draft);
+        setPendingCharacterId(draft, null);
       }
       setPendingContentSystemType(draft, systemId);
     });

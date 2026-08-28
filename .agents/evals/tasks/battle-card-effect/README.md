@@ -1,0 +1,11 @@
+# Task: Battle — add card effect kind
+
+Setup: Branch from `main`, pick an unused `BattleCardEffect` kind name.
+Goal: Add kind per `docs/WORKFLOWS.md#add-a-new-card-effect-kind` — schema in `src/lib/game-data/effects/`, handler in `src/lib/battle/effect-handlers/`, registry + metadata wiring, card using it (`descriptionLines` matches).
+Pass when:
+
+- `npm run typecheck:all` passes
+- `npm run lint` + `npm run lint:boundaries` passes
+- `effects-registry.test.ts` + `effect-handlers-registry.test.ts` + `unit-battle` green
+- No `Math.floor`/`Math.random` lint regressions
+  Run: `npm run verify:changed -- src/lib/game-data/effects src/lib/battle`

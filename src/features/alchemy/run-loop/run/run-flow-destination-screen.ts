@@ -31,7 +31,16 @@ export function createDestinationScreenHandlers(
       if (!choice) return;
       deps.actions.clearCardHover();
       const commitDestinationProgress = () => {
-        dispatchRunSessionCommand((draft) => commitDestinationClaim(draft, destination));
+        try {
+          dispatchRunSessionCommand((draft) => commitDestinationClaim(draft, destination));
+        } catch (error) {
+          try {
+            dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));
+          } catch {
+            // cancel is best-effort; original error is load-bearing
+          }
+          throw new Error("commitDestinationProgress failed", { cause: error });
+        }
       };
       routeDestinationChoice(destination, {
         navigateTo: (screen) => deps.actions.navigateTo(screen, commitDestinationProgress),

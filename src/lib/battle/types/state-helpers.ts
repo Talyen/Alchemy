@@ -123,7 +123,15 @@ export function setFlag<K extends keyof CombatFlags>(state: BattleState, flag: K
 }
 
 // Adds delta (positive or negative) to current, clamped to [0, max]. NOT an absolute setter.
+// Non-finite inputs are load-bearing corruption — preserve current health and clamp
+// to a sane max rather than killing the player with a 0 fallback.
 export function clampHealth(current: number, delta: number, max: number): number {
+  if (!Number.isFinite(current) || !Number.isFinite(delta) || !Number.isFinite(max)) {
+    const safeCurrent = Number.isFinite(current) ? current : 0;
+    const safeMax = Number.isFinite(max) && max > 0 ? max : safeCurrent;
+    const safeDelta = Number.isFinite(delta) ? delta : 0;
+    return clamp(safeCurrent + safeDelta, 0, safeMax);
+  }
   return clamp(current + delta, 0, max);
 }
 
@@ -167,7 +175,7 @@ export function deathsDoorGraceTurns(extension: number): number {
 // Once grace expires, the next lethal hit after that enemy phase can kill.
 // damageReduction subtracts flat damage (e.g., from talents) before applying to health.
 export function applyPlayerCombatDamage(state: BattleState, damage: number, damageType?: string): BattleState {
-  if (damage <= 0) return state;
+  if (!Number.isFinite(damage) || damage <= 0) return state;
   let reducedDamage = damage - state.talentEffects.damageReduction;
   if (state.activeCompanion && state.talentEffects.damageReductionWithCompanion > 0) {
     reducedDamage -= state.talentEffects.damageReductionWithCompanion;

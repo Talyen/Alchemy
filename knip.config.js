@@ -62,6 +62,11 @@ export default {
     "scripts/lib/change-routes.mjs": ["exports"],
     // Shared Vite alias / SSR list — consumed by vite.config.ts and vitest.config.ts sync guard.
     "scripts/lib/vite-aliases.mjs": ["exports"],
+    // Deprecated shims — canonical owners are write-port-run / write-port-session and run-resume-codec.
+    "src/features/alchemy/shared/stores/encode-shops.ts": ["files", "exports", "types"],
+    "src/features/alchemy/shared/stores/write-port-battle.ts": ["exports", "types"],
+    "src/features/alchemy/shared/stores/write-port-profile.ts": ["exports", "types"],
+    "src/features/alchemy/shared/stores/run-resume-codec.ts": ["exports"],
   },
   ignore: [
     "tests/environment.d.ts",

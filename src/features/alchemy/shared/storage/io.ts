@@ -35,12 +35,20 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
     warnings.push("active run could not be restored");
   }
   const rawParked =
-    raw && typeof raw === "object" && "parkedRuns" in raw && raw.parkedRuns && typeof raw.parkedRuns === "object"
+    raw &&
+    typeof raw === "object" &&
+    "parkedRuns" in raw &&
+    raw.parkedRuns &&
+    typeof raw.parkedRuns === "object" &&
+    !Array.isArray(raw.parkedRuns)
       ? Object.keys(raw.parkedRuns).length
       : 0;
   const keptParked = Object.keys(normalized.parkedRuns ?? {}).length;
   if (rawParked > keptParked) {
     warnings.push("a parked run could not be restored");
+  }
+  if (typeof (raw as { gold?: unknown }).gold === "number" && (raw as { gold: number }).gold !== normalized.gold) {
+    warnings.push(`Field "gold" was repaired (raw ${String((raw as { gold: number }).gold)} -> ${normalized.gold})`);
   }
   return warnings;
 }

@@ -19,7 +19,7 @@ interface FightPacingClockConfig {
   maxRounds: number;
 }
 
-const SPAN_EPSILON = 0.0001;
+const SPAN_EPSILON = 0.001;
 
 function fightPacingClockConfig(enemyType: EnemyType): FightPacingClockConfig {
   return FIGHT_PACING.clockByEnemyType[enemyType];

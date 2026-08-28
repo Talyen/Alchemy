@@ -17,7 +17,6 @@ import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Screen } from "@/lib/routing";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { DisplayOverrides } from "./run-domain-types";
-import type { ActiveRunProgressFields } from "./run-state-init";
 import { mostRecentResumableMode } from "./parked-runs";
 import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 import type { ContentNavigationRunPort, ContentNavigationTalentPort, RunOrchestrationPort } from "./run-port-types";
@@ -25,40 +24,35 @@ import { createRunSessionCommand } from "./run-session-command";
 import { selectAutosaveAllowed } from "./select-autosave-allowed";
 import { setHasActiveBattle as setHasActiveBattleCommand } from "./run-session-write-port";
 
-// The three run-facing ports intentionally overlap (orchestration is the superset of
-// navigation + part of battle). A shared selector factory centralizes the per-field
-// picking so renaming/adding a field touches one place instead of three hand-maintained
-// object spreads. Overlap is intentional; narrowing is by key list, not by copy-paste.
-function selectRunFields<K extends keyof ActiveRunProgressFields>(
-  ...keys: K[]
-): (state: GameplayState) => Pick<ActiveRunProgressFields, K> {
-  return (state) => {
-    const out = {} as Pick<ActiveRunProgressFields, K>;
-    for (const k of keys) out[k] = state.run.activeRun[k];
-    return out;
+// Keep in sync with ContentNavigationRunPort.
+function selectContentNavigationFields(state: GameplayState): ContentNavigationRunPort {
+  const r = state.run.activeRun;
+  return {
+    contentSystemType: r.contentSystemType,
+    lastOfferedDestinations: r.lastOfferedDestinations,
+    destinationRoundsSinceOffered: r.destinationRoundsSinceOffered,
   };
 }
 
-const selectContentNavigationFields = selectRunFields(
-  "contentSystemType",
-  "lastOfferedDestinations",
-  "destinationRoundsSinceOffered",
-);
-
-const selectOrchestrationFields = selectRunFields(
-  "characterId",
-  "selectedDifficulty",
-  "runMaxHealth",
-  "contentSystemType",
-  "roomsEncountered",
-  "currentAct",
-  "runDeck",
-  "runPlayerHealth",
-  "destinationIndexInAct",
-  "completedDestinations",
-  "lastOfferedDestinations",
-  "destinationRoundsSinceOffered",
-);
+// Keep in sync with RunOrchestrationPort — explicit fields avoid generic drift.
+function selectOrchestrationFields(state: GameplayState): RunOrchestrationPort {
+  const r = state.run.activeRun;
+  return {
+    characterId: r.characterId,
+    selectedDifficulty: r.selectedDifficulty,
+    runMaxHealth: r.runMaxHealth,
+    contentSystemType: r.contentSystemType,
+    roomsEncountered: r.roomsEncountered,
+    currentAct: r.currentAct,
+    runDeck: r.runDeck,
+    runPlayerHealth: r.runPlayerHealth,
+    destinationIndexInAct: r.destinationIndexInAct,
+    completedDestinations: r.completedDestinations,
+    lastOfferedDestinations: r.lastOfferedDestinations,
+    destinationRoundsSinceOffered: r.destinationRoundsSinceOffered,
+    gold: state.runProfile.gold,
+  };
+}
 
 const commandSetHasActiveBattle = createRunSessionCommand(setHasActiveBattleCommand);
 
@@ -69,12 +63,7 @@ export function useTalentEffects(): TalentEffectManifest {
 
 /** Single orchestration subscription for run-flow, content-nav, destinations, and wildwood. */
 export function useRunOrchestrationPort(): RunOrchestrationPort {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      ...selectOrchestrationFields(state),
-      gold: state.runProfile.gold,
-    })),
-  );
+  return useGameplayStateStore(useShallow(selectOrchestrationFields));
 }
 
 export function useContentNavigationRunPort(): ContentNavigationRunPort {

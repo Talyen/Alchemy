@@ -274,6 +274,8 @@ export const ROUTES = Object.freeze([
       "docs/**",
       "tests/e2e/README.md",
       ".agents/skills/**",
+      ".agents/knowledge/**",
+      ".agents/evals/**",
       ".cursor/**",
       "scripts/archive-plans.mjs",
       "scripts/check-documentation-contract.mjs",

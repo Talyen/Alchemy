@@ -70,11 +70,28 @@ export function subscribeAlchemyPersistence(listener: () => void): () => void {
 }
 
 export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): SaveData {
+  const persistenceFields = encodeAlchemyPersistenceFields();
+  // Envelope keys win over codec fields — a codec adding a same-named field must not
+  // silently overwrite the save envelope version. Destructure with unused rest to
+  // make the deny-list type-safe without unsafe casts or void statements.
+  const {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deny-list: prevent codec from overwriting envelope
+    saveSchemaVersion: _saveSchemaVersion,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deny-list
+    gameBuildVersion: _gameBuildVersion,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deny-list
+    contentVersion: _contentVersion,
+    ...safeFields
+  } = persistenceFields as AlchemyPersistenceFields & {
+    saveSchemaVersion?: unknown;
+    gameBuildVersion?: unknown;
+    contentVersion?: unknown;
+  };
   return {
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,
-    ...encodeAlchemyPersistenceFields(),
+    ...safeFields,
     activeRun,
     parkedRuns: readParkedRuns(),
     runRecency: readRunRecency(),

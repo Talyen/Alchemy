@@ -1,0 +1,60 @@
+name: Gated E2E
+
+on:
+  workflow_call:
+    inputs:
+      script:
+        type: string
+        required: true
+        description: "npm script to run, e.g. test:ship:e2e or test:e2e:shop"
+      report-name:
+        type: string
+        required: true
+        description: "artifact name for failure upload"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !Raw Assets
+          sparse-checkout-cone-mode: false
+
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Setup Playwright Chromium
+        uses: ./.github/actions/setup-playwright
+        with:
+          install-deps: "false"
+
+      - run: mkdir -p reports
+
+      - name: Run ${{ inputs.report-name }}
+        run: npm run ${{ inputs.script }}
+        env:
+          PLAYWRIGHT_VITE_MODE: preview
+
+      - name: Summarize ${{ inputs.report-name }}
+        if: always()
+        run: node scripts/ci-summarize-playwright.mjs
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.report-name }}
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7

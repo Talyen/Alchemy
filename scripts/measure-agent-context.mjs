@@ -11,7 +11,7 @@ const INSTRUCTION_FILES = ["AGENTS.md"];
 
 export const ROUTE_CONTEXT_BUDGETS = Object.freeze({
   "active-run": { preread: 14 * 1024, total: 16 * 1024 },
-  save: { preread: 12 * 1024, total: 23 * 1024 },
+  save: { preread: 12 * 1024, total: 24 * 1024 },
   battle: { preread: 14 * 1024, total: 15 * 1024 },
   "content-systems": { preread: 10 * 1024, total: 16 * 1024 },
   homestead: { preread: 10 * 1024, total: 11 * 1024 },

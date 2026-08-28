@@ -34,13 +34,9 @@ function resolveCardPlayCost(state: BattleState, card: BattleCard) {
   if (consumedFlags.size === 0 && disarmedFlags.size === 0) {
     return { state, effectiveCost };
   }
-  let nextFlags: CombatFlags = { ...state.flags };
-  for (const flag of consumedFlags) {
-    nextFlags = { ...nextFlags, [flag]: true };
-  }
-  for (const flag of disarmedFlags) {
-    nextFlags = { ...nextFlags, [flag]: false };
-  }
+  const nextFlags: CombatFlags = { ...state.flags };
+  for (const flag of consumedFlags) nextFlags[flag] = true;
+  for (const flag of disarmedFlags) nextFlags[flag] = false;
   return { state: { ...state, flags: nextFlags }, effectiveCost };
 }
 
@@ -147,10 +143,18 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
   }
   if (!targetType) return state;
 
-  const targetIndex = state.deck.findIndex((c) => cardHasDamageType(c, targetType) || c.tags?.includes(targetType));
-  if (targetIndex === -1) return state;
-
-  const [rawDrawnCard] = state.deck.slice(targetIndex, targetIndex + 1);
+  const eligibleIndices: number[] = [];
+  for (let i = 0; i < state.deck.length; i++) {
+    const candidate = state.deck[i];
+    if (candidate && (cardHasDamageType(candidate, targetType) || candidate.tags?.includes(targetType))) {
+      eligibleIndices.push(i);
+    }
+  }
+  if (eligibleIndices.length === 0) return state;
+  // eslint-disable-next-line no-restricted-syntax -- battle rule enforces Math.round for damage; index pick is not combat arithmetic
+  const pick = Math.floor(state.rng() * eligibleIndices.length);
+  const targetIndex = eligibleIndices[pick] ?? eligibleIndices[0]!;
+  const rawDrawnCard = state.deck[targetIndex];
   if (!rawDrawnCard) return state;
 
   const drawnCard = { ...rawDrawnCard, uid: state.nextCardUid };

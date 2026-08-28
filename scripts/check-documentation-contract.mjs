@@ -206,6 +206,17 @@ export function checkDurableDocumentReachability() {
   return [...documents.keys()].filter((relativePath) => !reachable.has(relativePath));
 }
 
+export function checkKnowledgeIndexCompleteness() {
+  const knowledgeDir = join(ROOT, ".agents", "knowledge", "patterns");
+  const indexPath = join(ROOT, ".agents", "knowledge", "index.md");
+  if (!existsSync(knowledgeDir) || !existsSync(indexPath)) return [];
+  const patterns = readdirSync(knowledgeDir).filter((name) => name.endsWith(".md"));
+  const indexSource = readFileSync(indexPath, "utf8");
+  return patterns
+    .filter((name) => !indexSource.includes(name))
+    .map((name) => `knowledge index missing: .agents/knowledge/patterns/${name}`);
+}
+
 export const DOCUMENTATION_CONTRACTS = [
   ["local Markdown links", checkLocalMarkdownLinks],
   ["inline repository paths", checkInlineRepositoryPaths],
@@ -213,6 +224,7 @@ export const DOCUMENTATION_CONTRACTS = [
   ["Markdown heading anchors", checkMarkdownHeadingAnchors],
   ["CONTRIBUTING E2E paths", checkContributingE2ePaths],
   ["durable document reachability", checkDurableDocumentReachability],
+  ["knowledge index completeness", checkKnowledgeIndexCompleteness],
 ];
 
 export function checkDocumentationContracts() {
