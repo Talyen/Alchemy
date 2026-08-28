@@ -137,17 +137,22 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     discoveredUniqueIds,
     autoEndTurn,
     selectedAspectRatio,
+    gold,
+    runGold,
     ...activeRunData
-  } = overrides;
+  } = overrides as Record<string, unknown> & { gold?: unknown; runGold?: unknown };
+  // Unified persistence seam: gold lives on runProfile (top-level save.gold), not activeRun.runGold.
+  // Legacy E2E callers still use runGold; map it to the new location for backward compat.
+  const injectedGold = typeof gold === "number" ? gold : typeof runGold === "number" ? runGold : undefined;
   const save: Record<string, unknown> = {
     ...baseHomesteadSave,
+    ...(injectedGold !== undefined ? { gold: injectedGold } : {}),
     // E2E battles assert on a stable opening hand; auto-end races empty/mid-draw states.
     autoEndTurn: autoEndTurn === true,
     ...(typeof selectedAspectRatio === "string" ? { selectedAspectRatio } : {}),
     activeRun: {
       characterId: "knight",
       runDeck: [],
-      runGold: 0,
       runPlayerHealth: 30,
       runMaxHealth: 30,
       roomsEncountered: 0,
