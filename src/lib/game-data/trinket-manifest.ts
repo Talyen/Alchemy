@@ -1,5 +1,3 @@
-// Authored combat knobs unlocked by Boons or equipped Trinkets. Content-owned here so each
-// compendium row can carry its own effects; battle consumes the merged manifest.
 export interface TrinketManifest {
   extraDrawPerBattle: number;
   firstHolyDamageDoubled: boolean;

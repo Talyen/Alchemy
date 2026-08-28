@@ -67,8 +67,6 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
   };
 }
 
-// Base gold roll is inline in rollVictoryGold: floor(rng() * 21 + 10) over [10, 30].
-// 0.25 yields the deterministic 15 base gold the gold assertions below rely on.
 const testRng = () => 0.25;
 
 describe("computeVictoryRewardState", () => {
@@ -352,7 +350,7 @@ describe("computeVictoryRewards", () => {
       }),
       () => 0.25,
     );
-    // Base roll 15 + elite bonus 5 (rounded).
+
     expect(result.goldEarned).toBe(20);
   });
 
@@ -391,7 +389,7 @@ describe("computeVictoryRewards", () => {
       }),
       testRng,
     );
-    // Base roll 15 + boss bonus 8 (rounded).
+
     expect(result.goldEarned).toBe(23);
     expect(result.rewardState.rewardType).toBe("trinket");
   });
@@ -404,7 +402,7 @@ describe("computeVictoryRewards", () => {
       }),
       testRng,
     );
-    // Base roll 15 + generous bonus 8 (rounded).
+
     expect(result.goldEarned).toBe(23);
   });
 
@@ -484,7 +482,7 @@ describe("computeVictoryRewards", () => {
   it("computes destinations via getAvailableDestinations", () => {
     const getAvailableDestinations = vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]);
     const result = computeVictoryRewards(baseInput({ getAvailableDestinations }), testRng);
-    // Persisted gold: purse 5 + earned 15.
+
     expect(getAvailableDestinations).toHaveBeenCalledWith({
       currentHealth: 30,
       currentGold: 20,
@@ -571,8 +569,7 @@ describe("commitVictoryRewards", () => {
         contentSystemType: "wildwood",
       }),
     );
-    // The wish engine never generates crystal in wildwood (it grants gold
-    // instead); the commit guard also refuses to award materials.
+
     expect(readGameplayState().runProfile.materialInventory.crystal).toBe(0);
   });
 

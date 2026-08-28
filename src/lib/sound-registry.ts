@@ -1,11 +1,3 @@
-// Sound registry — maps every game event to its corresponding asset filename in
-// public/sounds/. This is the single source of truth for what SFX exist.
-//
-// Arrays provide random variation (one is picked at runtime). Strings are
-// deterministic. The audio engine resolves these against import.meta.env.BASE_URL.
-
-// ── Cards ──
-// Each card id maps to the sound played when that card resolves.
 export const cardSounds: Record<string, string[]> = {
   slash: ["sword-attack-1.ogg"],
   stab: ["sword-attack-3.ogg"],
@@ -67,8 +59,6 @@ export const cardSounds: Record<string, string[]> = {
   judgment: ["strong-punch.ogg"],
 };
 
-// ── Enemy attacks ──
-// Maps enemy id to the sound played when they attack the player.
 export const enemyAttackSounds: Record<string, string[]> = {
   skeleton: ["swish-hit.ogg"],
   goblin: ["swish-hit.ogg"],
@@ -86,8 +76,6 @@ export const enemyAttackSounds: Record<string, string[]> = {
   slime: ["squelching-4.ogg"],
 };
 
-// ── Battle events ──
-// Generic combat moments that aren't tied to a specific card or enemy.
 export const battleEventSounds = {
   enemyHit: "sword-impact-hit-1.ogg",
   playerHit: "punch-3.ogg",
@@ -109,7 +97,6 @@ export const battleEventSounds = {
   sliceDeath: "sword-slice.ogg",
 } as const;
 
-// ── UI ──
 export const uiSounds = {
   gearMove: "metal-button-4.ogg",
   cardHover: "card-draw-3.ogg",
@@ -132,13 +119,11 @@ export const uiSounds = {
 
 export type UISound = keyof typeof uiSounds;
 
-// ── Game flow stingers ──
 export const stingerSounds = {
   victory: "harpsichord-level-complete.ogg",
   defeat: "harpsichord-defeated.ogg",
 } as const;
 
-/** Every SFX filename referenced by gameplay. Used for preload, asset checks, and URL resolution. */
 export function allRegisteredSoundFiles(): string[] {
   return [
     ...new Set([

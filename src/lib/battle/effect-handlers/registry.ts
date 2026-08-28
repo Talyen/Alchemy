@@ -1,6 +1,3 @@
-/**
- * Maps each registered effect kind to its battle apply handler.
- */
 import type { BattleCard, BattleCardEffect, BattleCardEffectKind } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "../types";
 import type { CardEffectResolutionContext, EffectHandler } from "./handler-types";
@@ -38,8 +35,6 @@ import {
 
 type RegisteredEffectKind = Exclude<BattleCardEffectKind, "chance" | "repeat-over-turns">;
 
-// `satisfies Record<...>` ensures ALL registered kinds have a handler at build time.
-// The effect-handlers-registry.test.ts provides a runtime belt-and-suspenders check.
 export const EFFECT_APPLY_BY_KIND = {
   damage: applyDamageEffect,
   "player-status": applyPlayerStatusEffectHandler,

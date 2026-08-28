@@ -1,4 +1,3 @@
-// Play-policy scoring for headless balance simulations.
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 

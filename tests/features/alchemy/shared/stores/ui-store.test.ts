@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 
 beforeEach(() => {
@@ -46,5 +46,27 @@ describe("plasma registrations", () => {
     expect(useUiStore.getState().plasmaInteraction?.colorPair).toEqual(blue);
     store.clearPlasmaInteraction("tooltip");
     expect(useUiStore.getState().plasmaBaseline?.colorPair).toEqual(red);
+  });
+});
+
+describe("maybeTriggerShimmer", () => {
+  it("is per-card cooldown not global", () => {
+    const nowSpy = vi.spyOn(performance, "now").mockReturnValue(1000);
+    const store = useUiStore.getState();
+    store.maybeTriggerShimmer("card-a");
+    const tokenA = useUiStore.getState().shimmerState?.token;
+    expect(tokenA).toBe(1000);
+
+    nowSpy.mockReturnValue(1005);
+    store.maybeTriggerShimmer("card-a");
+    expect(useUiStore.getState().shimmerState?.token).toBe(tokenA);
+
+    store.maybeTriggerShimmer("card-b");
+    expect(useUiStore.getState().shimmerState?.cardId).toBe("card-b");
+
+    nowSpy.mockReturnValue((tokenA ?? 0) + 10_000);
+    store.maybeTriggerShimmer("card-a");
+    expect(useUiStore.getState().shimmerState?.cardId).toBe("card-a");
+    nowSpy.mockRestore();
   });
 });

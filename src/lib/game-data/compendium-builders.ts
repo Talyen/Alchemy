@@ -1,4 +1,3 @@
-// Factories for compendium enemy and trinket entries — reduces repeated field boilerplate.
 import type { BestiaryEntry, PlayerStatusId, TrinketEntry } from "./types";
 
 const ENEMY_SUBTITLES = { boss: "Boss", normal: "Normal", elite: "Elite" } as const;

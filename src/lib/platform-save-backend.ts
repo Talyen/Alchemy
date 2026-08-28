@@ -1,13 +1,10 @@
-// Browser/Desktop save transport. Owns platform selection, backup/cloud candidate
-// ordering, and the write/clear ordering required for recoverable desktop saves.
-
 type SaveBackendReadResult = { ok: true; candidates: string[] } | { ok: false; error: unknown };
 type SaveBackendWriteResult = { ok: true } | { ok: false; error: unknown };
 
 export interface SaveBackend {
   readCandidates(key: string): Promise<SaveBackendReadResult>;
   write(key: string, value: string): Promise<SaveBackendWriteResult>;
-  /** Synchronous best-effort write for terminal browser lifecycle events. */
+
   writeSync?(key: string, value: string): SaveBackendWriteResult | null;
   clear(key: string): Promise<SaveBackendWriteResult>;
 }

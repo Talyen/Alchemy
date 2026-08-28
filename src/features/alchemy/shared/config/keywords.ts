@@ -1,8 +1,5 @@
-// Keyword text matching metadata for card description highlighting.
 import type { KeywordId } from "@/lib/game-data";
 
-// Maps display-friendly strings like "Physical" to their KeywordId.
-// Used to colorize card descriptions; longer aliases win before sub-strings.
 export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Physical", keywordId: "physical" },
   { match: "Stun", keywordId: "stun" },
@@ -41,8 +38,6 @@ export const keywordAliasMap = new Map<string, KeywordId>(
   keywordAliases.map((alias) => [alias.match.toLowerCase(), alias.keywordId]),
 );
 
-// Pre-compiled regex for keyword highlighting so card description rendering
-// does not rebuild this expression on every render.
 export const keywordPattern = new RegExp(
   `\\b(${keywordAliases
     .map((alias) => alias.match.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&"))

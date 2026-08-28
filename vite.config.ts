@@ -47,7 +47,7 @@ export default defineConfig(({ mode, command }) => {
         }),
       process.env.ANALYZE &&
         visualizer({
-          open: true,
+          open: !process.env.CI,
           gzipSize: true,
           brotliSize: true,
           filename: "reports/bundle-analysis.html",
@@ -119,9 +119,9 @@ export default defineConfig(({ mode, command }) => {
           },
         },
       },
-      // Eagerly-loaded app code intentionally stays in one entry chunk; silence the
-      // default 500 kB advisory that conflicts with the no-React.lazy invariant.
-      chunkSizeWarningLimit: 900,
+      // No React.lazy — entry is intentionally eager. Keep warning limit in sync
+      // with scripts/check-bundle-budget.mjs BUDGETS.indexMaxBytes (600 kB).
+      chunkSizeWarningLimit: 600,
     },
     resolve: {
       alias: {

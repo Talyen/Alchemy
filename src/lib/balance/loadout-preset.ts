@@ -1,4 +1,3 @@
-// Declared gold / homestead / gear / core-trinket loadouts for balance tiers.
 import { characters, type CharacterId } from "@/lib/game-data";
 import { MAX_HEALTH_PER_TALENT_POINT } from "@/lib/game-constants";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
@@ -18,7 +17,6 @@ export const TIER_GOLD: Record<TalentPreset, number> = {
   late: 80,
 };
 
-/** Estimated combats finished before this tier's fights, for Vitality (+1 max HP per combat). */
 export const TYPICAL_VITALITY_COMBATS: Record<TalentPreset, number> = {
   early: 0,
   mid: 8,

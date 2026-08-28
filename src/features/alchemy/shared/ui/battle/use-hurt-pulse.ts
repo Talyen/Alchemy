@@ -1,4 +1,3 @@
-// Shared impact pulse timing for portrait flash, sparks, and overflow-visible on the art frame.
 import { useEffect, useRef, useState } from "react";
 
 import type { CombatImpactCue } from "../../types";

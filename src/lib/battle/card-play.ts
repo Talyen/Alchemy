@@ -1,6 +1,3 @@
-/**
- * Resolves card play validation, cost reduction, and effect application during combat.
- */
 import { drawFromState, applyDrawResult } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import {
@@ -21,14 +18,12 @@ import {
 } from "./types";
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import { rollPercent } from "./status-helpers";
+import { getBattleRng, rollPercent } from "./status-helpers";
 
 import { cardHasDamageType, computeEffectiveCost, isNatureCard } from "./card-cost-rules";
+import { rngInt } from "@/lib/run-rng";
 import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
-/**
- * Resolves the final state and cost for a played card, modifying flags if discounts were used.
- */
 function resolveCardPlayCost(state: BattleState, card: BattleCard) {
   const { effectiveCost, consumedFlags, disarmedFlags } = computeEffectiveCost(state, card);
   if (consumedFlags.size === 0 && disarmedFlags.size === 0) {
@@ -40,9 +35,6 @@ function resolveCardPlayCost(state: BattleState, card: BattleCard) {
   return { state: { ...state, flags: nextFlags }, effectiveCost };
 }
 
-/**
- * Validates whether a card in the player's hand can currently be played.
- */
 function getPlayableCard(state: BattleState, cardId: string, index: number): BattleCard | null {
   if (state.wishOptions) return null;
   const card = state.hand[index];
@@ -72,7 +64,6 @@ function canAffordCard(state: BattleState, index: number): boolean {
   return !!currentCard && state.mana >= computeEffectiveCost(state, currentCard).effectiveCost;
 }
 
-/** Battle-engine playability (mana, phase, defeat, wish). UI adds screen/animation guards on top. */
 export function canPlayCard(state: BattleState, card: BattleCard, index: number, options?: CardPlayOptions): boolean {
   if (state.enemyHealth <= 0 && !options?.allowAfterEnemyDefeat) return false;
   if (isPlayerDefeated(state)) return false;
@@ -84,10 +75,6 @@ export function canPlayCard(state: BattleState, card: BattleCard, index: number,
   return true;
 }
 
-/**
- * Executes state changes directly related to removing a card from hand and applying its effects.
- * `playTwice` must be resolved by the caller before the hand/flags reset performed here.
- */
 function executeCardPlayState(
   state: BattleState,
   card: BattleCard,
@@ -109,14 +96,13 @@ function executeCardPlayState(
     enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
   };
   nextState = applyCardEffects(nextState, card, combatTexts, playContext);
-  // Replay shares the first application's context so start-of-play conditionals
-  // (e.g. restore-mana ifEnemyFrozen) compare against the same pre-play snapshot.
+
   if (playTwice) nextState = applyCardEffects(nextState, card, combatTexts, playContext);
 
   nextState = applyNatureCardPlayTalents(nextState, card, combatTexts);
 
   if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {
-    if (rollPercent(state.gearEffects.manaOnNatureDamageChance, state.rng)) {
+    if (rollPercent(state.gearEffects.manaOnNatureDamageChance, getBattleRng(state))) {
       nextState = gainManaWithCombatText(nextState, 1, combatTexts);
     }
   }
@@ -135,7 +121,7 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
 
   let targetType: "burn" | "freeze" | null = null;
   if (hasBurn && hasFreeze) {
-    targetType = rollPercent(WISH_TRINKET_FORK_PERCENT, state.rng) ? "freeze" : "burn";
+    targetType = rollPercent(WISH_TRINKET_FORK_PERCENT, getBattleRng(state)) ? "freeze" : "burn";
   } else if (hasBurn) {
     targetType = "freeze";
   } else if (hasFreeze) {
@@ -151,8 +137,7 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
     }
   }
   if (eligibleIndices.length === 0) return state;
-  // eslint-disable-next-line no-restricted-syntax -- battle rule enforces Math.round for damage; index pick is not combat arithmetic
-  const pick = Math.floor(state.rng() * eligibleIndices.length);
+  const pick = rngInt(getBattleRng(state), eligibleIndices.length);
   const targetIndex = eligibleIndices[pick] ?? eligibleIndices[0]!;
   const rawDrawnCard = state.deck[targetIndex];
   if (!rawDrawnCard) return state;
@@ -167,19 +152,14 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
   };
 }
 
-/**
- * Applies the Resonant Chime boon effect if cards played trigger criteria.
- */
 function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   const { resonantChimeCardsRequired, resonantChimeMana } = state.trinketEffects;
   if (
     resonantChimeCardsRequired > 0 &&
     resonantChimeMana > 0 &&
-    // Ensure the chime triggers at most once per player turn
     !state.flags.resonantChimeUsedThisTurn &&
     state.cardsPlayedThisTurn >= resonantChimeCardsRequired
   ) {
-    // At full mana the chime holds its charge instead of wasting it.
     const afterMana = gainManaWithCombatText(state, resonantChimeMana, combatTexts);
     if (afterMana.mana <= state.mana) return state;
     return { ...afterMana, flags: { ...state.flags, resonantChimeUsedThisTurn: true } };
@@ -243,9 +223,6 @@ function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTe
   return nextState;
 }
 
-/**
- * Resolves post-play destination (exhausted/discard pile) and triggers consume riders.
- */
 export function handlePostPlayCardDestination(
   state: BattleState,
   card: BattleCard,
@@ -279,10 +256,6 @@ export function handlePostPlayCardDestination(
   return { ...state, discard: [...state.discard, card] };
 }
 
-/**
- * Coordinates cost checks, play validation, effect dispatching, and deck movement.
- * Validation is owned by canPlayCard; this function trusts its verdict.
- */
 export function playBattleCardResolved(
   state: BattleState,
   cardId: string,
@@ -297,13 +270,11 @@ export function playBattleCardResolved(
 
   const { state: costState, effectiveCost } = resolveCardPlayCost(state, card);
 
-  // Single resolution point for replay; both the effect application and the
-  // encounter-trait pass consume this decision.
   const playTwice = costState.flags.playNextCardTwice;
   let nextState = executeCardPlayState(costState, card, index, effectiveCost, combatTexts, playTwice);
   nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
   if (playTwice) nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
-  // Chime only grants mana, so survival cannot change across it.
+
   const playerAlive = !isPlayerDefeated(nextState);
   if (playerAlive && enemyWasAlive) {
     nextState = applyResonantChimeTrinket(nextState, combatTexts);
@@ -313,9 +284,6 @@ export function playBattleCardResolved(
   return { state: nextState, combatTexts };
 }
 
-/**
- * Inspects card effects to determine whether any effect deals damage directly or recursively.
- */
 export function hasDamageEffect(effects: ReadonlyArray<BattleCard["effects"][number]>): boolean {
   for (const effect of effects) {
     if (
@@ -338,14 +306,10 @@ export function hasDamageEffect(effects: ReadonlyArray<BattleCard["effects"][num
   return false;
 }
 
-/**
- * Checks whether a card has direct or recursive damage-dealing effects (an attack card).
- */
 export function isAttackCard(card: Pick<BattleCard, "effects">): boolean {
   return hasDamageEffect(card.effects);
 }
 
-/** True when any enemy attack packet deals hit damage rather than status-only. */
 export function enemyAttackDealsDamage(effects: readonly EnemyAttackEffect[] | null | undefined): boolean {
   return (effects ?? []).some((effect) => effect.kind === "damage");
 }

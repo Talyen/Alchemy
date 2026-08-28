@@ -1,10 +1,6 @@
-// Shared RAF particle animation core. Owns the running flag, dt clamp, progress
-// easing, clearRect, and completion; engines supply step/draw callbacks so
-// one-shot burst effects share identical loop scaffolding.
 export interface ParticleLoopCallbacks<T> {
-  /** Advance one particle by dt (frame-normalized to ~60fps). */
   step: (particle: T, dt: number) => void;
-  /** Draw one particle at the current loop progress in [0, 1]. */
+
   draw: (ctx: CanvasRenderingContext2D, particle: T, progress: number) => void;
 }
 

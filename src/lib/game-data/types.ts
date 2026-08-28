@@ -1,6 +1,3 @@
-// Core game-data type contracts shared across lib and features: card shapes, status IDs,
-// enemy/trait/boon definitions. No runtime code — pure types only so other modules can import
-// shapes without dragging in data or side effects.
 import type { TrinketManifest } from "./trinket-manifest";
 
 export type KeywordId =
@@ -28,7 +25,6 @@ export type KeywordId =
 
 export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature";
 
-/** Damage types used for random-hit effects (e.g. Roll the Dice). Archery is a card tag, not a damage type. */
 export const DAMAGE_TYPES = ["physical", "stun", "holy", "burn", "poison", "bleed", "freeze", "nature"] as const;
 
 export type PlayerStatusId =
@@ -52,7 +48,7 @@ export type EnemyStatusId =
   | "burnBonus"
   | "freezeBonus"
   | "onAttackBleed";
-/** Enemy status IDs that represent actual damage types (excludes augments like burnBonus). */
+
 export type EnemyStatusDamageId = Exclude<EnemyStatusId, "burnBonus" | "freezeBonus" | "onAttackBleed">;
 
 export type CompanionId =
@@ -153,10 +149,10 @@ export interface BattleCard {
   cost: number;
   consume?: boolean;
   corrupted?: boolean;
-  /** Positions of numeric values in descriptionLines that were modified by corruption, used to highlight them in the UI. */
+
   corruptedValuePositions?: Array<{ lineIndex: number; matchIndex: number }>;
   baseTitle?: string;
-  /** Playstyle tags (e.g. archery) counted for talent XP; not damage types. */
+
   tags?: KeywordId[];
   effects: BattleCardEffect[];
   excludeFromOfferPool?: boolean;
@@ -198,13 +194,12 @@ export interface KeywordDefinition {
   colorClass: string;
   borderClass: string;
   shineColors: string[];
-  /** Translucent pill background for badges; must be a full Tailwind class string for JIT. */
+
   pillBgClass?: string;
 }
 
 export const harmfulPlayerStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];
 
-/** UI chip order — keep aligned with PlayerStatusId union. */
 export const PLAYER_STATUS_DISPLAY_ORDER: readonly PlayerStatusId[] = [
   "block",
   "armor",
@@ -218,7 +213,6 @@ export const PLAYER_STATUS_DISPLAY_ORDER: readonly PlayerStatusId[] = [
   "stun",
 ];
 
-/** UI chip order — keep aligned with EnemyStatusId union. */
 export const ENEMY_STATUS_DISPLAY_ORDER: readonly EnemyStatusId[] = [
   "burnBonus",
   "freezeBonus",

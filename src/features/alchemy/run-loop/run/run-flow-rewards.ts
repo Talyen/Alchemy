@@ -25,9 +25,9 @@ export interface RewardRouteDeps {
   completeRunVictory: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
   handleActComplete: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
   labyrinthClearNode: () => void;
-  /** Commit hook for most routes: restores the settled reward surface and releases the claim. */
+
   settleClaimSurface: () => void;
-  /** Claim-only release for ACT_COMPLETE, whose successor overwrites the reward surface anyway. */
+
   releaseClaim: () => void;
 }
 
@@ -49,8 +49,6 @@ export function executeRewardRouteTransition(
       deps.navigateTo(ROUTE_SCREENS.LABYRINTH_MAP, deps.settleClaimSurface);
       break;
     case REWARD_ROUTES.ACT_COMPLETE:
-      // prepareNextDestination / victory commit overwrite offer state;
-      // only the claim lock must be released here.
       deps.handleActComplete(materials, deps.releaseClaim);
       break;
     case REWARD_ROUTES.DESTINATION:
@@ -94,10 +92,6 @@ export function createRewardHandlers(
           companionRewardCards: session.companionRewardCards ? current(session.companionRewardCards) : null,
         });
 
-        // Keep the live offer UI until onRenderedScreenCommit so Victory does not
-        // hollow during NAVIGATION_DELAY_MS + PAGE_EXIT_MS. Mid-claim autosave
-        // persists companion handoff or destination continuation (not the claimed primary).
-
         const isWildwood = contentSystemType === CONTENT_SYSTEMS.WILDWOOD;
         if (!isWildwood) awardMaterialsDuringRun(draft, result.materials);
 
@@ -121,8 +115,6 @@ export function createRewardHandlers(
           if (!commit) return;
           const { result, isWildwood } = commit;
 
-          // Single commit hook for every route: restores the settled reward
-          // surface (next state + companion handoff clear) and releases the claim.
           const settleClaimSurface = () => {
             dispatchRunSessionCommand((draft) => {
               setRewardState(draft, result.nextRewardState);

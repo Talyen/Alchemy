@@ -23,8 +23,7 @@ const createRunFieldSetter = createDraftFieldSetter<ActiveRunProgressFields, Gam
 );
 
 export const setRunDeck = createRunFieldSetter("runDeck");
-// Gold is a profile purse, not an active-run field — see run-resume-codec and MIGRATIONS.md.
-// These wrappers deliberately delegate to gold-purse rather than setRunField.
+
 export function setRunGold(draft: GameplayDraft, action: number | ((prev: number) => number)): void {
   setProfileGold(draft, action);
 }
@@ -51,7 +50,6 @@ export const setRunBoons = createRunFieldSetter("runBoons");
 export const setEncounteredRunEnemyIds = createRunFieldSetter("encounteredRunEnemyIds");
 export const setContentSystemType = createRunFieldSetter("contentSystemType");
 
-/** Clear run-scoped tallies while keeping the chosen character. */
 export function resetProgress(draft: GameplayDraft): void {
   draft.run.activeRun = {
     ...createInitialActiveRunFields(null, draft.run.activeRun.characterId),
@@ -60,7 +58,6 @@ export function resetProgress(draft: GameplayDraft): void {
   draft.run.initialized = true;
 }
 
-/** Draw the next value from a named run RNG stream and persist its counter. */
 export function nextRunRandom(draft: GameplayDraft, stream: RunRngStream): number {
   const draw = nextRunRngValue(draft.run.activeRun.rng, stream);
   draft.run.activeRun.rng.counters[stream] = draw.nextCounter;
@@ -99,7 +96,6 @@ export function cloneRunObtainedItem(item: RunObtainedItem): RunObtainedItem {
   };
 }
 
-/** Append a permanent Gear or Armory Trinket grant to the run-end recap accumulator. */
 export function recordRunObtainedItem(draft: GameplayDraft, item: RunObtainedItem): void {
   draft.run.activeRun.runObtainedItems = [...draft.run.activeRun.runObtainedItems, cloneRunObtainedItem(item)];
 }
@@ -118,18 +114,13 @@ export function initializeFromResumeSnapshot(draft: GameplayDraft, activeRun: Ac
   draft.run.initialized = true;
 }
 
-/** Seed active-run fields from a run start, clearing per-run tallies and destination offers. */
 export function hydrateFromSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
   Object.assign(draft.run.activeRun, runFieldsFromSnapshot(snapshot), {
     runTalentXP: {},
     runMaterialsEarned: emptyInventory(),
     runObtainedItems: [],
-    lastOfferedDestinations: [],
-    destinationRoundsSinceOffered: {},
   });
 }
-
-// --- Navigation (screen routing lives inside the run domain) ---
 
 export function setScreen(draft: GameplayDraft, action: Screen | ((prev: Screen) => Screen)): void {
   draft.run.navigation.screen = typeof action === "function" ? action(draft.run.navigation.screen) : action;
@@ -139,19 +130,14 @@ export function resetNavigation(draft: GameplayDraft): void {
   draft.run.navigation.screen = "menu";
 }
 
-// --- Battle RNG binding helpers ---
-
 export function createDraftRunRandomSource(draft: GameplayDraft, stream: RunRngStream): () => number {
   return () => nextRunRandom(draft, stream);
 }
 
-/** Bind a battle snapshot to the draft `world` stream for one command body. */
 export function withDraftWorldBattleRng(draft: GameplayDraft, battleState: BattleState): BattleState {
   const snapshot = isDraft(battleState) ? current(battleState) : battleState;
   return { ...snapshot, rng: createDraftRunRandomSource(draft, "world") };
 }
-
-// --- Battle lifecycle (canonical owner; write-port-battle remains as deprecated re-export shim) ---
 
 function hydrateBattleState(battleState: BattleState): BattleState {
   return {
@@ -183,18 +169,23 @@ function rebindBattleWorldRng(battleState: BattleState): BattleState {
   return { ...battleState, rng: restingWorldRng() };
 }
 
-/** Replace a recipe-local world rng with the throwing resting callback before returning from a command. */
-export function withRestingWorldBattleRng(_draft: GameplayDraft, battleState: BattleState): BattleState {
+export function withRestingWorldBattleRng(battleState: BattleState): BattleState;
+export function withRestingWorldBattleRng(_draft: GameplayDraft, battleState: BattleState): BattleState;
+export function withRestingWorldBattleRng(a: unknown, b?: BattleState): BattleState {
+  const battleState = (b ?? a) as BattleState;
+  if (!battleState || typeof battleState.enemyHealth !== "number") {
+    throw new Error("withRestingWorldBattleRng: expected BattleState");
+  }
   return rebindBattleWorldRng(battleState);
 }
 
 export function withRestingEndPlayerTurnResolution(
-  draft: GameplayDraft,
+  _draft: GameplayDraft,
   result: EndPlayerTurnResolution,
 ): EndPlayerTurnResolution {
-  const state = withRestingWorldBattleRng(draft, result.state);
+  const state = withRestingWorldBattleRng(result.state);
   const afterAttack = result.afterAttackState
-    ? { afterAttackState: withRestingWorldBattleRng(draft, result.afterAttackState) }
+    ? { afterAttackState: withRestingWorldBattleRng(result.afterAttackState) }
     : {};
   if (result.kind === "haste") {
     return { ...result, state, ...afterAttack };
@@ -202,12 +193,11 @@ export function withRestingEndPlayerTurnResolution(
   return {
     ...result,
     state,
-    enemyTurnStartState: withRestingWorldBattleRng(draft, result.enemyTurnStartState),
+    enemyTurnStartState: withRestingWorldBattleRng(result.enemyTurnStartState),
     ...afterAttack,
   };
 }
 
-/** Commit the logical combat state and clear stale display overrides. */
 export function setSyncedBattleState(
   draft: GameplayDraft,
   action: BattleState | ((prev: BattleState) => BattleState),
@@ -252,7 +242,6 @@ function rebindPendingTransitionWorldRng(
   };
 }
 
-/** Hydrate and start a battle with resting RNG, or clear combat state entirely when passed `null`. */
 export function initializeActiveBattle(
   draft: GameplayDraft,
   battleState: BattleState | null,
@@ -273,7 +262,6 @@ export function initializeActiveBattle(
   battle.hasActiveBattle = true;
 }
 
-/** Commit the logical state and its async continuation as one durable revision. */
 export function commitBattleTransition(
   draft: GameplayDraft,
   battleState: BattleState,
@@ -285,7 +273,6 @@ export function commitBattleTransition(
   syncPurseFromBattleGold(draft);
 }
 
-/** Start a visible async transition while keeping its continuation in the save. */
 export function beginBattleTransition(
   draft: GameplayDraft,
   battleState: BattleState,

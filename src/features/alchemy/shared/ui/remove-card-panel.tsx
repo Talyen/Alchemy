@@ -1,4 +1,3 @@
-// Shared card-removal panel used by merchant, mystery, and wildwood screens.
 import { useMemo, useState, type ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 
@@ -30,7 +29,7 @@ export function RemoveCardPanel({
   onConfirm: (index: number) => void;
   onCancel?: () => void;
   cancelLabel?: string;
-  /** When false, Escape does not invoke onCancel (pause menu remains reachable). */
+
   escapeCancels?: boolean;
   compact?: boolean;
 }) {

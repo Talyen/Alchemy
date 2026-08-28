@@ -1,4 +1,3 @@
-// Card play, wish resolution, and post-play draw sequences in battle UI.
 import type { MouseEvent } from "react";
 import {
   canPlayCard as canPlayCardInBattle,

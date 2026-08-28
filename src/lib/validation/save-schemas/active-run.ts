@@ -1,4 +1,3 @@
-// Active run and mid-combat persistence schemas.
 import { z } from "zod";
 import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
@@ -127,7 +126,7 @@ const PersistedBattleTransitionSchema = z
       playerTurnSkipped: z.boolean(),
     }),
     z.object({ kind: z.literal("continue-end-turn") }),
-    // Accepted on load so enemy-phase snapshots without a continuation can resume.
+
     z.object({ kind: z.literal("legacy-enemy-turn") }),
   ])
   .nullable()
@@ -151,47 +150,35 @@ const OptionalWildwoodBossIdSchema = z
   .transform((id) => sanitizeWildwoodBossId(id))
   .catch(null);
 
-const ShopPersistSchema = z
-  .object({
-    cards: z.array(BattleCardSchema),
-    removeUsed: z.boolean().catch(false),
-    refreshesLeft: z.number().int().nonnegative().catch(0),
-    firstPurchaseUsed: z.boolean().catch(false),
-    purchasedSlotKeys: deduplicatedStringArraySchema().default([]),
-  })
-  .nullable()
-  .catch(null);
+function createShopPersistSchema<T extends z.ZodRawShape>(shape: T) {
+  return z
+    .object({
+      ...shape,
+      refreshesLeft: z.number().int().nonnegative().catch(0),
+      firstPurchaseUsed: z.boolean().catch(false),
+      purchasedSlotKeys: deduplicatedStringArraySchema().default([]),
+    })
+    .nullable()
+    .catch(null);
+}
 
-const AlchemistPersistSchema = z
-  .object({
-    potions: z.array(BattleCardSchema),
-    mixUsed: z.boolean().catch(false),
-    refreshesLeft: z.number().int().nonnegative().catch(0),
-    firstPurchaseUsed: z.boolean().catch(false),
-    purchasedSlotKeys: deduplicatedStringArraySchema().default([]),
-  })
-  .nullable()
-  .catch(null);
+const ShopPersistSchema = createShopPersistSchema({
+  cards: z.array(BattleCardSchema),
+  removeUsed: z.boolean().catch(false),
+});
 
-const TrinketShopPersistSchema = z
-  .object({
-    trinketIds: z.array(z.string()),
-    refreshesLeft: z.number().int().nonnegative().catch(0),
-    firstPurchaseUsed: z.boolean().catch(false),
-    purchasedSlotKeys: deduplicatedStringArraySchema().default([]),
-  })
-  .nullable()
-  .catch(null);
+const AlchemistPersistSchema = createShopPersistSchema({
+  potions: z.array(BattleCardSchema),
+  mixUsed: z.boolean().catch(false),
+});
 
-const EquipmentShopPersistSchema = z
-  .object({
-    gear: GearInstanceArraySchema,
-    refreshesLeft: z.number().int().nonnegative().catch(0),
-    firstPurchaseUsed: z.boolean().catch(false),
-    purchasedSlotKeys: deduplicatedStringArraySchema().default([]),
-  })
-  .nullable()
-  .catch(null);
+const TrinketShopPersistSchema = createShopPersistSchema({
+  trinketIds: z.array(z.string()),
+});
+
+const EquipmentShopPersistSchema = createShopPersistSchema({
+  gear: GearInstanceArraySchema,
+});
 
 const WildwoodDraftStateSchema = z
   .object({
@@ -211,8 +198,6 @@ const WildwoodDraftStateSchema = z
   .catch(null);
 
 const PersistedPendingRewardBaseSchema = {
-  // Companion choices are carried separately from the primary reward choice so
-  // a save during the victory -> companion-reward handoff can resume safely.
   companionChoiceIds: z.array(z.string()).default([]),
   selectedId: z.string().nullable().catch(null),
   gold: z.number().int().nonnegative().catch(0),
@@ -268,9 +253,6 @@ const InterruptedFlowSchema = z
 
 export type InterruptedFlow = z.infer<typeof InterruptedFlowSchema>;
 
-// ===== ActiveRunData =====
-// normalizeActiveRunData lives in ./normalize-active-run-data.ts — imported above.
-
 export const ActiveRunDataSchema = z
   .object({
     characterId: CharacterIdSchema,
@@ -294,7 +276,7 @@ export const ActiveRunDataSchema = z
     wildwoodDraft: WildwoodDraftStateSchema.default(null),
     starterDraftChoices: z.array(BattleCardSchema).nullable().catch(null).default(null),
     activeCombat: ActiveCombatDataSchema.catch(null).default(null),
-    // Defaults match normalizeActiveRunData — required on Zod output without a post-cast.
+
     runTalentXP: TalentXPSchema.default({}),
     runMaterialsEarned: MaterialInventorySchema.default(emptyInventory()),
     runObtainedItems: RunObtainedItemArraySchema.default([]),

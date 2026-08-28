@@ -1,4 +1,3 @@
-// Unit tests for hex-floor labyrinth generation, reachability, and boss expansion.
 import { describe, expect, it } from "vitest";
 import { createSeededRng } from "@/lib/utils";
 import {

@@ -1,4 +1,3 @@
-// Apply the decoded resume session to the aggregate's session region.
 import {
   repairShopOfferings,
   shopItemSlotKey,
@@ -31,7 +30,6 @@ import {
   setWildwoodDraft,
 } from "./write-port-session";
 
-/** Rehydrate a persisted run's transient session fields onto the command draft. */
 export function restoreRunSession(draft: GameplayDraft, decoded: DecodedRunResumeSession): void {
   if (decoded.labyrinthMap) setLabyrinthMap(draft, decoded.labyrinthMap);
   setActiveLabyrinthModifiers(draft, decoded.activeLabyrinthModifiers);

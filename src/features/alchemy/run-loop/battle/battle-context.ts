@@ -7,7 +7,6 @@ import { createTransferCancelRegistry, type TransferCancelRegistry } from "./car
 import type { BattlePresentationPort } from "./battle-presentation-port";
 import { resolveBattlePresentation } from "./battle-presentation-port";
 
-/** Playback callbacks the battle route binds into shell-owned refs. */
 export interface BattlePlaybackBind {
   scheduleAutoEndTurn: (state?: BattleState) => void;
   clearAutoEndTurn: () => void;
@@ -63,14 +62,13 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
 
   const context = useMemo(() => {
     return {
-      // DOM Refs
       handCardRefs,
       drawPileRef,
       discardPileRef,
       battleSceneRef,
       playerPanelRef,
       enemyPanelRef,
-      // Internal state Refs
+
       cardPlayInProgressRef,
       companionScheduledRef,
       battleTimerGroupRef,
@@ -81,7 +79,6 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       transferCancelRegistryRef,
       transferIdCounterRef,
 
-      // Getters for dynamic props
       get screen() {
         return propsRef.current.screen;
       },

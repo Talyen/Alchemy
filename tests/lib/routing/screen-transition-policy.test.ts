@@ -10,7 +10,6 @@ import {
   type Screen,
 } from "@/lib/routing";
 
-/** Interactive destinations used by run-flow, destination routing, and related shell handlers. */
 const PRODUCTION_NAVIGATION_EDGES: ReadonlyArray<readonly [Screen, Screen]> = [
   [ROUTE_SCREENS.BATTLE, ROUTE_SCREENS.REWARDS],
   [ROUTE_SCREENS.BATTLE, ROUTE_SCREENS.RUN_VICTORY],

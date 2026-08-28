@@ -37,7 +37,6 @@ function applyTierUpgrade(
   return true;
 }
 
-/** Homestead spend / upgrade mutations over the permanent profile fields. */
 export function addMaterials(profile: Draft<PermanentProgressFields>, materials: MaterialInventory): void {
   profile.materialInventory = addInventory(profile.materialInventory, materials);
 }

@@ -52,7 +52,7 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
       const desktop = window.alchemyDesktop;
       if (!desktop) throw new Error("desktop bridge missing");
       await desktop.clearSave();
-      // Four writes rotate primary into bak.1–3 so clear must wipe the full ring.
+
       for (let i = 0; i < 4; i += 1) {
         const ok = await desktop.writeSave(JSON.stringify({ marker: `bak-ring-${i}`, lastSavedAt: i }));
         if (!ok) throw new Error(`writeSave failed at ${i}`);

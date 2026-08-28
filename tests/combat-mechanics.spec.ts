@@ -27,7 +27,6 @@ const DOT_STATUS_CASES = [
   },
 ] as const;
 
-// Goblin's trinket-hoarder doubles burn; play+tick can kill and leave this suite on Victory.
 const DOT_ENCOUNTER_OVERRIDES = { encounteredRunEnemyIds: ["goblin"] };
 
 test.describe("Damage-over-Time Status Effects", critical, () => {
@@ -52,8 +51,6 @@ test.describe("Damage-over-Time Status Effects", critical, () => {
 
       await battle.endTurn();
 
-      // Exact tick amounts are pinned in tests/lib/battle/status-ticks-enemy.test.ts;
-      // here we only assert the presentation fact unique to each DoT type.
       await expect(battle.victoryHeading).toBeHidden();
 
       if ("chipGoneAfterTick" in statusCase && statusCase.chipGoneAfterTick) {
@@ -104,10 +101,7 @@ test.describe("Battle Autoplay", critical, () => {
     const enemyBefore = await battle.enemyHealth();
 
     await battle.autoplayToggle.click();
-    // Under load the battle can resolve before the pressed attribute
-    // re-renders; once the control unmounts, the outcome poll below takes over.
-    // Keep the inner timeout short so a mid-poll unmount (victory screen replaces
-    // the HUD) ends this iteration instead of consuming the whole toPass budget.
+
     await expect(async () => {
       if (!(await battle.autoplayToggle.isVisible())) return;
       await expect(battle.autoplayToggle).toHaveAttribute("aria-pressed", "true", { timeout: 250 });

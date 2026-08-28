@@ -1,7 +1,6 @@
-// Companion-related card effect schemas and metadata.
 import { z } from "zod";
 import type { EffectKindDefinition } from "./registry";
-import { CompanionIdSchema } from "./shared-schemas";
+import { AmountSchema, CompanionIdSchema } from "./shared-schemas";
 
 export const summonCompanionEffectDefinition = {
   kind: "summon-companion",
@@ -15,6 +14,6 @@ export const buffCompanionEffectDefinition = {
   kind: "buff-companion",
   schema: z.object({
     kind: z.literal("buff-companion"),
-    amount: z.number().int().min(0).max(999),
+    amount: AmountSchema,
   }),
 } satisfies EffectKindDefinition<"buff-companion">;

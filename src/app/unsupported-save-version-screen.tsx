@@ -1,5 +1,3 @@
-// Blocking screen shown when a local save requires newer game data than this build supports.
-// Uses only the shared Button primitive so unsupported saves cannot enter normal game UI.
 import { Button } from "@/components/ui/button";
 
 interface Props {

@@ -10,7 +10,7 @@
     "sharp": true
   },
   "engines": {
-    "node": ">=24.0.0",
+    "node": "^20.19.0 || >=22.12.0",
     "npm": ">=11"
   },
   "type": "module",
@@ -55,7 +55,7 @@
     "test:ship:unit": "node scripts/run-ship-unit.mjs",
     "test:ship:e2e": "playwright test tests/save-persistence.spec.ts tests/save-error-paths.spec.ts --project chromium",
     "test:ship:desktop": "playwright test --config playwright.electron.config.ts",
-    "check:ship": "npm run lint:ci && npm run test:ship:unit && cross-env ALCHEMY_SKIP_ASSETS=1 npm run build:desktop",
+    "check:ship": "npm run lint:ci && npm run test:ship:unit && cross-env ALCHEMY_SKIP_ASSETS=1 npm run build:desktop && npm run check:bundle",
     "check:ship:full": "npm run check:ship && npm run test:ship:e2e",
     "verify:release-version": "node scripts/verify-release-version.mjs",
     "steam:upload": "node scripts/steam-upload.mjs",
@@ -89,6 +89,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:watch": "tsc --noEmit --watch",
     "typecheck:all": "concurrently \"tsc --noEmit\" \"tsc -p tsconfig.test.json --noEmit\"",
+    "check:bundle": "node scripts/check-bundle-budget.mjs",
     "lint:ci": "concurrently --kill-others-on-fail --max-process 4 --names docs,routing,generated,format,typecheck,eslint,boundaries,arch-smoke,knip \"npm run docs:check\" \"npm run ci:routing\" \"npm run check:generated\" \"npm run format:check\" \"npm run typecheck:all\" \"npm run lint\" \"npm run lint:boundaries\" \"npm run lint:architecture-smoke\" \"npm run deadcode\"",
     "format": "node scripts/run-prettier.mjs --write",
     "ensure:electron": "node scripts/ensure-electron.mjs",

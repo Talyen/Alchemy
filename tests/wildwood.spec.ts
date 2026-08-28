@@ -1,4 +1,3 @@
-// E2E tests for the resumable Wildwood Draft boss gauntlet.
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";

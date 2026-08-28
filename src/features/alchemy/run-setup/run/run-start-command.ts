@@ -23,7 +23,6 @@ interface ApplyRunStartOptions {
   discoverDeck?: boolean;
 }
 
-/** Resolve meta-progression inputs before opening the gameplay command. */
 export function createConfiguredRunStartSnapshot({
   characterId,
   contentSystemType,
@@ -45,7 +44,6 @@ export function createConfiguredRunStartSnapshot({
   });
 }
 
-/** Draft-only run-start mutation; event handlers own the surrounding command and effects. */
 export function applyRunStartToDraft(
   draft: GameplayDraft,
   snapshot: RunStartSnapshot,

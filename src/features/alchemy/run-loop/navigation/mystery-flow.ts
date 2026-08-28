@@ -1,5 +1,3 @@
-// Dispatches and applies mystery event consequences to the run state.
-// Consumed by the run navigation flow and `useMysteryEventNavigation`.
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { cardById, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { MYSTERY_CARD_CHOICES, GEAR_ASTRAL_GUARANTEE_BONUS } from "@/lib/game-constants";
@@ -29,10 +27,6 @@ import {
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
 export interface MysteryEffectResult {
-  /**
-   * When non-null, indicates that a sub-picker dialog (e.g., choosing a card)
-   * was opened, which pauses the evaluation of subsequent effects in the list.
-   */
   followUp: "choose-card" | null;
   goldSound?: "gain" | "spend";
 }
@@ -123,9 +117,6 @@ function gainRandomMysteryTrinket(
   const owned = new Set(combineTrinketEffectIds(run.runBoons, context.draft.gear.equippedTrinkets[run.characterId]));
   const trinketId = pickMysteryTrinketGrantId({ fromIds: effect.fromIds, owned, rng: context.rng });
   if (!trinketId) {
-    // Legacy unresolved random-trinket effects only: the grant is persisted immediately, so a
-    // random base item is fine (unlike pre-choice badges, which need cross-session stability and
-    // therefore derive the fallback deterministically in resolve-trinkets.ts).
     const baseItem = pickRandom(gearBaseItemList, context.rng);
     if (!baseItem) return { followUp: null };
     return gainMysteryGeneratedGear(baseItem.id, context, true);

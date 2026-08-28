@@ -32,19 +32,19 @@ describe("Mixed potion classification and combat mechanics", () => {
 
   it("applies potionPotency talent bonus to mixed potions during battle", () => {
     const mixed = createMixedPotion(healthPotion, manaPotion);
-    // Base health-potion heals 8. Mixed with mana-potion, heal amount is 8.
+
     const state = makeState({
       playerHealth: 10,
       playerMaxHealth: 30,
       talentEffects: {
         ...defaultTalentEffects,
-        potionPotency: 2, // 2x multiplier
+        potionPotency: 2,
       },
     });
 
     const texts = makeCombatTexts();
     const nextState = applyCardEffects(state, mixed, texts);
-    // With 2x potency, heal 8 becomes heal 16 (10 + 16 = 26)
+
     expect(nextState.playerHealth).toBe(26);
   });
 

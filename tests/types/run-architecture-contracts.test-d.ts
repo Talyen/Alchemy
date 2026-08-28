@@ -1,14 +1,9 @@
-// Compile-time contract suite: enforced by `tsc -p tsconfig.test.json` inside
-// `typecheck:all`, not by Vitest. The `.test-d.ts` suffix keeps it out of
-// `npm test` (these assertions have no runtime effect).
 import { describe, expectTypeOf, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
 import type { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow-handler-deps";
-import type { RunOrchestrationPort } from "@/features/alchemy/shared/stores/run-port-types";
 import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
-import type { useRunOrchestrationPort } from "@/features/alchemy/shared/stores/run-session-react-ports";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
 type WritePort = typeof import("@/features/alchemy/shared/stores/run-session-write-port");
@@ -25,12 +20,11 @@ describe("run architecture type contracts", () => {
     expectTypeOf<NonDraftFirstWrite>().toEqualTypeOf<never>();
   });
 
-  it("keeps battle commands draft-sourced and run-flow controllers on capability-specific ports", () => {
+  it("keeps battle commands draft-sourced and run-flow controllers capability-specific", () => {
     type BattleProps = Parameters<typeof useBattleController>[0];
 
     expectTypeOf<Extract<keyof BattleProps, "run" | "talents" | "homesteadEffects">>().toEqualTypeOf<never>();
     expectTypeOf<keyof RunFlowHandlerDeps>().toEqualTypeOf<"actions" | "getAvailableDestinations">();
-    expectTypeOf<ReturnType<typeof useRunOrchestrationPort>>().toEqualTypeOf<RunOrchestrationPort>();
   });
 
   it("keeps display data out of the shell command controller", () => {

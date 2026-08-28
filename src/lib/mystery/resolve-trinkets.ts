@@ -1,4 +1,3 @@
-// Resolves mystery trinket grants so choice UI matches the item that will be given.
 import { trinketLibrary } from "@/lib/game-data";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { pickRandom } from "@/lib/utils";
@@ -14,11 +13,6 @@ function stableHashSeed(seed: string): number {
   return hash >>> 0;
 }
 
-/**
- * Once every trinket is owned, a trinket grant becomes an astral gear drop instead of a
- * duplicate. Derived deterministically from the slot seed so resolution and save rehydration
- * agree without persisting extra state.
- */
 function mysteryTrinketFallbackEffect(seed: string): Extract<MysteryEffect, { kind: "gainGeneratedGear" }> {
   const baseItem = gearBaseItemList[stableHashSeed(seed) % gearBaseItemList.length];
   if (!baseItem) throw new Error("gearBaseItemList is empty");
@@ -64,7 +58,6 @@ function resolveMysteryTrinketEffect(
   return { kind: "gainTrinket", trinketId: id };
 }
 
-/** Rewrites trinket effects to concrete unowned IDs so choice badges match the grant. */
 export function resolveMysteryEventTrinkets(
   event: MysteryEvent,
   ownedTrinketIds: readonly string[],
@@ -88,8 +81,6 @@ export function collectResolvedMysteryTrinketIds(event: MysteryEvent): string[] 
     for (const effect of choice.effects) {
       if (effect.kind === "gainTrinket") ids.push(effect.trinketId);
       else if (effect.kind === "gainRandomTrinket") ids.push("");
-      // Fallback-only: authored gear never sets astral. "" keeps the positional
-      // contract when a trinket slot was replaced by mysteryTrinketFallbackEffect.
       else if (effect.kind === "gainGeneratedGear" && effect.astral) ids.push("");
     }
   }
@@ -100,7 +91,6 @@ export function eventHasUnresolvedRandomTrinket(event: MysteryEvent): boolean {
   return event.choices.some((choice) => choice.effects.some((effect) => effect.kind === "gainRandomTrinket"));
 }
 
-/** Resolve leftover gainRandomTrinket effects on a visit that predates resolvedTrinketIds. */
 export function repairUnresolvedMysteryTrinkets(
   event: MysteryEvent,
   ownedTrinketIds: readonly string[],

@@ -1,4 +1,3 @@
-// App-level autosave wiring.
 import { useEffect } from "react";
 import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
@@ -8,12 +7,11 @@ import {
   saveAlchemySaveDataForExit,
   subscribeAlchemyPersistence,
 } from "@/features/alchemy/shared/storage";
-import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
+import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_MAX_WAIT_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";
 import type { Screen } from "@/lib/routing";
 
-// Persists the normalized App/controller snapshot whenever a saved field changes.
 export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: Screen | null = null) {
   const enabledRef = useLatestRef(enabled);
   const runScreenOverrideRef = useLatestRef(runScreenOverride);
@@ -51,11 +49,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
       if (timer) {
         clearTimeout(timer);
       }
-      // Battle-screen commits are the highest-frequency writes; debounce them
-      // longer so the full-save serialization doesn't hitch every quiet gap.
-      // Terminal pagehide/visibilitychange flushes are unaffected and still
-      // persist the freshest battle state for crash-resume. The max-wait keeps
-      // continuous play from deferring disk writes indefinitely.
+
       const debounceMs = isAnimationDisabled()
         ? 0
         : readRunPhase() === "battle"

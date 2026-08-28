@@ -13,7 +13,6 @@ import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/active-run-data-fixture";
 
-/** Encode the live store through the canonical resume codec. */
 function encodeState(screen?: Screen): ActiveRunData {
   return encodeRunResumeSnapshot(getRunSession(screen), screen);
 }

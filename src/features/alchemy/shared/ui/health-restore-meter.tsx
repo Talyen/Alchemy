@@ -1,4 +1,3 @@
-// Shared heal chrome used by campfire rest.
 import { Progress } from "@/components/ui/progress";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";

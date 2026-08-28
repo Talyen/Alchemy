@@ -1,5 +1,3 @@
-// Actor rail for the battle screen: hero/enemy panels, companion, turn shine, and combat text.
-// VFX subscriptions live in battle/presentation/actor-vfx so layout does not tick with ghosts.
 import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 

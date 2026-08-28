@@ -1,4 +1,3 @@
-// Library card picker for mystery chooseCard follow-up.
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";

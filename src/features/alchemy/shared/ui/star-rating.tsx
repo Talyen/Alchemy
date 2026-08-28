@@ -1,4 +1,3 @@
-// Star rating display for tier/level progression.
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 

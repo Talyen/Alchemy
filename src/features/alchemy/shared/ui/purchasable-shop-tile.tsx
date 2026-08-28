@@ -1,12 +1,12 @@
-// Shared purchasable shop tile chrome — media slot + price / purchased chip.
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 import { CurrencyAmount } from "./display-elements";
 import { DisabledTooltip } from "./service-button";
+import { getShopPurchaseState } from "./purchasable-shop-helpers";
 
 export function ShopPriceChip({ price, gold, purchased }: { price: number; gold: number; purchased: boolean }) {
-  const canAfford = gold >= price;
+  const { canAfford } = getShopPurchaseState(price, gold, purchased);
 
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-max -translate-x-1/2 select-none">

@@ -1,4 +1,3 @@
-// React context for card-description bonuses (homestead bonds, etc.) without prop drilling.
 /* eslint-disable react-refresh/only-export-components -- co-located DescriptionContext and description context hook */
 import { createContext, useContext } from "react";
 import type { CardDescriptionContext } from "@/lib/game-data";

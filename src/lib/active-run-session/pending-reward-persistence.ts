@@ -84,7 +84,6 @@ export function serializePendingReward(
   return { ...shared, rewardType: "card", choiceIds: rewardState.choices.map((choice) => choice.id) };
 }
 
-/** Empty reward state carrying the persisted shared fields (selection, gold, materials, victory context). */
 function restoreSharedRewardFields(persisted: PersistedPendingReward): RewardState {
   return {
     ...createEmptyRewardState(filterValidDestinations(persisted.destinations)),
@@ -124,7 +123,6 @@ export interface RestoredPendingReward {
   companionRewardCards: BattleCard[] | null;
 }
 
-/** Restore both sides of the victory reward handoff as one persistence unit. */
 export function restorePendingRewardBundle(persisted: PersistedPendingReward): RestoredPendingReward {
   const companionRewardCards = resolveCompanionChoices(persisted.companionChoiceIds);
   const rewardState = restorePendingReward(persisted);
@@ -133,9 +131,6 @@ export function restorePendingRewardBundle(persisted: PersistedPendingReward): R
     return { rewardState, companionRewardCards };
   }
 
-  // A save can be taken after the normal reward is claimed but before the
-  // companion choices are promoted to rewardState. Preserve the shared reward
-  // metadata so the companion claim remains valid after resume.
   return {
     rewardState: restoreSharedRewardFields(persisted),
     companionRewardCards,

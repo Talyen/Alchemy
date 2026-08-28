@@ -10,10 +10,6 @@ export interface CombatMeta {
   activeTrinketIds: string[];
 }
 
-// Single draft-sourced derivation for battle start and live-meta rebind.
-// Returns raw trinket IDs instead of a manifest: battle creation needs IDs
-// for `createBattleStartState`, while rebind builds the manifest via
-// `computeTrinketManifest` to avoid coupling this helper to trinket impl.
 export function deriveCombatMeta(draft: GameplayDraft): CombatMeta {
   const run = draft.run.activeRun;
   const characterId = run.characterId;

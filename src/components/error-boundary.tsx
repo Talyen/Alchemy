@@ -1,15 +1,12 @@
-// React error boundary that logs component stacks via the centralized error logger
-// and shows a reload fallback.
-// Used at the root so render failures do not leave the game on a blank page.
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { logError } from "@/lib/error-logger";
 
 interface Props {
   children: ReactNode;
-  /** Optional label for nested boundaries (e.g. screen name) */
+
   label?: string;
-  /** Called when an error is caught, before the fallback UI shows */
+
   onError?: (error: Error, info: ErrorInfo) => void;
 }
 interface State {

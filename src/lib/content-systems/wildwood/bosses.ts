@@ -1,5 +1,3 @@
-// Wildwood gauntlet boss allowlist. Adding a boss to the compendium does not
-// make it eligible until it is listed here.
 export const WILDWOOD_BOSS_IDS = ["forge-golem", "frostwarden", "blight-treant", "iron-bear"] as const;
 
 export type WildwoodBossId = (typeof WILDWOOD_BOSS_IDS)[number];

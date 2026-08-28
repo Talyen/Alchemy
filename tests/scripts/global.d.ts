@@ -6,6 +6,14 @@ declare module "*/assets/asset-manifest.mjs" {
   ): Promise<Array<{ source: string; target: string }>>;
 }
 
+declare module "*/check-bundle-budget.mjs" {
+  export const BUDGETS: Readonly<{
+    indexMaxBytes: number;
+    totalJsMaxBytes: number;
+  }>;
+  export function checkBundleBudget(dist?: string): boolean;
+}
+
 interface PatchNoteCommit {
   subject: string;
   body: string;

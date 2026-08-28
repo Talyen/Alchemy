@@ -49,7 +49,7 @@ Knowledge: [.agents/knowledge/](./.agents/knowledge/index.md) — **not auto-loa
 
 - Before store/port/save/constant/routing change, search touched subsystem first; expand to public consumers only.
 - If docs + nearest tests leave rule ambiguous, recover intent from tests + ≤5 commits; record invariant.
-- Post-edit: review diff only (delete → reuse → simplify → parameterize → abstract). Comments: why/ordering/invariants only; load-bearing rules → tests. New cross-boundary contract → `architect` skill.
+- Post-edit: review diff only (delete → reuse → simplify → parameterize → abstract). No comments — express intent via code, types, and tests; only `eslint`/`@ts-`/`prettier-ignore`/`c8` directives allowed (`eslint/no-comments.js:1`). New cross-boundary contract → `architect` skill.
 
 ## UI
 

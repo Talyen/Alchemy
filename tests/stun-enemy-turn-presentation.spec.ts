@@ -3,7 +3,6 @@ import { failOnRuntimeErrors, makeStatusCard, startBattleWithDeck } from "./help
 import { BattlePage } from "./pages/battle-page";
 import { slow } from "./playwright-tags";
 
-/** Real-animation regression: stunned enemy must show Enemy Turn and must not flash the next hand. */
 test.describe("Stunned enemy turn presentation", slow, () => {
   test("stunned enemy shows Enemy Turn and draws hand without a flash", async ({ page }) => {
     test.setTimeout(60_000);
@@ -12,7 +11,6 @@ test.describe("Stunned enemy turn presentation", slow, () => {
     const enemyTurn = page.getByTestId("turn-badge-enemy");
     const yourTurn = page.getByTestId("turn-badge-player");
 
-    // Stun amount must trigger CC (stacks >= 50% remaining HP) without killing the enemy.
     await startBattleWithDeck(
       page,
       Array.from({ length: 6 }, () => makeStatusCard("stun", 12)),
@@ -27,7 +25,6 @@ test.describe("Stunned enemy turn presentation", slow, () => {
 
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 5000 });
 
-    // Capture discard flying cards, then the enemy-phase badge, without a pre-draw hand flash.
     const sawDiscardFly = expect
       .poll(async () => flyingCards.count(), {
         timeout: 10_000,

@@ -1,6 +1,3 @@
-// Unified registry for battle card effect kinds and schemas.
-// Consolidates the former definition/kinds/schemas/recursive/template-definitions layers
-// so adding a new effect touches only its category schema file and this registry array.
 import { z } from "zod";
 import type { BattleCardEffect } from "../types";
 import {
@@ -38,7 +35,6 @@ export interface EffectKindDefinition<K extends BattleCardEffect["kind"] = Battl
   schema: z.ZodType;
 }
 
-/** Registry of non-recursive effect kinds (chance/repeat-over-turns are lazy). */
 export const TEMPLATE_EFFECT_DEFINITIONS = [
   damageEffectDefinition,
   playerStatusEffectDefinition,
@@ -77,7 +73,6 @@ export const BATTLE_CARD_EFFECT_KINDS = [
   ...RECURSIVE_BATTLE_CARD_EFFECT_KINDS,
 ] as const satisfies readonly BattleCardEffectKind[];
 
-// Recursive factories
 function createChanceEffectSchema(getEffectSchema: () => z.ZodType<BattleCardEffect>) {
   return z.object({
     kind: z.literal("chance"),
@@ -95,7 +90,6 @@ function createRepeatOverTurnsEffectSchema(getEffectSchema: () => z.ZodType<Batt
   });
 }
 
-// Discriminated union composition
 type DiscriminableKindSchema = z.core.$ZodTypeDiscriminable<"kind">;
 
 function getTemplateEffectSchemas(): [DiscriminableKindSchema, ...DiscriminableKindSchema[]] {

@@ -1,5 +1,3 @@
-// Progress → Slice visual state. Timing matches Trinket CombatantSliceEffectConfig.
-
 import { SLICE_NORMAL } from "./slice-crack";
 
 const SLICE_INTENSITY = 0.5;

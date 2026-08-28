@@ -1,12 +1,9 @@
-// Runtime validation before hydration (returns ActiveRunData | null).
-// Save-file legacy fixes during load use normalizeActiveRunData in @/lib/validation.
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { ActiveRunDataSchema, type ParsedActiveRunData } from "@/lib/validation";
 
 import type { ActiveRunData } from "./types";
 import { hydratePersistedMysteryChoice } from "./mystery-visit-persistence";
 
-/** Maps Zod-parsed active-run output to the hydrated runtime ActiveRunData contract. */
 export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
   return {
     ...parsed,

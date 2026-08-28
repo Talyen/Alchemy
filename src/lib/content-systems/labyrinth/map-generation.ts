@@ -1,7 +1,3 @@
-/**
- * Seeded hex-floor Labyrinth generator. Floor 0 is a cleared entrance; floor 1+
- * expand when the current floor boss is cleared.
- */
 import { pickRandom, shuffle } from "@/lib/utils";
 import { enemiesByType, type EnemyType } from "@/lib/game-data";
 
@@ -165,7 +161,6 @@ export function withClearedLabyrinthNode(map: LabyrinthMap, nodeId: string, rng:
   return cleared;
 }
 
-/** Linear three-node floor for E2E / schema fixtures. */
 export function createMinimalLabyrinthMap(): LabyrinthMap {
   const combatId = labyrinthNodeId(1, 0);
   const restId = labyrinthNodeId(1, 1);

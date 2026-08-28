@@ -1,5 +1,3 @@
-// Brief portrait impact feedback: typed edge sparks plus an optional Health-loss flash.
-// Mounts only for the pulse duration so the overlay never sticks after the animation ends.
 import { HurtSparkBurst } from "./hurt-spark-burst";
 import type { CombatImpactCue } from "../../types";
 

@@ -1,5 +1,3 @@
-/** Shared active-run input shapes for storage, parse, and normalization tests. */
-
 const BASE_RUN_TEMPLATE = {
   characterId: "knight",
   runDeck: [],
@@ -13,7 +11,6 @@ const BASE_RUN_TEMPLATE = {
   contentSystemType: "campaign",
 } as const;
 
-/** Minimal valid-ish run input used by ActiveRunDataSchema contract tests. */
 export function makeMinimalActiveRunInput(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     ...BASE_RUN_TEMPLATE,
@@ -24,7 +21,6 @@ export function makeMinimalActiveRunInput(overrides: Record<string, unknown> = {
   };
 }
 
-/** Full run candidate for production parseActiveRun tests. */
 export function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return makeMinimalActiveRunInput({
     runDeck: [
@@ -47,7 +43,6 @@ export function makeRunCandidate(overrides: Record<string, unknown> = {}): Recor
   });
 }
 
-/** Input for normalizeActiveRunData tests. */
 export function baseActiveRunInput(): Record<string, unknown> {
   return makeMinimalActiveRunInput({
     selectedDifficulty: null,

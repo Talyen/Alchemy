@@ -1,4 +1,3 @@
-// Thin React wiring around createContentSystemNavigation.
 import { useMemo } from "react";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import type { ContentSystemNavigationDeps } from "@/features/alchemy/run-setup/run/content-system-navigation-types";

@@ -1,7 +1,3 @@
-// Public gameplay write capability for feature code.
-// Domain mutators live in write-port-*.ts; import from this barrel only.
-// Every export is an explicit draft-first mutator. Event handlers own the surrounding
-// `dispatchRunSessionCommand`; compound recipes compose these helpers without nesting.
 export {
   addRunGold,
   addRunMaterialsEarned,
@@ -24,6 +20,18 @@ export {
   setRunPlayerHealth,
   setRunBoons,
   setScreen,
+  beginBattleTransition,
+  clearBattleTransition,
+  commitBattleTransition,
+  initializeActiveBattle,
+  setBattleStartState,
+  setBattleState,
+  setSyncedBattleState,
+  setHasActiveBattle,
+  clearPendingTransitionResumeRequired,
+  setDisplayOverrides,
+  withRestingEndPlayerTurnResolution,
+  withRestingWorldBattleRng,
 } from "./write-port-run";
 export {
   addMaterials,
@@ -42,18 +50,14 @@ export {
   setMaterials,
   unlockAllTalents,
   unlockTalent,
-} from "./write-port-profile";
-export {
-  beginBattleTransition,
-  clearBattleTransition,
-  commitBattleTransition,
-  initializeActiveBattle,
-  setBattleStartState,
-  setBattleState,
-  setHasActiveBattle,
-  withRestingEndPlayerTurnResolution,
-  withRestingWorldBattleRng,
-} from "./write-port-battle";
+  applyTalentState,
+  setDiscoveredCardIds,
+  setEncounteredEnemyIds,
+  setDiscoveredTrinketIds,
+  setDiscoveredUniqueIds,
+  setCompletedDifficulties,
+  setFinishedRunCharacters,
+} from "./write-port-session";
 export {
   abandonCorruptionDestinationVisit,
   abandonMysteryDestinationVisit,

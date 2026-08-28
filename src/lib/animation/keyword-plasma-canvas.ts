@@ -1,4 +1,3 @@
-// Canvas blob approximation of Trinket keyword plasma — four moving radial charges with screen blend.
 import { parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
 import { createPlasmaLifecycle } from "./keyword-plasma-lifecycle";
 import type { PlasmaRendererOptions } from "./keyword-plasma-types";

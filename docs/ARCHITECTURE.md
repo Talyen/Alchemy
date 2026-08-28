@@ -60,18 +60,19 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 ### Persistence API
 
-| API                                    | Role                                                                                                                                                                                     |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `encodeRunResumeSnapshot(source)`      | Sole **encode** assembler (`RunSession` → `ActiveRunData`). Private helper: `encodeActiveRunFromSession`. Hydrate **parse** uses `toActiveRunData` in `lib/active-run-session/parse.ts`. |
-| `decodeRunResumeSnapshot(data)`        | Translate `ActiveRunData` → aggregate session fields                                                                                                                                     |
-| `snapshotRun(screen?)`                 | Read aggregate run state through the codec                                                                                                                                               |
-| `restoreRun(…)`                        | Apply the decoded snapshot on boot/resume (incl. trinket-manifest repair)                                                                                                                |
-| `parseActiveRun(raw)`                  | Validate JSON before hydrate                                                                                                                                                             |
-| `PersistedBattleStateSchema`           | Single BattleState wire parse + default merge                                                                                                                                            |
-| `activeCombat.pendingBattleTransition` | Resume an interrupted enemy-turn continuation                                                                                                                                            |
-| Domain persistence codecs              | Own defaults, encode, hydrate, and subscriptions                                                                                                                                         |
-| Persistence coordinator                | Compose domain fields into the versioned envelope                                                                                                                                        |
-| `platform-save-backend.ts`             | Browser/Desktop transport, backup/cloud candidate order, and recoverable write/clear ordering                                                                                            |
+| API                                    | Role                                                                                                                                                                                                                    |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `encodeRunResumeSnapshot(source)`      | Sole **encode** assembler (`RunSession` → `ActiveRunData`). Private helper: `encodeActiveRunFromSession`. Hydrate **parse** uses `toActiveRunData` in `lib/active-run-session/parse.ts`.                                |
+| `decodeRunResumeSnapshot(data)`        | Translate `ActiveRunData` → aggregate session fields                                                                                                                                                                    |
+| `snapshotRun(screen?)`                 | Read aggregate run state through the codec                                                                                                                                                                              |
+| `restoreRun(…)`                        | Apply the decoded snapshot on boot/resume (incl. trinket-manifest repair)                                                                                                                                               |
+| `parseActiveRun(raw)`                  | Validate JSON before hydrate                                                                                                                                                                                            |
+| `PersistedBattleStateSchema`           | Single BattleState wire parse + default merge                                                                                                                                                                           |
+| `activeCombat.pendingBattleTransition` | Resume an interrupted enemy-turn continuation                                                                                                                                                                           |
+| Domain persistence codecs              | Own defaults, encode, hydrate, and subscriptions — typed as `GameplayPersistenceCodec<T>` (hydrates via `GameplayDraft`) or `StandalonePersistenceCodec<T>` (own Zustand store) in `shared/stores/persistence-codec.ts` |
+| `manifest-utils.ts`                    | `createNumericManifest` / `mergeNumericManifests` — shared numeric manifest defaults (gear)                                                                                                                             |
+| Persistence coordinator                | Compose domain fields into the versioned envelope                                                                                                                                                                       |
+| `platform-save-backend.ts`             | Browser/Desktop transport, backup/cloud candidate order, and recoverable write/clear ordering                                                                                                                           |
 
 `shared/storage/io.ts` owns save parsing, validation, future-version protection, and write serialization. It delegates raw persistence to one `SaveBackend` configured during bootstrap. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. Candidate order, Steam Cloud as a one-way mirror, and wipe/protect behavior: [MIGRATIONS.md § Public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract).
 
@@ -82,7 +83,7 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 | Reads (imperative)           | `run-session-read-port.ts`                                                     | Data-only `readActiveRun()`, `readRunProfile()`, `readRunSession()`, `readBattle()`, `readShopFirstPurchaseUsed()`       |
 | Reads (React, screen)        | `use-run-screen-data.ts` + `app/screen-routes/use-battle-screen-route-data.ts` | Exact route display contracts; battle display is `useBattleScreenRouteData`, which composes `useRunSessionBattleContext` |
 | Reads (React, orchestration) | `run-session-model.ts`                                                         | `useRunSessionNavigationSlice`; `useRunSessionBattleContext` is a display composable, not a shell command source         |
-| Reads (React, meta/setup)    | `run-session-react-ports.ts`                                                   | Homestead/talent/draft slices and `useRunOrchestrationPort`                                                              |
+| Reads (React, meta/setup)    | `run-session-react-ports.ts`                                                   | Homestead, talent, draft, and content-navigation slices                                                                  |
 | React action selectors       | `store-actions.ts`                                                             | Settings, collection, and homestead command selectors for App chrome                                                     |
 | Writes                       | `run-session-write-port.ts` + `dispatchRunSessionCommand`                      | Draft mutators; first argument is `GameplayDraft`. `set*` accepts a value or `(prev) => next` updater                    |
 | Battle writes                | `run-session-write-port.ts`                                                    | `setBattleState`, `beginBattleTransition`, `commitBattleTransition`; `readBattle()` is data-only                         |
@@ -159,7 +160,7 @@ BattleScreenRoute → useBattleScreenRouteData (committed battle display)
 - `gameplay-state-store.runProfile` owns homestead and talent progression. Run reward finalization writes through `run-session-write-port` (`finalizeRunXP`, `awardMaterialsDuringRun`, …) and lifecycle ports — do not merge this into `profile`.
 - `gear-store` owns the permanent Gear subdomain and its invariants.
 
-Each persistence owner exposes a codec beside its aggregate region. The codec owns that domain's save-field contract, defaults, encoding, and hydration. `shared/storage/persistence-coordinator.ts` composes those codecs and subscribes to the settings codec plus the aggregate commit signal. Feature code uses the owning capability port.
+Each persistence owner exposes a codec beside its aggregate region. The codec owns that domain's save-field contract, defaults, encoding, and hydration. `shared/storage/persistence.ts` composes those codecs and subscribes to the settings codec plus the aggregate commit signal. Feature code uses the owning capability port.
 
 ## Permanent Gear (`gear-store`)
 
@@ -167,16 +168,18 @@ Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pur
 
 ## Types
 
-| Concern                    | Module                                                                                                                                 |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Aggregate fields + actions | `gameplay-state-store.ts`                                                                                                              |
-| Imperative reads           | `run-session-read-port.ts`                                                                                                             |
-| Draft mutators             | `run-session-write-port.ts` (re-exports `write-port-run.ts`, `write-port-session.ts`, `write-port-battle.ts`, `write-port-profile.ts`) |
-| React ports                | `run-session-react-ports.ts`, `run-port-types.ts`                                                                                      |
-| Screen display contracts   | `run-screen-data.ts`, `use-run-screen-data.ts`; battle: `app/screen-routes/use-battle-screen-route-data.ts`                            |
-| Atomic commit              | `run-session-command.ts` (`dispatchRunSessionCommand`)                                                                                 |
-| Active-run view helpers    | `run-state-init.ts` (`pickActiveRunView`)                                                                                              |
-| Fresh-run snapshots        | `shared/run-flow/run-start.ts`                                                                                                         |
+| Concern                    | Module                                                                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aggregate fields + actions | `gameplay-state-store.ts`                                                                                                                           |
+| Imperative reads           | `run-session-read-port.ts`                                                                                                                          |
+| Draft mutators             | `run-session-write-port.ts` (re-exports `write-port-run.ts`, `write-port-session.ts`) — field setters use `store-helpers.ts:createDraftFieldSetter` |
+| React ports                | `run-session-react-ports.ts`, `run-port-types.ts` + `run-reads.ts` (canonical port field picks)                                                     |
+| Persistence codecs         | `persistence-codec.ts` (`PersistenceCodec`, `GameplayPersistenceCodec`, `StandalonePersistenceCodec`)                                               |
+| Numeric manifests          | `manifest-utils.ts` (`createNumericManifest`, `mergeNumericManifests`)                                                                              |
+| Screen display contracts   | `run-screen-data.ts`, `use-run-screen-data.ts`; battle: `app/screen-routes/use-battle-screen-route-data.ts`                                         |
+| Atomic commit              | `run-session-command.ts` (`dispatchRunSessionCommand`)                                                                                              |
+| Active-run view helpers    | `run-state-init.ts` (`pickActiveRunView`)                                                                                                           |
+| Fresh-run snapshots        | `shared/run-flow/run-start.ts`                                                                                                                      |
 
 Gameplay mutations use the command boundary; persistence codecs receive a draft from the coordinator for hydration. Feature code imports narrow ports, commands, reads, writes, and lifecycle directly from their owning modules.
 

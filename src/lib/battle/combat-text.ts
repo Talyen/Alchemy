@@ -1,6 +1,3 @@
-/**
- * Aggregates and merges floating combat text events for UI rendering.
- */
 import { harmfulPlayerStatusIds, type PlayerStatusId } from "@/lib/game-data";
 import {
   addPlayerStatus,
@@ -13,24 +10,18 @@ import {
 } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
 
-// Narrows label-style combat text so numeric merging never assumes an amount exists.
 function isNoticeCombatText(event: CombatTextEvent) {
   return event.kind === "notice";
 }
 
-// Narrows amount-bearing combat text so numeric events can merge safely.
 function isNumericCombatText(event: CombatTextEvent): event is NumericCombatTextEvent {
   return event.kind !== "notice";
 }
 
-// Keeps harmful status applications out of floating numeric text while preserving
-// actual DoT damage events, which use kind="damage" and should still show as -N.
 export function shouldShowCombatText(event: CombatTextEvent) {
   return event.kind !== "status" || !harmfulPlayerStatusIds.includes(event.stat as never);
 }
 
-// Centralizes combat text filtering and merging so effect reducers can report resolved
-// state changes without each call site deciding what belongs in floating number UI.
 export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: CombatTextEvent) {
   if (!shouldShowCombatText(nextEvent)) return;
 
@@ -60,8 +51,6 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
   combatTexts.push(nextEvent);
 }
 
-// Helper for overheal-to-block talent. Emits block combat text when applyPlayerHealing
-// triggers overheal conversion (talentEffect.overhealToBlockRatio).
 export function emitOverhealBlockText(
   stateBefore: Pick<BattleState, "playerStatuses">,
   stateAfter: Pick<BattleState, "playerStatuses">,
@@ -105,8 +94,6 @@ export function applyHealOnManaGain(
   return applyHealingWithCombatText(state, state.talentEffects.healOnManaGain, combatTexts);
 }
 
-// Paces the mana amount, applies it capped at maxMana, and reports the applied
-// gain (never the authored amount) as floating text.
 export function gainManaWithCombatText(
   state: BattleState,
   amount: number,
@@ -123,9 +110,6 @@ export function gainManaWithCombatText(
   return nextState;
 }
 
-// Paces the status amount and reports the applied delta as floating text only
-// when some actually landed, so clamped applications never display more than
-// happened (or a no-op "+0").
 export function addPlayerStatusWithCombatText(
   state: BattleState,
   stat: PlayerStatusId,
@@ -148,7 +132,7 @@ export function addGoldWithCombatText(
   combatTexts?: CombatTextEvent[],
 ): BattleState {
   if (amount <= 0) return state;
-  // Scales once here so displayed and applied gold can never diverge.
+
   const scaledGold = scaleGoldReward(amount, state.gearEffects);
   const nextState = { ...state, gold: state.gold + scaledGold };
   if (combatTexts && scaledGold > 0) {

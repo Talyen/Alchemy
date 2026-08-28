@@ -1,7 +1,6 @@
-// Shared helpers for enemy turn phase transitions, Death's Door, and health thresholds.
 import { drawCards, applyDrawResult } from "./draw";
 import { applyHealingWithCombatText } from "./combat-text";
-import { decayHalvedStatus } from "./status-helpers";
+import { decayHalvedStatus, getBattleRng } from "./status-helpers";
 import { deathsDoorGraceTurns, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import { CARDS_PER_TURN, PERCENT_DENOMINATOR } from "../game-constants";
 import { applyCardEffects } from "./effect-handlers";
@@ -13,7 +12,6 @@ export const ENEMY_TURN_CONSTANTS = {
   IRON_HIDE_OPTIONS_COUNT: 3,
 };
 
-/** Boss stacking traits (Iron Hide, Rusting Carapace, Glacial Shell) fire on even turns (2, 4, …). */
 export function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
   return state.turn % 2 === 0;
 }
@@ -21,9 +19,6 @@ export function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
 type FreezeAspect = "regen" | "scaling";
 
 function computeDeathsDoorGraceRemaining(state: BattleState): number {
-  // Grace-turns-remaining is the single source of truth; triggeredTurn is retained
-  // only for legacy saves. Returning the stored remaining avoids turn-diff drift on
-  // haste-preserved turns (where `turn` still increments but grace is held).
   if (state.deathsDoorGraceTurnsRemaining !== null) return state.deathsDoorGraceTurnsRemaining;
   if (state.deathsDoorTriggeredTurn !== null) {
     const graceTurns = deathsDoorGraceTurns(state.talentEffects.deathsDoorExtension);
@@ -74,8 +69,7 @@ function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: bo
     enemyCC: { ...state.enemyCC, cooldown: Math.max(0, state.enemyCC.cooldown - 1) },
     playerStatuses: {
       ...state.playerStatuses,
-      // Haste turns skip the enemy attack window, so the block gained this turn
-      // has not yet been attacked into and must hold until a real enemy phase resolves.
+
       block: options?.preserveBlock ? state.playerStatuses.block : decayHalvedStatus(state.playerStatuses.block),
     },
     cardsPlayedThisTurn: 0,
@@ -119,7 +113,7 @@ function performDrawAndResetPhase(
   deathsDoorNeedsRecoveryTurn: boolean,
   options?: { preserveBlock?: boolean },
 ): BattleState {
-  const nextDraw = drawCards(state.deck, state.discard, [], CARDS_PER_TURN, state.nextCardUid, state.rng);
+  const nextDraw = drawCards(state.deck, state.discard, [], CARDS_PER_TURN, state.nextCardUid, getBattleRng(state));
   const nextState = resetPlayerTurnState(state, options);
   const hadUnspentMana = state.mana > 0;
   const wellspringBonus =

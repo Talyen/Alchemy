@@ -1,6 +1,3 @@
-// Aggregate command for permanent Gear mutations that affect the active run.
-// Keeping the invariant here prevents Armory, shops, and reward flows from
-// each implementing their own partial Gear → run-health synchronization.
 import { gearDefinitions } from "@/lib/gear";
 import type { GearStore } from "./gear-store-types";
 import {

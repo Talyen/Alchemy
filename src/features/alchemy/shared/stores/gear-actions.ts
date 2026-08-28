@@ -28,8 +28,6 @@ import { initialState } from "./gear-store-initial-state";
 import type { GearStateFields } from "./gear-store-types";
 import { isTrinketId } from "@/lib/game-data";
 
-/** Mutations over the aggregate's gear region; each takes the gear draft directly. */
-
 export function initializeGear(
   gear: Draft<GearStateFields>,
   inventories: GearInventories,

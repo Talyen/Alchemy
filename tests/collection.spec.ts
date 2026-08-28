@@ -70,9 +70,6 @@ test.describe("Collection", critical, () => {
       await new MenuPage(page).gotoCollection();
     });
 
-    // Tiles can be measured mid-mount with a zero-area box (0/0 = NaN) while the
-    // tab content animates in, so re-measure until every box settles to a finite
-    // aspect ratio before asserting.
     async function settledAspectRatios(images: Locator): Promise<number[]> {
       let ratios: number[] = [];
       await expect(async () => {

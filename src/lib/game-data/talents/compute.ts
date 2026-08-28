@@ -5,8 +5,6 @@ import { createEmptyTalentEffectManifest } from "./manifest-defaults";
 
 const talentById = new Map(talentPool.map((talent) => [talent.id, talent]));
 
-// Collapse unlocked IDs into a flat manifest once per change/battle. Combat code reads
-// numbers/booleans directly, which keeps turn resolution decoupled from talent grid data.
 export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEffectManifest {
   const manifest = createEmptyTalentEffectManifest();
 
@@ -42,7 +40,6 @@ export function normalizeUnlockedTalents(unlockedTalents: UnlockedTalents): Unlo
 }
 
 function applyTalentEffect(manifest: TalentEffectManifest, effect: TalentEffectOperation) {
-  // Data-driven talent effects keep descriptions and mechanics adjacent in talentPool.
   if (effect.kind === "add") {
     manifest[effect.field] += effect.amount;
     return;

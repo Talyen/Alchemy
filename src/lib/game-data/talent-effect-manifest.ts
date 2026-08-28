@@ -1,4 +1,3 @@
-// Pre-computed bonuses from unlocked talents, recalculated each battle start.
 import type { CompanionId } from "./types";
 
 export interface HealthThresholdBonus {
@@ -7,7 +6,6 @@ export interface HealthThresholdBonus {
 }
 
 export interface TalentEffectManifest {
-  // --- Physical ---
   flatPhysicalDamage: number;
   armorToPhysicalDamage: boolean;
   physicalStunChance: number;
@@ -20,7 +18,6 @@ export interface TalentEffectManifest {
   forgeToPhysicalDamageMultiplier: number;
   physicalOnDodgeEqualToAttack: boolean;
 
-  // --- Stun ---
   stunThresholdReduction: number;
   drawOnStun: number;
   nextCardFreeOnStun: boolean;
@@ -32,7 +29,6 @@ export interface TalentEffectManifest {
   stunStripArmor: boolean;
   manaOnStun: number;
 
-  // --- Block ---
   startBlock: number;
   blockPreventsBleed: boolean;
   blockPreventsPoison: boolean;
@@ -44,7 +40,6 @@ export interface TalentEffectManifest {
   blockToStunDamage: boolean;
   blockOnDodgeEqualToAttack: boolean;
 
-  // --- Forge ---
   startForge: number;
   forgeToBurn: boolean;
   forgeToHoly: boolean;
@@ -58,7 +53,6 @@ export interface TalentEffectManifest {
   forgeBlockThreshold: number;
   forgeBlockAmount: number;
 
-  // --- Armor ---
   armorMitigatesBurn: boolean;
   armorBlockThreshold: number;
   armorBlockAmount: number;
@@ -70,7 +64,6 @@ export interface TalentEffectManifest {
   armorCleanseThreshold: number;
   flatArmorAmount: number;
 
-  // --- Health ---
   campfireHealBonus: number;
   healthThresholdBlock: HealthThresholdBonus | null;
   maxHealthPerCombat: number;
@@ -87,7 +80,6 @@ export interface TalentEffectManifest {
   freezeDamageReduction: number;
   natureDamageReduction: number;
 
-  // --- Burn ---
   firstBurnCardBonusMultiplier: number;
   burnRemovesEnemyArmor: boolean;
   burnDoubleChance: number;
@@ -98,7 +90,6 @@ export interface TalentEffectManifest {
   blockToBurnDamage: boolean;
   burnStunChance: number;
 
-  // --- Consume ---
   consumeBurnDamageBonusPercent: number;
   firstConsumeCardFree: boolean;
   consumeDamageBonusPercent: number;
@@ -108,7 +99,6 @@ export interface TalentEffectManifest {
   poisonOnConsume: number;
   blockOnConsume: number;
 
-  // --- Gold ---
   shopCardDiscount: number;
   shopFreeRefresh: boolean;
   startGold: number;
@@ -123,10 +113,8 @@ export interface TalentEffectManifest {
   goldOnWish: number;
   mixPotionDiscount: number;
 
-  // --- Companions ---
   companionBondLevels: Record<CompanionId, number>;
 
-  // --- Holy ---
   holyLifestealPercent: number;
   firstHolyCardFree: boolean;
   holyGoldPercent: number;
@@ -137,7 +125,6 @@ export interface TalentEffectManifest {
   holyVsBurnMultiplier: number;
   holyGoldChance: number;
 
-  // --- Wish ---
   wishUndiscoveredCards: boolean;
   healthOnWish: number;
   removeHarmfulStatusOnWish: boolean;
@@ -149,12 +136,10 @@ export interface TalentEffectManifest {
   wishBlockAmount: number;
   wishCardsUpgraded: boolean;
 
-  // --- Homestead ---
   runMaxHealthBonus: number;
   runMaxManaBonus: number;
   cardHealBonus: Record<string, number>;
 
-  // --- Poison ---
   poisonDamageReduction: number;
   firstPoisonCardFree: boolean;
   poisonPhysicalBonus: number;
@@ -168,7 +153,6 @@ export interface TalentEffectManifest {
   poisonLeechChance: number;
   poisonPreventsEnemyDodge: boolean;
 
-  // --- Companion combat ---
   companionDamage: number;
   companionGoldFindActive: boolean;
   companionLeechChance: number;
@@ -180,24 +164,19 @@ export interface TalentEffectManifest {
   firstCompanionCardFree: boolean;
   companionAttacksOnDodge: boolean;
 
-  // --- Wishing Well ---
   wishCrystalGold: number;
 
-  // --- Mana ---
   startMana: number;
   wellspringKeepMana: number;
   manaBulwarkActive: boolean;
   manaShellActive: boolean;
-  // Per-mana-crystal damage uses two units by design (values are tuned around it):
-  // burn is a percent of maxMana — amount = maxMana * value / 100;
-  // freeze and companion are mana-halves — amount = maxMana * value / 2.
+
   burnDamagePerManaCrystal: number;
   freezeDamagePerManaCrystal: number;
   burnDamageOnManaCrystalLoss: number;
   companionDamagePerManaCrystal: number;
   healOnManaGain: number;
 
-  // --- Freeze ---
   freezeThresholdReduction: number;
   freezeDoubleDamage: boolean;
   blockOnFreeze: number;
@@ -212,7 +191,6 @@ export interface TalentEffectManifest {
   receiveHalfFreezeDamage: boolean;
   flatFreezeDamage: number;
 
-  // --- Archery ---
   flatArrowDamage: number;
   archeryPlayTwiceChance: number;
   archeryDoubledVsStunned: boolean;
@@ -225,7 +203,6 @@ export interface TalentEffectManifest {
   goldOnArcheryKill: number;
   nextArcheryCardFreeOnDodge: boolean;
 
-  // --- Nature ---
   flatNatureDamage: number;
   naturePoisonChance: number;
   natureBleedChance: number;
@@ -237,7 +214,6 @@ export interface TalentEffectManifest {
   healOnNatureCard: number;
   nextNatureCardFreeOnDodge: boolean;
 
-  // --- Bleed ---
   firstBleedCardFree: boolean;
   bleedPhysicalBonus: number;
   bleedLeechChance: number;
@@ -251,7 +227,6 @@ export interface TalentEffectManifest {
   bleedHalvesEnemyHealing: boolean;
   partingCutOnDodge: boolean;
 
-  // --- Leech ---
   firstLeechCardDoubled: boolean;
   leechDesperateMultiplier: number;
   leechMissingHealthStep: number;

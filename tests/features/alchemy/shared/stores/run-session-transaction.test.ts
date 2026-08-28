@@ -22,7 +22,7 @@ import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-ses
 import {
   setDiscoveredCardIds,
   setMaterials as setRunProfileMaterials,
-} from "@/features/alchemy/shared/stores/write-port-profile";
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
 import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";

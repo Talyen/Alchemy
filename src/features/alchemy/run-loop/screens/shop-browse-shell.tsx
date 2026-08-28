@@ -1,5 +1,3 @@
-// Shared shop browse chrome — header, gold, offerings grid, services, leave.
-// Mode slots (remove / mix / reveal) stay as children outside ShopBrowseOfferings.
 import type { ReactNode } from "react";
 
 import { RefreshCw } from "lucide-react";

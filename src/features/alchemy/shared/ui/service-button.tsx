@@ -1,4 +1,3 @@
-// Shop/service action buttons with disabled explanatory tooltips.
 import type { ComponentType, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,8 +8,7 @@ import { useHoverVisible } from "./use-hover-visible";
 
 export function DisabledTooltip({ show, message, children }: { show: boolean; message: string; children: ReactNode }) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
-  // The wrapper renders unconditionally so children keep the same DOM/stacking
-  // context whether or not the tooltip is armed.
+
   return (
     <div ref={triggerRef} className="relative" {...(show ? { onMouseEnter, onMouseLeave } : {})}>
       {children}

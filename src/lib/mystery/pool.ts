@@ -5,7 +5,6 @@ import { pickRandom } from "@/lib/utils";
 import { resolveMysteryEventTrinkets } from "./resolve-trinkets";
 import type { MysteryEffect, MysteryEvent } from "./types";
 
-// Effect order: XP → gold → materials → portrait reward (matches MysteryRewardSummary + tooltips)
 const xp = (keyword: KeywordId, amount = 8): MysteryEffect => ({ kind: "gainXP", keyword, amount });
 const mat = (material: MaterialId, amount: number): MysteryEffect => ({ kind: "gainMaterial", material, amount });
 const gold = (amount: number): MysteryEffect => ({ kind: "gainGold", amount });
@@ -248,7 +247,6 @@ export function pickMysteryEvent(rng: () => number): MysteryEvent {
   return event;
 }
 
-/** Draws a new event and resolves its trinket grants against owned trinkets so badges match payouts. */
 export function pickResolvedMysteryEvent(rng: () => number, ownedTrinketIds: readonly string[]): MysteryEvent {
   return resolveMysteryEventTrinkets(pickMysteryEvent(rng), ownedTrinketIds, rng);
 }

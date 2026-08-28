@@ -1,4 +1,3 @@
-// Shared homestead upgrade cost curves (single- and dual-material tiers).
 import type { MaterialId, MaterialInventory } from "./types";
 import { emptyInventory } from "./inventory";
 

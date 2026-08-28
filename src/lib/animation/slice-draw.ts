@@ -1,5 +1,3 @@
-// Canvas drawing for the Slice crack stroke and sparks. Used by SliceDeath.
-
 import { sliceCrackPolylineToFraction } from "./slice-crack";
 import {
   sampleBorderSpark,

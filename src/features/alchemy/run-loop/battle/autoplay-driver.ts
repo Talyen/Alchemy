@@ -1,4 +1,3 @@
-// Headless autoplay loop: play the first playable hand card, wait, retry on reject.
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
@@ -12,7 +11,6 @@ function isAutoplayBattleOver(state: BattleState): boolean {
   return state.enemyHealth <= 0 || isPlayerDefeated(state);
 }
 
-/** True while a play commit or draw/discard transfer is in flight. */
 export function isBattlePlayInputBusy(options: {
   cardPlayInProgress: boolean;
   cardTransferInProgress: boolean;
@@ -20,7 +18,6 @@ export function isBattlePlayInputBusy(options: {
   return options.cardPlayInProgress || options.cardTransferInProgress;
 }
 
-/** Shared idle gate for autoplay and auto-end-turn (menu is autoplay-only). */
 export function isBattlePlaybackBlocked(options: {
   screen: Screen;
   battleState: BattleState;

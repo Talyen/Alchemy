@@ -33,7 +33,7 @@ describe("getAvailableDestinations", () => {
 
   it("includes Campfire when Health is low regardless of thresholds", () => {
     const destinations = getAvailableDestinations(eliteFloor - 2, 100, MAX_HEALTH);
-    // campfire check: health < floor(max*0.8) → included
+
     expect(destinations).toContain("Campfire");
   });
 

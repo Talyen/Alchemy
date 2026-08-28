@@ -1,4 +1,3 @@
-// In-game navigation menu overlay and anchored popover.
 import { BookOpen, Cog, House, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Fragment } from "react";
 import { getProgressionFeatureUnlockMessage } from "@/lib/game-data";

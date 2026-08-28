@@ -1,6 +1,3 @@
-// Core types for the Homestead persistent progression system.
-// Materials, building/farm/research IDs, and effect manifests.
-
 import type { TalentEffectManifest } from "@/lib/game-data";
 
 export type MaterialId = "wood" | "iron" | "herbs" | "food" | "crystal";
@@ -66,7 +63,7 @@ export interface HomesteadFarm {
   tiers: HomesteadUpgradeTier[];
   yield: MaterialInventory;
   buttonLabel: string;
-  /** Hidden from UI until content is implemented; save data is preserved. */
+
   hidden?: boolean;
 }
 
@@ -77,11 +74,6 @@ export interface HomesteadResearch {
   tiers: HomesteadUpgradeTier[];
   buttonLabel: string;
 }
-
-// ─── Homestead key arrays ───────────────────────────────────────────
-// Single source of truth for which TalentEffectManifest fields homestead
-// can contribute to. The generic merger (effects.ts) iterates these arrays
-// — adding a key here automatically makes it mergeable from homestead data.
 
 type NumericTalentKey = {
   [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends number ? K : never;
@@ -98,7 +90,7 @@ type RecordTalentKey = {
 export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "flatPhysicalDamage",
   "companionDamage",
-  // Talent default is 1 (identity); homestead default is 0 so merge adds a bonus onto that base.
+
   "potionPotency",
   "flatBurnDamage",
   "flatArrowDamage",
@@ -130,7 +122,6 @@ type HomesteadBattleKey =
 
 type HomesteadBattleEffects = Pick<TalentEffectManifest, HomesteadBattleKey>;
 
-// Run-level homestead bonuses that never enter battle state.
 interface HomesteadMetaEffects {
   herbFindBonus: number;
   endRunFoodPerRoom: number;
@@ -139,5 +130,4 @@ interface HomesteadMetaEffects {
   gearAstralChanceBonus: number;
 }
 
-// Composite: all homestead bonuses feed through a single manifest type.
 export type HomesteadEffectManifest = HomesteadBattleEffects & HomesteadMetaEffects;

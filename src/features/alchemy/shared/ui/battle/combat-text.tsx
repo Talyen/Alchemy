@@ -1,5 +1,3 @@
-// Floating combat text widgets for battle feedback.
-// Used by BattleScreen actor rails.
 import { createElement } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -8,7 +6,6 @@ import { cn } from "@/lib/utils";
 import type { FloatingCombatText } from "../../types";
 import { getCombatTextColorClass, getCombatTextIcon } from "../../utils";
 
-// Finalized Floating Combat Text design parameters.
 const FCT_BASE_SIZE_CQH = 3.5;
 const FCT_POP_SCALE = 2.0;
 const FCT_HOLD_SCALE = 1.8;
@@ -90,7 +87,6 @@ const FCT_ANIMATION_PROPS = (() => {
   };
 })();
 
-// Renders a rail of active combat text bubbles, centered on actor art.
 export function CombatTextRail({ entries }: { entries: FloatingCombatText[] }) {
   if (entries.length === 0) {
     return null;
@@ -115,12 +111,7 @@ function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
   const iconSize = `${FCT_BASE_SIZE_CQH * 0.94}cqh`;
 
   return (
-    <div
-      className="absolute left-1/2"
-      // Lane offset is per floating entry — static utilities can't encode the runtime stack index.
-      // Horizontal center lives on this wrapper so Framer y/scale on the bubble do not fight CSS transform.
-      style={{ top: `${entry.lane * 56}px`, transform: "translate3d(-50%, 0, 0)" }}
-    >
+    <div className="absolute left-1/2" style={{ top: `${entry.lane * 56}px`, transform: "translate3d(-50%, 0, 0)" }}>
       <motion.div
         className={cn(
           "inline-flex items-center gap-1.5 font-bold tracking-wide whitespace-nowrap",

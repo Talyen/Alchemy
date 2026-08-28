@@ -67,4 +67,18 @@ describe("run RNG", () => {
     }
     expect([stream(), stream(), stream(), stream(), stream()]).toEqual(expected);
   });
+
+  it("falls back to seed 0 on non-finite rng output", () => {
+    expect(createRunRngState(() => NaN).seed).toBe(0);
+    expect(createRunRngState(() => Infinity).seed).toBe(0);
+    expect(createRunRngState(() => -Infinity).seed).toBe(0);
+
+    expect(createRunRngState(() => 0.5).seed).toBe(((0.5 * 0x1_0000_0000) | 0) >>> 0);
+  });
+
+  it("throws in DEV on unknown stream via nextRunRngValue guard", () => {
+    const state = createRunRngState(() => 0.1);
+    // @ts-expect-error — force unknown stream for guard branch
+    expect(() => nextRunRngValue(state, "unknown")).toThrow(/Unknown run RNG stream/);
+  });
 });

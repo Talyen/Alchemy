@@ -1,4 +1,3 @@
-// Shared run-end talent XP, obtained items, and materials summary for victory and defeat screens.
 import { useMemo } from "react";
 import { getTalentTreeKeywordIds, type KeywordId, type TalentXP } from "@/lib/game-data";
 import type { RunObtainedItem } from "@/lib/active-run-session";

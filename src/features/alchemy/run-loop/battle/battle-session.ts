@@ -1,4 +1,3 @@
-// Battle session identity, victory/defeat guards, and timeout/transfer cleanup.
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
@@ -14,7 +13,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     if (session !== ctx.battleSessionRef.current) return false;
     if (ctx.battleAbortControllerRef.current.signal.aborted) return false;
     const store = getStore();
-    // Allow post-victory animation frames until a new session starts.
+
     return store.hasActiveBattle || (ctx.victoryDefeatHandledRef.current && store.battleState.enemyHealth <= 0);
   }
 
@@ -83,7 +82,6 @@ export function createBattleSession(ctx: BattleControllerContext) {
     dispatchRunSessionCommand((draft) => setBattleStartState(draft, null));
   }
 
-  /** Reset session identity/presentation after the new battle state commits. */
   function prepareBattleSessionForStart() {
     ctx.battleAbortControllerRef.current.abort();
     ctx.battleAbortControllerRef.current = new AbortController();

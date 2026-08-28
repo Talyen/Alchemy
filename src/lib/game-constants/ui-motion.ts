@@ -1,5 +1,3 @@
-// UI motion, layout, preload, and presentation tuning.
-
 export const IMAGE_PRELOAD_BATCH_SIZE = 4;
 export const IMAGE_PRELOAD_TIMEOUT_MS = 15_000;
 
@@ -22,17 +20,16 @@ export const COMBAT_TEXT_LANE_DELAY_MS = 80;
 export const COMBAT_TEXT_MAX_VISIBLE_PER_RAIL = 3;
 export const CARD_ACTIVATION_ROTATION_DEGREES = 4.2;
 
-/** One full stun/freeze combatant overlay loop (ms). Trinket: `combatantStatusEffectPhaseDuration`. */
 export const COMBATANT_STATUS_EFFECT_PHASE_MS = 4000;
-/** Stun star orbit radius as a fraction of the smaller canvas dimension. Trinket: `orbitRadius`. */
+
 export const COMBATANT_STATUS_ORBIT_RADIUS = 0.42;
-/** Stun overlay star count. Trinket: `starCount`. */
+
 export const COMBATANT_STATUS_STAR_COUNT = 8;
-/** Freeze encroachment completes at this fraction of one overlay loop (0–1). Trinket: `combatantFreezeEncroachProgress`. */
+
 export const COMBATANT_FREEZE_ENCROACH_PROGRESS = 0.35;
-/** Max frost veil opacity multiplier for freeze overlay. Trinket: ice-crystals `frostOpacity`. */
+
 export const COMBATANT_STATUS_FROST_OPACITY = 0.75;
-/** Freeze overlay snowflake count (distributed around card edges). Trinket: ice-crystals `particleCount`. */
+
 export const COMBATANT_STATUS_FLAKE_COUNT = 12;
 
 export const CARD_TRANSFER_CONFIG = {
@@ -78,15 +75,15 @@ export const HAND_FAN_ROTATION_DEGREES = 4.2;
 export const HAND_REST_DROP_PX = 12;
 export const HAND_HOVER_LIFT_PX = 26;
 export const HAND_HOVER_ROTATION_DEGREES = 2.6;
-/** Gap between a hovered hand card and its detail tooltip (PortaledTooltip padding). */
+
 export const HAND_HOVER_TOOLTIP_PADDING_PX = 16;
-/** Delay before clearing hand hover so a sibling card can claim it first. */
+
 export const HAND_HOVER_HANDOFF_MS = 50;
-/** Horizontal slide duration when the fan rebalances after a card leaves. */
+
 export const HAND_REFLOW_MOTION_MS = 320;
 export const HAND_CARD_BASE_Z_INDEX = 10;
 export const HAND_CARD_HOVER_Z_INDEX = 40;
-/** Battle wish overlay and flying card transfer layer. */
+
 export const WISH_OVERLAY_Z_INDEX = 90;
 
 export const LABYRINTH_MAP_UI = {

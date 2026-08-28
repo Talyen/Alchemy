@@ -1,6 +1,3 @@
-// Narrow renderer bridge for desktop-only window and Steam capabilities.
-// Save persistence uses platform-save-backend.ts instead of this runtime API.
-
 export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
 
 export interface SteamInitialization {

@@ -1,4 +1,3 @@
-// Unit tests for labyrinth modifier definitions and encounter-type selection.
 import { describe, expect, it } from "vitest";
 import { ENCOUNTER_TRAITS, REWARD_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "@/lib/content-systems/labyrinth/modifiers";

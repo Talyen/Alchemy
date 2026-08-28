@@ -1,4 +1,3 @@
-// Root app shell for save data, audio/display side effects, routing, and global layout.
 import { useCallback, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Screen } from "@/lib/routing";
@@ -252,8 +251,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
 export default function App() {
   const bootstrapResult = useAlchemyBootstrap();
-  // Gate lives here so StartupLoadingScreen stays mounted across bootstrap and
-  // art decode (outside the VR stage for size parity).
+
   const { ready: initialLoadReady, progress: startupProgress } = useInitialLoadReady({
     bootstrapReady: bootstrapResult != null,
   });

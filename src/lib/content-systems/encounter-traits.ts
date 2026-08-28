@@ -1,9 +1,7 @@
-// Shared encounter trait catalog and mode-aware deterministic selection helpers.
 import type { EnemyTrait } from "@/lib/game-data";
 import { sampleItems } from "@/lib/utils";
 import type { ContentSystemId } from "./content-system-ids";
 
-/** Retained as save-migration tombstones when encounter traits leave the catalog. */
 const RETIRED_ENCOUNTER_TRAIT_IDS = [
   "armored",
   "sturdy",

@@ -33,7 +33,6 @@ function getSavedBattleTurn(page: import("@playwright/test").Page): Promise<numb
   }, SAVE_KEY);
 }
 
-/** Purse gold: flushed saves store it on `gold` with `runGold` 0; unflushed injects may still have legacy `runGold`. */
 function persistedPurseGold(save: { gold?: unknown; activeRun?: { runGold?: unknown } | null }): number {
   const runGold = typeof save.activeRun?.runGold === "number" ? save.activeRun.runGold : 0;
   const gold = typeof save.gold === "number" ? save.gold : 0;
@@ -90,7 +89,6 @@ test.describe("Save Persistence & Resume", () => {
     });
     await page.goto("/");
 
-    // currentScreen: destination hydrates before menu is stable; Resume via Play races bootstrap.
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Campfire" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Mystery" })).toBeVisible();
@@ -208,9 +206,7 @@ test.describe("Save Persistence & Resume", () => {
       (data) => {
         try {
           localStorage.setItem(data.saveKey, JSON.stringify(data.save));
-        } catch {
-          // Ignore opaque origin exceptions
-        }
+        } catch {}
       },
       { saveKey: SAVE_KEY, save: legacySave },
     );

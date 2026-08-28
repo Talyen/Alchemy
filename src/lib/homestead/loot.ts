@@ -1,13 +1,9 @@
-// Enemy material loot tables and end-of-run bonus calculations.
-// Each enemy drops thematic materials based on its identity.
-
 import { MATERIAL_IDS, type MaterialId, type MaterialInventory } from "./types";
 import type { HomesteadEffectManifest } from "./types";
 import { addInventory, emptyInventory, materialAmount } from "./inventory";
 import { materialCost } from "./costs";
 import { HOMESTEAD_LOOT_CONFIG } from "../game-constants";
 
-// Per-enemy loot table: a guaranteed drop, plus possible bonus drops with weight.
 interface MaterialLootEntry {
   material: MaterialId;
   min: number;
@@ -83,7 +79,6 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
   },
 };
 
-// Exported for the bestiary↔loot parity test; not a production lookup.
 export const enemyLootTableIds = Object.keys(enemyLootTables);
 
 function rollBonuses(table: EnemyLootTable, rng: () => number): MaterialInventory {
@@ -96,7 +91,6 @@ function rollBonuses(table: EnemyLootTable, rng: () => number): MaterialInventor
   return result;
 }
 
-// Apply enemy-type multiplier to loot: elites get 1.3x, bosses get 3x.
 function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): MaterialInventory {
   const { enemyTypeMultipliers } = HOMESTEAD_LOOT_CONFIG;
   const multiplier =
@@ -122,7 +116,6 @@ export function getEnemyMaterialLoot(enemyId: string, enemyType: string, rng: ()
   return applyTypeMultiplier(combined, enemyType);
 }
 
-// Applies persistent material find multipliers to discovered material rewards.
 export function applyMaterialFindBonus(
   materials: MaterialInventory,
   effects: Pick<HomesteadEffectManifest, "herbFindBonus">,
@@ -136,7 +129,6 @@ type EndOfRunHomesteadEffects = Pick<
   "endRunFoodPerRoom" | "endRunHerbsPerRoom" | "endRunCrystalPerRoom" | "herbFindBonus"
 >;
 
-// Applies homestead flat end-of-run yields, then herb find multiplier.
 export function applyEndOfRunHomesteadBonuses(
   base: MaterialInventory,
   effects: EndOfRunHomesteadEffects,

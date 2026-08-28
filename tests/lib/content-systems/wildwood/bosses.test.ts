@@ -1,4 +1,3 @@
-// Unit tests for Wildwood boss definitions — data integrity via compendium.
 import { describe, expect, it } from "vitest";
 import {
   WILDWOOD_BOSS_IDS,

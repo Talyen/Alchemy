@@ -1,4 +1,3 @@
-// Alchemist's Shop screen — buy potions, refresh, or mix two potions from your deck.
 import { useMemo, useState } from "react";
 import { FlaskConical } from "lucide-react";
 
@@ -48,7 +47,6 @@ export function AlchemistShopScreen({
   onContinue: () => void;
   onOpenMenu: (rect?: DOMRect) => void;
 }) {
-  // One phase machine for potion mixing: idle → picking (two picks) with page state.
   const [mix, setMix] = useState<{ step: 0 | 1 | 2; a: number | null; b: number | null; page: number }>({
     step: 0,
     a: null,
@@ -62,7 +60,6 @@ export function AlchemistShopScreen({
     setMix({ step: 0, a: null, b: null, page: 0 });
   }
 
-  // Escape cancels potion selection only — not the mixed-card reveal (Continue).
   useCaptureEscapeCancel(mixMode && !mixedCard ? resetSelections : undefined);
 
   function startMix() {
@@ -70,8 +67,6 @@ export function AlchemistShopScreen({
   }
 
   function selectMixCard(index: number) {
-    // Potion mixing is a two-step selection machine: generated Mixed Potions are excluded,
-    // re-clicking the first pick backs up to step one, and the second pick toggles freely.
     const card = runDeck[index];
     if (!card) return;
     if (isMixedPotionCard(card)) return;
@@ -89,8 +84,6 @@ export function AlchemistShopScreen({
   }
 
   function handleMixConfirm() {
-    // Build a preview result before mutating the deck so the reveal can show the crafted
-    // card after the controller removes the two source potions.
     if (mix.a === null || mix.b === null) return;
     const result = onMixPotions(mix.a, mix.b);
     if (result) setMixedCard(result);

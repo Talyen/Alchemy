@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { preloadSounds, preloadAllSounds, preloadBattleSounds, resetSoundPreloadCache } from "@/lib/audio-preload";
 import { audioState } from "@/lib/audio-state";

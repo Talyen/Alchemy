@@ -10,12 +10,10 @@ import {
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
-/** Clear the persisted battle-active state; presentation cleanup is a post-commit concern. */
 export function clearCombatState(draft: GameplayDraft) {
   setHasActiveBattle(draft, false);
 }
 
-/** Clear transient combat presentation after the gameplay state has committed. */
 export function clearCombatPresentation() {
   clearBattlePresentationUi();
 }

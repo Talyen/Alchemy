@@ -1,17 +1,20 @@
-// Status-related card effect schemas and metadata.
 import { z } from "zod";
 import type { EffectKindDefinition } from "./registry";
-import { EnemyStatusIdSchema, DamageTypeSchema } from "./shared-schemas";
+import { AmountSchema, DamageTypeSchema, EnemyStatusIdSchema } from "./shared-schemas";
 
 export const playerStatusEffectDefinition = {
   kind: "player-status",
-  schema: z.object({
-    kind: z.literal("player-status"),
-    status: z.enum(["block", "armor", "forge", "haste", "phoenixFeather"]),
-    amount: z.number().int().min(0).max(999),
-    perManaCrystal: z.number().int().min(0).max(999).optional(),
-    convertCurrentMana: z.number().int().min(0).max(100).optional(),
-  }),
+  schema: z
+    .object({
+      kind: z.literal("player-status"),
+      status: z.enum(["block", "armor", "forge", "haste", "phoenixFeather"]),
+      amount: AmountSchema,
+      perManaCrystal: AmountSchema.optional(),
+      convertCurrentMana: z.number().int().min(0).max(100).optional(),
+    })
+    .refine((data) => !(data.perManaCrystal !== undefined && data.convertCurrentMana !== undefined), {
+      message: "player-status cannot have both perManaCrystal and convertCurrentMana",
+    }),
 } satisfies EffectKindDefinition<"player-status">;
 
 export const enemyStatusEffectDefinition = {
@@ -19,7 +22,7 @@ export const enemyStatusEffectDefinition = {
   schema: z.object({
     kind: z.literal("enemy-status"),
     status: EnemyStatusIdSchema,
-    amount: z.number().int().min(0).max(999),
+    amount: AmountSchema,
   }),
 } satisfies EffectKindDefinition<"enemy-status">;
 
@@ -27,7 +30,7 @@ export const removeHarmfulStatusEffectDefinition = {
   kind: "remove-harmful-status",
   schema: z.object({
     kind: z.literal("remove-harmful-status"),
-    amount: z.number().int().min(0).max(999),
+    amount: AmountSchema,
     removeAll: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"remove-harmful-status">;
@@ -45,7 +48,7 @@ export const multiplyEnemyStatusEffectDefinition = {
   schema: z.object({
     kind: z.literal("multiply-enemy-status"),
     status: EnemyStatusIdSchema,
-    factor: z.number(),
+    factor: z.number().int().min(1).max(10),
   }),
 } satisfies EffectKindDefinition<"multiply-enemy-status">;
 

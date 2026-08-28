@@ -1,5 +1,3 @@
-// Shared run-navigation helpers for destination history and campaign novice starts.
-// Used by useRunFlowEngine and victory-flow to avoid duplicated ternaries and start blocks.
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import type { Destination } from "@/lib/routing";
@@ -37,7 +35,6 @@ export function tryStartNoviceCampaignBattle(characterId: CharacterId, deps: Nov
   return true;
 }
 
-/** Skips novice auto-start when already completed; otherwise runs `onContinue` (difficulty select, etc.). */
 export function afterCampaignCharacterResolved(
   characterId: CharacterId,
   deps: NoviceCampaignStartDeps,

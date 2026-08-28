@@ -1,4 +1,3 @@
-// Reward state, gold math, and combat/boss reward builders.
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import {
   GEAR_REWARD_PERMANENT_TRINKET_CHANCE,

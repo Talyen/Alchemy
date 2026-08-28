@@ -1,6 +1,3 @@
-// Route-local battle playback: autoplay ticks and auto-end-turn.
-// Lives next to battle display so combat ticks do not re-render the shell controller.
-// Session autoplay on/off is owned by the battle controller so it survives route unmount.
 import { useCallback, useMemo, useRef } from "react";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
@@ -37,7 +34,7 @@ export function useBattlePlayback({
   const scheduleAutoEndTurnRef = useRef<(state?: BattleState) => void>(() => {});
   const wakeAutoplayRef = useRef<(() => void) | null>(null);
   const onPlaybackGateChangeRef = useRef<() => void>(() => {});
-  // Combined wakeup: auto-end reschedules immediately; autoplay interrupts its retry wait.
+
   // eslint-disable-next-line react-hooks/refs -- latest playback callbacks; not a render input
   onPlaybackGateChangeRef.current = () => {
     scheduleAutoEndTurnRef.current();

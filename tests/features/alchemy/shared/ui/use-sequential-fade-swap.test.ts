@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-sequential-fade-swap";

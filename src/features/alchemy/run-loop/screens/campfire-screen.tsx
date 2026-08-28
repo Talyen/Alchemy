@@ -1,4 +1,3 @@
-// Campfire rest screen — restores a percentage of max Health.
 import { useState, useEffect } from "react";
 
 import { ScreenDescription, TitledScreenShell } from "../../shared/ui/shared-ui";

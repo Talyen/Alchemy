@@ -67,16 +67,8 @@ export const LIB_NO_FEATURES = [
   },
 ];
 
-/** @type {ImportPattern[]} */
-export const LIB_BARREL_PATTERNS = [
-  {
-    group: ["@/lib/game-data/*"],
-    allowImportNames: ["hydrateCard", "getOfferableCardPool", "getStandardPotionPool", "isStandardPotionCard"],
-    message: "Import from @/lib/game-data (barrel) instead of deep paths.",
-  },
-  { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
-  { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
-];
+/** @type {ImportPattern[]} — subset of BARREL_PATTERNS relevant inside src/lib (no features barrels). */
+export const LIB_BARREL_PATTERNS = BARREL_PATTERNS.filter((pattern) => pattern.group.some((g) => g.includes("@/lib/")));
 
 /** @type {ImportPattern[]} */
 export const GAME_DATA_NO_BATTLE = [
@@ -234,8 +226,15 @@ export const UI_NO_SESSION_STORES = [
       "**/stores/battle-store",
       "**/stores/run-session-actions",
       "**/stores/run-session-read",
+      "**/stores/run-session-*",
+      "**/stores/run-reads",
       "@/features/alchemy/shared/stores/run-domain-store",
       "@/features/alchemy/shared/stores/battle-store",
+      "@/features/alchemy/shared/stores/run-session-read-port",
+      "@/features/alchemy/shared/stores/run-session-write-port",
+      "@/features/alchemy/shared/stores/run-session-react-ports",
+      "@/features/alchemy/shared/stores/run-reads",
+      "@/features/alchemy/shared/stores/gameplay-state-store",
     ],
     message: "UI widgets receive data via props. Only ui-store is allowed for ephemeral hover/shimmer.",
   },
@@ -259,6 +258,42 @@ export const BATTLE_NO_MATH_FLOOR = {
   selector: 'CallExpression[callee.object.name="Math"][callee.property.name="floor"]',
   message: "Use Math.round() instead of Math.floor() in battle engine code.",
 };
+
+/** @type {SyntaxSelector} */
+export const BATTLE_NO_DIRECT_RNG = {
+  selector: 'MemberExpression[object.name="state"][property.name="rng"]',
+  message: "Use getBattleRng(state) instead of state.rng in battle engine code.",
+};
+
+/** @type {SyntaxSelector[]} */
+export const AGGREGATE_NO_DIRECT_MUTATION = [
+  {
+    selector: 'MemberExpression[object.name="useGameplayStateStore"][property.name="getState"]',
+    message:
+      "Use capability ports (run-session-read-port / run-session-write-port) + dispatchRunSessionCommand instead of useGameplayStateStore.getState() — see .agents/knowledge/patterns/run-state-command-boundary.md.",
+  },
+  {
+    selector: 'MemberExpression[object.name="useGameplayStateStore"][property.name="setState"]',
+    message:
+      "Use dispatchRunSessionCommand + draft mutators instead of useGameplayStateStore.setState() — see .agents/knowledge/patterns/run-state-command-boundary.md.",
+  },
+];
+
+/** @type {SyntaxSelector[]} */
+export const GEAR_NO_OUTER_DISPATCH = [
+  {
+    selector:
+      'ImportDeclaration[source.value=/gear-session-command/] ImportSpecifier[imported.name="dispatchGearMutationWithRunHealthSync"]',
+    message:
+      "Use mutateGearWithRunHealthSync(draft, ...) inside a run-session command — outer dispatch nests commands — see .agents/knowledge/patterns/gear-hp-sync.md.",
+  },
+  {
+    selector:
+      'ImportDeclaration[source.value=/gear-session-command/] ImportSpecifier[imported.name="dispatchGearSalvageWithMaterialGrant"]',
+    message:
+      "Use mutateGearWithRunHealthSync(draft, ...) + grantMaterials(draft, ...) inside a run-session command — outer salvage dispatch nests commands — see .agents/knowledge/patterns/gear-hp-sync.md.",
+  },
+];
 
 /** @type {SyntaxSelector[]} */
 export const CLASSNAME_NO_TEMPLATE = [

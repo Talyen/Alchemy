@@ -1,5 +1,3 @@
-// Single interactive collection tile for hero, card, bestiary, trinket, and unique entries.
-// Used by CollectionGrid to keep grid layout separate from tile behavior.
 import { memo, useState, type RefObject } from "react";
 
 import { playCardSound, playEnemyAttack } from "@/lib/audio";

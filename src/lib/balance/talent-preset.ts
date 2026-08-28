@@ -1,4 +1,3 @@
-// Combat-filtered talent presets for balance simulations (tree row / pool order).
 import { defaultTalentEffects } from "@/lib/battle";
 import {
   computeTalentEffects,
@@ -50,7 +49,6 @@ const AFFINITY_POINT_FALLBACK: Record<TalentPreset, number> = {
   late: LATE_AFFINITY_TALENT_CAP * 3,
 };
 
-/** Points a typical player would have spent on this class kit (affinity trees only). */
 export function countAffinityCombatTalents(keywords: readonly KeywordId[], preset: TalentPreset): number {
   if (keywords.length === 0) {
     return AFFINITY_POINT_FALLBACK[preset];

@@ -1,4 +1,3 @@
-// Continuous stun/freeze overlay for combatant portraits and hand cards (Trinket parity).
 import { type ReactNode, useLayoutEffect, useRef } from "react";
 
 import type { ActiveCcKeyword } from "@/features/alchemy/shared/utils";

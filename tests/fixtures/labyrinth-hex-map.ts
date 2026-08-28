@@ -1,4 +1,3 @@
-/** Deterministic hex Labyrinth map for save fixtures and E2E inject. Keep this module free of game-data art imports. */
 import {
   LABYRINTH_ENTRANCE_FLOOR_ID,
   LABYRINTH_ENTRANCE_NODE_ID,
@@ -110,7 +109,6 @@ function playableFloorNodes(
   });
 }
 
-/** Two playable production-sized floors for Labyrinth perf and floor-switch E2E. */
 export function productionHexLabyrinthMapFixture(): LabyrinthMap {
   const floor1 = playableFloorNodes(1, (index, type) => index < 5 || type === "boss");
   const floor2 = playableFloorNodes(2, () => false);

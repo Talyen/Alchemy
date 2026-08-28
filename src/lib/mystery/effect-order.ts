@@ -1,7 +1,5 @@
 import type { MysteryEffect } from "./types";
 
-// Display order: XP → gold → materials → portrait reward (card/trinket/gear/etc).
-// Used by tooltips, reward summary grouping, and pool authoring tests.
 export function getMysteryEffectRank(effect: MysteryEffect): number {
   switch (effect.kind) {
     case "gainXP":

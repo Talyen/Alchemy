@@ -1,4 +1,3 @@
-// Profile-lifetime gold purse. Shops, battle, HUD, and run start all read/write this field.
 import type { GameplayDraft } from "./run-session-command";
 import { getGoldMultiplier } from "@/lib/game-data";
 

@@ -1,4 +1,3 @@
-// Shared feature-level UI/controller types for screens, routes, ghosts, combat text, and options.
 import type { CSSProperties, RefObject } from "react";
 
 import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
@@ -79,7 +78,7 @@ export interface StatusChip {
     | "frozen"
     | PendingPulseChipId;
   value: number;
-  /** Binary effects (e.g. Phoenix Feather or Control Immunity) omit the numeric badge in their tooltip. */
+
   hideValue?: boolean;
 }
 

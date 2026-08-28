@@ -1,5 +1,3 @@
-// Battle UI formatting helpers for combat text colors/icons and status chip ordering.
-// Used by battle controller and widgets to keep presentation derivation out of combat logic.
 import type { BattleState, CombatTextEvent, CcState } from "@/lib/battle";
 import { isPlayerCcControlled, isStunFreezeBuildupBlocked } from "@/lib/battle";
 import {
@@ -77,7 +75,6 @@ function buildCcImmunityChip(cc: CcState): StatusChip[] {
   return [{ id: "ccImmunity", value: cc.cooldown, hideValue: true }];
 }
 
-// Buff-tier player chips precede armed-effect chips, which precede harmful DoT build-ups.
 const BUFF_TIER_CHIP_IDS = new Set<string>(["block", "armor", "forge", "haste", "phoenixFeather"]);
 
 function insertAfterBuffTier(chips: StatusChip[], additions: StatusChip[]): StatusChip[] {
@@ -93,7 +90,6 @@ function isDamageEffect(effect: BattleCardEffect): effect is Extract<BattleCardE
   return effect.kind === "damage";
 }
 
-// CC immunity surfaces only after active Stun/Freeze skip turns are consumed.
 function buildArmedPlayerChips(state: BattleState): StatusChip[] {
   const chips: StatusChip[] = [];
   const { flags } = state;

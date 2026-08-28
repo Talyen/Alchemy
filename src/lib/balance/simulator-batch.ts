@@ -48,11 +48,6 @@ export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
   return runBatchInternal(config, true);
 }
 
-/**
- * Summary-only path: aggregates while simulating without retaining every
- * BattleSimulationResult. `result.results` will be `[]` — callers needing
- * per-iteration traces must use `simulateBatch`.
- */
 export function simulateBatchSummary(config: BalanceBatchConfig): BalanceBatchResult {
   return runBatchInternal(config, false);
 }

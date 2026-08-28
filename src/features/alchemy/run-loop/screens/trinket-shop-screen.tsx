@@ -1,4 +1,3 @@
-// Trinket Shop — buy trinkets or refresh offerings.
 import type { TrinketEntry } from "@/lib/game-data";
 
 import { PurchasableTrinketItem } from "../../shared/ui/purchasable-trinket-item";

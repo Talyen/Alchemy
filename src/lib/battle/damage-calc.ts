@@ -1,6 +1,3 @@
-/**
- * Player damage calculation: per-type base amounts, first-card modifiers, crit, block, and armor mitigation.
- */
 import {
   getBurnBonusToBleedingMultiplier,
   getEnemyDamageMultiplier,
@@ -8,7 +5,7 @@ import {
   rollPercent,
 } from "./status-helpers";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
-import { scaleBlockBonus, scalePercent, scalePerMana } from "./amount-helpers";
+import { scalePercent, scalePerMana } from "./amount-helpers";
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
@@ -38,10 +35,6 @@ function getPlayerBlockHalf(state: BattleState): number {
   return Math.round(state.playerStatuses.block / HALF_DIVISOR);
 }
 
-/**
- * Calculates raw base damage amount before keyword specific modifiers are applied.
- * Evaluates forge bonus and whether the damage scales on current block or armor.
- */
 function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {
   if (!forgeAppliesToDamageType(damageType, state.talentEffects)) return 0;
   const forge = state.playerStatuses.forge;
@@ -78,15 +71,12 @@ function computeBaseRawAmount(
   return amount;
 }
 
-/**
- * Applies physical damage modifiers from character talent effects.
- * Takes into account flat bonus, armor/block scaling, stunned/frozen multipliers, and bleed/poison status bonuses.
- */
 function applyPhysicalScaling(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.talentEffects.flatPhysicalDamage + state.gearEffects.flatPhysicalDamage;
   if (state.talentEffects.armorToPhysicalDamage) {
     nextAmount += state.playerStatuses.armor;
   }
+
   if (state.talentEffects.blockToPhysicalDamageMultiplier > 0) {
     nextAmount += Math.round(state.playerStatuses.block * state.talentEffects.blockToPhysicalDamageMultiplier);
   }
@@ -121,10 +111,6 @@ function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): nu
   return applyPhysicalCCAndStatusMultipliers(state, scaledAmount);
 }
 
-/**
- * Applies holy damage modifiers based on player gold and current block.
- * Amplifies output if the target is currently afflicted with burn.
- */
 function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.gearEffects.flatHolyDamage;
   nextAmount += scalePercent(state.gold, state.talentEffects.holyGoldPercent, PERCENT_DENOMINATOR);
@@ -143,9 +129,6 @@ function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number
   return nextAmount;
 }
 
-/**
- * Applies bleed damage modifiers, including desperation below half health and execute bonuses.
- */
 function applyBleedDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.gearEffects.flatBleedDamage;
   if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR && state.talentEffects.bleedDesperateMultiplier > 1) {
@@ -160,14 +143,10 @@ function applyBleedDamageModifiers(state: BattleState, rawAmount: number): numbe
   return nextAmount;
 }
 
-function getBlockScaledDamageBonus(state: BattleState, percent = BLOCK_SCALED_DAMAGE_PERCENT): number {
-  return scaleBlockBonus(state.playerStatuses.block, percent, PERCENT_DENOMINATOR);
-}
-
 function applyStunDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.talentEffects.flatStunDamage + state.gearEffects.flatStunDamage;
   if (state.talentEffects.blockToStunDamage) {
-    nextAmount += getBlockScaledDamageBonus(state);
+    nextAmount += scalePercent(state.playerStatuses.block, BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR);
   }
   return nextAmount;
 }
@@ -181,7 +160,7 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: 
     nextAmount += scalePerMana(state.maxMana, state.gearEffects.burnDamagePerManaPercent, "percent");
   }
   if (state.talentEffects.blockToBurnDamage) {
-    nextAmount += getBlockScaledDamageBonus(state, BURN_BLOCK_SCALED_DAMAGE_PERCENT);
+    nextAmount += scalePercent(state.playerStatuses.block, BURN_BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR);
   }
   if (card?.consume && state.talentEffects.consumeBurnDamageBonusPercent > 0) {
     nextAmount = Math.round(nextAmount * (1 + state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR));
@@ -235,9 +214,7 @@ function computeBaseDamage(
   card?: BattleCard,
 ) {
   const rawAmount = computeBaseRawAmount(state, effect, card);
-  // Option B: equalTo* is raw stat + forge only so card text matches tooltip.
-  // Per-type flat/scaling bonuses (flatPhysical, armorTo*, blockTo* etc.) only apply to
-  // explicit `amount` effects. See card-description.ts early-return for these flags.
+
   // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean flags; || is correct for false vs undefined.
   const isEqualTo = Boolean(effect.equalToBlock || effect.equalToArmor || effect.equalToGoldPercent);
   if (isEqualTo) {
@@ -256,17 +233,11 @@ function computeBaseDamage(
   return Math.max(0, amount);
 }
 
-/**
- * Evaluates whether damage turns into a critical strike and returns modified damage.
- */
 function applyCrit(damage: number, state: BattleState) {
   if (state.flags.nextHitCrit) return damage * CRIT_MULTIPLIER;
   return rollPercent(GLOBAL_CRIT_CHANCE, getBattleRng(state)) ? damage * CRIT_MULTIPLIER : damage;
 }
 
-/**
- * Applies first-card element doubling modifiers (burn, holy), updating state with consumed flags.
- */
 function applyFirstDamageModifiers(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
@@ -294,9 +265,6 @@ function applyFirstDamageModifiers(
   return { state: nextState, rawDamage: nextDamage };
 }
 
-/**
- * Resolves boon-based stun triggers from playing high physical/stun damage with active forge stacks.
- */
 function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean, card?: BattleCard): BattleState {
   if (!isPhysicalOrStun) return state;
   let pierce = state.trinketEffects.sunderingArmorPiercing + state.gearEffects.armorPiercing;
@@ -307,10 +275,6 @@ function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boole
   return reduceEnemyArmor(state, pierce);
 }
 
-// Returns { state, remainingDamage } because block absorption produces TWO distinct
-// outputs consumed by the caller: the updated state and the damage value after block.
-// Functions that only modify state inline (consumeForgeAfterDamage, applySunderingArmorPiercing)
-// return just BattleState.
 function applyBlockAbsorption(state: BattleState, damage: number): { state: BattleState; remainingDamage: number } {
   const effectiveBlock = state.enemyMitigation.block;
   const blockAbsorbed = Math.min(damage, effectiveBlock);
@@ -353,9 +317,6 @@ function computeBurnMultiplier(effect: Extract<BattleCardEffect, { kind: "damage
   return getBurnBonusToBleedingMultiplier(state);
 }
 
-/**
- * Computes final adjusted damage to the enemy, considering critical strikes, traits, and armor reduction.
- */
 export function computeCardDamageToEnemy(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,

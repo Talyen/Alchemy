@@ -1,4 +1,3 @@
-// Reusable tab bar with rectangular buttons.
 import type { ElementType } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

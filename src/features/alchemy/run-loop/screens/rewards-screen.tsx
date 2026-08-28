@@ -155,10 +155,6 @@ export function RewardsScreen({
   const selectedRewardId = rewardState.selectedId;
   const choicePrompt = getRewardPrompt(rewardState.rewardType);
 
-  // Read which reward choice is hovered directly from the ui-store hover ID.
-  // Cards register under scope "reward" so their hover ID is "reward-{choiceId}".
-  // Reading from the store avoids the leave/enter callback ordering race that
-  // causes the local state to momentarily clear between card transitions.
   const hoveredCardId = useUiStore((s) => s.hoveredCardId);
   const { hoveredReward, selectedReward } = useMemo(() => {
     const hoveredId = hoveredCardId?.startsWith("reward-") ? hoveredCardId.slice("reward-".length) : null;
@@ -199,7 +195,7 @@ export function RewardsScreen({
               secondary: {
                 label: "Skip",
                 onClick: onSkip,
-                // Disabled while claim is in flight or after commit drains choices.
+
                 disabled: claimLocked,
               },
             }

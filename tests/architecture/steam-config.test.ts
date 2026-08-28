@@ -60,7 +60,7 @@ describe("steam platform config", () => {
 
   it("routes packaging through dist-desktop rather than direct electron-builder scripts", () => {
     expect(pkg.scripts["dist:desktop"]).toContain("dist-desktop.mjs");
-    // package:win is the directory-packaging variant of the same pipeline.
+
     expect(pkg.scripts["package:win"]).toContain("dist:desktop");
     expect(pkg.scripts["package:win"]).toContain("--dir");
     expect(pkg.scripts["dist:win"]).toBeUndefined();

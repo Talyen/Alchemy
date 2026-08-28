@@ -1,4 +1,3 @@
-// Filters the post-victory destination pool by current run health and gold.
 import { CAMPFIRE_HEALTH_THRESHOLD, ELITE_HEALTH_THRESHOLD, SHOP_MIN_GOLD } from "@/lib/game-constants";
 
 import { DESTINATIONS, isShopDestination, type Destination } from "./destinations";

@@ -1,4 +1,3 @@
-// Companion summon card turn-line text derived from companionLibrary turn-start effects.
 import { capitalizeWord } from "@/lib/utils";
 import type { BattleCardEffect } from "../types";
 
@@ -56,7 +55,6 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
   return COMPANION_TURN_LINE_FORMATTERS[effect.kind](effect as never, amountOverride);
 }
 
-/** Base companion turn-start line; optional amountOverride applies to damage (and block) only. */
 export function formatCompanionTurnLineBase(effect: BattleCardEffect, amountOverride?: number): string | null {
   return companionTurnLine(effect, amountOverride);
 }
@@ -66,7 +64,6 @@ export interface CompanionTurnLineContext {
   damageBonus?: number;
 }
 
-/** Companion turn-start line including bond-level and global damage bonus context. */
 export function formatCompanionTurnStartLine(
   turnEffect: BattleCardEffect,
   context: CompanionTurnLineContext = {},

@@ -1,4 +1,3 @@
-// Hex projection, seal sizing, and inspector anchoring for the labyrinth map screen.
 import type { LabyrinthGridPosition, LabyrinthNode } from "@/lib/content-systems/types";
 import { hexMetrics, hexRadius, projectedX } from "@/lib/content-systems/labyrinth/hex-grid";
 import { LABYRINTH_MAP_UI } from "@/lib/game-constants";

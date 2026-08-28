@@ -1,5 +1,3 @@
-// Enemy trait magnitudes, damage modifiers, and companion combat tuning.
-
 export const TRAIT_FORGE_PER_TURN = 1;
 export const IRON_HIDE_ARMOR_PER_TURN = 1;
 export const TRAIT_FREEZE_BONUS_PER_TURN = 1;
@@ -10,13 +8,13 @@ export const ENEMY_STARTING_BLOCK = 4;
 
 export const TRAIT_DAMAGE_WEAKNESS = 2;
 const TRAIT_DAMAGE_RESISTANCE = 0.5;
-/** Burn Vulnerability / Glacial Shell / Trinket Hoarder: 50% more Burn (take 150%). */
+
 const TRAIT_BURN_VULNERABILITY = 1.5;
-/** Poison Resistance: 25% less Poison (take 75%). */
+
 const POISON_RESISTANCE_MULTIPLIER = 0.75;
-/** Living Armor: 25% less Bleed (take 75%). */
+
 const LIVING_ARMOR_BLEED_MULTIPLIER = 0.75;
-/** Amorphous: 10% less Physical and Poison (take 90%). */
+
 const AMORPHOUS_DAMAGE_MULTIPLIER = 0.9;
 
 export const ENEMY_TRAIT_IDS = {
@@ -35,7 +33,6 @@ export const ENEMY_TRAIT_IDS = {
   AMORPHOUS: "amorphous",
 } as const;
 
-// Trait damage rules: first matching (traitId, damageType) wins.
 export const TRAIT_DAMAGE_RULES: Array<{ traitId: string; damageType: string; multiplier: number }> = [
   { traitId: ENEMY_TRAIT_IDS.BRITTLE_BONES, damageType: "holy", multiplier: TRAIT_DAMAGE_WEAKNESS },
   { traitId: ENEMY_TRAIT_IDS.BRITTLE_BONES, damageType: "stun", multiplier: TRAIT_DAMAGE_WEAKNESS },

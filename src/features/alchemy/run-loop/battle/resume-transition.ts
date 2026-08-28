@@ -15,7 +15,6 @@ import {
   type TurnOrchestration,
 } from "./turn-orchestration-shared";
 
-/** Consume a persisted transition without replaying presentation delays. */
 export function resumePendingBattleTransition(
   sessionNum: number,
   battleSession: BattleTurnSession,

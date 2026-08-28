@@ -1,5 +1,3 @@
-// Battle presentation screen for actors, hand fan, piles, ghosts, wish choices, and menu entry.
-// Driven by BattleScreenRoute display props + routeCommands battle handlers.
 import { useCallback, useMemo, useState, type MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";

@@ -1,5 +1,3 @@
-// Shared alchemy configuration barrel split by concern.
-// Token/layout modules only — `game-data-catalog.ts` stays a separate UI catalog seam.
 export * from "./boss-shine";
 export * from "./button-tokens";
 export * from "./combat-text-icons";

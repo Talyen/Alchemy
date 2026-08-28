@@ -1,4 +1,3 @@
-// Anomaly metric registry and peak sampling for balance simulation reports.
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
 
 export interface BattleAnomalies {

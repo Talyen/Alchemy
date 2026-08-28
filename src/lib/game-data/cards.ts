@@ -1,4 +1,3 @@
-// Public card library barrel.
 export { cardLibrary, cardById } from "./cards/library/cards";
 
 export {

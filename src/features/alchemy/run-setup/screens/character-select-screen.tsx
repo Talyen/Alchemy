@@ -1,5 +1,3 @@
-// Hero selection screen with character art, keyword previews, shine frames, and shimmer feedback.
-// Used when beginning a fresh run before destination routing starts.
 import { useMemo, useState } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";

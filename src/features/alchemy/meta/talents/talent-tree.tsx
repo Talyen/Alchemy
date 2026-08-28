@@ -1,7 +1,3 @@
-// Interactive talent grid — stacked rows of [1, 2, 3, 4] rectangular nodes in pool order.
-// A row unlocks once every real talent in the rows above it is unlocked; any real
-// talent on an unlocked row can be allocated with an unspent point. Placeholder
-// nodes render as inert "Coming Soon" cards and never participate in progression.
 import { createElement, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { Lock } from "lucide-react";
@@ -23,7 +19,7 @@ import { TalentUnlockBurst } from "./talent-unlock-burst";
 export interface TalentLayoutProps {
   allTalents: TalentDefinition[];
   unlockedIds: string[];
-  /** Real talents on an unlocked row that have not been allocated yet. */
+
   allocatableIds: Set<string>;
   hasUnspentPoints: boolean;
   onUnlock?: ((talentId: string) => void) | undefined;

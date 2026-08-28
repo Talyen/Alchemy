@@ -1,5 +1,3 @@
-// Assembles card-transfer and draw-sequence dependency bags for battle animations.
-// Card transfers: runCardTransfer replaces the active list with one entry; callers await sequentially (no overlap).
 import { delay } from "@/lib/animation/game-timer";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { playBattleEvent } from "@/lib/audio";

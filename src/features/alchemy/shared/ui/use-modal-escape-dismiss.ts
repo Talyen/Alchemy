@@ -1,11 +1,7 @@
-// Fade-aware escape-stack dismissal for modal overlays.
-// Registers an escape handler only while the overlay is mounted and not fading
-// out, so Escape during the exit animation cannot re-trigger a close.
 import { useEffect, useId, useRef } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 
 interface ModalEscapeDismissOptions {
-  /** True while the overlay is mounted and not in its exit fade. */
   active: boolean;
   id: string;
   priority?: number;

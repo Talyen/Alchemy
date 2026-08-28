@@ -1,5 +1,3 @@
-// Battle resource widgets for draw/discard piles, mana, and gold.
-// Used by BattleScreen controls.
 import { Coins, Gem } from "lucide-react";
 
 import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -9,7 +7,6 @@ import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass } from "../../c
 import { TiltSurface } from "../tilt-surface";
 import { useChangeToken } from "./use-change-token";
 
-// Shows a tactile pile card on desktop and a compact counter on mobile battle layout.
 export function PilePanel({
   label,
   count,
@@ -49,10 +46,7 @@ export function PilePanel({
   );
 }
 
-// Renders gold plus mana gems, including temporary mana overflow above the max.
 export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: number; gold: number }) {
-  // Show temporary mana overflow by rendering up to current mana, not just max mana;
-  // otherwise mana-grant cards could appear to do nothing above the cap.
   const displayCount = Math.max(mana, maxMana);
   const manaToken = useChangeToken(`${mana}-${maxMana}`);
 

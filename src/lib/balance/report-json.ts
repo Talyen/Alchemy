@@ -1,4 +1,3 @@
-// JSON exporter for the balance report model.
 import type { BalanceReportModel } from "./report-model";
 import { reportMethodologyLines, type ReportRunOptions } from "./report-run";
 

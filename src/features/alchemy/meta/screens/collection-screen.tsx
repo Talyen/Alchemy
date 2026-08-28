@@ -1,6 +1,3 @@
-// Collection screen with tabs (heroes / cards / bestiary / trinkets / uniques) and paginated grid.
-// The active grid alone is mounted. Art remains globally predecoded at boot, so
-// tab switches stay instant without retaining five grids of interactive DOM.
 import { collectionShellWidthClass } from "../../shared/config";
 import { HamburgerTrigger, PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
 import {

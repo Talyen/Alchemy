@@ -1,5 +1,3 @@
-// Companion card panel and tooltip for active battle allies.
-// Used by the battle actor section.
 import { formatCompanionTurnStartLine, type CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +24,6 @@ function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonu
   return line ? [line] : ["Acts at the start of each turn"];
 }
 
-// Shows the active companion with enough tooltip detail to explain its automatic attack.
 export function CompanionPanel({
   companion,
   compact = false,

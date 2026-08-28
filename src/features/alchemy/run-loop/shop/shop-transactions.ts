@@ -1,4 +1,3 @@
-// Shared shop command wrappers, draft recipes, and spend feedback.
 import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { playGoldSpend } from "@/lib/audio";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";

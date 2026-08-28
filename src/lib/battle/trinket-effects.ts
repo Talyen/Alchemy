@@ -1,6 +1,3 @@
-/**
- * Resolves passive, combat-time boon triggers.
- */
 import type { BattleState, CombatTextEvent } from "./types";
 import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { getBattleRng, rollPercent } from "./status-helpers";

@@ -13,7 +13,6 @@ export interface RunTeardownDeps {
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
 }
 
-/** Cancel in-flight claims, clear presentation, tear down the run, and land on menu. */
 export function createRunTeardown(deps: RunTeardownDeps) {
   function resetRunState() {
     dispatchRunSessionCommand(

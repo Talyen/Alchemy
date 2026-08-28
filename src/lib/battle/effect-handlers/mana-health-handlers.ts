@@ -1,4 +1,3 @@
-// Mana and health-related card effect apply handlers.
 import { applyPotionMultiplier } from "../amount-helpers";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import {

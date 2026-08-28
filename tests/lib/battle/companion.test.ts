@@ -29,7 +29,7 @@ describe("processCompanionTurnStart", () => {
     });
     const texts = makeTexts();
     const result = processCompanionTurnStart(state, texts);
-    // Wolf deals 1 physical damage → health 29. Bleed status: 1 * 2 = 2.
+
     expect(result.enemyHealth).toBe(29);
     expect(result.enemyStatuses.bleed).toBe(2);
   });
@@ -70,7 +70,7 @@ describe("processCompanionTurnStart", () => {
     });
     const texts = makeTexts();
     const result = processCompanionTurnStart(state, texts);
-    // Same as Wolf: 1 physical damage, bleed * 2 = 2.
+
     expect(result.enemyHealth).toBe(29);
     expect(result.enemyStatuses.bleed).toBe(2);
   });
@@ -92,7 +92,7 @@ describe("processCompanionTurnStart", () => {
     });
     const texts = makeTexts();
     const result = processCompanionTurnStart(state, texts);
-    // Base 1 + buff 2 = 3 damage, bleed status: 3 * 2 = 6.
+
     expect(result.enemyHealth).toBe(27);
     expect(result.enemyStatuses.bleed).toBe(6);
   });
@@ -190,10 +190,9 @@ describe("processCompanionTurnStart", () => {
       enemyHealth: 30,
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Phoenix deals 1 burn damage. Since player card-play doubling flags are active
-    // but disabled for companion, damage should be exactly 1, not 2 or 4.
+
     expect(result.enemyHealth).toBe(29);
-    // Doubling flags should remain unconsumed (false)
+
     expect(result.flags.firstBurnCardDoubledUsed).toBe(false);
     expect(result.flags.firstBurnTrinketDoubledUsed).toBe(false);
   });
@@ -207,7 +206,7 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Panther base 1 bleed + bleed bonus 3 = 4, bleed status: 4 × 2 = 8.
+
     expect(result.enemyStatuses.bleed).toBe(8);
   });
 
@@ -221,7 +220,7 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Phoenix 1 burn + frozen bonus 3 = 4 damage → enemy 26.
+
     expect(result.enemyHealth).toBe(26);
   });
 
@@ -236,7 +235,7 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Phoenix base 1 burn × 2 low-health = 2 → enemy 6.
+
     expect(result.enemyHealth).toBe(6);
   });
 
@@ -250,7 +249,7 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Phoenix base 1 + (6 × 200 / 2) = 1 + 600 = 601, burn status: 601.
+
     expect(result.enemyStatuses.burn).toBe(601);
   });
 
@@ -260,7 +259,7 @@ describe("processCompanionTurnStart", () => {
       gearEffects: { ...defaultGearEffects, companionDamageBonus: 5 },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Phoenix 1 + 5 = 6 damage → enemy 24.
+
     expect(result.enemyHealth).toBe(24);
   });
 
@@ -270,7 +269,7 @@ describe("processCompanionTurnStart", () => {
       gearEffects: { ...defaultGearEffects, companionDamageBonus: 5 },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Phoenix 1 + 5 = 6 damage → enemy 24.
+
     expect(result.enemyHealth).toBe(24);
   });
 
@@ -320,7 +319,7 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Shield Scarab has no damage effects, so no heal.
+
     expect(result.playerHealth).toBe(10);
   });
 
@@ -335,7 +334,7 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Phoenix deals 1 burn. Leech heal = leech(1) = at least 1 healing.
+
     expect(result.playerHealth).toBeGreaterThan(10);
     expect(result.enemyHealth).toBe(29);
   });
@@ -352,7 +351,7 @@ describe("processCompanionTurnStart", () => {
       rng: () => 0.99,
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    // Roll fails, no leech.
+
     expect(result.playerHealth).toBe(10);
   });
 
@@ -372,7 +371,7 @@ describe("processCompanionTurnStart", () => {
     });
     const texts = makeTexts();
     const result = processCompanionTurnStart(state, texts);
-    // Gear heal (4) and leech heal (1) both apply -> health is 15. Combat text merges to amount: 5.
+
     expect(result.playerHealth).toBe(15);
     const healText = texts.find((t) => t.kind === "heal") as { amount?: number } | undefined;
     expect(healText).toBeDefined();

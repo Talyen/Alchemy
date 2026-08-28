@@ -10,7 +10,7 @@ import {
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { addRunMaterialsEarned, setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import { setRunSession, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -302,7 +302,7 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(readActiveRun().runDeck).toHaveLength(1);
     expect(navigateTo).toHaveBeenCalledTimes(1);
     expect(readRunSession().rewardClaimInFlight).toBe(true);
-    // Offer UI stays populated until navigation commits (no hollow Victory exit).
+
     expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
     expect(readRunSession().rewardState.choices).toEqual([card]);
 
@@ -357,7 +357,7 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
     expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([primary.id]);
     expect(readRunSession().rewardClaimInFlight).toBe(true);
-    // Primary offer stays visible until commit (no hollow / early companion swap).
+
     expect(readRunSession().rewardState.choices).toEqual([primary]);
     expect(readRunSession().companionRewardCards).toEqual([companion]);
 
@@ -402,7 +402,7 @@ describe("createRunFlowHandlers victory paths", () => {
 
     expect(navigateTo).toHaveBeenCalledTimes(1);
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CAMPFIRE, expect.any(Function));
-    // Progress commits only after the navigation callback runs.
+
     expect(readActiveRun().completedDestinations).toEqual([]);
     expect(readActiveRun().destinationIndexInAct).toBe(0);
     expect(readRunSession().pendingDestinationClaim).toBe(DESTINATIONS.CAMPFIRE);

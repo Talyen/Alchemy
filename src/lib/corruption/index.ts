@@ -1,5 +1,3 @@
-// Card corruption helpers for altar events: mutate numeric card text/effects or transform into another card.
-// Used by run navigation and tests so corrupted cards remain normal playable BattleCard objects.
 import { type BattleCard } from "@/lib/game-data";
 import {
   CORRUPTION_DELTA_CHANCE,
@@ -36,12 +34,10 @@ export interface CorruptionResult {
   delta: 1 | -1;
 }
 
-// Generated/special cards do not have stable base content, so corruption transforms avoid them.
 export function isSpecialCorruptionCard(card: Pick<BattleCard, "id">): boolean {
   return card.id === MIXED_POTION_CARD_ID || card.id.startsWith(`${MIXED_POTION_CARD_ID}-`);
 }
 
-// Only authored text numbers that can be paired with a mechanical effect are editable.
 export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
   const targets: CorruptionTarget[] = [];
   const usedFieldKeys = new Set<string>();
@@ -77,7 +73,6 @@ interface TransformCandidate {
   targets: CorruptionTarget[];
 }
 
-// Random transform candidates must themselves be numerically mutable after the transformation.
 function getTransformCandidates(candidates: BattleCard[]): TransformCandidate[] {
   const valid: TransformCandidate[] = [];
   for (const card of candidates) {
@@ -89,7 +84,6 @@ function getTransformCandidates(candidates: BattleCard[]): TransformCandidate[] 
   return valid;
 }
 
-// Clones effects shallowly so the corrupted card can diverge from static card data safely.
 function cloneCard(card: BattleCard): BattleCard {
   return {
     ...card,
@@ -98,7 +92,6 @@ function cloneCard(card: BattleCard): BattleCard {
   };
 }
 
-// Replaces one numeric occurrence without touching other numbers on the same line.
 export function replaceNumberAt(line: string, matchIndex: number, nextValue: number): string {
   if (matchIndex < 0 || matchIndex >= line.length) return line;
   const match = line.slice(matchIndex).match(CORRUPTION_TEXT_PATTERNS.leadingNumber);
@@ -106,7 +99,6 @@ export function replaceNumberAt(line: string, matchIndex: number, nextValue: num
   return `${line.slice(0, matchIndex)}${nextValue}${line.slice(matchIndex + match[0].length)}`;
 }
 
-// Applies the selected +/- mutation to both text and the paired mechanical effect.
 function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delta: 1 | -1): BattleCard {
   const currentLine = card.descriptionLines[target.lineIndex];
   if (currentLine === undefined) return card;
@@ -129,7 +121,6 @@ function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delt
   return nextCard;
 }
 
-// Creates the actual corrupted card, falling back to transform when direct mutation is impossible.
 export function corruptCard(
   selectedCard: BattleCard,
   library: BattleCard[],
@@ -174,7 +165,6 @@ export function corruptCard(
   };
 }
 
-// Deck replacement is centralized so the selected physical deck slot is preserved immutably.
 export function corruptDeckCard(
   deck: BattleCard[],
   cardIndex: number,

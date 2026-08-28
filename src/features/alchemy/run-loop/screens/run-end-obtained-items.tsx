@@ -1,4 +1,3 @@
-// Run-end recap of permanent Gear and Armory Trinkets obtained during the run.
 import { trinketById } from "@/lib/game-data";
 import type { RunObtainedItem } from "@/lib/active-run-session";
 import { cn } from "@/lib/utils";

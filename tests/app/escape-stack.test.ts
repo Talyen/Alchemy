@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ESCAPE_PRIORITY, pushEscapeHandler, resetEscapeStackForTests } from "@/app/escape-stack";
 
@@ -88,11 +87,11 @@ describe("escape-stack", () => {
     const documentHandler = vi.fn();
 
     pushEscapeHandler({ id: "menu", priority: ESCAPE_PRIORITY.APP_MENU, onEscape: menu });
-    // Document capture runs after window capture when the event is not stopped.
+
     document.addEventListener("keydown", documentHandler, true);
 
     const event = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
-    // Dispatch on document so both window-capture (stack) and document-capture run.
+
     document.dispatchEvent(event);
 
     expect(menu).toHaveBeenCalledTimes(1);

@@ -1,4 +1,3 @@
-// Presentation-store gate for autoplay / auto-end-turn: subscribe without re-rendering the route.
 import { useEffect, useRef, type RefObject } from "react";
 
 import type { BattlePresentationPort } from "./battle-presentation-port";

@@ -1,4 +1,3 @@
-// Interactive battle-card button with hover scale, shimmer, selection, and detail popup behavior.
 import {
   type CSSProperties,
   type MouseEvent,
@@ -40,7 +39,7 @@ interface BattleCardButtonBaseProps {
   baseTransform?: string;
   className?: string;
   wrapperClassName?: string;
-  /** Motion/position only — e.g. drag ghost coordinates; not for theme colors. */
+
   wrapperStyle?: CSSProperties;
   wrapperDataCardKey?: string;
   selected?: boolean;
@@ -48,16 +47,13 @@ interface BattleCardButtonBaseProps {
   dragging?: boolean | undefined;
   scaleOnHover?: boolean | undefined;
   descriptionContext?: CardDescriptionContext | undefined;
-  /** Keyword shine palette; shown only while hovered/focused and not dragging. */
+
   shineColor?: readonly string[] | undefined;
-  /** Gap between the trigger and the hover detail tooltip. */
+
   tooltipPadding?: number | undefined;
   children?: ReactNode | undefined;
 }
 
-// Hover control: pass all three props to drive hover externally (hand-style
-// handoff timing), or none to let the button track hover itself. Passing a
-// partial set is a compile error because either half would be silently ignored.
 export type BattleCardButtonProps = BattleCardButtonBaseProps &
   (
     | { hovered?: undefined; onHoverStart?: undefined; onHoverEnd?: undefined }
@@ -71,8 +67,7 @@ export function BattleCardButton(props: BattleCardButtonProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const hoverEndTimerRef = useRef(0);
   const [internalHovered, setInternalHovered] = useState(false);
-  // Hand-style call sites control hover for handoff timing; simple call sites
-  // omit the props and get self-contained hover behavior.
+
   const isControlledHover = props.onHoverStart !== undefined || props.onHoverEnd !== undefined;
   const hovered = isControlledHover ? (props.hovered ?? false) : internalHovered;
 
@@ -139,9 +134,6 @@ function CardHoverPopup({
   descriptionContext: CardDescriptionContext;
   padding?: number | undefined;
 }) {
-  // Description formatting allocates an effect-cursor and scans every line, so
-  // only build it for the card actually being hovered — the render-body call
-  // was running for every hand card on every re-render.
   const descriptionLines = visible ? getEffectiveCardDescriptionLines(card, descriptionContext) : [];
   return (
     <DetailPopup

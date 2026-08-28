@@ -11,7 +11,6 @@ export type BattleTurnSession = Pick<
   "isCurrentBattleSession" | "runIfSessionActive" | "checkBattleEnd" | "handleVictoryDefeat"
 >;
 
-/** Presentation + logging helpers for end-turn sequencing (session is passed separately). */
 export interface TurnOrchestration {
   getDrawSequenceDeps: () => HandDrawSequenceDeps;
   logBattleError: (context: string, err: unknown) => void;
@@ -36,7 +35,6 @@ export function getBattleContinuation(
   return { kind: "continue-end-turn" };
 }
 
-/** Shared tail after draw/resume: battle-end check, skip-turn chain, or companion + auto-end. */
 export function finalizePlayerTurnResume(
   state: BattleState,
   playerTurnSkipped: boolean,

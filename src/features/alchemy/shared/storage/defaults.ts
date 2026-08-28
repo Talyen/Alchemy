@@ -1,7 +1,6 @@
-// Default save envelope composed from the single codec registry.
 import type { SaveData } from "./types";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
-import { createDefaultPersistenceFields } from "./codec-registry";
+import { createDefaultPersistenceFields } from "./persistence";
 
 export const defaultSaveData: SaveData = {
   saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,

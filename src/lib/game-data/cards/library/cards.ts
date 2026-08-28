@@ -1,5 +1,3 @@
-// Static card definitions. Cards are data and live in one flat library by design.
-// Pool/persistence helpers live in cards/card-pools.ts and cards/hydrate-card.ts.
 import type { BattleCard } from "../../types";
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import * as assetRefs from "../../assets";
@@ -333,7 +331,7 @@ export const cardLibrary: BattleCard[] = [
       { damageType: "burn", amount: 2 },
     ],
   }),
-  // Effect order invariant: remove-harmful-status before self-damage (see card-effect-ordering.test.ts)
+
   {
     id: "cauterize",
     title: "Cauterize",
@@ -726,9 +724,8 @@ export const cardLibrary: BattleCard[] = [
   },
 ] satisfies BattleCard[];
 
-/** Id-keyed view of the library — prefer this over scanning `cardLibrary` by id. */
 export const cardById: Record<string, BattleCard> = Object.fromEntries(cardLibrary.map((card) => [card.id, card]));
-// Fail-fast on duplicate ids: throw in dev/test, warn in prod to avoid bricking the bundle.
+
 if (Object.keys(cardById).length !== cardLibrary.length) {
   const msg = "Duplicate card id in cardLibrary";
   if (import.meta.env.DEV) throw new Error(msg);

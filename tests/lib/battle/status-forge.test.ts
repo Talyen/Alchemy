@@ -15,7 +15,7 @@ describe("applyPlayerStatusEffect � forge integration", () => {
     const result = applyPlayerStatusEffect(state, effect, texts);
     expect(result.playerStatuses.forge).toBe(6);
     expect(result.enemyStatuses.burn).toBe(4);
-    // Burn application is not floated as damage — the DoT itself deals -N next enemy phase.
+
     expect(texts).toEqual([{ target: "player", kind: "status", stat: "forge", amount: 3 }]);
   });
 

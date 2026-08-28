@@ -12,21 +12,16 @@ const CURRENCY_CURSOR_STYLES: Record<CraftingCurrencyId, { className: string }> 
   "smiths-whetstone": { className: "bg-stone-950" },
 };
 
-/** Floating currency icon that follows the pointer over the workspace while targeting.
- * Owns its own tracking so per-move updates never re-render the armory tree above it. */
 export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: CraftingCurrencyId | null }) {
   const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (!activeCurrencyId) return;
     function handlePointerMove(event: PointerEvent) {
-      // SVG children (icons) are Element but not HTMLElement; closest() works on both.
       const target = event.target instanceof Element ? event.target : null;
       setPoint(target?.closest('[data-testid="armory-workspace"]') ? { x: event.clientX, y: event.clientY } : null);
     }
     function handlePointerOut(event: PointerEvent) {
-      // pointerleave doesn't bubble, so listen for the bubbling pointerout whose
-      // relatedTarget is null — the signal the pointer left the window.
       if (!event.relatedTarget) setPoint(null);
     }
     document.addEventListener("pointermove", handlePointerMove);

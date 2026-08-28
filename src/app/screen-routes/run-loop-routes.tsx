@@ -61,7 +61,6 @@ function BattleScreenRoute({
     currentBind(bind);
     return () => currentBind(null);
   }, [bind, bindPlaybackRef]);
-  // bindPlaybackRef is stable (useLatestRef contract) — effect re-binds only when `bind` identity changes.
 
   return (
     <BattleScreen

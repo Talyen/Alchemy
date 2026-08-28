@@ -1,5 +1,3 @@
-// Top-level alchemy controller composition hook.
-// Used by App as the single UI-facing API while domain rules stay in smaller controllers.
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import {
@@ -35,7 +33,6 @@ const commandResetUnlockedTalents = createRunSessionCommand(resetUnlockedTalents
 const commandUnlockAllTalents = createRunSessionCommand(unlockAllTalents);
 
 export function useAlchemyRunController() {
-  // The app bootstrap gate restores the aggregate before this controller mounts.
   const homesteadEffects = useHomesteadEffects();
   const talentEffects = useTalentEffects();
   const contentSystemType = useContentSystemType();
@@ -54,7 +51,6 @@ export function useAlchemyRunController() {
     dispatchRunSessionCommand((draft) => setActiveLabyrinthRewardModifiers(draft, modifiers));
   }, []);
 
-  // Stable wrappers so battle can be created before nav; assign latest handlers during render.
   const battleCompletionRef = useRef<{ onBattleVictory: () => void; onBattleDefeat: () => void }>({
     onBattleVictory: () => {},
     onBattleDefeat: () => {},
@@ -114,10 +110,8 @@ export function useAlchemyRunController() {
   const handleAbandonRun = nav.handleAbandonRun;
 
   const handleBeginLabyrinth = useCallback(() => {
-    if (
-      !(activeRunData && contentSystemType === "labyrinth") &&
-      !(hasActiveBattle && contentSystemType === "labyrinth")
-    ) {
+    const hasLabyrinthContext = contentSystemType === "labyrinth" && Boolean(activeRunData || hasActiveBattle);
+    if (!hasLabyrinthContext) {
       labyrinth.resetMap();
     }
     beginLabyrinth();

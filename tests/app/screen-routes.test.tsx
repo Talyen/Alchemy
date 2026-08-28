@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREEN_VALUES, type Screen } from "@/lib/routing";
 import { renderAlchemyScreenRoute, SCREEN_ROUTES } from "@/app/screen-routes";

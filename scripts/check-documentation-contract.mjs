@@ -3,6 +3,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -217,6 +218,35 @@ export function checkKnowledgeIndexCompleteness() {
     .map((name) => `knowledge index missing: .agents/knowledge/patterns/${name}`);
 }
 
+export function checkSkillImpactLedger({ changedPaths } = {}) {
+  // Enforce skill-impact history when instruction memory changes.
+  // Uses git diff when available; falls back to allowing local edits without git metadata.
+  let paths = changedPaths;
+  if (!paths) {
+    try {
+      const output = execSync("git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null", {
+        encoding: "utf8",
+      });
+      paths = output.split("\n").filter(Boolean);
+      // No diff (e.g. committed tree or fresh clone) — don't gate docs:check.
+      if (paths.length === 0) return [];
+    } catch {
+      return [];
+    }
+  }
+  const touchesInstructionMemory = paths.some(
+    (p) => p.startsWith(".agents/skills/") || p.startsWith(".agents/knowledge/"),
+  );
+  const touchesLedger = paths.includes(".agents/knowledge/skill-impact.md");
+  // Only gate when instruction memory is touched but ledger is not.
+  if (touchesInstructionMemory && !touchesLedger) {
+    return [
+      "skill-impact ledger missing: .agents/knowledge/skill-impact.md must be updated when .agents/skills/ or .agents/knowledge/ changes",
+    ];
+  }
+  return [];
+}
+
 export const DOCUMENTATION_CONTRACTS = [
   ["local Markdown links", checkLocalMarkdownLinks],
   ["inline repository paths", checkInlineRepositoryPaths],
@@ -225,6 +255,7 @@ export const DOCUMENTATION_CONTRACTS = [
   ["CONTRIBUTING E2E paths", checkContributingE2ePaths],
   ["durable document reachability", checkDurableDocumentReachability],
   ["knowledge index completeness", checkKnowledgeIndexCompleteness],
+  ["skill-impact ledger", checkSkillImpactLedger],
 ];
 
 export function checkDocumentationContracts() {

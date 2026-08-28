@@ -1,4 +1,3 @@
-// Mystery event navigation: begin + choice handlers with screen transition + sound.
 import { useCallback, useMemo } from "react";
 import { pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";

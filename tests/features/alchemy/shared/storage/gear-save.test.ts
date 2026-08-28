@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
+import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
 import { normalizeSaveData } from "../../../../helpers/parse-save-for-tests";
 import { mutateGearForTest, resetGearForTest } from "../../../../helpers/gameplay-store-test";
 

@@ -1,5 +1,3 @@
-// Short radial red spark burst for player hurt feedback on battle portraits.
-// Canvas + requestAnimationFrame only; no battle state.
 import { animateParticleLoop } from "./particle-loop";
 
 interface HurtSpark {
@@ -53,7 +51,6 @@ function sampleVerticalEdgeSpawn(bounds: HurtSparkBounds): { x: number; y: numbe
   return { x: originX + width - EDGE_INSET, y, nx: 1, ny: 0 };
 }
 
-// Picks a random point on the portrait perimeter and the outward-facing normal at that point.
 function samplePerimeterSpawn(bounds: HurtSparkBounds): { x: number; y: number; nx: number; ny: number } {
   const { x: originX, y: originY, width, height } = bounds;
   const perimeter = 2 * (width + height);

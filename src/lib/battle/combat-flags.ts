@@ -1,7 +1,4 @@
-/** Single source for CombatFlags — defaults, preservation, and type generation. */
-
 export const FLAG_DEFINITIONS = {
-  // one-shot per combat (first card free / doubled)
   firstHolyCardFreeUsed: { default: false as const, preserveAs: true as const },
   firstBurnCardDoubledUsed: { default: false as const, preserveAs: true as const },
   firstArmorCardDoubledUsed: { default: false as const, preserveAs: true as const },
@@ -15,18 +12,18 @@ export const FLAG_DEFINITIONS = {
   firstConsumeCardFreeUsed: { default: false as const, preserveAs: true as const },
   firstCompanionCardFreeUsed: { default: false as const, preserveAs: true as const },
   firstArcheryCardFreeUsed: { default: false as const, preserveAs: true as const },
-  // numeric discount / bonus
+
   nextCardCostReduction: { default: 0 as const, preserveAs: 0 as const },
-  // per-combat once (not preserved — companion/pulses may interact)
+
   goldOnFirstPoisonThisCombat: { default: false as const, preserveAs: null },
-  // per-turn (reset each player turn, preserved for non-card actions)
+
   resonantChimeUsedThisTurn: { default: false as const, preserveAs: true as const },
   runicQuillUsedThisTurn: { default: false as const, preserveAs: true as const },
   consumeDrawUsedThisTurn: { default: false as const, preserveAs: true as const },
-  // lifecycle (triggered once per battle)
+
   divineAegisTriggered: { default: false as const, preserveAs: null },
   saintfallRetributionTriggered: { default: false as const, preserveAs: null },
-  // next-hit active (set by play, consumed on hit)
+
   nextHitCrit: { default: false as const, preserveAs: false as const },
   playNextCardTwice: { default: false as const, preserveAs: false as const },
   nextHitPoison: { default: false as const, preserveAs: false as const },
@@ -41,7 +38,6 @@ export type CombatFlags = {
   [K in FlagId]: (typeof FLAG_DEFINITIONS)[K]["default"] extends boolean ? boolean : number;
 };
 
-// Subset preserved for non-card actions (companion / pending pulses)
 export const PRESERVED_FLAG_VALUES = Object.fromEntries(
   Object.entries(FLAG_DEFINITIONS)
     .filter(([, def]) => (def as { preserveAs: unknown }).preserveAs !== null)
@@ -51,7 +47,6 @@ export const PRESERVED_FLAG_VALUES = Object.fromEntries(
 export type PreservedFlagKey = keyof typeof PRESERVED_FLAG_VALUES;
 export const PRESERVED_FLAG_KEYS = Object.keys(PRESERVED_FLAG_VALUES) as PreservedFlagKey[];
 
-// One-shot keys that must be set to "used" before non-card mutates
 export type FirstTimeFlagKey =
   | "firstHolyCardFreeUsed"
   | "firstBurnCardDoubledUsed"

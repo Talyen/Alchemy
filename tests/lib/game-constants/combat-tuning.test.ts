@@ -18,9 +18,6 @@ import {
   WISH_OVERLAY_Z_INDEX,
 } from "@/lib/game-constants";
 
-// Constants have no behavior of their own; these tests pin only cross-constant
-// orderings and table domains that other code relies on. Exact tuning values live
-// in src/lib/game-constants/ and are exercised by balance sims, not here.
 describe("game-constants contracts", () => {
   it("keeps presentation and economy orderings", () => {
     expect(VICTORY_TRANSITION_DELAY).toBeGreaterThanOrEqual(SLICE_DEATH_DURATION_MS);

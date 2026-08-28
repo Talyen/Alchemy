@@ -1,17 +1,12 @@
-/**
- * Pointy-top hex adjacency and projection. Single source of truth for generation,
- * reachability, and map layout.
- */
 import type { LabyrinthGridPosition } from "../types";
 
 export const LABYRINTH_HEX = {
-  /** Seal sizing and new-floor generation width. */
   fullColumnsAcross: 3,
-  /** Parse window so in-progress 4-wide hex saves still validate. */
+
   parseColumnsAcross: 4,
   minNodesPerFloor: 12,
   maxNodesPerFloor: 14,
-  /** Inclusive max row index (rows 0–8). */
+
   maxFloorRows: 8,
   maxNodeDegree: 3,
 } as const;
@@ -24,7 +19,6 @@ export function projectedHalfColumn(position: LabyrinthGridPosition): number {
   return 2 * position.col + position.row;
 }
 
-/** Offset-column index for a pointy-top floor that starts at (0, 0). */
 export function hexVisualColumn(position: LabyrinthGridPosition): number {
   return position.col + Math.floor(position.row / 2);
 }

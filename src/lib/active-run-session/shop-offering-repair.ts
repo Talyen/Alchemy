@@ -1,12 +1,7 @@
-/** Slot identity for card/trinket shelves. Duplicate item IDs are legal, so the index is part of the key. */
 export function shopItemSlotKey(id: string, index: number): string {
   return `${id}-${index}`;
 }
 
-/**
- * Drop offerings that fail `keep` and remap `purchasedSlotKeys` in the same pass.
- * Old keys are computed from the original index; survivors get keys for their new index.
- */
 export function repairShopOfferings<T>(
   items: readonly T[],
   purchasedSlotKeys: readonly string[],

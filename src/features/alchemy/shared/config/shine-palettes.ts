@@ -41,7 +41,6 @@ export function getKeywordShineColors(keywordId: KeywordId): readonly string[] {
   return keywordDefinitions[keywordId]?.shineColors ?? SHINE_PALETTES.talentDefault;
 }
 
-/** Unique shine stops across the given keywords. Empty when none resolve. */
 export function getKeywordListShineColors(keywordIds: readonly KeywordId[]): readonly string[] {
   const seen = new Set<string>();
   const colors: string[] = [];
@@ -57,18 +56,15 @@ export function getKeywordListShineColors(keywordIds: readonly KeywordId[]): rea
   return colors;
 }
 
-/** Unique shine stops for every mechanical keyword on a battle card. Empty when the card has none. */
 export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
   return getKeywordListShineColors(getCardKeywords(card));
 }
 
-/** Keyword shine for a companion's turn start effects; companion palette when none resolve. */
 export function getCompanionShineColors(companion: CompanionDefinition): readonly string[] {
   const colors = getKeywordListShineColors(getCompanionKeywords(companion));
   return colors.length > 0 ? colors : keywordDefinitions.companion.shineColors;
 }
 
-/** Keyword shine for a trinket's description; boon palette when none resolve. */
 export function getTrinketShineColors(trinketId: string): readonly string[] {
   const colors = getKeywordListShineColors(getTrinketKeywords(trinketId));
   return colors.length > 0 ? colors : [...SHINE_PALETTES.boon];
@@ -78,7 +74,6 @@ export function getTrinketShineGradient(trinketId: string): string | null {
   return buildSmoothShineGradient(getTrinketShineColors(trinketId));
 }
 
-/** First shine stop of every keyword, cycled one-at-a-time on Wildcard hero select. */
 export const WILDCARD_KEYWORD_SHINE_COLORS: readonly string[] = Object.values(keywordDefinitions).flatMap((def) => {
   const first = def.shineColors[0];
   return first ? [first] : [];
@@ -86,7 +81,6 @@ export const WILDCARD_KEYWORD_SHINE_COLORS: readonly string[] = Object.values(ke
 
 export const WILDCARD_SHINE_CYCLE_MS = 2800;
 
-/** One shine stop per affinity so a hero's three keywords read as three colors. Empty list is Wildcard gold/black. */
 export function getShineColorsForKeywords(keywordIds: readonly KeywordId[]): readonly string[] {
   if (keywordIds.length === 0) return SHINE_PALETTES.wildcard;
 

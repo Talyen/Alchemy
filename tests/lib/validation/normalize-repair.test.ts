@@ -30,7 +30,7 @@ describe("normalizeActiveRunData empty-choice repair", () => {
     expect(repaired.length).toBe(3);
     for (const card of repaired) expect(isTombstonedCardId(card.id)).toBe(false);
     expect(result.rng.counters.rewards).toBeGreaterThan(0);
-    // Not drawn from wildwood or events streams
+
     expect(result.rng.counters.world).toBe(0);
     expect(result.rng.counters.events).toBe(0);
   });

@@ -200,7 +200,7 @@ describe("classifyTargets", () => {
     const metrics = computeMetrics(sample(times, { durationMs: 30_000 }), { minFrames: 100 });
     const checks = classifyTargets(metrics, "transition");
     const hitch = checks.find((c) => c.id === "hitches50");
-    expect(hitch?.band).toBe("green"); // budget allows 1 per 30s
+    expect(hitch?.band).toBe("green");
   });
 });
 

@@ -1,5 +1,3 @@
-// React entry point for the game client.
-// Vite mounts this into #root; gameplay logic starts inside App/controllers.
 import React from "react";
 import ReactDOM from "react-dom/client";
 
@@ -11,8 +9,6 @@ import "@/features/alchemy/shared/stores/error-log-store";
 
 initializeRendererCrashReporting();
 
-// Use pointer_c_shaded for all cursor variants — no special effects.
-// Same image throughout; different CSS fallbacks if the image fails.
 const cursorStyle = document.createElement("style");
 cursorStyle.textContent = `
   html { cursor: url("${cursorArt.pointer}") 0 0, auto; }
@@ -38,7 +34,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   </React.StrictMode>,
 );
 
-// Defer non-critical startup work so the first frame is not delayed.
 const idle: (cb: () => void) => void =
   typeof globalThis.requestIdleCallback === "function"
     ? (cb) => globalThis.requestIdleCallback(cb)

@@ -22,17 +22,10 @@ function effectHasDamageType(effect: BattleCard["effects"][number], damageType: 
   return false;
 }
 
-/**
- * Checks if a card contains a specific damage type effect.
- * Used for determining keyword affinity and applying first-card-free rules.
- */
 export function cardHasDamageType(card: BattleCard, damageType: string): boolean {
   return card.effects.some((e) => effectHasDamageType(e, damageType));
 }
 
-/**
- * Checks if a card belongs to the Nature archetype (deals nature damage or has nature tag).
- */
 export function isNatureCard(card: BattleCard): boolean {
   return cardHasDamageType(card, "nature") || card.tags?.includes("nature") === true;
 }
@@ -70,28 +63,14 @@ const FIRST_CARD_FREE_RULES: Array<{
   },
 ];
 
-/**
- * Applies a discount to card cost. Only handles reductions (positive values).
- * Negative values (cost increases) are dropped since no card currently
- * uses that mechanic — if added later, use a separate applyCostPenalty.
- */
 function applyCostDiscount(cost: number, reduction: number): number {
   return reduction > 0 ? Math.max(0, cost - reduction) : cost;
 }
 
-/**
- * Checks if a boon discount applies to the first potion played.
- */
 function checkTrinketFreePotion(state: CardCostState, card: BattleCard): boolean {
   return !state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && isPotionCard(card);
 }
 
-/**
- * Pure cost computation shared by UI playability checks and card play (resolveCardPlayCost).
- * Returns the effective cost and which one-shot free-card flags were consumed.
- * When cost is already 0 (e.g. from nextCardCostReduction), free-card flags
- * are intentionally NOT consumed so they remain available for the next meaningful card.
- */
 export function computeEffectiveCost(
   state: CardCostState,
   card: BattleCard,

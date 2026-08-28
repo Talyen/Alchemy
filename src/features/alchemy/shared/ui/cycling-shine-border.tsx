@@ -1,4 +1,3 @@
-// Cycles a shine overlay through a color list by interpolating CSS color stops.
 import { useId, useMemo, type CSSProperties } from "react";
 
 import { ShineBorder } from "@/components/ui/shine-border";

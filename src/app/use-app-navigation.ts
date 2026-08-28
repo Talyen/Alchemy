@@ -1,5 +1,3 @@
-// Root-level app navigation: menu state, screen transitions, return-to-run routing,
-// keyboard Escape stack handling, and dev mode shortcuts.
 import { useCallback, useEffect, useState } from "react";
 import type { Screen } from "@/lib/routing";
 import { isRunLoopScreen } from "@/lib/routing";
@@ -28,8 +26,6 @@ import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/res
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
-// ── Game Menu State ──
-
 export function useGameMenuState() {
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
@@ -46,8 +42,6 @@ export function useGameMenuState() {
 
   return { gameMenuOpen, menuAnchorRect, openBattleMenu, closeGameMenu, setMenuAnchorRect, setGameMenuOpen };
 }
-
-// ── Screen Transitions ──
 
 export function useRenderedScreenTransition(controllerScreen: Screen, commitPendingTransition: () => void) {
   const { shown: renderedScreen, phase: fadePhase } = useSequentialFadeSwap({
@@ -69,8 +63,6 @@ export function useRenderedScreenTransition(controllerScreen: Screen, commitPend
   return { renderedScreen, pagePhase, tooltipBlocked };
 }
 
-// ── Return To Run Navigation ──
-
 export function resolveReturnToRunTarget(
   returnToRunScreen: Screen | null,
   hasActiveBattle: boolean,
@@ -82,7 +74,6 @@ export function resolveReturnToRunTarget(
   return null;
 }
 
-/** Last screen to restore when leaving Options. Ignore Options itself so Back cannot no-op. */
 export function rememberNonOptionsScreen(renderedScreen: Screen, previous: Screen): Screen {
   return renderedScreen === "options" ? previous : renderedScreen;
 }
@@ -164,8 +155,6 @@ export function useReturnToRunNavigation({
   };
 }
 
-// ── App Keyboard Shortcuts ──
-
 function isRadixEscapeTargetOpen(): boolean {
   return Boolean(
     document.querySelector(
@@ -207,8 +196,6 @@ export function useAppKeyboardShortcuts({
     });
   }, [gameMenuOpenRef, renderedScreenRef, setMenuAnchorRect, setGameMenuOpen]);
 }
-
-// ── Dev Shortcuts ──
 
 export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | "unlockAllTalents">) {
   const clearSaveData = useCallback(() => {

@@ -78,7 +78,7 @@ describe("tickEnemyStatuses", () => {
       gearEffects: { ...makeTestBattleState().gearEffects, leechHealBonusPercent: 50 },
     });
     const texts = makeTexts();
-    // computeLeechHeal(4) = 2, scaled by +50% -> 3.
+
     const next = tickEnemyStatuses(state, texts);
     expect(next.playerHealth).toBe(23);
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
@@ -95,7 +95,7 @@ describe("tickEnemyStatuses", () => {
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(0);
-    // Only 3 health was lost, so leech pays round(3 / 2) — not the queued round(10 / 2).
+
     expect(next.playerHealth).toBe(22);
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
   });
@@ -211,7 +211,7 @@ describe("tickEnemyStatuses", () => {
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
-    // 10 burn damage * 1.5 (vulnerability multiplier) = 15 damage. Health: 50 -> 35.
+
     expect(next.enemyHealth).toBe(35);
   });
 
@@ -233,7 +233,7 @@ describe("tickEnemyStatuses", () => {
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
-    // 10 bleed damage * 0.75 (resistance multiplier) = 8 damage. Health: 50 -> 42.
+
     expect(next.enemyHealth).toBe(42);
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 8 });
   });
@@ -251,14 +251,12 @@ describe("DoT tick kills pay lethality payouts", () => {
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(0);
-    expect(next.playerHealth).toBe(25); // +2 bone charm, +3 heal-on-kill
+    expect(next.playerHealth).toBe(25);
     expect(next.gold).toBe(4);
   });
 
   it("a lethal burn tick still counts as defeated while burning", () => {
     const state = patchBattleState({
-      // 1-stack burn is lethal here and decays to 0 after the tick; the payout
-      // must run before that decay to see burn > 0.
       enemyHealth: 1,
       playerHealth: 20,
       enemyStatuses: defaultEnemyStatusValues({ burn: 1 }),
@@ -294,7 +292,7 @@ describe("DoT tick kills pay lethality payouts", () => {
     });
     const next = tickEnemyStatuses(state, makeTexts());
     expect(next.enemyHealth).toBe(0);
-    expect(next.gold).toBe(4); // single goldOnKill payment
-    expect(next.playerHealth).toBe(25); // +2 +3 paid once
+    expect(next.gold).toBe(4);
+    expect(next.playerHealth).toBe(25);
   });
 });

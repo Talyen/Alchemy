@@ -1,6 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-// Every destination choice button names one of these map nodes.
 const DESTINATION_NAME = /Combat|Campfire|Card Shop|Alchemist|Mystery|Corruption|Trinket Shop|Equipment Shop/;
 
 export class DestinationPage {
@@ -13,9 +12,6 @@ export class DestinationPage {
   }
 
   async expectVisible(timeout = 5000) {
-    // Boss-only runs swap the heading for the upcoming boss's name and some
-    // resume paths render no choice buttons yet, so accept either marker.
-    // first() keeps the combined locator within strict-mode's one-element rule.
     await expect(this.heading.or(this.page.getByRole("button", { name: DESTINATION_NAME })).first()).toBeVisible({
       timeout,
     });

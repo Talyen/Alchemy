@@ -1,6 +1,3 @@
-// Trinket compendium definitions. Kept separate so boon content changes stay localized.
-// Each row authors its combat effects alongside its prose; lib/trinkets.ts derives the
-// runtime effect map, and content validation checks the numbers stay in parity.
 import * as assetRefs from "../assets";
 import { trinket } from "../compendium-builders";
 

@@ -84,8 +84,6 @@ describe("alchemist shop actions", () => {
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions({ talentEffects: { potionMixPotency: 0 } });
 
-      // Mixing a Mixed Potion with another potion fails without charging the
-      // player or disabling the Mix service.
       const result = actions.alchemist.mixPotions(0, 1);
       expect(result).toBeNull();
       expect(readRunProfile().gold).toBe(999);
@@ -104,7 +102,6 @@ describe("alchemist shop actions", () => {
       expect(first).not.toBeNull();
       expect(readRunSession().alchemistState.mixUsed).toBe(true);
 
-      // mixUsed is read from the draft on the next command, not from a command closure
       const second = firstActions.alchemist.mixPotions(0, 1);
       expect(second).toBeNull();
       expect(readRunProfile().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
@@ -136,7 +133,6 @@ describe("alchemist shop actions", () => {
       const actions = buildActions({ talentEffects: { potionDiscount: 5, shopCardDiscount: 3 } });
       const potion = requiredItem(readRunSession().alchemistState.potions[0], "alchemist potion");
 
-      // Potion discount stacks with shop card discount for potion cards
       expect(actions.alchemist.getPotionBuyPrice(potion)).toBeLessThanOrEqual(ALCHEMIST_POTION_PRICE - 3);
     });
   });

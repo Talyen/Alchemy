@@ -92,14 +92,12 @@ it("preserves currentTime on cached track when switching music", () => {
     battleElement.currentTime = 42;
   }
 
-  // Switch to Menu music
   playMusicImmediate(MUSIC_KEYS.MENU);
   const menuElement = audioState.currentMusic;
   expect(menuElement).not.toBe(battleElement);
   expect(battleElement?.paused).toBe(true);
   expect(battleElement?.currentTime).toBe(42);
 
-  // Switch back to Battle music — should resume the cached element without losing progress
   playMusicImmediate(MUSIC_KEYS.BATTLE);
   expect(audioState.currentMusic).toBe(battleElement);
   expect(battleElement?.currentTime).toBe(42);
@@ -163,11 +161,9 @@ it("cancels prior transition when rapid playMusic is invoked", () => {
   const menuElement = audioState.currentMusic;
   expect(menuElement).toBeDefined();
 
-  // Rapidly switch to Battle before Menu finishes fade-in
   playMusic(MUSIC_KEYS.BATTLE);
   expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.BATTLE);
 
-  // Advance time through fade-out and fade-in
   vi.advanceTimersByTime(3000);
 
   expect(audioState.currentMusic).toBeDefined();

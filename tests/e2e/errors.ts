@@ -1,4 +1,3 @@
-// Collects page errors and console.error for post-test assertions in E2E specs.
 import type { Page } from "@playwright/test";
 
 export function failOnRuntimeErrors(page: Page) {

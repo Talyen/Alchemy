@@ -1,4 +1,3 @@
-// Shared companion bond tier data for Homestead state, saves, and validation.
 import { companionLibrary, type CompanionId } from "@/lib/game-data";
 import { singleMaterialCosts } from "./costs";
 import type { TieredItem } from "./tiers";

@@ -1,4 +1,3 @@
-// Shared gold / material reward row of standalone resource pills.
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 

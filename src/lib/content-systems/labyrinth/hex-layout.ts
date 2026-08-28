@@ -1,6 +1,3 @@
-/**
- * Lane floor layouts: 2–3 paths that merge at least once, leaf entry/boss, no dead ends.
- */
 import { pickRandom } from "@/lib/utils";
 
 import type { LabyrinthGridPosition } from "../types";
@@ -72,10 +69,6 @@ function orderLayout(positions: LabyrinthGridPosition[]): LabyrinthGridPosition[
   return [entrance, ...middle, boss];
 }
 
-/**
- * Two lanes (visual 0 and 2) from a top split, merge at row 5, then a vis-2 tail.
- * The join sits one row below the parallel section so the merge hex stays degree 3.
- */
 const TWO_PATH_STEM: LabyrinthGridPosition[] = [
   hexAt(0, 0),
   hexAt(1, 0),
@@ -90,10 +83,6 @@ const TWO_PATH_STEM: LabyrinthGridPosition[] = [
   hexAt(5, 1),
 ];
 
-/**
- * Two lanes that meet a three-wide join, creating a second cycle / third route,
- * then a vis-2 tail. Distinct from the two-route delayed merge at row 5.
- */
 const THREE_PATH_STEM: LabyrinthGridPosition[] = [
   hexAt(0, 0),
   hexAt(1, 0),

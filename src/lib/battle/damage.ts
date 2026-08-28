@@ -1,6 +1,3 @@
-/**
- * Player card damage entry point — delegates to calculation and rider modules.
- */
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { computeCardDamageToEnemy } from "./damage-calc";
@@ -14,8 +11,6 @@ export function dealDamageToEnemy(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   combatTexts: CombatTextEvent[],
 ) {
-  // Dodge preserves one-shot "next hit" buffs per design — a dodged attack does
-  // not count as the "next hit" (see `dodge-affixes.test.ts` & `enemy-dodge.test.ts`).
   const dodged = tryDodgePlayerAttackPacket(state, combatTexts);
   if (dodged) {
     return dodged;

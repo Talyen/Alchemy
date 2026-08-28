@@ -1,8 +1,3 @@
-/**
- * Player and enemy DoT ticks. Enemy DoTs run at enemy phase start; player DoTs during enemy resolution.
- * Player stun/freeze threshold-check normally runs when buildup is applied; tick-time
- * resolution remains as a fallback for pre-existing stacks.
- */
 import {
   applyPlayerCombatDamage,
   scaleReceivedPlayerDamage,
@@ -14,6 +9,7 @@ import {
   decayArmorAfterDamage,
   decayHalvedStatus,
   decayPoisonStacks,
+  getBattleRng,
   getBurnBonusToBleedingMultiplier,
   getEnemyDamageMultiplier,
   rollPercent,
@@ -31,8 +27,7 @@ import { dealEnemyDotTick } from "./dot-resolve";
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.burn;
   if (damage <= 0) return state;
-  // Burn has a talent chance to DOUBLE instead of halving — intentional for
-  // burn-focused builds. Armor decay after burn only triggers if damage > 0.
+
   const multiplier = getEnemyDamageMultiplier(state, "burn") * getBurnBonusToBleedingMultiplier(state);
   const finalDamage = Math.round(damage * multiplier);
   mergeCombatText(combatTexts, {
@@ -42,7 +37,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
     amount: finalDamage,
   });
   let nextBurn = state.enemyStatuses.burn;
-  if (rollPercent(state.talentEffects.burnDoubleChance, state.rng)) {
+  if (rollPercent(state.talentEffects.burnDoubleChance, getBattleRng(state))) {
     nextBurn *= HALF_DIVISOR;
   } else {
     nextBurn = decayHalvedStatus(nextBurn);
@@ -51,7 +46,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, state.rng)) return state;
+  if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, getBattleRng(state))) return state;
   return applyHealingWithCombatText(state, computeLeechHeal(damage), combatTexts, { skipFightPacing: true });
 }
 
@@ -69,7 +64,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const isFrozenPreserved = state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezePreventsPoisonDecay;
   let nextPoison = state.enemyStatuses.poison;
   if (!isFrozenPreserved) {
-    if (rollPercent(state.talentEffects.poisonGainChance, state.rng)) {
+    if (rollPercent(state.talentEffects.poisonGainChance, getBattleRng(state))) {
       nextPoison += POISON_GAIN_AMOUNT;
     } else {
       nextPoison = decayPoisonStacks(nextPoison);
@@ -88,12 +83,10 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.bleed;
   if (damage <= 0) return state;
-  // Bleed "bursts" — deals full stack as damage then resets to 0.
-  // Pending leech healing is paid out here, matching the mechanic that
-  // leech heals when bleed actually deals damage.
+
   const multiplier = getEnemyDamageMultiplier(state, "bleed");
   const finalDamage = Math.round(damage * multiplier);
-  // Merge before the tick like burn/poison so all DoT damage text shares one order.
+
   mergeCombatText(combatTexts, {
     target: "enemy",
     kind: "damage",
@@ -115,7 +108,6 @@ export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEve
   return nextState;
 }
 
-/** Shared player DoT tail: apply damage + next stacks, optional riders, damage text, armor decay. */
 function dealPlayerDotTick(
   state: BattleState,
   reducedDamage: number,
@@ -139,11 +131,6 @@ function dealPlayerDotTick(
   return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 
-/**
- * Canonical player DoT mitigation chain, shared by burn and bleed so their
- * order cannot drift: percentage resists first, then flat reductions
- * (block-scaled talents, armor last) — matching applyPlayerCombatDamage.
- */
 function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | "bleed"): number {
   const scaled = scaleReceivedPlayerDamage(damage, state.talentEffects, status);
   const blockReduction = status === "burn" ? state.talentEffects.blockReduceBurnDamage : 0;

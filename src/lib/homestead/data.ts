@@ -1,7 +1,3 @@
-// Homestead data definitions — buildings, farm plots, and research upgrades.
-// Each item has a tiers array (length 1-3) describing the cost and effects
-// of each successive upgrade. Items with 3 tiers show stars in the UI.
-
 import {
   defineBuilding,
   defineFarm,

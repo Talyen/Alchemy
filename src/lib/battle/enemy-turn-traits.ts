@@ -1,5 +1,5 @@
-// Enemy trait and difficulty turn-start handlers plus regeneration.
 import { mergeCombatText } from "./combat-text";
+import { getBattleRng } from "./status-helpers";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
@@ -45,7 +45,9 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
     return addEnemyMitigation(state, "forge", TRAIT_FORGE_PER_TURN);
   },
   "iron-hide": (state, combatTexts, options) => {
-    const choice = Math.trunc((options?.traitRoll ?? state.rng()) * ENEMY_TURN_CONSTANTS.IRON_HIDE_OPTIONS_COUNT);
+    const choice = Math.trunc(
+      (options?.traitRoll ?? getBattleRng(state)()) * ENEMY_TURN_CONSTANTS.IRON_HIDE_OPTIONS_COUNT,
+    );
     if (choice === 0) {
       mergeCombatText(combatTexts, {
         target: "enemy",
@@ -84,8 +86,6 @@ const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], En
   },
 };
 
-// Traits whose behavior is purely passive (damage multipliers, one-time setup, etc.)
-// and intentionally have no turn-start handler. Excludes warnings to reduce noise.
 const PASSIVE_ONLY_TRAITS = new Set([
   "brittle-bones",
   "trinket-hoarder",
@@ -104,8 +104,6 @@ const PASSIVE_ONLY_TRAITS = new Set([
   ...COMBAT_ENCOUNTER_TRAIT_IDS,
 ]);
 
-// Difficulty modifiers whose behavior is purely passive (applied at battle start or checked elsewhere)
-// and intentionally have no turn-start handler.
 const PASSIVE_ONLY_MODIFIERS = new Set<DifficultyModifier["kind"]>([
   "enemy-starting-armor",
   "increase-enemy-physical-damage",
@@ -120,21 +118,16 @@ const PASSIVE_ONLY_MODIFIERS = new Set<DifficultyModifier["kind"]>([
   "enemy-damage-multiplier",
 ]);
 
-/** Turn-start handler ids — used by tests and startup validation. */
 export const ENEMY_TRAIT_TURN_START_HANDLER_IDS = Object.keys(enemyTraitTurnStartHandlers);
 
-/** Passive enemy traits with no turn-start handler — used by tests and startup validation. */
 export const PASSIVE_ONLY_ENEMY_TRAIT_IDS = [...PASSIVE_ONLY_TRAITS];
 
-/** Difficulty modifiers with turn-start handlers — used by tests and startup validation. */
 export const DIFFICULTY_TURN_START_MODIFIER_KINDS = Object.keys(difficultyTurnStartHandlers) as Array<
   DifficultyModifier["kind"]
 >;
 
-/** Passive difficulty modifiers with no turn-start handler — used by tests and startup validation. */
 export const PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS = [...PASSIVE_ONLY_MODIFIERS];
 
-/** Every difficulty modifier kind: turn-start handler kinds plus the passive-only set. */
 const ALL_DIFFICULTY_MODIFIER_KINDS: Array<DifficultyModifier["kind"]> = [
   ...DIFFICULTY_TURN_START_MODIFIER_KINDS,
   ...PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS,
@@ -158,7 +151,6 @@ export function collectUncoveredDifficultyModifierKinds(
   return [...new Set(kinds)].filter((kind) => !isDifficultyModifierTurnStartCovered(kind));
 }
 
-/** Shared handler-failure policy: log-and-continue in production, rethrow in DEV. */
 function reportHandlerFailure(source: string, err: unknown, context?: Record<string, unknown>): void {
   const message = err instanceof Error ? err.message : String(err);
   logError(`${source} failed: ${message}`, "battle", context);
@@ -220,7 +212,6 @@ export function processEnemyTraits(
       try {
         nextState = processTraitHandler(trait, nextState, combatTexts, traitRoll);
       } catch (err) {
-        // In DEV every failure path terminates via throw; skip the second report.
         if (import.meta.env.DEV) throw err;
         reportHandlerFailure(`Enemy trait handler for ${trait.id}`, err);
       }

@@ -1,4 +1,3 @@
-/** Cursor/VS Code shells and undisplayed windows — not Alchemy desktop or a normal browser tab. */
 export function isNonPlayerAudioHost(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;
 

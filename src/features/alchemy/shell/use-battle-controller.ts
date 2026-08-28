@@ -96,11 +96,15 @@ export function useBattleController({
   }, [ctx]);
 
   useEffect(() => {
+    if (screen !== "battle") {
+      pendingTransitionResumeAttemptedRef.current = false;
+      return;
+    }
     if (!hasActiveBattle) {
       pendingTransitionResumeAttemptedRef.current = false;
       return;
     }
-    if (screen !== "battle" || !pendingTransitionResumeRequired || pendingTransitionResumeAttemptedRef.current) {
+    if (!pendingTransitionResumeRequired || pendingTransitionResumeAttemptedRef.current) {
       return;
     }
     pendingTransitionResumeAttemptedRef.current = true;
@@ -108,7 +112,12 @@ export function useBattleController({
   }, [actions.endTurnUi, hasActiveBattle, pendingTransitionResumeRequired, screen]);
 
   const playOpeningDrawWhenReady = useCallback(() => {
-    const battle = readBattle();
+    let battle: ReturnType<typeof readBattle>;
+    try {
+      battle = readBattle();
+    } catch {
+      return;
+    }
     if (
       battle.pendingTransitionResumeRequired ||
       battle.pendingBattleTransition?.kind !== "opening-draw" ||
@@ -117,7 +126,9 @@ export function useBattleController({
     ) {
       return;
     }
-    void actions.openingDraw.playOpeningDraw();
+    void actions.openingDraw.playOpeningDraw().catch((error: unknown) => {
+      if (import.meta.env.DEV) console.warn("[openingDraw] best-effort presentation failed", error);
+    });
   }, [actions.openingDraw, ctx]);
 
   useEffect(() => {

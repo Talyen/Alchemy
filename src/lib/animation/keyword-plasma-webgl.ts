@@ -1,4 +1,3 @@
-// WebGL fragment-shader port of Trinket KeywordPlasmaDiffusion.metal.
 import { parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
 import { startCanvasKeywordPlasma } from "./keyword-plasma-canvas";
 import { createPlasmaLifecycle } from "./keyword-plasma-lifecycle";

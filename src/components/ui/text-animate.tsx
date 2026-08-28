@@ -1,5 +1,3 @@
-// Word-by-word blur-in-up text animation with viewport trigger. The aria-label
-// mirrors the narrative text so tests can query it while the words animate.
 import { motion, type Variants } from "motion/react";
 
 import { cn } from "@/lib/utils";

@@ -1,4 +1,3 @@
-// Shared run-end shell for victory and defeat — title, subtitle, progress, continue.
 import { Button } from "@/components/ui/button";
 import {
   BUTTON_WIDTH_ACTION,

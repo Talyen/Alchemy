@@ -1,4 +1,3 @@
-// App-level display values for screen routes (character art, layout mode).
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import {
   cardLibrary,

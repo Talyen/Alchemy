@@ -6,7 +6,6 @@ export type GearAffixAspect = "offensive" | "defensive";
 
 type AffixRollRange = Record<GearRarity, { min: number; max: number }>;
 
-/** [basicMin, basicMax, astralMin, astralMax] — keeps the catalog rows scannable. */
 function rollRange(basicMin: number, basicMax: number, astralMin: number, astralMax: number): AffixRollRange {
   return {
     basic: { min: basicMin, max: basicMax },
@@ -803,7 +802,6 @@ const affixRows = [
 
 export type GearAffixId = (typeof affixRows)[number]["id"];
 
-/** Runtime tuple used by Zod schemas; derived from the catalog rows above. */
 export const GEAR_AFFIX_IDS = affixRows.map((row) => row.id) as [GearAffixId, ...GearAffixId[]];
 
 export interface GearAffixDefinition {

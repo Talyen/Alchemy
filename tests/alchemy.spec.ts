@@ -14,9 +14,6 @@ baseTest.describe("App Boot", { tag: [prepush.tag] }, () => {
 });
 
 test.describe("Block Mechanics", critical, () => {
-  // Damage math is pinned in tests/lib/battle/damage-holy.test.ts (holy
-  // equalToBlock) and tests/lib/battle/damage-base.test.ts (physical); this
-  // covers the UI-integration fact that both cards play off a live block value.
   test("blessed aegis plays against a live block value", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;

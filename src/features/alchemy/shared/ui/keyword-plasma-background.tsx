@@ -87,7 +87,6 @@ export function KeywordPlasmaBackground({
     };
   }, [colorPair, targetPrimary, targetSecondary]);
 
-  // Color transitions mutate colorsRef; do not restart the renderer on hover.
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;

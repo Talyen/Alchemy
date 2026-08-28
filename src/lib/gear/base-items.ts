@@ -10,7 +10,7 @@ export interface GearBaseItemDefinition {
   requiresTwoHands: boolean;
   affinityKeywords: KeywordId[];
   salvageByRarity: Record<GearRarity, MaterialInventory>;
-  /** Explicit on every main-hand item so ranged tagging is a data-level decision. */
+
   rangedWeapon?: boolean;
   quiver?: boolean;
 }

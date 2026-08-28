@@ -94,8 +94,7 @@ test.describe("Card Interactions", slow, () => {
     expect(handBefore).toBeGreaterThanOrEqual(2);
 
     await battle.hand.nth(0).hover();
-    // Card popups portal into the root tooltip overlay; fade-out keeps the
-    // previously hovered panel mounted briefly, so target the visible one.
+
     await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible();
 
     await battle.hand.nth(1).hover();

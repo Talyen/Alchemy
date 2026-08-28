@@ -1,4 +1,3 @@
-// Structured balance-report payload shared by HTML and JSON exporters.
 import type { CharacterId } from "@/lib/game-data";
 import type { BalanceLoadoutMode } from "./loadout-preset";
 import type { PairedDelta, RateCell } from "./report-rankings";

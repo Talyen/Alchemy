@@ -122,7 +122,7 @@ describe("damage riders via applyCardEffects", () => {
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    // Archery branch hit (card has archery tag), but chance=0 prevents recursion
+
     expect(result.enemyHealth).toBe(45);
   });
 

@@ -8,7 +8,7 @@ import { GEAR_RARITIES } from "@/lib/gear/types-core";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const gearDir = path.join(rootDir, "Raw Assets", "Gear");
-// CI sparse-checkouts omit Raw Assets except in the assets drift job.
+
 const rawGearPresent = existsSync(gearDir);
 
 function slugifyGearName(name: string): string {

@@ -1,4 +1,3 @@
-// Shared page scaffolding for game screens.
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { screenDescriptionClass, screenShellPaddingClass, screenTitleClass } from "../config";
@@ -35,8 +34,6 @@ export function ScreenHeaderRow({
 }
 
 export function PageLayout({ children, align = "center" }: { children: ReactNode; align?: "center" | "start" }) {
-  // Outer scroller + inner min-h-full center: keeps justify-center from jumping when
-  // abspos feedback (combat text, ghosts, hurt sparks) changes scrollHeight.
   return (
     <div className="game-page-scroll h-full w-full overflow-x-hidden overflow-y-auto px-5 py-7">
       <div
@@ -55,7 +52,7 @@ export function ScreenShell({
   children,
   className,
   maxWidthClass = "max-w-5xl",
-  minHeightClass = "min-h-[57.78cqh]", // 1.2× former 48.15cqh
+  minHeightClass = "min-h-[57.78cqh]",
 }: {
   children: ReactNode;
   className?: string;

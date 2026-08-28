@@ -1,4 +1,3 @@
-// Battle trinket inspect: sack chrome toggle plus a fading full-art overlay.
 import { useMemo } from "react";
 import { ShoppingBag, X } from "lucide-react";
 

@@ -1,4 +1,3 @@
-// Target bands for balance-sim findings. Single source for evaluator, HTML, JSON, and tests.
 import { ANOMALY_THRESHOLD_BY_PRESET, type AnomalyPreset } from "./anomalies";
 
 export type EnemyTypeBand = "normal" | "elite" | "boss";
@@ -15,7 +14,6 @@ export const LENGTH_BAND_BY_TYPE: Record<EnemyTypeBand, { min: number; max: numb
   boss: { min: 15, max: 30 },
 };
 
-/** Inclusive min, exclusive of 1.0 (100% is a separate never-floor rule). */
 export const WIN_RATE_BAND_BY_TYPE: Record<EnemyTypeBand, { min: number; max: number }> = {
   normal: { min: 0.9, max: 0.999 },
   elite: { min: 0.8, max: 0.95 },

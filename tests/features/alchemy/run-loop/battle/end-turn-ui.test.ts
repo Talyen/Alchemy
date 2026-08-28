@@ -5,7 +5,7 @@ import type { createBattleSession } from "@/features/alchemy/run-loop/battle/bat
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 

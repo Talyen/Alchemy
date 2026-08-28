@@ -1,4 +1,3 @@
-// HTML exporter for the capped findings summary.
 import {
   FINDING_BUCKET_LABELS,
   FINDING_BUCKET_ORDER,

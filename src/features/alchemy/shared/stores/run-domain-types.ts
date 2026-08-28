@@ -46,18 +46,13 @@ export interface DisplayOverrides {
 export interface RunDomainBattleState {
   battleState: BattleState;
   pendingBattleTransition: PersistedBattleTransition | null;
-  /**
-   * In-memory only: true when a pending transition arrived via battle hydration
-   * (save/boot) and must be fast-forwarded. Live `beginBattleTransition` must not
-   * set this — otherwise the controller resume effect commits mid-presentation.
-   */
+
   pendingTransitionResumeRequired: boolean;
   displayOverrides: DisplayOverrides;
   battleStartState: BattleState | null;
   hasActiveBattle: boolean;
 }
 
-/** Active-run region of the authoritative gameplay aggregate. */
 export interface RunDomainDataState {
   activeRun: ActiveRunProgressFields;
   parkedRuns: ParkedRunsMap;
@@ -65,11 +60,6 @@ export interface RunDomainDataState {
   initialized: boolean;
   navigation: { screen: Screen };
 }
-
-const emptyShop: ShopState = emptyShopState();
-const emptyAlchemist: AlchemistState = emptyAlchemistState();
-const emptyTrinketShop: TrinketShopState = emptyTrinketShopState();
-const emptyEquipmentShop: EquipmentShopState = emptyEquipmentShopState();
 
 export function createInitialSessionFields(): RunSessionFields {
   return {
@@ -92,10 +82,10 @@ export function createInitialSessionFields(): RunSessionFields {
     labyrinthMap: generateLabyrinthMap(createSeededRng(0)),
     wildwoodDraft: null,
     starterDraftChoices: null,
-    shopState: emptyShop,
-    alchemistState: emptyAlchemist,
-    trinketShopState: emptyTrinketShop,
-    equipmentShopState: emptyEquipmentShop,
+    shopState: emptyShopState(),
+    alchemistState: emptyAlchemistState(),
+    trinketShopState: emptyTrinketShopState(),
+    equipmentShopState: emptyEquipmentShopState(),
     mysteryEvent: null,
     mysteryChosenChoice: null,
     mysteryPendingRemoval: false,
@@ -153,13 +143,13 @@ export interface RunSessionFields {
   equipmentShopState: EquipmentShopState;
   mysteryEvent: MysteryEvent | null;
   mysteryChosenChoice: MysteryChoice | null;
-  /** Legacy choose-removal state loaded from an in-progress mystery visit. */
+
   mysteryPendingRemoval: boolean;
   mysteryCardChoices: BattleCard[] | null;
-  /** Trinket ids actually granted by gainRandomTrinket effects in the current mystery event, in effect order. */
+
   mysteryGrantedTrinketIds: string[];
-  /** Gear instances granted by gainGeneratedGear effects in the current mystery event, in effect order. */
+
   mysteryGrantedGearInstances: GearInstance[];
-  /** Card id picked from a chooseCard follow-up in the current mystery event. */
+
   mysteryChosenCardId: string | null;
 }

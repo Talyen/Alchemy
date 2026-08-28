@@ -23,8 +23,8 @@ export default defineConfig({
   // CI gate runs fully parallel for throughput. Disable animations via fastBattle
   // where applicable; the raw-animation canaries are isolated per-context.
   fullyParallel: isPrepush || isNightly || isFullE2eSuite || isCi,
-  maxFailures,
-  workers: isNightly || isCi ? 4 : defaultWorkers,
+  maxFailures: isPrepush ? 5 : maxFailures,
+  workers: isPrepush ? 2 : isNightly || isCi ? 4 : defaultWorkers,
   globalTimeout: 600_000,
   timeout: isCi ? 30_000 : 20_000,
   ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-results.json" }),

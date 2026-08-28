@@ -55,19 +55,26 @@ const buttonVariants = cva(
 
 interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  /** Classes for the outer inline-flex wrapper span (margins/positioning within the parent layout). */
+
   wrapperClassName?: string;
 }
 
 function Button({ className, wrapperClassName, variant, size, asChild = false, ref, ...props }: ButtonProps) {
   const classes = cn(buttonVariants({ variant, size }), className);
-  const button = <button className={cn(classes, size !== "icon" && "w-full")} ref={ref} {...props} />;
 
   if (asChild) {
     return <Slot className={classes} ref={ref} {...props} />;
   }
 
-  return <span className={cn("inline-flex", wrapperClassName)}>{button}</span>;
+  if (wrapperClassName) {
+    return (
+      <span className={cn("inline-flex", wrapperClassName)}>
+        <button className={classes} ref={ref} {...props} />
+      </span>
+    );
+  }
+
+  return <button className={classes} ref={ref} {...props} />;
 }
 
 export { Button };

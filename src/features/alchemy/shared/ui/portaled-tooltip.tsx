@@ -1,9 +1,3 @@
-// Root-space tooltip rendered via portal into the #tooltip-root overlay so it
-// renders at constant CSS-pixel scale regardless of the vr-stage transform and
-// cannot be clipped by overflow-hidden ancestors. Handles above/below flip,
-// side overflow when neither vertical gutter fits, explicit side placement,
-// and fade-out on hide. Panels are
-// pointer-events-none; visibility follows the trigger only.
 import { type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
@@ -27,13 +21,13 @@ export interface PortaledTooltipProps {
   width?: string;
   className?: string;
   padding?: number;
-  /** "above" (default) flips above/below; side-start / side-end anchor beside the trigger. */
+
   placement?: "above" | PortaledTooltipSide;
-  /** Fraction of the vr-stage width used as a max-width safety cap on small windows. */
+
   maxWidthFraction?: number;
-  /** Keep the panel mounted for a fade-out after hide. */
+
   fadeOutMs?: number;
-  /** Optional ambient palette active only while this tooltip is visible. */
+
   plasmaColorPair?: PlasmaColorPair | null | undefined;
 }
 
@@ -61,7 +55,6 @@ export function PortaledTooltip({
 
   if (!mounted) return null;
 
-  // Keep mounted for measurement, but hide until layout styles are ready to avoid a center-screen hop.
   const placed = Boolean(tooltipStyle);
   const maxWidth = maxWidthFraction ? `${Math.floor(getVrStageBounds().width * maxWidthFraction)}px` : undefined;
 

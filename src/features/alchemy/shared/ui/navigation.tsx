@@ -1,4 +1,3 @@
-// Navigation controls for pagination and menu triggers.
 import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -56,7 +55,6 @@ export function PaginationControls({
   );
 }
 
-/** Previous/next arrows flanking a row so tile size stays stable when paging appears. */
 export function FlankingPagination({
   page,
   totalPages,
@@ -104,7 +102,6 @@ export function FlankingPagination({
   );
 }
 
-/** Standardized hamburger trigger button for the GameMenu overlay. */
 export function HamburgerTrigger({
   onClick,
   label = "Open menu",

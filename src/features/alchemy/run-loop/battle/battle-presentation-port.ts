@@ -1,5 +1,3 @@
-// Imperative battle VFX surface used by glue (card play, transfers, turn sequencing).
-// Production wiring is the Zustand presentation store; tests inject a stub port.
 import type { CombatTextEvent } from "@/lib/battle";
 import type { CardGhost, CardTransfer } from "../../shared/types";
 import { useBattlePresentationStore } from "./battle-presentation-store";

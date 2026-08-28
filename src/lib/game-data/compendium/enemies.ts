@@ -1,4 +1,3 @@
-// Enemy compendium definitions. Kept separate so enemy content changes stay localized.
 import * as assetRefs from "../assets";
 import { defineEnemy, phys, playerStatus, poisonResistance, regeneration, trait } from "../compendium-builders";
 

@@ -1,8 +1,3 @@
-/**
- * Player-side Stun/Freeze (and other typed) follow-up hits. Stacks come from the
- * damage pipeline, not from addEnemyStatus. Avoids applyDamageRiders so riders
- * can call this without a cycle.
- */
 import type { BattleCard, DamageType } from "@/lib/game-data";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";

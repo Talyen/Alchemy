@@ -8,9 +8,12 @@ import playwright from "eslint-plugin-playwright";
 import { BOUNDARY_CONFIGS } from "./eslint/boundaries.js";
 import { alchemyPlugin } from "./eslint/plugin.js";
 import {
+  AGGREGATE_NO_DIRECT_MUTATION,
+  BATTLE_NO_DIRECT_RNG,
   BATTLE_NO_MATH_FLOOR,
   BATTLE_NO_MATH_RANDOM,
   CLASSNAME_NO_TEMPLATE,
+  GEAR_NO_OUTER_DISPATCH,
   restrictedImports,
   restrictedSyntax,
 } from "./eslint/fragments.js";
@@ -148,6 +151,7 @@ export default tseslint.config(
   {
     rules: {
       eqeqeq: ["error", "always", { null: "ignore" }],
+      "no-empty": ["error", { allowEmptyCatch: true }],
       "@typescript-eslint/consistent-type-imports": [
         "error",
         { prefer: "type-imports", fixStyle: "inline-type-imports", disallowTypeAnnotations: false },
@@ -166,6 +170,23 @@ export default tseslint.config(
     files: ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"],
     rules: {
       "alchemy/no-dependency-graph-comments": "error",
+      "alchemy/no-comments": "error",
+    },
+  },
+  {
+    files: [
+      "src/lib/game-data/assets.generated.ts",
+      "src/lib/game-data/gear-art.ts",
+      "src/lib/validation/metadata.generated.ts",
+    ],
+    rules: {
+      "alchemy/no-comments": "off",
+    },
+  },
+  {
+    files: ["eslint/**/*.js", "scripts/**/*.{js,mjs}", "*.config.*"],
+    rules: {
+      "alchemy/no-comments": "off",
     },
   },
   {
@@ -348,6 +369,83 @@ export default tseslint.config(
         selector: 'CallExpression[callee.name="enableFastMode"]',
         message: "Do not call enableFastMode in animation-focused specs or performance scenarios.",
       }),
+    },
+  },
+
+  // Final no-restricted-syntax routing. Flat config replaces rule values, so
+  // overlapping path policies must be composed in the same path-specific block.
+  {
+    files: ["src/**/*.ts"],
+    ignores: [
+      "src/features/alchemy/shared/stores/**",
+      "src/features/alchemy/run-loop/**",
+      "src/features/alchemy/shell/**",
+      "src/lib/battle/**",
+    ],
+    rules: {
+      "no-restricted-syntax": restrictedSyntax(...AGGREGATE_NO_DIRECT_MUTATION),
+    },
+  },
+  {
+    files: ["src/**/*.tsx"],
+    ignores: [
+      "src/features/alchemy/shared/stores/**",
+      "src/features/alchemy/run-loop/**",
+      "src/features/alchemy/shell/**",
+      "src/lib/battle/**",
+    ],
+    rules: {
+      "no-restricted-syntax": restrictedSyntax(...CLASSNAME_NO_TEMPLATE, ...AGGREGATE_NO_DIRECT_MUTATION),
+    },
+  },
+  {
+    files: ["src/lib/battle/**/*.ts"],
+    ignores: ["src/lib/battle/status-helpers.ts", "src/lib/battle/rng.ts", "src/lib/battle/battle-setup.ts"],
+    rules: {
+      "no-restricted-syntax": restrictedSyntax(
+        ...BATTLE_NO_MATH_RANDOM,
+        BATTLE_NO_MATH_FLOOR,
+        BATTLE_NO_DIRECT_RNG,
+        ...AGGREGATE_NO_DIRECT_MUTATION,
+      ),
+    },
+  },
+  {
+    files: ["src/lib/battle/status-helpers.ts", "src/lib/battle/rng.ts", "src/lib/battle/battle-setup.ts"],
+    rules: {
+      "no-restricted-syntax": restrictedSyntax(
+        ...BATTLE_NO_MATH_RANDOM,
+        BATTLE_NO_MATH_FLOOR,
+        ...AGGREGATE_NO_DIRECT_MUTATION,
+      ),
+    },
+  },
+  {
+    files: ["src/lib/battle/**/*.tsx"],
+    rules: {
+      "no-restricted-syntax": restrictedSyntax(
+        ...CLASSNAME_NO_TEMPLATE,
+        ...BATTLE_NO_MATH_RANDOM,
+        BATTLE_NO_MATH_FLOOR,
+        BATTLE_NO_DIRECT_RNG,
+        ...AGGREGATE_NO_DIRECT_MUTATION,
+      ),
+    },
+  },
+  {
+    files: ["src/features/alchemy/run-loop/**/*.ts", "src/features/alchemy/shell/**/*.ts"],
+    rules: {
+      "no-restricted-syntax": restrictedSyntax(...GEAR_NO_OUTER_DISPATCH, ...AGGREGATE_NO_DIRECT_MUTATION),
+    },
+  },
+  {
+    files: ["src/features/alchemy/run-loop/**/*.tsx", "src/features/alchemy/shell/**/*.tsx"],
+    rules: {
+      "no-restricted-syntax": restrictedSyntax(
+        ...CLASSNAME_NO_TEMPLATE,
+        ...GEAR_NO_OUTER_DISPATCH,
+        ...AGGREGATE_NO_DIRECT_MUTATION,
+      ),
     },
   },
 

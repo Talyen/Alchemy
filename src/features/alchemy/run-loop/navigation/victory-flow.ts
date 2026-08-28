@@ -42,8 +42,6 @@ import {
 } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 
-// Pure victory reward computation for run-flow victory handlers.
-
 interface VictoryGoldRoll {
   gold: number;
   eliteBonus: number;
@@ -79,7 +77,6 @@ function rollVictoryGold(
   return { gold, eliteBonus, bossBonus, generousBonus };
 }
 
-/** Builds the RewardState handed to the rewards screen from rolled victory gold/materials. */
 export function computeVictoryRewardState(
   input: {
     characterId: CharacterId;

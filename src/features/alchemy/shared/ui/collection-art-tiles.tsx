@@ -1,5 +1,3 @@
-// Shared trinket/gear art-tile presets so reward, shop, inspect, and summary
-// screens render identical art chrome and detail popups from one definition.
 import type { ReactNode } from "react";
 
 import type { TrinketEntry } from "@/lib/game-data";
@@ -25,7 +23,7 @@ import { TrinketItemTitle } from "./trinket-item-title";
 export interface TrinketTileProps {
   trinket: TrinketEntry;
   interactionKey: string;
-  /** Popup id namespace; defaults to the trinket id. */
+
   idPrefix?: string | undefined;
   as?: "button" | "div" | undefined;
   selected?: boolean | undefined;
@@ -33,15 +31,15 @@ export interface TrinketTileProps {
   interactiveChrome?: boolean | undefined;
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
-  /** Popup footer label; pass null to omit. Defaults to "Boon" for temporary trinkets. */
+
   footerChip?: string | null | undefined;
-  /** Merged after the default tile classes; Armory inventory uses this to shrink to the grid cell. */
+
   className?: string | undefined;
-  /** Keyword shine; pass false for sold-out/purchased states. */
+
   shine?: boolean | undefined;
   temporary?: boolean | undefined;
   children?: ReactNode | undefined;
-  /** Optional side-effect on hover entry/exit; does not override internal hover control. */
+
   onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
@@ -102,12 +100,12 @@ export interface GearTileProps {
   selected?: boolean | undefined;
   disabled?: boolean | undefined;
   interactiveChrome?: boolean | undefined;
-  /** Astral/unique shine derived from rarity; pass false for sold-out/purchased states. */
+
   shine?: boolean | undefined;
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
   children?: ReactNode | undefined;
-  /** Optional side-effect on hover entry/exit; does not override internal hover control. */
+
   onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
@@ -142,8 +140,6 @@ export function GearTile({
       onClick={onClick}
       ariaLabel={ariaLabel}
       onHoverChange={onHoverChange}
-      // Same rich content everywhere so gear exposes rarity and rolled affixes,
-      // not just base description lines.
       popup={({ visible, triggerRef }) => (
         <GearDetailPopup definition={definition} instance={instance} visible={visible} triggerRef={triggerRef} />
       )}

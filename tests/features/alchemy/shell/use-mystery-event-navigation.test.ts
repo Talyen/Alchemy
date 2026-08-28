@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -89,8 +88,7 @@ describe("useMysteryEventNavigation", () => {
 
   it("handleMysteryChooseCard ignores a second pick", async () => {
     const { result } = renderMysteryNav();
-    // Seed a valid choice list so the card-id guard passes; the test is about
-    // second-pick idempotence, not about choice validation.
+
     const { dispatchRunSessionCommand } = await import("@/features/alchemy/shared/stores/run-session-command");
     const { setMysteryCardChoices } = await import("@/features/alchemy/shared/stores/run-session-write-port");
     const { cardById } = await import("@/lib/game-data");

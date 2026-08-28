@@ -1,5 +1,3 @@
-// Ranking, pairing, and sample-noise helpers for balance reports.
-
 export function proportionSE(rate: number, n: number): number {
   if (n <= 0) return 0;
   return Math.sqrt((rate * (1 - rate)) / n);

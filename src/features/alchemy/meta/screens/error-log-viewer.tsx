@@ -1,5 +1,3 @@
-// Dev-mode error log viewer — displays persisted errors with source, stack, and context.
-// Only rendered in DEV mode. Provides copy-to-clipboard for bug reports.
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

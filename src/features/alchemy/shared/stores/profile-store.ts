@@ -1,7 +1,7 @@
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import { appendUniqueMany } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
-import type { PersistenceCodec } from "./persistence-codec";
+import type { GameplayPersistenceCodec } from "./persistence-codec";
 import { createDefaultProfileSaveFields, type ProfileSaveFields, type ProfileStateFields } from "./profile-store-types";
 import type { GameplayDraft } from "./run-session-command";
 import { readGameplayState, subscribeGameplayCommits, useGameplayStateStore } from "./gameplay-state-store";
@@ -12,7 +12,7 @@ import {
   setDiscoveredUniqueIds as setDiscoveredUniqueIdsInDraft,
   setEncounteredEnemyIds as setEncounteredEnemyIdsInDraft,
   setFinishedRunCharacters as setFinishedRunCharactersInDraft,
-} from "./write-port-profile";
+} from "./write-port-session";
 
 export type { ProfileSaveFields } from "./profile-store-types";
 
@@ -32,14 +32,13 @@ function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
   };
 }
 
-export const profilePersistenceCodec: PersistenceCodec<ProfileSaveFields, [draft: GameplayDraft]> = {
+export const profilePersistenceCodec: GameplayPersistenceCodec<ProfileSaveFields> = {
   createDefault: createDefaultProfileSaveFields,
   encode: () => cloneProfileSaveFields(readGameplayState().profile),
   hydrate: (fields, draft) => Object.assign(draft.profile, cloneProfileSaveFields(fields)),
   subscribe: (listener) => subscribeGameplayCommits(() => listener()),
 };
 
-/** Feature-facing read view — data only, no Zustand hook surface. */
 export type ProfileReadView = Pick<
   ProfileStateFields,
   | "collectionTab"
@@ -64,6 +63,10 @@ export function readProfileStore(): ProfileReadView {
     completedDifficulties: profile.completedDifficulties,
     finishedRunCharacters: profile.finishedRunCharacters,
   };
+}
+
+export function useProfileSlice<T>(selector: (profile: ProfileStateFields) => T): T {
+  return useGameplayStateStore(useShallow((state) => selector(state.profile)));
 }
 
 export function useProfileDiscoverySlice() {

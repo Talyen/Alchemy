@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { startBackgroundParticles } from "@/lib/animation/background-particles";
 
@@ -178,11 +177,9 @@ describe("startBackgroundParticles", () => {
 
     startBackgroundParticles(ref as never, "embers");
 
-    // Focused: the first frame draws and schedules the next.
     rafCbs[rafCbs.length - 1]?.(performance.now());
     expect(ctx.clearRect).toHaveBeenCalledTimes(1);
 
-    // Blur parks the loop: the pending frame does not draw and nothing new is scheduled.
     vi.mocked(document.hasFocus).mockReturnValue(false);
     window.dispatchEvent(new Event("blur"));
     const parkedCount = rafCbs.length;
@@ -190,7 +187,6 @@ describe("startBackgroundParticles", () => {
     expect(rafCbs.length).toBe(parkedCount);
     expect(ctx.clearRect).toHaveBeenCalledTimes(1);
 
-    // Focus resumes: the next scheduled frame draws again.
     vi.mocked(document.hasFocus).mockReturnValue(true);
     window.dispatchEvent(new Event("focus"));
     rafCbs[rafCbs.length - 1]?.(performance.now());

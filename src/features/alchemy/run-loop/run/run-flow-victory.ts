@@ -117,8 +117,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
       {
         afterCommit: () => {
           if (goldGained) playGoldGain();
-          // Hover only — full VFX reset waits until the battle screen unmounts so
-          // kill animations can play through victory grace.
+
           deps.actions.clearCardHover();
         },
       },
@@ -126,8 +125,6 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
   }
 
   function handleBattleVictory() {
-    // Compute random rewards and commit their state in one transaction so RNG
-    // counters cannot advance independently of the resulting reward state.
     commitVictoryResult();
     stopAllSfx();
     playVictory();

@@ -1,8 +1,5 @@
-// Display and audio-facing option lists for the options screen.
 import type { AspectRatioOption, DisplayMode } from "../types";
 
-// Aspect ratio choices determine virtual canvas width (height is fixed at 1080).
-// Auto selects the closest supported canvas shape for the current CSS viewport.
 export const aspectRatioOptions: Array<{ value: AspectRatioOption; label: string }> = [
   { value: "auto", label: "Auto" },
   { value: "16:9", label: "Standard (16:9)" },
@@ -10,8 +7,6 @@ export const aspectRatioOptions: Array<{ value: AspectRatioOption; label: string
   { value: "21:9", label: "Ultrawide (21:9)" },
 ];
 
-// Display modes are passed through the platform adapter so browser and desktop
-// builds can share one options screen.
 export const displayModeOptions: Array<{ value: DisplayMode; label: string }> = [
   { value: "windowed", label: "Windowed" },
   { value: "borderless-fullscreen", label: "Borderless Fullscreen" },

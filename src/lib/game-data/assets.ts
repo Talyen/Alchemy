@@ -48,8 +48,6 @@ const assetModules = import.meta.glob("@/assets/optimized/*.webp", {
   import: "default",
 });
 
-// Single eager glob; mystery subset derived via filter to avoid double-counting
-// mystery art in the preload set (previously a second mystery-*.webp glob).
 export const mysteryEventArt: Record<string, string> = Object.fromEntries(
   Object.entries(assetModules)
     .filter(([path]) => path.includes("/mystery-"))

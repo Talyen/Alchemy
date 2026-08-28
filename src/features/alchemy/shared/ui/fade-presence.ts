@@ -1,6 +1,3 @@
-// Fade primitive stack — `useFadePresence` is the boolean primitive,
-// `useSequentialFadeSwap` builds on the same phase + resolveGameDelay pattern for
-// keyed swaps (`fade-slot.tsx`). `portaled-tooltip.tsx` reuses `useFadePresence`.
 import { useEffect, useState } from "react";
 
 import { resolveGameDelay } from "@/lib/animation/game-timer";
@@ -14,12 +11,6 @@ export function fadePhaseClass(phase: FadePhase): string | undefined {
   return undefined;
 }
 
-/**
- * Shared hold primitive for fade outros — snapshots `value` while `hold` is
- * true so the exiting view keeps rendering the last live content. Used by
- * presence/swap wrappers; prefer this over ad-hoc `useRef` held snapshots
- * when the held value is a render input.
- */
 export function useHeldWhile<T>(hold: boolean, value: T): T {
   const [held, setHeld] = useState(value);
   useEffect(() => {
@@ -30,11 +21,6 @@ export function useHeldWhile<T>(hold: boolean, value: T): T {
   return hold ? value : held;
 }
 
-/**
- * Primitive mount/phase controller for a single boolean `open` flag.
- * `useSequentialFadeSwap` builds on the same phase/timeout pattern for keyed
- * swaps; `FadeSlot` wraps that swap. Tooltip reuses this with its own fadeOutMs.
- */
 export function useFadePresence(
   open: boolean,
   durationMs: number = MOTION_FADE_MS,

@@ -6,7 +6,6 @@ export interface CardEffectResolutionContext {
   enemyFreezeSkipTurnsAtStart: number;
 }
 
-/** Unified handler signature — each apply module narrows `effect` by kind internally. */
 export type EffectHandler = (
   state: BattleState,
   card: BattleCard,

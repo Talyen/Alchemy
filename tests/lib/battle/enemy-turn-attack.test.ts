@@ -82,8 +82,7 @@ describe("processEnemyAttack", () => {
       enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 10 }],
     });
     const result = processEnemyAttack(state, makeTexts());
-    // Health damage halves to 5, and freeze buildup equals the actual damage
-    // dealt (5) — the talent is applied once, not once per step.
+
     expect(result.playerHealth).toBe(25);
     expect(result.playerStatuses.freeze).toBe(5);
   });
@@ -368,7 +367,7 @@ describe("processEnemyAttack", () => {
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
     const result = processEnemyAttack(state, makeTexts());
-    // Phoenix Feather heals for 30% of max health (9)
+
     expect(result.playerHealth).toBe(9);
     expect(result.playerStatuses.phoenixFeather).toBe(0);
     expect(result.deathsDoorUsed).toBe(false);

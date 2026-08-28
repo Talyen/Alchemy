@@ -1,4 +1,3 @@
-// Shared E2E types.
 export type GameMode = "campaign" | "labyrinth" | "wildwood";
 
 export type DestinationName =

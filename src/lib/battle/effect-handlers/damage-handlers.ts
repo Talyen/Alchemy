@@ -1,4 +1,3 @@
-// Damage-related card effect apply handlers.
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
@@ -23,7 +22,7 @@ export const applyRandomDamageEffect: EffectHandler = (state, card, effect, poti
   if (effect.kind !== "random-damage") return state;
   const rng = getBattleRng(state);
   const damageType = DAMAGE_TYPES[Math.trunc(rng() * DAMAGE_TYPES.length)]!;
-  // Apply potion potency once after rolling so fractional multipliers don't bias the distribution.
+
   const span = effect.maxAmount - effect.minAmount + 1;
   const rolled = effect.minAmount + Math.trunc(rng() * span);
   const amount = applyPotionMultiplier(rolled, potionMult);

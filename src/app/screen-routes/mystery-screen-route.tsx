@@ -5,6 +5,20 @@ import { MysteryScreen, MysteryScreenShell } from "@/features/alchemy/run-loop/s
 import { useMysteryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunLoopCommands, RunLoopRouteCtx } from "./route-ctx";
 
+function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
+  const isMysteryActive = Boolean(r.mysteryEvent);
+  return {
+    heldEvent: useHeldWhile(isMysteryActive, r.mysteryEvent),
+    heldCardChoices: useHeldWhile(isMysteryActive, r.mysteryCardChoices),
+    heldGrantedTrinketIds: useHeldWhile(isMysteryActive, r.mysteryGrantedTrinketIds),
+    heldGrantedGearInstances: useHeldWhile(isMysteryActive, r.mysteryGrantedGearInstances),
+    heldChosenCardId: useHeldWhile(isMysteryActive, r.mysteryChosenCardId),
+    heldChosenChoice: useHeldWhile(isMysteryActive, r.mysteryChosenChoice),
+    heldPendingRemoval: useHeldWhile(isMysteryActive, r.mysteryPendingRemoval),
+    isMysteryActive,
+  };
+}
+
 export function MysteryScreenRoute({
   commands,
   onOpenBattleMenu,
@@ -14,20 +28,26 @@ export function MysteryScreenRoute({
 }) {
   const r = useMysteryScreenData();
   const { handleContinue } = commands;
-  const autoContinueAttemptedRef = useRef(false);
-  const isMysteryActive = Boolean(r.mysteryEvent);
-  const heldEvent = useHeldWhile(isMysteryActive, r.mysteryEvent);
-  const heldCardChoices = useHeldWhile(isMysteryActive, r.mysteryCardChoices);
-  const heldGrantedTrinketIds = useHeldWhile(isMysteryActive, r.mysteryGrantedTrinketIds);
-  const heldGrantedGearInstances = useHeldWhile(isMysteryActive, r.mysteryGrantedGearInstances);
-  const heldChosenCardId = useHeldWhile(isMysteryActive, r.mysteryChosenCardId);
-  const heldChosenChoice = useHeldWhile(isMysteryActive, r.mysteryChosenChoice);
-  const heldPendingRemoval = useHeldWhile(isMysteryActive, r.mysteryPendingRemoval);
+
+  const autoContinueAttemptedRef = useRef<string | null>(null);
+  const {
+    heldEvent,
+    heldCardChoices,
+    heldGrantedTrinketIds,
+    heldGrantedGearInstances,
+    heldChosenCardId,
+    heldChosenChoice,
+    heldPendingRemoval,
+  } = useHeldMysteryVisit(r);
 
   useEffect(() => {
-    if (r.mysteryEvent || heldEvent) return;
+    if (r.mysteryEvent) {
+      autoContinueAttemptedRef.current = null;
+      return;
+    }
+    if (heldEvent) return;
     if (autoContinueAttemptedRef.current) return;
-    autoContinueAttemptedRef.current = true;
+    autoContinueAttemptedRef.current = "attempted";
     handleContinue();
   }, [r.mysteryEvent, heldEvent, handleContinue]);
 

@@ -1,7 +1,3 @@
-/**
- * Companion turn-start resolution: builds a synthetic 0-cost card from the companion's
- * turnStartEffects and applies it as if played.
- */
 import { applyCardEffects } from "./effect-handlers";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
@@ -89,10 +85,6 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     effects: state.activeCompanion.turnStartEffects.map((effect) => scaleCompanionTurnEffect(effect, ctx)),
   };
 
-  // Companion actions are not player card plays and should not consume or benefit
-  // from per-turn/per-combat one-shot bonuses. withPreservedFlags snapshots the
-  // first-time-per-combat flags, sets them to "used" values, runs the effects,
-  // then restores the originals — without the manual scope-guard boilerplate.
   return withPreservedFlags(state, (s) => {
     let afterEffects = processEncounterTraitCardAction(
       applyCardEffects(s, companionCard, combatTexts),

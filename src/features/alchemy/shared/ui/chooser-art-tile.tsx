@@ -1,5 +1,3 @@
-// Shared art-chooser tile: framed art button + icon caption, with optional
-// hover/focus tooltip slot. Used by destination and game-mode choosers.
 import { useState, type ReactNode, type RefObject } from "react";
 import type { LucideIcon } from "lucide-react";
 
@@ -17,7 +15,7 @@ interface ChooserArtTileProps {
   art: string;
   icon: LucideIcon;
   label: string;
-  /** Screen-reader label override when the visible caption is not sufficient. */
+
   ariaLabel?: string | undefined;
   accentClassName: string;
   widthClass: string;
@@ -26,7 +24,7 @@ interface ChooserArtTileProps {
   surfaceClassName?: string | undefined;
   overlay?: ReactNode | undefined;
   onClick: () => void;
-  /** Attached to the art button so portal tooltips can position from it. */
+
   tooltipTriggerRef?: RefObject<HTMLButtonElement | null> | undefined;
   renderTooltip?: ((visible: boolean) => ReactNode) | undefined;
   plasmaColorPair?: PlasmaColorPair | null | undefined;
@@ -54,8 +52,7 @@ export function ChooserArtTile({
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const trackTooltip = renderTooltip !== undefined;
   usePlasmaInteraction(plasmaColorPair, tooltipVisible);
-  // One show/hide pair drives both pointer and keyboard focus so the surface,
-  // tooltip, and hover shimmer stay in sync.
+
   const hoverIn = () => {
     setTooltipVisible(true);
     onHoverStart();

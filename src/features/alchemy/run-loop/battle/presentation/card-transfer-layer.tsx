@@ -1,4 +1,3 @@
-// High-frequency transfer overlay leaf — subscribes to presentation store without re-rendering BattleScreen.
 import { useBattlePresentationStore } from "../battle-presentation-store";
 import { CardTransferOverlay } from "./card-transfer-overlay";
 

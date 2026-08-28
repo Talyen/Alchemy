@@ -4,10 +4,6 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = join(import.meta.dirname, "../..");
 
-/**
- * CI/Vercel set ALCHEMY_SKIP_ASSETS=1 and rely on committed optimized outputs.
- * Fail loudly if those outputs are missing so skip stays safe.
- */
 describe("committed asset outputs", () => {
   it("keeps generated registries and sample optimized media in the repo", () => {
     const assetsGenerated = join(ROOT, "src/lib/game-data/assets.generated.ts");

@@ -81,19 +81,14 @@ export const GEAR_EFFECT_KEYS = [
   "holyStunBuildupGold",
 ] as const;
 
+import { createNumericManifest, mergeNumericManifests } from "@/lib/manifest-utils";
+
 export type GearEffectManifest = {
   [K in (typeof GEAR_EFFECT_KEYS)[number]]: number;
 };
 
-export const defaultGearEffects: GearEffectManifest = GEAR_EFFECT_KEYS.reduce((effects, key) => {
-  effects[key] = 0;
-  return effects;
-}, {} as GearEffectManifest);
+export const defaultGearEffects: GearEffectManifest = createNumericManifest(GEAR_EFFECT_KEYS);
 
 export function mergeGearEffectManifests(base: GearEffectManifest, addition: GearEffectManifest): GearEffectManifest {
-  const merged = { ...base };
-  for (const key of GEAR_EFFECT_KEYS) {
-    merged[key] = base[key] + addition[key];
-  }
-  return merged;
+  return mergeNumericManifests(base, addition, GEAR_EFFECT_KEYS);
 }

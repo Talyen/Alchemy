@@ -26,7 +26,7 @@ import {
   initializeFromResumeSnapshot,
   setScreen,
 } from "./write-port-run";
-import { initializeActiveBattle } from "./write-port-battle";
+import { initializeActiveBattle } from "./write-port-run";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { omitParkedMode, removeRunRecency, touchRunRecency } from "./parked-runs";
 
@@ -41,7 +41,6 @@ export function parkForegroundRunInDraft(draft: GameplayDraft): void {
   draft.run.runRecency = touchRunRecency(draft.run.runRecency, mode);
 }
 
-/** Snapshot the live run into its mode slot and drop it from the hydrated tree without clearing the slot. */
 export function parkAndDeactivateForegroundRunInDraft(draft: GameplayDraft): void {
   if (!draft.session.hasActiveRun) return;
   parkForegroundRunInDraft(draft);

@@ -1,7 +1,3 @@
-/**
- * Player status application (card effects and enemy-attack statuses), harmful
- * status removal, and incoming damage statuses.
- */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import { addPlayerStatus, playerStatusDelta, setFlag, type BattleState, type CombatTextEvent } from "./types";
@@ -26,7 +22,6 @@ function clearHarmfulStatuses(playerStatuses: BattleState["playerStatuses"], sta
   return { nextPlayerStatuses, removed };
 }
 
-/** Shared cleanse heals: sin-eater + heal-on-cleanse, applied whenever harmful statuses are removed. */
 export function applyCleanseHeals(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   const nextState = applyHealingWithCombatText(
     state,
@@ -126,11 +121,6 @@ export function shouldBlockPreventStunBuildup(state: BattleState): boolean {
   return state.talentEffects.blockPreventsStun && state.playerStatuses.block > 0;
 }
 
-/**
- * Adds DoT/CC buildup equal to damage dealt after an enemy hit lands.
- * Stun suppression (block-prevents-stun) is the caller's responsibility,
- * checked against pre-hit Block before spending it.
- */
 export function applyPlayerDamageStatuses(
   state: BattleState,
   effect: { damageType: DamageType },
@@ -179,16 +169,13 @@ function applyHarmfulStatusFromAttack(
   if (blockPreventsStatus) {
     return state;
   }
-  // Plague Doctor boon: prevents the FIRST harmful status application each battle.
-  // Once used (firstHarmfulStatusPrevented flag), subsequent statuses apply normally.
+
   if (state.trinketEffects.plagueDoctorImmunity && !state.flags.firstHarmfulStatusPrevented) {
     return { ...state, flags: { ...state.flags, firstHarmfulStatusPrevented: true } };
   }
   const appliedAmount = status === "bleed" ? amount * BLEED_STATUS_MULTIPLIER : amount;
   const nextState = addPlayerStatus(state, status, appliedAmount);
-  // kind:"status" matches the card-applied path so the harmful-status filter
-  // in shouldShowCombatText treats both sources identically (hidden floats,
-  // while the DoT damage they later deal still shows as -N).
+
   mergeCombatText(combatTexts, {
     target: "player",
     kind: "status",
@@ -213,7 +200,6 @@ function applyBeneficialStatusFromAttack(
   return addPlayerStatus(state, status, amount);
 }
 
-/** Applies a harmful or beneficial status applied by an enemy attack. */
 export function applyPlayerStatusFromAttack(
   state: BattleState,
   effect: DirectPlayerStatusAttackEffect,

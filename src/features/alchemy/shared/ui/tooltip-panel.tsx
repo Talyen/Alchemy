@@ -1,6 +1,3 @@
-// Shared hover tooltip container with standard header/subheader/body/section slots.
-// Provides consistent styling across all tooltips — enemy, card, keyword, status, map, etc.
-// Width is configurable via the `width` prop (defaults to tooltipWidthClass).
 import { type CSSProperties, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -22,9 +19,9 @@ interface TooltipPanelProps {
   width?: string;
   className?: string;
   placement?: TooltipPlacement;
-  /** State-driven tooltips that are not inside a hover group. */
+
   visible?: boolean;
-  /** Runtime placement offsets from portaled tooltip anchoring — not for theme colors. */
+
   style?: CSSProperties | undefined;
   ref?: React.Ref<HTMLDivElement>;
 }

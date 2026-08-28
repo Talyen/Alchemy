@@ -1,6 +1,3 @@
-/**
- * Enemy stun threshold resolution and stun-triggered talent/gear/boon effects.
- */
 import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { addGoldWithCombatText, mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
@@ -65,7 +62,6 @@ function applyStunUniqueGearEffects(
 ): BattleState {
   let nextState = state;
   if (nextState.gearEffects.stunPurgeDealHolyPerEffect > 0) {
-    // Use pre-trigger mitigation snapshot so stunStripArmor talent doesn't rob Wardbreaker of its holy damage.
     const mitigation = preTriggerMitigation ?? nextState.enemyMitigation;
     const purged = mitigation.armor + mitigation.block + mitigation.forge;
     if (purged > 0) {
@@ -93,7 +89,6 @@ function applyStunUniqueGearEffects(
   return nextState;
 }
 
-/** Enemy stun threshold — runs immediately when stun stacks are added from damage. */
 export function resolveStunTrigger(
   state: BattleState,
   combatTexts?: CombatTextEvent[],
@@ -112,7 +107,7 @@ export function resolveStunTrigger(
     combatTexts: combatTexts ?? [],
   });
   if (!triggered) return state;
-  // CC immunity clears the stack without a stun — no stun rewards for a stun that didn't land.
+
   if (triggered.kind === "immune") return triggered.state;
 
   let nextState = triggered.state;

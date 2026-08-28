@@ -36,9 +36,7 @@ export function createDestinationScreenHandlers(
         } catch (error) {
           try {
             dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));
-          } catch {
-            // cancel is best-effort; original error is load-bearing
-          }
+          } catch {}
           throw new Error("commitDestinationProgress failed", { cause: error });
         }
       };

@@ -1,4 +1,3 @@
-// Test helpers for run-lifetime reads/writes against the authoritative aggregate.
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { createInitialSessionFields, type RunSessionFields } from "@/features/alchemy/shared/stores/run-domain-types";
 import {
@@ -94,9 +93,6 @@ const SESSION_KEYS = [
   "mysteryChosenCardId",
 ] as const satisfies ReadonlyArray<keyof RunSessionFields>;
 
-// Compile-time guards: these lists must cover every field of their source type, so
-// adding a field without listing it here becomes a type error instead of silently
-// weakening the patch helpers. Referenced via void so noUnusedLocals stays quiet.
 type AssertKeysCover<T, K extends ReadonlyArray<keyof T>> = [keyof T] extends [K[number]] ? true : never;
 
 const runProgressKeyGuards: Readonly<{

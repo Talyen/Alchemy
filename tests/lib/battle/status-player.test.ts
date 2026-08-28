@@ -62,7 +62,7 @@ describe("removeHarmfulPlayerStatuses", () => {
     });
     const texts = makeTexts();
     const result = removeHarmfulPlayerStatuses(state, 2, texts);
-    // sinEaterHealOnHarmfulStatusRemove heals once for the batch, not per status
+
     expect(result.playerHealth).toBe(24);
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 4 });
   });
@@ -88,7 +88,7 @@ describe("removeHarmfulPlayerStatuses", () => {
       },
     });
     const texts = makeTexts();
-    // cleanses burn, triggers healOnStatusCleanse(10) -> overheal = 8 -> block gained = round(8 * 0.5) = 4.
+
     const result = removeHarmfulPlayerStatuses(state, 1, texts);
     expect(result.playerHealth).toBe(30);
     expect(result.playerStatuses.block).toBe(6);
@@ -217,8 +217,7 @@ describe("applyPlayerDamageStatuses", () => {
       playerStatuses: defaultPlayerStatusValues({ freeze: 0 }),
       talentEffects: { ...patchBattleState().talentEffects, receiveHalfFreezeDamage: true },
     });
-    // actualDamage is already halved by the talent in computeMitigatedDamage;
-    // the buildup must not be halved a second time.
+
     const result = applyPlayerDamageStatuses(state, { damageType: "freeze" }, 5);
     expect(result.playerStatuses.freeze).toBe(5);
   });

@@ -1,4 +1,3 @@
-// Visual metadata for destinations, collection tabs, and keyword iconography.
 import type { LucideIcon } from "lucide-react";
 import {
   Beaker,
@@ -50,7 +49,6 @@ import type { Destination } from "@/lib/routing";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import type { CollectionTab } from "../types";
 
-// Collection tabs drive the collection navigation labels and icons.
 export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: LucideIcon }> = [
   { id: "heroes", label: "Heroes", icon: User },
   { id: "cards", label: "Cards", icon: BookOpen },
@@ -59,7 +57,6 @@ export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: 
   { id: "uniques", label: "Uniques", icon: Gem },
 ];
 
-// Destination visual theming gives each route type an icon, accent color, and art.
 interface ThemedChooserMeta {
   icon: LucideIcon;
   accentClassName: string;
@@ -130,7 +127,6 @@ export const destinationMeta: Record<Destination, ThemedChooserMeta> = {
   },
 };
 
-// Game mode visual theming for the game mode selection screen.
 export const gameModeMeta: Record<
   string,
   {
@@ -168,7 +164,6 @@ export const gameModeMeta: Record<
   },
 };
 
-// Maps each keyword to its Lucide icon across status chips and card displays.
 export const keywordIcons: Record<KeywordId, LucideIcon> = {
   physical: Swords,
   stun: Zap,

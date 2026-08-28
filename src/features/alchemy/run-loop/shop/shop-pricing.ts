@@ -1,4 +1,3 @@
-// Shop price calculations, gear pricing, and price selectors.
 import {
   ALCHEMIST_MIX_PRICE,
   ALCHEMIST_POTION_PRICE,

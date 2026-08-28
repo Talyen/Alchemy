@@ -195,9 +195,6 @@ export function startBackgroundParticles(
   const ro = new ResizeObserver(resize);
   ro.observe(activeParent);
 
-  // Pause when the document is hidden, the window is unfocused, or the canvas has no
-  // rendered size — the rAF loop is parked (not merely skipping draws) and resumed on
-  // the matching events, mirroring the audio mute logic.
   function isPaused() {
     return document.hidden || !document.hasFocus() || activeCanvas.width < 2 || activeCanvas.height < 2;
   }

@@ -31,7 +31,7 @@ describe("applyEffectByKind (mana effects)", () => {
     const texts = makeTexts();
     const effect = { kind: "restore-mana" as const, amount: 3 };
     const result = applyManaEffect(state, effect, 1.5, texts);
-    // 3 * 1.5 rounds to 5 but gains cap at maxMana.
+
     expect(result.mana).toBe(4);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 4 });
   });
@@ -116,7 +116,7 @@ describe("applyEffectByKind (mana effects)", () => {
     const effect = { kind: "lose-max-mana" as const, amount: 1 };
     const result = applyManaEffect(state, effect, 1, texts);
     expect(result.enemyHealth).toBe(0);
-    expect(result.playerHealth).toBe(22); // +2 bone charm
+    expect(result.playerHealth).toBe(22);
     expect(result.gold).toBe(4);
   });
 });

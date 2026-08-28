@@ -17,12 +17,6 @@ export function scaledGearLeechHeal(baseHeal: number, gear: GearEffectManifest):
   return Math.round(baseHeal * (1 + gear.leechHealBonusPercent / PERCENT_DENOMINATOR));
 }
 
-/**
- * Shared "deal scaled enemy damage" helper: applies an optional per-hit
- * multiplier, emits enemy damage combat text, and clamps enemy health to 0.
- * Callers pass their bespoke post-clamp riders (lucky-clover gold, kill
- * rewards, encounter-trait thresholds) via `riders`.
- */
 export interface DealEnemyScaledDamageOptions {
   multiplier?: number;
   riders?: (state: BattleState, finalDamage: number, combatTexts: CombatTextEvent[]) => BattleState;
@@ -48,11 +42,6 @@ export function dealEnemyScaledDamage(
   return options.riders ? options.riders(nextState, finalDamage, combatTexts) : nextState;
 }
 
-/**
- * Deals gear-on-Crowd-Control physical damage (freeze / stun procs), clamping
- * enemy health and paying kill payouts when the hit is lethal. Freeze keeps
- * lucky-clover gold off by default; stun opts in via `grantLuckyClover`.
- */
 export function applyGearCcPhysicalDamage(
   state: BattleState,
   gearDamage: number,

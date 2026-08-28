@@ -21,7 +21,7 @@ import {
   setRewardState as mutateRewardState,
   setScreen as mutateSetScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
+import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setHasActiveRun as mutateHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import { resetProgress as mutateResetProgress } from "@/features/alchemy/shared/stores/write-port-run";
 import {
@@ -152,8 +152,7 @@ describe("session facade API", () => {
       choices: [],
       lastVictoryEnemyType: "boss",
     });
-    // Hollow post-claim surfaces cannot beginRewardClaim (no choices); encode still
-    // stamps destination flow from empty rewards screen so resume cannot soft-lock.
+
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
     expect(snap.currentScreen).toBe("rewards");
     expect(snap.interruptedFlow).toEqual({

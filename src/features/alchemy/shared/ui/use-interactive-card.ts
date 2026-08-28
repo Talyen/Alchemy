@@ -1,6 +1,3 @@
-// Shared hover + shimmer state hook for interactive card/tile UI.
-// Reads hoveredCardId and shimmerState from ui-store,
-// providing ready-to-use bindings for card buttons and shared art surfaces.
 import { useCallback } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useUiStore } from "../stores/ui-store";

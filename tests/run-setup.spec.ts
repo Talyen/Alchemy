@@ -5,7 +5,6 @@ import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 
-/** Unlocks difficulty-1..N for Knight and Wizard so difficulty cards are selectable. */
 async function unlockDifficulties(page: import("@playwright/test").Page, difficultyIds: string[]) {
   await page.addInitScript(
     ({ saveKey, ids }) => {

@@ -1,6 +1,6 @@
 import { ENEMY_DODGE_CHANCE, HALF_DIVISOR, PLAYER_DODGE_CHANCE, STATUS_CONFIG } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
-import { rollPercent } from "./status-helpers";
+import { getBattleRng, rollPercent } from "./status-helpers";
 import type { BattleState, CombatTextEvent } from "./types";
 
 function getPlayerDodgeChance(
@@ -22,7 +22,7 @@ function tryDodgePacket(
   options: { target: "player" | "enemy"; chance: number; canDodge: boolean },
 ): BattleState | null {
   if (!options.canDodge) return null;
-  if (!rollPercent(options.chance, state.rng)) return null;
+  if (!rollPercent(options.chance, getBattleRng(state))) return null;
   mergeCombatText(combatTexts, {
     target: options.target,
     kind: "notice",

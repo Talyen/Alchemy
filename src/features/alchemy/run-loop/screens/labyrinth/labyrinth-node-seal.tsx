@@ -1,4 +1,3 @@
-// Artwork-first hex seal: clipped art, type-tinted stroke, hover/press/selected motion.
 import { Check } from "lucide-react";
 
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";

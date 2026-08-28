@@ -1,4 +1,3 @@
-// Difficulty selection screen shown after choosing a hero, before the run begins.
 import { Fragment, useState } from "react";
 import { Swords } from "lucide-react";
 

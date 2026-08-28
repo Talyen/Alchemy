@@ -1,4 +1,3 @@
-// Stable action-only selectors for render paths (functions do not change between store updates).
 import { useShallow } from "zustand/react/shallow";
 import { useSettingsStore, type SettingsStore } from "./settings-store";
 import {
@@ -59,7 +58,6 @@ export function useSettingsActions(): SettingsActions {
   return useSettingsStore(useShallow(selectSettingsActions));
 }
 
-/** Collection paging commands, bound once so references are stable across renders. */
 export function useCollectionActions(): CollectionActions {
   return collectionActions;
 }
@@ -78,7 +76,6 @@ const homesteadActions: HomesteadActions = {
   bondCompanion: commandBondCompanion,
 };
 
-/** Homestead commands, bound once so references are stable across renders. */
 export function useHomesteadActions(): HomesteadActions {
   return homesteadActions;
 }

@@ -13,8 +13,6 @@ import {
 import { enemyBestiary } from "@/lib/game-data/compendium/enemies";
 import { createEmptyTalentEffectManifest } from "@/lib/game-data";
 
-// ─── types ──────────────────────────────────────────────────────
-
 describe("emptyInventory", () => {
   it("returns all materials at 0", () => {
     const inv = emptyInventory();
@@ -124,8 +122,6 @@ describe("defaultHomesteadEffects", () => {
   });
 });
 
-// ─── data integrity ─────────────────────────────────────────────
-
 describe.each([
   { name: "buildings", items: buildings, hasTiers: true },
   { name: "farmPlots", items: farmPlots, hasTiers: false },
@@ -171,8 +167,6 @@ describe("farmPlots yields", () => {
     }
   });
 });
-
-// ─── effects ────────────────────────────────────────────────────
 
 describe("computeHomesteadEffects", () => {
   it("returns defaults for empty inputs", () => {
@@ -305,8 +299,6 @@ describe("mergeIntoManifest", () => {
     expect((merged as unknown as Record<string, unknown>).endRunFoodPerRoom).toBeUndefined();
   });
 });
-
-// ─── loot ───────────────────────────────────────────────────────
 
 function stableRngZero(): () => number {
   return () => 0;

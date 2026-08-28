@@ -1,4 +1,3 @@
-// Keyword-colored spark burst from the left and right edges of a talent node.
 import { useLayoutEffect, useRef } from "react";
 
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";

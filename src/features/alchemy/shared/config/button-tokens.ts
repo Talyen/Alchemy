@@ -1,8 +1,6 @@
-// Canonical interactive button width/shape tokens.
-// Hover/press motion tokens live in @/lib/ui/button-hover.
 export const BUTTON_SHAPE = "rounded-xl";
 
-export const BUTTON_WIDTH_MENU = "w-[19.2rem]"; // menu-only; widened with larger menu button text
+export const BUTTON_WIDTH_MENU = "w-[19.2rem]";
 export const BUTTON_WIDTH_DIALOG = "w-56";
 export const BUTTON_WIDTH_ACTION = "min-w-56";
 

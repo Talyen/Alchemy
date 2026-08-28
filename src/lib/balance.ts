@@ -1,4 +1,3 @@
-// Public barrel for balance automation helpers.
 export * from "./balance/simulator-types";
 export * from "./balance/simulator";
 export * from "./balance/simulator-batch";

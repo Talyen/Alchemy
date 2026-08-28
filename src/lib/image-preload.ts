@@ -1,8 +1,5 @@
-// Image preloading helpers for warming likely-next game art without blocking the
-// current interaction. Used by the app shell to reduce visible image pop-in.
 import { IMAGE_PRELOAD_BATCH_SIZE, IMAGE_PRELOAD_TIMEOUT_MS } from "./game-constants";
 
-// Cache storing in-flight and completed load promises by image source URL.
 interface ImageLoadEntry {
   token: object;
   promise: Promise<void>;
@@ -11,8 +8,6 @@ interface ImageLoadEntry {
 const imageLoads = new Map<string, ImageLoadEntry>();
 const MAX_IMAGE_CACHE_SIZE = 500;
 
-// Decodes an image once and caches the promise so repeated route predictions can
-// share work instead of creating competing network requests.
 export function preloadImage(src: string): Promise<void> {
   if (!src) return Promise.resolve();
   const existing = imageLoads.get(src);
@@ -66,9 +61,6 @@ export function preloadImage(src: string): Promise<void> {
   return promise;
 }
 
-// Warms the complete set while yielding between bounded batches. Startup awaits this
-// function before revealing the app, so gameplay still begins with every asset decoded;
-// the yields only keep the loading presentation responsive during the up-front work.
 export async function preloadImagesInBatches(
   srcs: readonly string[],
   batchSize = IMAGE_PRELOAD_BATCH_SIZE,

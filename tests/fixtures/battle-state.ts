@@ -1,11 +1,6 @@
-// Typed persisted-battle-snapshot fixture shared by unit and E2E suites.
-// Type-only imports keep this file free of @/lib/battle runtime (and its webp
-// asset barrel), so Playwright specs can import it without loading game art.
 import type { BattleState } from "@/lib/battle/types";
 import type { BestiaryEntry } from "@/lib/game-data/types";
 
-// Fields the app deep-merges with defaults on resume (normalizePersistedBattleState),
-// so injected snapshots only need the keys under test.
 type ResumeMergedFields =
   | "trinketEffects"
   | "gearEffects"
@@ -18,7 +13,6 @@ type ResumeMergedFields =
   | "enemyMitigation"
   | "currentEnemy";
 
-/** Wire shape of a persisted BattleState snapshot (JSON-safe, manifests may be partial). */
 export type InjectedBattleState = Partial<Omit<BattleState, ResumeMergedFields>> & {
   [K in ResumeMergedFields]?: Partial<BattleState[K]>;
 };
@@ -34,7 +28,6 @@ const GOBLIN_ENEMY: BestiaryEntry = {
   attackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
 };
 
-/** Common mid-combat goblin snapshot; per-flow differences pass as overrides. */
 export function makeGoblinBattleState(overrides: InjectedBattleState = {}): InjectedBattleState {
   return {
     deck: [],

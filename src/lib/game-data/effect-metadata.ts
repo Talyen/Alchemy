@@ -1,4 +1,3 @@
-// Shared card-effect metadata: keyword extraction used by talents, rewards, and descriptions.
 import type { BattleCardEffect, KeywordId } from "./types";
 
 type KeywordFormatter<K extends BattleCardEffect["kind"]> = (
@@ -62,7 +61,6 @@ function collectKeywordsFromChance(effect: Extract<BattleCardEffect, { kind: "ch
   );
 }
 
-/** Keywords implied by a single card effect (does not include card tags or consume). */
 export function collectKeywordsFromBattleEffect(effect: BattleCardEffect): KeywordId[] {
   return FORMATTERS[effect.kind](effect as never);
 }

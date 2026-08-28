@@ -1,5 +1,3 @@
-// Modal confirmation overlays for destructive or blocking game actions.
-// Used by menus and screens that need explicit player confirmation.
 import type { ComponentType, ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
@@ -18,7 +16,7 @@ export function ConfirmationDialog({
   dimBackground = true,
   dismissOnBackdrop = true,
   dismissOnEscape = true,
-  // Intentional: icon is replaceable so callers can pass salvage/material themed icons
+
   icon: Icon = AlertTriangle,
   body,
   onConfirm,

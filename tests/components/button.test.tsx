@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -96,10 +95,14 @@ describe("Button", () => {
     expect(button.className).toContain("bg-primary");
   });
 
-  it("wraps in span when not asChild", () => {
-    const { container } = render(<Button>Wrapped</Button>);
-    const wrapper = container.firstChild as HTMLElement;
+  it("wraps in span only when wrapperClassName is provided", () => {
+    const { container: without } = render(<Button>Wrapped</Button>);
+    expect(without.firstChild?.nodeName).toBe("BUTTON");
+    cleanup();
+    const { container: withWrapper } = render(<Button wrapperClassName="my-wrap">Wrapped</Button>);
+    const wrapper = withWrapper.firstChild as HTMLElement;
     expect(wrapper?.className).toContain("inline-flex");
+    expect(wrapper?.className).toContain("my-wrap");
     expect(wrapper?.tagName).toBe("SPAN");
   });
 

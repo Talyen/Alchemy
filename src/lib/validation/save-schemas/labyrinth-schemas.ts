@@ -1,4 +1,3 @@
-// Zod schemas for labyrinth map persistence.
 import { z } from "zod";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";

@@ -85,7 +85,7 @@ Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest
 
 ## Persistence
 
-Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/build-save-data-from-stores.ts`), which serializes five Gear-owned fields:
+Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/persistence.ts`), which serializes five Gear-owned fields:
 
 | Field                | Notes                                                              |
 | -------------------- | ------------------------------------------------------------------ |

@@ -1,4 +1,3 @@
-// Deterministic battle setup helpers for Vitest (mirrors tests/helpers.ts card shapes).
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
@@ -13,7 +12,6 @@ export function makeCombatTexts(): CombatTextEvent[] {
   return [];
 }
 
-/** Build a damage-effect card effect (canonical home for the shared helper). */
 export function makeEffect(
   damageType: string,
   amount: number,
@@ -27,24 +25,18 @@ export function makeEffect(
   } as BattleCardEffect;
 }
 
-/** Shared battle state with a 10-mana default (matches the run-loop effect suites). */
 export function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
   return makeTestBattleState({ mana: 10, ...overrides });
 }
 
 const chanceFailRng = () => 0.99;
 
-/** makeState whose rng always rolls 0.99, so percent chances never trigger. */
 export function makeStateWithFailedRolls(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
   return makeState({ rng: chanceFailRng, ...overrides });
 }
 
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
 
-/**
- * dealDamageToEnemy with the card's first damage effect extracted internally,
- * so damage suites do not repeat the per-test cast boilerplate.
- */
 export function dealDamage(state: BattleState, card: BattleCard, texts: CombatTextEvent[] = makeCombatTexts()) {
   const effect = card.effects.find((candidate): candidate is DamageEffect => candidate.kind === "damage");
   if (!effect) throw new Error("dealDamage fixture: card has no damage effect");
@@ -58,7 +50,7 @@ export function makeTestBattleState(overrides: Partial<BattleState> = {}): Battl
     mana: 4,
     maxMana: 4,
     rng: seededRng(42),
-    // Authored-magnitude unit tests; fight-pacing.test.ts opts back in.
+
     appliesFightPacing: false,
   };
   return {
@@ -90,7 +82,6 @@ type BattleStatePatch = Omit<
   enemyCC?: Partial<BattleState["enemyCC"]>;
 };
 
-/** Merge partial battle state without repeating default status / boon / talent spreads. */
 export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
   const base = makeTestBattleState();
   return {

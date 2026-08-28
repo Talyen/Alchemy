@@ -35,7 +35,6 @@ export function gearInstanceRarity(instance: GearInstance): GearRarity {
   return gearDefinitions[instance.definitionId]?.rarity ?? "basic";
 }
 
-/** Single owner of the `<baseItemId>-<rarity>` definition-id format. */
 export function gearDefinitionId(baseItemId: string, rarity: GearRarity): string {
   return `${baseItemId}-${rarity}`;
 }

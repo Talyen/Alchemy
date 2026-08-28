@@ -1,7 +1,3 @@
-/**
- * Applies per-damage-type status riders (burn/poison/bleed/stun/freeze/physical)
- * when a damage hit lands, and resolves the freeze CC trigger.
- */
 import type { BattleCardEffect } from "@/lib/game-data";
 import {
   addEnemyStatus,
@@ -16,7 +12,7 @@ import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } fr
 import { applyCrowdControlTriggerBonuses } from "./talent-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
-import { getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
+import { getBattleRng, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
 import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, HALF_DIVISOR } from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
 import { computeLeechHeal } from "./leech-heal";
@@ -97,7 +93,7 @@ function queueBleedLeech(
 ): BattleState {
   if (bleedAmount <= 0) return state;
   const leechFromCard = effect.lifesteal;
-  const leechFromTalent = rollPercent(state.talentEffects.bleedLeechChance, state.rng);
+  const leechFromTalent = rollPercent(state.talentEffects.bleedLeechChance, getBattleRng(state));
   if (!leechFromCard && !leechFromTalent) return state;
   return { ...state, pendingBleedLeechHealing: state.pendingBleedLeechHealing + bleedAmount };
 }
@@ -107,7 +103,7 @@ function procBleedPoison(state: BattleState, actualDamage: number, bleedAmount: 
     bleedAmount <= 0 ||
     actualDamage <= 0 ||
     state.talentEffects.bleedPoisonChance <= 0 ||
-    !rollPercent(state.talentEffects.bleedPoisonChance, state.rng)
+    !rollPercent(state.talentEffects.bleedPoisonChance, getBattleRng(state))
   )
     return state;
   return addEnemyStatus(state, "poison", actualDamage);
@@ -177,7 +173,7 @@ export function tryTriggerEnemyFreeze(
     combatTexts,
   });
   if (!triggered) return nextState;
-  // CC immunity clears the stack without a freeze — no freeze rewards for a freeze that didn't land.
+
   if (triggered.kind === "immune") return triggered.state;
 
   let result = triggered.state;
@@ -218,7 +214,7 @@ function applyFreezeStatusRider(
 
 function applyPhysicalBleedChance(state: BattleState, actualDamage: number): BattleState {
   const bleedChance = state.talentEffects.physicalBleedChance + state.gearEffects.physicalBleedChance;
-  if (actualDamage <= 0 || !rollPercent(bleedChance, state.rng)) return state;
+  if (actualDamage <= 0 || !rollPercent(bleedChance, getBattleRng(state))) return state;
   return addEnemyStatus(state, "bleed", actualDamage);
 }
 
@@ -237,9 +233,6 @@ function applyPhysicalStatusRider(
   return nextState;
 }
 
-/**
- * Dispatches the per-type status rider; holy/nature deal damage without riders.
- */
 export function applyDamageStatuses(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,

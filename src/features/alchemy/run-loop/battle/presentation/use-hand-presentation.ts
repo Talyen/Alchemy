@@ -1,4 +1,3 @@
-// Screen-safe presentation subscriptions for hand visibility and transfer busy.
 import { useMemo } from "react";
 import type { BattleState } from "@/lib/battle";
 import { useBattlePresentationStore } from "../battle-presentation-store";

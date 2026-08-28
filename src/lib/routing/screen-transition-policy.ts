@@ -20,19 +20,11 @@ const RUN_NODE_LEAVE_DESTINATIONS = [
 ] as const;
 const META_AND_RUN_RETURN_DESTINATIONS = [...META_DESTINATIONS, ...RUN_LOOP_SCREENS] as const;
 
-/**
- * Runtime transition policy for every routed screen. Restore/hydration writes
- * bypass this table intentionally; interactive navigation must use it through
- * useScreenTransitions. Same-screen transitions are universally allowed so a
- * route can commit deferred state without remounting its screen.
- */
-// Shell transition options (delay/immediate/guard) live conceptually in
-// use-screen-transitions; kept here to avoid circular imports.
 export interface ScreenTransitionOptions {
   delayMs?: number;
   immediate?: boolean;
   onCommit?: () => void;
-  /** When provided, transition is skipped if this returns false (checked at apply time, including after delay). */
+
   guard?: () => boolean;
 }
 
@@ -66,7 +58,7 @@ export const ALLOWED_SCREEN_TRANSITIONS: Record<Screen, readonly Screen[]> = {
     ROUTE_SCREENS.BATTLE,
     ROUTE_SCREENS.LABYRINTH_MAP,
   ],
-  // Options is reachable from anywhere but should only return to the caller or meta.
+
   [ROUTE_SCREENS.OPTIONS]: META_AND_RUN_RETURN_DESTINATIONS,
   [ROUTE_SCREENS.COLLECTION]: META_AND_RUN_RETURN_DESTINATIONS,
   [ROUTE_SCREENS.TALENTS]: META_AND_RUN_RETURN_DESTINATIONS,

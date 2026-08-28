@@ -1,4 +1,3 @@
-// Battle start helpers: enemy selection, state creation, and encounter tracking.
 import {
   createBattleStartState,
   drawOpeningHand,
@@ -128,7 +127,6 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
           if (typeof session.prepareBattleSessionForStart === "function") {
             session.prepareBattleSessionForStart();
           } else {
-            // Legacy test doubles may only expose the original reset helper.
             session.resetBattleSession();
           }
           const presentationStore = ctx.getPresentation();

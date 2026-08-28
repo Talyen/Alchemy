@@ -180,17 +180,14 @@ test.describe("Talents Screen", critical, () => {
     await menu.gotoWithUnlockedMeta();
     await menu.openTalents();
 
-    // Verify Overview screen header and cards
     await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Select Burn Talents" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Select Physical Talents" })).toBeVisible();
 
-    // Click Burn card to navigate to detail tree
     await page.getByRole("button", { name: "Select Burn Talents" }).click();
     await expect(page.getByRole("heading", { name: "Burn" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
 
-    // Click Back to return to overview
     await page.getByRole("button", { name: "Back" }).click();
     await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Select Burn Talents" })).toBeVisible();

@@ -1,4 +1,3 @@
-// Shared resize, pause, and 30fps scheduling for keyword plasma renderers.
 import { isAnimationDisabled } from "./animation-prefs";
 import {
   PLASMA_FRAME_MS,

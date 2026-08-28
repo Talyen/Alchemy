@@ -1,6 +1,3 @@
-// Exact display contracts for run-loop and run-end screens.
-// Each screen owns the smallest read model it needs; there is intentionally no
-// all-screens field bag because absent fields must be a type error, not undefined.
 import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
@@ -88,7 +85,6 @@ interface WildwoodRemovalScreenData {
   runDeck: BattleCard[];
 }
 
-/** Exact screen-to-data mapping used by typed route read hooks. */
 export interface RunScreenDataByScreen {
   campfire: CampfireScreenData;
   shop: ShopScreenData;

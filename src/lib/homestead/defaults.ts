@@ -1,6 +1,3 @@
-// Default homestead effect manifest — homestead keys only (zeros/false).
-// Talent identity defaults (potionPotency: 1, healMultiplier: 1) must not live here:
-// mergeIntoManifest adds homestead numbers onto talent values.
 import { defaultCompanionBondLevels } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "./types";
 

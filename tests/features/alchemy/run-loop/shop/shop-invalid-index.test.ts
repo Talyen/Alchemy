@@ -49,7 +49,7 @@ describe("shop invalid index guards", () => {
   describe("alchemist mixPotions", () => {
     it("is no-op for fractional, NaN, or same indices", () => {
       setRunProgress({ gold: 999, runDeck: [makeCard({ id: "a-potion" }), makeCard({ id: "b-potion" })] });
-      // Need potion cards for mix to be valid; make them potion-like
+
       const potionA = makeCard({
         id: "fire-potion",
         effects: [{ kind: "damage", damageType: "burn", amount: 3 }],
@@ -58,7 +58,7 @@ describe("shop invalid index guards", () => {
         id: "ice-potion",
         effects: [{ kind: "damage", damageType: "burn", amount: 2 }],
       } as unknown as never);
-      // Override deck to be potions
+
       setRunProgress({ gold: 999, runDeck: [potionA as unknown as never, potionB as unknown as never] });
       setAlchemistState(createInitialAlchemistState([potionA as unknown as never, potionB as unknown as never]));
       const actions = buildActions();
@@ -73,16 +73,15 @@ describe("shop invalid index guards", () => {
     it("succeeds for valid distinct potion indices", () => {
       const potionA = makeCard({ id: "fire-potion" } as unknown as never);
       const potionB = makeCard({ id: "frost-potion" } as unknown as never);
-      // Ensure they are considered potion cards by id suffix
+
       const a = { ...potionA, id: "fire-potion" };
       const b = { ...potionB, id: "ice-potion" };
       setRunProgress({ gold: 999, runDeck: [a as unknown as never, b as unknown as never, makeCard({ id: "other" })] });
       setAlchemistState(createInitialAlchemistState([a as unknown as never, b as unknown as never]));
       const actions = buildActions();
-      // Mix should be attempted; if cards are not potion cards by definition, it may still fail,
-      // but we assert that valid indices at least reach the potion check, not the integer guard
+
       const result = actions.alchemist.mixPotions(0, 1);
-      // If not potion, result is null but gold not spent; integer guard passed
+
       expect([true, false].includes(result !== null)).toBe(true);
     });
   });

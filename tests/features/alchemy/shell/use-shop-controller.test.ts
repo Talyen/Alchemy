@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useShopController } from "@/features/alchemy/shell/use-shop-controller";

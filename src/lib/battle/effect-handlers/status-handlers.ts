@@ -1,4 +1,3 @@
-// Status-related card effect apply handlers.
 import { applyPotionMultiplier } from "../amount-helpers";
 import { addEnemyStatus, type BattleState, type CombatTextEvent } from "../types";
 import { mergeCombatText } from "../combat-text";
@@ -21,7 +20,6 @@ function resolveEnemyStatusCcTrigger(
   return nextState;
 }
 
-/** Clears every stack of one player status, preserving the rest of the status sheet. */
 function zeroPlayerStatus(state: BattleState, status: EnemyStatusDamageId): BattleState {
   return { ...state, playerStatuses: { ...state.playerStatuses, [status]: 0 } };
 }
@@ -78,8 +76,7 @@ export const applyMultiplyEnemyStatusEffect: EffectHandler = (state, _card, effe
   if (effect.kind !== "multiply-enemy-status") return state;
   const current = state.enemyStatuses[effect.status];
   if (current <= 0) return state;
-  // Route through addEnemyStatus so stack additions honor enemy traits
-  // (braced halves stun; poison rolls its armor shred) like every other source.
+
   const nextState = addEnemyStatus(state, effect.status, current * (effect.factor - 1));
   mergeCombatText(combatTexts, {
     target: "enemy",

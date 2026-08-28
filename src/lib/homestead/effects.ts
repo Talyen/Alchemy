@@ -78,10 +78,6 @@ export function computeHomesteadEffects(
   return effects;
 }
 
-// Merges homestead effects into a TalentEffectManifest so battle code reads
-// combined bonuses from a single source. The merger is generic — it iterates
-// the key arrays from types.ts, so adding a key to HOMESTEAD_BATTLE_*_KEYS
-// automatically makes it mergeable. No per-field listing to maintain.
 export function mergeIntoManifest(
   talentEffects: TalentEffectManifest,
   homesteadEffects: HomesteadEffectManifest,

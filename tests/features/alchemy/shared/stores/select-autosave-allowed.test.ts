@@ -18,7 +18,7 @@ describe("selectAutosaveAllowed", () => {
     expect(selectAutosaveAllowed(battleState(0), "battle")).toBe(false);
   });
 
-  it("blocks hollow rewards and run-end screens", () => {
+  it("allows hollow rewards (now persisted as interruptedFlow none) and blocks run-end screens", () => {
     expect(
       selectAutosaveAllowed(
         {
@@ -27,7 +27,19 @@ describe("selectAutosaveAllowed", () => {
         },
         "rewards",
       ),
-    ).toBe(false);
+    ).toBe(true);
     expect(selectAutosaveAllowed(battleState(20, false), "game-over")).toBe(false);
+  });
+
+  it("hollow with claim in-flight still autosave-allowed (codec handles mid-claim suppression)", () => {
+    expect(
+      selectAutosaveAllowed(
+        {
+          battle: { hasActiveBattle: false, battleState: { enemyHealth: 20 } },
+          session: { rewardClaimInFlight: true, rewardState: { choices: [] } },
+        },
+        "rewards",
+      ),
+    ).toBe(true);
   });
 });

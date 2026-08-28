@@ -1,17 +1,3 @@
-// Save-load normalization during Zod ActiveRunDataSchema.transform only.
-// Content-system field isolation mirrors the encode-time guards in run-resume-codec.
-// Scalar defaults and contentSystemType are owned by the Zod schema (.catch / .default).
-// Tombstoned card stripping lives here so every parse path (active run, parked runs)
-// drops removed content before it can reach runtime state.
-//
-// Structure (one pure helper per concern, called from `normalizeActiveRunData`):
-//   1) health clamping
-//   2) wildwoodDraft repair
-//   3) starterDraft repair
-//   4) mysteryVisit repair
-//   5) content-system isolation + shop normalization
-// RNG-advancing re-offers (draft/mystery) intentionally mutate rngState.counters;
-// see `createRepairRng` — the transform is not idempotent without the autosave rewrite.
 import { repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { isTombstonedCardId } from "./migration/tombstoned-content-ids";
@@ -28,7 +14,6 @@ function filterLiveCards<T extends SavedCard>(cards: T[]): T[] {
   return cards.filter((card) => !isTombstonedCardId(card.id));
 }
 
-/** Strips tombstoned cards from every BattleCard pile of a persisted battle snapshot. */
 function filterLiveBattleState(state: Record<string, unknown>): Record<string, unknown> {
   const next = { ...state };
   for (const pile of ["deck", "hand", "discard", "exhausted", "wishOptions"] as const) {
@@ -36,9 +21,6 @@ function filterLiveBattleState(state: Record<string, unknown>): Record<string, u
     if (Array.isArray(pileValue)) next[pile] = filterLiveCards(pileValue as SavedCard[]);
   }
   if (Array.isArray(next.wishQueue)) {
-    // wishQueue is not typed by the wire schema, so drop malformed queue entries
-    // here — a throwing transform would abort the whole save parse and skip
-    // backup candidates in io.ts.
     next.wishQueue = (next.wishQueue as unknown[])
       .filter(Array.isArray)
       .map((queue) => filterLiveCards(queue as SavedCard[]));
@@ -131,8 +113,6 @@ function repairEmptyCardChoices(
 }
 
 function toPersistedCard(card: BattleCard): Record<string, unknown> {
-  // Persist only fields owned by the save schema — spread then pick to avoid
-  // silently dropping new BattleCard fields while still omitting runtime-only keys.
   const base: Record<string, unknown> = {
     id: card.id,
     title: card.title,
@@ -147,8 +127,7 @@ function toPersistedCard(card: BattleCard): Record<string, unknown> {
   if (card.baseTitle) base.baseTitle = card.baseTitle;
   const corruptedPositions = (card as unknown as { corruptedValuePositions?: unknown }).corruptedValuePositions;
   if (corruptedPositions) base.corruptedValuePositions = corruptedPositions;
-  // Fail loudly if BattleCard gains a new persisted field that isn't mapped here.
-  // `satisfies` won't help on a raw Record, so keep this list mirrored via tests.
+
   return base;
 }
 
@@ -247,11 +226,6 @@ function repairMysteryVisit(
   runDeck: BattleCard[] | null,
   rngState: RunRngState | null,
 ): unknown {
-  // When currentScreen is set to any non-mystery value the persisted blob is
-  // stale — null it so resume doesn't re-enter mystery. A legacy
-  // `pendingRemoval:true` flag is already kept via the cardChoices re-offer
-  // path below; nulling here still discards the stale visit after that
-  // picker completes (currentScreen flips away on pick).
   if (data.currentScreen != null && data.currentScreen !== "mystery") return null;
   if (!data.mysteryVisit || typeof data.mysteryVisit !== "object") return data.mysteryVisit;
   const rawVisit = data.mysteryVisit as Record<string, unknown>;
@@ -261,8 +235,7 @@ function repairMysteryVisit(
   const hadChoices = rawVisit.cardChoices != null;
   if (Array.isArray(filtered) && filtered.length === 0 && hadChoices && chosenCardId == null && rngState) {
     const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
-    // Mystery re-offer must not filter by owned cards — the choice pool is
-    // independent of deck affinity, hence empty `alreadyOwned`.
+
     const repaired = repairEmptyCardChoices(
       rngState,
       "events",
@@ -295,10 +268,7 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
     typeof data.runMetaMaxHealth === "number" && data.runMetaMaxHealth > 0 ? data.runMetaMaxHealth : runMaxHealth;
 
   const runDeck = nullableCardArray(data.runDeck) as BattleCard[] | null;
-  // Clone RNG before any repair advances counters — Zod transforms should not
-  // mutate the input object. Second parse of the same raw input would otherwise
-  // advance the shared counter twice; cloning keeps the transform pure-ish and
-  // the re-offer stays idempotent (second parse sees non-empty repaired choices).
+
   const rawRngState = data.rng as RunRngState | null | undefined;
   const rngState = cloneRngForRepair(rawRngState);
   const characterId = data.characterId as string | undefined;
@@ -307,8 +277,6 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
   const starterDraftChoices = repairStarterDraft(data, runDeck, rngState);
   const mysteryVisit = repairMysteryVisit(data, runDeck, rngState);
 
-  // If RNG was cloned and advanced, persist the new counters so the next
-  // autosave writes them — otherwise the re-offer would re-roll differently.
   const nextRng = rngState ?? (data.rng as RunRngState | null | undefined) ?? null;
 
   return {

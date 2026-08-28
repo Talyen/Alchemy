@@ -26,7 +26,6 @@ export function createBattleEndTurnUi(
 
   async function animateEndTurnThenResolve(currentState: BattleState, sessionNum: number) {
     try {
-      // Always emit discard bounds so the perf harness can wait even when animation is off.
       markBattleStage("discard-start");
       try {
         if (!isAnimationDisabled()) {
@@ -63,8 +62,7 @@ export function createBattleEndTurnUi(
       })
     )
       return;
-    // Claim single-flight before any await so empty-hand / missing-rect early returns
-    // and auto-end timer ticks cannot re-enter resolveEndTurn on the same snapshot.
+
     ctx.clearAutoEndTurnRef.current?.();
     ctx.cardPlayInProgressRef.current = true;
     session.clearBattleTimeoutsKeepCompanion();

@@ -39,7 +39,6 @@ function migrateParkedRuns(value: unknown): unknown {
   return next;
 }
 
-/** Replace 8×9 grid Labyrinth maps with a fresh hex floor; keep the rest of the run. */
 export function migrateV13ToV14(parsed: RawSaveData): RawSaveData {
   return {
     ...parsed,

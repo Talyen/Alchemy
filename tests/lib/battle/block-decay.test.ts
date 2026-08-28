@@ -26,8 +26,7 @@ describe("block decay timing", () => {
   it("absorbs enemy damage before block decays", () => {
     const state = makeState({ playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10 } });
     const result = endPlayerTurn(state);
-    // Enemy attacks for 4 physical damage → absorbed by block (10 → 6).
-    // Then block decays from 6 to round(6/2) = 3 during turn transition.
+
     expect(result.state.playerHealth).toBe(30);
     expect(result.state.playerStatuses.block).toBe(3);
   });
@@ -35,7 +34,7 @@ describe("block decay timing", () => {
   it("block decays when no damage is taken", () => {
     const state = makeState({ enemyAttackEffects: [] });
     const result = endPlayerTurn(state);
-    // No damage taken, block decays from 10 to 5
+
     expect(result.state.playerHealth).toBe(30);
     expect(result.state.playerStatuses.block).toBe(5);
   });
@@ -43,8 +42,7 @@ describe("block decay timing", () => {
   it("block absorbs partial damage then decays remainder", () => {
     const state = makeState({ playerStatuses: { ...makeTestBattleState().playerStatuses, block: 3 } });
     const result = endPlayerTurn(state);
-    // Enemy attacks for 4 physical → block absorbs 3, 1 damage to health.
-    // Block goes to 0 after absorption, decay of 0 rounds to 0.
+
     expect(result.state.playerHealth).toBe(29);
     expect(result.state.playerStatuses.block).toBe(0);
   });
@@ -55,7 +53,7 @@ describe("block decay timing", () => {
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
     });
     const result = endPlayerTurn(state);
-    // Enemy attacks for 2 → block: 7 → 5. Then block decays: round(5/2) = 3.
+
     expect(result.state.playerHealth).toBe(30);
     expect(result.state.playerStatuses.block).toBe(3);
   });

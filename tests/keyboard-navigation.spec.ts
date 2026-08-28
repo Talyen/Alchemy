@@ -15,7 +15,6 @@ test.describe("Keyboard Navigation", critical, () => {
     );
     const battle = new BattlePage(page);
 
-    // 1. Escape opens and closes the in-battle menu
     await page.keyboard.press("Escape");
     const mainMenuBtn = page.getByRole("button", { name: "Main Menu" });
     await expect(mainMenuBtn).toBeVisible({ timeout: 3000 });
@@ -23,7 +22,6 @@ test.describe("Keyboard Navigation", critical, () => {
     await page.keyboard.press("Escape");
     await expect(mainMenuBtn).toBeHidden({ timeout: 3000 });
 
-    // 2. Battle hamburger anchors menu near the trigger
     const trigger = page.getByRole("button", { name: "Open battle menu" });
     await trigger.click();
     const menu = page.getByTestId("game-menu");
@@ -40,11 +38,9 @@ test.describe("Keyboard Navigation", critical, () => {
       expect(menuBox.y).toBeGreaterThanOrEqual(triggerBox.y + triggerBox.height - 8);
     }
 
-    // Close menu to resume play
     await page.keyboard.press("Escape");
     await expect(menu).toBeHidden({ timeout: 3000 });
 
-    // 3. Focused card is playable with enter key
     const manaBefore = await battle.mana();
     const firstCard = battle.hand.first();
     await firstCard.focus();
@@ -54,7 +50,6 @@ test.describe("Keyboard Navigation", critical, () => {
     const manaAfter = await battle.mana();
     expect(manaAfter).toBeLessThan(manaBefore);
 
-    // 4. Focus end turn and activate with enter
     await battle.endTurnBtn.focus();
     await expect(battle.endTurnBtn).toBeFocused();
 

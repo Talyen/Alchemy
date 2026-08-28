@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { clearTiltFromEvent, getCardRect, setTiltFromEvent } from "@/features/alchemy/shared/utils/dom";
 import { installRafStub } from "../../../../helpers/animation-test";

@@ -51,7 +51,6 @@ describe("reward flow orchestration", () => {
   });
 
   describe("computeVictoryGold unmultiplied total", () => {
-    // Identity params (purseGold 0, multiplier 1) make persistedGold equal the unmultiplied total.
     function unmultipliedTotal(input: Omit<Parameters<typeof computeVictoryGold>[0], "purseGold" | "goldMultiplier">) {
       return computeVictoryGold({ ...input, purseGold: 0, goldMultiplier: 1 }).persistedGold;
     }

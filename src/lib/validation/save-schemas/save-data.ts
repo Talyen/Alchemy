@@ -1,4 +1,3 @@
-// Top-level save blob schema composition.
 import { z } from "zod";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
@@ -98,7 +97,7 @@ export const SaveDataSchema = z.preprocess(
       equippedTrinkets: EquippedTrinketsSchema,
       talentXP: TalentXPSchema,
       unlockedTalents: UnlockedTalentsSchema,
-      // .catch() fallbacks must match defaults.ts — both come from game-constants.ts.
+
       musicVolume: z
         .number()
         .catch(DEFAULT_MUSIC_VOLUME_PCT)

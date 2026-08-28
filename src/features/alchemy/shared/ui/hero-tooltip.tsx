@@ -1,5 +1,3 @@
-// Hover popup for hero roster entries on character select and Collection.
-// Used by CharacterSelectScreen and CompendiumTile so both surfaces share one tooltip body.
 import type { RefObject } from "react";
 import type { CharacterDefinition } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getPlasmaColorPairForCharacter } from "@/features/alchemy/shared/config";

@@ -9,15 +9,15 @@ Institutional memory for recurring bugs, surprising repo behavior, and rejected 
 
 ## Patterns
 
-| Pattern                                                                   | Status | Confidence | When to read                                                                      |
-| ------------------------------------------------------------------------- | ------ | ---------- | --------------------------------------------------------------------------------- |
-| [Run-State Command Boundary](./patterns/run-state-command-boundary.md)    | active | high       | Before touching `shared/stores/`, run session, battle, or persistence write paths |
-| [Battle Immutability & Seeded RNG](./patterns/battle-immutability-rng.md) | active | high       | Before changing `src/lib/battle/`, damage calc, status ticks, or card effects     |
-| [Save Migration Contract](./patterns/save-migration-contract.md)          | active | high       | Before changing any persisted save shape, defaults, or hydration                  |
-| [Run-Earned Materials Ownership](./patterns/run-materials-ownership.md)   | active | high       | Before granting materials, homestead currencies, or run-end rewards               |
-| [Asset Barrels Are Outputs](./patterns/asset-barrels-are-outputs.md)      | active | high       | Before editing art/sound, `*.generated.ts`, or asset manifests                    |
-| [Static Route Imports](./patterns/static-route-imports.md)                | active | high       | Before changing screen routes, lazy loading, or boot/loading gates                |
-| [Gear HP-Sync Write Path](./patterns/gear-hp-sync.md)                     | active | high       | Before mutating gear (equip/salvage/craft) during or outside a run                |
+| Pattern                                                                   | Status | Confidence | When to read                                                                                                         |
+| ------------------------------------------------------------------------- | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| [Run-State Command Boundary](./patterns/run-state-command-boundary.md)    | active | high       | Before touching `shared/stores/`, run session, battle, or persistence write paths                                    |
+| [Battle Immutability & Seeded RNG](./patterns/battle-immutability-rng.md) | active | high       | Before changing `src/lib/battle/`, damage calc, status ticks, or card effects                                        |
+| [Save Migration Contract](./patterns/save-migration-contract.md)          | active | high       | Before changing any persisted save shape, defaults, or hydration                                                     |
+| [Run-Earned Materials Ownership](./patterns/run-materials-ownership.md)   | active | high       | Before granting materials, homestead currencies, or run-end rewards                                                  |
+| [Asset Barrels Are Outputs](./patterns/asset-barrels-are-outputs.md)      | active | high       | Before editing art/sound, `*.generated.ts`, or asset manifests                                                       |
+| [Static Route Imports](./patterns/static-route-imports.md)                | active | high       | Before changing screen routes, lazy loading, or boot/loading gates                                                   |
+| [Gear HP-Sync Write Path](./patterns/gear-hp-sync.md)                     | active | medium     | Before mutating gear (equip/salvage/craft) during or outside a run — single occurrence; promote after 2nd recurrence |
 
 ## Maintenance
 

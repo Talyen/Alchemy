@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useChangeToken } from "@/features/alchemy/shared/ui/battle/use-change-token";

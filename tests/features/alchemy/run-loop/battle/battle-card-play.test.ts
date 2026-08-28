@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import "../../../../helpers/mock-audio";
 import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
 import type { MouseEvent } from "react";
@@ -8,7 +7,7 @@ import type { createBattleSession } from "@/features/alchemy/run-loop/battle/bat
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write-port-battle";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";

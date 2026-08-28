@@ -1,4 +1,3 @@
-// Zod enum and record schemas for persisted save fields.
 import { z } from "zod";
 import {
   characters,

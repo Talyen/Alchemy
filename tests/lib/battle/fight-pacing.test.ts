@@ -110,7 +110,6 @@ describe("paceCombatMagnitude", () => {
 
 describe("proc defensive grants bypass pacing (policy pin)", () => {
   it("grants CC-proc armor at authored magnitude even while the player is behind", () => {
-    // Player badly behind → comeback multiplier > 1 for player-side magnitudes.
     const base = pacedState({ playerHealth: 4, playerMaxHealth: 30, enemyHealth: 30, enemyMaxHealth: 30 });
     const armorAmount = 6;
     const state = { ...base, gearEffects: { ...base.gearEffects, armorOnStunOrFreeze: armorAmount } };

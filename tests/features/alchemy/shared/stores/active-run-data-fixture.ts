@@ -54,11 +54,6 @@ export function makeActiveRunData(overrides: Partial<ActiveRunData> = {}): Activ
   } satisfies ActiveRunData;
 }
 
-/**
- * Complete, non-default active-run fixture. `satisfies` makes persistence field
- * additions fail typecheck until this fixture and its round-trip assertions move
- * with the contract.
- */
 export function createCompleteActiveRunData(): ActiveRunData {
   const [slash, block] = getStartingDeck("knight");
   if (!slash || !block) throw new Error("Knight starting deck fixture is incomplete");

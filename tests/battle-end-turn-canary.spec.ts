@@ -7,7 +7,6 @@ const WEAK_DECK = Array.from({ length: 6 }, () =>
   makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
 );
 
-/** Canary for real battle animations — do not call enableFastMode here. */
 test.describe("Battle end turn with animations", prepush, () => {
   test("end turn round-trip does not hang", async ({ page }) => {
     test.setTimeout(45_000);

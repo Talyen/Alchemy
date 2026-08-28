@@ -1,20 +1,30 @@
-// Damage-related card effect schemas and metadata.
 import { z } from "zod";
 import type { EffectKindDefinition } from "./registry";
-import { DamageTypeSchema, EnemyStatusIdSchema } from "./shared-schemas";
+import { AmountSchema, DamageTypeSchema, EnemyStatusIdSchema } from "./shared-schemas";
 
 export const damageEffectDefinition = {
   kind: "damage",
-  schema: z.object({
-    kind: z.literal("damage"),
-    damageType: DamageTypeSchema,
-    amount: z.number().int().min(0).max(999),
-    lifesteal: z.boolean().optional(),
-    equalToBlock: z.boolean().optional(),
-    equalToArmor: z.boolean().optional(),
-    equalToGoldPercent: z.number().int().min(0).max(100).optional(),
-    doubleIfEnemyBurning: z.boolean().optional(),
-  }),
+  schema: z
+    .object({
+      kind: z.literal("damage"),
+      damageType: DamageTypeSchema,
+      amount: AmountSchema,
+      lifesteal: z.boolean().optional(),
+      equalToBlock: z.boolean().optional(),
+      equalToArmor: z.boolean().optional(),
+      equalToGoldPercent: z.number().int().min(0).max(100).optional(),
+      doubleIfEnemyBurning: z.boolean().optional(),
+    })
+    .refine((data) => !(data.equalToBlock && data.equalToArmor), {
+      message: "damage effect cannot have both equalToBlock and equalToArmor",
+    })
+    .refine(
+      (data) =>
+        [data.equalToBlock, data.equalToArmor, data.equalToGoldPercent !== undefined].filter(Boolean).length <= 1,
+      {
+        message: "damage effect must have at most one of equalToBlock/equalToArmor/equalToGoldPercent",
+      },
+    ),
 } satisfies EffectKindDefinition<"damage">;
 
 export const selfDamageEffectDefinition = {
@@ -22,7 +32,7 @@ export const selfDamageEffectDefinition = {
   schema: z.object({
     kind: z.literal("self-damage"),
     damageType: EnemyStatusIdSchema,
-    amount: z.number().int().min(0).max(999),
+    amount: AmountSchema,
   }),
 } satisfies EffectKindDefinition<"self-damage">;
 
@@ -30,8 +40,8 @@ export const randomDamageEffectDefinition = {
   kind: "random-damage",
   schema: z.object({
     kind: z.literal("random-damage"),
-    minAmount: z.number().int().min(0).max(999),
-    maxAmount: z.number().int().min(0).max(999),
+    minAmount: AmountSchema,
+    maxAmount: AmountSchema,
   }),
 } satisfies EffectKindDefinition<"random-damage">;
 
@@ -39,6 +49,6 @@ export const removeEnemyArmorEffectDefinition = {
   kind: "remove-enemy-armor",
   schema: z.object({
     kind: z.literal("remove-enemy-armor"),
-    amount: z.number().int().min(0).max(999),
+    amount: AmountSchema,
   }),
 } satisfies EffectKindDefinition<"remove-enemy-armor">;

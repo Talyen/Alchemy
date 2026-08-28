@@ -19,19 +19,16 @@ describe("unique item catalog", () => {
       expect(unique.signatureAffix).toBeDefined();
       expect(unique.supportingAffixes).toHaveLength(3);
 
-      // Verify the definition in gearDefinitions
       const definition = gearDefinitions[unique.id];
       expect(definition).toBeDefined();
       expect(definition.rarity).toBe("unique");
       expect(definition.art).toBeTruthy();
 
-      // Signature affix is uniqueOnly, supporting affixes are standard
       expect(gearAffixCatalog[unique.signatureAffix.id]?.uniqueOnly).toBe(true);
       for (const supporting of unique.supportingAffixes) {
         expect(gearAffixCatalog[supporting.id]?.uniqueOnly).toBeFalsy();
       }
 
-      // Verify instance generation produces correct fixed 4 affixes
       const instance = generateUniqueGearInstance(unique);
       expect(instance.definitionId).toBe(unique.id);
       expect(instance.affixes).toHaveLength(4);
@@ -68,7 +65,7 @@ describe("unique item catalog", () => {
     const allOwnedIds = new Set(uniqueItemList.map((u) => u.id));
     const offerings = generateEquipmentShopOfferings(3, () => 0.01, 0, allOwnedIds);
     expect(offerings).toHaveLength(3);
-    // When all uniques are owned, rolling unique degrades to astral
+
     for (const offering of offerings) {
       expect(gearDefinitions[offering.definitionId]?.rarity).toBe("astral");
     }

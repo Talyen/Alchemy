@@ -1,11 +1,5 @@
-/**
- * Deck draw and shuffle helpers.
- *
- * Callers must supply an explicit `rng` (production: `state.rng`; tests: a seeded
- * function). The previous `= Math.random` default was a footgun — AGENTS.md forbids
- * `Math.random()` in the battle engine, and the eslint rule only catches call expressions.
- */
 import type { BattleCard } from "@/lib/game-data";
+import { getBattleRng } from "./status-helpers";
 import type { BattleState } from "./types";
 import { shuffle, takeRandomItem } from "../utils";
 import { MAX_HAND_SIZE } from "../game-constants";
@@ -20,7 +14,6 @@ function refillDeck(
   return { deck: shuffle(discard, rng), discard: [] };
 }
 
-/** Draws cards from the deck into the hand, reshuffling discard when the deck empties. */
 export function drawCards(
   deck: BattleCard[],
   discard: BattleCard[],
@@ -40,7 +33,7 @@ export function drawCards(
     nextDeck = refilled.deck;
     nextDiscard = refilled.discard;
 
-    const card = nextDeck.shift();
+    const card = nextDeck.pop();
     if (!card) break;
     nextHand.push({ ...card, uid });
     uid += 1;
@@ -49,17 +42,16 @@ export function drawCards(
   return { deck: nextDeck, discard: nextDiscard, hand: nextHand, nextCardUid: uid };
 }
 
-/** Picks one card from the draw pile without occupying a hand slot, reshuffling discard if needed. */
 export function takeRandomCardFromDeck(state: BattleState): {
   card: BattleCard;
   deck: BattleCard[];
   discard: BattleCard[];
   nextCardUid: number;
 } | null {
-  const refilled = refillDeck([...state.deck], [...state.discard], state.rng);
+  const refilled = refillDeck([...state.deck], [...state.discard], getBattleRng(state));
   if (!refilled || refilled.deck.length === 0) return null;
   const deck = [...refilled.deck];
-  const rawCard = takeRandomItem(deck, state.rng);
+  const rawCard = takeRandomItem(deck, getBattleRng(state));
   if (!rawCard) return null;
   return {
     card: { ...rawCard, uid: state.nextCardUid },
@@ -69,12 +61,10 @@ export function takeRandomCardFromDeck(state: BattleState): {
   };
 }
 
-/** Convenience wrapper that pulls state.deck/discard/hand/rng from BattleState. */
 export function drawFromState(state: BattleState, amount: number) {
-  return drawCards(state.deck, state.discard, state.hand, amount, state.nextCardUid, state.rng);
+  return drawCards(state.deck, state.discard, state.hand, amount, state.nextCardUid, getBattleRng(state));
 }
 
-/** Applies a draw result's deck/discard/hand/uid back onto BattleState. */
 export function applyDrawResult(state: BattleState, draw: ReturnType<typeof drawCards>): BattleState {
   return {
     ...state,

@@ -1,4 +1,3 @@
-// Dev and run-end battle outcome shortcuts (skip combat, abandon run).
 import type { BattleState } from "@/lib/battle";
 import { setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { BattleControllerContext } from "./battle-context";

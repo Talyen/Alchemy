@@ -1,10 +1,3 @@
-// Unified screen transition primitive: delayed setScreen with optional commit
-// callback, plus the standard navigateTo used by run-loop flows. Both share
-// a single TimerGroup, replacing the separate `navTimer` and
-// `rewardTransitionTimer` that used to live in this layer.
-// Use `navigateTo` for most run-loop screens (animation + deferred commits).
-// Use `transition({ delayMs })` for post-combat victory pacing before rewards.
-// Use `transition({ immediate: true })` for game-over / labyrinth abandon.
 import { useCallback, useRef } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";

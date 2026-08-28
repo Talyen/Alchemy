@@ -1,4 +1,3 @@
-// Combat text aggregation tests for filtering UI-only floating number events.
 import { describe, expect, it } from "vitest";
 
 import {

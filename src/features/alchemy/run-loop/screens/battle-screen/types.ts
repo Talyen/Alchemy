@@ -1,4 +1,3 @@
-// Prop contracts shared by the focused battle screen view modules.
 import type { MouseEvent } from "react";
 
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -65,7 +64,6 @@ export interface BattleActionsProps {
 
 export type RequiredBattleViewProps = Required<BattleScreenViewProps>;
 
-/** Read-only battle view state passed from BattleScreenRoute. */
 export interface BattleScreenData {
   battleState: BattleState;
   displayOverrides: DisplayOverrides;

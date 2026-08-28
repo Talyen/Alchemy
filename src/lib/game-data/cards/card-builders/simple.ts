@@ -181,7 +181,6 @@ type StatusThenEffectCardInput = CardBaseInput & {
   effect: BattleCardEffect;
 };
 
-/** Status gain followed by a second effect (damage, gold, ...). */
 export function statusThenEffectCard({
   id,
   title,
@@ -235,11 +234,6 @@ type EffectsCardInput = CardBaseInput & {
   consume?: boolean;
 };
 
-/**
- * Derive every description line from its effect via the shared formatters.
- * Unsupported effect kinds throw here instead of drifting from shipped text,
- * so bespoke-prose cards keep their hand-authored literals.
- */
 export function effectsCard({
   id,
   title,

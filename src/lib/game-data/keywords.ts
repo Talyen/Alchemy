@@ -1,4 +1,3 @@
-// Keyword definitions (visual config per keyword) and shared card-to-keyword extraction.
 import type { BattleCard, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
 import { collectKeywordsFromBattleEffect } from "./effect-metadata";
 
@@ -205,7 +204,6 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   },
 };
 
-/** Drops keyword ids that have no definition (e.g. from older persisted data). */
 export function filterKeywordsForTalentXP(keywords: KeywordId[]): KeywordId[] {
   return keywords.filter((kw) => kw in keywordDefinitions);
 }

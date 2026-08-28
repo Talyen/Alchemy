@@ -1,7 +1,3 @@
-/**
- * Aims card-transfer VFX at player or enemy from the card's first targeting effect.
- * Exhaustive on BattleCardEffect so new kinds cannot silently default.
- */
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 
 function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {

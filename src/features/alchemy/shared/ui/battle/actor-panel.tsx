@@ -1,5 +1,3 @@
-// Battle actor panels for hero/enemy art, health, status rows, and death effects.
-// Used by BattleScreen through the battle UI barrel.
 import { type ReactNode, type Ref } from "react";
 
 import { Progress } from "@/components/ui/progress";
@@ -69,7 +67,6 @@ interface ArtPanelProps {
   children?: ReactNode;
 }
 
-// Renders one battle actor card with health/status chrome and optional enemy tooltip.
 export function ArtPanel({
   side,
   title,
@@ -320,7 +317,6 @@ function ActorHealthHeader({
   );
 }
 
-// Isolates the status-row markup from the stats-panel layout.
 function ActorStatusRow({
   title,
   statuses,

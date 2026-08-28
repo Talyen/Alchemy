@@ -1,4 +1,3 @@
-// Two-stop keyword colors for ambient plasma backgrounds — mirrors Trinket primary/secondary pairing.
 import {
   characters,
   getCardKeywords,
@@ -77,7 +76,6 @@ export function getPlasmaKeywordsForText(text: string): KeywordId[] {
   return [...keywords];
 }
 
-/** Primary + secondary plasma stops; null when no colors resolve. */
 export function getPlasmaColorPair(keywordIds: readonly KeywordId[]): PlasmaColorPair | null {
   if (keywordIds.length === 0) {
     const primary = WILDCARD_KEYWORD_SHINE_COLORS[0];
@@ -129,7 +127,6 @@ export function getPlasmaColorPairForCompanion(companion: CompanionDefinition): 
   );
 }
 
-/** Stable keyword ordering for plasma (character affinities are already ordered in data). */
 export function getPlasmaKeywordLabel(keywordId: KeywordId): string {
   return keywordDefinitions[keywordId]?.label ?? keywordId;
 }

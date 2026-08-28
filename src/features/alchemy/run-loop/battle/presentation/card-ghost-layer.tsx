@@ -1,4 +1,3 @@
-// High-frequency ghost overlay leaf — subscribes to presentation store without re-rendering BattleScreen.
 import { CardGhostOverlay } from "@/features/alchemy/shared/ui/card-ghost-overlay";
 import { useBattlePresentationStore } from "../battle-presentation-store";
 

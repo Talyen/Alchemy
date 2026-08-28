@@ -1,5 +1,3 @@
-// Pure card-text helpers for highlighted card descriptions.
-// Used by Card UI components and tests to keep corruption highlighting deterministic.
 import type { BattleCard } from "@/lib/game-data";
 
 const CARD_TEXT_CONFIG = {
@@ -11,7 +9,6 @@ export interface CorruptedTextFragment {
   corrupted: boolean;
 }
 
-// Corruption positions are stored as character offsets within a rendered description line.
 export function getCorruptedValueOffsets(
   card: Pick<BattleCard, "corruptedValuePositions"> | undefined,
   lineIndex: number,

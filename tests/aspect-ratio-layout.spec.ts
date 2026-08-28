@@ -135,7 +135,7 @@ test.describe("Ultra HD 3840x2160 (4K) additional checks", slow, () => {
       ).a,
     }));
     expect(fixedUiMetrics.rootFontSize).toBe(16);
-    // Matches BUTTON_WIDTH_MENU in src/features/alchemy/shared/config/button-tokens.ts.
+
     expect(fixedUiMetrics.buttonWidth).toBeCloseTo(
       19.2 * fixedUiMetrics.rootFontSize * fixedUiMetrics.stageTransformScale,
       0,

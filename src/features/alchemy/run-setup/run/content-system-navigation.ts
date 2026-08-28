@@ -1,4 +1,3 @@
-// Content-system Play routing: begin/resume, character select, draft, and difficulty.
 import { logError } from "@/lib/error-logger";
 import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
 import {
@@ -44,7 +43,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     initializeRunForDifficulty,
     getDifficultyModifiers,
     onStartBattle: deps.onStartBattle,
-    // Mirror handleDifficultySelect: the started run supersedes any pending character.
+
     navigateToBattle: () =>
       deps.navigateTo(ROUTE_SCREENS.BATTLE, () =>
         dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, null)),

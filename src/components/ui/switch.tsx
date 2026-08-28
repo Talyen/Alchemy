@@ -1,5 +1,3 @@
-// Pill-style toggle on a native checkbox — same geometry as the previous Radix
-// switch without the dependency. Keyboard/focus semantics come from the input.
 import { type ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 

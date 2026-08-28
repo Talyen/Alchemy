@@ -1,7 +1,3 @@
-/**
- * Hook for managing Labyrinth map navigation, state mutations, and node entry.
- */
-
 import { useCallback, useMemo } from "react";
 import { current } from "immer";
 import {
@@ -72,7 +68,6 @@ function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandle
   NODE_ACTIONS[node.type](node, handlers);
 }
 
-/** Pending node is owned by the session store — no local ref twin that can diverge after teardown. */
 export function useLabyrinthController(): LabyrinthController {
   const resetMap = useCallback(() => {
     dispatchRunSessionCommand((draft) => {

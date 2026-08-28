@@ -1,6 +1,3 @@
-/**
- * Labyrinth traversal: hex-frontier reachability and immutable clears.
- */
 import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeVisualState } from "../types";
 import { areHexesAdjacent } from "./hex-grid";
 

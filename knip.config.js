@@ -22,6 +22,7 @@ export default {
   entry: [
     "src/lib/game-data/index.ts",
     "src/lib/game-constants/index.ts",
+    "src/lib/gear/index.ts",
     "playwright.config.ts",
     "playwright.electron.config.ts",
     "playwright.performance.config.ts",
@@ -47,11 +48,8 @@ export default {
     // Shared active-run orchestration contract enforced by architecture tests; consumed via Pick aliases.
     "src/features/alchemy/shared/stores/run-port-types.ts": ["types"],
     "src/features/alchemy/shell/shell-types.ts": ["types"],
-    // Registry is internal but exported for envelope-key derivation tests; not yet imported as entry.
-    "src/features/alchemy/shared/storage/codec-registry.ts": ["exports"],
-    // Unified persistence seam: codecs and helpers re-exported for compat via codec-registry/persistence-coordinator.
-    "src/features/alchemy/shared/storage/persistence.ts": ["exports", "types"],
-    "src/features/alchemy/shared/storage/persistence-coordinator.ts": ["types"],
+    // Unified persistence seam: single source in persistence.ts (compat shims removed). Duplicate is deprecated alias.
+    "src/features/alchemy/shared/storage/persistence.ts": ["exports", "types", "duplicates"],
     // Orchestration port is consumed via type-level architecture contract; knip cannot trace test-d import when file is ignored.
     "src/features/alchemy/shared/stores/run-session-react-ports.ts": ["exports"],
     // Semantic alias: corruption weight mirrors default for now, intentional duplicate.
@@ -62,11 +60,12 @@ export default {
     "scripts/lib/change-routes.mjs": ["exports"],
     // Shared Vite alias / SSR list — consumed by vite.config.ts and vitest.config.ts sync guard.
     "scripts/lib/vite-aliases.mjs": ["exports"],
-    // Deprecated shims — canonical owners are write-port-run / write-port-session and run-resume-codec.
-    "src/features/alchemy/shared/stores/encode-shops.ts": ["files", "exports", "types"],
-    "src/features/alchemy/shared/stores/write-port-battle.ts": ["exports", "types"],
-    "src/features/alchemy/shared/stores/write-port-profile.ts": ["exports", "types"],
+    // run-resume-codec is the canonical resume boundary (shops/interrupted-flow included).
     "src/features/alchemy/shared/stores/run-resume-codec.ts": ["exports"],
+    // Test-only / external seams: profile slice and talent catalog are external contracts.
+    "src/features/alchemy/shared/stores/profile-store.ts": ["exports"],
+    "src/lib/game-data/talents/talent-pool-definitions.ts": ["exports"],
+    "src/features/alchemy/shared/stores/persistence-codec.ts": ["types"],
   },
   ignore: [
     "tests/environment.d.ts",

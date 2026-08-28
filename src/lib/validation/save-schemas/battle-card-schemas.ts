@@ -1,4 +1,3 @@
-// Zod schemas for persisted battle cards; effect shapes live in @/lib/game-data/effects.
 import { z } from "zod";
 import { BattleCardEffectSchema } from "@/lib/game-data";
 import { pushValidationError } from "./validation-utils";

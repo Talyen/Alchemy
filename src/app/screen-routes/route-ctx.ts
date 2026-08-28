@@ -1,4 +1,3 @@
-// Phase-scoped route contexts — keep the composer bag at App, narrow tables by phase.
 import type { AlchemyRouteCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import type { Screen } from "@/lib/routing";
 
@@ -18,30 +17,18 @@ export type RunLoopCommands = AlchemyRouteCommands["runLoop"];
 export type BattleCommands = AlchemyRouteCommands["battle"];
 export type RunEndCommands = AlchemyRouteCommands["runEnd"];
 
-export interface MetaRouteCtx {
-  routeCommands: Pick<AlchemyRouteCommands, "meta">;
+interface PhaseRouteCtx<K extends keyof AlchemyRouteCommands> {
+  routeCommands: Pick<AlchemyRouteCommands, K>;
   onOpenBattleMenu: RenderAlchemyScreenProps["onOpenBattleMenu"];
 }
 
-export interface RunSetupRouteCtx {
-  routeCommands: Pick<AlchemyRouteCommands, "runSetup">;
-  onOpenBattleMenu: RenderAlchemyScreenProps["onOpenBattleMenu"];
-}
+export type MetaRouteCtx = PhaseRouteCtx<"meta">;
+export type RunSetupRouteCtx = PhaseRouteCtx<"runSetup">;
+export type RunLoopRouteCtx = PhaseRouteCtx<"runLoop">;
+export type RunEndRouteCtx = PhaseRouteCtx<"runEnd">;
 
-export interface RunLoopRouteCtx {
-  routeCommands: Pick<AlchemyRouteCommands, "runLoop">;
-  onOpenBattleMenu: RenderAlchemyScreenProps["onOpenBattleMenu"];
-}
-
-export interface BattleRouteCtx {
-  routeCommands: Pick<AlchemyRouteCommands, "battle">;
-  onOpenBattleMenu: RenderAlchemyScreenProps["onOpenBattleMenu"];
+export interface BattleRouteCtx extends PhaseRouteCtx<"battle"> {
   gameMenuOpen: RenderAlchemyScreenProps["gameMenuOpen"];
-}
-
-export interface RunEndRouteCtx {
-  routeCommands: Pick<AlchemyRouteCommands, "runEnd">;
-  onOpenBattleMenu: RenderAlchemyScreenProps["onOpenBattleMenu"];
 }
 
 export type OptionsRouteCtx = Pick<

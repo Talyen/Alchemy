@@ -1,5 +1,3 @@
-// Card-description context shared by hand rendering and the wish overlay:
-// talents plus the trinket/buff companion damage modifiers.
 import { useMemo } from "react";
 import type { BattleScreenState } from "./types";
 

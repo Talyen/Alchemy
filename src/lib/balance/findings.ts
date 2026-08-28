@@ -1,4 +1,3 @@
-// Ranked, capped balance findings from a full report model. Discussion-only; does not retune content.
 import { enemyById, isEnemyId, talentPool } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import {
@@ -58,7 +57,7 @@ export interface BalanceFinding {
   worstScenario: string;
   causeHint?: string;
   recommendation: string;
-  /** Matchups collapsed into this row (worst class kept). */
+
   clusterSize?: number;
 }
 

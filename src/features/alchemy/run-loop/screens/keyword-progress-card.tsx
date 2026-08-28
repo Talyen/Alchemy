@@ -1,4 +1,3 @@
-// Keyword talent XP progress card shown on run victory and defeat screens.
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {

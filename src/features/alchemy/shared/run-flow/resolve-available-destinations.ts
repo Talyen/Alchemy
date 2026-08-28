@@ -1,4 +1,3 @@
-// Pure destination availability for shell wiring — run-setup / run-loop stay phase-isolated.
 import type { Destination } from "@/lib/routing";
 import { getPreviousDestination } from "./campaign-start";
 import { getRunAvailableDestinations, type DestinationOptionsInput } from "./destination-flow";
@@ -14,7 +13,6 @@ export interface ResolveAvailableDestinationsInput {
   options?: DestinationOptionsInput;
 }
 
-/** Resolve the next-room destination pool from run progress + optional overrides. */
 export function resolveAvailableDestinations(input: ResolveAvailableDestinationsInput): Destination[] {
   const options = input.options ?? {};
   const destinationIndexInAct = options.destinationIndexInAct ?? input.destinationIndexInAct;

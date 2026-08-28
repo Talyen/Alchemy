@@ -1,6 +1,3 @@
-// Short sound-effect playback for cards, combat events, UI, and stingers.
-// SFX use HTMLAudioElement, the same path as music, because Web Audio can unlock
-// and still emit silence while streamed music plays.
 import {
   battleEventSounds,
   cardSounds,
@@ -24,7 +21,7 @@ interface PlaySoundOptions {
   volume?: number;
   delay?: number;
   cooldownMs?: number;
-  /** When false, sound plays through screen transitions (UI feedback, stingers). Default true for combat SFX. */
+
   trackForCleanup?: boolean;
 }
 
@@ -46,14 +43,12 @@ function applyHtmlSfxPlayback(entry: ActiveHtmlSfx) {
   entry.el.volume = htmlSfxVolume(entry.volume);
 }
 
-/** Apply current mute and SFX/master volume to in-flight HTMLAudio SFX. */
 export function syncActiveHtmlSfxPlayback() {
   for (const entry of activeHtmlSfx) {
     applyHtmlSfxPlayback(entry);
   }
 }
 
-/** Test-only: module elements would otherwise leak stub Audio across cases. */
 export function resetHtmlSfxRuntime() {
   activeHtmlSfx.clear();
 }
@@ -63,7 +58,7 @@ export function stopAllSfx() {
   for (const entry of activeHtmlSfx) {
     if (!entry.trackForCleanup) continue;
     entry.el.pause();
-    // Clearing via removeAttribute avoids browsers re-fetching the page URL as media.
+
     entry.el.removeAttribute("src");
     entry.el.load();
     activeHtmlSfx.delete(entry);

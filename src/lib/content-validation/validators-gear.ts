@@ -51,7 +51,7 @@ function validateGearDefinitions(collector: ReturnType<typeof createCollector>):
     const minAffixes = definition.rarity ? GEAR_AFFIX_COUNT[definition.rarity].min : 0;
     if (definition.rarity === "unique") continue;
     if (!definition.rarity) continue;
-    // Same eligibility rule generation uses (aspect + affinity), not a restated copy.
+
     const eligibleAffixes = buildEligibleAffixPool(definition);
     if (eligibleAffixes.length < minAffixes)
       collector.error(

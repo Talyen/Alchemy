@@ -1,5 +1,3 @@
-// End-turn orchestration: enemy turn UI sequencing, haste/skipped/standard dispatch.
-// Pass session + transfer helpers; write-port and session-store are imported directly (no re-bundle).
 import { COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
 import {
   endPlayerTurn,
@@ -68,7 +66,6 @@ export function createTurnOrchestration(
   };
 }
 
-/** Top-level end-turn dispatch. Returns true when an async draw sequence was started (haste), false otherwise. */
 export function resolveEndTurn(
   currentState: BattleState,
   sessionNum: number,

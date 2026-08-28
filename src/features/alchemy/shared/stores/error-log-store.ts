@@ -1,6 +1,3 @@
-// Zustand store for structured error logs with localStorage persistence.
-// Errors survive reload so devs can inspect crashes after the fact.
-// Cap at MAX_ERRORS to prevent unbounded growth.
 import { create } from "zustand";
 import type { ErrorSource, LogEntry } from "@/lib/error-logger";
 import { registerErrorSink } from "@/lib/error-logger";
@@ -97,9 +94,7 @@ function loadPersisted(): LoggedError[] {
 function persist(errors: LoggedError[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(errors));
-  } catch {
-    // storage full or unavailable — silently drop
-  }
+  } catch {}
 }
 
 let nextId = 0;

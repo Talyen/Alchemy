@@ -1,4 +1,3 @@
-// Options screen with display, sound, gameplay, and save-data tabs.
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";

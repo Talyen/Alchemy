@@ -1,4 +1,3 @@
-// Combatant attacker lunge and cast motion. Lives on its own transform node so hit shake can nest inside.
 import { type CSSProperties, type ReactNode, useEffect, useRef } from "react";
 
 import { ATTACK_LUNGE_DURATION_MS, CAST_BRACE_DURATION_MS } from "@/lib/game-constants";

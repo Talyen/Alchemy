@@ -1,12 +1,8 @@
-// Absolute card ghost overlay for draw, discard, activate, and play-travel animations.
-// Used by BattleScreen animation overlays.
 import { cn } from "@/lib/utils";
 
 import type { CardGhost, GhostStyle } from "../types";
 
 export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: () => void }) {
-  // Ghosts use viewport rects captured before hand/battle state changes. CSS variables carry
-  // travel distance, rotation, and scale into keyframes so React does not animate layout.
   return (
     <img
       src={ghost.art}

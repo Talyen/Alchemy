@@ -1,5 +1,3 @@
-// Homestead material loot multipliers by enemy type.
-
 export const HOMESTEAD_LOOT_CONFIG = {
   enemyTypeMultipliers: {
     normal: 1,

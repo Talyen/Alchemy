@@ -185,10 +185,10 @@ describe("resolveStunTrigger", () => {
     };
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
-    expect(result.enemyStatuses.stun).toBe(0); // immunity clears the stack
-    expect(result.enemyCC.stunSkipTurns).toBe(0); // no skip
-    expect(result.enemyHealth).toBe(30); // no gear damage
-    expect(result.playerStatuses.block).toBe(0); // no stun rewards
+    expect(result.enemyStatuses.stun).toBe(0);
+    expect(result.enemyCC.stunSkipTurns).toBe(0);
+    expect(result.enemyHealth).toBe(30);
+    expect(result.playerStatuses.block).toBe(0);
     expect(texts).not.toContainEqual({ target: "player", kind: "status", stat: "block", amount: 3 });
   });
 
@@ -238,7 +238,7 @@ describe("resolveStunTrigger", () => {
     const result = resolveStunTrigger(state, texts);
     expect(result.playerStatuses.forge).toBe(5);
     expect(result.enemyStatuses.burn).toBe(8);
-    // Burn application is silent — the DoT itself floats -N when it ticks.
+
     expect(texts.some((t) => t.target === "enemy" && t.stat === "burn")).toBe(false);
   });
 
@@ -367,7 +367,7 @@ describe("resolveStunTrigger", () => {
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
-    // 3 + 2 caps at maxMana (4), so only 1 mana actually lands.
+
     expect(result.mana).toBe(4);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 1 });
   });

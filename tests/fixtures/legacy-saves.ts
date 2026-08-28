@@ -1,6 +1,3 @@
-// Current-schema save payloads for migration guard and storage tests.
-// CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION maps the launch baseline to a fixture.
-// Labyrinth maps here are seeded so mid-run map-save fixtures stay deterministic.
 import { hexLabyrinthMapFixture } from "./labyrinth-hex-map";
 import { saveEnvelopeFixture } from "./saves";
 
@@ -37,7 +34,6 @@ function emptyCraftingCurrencies() {
   };
 }
 
-/** Current-schema envelope: shared core plus the gear/crafting fields migration guards rely on. */
 function currentSaveEnvelope(overrides: Record<string, unknown> = {}) {
   const activeRun = overrides.activeRun as { runGold?: number } | undefined;
   const derivedGold =
@@ -68,7 +64,6 @@ function currentSaveEnvelope(overrides: Record<string, unknown> = {}) {
   });
 }
 
-/** Full meta-progress v10 save with gear, talents, and a mid-campaign active run. */
 function currentSchemaSave() {
   return currentSaveEnvelope({
     discoveredCardIds: ["slash", "block"],
@@ -122,7 +117,6 @@ function currentSchemaSave() {
   });
 }
 
-// Campaign fixture with a mid-run active campaign at the current schema.
 export function currentSchemaCampaignSave() {
   return currentSaveEnvelope({
     selectedAspectRatio: "auto",
@@ -170,7 +164,6 @@ export function currentSchemaCampaignSave() {
   });
 }
 
-// Labyrinth fixture exercises persisted map hydration for a route in progress.
 export function currentSchemaLabyrinthRunSave() {
   const labyrinthMap = hexLabyrinthMapFixture();
   return currentSaveEnvelope({
@@ -192,7 +185,6 @@ export function currentSchemaLabyrinthRunSave() {
   });
 }
 
-// Corrupted-card fixture preserves intentional card mutations while refreshing library-owned fields.
 export function currentSchemaCorruptedCardRunSave() {
   return currentSaveEnvelope({
     activeRun: {
@@ -224,7 +216,6 @@ export function currentSchemaCorruptedCardRunSave() {
   });
 }
 
-/** Wildwood reward phase with trinket choices at the current schema. */
 function nestedWildwoodDraft(overrides: Record<string, unknown> = {}) {
   return {
     version: 3,
@@ -429,7 +420,6 @@ function currentSchemaWildwoodLeftoverNestedRewardSave() {
   };
 }
 
-/** Mid-combat snapshot with trinket effects and combat flags at the current schema. */
 export function currentSchemaMidCombatTrinketSave() {
   return currentSaveEnvelope({
     discoveredTrinketIds: ["bone-charm", "meteorite"],
@@ -509,12 +499,6 @@ const FIXTURE_TOMBSTONED_ANTIVENOM = {
   id: "antivenom-potion",
 };
 
-/**
- * Active run whose persisted card piles still carry removed-content cards
- * (deck, battle snapshot piles, shop/alchemist inventories, mystery choices).
- * Covers the normalize-active-run-data stripping pass end-to-end through the
- * save schemas, including non-card sibling survival.
- */
 function currentSchemaTombstonedPilesSave() {
   return currentSaveEnvelope({
     finishedRunCharacters: ["knight"],

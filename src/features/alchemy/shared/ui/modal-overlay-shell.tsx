@@ -1,6 +1,3 @@
-// Shared modal backdrop: fade presence, escape-stack dismissal, dim layer, and
-// optional backdrop-click dismiss. Consumers render their panel as children and
-// keep panel-level styling (including stopPropagation when backdrop click is on).
 import type { ReactNode } from "react";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { cn } from "@/lib/utils";
@@ -10,7 +7,7 @@ import { useModalEscapeDismiss } from "./use-modal-escape-dismiss";
 interface ModalOverlayShellProps {
   open: boolean;
   escapeId: string;
-  /** Escape dismissal target; also the backdrop-click target when dismissOnBackdrop. */
+
   onClose: () => void;
   dismissOnEscape?: boolean;
   dismissOnBackdrop?: boolean;
@@ -18,10 +15,10 @@ interface ModalOverlayShellProps {
   position?: "fixed" | "absolute";
   zIndex?: number;
   dim?: boolean;
-  /** Extra backdrop classes: centering, padding, named motion classes, pointer-events overrides. */
+
   className?: string;
   testId?: string;
-  /** False unmounts immediately even mid-fade (content-driven gates). */
+
   mount?: boolean;
   children: ReactNode;
 }

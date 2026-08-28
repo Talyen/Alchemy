@@ -28,7 +28,7 @@ describe("computeBaseDamage — archery tag", () => {
       effects: [makeEffect("physical", 20)],
     });
     const result = dealDamage(state, card);
-    // Initial hit = 20 damage, extra hit = Math.round(20 / 2) = 10 damage. Total = 30 damage dealt.
+
     expect(result.enemyHealth).toBe(70);
   });
 

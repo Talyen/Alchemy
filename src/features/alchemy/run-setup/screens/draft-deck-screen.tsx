@@ -18,17 +18,9 @@ import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
-function DraftedCardItem({
-  card,
-  index,
-  onHoverChange,
-}: {
-  card: BattleCard;
-  index: number;
-  onHoverChange: (hovered: boolean) => void;
-}) {
+function DraftedCardItem({ card, onHoverChange }: { card: BattleCard; onHoverChange: (hovered: boolean) => void }) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    "drafted-" + String(index),
+    "drafted-" + card.id,
     card.id,
   );
 
@@ -91,9 +83,8 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
           <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
             {draftedCards.map((card, index) => (
               <DraftedCardItem
-                key={"drafted-" + String(index) + "-" + card.id}
+                key={"drafted-" + card.id + "-" + String(card.uid ?? index)}
                 card={card}
-                index={index}
                 onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
               />
             ))}

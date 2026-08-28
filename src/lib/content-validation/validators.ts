@@ -144,11 +144,6 @@ export function validateCompanions(collector: ReturnType<typeof createCollector>
   }
 }
 
-/**
- * Trinket combat parity: every authored numeric effect must surface as a
- * standalone number in the prose ("13" cannot satisfy a value of 3), and a row
- * with no effects is an inert trinket. Both are authored-content bugs.
- */
 export function collectTrinketParityIssues(trinket: {
   id: string;
   descriptionLines: string[];
@@ -160,8 +155,7 @@ export function collectTrinketParityIssues(trinket: {
   const issues: string[] = [];
   for (const [key, value] of effectEntries) {
     if (typeof value !== "number" || value === 0) continue;
-    // Digit-boundary match so "13" or "1.5" cannot satisfy a value of 3 or 1,
-    // while sentence punctuation around the number still counts.
+
     const pattern = new RegExp(`(?<![\\d.])${String(value).replace(".", "\\.")}(?!\\.?\\d)`);
     if (!pattern.test(prose)) issues.push(`Effect ${key} value ${value} does not appear in description`);
   }
@@ -193,12 +187,6 @@ export function validateTrinkets(collector: ReturnType<typeof createCollector>):
   }
 }
 
-/**
- * The talent grid is stacked rows of [1, 2, 3, 4] in pool order, so every
- * keyword pool must hold exactly that many entries (placeholders included) or
- * rows misalign and later nodes become unreachable. Duplicate ids would also
- * silently break unlock lookups.
- */
 export function validateTalents(collector: ReturnType<typeof createCollector>): void {
   addDuplicateIssues(
     talentPool.map((talent) => talent.id),
@@ -209,8 +197,7 @@ export function validateTalents(collector: ReturnType<typeof createCollector>): 
 
   const knownKeywords = new Set(Object.keys(keywordDefinitions));
   const expectedPerKeyword = TALENT_ROW_SIZES.reduce((sum, size) => sum + size, 0);
-  // Only tree-visible keywords owe the full 1/2/3/4 grid; status-only keywords
-  // (e.g. phoenixFeather) never appear in the pool.
+
   const treeKeywords = new Set(getTalentTreeKeywordIds());
   const countByKeyword = new Map<string, number>();
   for (const talent of talentPool) {

@@ -7,4 +7,4 @@ Pass when:
 - `unit-shop` green
 - `lint:boundaries` green
 - `alchemy/no-run-earned-add-materials` not regressed
-  Run: `npm run verify:changed -- src/features/alchemy/run-loop/shop`
+  Run: `npm run verify:changed -- src/features/alchemy/run-loop/shop/trinket-shop-commands.ts` (or `src/features/alchemy/run-loop/shop/**` — bare dir without `/**` does not route)

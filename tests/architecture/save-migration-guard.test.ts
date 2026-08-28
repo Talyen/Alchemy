@@ -128,7 +128,6 @@ describe("save migration guard", () => {
     expect(run).not.toBeNull();
     expect(run?.runDeck.map((card) => card.id)).toEqual(["slash"]);
 
-    // Shop/alchemist/mystery piles lose only the dead cards; sibling fields survive.
     expect(run?.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
     expect(run?.shopState?.refreshesLeft).toBe(1);
     expect(run?.shopState?.purchasedSlotKeys).toEqual(["slash-0"]);
@@ -137,14 +136,12 @@ describe("save migration guard", () => {
     expect(run?.alchemistState?.purchasedSlotKeys).toEqual(["slash-0"]);
     expect(run?.mysteryVisit).toBeNull();
 
-    // Mid-combat snapshot stays resumable: live deck, filtered wish queue.
     const battle = run?.activeCombat?.battleState;
     expect(battle?.deck.map((card) => card.id)).toEqual(["slash"]);
     expect(battle?.discard).toEqual([]);
     expect(battle?.wishQueue).toEqual([[{ ...battle?.deck[0] }]]);
     expect(battle?.mana).toBe(2);
 
-    // Missing runMetaMaxHealth shims from runMaxHealth so combat HP bonuses survive.
     expect(run?.runMetaMaxHealth).toBe(run?.runMaxHealth);
   });
 

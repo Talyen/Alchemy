@@ -27,8 +27,10 @@ function mixUint32(value: number): number {
 }
 
 export function createRunRngState(rng: () => number = Math.random): RunRngState {
+  const raw = rng();
+  const seed = Number.isFinite(raw) ? toUint32(Math.trunc(raw * UINT32_RANGE)) : 0;
   return {
-    seed: toUint32(Math.trunc(rng() * UINT32_RANGE)),
+    seed,
     counters: {
       rewards: 0,
       destinations: 0,
@@ -40,12 +42,19 @@ export function createRunRngState(rng: () => number = Math.random): RunRngState 
 }
 
 export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { value: number; nextCounter: number } {
-  const counter = state.counters[stream];
+  const counter = state.counters[stream] ?? 0;
+  if (!(stream in STREAM_SALTS)) {
+    if (import.meta.env.DEV) throw new Error(`Unknown run RNG stream: ${String(stream)}`);
+    return { value: 0, nextCounter: counter + 1 };
+  }
   const value = mixUint32(state.seed ^ STREAM_SALTS[stream] ^ Math.imul(counter + 1, 0x85eb_ca6b)) / UINT32_RANGE;
   return { value, nextCounter: counter + 1 };
 }
 
-/** Pure `() => number` over one named stream. No store I/O — for tests, the simulator, and local draws. */
+export function rngInt(rng: () => number, n: number): number {
+  return Math.floor(rng() * n);
+}
+
 export function createRunStreamRng(seed: number, stream: RunRngStream = "world", startCounter = 0): () => number {
   const state: RunRngState = {
     seed: toUint32(seed),

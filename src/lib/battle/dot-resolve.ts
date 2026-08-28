@@ -1,7 +1,3 @@
-/**
- * Shared enemy DoT tail: one health transition for ticks and detonates so
- * kill payouts, armor decay, and Divine Aegis cannot drift across sources.
- */
 import { clampHealth, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 import { payKillPayouts } from "./kill-payouts";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
@@ -17,7 +13,6 @@ export interface EnemyDotPulse {
   nextStacks: number;
 }
 
-/** Clamp health once, pay lethality, apply stack updates, riders, armor decay, trait threshold. */
 export function applyEnemyDotDamage(
   state: BattleState,
   pulses: readonly EnemyDotPulse[],
@@ -30,8 +25,7 @@ export function applyEnemyDotDamage(
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
   };
-  // Paid before stack decay so a lethal burn tick still counts as "defeated
-  // while burning" for healOnBurnEnemyDefeated.
+
   nextState = payKillPayouts(nextState, previousHealth > 0, combatTexts);
   for (const pulse of pulses) {
     nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
@@ -52,10 +46,6 @@ export function dealEnemyDotTick(
   return applyEnemyDotDamage(state, [{ status, finalDamage, nextStacks }], combatTexts, applyRiders);
 }
 
-/**
- * Burst remaining bleed/poison in one health transition (physical talent / archery gear).
- * Combat text and bleed-leech payout live here so both detonate callers stay aligned.
- */
 export function detonateEnemyStatuses(
   state: BattleState,
   statuses: ReadonlyArray<"bleed" | "poison">,

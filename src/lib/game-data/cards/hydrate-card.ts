@@ -1,22 +1,30 @@
-// Rehydrates a saved card against the library entry. Re-exported by ../cards.
 import type { BattleCard } from "../types";
 import { cardById } from "../cards";
 
 export type SavedCard = BattleCard;
+
+const warnedHydrateIds = new Set<string>();
 
 function hydrateDescriptionLines(saved: SavedCard, libraryCard: BattleCard): string[] {
   const savedLines =
     Array.isArray(saved.descriptionLines) && saved.descriptionLines.length > 0 ? saved.descriptionLines : null;
   const libraryLines = libraryCard.descriptionLines;
   if (!savedLines) return [...libraryLines];
-  // Corrupted cards carry intentional mutated lines — keep them.
+
   if (saved.corrupted) return [...savedLines];
-  // If effects were stripped or count mismatched, saved prose is ghost text — fall back to library.
+
   const savedEffects = Array.isArray(saved.effects) ? saved.effects : [];
   const libraryEffects = libraryCard.effects;
-  if (libraryEffects.length > 0 && savedEffects.length === 0) return [...libraryLines];
-  if (savedEffects.length !== libraryEffects.length) return [...libraryLines];
-  // Validate lines are strings; otherwise fallback.
+  if (savedEffects.length !== libraryEffects.length) {
+    if (import.meta.env.DEV && !warnedHydrateIds.has(saved.id)) {
+      warnedHydrateIds.add(saved.id);
+      console.warn(
+        `[hydrateCard] descriptionLines fallback for ${saved.id}: saved effects ${savedEffects.length} vs library ${libraryEffects.length}`,
+      );
+    }
+    return [...libraryLines];
+  }
+
   if (!savedLines.every((line) => typeof line === "string")) return [...libraryLines];
   return [...savedLines];
 }
@@ -40,7 +48,6 @@ function pickOptionalField<T>(saved: SavedCard, key: keyof SavedCard): T | undef
 export function hydrateCard(savedCard: SavedCard): BattleCard {
   const libraryCard = cardById[savedCard.id];
   if (!libraryCard) {
-    // E2E / custom cards with no library entry — keep the saved shape as-is.
     return savedCard;
   }
 

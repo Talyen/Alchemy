@@ -1,6 +1,3 @@
-// Core card selection helper using keyword deck affinity and tie-breaking randomness.
-// Fits within src/lib/ boundaries (no imports from features/).
-// Gameplay callers must supply a seeded RNG (run stream); Math.random is not used for rewards.
 import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "../game-constants";
 import { pickRandom, shuffle } from "../utils";
 import { getCardKeywords } from "./keywords";

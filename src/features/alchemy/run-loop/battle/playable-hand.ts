@@ -25,7 +25,6 @@ export function getHandCardKey(card: BattleCard): string {
   return `${card.id}-${card.uid}`;
 }
 
-/** Immutable hidden-hand membership. Identity changes iff the key set changes. */
 export type HiddenHandCardKeys = readonly string[];
 
 export const EMPTY_HIDDEN_HAND_KEYS: HiddenHandCardKeys = Object.freeze([]);

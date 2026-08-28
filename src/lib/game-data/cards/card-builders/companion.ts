@@ -9,16 +9,15 @@ type SummonCompanionCardInput = CardBaseInput & {
 
 export function summonCompanionCard({ id, title, art, companionId, cost = 1 }: SummonCompanionCardInput): BattleCard {
   const turnEffects = companionLibrary[companionId].turnStartEffects;
-  if (turnEffects.length !== 1) {
-    throw new Error(
-      `Companion ${companionId} must have exactly one turn-start effect for summon card ${id} (got ${turnEffects.length})`,
-    );
+  if (turnEffects.length === 0) {
+    throw new Error(`Companion ${companionId} must have at least one turn-start effect for summon card ${id}`);
   }
-  const turnEffect = turnEffects[0]!;
+  const descriptionLines = turnEffects.map((effect) => expectedCompanionTurnLine(effect));
+  descriptionLines.push("Companion");
   return {
     id,
     title: deriveTitle(id, title),
-    descriptionLines: [expectedCompanionTurnLine(turnEffect), "Companion"],
+    descriptionLines,
     art,
     cost,
     consume: true,

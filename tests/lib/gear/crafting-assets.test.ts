@@ -8,7 +8,7 @@ import { CRAFTING_CURRENCY_LIST } from "@/lib/gear";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const craftingDir = path.join(rootDir, "Raw Assets", "Crafting");
 const optimizedDir = path.join(rootDir, "src", "assets", "optimized");
-// CI sparse-checkouts omit Raw Assets except in the assets drift job.
+
 const rawCraftingPresent = existsSync(craftingDir);
 
 function slugify(name: string): string {

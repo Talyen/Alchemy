@@ -1,14 +1,11 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-import { syncGeneratedModule } from "./lib/generated-module.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { kebabToCamel } from "./lib/kebab-to-camel.mjs";
+import { getOptimizedManifestPath, resolveRootDir, runSyncGenerated } from "./lib/sync-generated-helpers.mjs";
 
-const currentFile = fileURLToPath(import.meta.url);
-const rootDir = path.resolve(path.dirname(currentFile), "..");
-const optimizedDir = path.join(rootDir, "src", "assets", "optimized");
-const manifestPath = path.join(optimizedDir, ".asset-hashes.json");
+const rootDir = resolveRootDir(import.meta.url);
+const manifestPath = getOptimizedManifestPath(rootDir);
 const outputFile = path.join(rootDir, "src", "lib", "game-data", "assets.generated.ts");
 
 function buildAssetsContent(manifest) {
@@ -29,19 +26,15 @@ function buildAssetsContent(manifest) {
 }
 
 export async function syncAssets({ check = false } = {}) {
-  const { files, wrote } = await syncGeneratedModule({
+  await runSyncGenerated({
     manifestPath,
     outputFile,
+    rootDir,
     check,
     build: buildAssetsContent,
+    onCount: (result) => result.files.length,
+    label: "Asset exports",
   });
-  console.log(
-    check
-      ? `Asset exports are current (${files.length} entries)`
-      : wrote
-        ? `Wrote ${files.length} asset exports to ${path.relative(rootDir, outputFile)}`
-        : `Asset exports unchanged (${files.length} entries)`,
-  );
 }
 
 if (isMainModule(import.meta.url)) {

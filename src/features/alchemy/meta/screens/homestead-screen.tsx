@@ -1,7 +1,3 @@
-// Homestead screen — persistent progression hub with free-order unlocking.
-// All nodes show in a 3-column grid; each uncompleted node can be built if
-// materials are sufficient. Completed nodes are dimmed with a checkmark.
-
 import { useState, useMemo } from "react";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
 import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/data";

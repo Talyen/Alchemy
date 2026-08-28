@@ -1,6 +1,3 @@
-// Deterministic Slice sparks: cut-face spray plus silhouette/cut-edge dissolve sparks.
-// Port of Trinket CombatantSliceParticles, without SwiftUI Canvas views.
-
 import {
   SLICE_CARD_FRACTION_RANGE,
   sliceCrackPointAtFraction,

@@ -15,10 +15,9 @@ import { LIB_NO_FEATURES, META_NO_RUN_LOOP, RUN_LOOP_NO_RUN_SETUP, RUN_SETUP_NO_
 function toTargetPath(groups) {
   const alias = groups.find((group) => group.startsWith("@/"));
   if (alias) return `^src/${alias.replace(/^@\//, "").replace(/\/\*\*$/, "")}/`;
-  const deep = groups
-    .at(-1)
-    .replace(/^\*\*\//, "")
-    .replace(/\/\*\*$/, "");
+  const deepGroup = groups.find((group) => group.startsWith("**/")) ?? groups.at(-1);
+  if (!deepGroup) return "^src/features/alchemy/";
+  const deep = deepGroup.replace(/^\*\*\//, "").replace(/\/\*\*$/, "");
   return `^src/features/alchemy/${deep}/`;
 }
 

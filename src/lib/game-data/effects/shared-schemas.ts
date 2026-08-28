@@ -1,4 +1,3 @@
-// Shared Zod enums for battle card effect schemas.
 import { z } from "zod";
 import { companionLibrary } from "../companions";
 import { DAMAGE_TYPES, type CompanionId } from "../types";
@@ -8,3 +7,5 @@ export const EnemyStatusIdSchema = z.enum(["burn", "poison", "bleed", "freeze", 
 
 const COMPANION_IDS = Object.keys(companionLibrary) as [CompanionId, ...CompanionId[]];
 export const CompanionIdSchema = z.enum(COMPANION_IDS);
+
+export const AmountSchema = z.number().int().min(0).max(999);

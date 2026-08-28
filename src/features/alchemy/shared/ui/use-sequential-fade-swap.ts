@@ -1,8 +1,3 @@
-// Sequential swap variant of the fade primitive in `fade-presence.ts`.
-// `useFadePresence` is the boolean open/close primitive; this hook builds on
-// the same phase + resolveGameDelay(MOTION_FADE_MS) pattern for keyed swaps.
-// Wrapped by `FadeSlot` (`fade-slot.tsx`). See also `portaled-tooltip.tsx:64-70`
-// for the third inline fade implementation.
 import { useEffect, useRef, useState } from "react";
 
 import { resolveGameDelay } from "@/lib/animation/game-timer";

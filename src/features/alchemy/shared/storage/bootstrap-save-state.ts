@@ -1,9 +1,8 @@
-// Boots persisted save state after optional Steam init so desktop cloud sync can run.
 import { initializeSteam, isDesktop } from "@/lib/platform";
 import { createPlatformSaveBackend } from "@/lib/platform-save-backend";
 import { configureSaveBackend, loadAlchemySaveState, type SaveLoadState } from "./io";
 import type { SaveData } from "./types";
-import { hydrateAlchemyPersistenceFields } from "./persistence-coordinator";
+import { hydrateAlchemyPersistenceFields } from "./persistence";
 
 export async function bootstrapAlchemySaveState(): Promise<SaveLoadState> {
   const steam = isDesktop() ? await initializeSteam() : { playerName: null, cloudSyncEnabled: false };

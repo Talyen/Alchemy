@@ -1,4 +1,3 @@
-// Steam rich-presence labels derived from run phase and screen (no platform imports).
 import type { CharacterId } from "@/lib/game-data";
 import type { Screen } from "./screens";
 import { ROUTE_SCREENS } from "./screens";

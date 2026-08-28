@@ -1,4 +1,3 @@
-// Deterministic RNG helpers for E2E destination forcing and seeded flows.
 import type { Page } from "@playwright/test";
 import { LCG_INCREMENT, LCG_MULTIPLIER } from "../fixtures/rng";
 

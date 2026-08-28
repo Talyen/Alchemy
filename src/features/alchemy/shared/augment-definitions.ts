@@ -1,7 +1,3 @@
-// Augment definitions for status effects that are not keywords but borrow visuals
-// (icon, color) from the keyword system for thematic consistency. Covers enemy augments
-// (burnBonus/freezeBonus), armed player buffs (Shadowstep/Predator's Focus/Poison Dagger),
-// delayed repeat-over-turns pulses, and Hemorrhage's on-attack bleed.
 import type { LucideIcon } from "lucide-react";
 import { Copy, Focus, Repeat, ShieldCheck } from "lucide-react";
 import { keywordIcons } from "./config";
@@ -15,7 +11,6 @@ export interface AugmentDefinition {
   colorClass: string;
 }
 
-/** Armed one-shot player buffs keyed by their CombatFlags field. */
 export type ArmedFlagChipId =
   | "playNextCardTwice"
   | "nextHitCrit"
@@ -25,7 +20,6 @@ export type ArmedFlagChipId =
   | "nextArcheryCardFree"
   | "nextNatureCardFree";
 
-/** Enemy-side chips for purely-offensive repeat-over-turns pulses, grouped by damage type. */
 export type PendingPulseChipId = `pending-${DamageType}`;
 
 export type AugmentId =

@@ -1,4 +1,3 @@
-// Save validation utilities: error collection stack and string dedup preprocessors.
 import { z } from "zod";
 
 export interface ValidationError {

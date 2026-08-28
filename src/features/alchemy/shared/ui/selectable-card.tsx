@@ -1,5 +1,3 @@
-// Selectable BattleCard tile — one owner for pick-a-card chrome (glow + selected
-// ring) across draft, reward, shop, corruption, mystery, and removal flows.
 import { type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
@@ -21,28 +19,21 @@ interface SelectableCardBaseProps {
   card: BattleCard;
   isSelected: boolean;
   onSelect: () => void;
-  /** Tile family — controls default width; "corruption" swaps in the danger ring. */
+
   chrome?: SelectableCardChrome;
   widthClass?: string;
-  /**
-   * Store-backed hover/shimmer identity (e.g. "reward", "draft-choice-0").
-   * Omit it for quiet tiles — shop-style flows never shimmer and let the button
-   * track its own hover.
-   */
+
   interactionKey?: string;
-  /** Optional side-effect fired on hover entry/exit without taking over hover control. */
+
   onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
 export type SelectableCardProps = SelectableCardBaseProps &
   (
     | { isHovered?: undefined; onHoverStart?: undefined; onHoverEnd?: undefined }
-    // Controlled callers (mystery deck pickers) bind the full hover trio so a
-    // selection can keep its detail popup open.
     | { isHovered: boolean; onHoverStart: () => void; onHoverEnd: () => void }
   );
 
-/** Resolved BattleCardButton hover binding — all three props, or absent. */
 interface HoverBinding {
   hovered: boolean;
   onHoverStart: () => void;
@@ -129,8 +120,7 @@ function SelectableCardSurface({
     shimmerActive,
     shimmerToken,
   };
-  // BattleCardButton's hover contract is a discriminated union (all three props
-  // or none), so controlled and uncontrolled callers render as separate branches.
+
   if (hover) {
     return (
       <BattleCardButton

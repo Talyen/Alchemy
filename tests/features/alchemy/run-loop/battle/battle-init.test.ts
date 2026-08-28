@@ -48,7 +48,7 @@ describe("createBattleInit", () => {
     const expected = mergeIntoManifest(computeTalentEffects({}), testEffects);
     expect(battle.talentEffects.flatPhysicalDamage).toBe(expected.flatPhysicalDamage);
     expect(battle.currentEnemy.enemyType).toBe("normal");
-    // createBattleInit must wire a resting rng callback (draws happen via withDraftWorldBattleRng).
+
     expect(typeof battle.rng).toBe("function");
     expect(() => battle.rng()).toThrow(/withDraftWorldBattleRng/);
   });

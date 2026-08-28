@@ -1,4 +1,3 @@
-// Shared hand draw lifecycle: detect new cards, hide until dealt, animate, cleanup.
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
@@ -19,7 +18,6 @@ function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): Battl
   return newHand.filter((c) => !oldUidSet.has(c.uid));
 }
 
-/** Hide newly drawn cards in the same tick as a store commit so they do not paint before the deal animation. */
 export function hideNewlyDrawnHandCards(
   oldHand: BattleCard[],
   newHand: BattleCard[],
@@ -67,7 +65,7 @@ export async function runHandDrawSequence(
       deps.setTransferInProgress(false);
       deps.setHiddenHandCardKeys((current) => current.filter((key) => !hiddenDrawKeys.has(key)));
     };
-    // Always clear opacity-0 hand cards even if the battle session ended mid-draw.
+
     if (deps.isSessionActive(session)) {
       deps.runIfSessionActive(session, clearHidden);
     } else {

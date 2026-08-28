@@ -1,6 +1,3 @@
-/**
- * Battle state factory: wires defaults, enemy setup, and createBattleState.
- */
 import {
   companionLibrary,
   type BattleCard,
@@ -133,7 +130,6 @@ function buildInitialBattleState(
   };
 }
 
-/** Resolve the normal opening draw after the empty-hand battle start state is committed. */
 export function drawOpeningHand(state: BattleState): BattleState {
   return applyDrawResult(
     state,
@@ -148,7 +144,6 @@ export function drawOpeningHand(state: BattleState): BattleState {
   );
 }
 
-/** Create the durable battle-start snapshot shown before the opening hand is dealt. */
 export function createBattleStartState(options: CreateBattleStateOptions): BattleState {
   const {
     runDeck,
@@ -170,7 +165,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
   }
 
   const trinketEffects = computeTrinketManifest(battleBoons);
-  // placeholderRng always succeeds on percent rolls — forbid silent use in production builds.
+
   if (!optionsRng && import.meta.env.PROD) {
     throw new Error("createBattleStartState requires rng in production; placeholderRng is UI-only.");
   }
@@ -230,7 +225,6 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
   return dealPlayerTypedHit(state, "freeze", startFreeze, []);
 }
 
-/** Create an immediately playable battle state for engine, test, and simulator consumers. */
 export function createBattleState(options: CreateBattleStateOptions): BattleState {
   return drawOpeningHand(createBattleStartState(options));
 }

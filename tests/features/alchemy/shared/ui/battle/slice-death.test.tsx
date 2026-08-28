@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import "../../../../../helpers/mock-audio";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

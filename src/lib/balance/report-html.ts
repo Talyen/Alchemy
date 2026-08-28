@@ -1,4 +1,3 @@
-// HTML exporter for the balance report model.
 import { talentPool } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import type { BalanceReportModel, PairedTierRow } from "./report-model";

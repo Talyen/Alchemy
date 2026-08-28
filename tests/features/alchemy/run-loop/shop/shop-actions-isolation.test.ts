@@ -56,7 +56,7 @@ const shops = [
     buyPrice: SHOP_CARD_PRICE as number | null,
     refreshPrice: SHOP_REFRESH_PRICE,
     offeringIds: () => readRunSession().shopState.cards.map((card) => card.id),
-    // Cards/trinkets use catalog ids; equipment instanceIds are UUIDs outside the shops stream.
+
     replayIds: () => readRunSession().shopState.cards.map((card) => card.id),
     restockDedup: true,
     initialize: (actions: Actions) => actions.merchant.initialize(),

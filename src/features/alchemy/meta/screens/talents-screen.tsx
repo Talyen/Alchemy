@@ -1,4 +1,3 @@
-// Talent screen — spend XP to unlock keyword-specific talents.
 import { useMemo, useState } from "react";
 import { RotateCcw } from "lucide-react";
 
@@ -25,9 +24,6 @@ import { FadeSlot } from "../../shared/ui/fade-slot";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
 
-// 4×10.5rem talent rows + 3×1rem tree gaps + 1rem pane gap + 4rem Back (h-16).
-// Shared by overview and node so FadeSlot identity swaps do not change shell height
-// (PageLayout centers the shell; a taller node pane would shift the whole screen up).
 const TALENT_PANE_CLASS = "flex min-h-[50rem] w-full flex-col items-center";
 
 export function TalentsScreen({

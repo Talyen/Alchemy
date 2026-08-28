@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { installDesktopApi } from "../helpers/desktop-save-mock-helper";
 import { createPlatformSaveBackend } from "@/lib/platform-save-backend";

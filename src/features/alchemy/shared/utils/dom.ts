@@ -1,5 +1,3 @@
-// DOM helpers for card rect capture and tilt effects.
-// Used by card UI and ghost animation code where viewport coordinates matter.
 import type { MouseEvent } from "react";
 import type { CardRect } from "../types";
 
@@ -18,8 +16,6 @@ export function getCardRect(element: DOMRect): CardRect {
 }
 
 export function setTiltFromEvent(event: MouseEvent<HTMLElement>) {
-  // Tilt updates are batched through requestAnimationFrame so rapid mousemove events do
-  // not write CSS variables more often than the browser can paint.
   const target = event.currentTarget;
   const frame = tiltFrames.get(target) ?? { clientX: event.clientX, clientY: event.clientY, rafId: null };
   frame.clientX = event.clientX;
@@ -29,8 +25,6 @@ export function setTiltFromEvent(event: MouseEvent<HTMLElement>) {
 
   if (frame.rafId !== null) return;
 
-  // Batch tilt writes into the next animation frame so hover movement never forces
-  // layout and style work multiple times in the same frame.
   frame.rafId = requestAnimationFrame(() => {
     const latest = tiltFrames.get(target);
     if (!latest) return;

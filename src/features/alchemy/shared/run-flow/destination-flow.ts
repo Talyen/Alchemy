@@ -1,4 +1,3 @@
-// Destination availability and sampling helpers for run navigation.
 import {
   DEFAULT_DESTINATION_WEIGHT,
   CORRUPTION_DESTINATION_WEIGHT,
@@ -64,8 +63,6 @@ export function createEmptyDestinationOfferState(): DestinationOfferState {
   return { lastOfferedDestinations: [], roundsSinceOffered: {} };
 }
 
-// Boss routing is injected by act progress; normal filtering stays in config so Health/gold
-// gates can be reused without knowing run progression.
 export function getRunAvailableDestinations({
   destinationIndexInAct,
   currentHealth,
@@ -182,7 +179,6 @@ export function sampleDestinationChoices(
   return { choices, offerState: advanceDestinationOfferState(offerState, eligibleDestinations, choices) };
 }
 
-/** Create the initial destination picker state from explicit, command-owned inputs. */
 export function createInitialDestinationResult({
   availableDestinations,
   offerState,
@@ -196,7 +192,6 @@ export function createInitialDestinationResult({
   };
 }
 
-/** Campaign resume keeps prior choices; advancing samples fresh destinations for the next room. */
 export function restoreOrCreateDestinationRewardState(
   prev: RewardState,
   options: {
@@ -231,7 +226,6 @@ export function withSelectedBossForDestinations(
   return { ...rewardState, selectedBossId: null };
 }
 
-/** Build a destination-picker reward state, selecting boss id when the only choice is boss combat. */
 export function createDestinationRewardState(destinations: Destination[], bossEnemyId?: string | null): RewardState {
   return withSelectedBossForDestinations(destinations, createEmptyRewardState(destinations), bossEnemyId);
 }

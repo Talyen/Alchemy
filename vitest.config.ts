@@ -15,9 +15,12 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    exclude: ["tests/performance/**", "tests/balance/**"],
+    environment: "jsdom",
     setupFiles: ["tests/setup.ts"],
     restoreMocks: true,
     testTimeout: 5_000,
+    slowTestThreshold: 2_000,
     pool: "threads",
     deps: {
       optimizer: {
@@ -32,6 +35,7 @@ export default defineConfig({
       exclude: [
         "src/**/types.ts",
         "src/**/assets.ts",
+        "src/features/alchemy/shared/ui/**",
         "src/features/alchemy/meta/screens/**",
         "src/features/alchemy/run-setup/screens/**",
         "src/features/alchemy/run-loop/screens/**",

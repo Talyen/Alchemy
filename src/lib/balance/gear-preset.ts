@@ -1,4 +1,3 @@
-// Typical-loadout gear rolls for balance sims: affinity-matching bases, seeded affixes.
 import { characters, type CharacterId } from "@/lib/game-data";
 import {
   generateGearInstanceForBaseItem,

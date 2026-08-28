@@ -9,7 +9,6 @@ import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecyc
 import { readRunInitialized } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
-/** Dev-only: `?wipeLocalSave=1` clears browser/desktop save before bootstrap, then strips the query. */
 async function maybeWipeLocalSaveFromQuery(): Promise<void> {
   if (!isAlchemyDevBuild() || typeof window === "undefined") return;
   const url = new URL(window.location.href);
@@ -21,10 +20,6 @@ async function maybeWipeLocalSaveFromQuery(): Promise<void> {
   window.history.replaceState({}, "", next);
 }
 
-/**
- * Bootstrap persisted data and publish readiness only after every owning store,
- * including the active run aggregate, has been hydrated.
- */
 export function useAlchemyBootstrap(): SaveLoadState | null {
   const [bootstrapResult, setBootstrapResult] = useState<SaveLoadState | null>(null);
 

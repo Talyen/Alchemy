@@ -1,4 +1,3 @@
-// Seeded campaign/labyrinth Wildcard starter-draft helpers. Wildwood keeps its own draft state.
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { selectRewardCards, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
@@ -19,7 +18,6 @@ function isAwaitingStarterDraftConfirm(
   return starterDraftChoices !== null && runDeckLength >= DRAFT_ROUNDS;
 }
 
-/** Where Play should return during an in-progress Wildcard starter draft. */
 export function wildcardStarterResumeTarget(input: {
   characterId: CharacterId;
   contentSystemType: ContentSystemId;

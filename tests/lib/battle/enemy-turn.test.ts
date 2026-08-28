@@ -84,8 +84,7 @@ describe("endPlayerTurn - haste branch", () => {
         enemyMitigation: defaultEnemyMitigation({ block: 8 }),
       }),
     );
-    // Extra player turn ends into a real enemy phase: enemy block halves at phase
-    // start, player block halves after absorbing the enemy's attack window.
+
     const second = endPlayerTurn(first.state);
     expect(second.enemyPerformedAttack).toBe(true);
     expect(second.state.enemyMitigation.block).toBe(4);

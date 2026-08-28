@@ -1,5 +1,3 @@
-// localStorage save injection for fast E2E bootstrap.
-// Desktop (Electron) boots from the native save bridge — write there and reload instead.
 import { expect, type Page } from "@playwright/test";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
@@ -9,7 +7,6 @@ import type { InjectedBattleState } from "../fixtures/battle-state";
 import { hexLabyrinthMapFixture } from "../fixtures/labyrinth-hex-map";
 import { makeHighDamageCard } from "./cards";
 
-/** Persisted destination claim surface for E2E / performance save injection. */
 export function destinationInterruptedFlow(destinations: string[]) {
   return {
     kind: "destination" as const,
@@ -43,7 +40,6 @@ export async function injectDestinationAtIndex(
   });
 }
 
-/** Resume on the mystery summary so Continue is the only remaining UI path. */
 export async function injectMysterySummaryVisit(page: Page) {
   await injectSaveState(page, {
     runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),
@@ -62,7 +58,6 @@ export async function injectMysterySummaryVisit(page: Page) {
   });
 }
 
-/** Persisted primary-reward claim surface for E2E save injection. */
 function primaryRewardInterruptedFlow(pending: Record<string, unknown>) {
   return { kind: "primary-reward" as const, pending };
 }
@@ -81,12 +76,6 @@ async function isDesktopPage(page: Page): Promise<boolean> {
   return page.evaluate(() => Boolean(window.alchemyDesktop?.isDesktop)).catch(() => false);
 }
 
-/**
- * Waits until the desktop save file is observably written (a save candidate
- * exists) instead of sleeping a fixed 50ms. The desktop bridge exposes no save
- * content read, so this polls `listSaveCandidates` rather than verifying the
- * payload — a content-verified poll would need a new IPC seam.
- */
 async function waitForDesktopSaveCandidate(page: Page): Promise<void> {
   const deadline = Date.now() + 2000;
   while (Date.now() < deadline) {
@@ -116,19 +105,12 @@ async function writeDesktopSaveAndReload(page: Page, save: unknown): Promise<voi
     }
   };
 
-  // Double-write: a Victory/rewards autosave can overwrite the first inject before reload.
   await write();
   await waitForDesktopSaveCandidate(page);
   await write();
   await page.reload({ waitUntil: "domcontentloaded" });
 }
 
-/**
- * Single save-payload builder for both transports (desktop bridge and browser
- * localStorage). The browser init script shallow-merges this payload into any
- * pre-existing save so earlier init scripts (e.g. aspect-ratio overrides)
- * survive.
- */
 function buildActiveRunSave(overrides: Record<string, unknown>) {
   const {
     discoveredCardIds,
@@ -141,13 +123,12 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     runGold,
     ...activeRunData
   } = overrides as Record<string, unknown> & { gold?: unknown; runGold?: unknown };
-  // Unified persistence seam: gold lives on runProfile (top-level save.gold), not activeRun.runGold.
-  // Legacy E2E callers still use runGold; map it to the new location for backward compat.
+
   const injectedGold = typeof gold === "number" ? gold : typeof runGold === "number" ? runGold : undefined;
   const save: Record<string, unknown> = {
     ...baseHomesteadSave,
     ...(injectedGold !== undefined ? { gold: injectedGold } : {}),
-    // E2E battles assert on a stable opening hand; auto-end races empty/mid-draw states.
+
     autoEndTurn: autoEndTurn === true,
     ...(typeof selectedAspectRatio === "string" ? { selectedAspectRatio } : {}),
     activeRun: {
@@ -168,8 +149,7 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
   if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
   if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
   if (Array.isArray(discoveredUniqueIds)) save.discoveredUniqueIds = discoveredUniqueIds;
-  // Earlier-registered init scripts (injectTalentUnlocks) own this key at
-  // navigation time; the fixture's empty default must not clobber them.
+
   delete save.unlockedTalents;
   return save;
 }
@@ -195,7 +175,6 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
   );
 }
 
-/** Inject a persisted mid-battle snapshot and boot straight into the battle screen. */
 export async function injectActiveBattle(
   page: Page,
   battleState: InjectedBattleState,
@@ -213,7 +192,6 @@ export async function injectActiveBattle(
   await page.goto("/");
 }
 
-/** Inject a mid-claim primary reward screen and navigate to it. */
 export async function enterPrimaryRewardScreen(page: Page, pending: Record<string, unknown>) {
   await injectSaveState(page, {
     runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()),

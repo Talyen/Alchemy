@@ -1,4 +1,3 @@
-// Enemy attack resolution: damage, block, armor, and attack effect dispatch.
 import {
   applyHealingWithCombatText,
   addPlayerStatusWithCombatText,
@@ -352,11 +351,6 @@ export function processEnemyDamageEffect(
     combatTexts,
   );
 
-  // Status rider: status-linked damage types (burn, poison, bleed, freeze, stun)
-  // apply their status to the player equal to the actual damage dealt,
-  // mirroring how player-side damage riders work (damage.ts applyDamageStatuses).
-  // Grounding checks pre-hit block so a hit that spends the last Block still
-  // suppresses stun buildup.
   const preventStunBuildup = effect.damageType === "stun" && shouldBlockPreventStunBuildup(state);
   if (!preventStunBuildup) {
     nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
@@ -378,9 +372,6 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
       if (effect.kind === "damage") {
         nextState = processEnemyDamageEffect(nextState, effect, combatTexts, { canDodge: true });
       } else if (effect.status === "stun" || effect.status === "freeze") {
-        // Stun/freeze as `player-status` in attack data historically routes through
-        // the damage pipeline so armor can mitigate it (see `enemy-turn-attack.test.ts`
-        // "armor reduces direct stun status attacks by default"). Keep that routing.
         nextState = processEnemyDamageEffect(
           nextState,
           { kind: "damage", damageType: effect.status, amount: effect.amount },

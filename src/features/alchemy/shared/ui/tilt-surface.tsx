@@ -1,5 +1,3 @@
-// Shared surface wrapper with shimmer overlay, selection ring, and optional logo tilt.
-// Card, boon, character, and homestead surfaces use it structurally without pointer tilt.
 import { type CSSProperties, type MouseEvent, type PointerEvent, type ReactNode, type Ref } from "react";
 
 import { cn } from "@/lib/utils";
@@ -35,15 +33,11 @@ interface TiltSurfaceProps {
   dataCount?: number;
   onMouseEnter?: (e: MouseEvent<HTMLElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLElement>) => void;
-  /**
-   * Clip children to the surface radius. Keep true for framed art so overflow:visible
-   * glow does not square corners or cover the bottom border. False for battle portraits
-   * whose hurt sparks must paint outside the frame.
-   */
+
   clipContents?: boolean | undefined;
-  /** When true, sets data-hovered for controlled card-hover-scale surfaces. */
+
   hoverScaleActive?: boolean | undefined;
-  /** Painted above the clip layer so frame chrome can cover the 3px glow border. */
+
   overlay?: ReactNode | undefined;
 }
 
@@ -176,26 +170,27 @@ function TiltSurfaceButton({
   );
 }
 
-function TiltSurfaceDiv({
-  children,
-  className,
-  shimmerActive,
-  shimmerToken,
-  shimmerRounded,
-  selected,
-  dragging,
-  onDivClick,
-  ariaLabel,
-  surfaceRef,
-  testId,
-  dataCount,
-  onMouseEnter,
-  onMouseLeave,
-  surfaceStyle,
-  tiltEnabled,
-  clipContents = true,
-  overlay,
-}: TiltSurfaceInner) {
+function TiltSurfaceDiv(props: TiltSurfaceInner) {
+  const {
+    children,
+    className,
+    shimmerActive,
+    shimmerToken,
+    shimmerRounded,
+    selected,
+    dragging,
+    onDivClick,
+    ariaLabel,
+    surfaceRef,
+    testId,
+    dataCount,
+    onMouseEnter,
+    onMouseLeave,
+    surfaceStyle,
+    tiltEnabled,
+    clipContents = true,
+    overlay,
+  } = props;
   const canTilt = tiltEnabled !== false;
   const { handleMouseMove, handleMouseLeave } = useTiltHandlers(canTilt, onMouseLeave);
   return (

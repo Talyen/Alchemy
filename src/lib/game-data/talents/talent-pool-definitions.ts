@@ -1,11 +1,9 @@
-// Consolidated talent pool — single source of truth for all keywords.
-// Previously 19 copy-pasted files (`pool/*.ts`); now one table so adding a talent does not copy boilerplate.
 import { MANABURN_DAMAGE_PERCENT } from "@/lib/game-constants";
 import type { TalentDefinition } from "./types";
 import { addEffect, setEffect } from "./types";
+import type { KeywordId } from "../types";
 
 export const talentPool: TalentDefinition[] = [
-  // -- archery --
   {
     id: "archery-damage",
     keywordId: "archery",
@@ -86,7 +84,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Award",
     effects: [setEffect("goldOnArcheryKill", 2)],
   },
-  // -- armor --
+
   {
     id: "armor-desperate-double",
     keywordId: "armor",
@@ -167,7 +165,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Plus",
     effects: [addEffect("flatArmorAmount", 1)],
   },
-  // -- bleed --
+
   {
     id: "bleed-first-free",
     keywordId: "bleed",
@@ -248,7 +246,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Scissors",
     effects: [addEffect("companionBleedDamageBonus", 1)],
   },
-  // -- block --
+
   {
     id: "block-depleted-heal",
     keywordId: "block",
@@ -329,7 +327,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "FlaskConical",
     effects: [setEffect("blockPreventsPoison", true)],
   },
-  // -- burn --
+
   {
     id: "burn-dmg-1",
     keywordId: "burn",
@@ -410,7 +408,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "ShieldCheck",
     effects: [setEffect("receiveHalfBurnDamage", true)],
   },
-  // -- companion --
+
   {
     id: "companion-damage",
     keywordId: "companion",
@@ -491,7 +489,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Bell",
     effects: [setEffect("firstCompanionCardFree", true)],
   },
-  // -- consume --
+
   {
     id: "consume-gourmand",
     keywordId: "consume",
@@ -572,7 +570,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "CookingPot",
     effects: [setEffect("blockOnConsume", 2)],
   },
-  // -- forge --
+
   {
     id: "forge-to-burn",
     keywordId: "forge",
@@ -653,7 +651,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Castle",
     effects: [setEffect("forgeBlockThreshold", 6), setEffect("forgeBlockAmount", 10)],
   },
-  // -- freeze --
+
   {
     id: "freeze-threshold",
     keywordId: "freeze",
@@ -734,7 +732,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Lock",
     effects: [setEffect("freezeBlocksRegen", true)],
   },
-  // -- gold --
+
   {
     id: "gold-shop-discount",
     keywordId: "gold",
@@ -815,7 +813,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Trophy",
     effects: [setEffect("eliteGoldDropBonus", 0.1)],
   },
-  // -- health --
+
   {
     id: "health-threshold-armor",
     keywordId: "health",
@@ -896,7 +894,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Flame",
     effects: [setEffect("campfireHealBonus", 0.1)],
   },
-  // -- holy --
+
   {
     id: "holy-tithe",
     keywordId: "holy",
@@ -977,7 +975,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "HeartPulse",
     effects: [setEffect("holyLifestealPercent", 10)],
   },
-  // -- leech --
+
   {
     id: "leech-first-double",
     keywordId: "leech",
@@ -1058,7 +1056,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Utensils",
     effects: [addEffect("natureLeechChance", 10)],
   },
-  // -- mana --
+
   {
     id: "mana-wellspring",
     keywordId: "mana",
@@ -1139,7 +1137,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Wand",
     effects: [setEffect("healOnManaGain", 2)],
   },
-  // -- nature --
+
   {
     id: "nature-overgrowth",
     keywordId: "nature",
@@ -1220,7 +1218,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Leaf",
     effects: [setEffect("healOnNatureCard", 1)],
   },
-  // -- physical --
+
   {
     id: "physical-expert-blacksmith",
     keywordId: "physical",
@@ -1301,7 +1299,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "ShieldCheck",
     effects: [setEffect("physicalDoubledBelowHalfHealth", true)],
   },
-  // -- poison --
+
   {
     id: "poison-leech-chance",
     keywordId: "poison",
@@ -1382,7 +1380,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "Syringe",
     effects: [setEffect("firstPoisonCardFree", true)],
   },
-  // -- stun --
+
   {
     id: "stun-forge-grant",
     keywordId: "stun",
@@ -1463,7 +1461,7 @@ export const talentPool: TalentDefinition[] = [
     icon: "PlugZap",
     effects: [setEffect("manaOnStun", 1)],
   },
-  // -- wish --
+
   {
     id: "wish-trinket",
     keywordId: "wish",
@@ -1545,3 +1543,16 @@ export const talentPool: TalentDefinition[] = [
     effects: [setEffect("wishBlockBelowHealthPct", 30), setEffect("wishBlockAmount", 6)],
   },
 ];
+
+export const talentPoolByKeyword: ReadonlyMap<KeywordId, TalentDefinition[]> = talentPool.reduce<
+  Map<KeywordId, TalentDefinition[]>
+>((acc, talent) => {
+  const bucket = acc.get(talent.keywordId);
+  if (bucket) bucket.push(talent);
+  else acc.set(talent.keywordId, [talent]);
+  return acc;
+}, new Map());
+
+export function getTalentsForKeyword(keywordId: KeywordId): readonly TalentDefinition[] {
+  return talentPoolByKeyword.get(keywordId) ?? [];
+}

@@ -1,4 +1,3 @@
-// Corruption screen handlers used by useRunFlowEngine.
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { corruptDeckCard } from "@/lib/corruption";
@@ -40,7 +39,6 @@ export interface CorruptionFlowDeps {
   returnToCurrentDestination: () => void;
 }
 
-/** Corruption screen commands: apply a corrupt pick, then advance or restore the picker on exit. */
 export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
   function handleCorruptCard(cardIndex: number) {
     if (readRunSession().corruptionResult) return;

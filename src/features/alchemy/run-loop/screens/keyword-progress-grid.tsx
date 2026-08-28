@@ -1,5 +1,3 @@
-// Grid of per-keyword XP progress cards with a mount-triggered entrance animation.
-// Shared by the run-end progress section and the mystery reward summary.
 import { useEffect, useState } from "react";
 import type { KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";

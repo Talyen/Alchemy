@@ -6,8 +6,6 @@ import {
   VALID_TARGET_SHADOW,
 } from "@/features/alchemy/meta/screens/armory/targeting-highlight";
 
-// Visual-token guard: targeting highlights are stringly-typed Tailwind class
-// bundles consumed by the armory grids, so a typo silently drops the highlight.
 describe("targetingHighlight", () => {
   it("valid-target tokens stay emerald with inset ring and hover escalation", () => {
     expect(VALID_TARGET_RING).toContain("ring-inset");

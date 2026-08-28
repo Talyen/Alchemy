@@ -1,12 +1,10 @@
-// Store-owned codec for permanent run-domain progression save fields.
 import type { CompanionId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
-import type { PersistenceCodec } from "./persistence-codec";
+import type { GameplayPersistenceCodec } from "./persistence-codec";
 import { readGameplayState, subscribeGameplayCommits } from "./gameplay-state-store";
-import type { GameplayDraft } from "./run-session-command";
 
 export interface RunProfileSaveFields {
   gold: number;
@@ -40,12 +38,11 @@ function createDefaultRunProfileSaveFields(): RunProfileSaveFields {
   return encodeRunProfileSnapshot(createInitialPermanentFields());
 }
 
-/** Persistence: permanent homestead + talent fields for save snapshots. */
 function readPermanentProgressForSave(): RunProfileSnapshot {
   return readGameplayState().runProfile;
 }
 
-export const runProfilePersistenceCodec: PersistenceCodec<RunProfileSaveFields, [draft: GameplayDraft]> = {
+export const runProfilePersistenceCodec: GameplayPersistenceCodec<RunProfileSaveFields> = {
   createDefault: createDefaultRunProfileSaveFields,
   encode: () => encodeRunProfileSnapshot(readPermanentProgressForSave()),
   hydrate: (fields, draft) => {

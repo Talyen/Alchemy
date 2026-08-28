@@ -1,4 +1,3 @@
-// Rebind live-run HP and in-combat manifests from profile-lifetime meta (gear, talents, homestead).
 import { computeStartingMaxHealth } from "@/lib/game-data";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import type { GameplayDraft } from "./run-session-command";
@@ -18,8 +17,7 @@ function computeDerivedRunMaxHealth(draft: GameplayDraft): number {
 
 function applyDerivedMaxHealth(draft: GameplayDraft): void {
   const derived = computeDerivedRunMaxHealth(draft);
-  // runMetaMaxHealth is always a positive baseline: seeded at run start or shimmed
-  // from legacy 0 values by normalizeActiveRunData.
+
   const metaBaseline = draft.run.activeRun.runMetaMaxHealth;
   const combatBonus = Math.max(0, draft.run.activeRun.runMaxHealth - metaBaseline);
   draft.run.activeRun.runMetaMaxHealth = derived;
@@ -32,9 +30,7 @@ export function rebindLiveRunMeta(
   options?: { gearChanged?: boolean; talentChanged?: boolean },
 ): void {
   if (!draft.session.hasActiveRun) return;
-  // Homestead max-health always recomputed (gear + homestead tally). Battle
-  // manifests are guarded by dirty flags to skip unchanged recomputes.
-  // `undefined` means recompute (previous behavior) for backward compat.
+
   const gearChanged = options?.gearChanged ?? true;
   const talentChanged = options?.talentChanged ?? true;
   applyDerivedMaxHealth(draft);

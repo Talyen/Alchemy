@@ -1,4 +1,3 @@
-// FLIP-style horizontal reflow for a hand card slot after the flex fan rebalances.
 import { ANIMATION_DISABLED_DURATION, isAnimationDisabled } from "@/lib/animation/animation-prefs";
 
 export function playHandSlotReflow(slot: HTMLElement, deltaX: number, durationMs: number): () => void {

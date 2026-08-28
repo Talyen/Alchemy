@@ -3,14 +3,26 @@
   "shell": "zsh",
   "permission": {
     "bash": {
-      "*": "allow",
+      "npm*": "allow",
+      "node*": "allow",
+      "npx*": "allow",
+      "vite*": "allow",
+      "vitest*": "allow",
+      "playwright*": "allow",
+      "tsc*": "allow",
+      "eslint*": "allow",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git add*": "allow",
+      "git commit*": "allow",
+      "git rebase --continue": "allow",
+      "git rebase --abort": "allow",
+      "git stash*": "ask",
       "git reset*": "deny",
       "git checkout --*": "deny",
       "git restore*": "deny",
-      "git clean*": "deny",
-      "git rebase --continue": "allow",
-      "git rebase --abort": "allow",
-      "git stash*": "ask"
+      "git clean*": "deny"
     }
   }
 }

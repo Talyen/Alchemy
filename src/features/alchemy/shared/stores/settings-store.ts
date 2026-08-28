@@ -6,7 +6,7 @@ import {
   DEFAULT_MUSIC_VOLUME_PCT,
   DEFAULT_SFX_VOLUME_PCT,
 } from "@/lib/game-constants";
-import type { PersistenceCodec } from "./persistence-codec";
+import type { StandalonePersistenceCodec } from "./persistence-codec";
 
 export interface SettingsSaveFields {
   selectedAspectRatio: AspectRatioOption;
@@ -70,10 +70,6 @@ export function preferredAutoplayEnabled(fields: {
   return fields.rememberAutoplayPreference && fields.autoplayEnabled;
 }
 
-/**
- * Store fields now share the persisted names; the only translation left is the
- * autoplay rule: autoplay never survives without the remembered preference.
- */
 function withDerivedAutoplay<T extends { rememberAutoplayPreference: boolean; autoplayEnabled: boolean }>(
   fields: T,
 ): T {
@@ -97,13 +93,12 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
       rememberAutoplayPreference,
       autoplayEnabled: rememberAutoplayPreference ? state.autoplayEnabled : false,
     })),
-  setAutoplayEnabled: (autoplayEnabled) => set({ autoplayEnabled }),
+  setAutoplayEnabled: (autoplayEnabled) => set((state) => withDerivedAutoplay({ ...state, autoplayEnabled })),
   setShowClearSaveConfirm: (showClearSaveConfirm) => set({ showClearSaveConfirm }),
   resetToDefaults: () =>
     set({ ...withDerivedAutoplay(createDefaultSettingsSaveFields()), showClearSaveConfirm: false }),
 }));
 
-/** Whitelist copy so neither persistence direction can carry unknown keys into the store or save. */
 function toSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
   return {
     selectedAspectRatio: state.selectedAspectRatio,
@@ -119,7 +114,7 @@ function toSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): Set
   };
 }
 
-export const settingsPersistenceCodec: PersistenceCodec<SettingsSaveFields> = {
+export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFields> = {
   createDefault: createDefaultSettingsSaveFields,
   encode: () => withDerivedAutoplay(toSaveFields(useSettingsStore.getState())),
   hydrate: (fields) => {

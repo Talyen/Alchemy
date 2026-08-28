@@ -1,4 +1,3 @@
-// Persist / hydrate mystery visit state for active-run snapshots.
 import {
   applyResolvedMysteryTrinketIds,
   collectResolvedMysteryTrinketIds,

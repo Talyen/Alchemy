@@ -1,6 +1,3 @@
-/**
- * Secondary damage riders: statuses, lifesteal, forge decay, and combat text.
- */
 import { forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { mergeCombatText, addGoldWithCombatText } from "./combat-text";
@@ -77,9 +74,6 @@ function applyForgeStunRider(
   return dealPlayerTypedHit(state, "stun", state.trinketEffects.forgeStunAmount, combatTexts);
 }
 
-/**
- * Applies riders specific to holy damage: lifesteal, block gain, burn chance, and wish chance.
- */
 function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: number, combatTexts: CombatTextEvent[]) {
   let nextState = applyHolyLifesteal(state, damage, combatTexts);
   nextState = applyDamageBlock(nextState, damage, combatTexts);
@@ -96,11 +90,6 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
   return nextState;
 }
 
-/**
- * Consumes player forge charge after executing a damage hit.
- * Forge is consumed whenever it contributed to the damage — whether
- * through physical/stun natively or burn/holy via talent effects.
- */
 function consumeForgeAfterDamage(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
@@ -139,9 +128,7 @@ export function applyDamageRiders(
   };
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
-  // Payouts key off pre-hit health so heal/gold-on-kill trigger only when the
-  // enemy WAS alive before this hit. Nested CC procs capture their own
-  // aliveness (dead here → they no-op), so payments never double.
+
   nextState = payKillPayouts(nextState, previousHealth > 0, combatTexts);
   if (
     card.tags?.includes("archery") &&
@@ -178,10 +165,7 @@ export function applyDamageRiders(
         nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true);
       }
     }
-    // Bleed and detonate only on the primary hit; the half-damage extra hit is damage-only
-    // to avoid double-applying riders and combat payouts (gold-on-kill, Lifesteal)
-    // on one card play. Holy lifesteal intentionally still fires on extra hits
-    // via applyHolyDamageRiders below — it is per-hit, not per-card.
+
     if (!isExtraHit) {
       if (rollTalentChance(state.talentEffects.archeryBleedChance, nextState)) {
         nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);

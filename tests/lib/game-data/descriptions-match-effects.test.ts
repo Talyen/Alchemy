@@ -1,10 +1,3 @@
-// Validates every card, enemy, and boon description advertises the same kinds
-// of effects it actually performs. Keeps hand-authored text structurally honest.
-//
-// Cardinal rule: the compendium is the single source of truth for display data.
-// Any file that authors its own description strings for enemies/cards/boons
-// instead of reading from the compendium will be flagged here and deleted.
-
 import { describe, expect, it } from "vitest";
 import {
   cardLibrary,
@@ -21,8 +14,6 @@ import {
   TRAIT_REQUIRED_PATTERNS,
   TRINKET_REQUIRED_PATTERNS,
 } from "@/lib/content-validation/card-parity";
-
-// ─────────────────────────── Cards ───────────────────────────
 
 describe("card descriptions vs effects", () => {
   it("keeps Gambler's Shot range punctuation readable", () => {
@@ -94,8 +85,6 @@ describe("card descriptions vs effects", () => {
   });
 });
 
-// ─────────────────────────── Enemies ───────────────────────────
-
 describe("enemy descriptions vs attack effects", () => {
   it.each(enemyBestiary.map((e) => [e.id, e.title] as const))("%s — attack effects have valid kinds", (_id, title) => {
     const enemy = enemyBestiary.find((e) => e.title === title)!;
@@ -128,8 +117,6 @@ describe("enemy descriptions vs attack effects", () => {
     expect(issues).toEqual([]);
   });
 });
-
-// ─────────────────────────── Boons ───────────────────────────
 
 describe("boon descriptions vs manifest effects", () => {
   it("every boon has a registered description check in TRINKET_REQUIRED_PATTERNS", () => {

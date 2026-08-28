@@ -1,4 +1,3 @@
-// Wildwood Draft pure gauntlet rule tests.
 import { describe, expect, it } from "vitest";
 import {
   canCompleteWildwoodDraft,

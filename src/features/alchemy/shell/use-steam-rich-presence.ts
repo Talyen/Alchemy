@@ -1,4 +1,3 @@
-// Steam rich presence updates when screen, run phase, or character changes.
 import { useEffect } from "react";
 import type { CharacterId } from "@/lib/game-data";
 import { getSteamRichPresenceLabel, type RunPhase, type Screen } from "@/lib/routing";

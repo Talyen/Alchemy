@@ -1,5 +1,3 @@
-// Renders consistent badge indicators and text descriptions for mystery effects.
-// Consumed by tooltip builders and outcome summary screens.
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { getCardKeywords, keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
@@ -183,7 +181,6 @@ const renderRemoveCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "remov
   <span className="text-sm text-balance text-muted-foreground">Remove a random card</span>
 );
 
-/** Compact rendering of a single mystery effect — used in both tooltip and reward screen. */
 export function MysteryEffectBadge({
   effect,
   findCard,
@@ -229,7 +226,6 @@ export function MysteryEffectBadge({
   }
 }
 
-/** Renders a list of mystery effects stacked vertically — used in the choice tooltip. */
 export function MysteryEffectList({
   effects,
   findCard,

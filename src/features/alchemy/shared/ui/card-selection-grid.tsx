@@ -1,4 +1,3 @@
-// Shared paginated card-selection layout for deck pickers.
 import type { ReactNode } from "react";
 
 import type { BattleCard } from "@/lib/game-data";
@@ -35,7 +34,6 @@ export function CardSelectionGrid({
   paginationSize?: "sm" | "default";
   paginationReserveSpace?: boolean;
 }) {
-  // The original deck index travels with each item so paginated/filtered pickers still mutate the correct slot.
   const {
     page: safePage,
     pageItems,

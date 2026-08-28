@@ -1,12 +1,7 @@
-// Small display primitives for gold.
 import { Coins } from "lucide-react";
 
 import { cn, formatLargeAmount } from "@/lib/utils";
 
-/**
- * Coins icon + tabular-nums amount. Owns only the pair itself — callers supply
- * the surrounding layout, typography, and icon sizing chrome.
- */
 export function CurrencyAmount({
   amount,
   suffix = "",

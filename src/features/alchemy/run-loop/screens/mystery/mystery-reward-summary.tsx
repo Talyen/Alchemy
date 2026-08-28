@@ -1,4 +1,3 @@
-// Mystery consequence reward summary after run state has been updated.
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, type KeywordId, type TalentXP, type TrinketEntry } from "@/lib/game-data";

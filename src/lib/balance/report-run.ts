@@ -1,4 +1,3 @@
-// Opt-in balance-report scenario matrix. Pure orchestration over simulateBatch.
 import {
   cardById,
   cardLibrary,

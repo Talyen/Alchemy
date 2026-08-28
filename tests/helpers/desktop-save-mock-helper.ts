@@ -60,7 +60,6 @@ export function setupMockWindowDesktop(options: MockDesktopOptions = {}) {
   return mockDesktop;
 }
 
-// Platform-bridge flavor: no Steam identity and cloud operations fail by default.
 export function installDesktopApi(options: InstallDesktopApiOptions = {}): DesktopApi {
   const { overrides, ...mockOptions } = options;
   const api = createMockAlchemyDesktop({

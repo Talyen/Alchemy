@@ -1,4 +1,3 @@
-// Content-system run start snapshots: campaign, labyrinth, wildwood, and Wildcard starter draft.
 import { playGoldGain } from "@/lib/audio";
 import {
   setPendingCharacterId,
@@ -21,7 +20,6 @@ import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/typ
 import { type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 
 export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
-  // Gold jingle plays only when this start is a fresh start for the system, matching grantStartGold.
   function isFreshSystemStart(contentSystemType: ContentSystemId): boolean {
     return !readHasActiveRun() || readActiveRun().contentSystemType !== contentSystemType;
   }

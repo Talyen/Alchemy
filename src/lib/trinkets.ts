@@ -1,6 +1,3 @@
-// Shared Boon/permanent Trinket manifest defaults and ID-to-effect conversion.
-// Effect values are authored on the compendium rows; this module derives the
-// flat battle-facing manifest. Used during battle creation and shop pricing.
 import { trinketLibrary } from "@/lib/game-data";
 import type { TrinketManifest } from "./battle/types";
 
@@ -36,7 +33,6 @@ export const defaultTrinketEffects: TrinketManifest = {
 
 const DEFAULT_TRINKET_MANIFEST_KEYS = Object.keys(defaultTrinketEffects) as Array<keyof TrinketManifest>;
 
-/** Authored effect per trinket id, derived from the compendium rows. */
 const trinketEffects: Record<string, Partial<TrinketManifest>> = Object.fromEntries(
   trinketLibrary.map((entry) => [entry.id, entry.effects]),
 );

@@ -21,10 +21,6 @@ export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> &
     onWildwoodRewardComplete?: RunFlowShellActions["wildwoodRewardComplete"];
   };
 
-/**
- * Builds RunFlowHandlerDeps for tests. Convenience stubs (navigateTo, onInitShop, …)
- * are wired into a default RunFlowShellActions when `actions` is omitted.
- */
 export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}): RunFlowHandlerDeps {
   const {
     getAvailableDestinations = () => [],

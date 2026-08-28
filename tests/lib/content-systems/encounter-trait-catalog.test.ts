@@ -1,4 +1,3 @@
-// Shared encounter trait catalog and mode-specific selection tests.
 import { describe, expect, it } from "vitest";
 import {
   COMBAT_ENCOUNTER_TRAIT_IDS,

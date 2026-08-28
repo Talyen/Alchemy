@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -109,7 +108,7 @@ describe("mystery transactional guards", () => {
     expect(result).toBe(true);
     expect(readActiveRun().runDeck).toHaveLength(1);
     expect(readRunSession().mysteryPendingRemoval).toBe(false);
-    // Duplicate should be no-op
+
     act(() => {
       result = hook.result.current.handleMysteryRemoveCard(0);
     });

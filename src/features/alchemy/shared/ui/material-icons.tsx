@@ -1,4 +1,3 @@
-// Shared material/resource artwork, wallet cards, and reward pills adopting Trinket styling.
 /* eslint-disable react-refresh/only-export-components -- co-located resource artwork, wallet pills, and color maps */
 import { cn, formatLargeAmount } from "@/lib/utils";
 import { MATERIAL_IDS, materialLabels, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
@@ -62,7 +61,6 @@ const SIZE_CLASSES: Record<ResourceArtworkSize, string> = {
   xl: "h-12 w-12",
 };
 
-/** High-resolution raster artwork for Homestead resources and currencies. */
 export function HomesteadResourceArtwork({
   resource,
   size = "md",
@@ -89,7 +87,6 @@ export function HomesteadResourceArtwork({
   );
 }
 
-/** Drop-in alias for MaterialIcon using crisp raster art. */
 export function MaterialIcon({
   material,
   className,
@@ -102,7 +99,6 @@ export function MaterialIcon({
   return <HomesteadResourceArtwork resource={material} size={size} className={className} />;
 }
 
-/** Trinket-styled wallet resource pill displaying icon, caption title, and stat amount. */
 function TrinketWalletResourcePill({
   resource,
   title,
@@ -152,7 +148,6 @@ function TrinketWalletResourcePill({
   );
 }
 
-/** Homestead screen top wallet bar displaying Gold + the 5 Homestead Materials. */
 export function HomesteadResourceWallet({
   gold = 0,
   materialInventory,
@@ -174,7 +169,6 @@ export function HomesteadResourceWallet({
   );
 }
 
-/** Material cost indicator inside upgrade buttons or node headers with red unaffordable tint. */
 export function MaterialCost({
   material,
   amount,
@@ -201,7 +195,6 @@ export function MaterialCost({
   );
 }
 
-/** Trinket-styled reward/inline pill. */
 export function MaterialPill({
   material,
   amount,
@@ -225,7 +218,6 @@ export function MaterialPill({
   );
 }
 
-/** Trinket-styled Gold reward/inline pill. */
 export function GoldPill({
   amount,
   showsIncreasePrefix = false,

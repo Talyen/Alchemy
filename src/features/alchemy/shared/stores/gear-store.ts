@@ -10,15 +10,32 @@ import {
   flattenGearInventories,
 } from "@/lib/gear";
 import { useShallow } from "zustand/react/shallow";
-import type { PersistenceCodec } from "./persistence-codec";
+import type { GameplayPersistenceCodec } from "./persistence-codec";
 import type { GearSaveFields, GearStateFields, GearStore } from "./gear-store-types";
 import { initializeGear } from "./gear-actions";
 import { readGameplayState, subscribeGameplayCommits, useGameplayStateStore } from "./gameplay-state-store";
-import type { GameplayDraft } from "./run-session-command";
 
 export type { GearSaveFields } from "./gear-store-types";
 
-export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: GameplayDraft]> = {
+function cloneGearInventories(inventories: GearSaveFields["gearInventories"]): GearSaveFields["gearInventories"] {
+  return Object.fromEntries(
+    Object.entries(inventories).map(([characterId, instances]) => [
+      characterId,
+      instances.map((instance) => ({
+        ...instance,
+        affixes: instance.affixes.map((affix) => ({ ...affix })),
+      })),
+    ]),
+  ) as GearSaveFields["gearInventories"];
+}
+
+function cloneGearLoadouts(loadouts: GearSaveFields["gearLoadouts"]): GearSaveFields["gearLoadouts"] {
+  return Object.fromEntries(
+    Object.entries(loadouts).map(([characterId, loadout]) => [characterId, { ...loadout }]),
+  ) as GearSaveFields["gearLoadouts"];
+}
+
+export const gearPersistenceCodec: GameplayPersistenceCodec<GearSaveFields> = {
   createDefault: () => ({
     gearInventories: createEmptyGearInventories(),
     gearLoadouts: createEmptyGearLoadouts(),
@@ -29,11 +46,11 @@ export const gearPersistenceCodec: PersistenceCodec<GearSaveFields, [draft: Game
   encode: () => {
     const state = readGameplayState().gear;
     return {
-      gearInventories: state.inventories,
-      gearLoadouts: state.loadouts,
-      ownedTrinketIds: state.ownedTrinketIds,
-      equippedTrinkets: state.equippedTrinkets,
-      craftingCurrencies: state.craftingCurrencies,
+      gearInventories: cloneGearInventories(state.inventories),
+      gearLoadouts: cloneGearLoadouts(state.loadouts),
+      ownedTrinketIds: [...state.ownedTrinketIds],
+      equippedTrinkets: { ...state.equippedTrinkets },
+      craftingCurrencies: { ...state.craftingCurrencies },
     };
   },
   hydrate: (fields, draft) => {
@@ -54,7 +71,6 @@ export type GearArmorySlice = Pick<
   "inventories" | "loadouts" | "ownedTrinketIds" | "equippedTrinkets" | "craftingCurrencies"
 >;
 
-/** Canonical gear read/command slice for feature controllers. */
 export function useGearArmorySlice(): GearArmorySlice {
   return useGameplayStateStore(
     useShallow((state) => ({
@@ -72,7 +88,6 @@ export function readHasAnyOwnedGear(): boolean {
   return flattenGearInventories(gear.inventories).length > 0 || gear.ownedTrinketIds.length > 0;
 }
 
-/** Feature-facing gear read — data only, no command methods. */
 export function readGearState(): GearStateFields {
   const gear = readGameplayState().gear;
   return {

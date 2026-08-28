@@ -1,4 +1,3 @@
-// Class-identity deck builder for balance simulations.
 import { createMixedPotion } from "@/lib/alchemist/potion-mixer";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import {

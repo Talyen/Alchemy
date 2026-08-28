@@ -1,7 +1,3 @@
-/**
- * Hidden fight pacing: losing-side comeback × stall clock. Multiplies authored
- * combat magnitudes before mitigation. Not a winner penalty; Death's Door is separate.
- */
 import { FIGHT_PACING } from "../game-constants";
 import type { EnemyType } from "@/lib/game-data";
 import type { BattleState } from "./types";
@@ -113,10 +109,6 @@ export function paceCombatMagnitude(
   return Math.round(amount * multiplier);
 }
 
-/**
- * Authored magnitude after the opening-turn stall clock: full health pools,
- * turn 1, no comeback. Lets E2E expectations consume live pacing math directly.
- */
 export function openingPacedDamage(amount: number, enemyType: EnemyType = "normal"): number {
   if (amount <= 0) return amount;
   const bonus = fightPacingScheduleClockBonus(

@@ -165,7 +165,7 @@ describe("save JSON round trips", () => {
     const reParsed = parseSave(deserialized);
     expect(reParsed).toEqual(original);
     expect(reParsed.materialInventory).toEqual({ wood: 12, iron: 5, herbs: 3, food: 0, crystal: 1 });
-    // bondedCompanions fills defaults for all companion ids, use toMatchObject
+
     expect(reParsed.bondedCompanions).toMatchObject({ wolf: 3, "lizard-scout": 1 });
   });
 

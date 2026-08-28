@@ -21,7 +21,7 @@ import {
   resetProgress as mutateResetProgress,
   resetRunXP as mutateResetRunXP,
 } from "@/features/alchemy/shared/stores/write-port-run";
-import { applyTalentState as mutateApplyTalentState } from "@/features/alchemy/shared/stores/write-port-profile";
+import { applyTalentState as mutateApplyTalentState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { mutateGearForTest } from "../../../../helpers/gameplay-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";

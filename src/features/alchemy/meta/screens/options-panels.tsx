@@ -53,7 +53,6 @@ export interface DevOptionsProps {
   onOpenErrorLog?: () => void;
 }
 
-// Keeps slider rows consistent so volume settings read as one sound board.
 function SliderOption({
   label,
   value,
@@ -86,7 +85,6 @@ function SliderOption({
   );
 }
 
-// Toggle row with a native switch role for boolean options.
 function ToggleOption({
   label,
   checked,
@@ -106,7 +104,6 @@ function ToggleOption({
   );
 }
 
-// Display options stay together because these controls all affect the rendered game stage.
 export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps }) {
   return (
     <div className="space-y-4">
@@ -133,7 +130,6 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
   );
 }
 
-// Audio controls share the same slider/toggle visual language for quick scanning.
 export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
   return (
     <div className="space-y-4">
@@ -149,7 +145,6 @@ export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
   );
 }
 
-// Gameplay options are separated from save/dev actions so future combat preferences have a clear home.
 export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsProps }) {
   return (
     <div className="space-y-4">
@@ -163,7 +158,6 @@ export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsPr
   );
 }
 
-// Destructive save actions and dev unlocks live in the secondary tab to avoid crowding core settings.
 export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; dev: DevOptionsProps }) {
   return (
     <div className="space-y-4">

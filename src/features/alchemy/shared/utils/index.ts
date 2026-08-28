@@ -1,5 +1,3 @@
-// Convenience barrel for alchemy utility helpers.
-// Controllers and UI import from here to avoid deep utility paths.
 export { tokenizeDescription, getHoverId } from "./string";
 export {
   getCombatTextColorClass,

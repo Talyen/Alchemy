@@ -1,4 +1,3 @@
-// Save envelope composed from store-owned persistence field contracts.
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { GearSaveFields } from "../stores/gear-store-types";

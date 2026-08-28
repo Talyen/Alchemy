@@ -31,7 +31,7 @@ describe("collectKeywordsFromBattleEffect", () => {
       successEffects: [inner],
       failureEffects: [inner],
     };
-    // Both branches produce ["physical", "leech"]; expect no duplication
+
     expect(collectKeywordsFromBattleEffect(effect)).toEqual(["physical", "leech"]);
   });
 

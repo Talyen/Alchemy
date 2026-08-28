@@ -1,4 +1,3 @@
-// Companion card effect apply handlers.
 import type { BattleState } from "../types";
 import { companionLibrary } from "@/lib/game-data";
 import type { EffectHandler } from "./handler-types";

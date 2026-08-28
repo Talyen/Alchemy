@@ -17,12 +17,10 @@ export function capitalizeWord(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-/** Shared wallet-style amount formatting: thousands separators, compact above 100k. */
 export function formatLargeAmount(amount: number): string {
   return amount >= 100000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString();
 }
 
-// Fisher-Yates shuffle — O(n), unbiased, in-place on a clone.
 export function shuffle<T>(items: readonly T[], rng: () => number = Math.random): T[] {
   const shuffled = [...items];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -33,18 +31,15 @@ export function shuffle<T>(items: readonly T[], rng: () => number = Math.random)
   return shuffled;
 }
 
-// Shuffle then take up to `count` items — the common sample-without-replacement pattern.
 export function sampleItems<T>(items: readonly T[], count: number, rng: () => number): T[] {
   return shuffle(items, rng).slice(0, Math.min(count, items.length));
 }
 
-// Picks one item from a non-empty collection without each caller repeating random index math.
 export function pickRandom<T>(items: readonly T[], rng: () => number = Math.random): T | undefined {
   if (items.length === 0) return undefined;
   return items[Math.floor(rng() * items.length)];
 }
 
-// Removes and returns one random item from a mutable array, or undefined if empty.
 export function takeRandomItem<T>(items: T[], rng: () => number = Math.random): T | undefined {
   if (items.length === 0) return undefined;
   const index = Math.floor(rng() * items.length);
@@ -56,8 +51,6 @@ export function isValidDeckIndex(index: number, deckLength: number): boolean {
   return Number.isInteger(index) && index >= 0 && index < deckLength;
 }
 
-// Mulberry32 seeded PRNG — returns a function that produces deterministic
-// values in [0, 1) for a given integer seed.
 export function createSeededRng(seed: number): () => number {
   let s = seed | 0;
   return () => {
@@ -68,7 +61,6 @@ export function createSeededRng(seed: number): () => number {
   };
 }
 
-// Appends a value immutably only when it is not already present.
 export function appendUnique<T>(items: readonly T[], item: T): T[] {
   return items.includes(item) ? (items as T[]) : [...items, item];
 }
@@ -83,7 +75,6 @@ export function createInstanceId(): string {
   return `id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-// Merges newly discovered IDs while preserving the original encounter order.
 export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): T[] {
   if (additions.length === 0) return items as T[];
   const set = new Set(items);

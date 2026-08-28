@@ -1,4 +1,3 @@
-// Talent Overview Grid — keyword portrait tiles with unspent-point dots and tree navigation.
 import { memo, useMemo } from "react";
 
 import {

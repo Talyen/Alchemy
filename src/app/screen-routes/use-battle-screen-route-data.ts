@@ -1,4 +1,3 @@
-// Route-local battle display reads — keeps presentation/display out of routeCommands.
 import { useMemo } from "react";
 import {
   useActiveRunScreenValue,

@@ -1,4 +1,3 @@
-// Mystery event effect schemas for non-combat route nodes.
 import type { KeywordId } from "@/lib/game-data";
 import type { MaterialId } from "@/lib/homestead/types";
 
@@ -13,7 +12,6 @@ export type MysteryEffect =
   | { kind: "removeCard" }
   | { kind: "gainTrinket"; trinketId: string }
   | { kind: "gainRandomTrinket"; fromIds?: string[] }
-  /** astral is set only by the all-trinkets-owned fallback; authored content never rolls rarity. */
   | { kind: "gainGeneratedGear"; baseItemId: string; astral?: true }
   | { kind: "gainMaterial"; material: MaterialId; amount: number };
 

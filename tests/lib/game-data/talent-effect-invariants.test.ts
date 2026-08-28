@@ -18,7 +18,6 @@ import {
 
 const ROOT = join(import.meta.dirname, "../../..");
 
-/** Fields with no talent or homestead writer must be listed here or deleted. */
 const UNUSED_MANIFEST_ALLOWLIST: ReadonlySet<keyof TalentEffectManifest> = new Set([
   "startBlock",
   "damageReduction",

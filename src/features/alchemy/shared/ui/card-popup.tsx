@@ -1,6 +1,3 @@
-// Hover detail popup for cards and collection tiles.
-// Rendered root-scale via PortaledTooltip (content-sized, capped at tooltipWidthClass).
-// Used by battle cards, shop cards, and collection previews.
 import { type ReactNode, type RefObject } from "react";
 
 import type { BattleCard } from "@/lib/game-data";

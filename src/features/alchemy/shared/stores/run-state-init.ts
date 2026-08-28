@@ -1,4 +1,3 @@
-// Run store initial state and hydration from active-run saves or fresh-run snapshots.
 import {
   getStartingDeck,
   type BattleCard,
@@ -21,7 +20,6 @@ import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffect
 import { createRunRngState, type RunRngState } from "@/lib/run-rng";
 import { filterValidDestinations, filterValidDestinationRounds } from "@/lib/routing";
 
-/** Active-run lifetime fields (deck, HP, acts, run tallies). */
 export interface ActiveRunProgressFields {
   characterId: CharacterId;
   runDeck: BattleCard[];
@@ -44,7 +42,6 @@ export interface ActiveRunProgressFields {
   runObtainedItems: RunObtainedItem[];
 }
 
-/** Permanent meta lifetime fields (homestead, talents, derived effects). */
 export interface PermanentProgressFields {
   gold: number;
   talentXP: TalentXP;
@@ -57,28 +54,13 @@ export interface PermanentProgressFields {
   effects: HomesteadEffectManifest;
 }
 
-/**
- * Full active-run fields + initialized flag. Derived from the canonical model so
- * adding a field flows into every committed session read and the imperative read.
- */
 export type ActiveRunReadView = ActiveRunProgressFields & { initialized: boolean };
 
-/** Progress-fields-only projection used by the resume codec and orchestration reads. */
-export function pickActiveRunFields(activeRun: ActiveRunProgressFields): ActiveRunProgressFields {
-  return { ...activeRun };
-}
-
-/**
- * Canonical picker for the full active-run read view (progress fields + initialized),
- * used by the committed read model, the run read port, and the orchestration port.
- * Delegates to {@link pickActiveRunFields} so the progress-field projection stays
- * canonical; there is no second hand-maintained spread.
- */
 export function pickActiveRunView(run: {
   activeRun: ActiveRunProgressFields;
   initialized: boolean;
 }): ActiveRunReadView {
-  return { ...pickActiveRunFields(run.activeRun), initialized: run.initialized };
+  return { ...run.activeRun, initialized: run.initialized };
 }
 
 function hydrateDestinations(initialActiveRun: ActiveRunData): {
@@ -93,7 +75,6 @@ function hydrateDestinations(initialActiveRun: ActiveRunData): {
   };
 }
 
-/** Common empty collections / tallies shared across all construction paths; call per-instance to avoid shared mutable arrays. */
 function createEmptyActiveRunCollections(): Pick<
   ActiveRunProgressFields,
   | "completedDestinations"
@@ -134,7 +115,6 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
   };
 }
 
-/** Resume path: ActiveRunData is already Zod-parsed and hydrated at the persistence boundary. */
 function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgressFields {
   const empty = createEmptyActiveRunCollections();
   return {
@@ -142,7 +122,7 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
     runDeck: [...activeRun.runDeck],
     runPlayerHealth: activeRun.runPlayerHealth,
     runMaxHealth: activeRun.runMaxHealth,
-    // Legacy 0 baselines are already shimmed to runMaxHealth by normalizeActiveRunData.
+
     runMetaMaxHealth: activeRun.runMetaMaxHealth,
     roomsEncountered: activeRun.roomsEncountered,
     currentAct: activeRun.currentAct,
@@ -204,10 +184,6 @@ export function runFieldsFromSnapshot(
   | "runBoons"
   | "encounteredRunEnemyIds"
 > {
-  // Per-run tallies/offers reset on start; reuse empty-collection defaults for the 3 reset fields
-  // so fresh/resume/snapshot don't each hand-maintain separate `[]`/`{}` literals with subtle diffs.
-  // Clone each collection so the returned run doesn't share refs with the factory singleton.
-  const empty = createEmptyActiveRunCollections();
   return {
     characterId: snapshot.characterId,
     contentSystemType: snapshot.contentSystemType,
@@ -220,9 +196,9 @@ export function runFieldsFromSnapshot(
     currentAct: snapshot.currentAct,
     destinationIndexInAct: snapshot.destinationIndexInAct,
     completedDestinations: snapshot.completedDestinations,
-    lastOfferedDestinations: [...empty.lastOfferedDestinations],
-    destinationRoundsSinceOffered: { ...empty.destinationRoundsSinceOffered },
+    lastOfferedDestinations: [],
+    destinationRoundsSinceOffered: {},
     runBoons: snapshot.runBoons,
-    encounteredRunEnemyIds: [...empty.encounteredRunEnemyIds],
+    encounteredRunEnemyIds: [],
   };
 }

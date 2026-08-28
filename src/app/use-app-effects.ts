@@ -1,5 +1,3 @@
-// Root-level app side-effects: audio sync, display mode/brightness, global error logging,
-// screen asset preloading, startup loading gate, and screen particle configurations.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { advanceStartupBar, computeStartupLoadTarget } from "@/app/startup-bar-progress";
 import {
@@ -33,8 +31,6 @@ import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 import { markStartupReady } from "@/lib/performance/startup-marks";
 
-// ── Audio Effects ──
-
 interface AppAudioEffectsOptions {
   masterVolume: number;
   musicVolume: number;
@@ -43,7 +39,6 @@ interface AppAudioEffectsOptions {
   screen: Screen;
 }
 
-/** Hidden tabs, unfocused windows, and zero-size Recents panes. A focused game plays immediately. */
 export function isAppInBackground(event?: Pick<Event, "type">): boolean {
   if (document.hidden) return true;
   if (event?.type === "blur") return true;
@@ -154,8 +149,6 @@ export function useAppAudioEffects({
   }, []);
 }
 
-// ── Display Effects ──
-
 interface AppDisplayEffectsOptions {
   displayMode: DisplayMode;
   brightness: number;
@@ -172,16 +165,12 @@ export function useAppDisplayEffects({ displayMode, brightness, stageRef }: AppD
   useLayoutEffect(() => {
     const el = stageRef.current;
     if (el) {
-      // Dimming is handled by a cheap black overlay in App. Values above 100 still
-      // need the stage filter to preserve exact brightness multiplication semantics.
       const brightnessFactor = brightness / 100;
       // eslint-disable-next-line react-compiler/react-compiler -- intentional DOM mutation inside useLayoutEffect
       el.style.filter = brightness > 100 ? `brightness(${brightnessFactor})` : "";
     }
   }, [brightness, stageRef]);
 }
-
-// ── Global Error Handlers ──
 
 function stackOf(value: unknown): string | undefined {
   const stack = (value as { stack?: unknown } | null)?.stack;
@@ -222,10 +211,6 @@ export function useGlobalErrorHandlers(): void {
   }, []);
 }
 
-// ── Initial Load Readiness Gate ──
-
-// Warms all game art and fonts, then reveals once the smoothed bar has caught
-// real progress (and the short minimum presentation time has elapsed).
 export function useInitialLoadReady({
   minDurationMs = INITIAL_LOAD_MIN_DURATION_MS,
   bootstrapReady = false,

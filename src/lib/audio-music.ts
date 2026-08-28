@@ -1,5 +1,3 @@
-// Streaming MP3 music playback and transitions.
-// Used by App/controllers through the public lib/audio facade.
 import { isNonPlayerAudioHost } from "./audio-host";
 import {
   FADE_IN_DELAY,
@@ -22,8 +20,6 @@ const MUSIC_CONFIG = {
   VOLUME_MIN: 0,
 } as const;
 
-// One row per boss track: the boss id ↔ music key mapping, files, and optional
-// intro skip live only here.
 interface BossMusicRow {
   bossId: string;
   tracks: readonly string[];
@@ -49,13 +45,10 @@ function bossMusic(key: string): BossMusicRow | undefined {
   return BOSS_MUSIC[key as keyof typeof BOSS_MUSIC];
 }
 
-// Maps a boss enemy id to its music key, falling back to undefined for non-boss or unknown ids.
 export function getBossMusicKey(bossId: string): string | undefined {
   return BOSS_MUSIC_ENTRIES.find(([, boss]) => boss.bossId === bossId)?.[0];
 }
 
-// Cache of HTMLAudioElements keyed by music key, so re-entering a battle or boss fight
-// resumes the same track from its saved position instead of starting from 0.
 const musicCache = new Map<string, HTMLAudioElement>();
 const musicElementKeys = new WeakMap<HTMLAudioElement, string>();
 
@@ -80,11 +73,8 @@ export function pauseAllMusic() {
   }
 }
 
-// Global counter tracking active scene music transitions to prevent concurrent crossfades
-// from racing or playing overlapping tracks.
 let musicTransitionToken = 0;
 
-// Play wrapper handling browser autoplay blocking policies.
 function playElement(el: HTMLAudioElement) {
   if (isNonPlayerAudioHost()) {
     el.muted = true;
@@ -98,11 +88,6 @@ function playElement(el: HTMLAudioElement) {
 
 const RAMP_TICK_MS = 30;
 
-/**
- * Single volume-ramp pump shared by fade-in and crossfade. Runs a short interval
- * so interpolation continues when animation frames are paused, aborts when a
- * newer music transition takes precedence, and completes once t reaches 1.
- */
 function rampVolume({
   transitionToken,
   delayMs = 0,
@@ -135,8 +120,6 @@ function rampVolume({
   }, RAMP_TICK_MS);
 }
 
-// Applies all active volume layers to a streaming music element.
-// Volume cascaded: state-music-volume * state-master-volume * constant-music-master-gain.
 export function applyMusicVolume(
   el: HTMLAudioElement,
   key: string | null = musicElementKeys.get(el) ?? audioState.currentMusicKey,
@@ -150,13 +133,10 @@ export function applyMusicVolume(
   );
 }
 
-// True when no music element is live or it is paused (autoplay gate).
 export function isMusicPaused(): boolean {
   return !audioState.currentMusic || audioState.currentMusic.paused;
 }
 
-// Stops and clears the current HTML audio element, then returns an element for
-// the given key — either from cache (resuming position) or newly created.
 function replaceCurrentTrack(key: string, fadeProgress: number): HTMLAudioElement | undefined {
   if (audioState.currentMusic) {
     audioState.currentMusic.pause();
@@ -190,7 +170,6 @@ function replaceCurrentTrack(key: string, fadeProgress: number): HTMLAudioElemen
   return el;
 }
 
-// Starts a keyed track with the standard delayed fade-in used for scene transitions.
 function startTrack(key: string, transitionToken: number) {
   const el = replaceCurrentTrack(key, MUSIC_CONFIG.VOLUME_MIN);
   if (!el) return;
@@ -207,15 +186,12 @@ function startTrack(key: string, transitionToken: number) {
   });
 }
 
-// Starts a keyed music group immediately (no crossfade), choosing one registered track
-// at random or resuming a cached element.
 export function playMusicImmediate(key: string) {
   musicTransitionToken += 1;
   audioState.currentMusicKey = key;
   replaceCurrentTrack(key, 1);
 }
 
-// Handles smooth fade-out of the old track, then starts (or resumes) the new keyed track.
 function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, transitionToken: number) {
   const oldVol = oldTrack.volume;
 

@@ -1,4 +1,3 @@
-// Unified run-flow handlers: composes concern modules for victory, defeat, rewards, destinations, and progression.
 import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { createVictoryHandlers } from "./run-flow-victory";
 import { createDefeatHandlers } from "./run-flow-defeat";

@@ -4,8 +4,7 @@ import { describe, expect, it } from "vitest";
 import { staticAssets, validateAssetRegistry } from "../../scripts/assets/asset-manifest.mjs";
 
 const repoRoot = path.resolve(__dirname, "..", "..");
-// CI sparse-checkout excludes Raw Assets, so source-existence validation only
-// runs where raw art is present.
+
 const rawAssetsDir = path.join(repoRoot, "Raw Assets");
 const hasRawAssets = existsSync(rawAssetsDir);
 

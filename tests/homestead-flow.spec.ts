@@ -115,8 +115,6 @@ test.describe("Homestead Flow", critical, () => {
         Companions: page.getByRole("img", { name: "Wolf" }),
       };
 
-      // Measure only once the shell height has settled so tab transitions do
-      // not produce a mid-animation frame.
       const settledHeight = async () => {
         let previous = -1;
         let height = -1;
@@ -145,8 +143,6 @@ test.describe("Homestead Flow", critical, () => {
       await expect(tabAnchors.Companions).toBeVisible({ timeout: 3000 });
       const companionHeight = await settledHeight();
 
-      // Full tab content presence checks (kept with the tab switch so the shell
-      // stays visible while asserting content).
       await homestead.switchTab("Buildings");
       await expect(page.getByRole("button", { name: /Blacksmith/ }).first()).toBeVisible({ timeout: 3000 });
       await homestead.switchTab("Farm");
@@ -155,12 +151,10 @@ test.describe("Homestead Flow", critical, () => {
       await expect(page.getByText("Detect Magic").first()).toBeVisible({ timeout: 3000 });
       await expect(page.getByText("Agility Training").first()).toBeVisible();
 
-      // 2-row upgrade tabs maintain consistent height.
       const max2Row = Math.max(...twoRowHeights);
       const min2Row = Math.min(...twoRowHeights);
       expect(max2Row - min2Row).toBeLessThanOrEqual(1);
 
-      // Single-row companions tab collapses vertically to fit its grid size.
       expect(companionHeight).toBeLessThan(min2Row);
     });
   });

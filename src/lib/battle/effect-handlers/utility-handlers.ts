@@ -1,4 +1,5 @@
-// Utility card effect apply handlers.
+import type { BattleCardEffect } from "@/lib/game-data";
+import type { BattleState } from "../types";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { addGoldWithCombatText } from "../combat-text";
 import { applyWishEffect } from "../wish";
@@ -22,17 +23,16 @@ export const applyDrawCardsEffect: EffectHandler = (state, _card, effect) => {
   return applyDrawResult(state, drawFromState(state, effect.amount));
 };
 
-export const applyNextHitCritEffect: EffectHandler = (state, _card, effect) => {
-  if (effect.kind !== "next-hit-crit") return state;
-  return { ...state, flags: { ...state.flags, nextHitCrit: true } };
-};
+function makeFlagEffect<K extends BattleCardEffect["kind"], F extends keyof BattleState["flags"]>(
+  kind: K,
+  flag: F,
+): EffectHandler {
+  return (state, _card, effect) => {
+    if (effect.kind !== kind) return state;
+    return { ...state, flags: { ...state.flags, [flag]: true } };
+  };
+}
 
-export const applyPlayNextCardTwiceEffect: EffectHandler = (state, _card, effect) => {
-  if (effect.kind !== "play-next-card-twice") return state;
-  return { ...state, flags: { ...state.flags, playNextCardTwice: true } };
-};
-
-export const applyNextHitPoisonEffect: EffectHandler = (state, _card, effect) => {
-  if (effect.kind !== "next-hit-poison") return state;
-  return { ...state, flags: { ...state.flags, nextHitPoison: true } };
-};
+export const applyNextHitCritEffect = makeFlagEffect("next-hit-crit", "nextHitCrit");
+export const applyPlayNextCardTwiceEffect = makeFlagEffect("play-next-card-twice", "playNextCardTwice");
+export const applyNextHitPoisonEffect = makeFlagEffect("next-hit-poison", "nextHitPoison");

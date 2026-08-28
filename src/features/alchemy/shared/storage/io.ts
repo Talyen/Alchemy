@@ -1,4 +1,3 @@
-// Browser localStorage IO for alchemy save data.
 import { SAVE_KEY } from "@/lib/game-constants";
 import { createPlatformSaveBackend, type SaveBackend } from "@/lib/platform-save-backend";
 
@@ -23,7 +22,6 @@ export function configureSaveBackend(backend: SaveBackend): void {
   saveBackend = backend;
 }
 
-// Keeps storage failures readable without crashing gameplay when browsers block persistence.
 function logStorageFailure(message: string, error?: unknown) {
   // eslint-disable-next-line @typescript-eslint/no-base-to-string -- preserve readable browser storage errors from unknown throws
   logError(message, "storage", error ? { error: String(error) } : undefined);
@@ -64,8 +62,6 @@ export interface SaveLoadState {
   status: SaveLoadStatus;
 }
 
-// Tombstoned card stripping happens inside ActiveRunDataSchema normalization
-// (normalizeActiveRunData), so this only hydrates parsed output into the runtime contract.
 function hydrateActiveRunDeck(activeRun: ParsedSaveData["activeRun"]): SaveData["activeRun"] {
   if (!activeRun) return null;
   return toActiveRunData(activeRun);
@@ -138,10 +134,6 @@ function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
 }
 
 function applySaveWritePolicy(result: SaveLoadState): SaveLoadState {
-  // Future-versioned saves disable writes to avoid downgrading. All other
-  // outcomes (ok and corrupt) re-enable writes so a fresh save can overwrite
-  // the bad candidate on next autosave — corrupt no longer leaves the session
-  // stuck read-only (see simplification plan Phase 1b).
   if (result.status.kind === "unsupported-newer-schema" || result.status.kind === "unsupported-newer-content") {
     writesDisabledForSession = true;
   } else {
@@ -150,11 +142,6 @@ function applySaveWritePolicy(result: SaveLoadState): SaveLoadState {
   return result;
 }
 
-// Loads save data plus status. On desktop, candidates are walked in preference
-// order: local, bak.1, bak.2, bak.3, cloud. Each candidate is parsed and
-// Zod-validated before being accepted. Corrupt candidates fall through to the
-// next recovery source. A future-versioned candidate protects itself and all
-// lower-priority candidates from writes; otherwise the first valid candidate wins.
 export async function loadAlchemySaveState(): Promise<SaveLoadState> {
   if (typeof window === "undefined") {
     return applySaveWritePolicy({ data: defaultSaveData, status: { kind: "ok" } });
@@ -175,7 +162,6 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
   return applySaveWritePolicy(evaluateSaveCandidates(candidates));
 }
 
-// Serializes overlapping saves so desktop IPC tmp writes never interleave.
 class SaveWriteQueue {
   private chain: Promise<void> = Promise.resolve();
   private coalesced: SaveData | null = null;
@@ -259,7 +245,6 @@ class SaveWriteQueue {
 
 const saveQueue = new SaveWriteQueue();
 
-/** Test-only isolation for module-scoped write policy and queue state. */
 export async function resetStorageIoForTests(): Promise<void> {
   await saveQueue.reset();
   writesDisabledForSession = false;
@@ -281,16 +266,11 @@ function serializeSaveSnapshot(data: SaveData, now: number = Date.now()): string
   return JSON.stringify(payload);
 }
 
-// Writes the current save snapshot exactly as provided by App/controller state.
 export async function saveAlchemySaveData(data: SaveData) {
   if (typeof window === "undefined") return;
   await saveQueue.enqueue(data, writeSaveSnapshot);
 }
 
-/**
- * Flushes the latest browser snapshot synchronously during page lifecycle exit.
- * Desktop IPC cannot be made synchronous, so it falls back to the normal serialized queue.
- */
 export function saveAlchemySaveDataForExit(data: SaveData): void {
   if (typeof window === "undefined" || writesDisabledForSession || saveQueue.isClearPending) return;
 
@@ -311,10 +291,6 @@ export function saveAlchemySaveDataForExit(data: SaveData): void {
       return;
     }
 
-    // Keep the terminal snapshot queued only while a chain task is still pending:
-    // if an async write is in flight (desktop IPC latency), it completes first and
-    // the serialized chain then rewrites this snapshot — a stale write can never
-    // land last. An idle chain has no writer left, so nothing needs queueing.
     saveQueue.queueExitSnapshot(data);
   } catch (error) {
     logStorageFailure("Save data could not be serialized during page exit", error);
@@ -322,11 +298,6 @@ export function saveAlchemySaveDataForExit(data: SaveData): void {
   }
 }
 
-// Removes the persisted save while leaving in-memory React state reset to callers.
-// Returns false when the wipe could not complete (e.g. Steam Cloud delete failed) so
-// callers like Save Protected can fail closed instead of reloading into the same block.
-// Pass `keepWritesDisabled` when the next step is a full reload so a terminal autosave
-// flush cannot rewrite the wiped snapshot from still-mounted in-memory stores.
 export async function clearAlchemySaveData(options?: { keepWritesDisabled?: boolean }): Promise<boolean> {
   if (typeof window === "undefined") return true;
   return saveQueue.enqueueClear(() => saveBackend.clear(SAVE_KEY), options?.keepWritesDisabled);

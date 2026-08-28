@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { startCombatantStatusEffectLoop } from "@/lib/animation/combatant-status-effect-loop";

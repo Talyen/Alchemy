@@ -9,9 +9,6 @@ import {
   MIN_MAX_MANA_FLOOR,
 } from "@/lib/game-constants";
 
-// Runtime startup validation only covers data-driven checks (libraries non-empty,
-// effect-handler coverage); these compile-time constants are pinned here instead.
-
 describe("startup validation invariants", () => {
   it("CARDS_PER_TURN > 0", () => {
     expect(CARDS_PER_TURN).toBeGreaterThan(0);

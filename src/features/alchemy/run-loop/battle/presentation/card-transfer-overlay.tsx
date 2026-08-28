@@ -1,4 +1,3 @@
-// Flying card transfer overlay for exact draw-pile and discard-pile handoffs in Battle.
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
@@ -7,8 +6,6 @@ import { cardSurfaceClass } from "@/features/alchemy/shared/config";
 import type { CardTransfer } from "../../../shared/types";
 
 export function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {
-  // Animate x/y transforms from a fixed left/top — layout props (left/top) force style
-  // recalculation every frame and hitch under Electron DPR2 discard/draw transfers.
   const deltaX = transfer.to.x - transfer.from.x;
   const deltaY = transfer.to.y - transfer.from.y;
 

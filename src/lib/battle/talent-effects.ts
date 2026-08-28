@@ -1,6 +1,3 @@
-/**
- * Crowd-control on-trigger bonuses from talents and gear.
- */
 import { drawFromState, applyDrawResult } from "./draw";
 import { addPlayerStatusWithCombatText, gainManaWithCombatText } from "./combat-text";
 import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";

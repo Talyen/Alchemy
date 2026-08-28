@@ -6,9 +6,6 @@ import * as metaScreensBarrel from "@/features/alchemy/meta/screens";
 import * as runLoopScreensBarrel from "@/features/alchemy/run-loop/screens";
 import * as sharedUtilsBarrel from "@/features/alchemy/shared/utils";
 
-// Barrel files should re-export symbols without executing module-level side effects.
-// These tests verify that importing each barrel resolves the expected public API.
-
 describe("@/lib/game-data barrel", () => {
   it("exports known symbols", () => {
     expect(gameDataBarrel.cardLibrary).toBeDefined();
@@ -61,7 +58,6 @@ describe("@/features/alchemy/shared/utils barrel", () => {
 
 describe("@/features/alchemy/shared/storage barrel", () => {
   it("exports known symbols", async () => {
-    // Storage module has module-level dependency on window for platform detection.
     const origWindow = (globalThis as Record<string, unknown>).window;
     (globalThis as Record<string, unknown>).window = {} as Window & typeof globalThis;
     try {

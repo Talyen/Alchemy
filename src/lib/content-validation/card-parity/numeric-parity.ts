@@ -73,8 +73,6 @@ function checkGoldLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  // "Gain N Gold" and "Steal N Gold" both route to gain-gold; the flavor prefix
-  // must not let a mismatched number slip past numeric parity.
   const prefix = line.startsWith("Gain ") ? "Gain " : line.startsWith("Steal ") ? "Steal " : null;
   if (!prefix || !line.includes(" Gold")) return false;
   const effect = nextGold();

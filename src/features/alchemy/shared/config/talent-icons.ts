@@ -1,5 +1,3 @@
-// Maps talent catalog icon ids (Lucide export names) to components.
-// Talent definitions in src/lib stay React-free; this registry is the feature resolver.
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,

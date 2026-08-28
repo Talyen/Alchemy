@@ -28,7 +28,6 @@ function getElectronExecutablePath(): string {
 export async function launchElectronApp(
   options: { packagedRenderer?: boolean; enableGpu?: boolean } = {},
 ): Promise<ElectronApplication> {
-  // Performance profiling must keep the GPU enabled; CI smoke tests disable it.
   const args =
     process.env.CI && !options.enableGpu
       ? [".", "--no-sandbox", "--disable-gpu", "--mute-audio"]

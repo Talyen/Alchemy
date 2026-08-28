@@ -1,4 +1,3 @@
-// Destination choice screen — pick the next node on the map.
 import { useEffect, useMemo } from "react";
 
 import { playBattleEvent } from "@/lib/audio";

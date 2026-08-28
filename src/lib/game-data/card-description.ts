@@ -41,25 +41,24 @@ function getSummonedCompanionId(card: Pick<BattleCard, "effects">): CompanionId 
   return effect?.companionId ?? null;
 }
 
-const COMPANION_TURN_LINE_REGEX =
-  /^(?:Deals \d+|Restores \d+|Cleanses \d+|Steals \d+|Gains? \d+ Block each turn|Draws \d+)/;
+const COMPANION_TURN_LINE_REGEX = /each turn$/;
 
 function isCompanionTurnLine(line: string): boolean {
   return COMPANION_TURN_LINE_REGEX.test(line);
 }
 
-function getCompanionLine(card: Pick<BattleCard, "effects">, context: CardDescriptionContext): string | null {
+function getCompanionLines(card: Pick<BattleCard, "effects">, context: CardDescriptionContext): string[] | null {
   const companionId = getSummonedCompanionId(card);
   if (!companionId) return null;
   const companion = companionLibrary[companionId];
-  const turnEffect = companion.turnStartEffects[0];
-  if (!turnEffect) return null;
-
-  return formatCompanionTurnStartLine(turnEffect, {
-    bondLevel: context.companionBondLevels?.[companionId] ?? 0,
-    damageBonus:
-      (context.companionDamage ?? 0) + (context.companionDamageBonus ?? 0) + (context.companionDamageBuff ?? 0),
-  });
+  if (companion.turnStartEffects.length === 0) return null;
+  const bondLevel = context.companionBondLevels?.[companionId] ?? 0;
+  const damageBonus =
+    (context.companionDamage ?? 0) + (context.companionDamageBonus ?? 0) + (context.companionDamageBuff ?? 0);
+  const lines = companion.turnStartEffects
+    .map((effect) => formatCompanionTurnStartLine(effect, { bondLevel, damageBonus }))
+    .filter((line): line is string => line !== null);
+  return lines.length > 0 ? lines : null;
 }
 
 function formatEffectiveLine(
@@ -101,7 +100,7 @@ function formatEffectiveLine(
 
   if (line.startsWith("Remove ")) {
     const effect = getNextEffect("remove-harmful-status");
-    // Full cleanses keep their authored wording — the amount is a handler cap, not a display number.
+
     if (!effect || effect.removeAll) return line;
     const amount = adjustedAmount(effect.amount, potionMultiplier);
     return `Remove ${amount} harmful Status${amount === 1 ? "" : "es"}`;
@@ -128,17 +127,31 @@ function createEffectCursor(effects: readonly BattleCardEffect[]) {
   };
 }
 
-/** Returns description lines whose numbers match known mechanical bonuses. */
 export function getEffectiveCardDescriptionLines(
   card: Pick<BattleCard, "id" | "effects" | "descriptionLines">,
   context: CardDescriptionContext = {},
 ): string[] {
   const potionMultiplier = getPotionMultiplier(card, context);
-  const companionLine = getCompanionLine(card, context);
+  const companionLines = getCompanionLines(card, context);
   const getNextEffect = createEffectCursor(card.effects);
+  let companionCursor = 0;
+  if (import.meta.env.DEV && companionLines) {
+    const turnLineCount = card.descriptionLines.filter(isCompanionTurnLine).length;
+    if (turnLineCount !== companionLines.length) {
+      console.warn(
+        `[getEffectiveCardDescriptionLines] companion line count mismatch for ${card.id}: description has ${turnLineCount} turn lines but companion has ${companionLines.length}`,
+      );
+    }
+  }
 
   return card.descriptionLines.map((line) => {
-    if (companionLine && isCompanionTurnLine(line)) return companionLine;
+    if (companionLines && isCompanionTurnLine(line) && companionCursor < companionLines.length) {
+      const next = companionLines[companionCursor];
+      if (next !== undefined) {
+        companionCursor += 1;
+        return next;
+      }
+    }
     return formatEffectiveLine(line, getNextEffect, context, potionMultiplier);
   });
 }

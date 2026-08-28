@@ -14,7 +14,6 @@ import {
   setDestinationIndexInAct,
   setDestinationOfferState,
 } from "./write-port-run";
-import { createDraftFieldSetter } from "./store-helpers";
 import { getDifficultyXPMultiplier, tryUnlockTalent, type KeywordId } from "@/lib/game-data";
 import {
   computeRunEndTalentXPSnapshot,
@@ -37,6 +36,7 @@ import { createInitialProfileState, type ProfileStateFields } from "./profile-st
 import * as homestead from "./homestead-actions";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { addRunMaterialsEarned, resetRunXP } from "./write-port-run";
+import { createDraftFieldSetter } from "./store-helpers";
 
 const createSessionFieldSetter = createDraftFieldSetter<RunSessionFields, GameplayDraft>((draft) => draft.session);
 
@@ -53,7 +53,6 @@ export function clearTransientSession(draft: GameplayDraft): void {
   Object.assign(draft.session, createInitialSessionFields());
 }
 
-/** Start a fresh run: seed active-run progress, drop the previous run-end snapshots, flag the run active. */
 export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
   hydrateFromSnapshot(draft, snapshot);
   draft.session.runEndTalentXP = {};
@@ -68,7 +67,6 @@ export const setRunEndMaterials = createSessionFieldSetter("runEndMaterials");
 export const setRunEndItems = createSessionFieldSetter("runEndItems");
 export const setCorruptionResult = createSessionFieldSetter("corruptionResult");
 
-/** Claim reward-screen focus once per pending reward; false when nothing is claimable or already claimed. */
 export function beginRewardClaim(draft: GameplayDraft): boolean {
   if (draft.session.rewardClaimInFlight) return false;
   if (draft.session.rewardState.choices.length === 0 && !draft.session.companionRewardCards?.length) return false;
@@ -80,7 +78,6 @@ export function releaseRewardClaim(draft: GameplayDraft): void {
   draft.session.rewardClaimInFlight = false;
 }
 
-/** Reserve one destination for claiming; false when another claim is open or the destination is not offered. */
 export function beginDestinationClaim(draft: GameplayDraft, destination: Destination): boolean {
   if (draft.session.pendingDestinationClaim !== null) return false;
   if (!draft.session.rewardState.destinations.includes(destination)) return false;
@@ -92,7 +89,6 @@ export function cancelDestinationClaim(draft: GameplayDraft): void {
   draft.session.pendingDestinationClaim = null;
 }
 
-/** Commit destination claim across session + active-run progress (cross-lifetime). */
 export function commitDestinationClaim(draft: GameplayDraft, destination: Destination): boolean {
   const transient = draft.session;
   if (transient.pendingDestinationClaim !== destination) return false;
@@ -113,7 +109,6 @@ export function commitDestinationClaim(draft: GameplayDraft, destination: Destin
   return true;
 }
 
-/** Undo a destination visit that never resolved so the same picker returns. */
 function abandonDestinationVisit(draft: GameplayDraft, destination: Destination): void {
   const transient = draft.session;
 
@@ -136,12 +131,10 @@ function abandonDestinationVisit(draft: GameplayDraft, destination: Destination)
   }
 }
 
-/** Undo a Corruption visit that never mutated a card so the same destination picker returns. */
 export function abandonCorruptionDestinationVisit(draft: GameplayDraft): void {
   abandonDestinationVisit(draft, DESTINATIONS.CORRUPTION);
 }
 
-/** Undo a Mystery visit whose event could not be restored. */
 export function abandonMysteryDestinationVisit(draft: GameplayDraft): void {
   abandonDestinationVisit(draft, DESTINATIONS.MYSTERY);
 }
@@ -151,7 +144,6 @@ export const setAlchemistState = createSessionFieldSetter("alchemistState");
 export const setTrinketShopState = createSessionFieldSetter("trinketShopState");
 export const setEquipmentShopState = createSessionFieldSetter("equipmentShopState");
 
-/** Drop leftover offerings when leaving a shop so runtime matches screen-gated encode. */
 export function clearShopOfferings(draft: GameplayDraft): void {
   setShopState(draft, emptyShopState());
   setAlchemistState(draft, emptyAlchemistState());
@@ -184,9 +176,6 @@ export function clearMysteryVisitState(draft: GameplayDraft): void {
   setMysteryChosenCardId(draft, null);
 }
 
-// --- Profile/permanent region (canonical owner; write-port-profile remains as deprecated re-export shim) ---
-
-/** Single entry for material grants — `trackRunEarned` controls run-summary tracking. */
 export function grantMaterials(
   draft: GameplayDraft,
   materials: ProfileMaterialInventory,
@@ -196,7 +185,6 @@ export function grantMaterials(
   if (options.trackRunEarned) addRunMaterialsEarned(draft, materials);
 }
 
-/** Persist homestead materials and track totals for the run-end summary screen. */
 export function awardMaterialsDuringRun(draft: GameplayDraft, materials: ProfileMaterialInventory): void {
   grantMaterials(draft, materials, { trackRunEarned: true });
 }
@@ -243,7 +231,6 @@ export function resetUnlockedTalents(draft: GameplayDraft): void {
   draft.runProfile.unlockedTalents = {};
 }
 
-/** Dev unlock-all: max every talent and drop pending run XP so run-end cannot merge on top. */
 export function unlockAllTalents(draft: GameplayDraft): void {
   if (!import.meta.env.DEV) return;
   const next: UnlockedTalents = {};
@@ -271,7 +258,6 @@ function mergeRunTalentXPIntoProfile(draft: GameplayDraft, runTalentXP: TalentXP
   return snapshot;
 }
 
-/** Reset every permanent (profile-lifetime) field to its initial values. */
 export function clearPermanentData(draft: GameplayDraft): void {
   Object.assign(draft.runProfile, createInitialPermanentFields());
 }

@@ -1,4 +1,3 @@
-// Card text rendering for titles, keyword popups, and corrupted value highlights.
 /* eslint-disable react-refresh/only-export-components -- co-located card description components and bare-token utility */
 import { Fragment, type ReactNode } from "react";
 
@@ -19,7 +18,6 @@ export interface TokenizedTextOptions {
   renderPlain?: (text: string, key: number) => ReactNode;
 }
 
-/** Shared keyword-tokenizing text renderer; defaults to colored keywords with plain fragments. */
 export function renderTokenizedDescription(text: string, options?: TokenizedTextOptions): ReactNode[] {
   return tokenizeDescription(text).map((part, index) => {
     if (part.keywordId) {

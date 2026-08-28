@@ -1,4 +1,3 @@
-// Pure startup-bar math: weighted work → target, then eased display that never jumps or sits full early.
 import {
   STARTUP_BAR_INCOMPLETE_CAP,
   STARTUP_BAR_TAU_MS,

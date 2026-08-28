@@ -1,4 +1,3 @@
-// Shared homestead tile layout: hover shell, art surface, and footer slot.
 import { useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { cardInteractiveGlowClass } from "../../../shared/config";

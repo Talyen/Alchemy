@@ -2,7 +2,6 @@ import { afterEach, beforeEach, vi } from "vitest";
 
 const DISABLE_ANIMATIONS_KEY = "alchemy-disable-animations";
 
-/** Collapse cosmetic JS delays for behavior tests that do not assert animation timing. */
 export function installDisabledAnimationsForTests(): void {
   let previousValue: string | null = null;
 
@@ -17,11 +16,6 @@ export function installDisabledAnimationsForTests(): void {
   });
 }
 
-/**
- * Queue-based requestAnimationFrame stub for jsdom tests. Returns the queued
- * callbacks; flush them manually (e.g. `frames.forEach((cb) => cb(16))`).
- * Pair with `vi.unstubAllGlobals()` in afterEach.
- */
 export function installRafStub(): FrameRequestCallback[] {
   const frames: FrameRequestCallback[] = [];
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {

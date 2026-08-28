@@ -1,9 +1,3 @@
-/**
- * Crowd-control threshold checks, immunity, and skip-turn assignment.
- * Stun/freeze resolve when buildup crosses the threshold for either side.
- * Enemy triggers funnel through tryTriggerEnemyCc; the caller applies any
- * post-trigger payload (stun talents/gear or frozen-heart/gear freeze damage).
- */
 import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
 import {
@@ -18,7 +12,6 @@ import {
 export type ActiveCcKeyword = "stun" | "freeze";
 type CcStat = ActiveCcKeyword;
 
-/** Overlay keyword while skip turns are active; stun wins when both are set. */
 export function getActiveCcKeyword(cc: CcState): ActiveCcKeyword | null {
   if (cc.stunSkipTurns > 0) return "stun";
   if (cc.freezeSkipTurns > 0) return "freeze";
@@ -52,7 +45,6 @@ export interface PlayerCcTriggerInput {
   combatTexts: CombatTextEvent[];
 }
 
-/** Player CC threshold is a fraction of playerMaxHealth. CC cooldown prevents immediate re-CC. */
 export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): BattleState {
   const { state, stat, stackValue, thresholdFraction, combatTexts } = input;
   if (stackValue <= 0) return state;
@@ -113,11 +105,10 @@ export function resolvePlayerCrowdControlTriggers(state: BattleState, combatText
 export interface EnemyCcImmunityInput {
   nextState: BattleState;
   stat: CcStat;
-  /** Pre-hit cooldown — enemy freeze checks state before stacks from this hit. */
+
   ccCooldown: number;
 }
 
-/** If enemy CC immunity is active, clear the stack on nextState without skipping. */
 export function applyEnemyCcImmunityClear(input: EnemyCcImmunityInput): BattleState | null {
   if (input.ccCooldown <= 0) return null;
   return clearEnemyCcStack(input.nextState, input.stat);
@@ -131,7 +122,6 @@ export interface EnemyCcTriggerInput {
   postTrigger?: (state: BattleState) => BattleState;
 }
 
-/** Assigns enemy skip turns, cooldown, and notice after threshold was met. */
 export function assignEnemyCrowdControlSkip(input: EnemyCcTriggerInput): BattleState {
   const { nextState, stat, skipDuration, combatTexts, postTrigger } = input;
   let result: BattleState = {
@@ -154,9 +144,8 @@ export function assignEnemyCrowdControlSkip(input: EnemyCcTriggerInput): BattleS
 }
 
 export interface EnemyCcTriggerCheckInput {
-  /** Health before the triggering hit — stun/freeze thresholds are checked against pre-hit health. */
   preHitHealth: number;
-  /** State after the triggering stack was added. */
+
   nextState: BattleState;
   stat: CcStat;
   stackValue: number;
@@ -168,12 +157,6 @@ export interface EnemyCcTriggerCheckInput {
 
 export type EnemyCcTriggerResult = { kind: "skip"; state: BattleState } | { kind: "immune"; state: BattleState };
 
-/**
- * Runs the canonical enemy CC trigger: threshold check against pre-hit health,
- * then either immunity clear (cooldown) or skip+notice assignment. Returns null
- * when the threshold is not met. The caller applies post-trigger payload (stun
- * talents/gear or frozen-heart/gear freeze damage) only on the "skip" branch.
- */
 export function tryTriggerEnemyCc(input: EnemyCcTriggerCheckInput): EnemyCcTriggerResult | null {
   const { preHitHealth, nextState, stat, stackValue, thresholdFraction, ccCooldown, skipDuration, combatTexts } = input;
   if (preHitHealth <= 0 || stackValue < preHitHealth * thresholdFraction) return null;

@@ -1,4 +1,3 @@
-// Shared encounter trait event dispatch for enemy actions, card actions, and health thresholds.
 import type { BattleCard } from "@/lib/game-data";
 import { HALF_DIVISOR } from "../game-constants";
 import { mergeCombatText } from "./combat-text";

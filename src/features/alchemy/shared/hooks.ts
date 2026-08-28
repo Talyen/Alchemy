@@ -1,14 +1,7 @@
-// Viewport, Aspect Ratio, and Resolution hooks/helpers.
-// Controls coordinate scaling mapping between virtual design stage and the physical screen.
-
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { MAX_STAGE_SCALE, MIN_STAGE_SCALE, STAGE_HEIGHT } from "@/lib/game-constants";
 import type { AspectRatioOption } from "./types";
 
-/**
- * Centered Layout configurations and Aspect Ratio values.
- * Keeps preset coordinates and scaling multipliers grouped in one config block.
- */
 const LAYOUT_CONFIG = {
   DEFAULT_WIDTH: 1920,
   DEFAULT_HEIGHT: 1080,
@@ -20,9 +13,6 @@ const LAYOUT_CONFIG = {
   } as Record<Exclude<AspectRatioOption, "auto">, { width: number; height: number }>,
 } as const;
 
-/**
- * Custom hook to track the browser viewport dimensions reactively.
- */
 function useViewportSize(active: boolean) {
   const [viewportSize, setViewportSize] = useState(() => ({
     width: typeof window !== "undefined" ? window.innerWidth : LAYOUT_CONFIG.DEFAULT_WIDTH,
@@ -54,9 +44,6 @@ function useViewportSize(active: boolean) {
   return viewportSize;
 }
 
-/**
- * Determines target virtual stage dimensions based on the resolved aspect ratio option.
- */
 function getVirtualStageDimensions(resolvedAspect: Exclude<AspectRatioOption, "auto">): {
   stageWidth: number;
   stageHeight: number;
@@ -68,11 +55,6 @@ function getVirtualStageDimensions(resolvedAspect: Exclude<AspectRatioOption, "a
   };
 }
 
-/**
- * Computes viewport fitting scale while clamping it to safe min/max ranges.
- * Fits the full CSS viewport — leftover space letterboxes via centered layout,
- * so a native-size window stays at scale 1 instead of permanently downscaling.
- */
 function getStageScale(viewportWidth: number, viewportHeight: number, stageWidth: number, stageHeight: number): number {
   const availableWidth = Math.max(0, viewportWidth);
   const availableHeight = Math.max(0, viewportHeight);
@@ -82,9 +64,6 @@ function getStageScale(viewportWidth: number, viewportHeight: number, stageWidth
   return Math.max(MIN_STAGE_SCALE, Math.min(MAX_STAGE_SCALE, rawScale));
 }
 
-/**
- * Maps an arbitrary aspect ratio to standard, narrow, or ultrawide aspectModes.
- */
 function getAspectModeFromRatio(aspectRatio: number): "standard" | "narrow" | "ultrawide" {
   if (aspectRatio < 1.68) {
     return "narrow";
@@ -95,9 +74,6 @@ function getAspectModeFromRatio(aspectRatio: number): "standard" | "narrow" | "u
   return "standard";
 }
 
-/**
- * Maps the resolved preset aspect ratio to standard, narrow, or ultrawide aspectModes.
- */
 function getAspectMode(resolvedAspect: Exclude<AspectRatioOption, "auto">): "standard" | "narrow" | "ultrawide" {
   if (resolvedAspect === "16:10") {
     return "narrow";
@@ -168,20 +144,15 @@ export function getVirtualResolutionLayout(
   };
 }
 
-/**
- * Hook to compute responsive CSS transform scaling style mappings, bounding boxes, and ratios
- * to fit a target game canvas size into the browser viewport size.
- */
 export function useVirtualResolution(selectedAspectRatio: AspectRatioOption, bypassVr = false) {
   const { width, height } = useViewportSize(!bypassVr);
   if (bypassVr) return BYPASS_RESOLUTION_RESULT;
   return getVirtualResolutionLayout(selectedAspectRatio, width, height);
 }
 
-/** Keeps the latest value available to stable event handlers without changing their identity. */
 export function useLatestRef<T>(value: T): RefObject<T> {
   const valueRef = useRef(value);
-  // Sync store/event callbacks in the same commit must not see the previous render.
+
   // eslint-disable-next-line react-hooks/refs -- latest-ref contract; not a render input
   valueRef.current = value;
   return valueRef;

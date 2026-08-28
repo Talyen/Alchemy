@@ -35,6 +35,6 @@ Feature code occasionally bypasses the aggregate command boundary — calling st
 - `profile-store.ts` / `gear-store.ts` adapter subscriptions to aggregate commit signal (persistence adapters).
 - Restoration: `restoreRun` is the sole hydration path (boot bypasses screen transition policy intentionally).
 
-## Enforcement opportunity
+## Enforcement
 
-Current: boundary lint (`gameplay-state-store.ts` internal) + code review. Potential hard gate: `alchemy/no-direct-aggregate-mutation` ESLint rule banning Zustand `set`/`getState` writes outside `shared/stores/**` (deferred — evaluate invasiveness first; pattern stays as knowledge).
+Current: boundary lint (`gameplay-state-store.ts` internal via `DOMAIN_STORE_PATTERNS` in `eslint/boundaries.js:58`) + `AGGREGATE_NO_DIRECT_MUTATION` (`no-restricted-syntax` on `useGameplayStateStore.getState`/`setState` outside `src/features/alchemy/shared/stores/**` — `eslint/fragments.js:70`, `eslint.config.js:372`) + code review. Allowed: `src/features/alchemy/shared/stores/**` (`run-session-command.ts` single draft, `gameplay-state-store.ts` `readGameplayState`) and `tests/**` helpers. Feature code must use `dispatchRunSessionCommand` + `run-session-write-port` / `run-session-read-port`.

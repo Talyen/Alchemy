@@ -1,4 +1,3 @@
-// Shared status math: halved decay, armor decay after damage, percent rolls, damage multipliers.
 import {
   BATTLE_CONFIG,
   HALF_DIVISOR,
@@ -13,26 +12,22 @@ import { applyPlayerCombatDamage, type BattleState, type CombatTextEvent, type C
 const DECAY_THRESHOLD = 1;
 const MIN_ARMOR = 0;
 
-/** Halves a stack each tick; stacks of 1 or less clear entirely. */
 export function decayHalvedStatus(value: number) {
   if (value <= DECAY_THRESHOLD) return 0;
   return Math.round(value / HALF_DIVISOR);
 }
 
-/** Poison stacks lost after tick: max(1, round(stacks * POISON_DECAY_PERCENT / 100)). */
 export function decayPoisonStacks(stacks: number): number {
   if (stacks <= 0) return 0;
   const decay = Math.max(1, Math.round((stacks * POISON_DECAY_PERCENT) / PERCENT_DENOMINATOR));
   return Math.max(0, stacks - decay);
 }
 
-/** Burn damage bonus vs bleeding enemies — shared by card damage calc and burn ticks. */
 export function getBurnBonusToBleedingMultiplier(state: Pick<BattleState, "enemyStatuses" | "gearEffects">): number {
   if (state.enemyStatuses.bleed <= 0 || state.gearEffects.burnDamageBonusToBleedingPercent <= 0) return 1;
   return 1 + state.gearEffects.burnDamageBonusToBleedingPercent / PERCENT_DENOMINATOR;
 }
 
-/** Trait weakness/resistance — first matching trait wins, then CC bonuses. */
 export function getEnemyDamageMultiplier(
   state: Pick<BattleState, "currentEnemy" | "enemyCC" | "talentEffects">,
   damageType: string,
@@ -53,7 +48,6 @@ import { rollPercent } from "./rng";
 
 export { rollPercent };
 
-/** Extracts rng from battle state. Missing rng is a programming error. */
 export function getBattleRng(state: { rng?: () => number }): () => number {
   if (!state.rng) {
     throw new Error("BattleState.rng is required for outcome rolls");
@@ -61,11 +55,6 @@ export function getBattleRng(state: { rng?: () => number }): () => number {
   return state.rng;
 }
 
-/**
- * Deals self-inflicted health loss through the player combat damage pipeline,
- * emitting combat text for the health actually lost (clamped at 0 — a
- * phoenix-feather save can leave the player healthier than before).
- */
 export function dealSelfDamage(
   state: BattleState,
   amount: number,
@@ -85,17 +74,12 @@ export function dealSelfDamage(
   return { state: postDamage, healthLost };
 }
 
-/** Evaluates a talent/boon percent chance roll using state's RNG. */
 export function rollTalentChance(chance: number, state: { rng?: () => number }): boolean {
   return chance > 0 && rollPercent(chance, getBattleRng(state));
 }
 
 export type ArmorDecayTarget = "player" | "enemy";
 
-/**
- * Decays the enemy's armor when health damage is taken.
- * Enemy armor is stored in enemyMitigation.
- */
 function decayEnemyArmor(state: BattleState): BattleState {
   if (state.enemyMitigation.armor <= MIN_ARMOR) {
     return state;
@@ -109,11 +93,6 @@ function decayEnemyArmor(state: BattleState): BattleState {
   };
 }
 
-/**
- * Decays the player's armor when health damage is taken.
- * Player armor is stored in playerStatuses. If armor breaks,
- * checks and applies the player's armorBreakBlock talent.
- */
 function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   if (state.playerStatuses.armor <= MIN_ARMOR) {
     return state;
@@ -128,7 +107,6 @@ function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): 
     },
   };
 
-  // If player armor breaks and the armorBreakBlock talent is active, grant block.
   const armorBroke = armorBefore > MIN_ARMOR && nextState.playerStatuses.armor === MIN_ARMOR;
   const hasArmorBreakTalent = nextState.talentEffects.armorBreakBlock > 0;
 
@@ -139,7 +117,6 @@ function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): 
   return nextState;
 }
 
-/** Reduces armor by BATTLE_CONFIG.ARMOR_DECAY_AMOUNT when health damage was taken. */
 export function decayArmorAfterDamage(
   state: BattleState,
   damage: number,

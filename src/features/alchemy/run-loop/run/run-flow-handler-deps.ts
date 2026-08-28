@@ -13,7 +13,6 @@ export type HandleActComplete = (displayMaterials?: MaterialInventory, onRendere
 export type AdvanceToNextDestination = () => void;
 
 export interface RunFlowHandlerDeps {
-  /** Shell-executed side effects (navigate, shops, battle starts, content hooks). */
   actions: RunFlowShellActions;
   getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
 }

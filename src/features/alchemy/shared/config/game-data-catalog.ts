@@ -1,5 +1,3 @@
-// Feature-facing catalog seam for screen/runtime reads of static game data.
-// Keeps UI modules from importing broad game-data registries directly.
 export {
   alchemistShopBg,
   campfire,

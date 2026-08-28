@@ -68,6 +68,5 @@ export function migrateV11ToV12(save: RawSaveData): RawSaveData {
     equippedTrinkets: isRecord(save.equippedTrinkets)
       ? save.equippedTrinkets
       : Object.fromEntries(CHARACTER_IDS.map((id) => [id, null])),
-    saveSchemaVersion: 12,
   };
 }

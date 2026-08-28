@@ -1,4 +1,3 @@
-// Free optional Wildwood Draft card-removal screen between boss encounters.
 import type { BattleCard } from "@/lib/game-data";
 
 import { RemoveCardPanel } from "../../shared/ui/remove-card-panel";

@@ -3,7 +3,6 @@ export interface PlasmaColorPair {
   secondary: string;
 }
 
-/** Parses #rgb or #rrggbb to 0–1 RGB channels. */
 export function parsePlasmaHexColor(hex: string): [number, number, number] {
   const normalized = hex.trim().replace(/^#/, "");
   if (normalized.length === 3) {

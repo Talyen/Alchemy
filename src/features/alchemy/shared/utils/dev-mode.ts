@@ -1,4 +1,3 @@
-// Dev-build and startup-gate helpers — Vite dev server or Playwright loading bypass only.
 export function isAlchemyDevBuild(): boolean {
   return import.meta.env.DEV;
 }

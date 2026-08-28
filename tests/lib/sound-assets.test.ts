@@ -11,7 +11,7 @@ import {
 
 const soundsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../public/sounds");
 const rawSoundsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../Raw Assets/Sound Effects");
-// CI sparse-checkouts omit Raw Assets except in the assets drift job.
+
 const hasRawSounds = existsSync(rawSoundsDir);
 const declaredSounds = new Set([...generatedSoundAssets.map(({ target }) => target), ...curatedSoundFiles]);
 

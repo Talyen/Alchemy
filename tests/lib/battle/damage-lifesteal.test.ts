@@ -20,7 +20,6 @@ describe("dealDamageToEnemy — lifesteal", () => {
 
 describe("applyLifestealAndPlayerHitTriggers — leechMissingHealthStep", () => {
   it("adds rounded missing-health chunks on top of base leech (half rounds up)", () => {
-    // Base leech = round(6 * 0.5) = 3; missing = 10, step 4 → round(2.5) = 3 extra.
     const state = patchBattleState({
       rng: () => 0.99,
       playerHealth: 20,
@@ -32,7 +31,6 @@ describe("applyLifestealAndPlayerHitTriggers — leechMissingHealthStep", () => 
   });
 
   it("floors partial chunks below the step size", () => {
-    // Base leech 3; missing = 10 → floor(10 / 7) = 1 extra.
     const state = patchBattleState({
       rng: () => 0.99,
       playerHealth: 20,

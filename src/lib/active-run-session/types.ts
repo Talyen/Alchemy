@@ -1,4 +1,3 @@
-// Persisted mid-run save contracts shared by validation, storage, and controllers.
 import type { BattleState } from "@/lib/battle";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
@@ -20,7 +19,6 @@ import type { RefreshableShopFields } from "./shop-session-types";
 
 export type { InterruptedFlow, PersistedPendingReward };
 
-/** Permanent Gear or Armory Trinket granted during the live run, in obtain order. */
 export type RunObtainedItem = { kind: "gear"; instance: GearInstance } | { kind: "trinket"; trinketId: string };
 
 export interface PersistedShopState extends RefreshableShopFields {
@@ -44,7 +42,7 @@ export interface PersistedEquipmentShopState extends RefreshableShopFields {
 export interface PersistedMysteryVisit {
   eventId: string;
   chosenChoice: MysteryChoice | null;
-  /** Legacy choose-removal visit; omitted after the pending choice is resolved. */
+
   pendingRemoval?: boolean;
   cardChoices: BattleCard[] | null;
   grantedTrinketIds: string[];
@@ -69,7 +67,6 @@ export type PersistedBattleTransition =
       kind: "continue-end-turn";
     }
   | {
-      /** Recovery marker for enemy-phase saves without a persisted continuation. */
       kind: "legacy-enemy-turn";
     };
 
@@ -85,7 +82,7 @@ export interface ActiveRunData {
   runDeck: BattleCard[];
   runPlayerHealth: number;
   runMaxHealth: number;
-  /** Derived max HP from current meta when this snapshot was written; combat bonuses are runMaxHealth minus this. */
+
   runMetaMaxHealth: number;
   roomsEncountered: number;
   currentAct: number;
@@ -101,7 +98,7 @@ export interface ActiveRunData {
   labyrinthMap: LabyrinthMap | null;
   labyrinthPendingNode: LabyrinthPendingNodeId | null;
   wildwoodDraft: WildwoodDraftState | null;
-  /** Campaign/labyrinth Wildcard pick set; null when the starter draft is finished or unused. */
+
   starterDraftChoices: BattleCard[] | null;
   activeCombat: ActiveCombatData | null;
   runTalentXP: TalentXP;

@@ -1,4 +1,3 @@
-// Run destination labels shared by map generation, navigation, and persistence.
 export const DESTINATIONS = {
   NORMAL_COMBAT: "Normal Combat",
   ELITE_COMBAT: "Elite Combat",

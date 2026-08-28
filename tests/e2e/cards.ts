@@ -1,10 +1,7 @@
-// Lightweight card factories for E2E battle setup (no game-data webp imports).
 import type { BattleCard } from "@/lib/game-data";
 import type { DamageType } from "@/lib/game-data/types";
 import { makeTestCard } from "../fixtures/cards";
 
-// Rendered hand keys are `${card.id}-${card.uid}`; production hands always
-// carry draw-assigned uids, so factory cards get unique ones too (overridable).
 let nextFactoryCardUid = 1;
 
 export function makeCard(overrides: Record<string, unknown> = {}) {

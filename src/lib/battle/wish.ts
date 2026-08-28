@@ -1,6 +1,3 @@
-/**
- * Wish card generation and wish effect resolution.
- */
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
@@ -13,7 +10,7 @@ import {
   mergeCombatText,
 } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
-import { getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
+import { getBattleRng, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import {
   PERCENT_DENOMINATOR,
@@ -61,7 +58,8 @@ function upgradeWishCard(card: BattleCard): BattleCard {
 }
 
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
-  const baseCount = WISH_CHOICE_COUNT + (rollPercent(state.talentEffects.wishExtraChoiceChance, state.rng) ? 1 : 0);
+  const baseCount =
+    WISH_CHOICE_COUNT + (rollPercent(state.talentEffects.wishExtraChoiceChance, getBattleRng(state)) ? 1 : 0);
 
   let candidates = getOfferableCardPool().filter((candidate) => candidate.id !== card.id);
 
@@ -72,9 +70,8 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
     }
   }
 
-  // Concatenate draw pile, hand, discard, and consumed cards to represent the player's full deck
   const fullDeck = [...state.deck, ...state.hand, ...state.discard, ...state.exhausted];
-  const selected = selectRewardCards(fullDeck, candidates, baseCount, [], state.rng);
+  const selected = selectRewardCards(fullDeck, candidates, baseCount, [], getBattleRng(state));
 
   if (state.talentEffects.wishCardsUpgraded) {
     return selected.map((c) => upgradeWishCard(c));
@@ -97,7 +94,7 @@ function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[
 function applyWishCrystalGoldTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   const amount = state.talentEffects.wishCrystalGold;
   if (amount <= 0) return state;
-  if (rollPercent(WISH_CRYSTAL_GOLD_PERCENT, state.rng)) {
+  if (rollPercent(WISH_CRYSTAL_GOLD_PERCENT, getBattleRng(state))) {
     return addGoldWithCombatText(state, amount, combatTexts);
   }
   if (shouldConvertCrystalWishToGold(state.contentSystemType)) {
@@ -165,7 +162,7 @@ function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]
 
 function applyWishTrinketTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (!state.talentEffects.wishTrinketChoice) return state;
-  const isForge = rollPercent(WISH_TRINKET_FORK_PERCENT, state.rng);
+  const isForge = rollPercent(WISH_TRINKET_FORK_PERCENT, getBattleRng(state));
   const status = isForge ? ("forge" as const) : ("armor" as const);
   return applyPlayerStatusEffect(state, { kind: "player-status", status, amount: 1 }, combatTexts);
 }

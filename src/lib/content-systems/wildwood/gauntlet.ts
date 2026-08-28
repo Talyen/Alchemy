@@ -1,4 +1,3 @@
-// Pure Wildwood Draft boss bag, removal, and shared encounter trait rules.
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { characters, selectRewardCards, type BattleCard, type BestiaryEntry, type CharacterId } from "@/lib/game-data";
 import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";

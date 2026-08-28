@@ -22,11 +22,6 @@ import { sampleItems } from "@/lib/utils";
 
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
 
-// Refresh keeps the shelf full while maximizing novelty: when enough unowned
-// alternatives exist outside `currentIds`, the shelf is entirely novel; when the
-// pool is nearly exhausted it fills with whatever remains (may reuse). If fewer
-// than TRINKET_SHOP_OFFERED trinkets are unowned at all, the shelf caps at the
-// available count — sampleItems clamps to the pool size.
 export function resampleTrinketShopOfferings(
   rng: () => number,
   ownedIds: readonly string[] = [],
@@ -59,7 +54,6 @@ export function resampleEquipmentShopOfferings(
   return generateEquipmentShopOfferings(EQUIPMENT_SHOP_OFFERED, rng, gearAstralChanceBonus, ownedUniqueIds);
 }
 
-/** `firstPurchaseUsed` resets per visit (`empty*State`); Merchant's Favor is first purchase at each shop. */
 export function createInitialShopState(deck: BattleCard[], rng: () => number): ShopState {
   return {
     ...emptyShopState(),

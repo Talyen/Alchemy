@@ -1,5 +1,3 @@
-// Enemy death Slice: jagged crack, split halves, and sparks. Replaces the old
-// pixel-burst dissolve. Honors reduced-motion and e2e animation-disabled.
 import { useLayoutEffect, useRef, useState } from "react";
 
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";

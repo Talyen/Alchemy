@@ -71,7 +71,7 @@ export const TrinketContentSchema = z.object({
   title: NonEmptyStringSchema,
   descriptionLines: z.array(NonEmptyStringSchema).min(1),
   art: NonEmptyStringSchema,
-  // partialRecord: rows author only the knobs they use; record would demand every key.
+
   effects: z.partialRecord(z.enum(trinketEffectKeys), z.union([z.number(), z.boolean()])),
 });
 

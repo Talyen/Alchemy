@@ -1,6 +1,3 @@
-// Pure run-start snapshot builder for campaign, labyrinth, and wildwood entry points.
-// Lives in shared/run-flow so run-setup and shared/stores can both consume it without
-// a phase → stores ownership inversion.
 import {
   computeStartingMaxHealth,
   getStartingDeck,
@@ -39,7 +36,6 @@ export interface RunStartInput {
   homesteadMaxHealthBonus?: number;
 }
 
-// Builds a coherent new-run state so every mode starts from a fresh, testable snapshot.
 export function createRunStartSnapshot({
   characterId,
   contentSystemType,

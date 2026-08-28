@@ -7,7 +7,6 @@ import { withPreservedFlags, type BattleState } from "@/lib/battle/types";
 import { makeCombatTexts, makeTestBattleState } from "../../fixtures/battle";
 import { defaultCombatFlags, defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
-/** State where a CC proc fires (stacks far above threshold) and the proc damage kills. */
 function ccProcKillState(): BattleState {
   return makeTestBattleState({
     enemyHealth: 5,
@@ -34,7 +33,7 @@ describe("lethality payouts — every kill path pays the same rewards", () => {
     const texts = makeCombatTexts();
     const result = resolveStunTrigger(state, texts);
     expect(result.enemyHealth).toBe(0);
-    expect(result.playerHealth).toBe(25); // +2 bone charm, +3 heal-on-kill
+    expect(result.playerHealth).toBe(25);
     expect(result.gold).toBe(4);
   });
 
@@ -64,7 +63,7 @@ describe("lethality payouts — every kill path pays the same rewards", () => {
   it("does not pay twice when a follow-up path lands after an already-lethal hit", () => {
     const lethal = withGear({ ...ccProcKillState(), enemyHealth: 0 }, { goldOnKill: 4 });
     const texts = makeCombatTexts();
-    // Enemy already dead: any follow-up path must see enemyWasAlive=false and no-op.
+
     const afterTypedHit = dealPlayerTypedHit(lethal, "physical", 10, texts);
     expect(afterTypedHit.gold).toBe(0);
     expect(afterTypedHit.playerHealth).toBe(20);
@@ -93,7 +92,7 @@ describe("withPreservedFlags", () => {
       return s;
     });
     expect(observedInside).toEqual({ crit: false, twice: false });
-    // And the caller's armed values survive the action.
+
     expect(result.flags.nextHitCrit).toBe(true);
     expect(result.flags.playNextCardTwice).toBe(true);
   });

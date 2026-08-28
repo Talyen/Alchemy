@@ -1,23 +1,8 @@
-// Run screen taxonomy and transition helpers.
-// Screen *state* lives in navigation.screen on the run domain store; stores hold run/battle/session data.
-// Navigation handlers (`use-run-flow-engine`, `run-flow-handlers`) call `navigateTo` / `transition`
-// from `shell/use-screen-transitions.ts`.
-//
-// Screen transition modes:
-// - navigateTo: default run-loop path — NAVIGATION_DELAY_MS delay + optional deferred store commit after PAGE_EXIT_MS.
-// - transition({ delayMs }): victory → rewards; uses setScreen after delay (no navigateTo commit callback).
-// - transition({ immediate: true }): defeat/game-over and labyrinth abandon — instant setScreen (cancels pending navigateTo).
-// - restoreRun: boot resume — immediate setScreen from persisted currentScreen.
 import type { Screen } from "./screens";
 import { ROUTE_SCREENS } from "./screens";
 
-/** High-level run lifecycle phase for persistence and orchestration. */
 export type RunPhase = "meta" | "runLoop" | "battle" | "runEnd";
 
-/**
- * Static phase classification per screen. Battle is classified as `runLoop` here;
- * `getRunPhase` upgrades `BATTLE` to `battle` when `hasActiveBattle` is true.
- */
 export const SCREEN_PHASE: Record<Screen, RunPhase> = {
   [ROUTE_SCREENS.MENU]: "meta",
   [ROUTE_SCREENS.GAME_MODE_SELECT]: "meta",
@@ -49,7 +34,6 @@ export function isRunLoopScreen(screen: Screen): boolean {
   return SCREEN_PHASE[screen] === "runLoop";
 }
 
-/** Derives run phase from the current screen and whether combat state is active. */
 export function getRunPhase(screen: Screen, hasActiveBattle: boolean): RunPhase {
   if (hasActiveBattle && screen === ROUTE_SCREENS.BATTLE) return "battle";
   return SCREEN_PHASE[screen];

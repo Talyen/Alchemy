@@ -1,4 +1,3 @@
-// Extracted utility functions for battle controller card measurement, transfer timing, scene rects, and companion audio.
 import { playBattleEvent, playCardSound } from "@/lib/audio";
 import { logError } from "@/lib/error-logger";
 import type { CombatTextEvent } from "@/lib/battle";
@@ -41,9 +40,6 @@ export function playCompanionSound(companionId: string) {
   if (soundCardId) playCardSound(soundCardId);
 }
 
-// Plays battle-event impact sounds (hit, block absorb, heal) based on
-// resolved combat text. The per-sound cooldown in the audio engine prevents
-// multi-hit cards from stacking identical impact sounds too rapidly.
 export function playCombatTextSounds(combatTexts: CombatTextEvent[]) {
   for (const ct of combatTexts) {
     if (ct.kind === "notice") {
@@ -108,9 +104,7 @@ export function defaultMeasureVisualCardRect(
   if (!element || !sceneRect) return null;
   const rect = element.getBoundingClientRect();
   const computedStyle = getComputedStyle(element);
-  // Hand cards are sized with container-query units, so their used size is often
-  // fractional. offsetWidth/offsetHeight round that size to whole CSS pixels and
-  // make the flying transfer card subtly resize when the live card is revealed.
+
   const width = Number.parseFloat(computedStyle.width) || element.offsetWidth;
   const height = Number.parseFloat(computedStyle.height) || element.offsetHeight;
   return {

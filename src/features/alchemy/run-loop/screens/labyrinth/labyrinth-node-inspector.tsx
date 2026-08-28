@@ -1,4 +1,3 @@
-// Floating chamber card for a selected labyrinth hex: art, traits, and Enter when reachable.
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION, LABYRINTH_NODE_META, tooltipBodyClass } from "@/features/alchemy/shared/config";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";

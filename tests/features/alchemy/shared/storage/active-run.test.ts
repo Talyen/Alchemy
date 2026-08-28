@@ -245,7 +245,7 @@ describe("parseActiveRun", () => {
 
     const parsedBattle = migrated.activeRun?.activeCombat?.battleState;
     expect(parsedBattle).toBeTruthy();
-    // Wire parse keeps structural defaults; resume repair recomputes from runBoons.
+
     expect(parsedBattle!.trinketEffects.boneCharmHealOnKill).toBe(0);
     expect(
       repairPersistedBattleBoonManifest(parsedBattle!, migrated.activeRun!.runBoons).trinketEffects.boneCharmHealOnKill,

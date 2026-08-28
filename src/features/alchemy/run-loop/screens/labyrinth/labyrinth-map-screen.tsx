@@ -1,6 +1,3 @@
-/**
- * Labyrinth hex-floor map with a node-anchored chamber inspector.
- */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
@@ -81,7 +78,6 @@ export function LabyrinthMapScreen({
       id: "labyrinth-inspector",
       priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
       onEscape: () => {
-        // GameMenu stays mounted while fading out (`pointer-events-none`). Only decline when it is actually open.
         const menu = document.querySelector("[data-testid=game-menu]");
         if (menu instanceof HTMLElement && !menu.closest(".pointer-events-none")) return false;
         onNodeDeselect();

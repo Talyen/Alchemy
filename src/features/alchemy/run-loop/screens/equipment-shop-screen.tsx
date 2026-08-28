@@ -1,4 +1,3 @@
-// Equipment Shop — buy gear or refresh offerings.
 import type { GearInstance } from "@/lib/gear";
 
 import { PurchasableGearItem } from "../../shared/ui/purchasable-gear-item";
@@ -32,7 +31,6 @@ export function EquipmentShopScreen({
     <ShopBrowseShell title="Equipment Shop" gold={gold} onOpenMenu={onOpenMenu}>
       <ShopBrowseOfferings
         swapKey={shopOfferingsSwapKey(
-          // instanceId keys stay valid when restore drops owned uniques; do not switch to id-index.
           gear.map((g) => g.instanceId),
           refreshesLeft,
         )}

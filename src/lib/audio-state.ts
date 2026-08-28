@@ -1,5 +1,3 @@
-// Shared mutable audio runtime state for SFX and streamed music modules.
-// Used only by the audio implementation modules so public callers keep importing from lib/audio.
 import { DEFAULT_MUSIC_VOLUME, DEFAULT_SFX_VOLUME } from "./game-constants";
 
 interface AudioRuntimeState {

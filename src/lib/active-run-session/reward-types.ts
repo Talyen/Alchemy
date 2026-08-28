@@ -1,4 +1,3 @@
-// Runtime reward state shared by run session and persistence restore.
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";

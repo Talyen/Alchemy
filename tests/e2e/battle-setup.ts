@@ -1,4 +1,3 @@
-// Battle and destination bootstrap helpers for E2E specs.
 import { expect, type Page } from "@playwright/test";
 import type { BattleCard } from "@/lib/game-data";
 import { BattlePage } from "../pages/battle-page";
@@ -69,7 +68,6 @@ export async function assertDefeatFromEndRun(page: Page, options: { returnToMenu
   }
 }
 
-/** Win the current battle via combat and claim the first reward card. */
 export async function winBattleAndClaimReward(page: Page, maxTurns = 6) {
   await new BattlePage(page).winViaCombat(maxTurns);
   await new RewardPage(page).claimFirstReward();

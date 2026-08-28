@@ -1,5 +1,3 @@
-// Battle status icon popups for keyword statuses and Death's Door.
-// Used by ArtPanel to keep actor layout separate from status tooltip details.
 import { type ReactNode } from "react";
 import { Skull, Sparkles } from "lucide-react";
 import type { KeywordId } from "@/lib/game-data";
@@ -59,7 +57,6 @@ function StatusChipShell({
   );
 }
 
-/** Shared status tooltip: label row with optional value chip, then description body. */
 function StatusTooltip({
   labelNode,
   value,
@@ -100,7 +97,6 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
     return <HasteStatusIcon value={chip.value} />;
   }
 
-  // Check augment definitions first (burnBonus, freezeBonus, etc.)
   const augment = augmentDefinitions[chip.id as keyof typeof augmentDefinitions];
   if (augment) {
     return <AugmentStatusIcon chip={chip} augment={augment} />;

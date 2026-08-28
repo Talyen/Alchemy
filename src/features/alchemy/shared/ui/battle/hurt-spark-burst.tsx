@@ -1,5 +1,3 @@
-// Canvas spark burst around a combatant portrait, colored by the resolved impact event.
-// Used by PortraitHurtVfx during each hurt pulse.
 import { useLayoutEffect, useRef } from "react";
 
 import { animateHurtSparks, createHurtSparks } from "@/lib/animation/hurt-sparks";

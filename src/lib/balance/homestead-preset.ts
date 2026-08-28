@@ -1,4 +1,3 @@
-// Homestead presets for balance simulations (companion bonds + typical upgrade stars).
 import { type BattleCard, type CompanionId } from "@/lib/game-data";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
@@ -36,7 +35,6 @@ export function buildSimCompanionBondLevels(
   return bonds;
 }
 
-/** Mid = 1★ every building/farm/research; late = 2★. Early stays unupgraded. */
 const TYPICAL_HOMESTEAD_STARS: Record<TalentPreset, number> = {
   early: 0,
   mid: 1,

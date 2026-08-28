@@ -217,9 +217,9 @@ describe("applyDamageStatuses", () => {
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const texts = makeTexts();
     const result = applyDamageStatuses(state, effect, 10, texts);
-    expect(result.enemyStatuses.freeze).toBe(0); // immunity clears the stack
-    expect(result.enemyCC.freezeSkipTurns).toBe(0); // no skip
-    expect(result.enemyHealth).toBe(30); // no frozen-heart damage
+    expect(result.enemyStatuses.freeze).toBe(0);
+    expect(result.enemyCC.freezeSkipTurns).toBe(0);
+    expect(result.enemyHealth).toBe(30);
     expect(texts).not.toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 6 });
   });
 
@@ -241,8 +241,8 @@ describe("applyDamageStatuses", () => {
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const result = applyDamageStatuses(state, effect, 10, []);
-    expect(result.enemyStatuses.freeze).toBe(0); // cleared on trigger
-    expect(result.enemyCC.freezeSkipTurns).toBeGreaterThanOrEqual(1); // freeze triggers
+    expect(result.enemyStatuses.freeze).toBe(0);
+    expect(result.enemyCC.freezeSkipTurns).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -373,7 +373,7 @@ describe("applyDamageStatuses — physical riders", () => {
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
     const result = applyDamageStatuses(state, effect, 5, makeTexts());
     expect(result.enemyHealth).toBe(0);
-    expect(result.playerHealth).toBe(22); // +2 bone charm
+    expect(result.playerHealth).toBe(22);
     expect(result.gold).toBe(4);
   });
 
@@ -395,10 +395,9 @@ describe("applyDamageStatuses — physical riders", () => {
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5, lifesteal: true };
     const result = applyDamageStatuses(state, effect, 5, []);
     expect(result.enemyStatuses.bleed).toBe(0);
-    // Queued leech is paid with the burst instead of stranding until a future
-    // tick, capped at the health the burst actually removed.
+
     expect(result.pendingBleedLeechHealing).toBe(0);
-    // The burst dealt 8, so only 8 of the queued 16 is payable -> round(8 / 2).
+
     expect(result.playerHealth).toBe(24);
   });
 
@@ -420,7 +419,7 @@ describe("applyDamageStatuses — physical riders", () => {
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
     const result = applyDamageStatuses(state, effect, 5, []);
     expect(result.enemyHealth).toBe(0);
-    // Overkill: only 4 of the queued 16 is payable, matching the tickBleed clamp.
+
     expect(result.playerHealth).toBe(22);
   });
 
@@ -442,7 +441,7 @@ describe("applyDamageStatuses — physical riders", () => {
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
     const result = applyDamageStatuses(state, effect, 5, []);
-    // computeLeechHeal(4) = 2, scaled by +50% -> 3 (unscaled would heal 2).
+
     expect(result.playerHealth).toBe(23);
   });
 

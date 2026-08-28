@@ -9,7 +9,7 @@ import {
   resetToDefaults,
   setCollectionPage,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/write-port-profile";
+import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 function makeSave(overrides: Partial<SaveData> = {}): SaveData {
   return { ...defaultSaveData, ...overrides };
@@ -54,7 +54,7 @@ describe("profile store", () => {
 
   it("supports functional discovery updates and collection navigation", () => {
     dispatchRunSessionCommand((draft) => {
-      setDiscoveredCardIds(draft, (previous) => [...previous, "card-a"]);
+      setDiscoveredCardIds(draft, (previous: string[]) => [...previous, "card-a"]);
       setCollectionPage(draft, "bestiary", 2);
       setCollectionPage(draft, "cards", -1);
       handleCollectionTabChange(draft, "bestiary");

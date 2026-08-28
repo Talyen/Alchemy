@@ -1,4 +1,3 @@
-// Factories for homestead building, farm, and research data — reduces repeated tier/cost boilerplate.
 import type {
   BuildingId,
   FarmId,

@@ -95,6 +95,5 @@ export function migrateV12ToV13(save: RawSaveData): RawSaveData {
     ...save,
     activeRun: migrateRun(save.activeRun),
     parkedRuns,
-    saveSchemaVersion: 13,
   };
 }

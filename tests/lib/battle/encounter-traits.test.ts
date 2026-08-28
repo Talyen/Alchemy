@@ -1,4 +1,3 @@
-// Combat behavior tests for shared encounter traits.
 import { describe, expect, it } from "vitest";
 import {
   addEnemyStatus,
@@ -61,8 +60,7 @@ describe("encounter trait enemy actions", () => {
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
     });
     const result = endPlayerTurn(state);
-    // Tempered's gain fires every enemy phase, stunned or not (matching the
-    // bestiary stacking traits); zealot's damage rider needs a real attack.
+
     expect(result.state.enemyMitigation.forge).toBe(1);
     expect(result.state.playerHealth).toBe(state.playerHealth);
   });

@@ -146,7 +146,7 @@ describe("reward flow selection", () => {
       let call = 0;
       const rng = () => {
         call += 1;
-        // First draw selects gear (high third); second draw hits the 1/3 Trinket gate.
+
         return call === 1 ? 0.9 : 0.1;
       };
       const result = createWildwoodRewardState(getStartingDeck("knight"), rng, 0, [], []);

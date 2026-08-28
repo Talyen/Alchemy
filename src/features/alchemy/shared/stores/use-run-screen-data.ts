@@ -1,12 +1,25 @@
-// Screen-scoped React read hooks. Each hook subscribes only to the stores and
-// fields required by its screen, and its return type describes exactly that data.
-// Screens must use these (or useBattleScreenRouteData for battle), not the shell
-// orchestration ports in run-session-react-ports.
 import { useShallow } from "zustand/react/shallow";
-import { useGameplayStateStore } from "./gameplay-state-store";
+import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 import type { RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
 
 type ScreenData<S extends RunDataScreen> = RunScreenDataByScreen[S];
+
+function selectGold(state: GameplayState) {
+  return state.runProfile.gold;
+}
+
+function selectShopCardBase(state: GameplayState) {
+  return {
+    gold: state.runProfile.gold,
+    runDeck: state.run.activeRun.runDeck,
+  };
+}
+
+function createShopDataHook<S extends RunDataScreen>(
+  selector: (state: GameplayState) => ScreenData<S>,
+): () => ScreenData<S> {
+  return () => useGameplayStateStore(useShallow(selector));
+}
 
 export function useCampfireScreenData(): ScreenData<"campfire"> {
   return useGameplayStateStore(
@@ -17,43 +30,25 @@ export function useCampfireScreenData(): ScreenData<"campfire"> {
   );
 }
 
-export function useShopScreenData(): ScreenData<"shop"> {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      gold: state.runProfile.gold,
-      runDeck: state.run.activeRun.runDeck,
-      shopState: state.session.shopState,
-    })),
-  );
-}
+export const useShopScreenData = createShopDataHook<"shop">((state) => ({
+  ...selectShopCardBase(state),
+  shopState: state.session.shopState,
+}));
 
-export function useAlchemistScreenData(): ScreenData<"alchemist"> {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      gold: state.runProfile.gold,
-      runDeck: state.run.activeRun.runDeck,
-      alchemistState: state.session.alchemistState,
-    })),
-  );
-}
+export const useAlchemistScreenData = createShopDataHook<"alchemist">((state) => ({
+  ...selectShopCardBase(state),
+  alchemistState: state.session.alchemistState,
+}));
 
-export function useTrinketShopScreenData(): ScreenData<"trinket-shop"> {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      gold: state.runProfile.gold,
-      trinketShopState: state.session.trinketShopState,
-    })),
-  );
-}
+export const useTrinketShopScreenData = createShopDataHook<"trinket-shop">((state) => ({
+  gold: selectGold(state),
+  trinketShopState: state.session.trinketShopState,
+}));
 
-export function useEquipmentShopScreenData(): ScreenData<"equipment-shop"> {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      gold: state.runProfile.gold,
-      equipmentShopState: state.session.equipmentShopState,
-    })),
-  );
-}
+export const useEquipmentShopScreenData = createShopDataHook<"equipment-shop">((state) => ({
+  gold: selectGold(state),
+  equipmentShopState: state.session.equipmentShopState,
+}));
 
 export function useLabyrinthMapScreenData(): ScreenData<"labyrinth-map"> {
   return useGameplayStateStore(

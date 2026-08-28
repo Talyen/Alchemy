@@ -1,4 +1,3 @@
-// Mystery event narrative, art, and choice buttons with effect tooltips.
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";

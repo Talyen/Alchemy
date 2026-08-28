@@ -1,4 +1,3 @@
-// Destination / screen navigation helpers for run-flow shell wiring.
 import { useCallback, useMemo } from "react";
 import { readHasAnyOwnedGear, readHasUnownedTrinkets } from "@/features/alchemy/shared/stores/gear-store";
 import {

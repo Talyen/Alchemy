@@ -1,4 +1,3 @@
-// Difficulty definitions — stat modifiers per character per difficulty tier.
 import type { CharacterId } from "./characters";
 import type { CompanionId, EnemyStatusId } from "./types";
 

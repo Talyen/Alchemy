@@ -19,11 +19,6 @@ export interface DecodedClaimSurface {
   screen: Screen | null;
 }
 
-/**
- * During an in-flight claim the primary choice is already applied to the deck.
- * Persist only the post-claim surface (companion handoff or destinations) so
- * autosave cannot re-offer the claimed primary or soft-lock empty Rewards.
- */
 function encodeMidClaimPendingReward(session: RunSession["session"]): PersistedPendingReward | null {
   const companions = session.companionRewardCards;
   if (!companions?.length) return null;
@@ -48,9 +43,9 @@ export function resolveEncodeScreen(
 ): Screen | null | undefined {
   if (!session.rewardClaimInFlight) return requested;
   if (session.companionRewardCards?.length) return requested ?? "rewards";
-  // Primary drained with destinations still pending — resume on destination pick.
+
   if (session.rewardState.destinations.length > 0) return "destination";
-  // Boss / act-complete / labyrinth clear: no claimable surface left.
+
   if (requested === "rewards" || requested == null) {
     if (session.labyrinthMap) return "labyrinth-map";
     if (session.wildwoodDraft) {
@@ -80,7 +75,7 @@ export function encodeInterruptedFlow(
       const pending = encodeMidClaimPendingReward(session);
       return pending ? { kind: "companion-reward", pending } : { kind: "none" };
     }
-    // Match resolveEncodeScreen: post-claim destination / hollow rewards need destination phase.
+
     if (session.rewardState.destinations.length > 0 || currentScreen === "destination" || currentScreen === "rewards") {
       return encodeDestinationFlow(session);
     }
@@ -92,12 +87,10 @@ export function encodeInterruptedFlow(
     return pending ? { kind: "primary-reward", pending } : { kind: "none" };
   }
 
-  // Destination phase: destination screen, or rewards with no primary/companion choices left.
   if (currentScreen === "destination" || (currentScreen === "rewards" && session.rewardState.choices.length === 0)) {
     return encodeDestinationFlow(session);
   }
 
-  // Non-claim screens can still carry an in-progress reward payload (e.g. snapshot parity).
   const pending = serializePendingReward(session.rewardState, session.companionRewardCards);
   if (pending && session.companionRewardCards?.length) {
     return { kind: "companion-reward", pending };
@@ -117,7 +110,6 @@ function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
   return "destination";
 }
 
-/** Fallback when a persisted active run has a null/missing currentScreen. */
 export function inferActiveRunScreen(activeRun: ActiveRunData): Screen {
   if (activeRun.activeCombat && activeRun.activeCombat.battleState.enemyHealth > 0) return "battle";
   if (activeRun.contentSystemType === "labyrinth" && activeRun.labyrinthMap) return "labyrinth-map";

@@ -30,7 +30,6 @@ export function createDefaultProfileSaveFields(): ProfileSaveFields {
   };
 }
 
-/** Persisted profile fields plus collection UI state. */
 export interface ProfileStateFields extends ProfileSaveFields {
   collectionTab: CollectionTab;
   collectionPages: Record<CollectionTab, number>;

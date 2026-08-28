@@ -1,7 +1,3 @@
-// Wrapper over `useSequentialFadeSwap` (which builds on `fade-presence.ts:useFadePresence`).
-// Primitive stack: `useHeldWhile`/`useFadePresence` (fade-presence.ts) →
-// `useSequentialFadeSwap` → `FadeSlot` (this file). `portaled-tooltip.tsx:64-70`
-// keeps a separate inline fade for portal dismissal timing (intentionally not useFadePresence).
 import { useRef, type HTMLAttributes, type ReactNode } from "react";
 
 import { MOTION_FADE_MS } from "@/lib/game-constants";

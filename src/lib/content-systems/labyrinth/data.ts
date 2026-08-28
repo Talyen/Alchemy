@@ -1,6 +1,3 @@
-/**
- * Labyrinth labels, identity constants, and floor-generation knobs.
- */
 import type { LabyrinthNodeType } from "../types";
 
 export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {

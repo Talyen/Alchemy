@@ -1,5 +1,3 @@
-// Battle and campfire presentation delays (ms).
-
 export const AUTO_END_TURN_DELAY = 1220;
 export const AUTOPLAY_RETRY_DELAY_MS = 50;
 export const AUTOPLAY_POST_PLAY_DELAY_MS = 1000;
@@ -7,7 +5,7 @@ export const SLICE_DEATH_DURATION_MS = 1250;
 export const VICTORY_TRANSITION_DELAY = 1300;
 export const ENEMY_PHASE_DELAY = 900;
 export const ENEMY_ATTACK_RECOVERY_DELAY = 500;
-/** Hit shake starts at the attack lunge's contact pose, then gets a small reset buffer. */
+
 export const HIT_SHAKE_DELAY_MS = 340;
 export const SHAKE_DURATION = HIT_SHAKE_DELAY_MS + 420;
 export const ATTACK_LUNGE_DURATION_MS = 950;

@@ -155,7 +155,7 @@ describe("applyCardEffects — multiply-enemy-status", () => {
     });
     const card = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "stun", factor: 2 }] });
     const result = applyCardEffects(state, card, []);
-    // current 3 → +3 added → braced halves the addition → 3 + round(3/2) = 5
+
     expect(result.enemyStatuses.stun).toBe(5);
   });
 });

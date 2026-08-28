@@ -1,5 +1,3 @@
-// Waits for hand card DOM layout to stabilize before draw-transfer animations measure targets.
-// Used by card-transfer-animations during deal-in sequences.
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import type { CardRect } from "../../shared/types";
 

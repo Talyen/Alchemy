@@ -1,6 +1,3 @@
-// Unified persistence codec — single source for defaults, encode, hydrate, and save envelope.
-// Replaces the split between codec-registry.ts + persistence-coordinator.ts + build-save-data-from-stores.ts
-// Old files now re-export from here for backward compat; new code should import from this file.
 import { settingsPersistenceCodec, type SettingsSaveFields } from "@/features/alchemy/shared/stores/settings-store";
 import {
   discoverUniqueIds,
@@ -41,10 +38,7 @@ export function encodePersistenceFields(): AlchemyPersistenceFields {
   return Object.assign({}, ...PERSISTENCE_CODECS.map((c) => c.encode())) as AlchemyPersistenceFields;
 }
 
-/** Alias for external callers — same as encodePersistenceFields. */
-export function encodeAlchemyPersistenceFields(): AlchemyPersistenceFields {
-  return encodePersistenceFields();
-}
+export const encodeAlchemyPersistenceFields = encodePersistenceFields;
 
 function unionOwnedUniquesIntoDiscovered(draft: GameplayDraft): void {
   const owned = getOwnedUniqueDefinitionIds(draft.gear.inventories);
@@ -70,10 +64,8 @@ export function subscribeAlchemyPersistence(listener: () => void): () => void {
 }
 
 export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): SaveData {
-  const persistenceFields = encodeAlchemyPersistenceFields();
-  // Envelope keys win over codec fields — a codec adding a same-named field must not
-  // silently overwrite the save envelope version. Destructure with unused rest to
-  // make the deny-list type-safe without unsafe casts or void statements.
+  const persistenceFields = encodePersistenceFields();
+
   const {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deny-list: prevent codec from overwriting envelope
     saveSchemaVersion: _saveSchemaVersion,

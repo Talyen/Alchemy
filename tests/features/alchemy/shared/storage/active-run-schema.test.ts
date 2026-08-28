@@ -5,7 +5,6 @@ import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 
-/** Schema-only parse for ActiveRunDataSchema coercion/default tests (no runtime guards). */
 const parseActiveRunSchema = (value: unknown) => ActiveRunDataSchema.nullable().catch(null).parse(value);
 
 const seededLabyrinthMap = generateLabyrinthMap(createSeededRng(42));
@@ -39,8 +38,6 @@ describe("active run field parsing and normalization", () => {
   });
 
   it("recovers from corrupt numeric run fields with defaults", () => {
-    // Zod recovers individual corrupt fields with catch()/defaults instead of discarding the whole run.
-    // runPlayerHealth > maxHealth is clamped.
     expect(parseActiveRunSchema(makeMinimalActiveRunInput({ runPlayerHealth: 31 }))?.runPlayerHealth).toBe(30);
     expect(parseActiveRunSchema(makeMinimalActiveRunInput({ runMaxHealth: 0 }))?.runMaxHealth).toBe(30);
     expect(parseActiveRunSchema(makeMinimalActiveRunInput({ roomsEncountered: -1 }))?.roomsEncountered).toBe(0);

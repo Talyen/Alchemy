@@ -179,8 +179,7 @@ describe("applyPlayerHealing", () => {
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 2 },
       talentEffects: { ...makeTestBattleState().talentEffects, overhealToBlockRatio: 0.5 },
     });
-    // Heal 15 when at 25/30: health becomes 30 (caps). Overheal = 10.
-    // Block gained = round(10 * 0.5) = 5. Total block = 2 + 5 = 7.
+
     const next = applyPlayerHealing(state, 15);
     expect(next.playerHealth).toBe(30);
     expect(next.playerStatuses.block).toBe(7);

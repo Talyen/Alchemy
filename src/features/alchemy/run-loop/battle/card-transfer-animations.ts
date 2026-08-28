@@ -1,4 +1,3 @@
-// Card transfer animations, ghost travel, and transfer cancellation for battle UI.
 import type { BattleCard } from "@/lib/game-data";
 import {
   GHOST_FALLBACK_CENTER_Y_RATIO,

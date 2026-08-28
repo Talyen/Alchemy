@@ -8,4 +8,4 @@ Pass when:
 - `npm run lint` + `npm run lint:boundaries` passes
 - `effects-registry.test.ts` + `effect-handlers-registry.test.ts` + `unit-battle` green
 - No `Math.floor`/`Math.random` lint regressions
-  Run: `npm run verify:changed -- src/lib/game-data/effects src/lib/battle`
+  Run: `npm run verify:changed -- src/lib/game-data/effects/damage-schemas.ts src/lib/battle/damage-calc.ts` (or `src/lib/game-data/** src/lib/battle/**` — bare `src/lib/battle` does not route)

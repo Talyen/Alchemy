@@ -1,5 +1,3 @@
-// Test reset and gear/profile setup over the gameplay aggregate.
-// Reads go through production ports; mutations go through dispatchRunSessionCommand.
 import { vi } from "vitest";
 import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -43,7 +41,6 @@ function createInitialGearState() {
   };
 }
 
-/** Replace the aggregate with fresh production initials so tests never share the Zustand template. */
 export function resetRunDomainStore(): void {
   const revision = useGameplayStateStore.getState().revision + 1;
   useGameplayStateStore.setState(
@@ -92,11 +89,6 @@ export function resetGearForTest(): void {
   mutateGearForTest((gear) => gear.reset());
 }
 
-/**
- * One-line beforeEach reset for store-heavy suites: clears mock recordings and
- * restores every gameplay slice (run, profile, session, battle, navigation)
- * plus transient UI state to their initial values.
- */
 export function resetAllTestStores(): void {
   vi.clearAllMocks();
   resetRunDomainStore();

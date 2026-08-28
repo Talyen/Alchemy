@@ -1,4 +1,3 @@
-// Single parse path for persisted BattleState: structural Zod check + default merge.
 import { z } from "zod";
 import { type BattleState } from "@/lib/battle";
 import { normalizePersistedBattleState } from "../normalize-persisted-battle-state";
@@ -26,7 +25,6 @@ const PersistedBattleStateWireSchema = z.looseObject({
   difficultyModifiers: z.array(z.unknown()),
 });
 
-/** Validate wire shape, then deep-merge with `defaultBattleState()` for resume. */
 export const PersistedBattleStateSchema = PersistedBattleStateWireSchema.transform((data) =>
   normalizePersistedBattleState(data as unknown as Partial<BattleState>),
 );

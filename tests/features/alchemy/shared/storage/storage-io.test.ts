@@ -251,8 +251,6 @@ describe("storage io", () => {
     releaseWrite?.();
     await pending;
 
-    // The stale in-flight write lands first, but the terminal snapshot must be
-    // rewritten after it — the exit state can never be clobbered.
     expect(JSON.parse(storage[SAVE_KEY]).discoveredCardIds).toEqual(["latest"]);
   });
 
@@ -429,7 +427,7 @@ describe("storage io", () => {
     });
 
     const first = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["first"] });
-    // Let the first write enter writeSave and block on the gate.
+
     await Promise.resolve();
     await Promise.resolve();
 

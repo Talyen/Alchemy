@@ -1,5 +1,3 @@
-// Reusable card flip widget — two absolutely-positioned faces in a 3D container.
-// Parent controls `flipped` state and provides front/back content (typically <img> elements).
 import type { CSSProperties, ReactNode } from "react";
 
 interface CardFlipProps {

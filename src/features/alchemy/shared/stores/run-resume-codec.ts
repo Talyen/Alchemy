@@ -1,6 +1,3 @@
-// Canonical boundary between aggregate run state and persisted resume data.
-// Keeping this translation in one public module prevents autosave and boot hydration from
-// growing independent field-by-field mappings. Shop and interrupted-flow encode live beside this file.
 import { isPlayerDefeated } from "@/lib/battle";
 import {
   emptyHydratedMysteryVisit,
@@ -36,7 +33,7 @@ import type { GearInstance } from "@/lib/gear";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { type Screen } from "@/lib/routing";
-import { createInitialActiveRunFields, pickActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
+import { createInitialActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
 import type { RunSession } from "./run-session-model";
 import { decodeInterruptedFlow, encodeInterruptedFlow, resolveEncodeScreen } from "./encode-interrupted-flow";
 
@@ -128,7 +125,6 @@ function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBatt
   return null;
 }
 
-/** Single place for all screen-gated persistence — shops, mystery, corruption, interrupted flow. */
 function encodeScreenGatedFields(
   session: RunSession["session"],
   screen: Screen | null | undefined,
@@ -141,10 +137,9 @@ function encodeScreenGatedFields(
   };
 }
 
-/** Encode the aggregate run read model directly into persisted ActiveRunData. */
 function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFields): ActiveRunData {
   const { run, session, battle } = source;
-  // Strip profile-joined fields before projecting the canonical active-run progress.
+
   const {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     initialized: _initialized,
@@ -156,8 +151,7 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
     unlockedTalents: _unlockedTalents,
     ...runProgress
   } = run as unknown as ActiveRunProgressFields & Record<string, unknown>;
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-  const progress = pickActiveRunFields(runProgress as unknown as ActiveRunProgressFields);
+  const progress = { ...(runProgress as unknown as ActiveRunProgressFields) };
   const activeCombat =
     battle.hasActiveBattle && battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)
       ? {
@@ -201,7 +195,6 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
   });
 }
 
-/** Decode persisted resume data into the aggregate session fields. */
 export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunResumeSnapshot {
   let screen = activeRun.currentScreen;
   let rewardState: RewardState | null = null;

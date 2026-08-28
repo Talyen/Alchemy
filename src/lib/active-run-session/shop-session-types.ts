@@ -1,4 +1,3 @@
-// Runtime shop session types + empty factories. Serialize/hydrate live in shop-persistence.ts.
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import {

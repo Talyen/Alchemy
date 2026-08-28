@@ -1,5 +1,3 @@
-// Shared types for keyword plasma canvas and WebGL renderers.
-
 export type PlasmaRendererMode = "canvas" | "webgl";
 
 export interface PlasmaColorState {

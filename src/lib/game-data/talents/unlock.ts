@@ -1,6 +1,3 @@
-/**
- * Talent unlock validation — authoritative rules for spending keyword points.
- */
 import type { KeywordId } from "../types";
 import { countImplementedTalents, getTalentRowIndex, getTalentsForKeyword, isTalentRowUnlocked } from "./choices";
 import { talentPool } from "./pool";

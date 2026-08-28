@@ -1,4 +1,3 @@
-// Shared art tile surface for selectable rewards and purchasable collection items.
 import { type RefObject, type ReactNode } from "react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -25,14 +24,14 @@ interface InteractiveArtTileProps {
   as?: "button" | "div" | undefined;
   interactive?: boolean | undefined;
   selected?: boolean | undefined;
-  /** Hover/select 3px chrome. Shine tiles keep scale/glow and thicken the shine instead. */
+
   interactiveChrome?: boolean | undefined;
   shineColor?: string | readonly string[] | undefined;
   disabled?: boolean | undefined;
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
   children?: ReactNode | undefined;
-  /** Optional side-effect on hover entry/exit; does not override internal hover control. */
+
   onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
@@ -75,8 +74,7 @@ export function InteractiveArtTile({
     onHoverEnd: wrappedHoverEnd,
   });
   const shineColors = shineColor == null ? [] : Array.isArray(shineColor) ? shineColor : [shineColor];
-  // Sold-out/purchased tiles remain interactive for their detail popup, but
-  // disabled state must silence every purchasable glow layer.
+
   const showShine = shineColors.length > 0 && !disabled;
   const showGlow = interactiveChrome && interactive && !disabled;
 
@@ -87,8 +85,7 @@ export function InteractiveArtTile({
       onMouseEnter={interactive ? handleHoverStart : undefined}
       onMouseLeave={interactive ? handleMouseLeave : undefined}
     >
-      {/* The ref is only read inside layout effects in PortaledTooltip's placement
-          hook, never during render; passing it to the popup factory is safe. */}
+      {}
       {/* eslint-disable-next-line react-hooks/refs */}
       {interactive && popup && showPopup ? popup({ visible: isHovered, triggerRef: wrapperRef }) : null}
       <TiltSurface

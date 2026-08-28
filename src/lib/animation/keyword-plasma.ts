@@ -1,4 +1,3 @@
-// Keyword plasma renderer entry — dispatches to canvas or WebGL backends.
 import { startCanvasKeywordPlasma } from "./keyword-plasma-canvas";
 import type { PlasmaRendererMode, PlasmaRendererOptions, StartPlasmaRenderer } from "./keyword-plasma-types";
 import { startWebGLKeywordPlasma } from "./keyword-plasma-webgl";

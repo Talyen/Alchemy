@@ -13,7 +13,6 @@ afterEach(() => {
   }
 });
 
-/** Temp git repo with one conventional commit so getCommitsSinceTag has real data. */
 function gitRepoWithCommit(message: string) {
   const root = mkdtempSync(join(tmpdir(), "alchemy-changelog-"));
   tempDirs.push(root);
@@ -83,7 +82,7 @@ describe("sync-changelog", () => {
   it("refuses to rewrite the changelog when git history is unreadable", () => {
     const root = mkdtempSync(join(tmpdir(), "alchemy-changelog-"));
     tempDirs.push(root);
-    // No git repo: getCommitsSinceTag cannot distinguish commits from failure.
+
     expect(() => computeSyncedChangelog("# Changelog\n", root)).toThrow(/git log failed/);
   });
 });

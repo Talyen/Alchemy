@@ -8,7 +8,6 @@ import type { BattleCardEffect } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { defaultGearEffects } from "@/lib/gear";
 
-/** First roll dodges (5%); later rolls miss crits and other percent checks. */
 function dodgeThenMissRng() {
   let calls = 0;
   return () => {
@@ -30,12 +29,10 @@ describe("unique item battle effects", () => {
     const combatTexts: CombatTextEvent[] = [];
     const afterStun = resolveStunTrigger(baseState, combatTexts);
 
-    // Enemy should have had armor, block, forge stripped
     expect(afterStun.enemyMitigation.armor).toBe(0);
     expect(afterStun.enemyMitigation.block).toBe(0);
     expect(afterStun.enemyMitigation.forge).toBe(0);
 
-    // Purged 10 + 15 + 5 = 30 stacks * 2 = 60 holy damage dealt
     expect(afterStun.enemyHealth).toBe(40);
   });
 
@@ -70,7 +67,7 @@ describe("unique item battle effects", () => {
     const baseState = patchBattleState({
       playerHealth: 50,
       playerMaxHealth: 100,
-      rng: () => 0.05, // 5% ensures 20% proc chance succeeds
+      rng: () => 0.05,
       gearEffects: { ...defaultGearEffects, burnBleedMirrorAndLeech: 1 },
     });
 
@@ -82,10 +79,9 @@ describe("unique item battle effects", () => {
     const combatTexts: CombatTextEvent[] = [];
     const afterBurn = applyDamageStatuses(baseState, burnEffect, 20, combatTexts);
 
-    // Applied burn and procced bleed
     expect(afterBurn.enemyStatuses.burn).toBe(20);
     expect(afterBurn.enemyStatuses.bleed).toBe(20);
-    // Leeched 50% of 20 = 10 HP
+
     expect(afterBurn.playerHealth).toBe(60);
   });
 
@@ -105,7 +101,6 @@ describe("unique item battle effects", () => {
     const combatTexts: CombatTextEvent[] = [];
     const afterFreeze = applyDamageStatuses(baseState, freezeEffect, 25, combatTexts);
 
-    // Freeze damage granted 25 block
     expect(afterFreeze.playerStatuses.block).toBe(25);
     expect(afterFreeze.enemyStatuses.freeze).toBe(25);
   });
@@ -216,7 +211,6 @@ describe("unique item battle effects", () => {
 
     const resolution = playBattleCardResolved(baseState, "quick-shot", 0);
 
-    // Bleed 15 + poison 10 detonated after the 5 physical hit
     expect(resolution.state.enemyHealth).toBe(70);
     expect(resolution.state.enemyStatuses.bleed).toBe(0);
     expect(resolution.state.enemyStatuses.poison).toBe(0);
@@ -246,7 +240,6 @@ describe("unique item battle effects", () => {
 
     const resolution = playBattleCardResolved(baseState, "fireball", 0);
 
-    // Playing burn drew the freeze card into hand from deck with a new UID
     const drawn = resolution.state.hand.find((c) => c.id === "frostbolt");
     expect(drawn).toBeDefined();
     expect(drawn?.uid).toBe(100);
@@ -296,13 +289,11 @@ describe("unique item battle effects", () => {
       combatTexts,
     );
 
-    // First block depletion: dealt Holy + Stun to enemy, and healed player for 6
     expect(afterFirstDepletion.playerStatuses.block).toBe(0);
     expect(afterFirstDepletion.enemyStatuses.stun).toBe(6);
     expect(afterFirstDepletion.playerHealth).toBe(46);
     expect(afterFirstDepletion.flags.saintfallRetributionTriggered).toBe(true);
 
-    // Player gains block again and loses it in the same combat
     const reblockedState = patchBattleState({
       ...afterFirstDepletion,
       playerStatuses: { ...afterFirstDepletion.playerStatuses, block: 5 },
@@ -315,7 +306,6 @@ describe("unique item battle effects", () => {
       [],
     );
 
-    // Second depletion should NOT re-trigger Saintfall
     expect(afterSecondDepletion.playerStatuses.block).toBe(0);
     expect(afterSecondDepletion.enemyStatuses.stun).toBe(0);
     expect(afterSecondDepletion.flags.saintfallRetributionTriggered).toBe(true);

@@ -12,11 +12,6 @@ import type { BattleState, CombatFlags, EnemyMitigation } from "./state-types";
 import { isStunFreezeBuildupBlocked } from "./state-types";
 import { PRESERVED_FLAG_KEYS, PRESERVED_FLAG_VALUES, type PreservedFlagKey } from "../combat-flags";
 
-/**
- * Snapshot card-play flags before a non-card action (e.g., companion attack),
- * set them to their inactive sentinel (used/empty), run the mutate callback, then restore.
- * Single source is FLAG_DEFINITIONS.preserveAs — no second map to keep in sync.
- */
 export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) => BattleState): BattleState {
   const saved: Partial<Pick<CombatFlags, PreservedFlagKey>> = {};
   for (const key of PRESERVED_FLAG_KEYS) {
@@ -30,10 +25,6 @@ export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) 
   return { ...result, flags: { ...result.flags, ...saved } };
 }
 
-// Immutable update helpers for BattleState. Replaces the error-prone nested spread
-// pattern used ~25 times across the battle engine with one-line focused updaters.
-
-/** Effective delta after gear bonuses; positive block gains add flatBlockGained. */
 export function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
   return status === "block" && delta > 0 ? delta + state.gearEffects.flatBlockGained : delta;
 }
@@ -51,7 +42,6 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
   };
 }
 
-/** Clears or ticks a status. Positive stun/freeze buildup must go through `addPlayerStatus`. */
 export function setPlayerStatus(state: BattleState, status: PlayerStatusId, value: number): BattleState {
   return { ...state, playerStatuses: { ...state.playerStatuses, [status]: value } };
 }
@@ -69,8 +59,6 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
     enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + traitAdjustedDelta },
   };
 
-  // Sole shred roll owner: every poison application strips once, whatever its
-  // source (hits stack through here too; ticks are not applications).
   if (
     status === "poison" &&
     traitAdjustedDelta > 0 &&
@@ -82,7 +70,6 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
   return nextState;
 }
 
-/** Clears or ticks a status. Positive stun/freeze buildup must go through `addEnemyStatus`. */
 export function setEnemyStatus(state: BattleState, status: EnemyStatusId, value: number): BattleState {
   return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: value } };
 }
@@ -122,9 +109,6 @@ export function setFlag<K extends keyof CombatFlags>(state: BattleState, flag: K
   return { ...state, flags: { ...state.flags, [flag]: value } };
 }
 
-// Adds delta (positive or negative) to current, clamped to [0, max]. NOT an absolute setter.
-// Non-finite inputs are load-bearing corruption — preserve current health and clamp
-// to a sane max rather than killing the player with a 0 fallback.
 export function clampHealth(current: number, delta: number, max: number): number {
   if (!Number.isFinite(current) || !Number.isFinite(delta) || !Number.isFinite(max)) {
     const safeCurrent = Number.isFinite(current) ? current : 0;
@@ -135,7 +119,6 @@ export function clampHealth(current: number, delta: number, max: number): number
   return clamp(current + delta, 0, max);
 }
 
-/** Adds mana clamped at maxMana — overcap is discarded, never carried into later turns. */
 export function gainMana(state: BattleState, amount: number): BattleState {
   if (amount <= 0) return state;
   return { ...state, mana: Math.min(state.maxMana, state.mana + amount) };
@@ -149,7 +132,6 @@ function computeDamageReduction(damage: number, damageType: string | undefined, 
   return damage;
 }
 
-/** Halves incoming player damage when the matching resist talent is unlocked. */
 export function scaleReceivedPlayerDamage(
   damage: number,
   talentEffects: BattleState["talentEffects"],
@@ -170,10 +152,6 @@ export function deathsDoorGraceTurns(extension: number): number {
   return DEATHS_DOOR_GRACE_TURNS + Math.max(0, extension);
 }
 
-// Death's Door triggers once per battle. During the grace window (deathsDoorActive)
-// lethal hits floor the player at 1 HP. Healing does not dismiss the window.
-// Once grace expires, the next lethal hit after that enemy phase can kill.
-// damageReduction subtracts flat damage (e.g., from talents) before applying to health.
 export function applyPlayerCombatDamage(state: BattleState, damage: number, damageType?: string): BattleState {
   if (!Number.isFinite(damage) || damage <= 0) return state;
   let reducedDamage = damage - state.talentEffects.damageReduction;

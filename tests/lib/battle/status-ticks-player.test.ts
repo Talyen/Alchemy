@@ -135,7 +135,6 @@ describe("tickPlayerStatuses", () => {
       expectedDamageText: 8,
     },
     {
-      // block reduces: 8 -> 7, armor reduces: 7 -> 4
       name: "stacks with armorMitigatesBurn",
       burn: 8,
       block: 5,
@@ -222,7 +221,7 @@ describe("tickPlayerStatuses", () => {
       },
     });
     const texts = makeTexts();
-    // Canonical chain (scale -> armor): round(10/2) - 3 = 2. Armor-subtract-first would give round(7/2) = 4.
+
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(28);
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: status, amount: 2 });
@@ -236,8 +235,8 @@ describe("tickPlayerStatuses", () => {
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
-    // Stun threshold: 30 * 0.5 = 15, stun is 20 > 15, so triggers.
-    expect(next.playerHealth).toBe(30); // no damage from stun
+
+    expect(next.playerHealth).toBe(30);
     expect(next.playerStatuses.stun).toBe(0);
     expect(next.playerCC.stunSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
@@ -264,7 +263,7 @@ describe("tickPlayerStatuses", () => {
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(30);
-    expect(next.playerStatuses.stun).toBe(5); // unchanged, below threshold
+    expect(next.playerStatuses.stun).toBe(5);
     expect(next.playerCC.stunSkipTurns).toBe(0);
   });
 
@@ -276,8 +275,8 @@ describe("tickPlayerStatuses", () => {
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
-    // Freeze threshold: 30 * 0.5 = 15, freeze is 30 >= 15, so triggers.
-    expect(next.playerHealth).toBe(30); // no damage from freeze
+
+    expect(next.playerHealth).toBe(30);
     expect(next.playerStatuses.freeze).toBe(0);
     expect(next.playerCC.freezeSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "freeze", text: "Frozen" });
@@ -355,14 +354,12 @@ describe("tickPlayerStatuses", () => {
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
-    // burn: 8 damage (no receiveHalfBurnDamage talent), decays to 4.
-    // poison: 4 damage, decays to 3. bleed: 5 damage, cleared to 0.
-    // stun and freeze: below threshold, no damage, unchanged.
+
     expect(next.playerHealth).toBe(33);
     expect(next.playerStatuses.burn).toBe(4);
     expect(next.playerStatuses.poison).toBe(3);
     expect(next.playerStatuses.bleed).toBe(0);
-    expect(next.playerStatuses.stun).toBe(3); // below threshold (50*0.5=25), unchanged
-    expect(next.playerStatuses.freeze).toBe(2); // below threshold, unchanged
+    expect(next.playerStatuses.stun).toBe(3);
+    expect(next.playerStatuses.freeze).toBe(2);
   });
 });

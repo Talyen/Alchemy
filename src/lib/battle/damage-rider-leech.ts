@@ -51,7 +51,7 @@ function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
     if (mit.forge > 0) pool.push({ key: "forge", status: "forge" });
     if (mit.armor > 0) pool.push({ key: "armor", status: "armor" });
     if (mit.block > 0) pool.push({ key: "block", status: "block" });
-    const steal = pickRandom(pool, state.rng);
+    const steal = pickRandom(pool, getBattleRng(state));
     if (steal) {
       const nextState = {
         ...state,
@@ -63,9 +63,6 @@ function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
   return state;
 }
 
-/**
- * Applies standard lifesteal to restore player health based on damage dealt.
- */
 function applyLeechHitRiders(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   let nextState = state;
@@ -105,9 +102,6 @@ export function applyLifestealAndPlayerHitTriggers(state: BattleState, damage: n
   return applyLeechHitRiders(nextState, damage, combatTexts);
 }
 
-/**
- * Rolls nature leech; on success applies standard lifesteal and hit riders.
- */
 export function applyNatureLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
   const leechChance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
@@ -122,9 +116,6 @@ export function applyHolyLifesteal(state: BattleState, damage: number, combatTex
   return executePlayerHealing(state, healAmount, combatTexts);
 }
 
-/**
- * Grants player block proportionally when holy damage is dealt.
- */
 export function applyDamageBlock(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyBlockPercentFromDamage <= 0) return state;
   const blockAmount = Math.round((damage * state.talentEffects.holyBlockPercentFromDamage) / PERCENT_DENOMINATOR);
@@ -138,9 +129,6 @@ export function applyDamageBlock(state: BattleState, damage: number, combatTexts
   return addPlayerStatus(state, "block", blockAmount);
 }
 
-/**
- * Grants gold proportional to holy damage with a percentage chance when Tithe is active.
- */
 export function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyGoldChance <= 0) return state;
   if (rollPercent(state.talentEffects.holyGoldChance, getBattleRng(state))) {

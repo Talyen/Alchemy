@@ -1,5 +1,3 @@
-// Pure collection item shaping for heroes, cards, enemies, trinkets, and uniques.
-// Used by collection UI layout and tests without owning rendering concerns.
 import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import {
   cardLibrary,
@@ -38,7 +36,7 @@ export interface CollectionTileItem {
   hoverScope: string;
   frameType: "hero" | "card" | "bestiary" | "trinket" | "unique";
   enemyEntry?: BestiaryEntry;
-  /** Discovered cards: format description lines in the hover popup, not while paging. */
+
   card?: BattleCard;
   companionBondLevels?: Record<string, number>;
   character?: CharacterDefinition;
@@ -116,7 +114,6 @@ function sortByTitle<T extends { title: string }>(entries: T[]): T[] {
   return [...entries].sort((a, b) => a.title.localeCompare(b.title));
 }
 
-// Catalogs are static at module load; pre-sort once so paging never re-sorts the full library.
 const sortedCardLibrary = sortByTitle(cardLibrary);
 const sortedEnemyBestiary = sortByTitle(enemyBestiary);
 const sortedTrinketLibrary = sortByTitle(trinketLibrary);

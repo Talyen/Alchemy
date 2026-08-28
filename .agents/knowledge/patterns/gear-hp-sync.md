@@ -1,7 +1,7 @@
 # Gear HP-Sync Write Path
 
 Status: active
-Confidence: high
+Confidence: medium — single occurrence at introduction (2026-08-28); promote to high after second independent recurrence per `index.md:When to consult`
 
 ## Observation
 
@@ -31,6 +31,6 @@ Gear equip/unequip/salvage/crafting mutates `GearStore` and must sync live run h
 - Meta-only bulk mutations when no run is active — `syncRunHealth: false` is acceptable (draft check already guards).
 - Persistence adapters subscribe to aggregate commit; they do not use gear dispatch directly.
 
-## Enforcement opportunity
+## Enforcement
 
-Lint: forbid `dispatchGearMutationWithRunHealthSync` import inside `src/features/alchemy/run-loop/**` and `src/features/alchemy/shell/**` (should use draft variant). Deferred — pattern suffices until second recurrence.
+Lint: `GEAR_NO_OUTER_DISPATCH` (`no-restricted-syntax` on `dispatchGearMutationWithRunHealthSync`/`dispatchGearSalvageWithMaterialGrant` in `src/features/alchemy/run-loop/**` + `shell/**` — `eslint/fragments.js:70`, `eslint.config.js:372`) — use `mutateGearWithRunHealthSync(draft, ...)`. Part of `run-state-command-boundary.md:Enforcement` draft-variant rule; this pattern stays as `medium` until second independent recurrence proves generalizability (see `index.md:When to consult`).

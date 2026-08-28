@@ -1,4 +1,3 @@
-// Presentation-boundary autoplay: plays hand cards through the same path as a click.
 import { useEffect, type RefObject } from "react";
 
 import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";

@@ -1,14 +1,11 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-import { syncGeneratedModule } from "./lib/generated-module.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { kebabToCamel } from "./lib/kebab-to-camel.mjs";
+import { getOptimizedManifestPath, resolveRootDir, runSyncGenerated } from "./lib/sync-generated-helpers.mjs";
 
-const currentFile = fileURLToPath(import.meta.url);
-const rootDir = path.resolve(path.dirname(currentFile), "..");
-const optimizedDir = path.join(rootDir, "src", "assets", "optimized");
-const manifestPath = path.join(optimizedDir, ".asset-hashes.json");
+const rootDir = resolveRootDir(import.meta.url);
+const manifestPath = getOptimizedManifestPath(rootDir);
 const outputFile = path.join(rootDir, "src", "lib", "game-data", "gear-art.ts");
 
 function toAssetExportName(target) {
@@ -46,19 +43,15 @@ function buildGearArtContent(manifest) {
 }
 
 export async function syncGearArt({ check = false } = {}) {
-  const { gearFiles, wrote } = await syncGeneratedModule({
+  await runSyncGenerated({
     manifestPath,
     outputFile,
+    rootDir,
     check,
     build: buildGearArtContent,
+    onCount: (result) => result.gearFiles.length,
+    label: "Gear art mappings",
   });
-  console.log(
-    check
-      ? `Gear art mappings are current (${gearFiles.length} entries)`
-      : wrote
-        ? `Wrote ${gearFiles.length} gear art mappings to ${path.relative(rootDir, outputFile)}`
-        : `Gear art mappings unchanged (${gearFiles.length} entries)`,
-  );
 }
 
 if (isMainModule(import.meta.url)) {

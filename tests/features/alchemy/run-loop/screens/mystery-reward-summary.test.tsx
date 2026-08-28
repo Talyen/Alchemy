@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -54,7 +53,6 @@ describe("MysteryRewardSummary", () => {
 
     fireEvent.mouseEnter(tileWrapper!);
 
-    // The hover DetailPopup mounts with a second copy of the trinket title.
     expect(screen.getAllByText("Bone Charm")).toHaveLength(2);
   });
 

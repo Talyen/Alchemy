@@ -1,5 +1,3 @@
-// Enemy turn orchestration: haste skip, CC skip, standard enemy phase, and endPlayerTurn.
-// Attack resolution lives in enemy-turn-attack.ts; trait handlers in enemy-turn-traits.ts.
 import { applyIronwoodBuckler } from "./trinket-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -45,9 +43,6 @@ function processHasteEarlyTurn(state: BattleState): BattleState {
   };
 }
 
-// Clears the hand and folds it into the discard. Enemy block decay is NOT done
-// here: per the block rule, enemy block halves when a real enemy phase begins,
-// and a haste turn never begins one.
 function beginEnemyPhase(state: BattleState): BattleState {
   return {
     ...state,
@@ -85,7 +80,6 @@ function resolveEnemyPostTickResolution(
     afterAttackState = nextState;
     if (nextState.enemyHealth <= 0) return { state: nextState, afterAttackState };
   } else {
-    // Per-turn stat gains fire every enemy phase, including CC-skipped ones.
     nextState = reduceSkipTurns(nextState);
   }
   nextState = tickPlayerStatuses(nextState, texts);
@@ -178,8 +172,6 @@ export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number
     return resolveHasteTurn(nextState);
   }
 
-  // A real enemy phase begins here, so the enemy block halves now (once per
-  // attack window even across chained haste turns).
   const enemyPhaseState = resetEnemyTurnState(nextState);
 
   if (state.enemyCC.stunSkipTurns + state.enemyCC.freezeSkipTurns > 0) {
@@ -189,11 +181,6 @@ export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number
   return resolveStandardEnemyTurn(enemyPhaseState, options);
 }
 
-/**
- * Recover saves that exposed an in-flight enemy phase without a persisted
- * continuation. Player CC can leave `advanceToPlayerTurn` still on the enemy
- * phase, so loop and finally force a playable player turn.
- */
 export function recoverLegacyEnemyPhase(state: BattleState): BattleState {
   let recovered = state;
   let attempts = 0;

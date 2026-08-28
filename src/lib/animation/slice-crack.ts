@@ -1,7 +1,3 @@
-// Jagged Slice crack in unit space, shared by half-plane clip-paths, the drawn
-// fissure, and cut-face sparks. Landscape enemy art uses a 4:3 aspect so the
-// diagonal still spans the portrait. Port of Trinket CombatantSliceCrack.
-
 import { sliceEffectNoise } from "./slice-noise";
 
 export interface SlicePoint {
@@ -27,7 +23,6 @@ export const SLICE_NORMAL: SliceVec = {
   dy: -Math.sin(SLICE_ANGLE_RADIANS),
 };
 
-/** 4:3 landscape enemy art (Trinket used 192×256 portrait). */
 export const SLICE_ASPECT_WIDTH = 256;
 export const SLICE_ASPECT_HEIGHT = 192;
 const SLICE_SEGMENT_COUNT = 5;
@@ -170,7 +165,6 @@ export function sliceCrackTangentAtFraction(fraction: number): SliceVec {
   return { dx: dx / length, dy: dy / length };
 }
 
-/** Signed distance to the crack. Negative on the primary (−normal) side. */
 export function sliceCrackSide(point: SlicePoint): number {
   const px = point.x * SLICE_ASPECT_WIDTH;
   const py = point.y * SLICE_ASPECT_HEIGHT;
@@ -220,7 +214,6 @@ function dist2(a: SlicePoint, b: SlicePoint): number {
   return dx * dx + dy * dy;
 }
 
-/** Corners on this half, ordered from the last crack point back toward the first. */
 function sliceCrackHalfCorners(isPrimary: boolean): SlicePoint[] {
   const onHalf = (point: SlicePoint) => (isPrimary ? sliceCrackSide(point) < 0 : sliceCrackSide(point) > 0);
   const halfCorners = CARD_CORNERS_CW.filter(onHalf);
@@ -233,7 +226,6 @@ function sliceCrackHalfCorners(isPrimary: boolean): SlicePoint[] {
   return [...halfCorners.slice(start), ...halfCorners.slice(0, start)];
 }
 
-/** CSS clip-path polygon for one half-plane of the jagged crack. */
 function sliceCrackHalfClipPath(isPrimary: boolean): string {
   const verts = [...SLICE_CRACK_POINTS, ...sliceCrackHalfCorners(isPrimary)];
   return `polygon(${verts.map((p) => `${formatPct(p.x)} ${formatPct(p.y)}`).join(", ")})`;

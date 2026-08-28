@@ -1,4 +1,3 @@
-// Labyrinth map node chrome: icons, colors, shine palettes, and fallback art per node type.
 import { Crown, DoorOpen, FlaskConical, Gem, Hammer, Heart, ShoppingCart, Skull, Sparkles, Swords } from "lucide-react";
 
 import type { LabyrinthNodeType } from "@/lib/content-systems/types";

@@ -1,4 +1,3 @@
-// Unit tests for alchemist potion-combining logic.
 import { describe, expect, it } from "vitest";
 import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck } from "@/lib/alchemist";
 import { ALCHEMIST_MIX_PRICE } from "@/lib/game-constants";
@@ -89,7 +88,6 @@ describe("createMixedPotion", () => {
     });
     const mixed = createMixedPotion(complexPotion, complexPotion, 3);
 
-    // Amount doubles (10 * 2 + 3 = 23), but "2 turns" is untouched
     expect(mixed.effects[0]).toEqual({ kind: "damage", damageType: "poison", amount: 23 });
     expect(mixed.descriptionLines).toEqual(["Deal 23 damage for 2 turns", "Consume"]);
   });
@@ -103,8 +101,7 @@ describe("createMixedPotion", () => {
         { kind: "player-status", status: "block", amount: 10 },
       ],
     });
-    // Doubling: 5 -> 10, 10 -> 20.
-    // In old buggy logic: 5 -> 10, then pass for 10 converted the "10" (which was 5) into 20!
+
     const mixed = createMixedPotion(multiEffectPotion, multiEffectPotion);
 
     expect(mixed.effects[0]).toEqual({ kind: "damage", damageType: "burn", amount: 10 });
@@ -124,8 +121,7 @@ describe("createMixedPotion", () => {
       descriptionLines: ["Deal 5 Burn damage", "Consume"],
       effects: [{ kind: "damage", damageType: "burn", amount: 5 }],
     });
-    // Fire's 5 doubles to 10, but Mana Shield's "5" belongs to convertCurrentMana
-    // and must stay 5 — its effect is never rescaled.
+
     const mixed = createMixedPotion(firePotionFive, manaShieldPotion, 0);
 
     expect(mixed.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 });
@@ -144,9 +140,7 @@ describe("createMixedPotion", () => {
         { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 },
       ],
     });
-    // Doubling: the damage amount 5 -> 10. The colliding convertCurrentMana 5 is
-    // untouched in effects, but its text occurrences display the scaled value —
-    // deliberate trade-off so real scaled numbers are never understated.
+
     const mixed = createMixedPotion(volatilePotion, volatilePotion);
 
     expect(mixed.effects[0]).toEqual({ kind: "damage", damageType: "burn", amount: 10 });

@@ -1,4 +1,3 @@
-// Main-menu and game-mode navigation helpers for E2E specs.
 import { expect, type Page } from "@playwright/test";
 import { GAME_MODE_TITLES, type GameMode } from "./types";
 
@@ -35,8 +34,6 @@ export async function resumeCampaignRun(page: Page) {
   try {
     await playButton.waitFor({ state: "visible", timeout: 3000 });
     await resumeGameMode(page, "campaign");
-  } catch {
-    // Play button did not appear; we may already be on the destination screen (e.g., bootstrapped save).
-  }
+  } catch {}
   await expect(destination).toBeVisible({ timeout: 10000 });
 }

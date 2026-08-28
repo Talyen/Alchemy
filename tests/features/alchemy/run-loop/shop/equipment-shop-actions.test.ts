@@ -34,8 +34,7 @@ describe("equipment shop actions", () => {
       expect(readRunSession().equipmentShopState.purchasedSlotKeys).toEqual([instance.instanceId]);
       expect(readGearState().inventories.knight).toContainEqual(instance);
       expect(readActiveRun().runObtainedItems).toEqual([{ kind: "gear", instance }]);
-      // Shop buy adds to inventory without equipping, so max-health affixes do not apply yet.
-      // mutateGearWithRunHealthSync still runs in the same commit (delta 0).
+
       expect(readActiveRun().runMaxHealth).toBe(30);
       expect(readActiveRun().runPlayerHealth).toBe(30);
     });

@@ -1,4 +1,3 @@
-// Persist / hydrate shop session state for active-run snapshots.
 import type {
   PersistedAlchemistState,
   PersistedEquipmentShopState,
@@ -93,7 +92,6 @@ export function serializeEquipmentShopState(state: EquipmentShopState): Persiste
 }
 
 export function hydrateEquipmentShopState(data: PersistedEquipmentShopState): EquipmentShopState {
-  // Zod preprocess drops unknown defs; hydrate still remaps so orphan purchase keys cannot linger.
   const repaired = repairShopOfferings(
     data.gear,
     data.purchasedSlotKeys ?? [],

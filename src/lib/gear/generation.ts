@@ -122,26 +122,26 @@ interface RollItemDropTierOptions {
   astralChanceBonus?: number;
 }
 
-/** Gear rarity only — permanent Trinkets are gated separately in reward-flow. */
+function resolveDropTier(uniqueChance: number, astralChance: number, rng: () => number): GearRarity {
+  const draw = rng();
+  if (draw < uniqueChance) return "unique";
+  if (draw < uniqueChance + astralChance) return "astral";
+  return "basic";
+}
+
 function rollItemDropTier(options: RollItemDropTierOptions, rng: () => number): GearRarity {
   const allowsUnique = options.allowsUnique !== false;
   const astralBonus = Math.max(0, options.astralChanceBonus ?? 0);
 
   if (options.isBoss) {
     const uniqueChance = allowsUnique ? DROP_RATES_BOSS.unique : 0;
-    const draw = rng();
-    if (draw < uniqueChance) return "unique";
-    return "astral";
+    return rng() < uniqueChance ? "unique" : "astral";
   }
 
   const uniqueChance = allowsUnique ? DROP_RATES_NORMAL.unique : 0;
   let astralChance = DROP_RATES_NORMAL.astral + astralBonus;
   if (!allowsUnique) astralChance += DROP_RATES_NORMAL.unique;
-
-  const draw = rng();
-  if (draw < uniqueChance) return "unique";
-  if (draw < uniqueChance + astralChance) return "astral";
-  return "basic";
+  return resolveDropTier(uniqueChance, astralChance, rng);
 }
 
 function rollEquipmentShopDropTier(astralChanceBonus = 0, rng: () => number, allowsUnique = true): GearRarity {
@@ -149,11 +149,7 @@ function rollEquipmentShopDropTier(astralChanceBonus = 0, rng: () => number, all
   const astralBonus = Math.max(0, astralChanceBonus);
   const astralChance =
     EQUIPMENT_SHOP_DROP_RATES.astral + astralBonus + (allowsUnique ? 0 : EQUIPMENT_SHOP_DROP_RATES.unique);
-
-  const draw = rng();
-  if (draw < uniqueChance) return "unique";
-  if (draw < uniqueChance + astralChance) return "astral";
-  return "basic";
+  return resolveDropTier(uniqueChance, astralChance, rng);
 }
 
 interface GenerateGearOfferingsOptions {
@@ -291,7 +287,6 @@ export function createGearInstance(definition: GearDefinition, affixes: GearAffi
   };
 }
 
-/** Shared generation tail: roll affix count for the rarity, roll affixes, build the instance. */
 function rollAndCreateInstance(definition: GearDefinition, rarity: GearRarity, rng: () => number): GearInstance {
   const affixCount = rollAffixCount(rarity, rng);
   return createGearInstance(definition, rollAffixes(definition, affixCount, rng));

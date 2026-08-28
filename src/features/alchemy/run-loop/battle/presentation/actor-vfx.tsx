@@ -1,5 +1,3 @@
-// Actor VFX leaves: combat text, shake, hurt flash, attacker lunge. Isolated so BattleActors layout does not
-// re-render on every presentation tick.
 import type { ComponentProps } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ArtPanel, CompanionPanel, CombatTextRail } from "@/features/alchemy/shared/ui/battle-ui";

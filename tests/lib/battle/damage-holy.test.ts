@@ -77,8 +77,7 @@ describe("applyHolyDamageRiders", () => {
     });
     const texts = makeCombatTexts();
     const result = applyDamageBlock(state, 10, texts);
-    // 50% of 10 = 5 block, plus flatBlockGained 2 in the text (matches the
-    // run-state delta from addPlayerStatus).
+
     expect(result.playerStatuses.block).toBe(7);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 7 });
   });

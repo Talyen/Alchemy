@@ -1,4 +1,3 @@
-// Test helpers — build run/talent controller shapes from the live run store.
 import type {
   ContentNavigationRunPort,
   ContentNavigationTalentPort,

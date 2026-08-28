@@ -1,8 +1,6 @@
-// Classify talent effects that can fire in an isolated battle vs meta/run-only.
 import type { TalentEffectManifest } from "@/lib/game-data";
 import { isTalentPlaceholder, talentPool, type TalentDefinition, type TalentEffectOperation } from "@/lib/game-data";
 
-/** Fields that never change an isolated battle (shops, post-combat gold, campfire, etc.). */
 export const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = new Set([
   "shopCardDiscount",
   "shopFreeRefresh",

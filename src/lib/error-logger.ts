@@ -1,8 +1,3 @@
-// Centralized error logger with pluggable sinks.
-// Sinks are registered by the app layer (main.tsx) after stores initialize.
-// During early boot errors fall through to console.error only.
-// Kept free of features/ imports to avoid circular deps.
-
 export type ErrorSource =
   | "react"
   | "global"
@@ -32,7 +27,6 @@ export function registerErrorSink(sink: LogSink): void {
   sinks = [...sinks, sink];
 }
 
-/** Test-only isolation for module-scoped sink state. */
 export function resetErrorSinksForTests(): void {
   sinks = [];
 }
@@ -53,12 +47,9 @@ export function logError(
     for (const sink of sinks) {
       try {
         sink(entry);
-      } catch {
-        // sinks must not throw
-      }
+      } catch {}
     }
   } catch {
-    // last resort — nothing we can do
   } finally {
     logging = false;
   }

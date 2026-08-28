@@ -1,4 +1,3 @@
-// Shared hover/focus popup mounting for collection and shop/reward art tiles.
 import { useEffect, useRef, useState } from "react";
 
 import { TOOLTIP_FADE_OUT_MS } from "./portaled-tooltip";

@@ -1,6 +1,3 @@
-/**
- * Forge threshold bursts and player forge application.
- */
 import { addEnemyStatus, addPlayerStatus, stripEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";
 import { HALF_DIVISOR } from "../game-constants";
@@ -10,7 +7,6 @@ function computeForgeBurnAmount(state: BattleState): number {
   return state.talentEffects.forgeBurnDamage;
 }
 
-/** Fires `onCross` once when forge crosses `threshold` from below. */
 function onForgeFirstCrossThreshold(
   state: BattleState,
   prevForge: number,

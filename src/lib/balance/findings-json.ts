@@ -1,4 +1,3 @@
-// JSON exporter for the capped findings summary.
 import type { BalanceFindingsReport } from "./findings";
 import {
   ANOMALY_FINDING_THRESHOLDS,

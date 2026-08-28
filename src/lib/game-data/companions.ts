@@ -16,8 +16,6 @@ import {
 } from "./assets";
 import type { CompanionDefinition, CompanionId } from "./types";
 
-// Companion definitions describe persistent battle allies and the player-originated
-// effects they trigger at the beginning of each player turn.
 export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefinition> = {
   wolf: {
     id: "wolf",

@@ -198,7 +198,6 @@ describe("asset-manifest-cache", () => {
     await writeFile(sourcePath, "bytes-a");
     const first = await resolveSourceHash(sourcePath, { quality: 80 }, 2, undefined);
 
-    // Keep mtime, change size via rewrite then restore mtime.
     await writeFile(sourcePath, "bytes-aa");
     await utimes(sourcePath, first.mtimeMs / 1000, first.mtimeMs / 1000);
 

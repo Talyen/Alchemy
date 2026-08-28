@@ -1,14 +1,11 @@
-// Shared homestead save payloads for validation and E2E injection.
 import {
   CURRENT_CONTENT_VERSION,
   CURRENT_GAME_BUILD_VERSION,
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation/metadata";
 
-/** Roster used by finishedRunCharacters across unit fixtures and E2E save injection. */
 export const ALL_PLAYABLE_CHARACTERS = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
 
-/** Default discovery list injected when a save does not specify one. */
 export const DEFAULT_DISCOVERED_CARD_IDS = [
   "slash",
   "bash",
@@ -51,7 +48,6 @@ export interface HomesteadSaveFixture {
   lastSavedAt: number;
 }
 
-/** Single owner of the current-schema envelope core shared by unit fixtures and E2E injection. */
 export function saveEnvelopeFixture(overrides: Record<string, unknown> = {}) {
   return {
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,

@@ -1,4 +1,3 @@
-// Canonical screen route identifiers shared by validation, persistence, and UI routing.
 export const ROUTE_SCREENS = {
   MENU: "menu",
   GAME_MODE_SELECT: "game-mode-select",
@@ -28,6 +27,4 @@ export const ROUTE_SCREENS = {
 
 export type Screen = (typeof ROUTE_SCREENS)[keyof typeof ROUTE_SCREENS];
 
-// ROUTE_SCREENS is non-empty by construction; deriving this list keeps persisted
-// save validation synchronized with the compile-time Screen union.
 export const ROUTE_SCREEN_VALUES = Object.values(ROUTE_SCREENS) as [Screen, ...Screen[]];

@@ -16,7 +16,7 @@ import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { addMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/write-port-profile";
+import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
 import { resetProfileForTest } from "../../../../helpers/gameplay-store-test";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";

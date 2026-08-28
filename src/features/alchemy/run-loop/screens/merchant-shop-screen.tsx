@@ -1,4 +1,3 @@
-// Merchant shop screen — buy cards, remove deck cards, or refresh the shop.
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 

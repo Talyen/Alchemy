@@ -1,4 +1,3 @@
-// Eased HP counter for campfire heal animations.
 import { useEffect, useRef, useState } from "react";
 
 import { CAMPFIRE_ANIMATION_MS } from "@/lib/game-constants";
@@ -24,8 +23,6 @@ export function useEasedHealth({
   const onFinishedRef = useRef(onFinished);
   const inactiveFrom = active ? null : from;
 
-  // Adjust animation state during render when its origin changes. React retries this
-  // render before committing, so activation cannot paint a stale previous origin.
   if (syncedInput.active !== active || syncedInput.from !== from) {
     setSyncedInput({ active, from });
     setAnimatedHealth(from);

@@ -1,4 +1,3 @@
-// Compose stable, domain-shaped shop commands. Domain behavior lives in the sibling command modules.
 import { createAlchemistShopCommands } from "./alchemist-shop-commands";
 import { createEquipmentShopCommands } from "./equipment-shop-commands";
 import { createMerchantShopCommands } from "./merchant-shop-commands";

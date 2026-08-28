@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -44,8 +43,6 @@ describe("RemoveCardPanel Card Tooltips in Grid", () => {
     const descriptionSpan = screen.getByText(/Deal/);
     expect(descriptionSpan).toBeTruthy();
 
-    // Card popups render root-scale in the tooltip overlay (document.body when
-    // the overlay root is not mounted), not inside the grid item.
     const tooltipPanel = descriptionSpan.closest(".hover-popup-panel");
     expect(tooltipPanel).toBeTruthy();
     expect(tooltipPanel?.classList.contains("pointer-events-none")).toBe(true);

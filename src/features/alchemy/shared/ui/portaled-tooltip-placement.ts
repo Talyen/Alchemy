@@ -8,13 +8,11 @@ export interface PortaledTooltipAnchor {
 
 export type PortaledTooltipSide = "side-start" | "side-end";
 
-/** "above" prefers above, then below, then beside; side placements stay beside. */
 export type PortaledTooltipPlacement = "above" | PortaledTooltipSide;
 
 const VR_STAGE_SELECTOR = '[data-testid="vr-stage"]';
 const DEFAULT_HORIZONTAL_INSET = 152;
 
-/** Clip bounds for tooltips: the VR stage when present, otherwise the document. */
 export function getVrStageBounds(): DOMRect {
   const stage = document.querySelector(VR_STAGE_SELECTOR);
   if (stage) {
@@ -66,7 +64,6 @@ export function measurePortaledTooltipPlacement(
   };
 }
 
-/** Position a tooltip beside the trigger, flipping to the other side when clipped. */
 export function buildSideTooltipStyle(
   anchor: PortaledTooltipAnchor,
   triggerRect: Pick<DOMRect, "left" | "right">,
@@ -88,8 +85,6 @@ export function buildSideTooltipStyle(
 
   left = Math.max(stage.left + padding, Math.min(left, stage.right - padding - tooltipRect.width));
 
-  // Vertically center on the trigger, clamped inside the stage. The panel is
-  // translateY(-50%)-centered via CSS, so `top` is the center line.
   const halfHeight = tooltipRect.height / 2;
   const centerY = (anchor.top + anchor.bottom) / 2;
   const minTop = stage.top + halfHeight + padding;
@@ -146,8 +141,6 @@ export function usePortaledTooltipPlacement(
 
     updatePlacement();
 
-    // Coalesce scroll/resize storms into one measurement per frame, matching
-    // the rAF-batched convention used for tilt writes in shared/utils/dom.
     let frame: number | null = null;
     const requestPlacementUpdate = () => {
       if (frame !== null) return;
@@ -158,7 +151,7 @@ export function usePortaledTooltipPlacement(
     };
 
     window.addEventListener("resize", requestPlacementUpdate);
-    // Capture scroll from nested overflow containers (armory inventory, collection grids).
+
     document.addEventListener("scroll", requestPlacementUpdate, true);
 
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(requestPlacementUpdate) : null;

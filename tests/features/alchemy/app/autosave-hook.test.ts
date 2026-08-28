@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
@@ -76,8 +75,6 @@ describe("useAlchemyAutosaveFromStores", () => {
   it("flushes within the max wait even when commits keep resetting the debounce", async () => {
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
-    // Commits every 250ms never leave a 500ms quiet gap, so only the max-wait
-    // can produce a write while play continues.
     act(() => {
       dispatchRunSessionCommand((draft) => setRunGold(draft, 1));
     });
@@ -91,8 +88,6 @@ describe("useAlchemyAutosaveFromStores", () => {
     }
     expect(Object.keys(mockStorage)).toHaveLength(0);
 
-    // AUTOSAVE_MAX_WAIT_MS (10s) after the first dirty commit elapses and the
-    // pending forced flush finally fires with the freshest committed value.
     await act(async () => {
       vi.advanceTimersByTime(250);
       await Promise.resolve();
