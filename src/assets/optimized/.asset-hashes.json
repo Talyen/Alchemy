@@ -679,18 +679,18 @@
     "outputHash": "d1f6ec913b60b7c7"
   },
   "gear-leather-buckler-astral.webp": {
-    "hash": "d83c1c263cb428ab",
-    "mtimeMs": 1782421241948.264,
-    "size": 183804,
+    "hash": "6856e613f509f812",
+    "mtimeMs": 1787862411314.475,
+    "size": 2715823,
     "settingsSig": "f0323ec9e9ab055f",
-    "outputHash": "a46fbc69823bb695"
+    "outputHash": "0d1b6c7c05c2e117"
   },
   "gear-leather-buckler-basic.webp": {
-    "hash": "ab20dff377f59632",
-    "mtimeMs": 1782421241948.5498,
-    "size": 174524,
+    "hash": "cd68d3e3fe184a11",
+    "mtimeMs": 1787862029253.5183,
+    "size": 2415111,
     "settingsSig": "f0323ec9e9ab055f",
-    "outputHash": "43fb4f331276e4ab"
+    "outputHash": "8262d2f5ab46005f"
   },
   "gear-longbow-astral.webp": {
     "hash": "820b3a230d0ab2f0",
@@ -763,18 +763,18 @@
     "outputHash": "790f62dbfec0ce1b"
   },
   "gear-quiver-astral.webp": {
-    "hash": "f8341dee18472c13",
-    "mtimeMs": 1782421241954.7263,
-    "size": 187290,
+    "hash": "627ee7b574f8a253",
+    "mtimeMs": 1787862367001.8809,
+    "size": 2769656,
     "settingsSig": "f0323ec9e9ab055f",
-    "outputHash": "2e249987fee6c22b"
+    "outputHash": "0525230ac5a386fa"
   },
   "gear-quiver-basic.webp": {
-    "hash": "9535034b81096400",
-    "mtimeMs": 1782421241955.2217,
-    "size": 151651,
+    "hash": "51b85fa2187e37d5",
+    "mtimeMs": 1787862174993.961,
+    "size": 2644774,
     "settingsSig": "f0323ec9e9ab055f",
-    "outputHash": "f9bc5e23d47a41a6"
+    "outputHash": "917e4c878774979c"
   },
   "gear-recurve-bow-astral.webp": {
     "hash": "41471d10bac3ed78",

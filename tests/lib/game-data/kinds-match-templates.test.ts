@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { BATTLE_CARD_EFFECT_KINDS, RECURSIVE_BATTLE_CARD_EFFECT_KINDS } from "@/lib/game-data/effects/kinds";
-import { TEMPLATE_EFFECT_DEFINITIONS } from "@/lib/game-data/effects/template-definitions";
+import {
+  BATTLE_CARD_EFFECT_KINDS,
+  RECURSIVE_BATTLE_CARD_EFFECT_KINDS,
+  TEMPLATE_EFFECT_DEFINITIONS,
+} from "@/lib/game-data/effects/registry";
 
 describe("BATTLE_CARD_EFFECT_KINDS single-source guard", () => {
   it("contains every template kind plus recursive kinds, no extras", () => {

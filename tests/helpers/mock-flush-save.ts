@@ -15,6 +15,6 @@ vi.mock("@/features/alchemy/shared/storage/flush-save", async (importOriginal) =
   const actual = await importOriginal<Record<string, unknown>>();
   return {
     ...actual,
-    flushAlchemySaveNow: vi.fn(),
+    flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
   };
 });

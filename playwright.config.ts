@@ -24,7 +24,7 @@ export default defineConfig({
   // where applicable; the raw-animation canaries are isolated per-context.
   fullyParallel: isPrepush || isNightly || isFullE2eSuite || isCi,
   maxFailures,
-  workers: isNightly ? 4 : isCi ? 4 : defaultWorkers,
+  workers: isNightly || isCi ? 4 : defaultWorkers,
   globalTimeout: 600_000,
   timeout: isCi ? 30_000 : 20_000,
   ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-results.json" }),

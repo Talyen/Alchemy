@@ -29,18 +29,29 @@ export type GameplayDraft = Draft<GameplayState>;
  * (e.g. `flushSaveAfterRunEnd`, audio) and intentionally lives outside the
  * draft — see module header.
  */
+let inCommand = false;
+
 export function dispatchRunSessionCommand<T>(
   execute: (draft: GameplayDraft) => T,
   options?: { afterCommit?: (result: T) => void },
 ): T {
+  if (inCommand) {
+    throw new Error("dispatchRunSessionCommand: nested command is not allowed (execute must not dispatch)");
+  }
+  inCommand = true;
   let result!: T;
-  const base = useGameplayStateStore.getState();
-  const next = produce(base, (draft: GameplayDraft) => {
-    result = execute(draft);
-  });
+  let next: GameplayState;
+  try {
+    const base = useGameplayStateStore.getState();
+    next = produce(base, (draft: GameplayDraft) => {
+      result = execute(draft);
+    });
 
-  if (next !== base) {
-    useGameplayStateStore.setState({ ...next, revision: base.revision + 1 }, true);
+    if (next !== base) {
+      useGameplayStateStore.setState({ ...next, revision: base.revision + 1 }, true);
+    }
+  } finally {
+    inCommand = false;
   }
   options?.afterCommit?.(result);
   return result;

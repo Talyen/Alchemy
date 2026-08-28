@@ -20,13 +20,22 @@ export async function prepareAssets() {
   const results = await Promise.allSettled([optimizeAssets(), optimizeSounds(), optimizeMusic()]);
   const [artResult, soundsResult, musicResult] = results;
   const failures = [];
-  const pipelineFailed = (result) => result.status === "rejected" || !result.value.ok;
+  const pipelineFailed = (result) => result.status === "rejected" || !result.value?.ok;
+  const pipelineReason = (result) =>
+    result.status === "rejected" ? String(result.reason) : result.value?.error ? String(result.value.error) : "";
 
   if (pipelineFailed(artResult)) {
-    failures.push("Art optimization failed.");
+    const detail = pipelineReason(artResult);
+    failures.push(detail ? `Art optimization failed: ${detail}` : "Art optimization failed.");
   }
-  if (pipelineFailed(soundsResult)) failures.push("Sound optimization failed.");
-  if (pipelineFailed(musicResult)) failures.push("Music optimization failed.");
+  if (pipelineFailed(soundsResult)) {
+    const detail = pipelineReason(soundsResult);
+    failures.push(detail ? `Sound optimization failed: ${detail}` : "Sound optimization failed.");
+  }
+  if (pipelineFailed(musicResult)) {
+    const detail = pipelineReason(musicResult);
+    failures.push(detail ? `Music optimization failed: ${detail}` : "Music optimization failed.");
+  }
 
   if (artResult.status === "fulfilled" && artResult.value.ok) {
     // Both regenerate barrels from the completed art manifest but write disjoint outputs.

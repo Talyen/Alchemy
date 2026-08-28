@@ -2,17 +2,19 @@
 // remains private to shared/stores so callers cannot bypass orchestration.
 export {
   restoreRun,
+  resolveActiveRunForSave,
   snapshotRun,
-  teardownRun,
   syncRunToBattleStart,
   syncBattleToRun,
-  clearBattleUi,
-  clearBattlePresentationUi,
+  teardownRun,
+  flushSaveAfterGearMutation,
   finalizeRunEndSession,
   applyRunDefeatTeardown,
-  resolveActiveRunForSave,
-  flushSaveAfterGearMutation,
+} from "./run-lifecycle";
+export {
   onRunTeardown,
   onClearBattlePresentation,
-} from "./run-transitions";
+  clearBattleUi,
+  clearBattlePresentationUi,
+} from "./run-presentation-lifecycle";
 export { hydrateModeRunInDraft } from "./run-park-restore";

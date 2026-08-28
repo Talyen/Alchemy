@@ -5,12 +5,13 @@
 import { applyCardEffects } from "./effect-handlers";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
-import { LOW_HEALTH_THRESHOLD_PERCENT, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { LOW_HEALTH_THRESHOLD_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { computeLeechHeal } from "./leech-heal";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollPercent, getBattleRng, rollTalentChance } from "./status-helpers";
 import { dealPlayerTypedHit } from "./player-typed-hit";
+import { scalePerMana } from "./amount-helpers";
 
 interface CompanionScaleContext {
   talentEffects: TalentEffectManifest;
@@ -37,7 +38,7 @@ function companionDamageBonusForEffect(
     trinketEffects.companionDamageBonus +
     ctx.damageBuff +
     (ctx.enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0) +
-    Math.round((ctx.maxMana * talentEffects.companionDamagePerManaCrystal) / HALF_DIVISOR) +
+    scalePerMana(ctx.maxMana, talentEffects.companionDamagePerManaCrystal, "half") +
     (gearEffects.companionBenefitsFromForge > 0 && (effect.damageType === "physical" || effect.damageType === "stun")
       ? ctx.playerForge
       : 0)

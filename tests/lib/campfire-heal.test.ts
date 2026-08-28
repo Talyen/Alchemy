@@ -20,7 +20,7 @@ describe("campfire rest heal", () => {
     expect(getCampfireRestHealth(25, 30, 0.4)).toBe(30);
   });
 
-  it("floors fractional heal products", () => {
-    expect(getCampfireRestHealth(10, 25)).toBe(17);
+  it("rounds fractional heal products", () => {
+    expect(getCampfireRestHealth(10, 25)).toBe(18);
   });
 });

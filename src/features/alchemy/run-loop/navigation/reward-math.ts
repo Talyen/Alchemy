@@ -50,7 +50,7 @@ export function getActiveRewardModifiersForContentSystem(
 
 export function getGenerousGoldBonus(modifiers: EncounterRewardTraitId[], gold: number): number {
   return hasRewardModifier(modifiers, "generous")
-    ? Math.floor(gold * LABYRINTH_REWARD_CONFIG.generousGoldBonusFraction)
+    ? Math.round(gold * LABYRINTH_REWARD_CONFIG.generousGoldBonusFraction)
     : 0;
 }
 
@@ -60,7 +60,7 @@ export function applyLabyrinthRewardMaterialModifiers(
 ): MaterialInventory {
   if (!hasRewardModifier(modifiers, "scavenger")) return materials;
   return MATERIAL_IDS.reduce<MaterialInventory>((result, material) => {
-    result[material] = Math.floor(materials[material] * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier);
+    result[material] = Math.round(materials[material] * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier);
     return result;
   }, {} as MaterialInventory);
 }
@@ -79,7 +79,7 @@ function sumGoldBonuses(
 }
 
 export function computeRewardGold(input: RewardGoldInput): number {
-  return Math.floor(
+  return Math.round(
     (input.baseGold +
       sumGoldBonuses(input.bonusGold, input.generousBonus, input.talentGoldPerCombat, input.trinketIds)) *
       input.goldMultiplier,
@@ -104,6 +104,6 @@ export function computeVictoryGold({
     purseGold;
   return {
     earnedBeforeMultiplier,
-    persistedGold: purseGold + Math.floor(earnedBeforeMultiplier * goldMultiplier),
+    persistedGold: purseGold + Math.round(earnedBeforeMultiplier * goldMultiplier),
   };
 }

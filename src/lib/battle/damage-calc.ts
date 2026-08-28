@@ -1,9 +1,14 @@
 /**
  * Player damage calculation: per-type base amounts, first-card modifiers, crit, block, and armor mitigation.
  */
-import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier, getBattleRng } from "./status-helpers";
+import {
+  getBurnBonusToBleedingMultiplier,
+  getEnemyDamageMultiplier,
+  getBattleRng,
+  rollPercent,
+} from "./status-helpers";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
-import { scaleBlockBonus } from "./amount-helpers";
+import { scaleBlockBonus, scalePerMana } from "./amount-helpers";
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
@@ -168,10 +173,10 @@ function applyStunDamageModifiers(state: BattleState, rawAmount: number): number
 function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: BattleCard): number {
   let nextAmount = rawAmount + state.talentEffects.flatBurnDamage + state.gearEffects.flatBurnDamage;
   if (state.talentEffects.burnDamagePerManaCrystal > 0) {
-    nextAmount += Math.round((state.maxMana * state.talentEffects.burnDamagePerManaCrystal) / PERCENT_DENOMINATOR);
+    nextAmount += scalePerMana(state.maxMana, state.talentEffects.burnDamagePerManaCrystal, "percent");
   }
   if (state.gearEffects.burnDamagePerManaPercent > 0) {
-    nextAmount += Math.round((state.maxMana * state.gearEffects.burnDamagePerManaPercent) / PERCENT_DENOMINATOR);
+    nextAmount += scalePerMana(state.maxMana, state.gearEffects.burnDamagePerManaPercent, "percent");
   }
   if (state.talentEffects.blockToBurnDamage) {
     nextAmount += getBlockScaledDamageBonus(state, BURN_BLOCK_SCALED_DAMAGE_PERCENT);
@@ -184,7 +189,9 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: 
 
 function applyFreezeDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.talentEffects.flatFreezeDamage + state.gearEffects.flatFreezeDamage;
-  nextAmount += Math.round((state.maxMana * state.talentEffects.freezeDamagePerManaCrystal) / HALF_DIVISOR);
+  if (state.talentEffects.freezeDamagePerManaCrystal > 0) {
+    nextAmount += scalePerMana(state.maxMana, state.talentEffects.freezeDamagePerManaCrystal, "half");
+  }
   return nextAmount;
 }
 
@@ -252,10 +259,7 @@ function computeBaseDamage(
  */
 function applyCrit(damage: number, state: BattleState) {
   if (state.flags.nextHitCrit) return damage * CRIT_MULTIPLIER;
-  const totalChance = GLOBAL_CRIT_CHANCE;
-  const rng = getBattleRng(state);
-  const isCrit = totalChance > 0 && rng() * PERCENT_DENOMINATOR < totalChance;
-  return isCrit ? damage * CRIT_MULTIPLIER : damage;
+  return rollPercent(GLOBAL_CRIT_CHANCE, getBattleRng(state)) ? damage * CRIT_MULTIPLIER : damage;
 }
 
 /**

@@ -10,7 +10,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import { resolveDevPort } from "./scripts/lib/dev-port.mjs";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore no types for vite-aliases.mjs
-import { VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
+import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 
 // Single port contract shared with scripts/lib/dev-port.mjs consumers (polling/stop/cleanup).
 const devPort = resolveDevPort(process.env);
@@ -66,7 +66,11 @@ export default defineConfig(({ mode, command }) => {
           telemetry: false,
         }),
     ].filter(Boolean),
+    optimizeDeps: {
+      include: [...SSR_OPTIMIZE_INCLUDE],
+    },
     build: {
+      target: "esnext",
       assetsInlineLimit: 4096,
       // Hidden sourcemaps for any desktop build aid local repro; Sentry upload remains gated on `sentryEnabled`.
       // `ALCHEMY_SKIP_SOURCEMAP=1` opts out for fast local iterate when maps are not needed.
@@ -90,16 +94,6 @@ export default defineConfig(({ mode, command }) => {
                 name: "motion-vendor",
                 test: /[\\/]node_modules[\\/](motion|framer-motion)[\\/]/,
                 priority: 30,
-              },
-              {
-                name: "icons-vendor",
-                test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
-                priority: 20,
-              },
-              {
-                name: "radix-vendor",
-                test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
-                priority: 20,
               },
               {
                 name: "vendor",

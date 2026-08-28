@@ -354,8 +354,8 @@ describe("computeVictoryRewards", () => {
       }),
       () => 0.25,
     );
-    // Base roll 15 + elite bonus 4.
-    expect(result.goldEarned).toBe(19);
+    // Base roll 15 + elite bonus 5 (rounded).
+    expect(result.goldEarned).toBe(20);
   });
 
   it("doubles gold reward when enemy has gold-trove trait", () => {
@@ -393,8 +393,8 @@ describe("computeVictoryRewards", () => {
       }),
       testRng,
     );
-    // Base roll 15 + boss bonus 7.
-    expect(result.goldEarned).toBe(22);
+    // Base roll 15 + boss bonus 8 (rounded).
+    expect(result.goldEarned).toBe(23);
     expect(result.rewardState.rewardType).toBe("trinket");
   });
 
@@ -406,8 +406,8 @@ describe("computeVictoryRewards", () => {
       }),
       testRng,
     );
-    // Base roll 15 + generous bonus 7.
-    expect(result.goldEarned).toBe(22);
+    // Base roll 15 + generous bonus 8 (rounded).
+    expect(result.goldEarned).toBe(23);
   });
 
   it("applies labyrinth scavenger reward modifier to materials", () => {

@@ -45,7 +45,12 @@ function isAllowedRendererUrl(rawUrl, { packaged, devServerUrl }) {
 }
 
 function resolveAppAssetPath(rendererRoot, rawUrl) {
-  const rawPath = rawUrl.slice(rawUrl.indexOf("/", `${APP_PROTOCOL}://`.length + APP_HOST.length));
+  // Defense-in-depth: check both raw slice (before URL normalization) and
+  // normalized pathname for traversal and control chars. Encoded %00/%5C in
+  // the raw slice decodes to \0/\ on the normalized path, so both layers
+  // must reject — keeping checks in both places prevents future regression.
+  const rawPathStart = rawUrl.indexOf("/", `${APP_PROTOCOL}://`.length + APP_HOST.length);
+  const rawPath = rawPathStart >= 0 ? rawUrl.slice(rawPathStart) : "/";
   let decodedRawPath;
   try {
     decodedRawPath = decodeURIComponent(rawPath.split(/[?#]/, 1)[0] ?? "");
@@ -74,7 +79,13 @@ function resolveAppAssetPath(rendererRoot, rawUrl) {
   } catch {
     return null;
   }
-  if (decodedPath.includes("\0") || decodedPath.includes("\\")) return null;
+  if (
+    decodedPath.includes("\0") ||
+    decodedPath.includes("\\") ||
+    decodedPath.split("/").some((segment) => segment === "..")
+  ) {
+    return null;
+  }
 
   const relativeRequest = decodedPath === "/" ? "index.html" : decodedPath.replace(/^\/+/, "");
   const normalizedRoot = path.resolve(rendererRoot);

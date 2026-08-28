@@ -228,7 +228,7 @@ describe("reward flow selection", () => {
         goldMultiplier: 1.5,
         rng: () => 0.5,
       });
-      expect(result.gold).toBe(22);
+      expect(result.gold).toBe(23);
     });
 
     it("goldMultiplier defaults to 1 for combat rewards", () => {

@@ -132,7 +132,7 @@ describe("reward flow orchestration", () => {
     });
 
     it("computes generous gold bonus from base reward gold", () => {
-      expect(getGenerousGoldBonus(["generous"], 11)).toBe(5);
+      expect(getGenerousGoldBonus(["generous"], 11)).toBe(6);
       expect(getGenerousGoldBonus([], 11)).toBe(0);
     });
 
@@ -370,7 +370,7 @@ describe("reward flow orchestration", () => {
         goldMultiplier: 2,
       });
       expect(result.earnedBeforeMultiplier).toBe(25);
-      expect(result.persistedGold).toBe(10 + Math.floor(25 * 2));
+      expect(result.persistedGold).toBe(10 + Math.round(25 * 2));
     });
   });
 

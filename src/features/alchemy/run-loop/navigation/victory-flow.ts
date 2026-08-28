@@ -58,22 +58,22 @@ function rollVictoryGold(
   rng: () => number,
 ): VictoryGoldRoll {
   const baseGold = Math.floor(rng() * (GOLD_REWARD_MAX - GOLD_REWARD_MIN + 1) + GOLD_REWARD_MIN);
-  let gold = Math.floor(baseGold * (1 + talentEffects.enemyGoldDropBonus));
+  let gold = Math.round(baseGold * (1 + talentEffects.enemyGoldDropBonus));
 
   if (talentEffects.companionGoldFindActive && battleState.activeCompanion && rng() < COMPANION_GOLD_FIND_CHANCE) {
-    gold = Math.floor(gold * COMPANION_GOLD_MULTIPLIER);
+    gold = Math.round(gold * COMPANION_GOLD_MULTIPLIER);
   }
 
   if (battleState.currentEnemy.traits?.some((t) => t.id === ENEMY_TRAIT_IDS.GOLD_TROVE)) {
-    gold = Math.floor(gold * GOLD_TROVE_REWARD_MULTIPLIER);
+    gold = Math.round(gold * GOLD_TROVE_REWARD_MULTIPLIER);
   }
 
   const eliteFraction =
     ELITE_GOLD_BONUS_FRACTION +
     (battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? talentEffects.eliteGoldDropBonus : 0);
-  const eliteBonus = battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? Math.floor(gold * eliteFraction) : 0;
+  const eliteBonus = battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? Math.round(gold * eliteFraction) : 0;
   const bossBonus =
-    battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
+    battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS ? Math.round(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
   const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
 
   return { gold, eliteBonus, bossBonus, generousBonus };

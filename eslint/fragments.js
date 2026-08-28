@@ -112,13 +112,15 @@ export const BATTLE_NO_FEATURES = [
 export const DOMAIN_STORE_PATTERNS = [
   {
     group: [
-      "**/run-transitions",
-      "@/features/alchemy/shared/stores/run-transitions",
       "**/gameplay-state-store",
       "@/features/alchemy/shared/stores/gameplay-state-store",
+      "**/run-lifecycle",
+      "@/features/alchemy/shared/stores/run-lifecycle",
+      "**/run-presentation-lifecycle",
+      "@/features/alchemy/shared/stores/run-presentation-lifecycle",
     ],
     message:
-      "Import a capability-specific run-session port instead of the low-level gameplay aggregate or run-transitions.",
+      "Import a capability-specific run-session port instead of the low-level gameplay aggregate or lifecycle internals.",
   },
 ];
 

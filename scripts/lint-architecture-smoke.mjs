@@ -96,7 +96,7 @@ assert.ok(
 const runLoopBattleImports = await calculateImports(
   "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
 );
-for (const restriction of ["run-transitions", "gameplay-state-store", "screens"]) {
+for (const restriction of ["run-lifecycle", "gameplay-state-store", "screens"]) {
   assertImportGroup(runLoopBattleImports, restriction, "run-loop/battle");
 }
 

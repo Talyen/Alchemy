@@ -10,3 +10,8 @@ export function applyPotionMultiplier(amount: number, potionMult: number): numbe
 export function scaleBlockBonus(block: number, percent: number, denominator = 100): number {
   return Math.round((block * percent) / denominator);
 }
+
+export function scalePerMana(maxMana: number, value: number, unit: "percent" | "half"): number {
+  const divisor = unit === "percent" ? 100 : 2;
+  return Math.round((maxMana * value) / divisor);
+}

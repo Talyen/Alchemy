@@ -11,7 +11,7 @@ export const E2E_ESCALATIONS = Object.freeze({
   mystery: "e2e-mystery",
 });
 
-export const E2E_NAMES = new Set(["save", "shop", "audio", "gear", "mystery"]);
+export const E2E_NAMES = new Set(Object.keys(E2E_ESCALATIONS).filter((k) => k !== "shop-screen"));
 
 export const COMMANDS = Object.freeze({
   "unit-active": {

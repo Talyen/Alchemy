@@ -91,8 +91,9 @@ function hasAffordableHomesteadUpgrade(input: {
     return canAfford(materialInventory, tier.cost);
   });
 
+  const discoveredSet = new Set(discoveredCardIds);
   const affordableBond = COMPANION_CARDS.some(({ id, companionId }) => {
-    if (!discoveredCardIds.includes(id)) return false;
+    if (!discoveredSet.has(id)) return false;
     const currentLevel = bondedCompanions[companionId] ?? 0;
     if (currentLevel >= COMPANION_MAX_TIER) return false;
     const bondTier = COMPANION_BOND_TIERS[currentLevel];

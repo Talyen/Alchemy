@@ -178,10 +178,16 @@ export function applyDamageRiders(
         nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true);
       }
     }
-    if (rollTalentChance(state.talentEffects.archeryBleedChance, nextState)) {
-      nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);
+    // Bleed and detonate only on the primary hit; the half-damage extra hit is damage-only
+    // to avoid double-applying riders and combat payouts (gold-on-kill, Lifesteal)
+    // on one card play. Holy lifesteal intentionally still fires on extra hits
+    // via applyHolyDamageRiders below — it is per-hit, not per-card.
+    if (!isExtraHit) {
+      if (rollTalentChance(state.talentEffects.archeryBleedChance, nextState)) {
+        nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);
+      }
+      nextState = applyArcheryDetonate(nextState, combatTexts);
     }
-    nextState = applyArcheryDetonate(nextState, combatTexts);
   }
   if (effect.damageType === "holy") {
     nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts);

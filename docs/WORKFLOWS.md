@@ -233,13 +233,13 @@ Cards in `cardLibrary` are automatically included in card shop, combat rewards, 
 | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | 1. Add to `BattleCardEffect` union                                           | `src/lib/game-data/types.ts`                                                           |
 | 2. Add an `EffectKindDefinition` to the matching grouped `*-schemas.ts` file | `src/lib/game-data/effects/`                                                           |
-| 3. Register non-recursive kinds in `TEMPLATE_EFFECT_DEFINITIONS`             | `src/lib/game-data/effects/template-definitions.ts`                                    |
-| 4. Add `kind` to `BATTLE_CARD_EFFECT_KINDS`                                  | `src/lib/game-data/effects/kinds.ts`                                                   |
+| 3. Register non-recursive kinds in `TEMPLATE_EFFECT_DEFINITIONS`             | `src/lib/game-data/effects/registry.ts`                                                |
+| 4. `BATTLE_CARD_EFFECT_KINDS` derives from the registry                      | `src/lib/game-data/effects/registry.ts` (`kinds.ts` is a deprecated shim)              |
 | 5. Register the runtime handler in `EFFECT_APPLY_BY_KIND`                    | `src/lib/battle/effect-handlers/` — see `src/lib/game-data/effects/BATTLE_HANDLERS.md` |
 | 6. Update effect metadata used for descriptions/keywords                     | `src/lib/game-data/effect-metadata.ts`                                                 |
 | 7. Schema-registry guard                                                     | `tests/lib/game-data/effects-registry.test.ts`                                         |
 
-`chance` and `repeat-over-turns` are the recursive exceptions: their schema factories live in `recursive-definition.ts` and dispatch handles them before the non-recursive registry.
+`chance` and `repeat-over-turns` are the recursive exceptions: their schema factories live in `registry.ts` and dispatch handles them before the non-recursive registry. `kinds.ts`, `template-definitions.ts`, and `schemas.ts` are deprecated re-export shims retained for backwards compatibility.
 
 ---
 

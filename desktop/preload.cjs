@@ -13,7 +13,10 @@ contextBridge.exposeInMainWorld("alchemyDesktop", {
   steamGetName: () => ipcRenderer.invoke("alchemy:steam-get-name"),
   steamSetRichPresence: (key, val) => ipcRenderer.invoke("alchemy:steam-set-rich-presence", key, val),
   steamCloudRead: () => {
-    if (typeof document !== "undefined") {
+    // Only allow DOM mock in dev: main process sets NODE_ENV, preload's `process`
+    // may be unavailable in some Electron configurations, so guard carefully.
+    const isDev = typeof process !== "undefined" && process.env != null && process.env.NODE_ENV !== "production";
+    if (isDev && typeof document !== "undefined") {
       const mockEl = document.getElementById("__steamCloudReadMock");
       if (mockEl) {
         return Promise.resolve(mockEl.getAttribute("data-payload") || null);

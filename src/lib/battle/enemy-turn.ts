@@ -69,12 +69,37 @@ function resolveHasteTurn(state: BattleState) {
   };
 }
 
+type EnemyPostTickMode = "attack" | "skip";
+
+function resolveEnemyPostTickResolution(
+  state: BattleState,
+  texts: CombatTextEvent[],
+  options: { traitRoll?: number } | undefined,
+  mode: EnemyPostTickMode,
+): { state: BattleState; afterAttackState?: BattleState } {
+  let nextState = processEncounterTraitActionStart(state, texts);
+  nextState = processEnemyTraits(nextState, texts, options);
+  let afterAttackState: BattleState | undefined;
+  if (mode === "attack") {
+    nextState = processEnemyAttack(nextState, texts);
+    afterAttackState = nextState;
+    if (nextState.enemyHealth <= 0) return { state: nextState, afterAttackState };
+  } else {
+    // Per-turn stat gains fire every enemy phase, including CC-skipped ones.
+    nextState = reduceSkipTurns(nextState);
+  }
+  nextState = tickPlayerStatuses(nextState, texts);
+  if (mode === "attack") nextState = processEncounterTraitActionDamage(nextState, texts);
+  nextState = resolveDeathsDoorGraceExpiry(nextState);
+  nextState = processEnemyRegeneration(nextState, texts);
+  if (afterAttackState === undefined) return { state: nextState };
+  return { state: nextState, afterAttackState };
+}
+
 function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: number }) {
   const enemyTurnStartCombatTexts: CombatTextEvent[] = [];
   const enemyResolutionCombatTexts: CombatTextEvent[] = [];
-  let nextState = state;
-
-  nextState = tickEnemyStatuses(nextState, enemyTurnStartCombatTexts);
+  const nextState = tickEnemyStatuses(state, enemyTurnStartCombatTexts);
   const enemyTurnStartState = nextState;
 
   if (enemyTurnStartState.enemyHealth <= 0) {
@@ -88,20 +113,12 @@ function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: num
     };
   }
 
-  // Per-turn stat gains fire every enemy phase, including CC-skipped ones —
-  // matching the bestiary stacking traits, which never gated on acting.
-  nextState = processEncounterTraitActionStart(nextState, enemyResolutionCombatTexts);
-  nextState = processEnemyTraits(nextState, enemyResolutionCombatTexts, options);
-  nextState = reduceSkipTurns(nextState);
-  nextState = tickPlayerStatuses(nextState, enemyResolutionCombatTexts);
-  nextState = resolveDeathsDoorGraceExpiry(nextState);
-  nextState = processEnemyRegeneration(nextState, enemyResolutionCombatTexts);
-
+  const result = resolveEnemyPostTickResolution(nextState, enemyResolutionCombatTexts, options, "skip");
   const combatTexts = [...enemyTurnStartCombatTexts, ...enemyResolutionCombatTexts];
 
   return {
     kind: "skipped" as const,
-    ...finalizePlayerTurn(nextState, combatTexts),
+    ...finalizePlayerTurn(result.state, combatTexts),
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
     enemyResolutionCombatTexts,
@@ -120,16 +137,8 @@ function resolveEnemyAction(
   options?: { traitRoll?: number },
 ): CombatTextResult & { afterAttackState: BattleState } {
   const texts: CombatTextEvent[] = [];
-  let nextState = processEncounterTraitActionStart(state, texts);
-  nextState = processEnemyTraits(nextState, texts, options);
-  nextState = processEnemyAttack(nextState, texts);
-  const afterAttackState = nextState;
-  if (nextState.enemyHealth <= 0) return { state: nextState, texts, afterAttackState };
-  nextState = tickPlayerStatuses(nextState, texts);
-  nextState = processEncounterTraitActionDamage(nextState, texts);
-  nextState = resolveDeathsDoorGraceExpiry(nextState);
-  nextState = processEnemyRegeneration(nextState, texts);
-  return { state: nextState, texts, afterAttackState };
+  const result = resolveEnemyPostTickResolution(state, texts, options, "attack");
+  return { state: result.state, texts, afterAttackState: result.afterAttackState! };
 }
 
 function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?: number }) {

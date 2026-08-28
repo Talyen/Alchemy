@@ -11,5 +11,5 @@ export function getCampfireRestHealth(
   maxHealth: number,
   healFraction: number = CAMPFIRE_HEAL_FRACTION,
 ): number {
-  return Math.min(maxHealth, currentHealth + Math.floor(maxHealth * healFraction));
+  return Math.min(maxHealth, currentHealth + Math.round(maxHealth * healFraction));
 }
