@@ -17,7 +17,8 @@ export default defineConfig({
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     setupFiles: ["tests/setup.ts"],
     restoreMocks: true,
-    testTimeout: 10_000,
+    testTimeout: 5_000,
+    pool: "threads",
     deps: {
       optimizer: {
         ssr: {

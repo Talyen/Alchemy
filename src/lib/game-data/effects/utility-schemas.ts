@@ -1,6 +1,6 @@
 // Utility and card manipulation card effect schemas and metadata.
 import { z } from "zod";
-import type { EffectKindDefinition } from "./definition";
+import type { EffectKindDefinition } from "./registry";
 
 export const gainGoldEffectDefinition = {
   kind: "gain-gold",

@@ -24,6 +24,7 @@ describe("save JSON round trips", () => {
     const original = parseSave({
       musicVolume: 60,
       displayMode: "fullscreen",
+      gold: 27,
       activeRun: {
         characterId: "wizard",
         runDeck: [
@@ -36,7 +37,6 @@ describe("save JSON round trips", () => {
             effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
           },
         ],
-        runGold: 27,
         runPlayerHealth: 18,
         runMaxHealth: 30,
         roomsEncountered: 5,
@@ -67,6 +67,7 @@ describe("save JSON round trips", () => {
 
   it("destination resume fields round-trip through JSON serialize/deserialize", () => {
     const original = parseSave({
+      gold: 12,
       activeRun: {
         characterId: "knight",
         runDeck: [],
@@ -107,6 +108,7 @@ describe("save JSON round trips", () => {
   it("labyrinth map round-trips through JSON serialize/deserialize", () => {
     const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
     const original = parseSave({
+      gold: 12,
       activeRun: {
         characterId: "ranger",
         runDeck: [],

@@ -4,10 +4,9 @@
 // side overflow when neither vertical gutter fits, explicit side placement,
 // and fade-out on hide. Panels are
 // pointer-events-none; visibility follows the trigger only.
-import { useEffect, useState, type ReactNode, type RefObject } from "react";
+import { type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
-import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { cn } from "@/lib/utils";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
@@ -16,6 +15,7 @@ import { tooltipWidthClass } from "../config";
 import { getVrStageBounds, usePortaledTooltipPlacement, type PortaledTooltipSide } from "./portaled-tooltip-placement";
 import { getTooltipRoot } from "./tooltip-root";
 import { TooltipPanel } from "./tooltip-panel";
+import { useFadePresence } from "./fade-presence";
 import { usePlasmaInteraction } from "./use-plasma-source";
 
 export const TOOLTIP_FADE_OUT_MS = 160;
@@ -57,24 +57,9 @@ export function PortaledTooltip({
     placement,
   );
 
-  const [mounted, setMounted] = useState(visible);
+  const { mounted } = useFadePresence(visible, fadeOutMs);
 
-  useEffect(() => {
-    if (visible) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- mount on visible transition, mirrors useFadePresence
-      setMounted(true);
-    }
-  }, [visible]);
-
-  const renderPanel = visible || (fadeOutMs > 0 && mounted);
-
-  useEffect(() => {
-    if (visible || !mounted || fadeOutMs <= 0) return;
-    const timer = window.setTimeout(() => setMounted(false), resolveGameDelay(fadeOutMs));
-    return () => window.clearTimeout(timer);
-  }, [visible, mounted, fadeOutMs]);
-
-  if (!renderPanel) return null;
+  if (!mounted) return null;
 
   // Keep mounted for measurement, but hide until layout styles are ready to avoid a center-screen hop.
   const placed = Boolean(tooltipStyle);

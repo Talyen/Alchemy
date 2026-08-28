@@ -16,7 +16,7 @@ import { createInitialProfileState, type ProfileStateFields } from "./profile-st
 import * as homestead from "./homestead-actions";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { addRunMaterialsEarned, resetRunXP } from "./write-port-run";
-import { setDraftField } from "./store-helpers";
+import { createDraftFieldSetter } from "./store-helpers";
 
 // --- Run-earned materials ---
 
@@ -128,67 +128,14 @@ export function finalizeRunXP(draft: GameplayDraft): void {
 
 // --- Profile (collection/discovery) region ---
 
-function assignProfileField<K extends keyof ProfileStateFields>(
-  draft: GameplayDraft,
-  field: K,
-  action: ProfileStateFields[K] | ((prev: ProfileStateFields[K]) => ProfileStateFields[K]),
-): void {
-  setDraftField(draft.profile, field, action);
-}
+const createProfileFieldSetter = createDraftFieldSetter<ProfileStateFields, GameplayDraft>((draft) => draft.profile);
 
-export const setDiscoveredCardIds = (
-  draft: GameplayDraft,
-  action:
-    | ProfileStateFields["discoveredCardIds"]
-    | ((prev: ProfileStateFields["discoveredCardIds"]) => ProfileStateFields["discoveredCardIds"]),
-): void => {
-  assignProfileField(draft, "discoveredCardIds", action);
-};
-
-export const setEncounteredEnemyIds = (
-  draft: GameplayDraft,
-  action:
-    | ProfileStateFields["encounteredEnemyIds"]
-    | ((prev: ProfileStateFields["encounteredEnemyIds"]) => ProfileStateFields["encounteredEnemyIds"]),
-): void => {
-  assignProfileField(draft, "encounteredEnemyIds", action);
-};
-
-export const setDiscoveredTrinketIds = (
-  draft: GameplayDraft,
-  action:
-    | ProfileStateFields["discoveredTrinketIds"]
-    | ((prev: ProfileStateFields["discoveredTrinketIds"]) => ProfileStateFields["discoveredTrinketIds"]),
-): void => {
-  assignProfileField(draft, "discoveredTrinketIds", action);
-};
-
-export const setDiscoveredUniqueIds = (
-  draft: GameplayDraft,
-  action:
-    | ProfileStateFields["discoveredUniqueIds"]
-    | ((prev: ProfileStateFields["discoveredUniqueIds"]) => ProfileStateFields["discoveredUniqueIds"]),
-): void => {
-  assignProfileField(draft, "discoveredUniqueIds", action);
-};
-
-export const setCompletedDifficulties = (
-  draft: GameplayDraft,
-  action:
-    | ProfileStateFields["completedDifficulties"]
-    | ((prev: ProfileStateFields["completedDifficulties"]) => ProfileStateFields["completedDifficulties"]),
-): void => {
-  assignProfileField(draft, "completedDifficulties", action);
-};
-
-export const setFinishedRunCharacters = (
-  draft: GameplayDraft,
-  action:
-    | ProfileStateFields["finishedRunCharacters"]
-    | ((prev: ProfileStateFields["finishedRunCharacters"]) => ProfileStateFields["finishedRunCharacters"]),
-): void => {
-  assignProfileField(draft, "finishedRunCharacters", action);
-};
+export const setDiscoveredCardIds = createProfileFieldSetter("discoveredCardIds");
+export const setEncounteredEnemyIds = createProfileFieldSetter("encounteredEnemyIds");
+export const setDiscoveredTrinketIds = createProfileFieldSetter("discoveredTrinketIds");
+export const setDiscoveredUniqueIds = createProfileFieldSetter("discoveredUniqueIds");
+export const setCompletedDifficulties = createProfileFieldSetter("completedDifficulties");
+export const setFinishedRunCharacters = createProfileFieldSetter("finishedRunCharacters");
 
 export function setCollectionPage(draft: GameplayDraft, tab: CollectionTab, page: number): void {
   draft.profile.collectionPages[tab] = Math.max(0, page);

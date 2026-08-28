@@ -43,4 +43,13 @@ describe("affix catalog guard", () => {
       expect(definition.name.length, `affix ${id} needs a non-empty name`).toBeGreaterThan(0);
     }
   });
+
+  it("requires unique display names for affixes", () => {
+    const seen = new Map<string, string>();
+    for (const definition of Object.values(gearAffixCatalog)) {
+      const prev = seen.get(definition.name);
+      expect(prev, `duplicate affix name "${definition.name}" used by ${prev} and ${definition.id}`).toBeUndefined();
+      seen.set(definition.name, definition.id);
+    }
+  });
 });

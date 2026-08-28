@@ -385,7 +385,7 @@ const affixRows = [
   },
   {
     id: "leech-potency",
-    name: "Leeching",
+    name: "Sanguine",
     aspect: "offensive",
     keywordId: "leech",
     descriptionTemplate: "Leech restores {value}% more Health",
@@ -551,7 +551,7 @@ const affixRows = [
   },
   {
     id: "absorb-per-mana",
-    name: "Aegis",
+    name: "Aetherward",
     aspect: "defensive",
     keywordId: "mana",
     descriptionTemplate: "Reduce damage taken by {value} for each full Mana Crystal",
@@ -690,7 +690,7 @@ const affixRows = [
   },
   {
     id: "dodge-armor",
-    name: "Warding",
+    name: "Wardplate",
     aspect: "defensive",
     keywordId: "dodge",
     descriptionTemplate: "On Dodge: Gain {value} Armor",

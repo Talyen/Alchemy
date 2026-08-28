@@ -8,7 +8,7 @@ import {
   rollPercent,
 } from "./status-helpers";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
-import { scaleBlockBonus, scalePerMana } from "./amount-helpers";
+import { scaleBlockBonus, scalePercent, scalePerMana } from "./amount-helpers";
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
@@ -65,7 +65,7 @@ function computeBaseRawAmount(
     return state.playerStatuses.armor + forgeBonus;
   }
   if (effect.equalToGoldPercent) {
-    const goldDamage = Math.round((state.gold * effect.equalToGoldPercent) / PERCENT_DENOMINATOR);
+    const goldDamage = scalePercent(state.gold, effect.equalToGoldPercent, PERCENT_DENOMINATOR);
     return goldDamage + forgeBonus;
   }
   let amount = effect.amount + forgeBonus;
@@ -127,11 +127,13 @@ function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): nu
  */
 function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.gearEffects.flatHolyDamage;
-  nextAmount += Math.round((state.gold * state.talentEffects.holyGoldPercent) / PERCENT_DENOMINATOR);
-  nextAmount += Math.round(
-    (state.playerStatuses.block * state.gearEffects.holyDamageFromBlockPercent) / PERCENT_DENOMINATOR,
+  nextAmount += scalePercent(state.gold, state.talentEffects.holyGoldPercent, PERCENT_DENOMINATOR);
+  nextAmount += scalePercent(
+    state.playerStatuses.block,
+    state.gearEffects.holyDamageFromBlockPercent,
+    PERCENT_DENOMINATOR,
   );
-  nextAmount += Math.round((state.gold * state.gearEffects.holyDamageFromGoldPercent) / PERCENT_DENOMINATOR);
+  nextAmount += scalePercent(state.gold, state.gearEffects.holyDamageFromGoldPercent, PERCENT_DENOMINATOR);
   if (state.talentEffects.blockToHolyDamage) {
     nextAmount += getPlayerBlockHalf(state);
   }

@@ -1,5 +1,7 @@
 // Screen-scoped React read hooks. Each hook subscribes only to the stores and
 // fields required by its screen, and its return type describes exactly that data.
+// Screens must use these (or useBattleScreenRouteData for battle), not the shell
+// orchestration ports in run-session-react-ports.
 import { useShallow } from "zustand/react/shallow";
 import { useGameplayStateStore } from "./gameplay-state-store";
 import type { RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";

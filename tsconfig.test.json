@@ -8,7 +8,9 @@
   "compilerOptions": {
     "types": ["vitest/globals", "vite/client", "node"],
     "noUncheckedIndexedAccess": false,
-    "exactOptionalPropertyTypes": false
+    "exactOptionalPropertyTypes": false,
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsbuild/test.tsbuildinfo"
   },
   "include": ["tests", "performance"]
 }

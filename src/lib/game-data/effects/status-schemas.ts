@@ -1,6 +1,6 @@
 // Status-related card effect schemas and metadata.
 import { z } from "zod";
-import type { EffectKindDefinition } from "./definition";
+import type { EffectKindDefinition } from "./registry";
 import { EnemyStatusIdSchema, DamageTypeSchema } from "./shared-schemas";
 
 export const playerStatusEffectDefinition = {

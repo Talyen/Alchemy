@@ -1,6 +1,6 @@
 // One-shot combat flag card effect schemas.
 import { z } from "zod";
-import type { EffectKindDefinition } from "./definition";
+import type { EffectKindDefinition } from "./registry";
 
 export const nextHitCritEffectDefinition = {
   kind: "next-hit-crit",

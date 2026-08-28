@@ -39,6 +39,15 @@ function emptyCraftingCurrencies() {
 
 /** Current-schema envelope: shared core plus the gear/crafting fields migration guards rely on. */
 function currentSaveEnvelope(overrides: Record<string, unknown> = {}) {
+  const activeRun = overrides.activeRun as { runGold?: number } | undefined;
+  const derivedGold =
+    typeof overrides.gold === "number"
+      ? overrides.gold
+      : typeof activeRun?.runGold === "number"
+        ? activeRun.runGold
+        : undefined;
+  const nextOverrides =
+    derivedGold !== undefined && overrides.gold === undefined ? { gold: derivedGold, ...overrides } : overrides;
   return saveEnvelopeFixture({
     saveSchemaVersion: 11,
     discoveredCardIds: [] as string[],
@@ -55,7 +64,7 @@ function currentSaveEnvelope(overrides: Record<string, unknown> = {}) {
     completedResearch: {},
     bondedCompanions: {},
     finishedRunCharacters: [] as string[],
-    ...overrides,
+    ...nextOverrides,
   });
 }
 
@@ -129,6 +138,7 @@ export function currentSchemaCampaignSave() {
     muteInBackground: false,
     autoEndTurn: true,
     brightness: 110,
+    gold: 42,
     activeRun: {
       characterId: "knight",
       runDeck: [
@@ -141,7 +151,6 @@ export function currentSchemaCampaignSave() {
           effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
         },
       ],
-      runGold: 42,
       runPlayerHealth: 18,
       runMaxHealth: 30,
       roomsEncountered: 3,
@@ -425,6 +434,7 @@ export function currentSchemaMidCombatTrinketSave() {
   return currentSaveEnvelope({
     discoveredTrinketIds: ["bone-charm", "meteorite"],
     finishedRunCharacters: ["knight"],
+    gold: 10,
     activeRun: {
       characterId: "knight",
       runDeck: [],

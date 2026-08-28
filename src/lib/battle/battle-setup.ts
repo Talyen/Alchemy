@@ -186,6 +186,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     startBlock,
     manaBonus,
     startCompanion,
+    startCompanionId,
     startingEnemyBlock,
   } = initializeEnemyState(battleEnemy, battleRooms, battleDiffs);
 
@@ -212,7 +213,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     startingBlock,
     startingArmor: playerStartingArmor,
     startingEnemyBlock,
-    activeCompanion: startCompanion ? companionLibrary["wolf"] : null,
+    activeCompanion: startCompanion ? (companionLibrary[startCompanionId] ?? companionLibrary["wolf"]) : null,
     currentEnemy: battleEnemy,
     talentEffects: battleTalents,
     trinketEffects,

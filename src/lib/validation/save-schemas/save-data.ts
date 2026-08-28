@@ -75,41 +75,8 @@ const EquippedTrinketsSchema = z
   .catch(emptyEquippedTrinkets)
   .transform((value) => value as EquippedTrinkets);
 
-function leftoverActiveRunGold(activeRun: unknown): number {
-  if (!activeRun || typeof activeRun !== "object") return 0;
-  const value = (activeRun as { runGold?: unknown }).runGold;
-  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0;
-}
-
-function omitActiveRunGold(activeRun: unknown): unknown {
-  if (!activeRun || typeof activeRun !== "object") return activeRun;
-  const { runGold: _runGold, ...rest } = activeRun as Record<string, unknown>;
-  void _runGold;
-  return rest;
-}
-
-function migrateLegacyRunGoldEnvelope(raw: unknown): unknown {
-  if (!raw || typeof raw !== "object") return raw;
-  const save = raw as Record<string, unknown>;
-  const leftover = leftoverActiveRunGold(save.activeRun);
-  const gold = typeof save.gold === "number" && Number.isFinite(save.gold) ? save.gold : 0;
-  const parked = save.parkedRuns;
-  const nextParked =
-    parked && typeof parked === "object"
-      ? Object.fromEntries(
-          Object.entries(parked as Record<string, unknown>).map(([mode, slot]) => [mode, omitActiveRunGold(slot)]),
-        )
-      : parked;
-  return {
-    ...save,
-    gold: leftover > 0 ? leftover : gold,
-    activeRun: omitActiveRunGold(save.activeRun),
-    parkedRuns: nextParked,
-  };
-}
-
 export const SaveDataSchema = z.preprocess(
-  (raw) => migrateLegacyRunGoldEnvelope(migrateSaveDataToCurrent(raw)),
+  (raw) => migrateSaveDataToCurrent(raw),
   z
     .object({
       saveSchemaVersion: z.literal(CURRENT_SAVE_SCHEMA_VERSION).catch(CURRENT_SAVE_SCHEMA_VERSION),

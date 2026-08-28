@@ -1,6 +1,6 @@
 // Mana and Health related card effect schemas and metadata.
 import { z } from "zod";
-import type { EffectKindDefinition } from "./definition";
+import type { EffectKindDefinition } from "./registry";
 
 export const restoreManaEffectDefinition = {
   kind: "restore-mana",

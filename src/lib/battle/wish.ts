@@ -15,7 +15,13 @@ import {
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
 import { getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
-import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
+import {
+  PERCENT_DENOMINATOR,
+  WISH_CHOICE_COUNT,
+  WISH_CRYSTAL_GOLD_PERCENT,
+  WISH_TRINKET_FORK_PERCENT,
+  MAX_HAND_SIZE,
+} from "../game-constants";
 import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-content";
 import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
 import { payKillPayouts } from "./kill-payouts";
@@ -91,7 +97,7 @@ function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[
 function applyWishCrystalGoldTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   const amount = state.talentEffects.wishCrystalGold;
   if (amount <= 0) return state;
-  if (state.rng() < WISH_CRYSTAL_GOLD_CHANCE) {
+  if (rollPercent(WISH_CRYSTAL_GOLD_PERCENT, state.rng)) {
     return addGoldWithCombatText(state, amount, combatTexts);
   }
   if (shouldConvertCrystalWishToGold(state.contentSystemType)) {
@@ -159,7 +165,7 @@ function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]
 
 function applyWishTrinketTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (!state.talentEffects.wishTrinketChoice) return state;
-  const isForge = state.rng() < 0.5;
+  const isForge = rollPercent(WISH_TRINKET_FORK_PERCENT, state.rng);
   const status = isForge ? ("forge" as const) : ("armor" as const);
   return applyPlayerStatusEffect(state, { kind: "player-status", status, amount: 1 }, combatTexts);
 }

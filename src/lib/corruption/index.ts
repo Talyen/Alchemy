@@ -1,6 +1,6 @@
 // Card corruption helpers for altar events: mutate numeric card text/effects or transform into another card.
 // Used by run navigation and tests so corrupted cards remain normal playable BattleCard objects.
-import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
+import { type BattleCard } from "@/lib/game-data";
 import {
   CORRUPTION_DELTA_CHANCE,
   CORRUPTION_MIN_VALUE,
@@ -11,13 +11,22 @@ import {
 } from "@/lib/game-constants";
 import { pickRandom } from "@/lib/utils";
 
-type NumericEffect = Extract<BattleCardEffect, { amount?: number }> & { amount: number };
+const CORRUPTIBLE_NUMERIC_FIELDS = [
+  "amount",
+  "minAmount",
+  "maxAmount",
+  "perManaCrystal",
+  "convertCurrentMana",
+] as const;
+
+type CorruptibleNumericField = (typeof CORRUPTIBLE_NUMERIC_FIELDS)[number];
 
 export interface CorruptionTarget {
   lineIndex: number;
   matchIndex: number;
   value: number;
   effectIndex: number;
+  field: CorruptibleNumericField;
 }
 
 export interface CorruptionResult {
@@ -35,20 +44,28 @@ export function isSpecialCorruptionCard(card: Pick<BattleCard, "id">): boolean {
 // Only authored text numbers that can be paired with a mechanical effect are editable.
 export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
   const targets: CorruptionTarget[] = [];
-  const usedEffectIndexes = new Set<number>();
+  const usedFieldKeys = new Set<string>();
 
   card.descriptionLines.forEach((line, lineIndex) => {
     for (const match of line.matchAll(CORRUPTION_TEXT_PATTERNS.authoredNumber)) {
       const matchIndex = match.index;
       if (matchIndex === undefined) continue;
       const value = Number(match[0]);
-      const effectIndex = card.effects.findIndex((effect, index) => {
-        if (usedEffectIndexes.has(index) || !("amount" in effect) || typeof effect.amount !== "number") return false;
-        return effect.amount === value;
-      });
-      if (effectIndex < 0) continue;
-      usedEffectIndexes.add(effectIndex);
-      targets.push({ lineIndex, matchIndex, value, effectIndex });
+      let matched: { effectIndex: number; field: CorruptibleNumericField } | null = null;
+      for (let idx = 0; idx < card.effects.length; idx += 1) {
+        const effect = card.effects[idx] as Record<string, unknown>;
+        for (const field of CORRUPTIBLE_NUMERIC_FIELDS) {
+          if (effect[field] !== value) continue;
+          const key = `${idx}:${field}`;
+          if (usedFieldKeys.has(key)) continue;
+          matched = { effectIndex: idx, field };
+          break;
+        }
+        if (matched) break;
+      }
+      if (!matched) continue;
+      usedFieldKeys.add(`${matched.effectIndex}:${matched.field}`);
+      targets.push({ lineIndex, matchIndex, value, effectIndex: matched.effectIndex, field: matched.field });
     }
   });
 
@@ -99,11 +116,11 @@ function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delt
   if (nextLine === currentLine && target.value !== nextValue) return card;
 
   const nextCard = cloneCard(card);
-  const effect = nextCard.effects[target.effectIndex] as NumericEffect | undefined;
-  if (!effect || typeof effect.amount !== "number") return card;
+  const effect = nextCard.effects[target.effectIndex] as Record<string, unknown> | undefined;
+  if (!effect || effect[target.field] !== target.value) return card;
 
   nextCard.descriptionLines[target.lineIndex] = nextLine;
-  effect.amount = nextValue;
+  effect[target.field] = nextValue;
   nextCard.corrupted = true;
   nextCard.corruptedValuePositions = [
     ...(card.corruptedValuePositions ?? []),

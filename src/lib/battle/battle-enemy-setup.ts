@@ -86,6 +86,10 @@ function applyDifficultyAttackModifiers(effects: EnemyAttackEffect[], modifiers:
   });
 }
 
+function isStartCompanionMod(mod: DifficultyModifier): mod is Extract<DifficultyModifier, { kind: "start-companion" }> {
+  return mod.kind === "start-companion";
+}
+
 function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: BestiaryEntry, roomMul: number) {
   const startingArmor = modifiers.find((m) => m.kind === "enemy-starting-armor")?.amount ?? 0;
   const traitStartingArmor = enemy.traits.some((t) => t.id === "living-armor")
@@ -93,7 +97,9 @@ function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: Bestiar
     : 0;
   const startBlock = modifiers.find((m) => m.kind === "start-block")?.amount ?? 0;
   const manaBonus = modifiers.find((m) => m.kind === "start-max-mana")?.amount ?? 0;
-  const startCompanion = modifiers.some((m) => m.kind === "start-companion");
+  const companionMod = modifiers.find(isStartCompanionMod);
+  const startCompanion = Boolean(companionMod);
+  const startCompanionId = companionMod?.companionId ?? "wolf";
   const startingEnemyBlock = enemy.traits.some((t) => t.id === "starting-block")
     ? Math.round(ENEMY_STARTING_BLOCK * roomMul)
     : 0;
@@ -102,6 +108,7 @@ function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: Bestiar
     startBlock,
     manaBonus,
     startCompanion,
+    startCompanionId,
     startingEnemyBlock,
   };
 }
@@ -116,11 +123,8 @@ export function initializeEnemyState(
     battleRooms,
   );
   const modifiedEffects = applyDifficultyAttackModifiers(scaledEnemyAttackEffects, battleDiffs);
-  const { startingArmor, startBlock, manaBonus, startCompanion, startingEnemyBlock } = computeStartingStatuses(
-    battleDiffs,
-    battleEnemy,
-    roomMul,
-  );
+  const { startingArmor, startBlock, manaBonus, startCompanion, startCompanionId, startingEnemyBlock } =
+    computeStartingStatuses(battleDiffs, battleEnemy, roomMul);
 
   const hpMul = battleDiffs.find((m) => m.kind === "enemy-health-multiplier")?.amount ?? 1;
   const enemyMaxHealth = Math.round(scaledEnemyHealth * hpMul);
@@ -134,6 +138,7 @@ export function initializeEnemyState(
     startBlock,
     manaBonus,
     startCompanion,
+    startCompanionId,
     startingEnemyBlock,
   };
 }

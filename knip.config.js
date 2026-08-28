@@ -73,5 +73,7 @@ export default {
     "commit-and-tag-version",
     // Bundled in @stryker-mutator/core; knip infers it from testRunner: "command".
     "@stryker-mutator/command-runner",
+    // Peer of @tailwindcss/vite — used via Vite plugin, knip traces only the plugin.
+    "tailwindcss",
   ],
 };

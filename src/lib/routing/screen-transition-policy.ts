@@ -26,6 +26,8 @@ const META_AND_RUN_RETURN_DESTINATIONS = [...META_DESTINATIONS, ...RUN_LOOP_SCRE
  * useScreenTransitions. Same-screen transitions are universally allowed so a
  * route can commit deferred state without remounting its screen.
  */
+// Shell transition options (delay/immediate/guard) live conceptually in
+// use-screen-transitions; kept here to avoid circular imports.
 export interface ScreenTransitionOptions {
   delayMs?: number;
   immediate?: boolean;

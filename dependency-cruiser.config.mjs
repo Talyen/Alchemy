@@ -35,11 +35,13 @@ function edge(name, fromPath, patterns) {
 const META_LAYER = "^src/features/alchemy/meta/";
 
 /** @type {import('dependency-cruiser').IConfiguration} */
+const [META_RUN_LOOP, META_RUN_SETUP] = META_NO_RUN_LOOP;
+
 export default {
   forbidden: [
     edge("lib-no-features", "^src/lib/", LIB_NO_FEATURES),
-    edge("meta-no-run-loop", META_LAYER, [META_NO_RUN_LOOP[0]]),
-    edge("meta-no-run-setup", META_LAYER, [META_NO_RUN_LOOP[1]]),
+    edge("meta-no-run-loop", META_LAYER, [META_RUN_LOOP]),
+    edge("meta-no-run-setup", META_LAYER, [META_RUN_SETUP]),
     edge("run-setup-no-run-loop", "^src/features/alchemy/run-setup/", RUN_SETUP_NO_RUN_LOOP),
     edge("run-loop-no-run-setup", "^src/features/alchemy/run-loop/", RUN_LOOP_NO_RUN_SETUP),
     {

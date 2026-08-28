@@ -168,26 +168,94 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
 }
 
 // Serializes overlapping saves so desktop IPC tmp writes never interleave.
-// Concurrent callers coalesce to the latest snapshot; each awaiter waits for
-// its place in the chain (which may write a newer snapshot than it submitted).
-//
-// Write state is tracked by three coordinated flags (not an enum) to keep
-// the hot path allocation-free: `saveWriteChain` (idle vs in-flight),
-// `coalescedSave` (null vs coalescing), and `clearPending` (clearing).
-let saveWriteChain: Promise<void> = Promise.resolve();
-let coalescedSave: SaveData | null = null;
-let clearPending = false;
-let saveChainTasks = 0;
+class SaveWriteQueue {
+  private chain: Promise<void> = Promise.resolve();
+  private coalesced: SaveData | null = null;
+  private clearPending = false;
+  private tasks = 0;
+
+  get hasPendingTasks(): boolean {
+    return this.tasks > 0;
+  }
+
+  get isClearPending(): boolean {
+    return this.clearPending;
+  }
+
+  async enqueue(data: SaveData, write: (d: SaveData) => Promise<void>): Promise<void> {
+    if (writesDisabledForSession) {
+      this.coalesced = null;
+      return;
+    }
+    this.coalesced = data;
+    this.tasks += 1;
+    const run = this.chain.then(async () => {
+      try {
+        while (this.coalesced !== null && !this.clearPending) {
+          const snapshot = this.coalesced;
+          this.coalesced = null;
+          if (writesDisabledForSession) return;
+          await write(snapshot);
+        }
+      } finally {
+        this.tasks -= 1;
+      }
+    });
+    this.chain = run.catch(() => {});
+    await run;
+  }
+
+  queueExitSnapshot(data: SaveData): void {
+    if (this.tasks > 0) this.coalesced = data;
+  }
+
+  async enqueueClear(clear: () => Promise<{ ok: boolean }>, keepWritesDisabled?: boolean): Promise<boolean> {
+    this.clearPending = true;
+    this.coalesced = null;
+    let cleared = false;
+    const run = this.chain.then(async () => {
+      try {
+        this.coalesced = null;
+        const result = await clear();
+        if (result.ok) {
+          if (!keepWritesDisabled) writesDisabledForSession = false;
+          cleared = true;
+          return;
+        }
+        logStorageFailure("Save data could not be cleared", (result as { error?: unknown }).error);
+      } finally {
+        this.coalesced = null;
+        this.clearPending = false;
+      }
+    });
+    this.chain = run.catch(() => {
+      this.coalesced = null;
+      this.clearPending = false;
+    });
+    try {
+      await run;
+    } catch {
+      return false;
+    }
+    return cleared;
+  }
+
+  async reset(): Promise<void> {
+    await this.chain.catch(() => {});
+    this.chain = Promise.resolve();
+    this.coalesced = null;
+    this.clearPending = false;
+    this.tasks = 0;
+  }
+}
+
+const saveQueue = new SaveWriteQueue();
 
 /** Test-only isolation for module-scoped write policy and queue state. */
 export async function resetStorageIoForTests(): Promise<void> {
-  await saveWriteChain.catch(() => {});
+  await saveQueue.reset();
   writesDisabledForSession = false;
   saveBackend = createPlatformSaveBackend();
-  saveWriteChain = Promise.resolve();
-  coalescedSave = null;
-  clearPending = false;
-  saveChainTasks = 0;
 }
 
 async function writeSaveSnapshot(data: SaveData): Promise<void> {
@@ -207,31 +275,8 @@ function serializeSaveSnapshot(data: SaveData, now: number = Date.now()): string
 
 // Writes the current save snapshot exactly as provided by App/controller state.
 export async function saveAlchemySaveData(data: SaveData) {
-  if (typeof window === "undefined") {
-    return;
-  }
-  if (writesDisabledForSession) {
-    coalescedSave = null;
-    return;
-  }
-
-  coalescedSave = data;
-  saveChainTasks += 1;
-  const run = saveWriteChain.then(async () => {
-    try {
-      while (coalescedSave !== null && !clearPending) {
-        const snapshot = coalescedSave;
-        coalescedSave = null;
-        if (writesDisabledForSession) return;
-        await writeSaveSnapshot(snapshot);
-      }
-    } finally {
-      saveChainTasks -= 1;
-    }
-  });
-  // Keep the chain alive even if a write logs-and-continues; never reject the gate.
-  saveWriteChain = run.catch(() => {});
-  await run;
+  if (typeof window === "undefined") return;
+  await saveQueue.enqueue(data, writeSaveSnapshot);
 }
 
 /**
@@ -239,7 +284,7 @@ export async function saveAlchemySaveData(data: SaveData) {
  * Desktop IPC cannot be made synchronous, so it falls back to the normal serialized queue.
  */
 export function saveAlchemySaveDataForExit(data: SaveData): void {
-  if (typeof window === "undefined" || writesDisabledForSession || clearPending) return;
+  if (typeof window === "undefined" || writesDisabledForSession || saveQueue.isClearPending) return;
 
   if (!saveBackend.writeSync) {
     void saveAlchemySaveData(data);
@@ -262,9 +307,7 @@ export function saveAlchemySaveDataForExit(data: SaveData): void {
     // if an async write is in flight (desktop IPC latency), it completes first and
     // the serialized chain then rewrites this snapshot — a stale write can never
     // land last. An idle chain has no writer left, so nothing needs queueing.
-    if (saveChainTasks > 0) {
-      coalescedSave = data;
-    }
+    saveQueue.queueExitSnapshot(data);
   } catch (error) {
     logStorageFailure("Save data could not be serialized during page exit", error);
     void saveAlchemySaveData(data);
@@ -277,39 +320,6 @@ export function saveAlchemySaveDataForExit(data: SaveData): void {
 // Pass `keepWritesDisabled` when the next step is a full reload so a terminal autosave
 // flush cannot rewrite the wiped snapshot from still-mounted in-memory stores.
 export async function clearAlchemySaveData(options?: { keepWritesDisabled?: boolean }): Promise<boolean> {
-  if (typeof window === "undefined") {
-    return true;
-  }
-
-  clearPending = true;
-  coalescedSave = null;
-  let cleared = false;
-  const run = saveWriteChain.then(async () => {
-    try {
-      coalescedSave = null;
-      const result = await saveBackend.clear(SAVE_KEY);
-      if (result.ok) {
-        if (!options?.keepWritesDisabled) {
-          writesDisabledForSession = false;
-        }
-        cleared = true;
-        return;
-      }
-      logStorageFailure("Save data could not be cleared", result.error);
-    } finally {
-      coalescedSave = null;
-      clearPending = false;
-    }
-  });
-  // Keep the chain alive even if clear logs-and-continues; never reject the gate.
-  saveWriteChain = run.catch(() => {
-    coalescedSave = null;
-    clearPending = false;
-  });
-  try {
-    await run;
-  } catch {
-    return false;
-  }
-  return cleared;
+  if (typeof window === "undefined") return true;
+  return saveQueue.enqueueClear(() => saveBackend.clear(SAVE_KEY), options?.keepWritesDisabled);
 }

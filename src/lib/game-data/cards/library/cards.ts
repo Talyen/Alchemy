@@ -728,3 +728,9 @@ export const cardLibrary: BattleCard[] = [
 
 /** Id-keyed view of the library — prefer this over scanning `cardLibrary` by id. */
 export const cardById: Record<string, BattleCard> = Object.fromEntries(cardLibrary.map((card) => [card.id, card]));
+// Fail-fast on duplicate ids: throw in dev/test, warn in prod to avoid bricking the bundle.
+if (Object.keys(cardById).length !== cardLibrary.length) {
+  const msg = "Duplicate card id in cardLibrary";
+  if (import.meta.env.DEV) throw new Error(msg);
+  console.error(msg);
+}

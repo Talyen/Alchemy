@@ -132,6 +132,14 @@ describe("initializeEnemyState", () => {
     expect(result.startBlock).toBe(4);
     expect(result.manaBonus).toBe(1);
     expect(result.startCompanion).toBe(true);
+    expect(result.startCompanionId).toBe("wolf");
+  });
+
+  it("respects companionId on start-companion modifier", () => {
+    const mods: DifficultyModifier[] = [{ kind: "start-companion", companionId: "phoenix" }];
+    const result = initializeEnemyState(skeleton, 1, mods);
+    expect(result.startCompanion).toBe(true);
+    expect(result.startCompanionId).toBe("phoenix");
   });
 
   it("stacks modifier starting armor with trait armor", () => {

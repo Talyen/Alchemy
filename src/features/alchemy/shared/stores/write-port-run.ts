@@ -13,26 +13,13 @@ import type { ActiveRunData, RunObtainedItem } from "@/lib/active-run-session";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { Screen } from "@/lib/routing";
-import { setDraftField } from "./store-helpers";
+import { createDraftFieldSetter } from "./store-helpers";
 
-function setRunField<K extends keyof ActiveRunProgressFields>(
-  draft: GameplayDraft,
-  field: K,
-  action: ActiveRunProgressFields[K] | ((prev: ActiveRunProgressFields[K]) => ActiveRunProgressFields[K]),
-): void {
-  setDraftField(draft.run.activeRun, field, action);
-}
+const createRunFieldSetter = createDraftFieldSetter<ActiveRunProgressFields, GameplayDraft>(
+  (draft) => draft.run.activeRun,
+);
 
-function createRunFieldSetter<K extends keyof ActiveRunProgressFields>(field: K) {
-  return (
-    draft: GameplayDraft,
-    action: ActiveRunProgressFields[K] | ((prev: ActiveRunProgressFields[K]) => ActiveRunProgressFields[K]),
-  ): void => setRunField(draft, field, action);
-}
-
-export function setRunDeck(draft: GameplayDraft, action: BattleCard[] | ((prev: BattleCard[]) => BattleCard[])): void {
-  setRunField(draft, "runDeck", action);
-}
+export const setRunDeck = createRunFieldSetter("runDeck");
 // Gold is a profile purse, not an active-run field — see run-resume-codec and MIGRATIONS.md.
 // These wrappers deliberately delegate to gold-purse rather than setRunField.
 export function setRunGold(draft: GameplayDraft, action: number | ((prev: number) => number)): void {

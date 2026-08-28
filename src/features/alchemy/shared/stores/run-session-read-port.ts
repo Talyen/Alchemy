@@ -1,6 +1,8 @@
 // Imperative capability reads for event-time handlers and persistence bridges.
-// These contracts intentionally expose one lifetime at a time and contain no
-// command methods, so callers cannot accidentally mutate the aggregate while
+// Use these inside commands, afterCommit effects, and persistence codecs (non-React).
+// For React display, use useRunScreenData / useBattleScreenRouteData; for shell orchestration
+// use run-session-react-ports. These contracts intentionally expose one lifetime at a
+// time and contain no command methods, so callers cannot accidentally mutate the aggregate while
 // reading it.
 //
 // Returned objects are shallow snapshots. Nested fields (shop state, battleState,

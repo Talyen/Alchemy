@@ -1,6 +1,6 @@
 // Companion-related card effect schemas and metadata.
 import { z } from "zod";
-import type { EffectKindDefinition } from "./definition";
+import type { EffectKindDefinition } from "./registry";
 import { CompanionIdSchema } from "./shared-schemas";
 
 export const summonCompanionEffectDefinition = {

@@ -114,6 +114,22 @@ function sanitizeDeckForRepair(cards: BattleCard[]): BattleCard[] {
   );
 }
 
+function repairEmptyCardChoices(
+  rngState: RunRngState,
+  stream: RunRngStream,
+  count: number,
+  pool: BattleCard[],
+  deckForAffinity: BattleCard[],
+  extraKeywords: string[] = [],
+  alreadyOwned: BattleCard[] = deckForAffinity,
+): Array<Record<string, unknown>> | null {
+  const rng = createRepairRng(rngState, stream);
+  const repaired = selectRewardCards(deckForAffinity, pool, count, alreadyOwned, rng, extraKeywords as never[]).map(
+    toPersistedCard,
+  );
+  return repaired.length > 0 ? repaired : null;
+}
+
 function toPersistedCard(card: BattleCard): Record<string, unknown> {
   // Persist only fields owned by the save schema — spread then pick to avoid
   // silently dropping new BattleCard fields while still omitting runtime-only keys.
@@ -178,20 +194,18 @@ function repairWildwoodDraft(
     runDeckLength < DRAFT_ROUNDS &&
     rngState
   ) {
-    const rng = createRepairRng(rngState, "world");
-    const pool = getOfferableCardPool();
     const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
     const keywords =
       (characterId ? (characters as Record<string, { keywords: string[] }>)[characterId]?.keywords : undefined) ?? [];
-    const repaired = selectRewardCards(
-      deckForAffinity,
-      pool,
+    const repaired = repairEmptyCardChoices(
+      rngState,
+      "world",
       DRAFT_CHOICES,
+      getOfferableCardPool(),
       deckForAffinity,
-      rng,
-      keywords as never[],
-    ).map(toPersistedCard);
-    if (repaired.length > 0) draftChoices = repaired;
+      keywords,
+    );
+    if (repaired) draftChoices = repaired;
   }
   return { ...raw, draftChoices };
 }
@@ -213,16 +227,15 @@ function repairStarterDraft(
   ) {
     const hadDraft = data.starterDraftChoices != null;
     if (hadDraft) {
-      const rng = createRepairRng(rngState, "rewards");
       const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
-      const repaired = selectRewardCards(
-        deckForAffinity,
-        getOfferableCardPool(),
+      const repaired = repairEmptyCardChoices(
+        rngState,
+        "rewards",
         DRAFT_CHOICES,
+        getOfferableCardPool(),
         deckForAffinity,
-        rng,
-      ).map(toPersistedCard);
-      if (repaired.length > 0) return repaired;
+      );
+      if (repaired) return repaired;
     }
   }
   if (filtered === null) return null;
@@ -247,12 +260,19 @@ function repairMysteryVisit(
   const chosenCardId = rawVisit.chosenCardId as string | null | undefined;
   const hadChoices = rawVisit.cardChoices != null;
   if (Array.isArray(filtered) && filtered.length === 0 && hadChoices && chosenCardId == null && rngState) {
-    const rng = createRepairRng(rngState, "events");
     const deckForAffinity = sanitizeDeckForRepair(runDeck ?? []);
-    const repaired = selectRewardCards(deckForAffinity, getOfferableCardPool(), MYSTERY_CARD_CHOICES, [], rng).map(
-      toPersistedCard,
+    // Mystery re-offer must not filter by owned cards — the choice pool is
+    // independent of deck affinity, hence empty `alreadyOwned`.
+    const repaired = repairEmptyCardChoices(
+      rngState,
+      "events",
+      MYSTERY_CARD_CHOICES,
+      getOfferableCardPool(),
+      deckForAffinity,
+      [],
+      [],
     );
-    if (repaired.length > 0) cardChoices = repaired;
+    if (repaired) cardChoices = repaired;
   }
   if (filtered === null && rawVisit.cardChoices == null) cardChoices = null;
   return { ...rawVisit, cardChoices };

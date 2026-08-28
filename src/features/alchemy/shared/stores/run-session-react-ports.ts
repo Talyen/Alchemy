@@ -1,5 +1,7 @@
 // React-facing capability ports over the authoritative gameplay aggregate.
-// Keep these selectors narrow so controllers subscribe only to their domain.
+// Use for shell controllers (useAlchemyRunController, useRunFlowEngine) and orchestration.
+// For screen display, prefer useRunScreenData / useBattleScreenRouteData (exact per-screen contracts).
+// For imperative handlers, use run-session-read-port. Keep selectors narrow so controllers subscribe only to their domain.
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import {

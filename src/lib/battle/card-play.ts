@@ -24,7 +24,7 @@ import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { rollPercent } from "./status-helpers";
 
 import { cardHasDamageType, computeEffectiveCost, isNatureCard } from "./card-cost-rules";
-import { MAX_HAND_SIZE } from "../game-constants";
+import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
 /**
  * Resolves the final state and cost for a played card, modifying flags if discounts were used.
@@ -139,7 +139,7 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
 
   let targetType: "burn" | "freeze" | null = null;
   if (hasBurn && hasFreeze) {
-    targetType = state.rng() < 0.5 ? "freeze" : "burn";
+    targetType = rollPercent(WISH_TRINKET_FORK_PERCENT, state.rng) ? "freeze" : "burn";
   } else if (hasBurn) {
     targetType = "freeze";
   } else if (hasFreeze) {
