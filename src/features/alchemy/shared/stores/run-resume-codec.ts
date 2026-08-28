@@ -87,23 +87,36 @@ function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBatt
   return null;
 }
 
+/** Single place for all screen-gated persistence — shops, mystery, corruption, interrupted flow. */
+function encodeScreenGatedFields(
+  session: RunSession["session"],
+  screen: Screen | null | undefined,
+): Omit<EncodeResumeFields, "currentScreen"> {
+  return {
+    interruptedFlow: encodeInterruptedFlow(session, screen),
+    ...encodePersistedShops(session, screen),
+    mysteryVisit: screen === "mystery" ? serializeMysteryVisit(session) : null,
+    corruptionResult: screen === "corruption" ? session.corruptionResult : null,
+  };
+}
+
 /** Encode the aggregate run read model directly into persisted ActiveRunData. */
 function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFields): ActiveRunData {
   const { run, session, battle } = source;
-  // Drop fields joined only for the committed session read model before spreading
-  // the canonical active-run progress projection into persistence.
+  // Strip profile-joined fields before projecting the canonical active-run progress.
   const {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     initialized: _initialized,
-    talentXP: _talentXP,
-    unlockedTalents: _unlockedTalents,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     gold: _gold,
-    ...activeRunProgress
-  } = run;
-  void _initialized;
-  void _talentXP;
-  void _unlockedTalents;
-  void _gold;
-  const progress = pickActiveRunFields(activeRunProgress);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    talentXP: _talentXP,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    unlockedTalents: _unlockedTalents,
+    ...runProgress
+  } = run as unknown as ActiveRunProgressFields & Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+  const progress = pickActiveRunFields(runProgress as unknown as ActiveRunProgressFields);
   const activeCombat =
     battle.hasActiveBattle && battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)
       ? {
@@ -138,31 +151,12 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
   };
 }
 
-function encodeMysteryVisit(
-  session: RunSession["session"],
-  currentScreen: Screen | null | undefined,
-): PersistedMysteryVisit | null {
-  if (currentScreen !== "mystery") return null;
-  return serializeMysteryVisit(session);
-}
-
-function encodeCorruptionResult(
-  session: RunSession["session"],
-  currentScreen: Screen | null | undefined,
-): CorruptionResult | null {
-  if (currentScreen !== "corruption") return null;
-  return session.corruptionResult;
-}
-
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
   const requestedScreen = screen ?? source.screen;
   const currentScreen = resolveEncodeScreen(requestedScreen, source.session) ?? requestedScreen;
   return encodeActiveRunFromSession(source, {
     currentScreen,
-    interruptedFlow: encodeInterruptedFlow(source.session, currentScreen),
-    ...encodePersistedShops(source.session, currentScreen),
-    mysteryVisit: encodeMysteryVisit(source.session, currentScreen),
-    corruptionResult: encodeCorruptionResult(source.session, currentScreen),
+    ...encodeScreenGatedFields(source.session, currentScreen),
   });
 }
 
