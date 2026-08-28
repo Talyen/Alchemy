@@ -18,6 +18,7 @@ import type { GearEffectManifest } from "@/lib/gear";
 export type { TrinketManifest };
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
+import type { CombatFlags } from "../combat-flags";
 
 export interface PendingTurnStartPulse {
   remainingTurns: number;
@@ -63,67 +64,10 @@ export function isStunFreezeBuildupBlocked(cc: CcState): boolean {
 // the duration of the battle. Type lives in game-data next to the trinket rows
 // that author their effect values; re-exported here for battle consumers.
 
-// Threshold-driven combat flags that reset each battle.
-// Split into logical groups so new flags land in the right bucket and preservation
-// logic stays obvious. Wire shape stays flat (one `flags` object) for persistence compat.
-export interface FirstTimeFlags {
-  firstHolyCardFreeUsed: boolean;
-  firstBurnCardDoubledUsed: boolean;
-  firstArmorCardDoubledUsed: boolean;
-  firstPoisonCardFreeUsed: boolean;
-  firstBleedCardFreeUsed: boolean;
-  firstHolyDamageBonusUsed: boolean;
-  firstBurnTrinketDoubledUsed: boolean;
-  firstHarmfulStatusPrevented: boolean;
-  firstPotionFreeUsed: boolean;
-  firstLeechCardDoubledUsed: boolean;
-  firstConsumeCardFreeUsed: boolean;
-  firstCompanionCardFreeUsed: boolean;
-  firstArcheryCardFreeUsed: boolean;
-  nextCardCostReduction: number; // temporary mana discount on next card played
-  goldOnFirstPoisonThisCombat: boolean;
-  resonantChimeUsedThisTurn: boolean;
-  runicQuillUsedThisTurn: boolean;
-  consumeDrawUsedThisTurn: boolean;
-}
-
-export interface NextHitFlags {
-  nextHitCrit: boolean;
-  playNextCardTwice: boolean;
-  nextHitPoison: boolean;
-  nextHitPhysicalBonus: number;
-  nextPhysicalDealsBleed: boolean;
-  nextArcheryCardFree: boolean;
-  nextNatureCardFree: boolean;
-}
-
-export interface BattleLifecycleFlags {
-  divineAegisTriggered: boolean;
-  saintfallRetributionTriggered: boolean;
-}
-
-export type CombatFlags = FirstTimeFlags & NextHitFlags & BattleLifecycleFlags;
-
-// Subset of CombatFlags consumed by card play — companion actions must not consume these.
-// When adding a new flag here, also add its "used" sentinel to
-// `FIRST_TIME_FLAG_USED_VALUES` in `state-helpers.ts` so `withPreservedFlags` covers it.
-export type FirstTimeFlagKey =
-  | "firstHolyCardFreeUsed"
-  | "firstBurnCardDoubledUsed"
-  | "firstArmorCardDoubledUsed"
-  | "firstPoisonCardFreeUsed"
-  | "firstBleedCardFreeUsed"
-  | "firstHolyDamageBonusUsed"
-  | "firstBurnTrinketDoubledUsed"
-  | "firstLeechCardDoubledUsed"
-  | "firstConsumeCardFreeUsed"
-  | "firstCompanionCardFreeUsed"
-  | "firstArcheryCardFreeUsed"
-  | "firstPotionFreeUsed"
-  | "nextCardCostReduction"
-  | "resonantChimeUsedThisTurn"
-  | "runicQuillUsedThisTurn"
-  | "consumeDrawUsedThisTurn";
+// CombatFlags is the flat wire shape for persistence compat; single source is FLAG_DEFINITIONS.
+// Adding a flag: add one entry to FLAG_DEFINITIONS in combat-flags.ts with default + preserveAs.
+export type { CombatFlags, FlagId, FirstTimeFlagKey, PreservedFlagKey } from "../combat-flags";
+export { FLAG_DEFINITIONS, PRESERVED_FLAG_VALUES, PRESERVED_FLAG_KEYS, createInitialFlags } from "../combat-flags";
 
 // The full snapshot of a battle at one point in time. Every mutation returns a new
 // BattleState (immutable), enabling the controller to diff states for animation.

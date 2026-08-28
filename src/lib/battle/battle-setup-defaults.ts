@@ -4,16 +4,11 @@
 import { createEmptyTalentEffectManifest, type TalentEffectManifest } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { BASE_ENEMY_HEALTH, FALLBACK_ENEMY_ATTACK, MAX_PLAYER_HEALTH } from "../game-constants";
-import {
-  EMPTY_ENEMY_MITIGATION,
-  type BattleState,
-  type CombatFlags,
-  type EnemyStatusValues,
-  type PlayerStatusValues,
-} from "./types";
+import { EMPTY_ENEMY_MITIGATION, type BattleState, type EnemyStatusValues, type PlayerStatusValues } from "./types";
 import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
 import { placeholderRng } from "./rng";
+import { createInitialFlags } from "./combat-flags";
 
 export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();
 
@@ -54,38 +49,6 @@ function createEmptyEnemyStatuses(): EnemyStatusValues {
     freezeBonus: 0,
     onAttackBleed: 0,
   } satisfies EnemyStatusValues;
-}
-
-function createInitialFlags(): CombatFlags {
-  return {
-    firstHolyCardFreeUsed: false,
-    firstBurnCardDoubledUsed: false,
-    firstArmorCardDoubledUsed: false,
-    firstPoisonCardFreeUsed: false,
-    firstBleedCardFreeUsed: false,
-    nextCardCostReduction: 0,
-    goldOnFirstPoisonThisCombat: false,
-    firstHolyDamageBonusUsed: false,
-    firstBurnTrinketDoubledUsed: false,
-    firstHarmfulStatusPrevented: false,
-    firstPotionFreeUsed: false,
-    firstLeechCardDoubledUsed: false,
-    firstConsumeCardFreeUsed: false,
-    firstCompanionCardFreeUsed: false,
-    firstArcheryCardFreeUsed: false,
-    resonantChimeUsedThisTurn: false,
-    runicQuillUsedThisTurn: false,
-    consumeDrawUsedThisTurn: false,
-    divineAegisTriggered: false,
-    nextHitCrit: false,
-    playNextCardTwice: false,
-    nextHitPoison: false,
-    nextHitPhysicalBonus: 0,
-    nextPhysicalDealsBleed: false,
-    nextArcheryCardFree: false,
-    nextNatureCardFree: false,
-    saintfallRetributionTriggered: false,
-  };
 }
 
 export function defaultBattleState(): BattleState {

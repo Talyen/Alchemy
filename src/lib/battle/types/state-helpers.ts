@@ -8,71 +8,23 @@ import {
 } from "../../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import { rollPercent } from "../rng";
-import type { BattleState, CombatFlags, EnemyMitigation, FirstTimeFlagKey } from "./state-types";
+import type { BattleState, CombatFlags, EnemyMitigation } from "./state-types";
 import { isStunFreezeBuildupBlocked } from "./state-types";
-
-const FIRST_TIME_FLAG_USED_VALUES: { [K in FirstTimeFlagKey]: CombatFlags[K] } = {
-  firstHolyCardFreeUsed: true,
-  firstBurnCardDoubledUsed: true,
-  firstArmorCardDoubledUsed: true,
-  firstPoisonCardFreeUsed: true,
-  firstBleedCardFreeUsed: true,
-  firstHolyDamageBonusUsed: true,
-  firstBurnTrinketDoubledUsed: true,
-  firstLeechCardDoubledUsed: true,
-  firstConsumeCardFreeUsed: true,
-  firstCompanionCardFreeUsed: true,
-  firstArcheryCardFreeUsed: true,
-  firstPotionFreeUsed: true,
-  nextCardCostReduction: 0,
-  resonantChimeUsedThisTurn: true,
-  runicQuillUsedThisTurn: true,
-  consumeDrawUsedThisTurn: true,
-};
-
-/** Armed player-card flags: force inactive so companions/pulses neither benefit nor consume. */
-const NON_CARD_INACTIVE_FLAGS = {
-  nextHitCrit: false,
-  playNextCardTwice: false,
-  nextHitPoison: false,
-  nextHitPhysicalBonus: 0,
-  nextPhysicalDealsBleed: false,
-  nextArcheryCardFree: false,
-  nextNatureCardFree: false,
-} as const satisfies Partial<CombatFlags>;
-
-const PRESERVED_NON_CARD_FLAG_VALUES = {
-  ...FIRST_TIME_FLAG_USED_VALUES,
-  ...NON_CARD_INACTIVE_FLAGS,
-} satisfies Record<FirstTimeFlagKey | keyof typeof NON_CARD_INACTIVE_FLAGS, CombatFlags[keyof CombatFlags]>;
-
-type PreservedNonCardFlagKey = keyof typeof PRESERVED_NON_CARD_FLAG_VALUES;
-const PRESERVED_NON_CARD_FLAG_KEYS = Object.keys(PRESERVED_NON_CARD_FLAG_VALUES) as PreservedNonCardFlagKey[];
-
-// Compile-time exhaustiveness: every FirstTimeFlagKey + NON_CARD_INACTIVE_FLAGS key must be preserved,
-// and no extra keys may appear. Add new card-play flags to both FirstTimeFlagKey and NON_CARD_INACTIVE_FLAGS as needed.
-type _AssertPreservedCompleteness = PreservedNonCardFlagKey extends
-  | FirstTimeFlagKey
-  | keyof typeof NON_CARD_INACTIVE_FLAGS
-  ? FirstTimeFlagKey | keyof typeof NON_CARD_INACTIVE_FLAGS extends PreservedNonCardFlagKey
-    ? true
-    : never
-  : never;
-const _assertPreservedCompleteness: _AssertPreservedCompleteness = true;
-void _assertPreservedCompleteness;
+import { PRESERVED_FLAG_KEYS, PRESERVED_FLAG_VALUES, type PreservedFlagKey } from "../combat-flags";
 
 /**
- * Snapshot first-time-per-combat flags before a non-card action (e.g., companion attack),
- * set them to their "used" sentinel values, run the mutate callback, then restore.
+ * Snapshot card-play flags before a non-card action (e.g., companion attack),
+ * set them to their inactive sentinel (used/empty), run the mutate callback, then restore.
+ * Single source is FLAG_DEFINITIONS.preserveAs — no second map to keep in sync.
  */
 export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) => BattleState): BattleState {
-  const saved: Partial<Pick<CombatFlags, PreservedNonCardFlagKey>> = {};
-  for (const key of PRESERVED_NON_CARD_FLAG_KEYS) {
+  const saved: Partial<Pick<CombatFlags, PreservedFlagKey>> = {};
+  for (const key of PRESERVED_FLAG_KEYS) {
     saved[key] = state.flags[key] as never;
   }
   const blockedState: BattleState = {
     ...state,
-    flags: { ...state.flags, ...PRESERVED_NON_CARD_FLAG_VALUES },
+    flags: { ...state.flags, ...PRESERVED_FLAG_VALUES },
   };
   const result = mutate(blockedState);
   return { ...result, flags: { ...result.flags, ...saved } };

@@ -28,6 +28,7 @@ export {
 export {
   addMaterials,
   awardMaterialsDuringRun,
+  grantMaterials,
   bondCompanion,
   clearPermanentData,
   completeResearch,

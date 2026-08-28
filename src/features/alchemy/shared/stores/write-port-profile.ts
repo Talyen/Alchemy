@@ -20,10 +20,19 @@ import { createDraftFieldSetter } from "./store-helpers";
 
 // --- Run-earned materials ---
 
+/** Single entry for material grants — `trackRunEarned` controls run-summary tracking. */
+export function grantMaterials(
+  draft: GameplayDraft,
+  materials: MaterialInventory,
+  options: { trackRunEarned?: boolean } = {},
+): void {
+  homestead.addMaterials(draft.runProfile, materials);
+  if (options.trackRunEarned) addRunMaterialsEarned(draft, materials);
+}
+
 /** Persist homestead materials and track totals for the run-end summary screen. */
 export function awardMaterialsDuringRun(draft: GameplayDraft, materials: MaterialInventory): void {
-  homestead.addMaterials(draft.runProfile, materials);
-  addRunMaterialsEarned(draft, materials);
+  grantMaterials(draft, materials, { trackRunEarned: true });
 }
 
 export function setMaterials(draft: GameplayDraft, materials: MaterialInventory): void {
@@ -31,7 +40,7 @@ export function setMaterials(draft: GameplayDraft, materials: MaterialInventory)
 }
 
 export function addMaterials(draft: GameplayDraft, materials: MaterialInventory): void {
-  homestead.addMaterials(draft.runProfile, materials);
+  grantMaterials(draft, materials);
 }
 
 // --- Homestead upgrades (recompute live-run manifests after each spend) ---

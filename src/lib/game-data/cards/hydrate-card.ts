@@ -5,10 +5,20 @@ import { cardById } from "../cards";
 export type SavedCard = BattleCard;
 
 function hydrateDescriptionLines(saved: SavedCard, libraryCard: BattleCard): string[] {
-  if (Array.isArray(saved.descriptionLines) && saved.descriptionLines.length > 0) {
-    return [...saved.descriptionLines];
-  }
-  return [...libraryCard.descriptionLines];
+  const savedLines =
+    Array.isArray(saved.descriptionLines) && saved.descriptionLines.length > 0 ? saved.descriptionLines : null;
+  const libraryLines = libraryCard.descriptionLines;
+  if (!savedLines) return [...libraryLines];
+  // Corrupted cards carry intentional mutated lines — keep them.
+  if (saved.corrupted) return [...savedLines];
+  // If effects were stripped or count mismatched, saved prose is ghost text — fall back to library.
+  const savedEffects = Array.isArray(saved.effects) ? saved.effects : [];
+  const libraryEffects = libraryCard.effects;
+  if (libraryEffects.length > 0 && savedEffects.length === 0) return [...libraryLines];
+  if (savedEffects.length !== libraryEffects.length) return [...libraryLines];
+  // Validate lines are strings; otherwise fallback.
+  if (!savedLines.every((line) => typeof line === "string")) return [...libraryLines];
+  return [...savedLines];
 }
 
 function hydrateEffects(saved: SavedCard, libraryCard: BattleCard): BattleCard["effects"] {

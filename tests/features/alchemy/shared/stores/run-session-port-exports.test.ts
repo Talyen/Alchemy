@@ -33,6 +33,7 @@ const WRITE_PORT_EXPORTS = [
   "withRestingEndPlayerTurnResolution",
   "withRestingWorldBattleRng",
   "finalizeRunXP",
+  "grantMaterials",
   "initializeActiveBattle",
   "plantFarm",
   "recordRunObtainedItem",
