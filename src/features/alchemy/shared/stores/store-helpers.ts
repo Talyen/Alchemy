@@ -1,7 +1,7 @@
 // Shared helpers for Immer draft mutations over the gameplay aggregate.
 
 /** Set a field on an Immer draft target from a direct value or an updater over the previous value. */
-export function setDraftField<T extends object, K extends keyof T>(
+function setDraftField<T extends object, K extends keyof T>(
   draft: T,
   field: K,
   action: T[K] | ((prev: T[K]) => T[K]),

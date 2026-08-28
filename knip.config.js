@@ -49,6 +49,9 @@ export default {
     "src/features/alchemy/shell/shell-types.ts": ["types"],
     // Registry is internal but exported for envelope-key derivation tests; not yet imported as entry.
     "src/features/alchemy/shared/storage/codec-registry.ts": ["exports"],
+    // Unified persistence seam: codecs and helpers re-exported for compat via codec-registry/persistence-coordinator.
+    "src/features/alchemy/shared/storage/persistence.ts": ["exports", "types"],
+    "src/features/alchemy/shared/storage/persistence-coordinator.ts": ["types"],
     // Orchestration port is consumed via type-level architecture contract; knip cannot trace test-d import when file is ignored.
     "src/features/alchemy/shared/stores/run-session-react-ports.ts": ["exports"],
     // Semantic alias: corruption weight mirrors default for now, intentional duplicate.
