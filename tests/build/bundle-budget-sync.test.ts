@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { BUDGETS, checkBundleBudget } from "../../scripts/check-bundle-budget.mjs";
+import { checkBundleBudget } from "../../scripts/check-bundle-budget.mjs";
+import { BUDGETS, CHUNK_SIZE_WARNING_KB } from "../../scripts/lib/bundle-budget.mjs";
 
 const tempDirs: string[] = [];
 
@@ -22,11 +23,7 @@ afterEach(() => {
 
 describe("bundle budget sync", () => {
   it("chunkSizeWarningLimit matches BUDGETS.indexMaxBytes", () => {
-    const viteConfig = readFileSync("vite.config.ts", "utf8");
-    const match = viteConfig.match(/chunkSizeWarningLimit:\s*(\d+)/);
-    expect(match, "chunkSizeWarningLimit not found in vite.config.ts").not.toBeNull();
-    const limitKb = Number(match![1]);
-    expect(limitKb * 1024).toBe(BUDGETS.indexMaxBytes);
+    expect(CHUNK_SIZE_WARNING_KB * 1024).toBe(BUDGETS.indexMaxBytes);
   });
 
   it("recognizes Vite entry hashes containing uppercase and URL-safe characters", () => {
@@ -41,9 +38,7 @@ describe("bundle budget sync", () => {
     expect(console.warn).not.toHaveBeenCalled();
   });
 
-  it("checks the largest asset when no entry chunk matches", () => {
-    vi.spyOn(console, "log").mockImplementation(() => undefined);
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  it("fails closed when no entry chunk matches", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const directory = createAssetDirectory({
       "vendor-a.js": BUDGETS.indexMaxBytes + 1,
@@ -51,7 +46,7 @@ describe("bundle budget sync", () => {
     });
 
     expect(checkBundleBudget(directory)).toBe(false);
-    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("index pattern not matched"));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("index chunk not found"));
   });
 
   it("fails when the matched entry exceeds its budget", () => {

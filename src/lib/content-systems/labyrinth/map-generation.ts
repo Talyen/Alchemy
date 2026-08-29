@@ -75,7 +75,7 @@ function makeNode(input: {
     floor: input.floor,
     gridPosition: input.gridPosition,
     modifiers: combatType ? getEnemyModifiersForNodeType(combatType, input.rng) : [],
-    rewardModifiers: combatType ? getRewardModifiersForNodeType(combatType, input.rng) : [],
+    rewardModifiers: combatType ? getRewardModifiersForNodeType(input.rng) : [],
     outgoingIds: input.outgoingIds ?? [],
     cleared: input.cleared ?? false,
   };

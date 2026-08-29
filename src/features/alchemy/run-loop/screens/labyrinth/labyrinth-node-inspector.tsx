@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION, LABYRINTH_NODE_META, tooltipBodyClass } from "@/features/alchemy/shared/config";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
+import { getKeywordListShineColors, SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
+import { ShineText } from "@/features/alchemy/shared/ui/shine-text";
 import { renderColoredKeywords } from "@/features/alchemy/shared/ui/card-description-ui";
 import { cn } from "@/lib/utils";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { NODE_TYPE_LABELS, NODE_TYPE_TOOLTIPS } from "@/lib/content-systems/labyrinth/data";
+import { LABYRINTH_COMBAT_TRAIT_KEYWORDS, LABYRINTH_REWARD_TRAIT_KEYWORDS } from "./labyrinth-plasma";
 import type {
   EncounterCombatTraitId,
   EncounterRewardTraitId,
@@ -24,15 +27,32 @@ interface Props {
 
 function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; variant: "enemy" | "reward" }) {
   const definition = ENCOUNTER_TRAITS[modifier];
+  const keywords =
+    variant === "enemy"
+      ? (LABYRINTH_COMBAT_TRAIT_KEYWORDS[modifier as EncounterCombatTraitId] ?? [])
+      : (LABYRINTH_REWARD_TRAIT_KEYWORDS[modifier as EncounterRewardTraitId] ?? []);
+  let colors = getKeywordListShineColors(keywords);
+  if (colors.length === 0) {
+    colors =
+      variant === "enemy" ? SHINE_PALETTES.corruption.slice(0, 3) : SHINE_PALETTES.labyrinth.alchemist.slice(0, 3);
+  }
   return (
     <div
       className={cn(
-        "rounded-lg bg-white/[0.03] px-3.5 py-2.5",
-        variant === "enemy" ? "border border-red-500/40" : "border border-emerald-500/40",
+        "rounded-lg bg-white/[0.03] px-4 py-3",
+        variant === "enemy" ? "border-[3px] border-red-500/40" : "border-[3px] border-emerald-500/40",
       )}
     >
-      <p className="text-xs font-bold text-amber-100 uppercase">{definition.label}</p>
-      <p className={cn(tooltipBodyClass, "mt-0.5")}>{renderColoredKeywords(definition.description)}</p>
+      <ShineText
+        colors={colors}
+        fallbackClassName={variant === "enemy" ? "text-red-400" : "text-emerald-400"}
+        className="text-base font-bold uppercase"
+      >
+        {definition.label}
+      </ShineText>
+      <p className={cn(tooltipBodyClass, "mt-0.5 text-base leading-relaxed")}>
+        {renderColoredKeywords(definition.description)}
+      </p>
     </div>
   );
 }
@@ -49,18 +69,18 @@ export function LabyrinthNodeInspector({ node, canEnter, onEnter, left, top, sid
     <aside
       aria-label="Chamber details"
       data-side={side}
-      className="labyrinth-inspector-in absolute z-30 flex max-h-[min(100%,32rem)] -translate-y-1/2 flex-col gap-3 overflow-y-auto rounded-xl border border-white/10 bg-black/80 p-3 shadow-[0_12px_32px_rgba(0,0,0,0.55)]"
+      className="labyrinth-inspector-in absolute z-30 flex max-h-[min(100%,36rem)] -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-[var(--radius-shell-hero)] border border-white/10 bg-black p-4 shadow-[0_12px_32px_rgba(0,0,0,0.55)]"
       style={{ left, top, width }}
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-white/15">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[var(--radius-shell-hero)] border border-white/15">
         <img src={art} alt="" className="h-full w-full object-cover object-top" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
-          <p className="text-xs font-bold tracking-wide text-amber-100/80 uppercase">{NODE_TYPE_LABELS[node.type]}</p>
-          <p className="text-lg font-semibold text-amber-50">{title}</p>
+          <p className="text-base font-bold tracking-wide text-amber-100/80 uppercase">{NODE_TYPE_LABELS[node.type]}</p>
+          <p className="text-3xl font-semibold text-amber-50">{title}</p>
         </div>
       </div>
-      <p className={cn(tooltipBodyClass, "text-left text-amber-100/80")}>
+      <p className={cn(tooltipBodyClass, "text-left text-base leading-relaxed text-amber-100/80")}>
         {renderColoredKeywords(NODE_TYPE_TOOLTIPS[node.type])}
       </p>
       {enemyModifiers.length > 0 || rewardModifiers.length > 0 ? (

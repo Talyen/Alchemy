@@ -87,5 +87,5 @@ export const HAND_CARD_HOVER_Z_INDEX = 40;
 export const WISH_OVERLAY_Z_INDEX = 90;
 
 export const LABYRINTH_MAP_UI = {
-  inspectorWidthPx: 320,
+  inspectorWidthPx: 480,
 } as const;

@@ -50,13 +50,22 @@ export type RunSessionReadView = Readonly<RunSessionFields>;
 export type BattleReadView = Readonly<RunDomainBattleState>;
 export type { DisplayOverrides } from "./run-domain-types";
 
-function freezeInDev<T extends object>(value: T): T {
+function deepFreezeInDev<T>(value: T): T {
   if (!import.meta.env.DEV) return value;
+  if (value === null || typeof value !== "object" || Object.isFrozen(value)) return value;
   Object.freeze(value);
-  for (const child of Object.values(value)) {
-    if (child !== null && typeof child === "object" && !Object.isFrozen(child)) Object.freeze(child);
+  for (const child of Object.values(value as Record<string, unknown>)) {
+    if (child !== null && typeof child === "object") deepFreezeInDev(child);
   }
   return value;
+}
+
+function freezeInDev<T extends object>(value: T): T {
+  return deepFreezeInDev(value);
+}
+
+export function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
+  return useGameplayStateStore(useShallow(selector));
 }
 export function readActiveRun(): ActiveRunReadView {
   return freezeInDev(pickActiveRunView(readGameplayState().run));
@@ -100,7 +109,7 @@ export function useTalentEffects(): TalentEffectManifest {
   return useMemo(() => computeTalentEffects(unlockedTalents), [unlockedTalents]);
 }
 export function useContentNavigationRunPort(): ContentNavigationRunPort {
-  return useGameplayStateStore(useShallow(selectContentNavigationFields));
+  return useShallowRunSelector(selectContentNavigationFields);
 }
 export function useContentNavigationTalentPort(
   talentEffects: TalentEffectManifest,
@@ -118,13 +127,11 @@ export function useAutosaveAllowed(screen: Screen): boolean {
   return useGameplayStateStore((state) => selectAutosaveAllowed(state, screen));
 }
 export function useBattleLifetimeFields() {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      hasActiveBattle: state.battle.hasActiveBattle,
-      pendingBattleTransition: state.battle.pendingBattleTransition,
-      pendingTransitionResumeRequired: state.battle.pendingTransitionResumeRequired,
-    })),
-  );
+  return useShallowRunSelector((state) => ({
+    hasActiveBattle: state.battle.hasActiveBattle,
+    pendingBattleTransition: state.battle.pendingBattleTransition,
+    pendingTransitionResumeRequired: state.battle.pendingTransitionResumeRequired,
+  }));
 }
 export function useHasActiveBattle(): boolean {
   return useGameplayStateStore((state) => state.battle.hasActiveBattle);
@@ -147,16 +154,14 @@ export function useForegroundResumeKind(): "battle" | "run" | null {
   });
 }
 export function useResumableGameModes(): Record<ContentSystemId, boolean> {
-  return useGameplayStateStore(
-    useShallow((state) => {
-      const live = state.session.hasActiveRun ? state.run.activeRun.contentSystemType : null;
-      return {
-        campaign: live === "campaign" || Boolean(state.run.parkedRuns.campaign),
-        labyrinth: live === "labyrinth" || Boolean(state.run.parkedRuns.labyrinth),
-        wildwood: live === "wildwood" || Boolean(state.run.parkedRuns.wildwood),
-      };
-    }),
-  );
+  return useShallowRunSelector((state) => {
+    const live = state.session.hasActiveRun ? state.run.activeRun.contentSystemType : null;
+    return {
+      campaign: live === "campaign" || Boolean(state.run.parkedRuns.campaign),
+      labyrinth: live === "labyrinth" || Boolean(state.run.parkedRuns.labyrinth),
+      wildwood: live === "wildwood" || Boolean(state.run.parkedRuns.wildwood),
+    };
+  });
 }
 export function useDisplayOverrides() {
   return useGameplayStateStore((state) => state.battle.displayOverrides);
@@ -171,32 +176,29 @@ export function useContentSystemType(): ContentSystemId {
   return useGameplayStateStore((state) => state.run.activeRun.contentSystemType);
 }
 export function useHomesteadProgressSlice() {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      gold: state.runProfile.gold,
-      materialInventory: state.runProfile.materialInventory,
-      constructedBuildings: state.runProfile.constructedBuildings,
-      plantedFarms: state.runProfile.plantedFarms,
-      completedResearch: state.runProfile.completedResearch,
-      bondedCompanions: state.runProfile.bondedCompanions,
-    })),
-  );
+  return useShallowRunSelector((state) => ({
+    gold: state.runProfile.gold,
+    materialInventory: state.runProfile.materialInventory,
+    constructedBuildings: state.runProfile.constructedBuildings,
+    plantedFarms: state.runProfile.plantedFarms,
+    completedResearch: state.runProfile.completedResearch,
+    bondedCompanions: state.runProfile.bondedCompanions,
+  }));
 }
 export function useHomesteadEffects() {
   return useGameplayStateStore((state) => state.runProfile.effects);
 }
 export function useTalentProgressSlice(): { talentXP: TalentXP; unlockedTalents: UnlockedTalents } {
-  return useGameplayStateStore(
-    useShallow((state) => ({ talentXP: state.runProfile.talentXP, unlockedTalents: state.runProfile.unlockedTalents })),
-  );
+  return useShallowRunSelector((state) => ({
+    talentXP: state.runProfile.talentXP,
+    unlockedTalents: state.runProfile.unlockedTalents,
+  }));
 }
 export function useDifficultySelectSlice(): { characterId: CharacterId; selectedDifficulty: DifficultyId | null } {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      characterId: state.session.pendingCharacterId ?? state.run.activeRun.characterId,
-      selectedDifficulty: state.run.activeRun.selectedDifficulty,
-    })),
-  );
+  return useShallowRunSelector((state) => ({
+    characterId: state.session.pendingCharacterId ?? state.run.activeRun.characterId,
+    selectedDifficulty: state.run.activeRun.selectedDifficulty,
+  }));
 }
 export function useDraftDeckSlice(): {
   contentSystemType: ContentSystemId;
@@ -204,14 +206,12 @@ export function useDraftDeckSlice(): {
   wildwoodDraft: WildwoodDraftState | null;
   starterDraftChoices: BattleCard[] | null;
 } {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      contentSystemType: state.run.activeRun.contentSystemType,
-      runDeck: state.run.activeRun.runDeck,
-      wildwoodDraft: state.session.wildwoodDraft,
-      starterDraftChoices: state.session.starterDraftChoices,
-    })),
-  );
+  return useShallowRunSelector((state) => ({
+    contentSystemType: state.run.activeRun.contentSystemType,
+    runDeck: state.run.activeRun.runDeck,
+    wildwoodDraft: state.session.wildwoodDraft,
+    starterDraftChoices: state.session.starterDraftChoices,
+  }));
 }
 export function useActiveRunCharacterId(): CharacterId {
   return useGameplayStateStore((state) => state.run.activeRun.characterId);
@@ -261,7 +261,7 @@ function pickRunSessionBattleSlice(battle: {
   };
 }
 function useRunSessionBattleSlice(): RunSessionBattleSlice {
-  return useGameplayStateStore(useShallow((state) => pickRunSessionBattleSlice(state.battle)));
+  return useShallowRunSelector((state) => pickRunSessionBattleSlice(state.battle));
 }
 export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleContext {
   const battle = useRunSessionBattleSlice();
@@ -274,15 +274,13 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
   );
 }
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
-  const session = useGameplayStateStore(
-    useShallow((state) => ({
-      screen: state.run.navigation.screen,
-      hasActiveBattle: state.battle.hasActiveBattle,
-      hasActiveRun: state.session.hasActiveRun,
-      pendingCharacterId: state.session.pendingCharacterId,
-      pendingContentSystemType: state.session.pendingContentSystemType,
-    })),
-  );
+  const session = useShallowRunSelector((state) => ({
+    screen: state.run.navigation.screen,
+    hasActiveBattle: state.battle.hasActiveBattle,
+    hasActiveRun: state.session.hasActiveRun,
+    pendingCharacterId: state.session.pendingCharacterId,
+    pendingContentSystemType: state.session.pendingContentSystemType,
+  }));
   const resolvedScreen = screen ?? session.screen;
   return useMemo(
     () => ({

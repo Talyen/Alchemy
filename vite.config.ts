@@ -9,6 +9,9 @@ import checker from "vite-plugin-checker";
 import { visualizer } from "rollup-plugin-visualizer";
 import { resolveDevPort } from "./scripts/lib/dev-port.mjs";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
+// @ts-ignore no types for bundle-budget.mjs
+import { CHUNK_SIZE_WARNING_KB } from "./scripts/lib/bundle-budget.mjs";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore no types for vite-aliases.mjs
 import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 
@@ -119,9 +122,7 @@ export default defineConfig(({ mode, command }) => {
           },
         },
       },
-      // No React.lazy — entry is intentionally eager. Keep warning limit in sync
-      // with scripts/check-bundle-budget.mjs BUDGETS.indexMaxBytes (600 kB).
-      chunkSizeWarningLimit: 600,
+      chunkSizeWarningLimit: CHUNK_SIZE_WARNING_KB,
     },
     resolve: {
       alias: {

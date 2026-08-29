@@ -36,10 +36,10 @@ export function commitVictoryRewards(
   }
 
   setRunGold(draft, result.persistedGold);
-  syncBattleToRun(draft, { playerHealth: result.playerHealth });
   if (result.maxHealthDelta > 0) {
     setRunMaxHealth(draft, (prev) => prev + result.maxHealthDelta);
   }
+  syncBattleToRun(draft, { playerHealth: result.playerHealth });
 
   setRewardState(draft, {
     ...result.rewardState,

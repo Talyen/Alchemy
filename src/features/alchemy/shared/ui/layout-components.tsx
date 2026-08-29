@@ -3,9 +3,20 @@ import { cn } from "@/lib/utils";
 import { screenDescriptionClass, screenShellPaddingClass, screenTitleClass } from "../config";
 import { HamburgerTrigger } from "./navigation";
 
-export function ScreenHeader({ title, className }: { title: ReactNode; className?: string }) {
+export function ScreenHeader({
+  title,
+  eyebrow,
+  className,
+}: {
+  title: ReactNode;
+  eyebrow?: ReactNode;
+  className?: string;
+}) {
   return (
     <div className={cn("flex flex-col items-center text-center", className)}>
+      {eyebrow ? (
+        <p className="mb-1 text-xs font-semibold tracking-[0.22em] text-amber-100/60 uppercase">{eyebrow}</p>
+      ) : null}
       <h1 className={cn("font-sans", screenTitleClass)}>{title}</h1>
       <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
     </div>
@@ -14,18 +25,20 @@ export function ScreenHeader({ title, className }: { title: ReactNode; className
 
 export function ScreenHeaderRow({
   title,
+  eyebrow,
   trailing,
   className,
   trailingClassName,
 }: {
   title: ReactNode;
+  eyebrow?: ReactNode;
   trailing?: ReactNode;
   className?: string;
   trailingClassName?: string;
 }) {
   return (
     <div className={cn("relative flex w-full items-center justify-center", className)}>
-      <ScreenHeader title={title} />
+      <ScreenHeader title={title} eyebrow={eyebrow} />
       {trailing ? (
         <div className={cn("absolute top-1/2 right-0 -translate-y-1/2", trailingClassName)}>{trailing}</div>
       ) : null}
@@ -70,6 +83,7 @@ export function ScreenShell({
 
 export function TitledScreenShell({
   title,
+  eyebrow,
   onOpenMenu,
   menuLabel,
   children,
@@ -80,6 +94,7 @@ export function TitledScreenShell({
   headerActions,
 }: {
   title: ReactNode;
+  eyebrow?: ReactNode;
   onOpenMenu: (rect?: DOMRect) => void;
   menuLabel: string;
   children: ReactNode;
@@ -106,7 +121,7 @@ export function TitledScreenShell({
           {...(maxWidthClass ? { maxWidthClass } : {})}
           {...(minHeightClass ? { minHeightClass } : {})}
         >
-          <ScreenHeaderRow title={title} trailing={trailing} />
+          <ScreenHeaderRow title={title} eyebrow={eyebrow} trailing={trailing} />
           {children}
         </ScreenShell>
       </PageLayout>

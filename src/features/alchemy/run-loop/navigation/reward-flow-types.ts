@@ -23,6 +23,7 @@ export interface BossRewardInput {
   gold: number;
   bossBonus: number;
   generousBonus: number;
+  wealthyBonus: number;
   talentGoldPerCombat: number;
   materials: MaterialInventory;
   trinketIds: string[];
@@ -39,6 +40,7 @@ export interface CombatRewardInput {
   gold: number;
   eliteBonus: number;
   generousBonus: number;
+  wealthyBonus: number;
   talentGoldPerCombat: number;
   materials: MaterialInventory;
   destinations: Destination[];

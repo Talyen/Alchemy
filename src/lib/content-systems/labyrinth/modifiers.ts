@@ -7,10 +7,6 @@ export function getEnemyModifiersForNodeType(
   return pickEncounterTraits("labyrinth", "combat", type === "combat" ? 1 : 2, rng);
 }
 
-export function getRewardModifiersForNodeType(
-  type: "combat" | "elite" | "boss",
-  rng: () => number,
-): EncounterRewardTraitId[] {
-  if (type === "boss" || (type === "combat" && rng() < 0.5)) return [];
+export function getRewardModifiersForNodeType(rng: () => number): EncounterRewardTraitId[] {
   return pickEncounterTraits("labyrinth", "reward", 1, rng);
 }

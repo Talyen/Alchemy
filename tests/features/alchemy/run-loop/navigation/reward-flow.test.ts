@@ -6,11 +6,14 @@ import {
   getActiveRewardModifiersForContentSystem,
   getCompanionCardChoices,
   getGenerousGoldBonus,
+  getWealthyGoldBonus,
+  getWellProvisionedHealing,
   getRandomPotionCard,
   finalizeRewardState,
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { executeRewardRouteTransition } from "@/features/alchemy/run-loop/run/run-flow-rewards";
 import { createEmptyRewardState, type BoonRewardState } from "@/lib/active-run-session";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
@@ -51,8 +54,17 @@ describe("reward flow orchestration", () => {
   });
 
   describe("computeVictoryGold unmultiplied total", () => {
-    function unmultipliedTotal(input: Omit<Parameters<typeof computeVictoryGold>[0], "purseGold" | "goldMultiplier">) {
-      return computeVictoryGold({ ...input, purseGold: 0, goldMultiplier: 1 }).persistedGold;
+    function unmultipliedTotal(
+      input: Omit<Parameters<typeof computeVictoryGold>[0], "purseGold" | "goldMultiplier" | "wealthyBonus"> & {
+        wealthyBonus?: number;
+      },
+    ) {
+      return computeVictoryGold({
+        wealthyBonus: 0,
+        ...input,
+        purseGold: 0,
+        goldMultiplier: 1,
+      }).persistedGold;
     }
 
     it("sums all gold sources", () => {
@@ -62,10 +74,11 @@ describe("reward flow orchestration", () => {
         gold: 10,
         eliteBonus: 3,
         generousBonus: 0,
+        wealthyBonus: 12,
         bossBonus: 5,
         talentGoldPerCombat: 2,
       });
-      expect(result).toBe(35);
+      expect(result).toBe(47);
     });
 
     it("handles zero gold sources", () => {
@@ -135,12 +148,37 @@ describe("reward flow orchestration", () => {
       expect(getGenerousGoldBonus([], 11)).toBe(0);
     });
 
+    it("computes wealthy gold bonus from config", () => {
+      expect(getWealthyGoldBonus(["wealthy"])).toBe(LABYRINTH_REWARD_CONFIG.wealthyGoldBonus);
+      expect(getWealthyGoldBonus([])).toBe(0);
+    });
+
+    it("computes well-provisioned healing from max health", () => {
+      expect(getWellProvisionedHealing(["wellProvisioned"], 100)).toBe(15);
+      expect(getWellProvisionedHealing(["wellProvisioned"], 1)).toBe(1);
+      expect(getWellProvisionedHealing([], 100)).toBe(0);
+    });
+
     it("doubles materials for scavenger without mutating the source inventory", () => {
       const materials = { wood: 1, iron: 2, herbs: 3, food: 4, crystal: 5 };
       const result = applyLabyrinthRewardMaterialModifiers(materials, ["scavenger"]);
 
       expect(result).toEqual({ wood: 2, iron: 4, herbs: 6, food: 8, crystal: 10 });
       expect(materials).toEqual({ wood: 1, iron: 2, herbs: 3, food: 4, crystal: 5 });
+    });
+
+    it("adds herbalist herbs after scavenger doubling", () => {
+      const materials = { wood: 1, iron: 2, herbs: 3, food: 4, crystal: 5 };
+      const result = applyLabyrinthRewardMaterialModifiers(materials, ["scavenger", "herbalist"]);
+
+      expect(result.herbs).toBe(6 + LABYRINTH_REWARD_CONFIG.herbalistHerbBonus);
+      expect(result.wood).toBe(2);
+    });
+
+    it("adds herbalist herbs when scavenger is inactive", () => {
+      const materials = { wood: 1, iron: 2, herbs: 3, food: 4, crystal: 5 };
+      const result = applyLabyrinthRewardMaterialModifiers(materials, ["herbalist"]);
+      expect(result.herbs).toBe(3 + LABYRINTH_REWARD_CONFIG.herbalistHerbBonus);
     });
 
     it("leaves materials unchanged when scavenger is inactive", () => {
@@ -363,6 +401,7 @@ describe("reward flow orchestration", () => {
         gold: 15,
         eliteBonus: 0,
         generousBonus: 0,
+        wealthyBonus: 0,
         bossBonus: 0,
         talentGoldPerCombat: 0,
         goldMultiplier: 2,

@@ -7,11 +7,15 @@ declare module "*/assets/asset-manifest.mjs" {
 }
 
 declare module "*/check-bundle-budget.mjs" {
+  export function checkBundleBudget(dist?: string): boolean;
+}
+
+declare module "*/bundle-budget.mjs" {
   export const BUDGETS: Readonly<{
     indexMaxBytes: number;
     totalJsMaxBytes: number;
   }>;
-  export function checkBundleBudget(dist?: string): boolean;
+  export const CHUNK_SIZE_WARNING_KB: number;
 }
 
 interface PatchNoteCommit {

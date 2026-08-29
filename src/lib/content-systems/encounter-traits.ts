@@ -1,4 +1,5 @@
 import type { EnemyTrait } from "@/lib/game-data";
+import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { sampleItems } from "@/lib/utils";
 import type { ContentSystemId } from "./content-system-ids";
 
@@ -72,6 +73,13 @@ export const ENCOUNTER_TRAITS = defineEncounterTraits({
   alchemist: reward("Alchemist", "Gain a random Potion alongside the normal reward", ["labyrinth", "wildwood"]),
   scavenger: reward("Scavenger", "Material loot from this encounter is doubled", ["labyrinth"]),
   companion: reward("Companion", "Choose a free Companion card after the battle", ["labyrinth", "wildwood"]),
+  wealthy: reward("Wealthy", `Gain ${LABYRINTH_REWARD_CONFIG.wealthyGoldBonus} bonus Gold`, ["labyrinth"]),
+  herbalist: reward("Herbalist", `Gain ${LABYRINTH_REWARD_CONFIG.herbalistHerbBonus} bonus Herbs`, ["labyrinth"]),
+  wellProvisioned: reward(
+    "Well-Provisioned",
+    `Restore ${Math.round(LABYRINTH_REWARD_CONFIG.wellProvisionedHealFraction * 100)}% Health after victory`,
+    ["labyrinth"],
+  ),
 });
 
 export type EncounterTraitId = keyof typeof ENCOUNTER_TRAITS;

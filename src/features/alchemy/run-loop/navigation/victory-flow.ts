@@ -22,7 +22,7 @@ import {
   GOLD_REWARD_MAX,
   GOLD_TROVE_REWARD_MULTIPLIER,
 } from "@/lib/game-constants";
-import { getGenerousGoldBonus } from "./reward-flow";
+import { getGenerousGoldBonus, getWealthyGoldBonus, getWellProvisionedHealing } from "./reward-flow";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RewardState } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
@@ -47,6 +47,7 @@ interface VictoryGoldRoll {
   eliteBonus: number;
   bossBonus: number;
   generousBonus: number;
+  wealthyBonus: number;
 }
 
 function rollVictoryGold(
@@ -73,8 +74,9 @@ function rollVictoryGold(
   const bossBonus =
     battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS ? Math.round(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
   const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
+  const wealthyBonus = getWealthyGoldBonus(labyrinthRewardModifiers);
 
-  return { gold, eliteBonus, bossBonus, generousBonus };
+  return { gold, eliteBonus, bossBonus, generousBonus, wealthyBonus };
 }
 
 export function computeVictoryRewardState(
@@ -93,6 +95,7 @@ export function computeVictoryRewardState(
     gold: number;
     eliteBonus: number;
     generousBonus: number;
+    wealthyBonus: number;
     bossBonus: number;
     materials: MaterialInventory;
     destinations: Destination[];
@@ -112,6 +115,7 @@ export function computeVictoryRewardState(
       gold: input.gold,
       bossBonus: input.bossBonus,
       generousBonus: input.generousBonus,
+      wealthyBonus: input.wealthyBonus,
       talentGoldPerCombat: talentEffects.goldPerCombat,
       materials: input.materials,
       trinketIds: activeTrinketEffectIds,
@@ -131,6 +135,7 @@ export function computeVictoryRewardState(
       gold: input.gold,
       eliteBonus: input.eliteBonus,
       generousBonus: input.generousBonus,
+      wealthyBonus: input.wealthyBonus,
       talentGoldPerCombat: talentEffects.goldPerCombat,
       materials: input.materials,
       destinations: input.destinations,
@@ -174,7 +179,7 @@ export function computeVictoryRewards(
       destinationOfferState: input.destinationOfferState,
     };
   }
-  const { gold, eliteBonus, bossBonus, generousBonus } = rollVictoryGold(
+  const { gold, eliteBonus, bossBonus, generousBonus, wealthyBonus } = rollVictoryGold(
     input.battleState,
     talentEffects,
     labyrinthRewardModifiers,
@@ -188,13 +193,19 @@ export function computeVictoryRewards(
     gold,
     eliteBonus,
     generousBonus,
+    wealthyBonus,
     bossBonus,
     talentGoldPerCombat: talentEffects.goldPerCombat,
     goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
   });
 
-  const playerHealth = input.battleState.playerHealth;
   const maxHealthDelta = talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0;
+  const effectiveMaxHealth = input.runMaxHealth + maxHealthDelta;
+  const wellProvisionedHealing = getWellProvisionedHealing(labyrinthRewardModifiers, effectiveMaxHealth);
+  const playerHealth =
+    wellProvisionedHealing > 0
+      ? Math.min(effectiveMaxHealth, input.battleState.playerHealth + wellProvisionedHealing)
+      : input.battleState.playerHealth;
 
   const baseMaterials = getEnemyMaterialLoot(
     input.battleState.currentEnemy.id,
@@ -236,6 +247,7 @@ export function computeVictoryRewards(
       gold,
       eliteBonus,
       generousBonus,
+      wealthyBonus,
       bossBonus,
       materials,
       destinations,

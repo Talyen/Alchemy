@@ -2,8 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
-import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/shared-ui";
-import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
+import { TitledScreenShell } from "../../../shared/ui/shared-ui";
 import { cn } from "@/lib/utils";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { floorNodes, labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
@@ -11,6 +10,8 @@ import { floorNodes, labyrinthNodeVisualState } from "@/lib/content-systems/laby
 import { inspectorPlacement, layoutFloorNodes } from "./labyrinth-map-layout";
 import { LabyrinthNodeInspector } from "./labyrinth-node-inspector";
 import { LabyrinthNodeSeal } from "./labyrinth-node-seal";
+import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
+import { usePlasmaBaseline } from "@/features/alchemy/shared/ui/use-plasma-source";
 
 interface Props {
   labyrinthMap: LabyrinthMap | null;
@@ -51,9 +52,13 @@ export function LabyrinthMapScreen({
   useLayoutEffect(() => {
     const element = mapCanvasRef.current;
     if (!element) return;
-    const observer = new ResizeObserver(() => setMapWidth(element.clientWidth));
+    const updateWidth = () => {
+      const next = element.clientWidth;
+      setMapWidth((prev) => (prev === next ? prev : next));
+    };
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
     observer.observe(element);
-    setMapWidth(element.clientWidth);
     return () => observer.disconnect();
   }, []);
 
@@ -66,11 +71,13 @@ export function LabyrinthMapScreen({
   const selectedPoint = selectedNode ? layout?.positions.get(selectedNode.id) : undefined;
   const selectedCanEnter =
     selectedNode && labyrinthMap ? labyrinthNodeVisualState(labyrinthMap, selectedNode.id) === "reachable" : false;
+  const inspectorNodeId = selectedNode?.id ?? null;
   const inspector =
     selectedNode && selectedPoint && layout
       ? inspectorPlacement(selectedPoint.x, selectedPoint.y, layout.metrics.width, mapWidth)
       : null;
-  const inspectorNodeId = selectedNode?.id ?? null;
+
+  usePlasmaBaseline(selectedNode ? getLabyrinthNodePlasmaPair(selectedNode) : null);
 
   useEffect(() => {
     if (!inspectorNodeId) return;
@@ -89,6 +96,7 @@ export function LabyrinthMapScreen({
   return (
     <TitledScreenShell
       title="Labyrinth"
+      eyebrow={`Floor ${viewedFloor}`}
       onOpenMenu={onOpenMenu}
       menuLabel="Open labyrinth menu"
       maxWidthClass="max-w-7xl"
@@ -119,10 +127,6 @@ export function LabyrinthMapScreen({
       }
     >
       <div className="mt-4 flex flex-col gap-4">
-        <ScreenDescription className="max-w-xl shrink-0 text-amber-100/75">
-          Choose your path through the depths
-        </ScreenDescription>
-
         <section aria-label="Labyrinth map" className="relative min-w-0">
           <div
             ref={mapCanvasRef}
@@ -138,7 +142,7 @@ export function LabyrinthMapScreen({
             {labyrinthMap && layout ? (
               <FadeSlot swapKey={viewedFloor} className="relative w-full">
                 <div
-                  className="relative mx-auto"
+                  className="relative mx-auto transition-[height] duration-300 ease-out"
                   style={{ width: "100%", height: layout.height }}
                   onClick={onNodeDeselect}
                 >
@@ -168,7 +172,7 @@ export function LabyrinthMapScreen({
                       left={inspector.left}
                       top={inspector.top}
                       side={inspector.side}
-                      width={LABYRINTH_MAP_UI.inspectorWidthPx}
+                      width={inspector.width}
                     />
                   ) : null}
                 </div>

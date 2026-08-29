@@ -43,37 +43,17 @@ describe("getEnemyModifiersForNodeType", () => {
 });
 
 describe("getRewardModifiersForNodeType", () => {
-  it("boss returns no reward modifiers", () => {
-    expect(getRewardModifiersForNodeType("boss", () => 0.75)).toHaveLength(0);
-  });
-
-  it("elite always returns exactly 1 reward modifier", () => {
+  it("always returns exactly 1 reward modifier", () => {
     for (let trial = 0; trial < 50; trial++) {
-      const mods = getRewardModifiersForNodeType("elite", Math.random);
-      expect(mods).toHaveLength(1);
+      expect(getRewardModifiersForNodeType(Math.random)).toHaveLength(1);
     }
-  });
-
-  it("combat returns 0 or 1 reward modifier (50% chance)", () => {
-    let hasZero = false;
-    let hasOne = false;
-    for (let trial = 0; trial < 100; trial++) {
-      const mods = getRewardModifiersForNodeType("combat", Math.random);
-      expect(mods.length).toBeLessThanOrEqual(1);
-      if (mods.length === 0) hasZero = true;
-      if (mods.length === 1) hasOne = true;
-    }
-    expect(hasZero).toBe(true);
-    expect(hasOne).toBe(true);
   });
 
   it("reward modifiers are always reward trait ids", () => {
-    for (const type of ["combat", "elite"] as const) {
-      for (let trial = 0; trial < 30; trial++) {
-        const mods = getRewardModifiersForNodeType(type, Math.random);
-        for (const m of mods) {
-          expect((REWARD_ENCOUNTER_TRAIT_IDS as readonly string[]).includes(m)).toBe(true);
-        }
+    for (let trial = 0; trial < 50; trial++) {
+      const mods = getRewardModifiersForNodeType(Math.random);
+      for (const m of mods) {
+        expect((REWARD_ENCOUNTER_TRAIT_IDS as readonly string[]).includes(m)).toBe(true);
       }
     }
   });

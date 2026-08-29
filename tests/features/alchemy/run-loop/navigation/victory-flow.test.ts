@@ -10,6 +10,7 @@ import { computeVictoryGold } from "@/features/alchemy/run-loop/navigation/rewar
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
+import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearDefinitions, uniqueItemList } from "@/lib/gear";
 import type { Destination } from "@/lib/routing";
@@ -84,6 +85,7 @@ describe("computeVictoryRewardState", () => {
         gold: 15,
         eliteBonus: 0,
         generousBonus: 0,
+        wealthyBonus: 0,
         bossBonus: 10,
         materials: emptyInventory(),
         destinations: [],
@@ -108,6 +110,7 @@ describe("computeVictoryRewardState", () => {
         gold: 15,
         eliteBonus: 0,
         generousBonus: 0,
+        wealthyBonus: 0,
         bossBonus: 0,
         materials: emptyInventory(),
         destinations: ["Normal Combat", "Campfire"],
@@ -133,6 +136,7 @@ describe("computeVictoryRewardState", () => {
         gold: 15,
         eliteBonus: 0,
         generousBonus: 0,
+        wealthyBonus: 0,
         bossBonus: 0,
         materials: emptyInventory(),
         destinations: ["Normal Combat"],
@@ -156,6 +160,7 @@ describe("computeVictoryRewardState", () => {
         gold: 15,
         eliteBonus: 4,
         generousBonus: 0,
+        wealthyBonus: 0,
         bossBonus: 0,
         materials: emptyInventory(),
         destinations: ["Normal Combat"],
@@ -178,6 +183,7 @@ describe("computeVictoryRewardState", () => {
       gold: 15,
       eliteBonus: 0,
       generousBonus: 0,
+      wealthyBonus: 0,
       bossBonus: 7,
       materials: emptyInventory(),
       destinations: [],
@@ -204,6 +210,7 @@ describe("computeVictoryRewardState", () => {
         gold: 15,
         eliteBonus: 0,
         generousBonus: 0,
+        wealthyBonus: 0,
         bossBonus: 7,
         materials: emptyInventory(),
         destinations: [],
@@ -231,6 +238,7 @@ describe("computeVictoryRewardState", () => {
         gold: 15,
         eliteBonus: 0,
         generousBonus: 0,
+        wealthyBonus: 0,
         bossBonus: 7,
         materials: emptyInventory(),
         destinations: [],
@@ -258,6 +266,7 @@ describe("computeVictoryRewardState", () => {
         gold: 15,
         eliteBonus: 0,
         generousBonus: 0,
+        wealthyBonus: 0,
         bossBonus: 7,
         materials: emptyInventory(),
         destinations: [],
@@ -406,6 +415,18 @@ describe("computeVictoryRewards", () => {
     expect(result.goldEarned).toBe(23);
   });
 
+  it("applies wealthy labyrinth modifier gold bonus", () => {
+    const result = computeVictoryRewards(
+      baseInput({
+        contentSystemType: "labyrinth",
+        activeLabyrinthRewardModifiers: ["wealthy"],
+      }),
+      testRng,
+    );
+    expect(result.goldEarned).toBe(15 + LABYRINTH_REWARD_CONFIG.wealthyGoldBonus);
+    expect(result.rewardState.gold).toBe(15 + LABYRINTH_REWARD_CONFIG.wealthyGoldBonus);
+  });
+
   it("applies labyrinth scavenger reward modifier to materials", () => {
     const result = computeVictoryRewards(
       baseInput({
@@ -415,6 +436,57 @@ describe("computeVictoryRewards", () => {
       testRng,
     );
     expect(result.rewardState.materials.wood).toBeGreaterThanOrEqual(1);
+  });
+
+  it("applies herbalist labyrinth modifier herb bonus", () => {
+    const result = computeVictoryRewards(
+      baseInput({
+        contentSystemType: "labyrinth",
+        activeLabyrinthRewardModifiers: ["herbalist"],
+      }),
+      testRng,
+    );
+    expect(result.rewardState.materials.herbs).toBe(LABYRINTH_REWARD_CONFIG.herbalistHerbBonus);
+  });
+
+  it("adds herbalist herbs after scavenger doubling in victory rewards", () => {
+    const result = computeVictoryRewards(
+      baseInput({
+        contentSystemType: "labyrinth",
+        activeLabyrinthRewardModifiers: ["scavenger", "herbalist"],
+      }),
+      testRng,
+    );
+    expect(result.rewardState.materials.wood).toBe(2);
+    expect(result.rewardState.materials.herbs).toBe(LABYRINTH_REWARD_CONFIG.herbalistHerbBonus);
+  });
+
+  it("heals with well-provisioned after victory", () => {
+    const result = computeVictoryRewards(
+      baseInput({
+        contentSystemType: "labyrinth",
+        activeLabyrinthRewardModifiers: ["wellProvisioned"],
+        runMaxHealth: 100,
+        battleState: baseBattleState({ playerHealth: 20 }),
+      }),
+      testRng,
+    );
+    expect(result.playerHealth).toBe(20 + Math.round(100 * LABYRINTH_REWARD_CONFIG.wellProvisionedHealFraction));
+  });
+
+  it("caps well-provisioned healing using max health plus talent delta", () => {
+    const result = computeVictoryRewards(
+      baseInput({
+        contentSystemType: "labyrinth",
+        activeLabyrinthRewardModifiers: ["wellProvisioned"],
+        unlockedTalents: { health: ["health-max-per-combat"] },
+        runMaxHealth: 30,
+        battleState: baseBattleState({ playerHealth: 30 }),
+      }),
+      testRng,
+    );
+    expect(result.maxHealthDelta).toBe(1);
+    expect(result.playerHealth).toBe(31);
   });
 
   it("awards boon rewards for elite combat victories", () => {
@@ -532,6 +604,14 @@ describe("commitVictoryRewards", () => {
     return dispatchRunSessionCommand((draft) => commitVictoryRewards(draft, result, deps, testRng));
   }
 
+  it("applies max health before writing healed player health", () => {
+    setRunProgress({ runPlayerHealth: 30, runMaxHealth: 30 });
+    commit(victoryResult({ playerHealth: 31, maxHealthDelta: 1 }));
+    const run = readGameplayState().run.activeRun;
+    expect(run.runMaxHealth).toBe(31);
+    expect(run.runPlayerHealth).toBe(31);
+  });
+
   it("reports gold gain when gold was earned", () => {
     expect(commit()).toBe(true);
   });
@@ -594,6 +674,7 @@ describe("commitVictoryRewards", () => {
       gold: 15,
       eliteBonus: 0,
       generousBonus: 0,
+      wealthyBonus: 0,
       bossBonus: 0,
       talentGoldPerCombat: 0,
       goldMultiplier: 2,

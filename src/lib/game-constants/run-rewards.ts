@@ -100,6 +100,9 @@ export const LABYRINTH_REWARD_CONFIG = {
   generousGoldBonusFraction: 0.5,
   scavengerMaterialMultiplier: 2,
   companionCardChoices: 3,
+  wealthyGoldBonus: 12,
+  herbalistHerbBonus: 3,
+  wellProvisionedHealFraction: 0.15,
 } as const;
 
 export const REWARD_SELECTION_CONFIG = {

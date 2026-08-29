@@ -4,6 +4,10 @@ import { spawn, spawnSync } from "node:child_process";
  * Run a bounded command and return one normalized captured-output record.
  * Callers own the user-facing summary and diagnostic artifact policy.
  */
+function collectOutput(stdout, stderr, error) {
+  return [stdout ?? "", stderr ?? "", error?.message ?? ""].filter(Boolean).join("\n");
+}
+
 export function runCommand(command, args = [], options = {}) {
   const started = Date.now();
   const result = spawnSync(command, args, {
@@ -14,10 +18,9 @@ export function runCommand(command, args = [], options = {}) {
     stdio: options.stdio ?? ["ignore", "pipe", "pipe"],
     timeout: options.timeout,
   });
-  const output = [result.stdout ?? "", result.stderr ?? "", result.error?.message ?? ""].filter(Boolean).join("\n");
   return {
     ...result,
-    output,
+    output: collectOutput(result.stdout, result.stderr, result.error),
     elapsedMs: Date.now() - started,
   };
 }
@@ -50,7 +53,7 @@ export function runCommandAsync(command, args = [], options = {}) {
         error,
         stdout,
         stderr,
-        output: [stdout, stderr, error?.message ?? ""].filter(Boolean).join("\n"),
+        output: collectOutput(stdout, stderr, error),
         elapsedMs: Date.now() - started,
       });
     };
