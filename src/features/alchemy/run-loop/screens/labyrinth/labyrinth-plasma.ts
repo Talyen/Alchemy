@@ -83,7 +83,7 @@ function collectEnemyKeywordIds(enemyId: string | undefined): KeywordId[] {
   return [...ids];
 }
 
-export function getLabyrinthNodeKeywordIds(node: LabyrinthNode): KeywordId[] {
+function getLabyrinthNodeKeywordIds(node: LabyrinthNode): KeywordId[] {
   const seen = new Set<KeywordId>();
   const ordered: KeywordId[] = [];
   const push = (ids: readonly KeywordId[]) => {

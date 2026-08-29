@@ -64,7 +64,7 @@ function freezeInDev<T extends object>(value: T): T {
   return deepFreezeInDev(value);
 }
 
-export function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
+function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
 }
 export function readActiveRun(): ActiveRunReadView {
