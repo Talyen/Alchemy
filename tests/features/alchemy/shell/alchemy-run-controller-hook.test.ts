@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveBattle, setRunGold, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";

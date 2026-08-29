@@ -6,12 +6,13 @@ authoring source.
 
 ## Pipeline overview
 
-| Asset kind    | Authoring source                             | Generated output                                 | Registry / consumer                                   |
-| ------------- | -------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
-| Game art      | `Raw Assets/` + `scripts/assets/*.mjs`       | `src/assets/optimized/`                          | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
-| Gear art      | `Raw Assets/Gear/`                           | Optimized WebP + `src/lib/game-data/gear-art.ts` | Gear definitions by stable definition ID              |
-| Sound effects | `Raw Assets/Sound Effects/` + sound manifest | `public/sounds/` OGG and MP3 fallbacks           | `src/lib/sound-registry.ts`                           |
-| Music         | `Raw Assets/Music/`                          | `public/Music/`                                  | Audio owners under `src/lib/audio*.ts`                |
+| Asset kind         | Authoring source                             | Generated output                                 | Registry / consumer                                     |
+| ------------------ | -------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------- |
+| Game art           | `Raw Assets/` + `scripts/assets/*.mjs`       | `src/assets/optimized/`                          | `assets.generated.ts` → `src/lib/game-data/assets.ts`   |
+| Gear art           | `Raw Assets/Gear/`                           | Optimized WebP + `src/lib/game-data/gear-art.ts` | Gear definitions by stable definition ID                |
+| Sound effects      | `Raw Assets/Sound Effects/` + sound manifest | `public/sounds/` OGG and MP3 fallbacks           | `src/lib/sound-registry.ts`                             |
+| Music              | `Raw Assets/Music/`                          | `public/Music/`                                  | Audio owners under `src/lib/audio*.ts`                  |
+| Validation version | `src/lib/validation/metadata.ts`             | `src/lib/validation/metadata.generated.ts`       | `CURRENT_GAME_BUILD_VERSION` via `npm run sync:version` |
 
 `scripts/prepare-assets.mjs` is the full pipeline. Art, sound, and music
 optimization run concurrently because their outputs are disjoint; generated

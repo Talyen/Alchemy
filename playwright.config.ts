@@ -13,18 +13,18 @@ const isFullE2eSuite = process.env.PLAYWRIGHT_E2E_FULL === "1";
 // Critical CI job: fail fast. Full suite (~100 tests): report up to 5 failures per run.
 const maxFailures = isFullE2eSuite ? 5 : isCi ? 1 : 0;
 
-const defaultWorkers = Math.min(3, Math.max(2, os.cpus().length > 1 ? os.cpus().length - 1 : 2));
+const defaultWorkers = Math.min(6, Math.max(3, os.cpus().length > 1 ? os.cpus().length - 1 : 3));
 
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
   testIgnore: ["**/electron-smoke.spec.ts", "**/electron-security.spec.ts"],
-  // Every E2E test is state-isolated (each injects its own localStorage), so the
-  // CI gate runs fully parallel for throughput. Disable animations via fastBattle
-  // where applicable; the raw-animation canaries are isolated per-context.
-  fullyParallel: isPrepush || isNightly || isFullE2eSuite || isCi,
+  // Every E2E test is state-isolated (each injects its own localStorage), so
+  // all tiers run fully parallel. Raw-animation canaries are isolated per-context
+  // via separate pages; fastBattle disables animations where requested.
+  fullyParallel: true,
   maxFailures: isPrepush ? 5 : maxFailures,
-  workers: isPrepush ? 2 : isNightly || isCi ? 4 : defaultWorkers,
+  workers: isPrepush ? 2 : isNightly || isCi ? Math.min(6, Math.max(4, os.cpus().length)) : defaultWorkers,
   globalTimeout: 600_000,
   timeout: isCi ? 30_000 : 20_000,
   ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-results.json" }),

@@ -22,7 +22,7 @@ import {
   useActiveRunCharacterId,
   useHomesteadProgressSlice,
   useTalentProgressSlice,
-} from "@/features/alchemy/shared/stores/run-session-react-ports";
+} from "@/features/alchemy/shared/stores/run-reads";
 import type { Screen } from "@/lib/routing";
 
 interface CompanionCardEntry {

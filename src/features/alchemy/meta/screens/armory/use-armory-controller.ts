@@ -18,7 +18,7 @@ import {
   dispatchGearMutationWithRunHealthSync,
   dispatchGearSalvageWithMaterialGrant,
 } from "@/features/alchemy/shared/stores/gear-session-command";
-import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useGearArmorySlice } from "@/features/alchemy/shared/stores/gear-store";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";

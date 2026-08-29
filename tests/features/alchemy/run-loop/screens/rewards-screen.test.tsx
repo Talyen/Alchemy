@@ -6,7 +6,7 @@ import { createEmptyRewardState } from "@/lib/active-run-session";
 import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetRunSessionSlice } from "../../../../helpers/run-domain-store-test";
 

@@ -5,7 +5,7 @@ import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 
 beforeEach(() => {
   resetAllTestStores();

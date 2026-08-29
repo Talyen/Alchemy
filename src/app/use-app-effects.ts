@@ -26,8 +26,8 @@ import { allGameArt } from "@/lib/game-data";
 import { preloadImagesInBatches } from "@/lib/image-preload";
 import type { DisplayMode } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
-import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-react-ports";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 import { markStartupReady } from "@/lib/performance/startup-marks";
 

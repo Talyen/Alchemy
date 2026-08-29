@@ -28,28 +28,7 @@ const CARD_VIEWPORT_TOLERANCE_PX = 12;
 const CARD_VIEWPORT_TOLERANCE_RATIO = 0.015;
 
 test.describe("Common resolutions (1366x768)", slow, () => {
-  test("menu screen fits viewport without overflow", async ({ page }) => {
-    for (const { width, height } of RESOLUTIONS) {
-      await setAspectRatio(page, "16:9");
-      await page.setViewportSize({ width, height });
-      await page.goto("/");
-      await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-      await assertNoOverflow(page, `Menu ${width}x${height}`);
-      await assertStageFitsViewport(page);
-    }
-  });
-
-  test("character-select screen fits viewport without overflow", async ({ page }) => {
-    for (const { width, height } of RESOLUTIONS) {
-      await setAspectRatio(page, "16:9");
-      await page.setViewportSize({ width, height });
-      await new MenuPage(page).goToCharacterSelect();
-      await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
-      await assertNoOverflow(page, `Character Select ${width}x${height}`);
-    }
-  });
-
-  test("battle screen cards and controls fit viewport without overflow", async ({
+  test("menu, character-select, and battle fit viewport without overflow", async ({
     page,
     fastBattle,
     runtimeErrors,
@@ -59,15 +38,23 @@ test.describe("Common resolutions (1366x768)", slow, () => {
     for (const { width, height } of RESOLUTIONS) {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
+
+      await page.goto("/");
+      await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+      await assertNoOverflow(page, `Menu ${width}x${height}`);
+      await assertStageFitsViewport(page);
+
+      await new MenuPage(page).goToCharacterSelect();
+      await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
+      await assertNoOverflow(page, `Character Select ${width}x${height}`);
+
       await startBattleWithDeck(
         page,
         Array.from({ length: 6 }, () => makeCard()),
       );
-
       await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible();
       expect(await page.locator('[aria-label^="Play "]').count()).toBeGreaterThanOrEqual(1);
       await assertNoOverflow(page, `Battle ${width}x${height}`);
-
       const maxCardOverflow = await page.evaluate(() =>
         Math.max(
           0,

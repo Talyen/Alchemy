@@ -2,11 +2,11 @@ import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { readGearMaxHealthBonus } from "@/features/alchemy/shared/stores/gear-store";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
-import { readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { applyRunStartSnapshot, clearTransientSession } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunStartSnapshot, type RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import { grantStartGold } from "@/features/alchemy/shared/stores/gold-purse";
+import { grantStartGold } from "@/features/alchemy/shared/stores/write-port-run";
 import { parkForegroundRunInDraft } from "@/features/alchemy/shared/stores/run-park-restore";
 import { omitParkedMode, touchRunRecency } from "@/features/alchemy/shared/stores/parked-runs";
 

@@ -1,8 +1,7 @@
 import type { GearInstance } from "@/lib/gear";
 
 import { PurchasableGearItem } from "../../shared/ui/purchasable-gear-item";
-import { shopOfferingsSwapKey } from "../shop/shop-slot-keys";
-import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
+import { GenericShopScreen } from "./generic-shop-screen";
 
 export function EquipmentShopScreen({
   gold,
@@ -28,33 +27,22 @@ export function EquipmentShopScreen({
   onOpenMenu: (rect?: DOMRect) => void;
 }) {
   return (
-    <ShopBrowseShell title="Equipment Shop" gold={gold} onOpenMenu={onOpenMenu}>
-      <ShopBrowseOfferings
-        swapKey={shopOfferingsSwapKey(
-          gear.map((g) => g.instanceId),
-          refreshesLeft,
-        )}
-        onLeave={onContinue}
-        services={
-          <RefreshShopServiceButton
-            gold={gold}
-            refreshesLeft={refreshesLeft}
-            refreshPrice={refreshPrice}
-            onRefresh={onRefresh}
-          />
-        }
-      >
-        {gear.map((instance) => (
-          <PurchasableGearItem
-            key={instance.instanceId}
-            instance={instance}
-            price={getGearPrice(instance)}
-            gold={gold}
-            purchased={purchasedSlotKeys.includes(instance.instanceId)}
-            onBuy={() => onBuyGear(instance)}
-          />
-        ))}
-      </ShopBrowseOfferings>
-    </ShopBrowseShell>
+    <GenericShopScreen
+      title="Equipment Shop"
+      gold={gold}
+      items={gear}
+      refreshesLeft={refreshesLeft}
+      refreshPrice={refreshPrice}
+      purchasedSlotKeys={purchasedSlotKeys}
+      getSlotKey={(g) => g.instanceId}
+      getPrice={getGearPrice}
+      onBuy={(instance) => onBuyGear(instance)}
+      onRefresh={onRefresh}
+      onContinue={onContinue}
+      onOpenMenu={onOpenMenu}
+      renderItem={(instance, price, purchased, onBuy) => (
+        <PurchasableGearItem instance={instance} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />
+      )}
+    />
   );
 }

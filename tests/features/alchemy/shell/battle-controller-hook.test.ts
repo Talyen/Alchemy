@@ -7,7 +7,7 @@ import { useBattleController } from "@/features/alchemy/shell/use-battle-control
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetAllTestStores } from "../../../helpers/run-domain-store-test";
 

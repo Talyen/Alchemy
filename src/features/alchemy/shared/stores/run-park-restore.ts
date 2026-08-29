@@ -11,7 +11,7 @@ import {
 import type { GameplayDraft } from "./run-session-command";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
 import { inferActiveRunScreen } from "./encode-interrupted-flow";
-import { getRunSessionFromState } from "./run-session-model";
+import { getRunSessionFromState } from "./run-reads";
 import { restoreRunSession } from "./restore-active-run-session";
 import {
   abandonMysteryDestinationVisit,

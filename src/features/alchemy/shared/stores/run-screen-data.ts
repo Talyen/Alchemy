@@ -41,7 +41,7 @@ interface EquipmentShopScreenData {
 }
 
 interface LabyrinthMapScreenData {
-  labyrinthMap: LabyrinthMap;
+  labyrinthMap: LabyrinthMap | null;
   selectedLabyrinthNodeId: string | null;
 }
 

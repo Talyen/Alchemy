@@ -17,7 +17,7 @@ import {
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
 import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { createEmptyGearInventories, generateUniqueGearInstance, getUniqueItemDefinition } from "@/lib/gear";
 
 beforeEach(() => {

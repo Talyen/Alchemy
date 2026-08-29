@@ -5,11 +5,7 @@ import {
   parkAndDeactivateForegroundRunInDraft,
 } from "@/features/alchemy/shared/stores/run-park-restore";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  readActiveRun,
-  readHasActiveRun,
-  readParkedRuns,
-} from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readHasActiveRun, readParkedRuns } from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => {

@@ -1,6 +1,6 @@
 import { appendCardToRunWithDiscovery, discoverCardIds } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { spendRunGold } from "@/features/alchemy/run-loop/run-gold";
-import { readDraftGold } from "@/features/alchemy/shared/stores/gold-purse";
+import { readDraftGold } from "@/features/alchemy/shared/stores/write-port-run";
 import {
   createDraftRunRandomSource,
   setAlchemistState,

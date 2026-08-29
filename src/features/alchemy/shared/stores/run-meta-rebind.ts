@@ -1,7 +1,7 @@
 import { computeStartingMaxHealth } from "@/lib/game-data";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import type { GameplayDraft } from "./run-session-command";
-import { syncBattleGoldFromPurse } from "./gold-purse";
+import { syncBattleGoldFromPurse } from "./write-port-run";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { deriveCombatMeta } from "./combat-meta";
 

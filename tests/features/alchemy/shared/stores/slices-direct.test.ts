@@ -35,7 +35,7 @@ import {
   readActiveRunScreen,
   readBattle,
   readRunSession,
-} from "@/features/alchemy/shared/stores/run-session-read-port";
+} from "@/features/alchemy/shared/stores/run-reads";
 import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 

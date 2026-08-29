@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   buildActions,
   createInitialAlchemistState,

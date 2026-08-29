@@ -5,7 +5,7 @@ import type { CardRect, CardTransfer } from "../../shared/types";
 import { animateDiscardedHand, animateDrawnHand, type CardTransferAnimationDeps } from "./card-transfer-animations";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
 import type { StableHandCardRectDeps } from "./hand-card-layout";
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import type { BattleControllerContext } from "./battle-context";
 
 export function createBattleTransferDeps(

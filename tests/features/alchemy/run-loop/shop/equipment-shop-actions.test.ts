@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { buildActions, createInitialEquipmentShopState, setEquipmentShopState } from "./shop-actions-harness";

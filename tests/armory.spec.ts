@@ -196,21 +196,36 @@ test.describe("Armory crafting", () => {
     await expect(gearItemLocator(page, "Ruby Ring")).toHaveCount(1);
   });
 
-  test("applies voidstone and removes affixes", critical, async ({ page }) => {
+  test("voidstone targeting lifecycle and affix display", critical, async ({ page }) => {
     await openArmory(page, {
       inventory: [affixedSword],
       craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
     });
-
+    await gearItemLocator(page, "Longsword").hover();
+    await expect(page.getByText("Ironbound")).toBeVisible();
+    await expect(page.getByText("Increases Physical damage by 1")).toBeVisible();
+    await activateCurrency(page, "voidstone");
+    await expect(page.getByRole("button", { name: /Apply Voidstone to Longsword/ })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("button", { name: /Apply Voidstone/ })).toHaveCount(0);
     await activateCurrency(page, "voidstone");
     await applyCurrencyToGear(page, "Longsword", "Voidstone");
-
     await expect(page.getByTestId("armory-crafting-cursor")).toHaveCount(0);
     await expect(currencyLocator(page, "voidstone")).toContainText("0");
-
-    const sword = gearItemLocator(page, "Longsword");
-    await sword.hover();
+    await gearItemLocator(page, "Longsword").hover();
     await expect(page.getByText("Ironbound")).toHaveCount(0);
+  });
+
+  test("rejects invalid voidstone target without consuming currency", async ({ page }) => {
+    await openArmory(page, {
+      inventory: [bodyGear],
+      craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
+    });
+    await selectArmorySlot(page, "body");
+    await activateCurrency(page, "voidstone");
+    await gearItemLocator(page, "Leather Armor").click();
+    await expect(currencyLocator(page, "voidstone")).toContainText("1");
+    await expect(currencyLocator(page, "voidstone")).toHaveAttribute("aria-pressed", "true");
   });
 
   test("upgrades basic gear to astral with ascension seal", slow, async ({ page }) => {
@@ -224,39 +239,6 @@ test.describe("Armory crafting", () => {
 
     await expect(gearItemLocator(page, "Astral Longsword")).toBeVisible();
     await expect(gearItemLocator(page, "Longsword")).toHaveCount(0);
-  });
-
-  test("cancels currency targeting with Escape", async ({ page }) => {
-    await openArmory(page, {
-      inventory: [affixedSword],
-      craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
-    });
-
-    await activateCurrency(page, "voidstone");
-    await expect(page.getByRole("button", { name: /Apply Voidstone to Longsword/ })).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(page.getByRole("button", { name: /Apply Voidstone/ })).toHaveCount(0);
-  });
-
-  test("rejects invalid voidstone target without consuming currency", async ({ page }) => {
-    await openArmory(page, {
-      inventory: [bodyGear],
-      craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
-    });
-
-    await selectArmorySlot(page, "body");
-    await activateCurrency(page, "voidstone");
-    await gearItemLocator(page, "Leather Armor").click();
-    await expect(currencyLocator(page, "voidstone")).toContainText("1");
-    await expect(currencyLocator(page, "voidstone")).toHaveAttribute("aria-pressed", "true");
-  });
-
-  test("shows affix epithets in gear tooltips", async ({ page }) => {
-    await openArmory(page, { inventory: [affixedSword] });
-
-    await gearItemLocator(page, "Longsword").hover();
-    await expect(page.getByText("Ironbound")).toBeVisible();
-    await expect(page.getByText("Increases Physical damage by 1")).toBeVisible();
   });
 });
 

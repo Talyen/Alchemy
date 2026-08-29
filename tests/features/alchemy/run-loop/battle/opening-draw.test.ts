@@ -17,7 +17,7 @@ let domain = {
   pendingBattleTransition: { kind: "opening-draw" as const, resultState },
 };
 
-vi.mock("@/features/alchemy/shared/stores/run-session-read-port", () => ({
+vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({
   readBattle: () => domain,
 }));
 

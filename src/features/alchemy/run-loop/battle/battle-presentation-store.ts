@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
 import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import type { CombatTextEvent } from "@/lib/battle";
 import {

@@ -1,7 +1,7 @@
 import { type BattleState } from "@/lib/battle";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { type createBattleSession } from "./battle-session";
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { isBattlePlayInputBusy } from "./autoplay-driver";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";

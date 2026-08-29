@@ -6,7 +6,7 @@ import {
   bootstrapAlchemySaveState,
 } from "@/features/alchemy/shared/storage/bootstrap-save-state";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { readRunInitialized } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunInitialized } from "@/features/alchemy/shared/stores/run-reads";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
 
 vi.mock("@/features/alchemy/shared/storage/bootstrap-save-state", () => ({
@@ -18,7 +18,7 @@ vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", () => ({
   restoreRun: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/shared/stores/run-session-read-port", () => ({
+vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({
   readRunInitialized: vi.fn(),
 }));
 

@@ -10,11 +10,9 @@ test.describe("Collection", critical, () => {
   });
 
   test.describe("with a discovered card", () => {
-    test.beforeEach(async ({ page }) => {
+    test("collection shows tabs, card inspection, and keeps tile gaps", async ({ page }) => {
       await new MenuPage(page).gotoCollection({ discoveredCardIds: ["anvil"] });
-    });
 
-    test("collection shows all five tabs with content and card inspection works", async ({ page }) => {
       await expect(page.getByRole("button", { name: "Heroes" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Cards" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Bestiary" })).toBeVisible();
@@ -27,10 +25,7 @@ test.describe("Collection", critical, () => {
       await expect(inspectBtn).toBeVisible({ timeout: 5000 });
       await inspectBtn.hover();
       await expect(page.getByText(/^Gain \d+ Forge/)).toBeVisible();
-    });
 
-    test("collection card tiles keep horizontal gaps between neighbors", async ({ page }) => {
-      await page.getByRole("button", { name: "Cards" }).click();
       await assertHorizontalNeighborGap(page.getByRole("button", { name: /Inspect/ }));
     });
   });
@@ -66,10 +61,6 @@ test.describe("Collection", critical, () => {
   });
 
   test.describe("default homestead", () => {
-    test.beforeEach(async ({ page }) => {
-      await new MenuPage(page).gotoCollection();
-    });
-
     async function settledAspectRatios(images: Locator): Promise<number[]> {
       let ratios: number[] = [];
       await expect(async () => {
@@ -86,74 +77,61 @@ test.describe("Collection", critical, () => {
     }
 
     test("heroes to cards keeps the collection heading still when pagination appears", async ({ page }) => {
+      await new MenuPage(page).gotoCollection();
       const heading = page.getByRole("heading", { name: "Collection" });
       await expect(heading).toBeVisible();
       await expect(page.getByRole("button", { name: "Previous page" })).toHaveCount(0);
       await expect(page.getByRole("button", { name: "Next page" })).toHaveCount(0);
-
       const heroesY = await heading.evaluate((el) => el.getBoundingClientRect().y);
-
       await page.getByRole("button", { name: "Cards" }).click();
       await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
       await expect(page.getByRole("button", { name: "Previous page" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Next page" })).toBeVisible();
-
       const cardsY = await heading.evaluate((el) => el.getBoundingClientRect().y);
       expect(Math.abs(cardsY - heroesY)).toBeLessThan(0.5);
     });
 
     test("collection tab navigation shows bestiary and boon undiscovered entries", async ({ page }) => {
+      await new MenuPage(page).gotoCollection();
       await page.getByRole("button", { name: "Bestiary" }).click();
       await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
-
       await page.getByRole("button", { name: "Trinkets" }).click();
       await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
-
       await page.getByRole("button", { name: "Uniques" }).click();
       await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
-
       await page.getByRole("button", { name: "Cards" }).click();
       await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
     });
 
     test("bestiary tiles use landscape art without collection overflow", async ({ page }) => {
+      await new MenuPage(page).gotoCollection();
       await page.getByRole("button", { name: "Bestiary" }).click();
       const bestiaryButtons = page.locator('button[aria-label="Inspect Undiscovered Entry"]');
       await expect(bestiaryButtons).toHaveCount(6);
-
       const bestiaryImages = bestiaryButtons.locator("img");
       const ratios = await settledAspectRatios(bestiaryImages);
       expect(ratios).toHaveLength(6);
-      for (const ratio of ratios) {
-        expect(ratio).toBeCloseTo(4 / 3, 2);
-      }
-
+      for (const ratio of ratios) expect(ratio).toBeCloseTo(4 / 3, 2);
       await assertNoOverflow(page, "collection bestiary");
     });
 
     test("trinket tiles use portrait art without collection overflow", async ({ page }) => {
+      await new MenuPage(page).gotoCollection();
       await page.getByRole("button", { name: "Trinkets" }).click();
       const trinketImages = page.locator('button[aria-label="Inspect Undiscovered Entry"] img');
       await expect(trinketImages.first()).toBeVisible();
-
       const ratios = await settledAspectRatios(trinketImages);
-      for (const ratio of ratios) {
-        expect(ratio).toBeCloseTo(3 / 4, 2);
-      }
-
+      for (const ratio of ratios) expect(ratio).toBeCloseTo(3 / 4, 2);
       await assertNoOverflow(page, "collection trinkets");
     });
 
     test("unique tiles use portrait art without collection overflow", async ({ page }) => {
+      await new MenuPage(page).gotoCollection();
       await page.getByRole("button", { name: "Uniques" }).click();
       const uniqueImages = page.locator('button[aria-label="Inspect Undiscovered Entry"] img');
       await expect(uniqueImages.first()).toBeVisible();
-
       const ratios = await settledAspectRatios(uniqueImages);
-      for (const ratio of ratios) {
-        expect(ratio).toBeCloseTo(3 / 4, 2);
-      }
-
+      for (const ratio of ratios) expect(ratio).toBeCloseTo(3 / 4, 2);
       await assertNoOverflow(page, "collection uniques");
     });
   });

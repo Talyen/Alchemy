@@ -6,7 +6,7 @@ import {
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { readRunInitialized } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunInitialized } from "@/features/alchemy/shared/stores/run-reads";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
 async function maybeWipeLocalSaveFromQuery(): Promise<void> {

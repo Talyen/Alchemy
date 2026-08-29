@@ -5,7 +5,7 @@ import { useMysteryEventNavigation } from "@/features/alchemy/shell/use-mystery-
 import { resetAllTestStores, resetProfileForTest } from "../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../helpers/run-domain-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
-import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { type MysteryEffect } from "@/lib/mystery";
 
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";

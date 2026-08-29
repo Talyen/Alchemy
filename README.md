@@ -24,7 +24,7 @@ Campfires.
 
 ## Prerequisites
 
-- Node.js 24+ (see `engines` in `package.json`)
+- Node.js `^20.19.0 || >=22.12.0` (see `engines` in `package.json`; `.node-version` pins 24 for local dev)
 - npm 11+
 
 ## Quick Start
@@ -74,7 +74,7 @@ Feature layout and run-state ownership:
 
 - `desktop/` — Electron main/preload
 - `src/app/` — boot, screen routes, save-state
-- `src/lib/` — React-free game logic (battle, game-data, gear, content-systems, homestead)
+- `src/lib/` — React-free game logic (battle, game-data, gear, content-systems, homestead, … — see `docs/REFERENCE.md#navigation-hints`)
 - `src/features/alchemy/` — React UI (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
 - `tests/` — Vitest unit tests and Playwright specs
 

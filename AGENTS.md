@@ -43,7 +43,7 @@ Knowledge: [.agents/knowledge/](./.agents/knowledge/index.md) — **not auto-loa
 - **Content:** `descriptionLines` matches effects; run materials via `awardMaterialsDuringRun()` (lint-enforced).
 - **Persistence:** change schemas/defaults/hydration/fixtures together ([MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)).
 - **Routes/assets:** screens statically imported; art eager; generated barrels are outputs — edit manifest, regenerate.
-- **Imports/purity:** `eslint.config.js` + `boundaries.js` own boundaries; keep I/O/clocks/RNG at seam.
+- **Imports/purity:** `eslint.config.js` + `eslint/boundaries.js` (+ `eslint/fragments.js`, double-checked by `dependency-cruiser.config.mjs`) own boundaries; keep I/O/clocks/RNG at seam.
 
 ## Change guards
 

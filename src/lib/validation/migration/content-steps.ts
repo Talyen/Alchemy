@@ -3,15 +3,19 @@ const CARD_ID_REMAPS: Record<string, string> = {
 };
 
 function remapContentTree(value: unknown, remapId: (id: string) => string): unknown {
-  if (typeof value === "string") return remapId(value);
   if (Array.isArray(value)) return value.map((item) => remapContentTree(item, remapId));
   if (value && typeof value === "object") {
     const next: Record<string, unknown> = {};
     for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-      next[key] = key === "id" && typeof nested === "string" ? remapId(nested) : remapContentTree(nested, remapId);
+      if (key === "id" && typeof nested === "string") {
+        next[key] = remapId(nested);
+      } else {
+        next[key] = remapContentTree(nested, remapId);
+      }
     }
     return next;
   }
+  if (typeof value === "string") return remapId(value);
   return value;
 }
 

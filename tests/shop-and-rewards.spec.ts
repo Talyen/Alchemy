@@ -62,57 +62,38 @@ test.describe("Reward Flow", critical, () => {
     },
   );
 
-  test("boon reward: boon appears in runBoons after claiming", async ({ page, fastBattle, runtimeErrors }) => {
+  test("boon, trinket, and gear rewards persist correctly", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
+
     await enterPrimaryRewardScreen(page, {
       rewardType: "boon",
       choiceIds: ["tattered-pages", "companions-collar"],
     });
-
-    const reward = new RewardPage(page);
-    await reward.claimWithConfirmationGate();
+    await new RewardPage(page).claimWithConfirmationGate();
     await new DestinationPage(page).expectVisible();
-
-    const trinkets = await page.evaluate((saveKey) => {
+    const boons = await page.evaluate((saveKey) => {
       const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
       return save.activeRun?.runBoons ?? [];
     }, SAVE_KEY);
-    expect(trinkets).toContain("tattered-pages");
-  });
+    expect(boons).toContain("tattered-pages");
 
-  test("permanent trinket reward: ownership is added without granting a boon", async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }) => {
-    void fastBattle;
-    void runtimeErrors;
     await enterPrimaryRewardScreen(page, {
       rewardType: "trinket",
       choiceIds: ["tattered-pages", "companions-collar"],
     });
-
     await new RewardPage(page).claimWithConfirmationGate();
     await new DestinationPage(page).expectVisible();
-
     const saved = await page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}"), SAVE_KEY);
     expect(saved.ownedTrinketIds).toContain("tattered-pages");
     expect(saved.activeRun?.runBoons ?? []).not.toContain("tattered-pages");
-  });
 
-  test("gear reward: claiming gear adds it to gearInventory", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
     await enterPrimaryRewardScreen(page, {
       rewardType: "gear",
       gearChoices: [{ instanceId: "reward-gear", definitionId: "leather-armor-basic", affixes: [] }],
     });
-
-    const reward = new RewardPage(page);
-    await reward.claimWithConfirmationGate();
+    await new RewardPage(page).claimWithConfirmationGate();
     await new DestinationPage(page).expectVisible();
-
     const gearInventory = await page.evaluate((saveKey) => {
       const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
       const inventories = save.gearInventories || {};

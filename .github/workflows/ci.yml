@@ -233,6 +233,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -252,24 +256,26 @@ jobs:
 
       - run: mkdir -p reports
 
-      - name: Run critical e2e tests
-        run: npm run test:e2e:prepush:full
+      - name: Run critical e2e tests (shard ${{ matrix.shard }}/2)
+        run: npm run test:e2e:critical -- --shard=${{ matrix.shard }}/2
         env:
           PLAYWRIGHT_VITE_MODE: preview
+          CI: true
+          PLAYWRIGHT_JSON_OUTPUT_NAME: reports/playwright-results-${{ matrix.shard }}.json
 
       - name: Summarize e2e tests
         if: always()
-        run: node scripts/ci-summarize-playwright.mjs
+        run: node scripts/ci-summarize-playwright.mjs reports/playwright-results-${{ matrix.shard }}.json
 
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report-critical
+          name: playwright-report-critical-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
-            reports/playwright-results.json
+            reports/playwright-results-${{ matrix.shard }}.json
             reports/current-run.*
             reports/runs/
           retention-days: 7

@@ -27,7 +27,7 @@ import {
   withDraftWorldBattleRng,
   withRestingWorldBattleRng,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { discoverCardIds } from "../run/deck-mutations";
 
 export function createBattleCardPlay(

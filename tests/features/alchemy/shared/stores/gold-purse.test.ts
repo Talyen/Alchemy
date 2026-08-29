@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { addRunGold, setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => {

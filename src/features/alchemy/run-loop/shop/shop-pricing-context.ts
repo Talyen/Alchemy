@@ -1,4 +1,4 @@
-import { readActiveRun, readShopFirstPurchaseUsed } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readShopFirstPurchaseUsed } from "@/features/alchemy/shared/stores/run-reads";
 import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { combineTrinketEffectIds } from "@/lib/trinkets";

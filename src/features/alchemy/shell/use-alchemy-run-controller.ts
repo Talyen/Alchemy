@@ -21,7 +21,7 @@ import {
   useTalentEffects,
   useContentSystemType,
   useHomesteadEffects,
-} from "@/features/alchemy/shared/stores/run-session-react-ports";
+} from "@/features/alchemy/shared/stores/run-reads";
 import { shouldSurrenderBattleOnEndRun } from "./end-run-policy";
 import {
   createRunSessionCommand,

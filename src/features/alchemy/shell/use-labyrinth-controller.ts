@@ -79,7 +79,9 @@ export function useLabyrinthController(): LabyrinthController {
 
   const selectNode = useCallback((nodeId: string) => {
     dispatchRunSessionCommand((draft) => {
-      const node = draft.session.labyrinthMap.nodes[nodeId];
+      const map = draft.session.labyrinthMap;
+      if (!map) return;
+      const node = map.nodes[nodeId];
       if (!node || node.cleared) return;
       setSelectedLabyrinthNodeId(draft, nodeId);
     });
@@ -95,8 +97,10 @@ export function useLabyrinthController(): LabyrinthController {
       if (session.activeLabyrinthPendingNode) return null;
       const nodeId = session.selectedLabyrinthNodeId;
       if (!nodeId) return null;
-      const node = session.labyrinthMap.nodes[nodeId];
-      if (!node || !canEnterLabyrinthNode(session.labyrinthMap, nodeId)) return null;
+      const map = session.labyrinthMap;
+      if (!map) return null;
+      const node = map.nodes[nodeId];
+      if (!node || !canEnterLabyrinthNode(map, nodeId)) return null;
       setActiveLabyrinthPendingNode(draft, nodeId);
       return current(node);
     });
@@ -117,7 +121,8 @@ export function useLabyrinthController(): LabyrinthController {
       setSelectedLabyrinthNodeId(draft, null);
       if (pendingNode) {
         const rng = createDraftRunRandomSource(draft, "world");
-        setLabyrinthMap(draft, (previous) => withClearedLabyrinthNode(previous, pendingNode, rng));
+        const prev = draft.session.labyrinthMap;
+        if (prev) setLabyrinthMap(draft, withClearedLabyrinthNode(prev, pendingNode, rng));
       }
       return pendingNode;
     });

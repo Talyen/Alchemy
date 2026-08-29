@@ -6,7 +6,7 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import { createEmptyRewardState, type ActiveRunData } from "@/lib/active-run-session";
 import { restoreRun, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { getCurrentRunPhase } from "../../../../helpers/run-session-assertions";
-import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
+import { getRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { cardLibrary, getStartingDeck } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -29,7 +29,7 @@ import {
   readActiveRunScreen,
   readBattle,
   readRunSession,
-} from "@/features/alchemy/shared/stores/run-session-read-port";
+} from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 
 const resetProgress = createRunSessionCommand(mutateResetProgress);

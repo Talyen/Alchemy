@@ -33,9 +33,9 @@ import {
   useAutosaveAllowed,
   useBondedCompanions,
   useTalentEffects,
-} from "@/features/alchemy/shared/stores/run-session-react-ports";
+} from "@/features/alchemy/shared/stores/run-reads";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
-import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
+import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-reads";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";

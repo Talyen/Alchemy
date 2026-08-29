@@ -5,7 +5,7 @@ import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data
 import { createSeededRng } from "@/lib/utils";
 import { useLabyrinthController, type LabyrinthNodeHandlers } from "@/features/alchemy/shell/use-labyrinth-controller";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setLabyrinthMap } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 
@@ -24,7 +24,7 @@ function stubNodeHandlers(overrides: Partial<LabyrinthNodeHandlers> = {}): Labyr
 }
 
 function firstReachableId() {
-  const map = readRunSession().labyrinthMap;
+  const map = readRunSession().labyrinthMap!;
   return map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!.outgoingIds[0]!;
 }
 
@@ -61,7 +61,7 @@ describe("useLabyrinthController hook", () => {
     });
 
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
-    expect(readRunSession().labyrinthMap.nodes[target]?.cleared).toBe(true);
+    expect(readRunSession().labyrinthMap!.nodes[target]?.cleared).toBe(true);
   });
 
   it("enterSelectedNode rejects a second enter while a node is pending", () => {
@@ -85,7 +85,7 @@ describe("useLabyrinthController hook", () => {
 
   it("selects a locked chamber without allowing enter", () => {
     const { result } = renderHook(() => useLabyrinthController());
-    const map = readRunSession().labyrinthMap;
+    const map = readRunSession().labyrinthMap!;
     const locked = Object.values(map.nodes).find(
       (node) => node.floor > 0 && node.id !== firstReachableId() && !node.cleared,
     );
@@ -110,6 +110,6 @@ describe("useLabyrinthController hook", () => {
     });
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
     expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
-    expect(readRunSession().labyrinthMap.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
+    expect(readRunSession().labyrinthMap!.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
   });
 });

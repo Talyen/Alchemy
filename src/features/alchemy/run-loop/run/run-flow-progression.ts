@@ -17,7 +17,7 @@ import { setCompletedDifficulties } from "@/features/alchemy/shared/stores/profi
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import type { CompleteRunVictory, RunFlowHandlerDeps } from "./run-flow-handler-deps";

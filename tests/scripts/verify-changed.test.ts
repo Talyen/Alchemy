@@ -333,7 +333,7 @@ describe("verify-changed route catalog", () => {
     const fixtures = [
       ["src/lib/battle/damage.ts", 13 * 1024],
       ["src/features/alchemy/shared/storage/io.ts", 12 * 1024],
-      ["src/features/alchemy/shared/stores/run-session-read-port.ts", 18 * 1024],
+      ["src/features/alchemy/shared/stores/run-reads.ts", 18 * 1024],
       ["src/features/alchemy/meta/screens/armory-screen.tsx", 14 * 1024],
       ["unknown.file", 9 * 1024],
     ] as const;

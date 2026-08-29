@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMysteryEventNavigation } from "@/features/alchemy/shell/use-mystery-event-navigation";
 import { resetAllTestStores } from "../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../helpers/run-domain-store-test";
-import { readRunSession, readActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunSession, readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setMysteryCardChoices,

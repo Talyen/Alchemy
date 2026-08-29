@@ -7,7 +7,7 @@ import {
   setRewardState,
   createDraftRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActiveRun, readHasActiveRun } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";

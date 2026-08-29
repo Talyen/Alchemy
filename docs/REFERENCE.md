@@ -4,7 +4,7 @@ Reference for commands, glossary, battle rules, and file lookup. Strict coding r
 
 ## Environment & Commands
 
-- **Node.js `>=24`** — authoritative in `package.json` `engines`.
+- **Node.js `^20.19.0 || >=22.12.0`** — authoritative in `package.json` `engines` (`.node-version` pins 24 for local dev).
 - **npm `>=11`** — authoritative in `package.json` `engines` (Node 24 bundles npm 11).
 - **Playwright:** `npx playwright install chromium` once before first `npm run test:e2e`.
 - **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`.

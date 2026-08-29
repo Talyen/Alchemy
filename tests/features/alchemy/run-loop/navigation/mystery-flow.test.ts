@@ -11,7 +11,7 @@ import * as cardPools from "@/lib/game-data/cards/card-pools";
 import { resetAllTestStores, resetProfileForTest } from "../../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 

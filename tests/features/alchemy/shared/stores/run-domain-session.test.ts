@@ -29,7 +29,7 @@ import {
   readActiveRunScreen,
   readBattle,
   readRunSession,
-} from "@/features/alchemy/shared/stores/run-session-read-port";
+} from "@/features/alchemy/shared/stores/run-reads";
 
 const syncBattleToRun = createRunSessionCommand(mutateBattleToRun);
 const syncRunToBattleStart = createRunSessionCommand(mutateRunToBattleStart);

@@ -1,8 +1,5 @@
-import type {
-  ContentNavigationRunPort,
-  ContentNavigationTalentPort,
-} from "@/features/alchemy/shared/stores/run-port-types";
-import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-session-read-port";
+import type { ContentNavigationRunPort, ContentNavigationTalentPort } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { computeTalentEffects } from "@/lib/game-data/talents";
 
 export function makeRunController(): ContentNavigationRunPort {

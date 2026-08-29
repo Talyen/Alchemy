@@ -8,12 +8,7 @@ import {
   setFinishedRunCharacters,
   setMaterials as setRunProfileMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  readActiveRun,
-  readBattle,
-  readRunProfile,
-  readRunSession,
-} from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 
 beforeEach(() => {
   useGameplayStateStore.setState(useGameplayStateStore.getInitialState(), true);

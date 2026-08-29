@@ -18,7 +18,7 @@ import { emptyShopState, type ShopState } from "@/lib/active-run-session";
 import { makeEffect, makeTestCardWithId } from "../../../../fixtures/battle";
 import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
-import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 
 vi.mock("@/lib/game-data", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/game-data")>();

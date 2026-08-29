@@ -5,11 +5,11 @@ import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
 import { type ActiveRunData, type PersistedBattleTransition } from "@/lib/active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
-import { getRunSession } from "@/features/alchemy/shared/stores/run-session-model";
+import { getRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import type { Screen } from "@/lib/routing";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/active-run-data-fixture";
 

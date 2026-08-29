@@ -6,7 +6,7 @@ import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { getRunSession } from "./run-session-model";
+import { getRunSession } from "./run-reads";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
 import { initializeActiveBattle, setRunEndItems, setRunEndLabyrinthFloor } from "./run-session-write-port";
@@ -116,7 +116,8 @@ function finalizeRunEndSessionState(
   options.finalizeRunXP(draft);
   setRunEndItems(draft, draft.run.activeRun.runObtainedItems.map(cloneRunObtainedItem));
   if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {
-    setRunEndLabyrinthFloor(draft, draft.session.labyrinthMap.currentFloor);
+    const floor = draft.session.labyrinthMap?.currentFloor ?? null;
+    setRunEndLabyrinthFloor(draft, floor);
   }
 
   clearModeSlotInDraft(draft, draft.run.activeRun.contentSystemType);

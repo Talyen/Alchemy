@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { mutateGearForTest } from "../../../../helpers/gameplay-store-test";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { buildActions, createInitialTrinketShopState, requiredItem, setTrinketShopState } from "./shop-actions-harness";
 import { TRINKET_SHOP_TRINKET_PRICE } from "@/lib/game-constants";

@@ -5,10 +5,10 @@ import {
   useTalentEffects,
   useTalentProgressSlice,
   useSetHasActiveBattle,
-} from "@/features/alchemy/shared/stores/run-session-react-ports";
+} from "@/features/alchemy/shared/stores/run-reads";
 import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-session-model";
+import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-reads";
 import { setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";

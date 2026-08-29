@@ -2,7 +2,7 @@ import { playUISound } from "@/lib/audio";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { corruptDeckCard } from "@/lib/corruption";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   createDraftRunRandomSource,
   setCorruptionResult,

@@ -36,7 +36,7 @@ import { createInitialProfileState, type ProfileStateFields } from "./profile-st
 import * as homestead from "./homestead-actions";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { addRunMaterialsEarned, resetRunXP } from "./write-port-run";
-import { createDraftFieldSetter } from "./store-helpers";
+import { createDraftFieldSetter } from "./draft-helpers";
 
 const createSessionFieldSetter = createDraftFieldSetter<RunSessionFields, GameplayDraft>((draft) => draft.session);
 

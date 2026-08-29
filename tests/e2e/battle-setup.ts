@@ -32,13 +32,11 @@ export async function startAtDestination(
   });
   await page.goto("/");
   if (options.forceDestination) {
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole("button", { name: options.forceDestination })).toBeVisible({ timeout: 3000 });
   } else {
     await resumeCampaignRun(page);
-  }
-  await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-  if (options.forceDestination) {
-    await expect(page.getByRole("button", { name: options.forceDestination })).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
   }
 }
 

@@ -1,7 +1,5 @@
 import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
 import { defaultBattleState, type BattleState, type PlayerStatusValues, type TurnPhase } from "@/lib/battle";
-import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { createSeededRng } from "@/lib/utils";
 import {
   createEmptyRewardState,
   emptyAlchemistState,
@@ -79,7 +77,7 @@ export function createInitialSessionFields(): RunSessionFields {
     corruptionResult: null,
     pendingCharacterId: null,
     pendingContentSystemType: "campaign",
-    labyrinthMap: generateLabyrinthMap(createSeededRng(0)),
+    labyrinthMap: null,
     wildwoodDraft: null,
     starterDraftChoices: null,
     shopState: emptyShopState(),
@@ -134,7 +132,7 @@ export interface RunSessionFields {
   corruptionResult: CorruptionResult | null;
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;
-  labyrinthMap: LabyrinthMap;
+  labyrinthMap: LabyrinthMap | null;
   wildwoodDraft: WildwoodDraftState | null;
   starterDraftChoices: BattleCard[] | null;
   shopState: ShopState;

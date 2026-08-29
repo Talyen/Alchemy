@@ -7,7 +7,7 @@ import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/
 import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/campaign-start";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   beginDestinationClaim,
   setAlchemistState,

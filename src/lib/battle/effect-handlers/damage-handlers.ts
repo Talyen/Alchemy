@@ -1,4 +1,5 @@
 import { DAMAGE_TYPES } from "@/lib/game-data";
+import { rngInt } from "@/lib/run-rng";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
 import { dealSelfDamage, getBattleRng } from "../status-helpers";
@@ -21,10 +22,10 @@ export const applySelfDamageEffect: EffectHandler = (state, _card, effect, _poti
 export const applyRandomDamageEffect: EffectHandler = (state, card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "random-damage") return state;
   const rng = getBattleRng(state);
-  const damageType = DAMAGE_TYPES[Math.trunc(rng() * DAMAGE_TYPES.length)]!;
+  const damageType = DAMAGE_TYPES[rngInt(rng, DAMAGE_TYPES.length)]!;
 
-  const span = effect.maxAmount - effect.minAmount + 1;
-  const rolled = effect.minAmount + Math.trunc(rng() * span);
+  const span = Math.max(1, effect.maxAmount - effect.minAmount + 1);
+  const rolled = effect.minAmount + rngInt(rng, span);
   const amount = applyPotionMultiplier(rolled, potionMult);
   return dealDamageToEnemy(state, card, { kind: "damage", damageType, amount }, combatTexts);
 };

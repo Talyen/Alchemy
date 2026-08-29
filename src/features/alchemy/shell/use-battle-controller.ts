@@ -15,8 +15,8 @@ import {
 import type { CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { useBattleLifetimeFields } from "@/features/alchemy/shared/stores/run-session-react-ports";
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { useBattleLifetimeFields } from "@/features/alchemy/shared/stores/run-reads";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import type { BattleState } from "@/lib/battle";
 import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
 import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";

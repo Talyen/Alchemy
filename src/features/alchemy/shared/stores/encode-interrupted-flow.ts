@@ -11,7 +11,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { filterValidDestinations, type Screen } from "@/lib/routing";
 import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
-import type { RunSession } from "./run-session-model";
+import type { RunSession } from "./run-reads";
 
 export interface DecodedClaimSurface {
   rewardState: RewardState | null;

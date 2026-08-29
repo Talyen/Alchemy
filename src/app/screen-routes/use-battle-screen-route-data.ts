@@ -3,8 +3,8 @@ import {
   useActiveRunScreenValue,
   useActiveRunBoons,
   useDisplayOverrides,
-} from "@/features/alchemy/shared/stores/run-session-react-ports";
-import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-model";
+} from "@/features/alchemy/shared/stores/run-reads";
+import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-reads";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 
 export function useBattleScreenRouteData() {

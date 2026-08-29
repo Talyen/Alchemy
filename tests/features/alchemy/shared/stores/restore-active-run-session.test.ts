@@ -3,7 +3,7 @@ import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
 import { shopItemSlotKey } from "@/lib/active-run-session";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { readActiveRunScreen, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRunScreen, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { mutateGearForTest, resetAllTestStores, resetGearForTest } from "../../../../helpers/gameplay-store-test";
 import { makeActiveRunData } from "./active-run-data-fixture";
 import { trinketLibrary } from "@/lib/game-data";

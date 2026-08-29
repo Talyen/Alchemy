@@ -34,7 +34,7 @@ import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { type Screen } from "@/lib/routing";
 import { createInitialActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
-import type { RunSession } from "./run-session-model";
+import type { RunSession } from "./run-reads";
 import { decodeInterruptedFlow, encodeInterruptedFlow, resolveEncodeScreen } from "./encode-interrupted-flow";
 
 export interface DecodedRunResumeSession {

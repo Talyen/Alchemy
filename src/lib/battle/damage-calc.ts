@@ -83,12 +83,16 @@ function applyPhysicalScaling(state: BattleState, rawAmount: number): number {
   return nextAmount;
 }
 
+function doublingActive(flag: boolean, cc: number): boolean {
+  return flag && cc > 0;
+}
+
 function applyPhysicalCCAndStatusMultipliers(state: BattleState, amount: number): number {
   let nextAmount = amount;
-  if (state.enemyCC.stunSkipTurns > 0 && state.talentEffects.physicalDoubledVsStunned) {
+  if (doublingActive(state.talentEffects.physicalDoubledVsStunned, state.enemyCC.stunSkipTurns)) {
     nextAmount *= 2;
   }
-  if (state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.physicalDoubledVsFrozen) {
+  if (doublingActive(state.talentEffects.physicalDoubledVsFrozen, state.enemyCC.freezeSkipTurns)) {
     nextAmount *= 2;
   }
   if (
@@ -295,8 +299,8 @@ function applyBlockAbsorption(state: BattleState, damage: number): { state: Batt
 function applyArcheryMultiplier(damage: number, state: BattleState): number {
   const cc = state.enemyCC;
   const talent = state.talentEffects;
-  if (cc.stunSkipTurns > 0 && talent.archeryDoubledVsStunned) return damage * 2;
-  if (cc.freezeSkipTurns > 0 && talent.archeryDoubledVsFrozen) return damage * 2;
+  if (doublingActive(talent.archeryDoubledVsStunned, cc.stunSkipTurns)) return damage * 2;
+  if (doublingActive(talent.archeryDoubledVsFrozen, cc.freezeSkipTurns)) return damage * 2;
   if (
     talent.archeryDoubledVsHighHealth &&
     state.enemyHealth > (state.enemyMaxHealth * ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR

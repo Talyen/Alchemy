@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { buildActions, createInitialShopState, makeCard, requiredItem, setShopState } from "./shop-actions-harness";
 import { SHOP_CARD_PRICE, SHOP_REMOVE_PRICE } from "@/lib/game-constants";
 

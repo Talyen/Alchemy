@@ -2,7 +2,7 @@ import type { BattleCard, DifficultyId, getDifficultyModifiers } from "@/lib/gam
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Destination, Screen } from "@/lib/routing";
 import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow/destination-flow";
-import type { ContentNavigationRunPort, ContentNavigationTalentPort } from "../../shared/stores/run-port-types";
+import type { ContentNavigationRunPort, ContentNavigationTalentPort } from "../../shared/stores/run-reads";
 
 export interface ContentSystemNavigationDeps {
   run: ContentNavigationRunPort;

@@ -1,4 +1,4 @@
-import { readBattle } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { BattleControllerContext } from "./battle-context";

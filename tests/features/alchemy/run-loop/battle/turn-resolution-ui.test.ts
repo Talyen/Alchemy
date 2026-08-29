@@ -55,7 +55,7 @@ const presentation = makePresentationPort();
 
 let domain: { battleState: BattleState; pendingBattleTransition: PersistedBattleTransition | null };
 
-vi.mock("@/features/alchemy/shared/stores/run-session-read-port", () => ({
+vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({
   readBattle: () => domain,
 }));
 

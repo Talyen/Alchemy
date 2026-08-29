@@ -2,10 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import {
-  useRunSessionBattleContext,
-  useRunSessionNavigationSlice,
-} from "@/features/alchemy/shared/stores/run-session-model";
+import { useRunSessionBattleContext, useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-reads";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";

@@ -3,7 +3,7 @@ import { playGoldSpend } from "@/lib/audio";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readDraftGold } from "@/features/alchemy/shared/stores/gold-purse";
+import { readDraftGold } from "@/features/alchemy/shared/stores/write-port-run";
 import { spendRunGold } from "../run-gold";
 
 type StateUpdate<T> = T | ((previous: T) => T);
