@@ -81,28 +81,25 @@ const EMPTY_PERSISTED_SHOPS: PersistedShops = {
   equipmentShopState: null,
 };
 
-const SHOP_ENCODERS: Partial<Record<Screen, (session: RunSession["session"]) => PersistedShops>> = {
-  shop: (session) => ({ ...EMPTY_PERSISTED_SHOPS, shopState: serializeShopState(session.shopState) }),
-  alchemist: (session) => ({
-    ...EMPTY_PERSISTED_SHOPS,
-    alchemistState: serializeAlchemistState(session.alchemistState),
-  }),
-  "trinket-shop": (session) => ({
-    ...EMPTY_PERSISTED_SHOPS,
-    trinketShopState: serializeTrinketShopState(session.trinketShopState),
-  }),
-  "equipment-shop": (session) => ({
-    ...EMPTY_PERSISTED_SHOPS,
-    equipmentShopState: serializeEquipmentShopState(session.equipmentShopState),
-  }),
-};
-
 export function encodePersistedShops(
   session: RunSession["session"],
   currentScreen: Screen | null | undefined,
 ): PersistedShops {
-  const encode = currentScreen ? SHOP_ENCODERS[currentScreen] : undefined;
-  return encode ? encode(session) : EMPTY_PERSISTED_SHOPS;
+  switch (currentScreen) {
+    case "shop":
+      return { ...EMPTY_PERSISTED_SHOPS, shopState: serializeShopState(session.shopState) };
+    case "alchemist":
+      return { ...EMPTY_PERSISTED_SHOPS, alchemistState: serializeAlchemistState(session.alchemistState) };
+    case "trinket-shop":
+      return { ...EMPTY_PERSISTED_SHOPS, trinketShopState: serializeTrinketShopState(session.trinketShopState) };
+    case "equipment-shop":
+      return {
+        ...EMPTY_PERSISTED_SHOPS,
+        equipmentShopState: serializeEquipmentShopState(session.equipmentShopState),
+      };
+    default:
+      return EMPTY_PERSISTED_SHOPS;
+  }
 }
 
 interface EncodeResumeFields {
@@ -129,9 +126,13 @@ function encodeScreenGatedFields(
   session: RunSession["session"],
   screen: Screen | null | undefined,
 ): Omit<EncodeResumeFields, "currentScreen"> {
+  const shops = encodePersistedShops(session, screen);
   return {
     interruptedFlow: encodeInterruptedFlow(session, screen),
-    ...encodePersistedShops(session, screen),
+    shopState: shops.shopState,
+    alchemistState: shops.alchemistState,
+    trinketShopState: shops.trinketShopState,
+    equipmentShopState: shops.equipmentShopState,
     mysteryVisit: screen === "mystery" ? serializeMysteryVisit(session) : null,
     corruptionResult: screen === "corruption" ? session.corruptionResult : null,
   };

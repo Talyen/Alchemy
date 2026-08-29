@@ -66,13 +66,8 @@ export default {
     "src/features/alchemy/shared/stores/profile-store.ts": ["exports"],
     "src/lib/game-data/talents/talent-pool-definitions.ts": ["exports"],
     "src/features/alchemy/shared/stores/persistence-codec.ts": ["types"],
-    // TODO: Remove after 2026-11-01 - compat barrels for staged barrel consolidation.
-    // Canonical is write-port-run / run-reads + draft-helpers; gold-purse and run-session-read-port are shims.
-    // purchasable-* / shop-card-item re-export purchasable-shop-item (tracked above); remove when screens import canonical.
     "src/features/alchemy/shared/stores/gold-purse.ts": ["exports", "types", "files"],
     "src/features/alchemy/shared/stores/run-session-read-port.ts": ["exports", "files"],
-    // Draft helpers and internal gold sync helpers are re-exported via compat barrels; keep private impls.
-    // setRunGold/addRunGold are intentional aliases of setProfileGold/addProfileGold (purse unified).
     "src/features/alchemy/shared/stores/draft-helpers.ts": ["exports"],
     "src/features/alchemy/shared/stores/write-port-run.ts": ["exports", "duplicates"],
   },

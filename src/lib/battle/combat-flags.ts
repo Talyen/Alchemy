@@ -47,23 +47,9 @@ export const PRESERVED_FLAG_VALUES = Object.fromEntries(
 export type PreservedFlagKey = keyof typeof PRESERVED_FLAG_VALUES;
 export const PRESERVED_FLAG_KEYS = Object.keys(PRESERVED_FLAG_VALUES) as PreservedFlagKey[];
 
-export type FirstTimeFlagKey =
-  | "firstHolyCardFreeUsed"
-  | "firstBurnCardDoubledUsed"
-  | "firstArmorCardDoubledUsed"
-  | "firstPoisonCardFreeUsed"
-  | "firstBleedCardFreeUsed"
-  | "firstHolyDamageBonusUsed"
-  | "firstBurnTrinketDoubledUsed"
-  | "firstLeechCardDoubledUsed"
-  | "firstConsumeCardFreeUsed"
-  | "firstCompanionCardFreeUsed"
-  | "firstArcheryCardFreeUsed"
-  | "firstPotionFreeUsed"
-  | "nextCardCostReduction"
-  | "resonantChimeUsedThisTurn"
-  | "runicQuillUsedThisTurn"
-  | "consumeDrawUsedThisTurn";
+export type FirstTimeFlagKey = {
+  [K in PreservedFlagKey]: (typeof FLAG_DEFINITIONS)[K]["preserveAs"] extends false ? never : K;
+}[PreservedFlagKey];
 
 export function createInitialFlags(): CombatFlags {
   return Object.fromEntries(

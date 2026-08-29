@@ -1,4 +1,5 @@
 export {
+  addGold,
   addRunGold,
   addRunMaterialsEarned,
   awardCardXP,
@@ -15,6 +16,7 @@ export {
   setEncounteredRunEnemyIds,
   setRoomsEncountered,
   setRunDeck,
+  setGold,
   setRunGold,
   setRunMaxHealth,
   setRunPlayerHealth,

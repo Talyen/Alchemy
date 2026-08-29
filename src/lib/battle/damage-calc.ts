@@ -87,26 +87,22 @@ function doublingActive(flag: boolean, cc: number): boolean {
   return flag && cc > 0;
 }
 
+function isBelowHalfHealth(state: BattleState): boolean {
+  return state.playerHealth * HALF_DIVISOR <= state.playerMaxHealth;
+}
+
+function applyConsumeBonus(amount: number, state: BattleState, card?: BattleCard): number {
+  if (!card?.consume || state.talentEffects.consumeDamageBonusPercent <= 0) return amount;
+  return Math.round(amount * (1 + state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR));
+}
+
 function applyPhysicalCCAndStatusMultipliers(state: BattleState, amount: number): number {
   let nextAmount = amount;
-  if (doublingActive(state.talentEffects.physicalDoubledVsStunned, state.enemyCC.stunSkipTurns)) {
-    nextAmount *= 2;
-  }
-  if (doublingActive(state.talentEffects.physicalDoubledVsFrozen, state.enemyCC.freezeSkipTurns)) {
-    nextAmount *= 2;
-  }
-  if (
-    state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR &&
-    state.talentEffects.physicalDoubledBelowHalfHealth
-  ) {
-    nextAmount *= 2;
-  }
-  if (state.enemyStatuses.poison > 0) {
-    nextAmount += state.talentEffects.poisonPhysicalBonus;
-  }
-  if (state.enemyStatuses.bleed > 0) {
-    nextAmount += state.talentEffects.bleedPhysicalBonus;
-  }
+  if (doublingActive(state.talentEffects.physicalDoubledVsStunned, state.enemyCC.stunSkipTurns)) nextAmount *= 2;
+  if (doublingActive(state.talentEffects.physicalDoubledVsFrozen, state.enemyCC.freezeSkipTurns)) nextAmount *= 2;
+  if (isBelowHalfHealth(state) && state.talentEffects.physicalDoubledBelowHalfHealth) nextAmount *= 2;
+  if (state.enemyStatuses.poison > 0) nextAmount += state.talentEffects.poisonPhysicalBonus;
+  if (state.enemyStatuses.bleed > 0) nextAmount += state.talentEffects.bleedPhysicalBonus;
   return nextAmount;
 }
 
@@ -135,12 +131,12 @@ function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number
 
 function applyBleedDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.gearEffects.flatBleedDamage;
-  if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR && state.talentEffects.bleedDesperateMultiplier > 1) {
+  if (isBelowHalfHealth(state) && state.talentEffects.bleedDesperateMultiplier > 1) {
     nextAmount = Math.round(nextAmount * state.talentEffects.bleedDesperateMultiplier);
   }
   if (
     state.talentEffects.bleedExecuteThreshold > 0 &&
-    state.enemyHealth <= (state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold) / PERCENT_DENOMINATOR
+    state.enemyHealth * PERCENT_DENOMINATOR <= state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold
   ) {
     nextAmount = Math.round(nextAmount * state.talentEffects.bleedExecuteMultiplier);
   }
@@ -218,23 +214,12 @@ function computeBaseDamage(
   card?: BattleCard,
 ) {
   const rawAmount = computeBaseRawAmount(state, effect, card);
-
   // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean flags; || is correct for false vs undefined.
   const isEqualTo = Boolean(effect.equalToBlock || effect.equalToArmor || effect.equalToGoldPercent);
-  if (isEqualTo) {
-    let amount = rawAmount;
-    if (card?.consume && state.talentEffects.consumeDamageBonusPercent > 0) {
-      amount = Math.round(amount * (1 + state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR));
-    }
-    return Math.max(0, amount);
-  }
+  if (isEqualTo) return Math.max(0, applyConsumeBonus(rawAmount, state, card));
   const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType];
   if (!modifier) throw new Error(`Missing DamageType handler: ${effect.damageType}`);
-  let amount = modifier(state, rawAmount, card);
-  if (card?.consume && state.talentEffects.consumeDamageBonusPercent > 0) {
-    amount = Math.round(amount * (1 + state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR));
-  }
-  return Math.max(0, amount);
+  return Math.max(0, applyConsumeBonus(modifier(state, rawAmount, card), state, card));
 }
 
 function applyCrit(damage: number, state: BattleState) {
@@ -298,21 +283,19 @@ function applyBlockAbsorption(state: BattleState, damage: number): { state: Batt
 
 function applyArcheryMultiplier(damage: number, state: BattleState): number {
   const cc = state.enemyCC;
-  const talent = state.talentEffects;
-  if (doublingActive(talent.archeryDoubledVsStunned, cc.stunSkipTurns)) return damage * 2;
-  if (doublingActive(talent.archeryDoubledVsFrozen, cc.freezeSkipTurns)) return damage * 2;
+  const talentEffects = state.talentEffects;
+  if (doublingActive(talentEffects.archeryDoubledVsStunned, cc.stunSkipTurns)) return damage * 2;
+  if (doublingActive(talentEffects.archeryDoubledVsFrozen, cc.freezeSkipTurns)) return damage * 2;
   if (
-    talent.archeryDoubledVsHighHealth &&
-    state.enemyHealth > (state.enemyMaxHealth * ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR
-  ) {
+    talentEffects.archeryDoubledVsHighHealth &&
+    state.enemyHealth * PERCENT_DENOMINATOR > state.enemyMaxHealth * ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT
+  )
     return damage * 2;
-  }
   if (
-    talent.archeryDoubledVsLowHealth &&
-    state.enemyHealth <= (state.enemyMaxHealth * LOW_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR
-  ) {
+    talentEffects.archeryDoubledVsLowHealth &&
+    state.enemyHealth * PERCENT_DENOMINATOR <= state.enemyMaxHealth * LOW_HEALTH_THRESHOLD_PERCENT
+  )
     return damage * 2;
-  }
   return damage;
 }
 

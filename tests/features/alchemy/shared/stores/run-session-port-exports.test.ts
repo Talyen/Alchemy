@@ -5,6 +5,7 @@ import * as lifecyclePort from "@/features/alchemy/shared/stores/run-session-lif
 const WRITE_PORT_EXPORTS = [
   "abandonCorruptionDestinationVisit",
   "abandonMysteryDestinationVisit",
+  "addGold",
   "addMaterials",
   "addRunGold",
   "addRunMaterialsEarned",
@@ -65,6 +66,7 @@ const WRITE_PORT_EXPORTS = [
   "setEncounteredRunEnemyIds",
   "setEquipmentShopState",
   "setFinishedRunCharacters",
+  "setGold",
   "setHasActiveBattle",
   "setLabyrinthMap",
   "setMaterials",

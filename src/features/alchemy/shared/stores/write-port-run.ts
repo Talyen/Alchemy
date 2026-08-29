@@ -38,27 +38,33 @@ export function syncPurseFromBattleGold(draft: GameplayDraft): void {
   draft.runProfile.gold = Math.max(0, draft.battle.battleState.gold);
 }
 
-export function setProfileGold(draft: GameplayDraft, action: number | ((prev: number) => number)): void {
+export function setGold(draft: GameplayDraft, action: number | ((prev: number) => number)): void {
   const next = typeof action === "function" ? action(draft.runProfile.gold) : action;
   draft.runProfile.gold = Math.max(0, next);
   syncBattleGoldFromPurse(draft);
 }
 
-export function addProfileGold(draft: GameplayDraft, amount: number): void {
+export function addGold(draft: GameplayDraft, amount: number): void {
   const mult = getGoldMultiplier(draft.run.activeRun.characterId, draft.run.activeRun.selectedDifficulty);
-  setProfileGold(draft, (gold) => gold + Math.floor(amount * mult));
+  setGold(draft, (gold) => gold + Math.round(amount * mult));
 }
 
 export function grantStartGold(draft: GameplayDraft, amount: number): void {
   if (amount <= 0) return;
-  setProfileGold(draft, (gold) => gold + amount);
+  setGold(draft, (gold) => gold + amount);
 }
 
+export function setProfileGold(draft: GameplayDraft, action: number | ((prev: number) => number)): void {
+  setGold(draft, action);
+}
+export function addProfileGold(draft: GameplayDraft, amount: number): void {
+  addGold(draft, amount);
+}
 export function setRunGold(draft: GameplayDraft, action: number | ((prev: number) => number)): void {
-  setProfileGold(draft, action);
+  setGold(draft, action);
 }
 export function addRunGold(draft: GameplayDraft, amount: number): void {
-  addProfileGold(draft, amount);
+  addGold(draft, amount);
 }
 export const setRunPlayerHealth = createRunFieldSetter("runPlayerHealth");
 export const setRunMaxHealth = createRunFieldSetter("runMaxHealth");

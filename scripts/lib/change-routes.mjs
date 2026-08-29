@@ -2,8 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { testFilesUnder } from "./test-suites.mjs";
-import { COMMANDS, E2E_ESCALATIONS, E2E_NAMES } from "./test-commands.mjs";
+import { COMMANDS, E2E_ESCALATIONS, E2E_NAMES, testFilesUnder } from "./test-commands.mjs";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
