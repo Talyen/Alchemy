@@ -5,21 +5,13 @@
 // drift. gameplay-aggregate-is-internal has no fragments equivalent — it
 // guards a single store file rather than an import-specifier group — and
 // therefore stays declared locally.
-import { LIB_NO_FEATURES, META_NO_RUN_LOOP, RUN_LOOP_NO_RUN_SETUP, RUN_SETUP_NO_RUN_LOOP } from "./eslint/fragments.js";
-
-/**
- * Convert an ESLint import-group list to a depcruise path regex.
- * Groups use either the alias form (starts with the @ alias) or, for
- * feature-local targets, a deep-glob form relative to src/features/alchemy.
- */
-function toTargetPath(groups) {
-  const alias = groups.find((group) => group.startsWith("@/"));
-  if (alias) return `^src/${alias.replace(/^@\//, "").replace(/\/\*\*$/, "")}/`;
-  const deepGroup = groups.find((group) => group.startsWith("**/")) ?? groups.at(-1);
-  if (!deepGroup) return "^src/features/alchemy/";
-  const deep = deepGroup.replace(/^\*\*\//, "").replace(/\/\*\*$/, "");
-  return `^src/features/alchemy/${deep}/`;
-}
+import {
+  LIB_NO_FEATURES,
+  META_NO_RUN_LOOP,
+  RUN_LOOP_NO_RUN_SETUP,
+  RUN_SETUP_NO_RUN_LOOP,
+  cruiserPathFromGroups,
+} from "./eslint/fragments.js";
 
 function edge(name, fromPath, patterns) {
   return {
@@ -27,7 +19,7 @@ function edge(name, fromPath, patterns) {
     severity: "error",
     comment: `Derived from eslint/fragments.js: ${patterns.map((pattern) => pattern.message).join(" ")}`,
     from: { path: fromPath },
-    to: { path: toTargetPath(patterns.flatMap((pattern) => pattern.group)) },
+    to: { path: cruiserPathFromGroups(patterns.flatMap((pattern) => pattern.group)) },
   };
 }
 

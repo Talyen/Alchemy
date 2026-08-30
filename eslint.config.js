@@ -9,6 +9,7 @@ import { BOUNDARY_CONFIGS } from "./eslint/boundaries.js";
 import { alchemyPlugin } from "./eslint/plugin.js";
 import {
   AGGREGATE_NO_DIRECT_MUTATION,
+  ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS,
   BATTLE_NO_DIRECT_RNG,
   BATTLE_NO_MATH_FLOOR,
   BATTLE_NO_MATH_RANDOM,
@@ -17,23 +18,6 @@ import {
   restrictedImports,
   restrictedSyntax,
 } from "./eslint/fragments.js";
-
-// The game-data and gear barrels re-export .webp assets; Playwright's esbuild
-// cannot parse those, and any file it collects that value-imports these barrels
-// breaks the whole E2E suite at collection time. Flag value imports (importKind
-// "value"); type-only imports are erased and deep imports of pure modules are fine.
-const ASSET_BARREL_NO_VALUE_IMPORT_REASONS = {
-  "@/lib/game-data": "its barrel re-exports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
-  "@/lib/gear":
-    "it re-exports crafting.ts which imports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
-};
-
-const ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS = Object.entries(ASSET_BARREL_NO_VALUE_IMPORT_REASONS).map(
-  ([source, reason]) => ({
-    selector: `ImportDeclaration[source.value="${source}"]:not([importKind="type"])`,
-    message: `Playwright-collected tests must not value-import ${source} — ${reason}`,
-  }),
-);
 
 export default tseslint.config(
   {

@@ -306,3 +306,27 @@ export const CLASSNAME_NO_TEMPLATE = [
     message: "Use cn() from @/lib/utils for class names instead of template literals.",
   },
 ];
+
+/** Playwright esbuild cannot parse .webp barrels — flag value imports only. */
+export const ASSET_BARREL_NO_VALUE_IMPORT_REASONS = {
+  "@/lib/game-data": "its barrel re-exports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
+  "@/lib/gear":
+    "it re-exports crafting.ts which imports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
+};
+
+export const ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS = Object.entries(ASSET_BARREL_NO_VALUE_IMPORT_REASONS).map(
+  ([source, reason]) => ({
+    selector: `ImportDeclaration[source.value="${source}"]:not([importKind="type"])`,
+    message: `Playwright-collected tests must not value-import ${source} — ${reason}`,
+  }),
+);
+
+/** Convert an ESLint import-group list to a dependency-cruiser path regex. */
+export function cruiserPathFromGroups(groups) {
+  const alias = groups.find((group) => group.startsWith("@/"));
+  if (alias) return `^src/${alias.replace(/^@\//, "").replace(/\/\*\*$/, "")}/`;
+  const deepGroup = groups.find((group) => group.startsWith("**/")) ?? groups.at(-1);
+  if (!deepGroup) return "^src/features/alchemy/";
+  const deep = deepGroup.replace(/^\*\*\//, "").replace(/\/\*\*$/, "");
+  return `^src/features/alchemy/${deep}/`;
+}
