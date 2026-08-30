@@ -105,7 +105,7 @@ export function readRunPhase(): RunPhase {
 }
 
 export function useTalentEffects(): TalentEffectManifest {
-  const unlockedTalents = useGameplayStateStore((state) => state.runProfile.unlockedTalents);
+  const unlockedTalents = useGameplayStateStore(useShallow((state) => state.runProfile.unlockedTalents));
   return useMemo(() => computeTalentEffects(unlockedTalents), [unlockedTalents]);
 }
 export function useContentNavigationRunPort(): ContentNavigationRunPort {
@@ -164,13 +164,13 @@ export function useResumableGameModes(): Record<ContentSystemId, boolean> {
   });
 }
 export function useDisplayOverrides() {
-  return useGameplayStateStore((state) => state.battle.displayOverrides);
+  return useGameplayStateStore(useShallow((state) => state.battle.displayOverrides));
 }
 export function useSetHasActiveBattle(): (active: boolean) => void {
   return useMemo(() => createRunSessionCommand(setHasActiveBattleCommand), []);
 }
 export function useBondedCompanions() {
-  return useGameplayStateStore((state) => state.runProfile.bondedCompanions);
+  return useGameplayStateStore(useShallow((state) => state.runProfile.bondedCompanions));
 }
 export function useContentSystemType(): ContentSystemId {
   return useGameplayStateStore((state) => state.run.activeRun.contentSystemType);
@@ -186,7 +186,7 @@ export function useHomesteadProgressSlice() {
   }));
 }
 export function useHomesteadEffects() {
-  return useGameplayStateStore((state) => state.runProfile.effects);
+  return useGameplayStateStore(useShallow((state) => state.runProfile.effects));
 }
 export function useTalentProgressSlice(): { talentXP: TalentXP; unlockedTalents: UnlockedTalents } {
   return useShallowRunSelector((state) => ({
@@ -217,7 +217,7 @@ export function useActiveRunCharacterId(): CharacterId {
   return useGameplayStateStore((state) => state.run.activeRun.characterId);
 }
 export function useActiveRunBoons(): string[] {
-  return useGameplayStateStore((state) => state.run.activeRun.runBoons);
+  return useGameplayStateStore(useShallow((state) => state.run.activeRun.runBoons));
 }
 
 type RunSessionRunSlice = ActiveRunReadView & { talentXP: TalentXP; unlockedTalents: UnlockedTalents; gold: number };
@@ -265,7 +265,7 @@ function useRunSessionBattleSlice(): RunSessionBattleSlice {
 }
 export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleContext {
   const battle = useRunSessionBattleSlice();
-  const activeLabyrinthModifiers = useGameplayStateStore((state) => state.session.activeLabyrinthModifiers);
+  const activeLabyrinthModifiers = useGameplayStateStore(useShallow((state) => state.session.activeLabyrinthModifiers));
   const committedScreen = useGameplayStateStore((state) => state.run.navigation.screen);
   const resolvedScreen = screen ?? committedScreen;
   return useMemo(
