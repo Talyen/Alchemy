@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
@@ -6,6 +7,8 @@ import {
   type KeywordId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { keywordIcons } from "@/features/alchemy/shared/config";
+
+const XP_REVEAL_DURATION_MS = 1000;
 
 export function KeywordProgressCard({
   kw,
@@ -20,7 +23,36 @@ export function KeywordProgressCard({
   animate: boolean;
   size?: "md" | "lg";
 }) {
-  const { progressPercent, xpForNext, xpRemaining } = getTalentKeywordProgress(totalXP, 0);
+  const startXP = Math.max(totalXP - runXP, 0);
+  const endXP = totalXP;
+  const animationKey = `${animate}:${startXP}:${endXP}`;
+  const [animationState, setAnimationState] = useState<{ key: string; xp: number } | null>(null);
+
+  useEffect(() => {
+    if (!animate || startXP === endXP) {
+      return;
+    }
+
+    let startTime: number | null = null;
+    let rafId: number;
+
+    const step = (timestamp: number) => {
+      startTime ??= timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(1, elapsed / XP_REVEAL_DURATION_MS);
+      const current = startXP + (endXP - startXP) * progress;
+      setAnimationState({ key: animationKey, xp: current });
+      if (progress < 1) {
+        rafId = requestAnimationFrame(step);
+      }
+    };
+
+    rafId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafId);
+  }, [animate, startXP, endXP, animationKey]);
+
+  const displayXP = animate && animationState?.key === animationKey ? animationState.xp : startXP;
+  const { points, progressPercent } = getTalentKeywordProgress(displayXP, 0);
   const Icon = keywordIcons[kw];
   const def = keywordDefinitions[kw];
   const large = size === "lg";
@@ -34,20 +66,17 @@ export function KeywordProgressCard({
             {def?.label ?? kw}
           </span>
         </div>
-        <span className={cn(large ? "text-lg" : "text-base", "font-semibold text-muted-foreground")}>+{runXP}</span>
+        <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>Lv{points}</span>
       </div>
       <Progress
         size="sm"
-        value={animate ? progressPercent : 0}
-        className={large ? "mt-2.5" : "mt-2"}
+        value={progressPercent}
+        className={cn("h-1.5", large ? "mt-2.5" : "mt-2")}
         fillStyle={{
-          transition: animate ? "width 1000ms ease-out" : "none",
+          transition: "none",
           backgroundColor: def?.shineColors?.[0] ?? undefined,
         }}
       />
-      <p className={cn("mt-1 text-right font-semibold text-muted-foreground", large ? "text-lg" : "text-base")}>
-        {xpForNext - xpRemaining}/{xpForNext}
-      </p>
     </div>
   );
 }

@@ -26,7 +26,7 @@ import type { CollectionTileItem } from "./collection-items";
 import { EnemyTooltip } from "./enemy-tooltip";
 import { GearItemTitle } from "./gear-item-title";
 import { HeroTooltip } from "./hero-tooltip";
-import { TiltSurface } from "./tilt-surface";
+import { Surface } from "./surface";
 import { TrinketItemTitle } from "./trinket-item-title";
 import { useInteractiveCard } from "./use-interactive-card";
 import { useTileHoverPopup } from "./use-tile-hover-popup";
@@ -59,7 +59,7 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
       onMouseLeave={handleMouseLeave}
     >
       {showPopup ? <CollectionTilePopup item={item} hovered={isHovered} triggerRef={wrapperRef} /> : null}
-      <TiltSurface
+      <Surface
         as="button"
         ariaLabel={inspectAriaLabel(item)}
         onFocus={handleHoverStart}
@@ -85,7 +85,7 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
       >
         <CollectionTileMedia item={item} flipped={flipped} />
         {showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
-      </TiltSurface>
+      </Surface>
     </div>
   );
 });

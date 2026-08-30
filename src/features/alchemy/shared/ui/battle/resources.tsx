@@ -4,7 +4,7 @@ import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/ga
 import { cn } from "@/lib/utils";
 
 import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass } from "../../config";
-import { TiltSurface } from "../tilt-surface";
+import { Surface } from "../surface";
 import { useChangeToken } from "./use-change-token";
 
 export function PilePanel({
@@ -35,14 +35,14 @@ export function PilePanel({
     );
   }
   return (
-    <TiltSurface
+    <Surface
       surfaceRef={ref}
       testId={`${type}-pile`}
       dataCount={count}
       className={cn(cardSurfaceClass, pileCardWidthClass, "bg-transparent")}
     >
       <img src={art} alt={`${label} pile`} className={cn("block w-full", cardArtImageClass)} />
-    </TiltSurface>
+    </Surface>
   );
 }
 

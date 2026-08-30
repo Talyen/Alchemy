@@ -59,6 +59,12 @@ function panelForTitle(title: string) {
   );
 }
 
+function visiblePanelForTitle(title: string) {
+  return Array.from(document.querySelectorAll(".hover-popup-panel[data-visible]")).find((panel) =>
+    panel.textContent?.includes(title),
+  );
+}
+
 describe("RewardsScreen card hover tooltip", () => {
   beforeEach(() => {
     useUiStore.setState({ hoveredCardId: null, shimmerState: null });
@@ -72,7 +78,7 @@ describe("RewardsScreen card hover tooltip", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Deal/)).toBeTruthy();
-      expect(panelForTitle("Slash")?.textContent).toMatch(/6/);
+      expect(visiblePanelForTitle("Slash")?.textContent).toMatch(/6/);
     });
   });
 
@@ -83,7 +89,7 @@ describe("RewardsScreen card hover tooltip", () => {
       const wrapper = rewardChoiceWrapper(card.title);
       fireEvent.mouseEnter(wrapper);
       await waitFor(() => {
-        expect(panelForTitle(card.title)?.textContent).toMatch(/Deal/);
+        expect(visiblePanelForTitle(card.title)?.textContent).toMatch(/Deal/);
       });
       fireEvent.mouseLeave(wrapper);
       await waitFor(() => {
@@ -103,7 +109,7 @@ describe("RewardsScreen card hover tooltip", () => {
     fireEvent.focus(button);
 
     await waitFor(() => {
-      expect(panelForTitle("Slash")?.textContent).toMatch(/Deal/);
+      expect(visiblePanelForTitle("Slash")?.textContent).toMatch(/Deal/);
     });
 
     fireEvent.blur(button);

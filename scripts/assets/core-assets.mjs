@@ -36,6 +36,7 @@ export const coreAssets = [
   { source: "Enemies/Fire Elemental.jpeg", target: "fire-elemental.webp", width: 720, quality: 82 },
   { source: "Enemies/Frost Elemental.jpeg", target: "frost-elemental.webp", width: 720, quality: 82 },
   { source: "Enemies/Slime.jpeg", target: "slime.webp", width: 720, quality: 82 },
+  { source: "Enemies/Will-o-Wisp.jpeg", target: "will-o-wisp.webp", width: 720, quality: 82 },
   { source: "Enemies/Placeholder Enemy.png", target: "placeholder-enemy.webp", width: 720, quality: 60 },
   // Heroes
   { source: "Heroes/Knight.jpeg", target: "knight.webp", width: characterWidth, quality: 82 },

@@ -26,7 +26,7 @@ import { useCardDescriptionContext } from "@/features/alchemy/shared/context/car
 import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "@/lib/game-data";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
 import { DetailPopup } from "./card-popup";
-import { TiltSurface } from "./tilt-surface";
+import { Surface } from "./surface";
 
 interface BattleCardButtonBaseProps {
   card: BattleCard;
@@ -172,7 +172,7 @@ function CardButtonSurface({
 }: BattleCardButtonProps) {
   const showShine = Boolean(hovered && !dragging && shineColor && shineColor.length > 0);
   return (
-    <TiltSurface
+    <Surface
       as="button"
       className={cn(
         cardSurfaceClass,
@@ -206,6 +206,6 @@ function CardButtonSurface({
         loading="eager"
       />
       {children}
-    </TiltSurface>
+    </Surface>
   );
 }

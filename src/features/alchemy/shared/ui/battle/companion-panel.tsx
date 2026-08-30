@@ -11,7 +11,7 @@ import { TooltipHeader } from "../tooltip-panel";
 import { PortaledTooltip } from "../portaled-tooltip";
 import { useHoverVisible } from "../use-hover-visible";
 import { DescriptionLines } from "../card-description-ui";
-import { TiltSurface } from "../tilt-surface";
+import { Surface } from "../surface";
 import { ArtTurnActiveBorder } from "./actor-panel-helpers";
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
 import type { ActiveCcKeyword } from "../../utils/cc-presentation";
@@ -54,7 +54,7 @@ export function CompanionPanel({
       onMouseLeave={onMouseLeave}
     >
       <CombatantStatusEffectPresentation keyword={ccKeyword}>
-        <TiltSurface
+        <Surface
           clipContents={false}
           className={cn(
             "relative",
@@ -76,7 +76,7 @@ export function CompanionPanel({
             className="block aspect-[3/4] w-full rounded-shell-hero"
             loading="eager"
           />
-        </TiltSurface>
+        </Surface>
       </CombatantStatusEffectPresentation>
       <PortaledTooltip
         triggerRef={triggerRef}

@@ -1,4 +1,5 @@
-import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import { clampHealth, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import { hasEnemyTrait } from "./enemy-turn-attack";
 import { addGoldWithCombatText, mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
@@ -111,6 +112,9 @@ export function resolveStunTrigger(
   if (triggered.kind === "immune") return triggered.state;
 
   let nextState = triggered.state;
+  if (hasEnemyTrait(nextState, "brawler")) {
+    nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", true);
+  }
   const preTriggerMitigation = nextState.enemyMitigation;
   nextState = applyStunTriggerBonuses(nextState, combatTexts);
   nextState = applyStunGearDamage(nextState, combatTexts);

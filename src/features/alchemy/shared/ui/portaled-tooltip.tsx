@@ -44,14 +44,13 @@ export function PortaledTooltip({
   plasmaColorPair = null,
 }: PortaledTooltipProps) {
   usePlasmaInteraction(plasmaColorPair, visible);
+  const { mounted } = useFadePresence(visible, fadeOutMs);
   const { tooltipRef, placeBelow, tooltipSide, tooltipStyle } = usePortaledTooltipPlacement(
     triggerRef,
-    visible,
+    mounted,
     padding,
     placement,
   );
-
-  const { mounted } = useFadePresence(visible, fadeOutMs);
 
   if (!mounted) return null;
 

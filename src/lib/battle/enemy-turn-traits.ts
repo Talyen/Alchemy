@@ -3,12 +3,21 @@ import { getBattleRng } from "./status-helpers";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
-import { clampHealth, type BattleState, type CombatTextEvent, addEnemyMitigation, addEnemyStatus } from "./types";
+import { hasEnemyTrait } from "./enemy-turn-attack";
+import {
+  clampHealth,
+  type BattleState,
+  type CombatTextEvent,
+  addEnemyMitigation,
+  addEnemyStatus,
+  setFlag,
+} from "./types";
 import {
   DIFFICULTY_FORGE_PER_TURN,
   HALF_DIVISOR,
   IRON_HIDE_ARMOR_PER_TURN,
   IRON_HIDE_BURN_BONUS_PER_TURN,
+  REACTION_ONLY_ENEMY_TRAIT_IDS as REACTION_ONLY_IDS,
   TRAIT_FORGE_PER_TURN,
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
@@ -28,7 +37,16 @@ export function processEnemyRegeneration(state: BattleState, combatTexts: Combat
   if (healAmount <= 0) return state;
   const pacedHeal = paceCombatMagnitude(state, healAmount, "enemy");
   mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: pacedHeal });
-  return { ...state, enemyHealth: clampHealth(state.enemyHealth, pacedHeal, state.enemyMaxHealth) };
+  const nextHealth = clampHealth(state.enemyHealth, pacedHeal, state.enemyMaxHealth);
+  let nextState: BattleState = { ...state, enemyHealth: nextHealth };
+  if (
+    hasEnemyTrait(state, "vampire") &&
+    state.enemyHealth < state.enemyMaxHealth &&
+    nextHealth >= state.enemyMaxHealth
+  ) {
+    nextState = setFlag(nextState, "enemyNextAttackBonus", nextState.flags.enemyNextAttackBonus + 1);
+  }
+  return nextState;
 }
 
 const EVERY_OTHER_TURN_TRAITS = new Set(["rusting-carapace", "iron-hide", "glacial-shell"]);
@@ -77,6 +95,14 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
     });
     return addEnemyStatus(state, "freezeBonus", TRAIT_FREEZE_BONUS_PER_TURN);
   },
+  cleric: (state, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
+    return addEnemyMitigation(state, "block", 1);
+  },
+  "stone-golem": (state, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
+    return addEnemyMitigation(state, "block", 1);
+  },
 };
 
 const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], EnemyTurnStartHandler>> = {
@@ -104,6 +130,8 @@ const PASSIVE_ONLY_TRAITS = new Set([
   ...COMBAT_ENCOUNTER_TRAIT_IDS,
 ]);
 
+const REACTION_ONLY_TRAITS: ReadonlySet<string> = new Set<string>([...REACTION_ONLY_IDS]);
+
 const PASSIVE_ONLY_MODIFIERS = new Set<DifficultyModifier["kind"]>([
   "enemy-starting-armor",
   "increase-enemy-physical-damage",
@@ -122,6 +150,8 @@ export const ENEMY_TRAIT_TURN_START_HANDLER_IDS = Object.keys(enemyTraitTurnStar
 
 export const PASSIVE_ONLY_ENEMY_TRAIT_IDS = [...PASSIVE_ONLY_TRAITS];
 
+export const REACTION_ONLY_ENEMY_TRAIT_IDS = [...REACTION_ONLY_IDS] as string[];
+
 export const DIFFICULTY_TURN_START_MODIFIER_KINDS = Object.keys(difficultyTurnStartHandlers) as Array<
   DifficultyModifier["kind"]
 >;
@@ -134,7 +164,9 @@ const ALL_DIFFICULTY_MODIFIER_KINDS: Array<DifficultyModifier["kind"]> = [
 ];
 
 function isEnemyTraitTurnStartCovered(traitId: string): boolean {
-  return traitId in enemyTraitTurnStartHandlers || PASSIVE_ONLY_TRAITS.has(traitId);
+  return (
+    traitId in enemyTraitTurnStartHandlers || PASSIVE_ONLY_TRAITS.has(traitId) || REACTION_ONLY_TRAITS.has(traitId)
+  );
 }
 
 function isDifficultyModifierTurnStartCovered(kind: DifficultyModifier["kind"]): boolean {
@@ -168,7 +200,7 @@ function processTraitHandler(
     if (EVERY_OTHER_TURN_TRAITS.has(trait.id) && !isEveryOtherTurnScalingTurn(state)) return state;
     return handler(state, combatTexts, { traitRoll });
   }
-  if (!PASSIVE_ONLY_TRAITS.has(trait.id)) {
+  if (!PASSIVE_ONLY_TRAITS.has(trait.id) && !REACTION_ONLY_TRAITS.has(trait.id)) {
     console.warn(`[Enemy Turn] No turn-start handler for trait: ${trait.id}`);
     reportHandlerFailure(`No turn-start handler for trait ${trait.id}`, new Error("uncovered enemy trait"), {
       traitId: trait.id,

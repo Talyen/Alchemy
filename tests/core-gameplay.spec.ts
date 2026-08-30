@@ -97,6 +97,10 @@ test.describe("Card Interactions", slow, () => {
 
     await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible();
 
+    await battle.enemyArt.hover();
+    await expect(page.locator(".hover-popup-panel[data-visible]")).toHaveCount(1);
+    await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible();
+
     await battle.hand.nth(1).hover();
     await expect(page.locator(".hover-popup-panel[data-visible]")).toBeVisible();
 

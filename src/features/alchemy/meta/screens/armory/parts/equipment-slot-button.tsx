@@ -17,7 +17,7 @@ import {
   cardInteractiveGlowClass,
   cardShineFrameClass,
 } from "../../../../shared/config";
-import { TiltSurface } from "../../../../shared/ui/tilt-surface";
+import { Surface } from "../../../../shared/ui/surface";
 import { useInteractiveCard } from "../../../../shared/ui/use-interactive-card";
 import { useTileHoverPopup } from "../../../../shared/ui/use-tile-hover-popup";
 import { GearTooltipPortal } from "../gear-tooltip-portal";
@@ -85,7 +85,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
       {instance && definition && showPopup ? (
         <GearTooltipPortal triggerRef={wrapperRef} visible={isHovered} definition={definition} instance={instance} />
       ) : null}
-      <TiltSurface
+      <Surface
         as="button"
         ariaLabel={ariaLabel}
         ariaPressed={selected}
@@ -128,7 +128,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         {shineColors ? (
           <ShineBorder shineColor={shineColors} borderWidth={GEAR_ASTRAL_SHINE_BORDER_WIDTH} className="z-20" />
         ) : null}
-      </TiltSurface>
+      </Surface>
     </div>
   );
 });

@@ -15,7 +15,7 @@ import {
   sectionTitleClass,
 } from "../../config";
 import type { CombatImpactCue, StatusChip } from "../../types";
-import { TiltSurface } from "../tilt-surface";
+import { Surface } from "../surface";
 import { useHoverVisible } from "../use-hover-visible";
 import { PortraitImpactVfx } from "./portrait-hurt-vfx";
 import { useImpactPulse } from "./use-hurt-pulse";
@@ -212,7 +212,7 @@ function ActorArtFrame({
 
   return (
     <CombatantStatusEffectPresentation keyword={isDead ? null : ccKeyword}>
-      <TiltSurface
+      <Surface
         surfaceRef={surfaceRef}
         testId={`battle-${side}-art-panel`}
         clipContents={false}
@@ -253,7 +253,7 @@ function ActorArtFrame({
           />
         )}
         <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
-      </TiltSurface>
+      </Surface>
     </CombatantStatusEffectPresentation>
   );
 }

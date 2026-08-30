@@ -1,4 +1,12 @@
-export const WILDWOOD_BOSS_IDS = ["forge-golem", "frostwarden", "blight-treant", "iron-bear"] as const;
+export const WILDWOOD_BOSS_IDS = [
+  "forge-golem",
+  "frostwarden",
+  "blight-treant",
+  "iron-bear",
+  "blood-countess",
+  "seraph",
+  "stone-titan",
+] as const;
 
 export type WildwoodBossId = (typeof WILDWOOD_BOSS_IDS)[number];
 

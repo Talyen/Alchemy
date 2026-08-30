@@ -31,6 +31,12 @@ export const FLAG_DEFINITIONS = {
   nextPhysicalDealsBleed: { default: false as const, preserveAs: false as const },
   nextArcheryCardFree: { default: false as const, preserveAs: false as const },
   nextNatureCardFree: { default: false as const, preserveAs: false as const },
+
+  enemyFirstHitDoubleUsed: { default: false as const, preserveAs: null },
+  enemyNextAttackCrit: { default: false as const, preserveAs: null },
+  enemyNextAttackBonus: { default: 0 as const, preserveAs: null },
+  enemyNextAttackHolyBonus: { default: 0 as const, preserveAs: null },
+  enemyBrawlerDamagePenalty: { default: false as const, preserveAs: null },
 } as const;
 
 export type FlagId = keyof typeof FLAG_DEFINITIONS;

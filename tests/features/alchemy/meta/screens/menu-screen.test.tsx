@@ -1,7 +1,6 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { installRafStub } from "../../../../helpers/animation-test";
 import { MenuScreen } from "@/features/alchemy/meta/screens/menu-screen";
 
 const defaultProps = {
@@ -21,18 +20,10 @@ describe("MenuScreen logo variants", () => {
     vi.unstubAllGlobals();
   });
 
-  it("tilts the logo toward the pointer", () => {
-    const frames = installRafStub();
-
+  it("applies the shared hover scale to the logo", () => {
     render(<MenuScreen {...defaultProps} />);
     const logo = screen.getByRole("button", { name: "Flip Alchemy logo" });
-    vi.spyOn(logo, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 100, 100));
-
-    fireEvent.mouseMove(logo, { clientX: 100, clientY: 0 });
-    frames.shift()?.(0);
-
-    expect(logo.style.getPropertyValue("--tilt-rotate-y")).toBe("7.5deg");
-    expect(logo.style.getPropertyValue("--tilt-rotate-x")).toBe("7.5deg");
+    expect(logo.classList.contains("card-hover-scale")).toBe(true);
   });
 
   it("flips without looping when there is only one logo variant", async () => {

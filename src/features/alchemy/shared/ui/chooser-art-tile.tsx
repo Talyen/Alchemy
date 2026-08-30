@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 import { cardInteractiveGlowClass } from "../config";
-import { TiltSurface } from "./tilt-surface";
+import { Surface } from "./surface";
 import { useInteractiveCard } from "./use-interactive-card";
 import { usePlasmaInteraction } from "./use-plasma-source";
 
@@ -64,7 +64,7 @@ export function ChooserArtTile({
 
   return (
     <div className={cn("group flex flex-col items-center gap-5", paddedTileClass)}>
-      <TiltSurface
+      <Surface
         as="button"
         buttonRef={tooltipTriggerRef}
         ariaLabel={ariaLabel ?? label}
@@ -91,7 +91,7 @@ export function ChooserArtTile({
           className="pointer-events-none block h-full w-full object-cover select-none"
           draggable={false}
         />
-      </TiltSurface>
+      </Surface>
       {trackTooltip ? renderTooltip(tooltipVisible) : null}
       <div className="pointer-events-none flex items-center justify-center gap-2.5 pt-1 text-center select-none">
         <Icon className={cn("h-5 w-5 shrink-0", accentClassName)} />

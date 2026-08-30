@@ -56,14 +56,13 @@
     background-clip: padding-box;
   }
 
-  .tilt-surface {
-    transform: var(--card-base-transform, translate3d(0px, 0px, 0px)) perspective(900px)
-      rotateX(var(--tilt-rotate-x, 0deg)) rotateY(var(--tilt-rotate-y, 0deg));
+  .surface {
+    transform: var(--card-base-transform, translate3d(0px, 0px, 0px));
     transition: transform 460ms var(--ease-out-expo);
     isolation: isolate;
   }
 
-  .tilt-surface.hand-card-motion {
+  .surface.hand-card-motion {
     transition: transform 220ms ease-out;
   }
 
@@ -249,44 +248,44 @@
 /* Unlayered so these beat utility overflow/border/ring on the same node.
    Ring + box-shadow glow square off on transformed overflow-hidden layers;
    drop-shadow follows the rounded painted alpha instead. */
-.tilt-surface {
+.surface {
   position: relative;
   overflow: visible;
-  --tilt-surface-radius: var(--radius-shell-hero);
-  --tilt-frame-border-width: 0px;
+  --surface-radius: var(--radius-shell-hero);
+  --surface-frame-border-width: 0px;
 }
 
 .rounded-shell-compact {
-  --tilt-surface-radius: var(--radius-shell-compact);
+  --surface-radius: var(--radius-shell-compact);
 }
 .rounded-shell-card {
-  --tilt-surface-radius: var(--radius-shell-card);
+  --surface-radius: var(--radius-shell-card);
 }
 .rounded-shell-tooltip {
-  --tilt-surface-radius: var(--radius-shell-tooltip);
+  --surface-radius: var(--radius-shell-tooltip);
 }
 .rounded-shell-panel {
-  --tilt-surface-radius: var(--radius-shell-panel);
+  --surface-radius: var(--radius-shell-panel);
 }
 .rounded-shell-inner {
-  --tilt-surface-radius: var(--radius-shell-inner);
+  --surface-radius: var(--radius-shell-inner);
 }
 .rounded-shell-dialog {
-  --tilt-surface-radius: var(--radius-shell-dialog);
+  --surface-radius: var(--radius-shell-dialog);
 }
 .rounded-shell-screen {
-  --tilt-surface-radius: var(--radius-shell-screen);
+  --surface-radius: var(--radius-shell-screen);
 }
 .rounded-shell-hero {
-  --tilt-surface-radius: var(--radius-shell-hero);
+  --surface-radius: var(--radius-shell-hero);
 }
 
 /* Glow requires overflow:visible, which disables cardSurfaceClass clipping.
    Clip/art sit on the padding box, so they must use the inner radius
    (outer radius − border width) or corners sit inside the frame. */
-.tilt-surface > img,
-.tilt-surface-clip {
-  border-radius: max(0px, calc(var(--tilt-surface-radius) - var(--tilt-frame-border-width)));
+.surface > img,
+.surface-clip {
+  border-radius: max(0px, calc(var(--surface-radius) - var(--surface-frame-border-width)));
 }
 
 /* Animated corruption-red gradient for corrupted card values and title prefixes.
@@ -314,18 +313,18 @@
 /* Absolute children use the padding box. Pull shine out onto the same
    border-box (and outer radius) as the CSS frame. 0 when shine replaces it. */
 .shine-border {
-  inset: calc(-1 * var(--tilt-frame-border-width, 0px));
+  inset: calc(-1 * var(--surface-frame-border-width, 0px));
   /* Mask frames are rectangular; clip to inherited radius so corners do not square off. */
   overflow: hidden;
 }
 
-.tilt-surface-clip img {
+.surface-clip img {
   border-radius: 0;
 }
 
 /* Aspect-ratio frames have a definite box. Pin the clip layer to the padding
    edge so h-full art cannot paint over the 3px glow border. */
-.tilt-surface[class*="aspect-"] > .tilt-surface-clip {
+.surface[class*="aspect-"] > .surface-clip {
   position: absolute;
   inset: 0;
   width: auto;
@@ -334,7 +333,7 @@
 .card-interactive-glow,
 .card-interactive-selected,
 .card-interactive-selected-danger {
-  --tilt-frame-border-width: 3px;
+  --surface-frame-border-width: 3px;
 }
 
 .card-interactive-glow,
@@ -354,7 +353,7 @@
   scale: 1.035;
 }
 
-.tilt-surface.hand-card-motion.card-hover-scale {
+.surface.hand-card-motion.card-hover-scale {
   transition:
     transform 220ms ease-out,
     scale 200ms ease-out;
@@ -421,7 +420,7 @@
   overflow: visible;
   border-width: 0;
   border-color: transparent;
-  --tilt-frame-border-width: 0px;
+  --surface-frame-border-width: 0px;
 }
 
 .has-shine-border .shine-border {
@@ -433,7 +432,7 @@
 .has-shine-border.card-interactive-selected {
   border-width: 0;
   border-color: transparent;
-  --tilt-frame-border-width: 0px;
+  --surface-frame-border-width: 0px;
 }
 
 .has-shine-border:hover:not(:disabled) .shine-border,

@@ -11,6 +11,7 @@ describe("StatusIcon", () => {
     fireEvent.mouseEnter(trigger);
 
     expect(screen.getByText("Control Immunity")).toBeTruthy();
+    expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
     expect(screen.queryByText("2")).toBeNull();
   });
 

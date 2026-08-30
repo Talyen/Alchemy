@@ -2,11 +2,10 @@ import { type CSSProperties, type MouseEvent, type PointerEvent, type ReactNode,
 
 import { cn } from "@/lib/utils";
 
-import { staticCardTransform, tiltSurfaceSelectedRingClass } from "../config/layout";
-import { clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent } from "../utils";
+import { staticCardTransform, surfaceSelectedRingClass } from "../config/layout";
 import { ShimmerOverlay } from "./shimmer";
 
-interface TiltSurfaceProps {
+interface SurfaceProps {
   as?: "button" | "div";
   children?: ReactNode;
   className?: string;
@@ -16,7 +15,6 @@ interface TiltSurfaceProps {
   selected?: boolean;
   disabled?: boolean;
   dragging?: boolean;
-  tiltEnabled?: boolean;
   baseTransform?: string | undefined;
   style?: CSSProperties;
   onClick?: ((e: MouseEvent<HTMLButtonElement>) => void) | undefined;
@@ -52,8 +50,8 @@ function ShimmerSlot({ active, token, rounded }: ShimmerProps) {
   ) : null;
 }
 
-const TILT_CLASSES = "tilt-surface";
-const CLIP_CONTENTS_CLASS = "tilt-surface-clip relative w-full overflow-hidden";
+const SURFACE_CLASSES = "surface";
+const CLIP_CONTENTS_CLASS = "surface-clip relative w-full overflow-hidden";
 
 function surfaceClassName(
   selected: boolean | undefined,
@@ -62,15 +60,15 @@ function surfaceClassName(
   className: string | undefined,
 ) {
   return cn(
-    TILT_CLASSES,
-    selected && tiltSurfaceSelectedRingClass,
+    SURFACE_CLASSES,
+    selected && surfaceSelectedRingClass,
     dragging && "opacity-0",
     disabled && "cursor-default grayscale",
     className,
   );
 }
 
-function TiltSurfaceBody({
+function SurfaceBody({
   clipContents,
   shimmerActive,
   shimmerToken,
@@ -94,21 +92,12 @@ function TiltSurfaceBody({
   );
 }
 
-function useTiltHandlers(canTilt: boolean, onMouseLeave?: (e: MouseEvent<HTMLElement>) => void) {
-  const handleMouseMove = canTilt ? setTiltFromEvent : undefined;
-  const handleMouseLeave = (e: MouseEvent<HTMLElement>) => {
-    if (canTilt) clearTiltFromEvent(e);
-    onMouseLeave?.(e);
-  };
-  return { handleMouseMove, handleMouseLeave };
-}
-
-interface TiltSurfaceInner extends TiltSurfaceProps {
+interface SurfaceInner extends SurfaceProps {
   surfaceStyle: CSSProperties;
   children: ReactNode;
 }
 
-function TiltSurfaceButton({
+function SurfaceButton({
   children,
   className,
   shimmerActive,
@@ -129,13 +118,10 @@ function TiltSurfaceButton({
   onMouseEnter,
   onMouseLeave,
   surfaceStyle,
-  tiltEnabled,
   clipContents = true,
   overlay,
   hoverScaleActive,
-}: TiltSurfaceInner) {
-  const canTilt = tiltEnabled !== false && !disabled;
-  const { handleMouseMove, handleMouseLeave } = useTiltHandlers(canTilt, onMouseLeave);
+}: SurfaceInner) {
   return (
     <button
       ref={buttonRef}
@@ -148,16 +134,14 @@ function TiltSurfaceButton({
       onPointerDown={onPointerDown}
       onFocus={onFocus}
       onBlur={onBlur}
-      onMouseMove={handleMouseMove}
       onMouseEnter={onMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseLeave={onMouseLeave}
       data-testid={testId}
-      data-tilt-strength={canTilt ? String(DEFAULT_TILT_STRENGTH) : undefined}
       data-hovered={hoverScaleActive ? "true" : undefined}
       className={surfaceClassName(selected, dragging, disabled, className)}
       style={surfaceStyle}
     >
-      <TiltSurfaceBody
+      <SurfaceBody
         clipContents={clipContents}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
@@ -165,12 +149,12 @@ function TiltSurfaceButton({
         overlay={overlay}
       >
         {children}
-      </TiltSurfaceBody>
+      </SurfaceBody>
     </button>
   );
 }
 
-function TiltSurfaceDiv(props: TiltSurfaceInner) {
+function SurfaceDiv(props: SurfaceInner) {
   const {
     children,
     className,
@@ -187,28 +171,34 @@ function TiltSurfaceDiv(props: TiltSurfaceInner) {
     onMouseEnter,
     onMouseLeave,
     surfaceStyle,
-    tiltEnabled,
     clipContents = true,
     overlay,
   } = props;
-  const canTilt = tiltEnabled !== false;
-  const { handleMouseMove, handleMouseLeave } = useTiltHandlers(canTilt, onMouseLeave);
   return (
     <div
       ref={surfaceRef}
       data-testid={testId}
       {...(dataCount !== undefined ? { "data-count": dataCount } : {})}
       onClick={onDivClick}
+      onKeyDown={
+        onDivClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                (onDivClick as (e?: unknown) => void)();
+              }
+            }
+          : undefined
+      }
+      tabIndex={onDivClick ? 0 : undefined}
       role={onDivClick ? "button" : undefined}
       aria-label={onDivClick ? ariaLabel : undefined}
-      onMouseMove={handleMouseMove}
       onMouseEnter={onMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      data-tilt-strength={canTilt ? String(DEFAULT_TILT_STRENGTH) : undefined}
+      onMouseLeave={onMouseLeave}
       className={surfaceClassName(selected, dragging, undefined, className)}
       style={surfaceStyle}
     >
-      <TiltSurfaceBody
+      <SurfaceBody
         clipContents={clipContents}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
@@ -216,23 +206,23 @@ function TiltSurfaceDiv(props: TiltSurfaceInner) {
         overlay={overlay}
       >
         {children}
-      </TiltSurfaceBody>
+      </SurfaceBody>
     </div>
   );
 }
 
-export function TiltSurface(props: TiltSurfaceProps) {
-  const { as: Component = "div", tiltEnabled = false, baseTransform, style, children, ...rest } = props;
+export function Surface(props: SurfaceProps) {
+  const { as: Component = "div", baseTransform, style, children, ...rest } = props;
   const surfaceStyle = { "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties;
   if (Component === "button")
     return (
-      <TiltSurfaceButton tiltEnabled={tiltEnabled} {...rest} surfaceStyle={surfaceStyle}>
+      <SurfaceButton {...rest} surfaceStyle={surfaceStyle}>
         {children}
-      </TiltSurfaceButton>
+      </SurfaceButton>
     );
   return (
-    <TiltSurfaceDiv tiltEnabled={tiltEnabled} {...rest} surfaceStyle={surfaceStyle}>
+    <SurfaceDiv {...rest} surfaceStyle={surfaceStyle}>
       {children}
-    </TiltSurfaceDiv>
+    </SurfaceDiv>
   );
 }

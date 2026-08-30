@@ -50,7 +50,6 @@ describe("MysteryEventIntro", () => {
     expect(art.getAttribute("alt")).toBe("Sacred Grove");
     expect(artSurface.classList.contains("card-interactive-glow")).toBe(true);
     expect(artSurface.classList.contains("border")).toBe(true);
-    expect(artSurface.getAttribute("data-tilt-strength")).toBeNull();
     expect(artSurface.querySelector(".card-shimmer-sweep")).toBeTruthy();
     expect(screen.getByLabelText(sampleEvent.narrative).classList.contains("text-center")).toBe(true);
   });

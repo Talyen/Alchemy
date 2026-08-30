@@ -1,7 +1,7 @@
 import { useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { cardInteractiveGlowClass } from "../../../shared/config";
-import { TiltSurface } from "../../../shared/ui/tilt-surface";
+import { Surface } from "../../../shared/ui/surface";
 import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 
 export function HomesteadTileFrame({
@@ -39,7 +39,7 @@ export function HomesteadTileFrame({
           onMouseEnter={() => setHoveredItemId(id)}
           onMouseLeave={() => setHoveredItemId(null)}
         >
-          <TiltSurface
+          <Surface
             className={cn(
               "group relative mx-auto flex items-center justify-center overflow-hidden rounded-shell-card border border-border/80 bg-stone-900 shadow-md",
               cardInteractiveGlowClass,
@@ -47,7 +47,7 @@ export function HomesteadTileFrame({
             )}
           >
             <img src={imageSrc} alt={imageAlt} className={imageClassName} />
-          </TiltSurface>
+          </Surface>
         </div>
         {footer}
       </div>

@@ -12,7 +12,7 @@ import { CyclingShineBorder } from "../../shared/ui/cycling-shine-border";
 import { HeroTooltip } from "../../shared/ui/hero-tooltip";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
-import { TiltSurface } from "../../shared/ui/tilt-surface";
+import { Surface } from "../../shared/ui/surface";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 import {
@@ -90,7 +90,7 @@ function CharacterCard({
         onFocusCapture={onFocusCapture}
         onBlurCapture={onBlurCapture}
       >
-        <TiltSurface
+        <Surface
           as="button"
           ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
           ariaDisabled={isLocked}
@@ -120,7 +120,7 @@ function CharacterCard({
               isLocked && chooserLockedSurfaceClass,
             )}
           />
-        </TiltSurface>
+        </Surface>
         {visible ? (
           <HeroTooltip
             character={char}

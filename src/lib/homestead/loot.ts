@@ -77,6 +77,106 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
     guaranteed: materialCost({ food: 1 }),
     bonuses: [lootEntry("herbs", 0, 1, 0.3)],
   },
+  "will-o-wisp": {
+    guaranteed: materialCost({ crystal: 2 }),
+    bonuses: [lootEntry("crystal", 0, 1, 0.6)],
+  },
+  bandit: {
+    guaranteed: materialCost({ wood: 1, food: 1 }),
+    bonuses: [lootEntry("wood", 0, 1, 0.4)],
+  },
+  ogre: {
+    guaranteed: materialCost({ iron: 2, food: 1 }),
+    bonuses: [lootEntry("iron", 0, 1, 0.5)],
+  },
+  "fire-imp": {
+    guaranteed: materialCost({ iron: 1, crystal: 1 }),
+    bonuses: [lootEntry("crystal", 0, 1, 0.4)],
+  },
+  hellhound: {
+    guaranteed: materialCost({ food: 2, iron: 1 }),
+    bonuses: [lootEntry("food", 0, 1, 0.4)],
+  },
+  pyromancer: {
+    guaranteed: materialCost({ crystal: 2, iron: 1 }),
+    bonuses: [lootEntry("crystal", 0, 1, 0.5)],
+  },
+  "giant-spider": {
+    guaranteed: materialCost({ herbs: 1, food: 1 }),
+    bonuses: [lootEntry("herbs", 0, 1, 0.5)],
+  },
+  "giant-snake": {
+    guaranteed: materialCost({ herbs: 2 }),
+    bonuses: [lootEntry("herbs", 0, 1, 0.5)],
+  },
+  "blood-cultist": {
+    guaranteed: materialCost({ herbs: 2, crystal: 1 }),
+    bonuses: [lootEntry("crystal", 0, 1, 0.4)],
+  },
+  "dire-wolf": {
+    guaranteed: materialCost({ food: 2 }),
+    bonuses: [lootEntry("food", 0, 1, 0.5)],
+  },
+  vampire: {
+    guaranteed: materialCost({ herbs: 2, food: 1 }),
+    bonuses: [lootEntry("crystal", 0, 1, 0.4)],
+  },
+  "blood-countess": {
+    guaranteed: materialCost({ herbs: 3, crystal: 1 }),
+    bonuses: [lootEntry("herbs", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
+  },
+  zealot: {
+    guaranteed: materialCost({ food: 1, crystal: 1 }),
+    bonuses: [lootEntry("food", 0, 1, 0.4)],
+  },
+  cleric: {
+    guaranteed: materialCost({ herbs: 1, crystal: 1 }),
+    bonuses: [lootEntry("herbs", 0, 1, 0.4)],
+  },
+  inquisitor: {
+    guaranteed: materialCost({ iron: 1, crystal: 1 }),
+    bonuses: [lootEntry("iron", 0, 1, 0.4)],
+  },
+  paladin: {
+    guaranteed: materialCost({ iron: 2, crystal: 1 }),
+    bonuses: [lootEntry("iron", 0, 1, 0.5)],
+  },
+  seraph: {
+    guaranteed: materialCost({ crystal: 3, herbs: 1 }),
+    bonuses: [lootEntry("crystal", 0, 2, 0.6), lootEntry("herbs", 0, 1, 0.4)],
+  },
+  "winter-wolf": {
+    guaranteed: materialCost({ food: 1, crystal: 1 }),
+    bonuses: [lootEntry("crystal", 0, 1, 0.4)],
+  },
+  "ice-wraith": {
+    guaranteed: materialCost({ crystal: 2, herbs: 1 }),
+    bonuses: [lootEntry("crystal", 0, 1, 0.5)],
+  },
+  yeti: {
+    guaranteed: materialCost({ food: 2, iron: 1 }),
+    bonuses: [lootEntry("food", 0, 1, 0.4)],
+  },
+  banshee: {
+    guaranteed: materialCost({ herbs: 1, crystal: 1 }),
+    bonuses: [lootEntry("herbs", 0, 1, 0.4)],
+  },
+  brawler: {
+    guaranteed: materialCost({ iron: 2, food: 1 }),
+    bonuses: [lootEntry("iron", 0, 1, 0.5)],
+  },
+  "stone-golem": {
+    guaranteed: materialCost({ iron: 3 }),
+    bonuses: [lootEntry("iron", 0, 2, 0.5)],
+  },
+  "earth-elemental": {
+    guaranteed: materialCost({ iron: 1, herbs: 1 }),
+    bonuses: [lootEntry("iron", 0, 1, 0.4)],
+  },
+  "stone-titan": {
+    guaranteed: materialCost({ iron: 3, crystal: 1 }),
+    bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
+  },
 };
 
 export const enemyLootTableIds = Object.keys(enemyLootTables);

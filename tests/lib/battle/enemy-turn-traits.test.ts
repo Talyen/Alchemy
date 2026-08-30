@@ -7,6 +7,7 @@ import {
   ENEMY_TRAIT_TURN_START_HANDLER_IDS,
   PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS,
   PASSIVE_ONLY_ENEMY_TRAIT_IDS,
+  REACTION_ONLY_ENEMY_TRAIT_IDS,
   processEnemyRegeneration,
   processEnemyTraits,
 } from "@/lib/battle/enemy-turn-traits";
@@ -39,6 +40,36 @@ describe("enemy turn trait coverage", () => {
     );
     expect(traitOverlap).toEqual([]);
     expect(modifierOverlap).toEqual([]);
+    expect(PASSIVE_ONLY_ENEMY_TRAIT_IDS.filter((id) => REACTION_ONLY_ENEMY_TRAIT_IDS.includes(id))).toEqual([]);
+  });
+
+  it("tracks imported traits with explicit runtime reactions", () => {
+    const importedIds = [
+      "will-o-wisp",
+      "bandit",
+      "ogre",
+      "fire-imp",
+      "hellhound",
+      "pyromancer",
+      "giant-spider",
+      "giant-snake",
+      "blood-cultist",
+      "dire-wolf",
+      "vampire",
+      "blood-countess",
+      "zealot-enemy",
+      "inquisitor",
+      "paladin",
+      "seraph",
+      "winter-wolf",
+      "ice-wraith",
+      "yeti",
+      "banshee",
+      "brawler",
+      "earth-elemental",
+      "stone-titan",
+    ];
+    expect(importedIds.every((id) => REACTION_ONLY_ENEMY_TRAIT_IDS.includes(id))).toBe(true);
   });
 });
 

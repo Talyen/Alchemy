@@ -17,7 +17,7 @@ import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 import { KeywordToken, renderTokenizedDescription } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
-import { TiltSurface } from "../../shared/ui/tilt-surface";
+import { Surface } from "../../shared/ui/surface";
 import {
   cardInteractiveGlowClass,
   cardSurfaceClass,
@@ -28,7 +28,7 @@ import {
   chooserLockedSurfaceClass,
   chooserRowGapClass,
   sectionTitleClass,
-  tiltSurfaceSelectedRingClass,
+  surfaceSelectedRingClass,
 } from "@/features/alchemy/shared/config";
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
 import { TooltipBody } from "../../shared/ui/tooltip-panel";
@@ -99,11 +99,11 @@ function DifficultyCard({
           "group relative flex h-full w-full min-w-0 flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6 text-center shadow-md transition-all disabled:cursor-default",
           !locked && cardInteractiveGlowClass,
           locked && chooserLockedSurfaceClass,
-          isSelected && tiltSurfaceSelectedRingClass,
+          isSelected && surfaceSelectedRingClass,
         )}
       >
         {showUnlockedArt ? (
-          <TiltSurface
+          <Surface
             className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", chooserHeroArtWidthClass)}
             shimmerActive={shimmerActive}
             shimmerToken={shimmerToken}
@@ -116,7 +116,7 @@ function DifficultyCard({
                 Completed
               </div>
             )}
-          </TiltSurface>
+          </Surface>
         ) : (
           <div className={cn("relative aspect-[5/6] overflow-hidden rounded-shell-panel", chooserHeroArtWidthClass)}>
             <img
@@ -193,7 +193,7 @@ export function DifficultySelectScreen({
             "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6",
           )}
         >
-          <TiltSurface
+          <Surface
             className={cn("relative aspect-[3/4] overflow-hidden rounded-shell-panel", chooserHeroArtWidthClass)}
             shimmerActive={characterShimmer.shimmerActive}
             shimmerToken={characterShimmer.shimmerToken}
@@ -205,7 +205,7 @@ export function DifficultySelectScreen({
               alt={char.name}
               className={cn(cardSurfaceClass, "h-full w-full rounded-shell-panel object-cover")}
             />
-          </TiltSurface>
+          </Surface>
           <p className={cn("font-sans", sectionTitleClass)}>{char.name}</p>
           <div className="flex flex-wrap justify-center gap-1">
             {char.keywords.map((kw) => (

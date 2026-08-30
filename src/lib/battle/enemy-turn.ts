@@ -1,7 +1,7 @@
 import { applyIronwoodBuckler } from "./trinket-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import type { BattleState, CombatTextEvent } from "./types";
-import { processEnemyAttack } from "./enemy-turn-attack";
+import { processEnemyAttack, processEnemyTraitActionStart } from "./enemy-turn-attack";
 import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
 import {
@@ -74,6 +74,7 @@ function resolveEnemyPostTickResolution(
 ): { state: BattleState; afterAttackState?: BattleState } {
   let nextState = processEncounterTraitActionStart(state, texts);
   nextState = processEnemyTraits(nextState, texts, options);
+  nextState = processEnemyTraitActionStart(nextState, texts);
   let afterAttackState: BattleState | undefined;
   if (mode === "attack") {
     nextState = processEnemyAttack(nextState, texts);

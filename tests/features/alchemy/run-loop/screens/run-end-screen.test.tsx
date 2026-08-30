@@ -49,15 +49,32 @@ describe("RunEndScreen", () => {
     cleanup();
   });
 
-  it("shows keyword XP earned this run from runEndTalentXP snapshot", () => {
+  it("shows keyword XP earned this run with Lv# label and keyword styling", () => {
     renderRunEnd({
       runEndTalentXP: { physical: 12, burn: 3 },
       talentXP: { physical: 20, burn: 3 },
     });
 
-    expect(screen.getByText("+12").isConnected).toBe(true);
-    expect(screen.getByText("+3").isConnected).toBe(true);
+    expect(screen.queryByText("+12")).toBeNull();
+    expect(screen.queryByText("+3")).toBeNull();
+    expect(screen.queryByText("8/10")).toBeNull();
+    expect(screen.queryByText("3/10")).toBeNull();
+
     expect(screen.getByText("Physical").isConnected).toBe(true);
+    expect(screen.getByText("Burn").isConnected).toBe(true);
+
+    const physicalLv = screen
+      .getAllByText(/^Lv\d+$/)
+      .find((el) => el.className.includes(keywordDefinitions.physical.colorClass));
+    expect(physicalLv).toBeTruthy();
+
+    const burnLv = screen
+      .getAllByText(/^Lv\d+$/)
+      .find((el) => el.className.includes(keywordDefinitions.burn.colorClass));
+    expect(burnLv).toBeTruthy();
+
+    const progressBars = document.querySelectorAll(".h-1\\.5");
+    expect(progressBars.length).toBeGreaterThanOrEqual(2);
   });
 
   it("hides keyword section when runEndTalentXP is empty", () => {
@@ -65,6 +82,7 @@ describe("RunEndScreen", () => {
 
     expect(screen.queryByText("+12")).toBeNull();
     expect(screen.queryByText("Physical")).toBeNull();
+    expect(screen.queryByText(/^Lv\d+$/)).toBeNull();
     expect(screen.getByRole("button", { name: /continue/i }).isConnected).toBe(true);
   });
 

@@ -2,9 +2,9 @@ import { useCallback, useState, type ReactNode } from "react";
 import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
-import { BUTTON_WIDTH_MENU } from "@/features/alchemy/shared/config";
+import { BUTTON_WIDTH_MENU, cardHoverScaleClass } from "@/features/alchemy/shared/config";
 import { CardFlip } from "../../shared/ui/card-flip";
-import { TiltSurface } from "../../shared/ui/tilt-surface";
+import { Surface } from "../../shared/ui/surface";
 import { cn } from "@/lib/utils";
 import { LockedMenuItem } from "../../shared/ui/locked-menu-item";
 import {
@@ -69,9 +69,8 @@ export function MenuScreen({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-10 text-center">
-      <TiltSurface
-        className="relative w-full max-w-[47.77cqh] cursor-pointer"
-        tiltEnabled
+      <Surface
+        className={cn("relative w-full max-w-[47.77cqh] cursor-pointer", cardHoverScaleClass)}
         onDivClick={handleLogoClick}
         ariaLabel="Flip Alchemy logo"
       >
@@ -82,7 +81,7 @@ export function MenuScreen({
           front={<img src={variants[0]} alt="Alchemy logo" className="w-full object-contain" loading="eager" />}
           back={<img src={variants[variantIdx]} alt="Alchemy logo" className="w-full object-contain" loading="eager" />}
         />
-      </TiltSurface>
+      </Surface>
 
       <div className="grid gap-2 overflow-visible">
         <MenuNavButton>

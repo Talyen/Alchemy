@@ -83,6 +83,7 @@
     "perf:trace": "node scripts/run-performance.mjs --trace",
     "perf:compare": "node scripts/run-performance.mjs --compare",
     "balance:sim": "cross-env ALCHEMY_BALANCE_SIM=1 vitest run tests/balance/balance-report.test.ts --reporter=verbose && node scripts/open-report.mjs reports/balance-findings.html",
+    "test:balance": "vitest run --config vitest.balance.config.ts",
     "check:push": "npm run format:check && npm run typecheck:all && npm run lint && cross-env ALCHEMY_SKIP_ASSETS=1 npm run build && npm run test:e2e:prepush",
     "lint": "eslint . --max-warnings=0",
     "lint:boundaries": "depcruise src --config dependency-cruiser.config.mjs --output-type err",

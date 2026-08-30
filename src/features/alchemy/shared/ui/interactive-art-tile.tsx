@@ -4,7 +4,7 @@ import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 
 import { cardInteractiveGlowClass, cardShineFrameClass } from "../config";
-import { TiltSurface } from "./tilt-surface";
+import { Surface } from "./surface";
 import { useInteractiveCard } from "./use-interactive-card";
 import { useTileHoverPopup } from "./use-tile-hover-popup";
 
@@ -88,7 +88,7 @@ export function InteractiveArtTile({
       {}
       {/* eslint-disable-next-line react-hooks/refs */}
       {interactive && popup && showPopup ? popup({ visible: isHovered, triggerRef: wrapperRef }) : null}
-      <TiltSurface
+      <Surface
         as={as}
         className={cn(
           className,
@@ -108,7 +108,7 @@ export function InteractiveArtTile({
         <img src={art ?? undefined} alt={title} className={imageClassName} />
         {showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
         {children}
-      </TiltSurface>
+      </Surface>
     </div>
   );
 }

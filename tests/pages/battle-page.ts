@@ -12,6 +12,7 @@ export class BattlePage {
   readonly blockChip: Locator;
   readonly menuBtn: Locator;
   readonly autoplayToggle: Locator;
+  readonly enemyArt: Locator;
   readonly companionPanel: Locator;
   readonly deathsDoorIcon: Locator;
   readonly statusChip: (name: string) => Locator;
@@ -28,6 +29,7 @@ export class BattlePage {
     this.blockChip = this.page.getByRole("button", { name: /^Block \d+$/ }).first();
     this.menuBtn = this.page.getByRole("button", { name: "Menu" });
     this.autoplayToggle = this.page.getByTestId("autoplay-toggle");
+    this.enemyArt = this.page.getByTestId("battle-enemy-art-panel");
     this.companionPanel = this.page.getByTestId("active-companion");
     this.deathsDoorIcon = this.page.getByLabel("Death's Door");
     this.statusChip = (name: string) =>

@@ -55,6 +55,13 @@ describe("getOfferableCardPool", () => {
 });
 
 describe("enemyBestiary data integrity", () => {
+  it("contains the complete 39-enemy roster and assigned tier split", () => {
+    expect(enemyBestiary).toHaveLength(39);
+    expect(enemyBestiary.filter((enemy) => enemy.enemyType === "normal")).toHaveLength(12);
+    expect(enemyBestiary.filter((enemy) => enemy.enemyType === "elite")).toHaveLength(20);
+    expect(enemyBestiary.filter((enemy) => enemy.enemyType === "boss")).toHaveLength(7);
+  });
+
   it("all enemy IDs are unique", () => {
     const ids = enemyBestiary.map((e) => e.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -71,6 +78,13 @@ describe("enemyBestiary data integrity", () => {
       expect(enemy.title).toBeTruthy();
       expect(enemy.art).toBeTruthy();
     }
+  });
+
+  it("uses the imported Will-o-Wisp art and placeholders only for the art backlog", () => {
+    const willOWisp = enemyBestiary.find((enemy) => enemy.id === "will-o-wisp")!;
+    const placeholderArt = enemyBestiary.find((enemy) => enemy.id === "bandit")!.art;
+    expect(willOWisp.art).not.toBe(placeholderArt);
+    expect(enemyBestiary.filter((enemy) => enemy.art === placeholderArt)).toHaveLength(24);
   });
 });
 

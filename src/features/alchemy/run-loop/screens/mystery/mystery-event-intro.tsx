@@ -13,7 +13,7 @@ import {
   viewCardWidthClass,
 } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
-import { TiltSurface } from "../../../shared/ui/tilt-surface";
+import { Surface } from "../../../shared/ui/surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { MysteryEffectList } from "../../../shared/ui/mystery-effect-badge";
 import { FadeSlot } from "../../../shared/ui/fade-slot";
@@ -92,7 +92,7 @@ export function MysteryEventIntro({
   return (
     <div className="flex w-full flex-col items-center gap-6">
       {event.art ? (
-        <TiltSurface
+        <Surface
           shimmerActive={shimmerActive}
           shimmerToken={shimmerToken}
           onMouseEnter={onHoverStart}
@@ -114,7 +114,7 @@ export function MysteryEventIntro({
             loading="eager"
             data-testid="mystery-event-art"
           />
-        </TiltSurface>
+        </Surface>
       ) : featuredCard ? (
         <div>
           <BattleCardButton

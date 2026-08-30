@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MysteryRewardSummary } from "@/features/alchemy/run-loop/screens/mystery/mystery-reward-summary";
-import type { TrinketEntry } from "@/lib/game-data";
+import { keywordDefinitions, type TrinketEntry } from "@/lib/game-data";
 import type { MysteryChoice } from "@/lib/mystery";
 import { getGearInstanceTitle } from "@/lib/gear";
 
@@ -111,7 +111,12 @@ describe("MysteryRewardSummary", () => {
     );
 
     expect(screen.getByText("Burn")).toBeTruthy();
-    expect(screen.getByText("+8")).toBeTruthy();
+    expect(screen.queryByText("+8")).toBeNull();
+    expect(screen.queryByText("10/20")).toBeNull();
+
+    const burnLv = screen.getByText("Lv1");
+    expect(burnLv).toBeTruthy();
+    expect(burnLv.className).toContain(keywordDefinitions.burn.colorClass);
 
     const continueBtn = screen.getByRole("button", { name: "Continue" });
     expect(continueBtn).toBeTruthy();
@@ -142,9 +147,14 @@ describe("MysteryRewardSummary", () => {
     );
 
     expect(screen.getByText("Burn")).toBeTruthy();
-    expect(screen.getByText("+8")).toBeTruthy();
+    expect(screen.queryByText("+8")).toBeNull();
     expect(screen.getByText("Freeze")).toBeTruthy();
-    expect(screen.getByText("+6")).toBeTruthy();
+    expect(screen.queryByText("+6")).toBeNull();
+
+    const lvLabels = screen.getAllByText("Lv0");
+    expect(lvLabels).toHaveLength(2);
+    expect(lvLabels.some((el) => el.className.includes(keywordDefinitions.burn.colorClass))).toBe(true);
+    expect(lvLabels.some((el) => el.className.includes(keywordDefinitions.freeze.colorClass))).toBe(true);
   });
 
   it("shows the granted gear tile for gainGeneratedGear", () => {
@@ -162,7 +172,7 @@ describe("MysteryRewardSummary", () => {
     );
 
     expect(screen.getByText(getGearInstanceTitle(instance))).toBeTruthy();
-    const basicSurface = screen.getByRole("img", { name: getGearInstanceTitle(instance) }).closest(".tilt-surface");
+    const basicSurface = screen.getByRole("img", { name: getGearInstanceTitle(instance) }).closest(".surface");
     expect(basicSurface?.querySelector(".shine-border")).toBeNull();
     expect(basicSurface?.className).toMatch(/card-interactive-glow/);
   });
@@ -181,7 +191,7 @@ describe("MysteryRewardSummary", () => {
       />,
     );
 
-    const surface = screen.getByRole("img", { name: getGearInstanceTitle(instance) }).closest(".tilt-surface");
+    const surface = screen.getByRole("img", { name: getGearInstanceTitle(instance) }).closest(".surface");
     expect(surface?.querySelector(".shine-border")).not.toBeNull();
     expect(surface?.className).toMatch(/card-interactive-glow/);
     expect(surface?.className).toMatch(/has-shine-border/);

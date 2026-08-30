@@ -307,6 +307,7 @@ export { default as wheatField } from "@/assets/optimized/wheat-field.webp";
 export { default as wildcard } from "@/assets/optimized/wildcard.webp";
 export { default as wildwoodDraft } from "@/assets/optimized/wildwood-draft.webp";
 export { default as willOWispCompanion } from "@/assets/optimized/will-o-wisp-companion.webp";
+export { default as willOWisp } from "@/assets/optimized/will-o-wisp.webp";
 export { default as wish } from "@/assets/optimized/wish.webp";
 export { default as wishingPotion } from "@/assets/optimized/wishing-potion.webp";
 export { default as wishingWellCoin } from "@/assets/optimized/wishing-well-coin.webp";

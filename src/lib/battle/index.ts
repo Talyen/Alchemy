@@ -17,7 +17,11 @@ export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";
 export { endPlayerTurn, recoverLegacyEnemyPhase, type EndPlayerTurnResolution } from "./enemy-turn";
-export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
+export {
+  collectUncoveredDifficultyModifierKinds,
+  collectUncoveredEnemyTraitIds,
+  REACTION_ONLY_ENEMY_TRAIT_IDS,
+} from "./enemy-turn-traits";
 export { getBattleStartPlayerHealth } from "./start-health";
 export {
   fightPacingClockMultiplier,

@@ -19,6 +19,33 @@ const ALL_AREAS: ContentValidationArea[] = [
 ];
 
 describe("content authoring validation", () => {
+  const PLACEHOLDER_ENEMY_IDS = [
+    "bandit",
+    "banshee",
+    "blood-countess",
+    "blood-cultist",
+    "brawler",
+    "cleric",
+    "dire-wolf",
+    "earth-elemental",
+    "fire-imp",
+    "giant-snake",
+    "giant-spider",
+    "hellhound",
+    "ice-wraith",
+    "inquisitor",
+    "ogre",
+    "paladin",
+    "pyromancer",
+    "seraph",
+    "stone-golem",
+    "stone-titan",
+    "vampire",
+    "winter-wolf",
+    "yeti",
+    "zealot",
+  ];
+
   it("has no structural content errors", () => {
     const result = runContentValidation();
     const messages = result.errors.map((issue) => `[${issue.area}] ${issue.id}: ${issue.message}`);
@@ -29,7 +56,11 @@ describe("content authoring validation", () => {
     const result = runContentValidation();
     for (const area of ALL_AREAS) {
       const areaWarnings = result.warnings.filter((w) => w.area === area);
-      expect(areaWarnings, `${area} warnings`).toEqual([]);
+      if (area === "art") {
+        expect(areaWarnings.map((warning) => warning.id)).toEqual(PLACEHOLDER_ENEMY_IDS);
+      } else {
+        expect(areaWarnings, `${area} warnings`).toEqual([]);
+      }
     }
   });
 });

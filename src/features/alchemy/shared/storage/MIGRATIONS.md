@@ -69,6 +69,7 @@ Migration tests must verify gameplay progress, not just field presence:
 - Homestead materials and upgrade tiers remain intact.
 - Active campaign, labyrinth, and wildwood runs resume when structurally valid (**`activeRun` must not be silently dropped**).
 - Mid-combat snapshots preserve trinket effects, gear effects, and combat flags.
+- Enemy-trait combat flags are additive battle-only fields with `preserveAs: null`; older mid-combat snapshots receive their defaults during normalization, so this content change does not require a schema bump.
 - Active and parked runs preserve Boons, pending reward meaning, and battle Trinket manifests across the schema-11 to schema-12 rename.
 - Schema-13 Wildwood rewards resume from `interruptedFlow` (card, Boon, Gear, selection, companion handoff) after nested draft reward fields are lifted from a reward-phase draft or dropped.
 - Schema-14 Labyrinth maps are hex floors (`floors` + `nodes`). In-progress 8×9 grid maps cannot be converted: the migration keeps deck, gold, HP, and character, regenerates floor 1 from the run seed, and clears `labyrinthPendingNode`. Do not silently drop `activeRun`.

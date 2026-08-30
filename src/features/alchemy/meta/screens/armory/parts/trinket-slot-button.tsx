@@ -15,7 +15,7 @@ import {
 import { ShineBorder } from "@/components/ui/shine-border";
 import { DetailPopup } from "@/features/alchemy/shared/ui/card-popup";
 import { TrinketItemTitle } from "@/features/alchemy/shared/ui/trinket-item-title";
-import { TiltSurface } from "@/features/alchemy/shared/ui/tilt-surface";
+import { Surface } from "@/features/alchemy/shared/ui/surface";
 import { useInteractiveCard } from "@/features/alchemy/shared/ui/use-interactive-card";
 import { useTileHoverPopup } from "@/features/alchemy/shared/ui/use-tile-hover-popup";
 import { GearSlotArt } from "./gear-slot-art";
@@ -64,7 +64,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
           plasmaColorPair={getPlasmaColorPairForTrinket(trinket)}
         />
       ) : null}
-      <TiltSurface
+      <Surface
         as="button"
         ariaLabel={SLOT_ARIA_LABELS.trinket}
         ariaPressed={selected}
@@ -97,7 +97,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
             className={cn(trinketArtFillClass, trinketArtImageClass, "pointer-events-none absolute inset-0 z-10")}
           />
         ) : null}
-      </TiltSurface>
+      </Surface>
     </div>
   );
 });

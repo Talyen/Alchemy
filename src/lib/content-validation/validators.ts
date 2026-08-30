@@ -122,7 +122,7 @@ export function validateEnemies(collector: ReturnType<typeof createCollector>): 
 
   const bestiaryTraitIds = enemyBestiary.flatMap((enemy) => enemy.traits.map((trait) => trait.id));
   for (const traitId of collectUncoveredEnemyTraitIds(bestiaryTraitIds)) {
-    collector.error("enemies", traitId, "Enemy trait has no turn-start handler or passive-only entry");
+    collector.error("enemies", traitId, "Enemy trait has no runtime handler or reaction coverage");
   }
   for (const modifierKind of collectUncoveredDifficultyModifierKinds()) {
     collector.error(

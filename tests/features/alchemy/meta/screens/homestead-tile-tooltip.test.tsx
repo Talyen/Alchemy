@@ -48,6 +48,7 @@ describe("HomesteadTileFrame hover tooltip", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Test Homestead Node")).toBeTruthy();
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
       expect(panelText()).toContain("Gain");
       expect(panelText()).toContain("wood");
     });

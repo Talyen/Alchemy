@@ -1,9 +1,11 @@
 import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
+import { hasEnemyTrait } from "./enemy-turn-attack";
 import {
   setEnemyStatus,
   setPlayerStatus,
   addPlayerStatus,
+  addEnemyMitigation,
   type BattleState,
   type CcState,
   type CombatTextEvent,
@@ -79,6 +81,11 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
       stat: "armor",
       amount: armorAmount,
     });
+  }
+
+  if (stat === "freeze" && hasEnemyTrait(state, "yeti")) {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
+    nextState = addEnemyMitigation(nextState, "block", 1);
   }
 
   return nextState;

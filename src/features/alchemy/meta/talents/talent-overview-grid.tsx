@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { cardInteractiveGlowClass, cardSurfaceClass } from "../../shared/config";
 
-import { TiltSurface } from "../../shared/ui/tilt-surface";
+import { Surface } from "../../shared/ui/surface";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
 const OVERVIEW_ROW_SIZE = 7;
@@ -71,7 +71,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
         }}
         className="group relative flex cursor-pointer flex-col items-center focus:outline-none"
       >
-        <TiltSurface
+        <Surface
           as="div"
           shimmerActive={shimmerActive}
           shimmerToken={shimmerToken}
@@ -88,7 +88,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
             className="pointer-events-none h-full w-full rounded-shell-hero object-cover select-none"
             draggable={false}
           />
-        </TiltSurface>
+        </Surface>
 
         <div className="mt-1.5 flex max-w-full items-center justify-center gap-2.5">
           <span className="truncate text-center font-sans text-base font-bold tracking-wide text-foreground/90 transition-colors group-hover:text-amber-300 sm:text-lg">

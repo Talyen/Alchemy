@@ -8,7 +8,15 @@ import { enemyById } from "@/lib/game-data";
 
 describe("WILDWOOD_BOSS_IDS", () => {
   it("contains the explicit gauntlet allowlist and every entry is a boss", () => {
-    expect(WILDWOOD_BOSS_IDS).toEqual(["forge-golem", "frostwarden", "blight-treant", "iron-bear"]);
+    expect(WILDWOOD_BOSS_IDS).toEqual([
+      "forge-golem",
+      "frostwarden",
+      "blight-treant",
+      "iron-bear",
+      "blood-countess",
+      "seraph",
+      "stone-titan",
+    ]);
     for (const bossId of WILDWOOD_BOSS_IDS) {
       expect(enemyById[bossId].enemyType).toBe("boss");
       expect(enemyById[bossId].traits.length).toBeGreaterThan(0);

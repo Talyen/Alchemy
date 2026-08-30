@@ -16,12 +16,11 @@ const card: BattleCard = {
 describe("BattleCardButton", () => {
   afterEach(cleanup);
 
-  it("uses scale-only hover motion without enabling tilt", () => {
+  it("uses scale-only hover motion", () => {
     render(<BattleCardButton card={card} ariaLabel="Test Card" shimmerActive={false} shimmerToken={undefined} />);
 
     const button = screen.getByRole("button", { name: "Test Card" });
     expect(button.classList.contains("card-hover-scale")).toBe(true);
-    expect(button.getAttribute("data-tilt-strength")).toBeNull();
   });
 
   it("allows custom-transform cards to opt out of the shared scale", () => {

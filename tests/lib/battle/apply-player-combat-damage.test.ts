@@ -80,6 +80,15 @@ describe("applyPlayerCombatDamage", () => {
     expect(result.playerHealth).toBe(25);
   });
 
+  it("can bypass player mitigation for trait-authored damage", () => {
+    const state = patchBattleState({
+      playerHealth: 30,
+      talentEffects: talents({ damageReduction: 3, burnDamageReduction: 5 }),
+    });
+    const result = applyPlayerCombatDamage(state, 10, "burn", { ignoreMitigation: true });
+    expect(result.playerHealth).toBe(20);
+  });
+
   it("health does not go below zero", () => {
     const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: true });
     const result = applyPlayerCombatDamage(state, 20);

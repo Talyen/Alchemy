@@ -25,6 +25,27 @@ describe("normalizePersistedBattleState", () => {
     expect(normalized.flags.firstHolyCardFreeUsed).toBe(false);
   });
 
+  it("defaults additive enemy trait flags for older battle snapshots", () => {
+    const defaults = defaultBattleState();
+    const {
+      enemyFirstHitDoubleUsed: _firstHit,
+      enemyNextAttackCrit: _crit,
+      enemyNextAttackBonus: _bonus,
+      enemyNextAttackHolyBonus: _holyBonus,
+      enemyBrawlerDamagePenalty: _brawler,
+      ...legacyFlags
+    } = defaults.flags;
+    const normalized = normalizePersistedBattleState({
+      flags: legacyFlags as unknown as ReturnType<typeof defaultBattleState>["flags"],
+    });
+
+    expect(normalized.flags.enemyFirstHitDoubleUsed).toBe(false);
+    expect(normalized.flags.enemyNextAttackCrit).toBe(false);
+    expect(normalized.flags.enemyNextAttackBonus).toBe(0);
+    expect(normalized.flags.enemyNextAttackHolyBonus).toBe(0);
+    expect(normalized.flags.enemyBrawlerDamagePenalty).toBe(false);
+  });
+
   it("sanitizes persisted enemy traits", () => {
     const saved = {
       ...defaultBattleState(),

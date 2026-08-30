@@ -152,15 +152,27 @@ export function deathsDoorGraceTurns(extension: number): number {
   return DEATHS_DOOR_GRACE_TURNS + Math.max(0, extension);
 }
 
-export function applyPlayerCombatDamage(state: BattleState, damage: number, damageType?: string): BattleState {
+export interface EnemyTraitIgnoreMitigationOptions {
+  ignoreMitigation?: boolean;
+}
+
+export function applyPlayerCombatDamage(
+  state: BattleState,
+  damage: number,
+  damageType?: string,
+  options?: EnemyTraitIgnoreMitigationOptions,
+): BattleState {
   if (!Number.isFinite(damage) || damage <= 0) return state;
-  let reducedDamage = damage - state.talentEffects.damageReduction;
-  if (state.activeCompanion && state.talentEffects.damageReductionWithCompanion > 0) {
-    reducedDamage -= state.talentEffects.damageReductionWithCompanion;
+  let reducedDamage = damage;
+  if (!options?.ignoreMitigation) {
+    reducedDamage -= state.talentEffects.damageReduction;
+    if (state.activeCompanion && state.talentEffects.damageReductionWithCompanion > 0) {
+      reducedDamage -= state.talentEffects.damageReductionWithCompanion;
+    }
+    reducedDamage = computeDamageReduction(reducedDamage, damageType, state);
+    reducedDamage = Math.max(0, reducedDamage);
+    reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);
   }
-  reducedDamage = computeDamageReduction(reducedDamage, damageType, state);
-  reducedDamage = Math.max(0, reducedDamage);
-  reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);
   const nextHealth = clampHealth(state.playerHealth, -reducedDamage, state.playerMaxHealth);
   if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
   if (state.playerStatuses.phoenixFeather > 0) {

@@ -2,9 +2,11 @@ import {
   applyPlayerCombatDamage,
   scaleReceivedPlayerDamage,
   setPlayerStatus,
+  setFlag,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
+import { hasEnemyTrait } from "./enemy-turn-attack";
 import {
   decayArmorAfterDamage,
   decayHalvedStatus,
@@ -172,7 +174,11 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     if (enemyLeechDamage > 0) {
       next = applyEnemyLeechHealing(next, enemyLeechDamage, combatTexts);
     }
-    return { ...next, pendingEnemyBleedLeechHealing: 0 };
+    next = { ...next, pendingEnemyBleedLeechHealing: 0 };
+    if (hasEnemyTrait(state, "blood-cultist") && state.playerHealth > next.playerHealth) {
+      next = setFlag(next, "enemyNextAttackCrit", true);
+    }
+    return next;
   });
 }
 

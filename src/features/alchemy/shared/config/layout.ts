@@ -78,7 +78,7 @@ export const popupBaseClassName =
 
 export const tooltipWidthClass = "w-fit max-w-72";
 
-export const tiltSurfaceSelectedRingClass = "card-interactive-selected";
+export const surfaceSelectedRingClass = "card-interactive-selected";
 
 export const tooltipAnchorClassNames = {
   above: "bottom-full mb-4",

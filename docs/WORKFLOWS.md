@@ -92,17 +92,17 @@ Motion tokens live in `src/styles/theme.css` and `src/styles/components.css`. Ho
 
 Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared components before hand-rolling styles.
 
-| Concern        | Standard                                                                                                                                                                                             |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shape          | `rounded-xl` rectangles (`BUTTON_SHAPE`)                                                                                                                                                             |
-| Primary CTA    | `Button variant="primary"` (gold fill) — Play, Continue, Confirm                                                                                                                                     |
-| Secondary CTA  | `Button variant="outline"` — Back, Cancel, Skip, alternate menu nav                                                                                                                                  |
-| Accent CTA     | `ShineAccentButton` — corruption forward actions with shine border                                                                                                                                   |
-| Paired footers | `ActionButtonRow` — secondary left, primary right                                                                                                                                                    |
-| Equal choices  | Destination art tiles (`DestinationChoices` + `TiltSurface`) with a label under the art                                                                                                              |
-| Tabs           | `TabBar` — `h-11`, `rounded-xl`                                                                                                                                                                      |
-| Hover / press  | Cards and art surfaces use the shared `1.035` CSS hover scale; pointer tilt is reserved for the main-menu logo. Press feedback uses CSS `active:`. Do not add Framer hover scale or parallel motion. |
-| Width tiers    | `BUTTON_WIDTH_*` in `src/features/alchemy/shared/config/button-tokens.ts`                                                                                                                            |
+| Concern        | Standard                                                                                                                                            |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shape          | `rounded-xl` rectangles (`BUTTON_SHAPE`)                                                                                                            |
+| Primary CTA    | `Button variant="primary"` (gold fill) — Play, Continue, Confirm                                                                                    |
+| Secondary CTA  | `Button variant="outline"` — Back, Cancel, Skip, alternate menu nav                                                                                 |
+| Accent CTA     | `ShineAccentButton` — corruption forward actions with shine border                                                                                  |
+| Paired footers | `ActionButtonRow` — secondary left, primary right                                                                                                   |
+| Equal choices  | Destination art tiles (`DestinationChoices` + `Surface`) with a label under the art                                                                 |
+| Tabs           | `TabBar` — `h-11`, `rounded-xl`                                                                                                                     |
+| Hover / press  | Cards and art surfaces use the shared `1.035` CSS hover scale. Press feedback uses CSS `active:`. Do not add Framer hover scale or parallel motion. |
+| Width tiers    | `BUTTON_WIDTH_*` in `src/features/alchemy/shared/config/button-tokens.ts`                                                                           |
 
 | Step               | Guidance                                                                                 |
 | ------------------ | ---------------------------------------------------------------------------------------- |

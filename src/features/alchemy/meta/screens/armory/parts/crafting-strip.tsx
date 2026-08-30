@@ -5,7 +5,7 @@ import { PortaledTooltip } from "../../../../shared/ui/portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltip-panel";
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { CURRENCY_COUNT_LABEL_CLASS } from "./currency-styles";
-import { sectionTitleClass, tiltSurfaceSelectedRingClass } from "../../../../shared/config";
+import { sectionTitleClass, surfaceSelectedRingClass } from "../../../../shared/config";
 
 function CurrencyChip({
   currency,
@@ -39,7 +39,7 @@ function CurrencyChip({
         disabled={!canUse}
         className={cn(
           "relative h-20 w-20 overflow-hidden rounded-xl border border-border/80 bg-black",
-          armed && tiltSurfaceSelectedRingClass,
+          armed && surfaceSelectedRingClass,
           !canUse && "cursor-default opacity-50",
         )}
         onMouseEnter={onMouseEnter}
@@ -98,7 +98,7 @@ export function CraftingStrip({
           disabled={!editable || (!hasSalvageableGear && !salvageMode)}
           className={cn(
             "relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border/80 bg-black text-red-300",
-            salvageMode && tiltSurfaceSelectedRingClass,
+            salvageMode && surfaceSelectedRingClass,
             (!editable || (!hasSalvageableGear && !salvageMode)) && "cursor-default opacity-50",
           )}
           onClick={(event) => {
