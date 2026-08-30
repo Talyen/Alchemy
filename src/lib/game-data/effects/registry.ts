@@ -22,13 +22,16 @@ import {
   healEffectDefinition,
   loseHealthEffectDefinition,
 } from "./mana-health-schemas";
-import { summonCompanionEffectDefinition, buffCompanionEffectDefinition } from "./companion-schemas";
-import { gainGoldEffectDefinition, wishEffectDefinition, drawCardsEffectDefinition } from "./utility-schemas";
 import {
+  summonCompanionEffectDefinition,
+  buffCompanionEffectDefinition,
+  gainGoldEffectDefinition,
+  wishEffectDefinition,
+  drawCardsEffectDefinition,
   nextHitCritEffectDefinition,
   playNextCardTwiceEffectDefinition,
   nextHitPoisonEffectDefinition,
-} from "./flag-schemas";
+} from "./simple-schemas";
 
 export interface EffectKindDefinition<K extends BattleCardEffect["kind"] = BattleCardEffect["kind"]> {
   kind: K;

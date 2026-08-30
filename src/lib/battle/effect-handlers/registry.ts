@@ -23,15 +23,16 @@ import {
   applyHealEffect,
   applyLoseHealthEffect,
 } from "./mana-health-handlers";
-import { applySummonCompanionEffect, applyBuffCompanionEffect } from "./companion-handlers";
 import {
+  applySummonCompanionEffect,
+  applyBuffCompanionEffect,
   applyGainGoldEffect,
   applyWishEffectHandler,
   applyDrawCardsEffect,
   applyNextHitCritEffect,
   applyPlayNextCardTwiceEffect,
   applyNextHitPoisonEffect,
-} from "./utility-handlers";
+} from "./simple-handlers";
 
 type RegisteredEffectKind = Exclude<BattleCardEffectKind, "chance" | "repeat-over-turns">;
 
@@ -76,6 +77,7 @@ export function applyEffectByKind(
   context?: CardEffectResolutionContext,
 ): BattleState {
   if (!hasEffectApplyHandler(kind)) {
+    if (kind !== "unknown") console.warn(`[Battle] Missing handler for effect kind: ${kind}`);
     return state;
   }
   return EFFECT_APPLY_BY_KIND[kind](state, card, effect, potionMult, combatTexts, context);
