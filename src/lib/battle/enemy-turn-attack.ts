@@ -55,7 +55,7 @@ export function hasEnemyTrait(state: BattleState, traitId: string, traitSet?: Re
   return state.currentEnemy.traits.some((trait) => trait.id === traitId);
 }
 
-export function getEnemyTraitSet(state: BattleState): ReadonlySet<string> {
+function getEnemyTraitSet(state: BattleState): ReadonlySet<string> {
   return new Set(state.currentEnemy.traits.map((trait) => trait.id));
 }
 
