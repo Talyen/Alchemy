@@ -1,17 +1,10 @@
-import { mergeCombatText } from "./combat-text";
+import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { getBattleRng } from "./status-helpers";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
-import { hasEnemyTrait } from "./enemy-turn-attack";
-import {
-  clampHealth,
-  type BattleState,
-  type CombatTextEvent,
-  addEnemyMitigation,
-  addEnemyStatus,
-  setFlag,
-} from "./types";
+import { hasEnemyTrait } from "./enemy-trait-query";
+import { type BattleState, type CombatTextEvent, addEnemyMitigation, addEnemyStatus, setFlag } from "./types";
 import {
   DIFFICULTY_FORGE_PER_TURN,
   HALF_DIVISOR,
@@ -21,8 +14,7 @@ import {
   TRAIT_FORGE_PER_TURN,
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
-import { ENEMY_TURN_CONSTANTS, isEveryOtherTurnScalingTurn, isFreezeActiveForAspect } from "./enemy-turn-utils";
-import { paceCombatMagnitude } from "./fight-pacing";
+import { ENEMY_TURN_CONSTANTS, isEveryOtherTurnScalingTurn, isFreezeActiveForAspect } from "./enemy-turn-rules";
 
 export function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyRegeneration <= 0) return state;
@@ -35,14 +27,11 @@ export function processEnemyRegeneration(state: BattleState, combatTexts: Combat
     healAmount = Math.round(healAmount / HALF_DIVISOR);
   }
   if (healAmount <= 0) return state;
-  const pacedHeal = paceCombatMagnitude(state, healAmount, "enemy");
-  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: pacedHeal });
-  const nextHealth = clampHealth(state.enemyHealth, pacedHeal, state.enemyMaxHealth);
-  let nextState: BattleState = { ...state, enemyHealth: nextHealth };
+  let nextState = applyEnemyHealingWithCombatText(state, healAmount, combatTexts);
   if (
     hasEnemyTrait(state, "vampire") &&
     state.enemyHealth < state.enemyMaxHealth &&
-    nextHealth >= state.enemyMaxHealth
+    nextState.enemyHealth >= state.enemyMaxHealth
   ) {
     nextState = setFlag(nextState, "enemyNextAttackBonus", nextState.flags.enemyNextAttackBonus + 1);
   }

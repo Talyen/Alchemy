@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import {
@@ -10,7 +9,6 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { CyclingShineBorder } from "../../shared/ui/cycling-shine-border";
 import { HeroTooltip } from "../../shared/ui/hero-tooltip";
-import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { Surface } from "../../shared/ui/surface";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
@@ -23,8 +21,6 @@ import {
   chooserHeroRowShellWidthClass,
   chooserLockedSurfaceClass,
   getCharacterShineColors,
-  getPlasmaColorPair,
-  getPlasmaKeywordsForCharacter,
   WILDCARD_KEYWORD_SHINE_COLORS,
   WILDCARD_SHINE_CYCLE_MS,
 } from "@/features/alchemy/shared/config";
@@ -52,13 +48,11 @@ function CharacterCard({
   onSelect,
   isLocked,
   unlockRequirementText,
-  onHoverChange,
 }: {
   id: CharacterId;
   onSelect: (id: CharacterId) => void;
   isLocked: boolean;
   unlockRequirementText: string;
-  onHoverChange: (id: CharacterId | null) => void;
 }) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLDivElement>();
@@ -70,14 +64,12 @@ function CharacterCard({
   function handleEnter() {
     if (!isLocked) {
       onHoverStart();
-      onHoverChange(id);
     }
     onMouseEnter();
   }
 
   function handleLeave() {
     onMouseLeave();
-    onHoverChange(null);
   }
 
   return (
@@ -148,15 +140,6 @@ export function CharacterSelectScreen({
   finishedRunCharacters: CharacterId[];
 }) {
   const charIds = Object.keys(characters) as CharacterId[];
-  const [hoveredCharacterId, setHoveredCharacterId] = useState<CharacterId | null>(null);
-
-  const plasmaKeywordIds = useMemo(() => {
-    if (hoveredCharacterId && isCharacterUnlocked(hoveredCharacterId, finishedRunCharacters)) {
-      return getPlasmaKeywordsForCharacter(hoveredCharacterId);
-    }
-    return null;
-  }, [finishedRunCharacters, hoveredCharacterId]);
-  usePlasmaInteraction(plasmaKeywordIds ? getPlasmaColorPair(plasmaKeywordIds) : null, plasmaKeywordIds !== null);
 
   return (
     <TitledScreenShell
@@ -177,7 +160,6 @@ export function CharacterSelectScreen({
               onSelect={onSelect}
               isLocked={isLocked}
               unlockRequirementText={unlockRequirementText}
-              onHoverChange={setHoveredCharacterId}
             />
           );
         })}

@@ -90,6 +90,9 @@ npm run balance:sim
 # Increase iterations per scenario (default: 100)
 ALCHEMY_BALANCE_ITERATIONS=500 npm run balance:sim
 
+# Increase independent class-deck seeds (default: 3)
+ALCHEMY_BALANCE_DECK_SEEDS=5 npm run balance:sim
+
 # Change the play policy (random-playable, greedy-damage, defensive-random, greedy-effective-damage)
 ALCHEMY_BALANCE_POLICY=greedy-effective-damage npm run balance:sim
 
@@ -98,6 +101,9 @@ ALCHEMY_BALANCE_LOADOUT=bare npm run balance:sim
 
 # Measure raw kit without hidden fight pacing
 ALCHEMY_BALANCE_PACING=off npm run balance:sim
+
+# Run the low-iteration, side-effect-free integration check
+npm run test:balance
 ```
 
 The simulator covers deterministic early/mid/late progression scenarios using
@@ -105,6 +111,12 @@ combat-eligible talents and seeded loadouts. Exact presets, finding bands, and
 report grouping are owned by `src/lib/balance/` and the generated report; use
 findings as review input rather than applying tunings automatically. The
 summary opens `reports/balance-findings.html` and writes a JSON companion.
+Numeric environment values must be positive integers. Policy and loadout values
+must exactly match the choices above; pacing accepts `on`/`1`/`true` or
+`off`/`0`/`false` (empty or any other value now fails fast — previously empty string silently defaulted to `on`). Invalid configuration fails before report files are written.
+Sweep seeds are deterministic per report tier and were re-keyed during the report extraction (`report-catalog`/`report-sweeps`): compare reports only from the same extractor revision.
+`balance:sim` generates reports; `test:balance` only verifies deterministic,
+finite report construction and does not touch `reports/`.
 
 ---
 

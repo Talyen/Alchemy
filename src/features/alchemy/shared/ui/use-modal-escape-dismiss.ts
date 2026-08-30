@@ -30,3 +30,11 @@ export function useModalEscapeDismiss({
     });
   }, [active, id, escapeId, priority]);
 }
+
+export function useCaptureEscapeCancel(onCancel: (() => void) | undefined) {
+  useModalEscapeDismiss({
+    active: onCancel !== undefined,
+    id: "capture-escape-cancel",
+    onEscape: onCancel ?? (() => {}),
+  });
+}

@@ -125,7 +125,7 @@ function TrinketWalletResourcePill({
     <div
       className={cn(
         "flex items-center rounded-xl border border-border/60 bg-card/65 shadow-sm backdrop-blur-sm transition-colors",
-        large ? "min-h-[64px] gap-3.5 px-5 py-3" : "min-h-[52px] gap-3 px-3.5 py-2.5",
+        large ? "min-h-[64px] gap-3.5 px-5 py-3" : "min-h-[52px] gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-3.5",
         fillsAvailableWidth ? "w-full" : "w-auto",
         className,
       )}
@@ -134,8 +134,8 @@ function TrinketWalletResourcePill({
       <div className="flex min-w-0 flex-col text-left leading-tight">
         <span
           className={cn(
-            "truncate font-medium tracking-wider text-muted-foreground uppercase",
-            large ? "text-base" : "text-sm",
+            "font-medium tracking-wide whitespace-nowrap text-muted-foreground uppercase",
+            large ? "text-base" : "text-xs sm:text-sm",
           )}
         >
           {displayTitle}

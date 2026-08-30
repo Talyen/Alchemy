@@ -87,4 +87,9 @@ describe("labyrinth reachability", () => {
     expect(canEnterLabyrinthNode(map, LABYRINTH_ENTRANCE_NODE_ID)).toBe(false);
     expect(canEnterLabyrinthNode(map, "missing")).toBe(false);
   });
+
+  it("preserves map reference when attempting to clear an already-cleared or missing node", () => {
+    expect(withClearedNode(map, LABYRINTH_ENTRANCE_NODE_ID)).toBe(map);
+    expect(withClearedNode(map, "missing")).toBe(map);
+  });
 });

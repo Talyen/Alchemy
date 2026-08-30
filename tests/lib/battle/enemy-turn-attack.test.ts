@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { processEnemyAttack, processEnemyDamageEffect } from "@/lib/battle/enemy-turn-attack";
+import { enemyBestiary } from "@/lib/game-data";
+import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
 import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
@@ -414,5 +416,56 @@ describe("processEnemyAttack", () => {
     });
     const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 8 }, makeTexts());
     expect(result.playerHealth).toBeLessThan(30);
+  });
+
+  it("banshee purges one defensive status in priority order block→armor→forge→haste", () => {
+    const banshee = enemyBestiary.find((e) => e.id === "banshee")!;
+    const base = makeTestBattleState({
+      currentEnemy: banshee,
+      enemyAttackEffects: banshee.attackEffects,
+      playerHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 2, forge: 1, haste: 1 },
+      rng: () => 0.99,
+    });
+    const texts = makeTexts();
+    const purgedBlock = processEnemyAttack(base, texts);
+    expect(purgedBlock.playerStatuses.block).toBe(0);
+    expect(purgedBlock.playerStatuses.armor).toBe(2);
+    expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "block", text: "Purged" });
+
+    const noBlock = makeTestBattleState({
+      currentEnemy: banshee,
+      enemyAttackEffects: banshee.attackEffects,
+      playerHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 2, forge: 1, haste: 1 },
+      rng: () => 0.99,
+    });
+    const purgedArmor = processEnemyAttack(noBlock, []);
+    expect(purgedArmor.playerStatuses.armor).toBe(0);
+    expect(purgedArmor.playerStatuses.forge).toBe(1);
+  });
+
+  it("blood-countess damages itself on player heal (and also on enemy heal per trait)", async () => {
+    const { applyEnemyHealingWithCombatText, applyHealingWithCombatText } = await import("@/lib/battle/combat-text");
+    const countessState = makeTestBattleState({
+      currentEnemy: enemyBestiary.find((e) => e.id === "blood-countess")!,
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      enemyHealth: 10,
+      enemyMaxHealth: 10,
+    });
+    const healed = applyHealingWithCombatText(countessState, 5, []);
+    expect(healed.enemyHealth).toBe(9);
+    expect(healed.playerHealth).toBe(25);
+
+    const enemyHealState = makeTestBattleState({
+      currentEnemy: enemyBestiary.find((e) => e.id === "blood-countess")!,
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      enemyHealth: 5,
+      enemyMaxHealth: 10,
+    });
+    const enemyHealed = applyEnemyHealingWithCombatText(enemyHealState, 3, []);
+    expect(enemyHealed.enemyHealth).toBe(7);
   });
 });

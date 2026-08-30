@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
@@ -9,6 +9,8 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
   const clearErrors = useErrorLogStore((s) => s.clearErrors);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const reversedErrors = useMemo(() => [...errors].reverse(), [errors]);
+
   function handleCopyAll() {
     const text = errors
       .map(
@@ -16,7 +18,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
           `[${e.source}] ${e.message}\n  at ${new Date(e.timestamp).toISOString()}\n  stack: ${e.stack ?? "(none)"}\n  context: ${JSON.stringify(e.context)}\n`,
       )
       .join("\n---\n");
-    navigator.clipboard.writeText(text).catch(() => {});
+    navigator.clipboard?.writeText?.(text)?.catch(() => {});
   }
 
   return (
@@ -46,7 +48,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
         {errors.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">No errors logged.</p>
         ) : (
-          [...errors].reverse().map((e) => (
+          reversedErrors.map((e) => (
             <div
               key={e.id}
               className="cursor-pointer rounded-shell-card border border-border/70 p-4 text-left surface-muted"

@@ -1,6 +1,6 @@
 import { MIXED_POTION_CARD_ID, POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
 import type { BattleCard } from "../types";
-import { cardLibrary } from "../cards";
+import { cardLibrary } from "./library/cards";
 
 export function isMixedPotionCard(card: Pick<BattleCard, "id">): boolean {
   return card.id === MIXED_POTION_CARD_ID || card.id.startsWith(`${MIXED_POTION_CARD_ID}-`);

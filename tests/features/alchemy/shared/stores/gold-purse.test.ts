@@ -8,7 +8,7 @@ beforeEach(() => {
   resetRunDomainStore();
 });
 
-describe("shared gold purse", () => {
+describe("profile gold write port", () => {
   it("writes spend and earn through profile gold", () => {
     dispatchRunSessionCommand((draft) => setRunGold(draft, 40));
     dispatchRunSessionCommand((draft) => addRunGold(draft, 5));

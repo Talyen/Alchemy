@@ -2,6 +2,7 @@ import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import { defaultBattleState } from "@/lib/battle";
+import { BASE_PLAYER_MANA } from "@/lib/game-constants";
 import { makeTestCard } from "./cards";
 import { seededRng } from "./rng";
 
@@ -47,8 +48,8 @@ export function makeTestBattleState(overrides: Partial<BattleState> = {}): Battl
   const base = defaultBattleState();
   const merged = {
     ...base,
-    mana: 4,
-    maxMana: 4,
+    mana: BASE_PLAYER_MANA,
+    maxMana: BASE_PLAYER_MANA,
     rng: seededRng(42),
 
     appliesFightPacing: false,

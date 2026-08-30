@@ -1,8 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Anvil,
   Beaker,
   BookOpen,
   Coins,
+  Crown,
   Crosshair,
   Dices,
   Droplet,
@@ -16,6 +18,7 @@ import {
   Leaf,
   Map,
   PawPrint,
+  PlayingCards,
   Shield,
   ShieldAlert,
   ShieldHalf,
@@ -25,7 +28,6 @@ import {
   Sun,
   Swords,
   User,
-  WandSparkles,
   Wind,
   Zap,
   Trophy,
@@ -72,19 +74,19 @@ export const destinationMeta: Record<Destination, ThemedChooserMeta> = {
     plasmaColorPair: { primary: "#f87171", secondary: "#7f1d1d" },
   },
   "Elite Combat": {
-    icon: ShieldAlert,
+    icon: Skull,
     accentClassName: "text-violet-400",
     art: eliteEnemyBg,
     plasmaColorPair: { primary: "#c084fc", secondary: "#581c87" },
   },
   "Card Shop": {
-    icon: Coins,
+    icon: PlayingCards,
     accentClassName: "text-amber-400",
     art: merchantShopBg,
     plasmaColorPair: { primary: "#fbbf24", secondary: "#78350f" },
   },
   "Alchemist's Shop": {
-    icon: WandSparkles,
+    icon: FlaskConical,
     accentClassName: "text-emerald-400",
     art: alchemistShopBg,
     plasmaColorPair: { primary: "#34d399", secondary: "#064e3b" },
@@ -96,7 +98,7 @@ export const destinationMeta: Record<Destination, ThemedChooserMeta> = {
     plasmaColorPair: { primary: "#c084fc", secondary: "#581c87" },
   },
   "Equipment Shop": {
-    icon: Hammer,
+    icon: Anvil,
     accentClassName: "text-slate-300",
     art: merchantShopBg,
     plasmaColorPair: { primary: "#cbd5e1", secondary: "#334155" },
@@ -120,7 +122,7 @@ export const destinationMeta: Record<Destination, ThemedChooserMeta> = {
     plasmaColorPair: { primary: "#6ee7b7", secondary: "#064e3b" },
   },
   "Boss Combat": {
-    icon: Skull,
+    icon: Crown,
     accentClassName: "text-red-400",
     art: normalEnemyBg,
     plasmaColorPair: { primary: "#f87171", secondary: "#7f1d1d" },

@@ -5,7 +5,7 @@ import { payKillPayouts } from "./kill-payouts";
 import { mergeCombatText } from "./combat-text";
 import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
 import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 const FOLLOW_UP_CARD: BattleCard = {
   id: "follow-up-typed-hit",

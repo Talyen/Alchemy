@@ -27,6 +27,8 @@ const UNUSED_MANIFEST_ALLOWLIST: ReadonlySet<keyof TalentEffectManifest> = new S
   "blockOnFreeze",
   "goldPerCombat",
   "blockOnNatureCard",
+  "bleedExecuteThreshold",
+  "bleedExecuteMultiplier",
 ]);
 
 const HOMESTEAD_KEYS = new Set<string>([

@@ -4,7 +4,7 @@ import { Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { ManaPanel, PilePanel } from "../../../shared/ui/battle-ui";
+import { ManaPanel, PilePanel } from "../../../shared/ui/battle/resources";
 import { battleBottomBarClass, battleBottomColumnClass, BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";

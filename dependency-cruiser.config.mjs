@@ -38,6 +38,13 @@ const [META_RUN_LOOP, META_RUN_SETUP] = META_NO_RUN_LOOP;
 
 export default {
   forbidden: [
+    {
+      name: "no-circular",
+      severity: "error",
+      comment: "Keep leaf battle and data modules independent from the orchestrators that consume them.",
+      from: {},
+      to: { circular: true },
+    },
     edge("lib-no-features", "^src/lib/", LIB_NO_FEATURES),
     edge("meta-no-run-loop", META_LAYER, [META_RUN_LOOP]),
     edge("meta-no-run-setup", META_LAYER, [META_RUN_SETUP]),

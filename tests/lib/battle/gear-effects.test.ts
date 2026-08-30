@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { applyGearKillRewards } from "@/lib/battle/kill-payouts";
 import { gearFrozenDamageMultiplier, scaledGearLeechHeal } from "@/lib/battle/gear-effects";
 import { applyGearDamageResistance, scaleGoldReward, type CombatTextEvent } from "@/lib/battle/types";
@@ -7,7 +7,7 @@ import { makeStateWithFailedRolls as makeState, makeTestCard, patchBattleState }
 import { defaultCcState } from "../../fixtures/default-battle-state";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
-import { processEnemyDamageEffect } from "@/lib/battle/enemy-turn-attack";
+import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { addEnemyStatus } from "@/lib/battle/types/state-helpers";

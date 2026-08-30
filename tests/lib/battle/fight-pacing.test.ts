@@ -32,13 +32,16 @@ const evenMetrics = {
 };
 
 describe("appliesFightPacingFromEnv", () => {
-  it("defaults on and treats off/0/false as disabled", () => {
+  it("defaults on and accepts explicit boolean forms", () => {
     expect(appliesFightPacingFromEnv(undefined)).toBe(true);
-    expect(appliesFightPacingFromEnv("")).toBe(true);
     expect(appliesFightPacingFromEnv("on")).toBe(true);
+    expect(appliesFightPacingFromEnv("1")).toBe(true);
+    expect(appliesFightPacingFromEnv("true")).toBe(true);
     expect(appliesFightPacingFromEnv("off")).toBe(false);
     expect(appliesFightPacingFromEnv("0")).toBe(false);
     expect(appliesFightPacingFromEnv("false")).toBe(false);
+    expect(() => appliesFightPacingFromEnv("")).toThrow("ALCHEMY_BALANCE_PACING");
+    expect(() => appliesFightPacingFromEnv("sometimes")).toThrow("ALCHEMY_BALANCE_PACING");
   });
 });
 

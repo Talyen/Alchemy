@@ -39,11 +39,13 @@ describe("card descriptions vs effects", () => {
     );
   });
 
-  it.each(cardLibrary.map((c) => [c.id, c.title] as const))("%s — descriptions match effects", (_id, title) => {
-    const card = cardLibrary.find((c) => c.title === title)!;
-    const issues = validateCardDescriptionParity(card);
-    expect(issues, issues.map((i) => i.message).join("; ")).toEqual([]);
-  });
+  it.each(cardLibrary.map((c) => [c.id, c.title, c] as const))(
+    "%s — descriptions match effects",
+    (_id, _title, card) => {
+      const issues = validateCardDescriptionParity(card);
+      expect(issues, issues.map((i) => i.message).join("; ")).toEqual([]);
+    },
+  );
 
   it("summon cards advertise companion turn damage from companionLibrary", () => {
     for (const card of cardLibrary) {
@@ -86,20 +88,22 @@ describe("card descriptions vs effects", () => {
 });
 
 describe("enemy descriptions vs attack effects", () => {
-  it.each(enemyBestiary.map((e) => [e.id, e.title] as const))("%s — attack effects have valid kinds", (_id, title) => {
-    const enemy = enemyBestiary.find((e) => e.title === title)!;
-    for (const effect of enemy.attackEffects) {
-      expect(["damage", "player-status"]).toContain(effect.kind);
-      if (effect.kind === "damage") {
-        expect(typeof effect.amount).toBe("number");
-        expect(effect.amount).toBeGreaterThan(0);
+  it.each(enemyBestiary.map((e) => [e.id, e.title, e] as const))(
+    "%s — attack effects have valid kinds",
+    (_id, _title, enemy) => {
+      for (const effect of enemy.attackEffects) {
+        expect(["damage", "player-status"]).toContain(effect.kind);
+        if (effect.kind === "damage") {
+          expect(typeof effect.amount).toBe("number");
+          expect(effect.amount).toBeGreaterThan(0);
+        }
+        if (effect.kind === "player-status") {
+          expect(typeof effect.amount).toBe("number");
+          expect(effect.amount).toBeGreaterThan(0);
+        }
       }
-      if (effect.kind === "player-status") {
-        expect(typeof effect.amount).toBe("number");
-        expect(effect.amount).toBeGreaterThan(0);
-      }
-    }
-  });
+    },
+  );
 
   it("every enemy trait is registered in TRAIT_REQUIRED_PATTERNS with valid text", () => {
     for (const enemy of enemyBestiary) {
@@ -132,10 +136,9 @@ describe("boon descriptions vs manifest effects", () => {
     }
   });
 
-  it.each(trinketLibrary.map((t) => [t.id, t.title] as const))(
+  it.each(trinketLibrary.map((t) => [t.id, t.title, t] as const))(
     "%s — description mentions key mechanic",
-    (_id, title) => {
-      const boon = trinketLibrary.find((t) => t.title === title)!;
+    (_id, _title, boon) => {
       const issues = validateTrinketDescriptionParity(boon);
       expect(issues, issues.map((i) => i.message).join("; ")).toEqual([]);
     },

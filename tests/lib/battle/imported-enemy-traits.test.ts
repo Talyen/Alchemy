@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
 import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
 import { processEnemyAttack, processEnemyTraitActionStart } from "@/lib/battle/enemy-turn-attack";
+import { applyHealingWithCombatText } from "@/lib/battle/combat-text";
+import { processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import { resolvePlayerCrowdControlTriggers } from "@/lib/battle/status-cc";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
@@ -126,7 +128,7 @@ describe("imported enemy attack reactions", () => {
   it.each([
     ["hellhound", { burn: 1 }, 93],
     ["dire-wolf", { bleed: 1 }, 97],
-    ["banshee", { stun: 1 }, 97],
+    ["banshee", { stun: 1 }, 96],
     ["ice-wraith", undefined, 98],
   ] as const)("modifies %s damage from its player/enemy state", (id, statuses, expectedHealth) => {
     const result = processEnemyAttack(
@@ -199,6 +201,39 @@ describe("imported enemy attack reactions", () => {
     expect(result.playerCC.freezeSkipTurns).toBeGreaterThan(0);
   });
 
+  it("purges Banshee buffs after a fully Blocked attack", () => {
+    const texts: Parameters<typeof processEnemyAttack>[1] = [];
+    const result = processEnemyAttack(
+      stateForEnemy("banshee", {
+        playerStatuses: defaultPlayerStatusValues({ block: 10, haste: 2 }),
+      }),
+      texts,
+    );
+    expect(result.playerHealth).toBe(100);
+    expect(result.playerStatuses.block).toBe(0);
+    expect(result.playerStatuses.haste).toBe(2);
+    expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "block", text: "Purged" });
+  });
+
+  it("damages Blood Countess when either combatant restores Health and pays kill rewards", () => {
+    const base = stateForEnemy("blood-countess");
+    const playerHealState = stateForEnemy("blood-countess", {
+      enemyHealth: 1,
+      playerHealth: 90,
+      gold: 0,
+      gearEffects: { ...base.gearEffects, goldOnKill: 3 },
+    });
+    const playerHealResult = applyHealingWithCombatText(playerHealState, 1, []);
+    expect(playerHealResult.enemyHealth).toBe(0);
+    expect(playerHealResult.gold).toBe(3);
+
+    const enemyHealResult = processEnemyRegeneration(
+      stateForEnemy("blood-countess", { enemyHealth: 90, enemyRegeneration: 3 }),
+      [],
+    );
+    expect(enemyHealResult.enemyHealth).toBe(92);
+  });
+
   it("halves Brawler's first attack after Stun resolves", () => {
     const stunned = resolveStunTrigger(
       stateForEnemy("brawler", {
@@ -218,13 +253,13 @@ describe("imported enemy attack reactions", () => {
     expect(result.playerHealth).toBe(95);
   });
 
-  it("applies boss auras during skipped turns", () => {
+  it("does not retain Blood Countess's retired Bleed aura", () => {
     const texts = [] as Parameters<typeof processEnemyTraitActionStart>[1];
     const result = processEnemyTraitActionStart(
       stateForEnemy("blood-countess", { enemyCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 } }),
       texts,
     );
-    expect(result.playerStatuses.bleed).toBe(2);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "bleed", amount: 1 });
+    expect(result.playerStatuses.bleed).toBe(0);
+    expect(texts).toEqual([]);
   });
 });

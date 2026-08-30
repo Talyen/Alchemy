@@ -41,7 +41,7 @@ describe("KeywordProgressCard", () => {
     expect(screen.queryByText("+5")).toBeNull();
     expect(screen.queryByText("10/20")).toBeNull();
 
-    const lvLabel = screen.getByText("Lv1");
+    const lvLabel = screen.getByText("Lv2");
     expect(lvLabel).toBeTruthy();
     expect(lvLabel.className).toContain(keywordDefinitions.physical.colorClass);
 
@@ -52,34 +52,34 @@ describe("KeywordProgressCard", () => {
   it("animates XP and updates Lv# when crossing talent thresholds", () => {
     render(<KeywordProgressCard kw="physical" runXP={12} totalXP={20} animate={true} />);
 
-    expect(screen.getByText("Lv0")).toBeTruthy();
+    expect(screen.getByText("Lv1")).toBeTruthy();
 
     advanceNextFrame(0);
-    expect(screen.getByText("Lv0")).toBeTruthy();
+    expect(screen.getByText("Lv1")).toBeTruthy();
 
     advanceNextFrame(200);
-    expect(screen.getByText("Lv1")).toBeTruthy();
+    expect(screen.getByText("Lv2")).toBeTruthy();
 
     advanceNextFrame(1000);
-    expect(screen.getByText("Lv1")).toBeTruthy();
+    expect(screen.getByText("Lv2")).toBeTruthy();
   });
 
   it("handles multiple level-ups across an animation window", () => {
     render(<KeywordProgressCard kw="nature" runXP={30} totalXP={35} animate={true} />);
 
-    expect(screen.getByText("Lv0")).toBeTruthy();
-
-    advanceNextFrame(0);
-    expect(screen.getByText("Lv0")).toBeTruthy();
-
-    advanceNextFrame(200);
     expect(screen.getByText("Lv1")).toBeTruthy();
 
-    advanceNextFrame(900);
+    advanceNextFrame(0);
+    expect(screen.getByText("Lv1")).toBeTruthy();
+
+    advanceNextFrame(200);
     expect(screen.getByText("Lv2")).toBeTruthy();
 
+    advanceNextFrame(900);
+    expect(screen.getByText("Lv3")).toBeTruthy();
+
     advanceNextFrame(1000);
-    expect(screen.getByText("Lv2")).toBeTruthy();
+    expect(screen.getByText("Lv3")).toBeTruthy();
   });
 
   it("cancels pending animation frame on unmount", () => {
@@ -95,11 +95,11 @@ describe("KeywordProgressCard", () => {
 
     advanceNextFrame(0);
     advanceNextFrame(200);
-    expect(screen.getByText("Lv1")).toBeTruthy();
+    expect(screen.getByText("Lv2")).toBeTruthy();
 
     rerender(<KeywordProgressCard kw="burn" runXP={12} totalXP={20} animate={false} />);
     expect(cancelRafSpy).toHaveBeenCalled();
-    expect(screen.getByText("Lv0")).toBeTruthy();
+    expect(screen.getByText("Lv1")).toBeTruthy();
   });
 
   it("restarts animation when XP props update", () => {
@@ -107,12 +107,12 @@ describe("KeywordProgressCard", () => {
 
     advanceNextFrame(0);
     advanceNextFrame(1000);
-    expect(screen.getByText("Lv0")).toBeTruthy();
+    expect(screen.getByText("Lv1")).toBeTruthy();
 
     rerender(<KeywordProgressCard kw="burn" runXP={15} totalXP={20} animate={true} />);
 
     advanceNextFrame(0);
     advanceNextFrame(500);
-    expect(screen.getByText("Lv1")).toBeTruthy();
+    expect(screen.getByText("Lv2")).toBeTruthy();
   });
 });

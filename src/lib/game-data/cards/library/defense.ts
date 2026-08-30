@@ -48,10 +48,10 @@ export const defenseCards: BattleCard[] = [
   {
     id: "mana-shield",
     title: "Mana Shield",
-    descriptionLines: ["Convert each of your Mana into 5 Block"],
+    descriptionLines: ["Convert each of your Mana into 3 Block"],
     art: assetRefs.manaShield,
     cost: 1,
-    effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 }],
+    effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
   },
   cardBuilders.effectsCard({
     id: "prayer",

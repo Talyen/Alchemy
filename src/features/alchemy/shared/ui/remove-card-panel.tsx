@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { CardSelectionGrid } from "./card-selection-grid";
 import { GoldCost } from "./display-elements";
 import { SelectableCard } from "./selectable-card";
-import { useCaptureEscapeCancel } from "./use-capture-escape-cancel";
+import { useCaptureEscapeCancel } from "./use-modal-escape-dismiss";
 
 export function RemoveCardPanel({
   runDeck,

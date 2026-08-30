@@ -1,7 +1,9 @@
 import { talentPool } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import type { BalanceReportModel, PairedTierRow } from "./report-model";
-import { reportMethodologyLines, TITLE_LOOKUPS, type ReportRunOptions } from "./report-run";
+import { TITLE_LOOKUPS } from "./report-catalog";
+import type { ReportRunOptions } from "./report-options";
+import { reportMethodologyLines } from "./report-run";
 import type { PairedDelta, RateCell } from "./report-rankings";
 
 function escapeHtml(value: string): string {

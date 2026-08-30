@@ -4,6 +4,7 @@ import {
   canOfferWildwoodRemoval,
   canPrepareNextWildwoodBoss,
   canSkipWildwoodRemoval,
+  createInitialWildwoodDraftState,
   createWildwoodBossBag,
   drawWildwoodBoss,
   enterWildwoodBattle,
@@ -17,7 +18,7 @@ import {
   type WildwoodDraftState,
 } from "@/lib/content-systems/wildwood/gauntlet";
 import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
-import { DRAFT_ROUNDS } from "@/lib/game-constants";
+import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
 import type { BestiaryEntry, BattleCard } from "@/lib/game-data";
 import { makeTestCard } from "../../../fixtures/cards";
 
@@ -52,6 +53,14 @@ function card(id: string): BattleCard {
 }
 
 describe("Wildwood Draft gauntlet rules", () => {
+  it("initializes Wildwood draft state with valid initial choices", () => {
+    const initial = createInitialWildwoodDraftState("knight", () => 0.5);
+    expect(initial.phase).toBe("draft");
+    expect(initial.draftChoices).toHaveLength(DRAFT_CHOICES);
+    expect(initial.remainingBossIds).toEqual([]);
+    expect(initial.currentBossId).toBeNull();
+  });
+
   it("creates a shuffled bag containing every boss exactly once", () => {
     const bag = createWildwoodBossBag(() => 0.5);
     expect([...bag].sort()).toEqual([...WILDWOOD_BOSS_IDS].sort());

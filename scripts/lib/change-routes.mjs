@@ -89,6 +89,19 @@ export const ROUTES = Object.freeze([
     fixture: "src/lib/balance/findings.ts",
   },
   {
+    id: "desktop",
+    patterns: [
+      "desktop/**",
+      "scripts/dist-desktop.mjs",
+      "scripts/verify-desktop-package.mjs",
+      "scripts/lib/desktop-artifact.mjs",
+      "tests/desktop-*.test.ts",
+    ],
+    commands: ["unit-desktop"],
+    docs: [doc("docs/RELEASE.md", "Commands", "desktop packaging and verification")],
+    fixture: "desktop/package-layout.cjs",
+  },
+  {
     id: "shop",
     patterns: [
       "src/features/alchemy/run-loop/shop/**",

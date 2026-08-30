@@ -178,7 +178,7 @@ describe("storage io", () => {
   });
 
   it("reports warnings when an active run cannot be restored and allows writes", async () => {
-    vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({
       activeRun: {
         characterId: "bard",
@@ -488,6 +488,9 @@ describe("storage io", () => {
   });
 
   it("keeps writes disabled when desktop clear fails due to Steam Cloud", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
     const futurePayload = JSON.stringify({
       ...currentSchemaCampaignSave(),
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,

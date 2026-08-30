@@ -2,6 +2,8 @@ import type { EncounterCombatTraitId, EncounterRewardTraitId } from "./encounter
 
 export { CONTENT_SYSTEMS, CONTENT_SYSTEM_IDS, type ContentSystemId } from "./content-system-ids";
 export type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-traits";
+export { WILDWOOD_BOSS_IDS, type WildwoodBossId } from "./wildwood/bosses";
+export type { WildwoodDraftState, WildwoodModifierId } from "./wildwood/gauntlet";
 
 export type LabyrinthNodeType =
   | "entrance"

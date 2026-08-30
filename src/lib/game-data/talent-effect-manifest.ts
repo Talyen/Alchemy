@@ -220,6 +220,7 @@ export interface TalentEffectManifest {
   bleedExecuteThreshold: number;
   bleedExecuteMultiplier: number;
   bleedDesperateMultiplier: number;
+  bleedHalveArmorChance: number;
   bleedPoisonChance: number;
   bleedPoisonDamageTakenBonus: number;
   companionBleedDamageBonus: number;

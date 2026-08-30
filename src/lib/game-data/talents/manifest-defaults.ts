@@ -211,6 +211,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   bleedExecuteThreshold: 0,
   bleedExecuteMultiplier: 1,
   bleedDesperateMultiplier: 1,
+  bleedHalveArmorChance: 0,
   bleedPoisonChance: 0,
   bleedPoisonDamageTakenBonus: 0,
   companionBleedDamageBonus: 0,

@@ -21,7 +21,7 @@ Existing active plan `codebase-simplification-hardening.md` is preserved. This p
 
 - `src/features/alchemy/shared/stores/gear-store.ts` `gearPersistenceCodec.encode` returns live references (`inventories`, `loadouts`, `ownedTrinketIds`, `equippedTrinkets`, `craftingCurrencies`). Autosave debounces 500 ms / 2500 ms (`src/lib/game-constants/storage.ts`); a mutation before flush mutates the snapshot — silent loss-of-atomicity bug. `profile-store.ts:35-40` correctly clones via `cloneProfileSaveFields`.
 - `src/features/alchemy/shared/stores/run-session-read-port.ts` and `gear-store.ts:75-84` / `profile-store.ts:55-67` return shallow copies with comment "treat as read-only" but nested `shopState`, `battleState` remain live references — accidental mutation possible. No `Object.freeze` in dev, no lint guard.
-- `src/features/alchemy/shared/stores/gold-purse.ts` bidirectional sync (`syncPurseFromBattleGold` / `syncBattleGoldFromPurse`) is called from 3 battle commits (`write-port-run.ts:228,291,304`) plus `run-meta-rebind.ts:54`. Missing one path desyncs HUD vs save. Also `addProfileGold` hides `getGoldMultiplier * Math.floor` inside a setter (`write-port-run.ts:25-28`).
+- `src/features/alchemy/shared/stores/write-port-run.ts` bidirectional sync (`syncPurseFromBattleGold` / `syncBattleGoldFromPurse`) is called from 3 battle commits plus `run-meta-rebind.ts:54`. Missing one path desyncs HUD vs save. Also `addProfileGold` hides `getGoldMultiplier * Math.floor` inside a setter (`write-port-run.ts:25-28`).
 - Stale deprecated shims `knip.config.js:66-69` (`encode-shops.ts`, `write-port-battle.ts`, `write-port-profile.ts`) still on disk or ignored rather than deleted.
 
 **Right shape:**

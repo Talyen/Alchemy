@@ -1,5 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { ConfirmationDialog } from "@/features/alchemy/shared/ui/dialogs";
@@ -10,19 +9,17 @@ describe("ConfirmationDialog", () => {
     resetEscapeStackForTests();
   });
 
-  it("calls onCancel when Escape is pressed", async () => {
-    const user = userEvent.setup();
+  it("calls onCancel when Escape is pressed", () => {
     const onCancel = vi.fn();
 
     render(<ConfirmationDialog title="Delete item?" confirmLabel="Delete" onConfirm={vi.fn()} onCancel={onCancel} />);
 
-    await user.keyboard("{Escape}");
+    fireEvent.keyDown(window, { key: "Escape" });
 
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it("does not call onCancel on Escape when dismissOnEscape is false", async () => {
-    const user = userEvent.setup();
+  it("does not call onCancel on Escape when dismissOnEscape is false", () => {
     const onCancel = vi.fn();
 
     render(
@@ -35,18 +32,17 @@ describe("ConfirmationDialog", () => {
       />,
     );
 
-    await user.keyboard("{Escape}");
+    fireEvent.keyDown(window, { key: "Escape" });
 
     expect(onCancel).not.toHaveBeenCalled();
   });
 
-  it("renders confirm and cancel actions", async () => {
-    const user = userEvent.setup();
+  it("renders confirm and cancel actions", () => {
     const onConfirm = vi.fn();
 
     render(<ConfirmationDialog title="Delete item?" confirmLabel="Delete" onConfirm={onConfirm} onCancel={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });

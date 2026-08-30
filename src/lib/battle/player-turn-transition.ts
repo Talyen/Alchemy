@@ -1,22 +1,11 @@
-import { drawCards, applyDrawResult } from "./draw";
+import type { BattleCard } from "@/lib/game-data";
+import { CARDS_PER_TURN } from "../game-constants";
 import { applyHealingWithCombatText } from "./combat-text";
+import { drawCards, applyDrawResult } from "./draw";
+import { applyCardEffects } from "./effect-handlers";
+import { finalizeCcSkipTurnDecrement } from "./status-cc";
 import { decayHalvedStatus, getBattleRng } from "./status-helpers";
 import { deathsDoorGraceTurns, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
-import { CARDS_PER_TURN, PERCENT_DENOMINATOR } from "../game-constants";
-import { applyCardEffects } from "./effect-handlers";
-import { applyPlayerStatusEffect } from "./status-player";
-import { finalizeCcSkipTurnDecrement } from "./status-cc";
-import type { BattleCard } from "@/lib/game-data";
-
-export const ENEMY_TURN_CONSTANTS = {
-  IRON_HIDE_OPTIONS_COUNT: 3,
-};
-
-export function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
-  return state.turn % 2 === 0;
-}
-
-type FreezeAspect = "regen" | "scaling";
 
 function computeDeathsDoorGraceRemaining(state: BattleState): number {
   if (state.deathsDoorGraceTurnsRemaining !== null) return state.deathsDoorGraceTurnsRemaining;
@@ -25,12 +14,6 @@ function computeDeathsDoorGraceRemaining(state: BattleState): number {
     return graceTurns - (state.turn - state.deathsDoorTriggeredTurn);
   }
   return deathsDoorGraceTurns(state.talentEffects.deathsDoorExtension);
-}
-
-export function isFreezeActiveForAspect(state: BattleState, aspect: FreezeAspect): boolean {
-  if (state.enemyCC.freezeSkipTurns <= 0) return false;
-  if (aspect === "regen") return state.talentEffects.freezeBlocksRegen;
-  return state.talentEffects.freezePreventsEnemyScaling;
 }
 
 function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -57,10 +40,6 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
   );
 }
 
-export function scaleByRoomMultiplier(state: BattleState, value: number): number {
-  return Math.round(value * state.roomScalingMultiplier);
-}
-
 function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: boolean }): BattleState {
   return {
     ...state,
@@ -69,7 +48,6 @@ function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: bo
     enemyCC: { ...state.enemyCC, cooldown: Math.max(0, state.enemyCC.cooldown - 1) },
     playerStatuses: {
       ...state.playerStatuses,
-
       block: options?.preserveBlock ? state.playerStatuses.block : decayHalvedStatus(state.playerStatuses.block),
     },
     cardsPlayedThisTurn: 0,
@@ -155,39 +133,6 @@ export function advanceToPlayerTurn(
   );
   if (drawnState.gearEffects.healthPerTurn <= 0) return drawnState;
   return applyHealingWithCombatText(drawnState, drawnState.gearEffects.healthPerTurn, combatTexts);
-}
-
-export function checkHealthThresholds(
-  prevHealth: number,
-  nextHealth: number,
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-) {
-  let nextState = state;
-
-  function applyHealthThresholdStatBonus(
-    currentState: BattleState,
-    configs: { threshold: number; amount: number } | Array<{ threshold: number; amount: number }> | null,
-    stat: "block" | "armor",
-  ): BattleState {
-    const bonuses = configs == null ? [] : Array.isArray(configs) ? configs : [configs];
-    let next = currentState;
-    for (const config of bonuses) {
-      const thresholdHp = (state.playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
-      if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
-        next = applyPlayerStatusEffect(
-          next,
-          { kind: "player-status", status: stat, amount: config.amount },
-          combatTexts,
-        );
-      }
-    }
-    return next;
-  }
-
-  nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdBlock, "block");
-  nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdArmor, "armor");
-  return nextState;
 }
 
 export function reduceSkipTurns(state: BattleState): BattleState {

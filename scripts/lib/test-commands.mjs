@@ -97,6 +97,18 @@ export const COMMANDS = Object.freeze({
     command: NPM,
     args: ["test", "--", "tests/lib/balance"],
   },
+  "unit-desktop": {
+    label: "desktop main-process and packaging unit tests",
+    reason: "desktop bridge, security, crash reporting, and package layout share the Electron boundary",
+    command: NPM,
+    args: [
+      "test",
+      "--",
+      "tests/desktop-security.test.ts",
+      "tests/desktop-sentry.test.ts",
+      "tests/desktop-package-layout.test.ts",
+    ],
+  },
   "unit-shop": {
     label: "shop unit tests",
     reason: "shop commands and both shop screens share transaction behavior",

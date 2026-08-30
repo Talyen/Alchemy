@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, type KeywordId, type TalentXP, type TrinketEntry } from "@/lib/game-data";
 import { type MaterialId } from "@/lib/homestead/types";
@@ -55,7 +55,7 @@ function MysteryCardRewardItem({ card }: { card: BattleCard }) {
         shimmerToken={shimmerToken}
         className={cn(viewCardWidthClass, cardInteractiveGlowClass)}
       />
-      <p className={controlLabelClass}>
+      <p className={cn(controlLabelClass, isHovered ? "invisible" : undefined)} aria-hidden={isHovered || undefined}>
         <CardTitle card={card} />
       </p>
     </div>
@@ -63,10 +63,11 @@ function MysteryCardRewardItem({ card }: { card: BattleCard }) {
 }
 
 function MysteryTrinketRewardItem({ boon }: { boon: TrinketEntry }) {
+  const [isHovered, setIsHovered] = useState(false);
   return (
     <div className="flex flex-col items-center gap-3">
-      <TrinketTile trinket={boon} interactionKey="mystery-reward" temporary />
-      <p className={controlLabelClass}>
+      <TrinketTile trinket={boon} interactionKey="mystery-reward" temporary onHoverChange={setIsHovered} />
+      <p className={cn(controlLabelClass, isHovered ? "invisible" : undefined)} aria-hidden={isHovered || undefined}>
         <TrinketItemTitle trinket={boon} />
       </p>
     </div>
@@ -74,10 +75,11 @@ function MysteryTrinketRewardItem({ boon }: { boon: TrinketEntry }) {
 }
 
 function MysteryGearRewardItem({ instance }: { instance: GearInstance }) {
+  const [isHovered, setIsHovered] = useState(false);
   return (
     <div className="flex flex-col items-center gap-3">
-      <GearTile instance={instance} interactionKey="mystery-reward" />
-      <p className={controlLabelClass}>
+      <GearTile instance={instance} interactionKey="mystery-reward" onHoverChange={setIsHovered} />
+      <p className={cn(controlLabelClass, isHovered ? "invisible" : undefined)} aria-hidden={isHovered || undefined}>
         <GearItemTitle instance={instance} />
       </p>
     </div>
@@ -189,11 +191,13 @@ export function MysteryRewardSummary({
           runXP: amount,
           totalXP: (talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0),
         }))}
+        size="lg"
+        columns={5}
       />
 
       {resourceEffects.length > 0 ? (
         <div>
-          <FoundResourcesRow gold={totalGold} materials={mats} />
+          <FoundResourcesRow gold={totalGold} materials={mats} size="lg" />
         </div>
       ) : null}
 

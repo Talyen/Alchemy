@@ -1,7 +1,7 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OptionsScreen } from "@/features/alchemy/meta/screens/options-screen";
+import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 
 const defaultProps = {
   onOpenMenu: vi.fn(),
@@ -44,16 +44,17 @@ const defaultProps = {
 };
 
 describe("OptionsScreen", () => {
+  installDisabledAnimationsForTests();
+
   afterEach(() => {
     cleanup();
   });
 
-  it("calls onBack when the Back button is clicked", async () => {
+  it("calls onBack when the Back button is clicked", () => {
     const onBack = vi.fn();
-    const user = userEvent.setup();
     render(<OptionsScreen {...defaultProps} onBack={onBack} />);
 
-    await user.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
@@ -65,10 +66,9 @@ describe("OptionsScreen", () => {
   });
 
   it("renders the remember auto-battle toggle on the gameplay tab", async () => {
-    const user = userEvent.setup();
     render(<OptionsScreen {...defaultProps} />);
 
-    await user.click(screen.getByRole("button", { name: "Sound" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sound" }));
     await waitFor(() => {
       expect(screen.getByText("Mute in Background")).toBeTruthy();
     });
@@ -76,7 +76,7 @@ describe("OptionsScreen", () => {
       screen.queryByText("Silence music and effects while the game is in a background tab or minimized."),
     ).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Gameplay" }));
+    fireEvent.click(screen.getByRole("button", { name: "Gameplay" }));
     await waitFor(() => {
       expect(screen.getByText("Remember Auto-Battle Preference")).toBeTruthy();
     });
@@ -85,10 +85,9 @@ describe("OptionsScreen", () => {
   });
 
   it("keeps developer controls in a bottom-only section on the Other tab", async () => {
-    const user = userEvent.setup();
     render(<OptionsScreen {...defaultProps} />);
 
-    await user.click(screen.getByRole("button", { name: "Other" }));
+    fireEvent.click(screen.getByRole("button", { name: "Other" }));
     await waitFor(() => {
       expect(screen.getByText("Dev Only")).toBeTruthy();
     });

@@ -1,5 +1,5 @@
 import { clampHealth, setFlag, type BattleState, type CombatTextEvent } from "./types";
-import { hasEnemyTrait } from "./enemy-turn-attack";
+import { hasEnemyTrait } from "./enemy-trait-query";
 import { addGoldWithCombatText, mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";

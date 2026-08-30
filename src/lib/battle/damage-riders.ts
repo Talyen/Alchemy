@@ -17,7 +17,7 @@ import { detonateEnemyStatuses } from "./dot-resolve";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { addEnemyStatus, addPlayerStatus, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { BATTLE_CONFIG, HALF_DIVISOR } from "../game-constants";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 function applyBurnDamageRiders(
   state: BattleState,

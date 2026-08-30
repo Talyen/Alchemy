@@ -1,7 +1,7 @@
 import { clampHealth, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 import { payKillPayouts } from "./kill-payouts";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { mergeCombatText } from "./combat-text";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 

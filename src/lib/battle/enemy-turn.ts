@@ -9,7 +9,7 @@ import {
   reduceSkipTurns,
   resetEnemyTurnState,
   resolveDeathsDoorGraceExpiry,
-} from "./enemy-turn-utils";
+} from "./player-turn-transition";
 
 interface EndPlayerTurnResolutionBase {
   state: BattleState;

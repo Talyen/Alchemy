@@ -129,6 +129,17 @@
   }
 }
 
+@keyframes loadingWordFade {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @keyframes numberPop {
   0% {
     transform: translate3d(0, 2px, 0) scale3d(0.96, 0.96, 1);

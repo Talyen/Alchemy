@@ -361,6 +361,7 @@ describe("resolveStunTrigger", () => {
       enemyHealth: 30,
       enemyMaxHealth: 30,
       mana: 3,
+      maxMana: 4,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       gearEffects: { ...defaultGearEffects, manaOnStun: 2 },

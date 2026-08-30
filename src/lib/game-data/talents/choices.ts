@@ -1,16 +1,14 @@
 import { keywordDefinitions } from "../keywords";
 import type { KeywordId } from "../types";
-import { talentPool } from "./pool";
+import { getTalentsForKeyword } from "./talent-pool-definitions";
 import { isTalentPlaceholder, type TalentDefinition } from "./types";
+
+export { getTalentsForKeyword } from "./talent-pool-definitions";
 
 export const TALENT_ROW_SIZES = [1, 2, 3, 4] as const;
 
 export function getTalentTreeKeywordIds(): KeywordId[] {
   return (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => countImplementedTalents(kw) > 0);
-}
-
-export function getTalentsForKeyword(keywordId: KeywordId): TalentDefinition[] {
-  return talentPool.filter((t) => t.keywordId === keywordId);
 }
 
 function getImplementedTalentsForKeyword(keywordId: KeywordId): TalentDefinition[] {

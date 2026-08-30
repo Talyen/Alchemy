@@ -54,18 +54,8 @@ export function grantStartGold(draft: GameplayDraft, amount: number): void {
   setGold(draft, (gold) => gold + amount);
 }
 
-export function setProfileGold(draft: GameplayDraft, action: number | ((prev: number) => number)): void {
-  setGold(draft, action);
-}
-export function addProfileGold(draft: GameplayDraft, amount: number): void {
-  addGold(draft, amount);
-}
-export function setRunGold(draft: GameplayDraft, action: number | ((prev: number) => number)): void {
-  setGold(draft, action);
-}
-export function addRunGold(draft: GameplayDraft, amount: number): void {
-  addGold(draft, amount);
-}
+export const setRunGold = setGold;
+export const addRunGold = addGold;
 export const setRunPlayerHealth = createRunFieldSetter("runPlayerHealth");
 export const setRunMaxHealth = createRunFieldSetter("runMaxHealth");
 export const setRoomsEncountered = createRunFieldSetter("roomsEncountered");
@@ -219,9 +209,9 @@ export function withRestingEndPlayerTurnResolution(
   _draft: GameplayDraft,
   result: EndPlayerTurnResolution,
 ): EndPlayerTurnResolution {
-  const state = withRestingWorldBattleRng(result.state);
+  const state = withRestingWorldBattleRng(_draft, result.state);
   const afterAttack = result.afterAttackState
-    ? { afterAttackState: withRestingWorldBattleRng(result.afterAttackState) }
+    ? { afterAttackState: withRestingWorldBattleRng(_draft, result.afterAttackState) }
     : {};
   if (result.kind === "haste") {
     return { ...result, state, ...afterAttack };
@@ -229,7 +219,7 @@ export function withRestingEndPlayerTurnResolution(
   return {
     ...result,
     state,
-    enemyTurnStartState: withRestingWorldBattleRng(result.enemyTurnStartState),
+    enemyTurnStartState: withRestingWorldBattleRng(_draft, result.enemyTurnStartState),
     ...afterAttack,
   };
 }

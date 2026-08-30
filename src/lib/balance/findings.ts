@@ -17,7 +17,7 @@ import {
 } from "./findings-bands";
 import type { BalanceReportModel, ClassMatchupRow, PairedTierRow, TierRateRow } from "./report-model";
 import type { RateCell } from "./report-rankings";
-import { TITLE_LOOKUPS } from "./report-run";
+import { TITLE_LOOKUPS } from "./report-catalog";
 
 type FindingSeverity = "critical" | "serious" | "watch";
 type FindingScope = "enemy" | "class" | "matchup" | "card" | "talent" | "companion" | "boon" | "anomaly";

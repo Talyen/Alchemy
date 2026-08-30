@@ -43,7 +43,7 @@ Battle reads are data-only. Battle writes use focused draft-first mutators from 
 
 ### Run randomness
 
-Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Command recipes obtain their generator through `createDraftRunRandomSource(draft, stream)` so counter advancement commits or rolls back with the resulting gameplay state. Battle outcomes use the `world` stream: command bodies bind `BattleState.rng` with `withDraftWorldBattleRng(draft, state)` for the duration of the recipe. Stored battle snapshots and values returned from the command keep a resting callback (`withRestingWorldBattleRng`) that always throws if drawn. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
+Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Command recipes obtain their generator through `createDraftRunRandomSource(draft, stream)` so counter advancement commits or rolls back with the resulting gameplay state. Battle outcomes use the `world` stream: command bodies bind `BattleState.rng` with `withDraftWorldBattleRng(draft, state)` for the duration of the recipe. Stored battle snapshots and values returned from the command keep a resting callback (`withRestingWorldBattleRng(draft, state)` — single-arg `withRestingWorldBattleRng(state)` remains supported as a deprecated shim) that always throws if drawn. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
 
 `Math.random()` is allowed only to create a fresh run seed or for cosmetic/meta-only effects.
 
@@ -188,6 +188,7 @@ Gameplay mutations use the command boundary; persistence codecs receive a draft 
 Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/boundaries.js`) and double-checked by `npm run lint:boundaries` (dependency-cruiser). Phase bans and flat-config stacking order live in those files; `npm run lint:architecture-smoke` (`scripts/lint-architecture-smoke.mjs`) asserts stacked `no-restricted-imports` fragments on representative files. Summary:
 
 - `src/lib/**` must not import `@/features/**`
+- Source modules must remain acyclic; reusable battle rules and reactions live below turn/card orchestrators
 - `gameplay-state-store.ts` is internal to `shared/stores/`; other layers use capability hooks, reads, writes, commands, and lifecycle ports
 - Feature code outside `shared/stores/` imports capability ports, commands, reads, writes, and lifecycle modules directly (not `run-lifecycle` internals)
 - Screens must not import `run-loop/battle` or `run-loop/navigation` orchestration (screens may import `run-loop/battle/presentation/` leaves)

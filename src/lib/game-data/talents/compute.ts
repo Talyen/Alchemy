@@ -1,16 +1,14 @@
 import type { TalentEffectManifest } from "../talent-effect-manifest";
-import { talentPool } from "./pool";
+import { getTalentById } from "./talent-pool-definitions";
 import { isTalentPlaceholder, type TalentEffectOperation, type UnlockedTalents } from "./types";
 import { createEmptyTalentEffectManifest } from "./manifest-defaults";
-
-const talentById = new Map(talentPool.map((talent) => [talent.id, talent]));
 
 export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEffectManifest {
   const manifest = createEmptyTalentEffectManifest();
 
   for (const [keywordId, talentIds] of Object.entries(unlockedTalents)) {
     for (const talentId of talentIds ?? []) {
-      const talent = talentById.get(talentId);
+      const talent = getTalentById(talentId);
       if (!talent || isTalentPlaceholder(talent) || talent.keywordId !== keywordId) continue;
       for (const effect of talent.effects ?? []) {
         applyTalentEffect(manifest, effect);
@@ -27,7 +25,7 @@ export function normalizeUnlockedTalents(unlockedTalents: UnlockedTalents): Unlo
   for (const [keywordId, talentIds] of Object.entries(unlockedTalents)) {
     const validIds = [];
     for (const talentId of talentIds ?? []) {
-      const talent = talentById.get(talentId);
+      const talent = getTalentById(talentId);
       if (!talent || isTalentPlaceholder(talent) || talent.keywordId !== keywordId) continue;
       validIds.push(talentId);
     }

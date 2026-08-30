@@ -1,6 +1,6 @@
 import type { TrinketEntry } from "@/lib/game-data";
 
-import { PurchasableTrinketItem } from "../../shared/ui/purchasable-trinket-item";
+import { PurchasableTrinketItem } from "../../shared/ui/purchasable-shop-item";
 import { shopItemSlotKey } from "../shop/shop-slot-keys";
 import { GenericShopScreen } from "./generic-shop-screen";
 

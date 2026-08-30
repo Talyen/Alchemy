@@ -110,6 +110,13 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 3. Add a fixture at version `N−1` in `tests/fixtures/legacy-saves.ts`.
 4. Assert **gameplay outcome** in `save-migration-guard.test.ts` — not only JSON field presence.
 
+## Content changes without save bump (current)
+
+- **Talent `bleed-execute` rewritten (Flay):** `Exsanguinate` (Bleed double below 30% HP via `bleedExecuteThreshold=30`, `bleedExecuteMultiplier=2`) → `Flay` (Bleed 20% chance to halve enemy Armor via `bleedHalveArmorChance=20`). `bleedExecute*` remains in `TalentEffectManifest` with defaults `0` for older saves; no live talent sets those fields after the rewrite. No schema bump — manifests use `manifest-defaults.ts` with Zod `.default(0)`.
+- **`bleed-desperate` tuned:** `bleedDesperateMultiplier 2 → 1.5` (50% more Bleed below 50% HP).
+- **Card `kindling` rewritten:** builder `damageThenMultiplyEnemyStatusCard(burn ×2 stacks)` → `{kind:"damage", damageType:"burn", amount:1, tripleIfEnemyNotBurning:true, consume:true}` with new Zod field `tripleIfEnemyNotBurning`. Tombstoned decks silently drop the old ID; new saves encode the new shape. No schema bump — additive card schema field with default `undefined`.
+- **Enemy trait rebalance (battle-only, `preserveAs: null`):** `banshee` changed from `+1 damage while player stunned` to `purge one defensive status (block→armor→forge→haste) on landed hit`; `blood-countess` moved from enemy-turn bleed pressure to `player-heal → holy 1 self-damage (+ kill-payout check)` via `applyBloodCountessHealingReaction`. Both are in-memory battle flags with no persisted save field.
+
 ## Active-run RNG streams (`activeRun.rng`)
 
 Active runs persist a seed and counters for named run-outcome streams. This is an additive nested field, so it does not require a top-level schema-version bump: `ActiveRunDataSchema` creates a fresh seed with zero counters when loading a legacy active run. After that first load, the normal autosave writes the explicit RNG state and all subsequent resumes continue the same sequence.

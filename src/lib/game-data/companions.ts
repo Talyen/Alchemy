@@ -110,19 +110,6 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
   },
 };
 
-export const defaultCompanionBondLevels: Record<CompanionId, number> = {
-  wolf: 0,
-  "lizard-scout": 0,
-  "frost-whelp": 0,
-  bear: 0,
-  panther: 0,
-  phoenix: 0,
-  skeleton: 0,
-  pixie: 0,
-  "mana-moth": 0,
-  "will-o-wisp": 0,
-  "golden-retriever": 0,
-  "shield-scarab": 0,
-  "library-owl": 0,
-  fox: 0,
-};
+export const defaultCompanionBondLevels: Record<CompanionId, number> = Object.fromEntries(
+  Object.keys(companionLibrary).map((id) => [id, 0]),
+) as Record<CompanionId, number>;

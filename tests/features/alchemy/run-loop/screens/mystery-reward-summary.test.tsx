@@ -114,7 +114,7 @@ describe("MysteryRewardSummary", () => {
     expect(screen.queryByText("+8")).toBeNull();
     expect(screen.queryByText("10/20")).toBeNull();
 
-    const burnLv = screen.getByText("Lv1");
+    const burnLv = screen.getByText("Lv2");
     expect(burnLv).toBeTruthy();
     expect(burnLv.className).toContain(keywordDefinitions.burn.colorClass);
 
@@ -151,7 +151,7 @@ describe("MysteryRewardSummary", () => {
     expect(screen.getByText("Freeze")).toBeTruthy();
     expect(screen.queryByText("+6")).toBeNull();
 
-    const lvLabels = screen.getAllByText("Lv0");
+    const lvLabels = screen.getAllByText("Lv1");
     expect(lvLabels).toHaveLength(2);
     expect(lvLabels.some((el) => el.className.includes(keywordDefinitions.burn.colorClass))).toBe(true);
     expect(lvLabels.some((el) => el.className.includes(keywordDefinitions.freeze.colorClass))).toBe(true);

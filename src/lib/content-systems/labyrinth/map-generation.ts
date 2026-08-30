@@ -142,14 +142,15 @@ export function generateLabyrinthMap(rng: () => number): LabyrinthMap {
 }
 
 export function expandBeyondBoss(map: LabyrinthMap, bossId: string, rng: () => number): LabyrinthMap {
-  const next = cloneLabyrinthMap(map);
-  const boss = next.nodes[bossId];
-  if (!boss || boss.type !== "boss" || !boss.cleared || boss.outgoingIds.length > 0) return next;
+  const boss = map.nodes[bossId];
+  if (!boss || boss.type !== "boss" || !boss.cleared || boss.outgoingIds.length > 0) return map;
 
-  const generated = generateFloor(boss.floor + 1, rng, usedEnemyIds(next));
+  const next = cloneLabyrinthMap(map);
+  const nextBoss = next.nodes[bossId]!;
+  const generated = generateFloor(nextBoss.floor + 1, rng, usedEnemyIds(next));
   next.floors.push(generated.floor);
   for (const node of generated.nodes) next.nodes[node.id] = node;
-  next.nodes[bossId] = { ...boss, outgoingIds: [generated.entryId] };
+  next.nodes[bossId] = { ...nextBoss, outgoingIds: [generated.entryId] };
   next.currentFloor = generated.floor.depth;
   return next;
 }

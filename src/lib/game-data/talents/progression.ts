@@ -74,6 +74,7 @@ export function mergeRunTalentXPIntoPermanent(runTalentXP: TalentXP, talentXP: T
 export interface TalentKeywordProgress {
   totalXP: number;
   points: number;
+  displayLevel: number;
   xpForNext: number;
   xpRemaining: number;
   progressPercent: number;
@@ -88,6 +89,7 @@ export function getTalentKeywordProgress(
   totalTalents?: number,
 ): TalentKeywordProgress {
   const points = computeTalentPoints(totalXP);
+  const displayLevel = points + 1;
   const xpForNext = xpForNextPoint(points);
   const xpRemaining = xpToNextPoint(totalXP);
   const progressPercent = Math.min(
@@ -101,6 +103,7 @@ export function getTalentKeywordProgress(
   return {
     totalXP,
     points,
+    displayLevel,
     xpForNext,
     xpRemaining,
     progressPercent,

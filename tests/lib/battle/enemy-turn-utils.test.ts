@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   advanceToPlayerTurn,
-  checkHealthThresholds,
-  isFreezeActiveForAspect,
   resetEnemyTurnState,
   resolveDeathsDoorGraceExpiry,
-} from "@/lib/battle/enemy-turn-utils";
+} from "@/lib/battle/player-turn-transition";
+import { checkHealthThresholds } from "@/lib/battle/player-health-thresholds";
+import { isFreezeActiveForAspect } from "@/lib/battle/enemy-turn-rules";
 import { defaultTalentEffects } from "@/lib/battle";
 import { CARDS_PER_TURN } from "@/lib/game-constants";
 import { defaultGearEffects } from "@/lib/gear";

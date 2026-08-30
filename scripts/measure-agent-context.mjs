@@ -17,6 +17,7 @@ export const ROUTE_CONTEXT_BUDGETS = Object.freeze({
   homestead: { preread: 10 * 1024, total: 11 * 1024 },
   generated: { preread: 9 * 1024, total: 35 * 1024 },
   balance: { preread: 10 * 1024, total: 31 * 1024 },
+  desktop: { preread: 9 * 1024, total: 13 * 1024 },
   shop: { preread: 10 * 1024, total: 11 * 1024 },
   "shop-screen": { preread: 10 * 1024, total: 18 * 1024 },
   audio: { preread: 9 * 1024, total: 13 * 1024 },

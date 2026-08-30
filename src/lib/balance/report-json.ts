@@ -1,5 +1,6 @@
 import type { BalanceReportModel } from "./report-model";
-import { reportMethodologyLines, type ReportRunOptions } from "./report-run";
+import type { ReportRunOptions } from "./report-options";
+import { reportMethodologyLines } from "./report-run";
 
 export function renderBalanceReportJson(model: BalanceReportModel, options: ReportRunOptions): string {
   return `${JSON.stringify(

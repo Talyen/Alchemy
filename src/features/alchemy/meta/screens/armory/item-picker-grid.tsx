@@ -36,6 +36,7 @@ import {
 } from "./targeting-highlight";
 
 const INVENTORY_PAGE_SIZE = 6;
+const FILLER_INDICES = Array.from({ length: INVENTORY_PAGE_SIZE }, (_, i) => i);
 
 export function ItemPickerGrid({
   slot,
@@ -167,7 +168,7 @@ export function ItemPickerGrid({
               </div>
             );
           })}
-          {Array.from({ length: fillerCount }).map((_, index) => (
+          {FILLER_INDICES.slice(0, fillerCount).map((index) => (
             <div
               key={`armory-inventory-filler-${index}`}
               data-testid="armory-inventory-filler"

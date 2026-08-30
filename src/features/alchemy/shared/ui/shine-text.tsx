@@ -17,13 +17,11 @@ export function ShineText({
   fallbackClassName?: string | undefined;
 }) {
   const gradient = buildSmoothShineGradient(colors);
-  const glowColor = colors[0];
-  if (!gradient || !glowColor) {
+  if (!gradient) {
     return <span className={cn(fallbackClassName, className)}>{children}</span>;
   }
 
-  const style: CSSProperties & { "--shine-text-glow-color": string } = {
-    "--shine-text-glow-color": glowColor,
+  const style: CSSProperties = {
     backgroundImage: gradient,
   };
 

@@ -12,6 +12,7 @@ import { FadeSlot } from "@/features/alchemy/shared/ui/fade-slot";
 import { PaginationControls } from "@/features/alchemy/shared/ui/shared-ui";
 
 const PAGE_SIZE = 6;
+const FILLER_INDICES = Array.from({ length: PAGE_SIZE }, (_, i) => i);
 
 export function TrinketPickerGrid({
   characterId,
@@ -60,7 +61,7 @@ export function TrinketPickerGrid({
               </div>
             );
           })}
-          {Array.from({ length: fillerCount }).map((_, index) => (
+          {FILLER_INDICES.slice(0, fillerCount).map((index) => (
             <div
               key={`armory-trinket-filler-${index}`}
               className={cn(collectionGridTileWidthClass, gearArtAspectClass)}

@@ -71,6 +71,10 @@ export const CI_ROUTE_CONTRACTS = Object.freeze([
     markers: ["desktop_renderer:", '"src/features/alchemy/shell/**"', '"src/features/alchemy/run-loop/screens/**"'],
   },
   {
+    id: "desktop",
+    markers: ["desktop:", '"desktop/**"', '"scripts/lib/desktop-artifact*"', '"scripts/verify-desktop-package*"'],
+  },
+  {
     id: "assets",
     markers: [
       "assets:",

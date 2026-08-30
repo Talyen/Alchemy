@@ -52,7 +52,7 @@ export function KeywordProgressCard({
   }, [animate, startXP, endXP, animationKey]);
 
   const displayXP = animate && animationState?.key === animationKey ? animationState.xp : startXP;
-  const { points, progressPercent } = getTalentKeywordProgress(displayXP, 0);
+  const { displayLevel, progressPercent } = getTalentKeywordProgress(displayXP, 0);
   const Icon = keywordIcons[kw];
   const def = keywordDefinitions[kw];
   const large = size === "lg";
@@ -66,7 +66,7 @@ export function KeywordProgressCard({
             {def?.label ?? kw}
           </span>
         </div>
-        <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>Lv{points}</span>
+        <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>Lv{displayLevel}</span>
       </div>
       <Progress
         size="sm"

@@ -8,6 +8,7 @@ import {
   xpToNextPoint,
   addTalentXP,
   getTalentKeywordProgress,
+  normalizeUnlockedTalents,
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 
@@ -15,6 +16,12 @@ describe("xpForNextPoint", () => {
   it("returns 10 XP for point 0→1", () => expect(xpForNextPoint(0)).toBe(10));
   it("returns 20 XP for point 1→2", () => expect(xpForNextPoint(1)).toBe(20));
   it("returns 50 XP for point 4→5", () => expect(xpForNextPoint(4)).toBe(50));
+});
+
+describe("talent save compatibility", () => {
+  it("preserves the shipped Bleed talent id", () => {
+    expect(normalizeUnlockedTalents({ bleed: ["bleed-execute"] })).toEqual({ bleed: ["bleed-execute"] });
+  });
 });
 
 describe("xpThresholdForPoints", () => {
@@ -92,6 +99,7 @@ describe("getTalentKeywordProgress", () => {
     const result = getTalentKeywordProgress(0, 0);
     expect(result.totalXP).toBe(0);
     expect(result.points).toBe(0);
+    expect(result.displayLevel).toBe(1);
     expect(result.spentPoints).toBe(0);
     expect(result.unspentPoints).toBe(0);
     expect(result.hasUnspent).toBe(false);
@@ -101,6 +109,7 @@ describe("getTalentKeywordProgress", () => {
   it("reports 0 points below XP threshold", () => {
     const result = getTalentKeywordProgress(9, 0);
     expect(result.points).toBe(0);
+    expect(result.displayLevel).toBe(1);
     expect(result.xpForNext).toBe(10);
     expect(result.xpRemaining).toBe(1);
     expect(result.progressPercent).toBe(90);
@@ -109,6 +118,7 @@ describe("getTalentKeywordProgress", () => {
   it("reports 1 point at exactly 10 XP", () => {
     const result = getTalentKeywordProgress(10, 0);
     expect(result.points).toBe(1);
+    expect(result.displayLevel).toBe(2);
     expect(result.xpForNext).toBe(20);
     expect(result.xpRemaining).toBe(20);
     expect(result.progressPercent).toBe(0);
@@ -118,6 +128,7 @@ describe("getTalentKeywordProgress", () => {
   it("computes progress percentage correctly", () => {
     const result = getTalentKeywordProgress(15, 0);
     expect(result.points).toBe(1);
+    expect(result.displayLevel).toBe(2);
     expect(result.xpForNext).toBe(20);
     expect(result.xpRemaining).toBe(15);
     expect(result.progressPercent).toBe(25);
@@ -126,6 +137,7 @@ describe("getTalentKeywordProgress", () => {
   it("distinguishes spent vs unspent points", () => {
     const result = getTalentKeywordProgress(30, 1);
     expect(result.points).toBe(2);
+    expect(result.displayLevel).toBe(3);
     expect(result.spentPoints).toBe(1);
     expect(result.unspentPoints).toBe(1);
     expect(result.hasUnspent).toBe(true);
@@ -134,6 +146,7 @@ describe("getTalentKeywordProgress", () => {
   it("reports hasUnspent false when all points are spent", () => {
     const result = getTalentKeywordProgress(30, 2);
     expect(result.points).toBe(2);
+    expect(result.displayLevel).toBe(3);
     expect(result.spentPoints).toBe(2);
     expect(result.unspentPoints).toBe(0);
     expect(result.hasUnspent).toBe(false);
@@ -142,6 +155,7 @@ describe("getTalentKeywordProgress", () => {
   it("handles high XP values", () => {
     const result = getTalentKeywordProgress(100, 3);
     expect(result.points).toBe(4);
+    expect(result.displayLevel).toBe(5);
     expect(result.xpForNext).toBe(50);
     expect(result.spentPoints).toBe(3);
     expect(result.unspentPoints).toBe(1);
@@ -155,6 +169,7 @@ describe("getTalentKeywordProgress", () => {
   it("handles more spent than available points", () => {
     const result = getTalentKeywordProgress(10, 5);
     expect(result.points).toBe(1);
+    expect(result.displayLevel).toBe(2);
     expect(result.spentPoints).toBe(5);
     expect(result.unspentPoints).toBe(0);
     expect(result.hasUnspent).toBe(false);
@@ -164,6 +179,7 @@ describe("getTalentKeywordProgress", () => {
     const result = getTalentKeywordProgress(0, 0);
     expect(result).toHaveProperty("totalXP");
     expect(result).toHaveProperty("points");
+    expect(result).toHaveProperty("displayLevel");
     expect(result).toHaveProperty("xpForNext");
     expect(result).toHaveProperty("xpRemaining");
     expect(result).toHaveProperty("progressPercent");

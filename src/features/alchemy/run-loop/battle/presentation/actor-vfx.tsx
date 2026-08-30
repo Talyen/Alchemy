@@ -1,6 +1,8 @@
 import type { ComponentProps } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { ArtPanel, CompanionPanel, CombatTextRail } from "@/features/alchemy/shared/ui/battle-ui";
+import { ArtPanel } from "@/features/alchemy/shared/ui/battle/actor-panel";
+import { CombatTextRail } from "@/features/alchemy/shared/ui/battle/combat-text";
+import { CompanionPanel } from "@/features/alchemy/shared/ui/battle/companion-panel";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useBattlePresentationStore } from "../battle-presentation-store";
 

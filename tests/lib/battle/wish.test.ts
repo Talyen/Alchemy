@@ -400,6 +400,7 @@ describe("new wish talents", () => {
     const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       mana: 2,
+      maxMana: 4,
       talentEffects: { ...makeTestBattleState().talentEffects, manaOnWish: 2 },
     });
     const result = applyWishEffect(state, card, 1, []);

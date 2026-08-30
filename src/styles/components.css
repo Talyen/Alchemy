@@ -218,6 +218,11 @@
   .alchemy-loading-fade {
     animation: startupBlurFadeIn 320ms var(--ease-out-expo) both;
   }
+
+  .alchemy-loading-word {
+    animation: loadingWordFade 200ms ease-out both;
+    will-change: opacity, transform;
+  }
 }
 
 @utility surface-muted {
@@ -239,9 +244,6 @@
 
 @utility boss-title-shine {
   animation: var(--animate-boss-title-shine);
-  filter: drop-shadow(
-    0 0 5px color-mix(in srgb, var(--shine-text-glow-color, var(--color-foreground)) 62%, transparent)
-  );
   will-change: background-position;
 }
 
@@ -291,7 +293,6 @@
 /* Animated corruption-red gradient for corrupted card values and title prefixes.
    Repeats its color band around the shared foreground highlight for a seamless loop. */
 .text-shine-corruption {
-  --shine-text-glow-color: var(--color-destructive);
   background-image: linear-gradient(
     in oklab 90deg,
     var(--color-destructive),
@@ -307,7 +308,6 @@
   background-clip: text;
   color: transparent;
   animation: var(--animate-shine-text-corruption);
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--shine-text-glow-color) 62%, transparent));
 }
 
 /* Absolute children use the padding box. Pull shine out onto the same

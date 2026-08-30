@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";
 import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage/bootstrap-save-state";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
@@ -10,6 +10,10 @@ const globalWithWindow = globalThis as unknown as { window?: object };
 installStorageIoTestHooks();
 
 describe("bootstrapAlchemySaveState", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
   afterEach(() => {
     delete globalWithWindow.window;
   });

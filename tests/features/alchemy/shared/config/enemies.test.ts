@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
-import { getBossEnemy, getCurrentEnemy } from "@/features/alchemy/shared/config";
+import { getBossById, getBossEnemy, getCurrentEnemy, rollFreshBossId } from "@/features/alchemy/shared/config/enemies";
 
 describe("getCurrentEnemy", () => {
   it("returns a non-skeleton enemy when no enemy type is specified", () => {
@@ -55,5 +55,25 @@ describe("getBossEnemy", () => {
     const bossIds = enemyBestiary.filter((enemy) => enemy.enemyType === "boss").map((enemy) => enemy.id);
 
     expect(getBossEnemy(bossIds).enemyType).toBe("boss");
+  });
+});
+
+describe("getBossById", () => {
+  it("returns boss entry for valid boss ID", () => {
+    const boss = getBossById("frostwarden");
+    expect(boss?.id).toBe("frostwarden");
+    expect(boss?.enemyType).toBe("boss");
+  });
+
+  it("returns undefined for non-boss enemy ID or invalid ID", () => {
+    expect(getBossById("skeleton")).toBeUndefined();
+    expect(getBossById("unknown-enemy")).toBeUndefined();
+  });
+});
+
+describe("rollFreshBossId", () => {
+  it("returns a valid boss enemy ID", () => {
+    const bossId = rollFreshBossId();
+    expect(["forge-golem", "frostwarden", "blight-treant", "iron-bear"]).toContain(bossId);
   });
 });

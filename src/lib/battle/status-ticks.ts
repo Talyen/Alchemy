@@ -6,7 +6,7 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { hasEnemyTrait } from "./enemy-turn-attack";
+import { hasEnemyTrait } from "./enemy-trait-query";
 import {
   decayArmorAfterDamage,
   decayHalvedStatus,
@@ -21,7 +21,7 @@ import { computeLeechHeal } from "./leech-heal";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import { applyEnemyLeechHealing } from "./enemy-turn-attack";
+import { applyEnemyLeechHealing } from "./enemy-attack-damage";
 import { tryPoisonStunProc } from "./player-typed-hit";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { dealEnemyDotTick } from "./dot-resolve";

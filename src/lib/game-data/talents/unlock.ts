@@ -1,8 +1,8 @@
 import type { KeywordId } from "../types";
 import { countImplementedTalents, getTalentRowIndex, getTalentsForKeyword, isTalentRowUnlocked } from "./choices";
-import { talentPool } from "./pool";
 import { getTalentKeywordProgress, type TalentXP } from "./progression";
-import type { UnlockedTalents } from "./types";
+import { getTalentById } from "./talent-pool-definitions";
+import { isTalentPlaceholder, type UnlockedTalents } from "./types";
 
 export type UnlockTalentFailureReason =
   | "unknown-talent"
@@ -20,10 +20,10 @@ export function canUnlockTalent(
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
 ): UnlockTalentResult {
-  const talent = talentPool.find((entry) => entry.id === talentId);
+  const talent = getTalentById(talentId);
   if (!talent) return { ok: false, reason: "unknown-talent" };
   if (talent.keywordId !== keywordId) return { ok: false, reason: "keyword-mismatch" };
-  if (talent.isPlaceholder) return { ok: false, reason: "not-implemented" };
+  if (isTalentPlaceholder(talent)) return { ok: false, reason: "not-implemented" };
 
   const unlockedIds = unlockedTalents[keywordId] ?? [];
   if (unlockedIds.includes(talentId)) return { ok: false, reason: "already-unlocked" };

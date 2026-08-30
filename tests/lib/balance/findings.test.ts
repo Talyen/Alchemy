@@ -9,6 +9,7 @@ import {
   type PairedTierRow,
   type RateCell,
 } from "@/lib/balance";
+import { emptyPairedWinStats } from "@/lib/balance/report-rankings";
 
 function cell(partial: Partial<RateCell>): RateCell {
   return {
@@ -22,7 +23,7 @@ function cell(partial: Partial<RateCell>): RateCell {
 }
 
 function paired(id: string, late: ReturnType<typeof makePairedDelta>): PairedTierRow {
-  const empty = makePairedDelta(id, 0, 0, 0);
+  const empty = makePairedDelta(id, emptyPairedWinStats());
   return { id, early: empty, mid: empty, late };
 }
 

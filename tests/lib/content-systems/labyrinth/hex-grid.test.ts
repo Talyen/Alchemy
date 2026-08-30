@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   areHexesAdjacent,
+  compareHexPositions,
   hexAt,
   hexKey,
+  hexMetrics,
   hexNeighbors,
   hexRadius,
   isHexInBounds,
   projectedHalfColumn,
+  projectedX,
 } from "@/lib/content-systems/labyrinth/hex-grid";
 
 describe("hex grid", () => {
@@ -28,5 +31,18 @@ describe("hex grid", () => {
     expect(isHexInBounds(hexAt(8, 0))).toBe(true);
     expect(isHexInBounds(hexAt(9, 0))).toBe(false);
     expect(hexRadius(400)).toBeGreaterThan(0);
+  });
+
+  it("calculates hex metrics, projections, and position sorting correctly", () => {
+    const metrics = hexMetrics(20);
+    expect(metrics.radius).toBe(20);
+    expect(metrics.width).toBeCloseTo(20 * Math.sqrt(3));
+    expect(metrics.height).toBe(40);
+    expect(metrics.verticalStep).toBe(30);
+    expect(projectedX({ row: 0, col: 1 }, 20)).toBeCloseTo(20 * Math.sqrt(3));
+    expect(projectedX({ row: 2, col: 0 }, 20)).toBeCloseTo(20 * Math.sqrt(3));
+    expect(compareHexPositions({ row: 0, col: 0 }, { row: 1, col: 0 })).toBeLessThan(0);
+    expect(compareHexPositions({ row: 1, col: 0 }, { row: 1, col: 1 })).toBeLessThan(0);
+    expect(compareHexPositions({ row: 1, col: 1 }, { row: 1, col: 1 })).toBe(0);
   });
 });

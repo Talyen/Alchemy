@@ -22,7 +22,7 @@ function TestTile({ descriptionLines }: { descriptionLines: string[] }) {
         />
       )}
       surfaceClassName="w-32 aspect-[3/4]"
-      imageSrc=""
+      imageSrc="test-art.png"
       imageAlt="Test homestead tile"
       imageClassName="w-full h-full"
       footer={<div>footer</div>}

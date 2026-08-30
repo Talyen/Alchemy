@@ -304,6 +304,24 @@ describe("verify-changed route catalog", () => {
     }
   });
 
+  it("routes desktop CommonJS and packaging helpers through focused unit coverage", () => {
+    for (const filePath of ["desktop/after-pack.cjs", "scripts/lib/desktop-artifact.mjs"]) {
+      const plan = resolvePlan([filePath]);
+      expect(
+        plan.routes.map((route) => route.id),
+        filePath,
+      ).toContain("desktop");
+      expect(
+        plan.commands.map((command) => command.key),
+        filePath,
+      ).toContain("unit-desktop");
+      expect(
+        plan.routes.map((route) => route.id),
+        filePath,
+      ).not.toContain("unknown");
+    }
+  });
+
   it("measures only the owner docs for a representative route by default", () => {
     const measurement = measureContext({ paths: ["src/lib/battle/damage.ts"] });
     expect(measurement.docs.map((doc) => doc.path)).toEqual(["AGENTS.md", "docs/REFERENCE.md"]);

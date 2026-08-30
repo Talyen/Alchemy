@@ -8,7 +8,7 @@ import {
   WIN_RATE_BAND_BY_TYPE,
 } from "./findings-bands";
 import type { BalanceReportModel } from "./report-model";
-import type { ReportRunOptions } from "./report-run";
+import type { ReportRunOptions } from "./report-options";
 
 export function renderBalanceFindingsJson(
   findings: BalanceFindingsReport,

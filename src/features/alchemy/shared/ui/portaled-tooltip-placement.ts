@@ -89,7 +89,7 @@ export function buildSideTooltipStyle(
   const centerY = (anchor.top + anchor.bottom) / 2;
   const minTop = stage.top + halfHeight + padding;
   const maxTop = stage.bottom - halfHeight - padding;
-  const top = Math.min(Math.max(centerY, minTop), Math.max(minTop, maxTop));
+  const top = maxTop < minTop ? (stage.top + stage.bottom) / 2 : Math.min(Math.max(centerY, minTop), maxTop);
 
   return { side, style: { left: `${left}px`, top: `${top}px` } };
 }
@@ -104,21 +104,27 @@ export function usePortaledTooltipPlacement(
   const [placeBelow, setPlaceBelow] = useState(false);
   const [tooltipSide, setTooltipSide] = useState<PortaledTooltipSide | null>(null);
   const [tooltipStyle, setTooltipStyle] = useState<CSSProperties | undefined>(undefined);
+  const isAdjustingRef = useRef(false);
 
   useLayoutEffect(() => {
     if (!active || !triggerRef.current || !tooltipRef.current) {
+      if (tooltipRef.current) tooltipRef.current.style.width = "";
       setTooltipStyle(undefined);
       return;
     }
 
     const trigger = triggerRef.current;
-    const tooltip = tooltipRef.current;
+    const tooltipEl = tooltipRef.current;
 
     const updatePlacement = () => {
-      if (!triggerRef.current || !tooltipRef.current) return;
+      if (isAdjustingRef.current || !triggerRef.current || !tooltipRef.current) return;
+      isAdjustingRef.current = true;
+
+      const el = tooltipRef.current;
+      el.style.width = "";
 
       const triggerRect = triggerRef.current.getBoundingClientRect();
-      const tooltipRect = tooltipRef.current.getBoundingClientRect();
+      const tooltipRect = el.getBoundingClientRect();
       const stage = getVrStageBounds();
       const anchor = {
         centerX: (triggerRect.left + triggerRect.right) / 2,
@@ -137,13 +143,15 @@ export function usePortaledTooltipPlacement(
         setPlaceBelow(false);
         setTooltipStyle(style);
       }
+
+      isAdjustingRef.current = false;
     };
 
     updatePlacement();
 
     let frame: number | null = null;
     const requestPlacementUpdate = () => {
-      if (frame !== null) return;
+      if (isAdjustingRef.current || frame !== null) return;
       frame = requestAnimationFrame(() => {
         frame = null;
         updatePlacement();
@@ -156,13 +164,15 @@ export function usePortaledTooltipPlacement(
 
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(requestPlacementUpdate) : null;
     resizeObserver?.observe(trigger);
-    resizeObserver?.observe(tooltip);
+    resizeObserver?.observe(tooltipEl);
 
     return () => {
       if (frame !== null) cancelAnimationFrame(frame);
       window.removeEventListener("resize", requestPlacementUpdate);
       document.removeEventListener("scroll", requestPlacementUpdate, true);
       resizeObserver?.disconnect();
+      tooltipEl.style.width = "";
+      isAdjustingRef.current = false;
     };
   }, [active, triggerRef, padding, placement]);
 

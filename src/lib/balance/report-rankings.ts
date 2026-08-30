@@ -1,19 +1,5 @@
-export function proportionSE(rate: number, n: number): number {
-  if (n <= 0) return 0;
-  return Math.sqrt((rate * (1 - rate)) / n);
-}
-
-export function pairedDeltaSE(treatmentRate: number, baselineRate: number, n: number): number {
-  return Math.hypot(proportionSE(treatmentRate, n), proportionSE(baselineRate, n));
-}
-
 export function isDeltaNoisy(delta: number, se: number, k = 2): boolean {
   return se > 0 && Math.abs(delta) < k * se;
-}
-
-export function mean(values: readonly number[]): number {
-  if (values.length === 0) return 0;
-  return values.reduce((total, value) => total + value, 0) / values.length;
 }
 
 export interface RateCell {
@@ -62,10 +48,58 @@ export interface PairedDelta {
   noisy: boolean;
 }
 
-export function makePairedDelta(id: string, winRate: number, baseline: number, n: number): PairedDelta {
-  const delta = winRate - baseline;
-  const se = pairedDeltaSE(winRate, baseline, n);
-  return { id, delta, winRate, baseline, se, n, noisy: isDeltaNoisy(delta, se) };
+export interface PairedWinStats {
+  n: number;
+  treatmentWins: number;
+  baselineWins: number;
+  squaredDifferenceSum: number;
+}
+
+export function emptyPairedWinStats(): PairedWinStats {
+  return { n: 0, treatmentWins: 0, baselineWins: 0, squaredDifferenceSum: 0 };
+}
+
+export function pairedWinStats(baseline: Uint8Array, treatment: Uint8Array): PairedWinStats {
+  if (baseline.length !== treatment.length) {
+    throw new Error(`paired win series must have equal lengths; received ${baseline.length} and ${treatment.length}`);
+  }
+  const stats = emptyPairedWinStats();
+  stats.n = baseline.length;
+  for (let index = 0; index < baseline.length; index += 1) {
+    const baselineWin = baseline[index] ?? 0;
+    const treatmentWin = treatment[index] ?? 0;
+    stats.baselineWins += baselineWin;
+    stats.treatmentWins += treatmentWin;
+    const difference = treatmentWin - baselineWin;
+    stats.squaredDifferenceSum += difference * difference;
+  }
+  return stats;
+}
+
+export function combinePairedWinStats(stats: readonly PairedWinStats[]): PairedWinStats {
+  return stats.reduce(
+    (combined, entry) => ({
+      n: combined.n + entry.n,
+      treatmentWins: combined.treatmentWins + entry.treatmentWins,
+      baselineWins: combined.baselineWins + entry.baselineWins,
+      squaredDifferenceSum: combined.squaredDifferenceSum + entry.squaredDifferenceSum,
+    }),
+    emptyPairedWinStats(),
+  );
+}
+
+export function makePairedDelta(id: string, stats: PairedWinStats): PairedDelta {
+  if (stats.n === 0) return { id, delta: 0, winRate: 0, baseline: 0, se: 0, n: 0, noisy: true };
+  const winRate = stats.treatmentWins / stats.n;
+  const baseline = stats.baselineWins / stats.n;
+  const differenceSum = stats.treatmentWins - stats.baselineWins;
+  const delta = differenceSum / stats.n;
+  const sampleVariance =
+    stats.n > 1
+      ? Math.max(0, (stats.squaredDifferenceSum - (differenceSum * differenceSum) / stats.n) / (stats.n - 1))
+      : 0;
+  const se = stats.n > 1 ? Math.sqrt(sampleVariance / stats.n) : 0;
+  return { id, delta, winRate, baseline, se, n: stats.n, noisy: stats.n < 2 || isDeltaNoisy(delta, se) };
 }
 
 export function topPlayedCards(counts: Record<string, number>, limit = 5): Array<{ cardId: string; count: number }> {

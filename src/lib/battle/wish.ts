@@ -22,7 +22,7 @@ import {
 import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-content";
 import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
 import { payKillPayouts } from "./kill-payouts";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 function upgradeWishCard(card: BattleCard): BattleCard {
   const targets = getEditableCorruptionTargets(card);

@@ -17,7 +17,7 @@ The executable catalog in `scripts/lib/change-routes.mjs` owns path-to-command a
   outputs, the check restores them and fails with the changed paths.
 - Inspect without running: add `--plan`; use `--verbose-plan` only when full argv is needed.
 - Local defaults run focused unit suites plus the `@prepush` canary only; no focused browser flow runs by default. All five focused flows (`save`, `shop`, `audio`, `gear`, `mystery`) are opt-in via `--e2e <route>`, or bare `--e2e` for every touched route; `--full` adds the full local handoff gate. CI owns these flows: every-push critical gate, path-filtered `save-gate` / `shop-gate` / `gear-gate` / `mystery-gate` / `audio-gate`, and nightly.
-- The Electron desktop suite (`test:ship:desktop`) is CI-only: it runs on pushes matching the `desktop_renderer` path filter and unconditionally on nightly. Run it locally only by explicit choice.
+- Desktop CommonJS and packaging changes route through focused unit coverage locally. The Electron desktop suite (`test:ship:desktop`) remains CI-only: it runs on pushes matching the `desktop_renderer` path filter and unconditionally on nightly. Run it locally only by explicit choice.
 - Unknown paths are labeled `unknown` and receive a TypeScript fallback with a warning that non-TypeScript behavior may not be exercised.
 - Canonical route fixtures and selected commands are tested in `tests/scripts/verify-changed.test.ts`.
 - On any push to `main`, use the fast pre-push hook (`check:push`); CI runs after push. CI E2E parity is `test:e2e:prepush:full`.

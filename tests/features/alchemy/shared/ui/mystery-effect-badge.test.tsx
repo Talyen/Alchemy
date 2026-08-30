@@ -37,7 +37,7 @@ describe("MysteryEffectBadge", () => {
     expect(screen.getByText(new RegExp(`Choose 1 of ${MYSTERY_CARD_CHOICES} Archery cards`))).toBeTruthy();
   });
 
-  it("describes generated gear as bold shine text with keyword gradient", () => {
+  it("describes basic generated gear without shine", () => {
     const { container } = render(
       <MysteryEffectBadge
         effect={{ kind: "gainGeneratedGear", baseItemId: "emerald-ring" }}
@@ -48,10 +48,8 @@ describe("MysteryEffectBadge", () => {
     );
     const title = screen.getByText("Emerald Ring");
     expect(title).toBeTruthy();
-    expect(title.classList.contains("font-bold")).toBe(true);
-    expect(title.classList.contains("boss-title-shine")).toBe(true);
-    expect(title.classList.contains("bg-clip-text")).toBe(true);
-    expect(title.style.backgroundImage).toContain("linear-gradient");
+    expect(title.classList.contains("boss-title-shine")).toBe(false);
+    expect(title.style.backgroundImage).toBe("");
     expect(container.querySelector("svg")).toBeNull();
     expect(screen.getByText(/Armory/)).toBeTruthy();
   });
@@ -86,7 +84,6 @@ describe("MysteryEffectBadge", () => {
     expect(title.classList.contains("font-bold")).toBe(true);
     expect(title.classList.contains("boss-title-shine")).toBe(true);
     expect(title.style.backgroundImage).toContain("linear-gradient");
-    expect(title.style.getPropertyValue("--shine-text-glow-color")).toBe("#fbbf24");
   });
 
   it("renders trinkets as bold shine text with keyword gradient", () => {
@@ -124,7 +121,7 @@ describe("MysteryEffectBadge", () => {
     expect(title.classList.contains("boss-title-shine")).toBe(true);
   });
 
-  it("renders addCard as bold shine text with card keyword gradient", () => {
+  it("renders addCard without shine", () => {
     const { container } = render(
       <MysteryEffectBadge
         effect={{ kind: "addCard", cardId: "strike" }}
@@ -144,9 +141,8 @@ describe("MysteryEffectBadge", () => {
     );
     const title = screen.getByText("Strike");
     expect(title).toBeTruthy();
-    expect(title.classList.contains("font-bold")).toBe(true);
-    expect(title.classList.contains("boss-title-shine")).toBe(true);
-    expect(title.style.backgroundImage).toContain("linear-gradient");
+    expect(title.classList.contains("boss-title-shine")).toBe(false);
+    expect(title.style.backgroundImage).toBe("");
     expect(container.querySelector("svg")).toBeNull();
     expect(screen.getByText(/to your deck/)).toBeTruthy();
     expect(screen.queryByText(/card to your deck/)).toBeNull();

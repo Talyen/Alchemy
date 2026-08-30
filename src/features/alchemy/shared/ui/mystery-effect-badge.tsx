@@ -1,5 +1,5 @@
 import type { BattleCard, KeywordId } from "@/lib/game-data";
-import { getCardKeywords, keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
+import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
   getKeywordListShineColors,
   getTrinketShineColors,
@@ -60,8 +60,8 @@ const renderMaterialBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainMat
 const renderHealBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "healHealth" }>> = (effect) => {
   const healthDef = keywordDefinitions.health;
   return (
-    <span className="font-semibold">
-      Restore {effect.amount} <span className={cn(healthDef?.colorClass)}>Health</span>
+    <span>
+      Restore {effect.amount} <span className={cn("font-semibold", healthDef?.colorClass)}>Health</span>
       {effect.chance !== undefined ? ` (${Math.round(effect.chance * PERCENTAGE_MULTIPLIER)}% chance)` : ""}
     </span>
   );
@@ -74,8 +74,9 @@ const renderDamageBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "damageHea
 const renderXpBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainXP" }>> = (effect) => {
   const def = keywordDefinitions[effect.keyword];
   return (
-    <span className="font-semibold">
-      Gain {effect.amount} <span className={cn(def?.colorClass)}>{def?.label ?? effect.keyword}</span> XP
+    <span>
+      Gain {effect.amount} <span className={cn("font-semibold", def?.colorClass)}>{def?.label ?? effect.keyword}</span>{" "}
+      XP
     </span>
   );
 };
@@ -83,8 +84,7 @@ const renderXpBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainXP" }>> =
 const renderAddCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "addCard" }>> = (effect, ctx) => {
   const card = ctx.findCard?.(effect.cardId);
   const title = card?.title ?? "a card";
-  const keywords = card && "effects" in card ? getCardKeywords(card) : [];
-  const colors = getKeywordsShineColors(keywords);
+  const colors: readonly string[] = [];
 
   return ctx.tooltip ? (
     <span className="text-sm text-balance text-muted-foreground">
@@ -162,19 +162,21 @@ const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
       : "Gear";
 
   const keywords = baseItem?.affinityKeywords ?? [];
-  const colors = uniqueItem ? getUniqueGearTextShineColors() : getKeywordsShineColors(keywords);
+  const colors = uniqueItem ? getUniqueGearTextShineColors() : effect.astral ? getKeywordsShineColors(keywords) : [];
 
-  return ctx.tooltip ? (
-    <span className="text-sm text-balance text-muted-foreground">
-      Add{" "}
-      <ShineText colors={colors} {...mysteryShineTextProps}>
-        {title}
-      </ShineText>{" "}
-      to your Armory
-    </span>
-  ) : (
-    <span className="text-sm text-balance text-muted-foreground">Add {title} to your Armory</span>
-  );
+  if (ctx.tooltip) {
+    const titleNode =
+      colors.length > 0 ? (
+        <ShineText colors={colors} {...mysteryShineTextProps}>
+          {title}
+        </ShineText>
+      ) : (
+        <span className="font-bold text-foreground">{title}</span>
+      );
+    return <span className="text-sm text-balance text-muted-foreground">Add {titleNode} to your Armory</span>;
+  }
+
+  return <span className="text-sm text-balance text-muted-foreground">Add {title} to your Armory</span>;
 };
 
 const renderRemoveCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "removeCard" }>> = () => (

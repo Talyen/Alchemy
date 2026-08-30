@@ -55,6 +55,7 @@ describe("clearAllPersistentGameData", () => {
   });
 
   it("leaves memory intact when the disk wipe fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     mockedClearSave.mockResolvedValue(false);
     dispatchRunSessionCommand((draft) => {
       addMaterials(draft, { wood: 10, iron: 0, herbs: 0, food: 0, crystal: 0 });

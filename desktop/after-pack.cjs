@@ -1,36 +1,50 @@
 const path = require("node:path");
-const { copyFile } = require("node:fs/promises");
-const { glob } = require("node:fs/promises");
+const { copyFile, glob: fsGlob } = require("node:fs/promises");
 const { flipFuses, FuseV1Options, FuseVersion } = require("@electron/fuses");
+const { executablePathForPackContext } = require("./package-layout.cjs");
+
+async function* fallbackGlob(pattern, options) {
+  const { readdir, stat } = require("node:fs/promises");
+  const cwd = options?.cwd ?? ".";
+  const pending = [""];
+  while (pending.length > 0) {
+    const relative = pending.pop();
+    const absolute = path.join(cwd, relative);
+    const entries = await readdir(absolute, { withFileTypes: true });
+    for (const entry of entries) {
+      const entryRelative = path.join(relative, entry.name);
+      const entryAbsolute = path.join(cwd, entryRelative);
+      if (entry.isDirectory()) {
+        pending.push(entryRelative);
+      } else if (entry.isFile()) {
+        const matches = entryRelative === pattern || entryRelative.endsWith(pattern.replace("**/", ""));
+        if (matches && entryRelative.includes("v8_context_snapshot")) {
+          const s = await stat(entryAbsolute).catch(() => null);
+          if (s) yield entryRelative;
+        }
+      }
+    }
+  }
+}
+
+async function installBrowserProcessSnapshots(appOutDir) {
+  const globImpl = typeof fsGlob === "function" ? fsGlob : fallbackGlob;
+  for await (const defaultSnapshot of globImpl("**/v8_context_snapshot*.bin", { cwd: appOutDir })) {
+    const snapshotDirectory = path.dirname(defaultSnapshot);
+    await copyFile(
+      path.join(appOutDir, defaultSnapshot),
+      path.join(appOutDir, snapshotDirectory, "browser_v8_context_snapshot.bin"),
+    );
+  }
+}
 
 module.exports = async function hardenElectronAfterPack(context) {
   const targetPlatform = context.electronPlatformName ?? context.packager.platform.nodeName;
-  const executableName =
-    targetPlatform === "win32"
-      ? `${context.packager.appInfo.productFilename}.exe`
-      : context.packager.appInfo.productFilename;
-  const executablePath =
-    targetPlatform === "darwin"
-      ? path.join(
-          context.appOutDir,
-          `${context.packager.appInfo.productFilename}.app`,
-          "Contents",
-          "MacOS",
-          context.packager.appInfo.productFilename,
-        )
-      : path.join(context.appOutDir, executableName);
+  const executablePath = executablePathForPackContext(context);
 
   // Electron does not ship a browser-specific snapshot. Enabling the fuse
   // without installing one makes the executable abort before JavaScript starts.
-  for await (const defaultSnapshot of glob("**/v8_context_snapshot*.bin", {
-    cwd: context.appOutDir,
-  })) {
-    const snapshotDirectory = path.dirname(defaultSnapshot);
-    await copyFile(
-      path.join(context.appOutDir, defaultSnapshot),
-      path.join(context.appOutDir, snapshotDirectory, "browser_v8_context_snapshot.bin"),
-    );
-  }
+  await installBrowserProcessSnapshots(context.appOutDir);
 
   await flipFuses(executablePath, {
     version: FuseVersion.V1,
@@ -46,3 +60,6 @@ module.exports = async function hardenElectronAfterPack(context) {
     strictlyRequireAllFuses: true,
   });
 };
+
+module.exports.installBrowserProcessSnapshots = installBrowserProcessSnapshots;
+module.exports.resolvePackagedExecutable = executablePathForPackContext;

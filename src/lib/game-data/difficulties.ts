@@ -63,40 +63,23 @@ const GLOBAL_DIFFICULTIES: DifficultyDefinition[] = [
   },
 ];
 
-export const difficultyConfigs: Record<CharacterId, ClassDifficultyConfig> = {
-  knight: {
-    headerTitle: "A Knight's Journey",
-    difficulties: GLOBAL_DIFFICULTIES,
-  },
-  rogue: {
-    headerTitle: "A Rogue's Tale",
-    difficulties: GLOBAL_DIFFICULTIES,
-  },
-  wizard: {
-    headerTitle: "A Wizard's Saga",
-    difficulties: GLOBAL_DIFFICULTIES,
-  },
-  ranger: {
-    headerTitle: "A Ranger's Fable",
-    difficulties: GLOBAL_DIFFICULTIES,
-  },
-  alchemist: {
-    headerTitle: "An Alchemist's Journey",
-    difficulties: GLOBAL_DIFFICULTIES,
-  },
-  warlock: {
-    headerTitle: "A Warlock's Journey",
-    difficulties: GLOBAL_DIFFICULTIES,
-  },
-  druid: {
-    headerTitle: "A Druid's Journey",
-    difficulties: GLOBAL_DIFFICULTIES,
-  },
-  wildcard: {
-    headerTitle: "A Wildcard's Journey",
-    difficulties: GLOBAL_DIFFICULTIES,
-  },
-};
+const CHARACTER_HEADER_TITLES = {
+  knight: "A Knight's Journey",
+  rogue: "A Rogue's Tale",
+  wizard: "A Wizard's Saga",
+  ranger: "A Ranger's Fable",
+  alchemist: "An Alchemist's Journey",
+  warlock: "A Warlock's Journey",
+  druid: "A Druid's Journey",
+  wildcard: "A Wildcard's Journey",
+} satisfies Record<CharacterId, string>;
+
+export const difficultyConfigs: Record<CharacterId, ClassDifficultyConfig> = Object.fromEntries(
+  (Object.keys(CHARACTER_HEADER_TITLES) as CharacterId[]).map((id) => [
+    id,
+    { headerTitle: CHARACTER_HEADER_TITLES[id], difficulties: GLOBAL_DIFFICULTIES },
+  ]),
+) as Record<CharacterId, ClassDifficultyConfig>;
 
 export const DIFFICULTY_ORDER: DifficultyId[] = ["difficulty-1", "difficulty-2", "difficulty-3"];
 

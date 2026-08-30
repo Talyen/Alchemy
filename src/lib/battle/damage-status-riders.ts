@@ -122,6 +122,11 @@ function applyBleedStatusRider(
 ): BattleState {
   const bleedAmount = actualDamage * BLEED_STATUS_MULTIPLIER;
   let nextState = stackBleed(state, actualDamage);
+  if (actualDamage > 0 && rollPercent(nextState.talentEffects.bleedHalveArmorChance, getBattleRng(nextState))) {
+    const halved = Math.round(nextState.enemyMitigation.armor / 2);
+    const removed = nextState.enemyMitigation.armor - halved;
+    if (removed > 0) nextState = reduceEnemyArmor(nextState, removed);
+  }
   nextState = queueBleedLeech(nextState, effect, bleedAmount);
   nextState = procBleedPoison(nextState, actualDamage, bleedAmount);
   nextState = applyGearBurnBleedMirrorLeech(nextState, actualDamage, "burn", combatTexts);

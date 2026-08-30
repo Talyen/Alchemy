@@ -11,17 +11,36 @@ import {
   isHexInGenerationBounds,
 } from "./hex-grid";
 
+function computeAllDegrees(positions: readonly LabyrinthGridPosition[]): number[] {
+  const degrees = new Array<number>(positions.length).fill(0);
+  for (let i = 0; i < positions.length; i += 1) {
+    const source = positions[i]!;
+    for (let j = i + 1; j < positions.length; j += 1) {
+      if (areHexesAdjacent(source, positions[j]!)) {
+        degrees[i] = (degrees[i] ?? 0) + 1;
+        degrees[j] = (degrees[j] ?? 0) + 1;
+      }
+    }
+  }
+  return degrees;
+}
+
 export function hexDegree(positions: readonly LabyrinthGridPosition[], index: number): number {
   const source = positions[index];
   if (!source) return 0;
-  return positions.reduce((count, target, targetIndex) => {
-    if (targetIndex === index) return count;
-    return count + (areHexesAdjacent(source, target) ? 1 : 0);
-  }, 0);
+  let count = 0;
+  for (let i = 0; i < positions.length; i += 1) {
+    if (i !== index && areHexesAdjacent(source, positions[i]!)) {
+      count += 1;
+    }
+  }
+  return count;
 }
 
-export function floorLayoutCycleCount(positions: readonly LabyrinthGridPosition[]): number {
-  const degrees = positions.map((_, index) => hexDegree(positions, index));
+export function floorLayoutCycleCount(
+  positions: readonly LabyrinthGridPosition[],
+  degrees: readonly number[] = computeAllDegrees(positions),
+): number {
   const edgeCount = degrees.reduce((sum, degree) => sum + degree, 0) / 2;
   return edgeCount - positions.length + 1;
 }
@@ -36,7 +55,7 @@ export function isValidFloorLayout(positions: readonly LabyrinthGridPosition[]):
     seen.add(key);
   }
 
-  const degrees = positions.map((_, index) => hexDegree(positions, index));
+  const degrees = computeAllDegrees(positions);
   const leaves = degrees.filter((degree) => degree === 1);
   if (degrees[0] !== 1 || degrees[degrees.length - 1] !== 1) return false;
   if (leaves.length !== 2) return false;
@@ -59,7 +78,7 @@ export function isValidFloorLayout(positions: readonly LabyrinthGridPosition[]):
   }
   if (reached.size !== positions.length) return false;
 
-  return floorLayoutCycleCount(positions) >= 1;
+  return floorLayoutCycleCount(positions, degrees) >= 1;
 }
 
 function orderLayout(positions: LabyrinthGridPosition[]): LabyrinthGridPosition[] {
@@ -112,9 +131,15 @@ function templatesForCount(nodeCount: number): LabyrinthGridPosition[][] {
   return [withTail(TWO_PATH_STEM, nodeCount), withTail(THREE_PATH_STEM, nodeCount)];
 }
 
+const PREVALIDATED_LAYOUTS: Record<number, LabyrinthGridPosition[][]> = {
+  12: templatesForCount(12).filter(isValidFloorLayout),
+  13: templatesForCount(13).filter(isValidFloorLayout),
+  14: templatesForCount(14).filter(isValidFloorLayout),
+};
+
 export function generateFloorLayout(nodeCount: number, rng: () => number): LabyrinthGridPosition[] {
   const clamped = Math.min(LABYRINTH_HEX.maxNodesPerFloor, Math.max(LABYRINTH_HEX.minNodesPerFloor, nodeCount));
-  const valid = templatesForCount(clamped).filter(isValidFloorLayout);
+  const valid = PREVALIDATED_LAYOUTS[clamped] ?? templatesForCount(clamped).filter(isValidFloorLayout);
   const selected = pickRandom(valid, rng) ?? valid[0];
   if (!selected) {
     throw new Error(`Labyrinth floor constraints must produce a layout for ${clamped} chambers`);

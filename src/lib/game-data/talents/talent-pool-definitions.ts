@@ -209,18 +209,18 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "bleed-execute",
     keywordId: "bleed",
-    name: "Exsanguinate",
-    description: "Bleed deals double damage against enemies below 30% Health",
-    icon: "Skull",
-    effects: [setEffect("bleedExecuteThreshold", 30), setEffect("bleedExecuteMultiplier", 2)],
+    name: "Flay",
+    description: "Bleed damage has a 20% chance to halve enemy Armor",
+    icon: "Scissors",
+    effects: [setEffect("bleedHalveArmorChance", 20)],
   },
   {
     id: "bleed-desperate",
     keywordId: "bleed",
     name: "Bleeding Out",
-    description: "You deal double Bleed damage while below 50% Health",
+    description: "You deal 50% more Bleed damage while below 50% Health",
     icon: "HeartCrack",
-    effects: [setEffect("bleedDesperateMultiplier", 2)],
+    effects: [setEffect("bleedDesperateMultiplier", 1.5)],
   },
   {
     id: "bleed-poison-chance",
@@ -1544,6 +1544,14 @@ export const talentPool: TalentDefinition[] = [
   },
 ];
 
+export const talentById: ReadonlyMap<string, TalentDefinition> = new Map(
+  talentPool.map((talent) => [talent.id, talent]),
+);
+
+export function getTalentById(talentId: string): TalentDefinition | undefined {
+  return talentById.get(talentId);
+}
+
 export const talentPoolByKeyword: ReadonlyMap<KeywordId, TalentDefinition[]> = talentPool.reduce<
   Map<KeywordId, TalentDefinition[]>
 >((acc, talent) => {
@@ -1553,6 +1561,6 @@ export const talentPoolByKeyword: ReadonlyMap<KeywordId, TalentDefinition[]> = t
   return acc;
 }, new Map());
 
-export function getTalentsForKeyword(keywordId: KeywordId): readonly TalentDefinition[] {
+export function getTalentsForKeyword(keywordId: KeywordId): TalentDefinition[] {
   return talentPoolByKeyword.get(keywordId) ?? [];
 }

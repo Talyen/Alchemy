@@ -87,6 +87,7 @@ jobs:
               - "package.json"
               - "steam/**"
               - "scripts/dist-desktop*"
+              - "scripts/lib/desktop-artifact*"
               - "scripts/verify-desktop-package*"
               - "scripts/sync-steam-appid*"
             desktop_renderer:

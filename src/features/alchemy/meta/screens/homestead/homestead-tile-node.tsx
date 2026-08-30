@@ -46,7 +46,7 @@ export function HomesteadTileFrame({
               surfaceClassName,
             )}
           >
-            <img src={imageSrc} alt={imageAlt} className={imageClassName} />
+            {imageSrc ? <img src={imageSrc} alt={imageAlt} className={imageClassName} /> : null}
           </Surface>
         </div>
         {footer}

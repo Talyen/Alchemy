@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react";
 
 import type { BattleCard } from "@/lib/game-data";
 
-import { PurchasableCardItem } from "../../shared/ui/shop-card-item";
+import { PurchasableCardItem } from "../../shared/ui/purchasable-shop-item";
 import { RemoveCardPanel } from "../../shared/ui/remove-card-panel";
 import { ScreenDescription, ServiceButton } from "../../shared/ui/shared-ui";
 import { shopItemSlotKey, shopOfferingsSwapKey } from "../shop/shop-slot-keys";

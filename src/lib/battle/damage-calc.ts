@@ -65,6 +65,9 @@ function computeBaseRawAmount(
   if (effect.doubleIfEnemyBurning && state.enemyStatuses.burn > 0) {
     amount *= 2;
   }
+  if (effect.tripleIfEnemyNotBurning && state.enemyStatuses.burn === 0) {
+    amount *= 3;
+  }
   if (card?.tags?.includes("archery")) {
     amount += state.talentEffects.flatArrowDamage + state.gearEffects.flatArrowDamage;
   }

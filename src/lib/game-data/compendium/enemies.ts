@@ -255,7 +255,11 @@ export const enemyBestiary = [
     art: assetRefs.placeholderEnemy,
     enemyType: "boss",
     traits: [
-      trait("blood-countess", "The Blood Countess", "Receives 30% more Holy damage\nDeals 1 Bleed damage each turn"),
+      trait(
+        "blood-countess",
+        "The Blood Countess",
+        "Receives 30% more Holy damage\nReceives 1 Holy damage when any combatant restores Health",
+      ),
     ],
     attackEffects: [{ kind: "damage", damageType: "bleed", amount: 4 }],
   }),
@@ -364,9 +368,9 @@ export const enemyBestiary = [
     art: assetRefs.placeholderEnemy,
     enemyType: "normal",
     traits: [
-      trait("banshee", "Banshee", "Deals 1 additional damage against Stunned players\nReceives 30% more Holy damage"),
+      trait("banshee", "Banshee", "Deals 4 Stun damage and Purges a beneficial effect\nReceives double Holy damage"),
     ],
-    attackEffects: [{ kind: "damage", damageType: "stun", amount: 2 }],
+    attackEffects: [{ kind: "damage", damageType: "stun", amount: 4 }],
   }),
   defineEnemy({
     id: "brawler",

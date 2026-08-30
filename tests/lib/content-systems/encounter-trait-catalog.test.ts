@@ -7,6 +7,7 @@ import {
   pickEncounterTrait,
   pickEncounterTraits,
   sanitizeEncounterTraitIds,
+  sanitizePersistedEnemyTraits,
 } from "@/lib/content-systems/encounter-traits";
 
 describe("encounter trait catalog", () => {
@@ -42,7 +43,18 @@ describe("encounter trait catalog", () => {
     expect(combat.every((id) => ENCOUNTER_TRAITS[id].category === "combat")).toBe(true);
   });
 
-  it("drops unknown and category-incompatible persisted ids", () => {
-    expect(sanitizeEncounterTraitIds(["tempered", "removed-trait", "collector"], "combat")).toEqual(["tempered"]);
+  it("drops unknown, category-incompatible, and object prototype persisted ids without error", () => {
+    expect(
+      sanitizeEncounterTraitIds(
+        ["tempered", "removed-trait", "collector", "toString", "valueOf", "__proto__"],
+        "combat",
+      ),
+    ).toEqual(["tempered"]);
+  });
+
+  it("filters out retired enemy traits from persisted lists", () => {
+    const activeTrait = { id: "normal-trait", title: "Normal", description: "Trait" };
+    const retiredTrait = { id: "armored", title: "Armored", description: "Retired" };
+    expect(sanitizePersistedEnemyTraits([activeTrait, retiredTrait])).toEqual([activeTrait]);
   });
 });

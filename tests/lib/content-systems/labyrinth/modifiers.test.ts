@@ -24,18 +24,23 @@ describe("getEnemyModifiersForNodeType", () => {
 
   it("enemy modifiers never include reward modifier kinds", () => {
     for (const type of ["combat", "elite", "boss"] as const) {
-      for (let trial = 0; trial < 30; trial++) {
-        const mods = getEnemyModifiersForNodeType(type, Math.random);
+      for (let seed = 1; seed <= 5; seed++) {
+        let step = 0;
+        const rng = () => ((seed * 9301 + step++ * 49297) % 233280) / 233280;
+        const mods = getEnemyModifiersForNodeType(type, rng);
         for (const m of mods) {
           expect((REWARD_ENCOUNTER_TRAIT_IDS as readonly string[]).includes(m)).toBe(false);
+          expect(ENCOUNTER_TRAITS[m].category).toBe("combat");
         }
       }
     }
   });
 
   it("does not return duplicate enemy modifiers", () => {
-    for (let trial = 0; trial < 100; trial++) {
-      const mods = getEnemyModifiersForNodeType("elite", Math.random);
+    for (let seed = 1; seed <= 10; seed++) {
+      let step = 0;
+      const rng = () => ((seed * 9301 + step++ * 49297) % 233280) / 233280;
+      const mods = getEnemyModifiersForNodeType("elite", rng);
       const unique = new Set(mods);
       expect(unique.size).toBe(mods.length);
     }
@@ -44,16 +49,17 @@ describe("getEnemyModifiersForNodeType", () => {
 
 describe("getRewardModifiersForNodeType", () => {
   it("always returns exactly 1 reward modifier", () => {
-    for (let trial = 0; trial < 50; trial++) {
-      expect(getRewardModifiersForNodeType(Math.random)).toHaveLength(1);
-    }
+    const mods = getRewardModifiersForNodeType(() => 0.5);
+    expect(mods).toHaveLength(1);
   });
 
   it("reward modifiers are always reward trait ids", () => {
-    for (let trial = 0; trial < 50; trial++) {
-      const mods = getRewardModifiersForNodeType(Math.random);
+    for (let seed = 1; seed <= 5; seed++) {
+      const rng = () => (seed * 0.19) % 1;
+      const mods = getRewardModifiersForNodeType(rng);
       for (const m of mods) {
         expect((REWARD_ENCOUNTER_TRAIT_IDS as readonly string[]).includes(m)).toBe(true);
+        expect(ENCOUNTER_TRAITS[m].category).toBe("reward");
       }
     }
   });

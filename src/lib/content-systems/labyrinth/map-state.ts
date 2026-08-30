@@ -48,9 +48,13 @@ export function cloneLabyrinthMap(map: LabyrinthMap): LabyrinthMap {
 }
 
 export function withClearedNode(map: LabyrinthMap, nodeId: string): LabyrinthMap {
-  const next = cloneLabyrinthMap(map);
-  const node = next.nodes[nodeId];
-  if (!node || node.cleared) return next;
-  next.nodes[nodeId] = { ...node, cleared: true };
-  return next;
+  const node = map.nodes[nodeId];
+  if (!node || node.cleared) return map;
+  return {
+    ...map,
+    nodes: {
+      ...map.nodes,
+      [nodeId]: { ...node, cleared: true },
+    },
+  };
 }

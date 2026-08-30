@@ -104,16 +104,15 @@ export const coreCards: BattleCard[] = [
     cost: 1,
     effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
   },
-  cardBuilders.damageThenMultiplyEnemyStatusCard({
+  {
     id: "kindling",
+    title: "Kindling",
+    descriptionLines: ["Deal 1 Burn damage", "Tripled if the enemy was not already Burning", "Consume"],
     art: assetRefs.kindling,
-    damageType: "burn",
-    damageAmount: 1,
-    status: "burn",
-    factor: 2,
-    multiplyLine: "Double enemy Burn stacks",
+    cost: 1,
     consume: true,
-  }),
+    effects: [{ kind: "damage", damageType: "burn", amount: 1, tripleIfEnemyNotBurning: true }],
+  },
   {
     id: "roll-the-dice",
     title: "Roll the Dice",

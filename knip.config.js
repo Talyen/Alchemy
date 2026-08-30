@@ -66,10 +66,10 @@ export default {
     "src/features/alchemy/shared/stores/profile-store.ts": ["exports"],
     "src/lib/game-data/talents/talent-pool-definitions.ts": ["exports"],
     "src/features/alchemy/shared/stores/persistence-codec.ts": ["types"],
-    "src/features/alchemy/shared/stores/gold-purse.ts": ["exports", "types", "files"],
     "src/features/alchemy/shared/stores/run-session-read-port.ts": ["exports", "files"],
     "src/features/alchemy/shared/stores/draft-helpers.ts": ["exports"],
     "src/features/alchemy/shared/stores/write-port-run.ts": ["exports", "duplicates"],
+    "src/lib/content-systems/types.ts": ["exports", "types"],
   },
   ignore: [
     "tests/environment.d.ts",

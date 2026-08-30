@@ -87,6 +87,7 @@ export type BattleCardEffect =
       equalToArmor?: boolean;
       equalToGoldPercent?: number;
       doubleIfEnemyBurning?: boolean;
+      tripleIfEnemyNotBurning?: boolean;
     }
   | {
       kind: "player-status";

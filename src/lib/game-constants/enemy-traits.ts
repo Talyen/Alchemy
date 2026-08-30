@@ -97,7 +97,7 @@ export const TRAIT_DAMAGE_RULES: Array<{ traitId: string; damageType: string; mu
   { traitId: ENEMY_TRAIT_IDS.ICE_WRAITH, damageType: "holy", multiplier: 1.3 },
   { traitId: ENEMY_TRAIT_IDS.YETI, damageType: "freeze", multiplier: 0.7 },
   { traitId: ENEMY_TRAIT_IDS.YETI, damageType: "burn", multiplier: 1.3 },
-  { traitId: ENEMY_TRAIT_IDS.BANSHEE, damageType: "holy", multiplier: 1.3 },
+  { traitId: ENEMY_TRAIT_IDS.BANSHEE, damageType: "holy", multiplier: TRAIT_DAMAGE_WEAKNESS },
   { traitId: ENEMY_TRAIT_IDS.BRAWLER, damageType: "bleed", multiplier: 1.3 },
   { traitId: ENEMY_TRAIT_IDS.EARTH_ELEMENTAL, damageType: "freeze", multiplier: 0.8 },
   { traitId: ENEMY_TRAIT_IDS.EARTH_ELEMENTAL, damageType: "burn", multiplier: 0.8 },

@@ -9,7 +9,7 @@ import {
 import { dealSelfDamage, getEnemyDamageMultiplier } from "../status-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
 import type { EffectHandler } from "./handler-types";
-import { processEncounterTraitHealthThreshold } from "../encounter-trait-events";
+import { processEncounterTraitHealthThreshold } from "../encounter-trait-health-threshold";
 import { dealEnemyScaledDamage } from "../gear-effects";
 import { payKillPayouts } from "../kill-payouts";
 

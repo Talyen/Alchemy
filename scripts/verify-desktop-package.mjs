@@ -5,6 +5,7 @@ import { basename, join, resolve } from "node:path";
 
 import { FuseState, FuseV1Options, getCurrentFuseWire } from "@electron/fuses";
 import {
+  browserSnapshotDirectories,
   executablePath,
   resolveUnpackedDirectory,
   targetFromUnpackedName,
@@ -22,21 +23,7 @@ const artifactPlatform = targetPlatform(target);
 const executable = executablePath(appDirectory, target);
 if (!existsSync(executable)) throw new Error(`Packaged executable is missing: ${executable}`);
 
-const snapshotDirectories =
-  artifactPlatform === "darwin"
-    ? [
-        join(
-          appDirectory,
-          "Alchemy.app",
-          "Contents",
-          "Frameworks",
-          "Electron Framework.framework",
-          "Versions",
-          "A",
-          "Resources",
-        ),
-      ]
-    : [appDirectory];
+const snapshotDirectories = browserSnapshotDirectories(appDirectory, target);
 if (
   !snapshotDirectories.some(
     (directory) =>
