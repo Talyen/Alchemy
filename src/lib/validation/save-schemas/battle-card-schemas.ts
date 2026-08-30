@@ -63,7 +63,7 @@ export const BattleCardSchema = z
         )
       : undefined;
     const cost =
-      Number.isFinite(saved.cost) && Number.isInteger(saved.cost) && saved.cost >= 0 ? Math.floor(saved.cost) : -1;
+      Number.isFinite(saved.cost) && Number.isInteger(saved.cost) && saved.cost >= 0 ? Math.round(saved.cost) : -1;
     return {
       id: saved.id,
       title: saved.title,

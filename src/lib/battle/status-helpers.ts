@@ -8,6 +8,7 @@ import {
 } from "../game-constants";
 import { addPlayerStatusWithCombatText, mergeCombatText } from "./combat-text";
 import { applyPlayerCombatDamage, type BattleState, type CombatTextEvent, type CombatTextStat } from "./types";
+import { getBattleRng, rollPercent } from "./rng";
 
 const DECAY_THRESHOLD = 1;
 const MIN_ARMOR = 0;
@@ -44,16 +45,7 @@ export function getEnemyDamageMultiplier(
   return multiplier;
 }
 
-import { rollPercent } from "./rng";
-
-export { rollPercent };
-
-export function getBattleRng(state: { rng?: () => number }): () => number {
-  if (!state.rng) {
-    throw new Error("BattleState.rng is required for outcome rolls");
-  }
-  return state.rng;
-}
+export { getBattleRng, rollPercent };
 
 export function dealSelfDamage(
   state: BattleState,

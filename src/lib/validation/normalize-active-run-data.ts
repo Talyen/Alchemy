@@ -262,8 +262,10 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
   activeCombat: unknown;
 } {
   const contentSystemType = data.contentSystemType as ContentSystemId;
-  const runMaxHealth = data.runMaxHealth as number;
-  const runPlayerHealth = Math.min(data.runPlayerHealth as number, runMaxHealth);
+  const rawMaxHealth = data.runMaxHealth as number;
+  const runMaxHealth = Number.isFinite(rawMaxHealth) && rawMaxHealth > 0 ? rawMaxHealth : 0;
+  const rawPlayerHealth = data.runPlayerHealth as number;
+  const runPlayerHealth = Number.isFinite(rawPlayerHealth) ? Math.min(Math.max(0, rawPlayerHealth), runMaxHealth) : 0;
   const runMetaMaxHealth =
     typeof data.runMetaMaxHealth === "number" && data.runMetaMaxHealth > 0 ? data.runMetaMaxHealth : runMaxHealth;
 

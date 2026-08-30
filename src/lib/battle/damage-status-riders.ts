@@ -29,7 +29,7 @@ function applyGearBurnBleedMirrorLeech(
 ): BattleState {
   if (state.gearEffects.burnBleedMirrorAndLeech <= 0 || actualDamage <= 0) return state;
   let nextState = state;
-  if (rollPercent(BURN_BLEED_MIRROR_CHANCE, nextState.rng)) {
+  if (rollPercent(BURN_BLEED_MIRROR_CHANCE, getBattleRng(nextState))) {
     nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
   }
   const healAmount = Math.max(1, Math.round(actualDamage / HALF_DIVISOR));
@@ -69,7 +69,7 @@ export function applyPoisonTalentRiders(
   }
   if (damage > 0) {
     const leechChance = nextState.talentEffects.poisonLeechChance + nextState.gearEffects.poisonLeechChance;
-    if (rollPercent(leechChance, nextState.rng)) {
+    if (rollPercent(leechChance, getBattleRng(nextState))) {
       nextState = applyHealingWithCombatText(
         nextState,
         scaledGearLeechHeal(computeLeechHeal(damage), nextState.gearEffects),

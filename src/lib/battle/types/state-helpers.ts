@@ -7,7 +7,7 @@ import {
   PERCENT_DENOMINATOR,
 } from "../../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
-import { rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "../rng";
 import type { BattleState, CombatFlags, EnemyMitigation } from "./state-types";
 import { isStunFreezeBuildupBlocked } from "./state-types";
 import { PRESERVED_FLAG_KEYS, PRESERVED_FLAG_VALUES, type PreservedFlagKey } from "../combat-flags";
@@ -62,7 +62,7 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
   if (
     status === "poison" &&
     traitAdjustedDelta > 0 &&
-    rollPercent(nextState.gearEffects.poisonArmorShredChance, nextState.rng)
+    rollPercent(nextState.gearEffects.poisonArmorShredChance, getBattleRng(nextState))
   ) {
     nextState = reduceEnemyArmor(nextState, 1);
   }

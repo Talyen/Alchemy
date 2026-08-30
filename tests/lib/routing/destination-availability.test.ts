@@ -3,8 +3,8 @@ import { getAvailableDestinations } from "@/lib/routing";
 import { CAMPFIRE_HEALTH_THRESHOLD, ELITE_HEALTH_THRESHOLD, SHOP_MIN_GOLD } from "@/lib/game-constants";
 
 const MAX_HEALTH = 30;
-const campfireFloor = Math.floor(MAX_HEALTH * CAMPFIRE_HEALTH_THRESHOLD);
-const eliteFloor = Math.floor(MAX_HEALTH * ELITE_HEALTH_THRESHOLD);
+const campfireFloor = Math.round(MAX_HEALTH * CAMPFIRE_HEALTH_THRESHOLD);
+const eliteFloor = Math.round(MAX_HEALTH * ELITE_HEALTH_THRESHOLD);
 
 describe("getAvailableDestinations", () => {
   it("excludes Equipment Shop when no gear is owned (Armory locked)", () => {

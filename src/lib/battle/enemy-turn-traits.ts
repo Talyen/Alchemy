@@ -1,5 +1,6 @@
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { getBattleRng } from "./status-helpers";
+import { rngInt } from "@/lib/run-rng";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
@@ -52,9 +53,8 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
     return addEnemyMitigation(state, "forge", TRAIT_FORGE_PER_TURN);
   },
   "iron-hide": (state, combatTexts, options) => {
-    const choice = Math.trunc(
-      (options?.traitRoll ?? getBattleRng(state)()) * ENEMY_TURN_CONSTANTS.IRON_HIDE_OPTIONS_COUNT,
-    );
+    const traitRng = options?.traitRoll !== undefined ? () => options.traitRoll! : getBattleRng(state);
+    const choice = rngInt(traitRng, ENEMY_TURN_CONSTANTS.IRON_HIDE_OPTIONS_COUNT);
     if (choice === 0) {
       mergeCombatText(combatTexts, {
         target: "enemy",
@@ -226,7 +226,7 @@ export function processEnemyTraits(
 ) {
   let nextState = state;
   const scalingBlocked = isFreezeActiveForAspect(nextState, "scaling");
-  const traitRoll = options?.traitRoll ?? nextState.rng();
+  const traitRoll = options?.traitRoll ?? getBattleRng(nextState)();
 
   if (!scalingBlocked) {
     for (const trait of nextState.currentEnemy.traits) {
