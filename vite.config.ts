@@ -30,6 +30,7 @@ export default defineConfig(({ mode, command }) => {
 
   return {
     base: mode === "desktop" ? "./" : "/",
+    cacheDir: "node_modules/.vite",
     server: { open: mode !== "desktop", port: devPort, strictPort: true },
     plugins: [
       tailwind(),
@@ -75,6 +76,7 @@ export default defineConfig(({ mode, command }) => {
     build: {
       target: "esnext",
       assetsInlineLimit: 4096,
+      reportCompressedSize: Boolean(process.env.ANALYZE),
       // Hidden sourcemaps for any desktop build aid local repro; Sentry upload remains gated on `sentryEnabled`.
       // `ALCHEMY_SKIP_SOURCEMAP=1` opts out for fast local iterate when maps are not needed.
       sourcemap: process.env.ALCHEMY_SKIP_SOURCEMAP === "1" ? false : mode === "desktop" ? "hidden" : false,
