@@ -111,38 +111,6 @@
     "outputHash": "2b980277e8bd1e87",
     "owner": "generated"
   },
-  "coin-collect.mp3": {
-    "hash": "56bad94334a0fd01",
-    "mtimeMs": 1782421243536.1343,
-    "size": 31174,
-    "settingsSig": "9fe65c6acfe4a8f2",
-    "outputHash": "3808b01610a14ab0",
-    "owner": "curated"
-  },
-  "coin-collect.ogg": {
-    "hash": "1d9b121e78dc5f20",
-    "mtimeMs": 1782421243536.1343,
-    "size": 31174,
-    "settingsSig": "dcb889add58a9032",
-    "outputHash": "21c51bab2e6f11e4",
-    "owner": "curated"
-  },
-  "coin-jingle-small.mp3": {
-    "hash": "e7a5504df48417c2",
-    "mtimeMs": 1782421243536.3916,
-    "size": 16176,
-    "settingsSig": "9fe65c6acfe4a8f2",
-    "outputHash": "51533d29c8fbc3ac",
-    "owner": "curated"
-  },
-  "coin-jingle-small.ogg": {
-    "hash": "aff8ebb2290c246c",
-    "mtimeMs": 1782421243536.3916,
-    "size": 16176,
-    "settingsSig": "dcb889add58a9032",
-    "outputHash": "95e9aea6ec5cbc2b",
-    "owner": "curated"
-  },
   "coins-gather-quick.mp3": {
     "hash": "9ee59ee6929b5a3b",
     "mtimeMs": 1782421243536.4563,

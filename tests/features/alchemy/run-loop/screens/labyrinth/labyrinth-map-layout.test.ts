@@ -42,14 +42,38 @@ describe("layoutFloorNodes", () => {
     expect(layout.metrics.width).toBeLessThan(400);
   });
 
-  it("keeps cleared node seats so uncleared nodes do not rebase", () => {
+  it("compacts to visible bounds so cleared space is reclaimed and map stays near top", () => {
     const layout = layoutFloorNodes(
       [node("cleared", hexAt(0, 0), true), node("alive-low", hexAt(4, 0)), node("alive-high", hexAt(8, 0))],
       400,
     );
     expect(layout.positions.has("cleared")).toBe(true);
-    expect(layout.positions.get("alive-low")?.y).toBe(4 * layout.metrics.verticalStep + layout.metrics.height / 2);
-    expect(layout.positions.get("alive-high")?.y).toBe(8 * layout.metrics.verticalStep + layout.metrics.height / 2);
+    expect(layout.height).toBe(4 * layout.metrics.verticalStep + layout.metrics.height);
+    expect(layout.positions.get("alive-low")?.y).toBe(layout.metrics.height / 2);
+    expect(layout.positions.get("alive-high")?.y).toBe(4 * layout.metrics.verticalStep + layout.metrics.height / 2);
+  });
+
+  it("keeps visible seals inside height after vertical compaction", () => {
+    const layout = layoutFloorNodes(
+      [node("cleared", hexAt(0, 0), true), node("a", hexAt(3, 0)), node("b", hexAt(5, 1)), node("c", hexAt(8, 0))],
+      400,
+    );
+    const halfHeight = layout.metrics.height / 2;
+    for (const [id, point] of layout.positions) {
+      if (id === "cleared") continue;
+      expect(point.y - halfHeight).toBeGreaterThanOrEqual(-0.5);
+      expect(point.y + halfHeight).toBeLessThanOrEqual(layout.height + 0.5);
+    }
+  });
+
+  it("re-centers horizontally on visible nodes", () => {
+    const clearedLeft = node("cleared", hexAt(1, 0), true);
+    const rightA = node("a", hexAt(1, 1));
+    const rightB = node("b", hexAt(2, 1));
+    const layoutMixed = layoutFloorNodes([clearedLeft, rightA, rightB], 420);
+    const layoutVisibleOnly = layoutFloorNodes([rightA, rightB], 420);
+    expect(layoutMixed.positions.get("a")?.x).toBe(layoutVisibleOnly.positions.get("a")?.x);
+    expect(layoutMixed.positions.get("b")?.x).toBe(layoutVisibleOnly.positions.get("b")?.x);
   });
 });
 

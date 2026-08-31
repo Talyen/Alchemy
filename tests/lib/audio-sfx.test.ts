@@ -116,7 +116,7 @@ describe("playCardSound", () => {
 describe("playGoldGain", () => {
   it("plays gold gain audio", () => {
     playGoldGain();
-    expect(lastAudio()?.src).toContain("coin-collect.");
+    expect(lastAudio()?.src).toContain("coins-gather-quick.");
     expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 });
@@ -124,7 +124,7 @@ describe("playGoldGain", () => {
 describe("playGoldSpend", () => {
   it("plays gold spend audio via shopBuy sound", () => {
     playGoldSpend();
-    expect(lastAudio()?.src).toContain("coin-jingle-small.");
+    expect(lastAudio()?.src).toContain("coins-gather-quick.");
     expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 });
@@ -153,7 +153,7 @@ describe("playBattleEvent", () => {
 describe("playUISound", () => {
   it("plays audio for known UI sound", () => {
     playUISound("shopBuy");
-    expect(lastAudio()?.src).toContain("coin-jingle-small.");
+    expect(lastAudio()?.src).toContain("coins-gather-quick.");
     expect(lastAudio()?.play).toHaveBeenCalledOnce();
   });
 

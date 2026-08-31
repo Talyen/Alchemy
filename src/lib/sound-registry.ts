@@ -92,7 +92,7 @@ export const battleEventSounds = {
   drawTransfer: "card-draw-2.ogg",
   endTurn: "toggle-off.ogg",
   wishAppear: "harpsichord-mystery.ogg",
-  gainGold: "coin-collect.ogg",
+  gainGold: "coins-gather-quick.ogg",
   deathsDoor: "horror-sting.ogg",
   sliceDeath: "sword-slice.ogg",
 } as const;
@@ -105,7 +105,7 @@ export const uiSounds = {
   toggleOn: "toggle-on.ogg",
   toggleOff: "toggle-off.ogg",
   error: "denied-03.ogg",
-  shopBuy: "coin-jingle-small.ogg",
+  shopBuy: "coins-gather-quick.ogg",
   shopRefresh: "keys-jingling.ogg",
   shopRemove: "card-fan.ogg",
   campfireRest: "fire-lighting.ogg",

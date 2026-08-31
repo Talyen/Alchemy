@@ -43,7 +43,8 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
     useHoverVisible<HTMLButtonElement>();
   const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : null;
   const typeLabel = NODE_TYPE_LABELS[node.type];
-  const hoverTitle = enemy?.title ?? typeLabel;
+  const hoverTitle = typeLabel;
+  const hoverSubtitle = enemy?.title ?? null;
 
   const isLocked = visual === "locked";
   const isCleared = visual === "cleared";
@@ -140,52 +141,52 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
             />
           </svg>
         ) : null}
+        {reachableShineColors ? (
+          <svg
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible transition-[stroke-width] duration-200 group-hover:[&_polygon]:[stroke-width:3] group-has-[:focus-visible]:[&_polygon]:[stroke-width:3]"
+            aria-hidden
+          >
+            <defs>
+              <linearGradient
+                id={`choice-shine-${node.id}`}
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+                gradientUnits="objectBoundingBox"
+              >
+                {reachableShineColors.map((color, i) => (
+                  <stop
+                    key={`${color}-${i}`}
+                    offset={`${(i / Math.max(1, reachableShineColors.length - 1)) * 100}%`}
+                    stopColor={color}
+                  />
+                ))}
+                {!reducedMotion ? (
+                  <>
+                    <animate attributeName="x1" values="0%; -100%; 0%" dur="3s" repeatCount="indefinite" />
+                    <animate attributeName="x2" values="100%; 0%; 100%" dur="3s" repeatCount="indefinite" />
+                  </>
+                ) : null}
+              </linearGradient>
+            </defs>
+            <polygon
+              points={HEX_POINTS_INSET_1}
+              fill="none"
+              stroke={`url(#choice-shine-${node.id})`}
+              strokeWidth={2}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              shapeRendering="geometricPrecision"
+            />
+          </svg>
+        ) : null}
       </button>
-      {reachableShineColors ? (
-        <svg
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          className="pointer-events-none absolute inset-0 h-full w-full transition-[stroke-width] duration-200 group-hover:[&_polygon]:[stroke-width:3] group-has-[:focus-visible]:[&_polygon]:[stroke-width:3]"
-          aria-hidden
-        >
-          <defs>
-            <linearGradient
-              id={`choice-shine-${node.id}`}
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="0%"
-              gradientUnits="objectBoundingBox"
-            >
-              {reachableShineColors.map((color, i) => (
-                <stop
-                  key={`${color}-${i}`}
-                  offset={`${(i / Math.max(1, reachableShineColors.length - 1)) * 100}%`}
-                  stopColor={color}
-                />
-              ))}
-              {!reducedMotion ? (
-                <>
-                  <animate attributeName="x1" values="0%; -100%; 0%" dur="3s" repeatCount="indefinite" />
-                  <animate attributeName="x2" values="100%; 0%; 100%" dur="3s" repeatCount="indefinite" />
-                </>
-              ) : null}
-            </linearGradient>
-          </defs>
-          <polygon
-            points={HEX_POINTS_INSET_1}
-            fill="none"
-            stroke={`url(#choice-shine-${node.id})`}
-            strokeWidth={2}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            shapeRendering="geometricPrecision"
-          />
-        </svg>
-      ) : null}
       <PortaledTooltip triggerRef={triggerRef} visible={visible && !selected}>
         <TooltipHeader>{hoverTitle}</TooltipHeader>
-        {enemy ? <TooltipSubheader className="mt-1">{typeLabel}</TooltipSubheader> : null}
+        {hoverSubtitle ? <TooltipSubheader className="mt-1">{hoverSubtitle}</TooltipSubheader> : null}
       </PortaledTooltip>
     </div>
   );

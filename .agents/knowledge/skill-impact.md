@@ -50,6 +50,14 @@ Result: accepted
 Evidence: `npm run typecheck` pass; `npm run lint` green; `npm run lint:boundaries` 951 modules; `src/lib/battle/damage-calc.ts` + `src/lib/game-data/effects/damage-schemas.ts` --plan → `unit-battle`; `src/features/alchemy/run-loop/shop/trinket-shop-commands.ts` --plan → `unit-shop`; `npm run docs:check` 8 checks pass after demotion; `.agents/knowledge/index.md:20` now `medium`.
 Reason: Complete audit signal-quality hygiene — keep confidence honest until second recurrence, remove stale `deferred` wording now that lint is live, and prove evals are runnable ground truth for future skill promotions per `evals/README.md:9` progression.
 
+## 2026-08-30 — Prefer pragmatic architectural solution over smallest workaround
+
+Pattern: N/A
+Proposal: Reframe “smallest complete change/remedy” guidance to “most pragmatic architectural solution — the best long-term shape, even when larger than the minimal workaround” in `AGENTS.md` (Working style + Change guards), `scripts/new-plan.mjs` plan template, `docs/Audits/README.md` Right size (plus relax structural-fix gate to prefer larger owner-restoring fix over local shim when shim leaves the problem class), `.agents/skills/architect/SKILL.md` (honest contract), and `.agents/evals/README.md` (diff signal).
+Result: accepted
+Evidence: `npm run docs:check` passes after ledger update; `AGENTS.md`, `scripts/new-plan.mjs`, `docs/Audits/README.md`, `.agents/skills/architect/SKILL.md`, `.agents/evals/README.md` diffs.
+Reason: Previous “smallest” anchor biased agents toward hacky, minimal-diff workarounds; new anchor preserves lib/hack avoidance and audit guardrails while explicitly favoring the cleaner, larger change when it is the more maintainable long-term shape — avoids both under-engineering and speculative over-abstraction.
+
 ## Template for future entries
 
 ```

@@ -10,6 +10,7 @@ import {
   validateEncounterTraits,
   validateGear,
 } from "./validators";
+import { validateTypography } from "./validators-typography";
 
 export type { ContentValidationArea } from "./types";
 
@@ -33,6 +34,7 @@ export function runContentValidation(): ContentValidationResult {
   validateKeywordsAndStatuses(collector);
   validateEncounterTraits(collector);
   validateGear(collector);
+  validateTypography(collector);
 
   const issues = sortIssues(collector.issues);
   return {

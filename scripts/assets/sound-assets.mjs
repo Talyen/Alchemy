@@ -53,8 +53,6 @@ export const generatedSoundAssets = [
 
 /** Committed sounds without raw sources that remain owned by the sound pipeline. */
 export const curatedSoundFiles = [
-  "coin-collect.ogg",
-  "coin-jingle-small.ogg",
   "coins-gather-quick.ogg",
   "gurgling.ogg",
   "keys-jingling.ogg",

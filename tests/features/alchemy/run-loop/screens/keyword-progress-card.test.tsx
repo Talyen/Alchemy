@@ -32,14 +32,14 @@ describe("KeywordProgressCard", () => {
     }
   }
 
-  it("renders Lv# with keyword color and thicker progress bar, omitting raw XP copy", () => {
+  it("renders Lv# with keyword color and thicker progress bar, including XP gain and progress", () => {
     const { container } = render(
       <KeywordProgressCard kw="physical" runXP={5} totalXP={15} animate={false} size="md" />,
     );
 
     expect(screen.getByText("Physical")).toBeTruthy();
-    expect(screen.queryByText("+5")).toBeNull();
-    expect(screen.queryByText("10/20")).toBeNull();
+    expect(screen.getByText("+5 XP")).toBeTruthy();
+    expect(screen.getByText("0/20")).toBeTruthy();
 
     const lvLabel = screen.getByText("Lv2");
     expect(lvLabel).toBeTruthy();

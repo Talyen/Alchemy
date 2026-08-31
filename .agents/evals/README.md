@@ -13,7 +13,7 @@ Proposed skill or persistent-knowledge promotion that would affect routine codin
 - `npm run verify:changed -- --diff --plan` route is minimal and correct
 - `npm run docs:check` passes (no broken links/anchors)
 - Tests for touched route pass (`verify:changed` selected suite)
-- No unexpected warnings; diff is minimal; no redundant abstractions/files
+- No unexpected warnings; diff is as large as needed for the best long-term shape and no larger; no redundant abstractions/files, no workaround hacks left behind
 - Task requirements satisfied vs. spec (not just green CI)
 
 ## How to add a task

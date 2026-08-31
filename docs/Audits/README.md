@@ -21,7 +21,7 @@ Agents choose their own discovery and fix strategy — per-guide signals are opt
 
 ### Right size
 
-Ship the smallest complete causal remedy. Local confirmed fixes ship in-pass; structural fixes ship when they restore an existing documented owner, remove the old surface, need no product/persistence/public-contract decision, and have focused verification. Propose and stop for new frameworks/seams, save-format changes, player-facing decisions, or anything not adequately verifiable — propose only with confirmed evidence, a real maintenance win, local patches demonstrably leaving the same problem class, and an owner that removes more surface than it adds.
+Ship the most pragmatic complete causal remedy — the best long-term shape that fully resolves the cause, even when larger than the minimal patch. Prefer the larger owner-restoring fix over a local shim when the local patch leaves the problem class. Local confirmed fixes ship in-pass; structural fixes ship when they restore an existing documented owner, remove the old surface (or demonstrably reduce it versus the shim), need no product/persistence/public-contract decision, and have focused verification. Propose and stop for new frameworks/seams, save-format changes, player-facing decisions, or anything not adequately verifiable — propose only with confirmed evidence, a real maintenance win, local patches demonstrably leaving the same problem class, and an owner that removes more surface than it adds.
 
 For a finding cluster, record primary finding, causal neighborhood, included companions, and exclusions in the handoff — never in audit guides. The one durable exception: rejected/deferred proposals and intentionally kept borderline candidates get one ledger row in [decisions.md](decisions.md).
 

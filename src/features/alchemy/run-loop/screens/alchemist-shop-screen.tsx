@@ -145,7 +145,7 @@ export function AlchemistShopScreen({
                   disabled={mixDisabled}
                   disabledMessage={mixDisabledMessage}
                   used={mixUsed}
-                  soldOutText="Mix Potions — Sold Out"
+                  soldOutText="Mix Potions - Sold Out"
                   onClick={startMix}
                 />
                 <RefreshShopServiceButton

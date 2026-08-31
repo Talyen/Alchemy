@@ -52,7 +52,8 @@ export function KeywordProgressCard({
   }, [animate, startXP, endXP, animationKey]);
 
   const displayXP = animate && animationState?.key === animationKey ? animationState.xp : startXP;
-  const { displayLevel, progressPercent } = getTalentKeywordProgress(displayXP, 0);
+  const { displayLevel, progressPercent, xpForNext, xpRemaining } = getTalentKeywordProgress(displayXP, 0);
+  const progressCurrent = Math.max(0, Math.floor(xpForNext - xpRemaining));
   const Icon = keywordIcons[kw];
   const def = keywordDefinitions[kw];
   const large = size === "lg";
@@ -77,6 +78,17 @@ export function KeywordProgressCard({
           backgroundColor: def?.shineColors?.[0] ?? undefined,
         }}
       />
+      <div
+        className={cn(
+          "flex items-center justify-between font-medium text-muted-foreground tabular-nums",
+          large ? "mt-1.5 text-xs" : "mt-1.5 text-[11px]",
+        )}
+      >
+        <span>+{runXP} XP</span>
+        <span>
+          {progressCurrent}/{xpForNext}
+        </span>
+      </div>
     </div>
   );
 }

@@ -62,7 +62,7 @@ export function MerchantShopScreen({
                   disabled={gold < removePrice}
                   disabledMessage="Not Enough Gold"
                   used={removeUsed}
-                  soldOutText="Remove Card — Sold Out"
+                  soldOutText="Remove Card - Sold Out"
                   onClick={() => {
                     setRemoveMode(true);
                   }}

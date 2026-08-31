@@ -85,7 +85,7 @@ export function RefreshShopServiceButton({
       disabled={refreshesLeft <= 0 || gold < refreshPrice}
       disabledMessage="Not Enough Gold"
       used={refreshesLeft <= 0}
-      soldOutText={`${label} — Sold Out`}
+      soldOutText={`${label} - Sold Out`}
       onClick={onRefresh}
     />
   );

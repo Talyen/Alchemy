@@ -55,10 +55,10 @@ describe("RunEndScreen", () => {
       talentXP: { physical: 20, burn: 3 },
     });
 
-    expect(screen.queryByText("+12")).toBeNull();
-    expect(screen.queryByText("+3")).toBeNull();
-    expect(screen.queryByText("8/10")).toBeNull();
-    expect(screen.queryByText("3/10")).toBeNull();
+    expect(screen.getByText("+12 XP").isConnected).toBe(true);
+    expect(screen.getByText("+3 XP").isConnected).toBe(true);
+    expect(screen.getByText("8/10").isConnected).toBe(true);
+    expect(screen.getByText("0/10").isConnected).toBe(true);
 
     expect(screen.getByText("Physical").isConnected).toBe(true);
     expect(screen.getByText("Burn").isConnected).toBe(true);

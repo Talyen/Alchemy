@@ -3,7 +3,7 @@ import { getMysteryEffectRank, sortMysteryEffectsByDisplayOrder } from "@/lib/my
 import type { MysteryEffect } from "@/lib/mystery";
 
 describe("getMysteryEffectRank", () => {
-  it("orders XP < gold < material < portrait", () => {
+  it("orders XP < portrait < gold < material", () => {
     const xp: MysteryEffect = { kind: "gainXP", keyword: "nature", amount: 8 };
     const gold: MysteryEffect = { kind: "gainGold", amount: 10 };
     const loseGold: MysteryEffect = { kind: "loseGold", amount: 5 };
@@ -13,12 +13,12 @@ describe("getMysteryEffectRank", () => {
     const gear: MysteryEffect = { kind: "gainGeneratedGear", baseItemId: "dagger" };
 
     expect(getMysteryEffectRank(xp)).toBe(0);
-    expect(getMysteryEffectRank(gold)).toBe(1);
-    expect(getMysteryEffectRank(loseGold)).toBe(1);
-    expect(getMysteryEffectRank(mat)).toBe(2);
-    expect(getMysteryEffectRank(card)).toBe(3);
-    expect(getMysteryEffectRank(trinket)).toBe(3);
-    expect(getMysteryEffectRank(gear)).toBe(3);
+    expect(getMysteryEffectRank(gold)).toBe(2);
+    expect(getMysteryEffectRank(loseGold)).toBe(2);
+    expect(getMysteryEffectRank(mat)).toBe(3);
+    expect(getMysteryEffectRank(card)).toBe(1);
+    expect(getMysteryEffectRank(trinket)).toBe(1);
+    expect(getMysteryEffectRank(gear)).toBe(1);
   });
 });
 
@@ -30,7 +30,7 @@ describe("sortMysteryEffectsByDisplayOrder", () => {
     const gold: MysteryEffect = { kind: "gainGold", amount: 20 };
 
     const sorted = sortMysteryEffectsByDisplayOrder([portrait, mat, gold, xp]);
-    expect(sorted.map((e) => e.kind)).toEqual(["gainXP", "gainGold", "gainMaterial", "gainGeneratedGear"]);
+    expect(sorted.map((e) => e.kind)).toEqual(["gainXP", "gainGeneratedGear", "gainGold", "gainMaterial"]);
   });
 
   it("does not mutate input", () => {

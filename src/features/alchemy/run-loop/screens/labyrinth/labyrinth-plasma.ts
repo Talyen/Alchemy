@@ -4,7 +4,7 @@ import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthNode } fr
 import { getPlasmaColorPair, type PlasmaColorPair } from "@/features/alchemy/shared/config/plasma-palettes";
 import { keywordAliases } from "@/features/alchemy/shared/config/keywords";
 import { destinationMeta } from "@/features/alchemy/shared/config/metadata";
-import type { Destination } from "@/lib/routing";
+import { LABYRINTH_TYPE_TO_DESTINATION } from "@/lib/content-systems/labyrinth/data";
 
 const LABYRINTH_TYPE_BASE_KEYWORDS: Record<LabyrinthNode["type"], KeywordId[]> = {
   entrance: [],
@@ -17,19 +17,6 @@ const LABYRINTH_TYPE_BASE_KEYWORDS: Record<LabyrinthNode["type"], KeywordId[]> =
   alchemist: ["poison"],
   "trinket-shop": ["wish"],
   "equipment-shop": ["forge"],
-};
-
-const LABYRINTH_TYPE_TO_DESTINATION: Record<LabyrinthNode["type"], Destination> = {
-  entrance: "Normal Combat",
-  combat: "Normal Combat",
-  elite: "Elite Combat",
-  boss: "Boss Combat",
-  rest: "Campfire",
-  mystery: "Mystery",
-  shop: "Card Shop",
-  alchemist: "Alchemist's Shop",
-  "trinket-shop": "Trinket Shop",
-  "equipment-shop": "Equipment Shop",
 };
 
 export const LABYRINTH_COMBAT_TRAIT_KEYWORDS: Partial<Record<EncounterCombatTraitId, KeywordId[]>> = {

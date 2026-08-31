@@ -5,14 +5,20 @@ Alchemy is a fantasy roguelite deckbuilder. Router + universal constraints; deta
 ## Working style
 
 - Dirty tree is in-flight user work: inspect, preserve intent, keep unrelated paths out.
-- Smallest complete implementation; prefer libs. Compatibility only for concrete consumer (save, shipped behavior, external contract).
+- Most pragmatic architectural solution — the best long-term shape, even when larger/harder than the minimal workaround; prefer libs over custom hacks. Compatibility only for concrete consumer (save, shipped behavior, external contract).
 - Challenge weak requirements with evidence; after 3 failures reassess with docs/tests, ask.
 - Run [Audits](./docs/Audits/README.md) only when cited. Zero findings is valid.
 - Update canonical owner in same change when altering a documented invariant.
 
 ## Communication
 
-For a collaborator who knows Alchemy as a game. Lead with what is now true, then files/symbols as needed. Match level, name a term once.
+For a collaborator who knows Alchemy as a game. Lead with what is now true.
+
+Prefer product, design, and player language — what the player sees, does, and feels — over implementation detail. Game-domain terms (Battle, Homestead, Armory, Boon, Gear, Talent, etc.) are encouraged and preferred over engineering terms.
+
+Avoid file paths, function/method names, line numbers, stack traces, and code excerpts in user-facing messages unless the user asks for them; keep that detail in diffs, tests, and commit messages.
+
+Match level, name a term once.
 
 ## Documentation owners
 
@@ -49,7 +55,7 @@ Knowledge: [.agents/knowledge/](./.agents/knowledge/index.md) — **not auto-loa
 
 - Before store/port/save/constant/routing change, search touched subsystem first; expand to public consumers only.
 - If docs + nearest tests leave rule ambiguous, recover intent from tests + ≤5 commits; record invariant.
-- Post-edit: review diff only (delete → reuse → simplify → parameterize → abstract). No comments — express intent via code, types, and tests; only `eslint`/`@ts-`/`prettier-ignore`/`c8` directives allowed (`eslint/no-comments.js:1`). New cross-boundary contract → `architect` skill.
+- Post-edit: review diff only — within the pragmatic solution, prefer delete → reuse → simplify → parameterize → abstract. No comments — express intent via code, types, and tests; only `eslint`/`@ts-`/`prettier-ignore`/`c8` directives allowed (`eslint/no-comments.js:1`). New cross-boundary contract → `architect` skill.
 
 ## UI
 
@@ -65,4 +71,4 @@ Trunk-based: commit to `main` / branch/PR only when asked. Conventional Commits 
 
 ## Handoff
 
-Game/workflow outcome first, exact verification + status, intentionally untouched. No log/diff dumps.
+Game/workflow outcome first in player/design terms (using game vocabulary), then concise verification status. Avoid code/engineering detail unless requested. Intentionally untouched. No log/diff dumps.

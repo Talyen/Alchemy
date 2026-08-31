@@ -31,7 +31,7 @@ Describe the user-visible outcome and the bounded implementation scope.
 ## Plan
 
 - [ ] Record the baseline and relevant constraints.
-- [ ] Implement the smallest complete change.
+- [ ] Implement the most pragmatic architectural solution — the best long-term shape (even when larger than the minimal workaround).
 - [ ] Add or extend only consequential coverage.
 - [ ] Run path-scoped verification.
 - [ ] Mark this plan complete, run the final docs check, and report verification.

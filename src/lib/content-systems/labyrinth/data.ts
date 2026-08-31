@@ -1,16 +1,30 @@
 import type { LabyrinthNodeType } from "../types";
+import { DESTINATIONS, type Destination } from "@/lib/routing/destinations";
+
+export const LABYRINTH_TYPE_TO_DESTINATION: Record<LabyrinthNodeType, Destination> = {
+  entrance: DESTINATIONS.NORMAL_COMBAT,
+  combat: DESTINATIONS.NORMAL_COMBAT,
+  elite: DESTINATIONS.ELITE_COMBAT,
+  boss: DESTINATIONS.BOSS_COMBAT,
+  rest: DESTINATIONS.CAMPFIRE,
+  mystery: DESTINATIONS.MYSTERY,
+  shop: DESTINATIONS.CARD_SHOP,
+  alchemist: DESTINATIONS.ALCHEMIST_SHOP,
+  "trinket-shop": DESTINATIONS.TRINKET_SHOP,
+  "equipment-shop": DESTINATIONS.EQUIPMENT_SHOP,
+};
 
 export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
   entrance: "Entrance",
-  combat: "Combat",
-  elite: "Elite",
-  rest: "Rest",
-  mystery: "Mystery",
-  shop: "Cards",
-  alchemist: "Alchemist",
-  "trinket-shop": "Trinkets",
-  "equipment-shop": "Equipment",
-  boss: "Boss",
+  combat: DESTINATIONS.NORMAL_COMBAT,
+  elite: DESTINATIONS.ELITE_COMBAT,
+  rest: DESTINATIONS.CAMPFIRE,
+  mystery: DESTINATIONS.MYSTERY,
+  shop: DESTINATIONS.CARD_SHOP,
+  alchemist: DESTINATIONS.ALCHEMIST_SHOP,
+  "trinket-shop": DESTINATIONS.TRINKET_SHOP,
+  "equipment-shop": DESTINATIONS.EQUIPMENT_SHOP,
+  boss: DESTINATIONS.BOSS_COMBAT,
 };
 
 export const NODE_TYPE_TOOLTIPS: Record<LabyrinthNodeType, string> = {

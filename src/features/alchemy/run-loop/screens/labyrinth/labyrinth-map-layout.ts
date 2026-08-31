@@ -13,17 +13,25 @@ export function layoutFloorNodes(nodes: LabyrinthNode[], availableWidth: number)
     height: Math.round(rawMetrics.height / 2) * 2,
     verticalStep: Math.round(rawMetrics.verticalStep / 2) * 2,
   };
-  const projectedXs = nodes.map((node) => projectedX(node.gridPosition, rawMetrics.radius));
-  const minX = Math.min(...projectedXs, 0);
-  const maxX = Math.max(...projectedXs, 0);
-  const horizontalCenter = (minX + maxX) / 2;
-  const lastRow = nodes.reduce((max, node) => Math.max(max, node.gridPosition.row), 0);
-  const height = lastRow * metrics.verticalStep + metrics.height;
+  const visibleNodes = nodes.filter((node) => !node.cleared);
+  const boundsNodes = visibleNodes.length > 0 ? visibleNodes : nodes;
+  let minRow = 0;
+  let horizontalCenter = 0;
+  let height = metrics.height;
+  if (boundsNodes.length > 0) {
+    const projectedXs = boundsNodes.map((node) => projectedX(node.gridPosition, rawMetrics.radius));
+    const minX = Math.min(...projectedXs);
+    const maxX = Math.max(...projectedXs);
+    horizontalCenter = (minX + maxX) / 2;
+    minRow = boundsNodes.reduce((min, node) => Math.min(min, node.gridPosition.row), Number.POSITIVE_INFINITY);
+    const maxRow = boundsNodes.reduce((max, node) => Math.max(max, node.gridPosition.row), Number.NEGATIVE_INFINITY);
+    height = (maxRow - minRow) * metrics.verticalStep + metrics.height;
+  }
   const positions = new Map<string, { x: number; y: number; position: LabyrinthGridPosition }>();
   for (const node of nodes) {
     positions.set(node.id, {
       x: Math.round(availableWidth / 2 + (projectedX(node.gridPosition, rawMetrics.radius) - horizontalCenter)),
-      y: Math.round(node.gridPosition.row * metrics.verticalStep + metrics.height / 2),
+      y: Math.round((node.gridPosition.row - minRow) * metrics.verticalStep + metrics.height / 2),
       position: node.gridPosition,
     });
   }

@@ -193,6 +193,19 @@ export default tseslint.config(
     },
   },
 
+  {
+    files: [
+      "src/lib/mystery/**/*.{ts,tsx}",
+      "src/lib/game-data/**/*.{ts,tsx}",
+      "src/lib/gear/**/*.{ts,tsx}",
+      "src/lib/content-systems/**/*.{ts,tsx}",
+      "src/features/alchemy/run-loop/screens/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "alchemy/no-em-dash": "error",
+    },
+  },
+
   // Ban React.FC / React.FunctionComponent — use plain function components with explicit Props.
   {
     rules: {

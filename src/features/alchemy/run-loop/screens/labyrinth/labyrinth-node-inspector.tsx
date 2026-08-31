@@ -60,7 +60,10 @@ function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; varia
 export function LabyrinthNodeInspector({ node, canEnter, onEnter, left, top, side, width }: Props) {
   const meta = LABYRINTH_NODE_META[node.type];
   const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : null;
-  const title = enemy?.title ?? NODE_TYPE_LABELS[node.type];
+  const destinationLabel = NODE_TYPE_LABELS[node.type];
+  const isBoss = node.type === "boss";
+  const title = isBoss && enemy ? enemy.title : destinationLabel;
+  const subtitle = isBoss ? destinationLabel : (enemy?.title ?? null);
   const art = enemy?.art ?? meta.art;
   const enemyModifiers: EncounterCombatTraitId[] = node.modifiers;
   const rewardModifiers: EncounterRewardTraitId[] = node.rewardModifiers;
@@ -76,8 +79,11 @@ export function LabyrinthNodeInspector({ node, canEnter, onEnter, left, top, sid
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[var(--radius-shell-hero)] border border-white/15">
         <img src={art} alt="" className="h-full w-full object-cover object-top" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
-          <p className="text-base font-bold tracking-wide text-amber-100/80 uppercase">{NODE_TYPE_LABELS[node.type]}</p>
+          <p className="text-base font-bold tracking-wide text-amber-100/80 uppercase">{destinationLabel}</p>
           <p className="text-3xl font-semibold text-amber-50">{title}</p>
+          {subtitle && subtitle !== title ? (
+            <p className="text-sm font-semibold tracking-wide text-amber-100/70">{subtitle}</p>
+          ) : null}
         </div>
       </div>
       <p className={cn(tooltipBodyClass, "text-left text-base leading-relaxed text-amber-100/80")}>

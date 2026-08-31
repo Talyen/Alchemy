@@ -6,11 +6,11 @@ export function getMysteryEffectRank(effect: MysteryEffect): number {
       return 0;
     case "gainGold":
     case "loseGold":
-      return 1;
-    case "gainMaterial":
       return 2;
-    default:
+    case "gainMaterial":
       return 3;
+    default:
+      return 1;
   }
 }
 
