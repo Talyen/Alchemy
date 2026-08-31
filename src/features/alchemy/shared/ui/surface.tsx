@@ -162,6 +162,7 @@ function SurfaceDiv(props: SurfaceInner) {
     shimmerToken,
     shimmerRounded,
     selected,
+    disabled,
     dragging,
     onDivClick,
     ariaLabel,
@@ -173,11 +174,13 @@ function SurfaceDiv(props: SurfaceInner) {
     surfaceStyle,
     clipContents = true,
     overlay,
+    hoverScaleActive,
   } = props;
   return (
     <div
       ref={surfaceRef}
       data-testid={testId}
+      data-hovered={hoverScaleActive ? "true" : undefined}
       {...(dataCount !== undefined ? { "data-count": dataCount } : {})}
       onClick={onDivClick}
       onKeyDown={
@@ -195,7 +198,7 @@ function SurfaceDiv(props: SurfaceInner) {
       aria-label={onDivClick ? ariaLabel : undefined}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className={surfaceClassName(selected, dragging, undefined, className)}
+      className={surfaceClassName(selected, dragging, disabled, className)}
       style={surfaceStyle}
     >
       <SurfaceBody

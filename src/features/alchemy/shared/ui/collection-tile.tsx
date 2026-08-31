@@ -11,8 +11,7 @@ import {
   cardInteractiveGlowClass,
   cardShineFrameClass,
   cardSurfaceClass,
-  collectionCardGridTileWidthClass,
-  collectionGridBestiaryWidthClass,
+  getTileWidthClass,
   getTrinketShineColors,
   getPlasmaColorPairForCard,
   getPlasmaColorPairForTrinket,
@@ -24,10 +23,9 @@ import { CardFlip } from "./card-flip";
 import { DetailPopup } from "./card-popup";
 import type { CollectionTileItem } from "./collection-items";
 import { EnemyTooltip } from "./enemy-tooltip";
-import { GearItemTitle } from "./gear-item-title";
+import { GearItemTitle, TrinketItemTitle } from "./gear-item-title";
 import { HeroTooltip } from "./hero-tooltip";
 import { Surface } from "./surface";
-import { TrinketItemTitle } from "./trinket-item-title";
 import { useInteractiveCard } from "./use-interactive-card";
 import { useTileHoverPopup } from "./use-tile-hover-popup";
 
@@ -72,7 +70,7 @@ export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumT
           !showShine && "border border-border/80",
           cardSurfaceClass,
           cardInteractiveGlowClass,
-          item.frameType === "bestiary" ? collectionGridBestiaryWidthClass : collectionCardGridTileWidthClass,
+          getTileWidthClass(item.frameType === "bestiary" ? "bestiary" : "collectionCard"),
         )}
         onClick={() => {
           if (item.hoverScope === "collection-card") {

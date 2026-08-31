@@ -1,15 +1,14 @@
 import { optimizeAssets } from "./optimize-assets.mjs";
 import { optimizeMusic } from "./optimize-music.mjs";
 import { optimizeSounds } from "./optimize-sounds.mjs";
-import { syncAssets } from "./sync-assets.mjs";
-import { syncGearArt } from "./sync-gear-art.mjs";
+import { syncGenerated } from "./sync-generated.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 /**
  * Single in-process orchestrator for predev/prebuild asset prep.
  * The three transform pipelines (art, sounds, music) are independent — they write
  * to disjoint output directories — so they run concurrently. Art must finish before
- * syncAssets/syncGearArt because those regenerate barrels from its manifest.
+ * syncGenerated because it regenerates barrels from its manifest.
  */
 export async function prepareAssets() {
   if (process.env.ALCHEMY_SKIP_ASSETS === "1") {
@@ -38,8 +37,7 @@ export async function prepareAssets() {
   }
 
   if (artResult.status === "fulfilled" && artResult.value.ok) {
-    // Both regenerate barrels from the completed art manifest but write disjoint outputs.
-    await Promise.all([syncAssets(), syncGearArt()]);
+    await syncGenerated();
   } else {
     console.warn("Skipping generated art barrels because art optimization did not complete successfully.");
   }

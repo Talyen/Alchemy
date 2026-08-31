@@ -41,7 +41,7 @@ Confirm unsafe escapes, unsound generics, broad records, non-exhaustive unions, 
 - **`any`:** `\bany\b` in non-test `src`.
 - **Suppressions & double casts:** `@ts-expect-error` / `eslint-disable` / `as unknown as`. `@ts-ignore` in `src` is an ESLint error (`@typescript-eslint/ban-ts-comment`).
 - **Non-null assertions:** `!.` in non-test `src`.
-- **Unsafe assertions on persistence/battle:** hits in `shared/storage/`, `save-schemas/`, `run-transitions.ts`, `src/lib/battle`.
+- **Unsafe assertions on persistence/battle:** hits in `shared/storage/`, `save-schemas/`, `screen-transition-policy.ts`, `use-screen-transitions.ts`, battle transition modules, and `src/lib/battle`.
 - **Raw enum / string decoding:** stringly unions without Zod or exhaustive checks at hydrate boundaries.
 - **Unsound generic/record models:** generic constraints, keyed writes, index signatures, or broad records permit values the runtime owner cannot handle.
 - **Invalid-state bags:** several optional properties or booleans encode mutually exclusive modes without a discriminant.

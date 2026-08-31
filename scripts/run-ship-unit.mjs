@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateRouteCatalog } from "./lib/change-routes.mjs";
-import { TEST_SUITES, validateTestSuitePaths } from "./lib/test-suites.mjs";
+import { TEST_SUITES, validateTestSuitePaths } from "./lib/test-commands.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 /** Resolve a dir/file path against the repo root. */
@@ -31,7 +31,7 @@ if (missing.length > 0) {
   console.error(
     `The ship unit suite matches no test files for:\n${missing.map((m) => `  - ${m}`).join("\n")}\n` +
       "A path above is stale — vitest would silently run a narrower gate. Fix the path or remove " +
-      "it from TEST_SUITES in scripts/lib/test-suites.mjs.",
+      "it from TEST_SUITES in scripts/lib/test-commands.mjs.",
   );
   process.exit(1);
 }

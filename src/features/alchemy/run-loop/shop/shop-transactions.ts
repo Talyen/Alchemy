@@ -2,9 +2,7 @@ import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { playGoldSpend } from "@/lib/audio";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readDraftGold } from "@/features/alchemy/shared/stores/write-port-run";
-import { spendRunGold } from "../run-gold";
+import { deductRunGold, readDraftGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 type StateUpdate<T> = T | ((previous: T) => T);
 export type DraftStateWriter<T> = (draft: GameplayDraft, value: StateUpdate<T>) => void;
@@ -70,7 +68,7 @@ export function purchaseShopOffering<TState extends { firstPurchaseUsed: boolean
     return { committed: false, price: input.price, value: undefined };
   }
 
-  spendRunGold(input.price, (update) => setRunGold(input.draft, update));
+  deductRunGold(input.draft, input.price);
   input.setState(input.draft, (previous) => ({
     ...previous,
     firstPurchaseUsed: true,
@@ -96,7 +94,7 @@ export function refreshShopOfferings<T, TItem>(
     return { committed: false, price: input.price, value: null };
   }
 
-  spendRunGold(input.price, (update) => setRunGold(input.draft, update));
+  deductRunGold(input.draft, input.price);
   const newItems = input.resample();
   input.setState(input.draft, (previous) => input.mapState(previous, newItems));
   return { committed: true, price: input.price, value: newItems };

@@ -65,6 +65,8 @@ export function invalidateCacheForKey(key: string): void {
 }
 
 export function pauseAllMusic() {
+  musicTransitionToken += 1;
+  cancelMusicTransition();
   for (const el of musicCache.values()) {
     el.muted = true;
     el.pause();

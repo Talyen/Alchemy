@@ -92,6 +92,18 @@ describe("createMixedPotion", () => {
     expect(mixed.descriptionLines).toEqual(["Deal 23 damage for 2 turns", "Consume"]);
   });
 
+  it("does not mutate trailing numbers that match the effect amount on the same line", () => {
+    const durationPotion = makePotion({
+      id: "duration-potion",
+      descriptionLines: ["Deal 10 damage for 10 turns", "Consume"],
+      effects: [{ kind: "damage", damageType: "poison", amount: 10 }],
+    });
+    const mixed = createMixedPotion(durationPotion, durationPotion, 3);
+
+    expect(mixed.effects[0]).toEqual({ kind: "damage", damageType: "poison", amount: 23 });
+    expect(mixed.descriptionLines).toEqual(["Deal 23 damage for 10 turns", "Consume"]);
+  });
+
   it("does not cascade-replace numbers when a scaled amount matches another base effect amount", () => {
     const multiEffectPotion = makePotion({
       id: "hybrid-potion",

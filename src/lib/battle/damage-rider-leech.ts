@@ -17,8 +17,12 @@ import {
 } from "./combat-text";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { rollPercent, getBattleRng, rollTalentChance } from "./status-helpers";
-import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
-import { computeLeechHeal } from "./leech-heal";
+import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, LEECH_HEAL_FRACTION, PERCENT_DENOMINATOR } from "../game-constants";
+
+export function computeLeechHeal(damageDealt: number): number {
+  if (damageDealt <= 0) return 0;
+  return Math.round(damageDealt * LEECH_HEAL_FRACTION);
+}
 
 function executePlayerHealing(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (amount <= 0) return state;

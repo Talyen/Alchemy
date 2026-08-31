@@ -10,9 +10,8 @@ import {
   type CombatTextStat,
 } from "./types";
 import { BATTLE_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
-import { computeLeechHeal } from "./leech-heal";
-import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-rules";
-import { getEnemyTraitSet, hasEnemyTrait } from "./enemy-trait-query";
+import { computeLeechHeal } from "./damage-rider-leech";
+import { getEnemyTraitSet, hasEnemyTrait, isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-rules";
 import { checkHealthThresholds } from "./player-health-thresholds";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";

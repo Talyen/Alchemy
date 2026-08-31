@@ -40,8 +40,12 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
       contentVersion: CURRENT_CONTENT_VERSION,
     };
   }
+  let currentVersion = schemaVersion;
   for (const { from, migrate } of SCHEMA_MIGRATIONS) {
-    if (schemaVersion <= from) next = migrate(next);
+    if (currentVersion === from) {
+      next = migrate(next);
+      currentVersion += 1;
+    }
   }
   const contentVersion = getRawContentVersion(next);
   if (contentVersion < 2) next = migrateContentV1ToV2(next);

@@ -1,5 +1,5 @@
 /**
- * Run measurable audit probes (knip, madge, complexity, amplification)
+ * Run measurable audit probes (knip, madge, complexity, amplification, content).
  * as a periodic sweep. Agent audit guides: docs/Audits/README.md.
  * Run: node scripts/audit-all.mjs
  *
@@ -50,6 +50,7 @@ const STEPS = [
   },
   { name: "type-escape trend counts", cmd: "node", args: ["scripts/audit-type-escapes.mjs"], timeout: 60_000 },
   { name: "change amplification", cmd: "node", args: ["scripts/audit-change-amplification.mjs"], timeout: 60_000 },
+  { name: "content-audit", cmd: "node", args: ["scripts/content-audit.mjs"], timeout: 180_000 },
 ];
 
 const started = Date.now();

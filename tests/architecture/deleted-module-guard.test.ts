@@ -31,6 +31,11 @@ describe("deleted module guard", () => {
       "src/features/alchemy/run-loop/battle/battle-playback-bind.ts",
       "src/features/alchemy/shared/stores/encode-corruption.ts",
       "src/features/alchemy/shared/stores/encode-mystery-visit.ts",
+      "src/features/alchemy/run-loop/run-gold.ts",
+      "src/features/alchemy/shared/ui/trinket-item-title.tsx",
+      "src/lib/battle/leech-heal.ts",
+      "src/lib/battle/start-health.ts",
+      "src/lib/battle/enemy-trait-query.ts",
     ];
     for (const path of deleted) {
       expect(existsSync(join(ROOT, path)), path).toBe(false);

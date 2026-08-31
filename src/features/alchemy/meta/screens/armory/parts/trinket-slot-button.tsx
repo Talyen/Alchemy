@@ -14,7 +14,7 @@ import {
 } from "@/features/alchemy/shared/config";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { DetailPopup } from "@/features/alchemy/shared/ui/card-popup";
-import { TrinketItemTitle } from "@/features/alchemy/shared/ui/trinket-item-title";
+import { TrinketItemTitle } from "@/features/alchemy/shared/ui/gear-item-title";
 import { Surface } from "@/features/alchemy/shared/ui/surface";
 import { useInteractiveCard } from "@/features/alchemy/shared/ui/use-interactive-card";
 import { useTileHoverPopup } from "@/features/alchemy/shared/ui/use-tile-hover-popup";

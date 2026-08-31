@@ -10,18 +10,17 @@ import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { pickRandom } from "@/lib/utils";
-import { spendRunGold } from "../run-gold";
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
   addRunGold,
   awardMaterialsDuringRun,
   awardMysteryXP,
+  deductRunGold,
   recordRunObtainedItem,
   setMysteryCardChoices,
   setMysteryGrantedGearInstances,
   setMysteryGrantedTrinketIds,
   setRunDeck,
-  setRunGold,
   setRunPlayerHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
@@ -90,7 +89,7 @@ function gainMysteryGold(amount: number, context: MysteryEffectContext) {
 }
 
 function loseMysteryGold(amount: number, context: MysteryEffectContext) {
-  spendRunGold(amount, (update) => setRunGold(context.draft, update));
+  deductRunGold(context.draft, amount);
   if (amount > 0) return { followUp: null, goldSound: "spend" as const };
   return { followUp: null };
 }

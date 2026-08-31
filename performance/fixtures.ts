@@ -11,7 +11,8 @@ import {
 } from "./metrics";
 import { installFrameSampler, setPerfPhase, startFrameSampler, stopFrameSampler } from "./frame-sampler";
 import { startCdpTrace, stopCdpTrace, summarizeTraceFile } from "./cdp-trace";
-import { PERF_PREVIEW_PORT, previewPortFromEnv } from "../tests/playwright-shared";
+import { PERF_PREVIEW_PORT } from "../scripts/lib/dev-port.mjs";
+import { previewPortFromEnv } from "../tests/playwright-shared";
 import {
   collectGitState,
   ensureOutputDirs,

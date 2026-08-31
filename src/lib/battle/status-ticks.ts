@@ -6,7 +6,7 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { hasEnemyTrait } from "./enemy-trait-query";
+import { hasEnemyTrait } from "./enemy-turn-rules";
 import {
   decayArmorAfterDamage,
   decayHalvedStatus,
@@ -17,7 +17,7 @@ import {
   rollPercent,
 } from "./status-helpers";
 import { HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
-import { computeLeechHeal } from "./leech-heal";
+import { computeLeechHeal } from "./damage-rider-leech";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
@@ -84,7 +84,10 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
 
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.bleed;
-  if (damage <= 0) return state;
+  if (damage <= 0) {
+    if (state.pendingBleedLeechHealing === 0) return state;
+    return { ...state, pendingBleedLeechHealing: 0 };
+  }
 
   const multiplier = getEnemyDamageMultiplier(state, "bleed");
   const finalDamage = Math.round(damage * multiplier);
@@ -95,14 +98,16 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     stat: "bleed",
     amount: finalDamage,
   });
+  const healthBeforeBleed = state.enemyHealth;
   return dealEnemyDotTick(state, "bleed", finalDamage, 0, combatTexts, (nextState) => {
-    return payPendingBleedLeech(state.enemyHealth, nextState, combatTexts);
+    return payPendingBleedLeech(healthBeforeBleed, nextState, combatTexts);
   });
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyStatuses.burn <= 0 && state.enemyStatuses.poison <= 0 && state.enemyStatuses.bleed <= 0) {
-    return state;
+    if (state.pendingBleedLeechHealing === 0) return state;
+    return { ...state, pendingBleedLeechHealing: 0 };
   }
   let nextState = tickBurn(state, combatTexts);
   nextState = tickPoison(nextState, combatTexts);
@@ -166,16 +171,21 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
 
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.bleed;
-  if (damage <= 0) return state;
+  if (damage <= 0) {
+    if (state.pendingEnemyBleedLeechHealing === 0) return state;
+    return { ...state, pendingEnemyBleedLeechHealing: 0 };
+  }
   const finalDamage = mitigatePlayerDot(state, damage, "bleed");
+  const healthBeforeBleed = state.playerHealth;
+  const pendingLeech = state.pendingEnemyBleedLeechHealing;
   return dealPlayerDotTick(state, finalDamage, "bleed", 0, combatTexts, undefined, (nextState) => {
-    const enemyLeechDamage = Math.min(state.pendingEnemyBleedLeechHealing, state.playerHealth - nextState.playerHealth);
+    const enemyLeechDamage = Math.min(pendingLeech, healthBeforeBleed - nextState.playerHealth);
     let next = nextState;
     if (enemyLeechDamage > 0) {
       next = applyEnemyLeechHealing(next, enemyLeechDamage, combatTexts);
     }
     next = { ...next, pendingEnemyBleedLeechHealing: 0 };
-    if (hasEnemyTrait(state, "blood-cultist") && state.playerHealth > next.playerHealth) {
+    if (hasEnemyTrait(state, "blood-cultist") && healthBeforeBleed > next.playerHealth) {
       next = setFlag(next, "enemyNextAttackCrit", true);
     }
     return next;
@@ -184,7 +194,11 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
 
 export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.playerStatuses.burn <= 0 && state.playerStatuses.poison <= 0 && state.playerStatuses.bleed <= 0) {
-    return resolvePlayerCrowdControlTriggers(state, combatTexts);
+    let nextState = state;
+    if (nextState.pendingEnemyBleedLeechHealing !== 0) {
+      nextState = { ...nextState, pendingEnemyBleedLeechHealing: 0 };
+    }
+    return resolvePlayerCrowdControlTriggers(nextState, combatTexts);
   }
   let nextState = tickPlayerBurn(state, combatTexts);
   nextState = tickPlayerPoison(nextState, combatTexts);

@@ -20,12 +20,6 @@ import {
   UI_NO_SESSION_STORES,
 } from "./fragments.js";
 
-/**
- * Shared BARREL + DOMAIN facade base. Collapses the 14 repeated
- * `layerImports(BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, ...extra)` blocks.
- * @param {string[]} files
- * @param {...import("./fragments.js").ImportPattern[]} extra
- */
 function boundaryBlock(files, ...extra) {
   return {
     files,
@@ -35,12 +29,6 @@ function boundaryBlock(files, ...extra) {
   };
 }
 
-/**
- * Variant for blocks that need `ignores` alongside the common base.
- * @param {string[]} files
- * @param {string[]} ignores
- * @param {...import("./fragments.js").ImportPattern[]} extra
- */
 function boundaryBlockWithIgnores(files, ignores, ...extra) {
   return {
     files,
@@ -51,106 +39,108 @@ function boundaryBlockWithIgnores(files, ignores, ...extra) {
   };
 }
 
-/** @type {import("eslint").Linter.Config[]} */
-export const BOUNDARY_CONFIGS = [
-  // Source files: barrel imports + domain-store facade containment.
-  // Later layer blocks must re-include these patterns (flat config replaces the rule).
-  boundaryBlockWithIgnores(["src/**/*.{ts,tsx}"], ["src/features/alchemy/shared/stores/**"]),
-  {
-    files: ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImports(BARREL_PATTERNS),
-    },
-  },
+export function cruiserPathFromGroups(groups) {
+  const alias = groups.find((group) => group.startsWith("@/"));
+  if (alias) return `^src/${alias.replace(/^@\//, "").replace(/\/\*\*$/, "")}/`;
+  const deepGroup = groups.find((group) => group.startsWith("**/")) ?? groups.at(-1);
+  if (!deepGroup) return "^src/features/alchemy/";
+  const deep = deepGroup.replace(/^\*\*\//, "").replace(/\/\*\*$/, "");
+  return `^src/features/alchemy/${deep}/`;
+}
 
-  // lib/ — pure logic: no features imports; keep barrel rules.
+export { LIB_NO_FEATURES, META_NO_RUN_LOOP, RUN_LOOP_NO_RUN_SETUP, RUN_SETUP_NO_RUN_LOOP };
+
+const BOUNDARY_TABLE = [
+  { files: ["src/**/*.{ts,tsx}"], ignores: ["src/features/alchemy/shared/stores/**"], extra: [] },
+  { files: ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"], onlyBarrel: true },
   {
     files: ["src/lib/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImportsWithPaths(
-        LIB_NO_FRAMEWORK_PATHS,
-        LIB_BARREL_PATTERNS,
-        LIB_NO_FEATURES,
-        DOMAIN_STORE_PATTERNS,
-      ),
-    },
+    paths: LIB_NO_FRAMEWORK_PATHS,
+    patterns: [LIB_BARREL_PATTERNS, LIB_NO_FEATURES, DOMAIN_STORE_PATTERNS],
   },
-
-  // game-data — schemas and card definitions only; no battle runtime.
   {
     files: ["src/lib/game-data/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": layerImportsWithPaths(
-        LIB_NO_FRAMEWORK_PATHS,
-        [{ group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." }],
-        GAME_DATA_NO_BATTLE,
-        LIB_NO_FEATURES,
-        DOMAIN_STORE_PATTERNS,
-      ),
-    },
+    paths: LIB_NO_FRAMEWORK_PATHS,
+    patterns: [
+      [{ group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." }],
+      GAME_DATA_NO_BATTLE,
+      LIB_NO_FEATURES,
+      DOMAIN_STORE_PATTERNS,
+    ],
   },
-
-  // Battle engine — no React, Zustand, features, Math.random, or Math.floor.
-  // placeholderRng in rng.ts is the only allowed constant RNG in setup/defaults.
   {
     files: ["src/lib/battle/**/*.{ts,tsx}"],
     ignores: ["src/lib/battle/rng.ts"],
-    rules: {
-      "no-restricted-imports": layerImportsWithPaths(
-        BATTLE_NO_FRAMEWORK_PATHS,
-        [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],
-        BATTLE_NO_FEATURES,
-        DOMAIN_STORE_PATTERNS,
-      ),
-      "no-restricted-syntax": restrictedSyntax(...BATTLE_NO_MATH_RANDOM, BATTLE_NO_MATH_FLOOR),
-    },
+    paths: BATTLE_NO_FRAMEWORK_PATHS,
+    patterns: [
+      [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],
+      BATTLE_NO_FEATURES,
+      DOMAIN_STORE_PATTERNS,
+    ],
+    syntax: [BATTLE_NO_MATH_RANDOM, BATTLE_NO_MATH_FLOOR],
   },
   {
     files: ["src/lib/battle/rng.ts"],
-    rules: {
-      "no-restricted-imports": layerImportsWithPaths(
-        BATTLE_NO_FRAMEWORK_PATHS,
-        [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],
-        BATTLE_NO_FEATURES,
-        DOMAIN_STORE_PATTERNS,
-      ),
-    },
+    paths: BATTLE_NO_FRAMEWORK_PATHS,
+    patterns: [
+      [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],
+      BATTLE_NO_FEATURES,
+      DOMAIN_STORE_PATTERNS,
+    ],
   },
+  { files: ["src/features/alchemy/run-setup/**/*.{ts,tsx}"], extra: [RUN_SETUP_NO_RUN_LOOP] },
+  {
+    files: ["src/features/alchemy/run-setup/screens/**/*.{ts,tsx}"],
+    extra: [RUN_SETUP_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION],
+  },
+  { files: ["src/features/alchemy/run-loop/**/*.{ts,tsx}"], extra: [RUN_LOOP_NO_RUN_SETUP] },
+  {
+    files: ["src/features/alchemy/run-loop/screens/**/*.{ts,tsx}"],
+    extra: [RUN_LOOP_NO_RUN_SETUP, SCREENS_NO_ORCHESTRATION],
+  },
+  {
+    files: ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}"],
+    extra: [ORCHESTRATION_NO_SCREENS, RUN_LOOP_NO_RUN_SETUP],
+  },
+  {
+    files: ["src/features/alchemy/run-loop/navigation/**/*.{ts,tsx}"],
+    extra: [ORCHESTRATION_NO_SCREENS, RUN_LOOP_NO_RUN_SETUP],
+  },
+  { files: ["src/features/alchemy/meta/**/*.{ts,tsx}"], extra: [META_NO_RUN_LOOP] },
+  {
+    files: ["src/features/alchemy/meta/screens/**/*.{ts,tsx}"],
+    extra: [META_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION],
+  },
+];
 
-  // run-setup — character/difficulty/draft; must not import run-loop (use shared/run-flow).
-  // Screens restack below so non-screen setup code is not treated as a screen.
-  boundaryBlock(["src/features/alchemy/run-setup/**/*.{ts,tsx}"], RUN_SETUP_NO_RUN_LOOP),
-  boundaryBlock(
-    ["src/features/alchemy/run-setup/screens/**/*.{ts,tsx}"],
-    RUN_SETUP_NO_RUN_LOOP,
-    SCREENS_NO_ORCHESTRATION,
-  ),
+function createBoundaryConfig(entry) {
+  if (entry.onlyBarrel) {
+    return {
+      files: entry.files,
+      rules: {
+        "no-restricted-imports": layerImports(BARREL_PATTERNS),
+      },
+    };
+  }
+  if (entry.paths) {
+    return {
+      files: entry.files,
+      ...(entry.ignores ? { ignores: entry.ignores } : {}),
+      rules: {
+        "no-restricted-imports": layerImportsWithPaths(entry.paths, ...entry.patterns),
+        ...(entry.syntax ? { "no-restricted-syntax": restrictedSyntax(...entry.syntax.flat()) } : {}),
+      },
+    };
+  }
+  return entry.ignores
+    ? boundaryBlockWithIgnores(entry.files, entry.ignores, ...entry.extra)
+    : boundaryBlock(entry.files, ...entry.extra);
+}
 
-  // run-loop (general) — must not import run-setup. Screens/battle/navigation restack below.
-  boundaryBlock(["src/features/alchemy/run-loop/**/*.{ts,tsx}"], RUN_LOOP_NO_RUN_SETUP),
-  boundaryBlock(
-    ["src/features/alchemy/run-loop/screens/**/*.{ts,tsx}"],
-    RUN_LOOP_NO_RUN_SETUP,
-    SCREENS_NO_ORCHESTRATION,
-  ),
-  boundaryBlock(
-    ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}"],
-    ORCHESTRATION_NO_SCREENS,
-    RUN_LOOP_NO_RUN_SETUP,
-  ),
-  boundaryBlock(
-    ["src/features/alchemy/run-loop/navigation/**/*.{ts,tsx}"],
-    ORCHESTRATION_NO_SCREENS,
-    RUN_LOOP_NO_RUN_SETUP,
-  ),
+const BOUNDARY_TABLE_CONFIGS = BOUNDARY_TABLE.map(createBoundaryConfig);
 
-  // Meta — menu/collection/homestead; must not depend on run-loop orchestration.
-  // Non-screen meta code does not get screen orchestration bans; meta/screens restacks below
-  // because flat config replaces earlier no-restricted-imports.
-  boundaryBlock(["src/features/alchemy/meta/**/*.{ts,tsx}"], META_NO_RUN_LOOP),
-  boundaryBlock(["src/features/alchemy/meta/screens/**/*.{ts,tsx}"], META_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION),
-
-  // Reusable UI widgets — no run/battle/session store subscriptions (ui-store is OK).
+export const BOUNDARY_CONFIGS = [
+  ...BOUNDARY_TABLE_CONFIGS,
   {
     files: ["src/features/alchemy/shared/ui/**/*.{ts,tsx}"],
     rules: {
@@ -158,8 +148,6 @@ export const BOUNDARY_CONFIGS = [
       "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
     },
   },
-
-  // Ban React.lazy on route screens — keep barrel + facade bans.
   {
     files: ["src/app/screen-routes/**/*.{ts,tsx}"],
     rules: {

@@ -1,10 +1,9 @@
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
-import { spendRunGold } from "@/features/alchemy/run-loop/run-gold";
-import { readDraftGold } from "@/features/alchemy/shared/stores/write-port-run";
 import {
   createDraftRunRandomSource,
+  deductRunGold,
+  readDraftGold,
   setRunDeck,
-  setRunGold,
   setShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { SHOP_CARDS_OFFERED } from "@/lib/game-constants";
@@ -65,7 +64,7 @@ export function createMerchantShopCommands({
       if (state.removeUsed || !isValidDeckIndex(index, run.runDeck.length) || readDraftGold(draft) < price) {
         return { committed: false, price, value: undefined };
       }
-      spendRunGold(price, (update) => setRunGold(draft, update));
+      deductRunGold(draft, price);
       setRunDeck(draft, (previous) => previous.filter((_, cardIndex) => cardIndex !== index));
       setShopState(draft, (previous) => ({ ...previous, removeUsed: true }));
       return { committed: true, price, value: undefined };

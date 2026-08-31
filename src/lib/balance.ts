@@ -1,4 +1,4 @@
-export * from "./balance/simulator-types";
+export type * from "./balance/simulator-types";
 export * from "./balance/simulator";
 export { simulateBatch } from "./balance/simulator-batch";
 export * from "./balance/class-deck";
@@ -9,7 +9,7 @@ export * from "./balance/gear-preset";
 export * from "./balance/homestead-preset";
 export * from "./balance/play-policy";
 export * from "./balance/report-rankings";
-export * from "./balance/report-model";
+export type * from "./balance/report-model";
 export * from "./balance/report-options";
 export * from "./balance/report-catalog";
 export * from "./balance/report-run";

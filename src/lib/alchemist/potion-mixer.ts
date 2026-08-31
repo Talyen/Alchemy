@@ -1,12 +1,12 @@
-import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
-import { isMixedPotionCard, mixedPotion } from "@/lib/game-data";
+import type { BattleCard, BattleCardEffect } from "../game-data";
+import { isMixedPotionCard, mixedPotion } from "../game-data";
 import {
   CONSUME_DESCRIPTION_LINE,
   MIXED_POTION_CARD_ID,
   MIXED_POTION_COST,
   MIXED_POTION_TITLE,
-} from "@/lib/game-constants";
-import { isValidDeckIndex } from "@/lib/utils";
+} from "../game-constants";
+import { isValidDeckIndex } from "../utils";
 
 const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
@@ -27,12 +27,18 @@ function scaleCardDescriptionLines(card: BattleCard, multiplier: number, potency
     return linesWithoutConsume;
   }
 
-  return linesWithoutConsume.map((line) =>
-    line.replace(/\b\d+\b/g, (match) => {
+  return linesWithoutConsume.map((line) => {
+    let replaced = false;
+    return line.replace(/\b\d+\b/g, (match) => {
+      if (replaced) return match;
       const scaled = scaleMap.get(Number(match));
-      return scaled !== undefined ? String(scaled) : match;
-    }),
-  );
+      if (scaled !== undefined) {
+        replaced = true;
+        return String(scaled);
+      }
+      return match;
+    });
+  });
 }
 
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {

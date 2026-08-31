@@ -110,12 +110,12 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 3. Add a fixture at version `N−1` in `tests/fixtures/legacy-saves.ts`.
 4. Assert **gameplay outcome** in `save-migration-guard.test.ts` — not only JSON field presence.
 
-## Content changes without save bump (current)
+## Content changes without a save bump
 
-- **Talent `bleed-execute` rewritten (Flay):** `Exsanguinate` (Bleed double below 30% HP via `bleedExecuteThreshold=30`, `bleedExecuteMultiplier=2`) → `Flay` (Bleed 20% chance to halve enemy Armor via `bleedHalveArmorChance=20`). `bleedExecute*` remains in `TalentEffectManifest` with defaults `0` for older saves; no live talent sets those fields after the rewrite. No schema bump — manifests use `manifest-defaults.ts` with Zod `.default(0)`.
-- **`bleed-desperate` tuned:** `bleedDesperateMultiplier 2 → 1.5` (50% more Bleed below 50% HP).
-- **Card `kindling` rewritten:** builder `damageThenMultiplyEnemyStatusCard(burn ×2 stacks)` → `{kind:"damage", damageType:"burn", amount:1, tripleIfEnemyNotBurning:true, consume:true}` with new Zod field `tripleIfEnemyNotBurning`. Tombstoned decks silently drop the old ID; new saves encode the new shape. No schema bump — additive card schema field with default `undefined`.
-- **Enemy trait rebalance (battle-only, `preserveAs: null`):** `banshee` changed from `+1 damage while player stunned` to `purge one defensive status (block→armor→forge→haste) on landed hit`; `blood-countess` moved from enemy-turn bleed pressure to `player-heal → holy 1 self-damage (+ kill-payout check)` via `applyBloodCountessHealingReaction`. Both are in-memory battle flags with no persisted save field.
+- Balance-only changes to live definitions do not change the save schema.
+- Additive fields that load safely through schema or manifest defaults do not require a migration step; keep their defaults while supported saves may omit them.
+- Removed catalog IDs follow the tombstone and hydrate-repair rules above. A meaning or ID remap requires a `contentVersion` handler.
+- Battle-only fields that are rebuilt rather than persisted do not affect the save contract.
 
 ## Active-run RNG streams (`activeRun.rng`)
 

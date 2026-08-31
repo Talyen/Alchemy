@@ -41,6 +41,16 @@ describe("getEffectiveCardDescriptionLines", () => {
     expect(lines).toEqual(["Heal 20", "Gain 10 Block"]);
   });
 
+  it("adjusts potion enemy-status amounts with potionPotency", () => {
+    const card = makeTestCard({
+      id: "poison-potion",
+      descriptionLines: ["Apply 5 Poison"],
+      effects: [{ kind: "enemy-status", status: "poison", amount: 5 }],
+    });
+    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 2 });
+    expect(lines).toEqual(["Apply 10 Poison"]);
+  });
+
   it("does not adjust non-potion amounts with potionPotency", () => {
     const card = makeTestCard({
       id: "normal-card",

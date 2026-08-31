@@ -1,10 +1,10 @@
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { getBattleRng } from "./status-helpers";
+import { hasEnemyTrait } from "./enemy-turn-rules";
 import { rngInt } from "@/lib/run-rng";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
-import { hasEnemyTrait } from "./enemy-trait-query";
 import { type BattleState, type CombatTextEvent, addEnemyMitigation, addEnemyStatus, setFlag } from "./types";
 import {
   DIFFICULTY_FORGE_PER_TURN,
@@ -101,25 +101,49 @@ const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], En
   },
 };
 
-const PASSIVE_ONLY_TRAITS = new Set([
-  "brittle-bones",
-  "trinket-hoarder",
-  "holy-vulnerability",
-  "burn-resistance",
-  "burn-vulnerability",
-  "living-armor",
-  "thick-hide",
-  "poison-resistance",
-  "gold-trove",
-  "starting-block",
-  "regeneration",
-  "freeze-vulnerability",
-  "amorphous",
-  "cinder-skin",
-  ...COMBAT_ENCOUNTER_TRAIT_IDS,
-]);
+const ENEMY_TRAIT_DEFINITIONS: Record<string, { passive: boolean; reaction: boolean; turnStart: boolean }> = (() => {
+  const passiveIds: string[] = [
+    "brittle-bones",
+    "trinket-hoarder",
+    "holy-vulnerability",
+    "burn-resistance",
+    "burn-vulnerability",
+    "living-armor",
+    "thick-hide",
+    "poison-resistance",
+    "gold-trove",
+    "starting-block",
+    "regeneration",
+    "freeze-vulnerability",
+    "amorphous",
+    "cinder-skin",
+    ...COMBAT_ENCOUNTER_TRAIT_IDS,
+  ];
+  const reactionIds: string[] = [...REACTION_ONLY_IDS] as string[];
+  const turnStartIds: string[] = Object.keys(enemyTraitTurnStartHandlers);
+  const allIds = new Set<string>([...passiveIds, ...reactionIds, ...turnStartIds]);
+  const defs: Record<string, { passive: boolean; reaction: boolean; turnStart: boolean }> = {};
+  for (const id of allIds) {
+    defs[id] = {
+      passive: passiveIds.includes(id),
+      reaction: reactionIds.includes(id),
+      turnStart: turnStartIds.includes(id),
+    };
+  }
+  return defs;
+})();
 
-const REACTION_ONLY_TRAITS: ReadonlySet<string> = new Set<string>([...REACTION_ONLY_IDS]);
+const PASSIVE_ONLY_TRAITS = new Set(
+  Object.entries(ENEMY_TRAIT_DEFINITIONS)
+    .filter(([, v]) => v.passive)
+    .map(([k]) => k),
+);
+
+const REACTION_ONLY_TRAITS: ReadonlySet<string> = new Set(
+  Object.entries(ENEMY_TRAIT_DEFINITIONS)
+    .filter(([, v]) => v.reaction)
+    .map(([k]) => k),
+);
 
 const PASSIVE_ONLY_MODIFIERS = new Set<DifficultyModifier["kind"]>([
   "enemy-starting-armor",
@@ -139,7 +163,7 @@ export const ENEMY_TRAIT_TURN_START_HANDLER_IDS = Object.keys(enemyTraitTurnStar
 
 export const PASSIVE_ONLY_ENEMY_TRAIT_IDS = [...PASSIVE_ONLY_TRAITS];
 
-export const REACTION_ONLY_ENEMY_TRAIT_IDS = [...REACTION_ONLY_IDS] as string[];
+export const REACTION_ONLY_ENEMY_TRAIT_IDS = [...REACTION_ONLY_TRAITS] as string[];
 
 export const DIFFICULTY_TURN_START_MODIFIER_KINDS = Object.keys(difficultyTurnStartHandlers) as Array<
   DifficultyModifier["kind"]

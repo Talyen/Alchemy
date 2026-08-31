@@ -1,6 +1,5 @@
 import { mergeCombatText } from "./combat-text";
-import { scaleByRoomMultiplier } from "./enemy-turn-rules";
-import { hasEnemyTrait } from "./enemy-trait-query";
+import { hasEnemyTrait, scaleByRoomMultiplier } from "./enemy-turn-rules";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { addEnemyMitigation, type BattleState, type CombatTextEvent } from "./types";
 

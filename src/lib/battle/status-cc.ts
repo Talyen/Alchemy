@@ -1,6 +1,6 @@
 import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
-import { hasEnemyTrait } from "./enemy-trait-query";
+import { hasEnemyTrait } from "./enemy-turn-rules";
 import {
   setEnemyStatus,
   setPlayerStatus,

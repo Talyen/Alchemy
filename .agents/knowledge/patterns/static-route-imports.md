@@ -22,7 +22,7 @@ One loading experience at cold start, then instant navigation. Screen JS in `src
 ## Preferred pattern
 
 - Add screen: extend `Screen` union + `ROUTE_SCREENS`, classify via `SCREEN_PHASE`, add edges to `ALLOWED_SCREEN_TRANSITIONS`, create component in `run-loop/screens/` etc., wrap in `TitledScreenShell`, wire in `screen-routes` phase table.
-- Keep `src/app/screen-routes/**/*` free of `React.lazy` / `React.lazy`.
+- Keep `src/app/screen-routes/**/*` free of `React.lazy` and lazy route imports.
 - Keep `allGameArt` eager; no lazy art or per-screen spinners for those assets.
 - E2E bypass only via `alchemy-skip-loading-screen` in `localStorage` for startup gate.
 

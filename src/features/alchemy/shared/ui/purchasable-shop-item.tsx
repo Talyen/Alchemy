@@ -2,7 +2,7 @@ import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { getGearInstanceTitle } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { cardInteractiveGlowClass, collectionTileWidthClass } from "../config";
+import { cardInteractiveGlowClass, getTileWidthClass } from "../config";
 import { BattleCardButton } from "./card-button";
 import { getCardDisplayTitle } from "./card-description-ui";
 import { GearTile, TrinketTile } from "./collection-art-tiles";
@@ -22,7 +22,7 @@ export function PurchasableCardItem({
   gold,
   purchased,
   onBuy,
-  widthClass = collectionTileWidthClass,
+  widthClass = getTileWidthClass("collection"),
 }: BasePurchasableProps & { card: BattleCard; widthClass?: string }) {
   const { canPurchase } = getShopPurchaseState(price, gold, purchased);
   const media = (

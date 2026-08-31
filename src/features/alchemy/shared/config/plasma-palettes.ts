@@ -36,6 +36,13 @@ export const DEATHS_DOOR_PLASMA_PAIR: PlasmaColorPair = {
 
 export const HASTE_PLASMA_PAIR: PlasmaColorPair = { primary: "#f0abfc", secondary: "#701a75" };
 
+export const WILDCARD_PLASMA_PAIR: PlasmaColorPair | null = (() => {
+  const primary = WILDCARD_KEYWORD_SHINE_COLORS[0];
+  const secondary = WILDCARD_KEYWORD_SHINE_COLORS[1] ?? WILDCARD_KEYWORD_SHINE_COLORS[2];
+  if (!primary || !secondary) return null;
+  return { primary, secondary };
+})();
+
 export function getPlasmaColorPairFromColors(colors: readonly string[]): PlasmaColorPair | null {
   const primary = colors[0];
   if (!primary) return null;
@@ -77,12 +84,7 @@ export function getPlasmaKeywordsForText(text: string): KeywordId[] {
 }
 
 export function getPlasmaColorPair(keywordIds: readonly KeywordId[]): PlasmaColorPair | null {
-  if (keywordIds.length === 0) {
-    const primary = WILDCARD_KEYWORD_SHINE_COLORS[0];
-    const secondary = WILDCARD_KEYWORD_SHINE_COLORS[1] ?? WILDCARD_KEYWORD_SHINE_COLORS[2];
-    if (!primary || !secondary) return null;
-    return { primary, secondary };
-  }
+  if (keywordIds.length === 0) return WILDCARD_PLASMA_PAIR;
 
   const firstPalette = getKeywordShineColors(keywordIds[0]!);
   const primary = firstPalette[0];

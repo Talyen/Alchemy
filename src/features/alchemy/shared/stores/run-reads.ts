@@ -51,8 +51,7 @@ export type BattleReadView = Readonly<RunDomainBattleState>;
 export type { DisplayOverrides } from "./run-domain-types";
 
 function deepFreezeInDev<T>(value: T): T {
-  if (!import.meta.env.DEV) return value;
-  if (value === null || typeof value !== "object" || Object.isFrozen(value)) return value;
+  if (!import.meta.env.DEV || value === null || typeof value !== "object" || Object.isFrozen(value)) return value;
   Object.freeze(value);
   for (const child of Object.values(value as Record<string, unknown>)) {
     if (child !== null && typeof child === "object") deepFreezeInDev(child);
@@ -60,21 +59,17 @@ function deepFreezeInDev<T>(value: T): T {
   return value;
 }
 
-function freezeInDev<T extends object>(value: T): T {
-  return deepFreezeInDev(value);
-}
-
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
 }
 export function readActiveRun(): ActiveRunReadView {
-  return freezeInDev(pickActiveRunView(readGameplayState().run));
+  return deepFreezeInDev(pickActiveRunView(readGameplayState().run));
 }
 export function readRunProfile(): RunProfileReadView {
-  return freezeInDev({ ...readGameplayState().runProfile });
+  return deepFreezeInDev({ ...readGameplayState().runProfile });
 }
 export function readRunSession(): RunSessionReadView {
-  return freezeInDev({ ...readGameplayState().session });
+  return deepFreezeInDev({ ...readGameplayState().session });
 }
 export function readShopFirstPurchaseUsed(
   shop: "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState",
@@ -82,7 +77,7 @@ export function readShopFirstPurchaseUsed(
   return readGameplayState().session[shop].firstPurchaseUsed;
 }
 export function readBattle(): BattleReadView {
-  return freezeInDev({ ...readGameplayState().battle });
+  return deepFreezeInDev({ ...readGameplayState().battle });
 }
 export function readRunInitialized(): boolean {
   return readGameplayState().run.initialized;

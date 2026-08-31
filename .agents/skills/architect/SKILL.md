@@ -12,6 +12,6 @@ Use for a **new or structurally revised public contract** imported across a feat
 ## Steps
 
 1. Read the exact route-selected owner section.
-2. Draft the most pragmatic honest TypeScript contract — the cleanest shape that makes invalid states unrepresentable without over- or under-modeling — before concrete React/handler code. Keep invalid states out of the model. Comments follow [AGENTS.md § Change guards](../../../AGENTS.md#change-guards): non-obvious invariants only, never import/consumer graphs.
+2. Draft the most pragmatic honest TypeScript contract — the cleanest shape that makes invalid states unrepresentable without over- or under-modeling — before concrete React/handler code. Keep invalid states out of the model. Follow [AGENTS.md § Change guards](../../../AGENTS.md#change-guards): express invariants through the contract, names, and tests; do not add explanatory comments.
 3. Search only the public symbol’s known consumers and boundary entry points; expand when evidence shows another owner.
 4. Preview the changed-path route. The `verifier` skill owns commands and handoff gates.

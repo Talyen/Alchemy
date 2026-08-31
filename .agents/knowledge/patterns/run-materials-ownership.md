@@ -34,4 +34,4 @@ Player loot earned during a run (mystery choices, combat crystals, reward screen
 
 ## Enforcement opportunity
 
-Strongest: custom ESLint rule `no-run-earned-add-materials` already errors. Could narrow further to forbid `addMaterials` import in `src/features/alchemy/run-loop/**` except salvage wrapper; currently rule is repo-wide warning via targeted glob — sufficient.
+Strongest: the repository-wide `alchemy/no-run-earned-add-materials` ESLint error rejects imports, exports, and calls outside its explicit owner allowlist.

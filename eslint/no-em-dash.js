@@ -25,6 +25,9 @@ export const noEmDash = {
       TemplateElement(node) {
         check(node.value.cooked ?? node.value.raw, node);
       },
+      JSXText(node) {
+        check(node.value, node);
+      },
     };
   },
 };

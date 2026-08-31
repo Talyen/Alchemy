@@ -37,4 +37,4 @@ Feature code occasionally bypasses the aggregate command boundary — calling st
 
 ## Enforcement
 
-Current: boundary lint (`gameplay-state-store.ts` internal via `DOMAIN_STORE_PATTERNS` in `eslint/boundaries.js:58`) + `AGGREGATE_NO_DIRECT_MUTATION` (`no-restricted-syntax` on `useGameplayStateStore.getState`/`setState` outside `src/features/alchemy/shared/stores/**` — `eslint/fragments.js:70`, `eslint.config.js:372`) + code review. Allowed: `src/features/alchemy/shared/stores/**` (`run-session-command.ts` single draft, `gameplay-state-store.ts` `readGameplayState`) and `tests/**` helpers. Feature code must use `dispatchRunSessionCommand` + `run-session-write-port` / `run-session-read-port`.
+Current: boundary lint keeps `gameplay-state-store.ts` internal through `DOMAIN_STORE_PATTERNS`; `AGGREGATE_NO_DIRECT_MUTATION` rejects `useGameplayStateStore.getState`/`setState` outside `src/features/alchemy/shared/stores/**`. Allowed owners are `run-session-command.ts`, `gameplay-state-store.ts`, and test helpers. Feature code must use `dispatchRunSessionCommand` plus `run-session-write-port` / `run-session-read-port`.

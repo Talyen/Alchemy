@@ -67,11 +67,8 @@ export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null):
   const persistenceFields = encodePersistenceFields();
 
   const {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deny-list: prevent codec from overwriting envelope
     saveSchemaVersion: _saveSchemaVersion,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deny-list
     gameBuildVersion: _gameBuildVersion,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deny-list
     contentVersion: _contentVersion,
     ...safeFields
   } = persistenceFields as AlchemyPersistenceFields & {

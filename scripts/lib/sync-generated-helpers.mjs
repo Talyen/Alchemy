@@ -3,6 +3,25 @@ import { fileURLToPath } from "node:url";
 
 import { syncGeneratedModule } from "./generated-module.mjs";
 
+export const WEBP_SUFFIX = ".webp";
+export const GEAR_PREFIX = "gear-";
+
+export function isWebpAsset(name) {
+  return name.endsWith(WEBP_SUFFIX);
+}
+
+export function isGearAsset(name) {
+  return name.startsWith(GEAR_PREFIX) && name.endsWith(WEBP_SUFFIX);
+}
+
+export function getAssetFiles(manifest) {
+  return Object.keys(manifest).filter(isWebpAsset).sort();
+}
+
+export function getGearFiles(manifest) {
+  return Object.keys(manifest).filter(isGearAsset).sort();
+}
+
 export function getOptimizedManifestPath(rootDir) {
   return path.join(rootDir, "src", "assets", "optimized", ".asset-hashes.json");
 }

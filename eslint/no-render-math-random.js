@@ -1,4 +1,11 @@
-const LAZY_HOOKS = new Set(["useState", "useCallback", "useMemo"]);
+const LAZY_HOOKS = new Set([
+  "useState",
+  "useCallback",
+  "useMemo",
+  "useEffect",
+  "useLayoutEffect",
+  "useInsertionEffect",
+]);
 
 function calleeName(node) {
   if (node.type === "Identifier") return node.name;

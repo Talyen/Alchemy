@@ -3,8 +3,7 @@ import { HALF_DIVISOR } from "../game-constants";
 import { applyEnemyHealingWithCombatText } from "./combat-text";
 import { applyEnemyLeechHealing, processEnemyDamageEffect } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
-import { hasEnemyTrait } from "./enemy-trait-query";
-import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-rules";
+import { hasEnemyTrait, isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-rules";
 import { type BattleState, type CombatTextEvent } from "./types";
 
 function addEnemyStatusText(

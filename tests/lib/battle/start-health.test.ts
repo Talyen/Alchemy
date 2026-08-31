@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getBattleStartPlayerHealth } from "@/lib/battle/start-health";
+import { getBattleStartPlayerHealth } from "@/lib/battle";
 
 describe("getBattleStartPlayerHealth", () => {
   it("returns runPlayerHealth when no Groves Favor trinket", () => {

@@ -6,7 +6,7 @@ Alchemy is a fantasy roguelite deckbuilder. Router + universal constraints; deta
 
 - Dirty tree is in-flight user work: inspect, preserve intent, keep unrelated paths out.
 - Most pragmatic architectural solution — the best long-term shape, even when larger/harder than the minimal workaround; prefer libs over custom hacks. Compatibility only for concrete consumer (save, shipped behavior, external contract).
-- Challenge weak requirements with evidence; after 3 failures reassess with docs/tests, ask.
+- Surface requirement conflicts with evidence. First failure: use bounded diagnostics; repeated failure class: consult knowledge; after 3 unsuccessful approaches, reassess with docs/tests and ask only when evidence cannot resolve the decision.
 - Run [Audits](./docs/Audits/README.md) only when cited. Zero findings is valid.
 - Update canonical owner in same change when altering a documented invariant.
 
@@ -22,7 +22,7 @@ Match level, name a term once.
 
 ## Documentation owners
 
-One owner per task; expand only across demonstrated boundary.
+Start with one owner document; expand only across a demonstrated boundary.
 
 | Need                                          | Read                                                                                                                                                                                                                |
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -44,8 +44,8 @@ Knowledge: [.agents/knowledge/](./.agents/knowledge/index.md) — **not auto-loa
 ## High-risk invariants
 
 - **Run state:** outside `shared/stores/` use capability ports; writes via `dispatchRunSessionCommand()` + `run-session-write-port.ts` ([ARCHITECTURE#run-state](./docs/ARCHITECTURE.md#run-state)).
-- **Controllers:** bindings via route/shell props, not context (allowed: `AppScreenChromeProvider`, `CardDescriptionProvider`, `ui-store`).
-- **Battle:** `BattleState` immutable, seeded `world` RNG, `Math.round` only; tuning in `src/lib/game-constants/` ([REFERENCE#battle](./docs/REFERENCE.md#battle-implementation-rules)).
+- **Controllers:** run/battle bindings travel through route/shell props, not context. Allowed providers are `AppScreenChromeProvider` and `CardDescriptionProvider`; presentation-only state may use `ui-store`.
+- **Battle:** `BattleState` immutable, seeded `world` RNG, `Math.round` only; shared combat tuning lives in `src/lib/game-constants/`, while content-owned magnitudes stay with their definitions ([REFERENCE#battle](./docs/REFERENCE.md#battle-implementation-rules)).
 - **Content:** `descriptionLines` matches effects; run materials via `awardMaterialsDuringRun()` (lint-enforced).
 - **Persistence:** change schemas/defaults/hydration/fixtures together ([MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)).
 - **Routes/assets:** screens statically imported; art eager; generated barrels are outputs — edit manifest, regenerate.
@@ -55,7 +55,7 @@ Knowledge: [.agents/knowledge/](./.agents/knowledge/index.md) — **not auto-loa
 
 - Before store/port/save/constant/routing change, search touched subsystem first; expand to public consumers only.
 - If docs + nearest tests leave rule ambiguous, recover intent from tests + ≤5 commits; record invariant.
-- Post-edit: review diff only — within the pragmatic solution, prefer delete → reuse → simplify → parameterize → abstract. No comments — express intent via code, types, and tests; only `eslint`/`@ts-`/`prettier-ignore`/`c8` directives allowed (`eslint/no-comments.js:1`). New cross-boundary contract → `architect` skill.
+- Post-edit: review diff only — within the pragmatic solution, prefer delete → reuse → simplify → parameterize → abstract. No comments — express intent via code, types, and tests; only tool directives allowed by `alchemy/no-comments`. New cross-boundary contract → `architect` skill.
 
 ## UI
 
@@ -63,7 +63,7 @@ Plain `function Props` (no `React.FC`), `cn()` for classes. Motion/tooltips/inte
 
 ## Verification & environment
 
-After edits use `verifier` skill. Commands in [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) / [REFERENCE](./docs/REFERENCE.md#environment--commands); triage in [REFERENCE#failure-first-triage](./docs/REFERENCE.md#failure-first-triage). Close browser tabs after IDE use. Node/npm versions in `package.json`.
+After edits use `verifier` skill. Commands in [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) / [REFERENCE](./docs/REFERENCE.md#environment--commands); triage in [REFERENCE#failure-first-triage](./docs/REFERENCE.md#failure-first-triage). Node/npm versions in `package.json`.
 
 ## Branch and commits
 
@@ -71,4 +71,4 @@ Trunk-based: commit to `main` / branch/PR only when asked. Conventional Commits 
 
 ## Handoff
 
-Game/workflow outcome first in player/design terms (using game vocabulary), then concise verification status. Avoid code/engineering detail unless requested. Intentionally untouched. No log/diff dumps.
+Game/workflow outcome first in player/design terms (using game vocabulary), then concise verification status. Avoid code/engineering detail unless requested. Name relevant scope intentionally left unchanged. No log/diff dumps.

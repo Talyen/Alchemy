@@ -138,10 +138,7 @@ export const SaveDataSchema = z.preprocess(
     .transform((save) => {
       const flatInventory = flattenGearInventories(save.gearInventories);
       const liveCombatGold = save.activeRun?.activeCombat?.battleState.gold;
-      let migratedGold = save.gold;
-      if (typeof liveCombatGold === "number") {
-        migratedGold = liveCombatGold;
-      }
+      const migratedGold = typeof liveCombatGold === "number" ? liveCombatGold : save.gold;
       return {
         ...save,
         gold: migratedGold,

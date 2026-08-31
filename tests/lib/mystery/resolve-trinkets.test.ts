@@ -128,17 +128,17 @@ describe("collect and apply resolved mystery trinket ids", () => {
     expect(hydrated.choices).toEqual(resolved.choices);
   });
 
-  it("does not rewrite authored astral gear when applying resolved trinket ids", () => {
+  it("does not rewrite authored gear when applying resolved trinket ids", () => {
     const event = {
-      id: "authored-astral",
-      title: "Authored Astral",
+      id: "authored-gear",
+      title: "Authored Gear",
       art: "test-art",
       narrative: "Test",
       choices: [
         {
           label: "A",
           effects: [
-            { kind: "gainGeneratedGear" as const, baseItemId: "staff", astral: true as const },
+            { kind: "gainGeneratedGear" as const, baseItemId: "staff" },
             { kind: "gainTrinket" as const, trinketId: "icy-heart" },
           ],
         },
@@ -149,9 +149,16 @@ describe("collect and apply resolved mystery trinket ids", () => {
     expect(hydrated.choices[0]?.effects[0]).toEqual({
       kind: "gainGeneratedGear",
       baseItemId: "staff",
-      astral: true,
     });
     expect(hydrated.choices[0]?.effects[1]).toEqual({ kind: "gainTrinket", trinketId: "merchants-favor" });
+  });
+
+  it("can re-apply resolved ids to an already resolved event with fallback astral gear", () => {
+    const allOwned = trinketLibrary.map((entry) => entry.id);
+    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0);
+    const ids = collectResolvedMysteryTrinketIds(resolved);
+    const rehydrated = applyResolvedMysteryTrinketIds(resolved, ids);
+    expect(rehydrated.choices).toEqual(resolved.choices);
   });
 
   it("repairs a legacy visit that still has gainRandomTrinket", () => {

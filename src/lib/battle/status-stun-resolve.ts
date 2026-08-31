@@ -1,10 +1,10 @@
 import { clampHealth, setFlag, type BattleState, type CombatTextEvent } from "./types";
-import { hasEnemyTrait } from "./enemy-trait-query";
 import { addGoldWithCombatText, mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
 import { payKillPayouts } from "./kill-payouts";
 import { getEnemyDamageMultiplier } from "./status-helpers";
+import { hasEnemyTrait } from "./enemy-turn-rules";
 import { applyCrowdControlTriggerBonuses } from "./talent-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { BATTLE_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";

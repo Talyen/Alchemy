@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 
 import {
   cardSurfaceClass,
-  collectionTileWidthClass,
   gearArtAspectClass,
   gearArtFillClass,
+  getTileWidthClass,
   getTrinketShineColors,
   getPlasmaColorPairForTrinket,
   trinketArtFillClass,
@@ -18,7 +18,7 @@ import {
 import { DetailPopup } from "./card-popup";
 import { GearDetailPopup } from "./gear-detail-popup";
 import { InteractiveArtTile } from "./interactive-art-tile";
-import { TrinketItemTitle } from "./trinket-item-title";
+import { TrinketItemTitle } from "./gear-item-title";
 
 export interface TrinketTileProps {
   trinket: TrinketEntry;
@@ -130,7 +130,7 @@ export function GearTile({
       interactionKey={interactionKey}
       title={title}
       art={definition?.art ?? ""}
-      className={cn(cardSurfaceClass, collectionTileWidthClass, gearArtAspectClass)}
+      className={cn(cardSurfaceClass, getTileWidthClass("collection"), gearArtAspectClass)}
       imageClassName={gearArtFillClass}
       shineColor={shine ? getAstralShineColors(instance) : undefined}
       as={as}

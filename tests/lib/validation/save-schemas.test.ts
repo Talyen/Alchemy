@@ -54,6 +54,17 @@ describe("SaveDataSchema", () => {
     }
   });
 
+  it("recovers the shared purse from a foreground combat snapshot", () => {
+    const result = SaveDataSchema.safeParse({
+      gold: 0,
+      activeRun: makeMinimalActiveRunInput({
+        activeCombat: { battleState: { ...defaultBattleState(), gold: 80 } },
+      }),
+    });
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (result.success) expect(result.data.gold).toBe(80);
+  });
+
   it("handles completely missing data", () => {
     const result = SaveDataSchema.safeParse(undefined);
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);

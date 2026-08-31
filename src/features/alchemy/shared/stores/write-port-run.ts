@@ -67,8 +67,15 @@ export function grantStartGold(draft: GameplayDraft, amount: number): void {
   setGold(draft, (gold) => gold + amount);
 }
 
+export function deductGold(draft: GameplayDraft, amount: number): void {
+  if (amount <= 0) return;
+  setGold(draft, (gold) => Math.max(0, gold - amount));
+}
+
 export const setRunGold = setGold;
 export const addRunGold = addGold;
+export const deductRunGold = deductGold;
+export const spendRunGold = deductGold;
 export const setRunPlayerHealth = createRunFieldSetter("runPlayerHealth");
 export const setRunMaxHealth = createRunFieldSetter("runMaxHealth");
 export const setRoomsEncountered = createRunFieldSetter("roomsEncountered");
@@ -209,12 +216,9 @@ function rebindBattleWorldRng(battleState: BattleState): BattleState {
 }
 
 export function withRestingWorldBattleRng(battleState: BattleState): BattleState;
-export function withRestingWorldBattleRng(_draft: GameplayDraft, battleState: BattleState): BattleState;
-export function withRestingWorldBattleRng(a: unknown, b?: BattleState): BattleState {
-  const battleState = (b ?? a) as BattleState;
-  if (!battleState || typeof battleState.enemyHealth !== "number") {
-    throw new Error("withRestingWorldBattleRng: expected BattleState");
-  }
+export function withRestingWorldBattleRng(draft: GameplayDraft, battleState: BattleState): BattleState;
+export function withRestingWorldBattleRng(...args: [BattleState] | [GameplayDraft, BattleState]): BattleState {
+  const battleState = args.length === 1 ? args[0] : args[1];
   return rebindBattleWorldRng(battleState);
 }
 
@@ -290,7 +294,8 @@ export function initializeActiveBattle(
     Object.assign(draft.battle, createInitialBattleFields());
     return;
   }
-  const hydrated = rebindBattleWorldRng(hydrateBattleState(battleState));
+  const hydratedRaw = hydrateBattleState(battleState);
+  const hydrated = rebindBattleWorldRng({ ...hydratedRaw, gold: draft.runProfile.gold });
   const pending = rebindPendingTransitionWorldRng(hydrateBattleTransition(pendingBattleTransition ?? null));
   const battle: Draft<RunDomainBattleState> = draft.battle;
   battle.battleState = hydrated;

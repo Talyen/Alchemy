@@ -38,22 +38,33 @@ export const cursorArt = {
   pointer: pointerCursor,
 } as const;
 
-function mysteryEventArtKey(path: string): string {
-  const filename = path.split("/").pop() ?? "";
-  return filename.replace(/^mystery-/, "").replace(/\.webp$/, "");
-}
+export const mysteryEventArt: Record<string, string> = {
+  "abandoned-study": assetRefs.mysteryAbandonedStudy,
+  "ancient-altar": assetRefs.mysteryAncientAltar,
+  "crystal-garden": assetRefs.mysteryCrystalGarden,
+  "crystal-geode": assetRefs.mysteryCrystalGeode,
+  "enchanted-spring": assetRefs.mysteryEnchantedSpring,
+  "fairy-ring": assetRefs.mysteryFairyRing,
+  "forgotten-hoard": assetRefs.mysteryForgottenHoard,
+  "fungal-grotto": assetRefs.mysteryFungalGrotto,
+  "hidden-cache": assetRefs.mysteryHiddenCache,
+  "hunters-lodge": assetRefs.mysteryHuntersLodge,
+  "mana-berries": assetRefs.mysteryManaBerries,
+  "medicinal-herb-garden": assetRefs.mysteryMedicinalHerbGarden,
+  "meteorite-crash": assetRefs.mysteryMeteoriteCrash,
+  "mountain-pass": assetRefs.mysteryMountainPass,
+  "murky-pond": assetRefs.mysteryMurkyPond,
+  "mysterious-tome": assetRefs.mysteryMysteriousTome,
+  "necromancers-offer": assetRefs.mysteryNecromancersOffer,
+  "overgrown-temple": assetRefs.mysteryOvergrownTemple,
+  "roadside-censer": assetRefs.mysteryRoadsideCenser,
+  "sacred-grove": assetRefs.mysterySacredGrove,
+  "the-phoenix": assetRefs.mysteryThePhoenix,
+  "the-wolf": assetRefs.mysteryTheWolf,
+  "wisdom-tree": assetRefs.mysteryWisdomTree,
+};
 
-const assetModules = import.meta.glob("@/assets/optimized/*.webp", {
-  eager: true,
-  import: "default",
-});
-
-export const mysteryEventArt: Record<string, string> = Object.fromEntries(
-  Object.entries(assetModules)
-    .filter(([path]) => path.includes("/mystery-"))
-    .map(([path, url]) => [mysteryEventArtKey(path), url as string]),
-);
-export const allGameArt = Object.values(assetModules) as string[];
+export const allGameArt: string[] = Object.values(assetRefs);
 
 export const gearSlotBackgroundArt = {
   body: assetRefs.gearSlotBody,

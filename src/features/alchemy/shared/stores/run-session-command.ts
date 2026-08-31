@@ -6,6 +6,15 @@ export type GameplayDraft = Draft<GameplayState>;
 
 let inCommand = false;
 
+function deepFreezeInDev<T>(value: T): T {
+  if (!import.meta.env.DEV || value === null || typeof value !== "object" || Object.isFrozen(value)) return value;
+  Object.freeze(value);
+  for (const child of Object.values(value as Record<string, unknown>)) {
+    if (child !== null && typeof child === "object") deepFreezeInDev(child);
+  }
+  return value;
+}
+
 export function dispatchRunSessionCommand<T>(
   execute: (draft: GameplayDraft) => T,
   options?: { afterCommit?: (result: T) => void },
@@ -24,7 +33,9 @@ export function dispatchRunSessionCommand<T>(
     });
 
     if (next !== base) {
-      useGameplayStateStore.setState({ ...next, revision: base.revision + 1 }, true);
+      const published = { ...next, revision: base.revision + 1 };
+      deepFreezeInDev(published);
+      useGameplayStateStore.setState(published, true);
     }
     committed = true;
   } finally {

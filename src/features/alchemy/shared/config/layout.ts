@@ -25,6 +25,23 @@ export const collectionBestiaryGridClass = `grid w-full ${collectionGridGapXClas
 
 export const collectionGridBestiaryWidthClass = "mx-auto w-full max-w-[clamp(36cqh,38.27cqh,40.25cqh)]";
 
+export type TileWidthVariant = "collection" | "view" | "bestiary" | "collectionCard";
+
+export function getTileWidthClass(variant: TileWidthVariant): string {
+  switch (variant) {
+    case "collection":
+      return collectionTileWidthClass;
+    case "view":
+      return viewCardWidthClass;
+    case "bestiary":
+      return collectionGridBestiaryWidthClass;
+    case "collectionCard":
+      return collectionCardGridTileWidthClass;
+    default:
+      return collectionTileWidthClass;
+  }
+}
+
 export const collectionGridMinHeightClass = "min-h-[64cqh]";
 export const pileCardWidthClass = "w-[clamp(13.8cqh,14.9cqh,21cqh)]";
 

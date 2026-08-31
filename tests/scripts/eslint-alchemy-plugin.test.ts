@@ -98,4 +98,72 @@ describe("alchemy ESLint plugin", () => {
     );
     expect(allowed).toEqual([]);
   });
+
+  it("bans em dashes across string literals, template elements, and JSX text", async () => {
+    const bannedLiteral = await lintRule(
+      "src/lib/mystery/events.ts",
+      `export const text = "Rewards \u2014 Choose one";\n`,
+      "no-em-dash",
+    );
+    expect(bannedLiteral.length).toBeGreaterThan(0);
+
+    const bannedTemplate = await lintRule(
+      "src/lib/mystery/events.ts",
+      "export const text = `Rewards \u2014 Choose one`;\n",
+      "no-em-dash",
+    );
+    expect(bannedTemplate.length).toBeGreaterThan(0);
+
+    const bannedJsx = await lintRule(
+      "src/features/alchemy/run-loop/screens/destination-screen.tsx",
+      `export function Screen() { return <span>Rewards \u2014 Choose one</span>; }\n`,
+      "no-em-dash",
+      { jsx: true },
+    );
+    expect(bannedJsx.length).toBeGreaterThan(0);
+
+    const allowed = await lintRule(
+      "src/lib/mystery/events.ts",
+      `export const text = "Rewards - Choose one";\n`,
+      "no-em-dash",
+    );
+    expect(allowed).toEqual([]);
+  });
+
+  it("bans general comments while permitting tool directives", async () => {
+    const banned = await lintRule(
+      "src/lib/battle/card-play.ts",
+      `/* helper description */\nexport function ping() {}\n`,
+      "no-comments",
+    );
+    expect(banned.length).toBeGreaterThan(0);
+
+    const allowedEslint = await lintRule(
+      "src/lib/battle/card-play.ts",
+      `// eslint-disable-next-line @typescript-eslint/no-explicit-any\nexport const x: any = 1;\n`,
+      "no-comments",
+    );
+    expect(allowedEslint).toEqual([]);
+
+    const allowedTs = await lintRule(
+      "src/lib/battle/card-play.ts",
+      `// @ts-expect-error test assertion\nexport const x: number = "1";\n`,
+      "no-comments",
+    );
+    expect(allowedTs).toEqual([]);
+
+    const allowedV8 = await lintRule(
+      "src/lib/battle/card-play.ts",
+      `/* v8 ignore next */\nexport function ping() {}\n`,
+      "no-comments",
+    );
+    expect(allowedV8).toEqual([]);
+
+    const allowedVite = await lintRule(
+      "src/lib/battle/card-play.ts",
+      `export const mod = import(/* @vite-ignore */ "./dynamic");\n`,
+      "no-comments",
+    );
+    expect(allowedVite).toEqual([]);
+  });
 });

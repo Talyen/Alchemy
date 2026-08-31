@@ -15,7 +15,7 @@ import { resolveStunTrigger } from "./status-stun-resolve";
 import { getBattleRng, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
 import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, HALF_DIVISOR } from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
-import { computeLeechHeal } from "./leech-heal";
+import { computeLeechHeal } from "./damage-rider-leech";
 import { payKillPayouts } from "./kill-payouts";
 import { detonateEnemyStatuses } from "./dot-resolve";
 

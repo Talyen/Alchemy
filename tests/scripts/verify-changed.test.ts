@@ -10,7 +10,7 @@ import {
   tailOutput,
 } from "../../scripts/lib/compact-output.mjs";
 import { validateRouteCatalog } from "../../scripts/lib/change-routes.mjs";
-import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-suites.mjs";
+import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-commands.mjs";
 import { measureAllRoutes, measureContext, ROUTE_CONTEXT_BUDGETS } from "../../scripts/measure-agent-context.mjs";
 import { formatPlan, writeFailureDigest } from "../../scripts/verify-changed.mjs";
 import { resolveRoutePlan as resolvePlan, resolveRoutes } from "../../scripts/lib/change-routes.mjs";

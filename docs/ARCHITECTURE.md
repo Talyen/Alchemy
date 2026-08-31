@@ -14,7 +14,7 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 | `run-loop/`  | Battle glue, navigation, shop, in-run screens                                          |
 | `shell/`     | Controller hooks                                                                       |
 
-Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-session-react-ports`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts); keep that module off the token `config/` barrel so layout/token imports stay catalog-free.
+Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-reads`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts); keep that module off the token `config/` barrel so layout/token imports stay catalog-free.
 
 `shared/run-flow/` is the neutral seam for destination sampling and campaign-start helpers so `run-setup` and `run-loop` do not import each other (ESLint-enforced).
 
@@ -31,7 +31,7 @@ Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/
 | `profile`        | Compendium discoveries (cards, enemies, trinkets, uniques; collection tab/page UI is transient in-memory, not in `ProfileSaveFields`) | Profile lifetime                                                                                                      |
 | `gear`           | Permanent inventories, loadouts, and crafting currencies                                                                              | Profile lifetime                                                                                                      |
 
-Cross-concern writes go through `run-session-write-port.ts`. Multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing reads (`run-session-read-port`, `profile-store` / `gear-store` slices, and the React ports) are data-only; command-backed write ports own every gameplay mutation. React orchestration uses narrow ports from `run-session-react-ports.ts`; screens use exact screen-data hooks (battle display via `useBattleScreenRouteData`).
+Cross-concern writes go through `run-session-write-port.ts`. Multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing reads (`run-session-read-port`, `run-reads`, and `profile-store` / `gear-store` slices) are data-only; command-backed write ports own every gameplay mutation. React orchestration uses narrow hooks from `run-reads.ts`; screens use exact screen-data hooks (battle display via `useBattleScreenRouteData`).
 
 Gameplay mutation callers enter through `dispatchRunSessionCommand()` from `run-session-command.ts`. The command boundary opens one Immer draft of the authoritative aggregate, replaces the aggregate root with one incremented revision on success, and discards the draft on failure. React selectors and autosave subscribe to that same root. Settings and presentation-only state remain separate. Commands are synchronous and must not span an `await`; audio, navigation timers, presentation updates, and other non-rollbackable work use `afterCommit` or run after the command returns. Draft mutators receive the draft explicitly and compose inside one command; a command body must not call another command. Transactional checks that guard a write (shop gold, refresh counts, purchased slots) read from that same draft rather than a committed read port. Persistence adapters may subscribe to the aggregate commit signal directly; gameplay callers must not.
 
@@ -43,9 +43,9 @@ Battle reads are data-only. Battle writes use focused draft-first mutators from 
 
 ### Run randomness
 
-Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Command recipes obtain their generator through `createDraftRunRandomSource(draft, stream)` so counter advancement commits or rolls back with the resulting gameplay state. Battle outcomes use the `world` stream: command bodies bind `BattleState.rng` with `withDraftWorldBattleRng(draft, state)` for the duration of the recipe. Stored battle snapshots and values returned from the command keep a resting callback (`withRestingWorldBattleRng(draft, state)` — single-arg `withRestingWorldBattleRng(state)` remains supported as a deprecated shim) that always throws if drawn. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
+Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Command recipes obtain their generator through `createDraftRunRandomSource(draft, stream)` so counter advancement commits or rolls back with the resulting gameplay state. Battle outcomes use the `world` stream: command bodies bind `BattleState.rng` with `withDraftWorldBattleRng(draft, state)` for the duration of the recipe. Stored battle snapshots and values returned from the command use `withRestingWorldBattleRng(draft, state)`, whose resting callback always throws if drawn. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
 
-`Math.random()` is allowed only to create a fresh run seed or for cosmetic/meta-only effects.
+`Math.random()` is allowed only to create a fresh run seed or presentation-only values that cannot affect gameplay or persisted state.
 
 | Concern                                               | Owner                                                                                  | Notes                                                                                                                                                                                                                                             |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -82,8 +82,8 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 | ---------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | Reads (imperative)           | `run-session-read-port.ts`                                                     | Data-only `readActiveRun()`, `readRunProfile()`, `readRunSession()`, `readBattle()`, `readShopFirstPurchaseUsed()`       |
 | Reads (React, screen)        | `use-run-screen-data.ts` + `app/screen-routes/use-battle-screen-route-data.ts` | Exact route display contracts; battle display is `useBattleScreenRouteData`, which composes `useRunSessionBattleContext` |
-| Reads (React, orchestration) | `run-session-model.ts`                                                         | `useRunSessionNavigationSlice`; `useRunSessionBattleContext` is a display composable, not a shell command source         |
-| Reads (React, meta/setup)    | `run-session-react-ports.ts`                                                   | Homestead, talent, draft, and content-navigation slices                                                                  |
+| Reads (React, orchestration) | `run-reads.ts`                                                                 | `useRunSessionNavigationSlice`; `useRunSessionBattleContext` is a display composable, not a shell command source         |
+| Reads (React, meta/setup)    | `run-reads.ts`                                                                 | Homestead, talent, draft, and content-navigation slices                                                                  |
 | React action selectors       | `store-actions.ts`                                                             | Settings, collection, and homestead command selectors for App chrome                                                     |
 | Writes                       | `run-session-write-port.ts` + `dispatchRunSessionCommand`                      | Draft mutators; first argument is `GameplayDraft`. `set*` accepts a value or `(prev) => next` updater                    |
 | Battle writes                | `run-session-write-port.ts`                                                    | `setBattleState`, `beginBattleTransition`, `commitBattleTransition`; `readBattle()` is data-only                         |
@@ -124,7 +124,7 @@ BattleScreenRoute → useBattleScreenRouteData (committed battle display)
 
 - `useAlchemyRunController` exposes battle **commands** on `routeCommands.battle`. Battle **display** is local to `BattleScreenRoute` via `useBattleScreenRouteData`.
 - Autoplay / auto-end-turn **ticks** live in `useBattlePlayback` on that route. Session autoplay on/off lives in `useBattleController`. Playback how-to: [WORKFLOWS § Change battle playback](./WORKFLOWS.md#change-battle-playback).
-- Presentation leaves subscribe to `battle-presentation-store`. Teardown follows committed store `screen !== "battle"` (not `renderedScreen`). `App.tsx` passes `routeCommands` through `RenderAlchemyScreen`. Run/battle bindings stay on props; allowed React contexts are `AppScreenChromeProvider`, `CardDescriptionProvider`, and presentation `ui-store`. See [WORKFLOWS § Add a new card](./WORKFLOWS.md#add-a-new-card) for card-description context.
+- Presentation leaves subscribe to `battle-presentation-store`. Teardown follows committed store `screen !== "battle"` (not `renderedScreen`). `App.tsx` passes `routeCommands` through `RenderAlchemyScreen`. Run/battle bindings stay on props; the allowed providers are `AppScreenChromeProvider` and `CardDescriptionProvider`, while presentation-only state may use `ui-store`. See [WORKFLOWS § Add a new card](./WORKFLOWS.md#add-a-new-card) for card-description context.
 
 ### Data flow
 
@@ -143,7 +143,7 @@ BattleScreenRoute → useBattleScreenRouteData (committed battle display)
 | Navigation / rewards   | `shell/use-run-flow-engine.ts` (React wiring) + `createRunFlowHandlers` / `run-loop/run/run-flow-*.ts` + `shell/use-mystery-event-navigation.ts` + `run-loop/navigation/*`                                                                               |
 | Content-system entry   | `run-setup/run/content-system-navigation.ts` + `content-system-run-init.ts` → `run-start-command.ts`; campaign/labyrinth Wildcard draft uses `shared/run-flow/starter-draft.ts`; Wildwood post-entry flow stays in `shell/use-wildwood-gauntlet-flow.ts` |
 | Run-flow shell actions | `run-loop/run/run-flow-shell-actions.ts` (assembled in `shell/use-run-flow-engine.ts`); destination routers use `DestinationRouteDeps`; reward routing uses `RewardRouteDeps` in `run-flow-rewards.ts`                                                   |
-| Run-flow ports         | `shared/stores/run-port-types.ts`                                                                                                                                                                                                                        |
+| Run-flow contracts     | `run-loop/run/run-flow-shell-actions.ts`, `run-destination-handlers.ts` (`DestinationRouteDeps`), `run-flow-rewards.ts` (`RewardRouteDeps`)                                                                                                              |
 | Battle                 | `shell/use-battle-controller.ts` + `app/screen-routes/use-battle-playback.ts` → `lib/battle/*`                                                                                                                                                           |
 | Shops                  | `shell/use-shop-controller.ts` → `run-loop/shop/create-shop-actions.ts` → domain command modules                                                                                                                                                         |
 | Session reads/writes   | `shared/stores/run-session-read-port.ts`, `run-session-write-port.ts`, `run-session-command.ts`                                                                                                                                                          |
@@ -170,18 +170,18 @@ Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pur
 
 ## Types
 
-| Concern                    | Module                                                                                                                                              |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aggregate fields + actions | `gameplay-state-store.ts`                                                                                                                           |
-| Imperative reads           | `run-session-read-port.ts`                                                                                                                          |
-| Draft mutators             | `run-session-write-port.ts` (re-exports `write-port-run.ts`, `write-port-session.ts`) — field setters use `store-helpers.ts:createDraftFieldSetter` |
-| React ports                | `run-session-react-ports.ts`, `run-port-types.ts` + `run-reads.ts` (canonical port field picks)                                                     |
-| Persistence codecs         | `persistence-codec.ts` (`PersistenceCodec`, `GameplayPersistenceCodec`, `StandalonePersistenceCodec`)                                               |
-| Numeric manifests          | `manifest-utils.ts` (`createNumericManifest`, `mergeNumericManifests`)                                                                              |
-| Screen display contracts   | `run-screen-data.ts`, `use-run-screen-data.ts`; battle: `app/screen-routes/use-battle-screen-route-data.ts`                                         |
-| Atomic commit              | `run-session-command.ts` (`dispatchRunSessionCommand`)                                                                                              |
-| Active-run view helpers    | `run-state-init.ts` (`pickActiveRunView`)                                                                                                           |
-| Fresh-run snapshots        | `shared/run-flow/run-start.ts`                                                                                                                      |
+| Concern                    | Module                                                                                                                              |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Aggregate fields + actions | `gameplay-state-store.ts`                                                                                                           |
+| Imperative reads           | `run-session-read-port.ts`                                                                                                          |
+| Draft mutators             | `run-session-write-port.ts` (re-exports the topical `write-port-*.ts` owners); field setters are created beside their owning domain |
+| React reads                | `run-reads.ts` (canonical hooks and port field picks)                                                                               |
+| Persistence codecs         | `persistence-codec.ts` (`PersistenceCodec`, `GameplayPersistenceCodec`, `StandalonePersistenceCodec`)                               |
+| Numeric manifests          | `manifest-utils.ts` (`createNumericManifest`, `mergeNumericManifests`)                                                              |
+| Screen display contracts   | `run-screen-data.ts`, `use-run-screen-data.ts`; battle: `app/screen-routes/use-battle-screen-route-data.ts`                         |
+| Atomic commit              | `run-session-command.ts` (`dispatchRunSessionCommand`)                                                                              |
+| Active-run view helpers    | `run-state-init.ts` (`pickActiveRunView`)                                                                                           |
+| Fresh-run snapshots        | `shared/run-flow/run-start.ts`                                                                                                      |
 
 Gameplay mutations use the command boundary; persistence codecs receive a draft from the coordinator for hydration. Feature code imports narrow ports, commands, reads, writes, and lifecycle directly from their owning modules.
 

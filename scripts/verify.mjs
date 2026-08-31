@@ -36,7 +36,13 @@ async function main() {
   }
   if (hasArch) {
     const mod = await import("./lint-architecture-smoke.mjs");
-    if (typeof mod.main === "function") await mod.main();
+    if (typeof mod.main !== "function") throw new Error("Architecture smoke script does not export main().");
+    try {
+      await mod.main();
+    } catch (error) {
+      console.error(error);
+      process.exitCode = 1;
+    }
     return;
   }
   if (hasChanged) {

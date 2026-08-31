@@ -159,7 +159,7 @@ export function applyDamageRiders(
   }
 
   if (card.tags?.includes("archery") && modifiedDamage > 0) {
-    if (!isExtraHit && rollTalentChance(state.talentEffects.archeryPlayTwiceChance, nextState)) {
+    if (!isExtraHit && rollTalentChance(nextState.talentEffects.archeryPlayTwiceChance, nextState)) {
       const secondHit = Math.round(modifiedDamage / HALF_DIVISOR);
       if (secondHit > 0) {
         nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true);

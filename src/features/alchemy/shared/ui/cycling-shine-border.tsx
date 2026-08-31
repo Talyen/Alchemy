@@ -1,7 +1,7 @@
-import { useId, useMemo, type CSSProperties } from "react";
+import { useInsertionEffect, useMemo, type CSSProperties } from "react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
-import { buildShineColorCycleKeyframes, CYCLE_SHINE_VAR } from "./cycling-shine-keyframes";
+import { CYCLE_SHINE_VAR, ensureShineCycleKeyframes, getShineCycleAnimationName } from "./cycling-shine-keyframes";
 
 interface CyclingShineBorderProps {
   colors: readonly string[];
@@ -18,29 +18,28 @@ export function CyclingShineBorder({
   intervalMs,
   className,
 }: CyclingShineBorderProps) {
-  const reactId = useId().replace(/:/g, "");
-  const animationName = `alchemy-shine-cycle-${reactId}`;
+  const animationName = useMemo(() => getShineCycleAnimationName(colors), [colors]);
   const firstColor = colors[0];
-  const keyframes = useMemo(() => buildShineColorCycleKeyframes(animationName, colors), [animationName, colors]);
   const cycleDurationMs = Math.max(1, colors.length) * intervalMs;
 
-  if (!firstColor || !keyframes) return null;
+  useInsertionEffect(() => {
+    ensureShineCycleKeyframes(animationName, colors);
+  }, [animationName, colors]);
+
+  if (!firstColor) return null;
 
   return (
-    <>
-      <style>{keyframes}</style>
-      <ShineBorder
-        shineColor={`var(${CYCLE_SHINE_VAR})`}
-        borderWidth={borderWidth}
-        duration={duration}
-        style={
-          {
-            [CYCLE_SHINE_VAR]: firstColor,
-            animation: `shine ${duration}s linear infinite, ${animationName} ${cycleDurationMs}ms linear infinite`,
-          } as CSSProperties
-        }
-        {...(className === undefined ? {} : { className })}
-      />
-    </>
+    <ShineBorder
+      shineColor={`var(${CYCLE_SHINE_VAR})`}
+      borderWidth={borderWidth}
+      duration={duration}
+      style={
+        {
+          [CYCLE_SHINE_VAR]: firstColor,
+          animation: `shine ${duration}s linear infinite, ${animationName} ${cycleDurationMs}ms linear infinite`,
+        } as CSSProperties
+      }
+      {...(className === undefined ? {} : { className })}
+    />
   );
 }

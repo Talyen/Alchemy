@@ -26,10 +26,15 @@ const domTypeScriptTestFiles = [
   "tests/lib/platform.test.ts",
   "tests/lib/validation/barrel-side-effects.test.ts",
 ];
-const domTypeScriptTests = [...domTestPrefixes.map((prefix) => `${prefix}**/*.test.ts`), ...domTypeScriptTestFiles];
+const domTypeScriptTests = [
+  ...domTestPrefixes.map((prefix) => `${prefix}**/*.test.ts`),
+  ...domTypeScriptTestFiles,
+  "tests/**/*.dom.test.ts",
+];
 
 function testEnvironmentForPath(filePath: string): "dom" | "node" {
   if (filePath.endsWith(".test.tsx")) return "dom";
+  if (filePath.endsWith(".dom.test.ts")) return "dom";
   if (domTestPrefixes.some((prefix) => filePath.startsWith(prefix))) return "dom";
   return domTypeScriptTestFiles.includes(filePath) ? "dom" : "node";
 }

@@ -11,8 +11,7 @@ import {
   processEnemyDamageEffect,
   type EnemyDamageOptions,
 } from "./enemy-attack-damage";
-import { getEnemyTraitSet, hasEnemyTrait } from "./enemy-trait-query";
-import { scaleByRoomMultiplier } from "./enemy-turn-rules";
+import { getEnemyTraitSet, hasEnemyTrait, scaleByRoomMultiplier } from "./enemy-turn-rules";
 import { handlePostPlayCardDestination } from "./card-play";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { applyPlayerStatusFromAttack, type DirectPlayerStatusAttackEffect } from "./status-player";

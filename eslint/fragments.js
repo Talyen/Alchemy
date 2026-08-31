@@ -320,13 +320,3 @@ export const ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS = Object.entries(ASSET_BARRE
     message: `Playwright-collected tests must not value-import ${source} — ${reason}`,
   }),
 );
-
-/** Convert an ESLint import-group list to a dependency-cruiser path regex. */
-export function cruiserPathFromGroups(groups) {
-  const alias = groups.find((group) => group.startsWith("@/"));
-  if (alias) return `^src/${alias.replace(/^@\//, "").replace(/\/\*\*$/, "")}/`;
-  const deepGroup = groups.find((group) => group.startsWith("**/")) ?? groups.at(-1);
-  if (!deepGroup) return "^src/features/alchemy/";
-  const deep = deepGroup.replace(/^\*\*\//, "").replace(/\/\*\*$/, "");
-  return `^src/features/alchemy/${deep}/`;
-}

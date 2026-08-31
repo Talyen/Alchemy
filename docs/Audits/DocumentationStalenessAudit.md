@@ -11,7 +11,7 @@ Find contradictions, harmful omissions in complete-looking workflows, and duplic
 - Do not hand-edit `CHANGELOG.md` (owned by release: `sync-changelog.mjs` prerelease + `release-changelog.mjs` postbump).
 - Do not treat dated “Last execution” / Done tables inside audits as source of truth — **delete** those tracker sections when found.
 - Do not rewrite design prose for style-only preferences or turn this into a repo-wide docs rewrite. Restructure a focused section when scattered line edits would preserve ambiguity or hide the current owner.
-- Historical mentions of deleted docs (e.g. old `PROMPTS.md` in `CHANGELOG.md`) are fine — fix live links only.
+- Historical mentions of deleted docs, such as the old PROMPTS.md in `CHANGELOG.md`, are fine — fix live links only.
 
 ## Severity
 

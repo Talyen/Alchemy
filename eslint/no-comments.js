@@ -1,4 +1,4 @@
-const DIRECTIVE_RE = /^(eslint|@ts-|prettier-ignore|c8)/;
+const DIRECTIVE_RE = /^(eslint|@ts-|prettier-ignore|c8|v8|@vite-|istanbul|#?__PURE__|@__NO_SIDE_EFFECTS__)/;
 
 /** @type {import("eslint").Rule.RuleModule} */
 export const noComments = {

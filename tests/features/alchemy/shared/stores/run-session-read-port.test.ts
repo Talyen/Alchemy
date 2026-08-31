@@ -38,4 +38,13 @@ describe("aggregate read ports", () => {
     expect(readRunSession()).not.toHaveProperty("setRewardState");
     expect(readBattle()).not.toHaveProperty("setSyncedBattleState");
   });
+
+  it("deep-freezes nested read values in development", () => {
+    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, true));
+
+    const session = readRunSession();
+    expect(Object.isFrozen(session)).toBe(true);
+    expect(Object.isFrozen(session.rewardState)).toBe(true);
+    expect(Object.isFrozen(session.rewardState.destinations)).toBe(true);
+  });
 });

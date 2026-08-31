@@ -2,7 +2,7 @@ import { applyCardEffects } from "./effect-handlers";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import { LOW_HEALTH_THRESHOLD_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
-import { computeLeechHeal } from "./leech-heal";
+import { computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollPercent, getBattleRng, rollTalentChance } from "./status-helpers";

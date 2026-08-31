@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getEnemyTraitSet, hasEnemyTrait } from "@/lib/battle/enemy-trait-query";
+import { getEnemyTraitSet, hasEnemyTrait } from "@/lib/battle/enemy-turn-rules";
 import { makeTestBattleState } from "../../fixtures/battle";
 
 describe("enemy trait query", () => {

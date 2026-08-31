@@ -1,14 +1,17 @@
 import { defineConfig } from "vitest/config";
 import baseConfig from "./vitest.config.ts";
 
+const { projects: _projects, ...baseTest } = (baseConfig.test ?? {}) as Record<string, unknown>;
+const baseExclude = ((baseTest as { exclude?: string[] }).exclude?.filter(
+  (pattern) => pattern !== "tests/balance/**",
+) ?? []) as string[];
+
 export default defineConfig({
   ...baseConfig,
   test: {
-    ...baseConfig.test,
-    projects: undefined,
+    ...(baseTest as object),
     include: ["tests/balance/**/*.test.ts"],
-    exclude:
-      (baseConfig.test?.exclude as string[] | undefined)?.filter((pattern) => pattern !== "tests/balance/**") ?? [],
+    exclude: baseExclude,
     environment: "node",
   },
 });

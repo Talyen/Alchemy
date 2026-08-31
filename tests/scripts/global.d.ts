@@ -191,6 +191,24 @@ declare module "*/kebab-to-camel.mjs" {
   export function kebabToCamel(name: string): string;
 }
 
+declare module "*/sync-generated-helpers.mjs" {
+  export const WEBP_SUFFIX: string;
+  export const GEAR_PREFIX: string;
+  export function isWebpAsset(name: string): boolean;
+  export function isGearAsset(name: string): boolean;
+  export function getAssetFiles(manifest: Record<string, unknown>): string[];
+  export function getGearFiles(manifest: Record<string, unknown>): string[];
+}
+
+declare module "*/ci-summarize.mjs" {
+  export function parseSummaryArgs(args: string[]): {
+    vitest: boolean;
+    playwright: boolean;
+    vitestPath: string;
+    playwrightPath: string;
+  };
+}
+
 interface VitestFailure {
   file: string;
   title: string;
@@ -371,10 +389,13 @@ declare module "*/check-documentation-contract.mjs" {
   export const DOCUMENTATION_CONTRACTS: ReadonlyArray<readonly [string, () => string[]]>;
   export function checkLocalMarkdownLinks(): string[];
   export function checkInlineRepositoryPaths(): string[];
+  export function checkBacktickedCurrentFileReferences(): string[];
   export function checkDocumentedNpmScripts(): string[];
   export function checkMarkdownHeadingAnchors(): string[];
   export function checkContributingE2ePaths(): string[];
   export function checkDurableDocumentReachability(): string[];
+  export function checkKnowledgeIndexCompleteness(): string[];
+  export function checkSkillIndexCompleteness(): string[];
   export function checkDocumentationContracts(): string[];
 }
 
@@ -396,6 +417,15 @@ declare module "*/prune-transient-artifacts.mjs" {
     rootDir?: string;
     transientDirs?: readonly string[];
   }): { removed: Array<{ path: string; bytes: number }>; bytes: number };
+}
+
+declare module "*/test-commands.mjs" {
+  export const TEST_SUITES: {
+    save: readonly string[];
+    tooling: readonly string[];
+    shipUnit: readonly string[];
+  };
+  export function validateTestSuitePaths(rootDir: string, suites?: readonly string[]): string[];
 }
 
 declare module "*/test-suites.mjs" {

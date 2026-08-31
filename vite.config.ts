@@ -13,7 +13,7 @@ import { resolveDevPort } from "./scripts/lib/dev-port.mjs";
 import { CHUNK_SIZE_WARNING_KB } from "./scripts/lib/bundle-budget.mjs";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore no types for vite-aliases.mjs
-import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
+import { VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 
 // Single port contract shared with scripts/lib/dev-port.mjs consumers (polling/stop/cleanup).
 const devPort = resolveDevPort(process.env);
@@ -41,9 +41,6 @@ export default defineConfig(({ mode, command }) => {
           presets: [reactCompilerPreset()],
         }),
       command === "serve" &&
-        // Checker is opt-in (`ALCHEMY_ENABLE_CHECKER=1`) so `npm run dev` stays snappy.
-        // E2E and CI use separate `typecheck` gates; the Playwright webServer also sets
-        // `ALCHEMY_SKIP_CHECKER=1` as a hard off. See docs/REFERENCE.md § Environment.
         process.env.ALCHEMY_ENABLE_CHECKER === "1" &&
         process.env.ALCHEMY_SKIP_CHECKER !== "1" &&
         checker({
@@ -70,24 +67,13 @@ export default defineConfig(({ mode, command }) => {
           telemetry: false,
         }),
     ].filter(Boolean),
-    optimizeDeps: {
-      include: [...SSR_OPTIMIZE_INCLUDE],
-    },
     build: {
       target: "esnext",
       assetsInlineLimit: 4096,
       reportCompressedSize: Boolean(process.env.ANALYZE),
-      // Hidden sourcemaps for any desktop build aid local repro; Sentry upload remains gated on `sentryEnabled`.
-      // `ALCHEMY_SKIP_SOURCEMAP=1` opts out for fast local iterate when maps are not needed.
       sourcemap: process.env.ALCHEMY_SKIP_SOURCEMAP === "1" ? false : mode === "desktop" ? "hidden" : false,
-      // App domains are still statically imported (no React.lazy — see ARCHITECTURE
-      // § Boot), so this splitting never changes load semantics; it only gives the
-      // browser stable, independently-cached chunks for code that churns at different
-      // rates (vendor vs card data vs battle engine) and shrinks any single parse unit.
       rolldownOptions: {
         output: {
-          // Keep gameplay screens eagerly loaded while letting the browser cache and parse
-          // stable vendor libraries separately from frequently changed app code.
           codeSplitting: {
             groups: [
               {
@@ -131,6 +117,5 @@ export default defineConfig(({ mode, command }) => {
         [VITE_ALIAS_PATH]: fileURLToPath(new URL(VITE_ALIAS_TARGET, import.meta.url)),
       },
     },
-    // Vitest config is owned by vitest.config.ts — do not duplicate `test` here.
   };
 });

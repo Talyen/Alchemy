@@ -157,6 +157,10 @@ export function corruptCard(
   const corruptedCard = applyNumericCorruption(sourceCard, target, delta);
   if (corruptedCard === sourceCard) return null;
 
+  if (transformed && selectedCard.uid !== undefined) {
+    corruptedCard.uid = selectedCard.uid;
+  }
+
   return {
     originalCard: selectedCard,
     corruptedCard,

@@ -142,13 +142,9 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
   const { run, session, battle } = source;
 
   const {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     initialized: _initialized,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     gold: _gold,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     talentXP: _talentXP,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     unlockedTalents: _unlockedTalents,
     ...runProgress
   } = run as unknown as ActiveRunProgressFields & Record<string, unknown>;

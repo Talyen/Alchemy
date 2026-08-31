@@ -101,7 +101,11 @@ export function repairUnresolvedMysteryTrinkets(
 }
 
 function isMysteryTrinketSlotEffect(effect: MysteryEffect): boolean {
-  return effect.kind === "gainTrinket" || effect.kind === "gainRandomTrinket";
+  return (
+    effect.kind === "gainTrinket" ||
+    effect.kind === "gainRandomTrinket" ||
+    (effect.kind === "gainGeneratedGear" && Boolean(effect.astral))
+  );
 }
 
 export function applyResolvedMysteryTrinketIds(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeLeechHeal } from "@/lib/battle/leech-heal";
+import { computeLeechHeal } from "@/lib/battle/damage-rider-leech";
 
 describe("computeLeechHeal", () => {
   it("returns zero for non-positive damage", () => {

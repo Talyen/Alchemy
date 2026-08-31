@@ -8,15 +8,21 @@ function collectOutput(stdout, stderr, error) {
   return [stdout ?? "", stderr ?? "", error?.message ?? ""].filter(Boolean).join("\n");
 }
 
-export function runCommand(command, args = [], options = {}) {
-  const started = Date.now();
-  const result = spawnSync(command, args, {
+function spawnOpts(options) {
+  return {
     cwd: options.cwd,
     env: options.env,
-    encoding: "utf8",
     shell: options.shell ?? process.platform === "win32",
     stdio: options.stdio ?? ["ignore", "pipe", "pipe"],
     timeout: options.timeout,
+  };
+}
+
+export function runCommand(command, args = [], options = {}) {
+  const started = Date.now();
+  const result = spawnSync(command, args, {
+    ...spawnOpts(options),
+    encoding: "utf8",
   });
   return {
     ...result,
@@ -32,13 +38,7 @@ export function runCommand(command, args = [], options = {}) {
 export function runCommandAsync(command, args = [], options = {}) {
   const started = Date.now();
   return new Promise((resolve) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd,
-      env: options.env,
-      shell: options.shell ?? process.platform === "win32",
-      stdio: options.stdio ?? ["ignore", "pipe", "pipe"],
-      timeout: options.timeout,
-    });
+    const child = spawn(command, args, spawnOpts(options));
     let stdout = "";
     let stderr = "";
     child.stdout?.on("data", (chunk) => {

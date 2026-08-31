@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  checkBacktickedCurrentFileReferences,
   checkContributingE2ePaths,
   checkDocumentedNpmScripts,
   checkDurableDocumentReachability,
   checkInlineRepositoryPaths,
   checkLocalMarkdownLinks,
   checkMarkdownHeadingAnchors,
+  checkSkillIndexCompleteness,
 } from "../../scripts/check-documentation-contract.mjs";
 
 describe("documentation contracts", () => {
@@ -15,6 +17,10 @@ describe("documentation contracts", () => {
 
   it("keeps inline backtick repository paths valid", () => {
     expect(checkInlineRepositoryPaths()).toEqual([]);
+  });
+
+  it("keeps current backticked file references valid", () => {
+    expect(checkBacktickedCurrentFileReferences()).toEqual([]);
   });
 
   it("documents only existing npm run scripts", () => {
@@ -31,5 +37,9 @@ describe("documentation contracts", () => {
 
   it("keeps every durable document reachable from a documented entry point", () => {
     expect(checkDurableDocumentReachability()).toEqual([]);
+  });
+
+  it("routes every local skill and resolves every routed skill", () => {
+    expect(checkSkillIndexCompleteness()).toEqual([]);
   });
 });

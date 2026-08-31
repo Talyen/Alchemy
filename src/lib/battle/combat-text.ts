@@ -9,7 +9,7 @@ import {
   type CombatTextEvent,
 } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
-import { hasEnemyTrait } from "./enemy-trait-query";
+import { hasEnemyTrait } from "./enemy-turn-rules";
 import { payKillPayouts } from "./kill-payouts";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text-events";
 

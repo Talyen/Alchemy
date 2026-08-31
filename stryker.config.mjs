@@ -5,11 +5,11 @@ export default {
   commandRunner: {
     command: "npx vitest run tests/lib/battle --reporter=dot",
   },
-  mutate: ["src/lib/battle/damage-calc.ts", "src/lib/battle/dot-resolve.ts"],
+  mutate: ["src/lib/battle/**/*.ts"],
   reporters: ["html", "clear-text", "json"],
   htmlReporter: { fileName: "reports/mutation/index.html" },
   jsonReporter: { fileName: "reports/mutation/mutation.json" },
-  thresholds: { high: 80, low: 50, break: 0 },
+  thresholds: { high: 80, low: 50, break: 50 },
   timeoutMS: 20_000,
   concurrency: 4,
   disableTypeChecks: true,

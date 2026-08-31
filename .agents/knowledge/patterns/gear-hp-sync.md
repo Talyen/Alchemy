@@ -33,4 +33,4 @@ Gear equip/unequip/salvage/crafting mutates `GearStore` and must sync live run h
 
 ## Enforcement
 
-Lint: `GEAR_NO_OUTER_DISPATCH` (`no-restricted-syntax` on `dispatchGearMutationWithRunHealthSync`/`dispatchGearSalvageWithMaterialGrant` in `src/features/alchemy/run-loop/**` + `shell/**` — `eslint/fragments.js:70`, `eslint.config.js:372`) — use `mutateGearWithRunHealthSync(draft, ...)`. Part of `run-state-command-boundary.md:Enforcement` draft-variant rule; this pattern stays as `medium` until second independent recurrence proves generalizability (see `index.md:When to consult`).
+Lint: `GEAR_NO_OUTER_DISPATCH` rejects `dispatchGearMutationWithRunHealthSync` / `dispatchGearSalvageWithMaterialGrant` in `src/features/alchemy/run-loop/**` and `shell/**`; use `mutateGearWithRunHealthSync(draft, ...)`. This is part of the [Run-State Command Boundary](./run-state-command-boundary.md#enforcement) draft-variant rule. The pattern stays `medium` until a second independent recurrence proves generalizability.

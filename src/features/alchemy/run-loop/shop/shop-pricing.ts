@@ -82,28 +82,69 @@ function computeBuyPrice(
   });
 }
 
+const SHOP_KIND_BUY_CONFIG = {
+  merchantCard: { basePrice: SHOP_CARD_PRICE, useCardDiscounts: true },
+  alchemistPotion: { basePrice: ALCHEMIST_POTION_PRICE, useCardDiscounts: true },
+  trinket: { basePrice: TRINKET_SHOP_TRINKET_PRICE, useCardDiscounts: false },
+} as const;
+
+type ShopBuyKind = keyof typeof SHOP_KIND_BUY_CONFIG | "gear";
+
+function getShopBuyPrice(
+  kind: ShopBuyKind,
+  item: BattleCard | GearInstance | null,
+  context: ShopBuyPriceContext,
+): number {
+  if (kind === "gear") return computeGearBuyPrice(item as GearInstance, context);
+  const config = SHOP_KIND_BUY_CONFIG[kind];
+  const discounts =
+    config.useCardDiscounts && item
+      ? getCardBuyTalentDiscounts(item as BattleCard, context.talentEffects)
+      : getGenericBuyTalentDiscounts(context.talentEffects);
+  return computeBuyPrice(config.basePrice, discounts, context);
+}
+
 export function computeMerchantCardBuyPrice(card: BattleCard, context: ShopBuyPriceContext): number {
-  return computeBuyPrice(SHOP_CARD_PRICE, getCardBuyTalentDiscounts(card, context.talentEffects), context);
+  return getShopBuyPrice("merchantCard", card, context);
 }
 
 export function computeAlchemistPotionBuyPrice(card: BattleCard, context: ShopBuyPriceContext): number {
-  return computeBuyPrice(ALCHEMIST_POTION_PRICE, getCardBuyTalentDiscounts(card, context.talentEffects), context);
+  return getShopBuyPrice("alchemistPotion", card, context);
 }
 
 export function computeTrinketBuyPrice(context: ShopBuyPriceContext): number {
-  return computeBuyPrice(TRINKET_SHOP_TRINKET_PRICE, getGenericBuyTalentDiscounts(context.talentEffects), context);
+  return getShopBuyPrice("trinket", null, context);
 }
 
 export function computeGearBuyPrice(instance: GearInstance, context: ShopBuyPriceContext): number {
   return computeBuyPrice(getEquipmentShopPrice(instance), getGenericBuyTalentDiscounts(context.talentEffects), context);
 }
 
+const SHOP_REFRESH_BASE: Record<string, number> = {
+  merchant: SHOP_REFRESH_PRICE,
+  alchemist: ALCHEMIST_REFRESH_PRICE,
+  trinket: SHOP_REFRESH_PRICE,
+  equipment: SHOP_REFRESH_PRICE,
+};
+
+function computeShopRefreshPriceForKind(
+  kind: string,
+  talentEffects: TalentEffectManifest,
+  refreshesLeft: number,
+): number {
+  return computeShopRefreshPrice(
+    SHOP_REFRESH_BASE[kind] ?? SHOP_REFRESH_PRICE,
+    talentEffects.shopFreeRefresh,
+    refreshesLeft,
+  );
+}
+
 export function computeMerchantRefreshPrice(talentEffects: TalentEffectManifest, refreshesLeft: number): number {
-  return computeShopRefreshPrice(SHOP_REFRESH_PRICE, talentEffects.shopFreeRefresh, refreshesLeft);
+  return computeShopRefreshPriceForKind("merchant", talentEffects, refreshesLeft);
 }
 
 export function computeAlchemistRefreshPrice(talentEffects: TalentEffectManifest, refreshesLeft: number): number {
-  return computeShopRefreshPrice(ALCHEMIST_REFRESH_PRICE, talentEffects.shopFreeRefresh, refreshesLeft);
+  return computeShopRefreshPriceForKind("alchemist", talentEffects, refreshesLeft);
 }
 
 export function computeRemoveCardPrice(talentEffects: TalentEffectManifest): number {

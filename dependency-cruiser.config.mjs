@@ -1,23 +1,16 @@
-// Projection of the import-boundary policy onto the module graph.
-// The policy and its import-pattern groups are owned by eslint/fragments.js
-// (applied to source by eslint/boundaries.js); every phase edge below derives
-// its target path from those groups, so the lint gate and this gate cannot
-// drift. gameplay-aggregate-is-internal has no fragments equivalent — it
-// guards a single store file rather than an import-specifier group — and
-// therefore stays declared locally.
 import {
   LIB_NO_FEATURES,
   META_NO_RUN_LOOP,
   RUN_LOOP_NO_RUN_SETUP,
   RUN_SETUP_NO_RUN_LOOP,
   cruiserPathFromGroups,
-} from "./eslint/fragments.js";
+} from "./eslint/boundaries.js";
 
 function edge(name, fromPath, patterns) {
   return {
     name,
     severity: "error",
-    comment: `Derived from eslint/fragments.js: ${patterns.map((pattern) => pattern.message).join(" ")}`,
+    comment: `Derived from eslint/boundaries.js: ${patterns.map((pattern) => pattern.message).join(" ")}`,
     from: { path: fromPath },
     to: { path: cruiserPathFromGroups(patterns.flatMap((pattern) => pattern.group)) },
   };

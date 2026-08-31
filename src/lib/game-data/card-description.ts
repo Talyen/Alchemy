@@ -106,6 +106,13 @@ function formatEffectiveLine(
     return `Remove ${amount} harmful Status${amount === 1 ? "" : "es"}`;
   }
 
+  if (line.startsWith("Apply ")) {
+    const effect = getNextEffect("enemy-status");
+    if (!effect) return line;
+    const amount = adjustedAmount(effect.amount, potionMultiplier);
+    return `Apply ${amount} ${displayDamageType(effect.status)}`;
+  }
+
   return line;
 }
 

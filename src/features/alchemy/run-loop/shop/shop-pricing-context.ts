@@ -7,16 +7,24 @@ import type { ShopBuyPriceContext } from "./shop-pricing";
 
 export type ShopSessionStateKey = "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState";
 
+function resolveShopPricingContext(args: {
+  talentEffects: TalentEffectManifest;
+  runBoons: string[];
+  firstPurchaseUsed: boolean;
+}): ShopBuyPriceContext {
+  return args;
+}
+
 export function resolveReadShopPricingContext(
   talentEffects: TalentEffectManifest,
   shopKey: ShopSessionStateKey,
 ): ShopBuyPriceContext {
   const run = readActiveRun();
-  return {
+  return resolveShopPricingContext({
     talentEffects,
     runBoons: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId)),
     firstPurchaseUsed: readShopFirstPurchaseUsed(shopKey),
-  };
+  });
 }
 
 export function resolveDraftShopPricingContext(
@@ -24,12 +32,12 @@ export function resolveDraftShopPricingContext(
   draft: GameplayDraft,
   state: { firstPurchaseUsed: boolean },
 ): ShopBuyPriceContext {
-  return {
+  return resolveShopPricingContext({
     talentEffects,
     runBoons: combineTrinketEffectIds(
       draft.run.activeRun.runBoons,
       draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
     ),
     firstPurchaseUsed: state.firstPurchaseUsed,
-  };
+  });
 }

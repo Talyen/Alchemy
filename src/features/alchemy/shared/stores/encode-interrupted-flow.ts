@@ -73,13 +73,13 @@ export function encodeInterruptedFlow(
   if (session.rewardClaimInFlight) {
     if (session.companionRewardCards?.length) {
       const pending = encodeMidClaimPendingReward(session);
-      return pending ? { kind: "companion-reward", pending } : { kind: "none" };
+      return pending ? { kind: "companion-reward", pending } : encodeDestinationFlow(session);
     }
 
     if (session.rewardState.destinations.length > 0 || currentScreen === "destination" || currentScreen === "rewards") {
       return encodeDestinationFlow(session);
     }
-    return { kind: "none" };
+    return encodeDestinationFlow(session);
   }
 
   if (currentScreen === "rewards" && session.rewardState.choices.length > 0) {

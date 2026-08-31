@@ -31,6 +31,15 @@ function markdownFiles(directory = ROOT) {
   });
 }
 
+function repositoryFiles(directory = ROOT) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.isDirectory()) {
+      return IGNORED_DIRECTORIES.has(entry.name) ? [] : repositoryFiles(join(directory, entry.name));
+    }
+    return [join(directory, entry.name)];
+  });
+}
+
 function lineNumberAt(source, index) {
   return source.slice(0, index).split("\n").length;
 }
@@ -113,6 +122,42 @@ export function checkInlineRepositoryPaths() {
       if (target && !existsSync(resolve(ROOT, target))) {
         missing.push(`${file.slice(ROOT.length + 1)} -> ${candidate}`);
       }
+    }
+  }
+  return missing;
+}
+
+export function checkBacktickedCurrentFileReferences() {
+  const isHistorical = (relativePath) =>
+    relativePath === "CHANGELOG.md" ||
+    relativePath.startsWith("docs/Plans/") ||
+    relativePath === "docs/Audits/decisions.md" ||
+    relativePath === ".agents/knowledge/skill-impact.md";
+  const repositoryPaths = repositoryFiles().map((file) => file.slice(ROOT.length + 1).replaceAll("\\", "/"));
+  const repositoryBasenames = new Set(repositoryPaths.map((file) => file.split("/").at(-1)));
+  const generatedReferencePrefixes = ["reports/", "release-notes/"];
+  const missing = [];
+
+  for (const file of markdownFiles()) {
+    const relativeDocumentPath = file.slice(ROOT.length + 1).replaceAll("\\", "/");
+    if (isHistorical(relativeDocumentPath)) continue;
+    const source = stripFencedBlocks(readFileSync(file, "utf8"));
+    for (const match of source.matchAll(/`([^`\n]+)`/gu)) {
+      const candidate = match[1]?.trim();
+      if (!candidate || PATH_TEMPLATE_CHARS.test(candidate) || candidate.includes(" ")) continue;
+      const reference = /^(.+?\.(?:[cm]?[jt]sx?|mdx?))(?:[:#].*)?$/u.exec(candidate)?.[1];
+      if (!reference) continue;
+      if (generatedReferencePrefixes.some((prefix) => reference.startsWith(prefix))) continue;
+      if (reference.startsWith("./") || reference.startsWith("../")) {
+        if (existsSync(resolve(dirname(file), reference))) continue;
+        missing.push(`${relativeDocumentPath}:${lineNumberAt(source, match.index)} -> ${candidate}`);
+        continue;
+      }
+      const normalized = reference.startsWith("@/") ? `src/${reference.slice(2)}` : reference;
+      const exists = normalized.includes("/")
+        ? repositoryPaths.some((repoPath) => repoPath === normalized || repoPath.endsWith(`/${normalized}`))
+        : repositoryBasenames.has(normalized);
+      if (!exists) missing.push(`${relativeDocumentPath}:${lineNumberAt(source, match.index)} -> ${candidate}`);
     }
   }
   return missing;
@@ -218,6 +263,29 @@ export function checkKnowledgeIndexCompleteness() {
     .map((name) => `knowledge index missing: .agents/knowledge/patterns/${name}`);
 }
 
+export function checkSkillIndexCompleteness() {
+  const skillsDir = join(ROOT, ".agents", "skills");
+  const indexPath = join(skillsDir, "README.md");
+  if (!existsSync(skillsDir) || !existsSync(indexPath)) return [];
+  const skillNames = readdirSync(skillsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(skillsDir, entry.name, "SKILL.md")))
+    .map((entry) => entry.name)
+    .sort();
+  const tableSource = readFileSync(indexPath, "utf8")
+    .split("\n")
+    .filter((line) => line.startsWith("|"))
+    .join("\n");
+  const routedNames = new Set(
+    [...tableSource.matchAll(/`([a-z][a-z0-9-]+)`/gu)].map((match) => match[1]).filter((name) => name !== "none"),
+  );
+  return [
+    ...skillNames.filter((name) => !routedNames.has(name)).map((name) => `skill index missing: ${name}`),
+    ...[...routedNames]
+      .filter((name) => !skillNames.includes(name))
+      .map((name) => `skill route has no SKILL.md: ${name}`),
+  ];
+}
+
 export function checkSkillImpactLedger({ changedPaths } = {}) {
   // Enforce skill-impact history when instruction memory changes.
   // Uses git diff when available; falls back to allowing local edits without git metadata.
@@ -250,11 +318,13 @@ export function checkSkillImpactLedger({ changedPaths } = {}) {
 export const DOCUMENTATION_CONTRACTS = [
   ["local Markdown links", checkLocalMarkdownLinks],
   ["inline repository paths", checkInlineRepositoryPaths],
+  ["backticked current file references", checkBacktickedCurrentFileReferences],
   ["documented npm scripts", checkDocumentedNpmScripts],
   ["Markdown heading anchors", checkMarkdownHeadingAnchors],
   ["CONTRIBUTING E2E paths", checkContributingE2ePaths],
   ["durable document reachability", checkDurableDocumentReachability],
   ["knowledge index completeness", checkKnowledgeIndexCompleteness],
+  ["skill index completeness", checkSkillIndexCompleteness],
   ["skill-impact ledger", checkSkillImpactLedger],
 ];
 

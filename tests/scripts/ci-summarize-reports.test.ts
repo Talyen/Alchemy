@@ -4,6 +4,7 @@ import {
   summarizeVitestFile,
   summarizeVitestReport,
 } from "../../scripts/ci-summarize-vitest.mjs";
+import { parseSummaryArgs } from "../../scripts/ci-summarize.mjs";
 import {
   collectPlaywrightTests,
   formatPlaywrightSummaryMarkdown,
@@ -24,6 +25,25 @@ import { formatRecentRun, parseShowRunsArgs, readRecentRuns } from "../../script
 import PlaywrightRunReporter from "../../scripts/lib/playwright-run-reporter.mjs";
 
 describe("ci-summarize-vitest", () => {
+  it("resolves defaults and positional paths for single and combined modes", () => {
+    expect(parseSummaryArgs(["--vitest"])).toMatchObject({
+      vitest: true,
+      playwright: false,
+      vitestPath: "reports/vitest-timings.json",
+    });
+    expect(parseSummaryArgs(["playwright", "reports/custom-playwright.json"])).toMatchObject({
+      vitest: false,
+      playwright: true,
+      playwrightPath: "reports/custom-playwright.json",
+    });
+    expect(parseSummaryArgs(["--all", "reports/custom-vitest.json", "reports/custom-playwright.json"])).toEqual({
+      vitest: true,
+      playwright: true,
+      vitestPath: "reports/custom-vitest.json",
+      playwrightPath: "reports/custom-playwright.json",
+    });
+  });
+
   it("extracts failed assertions and formats a short markdown digest", () => {
     const summary = summarizeVitestReport({
       numTotalTests: 3,

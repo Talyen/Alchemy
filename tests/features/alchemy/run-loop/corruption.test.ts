@@ -136,6 +136,25 @@ describe("card corruption", () => {
     expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 9 });
   });
 
+  it("preserves selectedCard uid when transformed", () => {
+    const rng = makeRng([0.1, 0, 0, 0.9]);
+    const slash = makeCard({ uid: 42 });
+    const bash = makeCard({
+      id: "bash",
+      title: "Bash",
+      descriptionLines: ["Deal 8 Physical damage"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+    });
+
+    const result = corruptCard(slash, [slash, bash], rng);
+    expect(result).not.toBeNull();
+    if (!result) return;
+
+    expect(result.transformed).toBe(true);
+    expect(result.corruptedCard.id).toBe("bash");
+    expect(result.corruptedCard.uid).toBe(42);
+  });
+
   it("mutates directly when the transform roll reaches 0.2", () => {
     const rng = makeRng([0.2, 0, 0.9]);
     const slash = makeCard();

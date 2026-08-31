@@ -17,9 +17,8 @@ import type { GearInstance } from "@/lib/gear";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { GearTile, TrinketTile } from "../../../shared/ui/collection-art-tiles";
-import { GearItemTitle } from "../../../shared/ui/gear-item-title";
+import { GearItemTitle, TrinketItemTitle } from "../../../shared/ui/gear-item-title";
 import { MysteryEffectBadge } from "../../../shared/ui/mystery-effect-badge";
-import { TrinketItemTitle } from "../../../shared/ui/trinket-item-title";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { KeywordProgressGrid } from "../keyword-progress-grid";
 

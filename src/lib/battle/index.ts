@@ -22,7 +22,6 @@ export {
   collectUncoveredEnemyTraitIds,
   REACTION_ONLY_ENEMY_TRAIT_IDS,
 } from "./enemy-turn-traits";
-export { getBattleStartPlayerHealth } from "./start-health";
 export {
   fightPacingClockMultiplier,
   fightPacingComebackMultiplier,

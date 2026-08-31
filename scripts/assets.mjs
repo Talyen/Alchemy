@@ -1,11 +1,8 @@
 #!/usr/bin/env node
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { prepareAssets } from "./prepare-assets.mjs";
-import { optimizeAssets } from "./optimize-assets.mjs";
-import { optimizeSounds } from "./optimize-sounds.mjs";
-import { optimizeMusic } from "./optimize-music.mjs";
-import { syncAssets } from "./sync-assets.mjs";
-import { syncGearArt } from "./sync-gear-art.mjs";
+import { runAllOptimizePipelines } from "./optimize-pipelines.mjs";
+import { syncGenerated } from "./sync-generated.mjs";
 
 function printHelp() {
   console.log(`Usage: node scripts/assets.mjs [command]
@@ -24,24 +21,15 @@ async function main() {
   }
   const hasOptimize = args.includes("--optimize");
   const hasSync = args.includes("--sync");
-  const hasCheck = args.includes("--check");
+  const check = args.includes("--check");
   const hasPrepare = args.includes("--prepare") || args.length === 0;
 
-  if (hasCheck) {
-    const { checkGenerated } = await import("./lib/sync-generated-helpers.mjs").catch(() => ({ checkGenerated: null }));
-    if (checkGenerated) await checkGenerated();
-    else {
-      console.log("Running sync checks...");
-      await Promise.all([syncAssets(), syncGearArt()]);
-    }
+  if (check || hasSync) {
+    await syncGenerated({ check });
     return;
   }
   if (hasOptimize) {
-    await Promise.all([optimizeAssets(), optimizeSounds(), optimizeMusic()]);
-    return;
-  }
-  if (hasSync) {
-    await Promise.all([syncAssets(), syncGearArt()]);
+    await runAllOptimizePipelines();
     return;
   }
   if (hasPrepare) {

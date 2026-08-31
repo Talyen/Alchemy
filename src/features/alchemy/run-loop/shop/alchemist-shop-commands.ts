@@ -1,11 +1,10 @@
 import { appendCardToRunWithDiscovery, discoverCardIds } from "@/features/alchemy/run-loop/run/deck-mutations";
-import { spendRunGold } from "@/features/alchemy/run-loop/run-gold";
-import { readDraftGold } from "@/features/alchemy/shared/stores/write-port-run";
 import {
   createDraftRunRandomSource,
+  deductRunGold,
+  readDraftGold,
   setAlchemistState,
   setRunDeck,
-  setRunGold,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
@@ -90,7 +89,7 @@ export function createAlchemistShopCommands({
       if (!mixed) {
         return { committed: false, price, value: null };
       }
-      spendRunGold(price, (update) => setRunGold(draft, update));
+      deductRunGold(draft, price);
       setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
       setRunDeck(draft, (previous) => applyMixToDeck(previous, indexA, indexB, mixed));
       discoverCardIds(draft, [MIXED_POTION_CARD_ID]);

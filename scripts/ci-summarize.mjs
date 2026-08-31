@@ -4,7 +4,7 @@ import path from "node:path";
 import { publishCiSummary } from "./lib/ci-summary.mjs";
 import { writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
 import { formatPlaywrightSummaryMarkdown, summarizePlaywrightReport } from "./lib/playwright-summary.mjs";
-import { formatVitestSummaryMarkdown, summarizeVitestReport } from "./ci-summarize-vitest.mjs";
+import { formatVitestSummaryMarkdown, summarizeVitestReport, summarizeVitestFile } from "./lib/vitest-summary.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const DEFAULT_VITEST_REPORT = "reports/vitest-timings.json";
@@ -66,7 +66,68 @@ function printHelp() {
   console.log(`Usage: node scripts/ci-summarize.mjs [vitest|playwright] [reportPath]
   --vitest [path]      Summarize Vitest (default ${DEFAULT_VITEST_REPORT})
   --playwright [path]  Summarize Playwright (default ${DEFAULT_PLAYWRIGHT_REPORT})
+  --all [vitestPath] [playwrightPath]  Summarize both (defaults as above)
   --help               Show this help`);
+}
+
+const REPORT_MODES = new Set(["vitest", "playwright"]);
+
+function isReportPath(value) {
+  return typeof value === "string" && !value.startsWith("-") && !REPORT_MODES.has(value);
+}
+
+/**
+ * Parse the summary dispatcher without making the optional report path depend
+ * on the order of flags. Positional paths after --all map to Vitest then
+ * Playwright; explicit tool flags always win for their respective report.
+ */
+export function parseSummaryArgs(args) {
+  const selected = { all: false, vitest: false, playwright: false };
+  const paths = { vitest: undefined, playwright: undefined };
+  const positionalPaths = [];
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === "--all") {
+      selected.all = true;
+      continue;
+    }
+
+    const dashedMode = arg === "--vitest" || arg === "--playwright";
+    const positionalMode = REPORT_MODES.has(arg);
+    if (dashedMode || positionalMode) {
+      const mode = arg === "--vitest" || arg === "vitest" ? "vitest" : "playwright";
+      selected[mode] = true;
+      const next = args[index + 1];
+      if (isReportPath(next)) {
+        paths[mode] = next;
+        index += 1;
+      }
+      continue;
+    }
+
+    if (!arg.startsWith("-")) positionalPaths.push(arg);
+  }
+
+  if (selected.all) {
+    selected.vitest = true;
+    selected.playwright = true;
+  } else if (!selected.vitest && !selected.playwright) {
+    selected.vitest = true;
+  }
+
+  for (const mode of ["vitest", "playwright"]) {
+    if (selected[mode] && paths[mode] === undefined && positionalPaths.length > 0) {
+      paths[mode] = positionalPaths.shift();
+    }
+  }
+
+  return {
+    vitest: selected.vitest,
+    playwright: selected.playwright,
+    vitestPath: paths.vitest ?? DEFAULT_VITEST_REPORT,
+    playwrightPath: paths.playwright ?? DEFAULT_PLAYWRIGHT_REPORT,
+  };
 }
 
 function main() {
@@ -75,33 +136,19 @@ function main() {
     printHelp();
     return;
   }
-  const hasVitest = args.includes("--vitest") || args.includes("vitest");
-  const hasPlaywright = args.includes("--playwright") || args.includes("playwright");
-  if (!hasVitest && !hasPlaywright) {
-    const first = args[0];
-    if (first === "vitest") publishVitest(args[1] ?? DEFAULT_VITEST_REPORT);
-    else if (first === "playwright") publishPlaywright(args[1] ?? DEFAULT_PLAYWRIGHT_REPORT);
-    else {
-      publishVitest(first ?? DEFAULT_VITEST_REPORT);
-    }
-    return;
-  }
-  if (hasVitest) {
-    const idx = args.indexOf("--vitest");
-    const vitestIdx = idx !== -1 ? idx : args.indexOf("vitest");
-    const reportPath =
-      args[vitestIdx + 1] && !args[vitestIdx + 1].startsWith("--") ? args[vitestIdx + 1] : DEFAULT_VITEST_REPORT;
-    publishVitest(reportPath);
-  }
-  if (hasPlaywright) {
-    const idx = args.indexOf("--playwright");
-    const pwIdx = idx !== -1 ? idx : args.indexOf("playwright");
-    const reportPath =
-      args[pwIdx + 1] && !args[pwIdx + 1].startsWith("--") ? args[pwIdx + 1] : DEFAULT_PLAYWRIGHT_REPORT;
-    publishPlaywright(reportPath);
-  }
+  const { vitest, playwright, vitestPath, playwrightPath } = parseSummaryArgs(args);
+  if (vitest) publishVitest(vitestPath);
+  if (playwright) publishPlaywright(playwrightPath);
 }
 
 if (isMainModule(import.meta.url)) main();
 
-export { publishVitest, publishPlaywright };
+export {
+  publishVitest,
+  publishPlaywright,
+  summarizeVitestReport,
+  formatVitestSummaryMarkdown,
+  summarizeVitestFile,
+  DEFAULT_VITEST_REPORT,
+  DEFAULT_PLAYWRIGHT_REPORT,
+};

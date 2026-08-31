@@ -58,6 +58,14 @@ Result: accepted
 Evidence: `npm run docs:check` passes after ledger update; `AGENTS.md`, `scripts/new-plan.mjs`, `docs/Audits/README.md`, `.agents/skills/architect/SKILL.md`, `.agents/evals/README.md` diffs.
 Reason: Previous “smallest” anchor biased agents toward hacky, minimal-diff workarounds; new anchor preserves lib/hack avoidance and audit guardrails while explicitly favoring the cleaner, larger change when it is the more maintainable long-term shape — avoids both under-engineering and speculative over-abstraction.
 
+## 2026-08-31 — Align active skills and knowledge with enforced contracts
+
+Pattern: `battle-immutability-rng`, `run-state-command-boundary`, `run-materials-ownership`, `gear-hp-sync`
+Proposal: Align the architect skill with the enforced no-comments rule; teach `getBattleRng` as the normal engine seam; distinguish shared combat tuning from content-owned magnitudes; correct material-lint severity; remove brittle source line references; and add documentation contracts for current backticked file references and local-skill routing completeness.
+Result: accepted
+Evidence: User-approved documentation review; stale architecture filenames survived the prior link/path checks; ESLint configuration confirms direct battle RNG access and run-earned material enforcement.
+Reason: Keep active instructions consistent with executable rules and make the demonstrated staleness class mechanically detectable without loading more routine context.
+
 ## Template for future entries
 
 ```

@@ -1,7 +1,7 @@
 import { type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardInteractiveGlowClass, collectionTileWidthClass, viewCardWidthClass } from "../config";
+import { cardInteractiveGlowClass, getTileWidthClass } from "../config";
 import { BattleCardButton } from "./card-button";
 import { getCardDisplayTitle } from "./card-description-ui";
 import { useInteractiveCard } from "./use-interactive-card";
@@ -9,10 +9,10 @@ import { useInteractiveCard } from "./use-interactive-card";
 type SelectableCardChrome = "choice" | "shop" | "deck" | "corruption";
 
 const DEFAULT_WIDTH_BY_CHROME: Record<SelectableCardChrome, string> = {
-  choice: collectionTileWidthClass,
-  shop: collectionTileWidthClass,
-  deck: viewCardWidthClass,
-  corruption: viewCardWidthClass,
+  choice: getTileWidthClass("collection"),
+  shop: getTileWidthClass("collection"),
+  deck: getTileWidthClass("view"),
+  corruption: getTileWidthClass("view"),
 };
 
 interface SelectableCardBaseProps {

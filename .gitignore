@@ -16,6 +16,7 @@ screenshot-*
 NUL
 .knip-output.json
 .stryker-tmp
+.eslintcache
 
 
 .vercel

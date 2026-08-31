@@ -1,10 +1,9 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { GearItemTitle } from "@/features/alchemy/shared/ui/gear-item-title";
+import { GearItemTitle, TrinketItemTitle } from "@/features/alchemy/shared/ui/gear-item-title";
 import { GearTooltipContent } from "@/features/alchemy/shared/ui/gear-tooltip-content";
 import { GearTile, TrinketTile } from "@/features/alchemy/shared/ui/collection-art-tiles";
-import { TrinketItemTitle } from "@/features/alchemy/shared/ui/trinket-item-title";
 import { CompendiumTile } from "@/features/alchemy/shared/ui/collection-tile";
 import { trinketById } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear";

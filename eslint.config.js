@@ -19,6 +19,10 @@ import {
   restrictedSyntax,
 } from "./eslint/fragments.js";
 
+function tsxSyntax(...extras) {
+  return restrictedSyntax(...CLASSNAME_NO_TEMPLATE, ...extras);
+}
+
 export default tseslint.config(
   {
     ignores: [
@@ -33,6 +37,7 @@ export default tseslint.config(
       "release-desktop",
       "reports",
       ".knip-output.json",
+      ".eslintcache",
     ],
   },
 
@@ -74,6 +79,7 @@ export default tseslint.config(
       "@typescript-eslint/no-useless-default-assignment": "off",
       "@typescript-eslint/no-unnecessary-type-conversion": "off",
       // Additions beyond the preset — type-aware bug catchers.
+      "@typescript-eslint/consistent-type-exports": ["error", { fixMixedExportsWithInlineTypeSpecifier: true }],
       "@typescript-eslint/no-deprecated": "error",
       "@typescript-eslint/switch-exhaustiveness-check": ["error", { considerDefaultExhaustiveForUnions: true }],
       "@typescript-eslint/prefer-nullish-coalescing": "error",
@@ -237,30 +243,18 @@ export default tseslint.config(
     },
   },
 
-  // JSX files: ban template-literal className (must use cn()).
-  {
-    files: ["src/**/*.tsx"],
-    rules: {
-      "no-restricted-syntax": restrictedSyntax(...CLASSNAME_NO_TEMPLATE),
-    },
-  },
-
-  // Battle .tsx files: keep Math.random/floor bans alongside className bans.
-  {
-    files: ["src/lib/battle/**/*.tsx"],
-    rules: {
-      "no-restricted-syntax": restrictedSyntax(
-        ...CLASSNAME_NO_TEMPLATE,
-        ...BATTLE_NO_MATH_RANDOM,
-        BATTLE_NO_MATH_FLOOR,
-      ),
-    },
-  },
-
-  // Allow unused args prefixed with _
+  // Allow unused vars and args prefixed with _
   {
     rules: {
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
     },
   },
 
@@ -392,7 +386,7 @@ export default tseslint.config(
       "src/lib/battle/**",
     ],
     rules: {
-      "no-restricted-syntax": restrictedSyntax(...CLASSNAME_NO_TEMPLATE, ...AGGREGATE_NO_DIRECT_MUTATION),
+      "no-restricted-syntax": tsxSyntax(...AGGREGATE_NO_DIRECT_MUTATION),
     },
   },
   {
@@ -420,8 +414,7 @@ export default tseslint.config(
   {
     files: ["src/lib/battle/**/*.tsx"],
     rules: {
-      "no-restricted-syntax": restrictedSyntax(
-        ...CLASSNAME_NO_TEMPLATE,
+      "no-restricted-syntax": tsxSyntax(
         ...BATTLE_NO_MATH_RANDOM,
         BATTLE_NO_MATH_FLOOR,
         BATTLE_NO_DIRECT_RNG,
@@ -438,11 +431,7 @@ export default tseslint.config(
   {
     files: ["src/features/alchemy/run-loop/**/*.tsx", "src/features/alchemy/shell/**/*.tsx"],
     rules: {
-      "no-restricted-syntax": restrictedSyntax(
-        ...CLASSNAME_NO_TEMPLATE,
-        ...GEAR_NO_OUTER_DISPATCH,
-        ...AGGREGATE_NO_DIRECT_MUTATION,
-      ),
+      "no-restricted-syntax": tsxSyntax(...GEAR_NO_OUTER_DISPATCH, ...AGGREGATE_NO_DIRECT_MUTATION),
     },
   },
 
