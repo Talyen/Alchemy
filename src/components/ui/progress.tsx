@@ -20,6 +20,10 @@ function Progress({ className, value, size = "md", color, fillStyle, ref, ...pro
   return (
     <div
       ref={ref}
+      role="progressbar"
+      aria-valuenow={Math.round(progressPercent)}
+      aria-valuemin={0}
+      aria-valuemax={100}
       className={cn("relative w-full overflow-hidden rounded-full", height, trackColor, className)}
       {...props}
     >

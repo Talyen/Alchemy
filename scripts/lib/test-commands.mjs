@@ -42,6 +42,22 @@ export const E2E_ESCALATIONS = Object.freeze({
 export const E2E_NAMES = new Set(Object.keys(E2E_ESCALATIONS).filter((k) => k !== "shop-screen"));
 
 export const COMMANDS = Object.freeze({
+  "unit-settings": {
+    label: "settings and Options unit tests",
+    reason: "settings values, persistence, Options bindings, audio effects, and display contracts move together",
+    command: NPM,
+    args: [
+      "test",
+      "--",
+      "tests/lib/settings-values.test.ts",
+      "tests/lib/validation/save-schemas.test.ts",
+      "tests/features/alchemy/shared/stores/profile-settings-stores.test.ts",
+      "tests/features/alchemy/meta/screens/options-screen.test.tsx",
+      "tests/app/options-screen-route.test.tsx",
+      "tests/app/use-app-audio-effects.test.ts",
+      "tests/app/use-initial-load-ready.test.ts",
+    ],
+  },
   "unit-active": {
     label: "active-run unit tests",
     reason: "run-session changes share aggregate, resume, shell, and fade contracts",

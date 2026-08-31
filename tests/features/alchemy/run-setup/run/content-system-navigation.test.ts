@@ -15,7 +15,7 @@ import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-po
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-import { getStartingDeck } from "@/lib/game-data";
+import { getStartingDeck, type CharacterId, type DifficultyId } from "@/lib/game-data";
 
 vi.mock("@/features/alchemy/shared/run-flow/campaign-start", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/run-flow/campaign-start")>();
@@ -39,14 +39,12 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
     hasActiveRun: false,
     hasActiveBattle: false,
     pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
-    completedDifficulties: {},
+    completedDifficulties: {} as Record<CharacterId, DifficultyId[]>,
     navigateTo,
     returnToBattle,
     onStartBattle,
     getAvailableDestinations: () => [DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
-    destinationRng: () => 0.5,
-    worldRng: () => 0.5,
     clearCardHover: vi.fn(),
     ...overrides,
   };

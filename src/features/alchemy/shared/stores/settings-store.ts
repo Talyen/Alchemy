@@ -21,17 +21,7 @@ export interface SettingsSaveFields {
   autoplayEnabled: boolean;
 }
 
-export interface SettingsStore {
-  selectedAspectRatio: SettingsSaveFields["selectedAspectRatio"];
-  displayMode: SettingsSaveFields["displayMode"];
-  brightness: SettingsSaveFields["brightness"];
-  musicVolume: SettingsSaveFields["musicVolume"];
-  sfxVolume: SettingsSaveFields["sfxVolume"];
-  masterVolume: SettingsSaveFields["masterVolume"];
-  muteInBackground: SettingsSaveFields["muteInBackground"];
-  autoEndTurn: SettingsSaveFields["autoEndTurn"];
-  rememberAutoplayPreference: SettingsSaveFields["rememberAutoplayPreference"];
-  autoplayEnabled: SettingsSaveFields["autoplayEnabled"];
+export interface SettingsStore extends SettingsSaveFields {
   showClearSaveConfirm: boolean;
 
   setSelectedAspectRatio: (value: AspectRatioOption) => void;
@@ -99,7 +89,7 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
     set({ ...withDerivedAutoplay(createDefaultSettingsSaveFields()), showClearSaveConfirm: false }),
 }));
 
-function toSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
+export function selectSettingsSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
   return {
     selectedAspectRatio: state.selectedAspectRatio,
     displayMode: state.displayMode,
@@ -116,9 +106,9 @@ function toSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): Set
 
 export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFields> = {
   createDefault: createDefaultSettingsSaveFields,
-  encode: () => withDerivedAutoplay(toSaveFields(useSettingsStore.getState())),
+  encode: () => withDerivedAutoplay(selectSettingsSaveFields(useSettingsStore.getState())),
   hydrate: (fields) => {
-    useSettingsStore.setState(withDerivedAutoplay(toSaveFields(fields)));
+    useSettingsStore.setState(withDerivedAutoplay(selectSettingsSaveFields(fields)));
   },
   subscribe: (listener) => useSettingsStore.subscribe(listener),
 };

@@ -1,6 +1,12 @@
 import type { Destination } from "@/lib/routing";
-import { getPreviousDestination } from "./campaign-start";
 import { getRunAvailableDestinations, type DestinationOptionsInput } from "./destination-flow";
+
+export function getPreviousDestination(
+  destinationIndexInAct: number,
+  completedDestinations: Destination[],
+): Destination | undefined {
+  return destinationIndexInAct === 0 ? undefined : completedDestinations[completedDestinations.length - 1];
+}
 
 export interface ResolveAvailableDestinationsInput {
   destinationIndexInAct: number;

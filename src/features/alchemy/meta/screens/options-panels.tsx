@@ -8,6 +8,7 @@ import {
   settingsPanelShellClass,
 } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
+import { SETTINGS_RANGES } from "@/lib/settings-values";
 import { AspectRatioSelect, DisplayModeSelect } from "../../shared/ui/shared-ui";
 import type { AspectRatioOption, DisplayMode } from "../../shared/types";
 
@@ -123,8 +124,8 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
         label="Brightness"
         value={display.brightness}
         onChange={display.onBrightnessChange}
-        min={50}
-        max={150}
+        min={SETTINGS_RANGES.brightness.min}
+        max={SETTINGS_RANGES.brightness.max}
       />
     </div>
   );

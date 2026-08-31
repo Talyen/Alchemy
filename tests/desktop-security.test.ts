@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { DISPLAY_MODE_VALUES } from "@/lib/settings-values";
 
 const require = createRequire(import.meta.url);
 interface SecurityModule {
@@ -87,7 +88,7 @@ describe("Electron renderer security policy", () => {
   });
 
   it("preserves the existing IPC payload limits", () => {
-    expect(security.isDisplayMode("windowed")).toBe(true);
+    for (const mode of DISPLAY_MODE_VALUES) expect(security.isDisplayMode(mode)).toBe(true);
     expect(security.isDisplayMode("invalid")).toBe(false);
     expect(security.isSavePayload("a".repeat(security.MAX_SAVE_PAYLOAD_BYTES))).toBe(true);
     expect(security.isSavePayload("a".repeat(security.MAX_SAVE_PAYLOAD_BYTES + 1))).toBe(false);

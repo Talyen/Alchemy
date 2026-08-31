@@ -1,10 +1,28 @@
-import { readFileSync, rmSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { substituteSteamVdf, writeSteamBuildVdfs } from "../../scripts/lib/steam-vdf.mjs";
 import { steamContentRoot } from "../../scripts/lib/desktop-artifact.mjs";
 
-const workspaceRoot = join(import.meta.dirname, "../..");
+const sourceRoot = join(import.meta.dirname, "../..");
+const temporaryRoots: string[] = [];
+
+function createWorkspace() {
+  const workspaceRoot = mkdtempSync(join(tmpdir(), "alchemy-steam-vdf-"));
+  const steamRoot = join(workspaceRoot, "steam");
+  mkdirSync(steamRoot);
+  copyFileSync(join(sourceRoot, "steam", "app_build.vdf"), join(steamRoot, "app_build.vdf"));
+  copyFileSync(join(sourceRoot, "steam", "depot_build.vdf"), join(steamRoot, "depot_build.vdf"));
+  temporaryRoots.push(workspaceRoot);
+  return workspaceRoot;
+}
+
+afterEach(() => {
+  for (const root of temporaryRoots.splice(0)) {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 describe("steam VDF substitution", () => {
   it("replaces template placeholders", () => {
@@ -25,6 +43,7 @@ describe("steam VDF substitution", () => {
   });
 
   it("writes substituted app and depot VDF files for steamcmd", () => {
+    const workspaceRoot = createWorkspace();
     const { appPath, depotPath, contentRoot } = writeSteamBuildVdfs(workspaceRoot, {
       STEAM_APP_ID: "999",
       STEAM_DEPOT_ID: "111",
@@ -39,11 +58,10 @@ describe("steam VDF substitution", () => {
     expect(appVdf).toContain('"setlive" ""');
     expect(contentRoot).toBe(steamContentRoot(workspaceRoot));
     expect(contentRoot.replaceAll("\\", "/")).toMatch(/release-desktop\/win-unpacked$/);
-
-    rmSync(join(workspaceRoot, "steam/build"), { recursive: true, force: true });
   });
 
   it("keeps buildoutput on release-desktop while contentroot is win-unpacked", () => {
+    const workspaceRoot = createWorkspace();
     const { appPath } = writeSteamBuildVdfs(workspaceRoot, {
       STEAM_APP_ID: "1",
       STEAM_DEPOT_ID: "2",
@@ -52,6 +70,5 @@ describe("steam VDF substitution", () => {
     expect(appVdf).toMatch(/"buildoutput" ".*\/release-desktop"/);
     expect(appVdf).toMatch(/"contentroot" ".*\/release-desktop\/win-unpacked"/);
     expect(appVdf).not.toContain("builder-debug.yml");
-    rmSync(join(workspaceRoot, "steam/build"), { recursive: true, force: true });
   });
 });

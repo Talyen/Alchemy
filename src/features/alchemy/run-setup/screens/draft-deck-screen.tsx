@@ -20,7 +20,7 @@ import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
 function DraftedCardItem({ card, onHoverChange }: { card: BattleCard; onHoverChange: (hovered: boolean) => void }) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    "drafted-" + card.id,
+    `drafted-${card.id}`,
     card.id,
   );
 
@@ -74,8 +74,8 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
     >
       <p className={cn("mt-3 text-center", bodyTextClass)}>
         {isComplete
-          ? "You drafted " + String(draftedCards.length) + " cards. Ready to begin your run."
-          : "Pick 1 of 3 cards \u2014 " + String(round + 1) + "/" + String(DRAFT_ROUNDS) + " selected"}
+          ? `You drafted ${String(draftedCards.length)} cards. Ready to begin your run.`
+          : `Pick 1 of 3 cards \u2014 ${String(round + 1)}/${String(DRAFT_ROUNDS)} selected`}
       </p>
 
       <FadeSlot swapKey={isComplete ? "complete" : round} className="mx-auto mt-8 min-h-[36cqh] w-full">
@@ -83,7 +83,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
           <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
             {draftedCards.map((card, index) => (
               <DraftedCardItem
-                key={"drafted-" + card.id + "-" + String(card.uid ?? index)}
+                key={`drafted-${card.id}-${String(card.uid ?? index)}`}
                 card={card}
                 onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
               />
@@ -93,11 +93,11 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
           <div className="flex flex-wrap items-start justify-center gap-6">
             {draftChoices.map((card, index) => (
               <SelectableCard
-                key={"draft-choice-" + String(index) + "-" + card.id}
+                key={`draft-choice-${String(index)}-${card.id}`}
                 card={card}
                 isSelected={false}
                 onSelect={() => onPick(card)}
-                interactionKey={"draft-choice-" + String(index)}
+                interactionKey={`draft-choice-${String(index)}`}
                 onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
               />
             ))}

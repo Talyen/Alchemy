@@ -163,13 +163,57 @@ it("cancels prior transition when rapid playMusic is invoked", () => {
 
   playMusic(MUSIC_KEYS.BATTLE);
   expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.BATTLE);
+  expect(vi.getTimerCount()).toBe(1);
+
+  playMusicImmediate(MUSIC_KEYS.BATTLE);
+  expect(vi.getTimerCount()).toBe(0);
+
+  playMusic(MUSIC_KEYS.MENU);
 
   vi.advanceTimersByTime(3000);
 
   expect(audioState.currentMusic).toBeDefined();
-  expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.BATTLE);
-  expect(menuElement?.paused).toBe(true);
+  expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.MENU);
+  expect(audioState.currentMusic).toBe(menuElement);
+  expect(menuElement?.paused).toBe(false);
 
+  vi.useRealTimers();
+});
+
+it("continues fading from the current gain when a transition is interrupted", () => {
+  vi.useFakeTimers();
+  class MockAudio {
+    src = "";
+    currentTime = 0;
+    paused = true;
+    volume = 1;
+    muted = false;
+    loop = false;
+    constructor(src?: string) {
+      this.src = src ?? "";
+    }
+    play() {
+      this.paused = false;
+      return Promise.resolve();
+    }
+    pause() {
+      this.paused = true;
+    }
+  }
+  vi.stubGlobal("Audio", MockAudio);
+
+  playMusicImmediate(MUSIC_KEYS.MENU);
+  const outgoing = audioState.currentMusic;
+  playMusic(MUSIC_KEYS.BATTLE);
+  vi.advanceTimersByTime(150);
+  const interruptedVolume = outgoing?.volume ?? 0;
+
+  playMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+  vi.advanceTimersByTime(30);
+
+  expect(outgoing?.volume).toBeLessThanOrEqual(interruptedVolume);
+
+  playMusicImmediate(MUSIC_KEYS.MENU);
   vi.useRealTimers();
 });
 

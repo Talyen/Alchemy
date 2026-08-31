@@ -58,6 +58,14 @@ export default {
     "src/lib/game-data/talents/pool/index.ts": ["exports"],
     // Backward-compat re-exports for verify:changed consumers; canonical source is scripts/lib/test-commands.mjs.
     "scripts/lib/change-routes.mjs": ["exports"],
+    // Deprecated effect-schema import paths retained for content and external tooling compatibility.
+    "src/lib/game-data/effects/companion-schemas.ts": ["files", "exports"],
+    "src/lib/game-data/effects/flag-schemas.ts": ["files", "exports"],
+    "src/lib/game-data/effects/utility-schemas.ts": ["files", "exports"],
+    "src/lib/game-data/effects/shared-schemas.ts": ["exports"],
+    "src/lib/game-data/effects/simple-schemas.ts": ["exports"],
+    // Deprecated effect-handler import path retained for content and external tooling compatibility.
+    "src/lib/battle/effect-handlers/utility-handlers.ts": ["exports"],
     // Shared Vite alias / SSR list — consumed by vite.config.ts and vitest.config.ts sync guard.
     "scripts/lib/vite-aliases.mjs": ["exports"],
     // run-resume-codec is the canonical resume boundary (shops/interrupted-flow included).

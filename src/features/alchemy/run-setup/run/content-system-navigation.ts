@@ -4,8 +4,6 @@ import {
   setPendingCharacterId,
   setPendingContentSystemType,
   setStarterDraftChoices,
-  setDestinationOfferState,
-  setRewardState,
   createDraftRunRandomSource,
   setRunDeck,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -22,14 +20,12 @@ import {
   parkAndDeactivateForegroundRunInDraft,
 } from "@/features/alchemy/shared/stores/run-park-restore";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
-import { restoreOrCreateDestinationRewardState } from "@/features/alchemy/shared/run-flow/destination-flow";
 import {
   createStarterDraftChoices,
   wildcardStarterResumeTarget,
 } from "@/features/alchemy/shared/run-flow/starter-draft";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
-import { createContentSystemRunInit } from "./content-system-run-init";
-import { rollFreshBossId } from "@/features/alchemy/shared/config";
+import { createContentSystemRunInit, restoreResumedCampaignDestinations } from "./content-system-run-init";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { getDifficultyModifiers, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
@@ -72,24 +68,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     } else if (systemId === CONTENT_SYSTEMS.CAMPAIGN) {
       deps.navigateTo(ROUTE_SCREENS.DESTINATION, () => {
         dispatchRunSessionCommand((draft) => {
-          const active = draft.run.activeRun;
-          setRewardState(draft, (prev) =>
-            restoreOrCreateDestinationRewardState(prev, {
-              availableDestinations: deps.getAvailableDestinations({
-                currentHealth: active.runPlayerHealth,
-                currentGold: draft.runProfile.gold,
-                destinationIndexInAct: active.destinationIndexInAct,
-                maxHealth: active.runMaxHealth,
-              }),
-              offerState: {
-                lastOfferedDestinations: active.lastOfferedDestinations,
-                roundsSinceOffered: active.destinationRoundsSinceOffered,
-              },
-              bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
-              rng: createDraftRunRandomSource(draft, "destinations"),
-              onSampled: (result) => setDestinationOfferState(draft, result.offerState),
-            }),
-          );
+          restoreResumedCampaignDestinations(draft, deps.getAvailableDestinations);
         });
       });
     } else if (systemId === CONTENT_SYSTEMS.WILDWOOD) {

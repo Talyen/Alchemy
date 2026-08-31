@@ -51,6 +51,7 @@ export function getBossMusicKey(bossId: string): string | undefined {
 
 const musicCache = new Map<string, HTMLAudioElement>();
 const musicElementKeys = new WeakMap<HTMLAudioElement, string>();
+const musicElementFadeGains = new WeakMap<HTMLAudioElement, number>();
 
 export function invalidateCacheForKey(key: string): void {
   const cached = musicCache.get(key);
@@ -58,6 +59,7 @@ export function invalidateCacheForKey(key: string): void {
     cached.pause();
     cached.currentTime = 0;
     musicElementKeys.delete(cached);
+    musicElementFadeGains.delete(cached);
   }
   musicCache.delete(key);
 }
@@ -74,6 +76,13 @@ export function pauseAllMusic() {
 }
 
 let musicTransitionToken = 0;
+let musicTransitionTimer: ReturnType<typeof setInterval> | null = null;
+
+function cancelMusicTransition(): void {
+  if (musicTransitionTimer === null) return;
+  clearInterval(musicTransitionTimer);
+  musicTransitionTimer = null;
+}
 
 function playElement(el: HTMLAudioElement) {
   if (isNonPlayerAudioHost()) {
@@ -101,11 +110,13 @@ function rampVolume({
   apply: (t: number) => void;
   onComplete?: () => void;
 }): void {
+  cancelMusicTransition();
   const startTime = performance.now();
 
   const timer = setInterval(() => {
     if (transitionToken !== musicTransitionToken) {
       clearInterval(timer);
+      if (musicTransitionTimer === timer) musicTransitionTimer = null;
       return;
     }
 
@@ -115,19 +126,23 @@ function rampVolume({
     apply(t);
     if (t >= 1) {
       clearInterval(timer);
+      if (musicTransitionTimer === timer) musicTransitionTimer = null;
       onComplete?.();
     }
   }, RAMP_TICK_MS);
+  musicTransitionTimer = timer;
 }
 
 export function applyMusicVolume(
   el: HTMLAudioElement,
   key: string | null = musicElementKeys.get(el) ?? audioState.currentMusicKey,
-  fadeProgress = 1,
+  fadeProgress?: number,
 ) {
+  if (fadeProgress !== undefined) musicElementFadeGains.set(el, fadeProgress);
+  const fadeGain = fadeProgress ?? musicElementFadeGains.get(el) ?? 1;
   const boost = key && BOSS_MUSIC_KEYS.has(key) ? BOSS_MUSIC_VOLUME_BOOST : 1;
   el.volume = clamp(
-    audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * fadeProgress * boost,
+    audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * fadeGain * boost,
     MUSIC_CONFIG.VOLUME_MIN,
     1,
   );
@@ -188,18 +203,20 @@ function startTrack(key: string, transitionToken: number) {
 
 export function playMusicImmediate(key: string) {
   musicTransitionToken += 1;
+  cancelMusicTransition();
   audioState.currentMusicKey = key;
   replaceCurrentTrack(key, 1);
 }
 
 function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, transitionToken: number) {
-  const oldVol = oldTrack.volume;
+  const oldKey = musicElementKeys.get(oldTrack) ?? audioState.currentMusicKey;
+  const startFadeGain = musicElementFadeGains.get(oldTrack) ?? 1;
 
   rampVolume({
     transitionToken,
     durationMs: FADE_OUT_DURATION,
     apply: (t) => {
-      oldTrack.volume = Math.max(MUSIC_CONFIG.VOLUME_MIN, oldVol * (1 - t));
+      applyMusicVolume(oldTrack, oldKey, startFadeGain * (1 - t));
     },
     onComplete: () => {
       oldTrack.pause();
@@ -221,6 +238,7 @@ export function playMusic(key: string) {
 
   const transitionToken = musicTransitionToken + 1;
   musicTransitionToken = transitionToken;
+  cancelMusicTransition();
   audioState.currentMusicKey = key;
 
   if (audioState.currentMusic) {

@@ -55,4 +55,22 @@ describe("Progress", () => {
     const fill = getFill(container);
     expect(fill.style.background).toBe("red");
   });
+
+  it("exposes progressbar accessibility role and value attributes", () => {
+    const { container } = render(<Progress value={75} />);
+    const progressbar = container.querySelector("[role='progressbar']");
+    expect(progressbar).toBeDefined();
+    expect(progressbar?.getAttribute("aria-valuenow")).toBe("75");
+    expect(progressbar?.getAttribute("aria-valuemin")).toBe("0");
+    expect(progressbar?.getAttribute("aria-valuemax")).toBe("100");
+  });
+
+  it("clamps aria-valuenow within 0 and 100", () => {
+    const { container: low } = render(<Progress value={-20} />);
+    expect(low.querySelector("[role='progressbar']")?.getAttribute("aria-valuenow")).toBe("0");
+
+    cleanup();
+    const { container: high } = render(<Progress value={140} />);
+    expect(high.querySelector("[role='progressbar']")?.getAttribute("aria-valuenow")).toBe("100");
+  });
 });

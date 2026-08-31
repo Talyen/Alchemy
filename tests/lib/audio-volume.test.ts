@@ -78,7 +78,7 @@ describe("setMasterVolume", () => {
     expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN * 2);
   });
 
-  it("uses the outgoing element's key when volume changes during a crossfade", () => {
+  it("preserves the outgoing fade gain when master volume changes during a crossfade", () => {
     vi.useFakeTimers();
     class MockAudio {
       currentTime = 0;
@@ -103,9 +103,11 @@ describe("setMasterVolume", () => {
     playMusicImmediate(MUSIC_KEYS.MENU);
     const outgoing = audioState.currentMusic;
     playMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+    vi.advanceTimersByTime(150);
+    const fadedVolume = outgoing?.volume ?? 0;
     setMasterVolume(0.5);
 
-    expect(outgoing?.volume).toBe(audioState.musicVolume * 0.5 * MUSIC_MASTER_GAIN);
+    expect(outgoing?.volume).toBeCloseTo(fadedVolume * 0.5);
 
     playMusicImmediate(MUSIC_KEYS.MENU);
     vi.advanceTimersByTime(31);
@@ -139,5 +141,41 @@ describe("setMusicVolume", () => {
     audioState.masterVolume = 0.5;
     setMusicVolume(0.5);
     expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN * 2);
+  });
+
+  it("preserves the incoming fade gain when music volume changes", () => {
+    vi.useFakeTimers();
+    class MockAudio {
+      currentTime = 0;
+      loop = false;
+      muted = false;
+      paused = true;
+      volume = 0;
+
+      constructor(public readonly src: string) {}
+
+      pause() {
+        this.paused = true;
+      }
+
+      play() {
+        this.paused = false;
+        return Promise.resolve();
+      }
+    }
+    vi.stubGlobal("Audio", MockAudio);
+
+    playMusic(MUSIC_KEYS.MENU);
+    vi.advanceTimersByTime(900);
+    const incoming = audioState.currentMusic;
+    const fadedVolume = incoming?.volume ?? 0;
+    setMusicVolume(audioState.musicVolume * 0.5);
+
+    expect(incoming?.volume).toBeCloseTo(fadedVolume * 0.5);
+
+    playMusicImmediate(MUSIC_KEYS.MENU);
+    invalidateCacheForKey(MUSIC_KEYS.MENU);
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 });

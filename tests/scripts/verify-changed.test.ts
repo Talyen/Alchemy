@@ -182,6 +182,18 @@ describe("verify-changed route catalog", () => {
     ).toContain("gear");
   });
 
+  it("routes settings, app effects, and platform contracts to complete owners", () => {
+    expect(resolveRoutes(["src/features/alchemy/shared/stores/settings-store.ts"]).map((route) => route.id)).toEqual([
+      "settings",
+      "audio",
+    ]);
+    expect(resolveRoutes(["src/app/use-app-effects.ts"]).map((route) => route.id)).toEqual(["settings", "audio"]);
+    expect(resolveRoutes(["src/lib/platform.ts"]).map((route) => route.id)).toEqual(["desktop"]);
+
+    const keys = resolvePlan(["src/lib/settings-values.ts"]).commands.map((command) => command.key);
+    expect(keys).toEqual(expect.arrayContaining(["unit-settings", "unit-audio", "unit-desktop"]));
+  });
+
   it("routes documentation changes to the documentation contract", () => {
     expect(resolveRoutes(["docs/new-guide.md"]).map((route) => route.id)).toEqual(["documentation"]);
     expect(resolvePlan(["docs/new-guide.md"]).commands.map((command) => command.key)).toEqual(["docs-check"]);

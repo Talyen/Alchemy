@@ -16,6 +16,7 @@ import { generateLabyrinthMap, withClearedLabyrinthNode } from "@/lib/content-sy
 import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
 import { baseHomesteadSave } from "../../fixtures/saves";
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
+import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES, SETTINGS_RANGES } from "@/lib/settings-values";
 
 describe("SaveDataSchema", () => {
   it("parses a full homestead save fixture", () => {
@@ -71,7 +72,7 @@ describe("SaveDataSchema", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.musicVolume).toBe(50);
-      expect(result.data.brightness).toBe(150);
+      expect(result.data.brightness).toBe(SETTINGS_RANGES.brightness.max);
       expect(result.data.displayMode).toBe("borderless-fullscreen");
     }
   });
@@ -148,8 +149,12 @@ describe("SaveDataSchema", () => {
     expect(SaveDataSchema.parse({ selectedAspectRatio: "99:99" }).selectedAspectRatio).toBe("auto");
   });
 
-  it.each(["windowed", "borderless-fullscreen", "fullscreen"] as const)("passes through display mode %s", (mode) => {
+  it.each(DISPLAY_MODE_VALUES)("passes through display mode %s", (mode) => {
     expect(SaveDataSchema.parse({ displayMode: mode }).displayMode).toBe(mode);
+  });
+
+  it.each(ASPECT_RATIO_VALUES)("passes through aspect ratio %s", (aspectRatio) => {
+    expect(SaveDataSchema.parse({ selectedAspectRatio: aspectRatio }).selectedAspectRatio).toBe(aspectRatio);
   });
 
   it("falls back for an invalid display mode", () => {

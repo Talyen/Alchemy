@@ -4,7 +4,7 @@ import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/campaign-start";
+import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/resolve-available-destinations";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";

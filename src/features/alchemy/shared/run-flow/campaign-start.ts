@@ -1,12 +1,5 @@
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
-import type { Destination } from "@/lib/routing";
-export function getPreviousDestination(
-  destinationIndexInAct: number,
-  completedDestinations: Destination[],
-): Destination | undefined {
-  return destinationIndexInAct === 0 ? undefined : completedDestinations[completedDestinations.length - 1];
-}
 
 interface NoviceCampaignStartDeps {
   completedDifficulties: Record<string, DifficultyId[]>;

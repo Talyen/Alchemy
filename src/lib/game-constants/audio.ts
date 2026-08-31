@@ -1,4 +1,3 @@
-export const DEFAULT_MUSIC_VOLUME = 0.0875;
 export const MUSIC_BASE_PATH = "Music/";
 
 export const MUSIC_KEYS = {
@@ -15,7 +14,6 @@ export const FADE_IN_DELAY = 600;
 export const FADE_IN_DURATION = 1400;
 export const MUSIC_MASTER_GAIN = 0.7;
 
-export const DEFAULT_SFX_VOLUME = 0.35;
 export const SFX_UI_VOLUME = 0.6;
 export const SFX_VICTORY_VOLUME = 0.8;
 export const SFX_DEFEAT_VOLUME = 0.7;

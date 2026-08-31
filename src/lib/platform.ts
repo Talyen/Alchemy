@@ -1,4 +1,6 @@
-export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
+import type { DisplayMode } from "./settings-values";
+
+export type { DisplayMode } from "./settings-values";
 
 export interface SteamInitialization {
   playerName: string | null;

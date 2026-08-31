@@ -30,6 +30,11 @@ changed-path and CI tier policy. When a test fails, follow
 [failure-first triage](./docs/REFERENCE.md#failure-first-triage) before opening
 raw traces or report directories.
 
+Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract,
+and tooling suites run in the `node` project. `vitest.config.ts:testEnvironmentForPath` owns that classification.
+Keep browser-dependent TypeScript tests in its explicit list, while `*.test.tsx` files are always DOM tests. Targeted
+paths and coverage run across both projects through the existing `npm test -- <path>` commands.
+
 ## Before you push
 
 Execution plans are short-lived working documents under [`docs/Plans/`](docs/Plans/README.md). Run `npm run plans:check` while a plan is active; `npm run docs:check` includes that check plus repository-wide documentation contracts. When the work ends, mark the plan `complete` (or `cancelled`), refresh its `updated` date, and run `npm run docs:check:final`; the command archives terminal plans and requires no active plans to remain.

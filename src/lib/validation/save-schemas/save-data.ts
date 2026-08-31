@@ -9,6 +9,7 @@ import {
   DEFAULT_SFX_VOLUME_PCT,
 } from "@/lib/game-constants";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "../metadata";
+import { SETTINGS_RANGES } from "@/lib/settings-values";
 import { migrateSaveDataToCurrent } from "../migration";
 import {
   CHARACTER_IDS,
@@ -86,7 +87,7 @@ export const SaveDataSchema = z.preprocess(
       brightness: z
         .number()
         .catch(DEFAULT_BRIGHTNESS_PCT)
-        .transform((v) => Math.max(50, Math.min(150, v))),
+        .transform((v) => Math.max(SETTINGS_RANGES.brightness.min, Math.min(SETTINGS_RANGES.brightness.max, v))),
       discoveredCardIds: deduplicatedStringArraySchema(),
       encounteredEnemyIds: deduplicatedStringArraySchema(),
       discoveredTrinketIds: deduplicatedStringArraySchema(),
@@ -101,15 +102,15 @@ export const SaveDataSchema = z.preprocess(
       musicVolume: z
         .number()
         .catch(DEFAULT_MUSIC_VOLUME_PCT)
-        .transform((v) => Math.max(0, Math.min(100, v))),
+        .transform((v) => Math.max(SETTINGS_RANGES.volume.min, Math.min(SETTINGS_RANGES.volume.max, v))),
       sfxVolume: z
         .number()
         .catch(DEFAULT_SFX_VOLUME_PCT)
-        .transform((v) => Math.max(0, Math.min(100, v))),
+        .transform((v) => Math.max(SETTINGS_RANGES.volume.min, Math.min(SETTINGS_RANGES.volume.max, v))),
       masterVolume: z
         .number()
         .catch(DEFAULT_MASTER_VOLUME_PCT)
-        .transform((v) => Math.max(0, Math.min(100, v))),
+        .transform((v) => Math.max(SETTINGS_RANGES.volume.min, Math.min(SETTINGS_RANGES.volume.max, v))),
       muteInBackground: z.boolean().catch(true),
       autoEndTurn: z.boolean().catch(true),
       rememberAutoplayPreference: z.boolean().catch(false),

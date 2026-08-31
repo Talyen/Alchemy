@@ -21,7 +21,7 @@ describe("CyclingShineBorder", () => {
   it("drives the shine from an interpolatable color variable", () => {
     const { container } = render(<CyclingShineBorder colors={["#ff0000", "#00ff00"]} intervalMs={1000} />);
     const shine = container.querySelector(".shine-border") as HTMLElement;
-    expect(shine.style.backgroundImage).toBe("radial-gradient(var(--cycle-shine))");
+    expect(shine.style.backgroundImage).toBe("radial-gradient(var(--cycle-shine), var(--cycle-shine))");
     expect(shine.style.backgroundColor).toBe("var(--cycle-shine)");
     expect(shine.style.animation).toContain("linear infinite");
   });

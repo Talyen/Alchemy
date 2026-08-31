@@ -6,13 +6,17 @@ type SwitchProps = Omit<ComponentProps<"input">, "onChange" | "checked"> & {
   onCheckedChange: (checked: boolean) => void;
 };
 
-function Switch({ className, checked, onCheckedChange, ...props }: SwitchProps) {
+function Switch({ className, checked, onCheckedChange, disabled, ...props }: SwitchProps) {
   return (
-    <span className={cn("relative inline-flex h-6 w-10 shrink-0", className)}>
+    <span
+      className={cn("relative inline-flex h-6 w-10 shrink-0", disabled && "cursor-not-allowed opacity-50", className)}
+    >
       <input
         type="checkbox"
         role="switch"
         checked={checked}
+        aria-checked={checked}
+        disabled={disabled}
         onChange={(event) => onCheckedChange(event.target.checked)}
         className="peer absolute inset-0 h-full w-full cursor-pointer appearance-none rounded-full border-2 border-transparent transition-colors not-checked:bg-muted checked:bg-primary focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
         {...props}

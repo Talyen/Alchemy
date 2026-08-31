@@ -115,4 +115,15 @@ describe("Button", () => {
     expect(container.querySelector("a")).toBeDefined();
     expect(container.querySelector("button")).toBeNull();
   });
+
+  it("wraps Slot in span when asChild and wrapperClassName are both provided", () => {
+    const { container } = render(
+      <Button asChild wrapperClassName="slot-wrapper">
+        <a href="/test">Link</a>
+      </Button>,
+    );
+    const span = container.querySelector("span.slot-wrapper");
+    expect(span).toBeDefined();
+    expect(span?.querySelector("a")).toBeDefined();
+  });
 });

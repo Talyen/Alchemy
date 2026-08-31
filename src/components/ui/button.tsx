@@ -11,11 +11,6 @@ import {
 } from "@/lib/ui/button-hover";
 import { cn } from "@/lib/utils";
 
-const primaryVariantClasses = cn(
-  "bg-primary text-primary-foreground active:bg-primary/90 active:brightness-100",
-  BUTTON_HOVER_PRIMARY,
-);
-
 const buttonVariants = cva(
   cn(
     "inline-flex items-center justify-center gap-2 rounded-xl text-base font-semibold whitespace-nowrap disabled:pointer-events-none disabled:opacity-50",
@@ -24,7 +19,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: primaryVariantClasses,
+        primary: cn(
+          "bg-primary text-primary-foreground active:bg-primary/90 active:brightness-100",
+          BUTTON_HOVER_PRIMARY,
+        ),
         destructive: cn(
           "bg-destructive text-destructive-foreground active:bg-destructive/90 active:brightness-100",
           BUTTON_HOVER_DESTRUCTIVE,
@@ -55,7 +53,6 @@ const buttonVariants = cva(
 
 interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-
   wrapperClassName?: string;
 }
 
@@ -63,7 +60,8 @@ function Button({ className, wrapperClassName, variant, size, asChild = false, r
   const classes = cn(buttonVariants({ variant, size }), className);
 
   if (asChild) {
-    return <Slot className={classes} ref={ref} {...props} />;
+    const slot = <Slot className={classes} ref={ref} {...props} />;
+    return wrapperClassName ? <span className={cn("inline-flex", wrapperClassName)}>{slot}</span> : slot;
   }
 
   if (wrapperClassName) {

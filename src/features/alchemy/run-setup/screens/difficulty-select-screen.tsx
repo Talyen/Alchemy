@@ -39,8 +39,14 @@ const DIFFICULTY_CONFIG = {
   XP_BONUSES: {
     "difficulty-2": "20% Bonus XP",
     "difficulty-3": "40% Bonus XP",
-  } as Record<string, string>,
+  } as Partial<Record<DifficultyId, string>>,
 } as const;
+
+const DIFFICULTY_ART: Record<DifficultyId, string> = {
+  "difficulty-1": difficulty1Art,
+  "difficulty-2": difficulty2Art,
+  "difficulty-3": difficulty3Art,
+};
 
 function renderDescription(text: string) {
   const lines = text.split("\n");
@@ -77,7 +83,6 @@ function DifficultyCard({
   const bonusLine = DIFFICULTY_CONFIG.XP_BONUSES[difficultyId] ?? "";
   const fullDescription = description + (bonusLine ? "\n" + bonusLine : "");
   const showUnlockedArt = !locked;
-  const DIFFICULTY_ART: Record<string, string> = { "difficulty-1": difficulty1Art, "difficulty-2": difficulty2Art };
   const diffArt = DIFFICULTY_ART[difficultyId] ?? difficulty3Art;
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
   const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard("difficulty-select", difficultyId);

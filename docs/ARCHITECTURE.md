@@ -156,6 +156,8 @@ BattleScreenRoute → useBattleScreenRouteData (committed battle display)
 ## Settings and meta profile
 
 - `settings-store` owns display, audio, and gameplay preferences. It does not contain gameplay progression.
+- `lib/settings-values.ts` owns the shared value sets and numeric bounds consumed by save validation, Options, audio,
+  and the desktop bridge; the settings codec still owns defaults, encoding, and hydration.
 - `profile-store` owns compendium discoveries (cards, encountered enemies, trinkets, and uniques), completed difficulties, finished-run characters, and transient collection browsing state.
 - `gameplay-state-store.runProfile` owns homestead and talent progression. Run reward finalization writes through `run-session-write-port` (`finalizeRunXP`, `awardMaterialsDuringRun`, …) and lifecycle ports — do not merge this into `profile`.
 - `gear-store` owns the permanent Gear subdomain and its invariants.

@@ -18,6 +18,7 @@ import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/ge
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { filterValidDestinations } from "@/lib/routing";
+import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES } from "@/lib/settings-values";
 import { deduplicateStrings } from "./validation-utils";
 
 function toNonEmptyTuple<T extends string>(values: readonly T[], label: string): [T, ...T[]] {
@@ -66,8 +67,8 @@ export const LabyrinthNodeTypeSchema = z.enum([
   "equipment-shop",
   "boss",
 ]);
-export const AspectRatioOptionSchema = z.enum(["auto", "16:9", "16:10", "21:9"]);
-export const DisplayModeSchema = z.enum(["windowed", "borderless-fullscreen", "fullscreen"]);
+export const AspectRatioOptionSchema = z.enum(ASPECT_RATIO_VALUES);
+export const DisplayModeSchema = z.enum(DISPLAY_MODE_VALUES);
 
 export const CRAFTING_CURRENCY_ZERO_INVENTORY = EMPTY_CRAFTING_CURRENCIES;
 

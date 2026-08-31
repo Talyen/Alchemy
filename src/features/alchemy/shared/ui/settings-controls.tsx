@@ -3,33 +3,53 @@ import { controlLabelClass, settingsPanelShellClass } from "@/features/alchemy/s
 import { cn } from "@/lib/utils";
 import type { AspectRatioOption, DisplayMode } from "../types";
 
+interface SettingsSelectProps<T extends string> {
+  id: string;
+  label: string;
+  value: T;
+  options: ReadonlyArray<{ value: T; label: string }>;
+  onChange: (value: T) => void;
+}
+
+function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
+  return (
+    <div className={cn(settingsPanelShellClass, "text-left")}>
+      <label htmlFor={id} className={cn("block", controlLabelClass)}>
+        {label}
+      </label>
+      <Select value={value} onValueChange={(nextValue) => onChange(nextValue as T)}>
+        <SelectTrigger id={id} className="mt-3">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 export function AspectRatioSelect({
   selectedAspectRatio,
   aspectRatioOptions,
   onChange,
 }: {
   selectedAspectRatio: AspectRatioOption;
-  aspectRatioOptions: Array<{ value: AspectRatioOption; label: string }>;
+  aspectRatioOptions: ReadonlyArray<{ value: AspectRatioOption; label: string }>;
   onChange: (aspectRatio: AspectRatioOption) => void;
 }) {
   return (
-    <div className={cn(settingsPanelShellClass, "text-left")}>
-      <label htmlFor="resolution" className={cn("block", controlLabelClass)}>
-        Aspect Ratio
-      </label>
-      <Select value={selectedAspectRatio} onValueChange={(value) => onChange(value as AspectRatioOption)}>
-        <SelectTrigger id="resolution" className="mt-3">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {aspectRatioOptions.map(({ value, label }) => (
-            <SelectItem key={value} value={value}>
-              {label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <SettingsSelect
+      id="resolution"
+      label="Aspect Ratio"
+      value={selectedAspectRatio}
+      options={aspectRatioOptions}
+      onChange={onChange}
+    />
   );
 }
 
@@ -39,26 +59,16 @@ export function DisplayModeSelect({
   onChange,
 }: {
   displayMode: DisplayMode;
-  displayModeOptions: Array<{ value: DisplayMode; label: string }>;
+  displayModeOptions: ReadonlyArray<{ value: DisplayMode; label: string }>;
   onChange: (mode: DisplayMode) => void;
 }) {
   return (
-    <div className={cn(settingsPanelShellClass, "text-left")}>
-      <label htmlFor="display-mode" className={cn("block", controlLabelClass)}>
-        Display Mode
-      </label>
-      <Select value={displayMode} onValueChange={(value) => onChange(value as DisplayMode)}>
-        <SelectTrigger id="display-mode" className="mt-3">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {displayModeOptions.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <SettingsSelect
+      id="display-mode"
+      label="Display Mode"
+      value={displayMode}
+      options={displayModeOptions}
+      onChange={onChange}
+    />
   );
 }

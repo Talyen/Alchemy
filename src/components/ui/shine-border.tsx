@@ -19,6 +19,7 @@ export function ShineBorder({
   const colors: readonly string[] = Array.isArray(shineColor) ? shineColor : [shineColor];
   const safeColors = colors.length > 0 ? colors : ["#000000"];
   const firstColor = safeColors[0] ?? "#000000";
+  const gradientStops = safeColors.length === 1 ? `${safeColors[0]}, ${safeColors[0]}` : safeColors.join(",");
 
   return (
     <div
@@ -27,7 +28,7 @@ export function ShineBorder({
           "--border-width": `${borderWidth}px`,
           "--duration": `${duration}s`,
           backgroundColor: firstColor,
-          backgroundImage: `radial-gradient(${safeColors.join(",")})`,
+          backgroundImage: `radial-gradient(${gradientStops})`,
           backgroundSize: "300% 300%",
           mask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
           WebkitMask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,

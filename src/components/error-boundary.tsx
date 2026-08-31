@@ -2,22 +2,28 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { logError } from "@/lib/error-logger";
 
+interface FallbackProps {
+  error: Error | undefined;
+  reset: () => void;
+}
+
 interface Props {
   children: ReactNode;
-
   label?: string;
-
   onError?: (error: Error, info: ErrorInfo) => void;
+  fallback?: ReactNode | ((props: FallbackProps) => ReactNode);
 }
+
 interface State {
   hasError: boolean;
+  error?: Error | undefined;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   override state: State = { hasError: false };
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo) {
@@ -33,8 +39,18 @@ export class ErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, info);
   }
 
+  private handleReset = () => {
+    this.setState({ hasError: false, error: undefined });
+  };
+
   override render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return typeof this.props.fallback === "function"
+          ? this.props.fallback({ error: this.state.error, reset: this.handleReset })
+          : this.props.fallback;
+      }
+
       return (
         <div className="flex h-screen items-center justify-center bg-background text-foreground">
           <div className="text-center">
@@ -46,7 +62,7 @@ export class ErrorBoundary extends Component<Props, State> {
               type="button"
               size="lg"
               onClick={() => {
-                this.setState({ hasError: false });
+                this.handleReset();
                 window.location.reload();
               }}
             >

@@ -1,5 +1,10 @@
 import { useShallow } from "zustand/react/shallow";
-import { useSettingsStore, type SettingsStore } from "./settings-store";
+import {
+  selectSettingsSaveFields,
+  useSettingsStore,
+  type SettingsSaveFields,
+  type SettingsStore,
+} from "./settings-store";
 import {
   bondCompanion,
   completeResearch,
@@ -80,34 +85,8 @@ export function useHomesteadActions(): HomesteadActions {
   return homesteadActions;
 }
 
-export interface AppSettings {
-  selectedAspectRatio: SettingsStore["selectedAspectRatio"];
-  displayMode: SettingsStore["displayMode"];
-  brightness: SettingsStore["brightness"];
-  musicVolume: SettingsStore["musicVolume"];
-  sfxVolume: SettingsStore["sfxVolume"];
-  masterVolume: SettingsStore["masterVolume"];
-  muteInBackground: SettingsStore["muteInBackground"];
-  autoEndTurn: SettingsStore["autoEndTurn"];
-  rememberAutoplayPreference: SettingsStore["rememberAutoplayPreference"];
-  autoplayEnabled: SettingsStore["autoplayEnabled"];
-}
-
-function selectAppSettings(state: SettingsStore): AppSettings {
-  return {
-    selectedAspectRatio: state.selectedAspectRatio,
-    displayMode: state.displayMode,
-    brightness: state.brightness,
-    musicVolume: state.musicVolume,
-    sfxVolume: state.sfxVolume,
-    masterVolume: state.masterVolume,
-    muteInBackground: state.muteInBackground,
-    autoEndTurn: state.autoEndTurn,
-    rememberAutoplayPreference: state.rememberAutoplayPreference,
-    autoplayEnabled: state.autoplayEnabled,
-  };
-}
+export type AppSettings = SettingsSaveFields;
 
 export function useAppSettings(): AppSettings {
-  return useSettingsStore(useShallow(selectAppSettings));
+  return useSettingsStore(useShallow(selectSettingsSaveFields));
 }

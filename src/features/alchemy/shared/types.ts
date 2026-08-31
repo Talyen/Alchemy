@@ -2,6 +2,7 @@ import type { CSSProperties, RefObject } from "react";
 
 import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle";
+export type { AspectRatioOption, DisplayMode } from "@/lib/settings-values";
 import type { ArmedFlagChipId, PendingPulseChipId } from "./augment-definitions";
 
 type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
@@ -60,10 +61,6 @@ export interface CombatImpactCue {
   colors: readonly string[];
   healthLost: boolean;
 }
-
-export type AspectRatioOption = "auto" | "16:9" | "16:10" | "21:9";
-
-export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
 
 export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets" | "uniques";
 

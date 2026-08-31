@@ -47,6 +47,21 @@ export const ROUTES = Object.freeze([
     fixture: "src/features/alchemy/shared/storage/io.ts",
   },
   {
+    id: "settings",
+    patterns: [
+      "src/lib/settings-values.ts",
+      "src/features/alchemy/shared/stores/settings-store.ts",
+      "src/features/alchemy/shared/config/options.ts",
+      "src/features/alchemy/shared/ui/settings-controls.tsx",
+      "src/features/alchemy/meta/screens/options-*.tsx",
+      "src/app/screen-routes/options-screen-route.tsx",
+      "src/app/use-app-effects.ts",
+    ],
+    commands: ["unit-settings", "e2e-prepush"],
+    docs: [doc("docs/ARCHITECTURE.md", "Settings and meta profile", "settings ownership")],
+    fixture: "src/features/alchemy/shared/stores/settings-store.ts",
+  },
+  {
     id: "battle",
     patterns: [
       "src/lib/battle/**",
@@ -96,6 +111,9 @@ export const ROUTES = Object.freeze([
       "scripts/verify-desktop-package.mjs",
       "scripts/lib/desktop-artifact.mjs",
       "tests/desktop-*.test.ts",
+      "src/lib/desktop-api.ts",
+      "src/lib/platform.ts",
+      "src/lib/settings-values.ts",
     ],
     commands: ["unit-desktop"],
     docs: [doc("docs/RELEASE.md", "Commands", "desktop packaging and verification")],
@@ -122,7 +140,14 @@ export const ROUTES = Object.freeze([
   },
   {
     id: "audio",
-    patterns: ["src/lib/audio*.ts", "src/lib/sound-registry.ts", "public/sounds/**"],
+    patterns: [
+      "src/lib/audio*.ts",
+      "src/lib/sound-registry.ts",
+      "src/lib/settings-values.ts",
+      "src/features/alchemy/shared/stores/settings-store.ts",
+      "src/app/use-app-effects.ts",
+      "public/sounds/**",
+    ],
     commands: ["unit-audio"],
     docs: [],
     fixture: "src/lib/audio-sfx.ts",

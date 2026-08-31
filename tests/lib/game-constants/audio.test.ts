@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULT_MUSIC_VOLUME,
-  DEFAULT_SFX_VOLUME,
   FADE_IN_DELAY,
   FADE_IN_DURATION,
   FADE_OUT_DURATION,
@@ -17,8 +15,6 @@ import {
 describe("audio constants", () => {
   it("keeps volume and fade domains valid", () => {
     for (const value of [
-      DEFAULT_MUSIC_VOLUME,
-      DEFAULT_SFX_VOLUME,
       MUSIC_MASTER_GAIN,
       SFX_UI_VOLUME,
       SFX_VICTORY_VOLUME,

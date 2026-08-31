@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   afterCampaignCharacterResolved,
-  getPreviousDestination,
   tryStartNoviceCampaignBattle,
 } from "@/features/alchemy/shared/run-flow/campaign-start";
+import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/resolve-available-destinations";
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import { getStartingDeck } from "@/lib/game-data";
 
