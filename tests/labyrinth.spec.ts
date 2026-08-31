@@ -21,7 +21,7 @@ test.describe("Labyrinth Mode", critical, () => {
     await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeVisible();
 
-    const restNodes = page.getByRole("button", { name: /Rest chamber/ });
+    const restNodes = page.getByRole("button", { name: /Campfire chamber/ });
     await restNodes.first().click();
     await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Fight", exact: true })).toHaveCount(0);
