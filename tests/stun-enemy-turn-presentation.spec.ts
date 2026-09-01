@@ -17,7 +17,7 @@ test.describe("Stunned enemy turn presentation", slow, () => {
     );
     const battle = new BattlePage(page);
 
-    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[aria-label^="Play "]:not(.opacity-0)')).toHaveCount(4, { timeout: 20_000 });
     await expect(yourTurn).toHaveAttribute("data-active", "true");
     await battle.playCardNamed("Stun");
     await expect(battle.hand).toHaveCount(3, { timeout: 15_000 });

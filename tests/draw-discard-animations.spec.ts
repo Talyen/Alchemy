@@ -23,7 +23,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       testWindow.openingHandCounts = [];
       const recordHand = () => {
         if (!document.querySelector('[data-testid="battle-scene"]')) return;
-        const count = document.querySelectorAll('[aria-label^="Play "]').length;
+        const count = document.querySelectorAll('[aria-label^="Play "]:not(.opacity-0)').length;
         if (testWindow.openingHandCounts?.at(-1) !== count) testWindow.openingHandCounts?.push(count);
         if (document.querySelector("[data-flying-card]")) testWindow.openingFlyingCardSeen = true;
       };
@@ -102,6 +102,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
   test("playable hand cards stay colored while discard and draw transfers block input", async ({ page }) => {
     test.setTimeout(60_000);
     const errors = failOnRuntimeErrors(page);
+    const flyingCards = page.locator("[data-flying-card]");
     const ghostOverlays = page.locator(".card-ghost-overlay");
     const visibleHandCards = page.locator('[aria-label^="Play "]:not(.opacity-0)');
 
@@ -144,7 +145,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await expect
       .poll(
         async () => {
-          if ((await ghostOverlays.count()) === 0) return false;
+          if ((await flyingCards.count()) === 0) return false;
           const classes = await visibleHandCards.evaluateAll((cards) => cards.map((card) => card.className));
           return classes.length > 0 && classes.every((className) => !className.includes("grayscale"));
         },

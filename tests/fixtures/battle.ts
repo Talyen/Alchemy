@@ -4,7 +4,7 @@ import { dealDamageToEnemy } from "@/lib/battle/damage";
 import { BASE_PLAYER_MANA } from "@/lib/game-constants";
 import { makeTestCard } from "./cards";
 import { seededRng } from "./rng";
-import { createDefaultBattleState } from "./battle-state";
+import { defaultBattleState } from "@/lib/battle";
 
 export { makeTestCard, makeTestCardWithId } from "./cards";
 export { seededRng } from "./rng";
@@ -45,7 +45,7 @@ export function dealDamage(state: BattleState, card: BattleCard, texts: CombatTe
 }
 
 export function makeTestBattleState(overrides: Partial<BattleState> = {}): BattleState {
-  const base = createDefaultBattleState();
+  const base = defaultBattleState();
   const merged = {
     ...base,
     mana: BASE_PLAYER_MANA,
