@@ -19,6 +19,10 @@ const LABYRINTH_TYPE_BASE_KEYWORDS: Record<LabyrinthNode["type"], KeywordId[]> =
   "equipment-shop": ["forge"],
 };
 
+function isKeywordId(value: string): value is KeywordId {
+  return value in keywordDefinitions;
+}
+
 export const LABYRINTH_COMBAT_TRAIT_KEYWORDS: Partial<Record<EncounterCombatTraitId, KeywordId[]>> = {
   tempered: ["forge"],
   plated: ["armor"],
@@ -63,8 +67,8 @@ function collectEnemyKeywordIds(enemyId: string | undefined): KeywordId[] {
     if (effect.kind === "damage" && effect.damageType in keywordDefinitions) {
       ids.add(effect.damageType);
     }
-    if (effect.kind === "player-status" && effect.status in keywordDefinitions) {
-      ids.add(effect.status as unknown as KeywordId);
+    if (effect.kind === "player-status" && isKeywordId(effect.status)) {
+      ids.add(effect.status);
     }
   }
   return [...ids];
