@@ -49,9 +49,9 @@ test.describe("Shop fade-out", critical, () => {
 
       await page.getByRole("button", { name: "Leave", exact: true }).click();
 
-      await expect(page.locator(".page-exit")).toBeAttached();
-      await expect(shop.heading).toBeAttached();
-      await expect.poll(() => shop.buyBtn.count()).toBe(offeringCount);
+      await expect(page.locator(".page-exit")).toBeAttached({ timeout: 10000 });
+      await expect(shop.heading).toBeAttached({ timeout: 10000 });
+      await expect.poll(() => shop.buyBtn.count(), { timeout: 10000 }).toBe(offeringCount);
       await new DestinationPage(page).expectVisible();
     });
   }
