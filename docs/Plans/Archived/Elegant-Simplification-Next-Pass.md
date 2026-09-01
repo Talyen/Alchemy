@@ -47,7 +47,7 @@ Existing active plan `codebase-simplification-hardening.md` is preserved. This p
 
 - `src/app/screen-routes/run-loop-routes.tsx` four shop screen routes (`MerchantShopScreenRoute`, `AlchemistShopScreenRoute`, `TrinketShopScreenRoute`, `EquipmentShopScreenRoute`) are structurally identical (useScreenData hook + `gold/runDeck/shopState` + `get*Price` + `handleContinue`). 90+ lines of copy-paste.
 - `src/features/alchemy/run-loop/shop/shop-pricing.ts` six `compute*Price` wrappers over one `Math.max(0, base - discounts)` with different base lookups.
-- `src/features/alchemy/run-loop/shop/create-shop-actions.ts` trivial `Record<ShopKind, () => void>` dispatch + `src/features/alchemy/shell/use-shop-controller.ts` 14-line memo wrapper — indirection for lint boundaries only.
+- `src/features/alchemy/run-loop/shop/create-shop-actions.ts` trivial `Record<ShopKind, () => void>` dispatch plus a short shell memo wrapper — indirection for lint boundaries only.
 - `src/features/alchemy/shared/ui/purchasable-shop-helpers.ts` 9-line fragment + `ShopPriceChip` recomputes `gold >= price` separately from `getShopPurchaseState` (`purchasable-shop-tile.tsx:8-9`).
 
 **Right shape:**

@@ -3,12 +3,17 @@ import {
   createBossRewardState,
   createCombatRewardState,
   createWildwoodRewardState,
+  computeWildwoodTrinketChance,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { gearDefinitions, uniqueItemList } from "@/lib/gear";
 
 describe("reward flow selection", () => {
+  it("reports the effective Wildwood permanent Trinket chance", () => {
+    expect(computeWildwoodTrinketChance()).toBeCloseTo(1 / 9);
+  });
+
   describe("createWildwoodRewardState", () => {
     it("rolls card rewards at the low third", () => {
       const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.1);

@@ -166,6 +166,27 @@ describe("fight pacing in combat pipelines", () => {
     expect(modifiedDamage).toBe(paceCombatMagnitude(state, 10, "player"));
   });
 
+  it("keeps equal-to-stat damage independent of per-type modifiers", () => {
+    const base = pacedState({
+      playerHealth: 8,
+      playerMaxHealth: 30,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      playerStatuses: { ...pacedState().playerStatuses, block: 10 },
+      talentEffects: { ...pacedState().talentEffects, flatPhysicalDamage: 99 },
+      gearEffects: { ...pacedState().gearEffects, flatPhysicalDamage: 99 },
+      enemyMitigation: { armor: 0, forge: 0, block: 0 },
+    });
+    const equalToBlockEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
+      kind: "damage",
+      damageType: "physical",
+      amount: 0,
+      equalToBlock: true,
+    };
+    const { modifiedDamage } = computeCardDamageToEnemy(base, equalToBlockEffect);
+    expect(modifiedDamage).toBe(paceCombatMagnitude(base, 10, "player"));
+  });
+
   it("does not double-pace stun stacks copied from actual damage", () => {
     const state = pacedState({
       playerHealth: 8,

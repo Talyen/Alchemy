@@ -163,6 +163,10 @@ function rollWildwoodRewardType(rng: () => number): "card" | "boon" | "gear" {
   return "gear";
 }
 
+export function computeWildwoodTrinketChance(): number {
+  return GEAR_REWARD_PERMANENT_TRINKET_CHANCE.normal / 3;
+}
+
 export function createWildwoodRewardState(
   runDeck: BattleCard[],
   rng: () => number,

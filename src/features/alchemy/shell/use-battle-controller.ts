@@ -47,6 +47,7 @@ export function useBattleController({
   const [isAutoplayEnabled, setIsAutoplayEnabledState] = useState(() =>
     preferredAutoplayEnabled(useSettingsStore.getState()),
   );
+  const [playbackBindVersion, setPlaybackBindVersion] = useState(0);
 
   const setAutoplayEnabled = useCallback((enabled: boolean) => {
     setIsAutoplayEnabledState(enabled);
@@ -115,8 +116,9 @@ export function useBattleController({
     let battle: ReturnType<typeof readBattle>;
     try {
       battle = readBattle();
-    } catch {
-      return;
+    } catch (error) {
+      if (import.meta.env.DEV) console.warn("[battle] unable to read opening-draw state", error);
+      return undefined;
     }
     if (
       battle.pendingTransitionResumeRequired ||
@@ -124,7 +126,7 @@ export function useBattleController({
       !ctx.battleSceneRef.current ||
       !ctx.drawPileRef.current
     ) {
-      return;
+      return undefined;
     }
     void actions.openingDraw.playOpeningDraw().catch((error: unknown) => {
       if (import.meta.env.DEV) console.warn("[openingDraw] best-effort presentation failed", error);
@@ -141,7 +143,14 @@ export function useBattleController({
       return;
     }
     playOpeningDrawWhenReady();
-  }, [hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired, playOpeningDrawWhenReady, screen]);
+  }, [
+    hasActiveBattle,
+    pendingBattleTransition,
+    pendingTransitionResumeRequired,
+    playbackBindVersion,
+    playOpeningDrawWhenReady,
+    screen,
+  ]);
 
   useEffect(() => {
     if (hasActiveBattle) return;
@@ -159,14 +168,11 @@ export function useBattleController({
     }
   }, [screen]);
 
-  const bindPlayback = useCallback(
-    (bind: BattlePlaybackBind | null) => {
-      scheduleAutoEndTurnRef.current = bind?.scheduleAutoEndTurn ?? null;
-      clearAutoEndTurnRef.current = bind?.clearAutoEndTurn ?? null;
-      if (bind) queueMicrotask(playOpeningDrawWhenReady);
-    },
-    [playOpeningDrawWhenReady],
-  );
+  const bindPlayback = useCallback((bind: BattlePlaybackBind | null) => {
+    scheduleAutoEndTurnRef.current = bind?.scheduleAutoEndTurn ?? null;
+    clearAutoEndTurnRef.current = bind?.clearAutoEndTurn ?? null;
+    if (bind) setPlaybackBindVersion((version) => version + 1);
+  }, []);
 
   const refs = useMemo(
     () => ({

@@ -99,10 +99,10 @@ export default defineConfig({
       // Enforced by the nightly coverage job (nightly.yml) — keep thresholds
       // at or below the measured baseline and ratchet them upward.
       thresholds: {
-        lines: 75,
-        functions: 65,
-        branches: 65,
-        statements: 75,
+        lines: 85,
+        functions: 85,
+        branches: 77,
+        statements: 83,
       },
     },
   },

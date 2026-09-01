@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREEN_VALUES, type Screen } from "@/lib/routing";
 import { renderAlchemyScreenRoute, SCREEN_ROUTES } from "@/app/screen-routes";
 import type { RenderAlchemyScreenProps } from "@/app/screen-routes/route-ctx";
+import { createMockRouteCommands } from "../helpers/run-controller";
 
 vi.mock("@/features/alchemy/meta/screens", () => ({
   ArmoryScreen: () => <div data-testid="armory-screen" />,
@@ -55,106 +56,7 @@ vi.mock("@/app/app-screen-chrome-context", () => ({
 function createMockProps(screen: Screen): RenderAlchemyScreenProps {
   return {
     screen,
-    routeCommands: {
-      meta: {
-        goToScreen: vi.fn(),
-        beginCampaign: vi.fn(),
-        beginLabyrinth: vi.fn(),
-        beginWildwood: vi.fn(),
-        unlockTalent: vi.fn(),
-        resetUnlockedTalents: vi.fn(),
-      },
-      runSetup: {
-        goToScreen: vi.fn(),
-        handleCharacterSelect: vi.fn(),
-        handleDifficultySelect: vi.fn(),
-        handleBackFromDifficultySelect: vi.fn(),
-        handleStarterDraftPick: vi.fn(),
-        handleStandardDraftComplete: vi.fn(),
-        handleWildwoodDraftPick: vi.fn(),
-        handleWildwoodDraftComplete: vi.fn(),
-      },
-      runLoop: {
-        labyrinth: {
-          handleNodeSelect: vi.fn(),
-          handleNodeDeselect: vi.fn(),
-          handleNodeEnter: vi.fn(),
-        },
-        rewards: {
-          selectChoice: vi.fn(),
-          finish: vi.fn(),
-        },
-        wildwood: {
-          removeCard: vi.fn(),
-          skipRemoval: vi.fn(),
-        },
-        destinations: {
-          choose: vi.fn(),
-          prepare: vi.fn(),
-          continueCampfire: vi.fn(),
-        },
-        shop: {
-          merchant: {
-            getCardBuyPrice: vi.fn(),
-            getRemoveCardPrice: vi.fn(),
-            getRefreshPrice: vi.fn(),
-            handleBuyCard: vi.fn(),
-            handleRemoveCard: vi.fn(),
-            handleRefresh: vi.fn(),
-            handleContinue: vi.fn(),
-          },
-          alchemist: {
-            getPotionBuyPrice: vi.fn(),
-            getMixPrice: vi.fn(),
-            getRefreshPrice: vi.fn(),
-            handleBuyCard: vi.fn(),
-            handleRefresh: vi.fn(),
-            handleMixPotions: vi.fn(),
-            handleContinue: vi.fn(),
-          },
-          trinket: {
-            getBuyPrice: vi.fn(),
-            getRefreshPrice: vi.fn(),
-            handleBuy: vi.fn(),
-            handleRefresh: vi.fn(),
-            handleContinue: vi.fn(),
-          },
-          equipment: {
-            getBuyPrice: vi.fn(),
-            getRefreshPrice: vi.fn(),
-            handleBuy: vi.fn(),
-            handleRefresh: vi.fn(),
-            handleContinue: vi.fn(),
-          },
-        },
-        mystery: {
-          handleChoice: vi.fn(),
-          handleChooseCard: vi.fn(),
-          handleRemoveCard: vi.fn(),
-          handleContinue: vi.fn(),
-        },
-        corruption: {
-          handleCorruptCard: vi.fn(),
-          handleExit: vi.fn(),
-        },
-      },
-      battle: {
-        screen: "battle",
-        refs: {} as never,
-        handleCardClick: vi.fn(),
-        handleWishChoice: vi.fn(),
-        skipCombatDevMode: vi.fn(),
-        handleEndTurn: vi.fn(),
-        isAutoplayEnabled: false,
-        setAutoplayEnabled: vi.fn(),
-        bindPlayback: vi.fn(),
-        handleAutoplayCard: vi.fn(),
-        isCardPlayInProgress: vi.fn(() => false),
-      },
-      runEnd: {
-        continueFromRunEnd: vi.fn(),
-      },
-    },
+    routeCommands: createMockRouteCommands(),
     onOpenBattleMenu: vi.fn(),
     onClearSaveData: vi.fn(),
     onUnlockAllDevMode: vi.fn(),

@@ -43,7 +43,10 @@ export function cruiserPathFromGroups(groups) {
   if (alias) return `^src/${alias.replace(/^@\//, "").replace(/\/\*\*$/, "")}/`;
   const deepGroup = groups.find((group) => group.startsWith("**/")) ?? groups.at(-1);
   if (!deepGroup) return "^src/features/alchemy/";
-  const deep = deepGroup.replace(/^\*\*\//, "").replace(/\/\*\*$/, "");
+  const deep = deepGroup
+    .replace(/^\*\*\//, "")
+    .replace(/\/\*\*$/, "")
+    .replace(/^src\/features\/alchemy\/?/, "");
   return `^src/features/alchemy/${deep}/`;
 }
 

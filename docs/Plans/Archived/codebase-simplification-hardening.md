@@ -1,6 +1,6 @@
 ---
-status: active
-updated: 2026-08-31
+status: complete
+updated: 2026-09-01
 ---
 
 # Codebase Simplification & Hardening
@@ -20,7 +20,7 @@ Incorporates the worthwhile tail from `Elegant-Simplification-Next-Pass.md` (arc
 - [x] Guard persistence Object.assign envelope overwrite with deny list; make codec-registry shim re-export persistence only.
 - [x] Keep flush-save live-read path via buildAlchemySaveDataFromStores.
 - [x] Add NaN/Infinity guards via clampHealth fallback.
-- [ ] Add SaveWriteQueue coalescing unit tests (deferred to follow-up).
+- [x] Add SaveWriteQueue coalescing unit tests (covered by overlapping/latest-snapshot and terminal-flush tests).
 
 ### Initiative 2 — Routing & run-flow consistency
 
@@ -43,7 +43,7 @@ Incorporates the worthwhile tail from `Elegant-Simplification-Next-Pass.md` (arc
 - [x] Add finite guard in clampHealth / applyPlayerCombatDamage.
 - [x] Smooth fight-pacing SPAN_EPSILON cliff 0.0001→0.001.
 - [x] Fix twinCasting deterministic findIndex to use pickRandom via battle RNG (seeded eligibleIndices pick).
-- [ ] Document equalTo bypass with regression test (existing comment in damage-calc).
+- [x] Document equalTo bypass with regression test (per-type modifiers remain bypassed).
 
 ### Initiative 5 — Scripts, CI, assets & build
 
@@ -59,8 +59,8 @@ Incorporates the worthwhile tail from `Elegant-Simplification-Next-Pass.md` (arc
 
 ### Initiative 7 — Test speed/coverage
 
-- [ ] Expand stryker config to damage-riders,status-ticks,card-play (nightly only); add unit tests for queue/pacing/twinCasting (deferred).
-- [ ] Ratchet vitest thresholds after gap closure; keep screens E2E-only.
+- [x] Expand stryker config to damage-riders,status-ticks,card-play (already covered); add unit tests for queue/pacing/twinCasting (already covered).
+- [x] Ratchet vitest thresholds after gap closure; keep screens E2E-only.
 
 ### Initiative 8 — Shop system consolidation (merged from Elegant I2) — worthwhile
 
@@ -69,14 +69,14 @@ Incorporates the worthwhile tail from `Elegant-Simplification-Next-Pass.md` (arc
 **Right shape:**
 
 - One `createShopScreenRoute` factory (or two: card-shop vs gear-shop if prop shapes diverge) — price-selector parity by construction.
-- Inline `useShopController` into `useAlchemyRunController` and remove `create-shop-actions.ts` dispatch file.
+- Inline the `useShopController` wrapper into `useAlchemyRunController`; retain `create-shop-actions.ts` as the pure command-composition owner.
 - Make `ShopPriceChip` consume `getShopPurchaseState` result; merge `purchasable-shop-helpers.ts` fragment into tile.
 
 **Verification:** `npm run test:e2e`, `npm test -- tests/app/screen-routes.test.tsx`, `npm run lint:boundaries`.
 
-- [ ] Factory for shop screen routes
-- [ ] Inline shop controller and remove indirection file
-- [ ] Unify purchasable helpers / ShopPriceChip
+- [x] Factory for shop screen routes
+- [x] Inline shop controller and remove indirection file
+- [x] Unify purchasable helpers / ShopPriceChip
 
 ### Initiative 9 — Controller & routing correctness (merged from Elegant I5) — worthwhile
 
@@ -84,20 +84,20 @@ Incorporates the worthwhile tail from `Elegant-Simplification-Next-Pass.md` (arc
 
 **Right shape:**
 
-- Split `useAlchemyRunController` into `useLabyrinthEntryGuard`, `useRouteCommands` (stable deps on primitives), `useBattleWiring`.
+- Extract `useLabyrinthEntryGuard` and `useBattleWiring` from `useAlchemyRunController`; stabilize the remaining route-command memo on primitive command dependencies.
 - Fix `handleBeginLabyrinth` De Morgan to `if ((activeRunData || hasActiveBattle) && type !== "labyrinth") reset; else if (type === "labyrinth" && !activeRunData && !hasActiveBattle) return;`.
 - Fix `useRunFlowEngine` to forward full `StartBattleOptions` via `...opts`.
 - Replace `queueMicrotask` with `useEffect` + abort signal; surface `readBattle` throw as `console.warn` in dev.
 - `useHeldMysteryVisit` struct; key auto-continue ref by `mysteryEvent.id`.
-- Table-drive `runLoopScreenRoutes` from `SCREEN_ROUTE_TABLE`.
+- Factor repeated `runLoopScreenRoutes` adapters through `createRunLoopRoute` while retaining the explicit screen-keyed route table.
 - Document `createWildwoodRewardState` trinket chance as 11% effective; add unit test for `computeWildwoodTrinketChance` (no semantics change).
 
 **Verification:** `npm test -- tests/features/alchemy/run-loop/` + `tests/app/screen-routes.test.tsx`, `npm run test:e2e` routing smoke.
 
-- [ ] Split god hook; fix handleBeginLabyrinth and memo deps
-- [ ] Forward full StartBattleOptions; remove microtask race
-- [ ] useHeldMysteryVisit + keyed auto-continue
-- [ ] Table-driven runLoopScreenRoutes; document Wildwood trinket chance (doc-only, no rebalancing)
+- [x] Extract Battle wiring and Labyrinth entry guard; fix handleBeginLabyrinth and route-command memo deps
+- [x] Forward full StartBattleOptions; remove microtask race
+- [x] useHeldMysteryVisit + keyed auto-continue
+- [x] Shared run-loop route adapter; document Wildwood trinket chance (doc-only, no rebalancing)
 
 ### Initiative 10 — Test fixtures & coverage rationalization (merged from Elegant I7) — worthwhile
 
@@ -113,16 +113,16 @@ Incorporates the worthwhile tail from `Elegant-Simplification-Next-Pass.md` (arc
 
 **Verification:** `npm test`, `npm run test:coverage`, no E2E change.
 
-- [ ] Shared mock builder for routeCommands
-- [ ] Merge battle fixtures; consolidate store helpers
-- [ ] Add unit tests for victory gold / reward state / shop purchase parity
-- [ ] Ratchet coverage thresholds after measurement
+- [x] Shared mock builder for routeCommands
+- [x] Merge battle fixtures; consolidate store helpers
+- [x] Add unit tests for victory gold / reward state / shop purchase parity
+- [x] Ratchet coverage thresholds after measurement
 
 ### Initiative 11 — Docs & import-boundary hygiene — small win
 
-- [ ] Remove stale `UI_NO_SESSION_STORES` boundary patterns (`**/stores/run-domain-store`, `**/stores/battle-store`, `**/stores/run-session-actions` — none exist after aggregate refactor; dead patterns never fire) after `npm run lint:boundaries -- --dry-run` confirms zero hits.
-- [ ] Harden `toTargetPath` in `dependency-cruiser.config.mjs` (already `groups.find(g => g.startsWith("**/")) ?? groups.at(-1)` — verify or add unit test).
-- [ ] Keep `ARCHITECTURE.md` as canonical region table; make `REFERENCE.md` glossary link to it (no duplicate table).
+- [x] Remove stale `UI_NO_SESSION_STORES` boundary patterns (`**/stores/run-domain-store`, `**/stores/battle-store`, `**/stores/run-session-actions` — none exist after aggregate refactor; dead patterns never fire) after boundary validation confirms zero hits.
+- [x] Harden `toTargetPath` in `dependency-cruiser.config.mjs` (alias/deep/fallback behavior covered by unit tests).
+- [x] Keep `ARCHITECTURE.md` as canonical region table; make `REFERENCE.md` glossary link to it (no duplicate table).
 
 ## Notes
 

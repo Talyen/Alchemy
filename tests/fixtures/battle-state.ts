@@ -1,6 +1,47 @@
 import type { BestiaryEntry, TalentEffectManifest, TrinketManifest } from "@/lib/game-data";
-import type { BattleState, CombatFlags, EnemyStatusValues, PlayerStatusValues } from "@/lib/battle/types";
+import type {
+  BattleState,
+  CombatFlags,
+  CcState,
+  EnemyMitigation,
+  EnemyStatusValues,
+  PlayerStatusValues,
+} from "@/lib/battle/types";
 import type { GearEffectManifest } from "@/lib/gear";
+import { defaultBattleState, defaultTalentEffects, EMPTY_ENEMY_MITIGATION } from "@/lib/battle";
+import { defaultTrinketEffects } from "@/lib/trinkets";
+
+export { defaultTalentEffects };
+
+const template = defaultBattleState();
+
+export function createDefaultBattleState(overrides: Partial<BattleState> = {}): BattleState {
+  return { ...defaultBattleState(), ...overrides };
+}
+
+export function defaultPlayerStatusValues(overrides?: Partial<PlayerStatusValues>): PlayerStatusValues {
+  return { ...template.playerStatuses, ...overrides };
+}
+
+export function defaultEnemyStatusValues(overrides?: Partial<EnemyStatusValues>): EnemyStatusValues {
+  return { ...template.enemyStatuses, ...overrides };
+}
+
+export function defaultEnemyMitigation(overrides?: Partial<EnemyMitigation>): EnemyMitigation {
+  return { ...EMPTY_ENEMY_MITIGATION, ...overrides };
+}
+
+export function defaultCcState(overrides?: Partial<CcState>): CcState {
+  return { ...template.playerCC, ...overrides };
+}
+
+export function defaultCombatFlags(overrides?: Partial<CombatFlags>): CombatFlags {
+  return { ...template.flags, ...overrides };
+}
+
+export function defaultTrinketManifest(overrides?: Partial<import("@/lib/game-data").TrinketManifest>) {
+  return { ...defaultTrinketEffects, ...overrides };
+}
 
 export type InjectedBattleState = Omit<
   Partial<BattleState>,

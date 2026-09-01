@@ -24,7 +24,8 @@ export function PurchasableCardItem({
   onBuy,
   widthClass = getTileWidthClass("collection"),
 }: BasePurchasableProps & { card: BattleCard; widthClass?: string }) {
-  const { canPurchase } = getShopPurchaseState(price, gold, purchased);
+  const purchaseState = getShopPurchaseState(price, gold, purchased);
+  const { canPurchase } = purchaseState;
   const media = (
     <BattleCardButton
       card={card}
@@ -35,7 +36,7 @@ export function PurchasableCardItem({
       shimmerToken={undefined}
       className={cn(widthClass, canPurchase && cardInteractiveGlowClass)}
     >
-      <ShopPriceChip price={price} gold={gold} purchased={purchased} />
+      <ShopPriceChip price={price} purchased={purchased} purchaseState={purchaseState} />
     </BattleCardButton>
   );
   return <PurchasableShopTile media={media} purchased={purchased} />;
@@ -48,7 +49,8 @@ export function PurchasableGearItem({
   purchased,
   onBuy,
 }: BasePurchasableProps & { instance: GearInstance }) {
-  const { canPurchase } = getShopPurchaseState(price, gold, purchased);
+  const purchaseState = getShopPurchaseState(price, gold, purchased);
+  const { canPurchase } = purchaseState;
   const media = (
     <GearTile
       instance={instance}
@@ -60,7 +62,7 @@ export function PurchasableGearItem({
       onClick={canPurchase ? onBuy : undefined}
       ariaLabel={getShopItemAriaLabel(getGearInstanceTitle(instance), purchased)}
     >
-      <ShopPriceChip price={price} gold={gold} purchased={purchased} />
+      <ShopPriceChip price={price} purchased={purchased} purchaseState={purchaseState} />
     </GearTile>
   );
   return <PurchasableShopTile media={media} purchased={purchased} />;
@@ -73,7 +75,8 @@ export function PurchasableTrinketItem({
   purchased,
   onBuy,
 }: BasePurchasableProps & { trinket: TrinketEntry }) {
-  const { canPurchase } = getShopPurchaseState(price, gold, purchased);
+  const purchaseState = getShopPurchaseState(price, gold, purchased);
+  const { canPurchase } = purchaseState;
   const media = (
     <TrinketTile
       trinket={trinket}
@@ -85,7 +88,7 @@ export function PurchasableTrinketItem({
       onClick={canPurchase ? onBuy : undefined}
       ariaLabel={getShopItemAriaLabel(trinket.title, purchased)}
     >
-      <ShopPriceChip price={price} gold={gold} purchased={purchased} />
+      <ShopPriceChip price={price} purchased={purchased} purchaseState={purchaseState} />
     </TrinketTile>
   );
   return <PurchasableShopTile media={media} purchased={purchased} />;

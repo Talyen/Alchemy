@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
+import { useCallback, useLayoutEffect, useMemo } from "react";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import {
   unlockTalent,
@@ -8,11 +8,12 @@ import {
   unlockAllTalents,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { useBattleController } from "./use-battle-controller";
-import { useShopController } from "./use-shop-controller";
+import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { useRunFlowEngine } from "./use-run-flow-engine";
 import { useLabyrinthController } from "./use-labyrinth-controller";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
+import { useBattleWiring } from "./use-battle-wiring";
+import { useLabyrinthEntryGuard } from "./use-labyrinth-entry-guard";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
 import {
@@ -51,29 +52,12 @@ export function useAlchemyRunController() {
     dispatchRunSessionCommand((draft) => setActiveLabyrinthRewardModifiers(draft, modifiers));
   }, []);
 
-  const battleCompletionRef = useRef<{ onBattleVictory: () => void; onBattleDefeat: () => void }>({
-    onBattleVictory: () => {},
-    onBattleDefeat: () => {},
-  });
-  const battleCompletionOps = useMemo(
-    () => ({
-      onBattleVictory: () => battleCompletionRef.current.onBattleVictory(),
-      onBattleDefeat: () => battleCompletionRef.current.onBattleDefeat(),
-    }),
-    [],
-  );
-
-  const battle = useBattleController({
+  const { battle, setBattleCompletionHandlers } = useBattleWiring({
     screen,
     setHoveredCardId,
-    onBattleVictory: battleCompletionOps.onBattleVictory,
-    onBattleDefeat: battleCompletionOps.onBattleDefeat,
   });
 
-  const shop = useShopController({
-    talentEffects,
-    homesteadEffects,
-  });
+  const shop = useMemo(() => createShopActions({ talentEffects, homesteadEffects }), [talentEffects, homesteadEffects]);
 
   const labyrinth = useLabyrinthController();
 
@@ -97,9 +81,11 @@ export function useAlchemyRunController() {
   });
 
   useLayoutEffect(() => {
-    battleCompletionRef.current.onBattleVictory = nav.handleBattleVictory;
-    battleCompletionRef.current.onBattleDefeat = nav.handleBattleDefeat;
-  });
+    setBattleCompletionHandlers({
+      onBattleVictory: nav.handleBattleVictory,
+      onBattleDefeat: nav.handleBattleDefeat,
+    });
+  }, [nav.handleBattleDefeat, nav.handleBattleVictory, setBattleCompletionHandlers]);
 
   useSteamRichPresence(screen, nav.runPhase, characterId);
 
@@ -109,11 +95,13 @@ export function useAlchemyRunController() {
   const handleBattleEndRun = battle.handleEndRun;
   const handleAbandonRun = nav.handleAbandonRun;
 
-  const handleBeginLabyrinth = useCallback(() => {
-    const hasLabyrinthContext = contentSystemType === "labyrinth" && Boolean(activeRunData || hasActiveBattle);
-    if (!hasLabyrinthContext) labyrinth.resetMap();
-    beginLabyrinth();
-  }, [activeRunData, beginLabyrinth, contentSystemType, hasActiveBattle, labyrinth]);
+  const handleBeginLabyrinth = useLabyrinthEntryGuard({
+    contentSystemType,
+    activeRunData: Boolean(activeRunData),
+    hasActiveBattle,
+    resetMap: labyrinth.resetMap,
+    beginLabyrinth,
+  });
 
   const nodeRouting = useMemo(
     () =>

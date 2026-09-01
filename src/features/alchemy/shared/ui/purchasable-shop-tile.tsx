@@ -3,10 +3,18 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { CurrencyAmount } from "./display-elements";
 import { DisabledTooltip } from "./service-button";
-import { getShopPurchaseState } from "./purchasable-shop-helpers";
+import type { ShopPurchaseState } from "./purchasable-shop-helpers";
 
-export function ShopPriceChip({ price, gold, purchased }: { price: number; gold: number; purchased: boolean }) {
-  const { canAfford } = getShopPurchaseState(price, gold, purchased);
+export function ShopPriceChip({
+  price,
+  purchased,
+  purchaseState,
+}: {
+  price: number;
+  purchased: boolean;
+  purchaseState: ShopPurchaseState;
+}) {
+  const { canAfford } = purchaseState;
 
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-max -translate-x-1/2 select-none">

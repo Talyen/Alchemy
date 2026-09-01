@@ -29,7 +29,8 @@ export function MysteryScreenRoute({
   const r = useMysteryScreenData();
   const { handleContinue } = commands;
 
-  const autoContinueAttemptedRef = useRef<string | null>(null);
+  const lastMysteryEventIdRef = useRef<string | null>(null);
+  const autoContinueAttemptedRef = useRef<string | null | undefined>(undefined);
   const {
     heldEvent,
     heldCardChoices,
@@ -42,12 +43,16 @@ export function MysteryScreenRoute({
 
   useEffect(() => {
     if (r.mysteryEvent) {
-      autoContinueAttemptedRef.current = null;
+      if (lastMysteryEventIdRef.current !== r.mysteryEvent.id) {
+        lastMysteryEventIdRef.current = r.mysteryEvent.id;
+        autoContinueAttemptedRef.current = null;
+      }
       return;
     }
     if (heldEvent) return;
-    if (autoContinueAttemptedRef.current) return;
-    autoContinueAttemptedRef.current = "attempted";
+    const visitId = lastMysteryEventIdRef.current;
+    if (autoContinueAttemptedRef.current !== undefined && autoContinueAttemptedRef.current === visitId) return;
+    autoContinueAttemptedRef.current = visitId;
     handleContinue();
   }, [r.mysteryEvent, heldEvent, handleContinue]);
 

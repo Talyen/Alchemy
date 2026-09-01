@@ -13,7 +13,7 @@ export function createBattleOpeningDraw(
   async function playOpeningDraw() {
     const current = readBattle();
     const pending = current.pendingBattleTransition;
-    if (pending?.kind !== "opening-draw") return;
+    if (pending?.kind !== "opening-draw") return false;
     const sessionNum = ctx.battleSessionRef.current;
 
     try {
@@ -25,9 +25,11 @@ export function createBattleOpeningDraw(
         transferDeps.getDrawSequenceDeps(),
       );
       if (completed) ctx.scheduleAutoEndTurnRef.current?.(pending.resultState);
+      return completed;
     } catch (err) {
       ctx.getPresentation().resetHandTransferUi();
       logBattleError("draw opening hand", err);
+      return false;
     }
   }
 

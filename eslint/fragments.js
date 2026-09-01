@@ -241,9 +241,6 @@ export const RUN_LOOP_NO_RUN_SETUP = [
 export const UI_NO_SESSION_STORES = [
   {
     group: [
-      "**/stores/run-domain-store",
-      "**/stores/battle-store",
-      "**/stores/run-session-actions",
       "**/stores/run-session-read",
       "**/stores/run-session-*",
       "**/stores/run-reads",

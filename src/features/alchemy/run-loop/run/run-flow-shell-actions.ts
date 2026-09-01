@@ -9,7 +9,13 @@ export interface RunFlowShellActions {
   transition: (screen: Screen, options?: ScreenTransitionOptions) => void;
   labyrinthClearNode: () => void;
   initializeShop: (kind: ShopKind) => void;
-  startBattle: (opts?: { deck?: BattleCard[]; gold?: number; enemyType?: "normal" | "elite" }) => void;
+  startBattle: (opts?: {
+    deck?: BattleCard[];
+    gold?: number;
+    enemyType?: "normal" | "elite";
+    modifiers?: DifficultyModifier[];
+    enemyId?: string;
+  }) => void;
 
   startBoss: (opts?: { bossId?: string | null; modifiers?: DifficultyModifier[] }) => void;
 

@@ -124,4 +124,23 @@ describe("MysteryScreenRoute", () => {
 
     expect(continueSpy).not.toHaveBeenCalled();
   });
+
+  it("keys recovery auto-continue by mystery event id", () => {
+    const firstEvent = { ...sampleEvent, id: "first-event" };
+    const secondEvent = { ...sampleEvent, id: "second-event" };
+    const view = render(routeElement());
+    expect(continueSpy).toHaveBeenCalledOnce();
+    mysteryScreenData.current = { ...mysteryScreenData.current, mysteryEvent: firstEvent };
+    view.rerender(routeElement());
+    mysteryScreenData.current = { ...mysteryScreenData.current, mysteryEvent: null };
+    view.rerender(routeElement());
+    expect(continueSpy).toHaveBeenCalledOnce();
+
+    mysteryScreenData.current = { ...mysteryScreenData.current, mysteryEvent: secondEvent };
+    view.rerender(routeElement());
+    mysteryScreenData.current = { ...mysteryScreenData.current, mysteryEvent: null };
+    view.rerender(routeElement());
+
+    expect(continueSpy).toHaveBeenCalledOnce();
+  });
 });

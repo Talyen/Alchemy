@@ -12,7 +12,10 @@ const resultState = {
   ...defaultBattleState(),
   hand: Array.from({ length: 4 }, (_, uid) => makeTestCardWithId(`card-${uid}`, { uid })),
 };
-let domain = {
+let domain: {
+  battleState: ReturnType<typeof defaultBattleState>;
+  pendingBattleTransition: { kind: "opening-draw"; resultState: typeof resultState } | null;
+} = {
   battleState: defaultBattleState(),
   pendingBattleTransition: { kind: "opening-draw" as const, resultState },
 };
@@ -58,6 +61,40 @@ describe("createBattleOpeningDraw", () => {
     expect(drawDeps.animateDrawnHand).toHaveBeenCalledWith(resultState.hand, resultState.hand, 3);
     expect(drawDeps.setTransferInProgress).toHaveBeenCalledWith(true);
     expect(drawDeps.setTransferInProgress).toHaveBeenLastCalledWith(false);
+    expect(scheduleAutoEndTurn).toHaveBeenCalledWith(resultState);
+  });
+
+  it("finishes playback after the committed transition clears the pending draw", async () => {
+    let finishAnimation: (() => void) | undefined;
+    const drawDeps = makeDrawSequenceDeps({
+      animateDrawnHand: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            finishAnimation = resolve;
+          }),
+      ),
+    });
+    commitBattleTransition.mockImplementationOnce(() => {
+      domain = { ...domain, pendingBattleTransition: null };
+    });
+    const openingDraw = createBattleOpeningDraw(
+      {
+        battleSessionRef: { current: 3 },
+        scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn },
+        getPresentation: () => presentation,
+      } as never,
+      { getDrawSequenceDeps: () => drawDeps } as never,
+    );
+
+    const playback = openingDraw.playOpeningDraw();
+
+    await vi.waitFor(() => expect(drawDeps.animateDrawnHand).toHaveBeenCalledOnce());
+    expect(domain.pendingBattleTransition).toBeNull();
+    expect(scheduleAutoEndTurn).not.toHaveBeenCalled();
+
+    finishAnimation?.();
+    await playback;
+
     expect(scheduleAutoEndTurn).toHaveBeenCalledWith(resultState);
   });
 });

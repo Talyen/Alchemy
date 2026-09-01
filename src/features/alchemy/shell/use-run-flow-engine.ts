@@ -81,7 +81,8 @@ export function useRunFlowEngine({
       transition,
       labyrinthClearNode,
       initializeShop,
-      startBattle: (opts) => battle.onStartBattle(opts?.deck, opts?.gold, opts?.enemyType),
+      startBattle: (opts) =>
+        battle.onStartBattle(opts?.deck, opts?.gold, opts?.enemyType, opts?.modifiers, opts?.enemyId),
       startBoss: (opts) => {
         if (opts?.bossId && battle.onStartBossById(opts.bossId, opts.modifiers)) return;
         battle.onStartBossBattle();
