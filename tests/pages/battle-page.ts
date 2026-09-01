@@ -73,11 +73,14 @@ export class BattlePage {
     const settleTimeout = process.env.CI ? 18_000 : 10_000;
 
     await expect(async () => {
-      if (await this.isBattleOver()) return;
       const endTurn = this.page.getByRole("button", { name: "End Turn" });
       await expect(endTurn).toBeEnabled({ timeout: turnTimeout });
       await endTurn.click({ force: true });
+    }).toPass({ timeout: settleTimeout });
+
+    await expect(async () => {
       if (await this.isBattleOver()) return;
+      const endTurn = this.page.getByRole("button", { name: "End Turn" });
       await expect(endTurn).toBeEnabled({ timeout: 3_000 });
     }).toPass({ timeout: settleTimeout });
   }
