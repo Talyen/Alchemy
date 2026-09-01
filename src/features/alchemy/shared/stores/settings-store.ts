@@ -83,7 +83,13 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
       rememberAutoplayPreference,
       autoplayEnabled: rememberAutoplayPreference ? state.autoplayEnabled : false,
     })),
-  setAutoplayEnabled: (autoplayEnabled) => set((state) => withDerivedAutoplay({ ...state, autoplayEnabled })),
+  setAutoplayEnabled: (autoplayEnabled) =>
+    set((state) =>
+      withDerivedAutoplay({
+        ...selectSettingsSaveFields(state),
+        autoplayEnabled,
+      }),
+    ),
   setShowClearSaveConfirm: (showClearSaveConfirm) => set({ showClearSaveConfirm }),
   resetToDefaults: () =>
     set({ ...withDerivedAutoplay(createDefaultSettingsSaveFields()), showClearSaveConfirm: false }),
@@ -110,5 +116,4 @@ export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFi
   hydrate: (fields) => {
     useSettingsStore.setState(withDerivedAutoplay(selectSettingsSaveFields(fields)));
   },
-  subscribe: (listener) => useSettingsStore.subscribe(listener),
 };

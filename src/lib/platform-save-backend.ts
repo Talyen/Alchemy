@@ -17,7 +17,7 @@ function desktopApi(): Window["alchemyDesktop"] | undefined {
   return window.alchemyDesktop;
 }
 
-function uniqueCandidates(candidates: string[]): string[] {
+export function uniqueCandidates(candidates: string[]): string[] {
   return Array.from(new Set(candidates));
 }
 

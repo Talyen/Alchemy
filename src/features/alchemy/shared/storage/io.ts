@@ -45,8 +45,9 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
   if (rawParked > keptParked) {
     warnings.push("a parked run could not be restored");
   }
-  if (typeof (raw as { gold?: unknown }).gold === "number" && (raw as { gold: number }).gold !== normalized.gold) {
-    warnings.push(`Field "gold" was repaired (raw ${String((raw as { gold: number }).gold)} -> ${normalized.gold})`);
+  const rawGold = (raw as { gold?: unknown }).gold;
+  if (rawGold !== undefined && rawGold !== normalized.gold) {
+    warnings.push(`Field "gold" was repaired (raw ${JSON.stringify(rawGold)} -> ${normalized.gold})`);
   }
   return warnings;
 }
@@ -84,7 +85,9 @@ async function collectSaveCandidates(): Promise<string[]> {
   return [];
 }
 
-function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
+export type SaveCandidateSource = "local" | "backup" | "cloud" | "unknown";
+
+export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
   for (const candidate of candidates) {
     let parsed: unknown;
     try {
@@ -177,7 +180,7 @@ class SaveWriteQueue {
   }
 
   async enqueue(data: SaveData, write: (d: SaveData) => Promise<void>): Promise<void> {
-    if (writesDisabledForSession) {
+    if (writesDisabledForSession || this.clearPending) {
       this.coalesced = null;
       return;
     }
@@ -275,6 +278,10 @@ export function saveAlchemySaveDataForExit(data: SaveData): void {
   if (typeof window === "undefined" || writesDisabledForSession || saveQueue.isClearPending) return;
 
   if (!saveBackend.writeSync) {
+    if (saveQueue.hasPendingTasks) {
+      saveQueue.queueExitSnapshot(data);
+      return;
+    }
     void saveAlchemySaveData(data);
     return;
   }

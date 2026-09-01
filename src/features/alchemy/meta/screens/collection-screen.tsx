@@ -43,7 +43,7 @@ export function CollectionScreen({
 
   return (
     <PageLayout>
-      <ScreenShell maxWidthClass={collectionShellWidthClass} className="alchemy-shell rounded-shell-screen">
+      <ScreenShell maxWidthClass={collectionShellWidthClass}>
         <ScreenHeaderRow
           title="Collection"
           trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open collection menu" />}

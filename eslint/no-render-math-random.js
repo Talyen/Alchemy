@@ -15,6 +15,12 @@ function calleeName(node) {
   return "";
 }
 
+function isFunctionNode(node) {
+  return (
+    node.type === "ArrowFunctionExpression" || node.type === "FunctionExpression" || node.type === "FunctionDeclaration"
+  );
+}
+
 function isMathRandomCall(node) {
   return (
     node.type === "CallExpression" &&
@@ -45,9 +51,13 @@ export const noRenderMathRandom = {
       CallExpression(node) {
         if (!isMathRandomCall(node)) return;
         const ancestors = context.sourceCode.getAncestors(node);
-        const lazy = ancestors.some(
-          (ancestor) => ancestor.type === "CallExpression" && LAZY_HOOKS.has(calleeName(ancestor.callee)),
-        );
+        const lazy = ancestors.some((ancestor, index) => {
+          if (ancestor.type !== "CallExpression" || !LAZY_HOOKS.has(calleeName(ancestor.callee))) {
+            return false;
+          }
+          const innerAncestors = ancestors.slice(index + 1);
+          return innerAncestors.some(isFunctionNode);
+        });
         if (!lazy) context.report({ node, messageId: "renderRandom" });
       },
     };

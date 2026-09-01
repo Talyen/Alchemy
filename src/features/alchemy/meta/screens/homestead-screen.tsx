@@ -11,6 +11,8 @@ import {
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
+import { cn } from "@/lib/utils";
+import { homesteadGridMinHeightClass } from "../../shared/config";
 import { HOMESTEAD_CONFIG, type GoalItem, type Tab, MaterialsBar, HomesteadTabs, getItems } from "./homestead/helpers";
 import { CompanionCardNode } from "./homestead/companion-node";
 import { HomesteadUpgradeNode } from "./homestead/upgrade-node";
@@ -75,11 +77,7 @@ export function HomesteadScreen({
 
   return (
     <PageLayout>
-      <ScreenShell
-        maxWidthClass="max-w-7xl"
-        minHeightClass="min-h-0"
-        className="alchemy-shell relative rounded-shell-screen"
-      >
+      <ScreenShell maxWidthClass="max-w-7xl" className="relative">
         <ScreenHeaderRow
           title="Homestead"
           trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open homestead menu" />}
@@ -89,7 +87,10 @@ export function HomesteadScreen({
           <MaterialsBar gold={gold} materialInventory={materialInventory} />
           <HomesteadTabs activeTab={tab} onSelectTab={setTab} />
 
-          <FadeSlot swapKey={tab === "companions" ? `companions-${companionPage}` : tab} className="mx-auto w-full">
+          <FadeSlot
+            swapKey={tab === "companions" ? `companions-${companionPage}` : tab}
+            className={cn("mx-auto flex w-full flex-col justify-center", homesteadGridMinHeightClass)}
+          >
             {tab === "companions" ? (
               <div className="grid grid-cols-4 gap-x-4 gap-y-4">
                 {companionCards

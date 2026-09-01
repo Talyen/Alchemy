@@ -2,6 +2,15 @@ const CARD_ID_REMAPS: Record<string, string> = {
   "sunder-armor": "sunder",
 };
 
+const CARD_ID_REMAPS_V2: Record<string, string> = {
+  roulette: "roll-the-dice",
+};
+
+export const REMAPS_ALL: Record<string, string> = {
+  ...CARD_ID_REMAPS,
+  ...CARD_ID_REMAPS_V2,
+};
+
 function remapContentTree(value: unknown, remapId: (id: string) => string): unknown {
   if (Array.isArray(value)) return value.map((item) => remapContentTree(item, remapId));
   if (value && typeof value === "object") {
@@ -19,14 +28,21 @@ function remapContentTree(value: unknown, remapId: (id: string) => string): unkn
   return value;
 }
 
-export function migrateContentV1ToV2(parsed: Record<string, unknown>): Record<string, unknown> {
+function migrateContentV1ToV2(parsed: Record<string, unknown>): Record<string, unknown> {
   return remapContentTree(parsed, (id) => CARD_ID_REMAPS[id] ?? id) as Record<string, unknown>;
 }
 
-const CARD_ID_REMAPS_V2: Record<string, string> = {
-  roulette: "roll-the-dice",
-};
-
-export function migrateContentV2ToV3(parsed: Record<string, unknown>): Record<string, unknown> {
+function migrateContentV2ToV3(parsed: Record<string, unknown>): Record<string, unknown> {
   return remapContentTree(parsed, (id) => CARD_ID_REMAPS_V2[id] ?? id) as Record<string, unknown>;
+}
+
+export function migrateContentToCurrentVersion(
+  parsed: Record<string, unknown>,
+  fromVersion: number,
+): Record<string, unknown> {
+  if (fromVersion >= 3) return parsed;
+  if (fromVersion < 2) {
+    return migrateContentV2ToV3(migrateContentV1ToV2(parsed));
+  }
+  return migrateContentV2ToV3(parsed);
 }

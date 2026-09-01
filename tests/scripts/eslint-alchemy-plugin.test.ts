@@ -26,6 +26,27 @@ async function lintRule(relativePath: string, code: string, ruleId: string, opti
   return results.flatMap((result) => result.messages.filter((message) => message.ruleId === `alchemy/${ruleId}`));
 }
 
+async function fixRule(relativePath: string, code: string, ruleId: string, options: { jsx?: boolean } = {}) {
+  const eslint = new ESLint({
+    cwd: ROOT,
+    fix: true,
+    overrideConfigFile: true,
+    overrideConfig: [
+      {
+        files: ["**/*.{ts,tsx}"],
+        plugins: { alchemy: alchemyPlugin },
+        languageOptions: {
+          parser: tseslint.parser,
+          parserOptions: { ecmaVersion: 2022, sourceType: "module", ecmaFeatures: { jsx: options.jsx === true } },
+        },
+        rules: { [`alchemy/${ruleId}`]: "error" },
+      },
+    ],
+  });
+  const results = await eslint.lintText(code, { filePath: path.join(ROOT, relativePath) });
+  return results[0]?.output ?? code;
+}
+
 describe("alchemy ESLint plugin", () => {
   it("bans progress addMaterials outside the homestead-bonus and meta salvage owners", async () => {
     const banned = await lintRule(
@@ -75,6 +96,15 @@ describe("alchemy ESLint plugin", () => {
       { jsx: true },
     );
     expect(banned.length).toBeGreaterThan(0);
+
+    const bannedEagerUseState = await lintRule(
+      "src/features/alchemy/meta/screens/menu-screen.tsx",
+      `import { useState } from "react";\nexport function Logo() { const [n] = useState(Math.random()); return n; }\n`,
+      "no-render-math-random",
+      { jsx: true },
+    );
+    expect(bannedEagerUseState.length).toBeGreaterThan(0);
+
     const allowed = await lintRule(
       "src/app/startup-loading-screen.tsx",
       `import { useState } from "react";\nexport function Screen() { const [n] = useState(() => Math.random()); return n; }\n`,
@@ -99,7 +129,7 @@ describe("alchemy ESLint plugin", () => {
     expect(allowed).toEqual([]);
   });
 
-  it("bans em dashes across string literals, template elements, and JSX text", async () => {
+  it("bans em dashes across string literals, template elements, and JSX text, and auto-fixes them", async () => {
     const bannedLiteral = await lintRule(
       "src/lib/mystery/events.ts",
       `export const text = "Rewards \u2014 Choose one";\n`,
@@ -121,6 +151,13 @@ describe("alchemy ESLint plugin", () => {
       { jsx: true },
     );
     expect(bannedJsx.length).toBeGreaterThan(0);
+
+    const fixed = await fixRule(
+      "src/lib/mystery/events.ts",
+      `export const text = "Rewards \u2014 Choose one";\n`,
+      "no-em-dash",
+    );
+    expect(fixed).toBe(`export const text = "Rewards - Choose one";\n`);
 
     const allowed = await lintRule(
       "src/lib/mystery/events.ts",

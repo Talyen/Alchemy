@@ -160,15 +160,15 @@ describe("reward flow orchestration", () => {
     });
 
     it("doubles materials for scavenger without mutating the source inventory", () => {
-      const materials = { wood: 1, iron: 2, herbs: 3, food: 4, crystal: 5 };
+      const materials = { wood: 1, iron: 2, herbs: 3, food: 4, gems: 5 };
       const result = applyLabyrinthRewardMaterialModifiers(materials, ["scavenger"]);
 
-      expect(result).toEqual({ wood: 2, iron: 4, herbs: 6, food: 8, crystal: 10 });
-      expect(materials).toEqual({ wood: 1, iron: 2, herbs: 3, food: 4, crystal: 5 });
+      expect(result).toEqual({ wood: 2, iron: 4, herbs: 6, food: 8, gems: 10 });
+      expect(materials).toEqual({ wood: 1, iron: 2, herbs: 3, food: 4, gems: 5 });
     });
 
     it("adds herbalist herbs after scavenger doubling", () => {
-      const materials = { wood: 1, iron: 2, herbs: 3, food: 4, crystal: 5 };
+      const materials = { wood: 1, iron: 2, herbs: 3, food: 4, gems: 5 };
       const result = applyLabyrinthRewardMaterialModifiers(materials, ["scavenger", "herbalist"]);
 
       expect(result.herbs).toBe(6 + LABYRINTH_REWARD_CONFIG.herbalistHerbBonus);
@@ -176,13 +176,13 @@ describe("reward flow orchestration", () => {
     });
 
     it("adds herbalist herbs when scavenger is inactive", () => {
-      const materials = { wood: 1, iron: 2, herbs: 3, food: 4, crystal: 5 };
+      const materials = { wood: 1, iron: 2, herbs: 3, food: 4, gems: 5 };
       const result = applyLabyrinthRewardMaterialModifiers(materials, ["herbalist"]);
       expect(result.herbs).toBe(3 + LABYRINTH_REWARD_CONFIG.herbalistHerbBonus);
     });
 
     it("leaves materials unchanged when scavenger is inactive", () => {
-      const materials = { wood: 1, iron: 2, herbs: 3, food: 4, crystal: 5 };
+      const materials = { wood: 1, iron: 2, herbs: 3, food: 4, gems: 5 };
       expect(applyLabyrinthRewardMaterialModifiers(materials, [])).toBe(materials);
     });
 

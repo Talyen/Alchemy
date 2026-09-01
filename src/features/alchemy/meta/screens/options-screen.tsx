@@ -62,7 +62,7 @@ export function OptionsScreen({
         {showErrorLog ? (
           <ErrorLogViewer onClose={() => setShowErrorLog(false)} />
         ) : (
-          <ScreenShell maxWidthClass="max-w-4xl" className="alchemy-shell rounded-shell-screen">
+          <ScreenShell maxWidthClass="max-w-4xl">
             <ScreenHeaderRow
               title="Options"
               trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open options menu" />}

@@ -16,8 +16,8 @@ function SalvageCurrencyChip({ currency, count }: { currency: CraftingCurrencyDe
       <PortaledTooltip triggerRef={triggerRef} visible={visible} className={DIALOG_TOOLTIP_CLASS}>
         <TooltipHeader>{currency.displayName}</TooltipHeader>
         <TooltipBody>
-          <p className="text-balance">{currency.tooltipEffect}</p>
-          <p className="mt-2 text-balance">{currency.description}</p>
+          <p className="text-pretty">{currency.tooltipEffect}</p>
+          <p className="mt-2 text-pretty">{currency.description}</p>
         </TooltipBody>
       </PortaledTooltip>
       <button

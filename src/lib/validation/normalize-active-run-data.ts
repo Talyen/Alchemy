@@ -75,8 +75,10 @@ function cloneRngForRepair(rngState: RunRngState | null | undefined): RunRngStat
     typeof rngState.seed !== "number" ||
     !rngState.counters ||
     typeof rngState.counters.rewards !== "number" ||
-    typeof rngState.counters.world !== "number" ||
-    typeof rngState.counters.events !== "number"
+    typeof rngState.counters.destinations !== "number" ||
+    typeof rngState.counters.events !== "number" ||
+    typeof rngState.counters.shops !== "number" ||
+    typeof rngState.counters.world !== "number"
   ) {
     return null;
   }
@@ -280,7 +282,21 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
   const starterDraftChoices = repairStarterDraft(data, runDeck, rngState);
   const mysteryVisit = repairMysteryVisit(data, runDeck, rngState);
 
-  const nextRng = rngState ?? (data.rng as RunRngState | null | undefined) ?? null;
+  let rngCountersChanged = false;
+  if (rngState?.counters) {
+    if (!rawRngState?.counters) {
+      rngCountersChanged = true;
+    } else {
+      rngCountersChanged =
+        rngState.counters.rewards !== rawRngState.counters.rewards ||
+        rngState.counters.destinations !== rawRngState.counters.destinations ||
+        rngState.counters.events !== rawRngState.counters.events ||
+        rngState.counters.shops !== rawRngState.counters.shops ||
+        rngState.counters.world !== rawRngState.counters.world;
+    }
+  }
+
+  const nextRng = rngCountersChanged ? (rngState ?? rawRngState ?? null) : (rawRngState ?? null);
 
   return {
     ...data,

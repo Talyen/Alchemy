@@ -224,7 +224,7 @@ export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | 
         uniqueItemList.map((unique) => unique.id),
       );
       setFinishedRunCharacters(draft, ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
-      setMaterials(draft, { wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
+      setMaterials(draft, { wood: 99, iron: 99, herbs: 99, food: 99, gems: 99 });
     });
     run.unlockAllTalents();
   }, [run]);

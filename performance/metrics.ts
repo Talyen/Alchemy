@@ -22,9 +22,16 @@ export interface InputEventSample {
   phase: string;
 }
 
+export interface FrameGapSample {
+  startTime: number;
+  duration: number;
+}
+
 export interface FrameSampleRaw {
-  /** Consecutive rAF timestamp deltas in ms. */
-  frameTimes: number[];
+  /** Consecutive rAF timestamp deltas in ms (legacy or simple test inputs). */
+  frameTimes?: number[];
+  /** Exact timed frame gap samples with start time and duration. */
+  frameGaps?: FrameGapSample[];
   longTasks: LongTaskSample[];
   /** Wall-clock duration of the measured window in ms. */
   durationMs: number;
@@ -86,18 +93,32 @@ export function phaseAtTime(phaseMarks: Array<{ time: number; phase: string }>, 
   return phase;
 }
 
-/** Correlate rAF gaps to harness phases for hitch localization. */
+/** Correlate rAF gaps to harness phases for hitch localization using start timestamps. */
 export function extractHitchEvents(
-  frameTimes: number[],
+  frames: Array<FrameGapSample | number>,
   phaseMarks: Array<{ time: number; phase: string }>,
   minGapMs = HITCH_GAP_MS,
 ): HitchEvent[] {
   const hitches: HitchEvent[] = [];
-  let timeMs = 0;
-  for (const gapMs of frameTimes) {
-    timeMs += gapMs;
-    if (gapMs >= minGapMs) {
-      hitches.push({ timeMs, gapMs, phase: phaseAtTime(phaseMarks, timeMs) });
+  let simulatedTime = 0;
+
+  for (const item of frames) {
+    if (typeof item === "number") {
+      if (Number.isFinite(item) && item >= minGapMs) {
+        hitches.push({ timeMs: simulatedTime, gapMs: item, phase: phaseAtTime(phaseMarks, simulatedTime) });
+      }
+      if (Number.isFinite(item) && item > 0) {
+        simulatedTime += item;
+      }
+    } else if (item && typeof item === "object") {
+      const { startTime, duration } = item;
+      if (Number.isFinite(duration) && duration >= minGapMs) {
+        hitches.push({
+          timeMs: startTime,
+          gapMs: duration,
+          phase: phaseAtTime(phaseMarks, startTime),
+        });
+      }
     }
   }
   return hitches.sort((a, b) => b.gapMs - a.gapMs).slice(0, MAX_HITCH_EVENTS);
@@ -129,12 +150,44 @@ export function lowFps(frameTimesAscending: number[], percent: number): number {
   return avg > 0 ? 1000 / avg : 0;
 }
 
+function extractValidGaps(sample: FrameSampleRaw): FrameGapSample[] {
+  if (sample.frameGaps && sample.frameGaps.length > 0) {
+    return sample.frameGaps.filter(
+      (g) => Number.isFinite(g.duration) && g.duration > 0 && Number.isFinite(g.startTime),
+    );
+  }
+  if (sample.frameTimes && sample.frameTimes.length > 0) {
+    let currentStart = 0;
+    const gaps: FrameGapSample[] = [];
+    for (const duration of sample.frameTimes) {
+      if (Number.isFinite(duration) && duration > 0) {
+        gaps.push({ startTime: currentStart, duration });
+        currentStart += duration;
+      }
+    }
+    return gaps;
+  }
+  return [];
+}
+
 export function computeMetrics(sample: FrameSampleRaw, options: { minFrames?: number } = {}): FrameMetrics {
   const minFrames = options.minFrames ?? MIN_FRAMES_DEFAULT;
-  const frameTimes = sample.frameTimes.filter((t) => Number.isFinite(t) && t > 0);
+  const frameGaps = extractValidGaps(sample);
+  const frameTimes = frameGaps.map((g) => g.duration);
   const sorted = [...frameTimes].sort((a, b) => a - b);
-  const longTasks = sample.longTasks.filter((t) => t.duration >= 50);
-  const hitchEvents = sample.hitchEvents ?? extractHitchEvents(frameTimes, sample.phaseMarks, HITCH_GAP_MS);
+  const longTasks = (sample.longTasks ?? [])
+    .filter((t) => Number.isFinite(t.duration) && t.duration >= 50)
+    .map((t) => ({
+      ...t,
+      phase: phaseAtTime(sample.phaseMarks, t.startTime),
+    }));
+  const hitchEvents =
+    sample.hitchEvents !== undefined
+      ? sample.hitchEvents.map((h) => ({
+          ...h,
+          phase: phaseAtTime(sample.phaseMarks, h.timeMs),
+        }))
+      : extractHitchEvents(frameGaps, sample.phaseMarks, HITCH_GAP_MS);
 
   if (frameTimes.length === 0) {
     return emptyMetrics(sample.durationMs, "no frame samples");
@@ -192,12 +245,14 @@ function buildMetrics(
   const hitchesOver50ms = frameTimes.filter((t) => t >= 50).length;
   const stallsOver100ms = frameTimes.filter((t) => t >= 100).length;
   const worstFrameGaps = [...sorted].reverse().slice(0, 10);
-  const measuredDuration = durationMs > 0 ? durationMs : mean(frameTimes) * frameTimes.length;
+  const sampledDuration = frameTimes.reduce((sum, d) => sum + d, 0);
+  const measuredDuration = durationMs > 0 ? durationMs : sampledDuration;
+  const averageFps = sampledDuration > 0 ? (frameTimes.length / sampledDuration) * 1000 : 0;
 
   return {
     frameCount: frameTimes.length,
     durationMs: measuredDuration,
-    averageFps: measuredDuration > 0 ? (frameTimes.length / measuredDuration) * 1000 : 0,
+    averageFps,
     p50FrameTime: percentile(sorted, 50),
     p95FrameTime: percentile(sorted, 95),
     p99FrameTime: percentile(sorted, 99),
@@ -218,51 +273,7 @@ function buildMetrics(
   };
 }
 
-export function aggregateMetrics(runs: FrameMetrics[]): FrameMetrics {
-  const validRuns = runs.filter((r) => r.valid);
-  if (validRuns.length === 0) {
-    return emptyMetrics(0, "no valid runs to aggregate");
-  }
-
-  // Pooling raw frame times is preferred via aggregateRawSamples; this path
-  // averages scalar metrics when only per-run summaries are available.
-  const durationMs = mean(validRuns.map((r) => r.durationMs));
-  const frameCount = validRuns.reduce((sum, r) => sum + r.frameCount, 0);
-  const longTasks = validRuns.flatMap((r) => r.longTasks);
-  const worstGaps = validRuns
-    .flatMap((r) => r.worstFrameGaps)
-    .sort((a, b) => b - a)
-    .slice(0, 10);
-
-  return {
-    frameCount,
-    durationMs,
-    averageFps: mean(validRuns.map((r) => r.averageFps)),
-    p50FrameTime: mean(validRuns.map((r) => r.p50FrameTime)),
-    p95FrameTime: mean(validRuns.map((r) => r.p95FrameTime)),
-    p99FrameTime: mean(validRuns.map((r) => r.p99FrameTime)),
-    p999FrameTime: mean(validRuns.map((r) => r.p999FrameTime)),
-    onePercentLowFps: mean(validRuns.map((r) => r.onePercentLowFps)),
-    pointOnePercentLowFps: mean(validRuns.map((r) => r.pointOnePercentLowFps)),
-    framesOver20ms: validRuns.reduce((sum, r) => sum + r.framesOver20ms, 0),
-    framesOver20msPct: mean(validRuns.map((r) => r.framesOver20msPct)),
-    framesOver33ms: validRuns.reduce((sum, r) => sum + r.framesOver33ms, 0),
-    framesOver33msPct: mean(validRuns.map((r) => r.framesOver33msPct)),
-    hitchesOver50ms: validRuns.reduce((sum, r) => sum + r.hitchesOver50ms, 0),
-    stallsOver100ms: validRuns.reduce((sum, r) => sum + r.stallsOver100ms, 0),
-    longTasksOver50ms: longTasks.length,
-    maxFrameGapMs: Math.max(...validRuns.map((r) => r.maxFrameGapMs)),
-    worstFrameGaps: worstGaps,
-    longTasks,
-    hitchEvents: validRuns
-      .flatMap((r) => r.hitchEvents)
-      .sort((a, b) => b.gapMs - a.gapMs)
-      .slice(0, MAX_HITCH_EVENTS),
-    valid: true,
-  };
-}
-
-/** Aggregate by pooling raw samples (preferred when available). */
+/** Aggregate by pooling raw samples (sole aggregation path). */
 export function aggregateRawSamples(samples: FrameSampleRaw[], options: { minFrames?: number } = {}): FrameMetrics {
   if (samples.length === 0) {
     return emptyMetrics(0, "no samples");
@@ -270,34 +281,46 @@ export function aggregateRawSamples(samples: FrameSampleRaw[], options: { minFra
 
   // Offset each run's timestamps so hitch/phase attribution stays meaningful across the pool.
   let timeOffset = 0;
+  const pooledFrameGaps: FrameGapSample[] = [];
   const pooledFrameTimes: number[] = [];
   const pooledLongTasks: LongTaskSample[] = [];
   const pooledPhaseMarks: Array<{ time: number; phase: string }> = [];
   const pooledHitches: HitchEvent[] = [];
+  const pooledInputEvents: InputEventSample[] = [];
 
   for (const s of samples) {
-    pooledFrameTimes.push(...s.frameTimes);
-    for (const task of s.longTasks) {
+    const rawGaps = extractValidGaps(s);
+    for (const gap of rawGaps) {
+      pooledFrameGaps.push({ startTime: gap.startTime + timeOffset, duration: gap.duration });
+      pooledFrameTimes.push(gap.duration);
+    }
+    for (const task of s.longTasks ?? []) {
       pooledLongTasks.push({ ...task, startTime: task.startTime + timeOffset });
     }
-    for (const mark of s.phaseMarks) {
+    for (const mark of s.phaseMarks ?? []) {
       pooledPhaseMarks.push({ time: mark.time + timeOffset, phase: mark.phase });
     }
-    const hitches = s.hitchEvents ?? extractHitchEvents(s.frameTimes, s.phaseMarks, HITCH_GAP_MS);
+    for (const input of s.inputEvents ?? []) {
+      pooledInputEvents.push({ ...input, startTime: input.startTime + timeOffset });
+    }
+    const hitches = s.hitchEvents ?? extractHitchEvents(rawGaps, s.phaseMarks ?? [], HITCH_GAP_MS);
     for (const hitch of hitches) {
       pooledHitches.push({ ...hitch, timeMs: hitch.timeMs + timeOffset });
     }
-    timeOffset += s.durationMs;
+    const runDuration = s.durationMs > 0 ? s.durationMs : rawGaps.reduce((sum, g) => sum + g.duration, 0);
+    timeOffset += runDuration;
   }
 
   const pooled: FrameSampleRaw = {
+    frameGaps: pooledFrameGaps,
     frameTimes: pooledFrameTimes,
     longTasks: pooledLongTasks,
     durationMs: timeOffset,
     phaseMarks: pooledPhaseMarks,
     hitchEvents: pooledHitches.sort((a, b) => b.gapMs - a.gapMs).slice(0, MAX_HITCH_EVENTS),
+    inputEvents: pooledInputEvents,
   };
-  const minFrames = (options.minFrames ?? MIN_FRAMES_DEFAULT) * Math.max(1, samples.length);
+  const minFrames = options.minFrames ?? MIN_FRAMES_DEFAULT * Math.max(1, samples.length);
   return computeMetrics(pooled, { minFrames });
 }
 

@@ -10,22 +10,13 @@
  * catalogs, or compatibility re-exports — each with a short reason.
  *
  * `npm run deadcode` — CI / `lint:ci`; not default pre-push.
- * Default mode traces dependencies through the Vite/Electron graph correctly,
- * so dependency checking lives here.
- * `npm run deadcode:strict` — nightly; entry exports + config hints. Dependency
- * classes are excluded: strict (production-only) analysis cannot trace this
- * graph and reports ~10 false positives. Config hints surface stale
- * `ignoreDependencies`; `ignoreIssues` staleness is not covered by hints —
- * probe occasionally by running knip with the block emptied.
+ * `npm run deadcode:strict` — nightly; entry exports + config hints.
  */
 export default {
   entry: [
     "src/lib/game-data/index.ts",
     "src/lib/game-constants/index.ts",
     "src/lib/gear/index.ts",
-    "playwright.config.ts",
-    "playwright.electron.config.ts",
-    "playwright.performance.config.ts",
     "src/lib/battle/index.ts",
     "src/lib/validation/index.ts",
     "src/features/alchemy/shared/run-flow/index.ts",
@@ -33,7 +24,6 @@ export default {
     "desktop/*.cjs",
   ],
   project: ["src/**/*.{ts,tsx}", "scripts/**/*.mjs", "desktop/**/*.cjs", "tests/**/*.{ts,tsx}"],
-  ignoreBinaries: ["start"],
   ignoreIssues: {
     // Compatibility barrel for active-run persistence types + serializers.
     "src/lib/active-run-session/index.ts": ["exports", "types"],
@@ -58,14 +48,8 @@ export default {
     "src/lib/game-data/talents/pool/index.ts": ["exports"],
     // Backward-compat re-exports for verify:changed consumers; canonical source is scripts/lib/test-commands.mjs.
     "scripts/lib/change-routes.mjs": ["exports"],
-    // Deprecated effect-schema import paths retained for content and external tooling compatibility.
-    "src/lib/game-data/effects/companion-schemas.ts": ["files", "exports"],
-    "src/lib/game-data/effects/flag-schemas.ts": ["files", "exports"],
-    "src/lib/game-data/effects/utility-schemas.ts": ["files", "exports"],
     "src/lib/game-data/effects/shared-schemas.ts": ["exports"],
     "src/lib/game-data/effects/simple-schemas.ts": ["exports"],
-    // Deprecated effect-handler import path retained for content and external tooling compatibility.
-    "src/lib/battle/effect-handlers/utility-handlers.ts": ["exports"],
     // Shared Vite alias / SSR list — consumed by vite.config.ts and vitest.config.ts sync guard.
     "scripts/lib/vite-aliases.mjs": ["exports"],
     // run-resume-codec is the canonical resume boundary (shops/interrupted-flow included).
@@ -78,13 +62,12 @@ export default {
     "src/features/alchemy/shared/stores/draft-helpers.ts": ["exports"],
     "src/features/alchemy/shared/stores/write-port-run.ts": ["exports", "duplicates"],
     "src/lib/content-systems/types.ts": ["exports", "types"],
+    // Testable save-load seams: evaluated via storage-io tests; platform dedup is public API.
+    "src/features/alchemy/shared/storage/io.ts": ["exports", "types"],
+    "src/lib/platform-save-backend.ts": ["exports", "types"],
+    "src/lib/validation/migration/content-steps.ts": ["exports"],
   },
-  ignore: [
-    "tests/environment.d.ts",
-    "tests/scripts/global.d.ts",
-    "tests/electron-environment.d.ts",
-    "tests/types/run-architecture-contracts.test-d.ts",
-  ],
+  ignore: ["tests/environment.d.ts", "tests/scripts/global.d.ts", "tests/electron-environment.d.ts"],
   ignoreDependencies: [
     // Loaded via node_modules path string in scripts/dist-desktop.mjs; knip cannot trace it.
     "electron-builder",
@@ -92,7 +75,5 @@ export default {
     "commit-and-tag-version",
     // Bundled in @stryker-mutator/core; knip infers it from testRunner: "command".
     "@stryker-mutator/command-runner",
-    // Peer of @tailwindcss/vite — used via Vite plugin, knip traces only the plugin.
-    "tailwindcss",
   ],
 };

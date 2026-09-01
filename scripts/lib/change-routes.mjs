@@ -98,10 +98,29 @@ export const ROUTES = Object.freeze([
   },
   {
     id: "balance",
-    patterns: ["src/lib/balance/**"],
-    commands: ["unit-balance"],
+    patterns: ["src/lib/balance/**", "tests/balance/**"],
+    commands: ["unit-balance", "report-balance"],
     docs: [doc("docs/REFERENCE.md", "Balance simulation", "balance harness interpretation")],
     fixture: "src/lib/balance/findings.ts",
+  },
+  {
+    id: "performance",
+    patterns: [
+      "performance/**",
+      "playwright.performance.config.ts",
+      "scripts/run-performance.mjs",
+      "src/lib/performance/**",
+      "tests/performance/**",
+      "tests/lib/performance/**",
+      "docs/PERFORMANCE.md",
+      "docs/Audits/PerformanceAudit.md",
+    ],
+    commands: ["unit-performance", "typecheck"],
+    docs: [
+      doc("docs/PERFORMANCE.md", "Performance profiling", "performance harness and profiling guide"),
+      doc("docs/Audits/PerformanceAudit.md", "Performance Audit", "performance audit playbook"),
+    ],
+    fixture: "performance/metrics.ts",
   },
   {
     id: "desktop",
@@ -203,7 +222,7 @@ export const ROUTES = Object.freeze([
   {
     id: "unit-test",
     patterns: ["tests/**/*.test.ts", "tests/**/*.test.tsx", "tests/*.test.ts", "tests/*.test.tsx"],
-    exclude: ["tests/scripts/**", "tests/architecture/**"],
+    exclude: ["tests/scripts/**", "tests/architecture/**", "tests/balance/**", "tests/performance/**"],
     commands: ["unit-changed"],
     docs: [],
     fixture: "tests/lib/utils.test.ts",
@@ -247,6 +266,7 @@ export const ROUTES = Object.freeze([
       "vite.config.ts",
     ],
     exclude: [
+      "scripts/run-performance.mjs",
       "scripts/assets/**",
       "scripts/prepare-assets.mjs",
       "scripts/check-prepared-assets.mjs",
@@ -259,7 +279,6 @@ export const ROUTES = Object.freeze([
       "scripts/sync-generated.mjs",
       "scripts/lib/asset-manifest-cache.mjs",
       "scripts/lib/sync-generated-helpers.mjs",
-      "scripts/lib/generated-module.mjs",
       "scripts/lib/asset-constants.mjs",
       "scripts/lib/audio-optimizer.mjs",
     ],
@@ -283,7 +302,6 @@ export const ROUTES = Object.freeze([
       "scripts/sync-generated.mjs",
       "scripts/lib/asset-manifest-cache.mjs",
       "scripts/lib/sync-generated-helpers.mjs",
-      "scripts/lib/generated-module.mjs",
       "scripts/lib/asset-constants.mjs",
       "scripts/lib/audio-optimizer.mjs",
       "src/assets/optimized/**",
@@ -454,9 +472,15 @@ export function resolveRoutes(paths) {
 export function resolveRoutePlan(paths, options = {}) {
   const routes = resolveRoutes(paths);
   const commandKeys = new Set(routes.flatMap((route) => route.commands));
+  const directUnitTestRoute = ROUTES.find((route) => route.id === "unit-test");
   const changedUnitTests = paths
     .map(normalizeChangedPath)
-    .filter((filePath) => /^tests\/.*\.test\.tsx?$/u.test(filePath));
+    .filter(
+      (filePath) =>
+        /^tests\/.*\.test\.tsx?$/u.test(filePath) &&
+        directUnitTestRoute !== undefined &&
+        routeMatchesPath(directUnitTestRoute, filePath),
+    );
   // A changed test already executed by a matched route's focused unit command
   // must not run twice (once via that command, once via unit-changed), so the
   // unit-changed file list only carries tests no matched route covers.

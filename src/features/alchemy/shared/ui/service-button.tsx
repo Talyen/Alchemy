@@ -6,7 +6,17 @@ import { GoldCost } from "./display-elements";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { useHoverVisible } from "./use-hover-visible";
 
-export function DisabledTooltip({ show, message, children }: { show: boolean; message: string; children: ReactNode }) {
+import { renderUnlockMessage } from "./unlock-text";
+
+export function DisabledTooltip({
+  show,
+  message,
+  children,
+}: {
+  show: boolean;
+  message: ReactNode;
+  children: ReactNode;
+}) {
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
 
   return (
@@ -14,7 +24,9 @@ export function DisabledTooltip({ show, message, children }: { show: boolean; me
       {children}
       {show ? (
         <PortaledTooltip triggerRef={triggerRef} visible={visible} className="whitespace-nowrap">
-          <p className={cn(tooltipBodyClass, "mt-0 space-y-0 leading-none text-foreground")}>{message}</p>
+          <p className={cn(tooltipBodyClass, "mt-0 space-y-0 leading-none text-foreground")}>
+            {typeof message === "string" ? renderUnlockMessage(message) : message}
+          </p>
         </PortaledTooltip>
       ) : null}
     </div>

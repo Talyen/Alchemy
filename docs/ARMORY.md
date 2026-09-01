@@ -40,7 +40,7 @@ contract and controller seams.
 | Aggregate   | `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper) |
 | Screen      | Armory route → `use-armory-controller.ts` → `armory-screen.tsx`                                                                        |
 | Battle      | `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation                                                       |
-| Persistence | `subscribeAlchemyPersistence` / `encodeAlchemyPersistenceFields`                                                                       |
+| Persistence | `subscribeAlchemyPersistence` / `encodePersistenceFields`                                                                              |
 
 ### Read paths
 
@@ -97,7 +97,7 @@ Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alche
 
 Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) and `src/lib/validation/metadata.ts` own the supported floor and current version. Gear shape changes follow that migration contract: safe additive fields may use schema defaults, while transforms require a versioned migration.
 
-`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session signal (run domain, transient/battle state, run profile, profile, and gear); changes are debounced before writing. `buildAlchemySaveDataFromStores` assembles the snapshot through `encodeAlchemyPersistenceFields`. The gear mutation callbacks in `useArmoryController` also call `flushSaveAfterGearMutation` (lifecycle port) after mutations during an active run.
+`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session signal (run domain, transient/battle state, run profile, profile, and gear); changes are debounced before writing. `buildAlchemySaveDataFromStores` assembles the snapshot through `encodePersistenceFields`. The gear mutation callbacks in `useArmoryController` also call `flushSaveAfterGearMutation` (lifecycle port) after mutations during an active run.
 
 ## Tests
 

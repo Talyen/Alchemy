@@ -115,6 +115,18 @@ export const COMMANDS = Object.freeze({
     command: NPM,
     args: ["test", "--", "tests/lib/balance"],
   },
+  "report-balance": {
+    label: "balance report integration",
+    reason: "balance changes must construct and render the complete report",
+    command: NPM,
+    args: ["run", "test:balance"],
+  },
+  "unit-performance": {
+    label: "performance harness and runtime marks unit tests",
+    reason: "performance harness, comparison model, and runtime marks share profiling contracts",
+    command: NPM,
+    args: ["test", "--", "tests/performance", "tests/lib/performance"],
+  },
   "unit-desktop": {
     label: "desktop main-process and packaging unit tests",
     reason: "desktop bridge, security, crash reporting, and package layout share the Electron boundary",

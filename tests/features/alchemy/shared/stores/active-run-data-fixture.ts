@@ -40,7 +40,7 @@ export function makeActiveRunData(overrides: Partial<ActiveRunData> = {}): Activ
     starterDraftChoices: null,
     activeCombat: null,
     runTalentXP: {},
-    runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+    runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0 },
     runObtainedItems: [],
     currentScreen: null,
     interruptedFlow: { kind: "none" },
@@ -97,7 +97,7 @@ export function createCompleteActiveRunData(): ActiveRunData {
       activeLabyrinthRewardModifiers: ["generous"],
     },
     runTalentXP: { armor: 11, burn: 7 },
-    runMaterialsEarned: { wood: 2, iron: 3, herbs: 4, food: 5, crystal: 6 },
+    runMaterialsEarned: { wood: 2, iron: 3, herbs: 4, food: 5, gems: 6 },
     runObtainedItems: [
       { kind: "gear", instance: { instanceId: "resume-obtained-gear", definitionId: "ruby-ring-basic", affixes: [] } },
       { kind: "trinket", trinketId: "bone-charm" },

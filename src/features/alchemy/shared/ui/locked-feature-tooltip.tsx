@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
 import { Lock } from "lucide-react";
 import { tooltipChipIconClass } from "../config";
 import { TooltipBody, TooltipHeader } from "./tooltip-panel";
+import { renderUnlockMessage } from "./unlock-text";
 
-export function LockedFeatureTooltip({ title, message }: { title: string; message: string }) {
+export function LockedFeatureTooltip({ title, message }: { title: string; message: ReactNode }) {
   return (
     <>
       <TooltipHeader>
@@ -12,7 +14,7 @@ export function LockedFeatureTooltip({ title, message }: { title: string; messag
         </span>
       </TooltipHeader>
       <TooltipBody>
-        <p>{message}</p>
+        <p>{typeof message === "string" ? renderUnlockMessage(message) : message}</p>
       </TooltipBody>
     </>
   );

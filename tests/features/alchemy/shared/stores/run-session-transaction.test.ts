@@ -344,7 +344,7 @@ describe("run-session transaction coordinator", () => {
     dispatchRunSessionCommand((draft) => {
       setGold(draft, 125);
       setHasActiveRun(draft, true);
-      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
+      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0 });
       setDiscoveredCardIds(draft, ["slash"]);
       addGearCurrencies(draft.gear, { voidstone: 1 });
     });
@@ -395,7 +395,7 @@ describe("run-session transaction coordinator", () => {
       dispatchRunSessionCommand((draft) => {
         setGold(draft, 999);
         setHasActiveRun(draft, true);
-        setRunProfileMaterials(draft, { wood: 9, iron: 0, herbs: 0, food: 0, crystal: 0 });
+        setRunProfileMaterials(draft, { wood: 9, iron: 0, herbs: 0, food: 0, gems: 0 });
         setDiscoveredCardIds(draft, ["burn"]);
         addGearCurrencies(draft.gear, { voidstone: 9 });
         throw new Error("transaction failed");

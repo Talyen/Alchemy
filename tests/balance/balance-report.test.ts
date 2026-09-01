@@ -35,20 +35,20 @@ function expectFiniteReport(value: unknown): void {
 }
 
 describe("balance report", () => {
-  it("builds a deterministic, finite report without filesystem effects", { timeout: 1_800_000 }, () => {
-    const first = buildBalanceReport(options);
-    const second = buildBalanceReport(options);
-    expectFiniteReport(first);
-    expect(first.enemies.length).toBeGreaterThan(0);
-    expect(first.classes).toHaveLength(8);
-    expect(first.cardsIsolatedSkeleton.length).toBeGreaterThan(0);
-    expect(first.cardsInClass.length).toBeGreaterThan(0);
-    expect(renderBalanceReportJson(second, options)).toBe(renderBalanceReportJson(first, options));
-    expect(renderBalanceReportHtml(first, options)).toContain("<h1>Balance Report</h1>");
-    const findings = evaluateBalanceFindings(first);
+  it("builds a finite report and renders without mutating it", { timeout: 1_800_000 }, () => {
+    const model = buildBalanceReport(options);
+    expectFiniteReport(model);
+    expect(model.enemies.length).toBeGreaterThan(0);
+    expect(model.classes).toHaveLength(8);
+    expect(model.cardsIsolatedSkeleton.length).toBeGreaterThan(0);
+    expect(model.cardsInClass.length).toBeGreaterThan(0);
+    const json = renderBalanceReportJson(model, options);
+    expect(renderBalanceReportHtml(model, options)).toContain("<h1>Balance Report</h1>");
+    expect(renderBalanceReportJson(model, options)).toBe(json);
+    const findings = evaluateBalanceFindings(model);
     expect(findings.findings.every((finding) => finding.recommendation.length > 0)).toBe(true);
-    expect(renderBalanceFindingsHtml(findings, first)).toContain("Balance Findings");
-    expect(renderBalanceFindingsJson(findings, first, options)).toContain('"findings"');
+    expect(renderBalanceFindingsHtml(findings, model)).toContain("Balance Findings");
+    expect(renderBalanceFindingsJson(findings, model, options)).toContain('"findings"');
     expect(formatFindingObserved("winRate", 0.5)).toContain("50");
   });
 });

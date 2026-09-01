@@ -20,7 +20,7 @@ describe("aggregate read ports", () => {
       setGold(draft, 23);
       setHasActiveRun(draft, true);
       setHasActiveBattle(draft, true);
-      setRunProfileMaterials(draft, { wood: 4, iron: 0, herbs: 0, food: 0, crystal: 0 });
+      setRunProfileMaterials(draft, { wood: 4, iron: 0, herbs: 0, food: 0, gems: 0 });
       setFinishedRunCharacters(draft, ["knight"]);
     });
 

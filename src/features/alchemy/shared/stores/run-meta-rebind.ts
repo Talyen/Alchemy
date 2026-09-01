@@ -25,7 +25,7 @@ function applyDerivedMaxHealth(draft: GameplayDraft): void {
   draft.run.activeRun.runPlayerHealth = Math.min(draft.run.activeRun.runMaxHealth, draft.run.activeRun.runPlayerHealth);
 }
 
-export function rebindMetaHealth(draft: GameplayDraft): void {
+function rebindMetaHealth(draft: GameplayDraft): void {
   if (!draft.session.hasActiveRun) return;
   applyDerivedMaxHealth(draft);
 }

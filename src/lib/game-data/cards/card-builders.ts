@@ -4,22 +4,22 @@ import type { BattleCard, BattleCardEffect, DamageType, EnemyStatusDamageId, Key
 import { companionLibrary } from "../companions";
 import { expectedCompanionTurnLine } from "./companion-turn-description";
 
-export interface CardBaseInput {
+interface CardBaseInput {
   id: BattleCard["id"];
   title?: string;
   art: BattleCard["art"];
   cost?: number;
 }
 
-export function deriveTitle(id: string, customTitle?: string): string {
+function deriveTitle(id: string, customTitle?: string): string {
   if (customTitle) return customTitle;
   const base = id.endsWith("-companion") ? id.slice(0, -10) : id;
   return base.split("-").map(capitalizeWord).join(" ");
 }
 
-export type PlayerStatusDescriptionStatus = "block" | "armor" | "forge";
+type PlayerStatusDescriptionStatus = "block" | "armor" | "forge";
 
-export function playerStatusDescriptionLine(status: PlayerStatusDescriptionStatus, amount: number): string {
+function playerStatusDescriptionLine(status: PlayerStatusDescriptionStatus, amount: number): string {
   switch (status) {
     case "block":
       return `Gain ${amount} Block`;
@@ -30,7 +30,7 @@ export function playerStatusDescriptionLine(status: PlayerStatusDescriptionStatu
   }
 }
 
-export function effectDescriptionLine(effect: BattleCardEffect): string {
+function effectDescriptionLine(effect: BattleCardEffect): string {
   switch (effect.kind) {
     case "heal":
       return `Restore ${effect.amount} Health`;

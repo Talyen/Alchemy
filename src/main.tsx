@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 
 import App from "./App";
 import "./index.css";
-import { cursorArt } from "./lib/game-data/assets";
+import { cursorArt } from "@/lib/game-data";
 import { initializeRendererCrashReporting } from "./lib/crash-reporting";
 import "@/features/alchemy/shared/stores/error-log-store";
 

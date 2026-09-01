@@ -37,18 +37,21 @@ export function layerImportsWithPaths(paths, ...fragments) {
 /** @type {ImportPattern[]} */
 export const BARREL_PATTERNS = [
   {
-    group: ["@/lib/game-data/*"],
+    group: ["@/lib/game-data/*", "**/lib/game-data/*"],
     allowImportNames: ["hydrateCard", "getOfferableCardPool", "getStandardPotionPool", "isStandardPotionCard"],
     message: "Import from @/lib/game-data (barrel) instead of deep paths.",
   },
-  { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
-  { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
+  { group: ["@/lib/battle/*", "**/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
   {
-    group: ["@/features/alchemy/shared/utils/*"],
+    group: ["@/lib/validation/*", "**/lib/validation/*"],
+    message: "Import from @/lib/validation (barrel) instead of deep paths.",
+  },
+  {
+    group: ["@/features/alchemy/shared/utils/*", "**/features/alchemy/shared/utils/*"],
     message: "Import from @/features/alchemy/shared/utils (barrel) instead of deep paths.",
   },
   {
-    group: ["@/features/alchemy/shared/storage/*"],
+    group: ["@/features/alchemy/shared/storage/*", "**/features/alchemy/shared/storage/*"],
     allowImportNames: [
       "flushAlchemySaveNow",
       "buildAlchemySaveDataFromStores",
@@ -68,7 +71,9 @@ export const LIB_NO_FEATURES = [
 ];
 
 /** @type {ImportPattern[]} — subset of BARREL_PATTERNS relevant inside src/lib (no features barrels). */
-export const LIB_BARREL_PATTERNS = BARREL_PATTERNS.filter((pattern) => pattern.group.some((g) => g.includes("@/lib/")));
+export const LIB_BARREL_PATTERNS = BARREL_PATTERNS.filter((pattern) =>
+  pattern.group.some((g) => g.includes("@/lib/") || g.includes("/lib/")),
+);
 
 /** @type {ImportPattern[]} */
 export const GAME_DATA_NO_BATTLE = [
@@ -343,3 +348,47 @@ export const ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS = Object.entries(ASSET_BARRE
     message: `Playwright-collected tests must not value-import ${source} — ${reason}`,
   }),
 );
+
+/** Ban .only and focused tests on test suites so CI never silently skips tests. */
+export const TESTS_NO_ONLY_SELECTORS = [
+  {
+    selector: 'CallExpression[callee.property.name="only"][callee.object.name=/(describe|it|test|suite)/]',
+    message: "Do not commit .only in tests; keep all tests active.",
+  },
+  {
+    selector:
+      'CallExpression[callee.property.name="only"][callee.object.property.name=/(describe|it|test|suite|concurrent|serial)/]',
+    message: "Do not commit .only in tests; keep all tests active.",
+  },
+  {
+    selector: 'MemberExpression[property.name="only"][object.name=/(describe|it|test|suite)/]',
+    message: "Do not commit .only in tests; keep all tests active.",
+  },
+  {
+    selector:
+      'MemberExpression[property.name="only"][object.property.name=/(describe|it|test|suite|concurrent|serial)/]',
+    message: "Do not commit .only in tests; keep all tests active.",
+  },
+  {
+    selector: 'CallExpression[callee.name="fit"]',
+    message: "Do not commit fit in tests; keep all tests active.",
+  },
+  {
+    selector: 'CallExpression[callee.name="fdescribe"]',
+    message: "Do not commit fdescribe in tests; keep all tests active.",
+  },
+];
+
+/** Banned creation of React contexts outside designated provider seams. */
+export const NO_UNOWNED_CONTEXT_CREATION = [
+  {
+    selector: 'CallExpression[callee.name="createContext"]',
+    message:
+      "Do not create React Contexts here. Allowed providers are AppScreenChromeProvider and CardDescriptionProvider; pass controllers via route/shell props.",
+  },
+  {
+    selector: 'CallExpression[callee.object.name="React"][callee.property.name="createContext"]',
+    message:
+      "Do not create React Contexts here. Allowed providers are AppScreenChromeProvider and CardDescriptionProvider; pass controllers via route/shell props.",
+  },
+];

@@ -26,7 +26,7 @@ describe("sortMysteryEffectsByDisplayOrder", () => {
   it("sorts mixed effects into display order and is stable within rank", () => {
     const portrait: MysteryEffect = { kind: "gainGeneratedGear", baseItemId: "dagger" };
     const xp: MysteryEffect = { kind: "gainXP", keyword: "mana", amount: 8 };
-    const mat: MysteryEffect = { kind: "gainMaterial", material: "crystal", amount: 3 };
+    const mat: MysteryEffect = { kind: "gainMaterial", material: "gems", amount: 3 };
     const gold: MysteryEffect = { kind: "gainGold", amount: 20 };
 
     const sorted = sortMysteryEffectsByDisplayOrder([portrait, mat, gold, xp]);

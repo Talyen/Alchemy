@@ -21,6 +21,7 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { PageLayout } from "../../shared/ui/shared-ui";
+import { renderUnlockMessage } from "../../shared/ui/unlock-text";
 import {
   ArmoryCharacterTabs,
   useArmoryTargetingEvents,
@@ -227,7 +228,7 @@ export function ArmoryScreen({
                     <div className="max-w-xs text-center">
                       <Lock className="mx-auto h-8 w-8" />
                       <p className="mt-2 font-semibold">
-                        Finish a Run as the {characters[requiredCharacterId].name} to unlock
+                        {renderUnlockMessage(`Finish a Run as the ${characters[requiredCharacterId].name} to unlock`)}
                       </p>
                     </div>
                   </div>

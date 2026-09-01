@@ -1,9 +1,16 @@
 import type { Page } from "@playwright/test";
-import { extractHitchEvents, type FrameSampleRaw, type InputEventSample, type LongTaskSample } from "./metrics";
+import {
+  extractHitchEvents,
+  type FrameGapSample,
+  type FrameSampleRaw,
+  type InputEventSample,
+  type LongTaskSample,
+} from "./metrics";
 
 declare global {
   interface Window {
     __alchemyPerf?: {
+      frameGaps: FrameGapSample[];
       frameTimes: number[];
       longTasks: LongTaskSample[];
       inputEvents: InputEventSample[];
@@ -24,6 +31,7 @@ export async function installFrameSampler(page: Page): Promise<void> {
   await page.evaluate(() => {
     if (window.__alchemyPerf) return;
     window.__alchemyPerf = {
+      frameGaps: [],
       frameTimes: [],
       longTasks: [],
       inputEvents: [],
@@ -55,6 +63,7 @@ export async function startFrameSampler(page: Page): Promise<void> {
   await page.evaluate(() => {
     const perf = window.__alchemyPerf!;
     if (perf.running) return;
+    perf.frameGaps = [];
     perf.frameTimes = [];
     perf.longTasks = [];
     perf.inputEvents = [];
@@ -64,16 +73,25 @@ export async function startFrameSampler(page: Page): Promise<void> {
     perf.lastTs = 0;
     perf.phaseMarks.push({ time: 0, phase: perf.phase });
 
+    const phaseAt = (marks: Array<{ time: number; phase: string }>, timeMs: number): string => {
+      let phase = marks[0]?.phase ?? "idle";
+      for (const mark of marks) {
+        if (mark.time <= timeMs) phase = mark.phase;
+        else break;
+      }
+      return phase;
+    };
+
     try {
       perf.observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          // Ignore buffered entries that started before the measured window.
           if (entry.startTime < perf.startTs) continue;
           if (entry.duration >= 50) {
+            const startTime = entry.startTime - perf.startTs;
             perf.longTasks.push({
-              startTime: entry.startTime - perf.startTs,
+              startTime,
               duration: entry.duration,
-              phase: perf.phase,
+              phase: phaseAt(perf.phaseMarks, startTime),
             });
           }
         }
@@ -94,13 +112,14 @@ export async function startFrameSampler(page: Page): Promise<void> {
           };
           const interactionId = entry.interactionId ?? 0;
           if (entry.startTime < perf.startTs || interactionId === 0) continue;
+          const startTime = entry.startTime - perf.startTs;
           perf.inputEvents.push({
             name: entry.name,
-            startTime: entry.startTime - perf.startTs,
+            startTime,
             duration: entry.duration,
             inputDelay: Math.max(0, (entry.processingStart ?? entry.startTime) - entry.startTime),
             interactionId,
-            phase: perf.phase,
+            phase: phaseAt(perf.phaseMarks, startTime),
           });
         }
       });
@@ -112,7 +131,10 @@ export async function startFrameSampler(page: Page): Promise<void> {
     const tick = (ts: number) => {
       if (!perf.running) return;
       if (perf.lastTs > 0) {
-        perf.frameTimes.push(ts - perf.lastTs);
+        const startTime = perf.lastTs - perf.startTs;
+        const duration = ts - perf.lastTs;
+        perf.frameGaps.push({ startTime, duration });
+        perf.frameTimes.push(duration);
       }
       perf.lastTs = ts;
       perf.rafId = requestAnimationFrame(tick);
@@ -125,15 +147,45 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
   const sample = await page.evaluate(() => {
     const perf = window.__alchemyPerf;
     if (!perf || !perf.running) {
-      return { frameTimes: [], longTasks: [], inputEvents: [], durationMs: 0, phaseMarks: [], hitchEvents: [] };
+      return {
+        frameGaps: [],
+        frameTimes: [],
+        longTasks: [],
+        inputEvents: [],
+        durationMs: 0,
+        phaseMarks: [],
+        hitchEvents: [],
+      };
     }
     perf.running = false;
     if (perf.rafId !== null) {
       cancelAnimationFrame(perf.rafId);
       perf.rafId = null;
     }
+
+    const phaseAt = (marks: Array<{ time: number; phase: string }>, timeMs: number): string => {
+      let phase = marks[0]?.phase ?? "idle";
+      for (const mark of marks) {
+        if (mark.time <= timeMs) phase = mark.phase;
+        else break;
+      }
+      return phase;
+    };
+
     if (perf.observer) {
       try {
+        const records = perf.observer.takeRecords();
+        for (const entry of records) {
+          if (entry.startTime < perf.startTs) continue;
+          if (entry.duration >= 50) {
+            const startTime = entry.startTime - perf.startTs;
+            perf.longTasks.push({
+              startTime,
+              duration: entry.duration,
+              phase: phaseAt(perf.phaseMarks, startTime),
+            });
+          }
+        }
         perf.observer.disconnect();
       } catch {
         // ignore
@@ -142,6 +194,24 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
     }
     if (perf.eventObserver) {
       try {
+        const records = perf.eventObserver.takeRecords();
+        for (const rawEntry of records) {
+          const entry = rawEntry as PerformanceEntry & {
+            processingStart?: number;
+            interactionId?: number;
+          };
+          const interactionId = entry.interactionId ?? 0;
+          if (entry.startTime < perf.startTs || interactionId === 0) continue;
+          const startTime = entry.startTime - perf.startTs;
+          perf.inputEvents.push({
+            name: entry.name,
+            startTime,
+            duration: entry.duration,
+            inputDelay: Math.max(0, (entry.processingStart ?? entry.startTime) - entry.startTime),
+            interactionId,
+            phase: phaseAt(perf.phaseMarks, startTime),
+          });
+        }
         perf.eventObserver.disconnect();
       } catch {
         // ignore
@@ -150,6 +220,7 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
     }
     const durationMs = performance.now() - perf.startTs;
     return {
+      frameGaps: [...perf.frameGaps],
       frameTimes: [...perf.frameTimes],
       longTasks: [...perf.longTasks],
       inputEvents: [...perf.inputEvents],
@@ -160,6 +231,9 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
 
   return {
     ...sample,
-    hitchEvents: extractHitchEvents(sample.frameTimes, sample.phaseMarks),
+    hitchEvents: extractHitchEvents(
+      sample.frameGaps && sample.frameGaps.length > 0 ? sample.frameGaps : (sample.frameTimes ?? []),
+      sample.phaseMarks,
+    ),
   };
 }

@@ -90,9 +90,9 @@ able to load and play the existing save.
 
 ### Policy: local is authoritative
 
-Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation) and then mirror to Steam Cloud. On load, candidates are walked in preference order (local → bak.1 → bak.2 → bak.3 → cloud). Corrupt candidates fall through to the next recovery source. A recognizable future-versioned candidate stops traversal and opens the Save Protected screen with writes disabled; otherwise the first compatible candidate that Zod-validates is used.
+Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation in `desktop/main.cjs` — `save.json` + `bak.1-3` + `tmp`) and then mirror to Steam Cloud. On load, candidates are walked in preference order (local → bak.1 → bak.2 → bak.3 → cloud) as returned by `src/lib/platform-save-backend.ts#createPlatformSaveBackend` (`uniqueCandidates` deduplicates identical Cloud mirrors). Corrupt candidates fall through to the next recovery source. A recognizable future-versioned candidate stops traversal and opens the Save Protected screen with writes disabled; otherwise the first compatible candidate that Zod-validates is used. Evaluation is pure in `src/features/alchemy/shared/storage/io.ts#evaluateSaveCandidates` for testability.
 
-Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest dirty snapshot to `localStorage`. Desktop IPC remains on the serialized asynchronous queue, so the earlier visibility/pagehide signals give it time to finish before the window closes. A terminal browser flush supersedes any queued snapshot that has not started writing.
+Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest dirty snapshot to `localStorage` via `writeSync`. Desktop IPC remains on the serialized asynchronous queue, so the earlier visibility/pagehide signals give it time to finish before the window closes. A terminal flush (browser `writeSync` or desktop coalesced `queueExitSnapshot`) supersedes any queued snapshot that has not started writing.
 
 ### Implementation rules
 
@@ -168,4 +168,4 @@ Schema 14 replaces the 8×9 `grid` + `connections` Labyrinth map with hex floors
 
 `parkedRuns` (`Partial<Record<ContentSystemId, ActiveRunData>>`) and `runRecency` are additive save fields with empty defaults. Load migrates a singular `activeRun` in place and does not hydrate parked slots until that mode is resumed. A corrupt parked slot is dropped; it does not wipe the save.
 
-Gold is the profile purse (`gold`). On load, in-combat `activeCombat.battleState.gold` wins; otherwise a positive leftover `activeRun.runGold` is copied into `gold`. The current wire shape does not persist `activeRun.runGold`. `runMetaMaxHealth` is additive (default 0, treated as `runMaxHealth` when missing) so combat HP bonuses survive a meta rebind.
+Gold is the profile purse (`gold`). On load, in-combat `activeCombat.battleState.gold` wins if present; otherwise the saved `gold` value is used. `runMetaMaxHealth` is additive (default 0, treated as `runMaxHealth` when missing) so combat HP bonuses survive a meta rebind.

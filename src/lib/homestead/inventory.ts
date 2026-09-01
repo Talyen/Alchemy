@@ -5,7 +5,7 @@ export function materialAmount(inventory: MaterialInventory, materialId: Materia
 }
 
 export function emptyInventory(): MaterialInventory {
-  return { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 };
+  return { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0 };
 }
 
 export function addInventory(a: MaterialInventory, b: MaterialInventory): MaterialInventory {

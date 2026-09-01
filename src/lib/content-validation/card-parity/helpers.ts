@@ -46,15 +46,6 @@ export function countLinesStartingWith(lines: string[], prefix: string): number 
   return lines.filter((line) => line.startsWith(prefix)).length;
 }
 
-export function countHealLines(lines: string[]): number {
-  return lines.filter(
-    (line) =>
-      line.startsWith("Heal ") ||
-      (line.startsWith("Restore ") && line.includes("Health")) ||
-      (line.startsWith("Gain ") && line.includes("Health")),
-  ).length;
-}
-
 export function parseLeadingNumber(line: string, prefix: string): number | null {
   if (!line.startsWith(prefix)) return null;
   const match = line.slice(prefix.length).match(/^\+?(\d+)/);

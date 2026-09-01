@@ -24,10 +24,14 @@ function cell(partial: Partial<RateCell>): RateCell {
 
 function paired(id: string, late: ReturnType<typeof makePairedDelta>): PairedTierRow {
   const empty = makePairedDelta(id, emptyPairedWinStats());
-  return { id, early: empty, mid: empty, late };
+  return { id, deltas: { early: empty, mid: empty, late } };
 }
 
-function emptyModel(): BalanceReportModel {
+function rates(late: RateCell, early = emptyRateCell(), mid = emptyRateCell()) {
+  return { early, mid, late };
+}
+
+function emptyModel(): { -readonly [Key in keyof BalanceReportModel]: BalanceReportModel[Key] } {
   return {
     meta: {
       policy: "greedy-effective-damage",
@@ -58,15 +62,11 @@ describe("evaluateBalanceFindings", () => {
       characterId,
       enemyId: "skeleton",
       enemyType: "normal",
-      early: emptyRateCell(),
-      mid: emptyRateCell(),
-      late: cell({ winRate: 1, averageTurns: 4 }),
+      rates: rates(cell({ winRate: 1, averageTurns: 4 })),
       topCardsLate: [],
     }));
     const model = emptyModel();
-    model.enemies = [
-      { id: "skeleton", early: emptyRateCell(), mid: emptyRateCell(), late: cell({ winRate: 1, averageTurns: 4 }) },
-    ];
+    model.enemies = [{ id: "skeleton", rates: rates(cell({ winRate: 1, averageTurns: 4 })) }];
     model.classMatchups = matchups;
 
     const result = evaluateBalanceFindings(model);
@@ -80,26 +80,20 @@ describe("evaluateBalanceFindings", () => {
 
   it("flags a too-short normal and a too-hard boss matchup", () => {
     const model = emptyModel();
-    model.enemies = [
-      { id: "goblin", early: emptyRateCell(), mid: emptyRateCell(), late: cell({ winRate: 0.95, averageTurns: 2 }) },
-    ];
+    model.enemies = [{ id: "goblin", rates: rates(cell({ winRate: 0.95, averageTurns: 2 })) }];
     model.classMatchups = [
       {
         characterId: "rogue",
         enemyId: "frostwarden",
         enemyType: "boss",
-        early: emptyRateCell(),
-        mid: emptyRateCell(),
-        late: cell({ winRate: 0.2, averageTurns: 8 }),
+        rates: rates(cell({ winRate: 0.2, averageTurns: 8 })),
         topCardsLate: [],
       },
       {
         characterId: "wizard",
         enemyId: "frostwarden",
         enemyType: "boss",
-        early: emptyRateCell(),
-        mid: emptyRateCell(),
-        late: cell({ winRate: 0.95, averageTurns: 8 }),
+        rates: rates(cell({ winRate: 0.95, averageTurns: 8 })),
         topCardsLate: [],
       },
     ];
@@ -153,8 +147,8 @@ describe("evaluateBalanceFindings", () => {
   it("flags anomaly spikes over threshold and ignores values under it", () => {
     const model = emptyModel();
     model.anomalyMetrics = [
-      { field: "Player→Enemy Dmg", early: 10, mid: 10, late: 400, thresholds: [100, 200, 300] },
-      { field: "Player Heal", early: 10, mid: 10, late: 10, thresholds: [100, 200, 300] },
+      { field: "Player→Enemy Dmg", values: { early: 10, mid: 10, late: 400 } },
+      { field: "Player Heal", values: { early: 10, mid: 10, late: 10 } },
     ];
     model.anomalies = [
       { field: "Player→Enemy Dmg", maxValue: 400, battles: 3, peakScenario: "wizard vs frost-elemental (Late)" },
@@ -171,10 +165,7 @@ describe("evaluateBalanceFindings", () => {
     const model = emptyModel();
     model.anomalyMetrics = Array.from({ length: 40 }, (_, index) => ({
       field: `metric-${index}`,
-      early: 0,
-      mid: 0,
-      late: 500,
-      thresholds: [100, 200, 300],
+      values: { early: 0, mid: 0, late: 500 },
     }));
     const result = evaluateBalanceFindings(model);
     expect(result.findings.length).toBe(FINDINGS_CAP);
@@ -193,9 +184,7 @@ describe("evaluateBalanceFindings", () => {
           characterId,
           enemyId,
           enemyType: "boss",
-          early: emptyRateCell(),
-          mid: emptyRateCell(),
-          late: cell({ winRate: 0.1 + index * 0.05, averageTurns: 8 }),
+          rates: rates(cell({ winRate: 0.1 + index * 0.05, averageTurns: 8 })),
           topCardsLate: [],
         });
       });
@@ -203,25 +192,19 @@ describe("evaluateBalanceFindings", () => {
 
     const model = emptyModel();
     model.classMatchups = matchups;
-    model.enemies = [
-      { id: "goblin", early: emptyRateCell(), mid: emptyRateCell(), late: cell({ winRate: 0.95, averageTurns: 2 }) },
-    ];
+    model.enemies = [{ id: "goblin", rates: rates(cell({ winRate: 0.95, averageTurns: 2 })) }];
     model.classes = [
       {
         id: "wizard",
-        early: emptyRateCell(),
-        mid: emptyRateCell(),
-        late: cell({ winRate: 1, averageTurns: 3 }),
-        earlyByType: {},
-        midByType: {},
-        lateByType: {
-          normal: emptyRateCell(),
-          elite: emptyRateCell(),
-          boss: emptyRateCell(),
+        rates: rates(cell({ winRate: 1, averageTurns: 3 })),
+        ratesByType: {
+          early: { normal: emptyRateCell(), elite: emptyRateCell(), boss: emptyRateCell() },
+          mid: { normal: emptyRateCell(), elite: emptyRateCell(), boss: emptyRateCell() },
+          late: { normal: emptyRateCell(), elite: emptyRateCell(), boss: emptyRateCell() },
         },
       },
     ];
-    model.anomalyMetrics = [{ field: "Player→Enemy Dmg", early: 10, mid: 10, late: 400, thresholds: [100, 200, 300] }];
+    model.anomalyMetrics = [{ field: "Player→Enemy Dmg", values: { early: 10, mid: 10, late: 400 } }];
     model.anomalies = [
       { field: "Player→Enemy Dmg", maxValue: 400, battles: 3, peakScenario: "wizard vs frostwarden (Late)" },
     ];

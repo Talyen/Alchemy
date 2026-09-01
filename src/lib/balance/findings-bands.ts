@@ -1,6 +1,7 @@
 import { ANOMALY_THRESHOLD_BY_PRESET, type AnomalyPreset } from "./anomalies";
+import type { ReportEnemyType } from "./report-catalog";
 
-export type EnemyTypeBand = "normal" | "elite" | "boss";
+export type EnemyTypeBand = ReportEnemyType;
 export type FindingsTier = AnomalyPreset;
 
 export const FINDINGS_CAP = 25;

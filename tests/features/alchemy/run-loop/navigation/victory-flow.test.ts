@@ -33,7 +33,7 @@ vi.mock("@/features/alchemy/shared/run-flow/destination-flow", async (importOrig
 });
 
 vi.mock("@/lib/homestead/loot", () => ({
-  getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 })),
+  getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, iron: 0, herbs: 0, food: 0, gems: 0 })),
   applyMaterialFindBonus: vi.fn((mats: unknown) => mats),
 }));
 
@@ -629,19 +629,19 @@ describe("commitVictoryRewards", () => {
     ).toBe(true);
   });
 
-  it("adds pending crystal materials to homestead", () => {
-    const materials = { ...emptyInventory(), crystal: 2 };
+  it("adds pending gems materials to homestead", () => {
+    const materials = { ...emptyInventory(), gems: 2 };
     commit(
       victoryResult(),
       commitDeps({
         battleState: baseBattleState({ pendingMaterials: materials }),
       }),
     );
-    expect(readGameplayState().runProfile.materialInventory.crystal).toBe(2);
+    expect(readGameplayState().runProfile.materialInventory.gems).toBe(2);
   });
 
-  it("does not award pending crystal materials for wildwood victories", () => {
-    const materials = { ...emptyInventory(), crystal: 2 };
+  it("does not award pending gems materials for wildwood victories", () => {
+    const materials = { ...emptyInventory(), gems: 2 };
     commit(
       victoryResult(),
       commitDeps({
@@ -650,7 +650,7 @@ describe("commitVictoryRewards", () => {
       }),
     );
 
-    expect(readGameplayState().runProfile.materialInventory.crystal).toBe(0);
+    expect(readGameplayState().runProfile.materialInventory.gems).toBe(0);
   });
 
   it("persists in-combat gold into the purse for wildwood victories", () => {

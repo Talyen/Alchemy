@@ -7,7 +7,6 @@ function parseSavedEffectList(values: unknown[]) {
     const result = BattleCardEffectSchema.safeParse(value);
     if (!result.success) {
       pushValidationError(`effects[${i}]`, result.error.message);
-      console.warn(`[Save Validation] Card effect at index ${i} dropped:`, result.error.message);
     }
     return result.success ? [{ ...result.data }] : [];
   });
@@ -17,7 +16,6 @@ function cloneSavedDescriptionLines(values: unknown[]): string[] | null {
   const allStrings = values.every((line) => typeof line === "string");
   if (!allStrings) {
     pushValidationError("descriptionLines", "contained non-string values");
-    console.warn(`[Save Validation] Card description lines contained non-string values`);
   }
   return allStrings ? [...values] : null;
 }
@@ -31,7 +29,7 @@ export const BattleCardSchema = z
     title: z.string().default(""),
     descriptionLines: z.array(z.unknown()).optional(),
     art: z.string().default(""),
-    cost: z.union([z.number(), z.nan()]).catch(-1),
+    cost: z.number().catch(-1),
     consume: z.boolean().optional(),
     corrupted: z.boolean().optional(),
     corruptedValuePositions: z
@@ -62,8 +60,7 @@ export const BattleCardSchema = z
             p.matchIndex >= 0,
         )
       : undefined;
-    const cost =
-      Number.isFinite(saved.cost) && Number.isInteger(saved.cost) && saved.cost >= 0 ? Math.round(saved.cost) : -1;
+    const cost = Number.isInteger(saved.cost) && saved.cost >= 0 ? saved.cost : -1;
     return {
       id: saved.id,
       title: saved.title,

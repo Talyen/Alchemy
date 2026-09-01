@@ -179,15 +179,15 @@ describe("progress write-port", () => {
 
   it("addRunMaterialsEarned aggregates across grants and clear empties the tally", () => {
     dispatchRunSessionCommand((draft) => {
-      addRunMaterialsEarned(draft, { wood: 2, iron: 0, herbs: 1, food: 0, crystal: 0 });
-      addRunMaterialsEarned(draft, { wood: 3, iron: 1, herbs: 0, food: 0, crystal: 2 });
+      addRunMaterialsEarned(draft, { wood: 2, iron: 0, herbs: 1, food: 0, gems: 0 });
+      addRunMaterialsEarned(draft, { wood: 3, iron: 1, herbs: 0, food: 0, gems: 2 });
     });
     expect(readActiveRun().runMaterialsEarned).toEqual({
       wood: 5,
       iron: 1,
       herbs: 1,
       food: 0,
-      crystal: 2,
+      gems: 2,
     });
     dispatchRunSessionCommand((draft) => clearRunMaterialsEarned(draft));
     expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());

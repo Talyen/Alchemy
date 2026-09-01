@@ -12,7 +12,7 @@ test.describe("Homestead Flow", critical, () => {
   test.describe("with custom materials", () => {
     test.beforeEach(async ({ page }) => {
       await new HomesteadPage(page).goto({
-        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, crystal: 5 },
+        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, gems: 5 },
       });
     });
 
@@ -23,7 +23,7 @@ test.describe("Homestead Flow", critical, () => {
         homestead.materialPill("Iron", 50),
         homestead.materialPill("Herbs", 25),
         homestead.materialPill("Food", 10),
-        homestead.materialPill("Crystal", 5),
+        homestead.materialPill("Gems", 5),
       ];
       for (const pill of pills) {
         await expect(pill).toBeVisible({ timeout: 3000 });
@@ -66,21 +66,21 @@ test.describe("Homestead Flow", critical, () => {
       const homestead = new HomesteadPage(page);
 
       await homestead.goto({
-        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, crystal: 5 },
+        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, gems: 5 },
         constructedBuildings: { "blacksmiths-forge": 1, carpentry: 0 },
       });
       await expect(homestead.buildingsTab).toBeVisible();
       await expect(homestead.materialPill("Wood", 100)).toBeVisible({ timeout: 3000 });
 
       await homestead.goto({
-        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, crystal: 5 },
+        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, gems: 5 },
         plantedFarms: { "herb-garden": 1 },
       });
       await homestead.switchTab("Farm");
       await expect(page.getByRole("button", { name: /Herb Garden/ })).toBeVisible({ timeout: 3000 });
 
       await homestead.goto({
-        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, crystal: 5 },
+        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, gems: 5 },
         completedResearch: { "botanical-distillation": 1 },
       });
       await homestead.switchTab("Research");
@@ -96,14 +96,14 @@ test.describe("Homestead Flow", critical, () => {
       await homestead.goto();
     });
 
-    test("homestead shell fits content across tabs and collapses vertically for single-row companions tab", async ({
+    test("homestead shell maintains consistent height across all tabs including single-row companions tab", async ({
       page,
     }) => {
-      const shell = page.locator(".alchemy-shell").first();
+      const shell = page.locator(".max-w-7xl").first();
       const tabAnchors: Record<"Buildings" | "Farm" | "Research" | "Companions", Locator> = {
         Buildings: page.getByRole("button", { name: /Blacksmith/ }),
         Farm: page.getByRole("button", { name: /Herb Garden/ }),
-        Research: page.getByRole("heading", { name: "Leyline Energy" }).or(page.getByText("Leyline Energy")),
+        Research: page.getByText("Leyline Energy").first(),
         Companions: page.getByRole("img", { name: "Wolf" }),
       };
 
@@ -124,16 +124,16 @@ test.describe("Homestead Flow", critical, () => {
         return height;
       };
 
-      const twoRowHeights: number[] = [];
+      const allHeights: number[] = [];
       for (const tab of ["Buildings", "Farm", "Research"] as const) {
         await homestead.switchTab(tab);
         await expect(tabAnchors[tab]).toBeVisible({ timeout: 3000 });
-        twoRowHeights.push(await settledHeight());
+        allHeights.push(await settledHeight());
       }
 
       await homestead.switchTab("Companions");
       await expect(tabAnchors.Companions).toBeVisible({ timeout: 3000 });
-      const companionHeight = await settledHeight();
+      allHeights.push(await settledHeight());
 
       await homestead.switchTab("Buildings");
       await expect(page.getByRole("button", { name: /Blacksmith/ }).first()).toBeVisible({ timeout: 3000 });
@@ -143,11 +143,9 @@ test.describe("Homestead Flow", critical, () => {
       await expect(page.getByText("Detect Magic").first()).toBeVisible({ timeout: 3000 });
       await expect(page.getByText("Agility Training").first()).toBeVisible();
 
-      const max2Row = Math.max(...twoRowHeights);
-      const min2Row = Math.min(...twoRowHeights);
-      expect(max2Row - min2Row).toBeLessThanOrEqual(1);
-
-      expect(companionHeight).toBeLessThan(min2Row);
+      const maxHeight = Math.max(...allHeights);
+      const minHeight = Math.min(...allHeights);
+      expect(maxHeight - minHeight).toBeLessThanOrEqual(1);
     });
   });
 });

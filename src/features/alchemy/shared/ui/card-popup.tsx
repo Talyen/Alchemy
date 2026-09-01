@@ -11,6 +11,7 @@ export function DetailPopup({
   idPrefix,
   title,
   subtitle,
+  chip,
   footerChip,
   descriptionLines,
   descriptionNodes,
@@ -23,6 +24,7 @@ export function DetailPopup({
   idPrefix: string;
   title: ReactNode;
   subtitle?: string | undefined;
+  chip?: string | undefined;
   footerChip?: string | undefined;
   descriptionLines: string[];
   descriptionNodes?: ReactNode[] | undefined;
@@ -32,6 +34,7 @@ export function DetailPopup({
   padding?: number | undefined;
   plasmaColorPair?: PlasmaColorPair | null | undefined;
 }) {
+  const displayChip = chip ?? footerChip;
   return (
     <PortaledTooltip
       triggerRef={triggerRef}
@@ -40,13 +43,15 @@ export function DetailPopup({
       plasmaColorPair={plasmaColorPair}
       {...(padding !== undefined ? { padding } : {})}
     >
-      <TooltipHeader>{title}</TooltipHeader>
+      <TooltipHeader className={displayChip ? "flex flex-wrap items-center gap-2" : undefined}>
+        {title}
+        {displayChip ? <TooltipChip className="shrink-0 whitespace-nowrap">{displayChip}</TooltipChip> : null}
+      </TooltipHeader>
       {subtitle ? <TooltipSubheader className="mt-1">{subtitle}</TooltipSubheader> : null}
       <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} {...(card ? { card } : {})} />
       {descriptionNodes?.map((node, i) => (
         <TooltipBody key={i}>{node}</TooltipBody>
       ))}
-      {footerChip ? <TooltipChip>{footerChip}</TooltipChip> : null}
     </PortaledTooltip>
   );
 }

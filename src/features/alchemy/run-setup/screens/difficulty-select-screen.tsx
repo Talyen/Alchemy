@@ -30,6 +30,7 @@ import {
 } from "@/features/alchemy/shared/config";
 import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
 import { TooltipBody } from "../../shared/ui/tooltip-panel";
+import { renderUnlockMessage } from "../../shared/ui/unlock-text";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
@@ -141,7 +142,7 @@ function DifficultyCard({
       {locked && (
         <PortaledTooltip triggerRef={triggerRef} visible={visible}>
           <TooltipBody>
-            <p>Clear Previous Difficulty to Unlock</p>
+            <p>{renderUnlockMessage("Clear previous Difficulty to unlock")}</p>
           </TooltipBody>
         </PortaledTooltip>
       )}

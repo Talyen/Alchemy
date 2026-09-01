@@ -31,27 +31,27 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
   },
   mimic: {
     guaranteed: materialCost({ iron: 2 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.5), lootEntry("iron", 0, 1, 0.4)],
+    bonuses: [lootEntry("gems", 0, 1, 0.5), lootEntry("iron", 0, 1, 0.4)],
   },
   "mud-elemental": {
     guaranteed: materialCost({ herbs: 1 }),
     bonuses: [],
   },
   necromancer: {
-    guaranteed: materialCost({ herbs: 2, crystal: 1 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.3), lootEntry("herbs", 0, 1, 0.5)],
+    guaranteed: materialCost({ herbs: 2, gems: 1 }),
+    bonuses: [lootEntry("gems", 0, 1, 0.3), lootEntry("herbs", 0, 1, 0.5)],
   },
   "plague-doctor": {
     guaranteed: materialCost({ herbs: 2 }),
     bonuses: [lootEntry("herbs", 0, 1, 0.4)],
   },
   "forge-golem": {
-    guaranteed: materialCost({ iron: 3, crystal: 1 }),
-    bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
+    guaranteed: materialCost({ iron: 3, gems: 1 }),
+    bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("gems", 0, 1, 0.4)],
   },
   frostwarden: {
-    guaranteed: materialCost({ crystal: 3 }),
-    bonuses: [lootEntry("crystal", 0, 2, 0.6), lootEntry("iron", 0, 1, 0.3)],
+    guaranteed: materialCost({ gems: 3 }),
+    bonuses: [lootEntry("gems", 0, 2, 0.6), lootEntry("iron", 0, 1, 0.3)],
   },
   "blight-treant": {
     guaranteed: materialCost({ wood: 2, herbs: 2 }),
@@ -59,27 +59,27 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
   },
   "living-armor": {
     guaranteed: materialCost({ iron: 2 }),
-    bonuses: [lootEntry("iron", 0, 1, 0.4), lootEntry("crystal", 0, 1, 0.3)],
+    bonuses: [lootEntry("iron", 0, 1, 0.4), lootEntry("gems", 0, 1, 0.3)],
   },
   "iron-bear": {
     guaranteed: materialCost({ iron: 2, food: 1 }),
     bonuses: [lootEntry("iron", 0, 2, 0.5), lootEntry("food", 0, 1, 0.4)],
   },
   "fire-elemental": {
-    guaranteed: materialCost({ iron: 1, crystal: 1 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.4)],
+    guaranteed: materialCost({ iron: 1, gems: 1 }),
+    bonuses: [lootEntry("gems", 0, 1, 0.4)],
   },
   "frost-elemental": {
-    guaranteed: materialCost({ crystal: 2 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.6)],
+    guaranteed: materialCost({ gems: 2 }),
+    bonuses: [lootEntry("gems", 0, 1, 0.6)],
   },
   slime: {
     guaranteed: materialCost({ food: 1 }),
     bonuses: [lootEntry("herbs", 0, 1, 0.3)],
   },
   "will-o-wisp": {
-    guaranteed: materialCost({ crystal: 2 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.6)],
+    guaranteed: materialCost({ gems: 2 }),
+    bonuses: [lootEntry("gems", 0, 1, 0.6)],
   },
   bandit: {
     guaranteed: materialCost({ wood: 1, food: 1 }),
@@ -90,16 +90,16 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
     bonuses: [lootEntry("iron", 0, 1, 0.5)],
   },
   "fire-imp": {
-    guaranteed: materialCost({ iron: 1, crystal: 1 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.4)],
+    guaranteed: materialCost({ iron: 1, gems: 1 }),
+    bonuses: [lootEntry("gems", 0, 1, 0.4)],
   },
   hellhound: {
     guaranteed: materialCost({ food: 2, iron: 1 }),
     bonuses: [lootEntry("food", 0, 1, 0.4)],
   },
   pyromancer: {
-    guaranteed: materialCost({ crystal: 2, iron: 1 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.5)],
+    guaranteed: materialCost({ gems: 2, iron: 1 }),
+    bonuses: [lootEntry("gems", 0, 1, 0.5)],
   },
   "giant-spider": {
     guaranteed: materialCost({ herbs: 1, food: 1 }),
@@ -110,8 +110,8 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
     bonuses: [lootEntry("herbs", 0, 1, 0.5)],
   },
   "blood-cultist": {
-    guaranteed: materialCost({ herbs: 2, crystal: 1 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.4)],
+    guaranteed: materialCost({ herbs: 2, gems: 1 }),
+    bonuses: [lootEntry("gems", 0, 1, 0.4)],
   },
   "dire-wolf": {
     guaranteed: materialCost({ food: 2 }),
@@ -119,46 +119,46 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
   },
   vampire: {
     guaranteed: materialCost({ herbs: 2, food: 1 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.4)],
+    bonuses: [lootEntry("gems", 0, 1, 0.4)],
   },
   "blood-countess": {
-    guaranteed: materialCost({ herbs: 3, crystal: 1 }),
-    bonuses: [lootEntry("herbs", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
+    guaranteed: materialCost({ herbs: 3, gems: 1 }),
+    bonuses: [lootEntry("herbs", 0, 2, 0.6), lootEntry("gems", 0, 1, 0.4)],
   },
   zealot: {
-    guaranteed: materialCost({ food: 1, crystal: 1 }),
+    guaranteed: materialCost({ food: 1, gems: 1 }),
     bonuses: [lootEntry("food", 0, 1, 0.4)],
   },
   cleric: {
-    guaranteed: materialCost({ herbs: 1, crystal: 1 }),
+    guaranteed: materialCost({ herbs: 1, gems: 1 }),
     bonuses: [lootEntry("herbs", 0, 1, 0.4)],
   },
   inquisitor: {
-    guaranteed: materialCost({ iron: 1, crystal: 1 }),
+    guaranteed: materialCost({ iron: 1, gems: 1 }),
     bonuses: [lootEntry("iron", 0, 1, 0.4)],
   },
   paladin: {
-    guaranteed: materialCost({ iron: 2, crystal: 1 }),
+    guaranteed: materialCost({ iron: 2, gems: 1 }),
     bonuses: [lootEntry("iron", 0, 1, 0.5)],
   },
   seraph: {
-    guaranteed: materialCost({ crystal: 3, herbs: 1 }),
-    bonuses: [lootEntry("crystal", 0, 2, 0.6), lootEntry("herbs", 0, 1, 0.4)],
+    guaranteed: materialCost({ gems: 3, herbs: 1 }),
+    bonuses: [lootEntry("gems", 0, 2, 0.6), lootEntry("herbs", 0, 1, 0.4)],
   },
   "winter-wolf": {
-    guaranteed: materialCost({ food: 1, crystal: 1 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.4)],
+    guaranteed: materialCost({ food: 1, gems: 1 }),
+    bonuses: [lootEntry("gems", 0, 1, 0.4)],
   },
   "ice-wraith": {
-    guaranteed: materialCost({ crystal: 2, herbs: 1 }),
-    bonuses: [lootEntry("crystal", 0, 1, 0.5)],
+    guaranteed: materialCost({ gems: 2, herbs: 1 }),
+    bonuses: [lootEntry("gems", 0, 1, 0.5)],
   },
   yeti: {
     guaranteed: materialCost({ food: 2, iron: 1 }),
     bonuses: [lootEntry("food", 0, 1, 0.4)],
   },
   banshee: {
-    guaranteed: materialCost({ herbs: 1, crystal: 1 }),
+    guaranteed: materialCost({ herbs: 1, gems: 1 }),
     bonuses: [lootEntry("herbs", 0, 1, 0.4)],
   },
   brawler: {
@@ -174,8 +174,8 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
     bonuses: [lootEntry("iron", 0, 1, 0.4)],
   },
   "stone-titan": {
-    guaranteed: materialCost({ iron: 3, crystal: 1 }),
-    bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
+    guaranteed: materialCost({ iron: 3, gems: 1 }),
+    bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("gems", 0, 1, 0.4)],
   },
 };
 
@@ -226,7 +226,7 @@ export function applyMaterialFindBonus(
 
 type EndOfRunHomesteadEffects = Pick<
   HomesteadEffectManifest,
-  "endRunFoodPerRoom" | "endRunHerbsPerRoom" | "endRunCrystalPerRoom" | "herbFindBonus"
+  "endRunFoodPerRoom" | "endRunHerbsPerRoom" | "endRunGemsPerRoom" | "herbFindBonus"
 >;
 
 export function applyEndOfRunHomesteadBonuses(
@@ -238,7 +238,7 @@ export function applyEndOfRunHomesteadBonuses(
     ...base,
     herbs: base.herbs + effects.endRunHerbsPerRoom * roomsEncountered,
     food: base.food + effects.endRunFoodPerRoom * roomsEncountered,
-    crystal: base.crystal + effects.endRunCrystalPerRoom * roomsEncountered,
+    gems: base.gems + effects.endRunGemsPerRoom * roomsEncountered,
   };
   return applyMaterialFindBonus(withFlatYields, effects);
 }

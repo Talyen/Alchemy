@@ -256,6 +256,32 @@ describe("verify-changed route catalog", () => {
     }
   });
 
+  it("routes performance profiling and runtime marks through unit-performance", () => {
+    for (const filePath of [
+      "performance/metrics.ts",
+      "performance/compare-model.mjs",
+      "performance/compare.ts",
+      "performance/frame-sampler.ts",
+      "playwright.performance.config.ts",
+      "scripts/run-performance.mjs",
+      "src/lib/performance/battle-stage-marks.ts",
+      "tests/performance/metrics.test.ts",
+      "tests/lib/performance/battle-stage-marks.test.ts",
+      "docs/PERFORMANCE.md",
+      "docs/Audits/PerformanceAudit.md",
+    ]) {
+      const plan = resolvePlan([filePath]);
+      expect(
+        plan.routes.map((route) => route.id),
+        filePath,
+      ).toContain("performance");
+      expect(
+        plan.commands.map((command) => command.key),
+        filePath,
+      ).toEqual(expect.arrayContaining(["unit-performance", "typecheck"]));
+    }
+  });
+
   it("keeps shared script helpers on the tooling route", () => {
     for (const filePath of [
       "scripts/lib/is-main-module.mjs",
@@ -277,7 +303,6 @@ describe("verify-changed route catalog", () => {
 
   it("keeps generated asset helpers on the assets route", () => {
     for (const filePath of [
-      "scripts/lib/generated-module.mjs",
       "scripts/lib/sync-generated-helpers.mjs",
       "scripts/lib/asset-constants.mjs",
       "scripts/sync-art-barrels.mjs",
@@ -314,6 +339,20 @@ describe("verify-changed route catalog", () => {
     expect(plan.routes.map((route) => route.id)).toEqual(["unit-test"]);
     expect(plan.commands.map((command) => command.key)).toEqual(["unit-changed"]);
     expect(plan.commands[0]?.args).toEqual(["test", "--", filePath]);
+  });
+
+  it("routes balance implementation through unit and full-report checks", () => {
+    for (const filePath of ["src/lib/balance/report-run.ts", "tests/balance/balance-report.test.ts"]) {
+      const plan = resolvePlan([filePath]);
+      expect(
+        plan.routes.map((route) => route.id),
+        filePath,
+      ).toEqual(["balance"]);
+      expect(
+        plan.commands.map((command) => command.key),
+        filePath,
+      ).toEqual(["unit-balance", "report-balance"]);
+    }
   });
 
   it("routes repository-tooling tests and declarations through their owning suite", () => {

@@ -52,7 +52,7 @@ describe("encodeRunResumeSnapshot", () => {
       runBoons: ["bone-charm"],
       encounteredRunEnemyIds: ["goblin"],
       runTalentXP: {},
-      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0 },
       runObtainedItems: [],
     });
 
@@ -89,7 +89,7 @@ describe("encodeRunResumeSnapshot", () => {
       corruptionResult: null,
       wildwoodDraft: null,
       starterDraftChoices: null,
-      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0 },
       runObtainedItems: [],
     });
   });

@@ -31,7 +31,7 @@ export function commitVictoryRewards(
   deps: CommitVictoryRewardsDeps,
   rng: () => number,
 ): boolean {
-  if (deps.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {
+  if (deps.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.gems > 0) {
     awardMaterialsDuringRun(draft, deps.battleState.pendingMaterials);
   }
 

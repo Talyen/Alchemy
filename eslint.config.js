@@ -15,6 +15,8 @@ import {
   BATTLE_NO_MATH_RANDOM,
   CLASSNAME_NO_TEMPLATE,
   GEAR_NO_OUTER_DISPATCH,
+  NO_UNOWNED_CONTEXT_CREATION,
+  TESTS_NO_ONLY_SELECTORS,
   restrictedImports,
   restrictedSyntax,
 } from "./eslint/fragments.js";
@@ -69,7 +71,16 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",
-      "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        {
+          allowNumber: true,
+          allowBoolean: true,
+          allowNever: true,
+          allowAny: false,
+          allowNullish: true,
+        },
+      ],
       "@typescript-eslint/no-unnecessary-condition": "off",
       "@typescript-eslint/no-unnecessary-type-parameters": "off",
       "@typescript-eslint/no-redundant-type-constituents": "off",
@@ -206,6 +217,8 @@ export default tseslint.config(
       "src/lib/gear/**/*.{ts,tsx}",
       "src/lib/content-systems/**/*.{ts,tsx}",
       "src/features/alchemy/run-loop/screens/**/*.{ts,tsx}",
+      "src/features/alchemy/run-setup/screens/**/*.{ts,tsx}",
+      "src/features/alchemy/meta/screens/**/*.{ts,tsx}",
     ],
     rules: {
       "alchemy/no-em-dash": "error",
@@ -258,7 +271,7 @@ export default tseslint.config(
     },
   },
 
-  // Test files — relax rules for test-specific patterns
+  // Test files — relax rules for test-specific patterns & ban .only focus
   {
     files: ["tests/**/*.ts", "tests/**/*.tsx", "performance/**/*.ts"],
     rules: {
@@ -266,15 +279,21 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
       // Playwright fixture `use` is not a React Hook.
       "react-hooks/rules-of-hooks": "off",
+      "no-restricted-syntax": restrictedSyntax(...TESTS_NO_ONLY_SELECTORS),
     },
   },
 
-  // Playwright specs — flake prevention without type-aware linting.
+  // Playwright specs & test fixtures/pages — flake prevention without type-aware linting.
   // missing-playwright-await catches unawaited expect()/locator actions,
   // the most common source of flaky e2e tests.
   {
     ...playwright.configs["flat/recommended"],
-    files: ["tests/**/*.spec.ts", "performance/scenarios/**/*.perf.ts"],
+    files: [
+      "tests/**/*.spec.ts",
+      "tests/pages/**/*.ts",
+      "tests/fixtures/**/*.ts",
+      "performance/scenarios/**/*.perf.ts",
+    ],
     rules: {
       ...playwright.configs["flat/recommended"].rules,
       // This suite intentionally uses conditional flows (save-state probing),
@@ -309,6 +328,7 @@ export default tseslint.config(
           message: "Unlock All is dev-only UI. Do not target it in e2e specs.",
         },
         ...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS,
+        ...TESTS_NO_ONLY_SELECTORS,
       ),
     },
   },
@@ -327,7 +347,7 @@ export default tseslint.config(
       "tests/electron-helpers.ts",
     ],
     rules: {
-      "no-restricted-syntax": restrictedSyntax(...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS),
+      "no-restricted-syntax": restrictedSyntax(...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS, ...TESTS_NO_ONLY_SELECTORS),
     },
   },
 
@@ -356,10 +376,14 @@ export default tseslint.config(
           },
         ],
       }),
-      "no-restricted-syntax": restrictedSyntax({
-        selector: 'CallExpression[callee.name="enableFastMode"]',
-        message: "Do not call enableFastMode in animation-focused specs or performance scenarios.",
-      }),
+      "no-restricted-syntax": restrictedSyntax(
+        {
+          selector: 'CallExpression[callee.name="enableFastMode"]',
+          message: "Do not call enableFastMode in animation-focused specs or performance scenarios.",
+        },
+        ...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS,
+        ...TESTS_NO_ONLY_SELECTORS,
+      ),
     },
   },
 
@@ -374,7 +398,7 @@ export default tseslint.config(
       "src/lib/battle/**",
     ],
     rules: {
-      "no-restricted-syntax": restrictedSyntax(...AGGREGATE_NO_DIRECT_MUTATION),
+      "no-restricted-syntax": restrictedSyntax(...AGGREGATE_NO_DIRECT_MUTATION, ...NO_UNOWNED_CONTEXT_CREATION),
     },
   },
   {
@@ -384,9 +408,11 @@ export default tseslint.config(
       "src/features/alchemy/run-loop/**",
       "src/features/alchemy/shell/**",
       "src/lib/battle/**",
+      "src/app/app-screen-chrome-context.tsx",
+      "src/features/alchemy/shared/context/card-description-context.tsx",
     ],
     rules: {
-      "no-restricted-syntax": tsxSyntax(...AGGREGATE_NO_DIRECT_MUTATION),
+      "no-restricted-syntax": tsxSyntax(...AGGREGATE_NO_DIRECT_MUTATION, ...NO_UNOWNED_CONTEXT_CREATION),
     },
   },
   {
@@ -398,6 +424,7 @@ export default tseslint.config(
         BATTLE_NO_MATH_FLOOR,
         BATTLE_NO_DIRECT_RNG,
         ...AGGREGATE_NO_DIRECT_MUTATION,
+        ...NO_UNOWNED_CONTEXT_CREATION,
       ),
     },
   },
@@ -408,6 +435,7 @@ export default tseslint.config(
         ...BATTLE_NO_MATH_RANDOM,
         BATTLE_NO_MATH_FLOOR,
         ...AGGREGATE_NO_DIRECT_MUTATION,
+        ...NO_UNOWNED_CONTEXT_CREATION,
       ),
     },
   },
@@ -419,19 +447,28 @@ export default tseslint.config(
         BATTLE_NO_MATH_FLOOR,
         BATTLE_NO_DIRECT_RNG,
         ...AGGREGATE_NO_DIRECT_MUTATION,
+        ...NO_UNOWNED_CONTEXT_CREATION,
       ),
     },
   },
   {
     files: ["src/features/alchemy/run-loop/**/*.ts", "src/features/alchemy/shell/**/*.ts"],
     rules: {
-      "no-restricted-syntax": restrictedSyntax(...GEAR_NO_OUTER_DISPATCH, ...AGGREGATE_NO_DIRECT_MUTATION),
+      "no-restricted-syntax": restrictedSyntax(
+        ...GEAR_NO_OUTER_DISPATCH,
+        ...AGGREGATE_NO_DIRECT_MUTATION,
+        ...NO_UNOWNED_CONTEXT_CREATION,
+      ),
     },
   },
   {
     files: ["src/features/alchemy/run-loop/**/*.tsx", "src/features/alchemy/shell/**/*.tsx"],
     rules: {
-      "no-restricted-syntax": tsxSyntax(...GEAR_NO_OUTER_DISPATCH, ...AGGREGATE_NO_DIRECT_MUTATION),
+      "no-restricted-syntax": tsxSyntax(
+        ...GEAR_NO_OUTER_DISPATCH,
+        ...AGGREGATE_NO_DIRECT_MUTATION,
+        ...NO_UNOWNED_CONTEXT_CREATION,
+      ),
     },
   },
 

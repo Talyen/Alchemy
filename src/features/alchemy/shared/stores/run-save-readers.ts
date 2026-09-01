@@ -3,7 +3,7 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
-import { type GameplayPersistenceCodec, subscribeGameplayPersistence } from "./persistence-codec";
+import { type GameplayPersistenceCodec } from "./persistence-codec";
 import { readGameplayState } from "./gameplay-state-store";
 
 export interface RunProfileSaveFields {
@@ -57,5 +57,4 @@ export const runProfilePersistenceCodec: GameplayPersistenceCodec<RunProfileSave
     };
     draft.runProfile = next;
   },
-  subscribe: subscribeGameplayPersistence,
 };

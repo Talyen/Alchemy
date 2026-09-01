@@ -17,5 +17,3 @@ export interface PendingRewardSharedFields {
 export type PendingRewardSharedInput = Omit<PendingRewardSharedFields, "companionChoiceIds"> & {
   companionChoiceIds?: string[];
 };
-
-export type PersistedRewardSharedFields = PendingRewardSharedFields;

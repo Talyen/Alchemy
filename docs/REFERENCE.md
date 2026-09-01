@@ -102,7 +102,7 @@ ALCHEMY_BALANCE_LOADOUT=bare npm run balance:sim
 # Measure raw kit without hidden fight pacing
 ALCHEMY_BALANCE_PACING=off npm run balance:sim
 
-# Run the low-iteration, side-effect-free integration check
+# Run the low-iteration, side-effect-free full-report check
 npm run test:balance
 ```
 
@@ -114,9 +114,10 @@ summary opens `reports/balance-findings.html` and writes a JSON companion.
 Numeric environment values must be positive integers. Policy and loadout values
 must exactly match the choices above; pacing accepts `on`/`1`/`true` or
 `off`/`0`/`false` (empty or any other value now fails fast — previously empty string silently defaulted to `on`). Invalid configuration fails before report files are written.
-Sweep seeds are deterministic per report tier and were re-keyed during the report extraction (`report-catalog`/`report-sweeps`): compare reports only from the same extractor revision.
-`balance:sim` generates reports; `test:balance` only verifies deterministic,
-finite report construction and does not touch `reports/`.
+Scenario seeds derive from tier, class, enemy, depth, replicate, and sweep identity instead of loop position, so adding or reordering unrelated content does not re-key existing comparisons. Core matchups reuse each tier/class deck sample across enemies while retaining distinct fight randomness; isolation sweeps keep baseline and treatment paired.
+`balance:sim` generates reports; `test:balance` verifies finite full-report
+construction and render purity without touching `reports/`. Changed balance
+implementation runs both the focused unit suite and this report check.
 
 ---
 

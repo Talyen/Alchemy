@@ -76,7 +76,14 @@ export function readHasActiveRun(): boolean {
   return readGameplayState().session.hasActiveRun;
 }
 export function readParkedRuns(): ParkedRunsMap {
-  return { ...readGameplayState().run.parkedRuns };
+  const parkedRuns = readGameplayState().run.parkedRuns;
+  const snapshot: ParkedRunsMap = {};
+  for (const [mode, rawRun] of Object.entries(parkedRuns)) {
+    const run = rawRun as ParkedRunsMap[ContentSystemId];
+    if (!run) continue;
+    snapshot[mode as ContentSystemId] = structuredClone(run);
+  }
+  return snapshot;
 }
 export function readRunRecency(): ContentSystemId[] {
   return [...readGameplayState().run.runRecency];
@@ -151,7 +158,6 @@ export function useResumableGameModes(): Record<ContentSystemId, boolean> {
 export function useDisplayOverrides() {
   return useGameplayStateStore(useShallow((state) => state.battle.displayOverrides));
 }
-export { useSetHasActiveBattle } from "./store-actions";
 export function useBondedCompanions() {
   return useGameplayStateStore(useShallow((state) => state.runProfile.bondedCompanions));
 }

@@ -597,7 +597,16 @@ describe("MaterialInventorySchema", () => {
       expect(result.data.iron).toBe(0);
       expect(result.data.herbs).toBe(0);
       expect(result.data.food).toBe(0);
-      expect(result.data.crystal).toBe(0);
+      expect(result.data.gems).toBe(0);
+    }
+  });
+
+  it("maps legacy crystal to gems", () => {
+    const result = MaterialInventorySchema.safeParse({ wood: 2, crystal: 7 });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.wood).toBe(2);
+      expect(result.data.gems).toBe(7);
     }
   });
 

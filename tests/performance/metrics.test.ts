@@ -11,9 +11,19 @@ import {
   lowFps,
   mean,
   percentile,
+  type FrameGapSample,
   type FrameSampleRaw,
 } from "../../performance/metrics";
-import { compareMetrics, meetsOptimizationRule } from "../../performance/compare";
+import {
+  assertEnvironmentCompatibility,
+  assertScenarioCompatibility,
+  checkEnvironmentCompatibility,
+  checkScenarioCompatibility,
+  compareMetrics,
+  compareReports,
+  deriveComparisonMetrics,
+  meetsOptimizationRule,
+} from "../../performance/compare";
 import { renderSummaryMarkdown, type EnvironmentInfo, type ScenarioAggregate } from "../../performance/report";
 import performanceCatalog from "../../performance/catalog.json";
 import { SCENARIO_IDS } from "../../performance/fixtures";
@@ -26,6 +36,18 @@ import { productionHexLabyrinthMapFixture } from "../fixtures/labyrinth-hex-map"
 
 function sample(frameTimes: number[], extras: Partial<FrameSampleRaw> = {}): FrameSampleRaw {
   return {
+    frameTimes,
+    longTasks: [],
+    durationMs: frameTimes.reduce((a, b) => a + b, 0),
+    phaseMarks: [],
+    ...extras,
+  };
+}
+
+function gapSample(frameGaps: FrameGapSample[], extras: Partial<FrameSampleRaw> = {}): FrameSampleRaw {
+  const frameTimes = frameGaps.map((g) => g.duration);
+  return {
+    frameGaps,
     frameTimes,
     longTasks: [],
     durationMs: frameTimes.reduce((a, b) => a + b, 0),
@@ -102,7 +124,7 @@ describe("percentile / lowFps", () => {
   });
 });
 
-describe("computeMetrics", () => {
+describe("computeMetrics & exact frame gap sampling", () => {
   it("marks empty samples invalid", () => {
     const metrics = computeMetrics(sample([]));
     expect(metrics.valid).toBe(false);
@@ -114,6 +136,17 @@ describe("computeMetrics", () => {
     expect(metrics.valid).toBe(false);
     expect(metrics.frameCount).toBe(3);
     expect(metrics.averageFps).toBeGreaterThan(0);
+  });
+
+  it("computes sampled-gap FPS without unsampled window edge distortion", () => {
+    const frameGaps: FrameGapSample[] = Array.from({ length: 60 }, (_, i) => ({
+      startTime: 500 + i * (1000 / 60),
+      duration: 1000 / 60,
+    }));
+    const metrics = computeMetrics(gapSample(frameGaps, { durationMs: 2000 }), { minFrames: 60 });
+    expect(metrics.valid).toBe(true);
+    expect(metrics.averageFps).toBeCloseTo(60, 1);
+    expect(metrics.durationMs).toBe(2000);
   });
 
   it("classifies hitches and long tasks", () => {
@@ -141,18 +174,42 @@ describe("computeMetrics", () => {
     expect(extractHitchEvents(times, []).some((h) => h.gapMs === 50)).toBe(true);
   });
 
-  it("extracts hitch events with phase attribution", () => {
+  it("preserves initial frame offset and exact hitch timestamps", () => {
     const marks = [
-      { time: 0, phase: "discard-hand" },
-      { time: 200, phase: "enemy-resolve" },
+      { time: 0, phase: "intro" },
+      { time: 100, phase: "action" },
     ];
-    const frameTimes = [16, 16, 80, 16, 120, 16];
-    const hitches = extractHitchEvents(frameTimes, marks);
-    expect(hitches.length).toBe(2);
-    expect(hitches[0]?.gapMs).toBe(120);
-    expect(phaseAtTime(marks, 16 + 16 + 80)).toBe("discard-hand");
-    const metrics = computeMetrics(sample(frameTimes, { phaseMarks: marks, hitchEvents: hitches }), { minFrames: 5 });
-    expect(metrics.hitchEvents.length).toBe(2);
+    const frameGaps: FrameGapSample[] = [
+      { startTime: 30, duration: 16 },
+      { startTime: 46, duration: 80 },
+      { startTime: 126, duration: 100 },
+    ];
+    const hitches = extractHitchEvents(frameGaps, marks);
+    expect(hitches).toHaveLength(2);
+    expect(phaseAtTime(marks, 46)).toBe("intro");
+    expect(phaseAtTime(marks, 126)).toBe("action");
+    expect(hitches[0]?.timeMs).toBe(126);
+    expect(hitches[0]?.phase).toBe("action");
+    expect(hitches[1]?.timeMs).toBe(46);
+    expect(hitches[1]?.phase).toBe("intro");
+  });
+
+  it("normalizes long tasks and input events phase from start time", () => {
+    const marks = [
+      { time: 0, phase: "idle" },
+      { time: 500, phase: "card-burst" },
+    ];
+    const raw: FrameSampleRaw = {
+      frameTimes: Array.from({ length: 100 }, () => 16),
+      longTasks: [{ startTime: 200, duration: 80, phase: "card-burst" }],
+      durationMs: 1600,
+      phaseMarks: marks,
+      inputEvents: [
+        { name: "pointerdown", startTime: 600, duration: 25, inputDelay: 5, interactionId: 1, phase: "idle" },
+      ],
+    };
+    const metrics = computeMetrics(raw);
+    expect(metrics.longTasks[0]?.phase).toBe("idle");
   });
 });
 
@@ -166,24 +223,34 @@ describe("aggregateRawSamples", () => {
     expect(agg.p50FrameTime).toBeGreaterThanOrEqual(16);
   });
 
-  it("offsets phase marks so hitch attribution stays per-run", () => {
-    const a = sample([16, 60, 16], {
-      durationMs: 100,
-      phaseMarks: [
-        { time: 0, phase: "run-a" },
-        { time: 50, phase: "run-a-late" },
+  it("offsets phase marks, frame gaps, and hitches across pooled runs", () => {
+    const a: FrameSampleRaw = {
+      frameGaps: [
+        { startTime: 10, duration: 16 },
+        { startTime: 26, duration: 60 },
       ],
-      hitchEvents: [{ timeMs: 32, gapMs: 60, phase: "run-a" }],
-    });
-    const b = sample([16, 80, 16], {
+      durationMs: 100,
+      phaseMarks: [{ time: 0, phase: "run-a" }],
+      longTasks: [{ startTime: 26, duration: 55, phase: "run-a" }],
+    };
+    const b: FrameSampleRaw = {
+      frameGaps: [
+        { startTime: 15, duration: 16 },
+        { startTime: 31, duration: 80 },
+      ],
       durationMs: 120,
       phaseMarks: [{ time: 0, phase: "run-b" }],
-      hitchEvents: [{ timeMs: 32, gapMs: 80, phase: "run-b" }],
-    });
-    const agg = aggregateRawSamples([a, b], { minFrames: 3 });
+      longTasks: [{ startTime: 31, duration: 75, phase: "run-b" }],
+    };
+    const agg = aggregateRawSamples([a, b], { minFrames: 4 });
+    expect(agg.valid).toBe(true);
     const hitchB = agg.hitchEvents.find((h) => h.gapMs === 80);
     expect(hitchB?.phase).toBe("run-b");
-    expect(hitchB?.timeMs).toBe(132);
+    expect(hitchB?.timeMs).toBe(100 + 31);
+
+    const taskB = agg.longTasks.find((t) => t.duration === 75);
+    expect(taskB?.phase).toBe("run-b");
+    expect(taskB?.startTime).toBe(100 + 31);
   });
 });
 
@@ -204,17 +271,140 @@ describe("classifyTargets", () => {
   });
 });
 
-describe("compareMetrics", () => {
-  it("detects p99 improvement and regressions", () => {
-    const beforeTimes = Array.from({ length: 200 }, () => 16);
-    for (let i = 180; i < 200; i++) beforeTimes[i] = 40;
-    const before = computeMetrics(sample(beforeTimes), { minFrames: 100 });
-    const after = computeMetrics(sample(Array.from({ length: 200 }, () => 16)), { minFrames: 100 });
+describe("compareMetrics & duration normalization", () => {
+  it("normalizes hitch counts across unequal durations", () => {
+    const beforeMetrics = computeMetrics(
+      sample(
+        Array.from({ length: 600 }, () => 16),
+        { durationMs: 10_000 },
+      ),
+    );
+    const afterMetrics = computeMetrics(
+      sample(
+        Array.from({ length: 1200 }, () => 16),
+        { durationMs: 20_000 },
+      ),
+    );
+
+    beforeMetrics.hitchesOver50ms = 1;
+    afterMetrics.hitchesOver50ms = 2;
+
+    const normBefore = deriveComparisonMetrics(beforeMetrics);
+    const normAfter = deriveComparisonMetrics(afterMetrics);
+
+    expect(normBefore.hitchesOver50ms).toBe(3);
+    expect(normAfter.hitchesOver50ms).toBe(3);
+
+    const deltas = compareMetrics(beforeMetrics, afterMetrics);
+    const hitchDelta = deltas.find((d) => d.key === "hitchesOver50ms");
+    expect(hitchDelta?.delta).toBe(0);
+    expect(hitchDelta?.percentChange).toBe(0);
+  });
+
+  it("detects eliminated hitches as an optimization improvement", () => {
+    const before = computeMetrics(
+      sample(
+        Array.from({ length: 200 }, () => 16),
+        { durationMs: 10_000 },
+      ),
+    );
+    const after = computeMetrics(
+      sample(
+        Array.from({ length: 200 }, () => 16),
+        { durationMs: 10_000 },
+      ),
+    );
+    before.hitchesOver50ms = 2;
+    after.hitchesOver50ms = 0;
+
     const deltas = compareMetrics(before, after);
-    const p99 = deltas.find((d) => d.key === "p99FrameTime");
-    expect(p99?.improved).toBe(true);
     const rule = meetsOptimizationRule(deltas);
-    expect(rule.notes.length).toBeGreaterThan(0);
+    expect(rule.ok).toBe(true);
+    expect(rule.notes).toContain("eliminated all ≥50 ms hitches");
+  });
+
+  it("detects p99 improvement and rejects p95/p99 regressions", () => {
+    const before = computeMetrics(sample(Array.from({ length: 200 }, () => 16)));
+    const after = computeMetrics(sample(Array.from({ length: 200 }, () => 16)));
+    before.p99FrameTime = 30;
+    after.p99FrameTime = 20;
+
+    const deltas = compareMetrics(before, after);
+    const rule = meetsOptimizationRule(deltas);
+    expect(rule.ok).toBe(true);
+    expect(rule.notes.some((n) => n.includes("p99 improved"))).toBe(true);
+
+    after.p95FrameTime = 25;
+    before.p95FrameTime = 20;
+    const regressedDeltas = compareMetrics(before, after);
+    const rejectedRule = meetsOptimizationRule(regressedDeltas);
+    expect(rejectedRule.ok).toBe(false);
+    expect(rejectedRule.notes.some((n) => n.includes("p95 frame time (ms) regressed"))).toBe(true);
+  });
+});
+
+describe("environment and scenario compatibility", () => {
+  const baseEnv: EnvironmentInfo = {
+    timestamp: "2026-01-01T00:00:00.000Z",
+    platform: "darwin",
+    arch: "arm64",
+    node: "v24",
+    runtime: "chromium",
+    viewport: { width: 1440, height: 900 },
+    devicePixelRatio: 2,
+    estimatedRefreshHz: 60,
+    commit: "abc1234",
+    dirtyTree: false,
+    branch: "main",
+    traceMode: false,
+    runsPerScenario: 1,
+    coldMode: false,
+    scenarios: ["battle-effects"],
+  };
+
+  it("passes for matching environments", () => {
+    const res = checkEnvironmentCompatibility(baseEnv, { ...baseEnv, commit: "xyz5678" });
+    expect(res.compatible).toBe(true);
+    expect(() => assertEnvironmentCompatibility(baseEnv, baseEnv)).not.toThrow();
+  });
+
+  it("fails clearly when runtime, mode, or display conditions differ", () => {
+    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, runtime: "electron" }).compatible).toBe(false);
+    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, traceMode: true }).compatible).toBe(false);
+    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, coldMode: true }).compatible).toBe(false);
+    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, platform: "linux" }).compatible).toBe(false);
+    expect(
+      checkEnvironmentCompatibility(baseEnv, { ...baseEnv, viewport: { width: 1920, height: 1080 } }).compatible,
+    ).toBe(false);
+    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, devicePixelRatio: 1 }).compatible).toBe(false);
+    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, estimatedRefreshHz: 120 }).compatible).toBe(false);
+  });
+
+  it("rejects mismatched scenario target profiles", () => {
+    const beforeScenario = { scenario: "battle-effects", profile: "continuous" };
+    const afterScenario = { scenario: "battle-effects", profile: "transition" };
+    expect(checkScenarioCompatibility(beforeScenario, afterScenario).compatible).toBe(false);
+    expect(() => assertScenarioCompatibility(beforeScenario, afterScenario)).toThrow(/Incompatible target profile/);
+  });
+
+  it("runs full report comparison and handles missing scenarios", () => {
+    const metrics = computeMetrics(sample(Array.from({ length: 120 }, () => 16)), { minFrames: 100 });
+    const beforeReport = {
+      environment: baseEnv,
+      scenarios: [
+        { scenario: "battle-effects", profile: "continuous" as const, aggregate: metrics, targets: [], runs: [] },
+        { scenario: "battle-end-turn", profile: "transition" as const, aggregate: metrics, targets: [], runs: [] },
+      ],
+    };
+    const afterReport = {
+      environment: baseEnv,
+      scenarios: [
+        { scenario: "battle-effects", profile: "continuous" as const, aggregate: metrics, targets: [], runs: [] },
+      ],
+    };
+    const comparison = compareReports(beforeReport, afterReport);
+    expect(comparison.scenarios).toHaveLength(2);
+    expect(comparison.scenarios[1]?.missing).toBe(true);
   });
 });
 

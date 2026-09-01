@@ -50,20 +50,13 @@ function liftNestedWildwoodReward(draft: Record<string, unknown>): Record<string
 
 function stripNestedWildwoodRewardFields(draft: unknown): unknown {
   if (!isRecord(draft)) return draft;
-  const {
-    version: _version,
-    rewardType: _rewardType,
-    rewardChoiceIds: _rewardChoiceIds,
-    rewardGearChoices: _rewardGearChoices,
-    selectedRewardId: _selectedRewardId,
-    ...rest
-  } = draft;
-  void _version;
-  void _rewardType;
-  void _rewardChoiceIds;
-  void _rewardGearChoices;
-  void _selectedRewardId;
-  return rest;
+  const next = { ...draft };
+  delete next.version;
+  delete next.rewardType;
+  delete next.rewardChoiceIds;
+  delete next.rewardGearChoices;
+  delete next.selectedRewardId;
+  return next;
 }
 
 function migrateRun(value: unknown): unknown {

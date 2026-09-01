@@ -31,7 +31,7 @@ export function resolveRootDir(importMetaUrl) {
   return path.resolve(path.dirname(fileURLToPath(importMetaUrl)), "..");
 }
 
-export async function syncGeneratedModule({ manifestPath, outputFile, check = false, build }) {
+async function syncGeneratedModule({ manifestPath, outputFile, check = false, build }) {
   const manifest = await loadManifest(manifestPath);
   const result = build(manifest);
   const wrote = await writeTextIfChanged(outputFile, result.content, { check });

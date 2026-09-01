@@ -5,7 +5,7 @@ import { defineConfig } from "vitest/config";
 // @ts-ignore no types for vite-aliases.mjs
 import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 
-const excludedTestPaths = ["tests/performance/**", "tests/balance/**"];
+const excludedTestPaths = ["tests/balance/**"];
 const domTestPrefixes = ["tests/app/", "tests/features/"];
 const domLibPrefixes = [
   "tests/lib/animation/",

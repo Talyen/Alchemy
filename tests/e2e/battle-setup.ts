@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data/types";
 import { BattlePage } from "../pages/battle-page";
 import { DestinationPage } from "../pages/destination-page";
 import { RewardPage } from "../pages/reward-page";

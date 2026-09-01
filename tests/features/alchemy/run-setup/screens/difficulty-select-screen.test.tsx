@@ -120,7 +120,13 @@ describe("DifficultySelectScreen", () => {
     const wrapper = lockedDiff.parentElement!;
 
     fireEvent.mouseEnter(wrapper);
-    expect(screen.getByText("Clear Previous Difficulty to Unlock")).toBeDefined();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.tagName.toLowerCase() === "p" &&
+          element.textContent?.toLowerCase() === "clear previous difficulty to unlock",
+      ),
+    ).toBeDefined();
 
     fireEvent.mouseLeave(wrapper);
   });

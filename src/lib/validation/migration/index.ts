@@ -1,6 +1,6 @@
-import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION } from "../metadata";
+import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "../metadata";
 import { getRawVersion, type RawSaveData } from "./types";
-import { migrateContentV1ToV2, migrateContentV2ToV3 } from "./content-steps";
+import { migrateContentToCurrentVersion } from "./content-steps";
 import { migrateV11ToV12 } from "./steps-v11-v12";
 import { migrateV12ToV13 } from "./steps-v12-v13";
 import { migrateV13ToV14 } from "./steps-v13-v14";
@@ -21,24 +21,13 @@ const SCHEMA_MIGRATIONS: Array<{ from: number; migrate: (data: RawSaveData) => R
 
 function migrateContentToCurrent(next: RawSaveData): RawSaveData {
   const contentVersion = getRawContentVersion(next);
-  if (contentVersion < 2) next = migrateContentV1ToV2(next);
-  if (contentVersion < 3) next = migrateContentV2ToV3(next);
-  return next;
+  return migrateContentToCurrentVersion(next, contentVersion);
 }
 
 export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
   if (!parsed || typeof parsed !== "object") return {};
   let next = { ...(parsed as RawSaveData) };
-  const schemaVersion = getRawSaveSchemaVersion(next);
-  if (schemaVersion !== 0 && schemaVersion < LAUNCH_SAVE_SCHEMA_VERSION) {
-    next = migrateContentToCurrent(next);
-    return {
-      ...next,
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-      contentVersion: CURRENT_CONTENT_VERSION,
-    };
-  }
-  let currentVersion = schemaVersion;
+  let currentVersion = getRawSaveSchemaVersion(next);
   while (true) {
     const migrated = SCHEMA_MIGRATIONS.find((m) => m.from === currentVersion);
     if (!migrated) break;

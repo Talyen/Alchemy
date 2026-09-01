@@ -57,7 +57,7 @@ describe("defaultBattleState", () => {
       playerHealth: 30,
       enemyHealth: 30,
       currentEnemy: { id: "skeleton" },
-      pendingMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+      pendingMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0 },
       talentEffects: defaultTalentEffects,
       playerStatuses: {
         block: 0,

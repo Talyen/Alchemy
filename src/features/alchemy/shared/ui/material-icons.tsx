@@ -19,7 +19,7 @@ const RESOURCE_ART_MAP: Record<HomesteadResource, string> = {
   iron: resourceIron,
   herbs: resourceHerbs,
   food: resourceFood,
-  crystal: resourceCrystal,
+  gems: resourceCrystal,
   gold: resourceGold,
   stone: resourceStone,
   hide: resourceHide,
@@ -37,7 +37,7 @@ export const matTextColor: Record<MaterialId, string> = {
   iron: "text-[#8CA2B8]",
   herbs: "text-[#30D158]",
   food: "text-[#FF9F0A]",
-  crystal: "text-[#0A84FF]",
+  gems: "text-[#0A84FF]",
 };
 
 export const matPillStyle: Record<MaterialId, string> = {
@@ -45,7 +45,7 @@ export const matPillStyle: Record<MaterialId, string> = {
   iron: "bg-[#4C637A]/20 border-[#4C637A]/30",
   herbs: "bg-[#30D158]/15 border-[#30D158]/30",
   food: "bg-[#FF9F0A]/15 border-[#FF9F0A]/30",
-  crystal: "bg-[#0A84FF]/15 border-[#0A84FF]/30",
+  gems: "bg-[#0A84FF]/15 border-[#0A84FF]/30",
 };
 
 export const goldTextColor = "text-[#D6B85A]";
@@ -85,18 +85,6 @@ export function HomesteadResourceArtwork({
       draggable={false}
     />
   );
-}
-
-export function MaterialIcon({
-  material,
-  className,
-  size = "md",
-}: {
-  material: MaterialId;
-  className?: string | undefined;
-  size?: ResourceArtworkSize | undefined;
-}) {
-  return <HomesteadResourceArtwork resource={material} size={size} className={className} />;
 }
 
 function TrinketWalletResourcePill({
@@ -258,7 +246,7 @@ export function MaterialInlineChip({
         className,
       )}
     >
-      <MaterialIcon material={material} size="xs" />
+      <HomesteadResourceArtwork resource={material} size="xs" />
       <span className="leading-none">{label}</span>
     </span>
   );

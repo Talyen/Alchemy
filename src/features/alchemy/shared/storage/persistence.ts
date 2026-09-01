@@ -1,4 +1,8 @@
-import { settingsPersistenceCodec, type SettingsSaveFields } from "@/features/alchemy/shared/stores/settings-store";
+import {
+  settingsPersistenceCodec,
+  useSettingsStore,
+  type SettingsSaveFields,
+} from "@/features/alchemy/shared/stores/settings-store";
 import {
   discoverUniqueIds,
   profilePersistenceCodec,
@@ -23,22 +27,31 @@ import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 
 export type AlchemyPersistenceFields = SettingsSaveFields & ProfileSaveFields & GearSaveFields & RunProfileSaveFields;
 
-export const PERSISTENCE_CODECS = [
-  settingsPersistenceCodec,
+const GAMEPLAY_PERSISTENCE_CODECS = [
   profilePersistenceCodec,
   gearPersistenceCodec,
   runProfilePersistenceCodec,
 ] as const;
 
+export const PERSISTENCE_CODECS = [settingsPersistenceCodec, ...GAMEPLAY_PERSISTENCE_CODECS] as const;
+
 export function createDefaultPersistenceFields(): AlchemyPersistenceFields {
-  return Object.assign({}, ...PERSISTENCE_CODECS.map((c) => c.createDefault())) as AlchemyPersistenceFields;
+  return {
+    ...settingsPersistenceCodec.createDefault(),
+    ...profilePersistenceCodec.createDefault(),
+    ...gearPersistenceCodec.createDefault(),
+    ...runProfilePersistenceCodec.createDefault(),
+  };
 }
 
 export function encodePersistenceFields(): AlchemyPersistenceFields {
-  return Object.assign({}, ...PERSISTENCE_CODECS.map((c) => c.encode())) as AlchemyPersistenceFields;
+  return {
+    ...settingsPersistenceCodec.encode(),
+    ...profilePersistenceCodec.encode(),
+    ...gearPersistenceCodec.encode(),
+    ...runProfilePersistenceCodec.encode(),
+  };
 }
-
-export const encodeAlchemyPersistenceFields = encodePersistenceFields;
 
 function unionOwnedUniquesIntoDiscovered(draft: GameplayDraft): void {
   const owned = getOwnedUniqueDefinitionIds(draft.gear.inventories);
@@ -57,7 +70,7 @@ export function hydrateAlchemyPersistenceFields(fields: AlchemyPersistenceFields
 }
 
 export function subscribeAlchemyPersistence(listener: () => void): () => void {
-  const unsubscribers = [settingsPersistenceCodec.subscribe(listener), subscribeRunSessionCommits(() => listener())];
+  const unsubscribers = [useSettingsStore.subscribe(listener), subscribeRunSessionCommits(() => listener())];
   return () => {
     for (const unsubscribe of unsubscribers) unsubscribe();
   };

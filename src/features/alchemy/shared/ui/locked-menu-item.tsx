@@ -9,7 +9,7 @@ import { playUISound } from "@/lib/audio";
 
 interface LockedMenuItemProps {
   title: string;
-  message: string;
+  message: ReactNode;
   locked: boolean;
   onSelect: () => void;
   icon: ReactNode;

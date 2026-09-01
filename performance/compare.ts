@@ -1,5 +1,16 @@
 import type { FrameMetrics } from "./metrics";
-import performanceCatalog from "./catalog.json";
+import type { EnvironmentInfo, ScenarioAggregate } from "./report";
+import {
+  checkEnvironmentCompatibility as jsCheckEnvironmentCompatibility,
+  assertEnvironmentCompatibility as jsAssertEnvironmentCompatibility,
+  checkScenarioCompatibility as jsCheckScenarioCompatibility,
+  assertScenarioCompatibility as jsAssertScenarioCompatibility,
+  deriveComparisonMetrics as jsDeriveComparisonMetrics,
+  compareMetrics as jsCompareMetrics,
+  meetsOptimizationRule as jsMeetsOptimizationRule,
+  compareReports as jsCompareReports,
+  COMPARE_KEYS as jsCompareKeys,
+} from "./compare-model.mjs";
 
 export interface MetricDelta {
   key: keyof Pick<
@@ -30,24 +41,46 @@ export interface MetricDelta {
   improved: boolean | null;
 }
 
-const COMPARE_KEYS = performanceCatalog.metrics as Array<{
+export const COMPARE_KEYS: Array<{
   key: MetricDelta["key"];
   label: string;
   higherIsBetter: boolean;
-}>;
+}> = jsCompareKeys;
+
+export function checkEnvironmentCompatibility(
+  beforeEnv?: Partial<EnvironmentInfo>,
+  afterEnv?: Partial<EnvironmentInfo>,
+): { compatible: boolean; errors: string[] } {
+  return jsCheckEnvironmentCompatibility(beforeEnv, afterEnv);
+}
+
+export function assertEnvironmentCompatibility(
+  beforeEnv?: Partial<EnvironmentInfo>,
+  afterEnv?: Partial<EnvironmentInfo>,
+): void {
+  jsAssertEnvironmentCompatibility(beforeEnv, afterEnv);
+}
+
+export function checkScenarioCompatibility(
+  beforeScenario: { scenario: string; profile?: string },
+  afterScenario: { scenario: string; profile?: string },
+): { compatible: boolean; errors: string[] } {
+  return jsCheckScenarioCompatibility(beforeScenario, afterScenario);
+}
+
+export function assertScenarioCompatibility(
+  beforeScenario: { scenario: string; profile?: string },
+  afterScenario: { scenario: string; profile?: string },
+): void {
+  jsAssertScenarioCompatibility(beforeScenario, afterScenario);
+}
+
+export function deriveComparisonMetrics(metrics: FrameMetrics): FrameMetrics {
+  return jsDeriveComparisonMetrics(metrics);
+}
 
 export function compareMetrics(before: FrameMetrics, after: FrameMetrics): MetricDelta[] {
-  return COMPARE_KEYS.map(({ key, label, higherIsBetter }) => {
-    const b = before[key];
-    const a = after[key];
-    const delta = a - b;
-    const percentChange = b === 0 ? null : (delta / b) * 100;
-    let improved: boolean | null = null;
-    if (delta !== 0) {
-      improved = higherIsBetter ? delta > 0 : delta < 0;
-    }
-    return { key, label, before: b, after: a, delta, percentChange, higherIsBetter, improved };
-  });
+  return jsCompareMetrics(before, after);
 }
 
 /** True when p99 (or hitch count) improved by ≥10%, or a hitch was eliminated. */
@@ -55,34 +88,27 @@ export function meetsOptimizationRule(deltas: MetricDelta[]): {
   ok: boolean;
   notes: string[];
 } {
-  const notes: string[] = [];
-  const p99 = deltas.find((d) => d.key === "p99FrameTime");
-  const hitches = deltas.find((d) => d.key === "hitchesOver50ms");
+  return jsMeetsOptimizationRule(deltas);
+}
 
-  let improved = false;
-  if (p99 && p99.percentChange !== null && p99.improved && Math.abs(p99.percentChange) >= 10) {
-    improved = true;
-    notes.push(`p99 improved by ${Math.abs(p99.percentChange).toFixed(1)}%`);
-  }
-  if (hitches && hitches.before > 0 && hitches.after === 0) {
-    improved = true;
-    notes.push("eliminated all ≥50 ms hitches");
-  } else if (hitches && hitches.percentChange !== null && hitches.improved && Math.abs(hitches.percentChange) >= 10) {
-    improved = true;
-    notes.push(`hitches improved by ${Math.abs(hitches.percentChange).toFixed(1)}%`);
-  }
+export interface ScenarioComparisonResult {
+  scenario: string;
+  profile?: string;
+  missing?: boolean;
+  deltas: MetricDelta[];
+  notes: string[];
+  rule: { ok: boolean; notes: string[] };
+}
 
-  const regressions: string[] = [];
-  for (const key of ["p95FrameTime", "p99FrameTime"] as const) {
-    const d = deltas.find((x) => x.key === key);
-    if (d && d.percentChange !== null && !d.improved && Math.abs(d.percentChange) > 5) {
-      regressions.push(`${d.label} regressed by ${Math.abs(d.percentChange).toFixed(1)}%`);
-    }
-  }
+export interface ReportComparisonResult {
+  beforeEnvironment: EnvironmentInfo;
+  afterEnvironment: EnvironmentInfo;
+  scenarios: ScenarioComparisonResult[];
+}
 
-  if (!improved && notes.length === 0) {
-    notes.push("no ≥10% p99/hitch improvement detected");
-  }
-
-  return { ok: improved && regressions.length === 0, notes: [...notes, ...regressions] };
+export function compareReports(
+  beforeReport: { environment: EnvironmentInfo; scenarios: ScenarioAggregate[] },
+  afterReport: { environment: EnvironmentInfo; scenarios: ScenarioAggregate[] },
+): ReportComparisonResult {
+  return jsCompareReports(beforeReport, afterReport);
 }

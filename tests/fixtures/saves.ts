@@ -82,7 +82,7 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
   rememberAutoplayPreference: false,
   autoplayEnabled: false,
   finishedRunCharacters: [...ALL_PLAYABLE_CHARACTERS],
-  materialInventory: { wood: 999, iron: 999, herbs: 999, food: 999, crystal: 999 },
+  materialInventory: { wood: 999, iron: 999, herbs: 999, food: 999, gems: 999 },
   constructedBuildings: {
     "blacksmiths-forge": 0,
     "hunters-lodge": 0,

@@ -72,7 +72,7 @@ export function getArt(id: string): string {
   return itemArt[id] ?? "";
 }
 
-export { MaterialCost, HomesteadResourceWallet as MaterialsBar } from "../../../shared/ui/material-icons";
+export { HomesteadResourceWallet as MaterialsBar } from "../../../shared/ui/material-icons";
 
 const MATERIAL_LABELS_LIST = MATERIAL_IDS.map((m) => materialLabels[m]);
 const MATERIAL_REGEX = new RegExp(`\\b(${MATERIAL_LABELS_LIST.join("|")})\\b`, "g");

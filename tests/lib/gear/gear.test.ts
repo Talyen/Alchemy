@@ -208,7 +208,7 @@ describe("gear domain", () => {
       iron: 0,
       herbs: 0,
       food: 0,
-      crystal: 3,
+      gems: 3,
     });
   });
 

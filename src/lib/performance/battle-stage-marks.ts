@@ -1,4 +1,4 @@
-const BATTLE_STAGE_MARK_PREFIX = "alchemy:battle:";
+export const BATTLE_STAGE_MARK_PREFIX = "alchemy:battle:";
 
 export type BattleStageMark =
   | "discard-start"
@@ -10,7 +10,7 @@ export type BattleStageMark =
   | "draw-start"
   | "draw-end";
 
-function battleStageMarkName(stage: BattleStageMark): string {
+export function battleStageMarkName(stage: BattleStageMark): string {
   return `${BATTLE_STAGE_MARK_PREFIX}${stage}`;
 }
 

@@ -32,6 +32,7 @@ export interface TrinketTileProps {
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
 
+  chip?: string | null | undefined;
   footerChip?: string | null | undefined;
 
   className?: string | undefined;
@@ -53,6 +54,7 @@ export function TrinketTile({
   interactiveChrome,
   onClick,
   ariaLabel,
+  chip,
   footerChip,
   className,
   shine = true,
@@ -60,6 +62,7 @@ export function TrinketTile({
   children,
   onHoverChange,
 }: TrinketTileProps) {
+  const resolvedChip = (chip !== undefined ? chip : footerChip) ?? (temporary ? "Boon" : undefined);
   return (
     <InteractiveArtTile
       id={trinket.id}
@@ -80,7 +83,7 @@ export function TrinketTile({
         <DetailPopup
           idPrefix={idPrefix}
           title={<TrinketItemTitle trinket={trinket} />}
-          footerChip={footerChip === null ? undefined : (footerChip ?? (temporary ? "Boon" : undefined))}
+          chip={resolvedChip === null ? undefined : resolvedChip}
           descriptionLines={trinket.descriptionLines}
           visible={visible}
           triggerRef={triggerRef}

@@ -1,7 +1,7 @@
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import { appendUniqueMany } from "@/lib/utils";
 import { useShallow } from "zustand/react/shallow";
-import { type GameplayPersistenceCodec, subscribeGameplayPersistence } from "./persistence-codec";
+import { type GameplayPersistenceCodec } from "./persistence-codec";
 import { createDefaultProfileSaveFields, type ProfileSaveFields, type ProfileStateFields } from "./profile-store-types";
 import type { GameplayDraft } from "./run-session-command";
 import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
@@ -36,7 +36,6 @@ export const profilePersistenceCodec: GameplayPersistenceCodec<ProfileSaveFields
   createDefault: createDefaultProfileSaveFields,
   encode: () => cloneProfileSaveFields(readGameplayState().profile),
   hydrate: (fields, draft) => Object.assign(draft.profile, cloneProfileSaveFields(fields)),
-  subscribe: subscribeGameplayPersistence,
 };
 
 export type ProfileReadView = Pick<

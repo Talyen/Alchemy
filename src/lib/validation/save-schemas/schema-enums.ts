@@ -77,7 +77,22 @@ export const CraftingCurrencyInventorySchema = z
   .catch(CRAFTING_CURRENCY_ZERO_INVENTORY)
   .transform((inventory) => normalizeCraftingCurrencies(inventory));
 
-export const MaterialInventorySchema = z.object(createMaterialInventoryShape()).catch(MATERIAL_ZERO_INVENTORY);
+export const MaterialInventorySchema = z
+  .preprocess((val) => {
+    if (!val || typeof val !== "object") return val;
+    const obj = val as Record<string, unknown>;
+    if ("crystal" in obj) {
+      const crystalValue = obj.crystal;
+      const gemsValue = obj.gems;
+      const crystalAmount = typeof crystalValue === "number" && Number.isFinite(crystalValue) ? crystalValue : 0;
+      const gemsAmount = typeof gemsValue === "number" && Number.isFinite(gemsValue) ? gemsValue : 0;
+      const { crystal: _crystal, ...rest } = obj;
+      void _crystal;
+      return { ...rest, gems: gemsAmount + crystalAmount };
+    }
+    return val;
+  }, z.object(createMaterialInventoryShape()))
+  .catch(MATERIAL_ZERO_INVENTORY);
 
 export const TalentXPSchema = z.preprocess((val) => {
   if (!val || typeof val !== "object") return {};
@@ -85,10 +100,6 @@ export const TalentXPSchema = z.preprocess((val) => {
   for (const [key, xp] of Object.entries(val as Record<string, unknown>)) {
     if (typeof xp === "number" && Number.isFinite(xp) && xp >= 0) {
       result[key] = Math.floor(xp);
-    } else {
-      console.warn(
-        `[Save Validation] Talent XP for key "${key}" dropped: expected a non-negative finite number, got ${typeof xp === "number" ? String(xp) : typeof xp}`,
-      );
     }
   }
   return result;
@@ -158,24 +169,19 @@ function normalizeTierRecordInput(val: unknown): Record<string, number> {
   return {};
 }
 
-function clampTierLevels<T extends string>(
-  data: Record<string, number>,
-  items: ReadonlyArray<{ id: T; tiers: readonly unknown[] }>,
-  validIds: T[],
-): Record<T, number> {
-  const result: Record<T, number> = {} as Record<T, number>;
-  for (const id of validIds) {
-    const maxTier = items.find((item) => item.id === id)?.tiers.length ?? 0;
-    result[id] = Math.min(maxTier, Math.max(0, data[id] ?? 0));
-  }
-  return result;
-}
-
 export function createTierRecordSchema<T extends string>(
   items: ReadonlyArray<{ id: T; tiers: readonly unknown[] }>,
 ): z.ZodType<Record<T, number>> {
+  const maxTierById = new Map<T, number>(items.map((item) => [item.id, item.tiers.length]));
   const validIds = items.map((item) => item.id);
   return z
     .preprocess((val) => normalizeTierRecordInput(val), z.record(z.string(), z.number().int().nonnegative().catch(0)))
-    .transform((data) => clampTierLevels(data, items, validIds));
+    .transform((data) => {
+      const result: Record<T, number> = {} as Record<T, number>;
+      for (const id of validIds) {
+        const maxTier = maxTierById.get(id) ?? 0;
+        result[id] = Math.min(maxTier, Math.max(0, data[id] ?? 0));
+      }
+      return result;
+    });
 }

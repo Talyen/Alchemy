@@ -60,7 +60,7 @@ export function TooltipPanel({
   );
 }
 
-export function TooltipHeader({ children, className }: { children: ReactNode; className?: string }) {
+export function TooltipHeader({ children, className }: { children: ReactNode; className?: string | undefined }) {
   return <p className={cn(tooltipHeaderClass, className)}>{children}</p>;
 }
 
@@ -70,8 +70,8 @@ export function TooltipSubheader({
   style,
 }: {
   children: ReactNode;
-  className?: string;
-  style?: CSSProperties;
+  className?: string | undefined;
+  style?: CSSProperties | undefined;
 }) {
   return (
     <p className={cn(tooltipSubheaderClass, className)} style={style}>
@@ -80,11 +80,11 @@ export function TooltipSubheader({
   );
 }
 
-export function TooltipBody({ children, className }: { children: ReactNode; className?: string }) {
+export function TooltipBody({ children, className }: { children: ReactNode; className?: string | undefined }) {
   return <div className={cn(tooltipBodyClass, className)}>{children}</div>;
 }
 
-export function TooltipSeparator({ className }: { className?: string }) {
+export function TooltipSeparator({ className }: { className?: string | undefined }) {
   return <div className={cn("border-t border-border/60 pt-3", className)} />;
 }
 
@@ -97,11 +97,11 @@ export function TooltipSection({ label, children }: { label: string; children: R
   );
 }
 
-export function TooltipChip({ children, className }: { children: ReactNode; className?: string }) {
+export function TooltipChip({ children, className }: { children: ReactNode; className?: string | undefined }) {
   return (
     <span
       className={cn(
-        "mt-1.5 inline-flex items-center rounded-full bg-amber-100/10 px-1.5 py-px tracking-wider text-amber-100/80 uppercase",
+        "inline-flex items-center rounded-full bg-amber-100/10 px-1.5 py-px tracking-wider text-amber-100/80 uppercase",
         tooltipFooterChipClass,
         className,
       )}

@@ -209,6 +209,7 @@ export const test = base.extend<PerfFixtures>({
           await interact(activePage, phase);
 
           let sample: FrameSampleRaw = {
+            frameGaps: [],
             frameTimes: [],
             longTasks: [],
             durationMs: 0,

@@ -31,11 +31,11 @@ function deltaCell(delta: PairedDelta): string {
   return `<td class="${cls}">${percent(delta.delta)}${mark}<div class="meta">SE ${percent(delta.se)} · n=${delta.n}</div></td>`;
 }
 
-function pairedRows(rows: PairedTierRow[], kind: keyof typeof TITLE_LOOKUPS | "talent"): string {
+function pairedRows(rows: readonly PairedTierRow[], kind: keyof typeof TITLE_LOOKUPS | "talent"): string {
   return rows
     .map(
       (row) =>
-        `<tr><td>${escapeHtml(titleFor(kind, row.id))}</td>${deltaCell(row.early)}${deltaCell(row.mid)}${deltaCell(row.late)}</tr>`,
+        `<tr><td>${escapeHtml(titleFor(kind, row.id))}</td>${deltaCell(row.deltas.early)}${deltaCell(row.deltas.mid)}${deltaCell(row.deltas.late)}</tr>`,
     )
     .join("\n");
 }
@@ -48,24 +48,23 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
   const enemyRows = model.enemies
     .map(
       (row) =>
-        `<tr><td>${escapeHtml(titleFor("enemy", row.id))}</td>${rateCells(row.early)}${rateCells(row.mid)}${rateCells(row.late)}</tr>`,
+        `<tr><td>${escapeHtml(titleFor("enemy", row.id))}</td>${rateCells(row.rates.early)}${rateCells(row.rates.mid)}${rateCells(row.rates.late)}</tr>`,
     )
     .join("\n");
 
   const classRows = model.classes
     .map((row) => {
-      const lateN = row.lateByType.normal?.winRate ?? 0;
-      const lateE = row.lateByType.elite?.winRate ?? 0;
-      const lateB = row.lateByType.boss?.winRate ?? 0;
-      return `<tr><td>${escapeHtml(titleFor("character", row.id))}</td>${rateCells(row.early)}${rateCells(row.mid)}${rateCells(row.late)}<td>${percent(lateN)}</td><td>${percent(lateE)}</td><td>${percent(lateB)}</td></tr>`;
+      const lateN = row.ratesByType.late.normal.winRate;
+      const lateE = row.ratesByType.late.elite.winRate;
+      const lateB = row.ratesByType.late.boss.winRate;
+      return `<tr><td>${escapeHtml(titleFor("character", row.id))}</td>${rateCells(row.rates.early)}${rateCells(row.rates.mid)}${rateCells(row.rates.late)}<td>${percent(lateN)}</td><td>${percent(lateE)}</td><td>${percent(lateB)}</td></tr>`;
     })
     .join("\n");
 
   const matchupRows = model.classMatchups
-    .sort((a, b) => a.characterId.localeCompare(b.characterId) || a.late.winRate - b.late.winRate)
     .map((row) => {
       const cards = row.topCardsLate.map((entry) => `${titleFor("card", entry.cardId)} (${entry.count})`).join(", ");
-      return `<tr><td>${escapeHtml(titleFor("character", row.characterId))}</td><td>${escapeHtml(titleFor("enemy", row.enemyId))}</td><td>${escapeHtml(row.enemyType)}</td>${rateCells(row.early)}${rateCells(row.mid)}${rateCells(row.late)}<td>${escapeHtml(cards)}</td></tr>`;
+      return `<tr><td>${escapeHtml(titleFor("character", row.characterId))}</td><td>${escapeHtml(titleFor("enemy", row.enemyId))}</td><td>${escapeHtml(row.enemyType)}</td>${rateCells(row.rates.early)}${rateCells(row.rates.mid)}${rateCells(row.rates.late)}<td>${escapeHtml(cards)}</td></tr>`;
     })
     .join("\n");
 
@@ -82,8 +81,11 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
 
   const metricRows = model.anomalyMetrics
     .map((row) => {
-      const cells = [row.early, row.mid, row.late]
-        .map((value, index) => `<td class="${value > row.thresholds[index]! ? "neg" : ""}">${value}</td>`)
+      const cells = (["early", "mid", "late"] as const)
+        .map((tier) => {
+          const value = row.values[tier];
+          return `<td class="${value > ANOMALY_THRESHOLD_BY_PRESET[tier] ? "neg" : ""}">${value}</td>`;
+        })
         .join("");
       return `<tr><td>${escapeHtml(row.field)}</td>${cells}</tr>`;
     })

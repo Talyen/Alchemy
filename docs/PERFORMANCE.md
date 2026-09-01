@@ -56,7 +56,7 @@ Collected via `requestAnimationFrame` timestamps and `PerformanceObserver` long 
 
 | Metric                             | Meaning                                            |
 | ---------------------------------- | -------------------------------------------------- |
-| Average FPS                        | Familiar summary — not the primary signal          |
+| Average FPS                        | Sampled gap rate (`frameCount / sampledDuration`)  |
 | p50 / p95 / p99 / p99.9 frame time | Cadence and tail stalls                            |
 | **1% low FPS**                     | `1000 / mean(slowest 1% frame times)`              |
 | **0.1% low FPS**                   | `1000 / mean(slowest 0.1% frame times)`            |
@@ -68,7 +68,9 @@ Collected via `requestAnimationFrame` timestamps and `PerformanceObserver` long 
 | Before/after runtime snapshot      | Heap, DOM/media nodes, and Electron working set    |
 | Startup observations               | Renderer-ready and Electron launch-to-ready time   |
 
-Phases (`play-card`, `damage-feedback`, `enemy-turn`, `draw-hand`) label long tasks in the report.
+Phases (`play-card`, `damage-feedback`, `enemy-turn`, `draw-hand`) label hitches, long tasks, and input events based on their exact recorded start timestamps against the phase timeline. Observers drain pending records (`takeRecords()`) at shutdown before disconnection to preserve terminal events.
+
+Average FPS is computed strictly across sampled frame gaps, avoiding distortion from unsampled window edges, while total measured duration is retained for rate budgets.
 
 Invalid runs (too few frames, empty samples, or missing/non-positive startup observations) **fail the harness**. Missing an advisory target does **not**.
 
@@ -131,6 +133,8 @@ Optimization rule of thumb: improve the targeted p99/hitch by ≥10% or eliminat
 Measure → identify failing scenario/phase → perf:trace that scenario → optimize → perf:compare before/after
 ```
 
+`perf:compare` derives duration-normalized rates for hitches, stalls, and long tasks (per 30 s) so runs of unequal duration are compared fairly. Material environment differences (runtime, trace mode, cold mode, platform, viewport, DPR, refresh rate, browser, target profile) are rejected with clear compatibility errors.
+
 ## Limitations
 
 - rAF sampling detects **main-thread cadence gaps**, not hardware GPU present timing.
@@ -142,11 +146,13 @@ Measure → identify failing scenario/phase → perf:trace that scenario → opt
 
 ## Layout
 
-| Path                                | Role                                   |
-| ----------------------------------- | -------------------------------------- |
-| `playwright.performance.config.ts`  | Performance test runtime configuration |
-| `performance/`                      | Sampler, metrics, reports, scenarios   |
-| `scripts/run-performance.mjs`       | CLI entry (`npm run perf`)             |
-| `tests/performance/metrics.test.ts` | Metrics/compare/report unit tests      |
+| Path                                | Role                                                     |
+| ----------------------------------- | -------------------------------------------------------- |
+| `playwright.performance.config.ts`  | Performance test runtime configuration                   |
+| `performance/`                      | Sampler, metrics, comparison model, reports, scenarios   |
+| `scripts/run-performance.mjs`       | CLI entry (`npm run perf`, `npm run perf:compare`)       |
+| `tests/performance/metrics.test.ts` | Metrics, compare, observer, and report unit tests (Node) |
+
+Metric and comparison unit tests in `tests/performance/` run in the ordinary Node Vitest suite (`npm test`).
 
 Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).

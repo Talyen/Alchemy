@@ -75,7 +75,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
       <p className={cn("mt-3 text-center", bodyTextClass)}>
         {isComplete
           ? `You drafted ${String(draftedCards.length)} cards. Ready to begin your run.`
-          : `Pick 1 of 3 cards \u2014 ${String(round + 1)}/${String(DRAFT_ROUNDS)} selected`}
+          : `Pick 1 of 3 cards - ${String(round + 1)}/${String(DRAFT_ROUNDS)} selected`}
       </p>
 
       <FadeSlot swapKey={isComplete ? "complete" : round} className="mx-auto mt-8 min-h-[36cqh] w-full">

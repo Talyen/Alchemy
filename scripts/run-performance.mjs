@@ -15,6 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeCurrentRun } from "./lib/current-run.mjs";
 import { PERF_PREVIEW_PORT } from "./lib/dev-port.mjs";
+import { checkEnvironmentCompatibility, compareReports } from "../performance/compare-model.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PERFORMANCE_CATALOG = JSON.parse(fs.readFileSync(path.join(root, "performance/catalog.json"), "utf8"));
@@ -116,45 +117,6 @@ function stampOutputDir(runtime = "chromium") {
   return dir;
 }
 
-function compareMetricsJson(before, after) {
-  return PERFORMANCE_CATALOG.metrics.map(({ key, label, higherIsBetter }) => {
-    const b = before[key];
-    const a = after[key];
-    const delta = a - b;
-    const percentChange = b === 0 ? null : (delta / b) * 100;
-    let improved = null;
-    if (delta !== 0) improved = higherIsBetter ? delta > 0 : delta < 0;
-    return { key, label, before: b, after: a, delta, percentChange, higherIsBetter, improved };
-  });
-}
-
-function optimizationNotes(deltas) {
-  // Keep in sync with performance/compare.ts meetsOptimizationRule.
-  const notes = [];
-  const p99 = deltas.find((d) => d.key === "p99FrameTime");
-  const hitches = deltas.find((d) => d.key === "hitchesOver50ms");
-  let improved = false;
-  if (p99?.percentChange !== null && p99?.improved && Math.abs(p99.percentChange) >= 10) {
-    improved = true;
-    notes.push(`p99 improved by ${Math.abs(p99.percentChange).toFixed(1)}%`);
-  }
-  if (hitches?.before > 0 && hitches?.after === 0) {
-    improved = true;
-    notes.push("eliminated all ≥50 ms hitches");
-  } else if (hitches?.percentChange !== null && hitches?.improved && Math.abs(hitches.percentChange) >= 10) {
-    improved = true;
-    notes.push(`hitches improved by ${Math.abs(hitches.percentChange).toFixed(1)}%`);
-  }
-  for (const key of ["p95FrameTime", "p99FrameTime"]) {
-    const d = deltas.find((x) => x.key === key);
-    if (d?.percentChange !== null && d?.improved === false && Math.abs(d.percentChange) > 5) {
-      notes.push(`${d.label} regressed by ${Math.abs(d.percentChange).toFixed(1)}%`);
-    }
-  }
-  if (!improved && notes.length === 0) notes.push("no ≥10% p99/hitch improvement detected");
-  return notes;
-}
-
 function fmt(n, digits = 2) {
   return Number.isFinite(n) ? n.toFixed(digits) : "n/a";
 }
@@ -175,6 +137,22 @@ function runCompare(beforeDir, afterDir) {
 
   const before = JSON.parse(fs.readFileSync(beforeFile, "utf8"));
   const after = JSON.parse(fs.readFileSync(afterFile, "utf8"));
+
+  const compat = checkEnvironmentCompatibility(before.environment, after.environment);
+  if (!compat.compatible) {
+    console.error("Incompatible performance reports for comparison:");
+    for (const err of compat.errors) console.error(` - ${err}`);
+    process.exit(1);
+  }
+
+  let comparisonResult;
+  try {
+    comparisonResult = compareReports(before, after);
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+
   const outDir = stampOutputDir("compare");
 
   const lines = [
@@ -186,25 +164,21 @@ function runCompare(beforeDir, afterDir) {
     "",
   ];
 
-  const afterByName = new Map(after.scenarios.map((s) => [s.scenario, s]));
-  for (const b of before.scenarios) {
-    const a = afterByName.get(b.scenario);
-    if (!a) {
-      lines.push(`## ${b.scenario}`, "", "_Missing in after report._", "");
+  for (const s of comparisonResult.scenarios) {
+    if (s.missing) {
+      lines.push(`## ${s.scenario}`, "", "_Missing in after report._", "");
       continue;
     }
-    const deltas = compareMetricsJson(b.aggregate, a.aggregate);
-    const notes = optimizationNotes(deltas);
-    lines.push(`## ${b.scenario}`, "");
+    lines.push(`## ${s.scenario}`, "");
     lines.push("| Metric | Before | After | Δ | % |");
     lines.push("| --- | ---: | ---: | ---: | ---: |");
-    for (const d of deltas) {
+    for (const d of s.deltas) {
       const pct = d.percentChange === null ? "n/a" : `${fmt(d.percentChange, 1)}%`;
       const mark = d.improved === true ? " improved" : d.improved === false ? " regressed" : "";
       lines.push(`| ${d.label} | ${fmt(d.before)} | ${fmt(d.after)} | ${fmt(d.delta)}${mark} | ${pct} |`);
     }
     lines.push("");
-    for (const note of notes) lines.push(`- ${note}`);
+    for (const note of s.notes) lines.push(`- ${note}`);
     lines.push("");
   }
 

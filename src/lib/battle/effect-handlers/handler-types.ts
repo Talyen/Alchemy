@@ -15,19 +15,6 @@ export type EffectHandler = (
   context?: CardEffectResolutionContext,
 ) => BattleState;
 
-export const POTION_SCALED_KINDS = new Set<BattleCardEffectKind>([
-  "damage",
-  "random-damage",
-  "player-status",
-  "enemy-status",
-  "heal",
-  "restore-mana",
-  "gain-gold",
-  "wish",
-  "cleanse-player-status-to-damage",
-  "remove-harmful-status",
-]);
-
 export function defineHandler<K extends BattleCardEffectKind>(
   kind: K,
   fn: (

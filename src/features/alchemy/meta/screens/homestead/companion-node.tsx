@@ -3,6 +3,7 @@ import { type ReactNode } from "react";
 import { type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford } from "@/lib/homestead/inventory";
 import { DetailPopup } from "../../../shared/ui/card-popup";
+import { renderUnlockMessage } from "../../../shared/ui/unlock-text";
 import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
 import { type BattleCard, type CompanionId, getEffectiveCardDescriptionLines } from "@/lib/game-data";
@@ -66,11 +67,12 @@ function getCompanionTooltip(
       title={title}
       subtitle={undefined}
       descriptionLines={
-        visible
-          ? discovered
-            ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
-            : ["Discover this card during a run to reveal it here."]
-          : []
+        visible && discovered ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions }) : []
+      }
+      descriptionNodes={
+        visible && !discovered
+          ? [<p key="undiscovered">{renderUnlockMessage("Discover this Companion during a Run to reveal it here.")}</p>]
+          : undefined
       }
       visible={visible}
       triggerRef={triggerRef}

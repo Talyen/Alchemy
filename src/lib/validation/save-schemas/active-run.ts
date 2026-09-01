@@ -25,7 +25,10 @@ import {
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { createRunRngState } from "@/lib/run-rng";
 
-const MaterialIdPersistSchema = z.enum(MATERIAL_IDS as [MaterialId, ...MaterialId[]]);
+const MaterialIdPersistSchema = z.preprocess(
+  (val) => (val === "crystal" ? "gems" : val),
+  z.enum(MATERIAL_IDS as [MaterialId, ...MaterialId[]]),
+);
 
 const RunObtainedGearItemSchema = z.object({
   kind: z.literal("gear"),
@@ -80,17 +83,16 @@ const MysteryChoicePersistSchema = z.object({
 const MysteryVisitPersistSchema = z
   .object({
     eventId: z.string(),
-    chosenChoice: MysteryChoicePersistSchema.nullable().catch(null).default(null),
-    pendingRemoval: z.boolean().catch(false).default(false),
-    cardChoices: z.array(BattleCardSchema).nullable().catch(null).default(null),
-    grantedTrinketIds: z.array(z.string()).catch([]).default([]),
-    grantedGear: GearInstanceArraySchema.catch([]).default([]),
-    chosenCardId: z.string().nullable().catch(null).default(null),
-    resolvedTrinketIds: z.array(z.string()).catch([]).default([]),
+    chosenChoice: MysteryChoicePersistSchema.nullable().catch(null),
+    pendingRemoval: z.boolean().catch(false),
+    cardChoices: z.array(BattleCardSchema).nullable().catch(null),
+    grantedTrinketIds: z.array(z.string()).catch([]),
+    grantedGear: GearInstanceArraySchema.catch([]),
+    chosenCardId: z.string().nullable().catch(null),
+    resolvedTrinketIds: z.array(z.string()).catch([]),
   })
   .nullable()
-  .catch(null)
-  .default(null);
+  .catch(null);
 
 const CorruptionResultPersistSchema = z
   .object({
@@ -100,17 +102,16 @@ const CorruptionResultPersistSchema = z
     delta: z.union([z.literal(1), z.literal(-1)]),
   })
   .nullable()
-  .catch(null)
-  .default(null);
+  .catch(null);
 
 const RunRngStateSchema = z.object({
   seed: z.number().int().nonnegative().max(0xffff_ffff),
   counters: z.object({
-    rewards: z.number().int().nonnegative().catch(0).default(0),
-    destinations: z.number().int().nonnegative().catch(0).default(0),
-    events: z.number().int().nonnegative().catch(0).default(0),
-    shops: z.number().int().nonnegative().catch(0).default(0),
-    world: z.number().int().nonnegative().catch(0).default(0),
+    rewards: z.number().int().nonnegative().catch(0),
+    destinations: z.number().int().nonnegative().catch(0),
+    events: z.number().int().nonnegative().catch(0),
+    shops: z.number().int().nonnegative().catch(0),
+    world: z.number().int().nonnegative().catch(0),
   }),
 });
 
@@ -126,12 +127,10 @@ const PersistedBattleTransitionSchema = z
       playerTurnSkipped: z.boolean(),
     }),
     z.object({ kind: z.literal("continue-end-turn") }),
-
     z.object({ kind: z.literal("legacy-enemy-turn") }),
   ])
   .nullable()
-  .catch(null)
-  .default(null);
+  .catch(null);
 
 const ActiveCombatDataSchema = z
   .object({
@@ -156,7 +155,7 @@ function createShopPersistSchema<T extends z.ZodRawShape>(shape: T) {
       ...shape,
       refreshesLeft: z.number().int().nonnegative().catch(0),
       firstPurchaseUsed: z.boolean().catch(false),
-      purchasedSlotKeys: deduplicatedStringArraySchema().default([]),
+      purchasedSlotKeys: deduplicatedStringArraySchema(),
     })
     .nullable()
     .catch(null);
@@ -187,8 +186,8 @@ const WildwoodDraftStateSchema = z
     remainingBossIds: WildwoodBossIdListSchema,
     previousBossId: OptionalWildwoodBossIdSchema,
     currentBossId: OptionalWildwoodBossIdSchema,
-    currentCombatTraitIds: EncounterCombatTraitArraySchema.default([]),
-    currentRewardTraitIds: EncounterRewardTraitArraySchema.default([]),
+    currentCombatTraitIds: EncounterCombatTraitArraySchema.catch([]),
+    currentRewardTraitIds: EncounterRewardTraitArraySchema.catch([]),
   })
   .transform((state) => ({
     ...state,
@@ -198,7 +197,7 @@ const WildwoodDraftStateSchema = z
   .catch(null);
 
 const PersistedPendingRewardBaseSchema = {
-  companionChoiceIds: z.array(z.string()).default([]),
+  companionChoiceIds: z.array(z.string()).catch([]),
   selectedId: z.string().nullable().catch(null),
   gold: z.number().int().nonnegative().catch(0),
   materials: MaterialInventorySchema.catch(emptyInventory()),

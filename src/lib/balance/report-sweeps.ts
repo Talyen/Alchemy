@@ -21,7 +21,14 @@ import {
 } from "./class-deck";
 import { combatTalentsInPoolOrder } from "./combat-talent";
 import { companionIdsFromDeck } from "./homestead-preset";
-import { BOON_GAUNTLET, REPORT_TIERS } from "./report-catalog";
+import {
+  balanceScenarioSeed,
+  BOON_GAUNTLET,
+  reportCharacterIds,
+  reportTierForPreset,
+  reportTierRecord,
+  REPORT_TIERS,
+} from "./report-catalog";
 import type { PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import { combinePairedWinStats, makePairedDelta, pairedWinStats, type PairedWinStats } from "./report-rankings";
@@ -48,7 +55,7 @@ export function buildBalanceBatchConfig(options: ReportRunOptions, config: Balan
     enemyId: config.enemyId,
     depth: config.depth,
     talentPreset: config.preset,
-    difficultyModifiers: REPORT_TIERS.find((tier) => tier.preset === config.preset)?.difficultyModifiers ?? [],
+    difficultyModifiers: reportTierForPreset(config.preset).difficultyModifiers,
     loadoutMode: options.loadoutMode,
     iterations: config.iterations ?? options.iterations,
     seed: config.seed,
@@ -65,10 +72,6 @@ function runSeries(options: ReportRunOptions, config: BalanceScenarioConfig): Wi
   return simulateWinSeries(buildBalanceBatchConfig(options, config));
 }
 
-function characterIds(): CharacterId[] {
-  return Object.keys(characters) as CharacterId[];
-}
-
 function buildRandomDeck(seed: number, size = 10): BattleCard[] {
   return sampleItems(cardLibrary, size, createRunStreamRng(seed, "world"));
 }
@@ -78,47 +81,44 @@ function buildFixedCardDeck(target: BattleCard, seed: number, size = 10): Battle
   return [target, ...others.slice(0, size - 1)];
 }
 
-type TierLabel = (typeof REPORT_TIERS)[number]["label"];
-type PairedStatsByTierAndId = Map<string, PairedWinStats[]>;
+type PairedStatsById = Map<string, Map<TalentPreset, PairedWinStats[]>>;
 
 function pushComparison(
-  collected: PairedStatsByTierAndId,
-  tier: TierLabel,
+  collected: PairedStatsById,
+  tier: TalentPreset,
   id: string,
   baseline: WinSeries,
   treatment: WinSeries,
 ): void {
-  const key = `${tier}:${id}`;
-  const entries = collected.get(key) ?? [];
+  const byTier = collected.get(id) ?? new Map<TalentPreset, PairedWinStats[]>();
+  const entries = byTier.get(tier) ?? [];
   entries.push(pairedWinStats(baseline.outcomes, treatment.outcomes));
-  collected.set(key, entries);
+  byTier.set(tier, entries);
+  collected.set(id, byTier);
 }
 
-function mergeComparisons(collected: PairedStatsByTierAndId): PairedTierRow[] {
-  const ids = [...new Set([...collected.keys()].map((key) => key.slice(key.indexOf(":") + 1)))];
-  const deltaFor = (tier: TierLabel, id: string) =>
-    makePairedDelta(id, combinePairedWinStats(collected.get(`${tier}:${id}`) ?? []));
-  return ids.map((id) => ({
+function mergeComparisons(collected: PairedStatsById): PairedTierRow[] {
+  return [...collected.entries()].map(([id, byTier]) => ({
     id,
-    early: deltaFor("Early", id),
-    mid: deltaFor("Mid", id),
-    late: deltaFor("Late", id),
+    deltas: reportTierRecord((tier) => makePairedDelta(id, combinePairedWinStats(byTier.get(tier) ?? []))),
   }));
 }
 
 export function runTrinketSweep(options: ReportRunOptions): PairedTierRow[] {
-  const collected: PairedStatsByTierAndId = new Map();
-  let scenarioSeed = 50_000;
+  const collected: PairedStatsById = new Map();
   for (const tier of REPORT_TIERS) {
-    for (const characterId of characterIds()) {
+    for (const characterId of reportCharacterIds()) {
       for (const scenario of BOON_GAUNTLET) {
-        const deck = buildRandomDeck(scenarioSeed);
+        const depth = tier.depthOffset + scenario.depthDelta;
+        const deckSeed = balanceScenarioSeed("boon-deck", tier.preset, characterId, scenario.enemyId, depth);
+        const fightSeed = balanceScenarioSeed("boon-fight", tier.preset, characterId, scenario.enemyId, depth);
+        const deck = buildRandomDeck(deckSeed);
         const shared = {
           characterId,
           enemyId: scenario.enemyId,
-          depth: tier.depthOffset + scenario.depthDelta,
+          depth,
           preset: tier.preset,
-          seed: scenarioSeed,
+          seed: fightSeed,
           deck,
           iterations: options.trinketIterations,
         };
@@ -126,13 +126,12 @@ export function runTrinketSweep(options: ReportRunOptions): PairedTierRow[] {
         for (const trinket of trinketLibrary) {
           pushComparison(
             collected,
-            tier.label,
+            tier.preset,
             trinket.id,
             baseline,
             runSeries(options, { ...shared, trinketIds: [trinket.id] }),
           );
         }
-        scenarioSeed += 1000;
       }
     }
   }
@@ -140,14 +139,14 @@ export function runTrinketSweep(options: ReportRunOptions): PairedTierRow[] {
 }
 
 export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string): PairedTierRow[] {
-  const collected: PairedStatsByTierAndId = new Map();
-  const ids = characterIds();
+  const collected: PairedStatsById = new Map();
+  const ids = reportCharacterIds();
   const iterations = Math.max(10, Math.floor(options.iterations / 10));
   for (const tier of REPORT_TIERS) {
     for (let index = 0; index < options.cardIterations; index += 1) {
       const characterId = ids[index % ids.length]!;
-      const deckSeed = 200_000 + index;
-      const seed = deckSeed + 100_000;
+      const deckSeed = balanceScenarioSeed("card-isolated-deck", tier.preset, enemyId, index);
+      const seed = balanceScenarioSeed("card-isolated-fight", tier.preset, characterId, enemyId, index);
       const shared = {
         characterId,
         enemyId,
@@ -161,7 +160,7 @@ export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string)
       for (const card of cardLibrary) {
         pushComparison(
           collected,
-          tier.label,
+          tier.preset,
           card.id,
           baseline,
           runSeries(options, { ...shared, deck: buildFixedCardDeck(card, deckSeed) }),
@@ -173,19 +172,20 @@ export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string)
 }
 
 export function runCardSweepInClass(options: ReportRunOptions): PairedTierRow[] {
-  const collected: PairedStatsByTierAndId = new Map();
+  const collected: PairedStatsById = new Map();
   const iterations = Math.max(10, Math.floor(options.iterations / 5));
-  let scenarioSeed = 400_000;
   for (const tier of REPORT_TIERS) {
-    for (const characterId of characterIds()) {
+    for (const characterId of reportCharacterIds()) {
+      const deckSeed = balanceScenarioSeed("card-in-class-deck", tier.preset, characterId);
+      const fightSeed = balanceScenarioSeed("card-in-class-fight", tier.preset, characterId, "skeleton");
       const affinity = characters[characterId].keywords;
-      const baseDeck = buildClassSimDeck(characterId, tier.preset, scenarioSeed);
+      const baseDeck = buildClassSimDeck(characterId, tier.preset, deckSeed);
       const shared = {
         characterId,
         enemyId: "skeleton",
         depth: tier.depthOffset + 2,
         preset: tier.preset,
-        seed: scenarioSeed,
+        seed: fightSeed,
         trinketIds: [],
         iterations,
       };
@@ -201,46 +201,45 @@ export function runCardSweepInClass(options: ReportRunOptions): PairedTierRow[] 
         const treatment = alreadyInDeck
           ? baseSeries
           : runSeries(options, { ...shared, deck: insertCardIntoDeck(baseDeck, card) });
-        pushComparison(collected, tier.label, card.id, baseline, treatment);
+        pushComparison(collected, tier.preset, card.id, baseline, treatment);
       }
-      scenarioSeed += 1000;
     }
   }
   return mergeComparisons(collected);
 }
 
 export function runTalentSweep(options: ReportRunOptions): PairedTierRow[] {
-  const collected: PairedStatsByTierAndId = new Map();
-  let seed = 600_000;
+  const collected: PairedStatsById = new Map();
   for (const tier of REPORT_TIERS) {
-    for (const characterId of characterIds()) {
+    for (const characterId of reportCharacterIds()) {
+      const deckSeed = balanceScenarioSeed("talent-deck", tier.preset, characterId);
       const keywords = characters[characterId].keywords;
       const unlocked = buildPresetUnlockedTalents(keywords, tier.preset);
       const talents = keywords.flatMap((keyword) => combatTalentsInPoolOrder(keyword));
-      const deck = buildClassSimDeck(characterId, tier.preset, seed);
+      const deck = buildClassSimDeck(characterId, tier.preset, deckSeed);
       for (const talent of talents) {
         const baselineEffects = computeTalentEffects(withoutTalent(unlocked, talent));
         const treatmentEffects = computeTalentEffects(withTalent(unlocked, talent));
         for (const scenario of BOON_GAUNTLET) {
+          const depth = tier.depthOffset + scenario.depthDelta;
           const shared = {
             characterId,
             enemyId: scenario.enemyId,
-            depth: tier.depthOffset + scenario.depthDelta,
+            depth,
             preset: tier.preset,
-            seed,
+            seed: balanceScenarioSeed("talent-fight", tier.preset, characterId, scenario.enemyId, depth),
             deck,
             iterations: options.trinketIterations,
           };
           pushComparison(
             collected,
-            tier.label,
+            tier.preset,
             talent.id,
             runSeries(options, { ...shared, talentEffects: baselineEffects }),
             runSeries(options, { ...shared, talentEffects: treatmentEffects }),
           );
         }
       }
-      seed += 1000;
     }
   }
   return mergeComparisons(collected);
@@ -251,13 +250,13 @@ function summonCards(): BattleCard[] {
 }
 
 export function runCompanionSweep(options: ReportRunOptions): PairedTierRow[] {
-  const collected: PairedStatsByTierAndId = new Map();
-  let seed = 700_000;
+  const collected: PairedStatsById = new Map();
   const summons = summonCards();
   for (const tier of REPORT_TIERS) {
-    for (const characterId of characterIds()) {
+    for (const characterId of reportCharacterIds()) {
+      const deckSeed = balanceScenarioSeed("companion-deck", tier.preset, characterId);
       const classKeywords = characters[characterId].keywords;
-      const deck = buildClassSimDeck(characterId, tier.preset, seed);
+      const deck = buildClassSimDeck(characterId, tier.preset, deckSeed);
       const relevant = summons.filter((card) => {
         const effect = card.effects.find((candidate) => candidate.kind === "summon-companion");
         if (!effect || effect.kind !== "summon-companion") return false;
@@ -275,24 +274,24 @@ export function runCompanionSweep(options: ReportRunOptions): PairedTierRow[] {
         const baselineDeck = removeCompanionSummonFromDeck(insertCardIntoDeck(deck, card), companionId);
         const treatmentDeck = insertCardIntoDeck(baselineDeck, card);
         for (const scenario of BOON_GAUNTLET) {
+          const depth = tier.depthOffset + scenario.depthDelta;
           const shared = {
             characterId,
             enemyId: scenario.enemyId,
-            depth: tier.depthOffset + scenario.depthDelta,
+            depth,
             preset: tier.preset,
-            seed,
+            seed: balanceScenarioSeed("companion-fight", tier.preset, characterId, scenario.enemyId, depth),
             iterations: options.trinketIterations,
           };
           pushComparison(
             collected,
-            tier.label,
+            tier.preset,
             companionId,
             runSeries(options, { ...shared, deck: baselineDeck }),
             runSeries(options, { ...shared, deck: treatmentDeck }),
           );
         }
       }
-      seed += 1000;
     }
   }
   return mergeComparisons(collected);

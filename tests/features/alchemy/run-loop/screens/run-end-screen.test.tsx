@@ -7,7 +7,7 @@ import type { RunObtainedItem } from "@/lib/active-run-session";
 import type { GearInstance } from "@/lib/gear";
 import { getGearInstanceTitle } from "@/lib/gear";
 
-const emptyMaterials = { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 };
+const emptyMaterials = { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0 };
 
 function gearItem(
   instanceId: string,

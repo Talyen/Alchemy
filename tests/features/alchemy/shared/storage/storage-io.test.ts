@@ -158,7 +158,7 @@ describe("storage io", () => {
     });
     expect(loaded.data.activeRun).not.toHaveProperty("runGold");
     expect(loaded.data.gold).toBe(42);
-    expect(loaded.data.materialInventory).toEqual({ wood: 4, iron: 2, herbs: 0, food: 0, crystal: 0 });
+    expect(loaded.data.materialInventory).toEqual({ wood: 4, iron: 2, herbs: 0, food: 0, gems: 0 });
 
     await saveAlchemySaveData(loaded.data);
     const reloaded = JSON.parse(mockStorage[SAVE_KEY]);

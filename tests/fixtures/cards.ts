@@ -1,4 +1,4 @@
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data/types";
 
 export function makeTestCard(overrides: Partial<BattleCard> = {}): BattleCard {
   return {

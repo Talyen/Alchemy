@@ -40,19 +40,3 @@ export const QUALITY = Object.freeze({
   cursor: 90,
   gear: 82,
 });
-
-export const ART_PRESET = Object.freeze({
-  card: { width: WIDTH.card, quality: QUALITY.card },
-  talent: { width: WIDTH.talent, quality: QUALITY.talent },
-  boon: { width: WIDTH.boon, quality: QUALITY.boon },
-  hero: { width: WIDTH.hero, quality: QUALITY.hero },
-  enemy: { width: WIDTH.enemy, quality: QUALITY.enemy },
-  destination: { width: WIDTH.destination, quality: QUALITY.destination },
-  gameMode: { width: WIDTH.gameMode, quality: QUALITY.gameMode },
-  homestead: { width: WIDTH.homestead, quality: QUALITY.homestead },
-  mystery: { width: WIDTH.mystery, quality: QUALITY.mystery },
-  difficulty: { width: WIDTH.difficulty, quality: QUALITY.difficulty },
-  resource: { width: WIDTH.resource, quality: QUALITY.resource },
-  logo: { width: WIDTH.logo, quality: QUALITY.logo },
-  gear: { width: WIDTH.gear, quality: QUALITY.gear },
-});

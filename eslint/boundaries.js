@@ -2,8 +2,6 @@ import {
   BARREL_PATTERNS,
   BATTLE_NO_FEATURES,
   BATTLE_NO_FRAMEWORK_PATHS,
-  BATTLE_NO_MATH_FLOOR,
-  BATTLE_NO_MATH_RANDOM,
   DOMAIN_STORE_PATTERNS,
   GAME_DATA_NO_BATTLE,
   layerImports,
@@ -14,7 +12,6 @@ import {
   META_NO_RUN_LOOP,
   NO_DIRECT_ASSET_IMPORT,
   ORCHESTRATION_NO_SCREENS,
-  restrictedSyntax,
   RUN_LOOP_NO_RUN_SETUP,
   RUN_SETUP_NO_RUN_LOOP,
   SCREENS_NO_ORCHESTRATION,
@@ -83,7 +80,6 @@ const BOUNDARY_TABLE = [
       BATTLE_NO_FEATURES,
       DOMAIN_STORE_PATTERNS,
     ],
-    syntax: [BATTLE_NO_MATH_RANDOM, BATTLE_NO_MATH_FLOOR],
   },
   {
     files: ["src/lib/battle/rng.ts"],
@@ -134,7 +130,6 @@ function createBoundaryConfig(entry) {
       ...(entry.ignores ? { ignores: entry.ignores } : {}),
       rules: {
         "no-restricted-imports": layerImportsWithPaths(entry.paths, ...entry.patterns),
-        ...(entry.syntax ? { "no-restricted-syntax": restrictedSyntax(...entry.syntax.flat()) } : {}),
       },
     };
   }

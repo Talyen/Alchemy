@@ -83,7 +83,7 @@ function useTooltipContent(
       if (currentTier.benefitDescription) {
         for (const line of currentTier.benefitDescription.split("\n")) {
           nodes.push(
-            <div key={`b-${nodes.length}`} className="text-balance">
+            <div key={`b-${nodes.length}`} className="text-pretty">
               {renderTextWithMaterials(line)}
             </div>,
           );
@@ -91,7 +91,7 @@ function useTooltipContent(
       }
       if (currentTier.nonCombatBenefitDescription) {
         nodes.push(
-          <div key={`b-${nodes.length}`} className="text-balance">
+          <div key={`b-${nodes.length}`} className="text-pretty">
             {renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}
           </div>,
         );

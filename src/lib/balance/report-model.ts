@@ -1,75 +1,63 @@
 import type { CharacterId } from "@/lib/game-data";
 import type { BalanceLoadoutMode } from "./loadout-preset";
+import type { ReportEnemyType, ReportTierRecord } from "./report-catalog";
 import type { PairedDelta, RateCell } from "./report-rankings";
 import type { BalancePlayPolicy } from "./simulator-types";
 
 export interface TierRateRow {
-  id: string;
-  early: RateCell;
-  mid: RateCell;
-  late: RateCell;
+  readonly id: string;
+  readonly rates: ReportTierRecord<RateCell>;
 }
 
 interface ClassTypeSplitRow {
-  id: CharacterId;
-  early: RateCell;
-  mid: RateCell;
-  late: RateCell;
-  earlyByType: Record<string, RateCell>;
-  midByType: Record<string, RateCell>;
-  lateByType: Record<string, RateCell>;
+  readonly id: CharacterId;
+  readonly rates: ReportTierRecord<RateCell>;
+  readonly ratesByType: ReportTierRecord<Readonly<Record<ReportEnemyType, RateCell>>>;
 }
 
 export interface ClassMatchupRow {
-  characterId: CharacterId;
-  enemyId: string;
-  enemyType: string;
-  early: RateCell;
-  mid: RateCell;
-  late: RateCell;
-  topCardsLate: Array<{ cardId: string; count: number }>;
+  readonly characterId: CharacterId;
+  readonly enemyId: string;
+  readonly enemyType: ReportEnemyType;
+  readonly rates: ReportTierRecord<RateCell>;
+  readonly topCardsLate: ReadonlyArray<{ cardId: string; count: number }>;
 }
 
 export interface AnomalyReportRow {
-  field: string;
-  maxValue: number;
-  battles: number;
-  peakScenario: string;
+  readonly field: string;
+  readonly maxValue: number;
+  readonly battles: number;
+  readonly peakScenario: string;
 }
 
 export interface AnomalyMetricRow {
-  field: string;
-  early: number;
-  mid: number;
-  late: number;
-  thresholds: number[];
+  readonly field: string;
+  readonly values: ReportTierRecord<number>;
 }
 
 export interface PairedTierRow {
-  id: string;
-  early: PairedDelta;
-  mid: PairedDelta;
-  late: PairedDelta;
+  readonly id: string;
+  readonly deltas: ReportTierRecord<PairedDelta>;
 }
 
 export interface BalanceReportModel {
-  meta: {
-    policy: BalancePlayPolicy;
-    loadoutMode: BalanceLoadoutMode;
-    iterations: number;
-    trinketIterations: number;
-    cardIterations: number;
-    deckSeeds: number;
+  readonly meta: {
+    readonly policy: BalancePlayPolicy;
+    readonly loadoutMode: BalanceLoadoutMode;
+    readonly iterations: number;
+    readonly trinketIterations: number;
+    readonly cardIterations: number;
+    readonly deckSeeds: number;
   };
-  enemies: TierRateRow[];
-  classes: ClassTypeSplitRow[];
-  classMatchups: ClassMatchupRow[];
-  boons: PairedTierRow[];
-  cardsIsolatedSkeleton: PairedTierRow[];
-  cardsIsolatedElite: PairedTierRow[];
-  cardsInClass: PairedTierRow[];
-  talents: PairedTierRow[];
-  companions: PairedTierRow[];
-  anomalies: AnomalyReportRow[];
-  anomalyMetrics: AnomalyMetricRow[];
+  readonly enemies: readonly TierRateRow[];
+  readonly classes: readonly ClassTypeSplitRow[];
+  readonly classMatchups: readonly ClassMatchupRow[];
+  readonly boons: readonly PairedTierRow[];
+  readonly cardsIsolatedSkeleton: readonly PairedTierRow[];
+  readonly cardsIsolatedElite: readonly PairedTierRow[];
+  readonly cardsInClass: readonly PairedTierRow[];
+  readonly talents: readonly PairedTierRow[];
+  readonly companions: readonly PairedTierRow[];
+  readonly anomalies: readonly AnomalyReportRow[];
+  readonly anomalyMetrics: readonly AnomalyMetricRow[];
 }

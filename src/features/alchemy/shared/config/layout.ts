@@ -43,6 +43,7 @@ export function getTileWidthClass(variant: TileWidthVariant): string {
 }
 
 export const collectionGridMinHeightClass = "min-h-[64cqh]";
+export const homesteadGridMinHeightClass = "min-h-[70.6cqh]";
 export const pileCardWidthClass = "w-[clamp(13.8cqh,14.9cqh,21cqh)]";
 
 export const chooserArtWidthClass = "w-full max-w-[39.11cqh]";

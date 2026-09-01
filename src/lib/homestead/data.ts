@@ -50,17 +50,17 @@ export const buildings = [
   ]),
   defineBuilding("runesmiths-workshop", "Runesmith", [
     {
-      cost: materialCost({ iron: 10, crystal: 10 }),
+      cost: materialCost({ iron: 10, gems: 10 }),
       effects: { flatBurnDamage: 1 },
       benefitDescription: "Increases Burn damage by 1",
     },
     {
-      cost: materialCost({ iron: 15, crystal: 15 }),
+      cost: materialCost({ iron: 15, gems: 15 }),
       effects: { flatFreezeDamage: 1 },
       benefitDescription: "Increases Burn and Freeze damage by 1",
     },
     {
-      cost: materialCost({ iron: 20, crystal: 20 }),
+      cost: materialCost({ iron: 20, gems: 20 }),
       effects: { flatNatureDamage: 1 },
       benefitDescription: "Increases Burn, Freeze, and Nature damage by 1",
     },
@@ -80,7 +80,7 @@ export const buildings = [
     stackingTiers(
       dualMaterialCosts("wood", "iron"),
       { wishCrystalGold: 1 },
-      (tier) => `Gain ${tier} Crystal or Gold when you Wish`,
+      (tier) => `Gain ${tier} Gems or Gold when you Wish`,
     ),
   ),
 ];
@@ -137,19 +137,19 @@ export const farmPlots = [
   ),
   defineFarm("crystal-garden", "Crystal Garden", [
     {
-      cost: materialCost({ crystal: 20 }),
-      effects: { endRunCrystalPerRoom: 2 },
-      benefitDescription: "Gain Crystal after each run",
+      cost: materialCost({ gems: 20 }),
+      effects: { endRunGemsPerRoom: 2 },
+      benefitDescription: "Gain Gems after each run",
     },
     {
-      cost: materialCost({ crystal: 30 }),
-      effects: { startMana: 1, endRunCrystalPerRoom: 2 },
-      benefitDescription: "Start combat with 1 additional Mana\nGain Crystal after each run",
+      cost: materialCost({ gems: 30 }),
+      effects: { startMana: 1, endRunGemsPerRoom: 2 },
+      benefitDescription: "Start combat with 1 additional Mana\nGain Gems after each run",
     },
     {
-      cost: materialCost({ crystal: 40 }),
-      effects: { runMaxManaBonus: 1, endRunCrystalPerRoom: 2 },
-      benefitDescription: "Gain 1 Mana Crystal\nGain Crystal after each run",
+      cost: materialCost({ gems: 40 }),
+      effects: { runMaxManaBonus: 1, endRunGemsPerRoom: 2 },
+      benefitDescription: "Gain 1 Mana Crystal\nGain Gems after each run",
     },
   ]),
 ];
@@ -157,36 +157,36 @@ export const farmPlots = [
 export const researchUpgrades = [
   defineResearch("leyline-energy", "Leyline Energy", [
     {
-      cost: materialCost({ crystal: 20 }),
+      cost: materialCost({ gems: 20 }),
       effects: { startMana: 1 },
       benefitDescription: "Increases starting Mana by 1",
     },
     {
-      cost: materialCost({ crystal: 30 }),
-      effects: { startMana: 1, endRunCrystalPerRoom: 1 },
-      benefitDescription: "Increases starting Mana by 2\nGain Crystal after each run",
-      nonCombatBenefitDescription: "Gain Crystal after each run",
+      cost: materialCost({ gems: 30 }),
+      effects: { startMana: 1, endRunGemsPerRoom: 1 },
+      benefitDescription: "Increases starting Mana by 2\nGain Gems after each run",
+      nonCombatBenefitDescription: "Gain Gems after each run",
     },
     {
-      cost: materialCost({ crystal: 40 }),
-      effects: { startMana: 2, endRunCrystalPerRoom: 1 },
-      benefitDescription: "Increases starting Mana by 4\nGain Crystal after each run",
-      nonCombatBenefitDescription: "Gain Crystal after each run",
+      cost: materialCost({ gems: 40 }),
+      effects: { startMana: 2, endRunGemsPerRoom: 1 },
+      benefitDescription: "Increases starting Mana by 4\nGain Gems after each run",
+      nonCombatBenefitDescription: "Gain Gems after each run",
     },
   ]),
   defineResearch("detect-magic", "Detect Magic", [
     {
-      cost: materialCost({ crystal: 20 }),
+      cost: materialCost({ gems: 20 }),
       effects: { gearAstralChanceBonus: 0.03 },
       benefitDescription: "3% increased chance to find higher rarity equipment",
     },
     {
-      cost: materialCost({ crystal: 30 }),
+      cost: materialCost({ gems: 30 }),
       effects: { gearAstralChanceBonus: 0.03 },
       benefitDescription: "6% increased chance to find higher rarity equipment",
     },
     {
-      cost: materialCost({ crystal: 40 }),
+      cost: materialCost({ gems: 40 }),
       effects: { gearAstralChanceBonus: 0.04 },
       benefitDescription: "10% increased chance to find higher rarity equipment",
     },

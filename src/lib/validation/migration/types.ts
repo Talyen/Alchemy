@@ -25,7 +25,25 @@ export function migrateParkedRuns(
   return next;
 }
 
+function hashStringToUint32(value: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 export function rngSeedFromRun(run: Record<string, unknown>): number {
   if (isRecord(run.rng) && typeof run.rng.seed === "number") return run.rng.seed >>> 0;
+  const runId = typeof run.runId === "string" ? run.runId : typeof run.id === "string" ? run.id : "";
+  if (runId) {
+    const hashed = hashStringToUint32(runId);
+    if (hashed !== 0) return hashed;
+  }
+  if (typeof run.contentSystemType === "string" && typeof run.characterId === "string") {
+    const fallback = hashStringToUint32(`${run.contentSystemType}:${run.characterId}`);
+    if (fallback !== 0) return fallback;
+  }
   return 1;
 }

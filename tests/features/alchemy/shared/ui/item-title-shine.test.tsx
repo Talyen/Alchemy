@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { GearItemTitle, TrinketItemTitle } from "@/features/alchemy/shared/ui/gear-item-title";
@@ -99,5 +99,28 @@ describe("item portrait shine", () => {
       />,
     );
     expect(container.querySelector(".shine-border")).toBeNull();
+  });
+});
+
+describe("boon tooltip chip placement and styling", () => {
+  it("renders the Boon tag to the right of the shiny title in the tooltip header", () => {
+    const trinket = trinketById.meteorite!;
+    const { container } = render(<TrinketTile trinket={trinket} interactionKey="test" temporary />);
+
+    const tile = container.firstElementChild as HTMLElement;
+    fireEvent.mouseEnter(tile);
+
+    const title = screen.getByText("Meteorite");
+    const chip = screen.getByText("Boon");
+
+    expect(title.classList.contains("boss-title-shine")).toBe(true);
+    expect(chip.classList.contains("boss-title-shine")).toBe(false);
+    expect(chip.classList.contains("uppercase")).toBe(true);
+    expect(chip.classList.contains("bg-amber-100/10")).toBe(true);
+
+    const header = title.closest("p");
+    expect(header).not.toBeNull();
+    expect(header!.contains(title)).toBe(true);
+    expect(header!.contains(chip)).toBe(true);
   });
 });

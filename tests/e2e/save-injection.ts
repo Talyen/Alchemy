@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data/types";
 import { SAVE_KEY } from "@/lib/game-constants";
 import { baseHomesteadSave, ALL_PLAYABLE_CHARACTERS, DEFAULT_DISCOVERED_CARD_IDS } from "../fixtures/saves";
 import type { InjectedBattleState } from "../fixtures/battle-state";

@@ -69,7 +69,7 @@ describe("resolveActiveRunForSave", () => {
 describe("buildAlchemySaveDataFromStores permanent progress", () => {
   it("reads materialInventory and talentXP from the run-domain profile when args are omitted", () => {
     setRunProgress({
-      materialInventory: { wood: 12, iron: 3, herbs: 1, food: 0, crystal: 2 },
+      materialInventory: { wood: 12, iron: 3, herbs: 1, food: 0, gems: 2 },
       talentXP: { burn: 40 },
       unlockedTalents: { burn: ["ember-1"] },
       initialized: true,
@@ -77,7 +77,7 @@ describe("buildAlchemySaveDataFromStores permanent progress", () => {
 
     const save = buildAlchemySaveDataFromStores(null);
 
-    expect(save.materialInventory).toEqual({ wood: 12, iron: 3, herbs: 1, food: 0, crystal: 2 });
+    expect(save.materialInventory).toEqual({ wood: 12, iron: 3, herbs: 1, food: 0, gems: 2 });
     expect(save.talentXP).toEqual({ burn: 40 });
     expect(save.unlockedTalents).toEqual({ burn: ["ember-1"] });
   });

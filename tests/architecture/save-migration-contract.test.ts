@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION } from "@/lib/validation";
+import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION, SaveDataSchema } from "@/lib/validation";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 
 const ROOT = join(import.meta.dirname, "../..");
@@ -79,5 +79,16 @@ describe("save migration contract", () => {
       "unlockedTalents",
     ].sort();
     expect(defaultKeys).toEqual(expectedKeys);
+  });
+
+  it("keeps defaults.ts values aligned with schema .catch defaults", () => {
+    const schemaDefaults = SaveDataSchema.parse({});
+    for (const key of Object.keys(defaultSaveData) as Array<keyof typeof defaultSaveData>) {
+      if (key === "gameBuildVersion" || key === "saveSchemaVersion" || key === "lastSavedAt") continue;
+      expect(
+        (schemaDefaults as unknown as Record<string, unknown>)[key],
+        `schema default for ${key} diverged from defaults.ts`,
+      ).toEqual((defaultSaveData as unknown as Record<string, unknown>)[key]);
+    }
   });
 });

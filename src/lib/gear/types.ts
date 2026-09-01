@@ -1,15 +1,21 @@
-import { characters, type CharacterId } from "@/lib/game-data";
-import { ARMORY_SLOTS, GEAR_SLOTS, type ArmorySlot, type GearSlot, type GearRarity, GEAR_RARITIES } from "./types-core";
+import {
+  ARMORY_SLOTS,
+  GEAR_SLOTS,
+  type ArmorySlot,
+  type GearSlot,
+  type GearRarity,
+  GEAR_RARITIES,
+  GEAR_CHARACTER_IDS,
+  type GearCharacterId,
+} from "./types-core";
 
 export type { GearEffectManifest } from "./gear-effect-manifest";
 export { defaultGearEffects, GEAR_EFFECT_KEYS } from "./gear-effect-manifest";
 
-export type GearCharacterId = CharacterId;
+export type { GearCharacterId };
 
-export { ARMORY_SLOTS, GEAR_SLOTS, GEAR_RARITIES };
+export { ARMORY_SLOTS, GEAR_SLOTS, GEAR_RARITIES, GEAR_CHARACTER_IDS };
 export type { ArmorySlot, GearSlot, GearRarity };
-
-export const GEAR_CHARACTER_IDS = Object.keys(characters) as GearCharacterId[];
 
 export type { GearAffixId } from "./affix-catalog";
 

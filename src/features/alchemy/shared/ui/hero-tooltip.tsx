@@ -6,6 +6,7 @@ import { renderColoredKeywords } from "./card-description-ui";
 import { KeywordTag } from "./keyword-tag";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "./tooltip-panel";
+import { renderUnlockMessage } from "./unlock-text";
 
 export function HeroTooltip({
   character,
@@ -30,7 +31,7 @@ export function HeroTooltip({
 
       {isLocked ? (
         <TooltipBody>
-          <p>{unlockRequirementText}</p>
+          <p>{renderUnlockMessage(unlockRequirementText)}</p>
         </TooltipBody>
       ) : (
         <>

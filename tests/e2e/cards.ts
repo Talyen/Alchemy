@@ -1,12 +1,8 @@
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data/types";
 import type { DamageType } from "@/lib/game-data/types";
 import { makeTestCard } from "../fixtures/cards";
 
 let nextFactoryCardUid = 1;
-
-export function resetCardFactory() {
-  nextFactoryCardUid = 1;
-}
 
 export function makeCard(overrides: Record<string, unknown> = {}) {
   return {

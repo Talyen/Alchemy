@@ -360,17 +360,17 @@ describe("new wish talents", () => {
     expect(result.gold).toBe(5);
   });
 
-  it("wishCrystalGold grants crystal on failed roll", () => {
+  it("wishCrystalGold grants gems on failed roll", () => {
     const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       talentEffects: { ...makeTestBattleState().talentEffects, wishCrystalGold: 5 },
       rng: () => 0.99,
     });
     const result = applyWishEffect(state, card, 1, []);
-    expect(result.pendingMaterials.crystal).toBe(5);
+    expect(result.pendingMaterials.gems).toBe(5);
   });
 
-  it("wishCrystalGold grants gold instead of crystal in wildwood (no silent drop)", () => {
+  it("wishCrystalGold grants gold instead of gems in wildwood (no silent drop)", () => {
     const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({
       talentEffects: { ...makeTestBattleState().talentEffects, wishCrystalGold: 5 },
@@ -378,7 +378,7 @@ describe("new wish talents", () => {
       contentSystemType: "wildwood",
     });
     const result = applyWishEffect(state, card, 1, []);
-    expect(result.pendingMaterials.crystal).toBe(0);
+    expect(result.pendingMaterials.gems).toBe(0);
     expect(result.gold).toBe(5);
   });
 

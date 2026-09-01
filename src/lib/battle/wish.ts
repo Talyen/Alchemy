@@ -100,10 +100,10 @@ function applyWishCrystalGoldTrigger(state: BattleState, combatTexts: CombatText
   if (shouldConvertCrystalWishToGold(state.contentSystemType)) {
     return addGoldWithCombatText(state, amount, combatTexts);
   }
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "crystal", amount });
+  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gems", amount });
   return {
     ...state,
-    pendingMaterials: { ...state.pendingMaterials, crystal: state.pendingMaterials.crystal + amount },
+    pendingMaterials: { ...state.pendingMaterials, gems: state.pendingMaterials.gems + amount },
   };
 }
 

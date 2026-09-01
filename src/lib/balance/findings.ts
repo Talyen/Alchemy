@@ -17,7 +17,7 @@ import {
 } from "./findings-bands";
 import type { BalanceReportModel, ClassMatchupRow, PairedTierRow, TierRateRow } from "./report-model";
 import type { RateCell } from "./report-rankings";
-import { TITLE_LOOKUPS } from "./report-catalog";
+import { REPORT_ENEMY_TYPES, REPORT_TIERS, TITLE_LOOKUPS } from "./report-catalog";
 
 type FindingSeverity = "critical" | "serious" | "watch";
 type FindingScope = "enemy" | "class" | "matchup" | "card" | "talent" | "companion" | "boon" | "anomaly";
@@ -71,8 +71,6 @@ export interface BalanceFindingsReport {
 
 const SEVERITY_RANK: Record<FindingSeverity, number> = { critical: 0, serious: 1, watch: 2 };
 
-const TIERS: FindingsTier[] = ["early", "mid", "late"];
-
 const APPLY_TYPE_WIN_BAND: Record<FindingsTier, boolean> = {
   early: false,
   mid: true,
@@ -99,10 +97,6 @@ function enemyTypeOf(id: string): EnemyTypeBand | undefined {
     return entry.enemyType;
   }
   return undefined;
-}
-
-function cellFor(row: { early: RateCell; mid: RateCell; late: RateCell }, tier: FindingsTier): RateCell {
-  return row[tier];
 }
 
 function titleEnemy(id: string): string {
@@ -177,14 +171,14 @@ export function evaluateBalanceFindings(model: BalanceReportModel): BalanceFindi
 
   for (const enemy of model.enemies) {
     const enemyType = enemyTypeOf(enemy.id);
-    for (const tier of TIERS) {
+    for (const { preset: tier } of REPORT_TIERS) {
       collectRateFindings({
         add,
         scope: "enemy",
         id: enemy.id,
         title: titleEnemy(enemy.id),
         tier,
-        cell: cellFor(enemy, tier),
+        cell: enemy.rates[tier],
         enemyType,
         worstScenario: `${titleEnemy(enemy.id)} (${tier})`,
         ...(ENEMY_CAUSE_HINTS[enemy.id] ? { causeHint: ENEMY_CAUSE_HINTS[enemy.id] } : {}),
@@ -195,47 +189,25 @@ export function evaluateBalanceFindings(model: BalanceReportModel): BalanceFindi
   collectEnemyTypeEquity(model.enemies, add);
 
   for (const row of model.classes) {
-    for (const tier of TIERS) {
-      const cell = cellFor(row, tier);
-      if (cell.n <= 0) continue;
-      if (isWinRateFloorOrCeiling(cell.winRate)) {
-        add({
-          severity: "critical",
-          scope: "class",
-          id: row.id,
-          title: titleClass(row.id),
-          tier,
-          metric: "winRate",
-          bucket: "floorCeiling",
-          observed: cell.winRate,
-          band: "never 0% or 100%",
-          worstScenario: `${titleClass(row.id)} overall (${tier})`,
-          ...(row.id === "wizard" || row.id === "warlock"
-            ? { causeHint: "Burn (and Bleed for Warlock) can spike stacks quickly." }
-            : {}),
-          recommendation: `Class win rate is a floor or ceiling.${REVIEW_SUFFIX}`,
-        });
-      }
-      if (cell.timeoutRate >= MATERIAL_TIMEOUT_RATE) {
-        add({
-          severity: "critical",
-          scope: "class",
-          id: row.id,
-          title: titleClass(row.id),
-          tier,
-          metric: "timeoutRate",
-          bucket: "timeout",
-          observed: cell.timeoutRate,
-          band: `< ${(MATERIAL_TIMEOUT_RATE * 100).toFixed(0)}% timeouts`,
-          worstScenario: `${titleClass(row.id)} overall (${tier})`,
-          recommendation: `Class fights hit the 30-turn cap.${REVIEW_SUFFIX}`,
-        });
-      }
+    for (const { preset: tier } of REPORT_TIERS) {
+      collectRateFindings({
+        add,
+        scope: "class",
+        id: row.id,
+        title: titleClass(row.id),
+        tier,
+        cell: row.rates[tier],
+        enemyType: undefined,
+        worstScenario: `${titleClass(row.id)} overall (${tier})`,
+        ...(row.id === "wizard" || row.id === "warlock"
+          ? { causeHint: "Burn (and Bleed for Warlock) can spike stacks quickly." }
+          : {}),
+      });
     }
 
-    for (const enemyType of ["normal", "elite", "boss"] as const) {
-      const cell = row.lateByType[enemyType];
-      if (!cell || cell.n <= 0) continue;
+    for (const enemyType of REPORT_ENEMY_TYPES) {
+      const cell = row.ratesByType.late[enemyType];
+      if (cell.n <= 0) continue;
       collectRateFindings({
         add,
         scope: "class",
@@ -466,21 +438,21 @@ function collectRateFindings(options: {
   }
 }
 
-function collectEnemyTypeEquity(enemies: TierRateRow[], add: (finding: BalanceFinding) => void): void {
+function collectEnemyTypeEquity(enemies: readonly TierRateRow[], add: (finding: BalanceFinding) => void): void {
   const byType: Record<EnemyTypeBand, TierRateRow[]> = { normal: [], elite: [], boss: [] };
   for (const enemy of enemies) {
     const enemyType = enemyTypeOf(enemy.id);
     if (!enemyType) continue;
     byType[enemyType].push(enemy);
   }
-  for (const enemyType of ["normal", "elite", "boss"] as const) {
+  for (const enemyType of REPORT_ENEMY_TYPES) {
     const rows = byType[enemyType];
-    const rates = rows.map((row) => row.late.winRate).filter((_, i) => (rows[i]?.late.n ?? 0) > 0);
+    const rates = rows.map((row) => row.rates.late.winRate).filter((_, i) => (rows[i]?.rates.late.n ?? 0) > 0);
     if (rates.length < 2) continue;
     const med = median(rates);
     for (const row of rows) {
-      if (row.late.n <= 0) continue;
-      const spread = Math.abs(row.late.winRate - med);
+      if (row.rates.late.n <= 0) continue;
+      const spread = Math.abs(row.rates.late.winRate - med);
       if (spread < EQUITY_SPREAD) continue;
       add({
         severity: "serious",
@@ -490,7 +462,7 @@ function collectEnemyTypeEquity(enemies: TierRateRow[], add: (finding: BalanceFi
         tier: "late",
         metric: "winRate",
         bucket: "equity",
-        observed: row.late.winRate,
+        observed: row.rates.late.winRate,
         band: `within ${EQUITY_SPREAD * 100}% of ${enemyType} median (${(med * 100).toFixed(1)}%)`,
         worstScenario: `${titleEnemy(row.id)} (late)`,
         ...(ENEMY_CAUSE_HINTS[row.id] ? { causeHint: ENEMY_CAUSE_HINTS[row.id] } : {}),
@@ -501,12 +473,12 @@ function collectEnemyTypeEquity(enemies: TierRateRow[], add: (finding: BalanceFi
 }
 
 function collectClassEquity(classes: BalanceReportModel["classes"], add: (finding: BalanceFinding) => void): void {
-  const rates = classes.filter((row) => row.late.n > 0).map((row) => row.late.winRate);
+  const rates = classes.filter((row) => row.rates.late.n > 0).map((row) => row.rates.late.winRate);
   if (rates.length < 2) return;
   const med = median(rates);
   for (const row of classes) {
-    if (row.late.n <= 0) continue;
-    if (Math.abs(row.late.winRate - med) < EQUITY_SPREAD) continue;
+    if (row.rates.late.n <= 0) continue;
+    if (Math.abs(row.rates.late.winRate - med) < EQUITY_SPREAD) continue;
     add({
       severity: "serious",
       scope: "class",
@@ -515,7 +487,7 @@ function collectClassEquity(classes: BalanceReportModel["classes"], add: (findin
       tier: "late",
       metric: "winRate",
       bucket: "equity",
-      observed: row.late.winRate,
+      observed: row.rates.late.winRate,
       band: `within ${EQUITY_SPREAD * 100}% of class median (${(med * 100).toFixed(1)}%)`,
       worstScenario: `${titleClass(row.id)} overall (late)`,
       recommendation: `This class is 15pp+ from the class median (same power budget).${REVIEW_SUFFIX}`,
@@ -532,9 +504,9 @@ function collectMatchupFindings(model: BalanceReportModel, add: (finding: Balanc
   }
 
   for (const [enemyId, rows] of byEnemy) {
-    const enemyType = (rows[0]?.enemyType as EnemyTypeBand | undefined) ?? enemyTypeOf(enemyId);
-    for (const tier of TIERS) {
-      const cells = rows.map((row) => ({ row, cell: cellFor(row, tier) })).filter((entry) => entry.cell.n > 0);
+    const enemyType = rows[0]?.enemyType ?? enemyTypeOf(enemyId);
+    for (const { preset: tier } of REPORT_TIERS) {
+      const cells = rows.map((row) => ({ row, cell: row.rates[tier] })).filter((entry) => entry.cell.n > 0);
       if (cells.length === 0) continue;
       const rates = cells.map((entry) => entry.cell.winRate);
       const med = median(rates);
@@ -543,7 +515,6 @@ function collectMatchupFindings(model: BalanceReportModel, add: (finding: Balanc
       for (const { row, cell } of cells) {
         const spread = Math.abs(cell.winRate - med);
         if (clustered || spread < EQUITY_SPREAD) continue;
-        const type = (row.enemyType as EnemyTypeBand) || enemyType;
         collectRateFindings({
           add,
           scope: "matchup",
@@ -551,7 +522,7 @@ function collectMatchupFindings(model: BalanceReportModel, add: (finding: Balanc
           title: `${titleClass(row.characterId)} vs ${titleEnemy(row.enemyId)}`,
           tier,
           cell,
-          enemyType: type,
+          enemyType: row.enemyType || enemyType,
           worstScenario: `${titleClass(row.characterId)} vs ${titleEnemy(row.enemyId)} (${tier})`,
           ...(ENEMY_CAUSE_HINTS[row.enemyId] ? { causeHint: ENEMY_CAUSE_HINTS[row.enemyId] } : {}),
         });
@@ -575,15 +546,15 @@ function collectMatchupFindings(model: BalanceReportModel, add: (finding: Balanc
 }
 
 function collectPairedFindings(
-  rows: PairedTierRow[],
+  rows: readonly PairedTierRow[],
   scope: "card" | "talent" | "companion" | "boon",
   titleOf: (id: string) => string,
   add: (finding: BalanceFinding) => void,
   context = "",
 ): void {
-  for (const tier of TIERS) {
+  for (const { preset: tier } of REPORT_TIERS) {
     const usable = rows
-      .map((row) => ({ row, delta: row[tier] }))
+      .map((row) => ({ row, delta: row.deltas[tier] }))
       .filter((entry) => entry.delta.n > 0 && !entry.delta.noisy);
     if (usable.length === 0) continue;
     const med = median(usable.map((entry) => entry.delta.delta));
@@ -609,11 +580,9 @@ function collectPairedFindings(
 
 function collectAnomalies(model: BalanceReportModel, add: (finding: BalanceFinding) => void): void {
   for (const row of model.anomalyMetrics) {
-    const tiers: FindingsTier[] = ["early", "mid", "late"];
-    for (let i = 0; i < tiers.length; i += 1) {
-      const tier = tiers[i]!;
-      const value = [row.early, row.mid, row.late][i] ?? 0;
-      const threshold = row.thresholds[i] ?? ANOMALY_THRESHOLD_BY_PRESET[tier];
+    for (const { preset: tier } of REPORT_TIERS) {
+      const value = row.values[tier];
+      const threshold = ANOMALY_THRESHOLD_BY_PRESET[tier];
       if (value <= threshold) continue;
       const peak = model.anomalies.find((entry) => entry.field === row.field);
       const burnHint =

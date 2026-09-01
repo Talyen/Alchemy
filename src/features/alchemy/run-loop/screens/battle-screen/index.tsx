@@ -11,8 +11,7 @@ import { BattleTrinketInspectButton, BattleBoonInspectOverlay } from "./trinket-
 import { uniqueRunBoons } from "./unique-run-trinkets";
 import { WishOverlay } from "./wish-overlay";
 import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleScreenData } from "./types";
-import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils";
-import { isAlchemyDevBuild } from "../../../shared/utils/dev-mode";
+import { getEnemyStatusChips, getPlayerStatusChips, isAlchemyDevBuild } from "../../../shared/utils";
 import { BackgroundParticles } from "../../../shared/ui/background-particles";
 import { getScreenParticleConfig } from "@/app/screen-particle-config";
 

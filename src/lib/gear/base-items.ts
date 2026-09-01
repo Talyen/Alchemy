@@ -32,8 +32,8 @@ const ironMedium = salvageBy({ iron: 6 }, { iron: 9 });
 const ironHeavy = salvageBy({ iron: 9 }, { iron: 12 });
 const woodLight = salvageBy({ wood: 3 }, { wood: 6 });
 const woodMedium = salvageBy({ wood: 6 }, { wood: 9 });
-const gemLight = salvageBy({ crystal: 3 }, { crystal: 6 });
-const natureGem = salvageBy({ crystal: 3 }, { crystal: 3, herbs: 3 });
+const gemLight = salvageBy({ gems: 3 }, { gems: 6 });
+const natureGem = salvageBy({ gems: 3 }, { gems: 3, herbs: 3 });
 
 const gearBaseItemCatalog = {
   "double-axe": {
@@ -145,7 +145,7 @@ const gearBaseItemCatalog = {
     compatibleSlots: ["main-hand"],
     requiresTwoHands: true,
     affinityKeywords: ["burn", "freeze", "mana"],
-    salvageByRarity: salvageBy({ wood: 3, crystal: 3 }, { wood: 6, crystal: 3 }),
+    salvageByRarity: salvageBy({ wood: 3, gems: 3 }, { wood: 6, gems: 3 }),
     rangedWeapon: false,
   },
   wand: {
@@ -153,7 +153,7 @@ const gearBaseItemCatalog = {
     compatibleSlots: ["main-hand", "off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["burn", "freeze", "mana"],
-    salvageByRarity: salvageBy({ wood: 3 }, { wood: 3, crystal: 3 }),
+    salvageByRarity: salvageBy({ wood: 3 }, { wood: 3, gems: 3 }),
     rangedWeapon: false,
   },
   "leather-buckler": {
@@ -183,7 +183,7 @@ const gearBaseItemCatalog = {
     compatibleSlots: ["off-hand"],
     requiresTwoHands: false,
     affinityKeywords: ["burn", "freeze", "holy"],
-    salvageByRarity: salvageBy({ herbs: 3, crystal: 3 }, { herbs: 6, crystal: 3 }),
+    salvageByRarity: salvageBy({ herbs: 3, gems: 3 }, { herbs: 6, gems: 3 }),
   },
   "leather-armor": {
     displayName: "Leather Armor",

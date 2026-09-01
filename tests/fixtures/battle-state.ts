@@ -1,8 +1,18 @@
-import type { BestiaryEntry } from "@/lib/game-data/types";
-import type { BattleStatePatch } from "./battle";
+import type { BestiaryEntry, TalentEffectManifest, TrinketManifest } from "@/lib/game-data";
+import type { BattleState, CombatFlags, EnemyStatusValues, PlayerStatusValues } from "@/lib/battle/types";
+import type { GearEffectManifest } from "@/lib/gear";
 
-export type InjectedBattleState = BattleStatePatch & {
-  currentEnemy?: Partial<import("@/lib/battle/types").BattleState["currentEnemy"]>;
+export type InjectedBattleState = Omit<
+  Partial<BattleState>,
+  "currentEnemy" | "playerStatuses" | "enemyStatuses" | "flags" | "trinketEffects" | "gearEffects" | "talentEffects"
+> & {
+  currentEnemy?: Partial<BattleState["currentEnemy"]>;
+  playerStatuses?: Partial<PlayerStatusValues>;
+  enemyStatuses?: Partial<EnemyStatusValues>;
+  flags?: Partial<CombatFlags>;
+  trinketEffects?: Partial<TrinketManifest>;
+  gearEffects?: Partial<GearEffectManifest>;
+  talentEffects?: Partial<TalentEffectManifest>;
 };
 
 const GOBLIN_ENEMY: BestiaryEntry = {

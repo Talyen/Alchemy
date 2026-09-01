@@ -10,7 +10,7 @@ import {
   flattenGearInventories,
 } from "@/lib/gear";
 import { useShallow } from "zustand/react/shallow";
-import { type GameplayPersistenceCodec, subscribeGameplayPersistence } from "./persistence-codec";
+import { type GameplayPersistenceCodec } from "./persistence-codec";
 import type { GearSaveFields, GearStateFields, GearStore } from "./gear-store-types";
 import { initializeGear } from "./gear-actions";
 import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
@@ -63,7 +63,6 @@ export const gearPersistenceCodec: GameplayPersistenceCodec<GearSaveFields> = {
       fields.equippedTrinkets,
     );
   },
-  subscribe: subscribeGameplayPersistence,
 };
 
 export type GearArmorySlice = Pick<
