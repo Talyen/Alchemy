@@ -1,3 +1,4 @@
+import { expect } from "@playwright/test";
 import { AEGIS_CARD, BLOCK_CARD, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
