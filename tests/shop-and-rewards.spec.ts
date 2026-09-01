@@ -47,7 +47,7 @@ test.describe("Shop fade-out", critical, () => {
       const offeringCount = await shop.buyBtn.count();
       expect(offeringCount).toBeGreaterThan(0);
 
-      await page.getByRole("button", { name: "Leave", exact: true }).click();
+      await page.getByRole("button", { name: "Leave", exact: true }).click({ noWaitAfter: true });
 
       await expect.poll(() => shop.buyBtn.count(), { timeout: 10000 }).toBe(offeringCount);
       await new DestinationPage(page).expectVisible();
