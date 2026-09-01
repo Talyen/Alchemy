@@ -14,7 +14,7 @@ import {
   type EnemyStatusId,
 } from "@/lib/game-data";
 import { CONTENT_SYSTEM_IDS } from "@/lib/content-systems/types";
-import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/gear/crafting";
+import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/gear/crafting-ids";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { filterValidDestinations } from "@/lib/routing";

@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import type { GearInstance } from "@/lib/gear/types";
-import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting-ids";
 import {
   activateCurrency,
   applyCurrencyToGear,

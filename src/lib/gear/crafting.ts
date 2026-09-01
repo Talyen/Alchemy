@@ -16,14 +16,11 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearDefinitionId, gearDefinitions, gearInstanceRarity } from "./definitions";
 import { type GearInstance, type GearAffixRoll, type GearRarity } from "./types";
 import { clamp, lerp, pickRandom } from "@/lib/utils";
+import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "./crafting-ids";
 
-export type CraftingCurrencyId =
-  | "discordant-dice"
-  | "sprig-of-growth"
-  | "voidstone"
-  | "ascension-seal"
-  | "severance-maw"
-  | "smiths-whetstone";
+export type { CraftingCurrencyId } from "./crafting-ids";
+export { CRAFTING_CURRENCY_IDS, EMPTY_CRAFTING_CURRENCIES } from "./crafting-ids";
+export { addCraftingCurrencies, normalizeCraftingCurrencies } from "./crafting-ids";
 
 export interface CraftingCurrencyDefinition {
   id: CraftingCurrencyId;
@@ -77,47 +74,6 @@ export const CRAFTING_CURRENCY_LIST: CraftingCurrencyDefinition[] = [
     art: craftingArt["smiths-whetstone"]!,
   },
 ];
-
-const CRAFTING_CURRENCY_IDS = CRAFTING_CURRENCY_LIST.map(({ id }) => id) as [
-  CraftingCurrencyId,
-  ...CraftingCurrencyId[],
-];
-
-export const EMPTY_CRAFTING_CURRENCIES = Object.fromEntries(CRAFTING_CURRENCY_IDS.map((id) => [id, 0])) as Record<
-  CraftingCurrencyId,
-  number
->;
-
-export function normalizeCraftingCurrencies(
-  currencies: Partial<Record<string, unknown>> | null | undefined,
-): Record<CraftingCurrencyId, number> {
-  const normalized = { ...EMPTY_CRAFTING_CURRENCIES };
-  if (!currencies || typeof currencies !== "object") return normalized;
-
-  for (const id of CRAFTING_CURRENCY_IDS) {
-    const value = currencies[id];
-    normalized[id] = typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
-  }
-
-  return normalized;
-}
-
-export function addCraftingCurrencies(
-  base: Partial<Record<string, unknown>> | null | undefined,
-  added: Partial<Record<string, unknown>> | null | undefined,
-): Record<CraftingCurrencyId, number> {
-  const next = normalizeCraftingCurrencies(base);
-  if (!added || typeof added !== "object") return next;
-
-  for (const id of CRAFTING_CURRENCY_IDS) {
-    const value = added[id];
-    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-      next[id] += Math.floor(value);
-    }
-  }
-
-  return next;
-}
 
 const CRAFTING_CURRENCIES_BY_ID: Record<CraftingCurrencyId, CraftingCurrencyDefinition> = Object.fromEntries(
   CRAFTING_CURRENCY_LIST.map((currency) => [currency.id, currency]),

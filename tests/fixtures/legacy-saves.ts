@@ -2,7 +2,7 @@ import { hexLabyrinthMapFixture } from "./labyrinth-hex-map";
 import { saveEnvelopeFixture } from "./saves";
 
 import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
-import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting-ids";
 
 function emptyGearInventories() {
   return createEmptyGearInventories() as unknown as Record<string, unknown[]>;
