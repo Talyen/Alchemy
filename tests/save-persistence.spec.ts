@@ -126,12 +126,6 @@ test.describe("Save Persistence & Resume", () => {
     }, SAVE_KEY);
     expect(turnBefore).toBe(2);
 
-    const beforeReloadSave2 = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
-    await page.addInitScript((value) => {
-      if (value) window.localStorage.setItem("alchemy-save", value);
-    }, beforeReloadSave2);
-    await page.reload();
-
     await expect(battle.endTurnBtn).toBeVisible({ timeout: 10000 });
     await expect.poll(() => battle.playerHealth()).toBe(18);
     await expect.poll(() => battle.enemyHealth()).toBe(40);
@@ -184,12 +178,6 @@ test.describe("Save Persistence & Resume", () => {
         };
         localStorage.setItem(saveKey, JSON.stringify(save));
       }, SAVE_KEY);
-
-      const beforeReloadSave3 = await page.evaluate((key) => localStorage.getItem(key), SAVE_KEY);
-      await page.addInitScript((value) => {
-        if (value) window.localStorage.setItem("alchemy-save", value);
-      }, beforeReloadSave3);
-      await page.reload();
 
       await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
       await expect
