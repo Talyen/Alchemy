@@ -43,14 +43,16 @@ import {
   type EquippedTrinkets,
 } from "@/lib/gear/types";
 
+function characterShape<T extends z.ZodType>(factory: (id: string) => T): Record<string, T> {
+  const shape: Record<string, T> = {};
+  for (const id of CHARACTER_IDS) shape[id] = factory(id);
+  return shape;
+}
+
 const GearInventorySchema = GearInstanceArraySchema;
 const emptyGearInventories = createEmptyGearInventories();
-const gearInventoriesShape: Record<string, z.ZodType> = {};
-for (const id of CHARACTER_IDS) {
-  gearInventoriesShape[id] = GearInventorySchema.catch([]);
-}
 const GearInventoriesSchema = z
-  .object(gearInventoriesShape)
+  .object(characterShape(() => GearInventorySchema.catch([])))
   .catch(emptyGearInventories)
   .transform((inventories) => inventories as GearInventories);
 const GearLoadoutSchema = z
@@ -58,20 +60,12 @@ const GearLoadoutSchema = z
   .catch({})
   .transform((raw) => normalizeGearLoadout(raw));
 const emptyGearLoadouts = createEmptyGearLoadouts();
-const gearLoadoutsShape: Record<string, z.ZodType> = {};
-for (const id of CHARACTER_IDS) {
-  gearLoadoutsShape[id] = GearLoadoutSchema.catch(emptyGearLoadouts[id]);
-}
 const GearLoadoutsSchema = z
-  .object(gearLoadoutsShape)
+  .object(characterShape((id) => GearLoadoutSchema.catch(emptyGearLoadouts[id as keyof typeof emptyGearLoadouts])))
   .transform((loadouts) => normalizeExclusiveGearLoadouts(loadouts as GearLoadouts));
 const emptyEquippedTrinkets = createEmptyEquippedTrinkets();
-const equippedTrinketsShape: Record<string, z.ZodType> = {};
-for (const id of CHARACTER_IDS) {
-  equippedTrinketsShape[id] = z.string().nullable().catch(null);
-}
 const EquippedTrinketsSchema = z
-  .object(equippedTrinketsShape)
+  .object(characterShape(() => z.string().nullable().catch(null)))
   .catch(emptyEquippedTrinkets)
   .transform((value) => value as EquippedTrinkets);
 
@@ -139,10 +133,11 @@ export const SaveDataSchema = z.preprocess(
       const flatInventory = flattenGearInventories(save.gearInventories);
       const liveCombatGold = save.activeRun?.activeCombat?.battleState.gold;
       const migratedGold = typeof liveCombatGold === "number" ? liveCombatGold : save.gold;
+      const derivedAutoplay = save.rememberAutoplayPreference && save.autoplayEnabled;
       return {
         ...save,
         gold: migratedGold,
-        autoplayEnabled: save.rememberAutoplayPreference && save.autoplayEnabled,
+        autoplayEnabled: derivedAutoplay,
         gearLoadouts: pruneOrphanGearLoadouts(flatInventory, save.gearLoadouts),
       };
     }),

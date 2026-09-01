@@ -5,49 +5,53 @@ import { applyPotionMultiplier } from "../amount-helpers";
 import { addGoldWithCombatText } from "../combat-text";
 import { applyWishEffect } from "../wish";
 import { drawFromState, applyDrawResult } from "../draw";
-import type { EffectHandler } from "./handler-types";
+import { defineHandler } from "./handler-types";
 
-export const applySummonCompanionEffect: EffectHandler = (state, _card, effect, _potionMult, _combatTexts) => {
-  if (effect.kind !== "summon-companion") return state;
-  let nextState: BattleState = { ...state, activeCompanion: companionLibrary[effect.companionId] };
-  if (state.talentEffects.drawOnCompanionCard > 0) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnCompanionCard));
-  }
-  return nextState;
-};
+export const applySummonCompanionEffect = defineHandler(
+  "summon-companion",
+  (state, _card, effect, _potionMult, _combatTexts) => {
+    let nextState: BattleState = { ...state, activeCompanion: companionLibrary[effect.companionId] };
+    if (state.talentEffects.drawOnCompanionCard > 0) {
+      nextState = applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnCompanionCard));
+    }
+    return nextState;
+  },
+);
 
-export const applyBuffCompanionEffect: EffectHandler = (state, _card, effect) => {
-  if (effect.kind !== "buff-companion") return state;
+export const applyBuffCompanionEffect = defineHandler("buff-companion", (state, _card, effect) => {
   return { ...state, companionDamageBuff: state.companionDamageBuff + effect.amount };
-};
+});
 
-export const applyGainGoldEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
-  if (effect.kind !== "gain-gold") return state;
+export const applyGainGoldEffect = defineHandler("gain-gold", (state, _card, effect, potionMult, combatTexts) => {
   const adjustedGold = applyPotionMultiplier(effect.amount, potionMult);
   return addGoldWithCombatText(state, adjustedGold, combatTexts);
-};
+});
 
-export const applyWishEffectHandler: EffectHandler = (state, card, effect, potionMult, combatTexts) => {
-  if (effect.kind !== "wish") return state;
+export const applyWishEffectHandler = defineHandler("wish", (state, card, effect, potionMult, combatTexts) => {
   const adjustedWish = applyPotionMultiplier(effect.amount, potionMult);
   return applyWishEffect(state, card, adjustedWish, combatTexts);
-};
+});
 
-export const applyDrawCardsEffect: EffectHandler = (state, _card, effect) => {
-  if (effect.kind !== "draw-cards") return state;
+export const applyDrawCardsEffect = defineHandler("draw-cards", (state, _card, effect) => {
   return applyDrawResult(state, drawFromState(state, effect.amount));
-};
+});
 
-function makeFlagEffect<K extends BattleCardEffect["kind"], F extends keyof BattleState["flags"]>(
-  kind: K,
-  flag: F,
-): EffectHandler {
-  return (state, _card, effect) => {
-    if (effect.kind !== kind) return state;
+const FLAG_EFFECTS = {
+  "next-hit-crit": "nextHitCrit",
+  "play-next-card-twice": "playNextCardTwice",
+  "next-hit-poison": "nextHitPoison",
+} as const satisfies Record<
+  Extract<BattleCardEffect["kind"], `next-hit-${string}` | "play-next-card-twice">,
+  keyof BattleState["flags"]
+>;
+
+function makeFlagHandler<K extends keyof typeof FLAG_EFFECTS>(kind: K): ReturnType<typeof defineHandler<K>> {
+  const flag = FLAG_EFFECTS[kind];
+  return defineHandler(kind, (state) => {
     return { ...state, flags: { ...state.flags, [flag]: true } };
-  };
+  });
 }
 
-export const applyNextHitCritEffect = makeFlagEffect("next-hit-crit", "nextHitCrit");
-export const applyPlayNextCardTwiceEffect = makeFlagEffect("play-next-card-twice", "playNextCardTwice");
-export const applyNextHitPoisonEffect = makeFlagEffect("next-hit-poison", "nextHitPoison");
+export const applyNextHitCritEffect = makeFlagHandler("next-hit-crit");
+export const applyPlayNextCardTwiceEffect = makeFlagHandler("play-next-card-twice");
+export const applyNextHitPoisonEffect = makeFlagHandler("next-hit-poison");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { applySummonCompanionEffect, applyBuffCompanionEffect } from "@/lib/battle/effect-handlers/companion-handlers";
+import { applySummonCompanionEffect, applyBuffCompanionEffect } from "@/lib/battle/effect-handlers/simple-handlers";
 import {
   applySelfDamageEffect,
   applyDamageEffect,
@@ -27,7 +27,7 @@ import {
   applyGainGoldEffect,
   applyWishEffectHandler,
   applyDrawCardsEffect,
-} from "@/lib/battle/effect-handlers/utility-handlers";
+} from "@/lib/battle/effect-handlers/simple-handlers";
 import { makeTestBattleState } from "../../fixtures/battle";
 
 type EffectHandler = (
@@ -38,7 +38,7 @@ type EffectHandler = (
   texts: CombatTextEvent[],
 ) => unknown;
 
-describe("effect handlers ignore mismatched kinds", () => {
+describe("effect handlers reject mismatched kinds", () => {
   it.each([
     { name: "applySummonCompanionEffect", apply: applySummonCompanionEffect },
     { name: "applyBuffCompanionEffect", apply: applyBuffCompanionEffect },
@@ -61,9 +61,9 @@ describe("effect handlers ignore mismatched kinds", () => {
     { name: "applyGainGoldEffect", apply: applyGainGoldEffect },
     { name: "applyWishEffectHandler", apply: applyWishEffectHandler },
     { name: "applyDrawCardsEffect", apply: applyDrawCardsEffect },
-  ] as const)("$name is a no-op for a mismatched kind", ({ apply }) => {
+  ] as const)("$name throws for a mismatched kind", ({ apply }) => {
     const state = makeTestBattleState();
-    expect((apply as EffectHandler)(state, {} as never, { kind: "__never__" } as never, 1, [])).toBe(state);
+    expect(() => (apply as EffectHandler)(state, {} as never, { kind: "__never__" } as never, 1, [])).toThrow();
   });
 });
 
@@ -99,6 +99,44 @@ describe("applyPlayerStatusEffectHandler", () => {
       [],
     );
     expect(result.playerStatuses.block).toBe(10);
+  });
+
+  it("converts current mana as block per mana and zeroes mana", () => {
+    const state = makeTestBattleState({ mana: 4, maxMana: 5 });
+    const result = applyPlayerStatusEffectHandler(
+      state,
+      {} as never,
+      { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 } as never,
+      1,
+      [],
+    );
+    expect(result.playerStatuses.block).toBe(12);
+    expect(result.mana).toBe(0);
+  });
+
+  it("respects potion multiplier on convertCurrentMana", () => {
+    const state = makeTestBattleState({ mana: 4, maxMana: 5 });
+    const result = applyPlayerStatusEffectHandler(
+      state,
+      {} as never,
+      { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 } as never,
+      2,
+      [],
+    );
+    expect(result.playerStatuses.block).toBe(24);
+  });
+
+  it("uses frozen manaAtStart snapshot, not live mana", () => {
+    const state = makeTestBattleState({ mana: 4, maxMana: 5 });
+    const result = applyPlayerStatusEffectHandler(
+      state,
+      {} as never,
+      { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 } as never,
+      1,
+      [],
+      { manaAtStart: 6, enemyFreezeSkipTurnsAtStart: 0 },
+    );
+    expect(result.playerStatuses.block).toBe(18);
   });
 });
 
@@ -225,5 +263,33 @@ describe("applyCleansePlayerStatusToDamageEffect", () => {
     );
     expect(result.playerStatuses.burn).toBe(0);
     expect(result.enemyHealth).toBe(25);
+  });
+});
+
+describe("applyRestoreManaEffect ifEnemyFrozen", () => {
+  it("no-ops when enemy not frozen and ifEnemyFrozen set", () => {
+    const state = makeTestBattleState({ enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 } });
+    const result = applyRestoreManaEffect(
+      state,
+      {} as never,
+      { kind: "restore-mana", amount: 2, ifEnemyFrozen: true } as never,
+      1,
+      [],
+      { manaAtStart: 0, enemyFreezeSkipTurnsAtStart: 0 },
+    );
+    expect(result).toBe(state);
+  });
+
+  it("restores when enemy frozen at start", () => {
+    const state = makeTestBattleState({ mana: 1, enemyCC: { freezeSkipTurns: 2, stunSkipTurns: 0, cooldown: 0 } });
+    const result = applyRestoreManaEffect(
+      state,
+      {} as never,
+      { kind: "restore-mana", amount: 2, ifEnemyFrozen: true } as never,
+      1,
+      [],
+      { manaAtStart: 1, enemyFreezeSkipTurnsAtStart: 1 },
+    );
+    expect(result.mana).toBeGreaterThan(1);
   });
 });

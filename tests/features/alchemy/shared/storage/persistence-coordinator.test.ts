@@ -15,7 +15,7 @@ import {
   setMaterials as setRunProfileMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
-import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { createEmptyGearInventories, generateUniqueGearInstance, getUniqueItemDefinition } from "@/lib/gear";
@@ -83,7 +83,7 @@ describe("persistence coordinator", () => {
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
     dispatchRunSessionCommand((draft) => {
-      setRunGold(draft, 42);
+      setGold(draft, 42);
       setHasActiveRun(draft, true);
     });
 
@@ -97,7 +97,7 @@ describe("persistence coordinator", () => {
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
     dispatchRunSessionCommand((draft) => {
-      setRunGold(draft, 42);
+      setGold(draft, 42);
       setHasActiveRun(draft, true);
       setDiscoveredCardIds(draft, ["slash"]);
       addGearCurrencies(draft.gear, { voidstone: 1 });

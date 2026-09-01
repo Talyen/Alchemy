@@ -111,6 +111,20 @@ async function writeDesktopSaveAndReload(page: Page, save: unknown): Promise<voi
   await page.reload({ waitUntil: "domcontentloaded" });
 }
 
+async function injectLocalStorage(page: Page, save: Record<string, unknown>, merge: boolean) {
+  await page.addInitScript(
+    (data: { saveKey: string; save: Record<string, unknown>; merge: boolean }) => {
+      if (data.merge) {
+        const existing = JSON.parse(localStorage.getItem(data.saveKey) || "{}") as Record<string, unknown>;
+        localStorage.setItem(data.saveKey, JSON.stringify({ ...existing, ...data.save }));
+      } else {
+        localStorage.setItem(data.saveKey, JSON.stringify(data.save));
+      }
+    },
+    { saveKey: SAVE_KEY, save, merge },
+  );
+}
+
 function buildActiveRunSave(overrides: Record<string, unknown>) {
   const {
     discoveredCardIds,
@@ -161,18 +175,7 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
     return;
   }
 
-  const injectionId = Math.random().toString(36).substring(2);
-  await page.addInitScript(
-    (data) => {
-      if (sessionStorage.getItem("alchemy-injected-id") === data.injectionId) {
-        return;
-      }
-      sessionStorage.setItem("alchemy-injected-id", data.injectionId);
-      const existing = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
-      localStorage.setItem(data.saveKey, JSON.stringify({ ...existing, ...data.save }));
-    },
-    { saveKey: SAVE_KEY, save, injectionId },
-  );
+  await injectLocalStorage(page, save, true);
 }
 
 export async function injectActiveBattle(
@@ -207,12 +210,7 @@ export async function injectHomestead(page: Page, overrides: Record<string, unkn
     await writeDesktopSaveAndReload(page, save);
     return;
   }
-  await page.addInitScript(
-    (data) => {
-      localStorage.setItem(data.saveKey, JSON.stringify(data.save));
-    },
-    { saveKey: SAVE_KEY, save },
-  );
+  await injectLocalStorage(page, save, false);
 }
 
 export async function injectTalentUnlocks(page: Page, unlockedTalents: Record<string, string[]>) {

@@ -5,14 +5,12 @@ import { cn } from "@/lib/utils";
 import {
   characters,
   characterArt,
+  difficultyArt,
   difficultyConfigs,
   isDifficultyUnlocked,
   type CharacterId,
   type DifficultyId,
 } from "@/lib/game-data";
-import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
-import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
-import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 
 import { KeywordToken, renderTokenizedDescription } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
@@ -43,9 +41,9 @@ const DIFFICULTY_CONFIG = {
 } as const;
 
 const DIFFICULTY_ART: Record<DifficultyId, string> = {
-  "difficulty-1": difficulty1Art,
-  "difficulty-2": difficulty2Art,
-  "difficulty-3": difficulty3Art,
+  "difficulty-1": difficultyArt["difficulty-1"]!,
+  "difficulty-2": difficultyArt["difficulty-2"]!,
+  "difficulty-3": difficultyArt["difficulty-3"]!,
 };
 
 function renderDescription(text: string) {
@@ -83,7 +81,7 @@ function DifficultyCard({
   const bonusLine = DIFFICULTY_CONFIG.XP_BONUSES[difficultyId] ?? "";
   const fullDescription = description + (bonusLine ? "\n" + bonusLine : "");
   const showUnlockedArt = !locked;
-  const diffArt = DIFFICULTY_ART[difficultyId] ?? difficulty3Art;
+  const diffArt = DIFFICULTY_ART[difficultyId] ?? difficultyArt["difficulty-3"]!;
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
   const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard("difficulty-select", difficultyId);
 

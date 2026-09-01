@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { startAtDestination } from "../helpers";
+import { startAtDestination } from "../e2e/battle-setup";
 import { GameStage } from "./game-stage";
 
 export class CorruptionPage {

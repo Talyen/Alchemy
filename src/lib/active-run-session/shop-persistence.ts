@@ -23,13 +23,19 @@ function hydrateRefreshableFields(data: RefreshableShopFields): RefreshableShopF
   };
 }
 
+function serializeRefreshable(state: RefreshableShopFields): RefreshableShopFields {
+  return {
+    refreshesLeft: state.refreshesLeft,
+    firstPurchaseUsed: state.firstPurchaseUsed,
+    purchasedSlotKeys: state.purchasedSlotKeys,
+  };
+}
+
 export function serializeShopState(state: ShopState): PersistedShopState {
   return {
     cards: state.cards,
     removeUsed: state.removeUsed,
-    refreshesLeft: state.refreshesLeft,
-    firstPurchaseUsed: state.firstPurchaseUsed,
-    purchasedSlotKeys: state.purchasedSlotKeys,
+    ...serializeRefreshable(state),
   };
 }
 
@@ -45,9 +51,7 @@ export function serializeAlchemistState(state: AlchemistState): PersistedAlchemi
   return {
     potions: state.potions,
     mixUsed: state.mixUsed,
-    refreshesLeft: state.refreshesLeft,
-    firstPurchaseUsed: state.firstPurchaseUsed,
-    purchasedSlotKeys: state.purchasedSlotKeys,
+    ...serializeRefreshable(state),
   };
 }
 
@@ -62,9 +66,7 @@ export function hydrateAlchemistState(data: PersistedAlchemistState): AlchemistS
 export function serializeTrinketShopState(state: TrinketShopState): PersistedTrinketShopState {
   return {
     trinketIds: state.trinkets.map((trinket) => trinket.id),
-    refreshesLeft: state.refreshesLeft,
-    firstPurchaseUsed: state.firstPurchaseUsed,
-    purchasedSlotKeys: state.purchasedSlotKeys,
+    ...serializeRefreshable(state),
   };
 }
 
@@ -85,9 +87,7 @@ export function hydrateTrinketShopState(data: PersistedTrinketShopState): Trinke
 export function serializeEquipmentShopState(state: EquipmentShopState): PersistedEquipmentShopState {
   return {
     gear: state.gear,
-    refreshesLeft: state.refreshesLeft,
-    firstPurchaseUsed: state.firstPurchaseUsed,
-    purchasedSlotKeys: state.purchasedSlotKeys,
+    ...serializeRefreshable(state),
   };
 }
 

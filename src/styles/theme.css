@@ -1,4 +1,5 @@
 @theme {
+  /* Motion tokens: keep CSS vars in sync with TS constants in src/lib/game-constants/motion.ts (or inline MOTION_FADE_MS/PAGE_EXIT_MS) and components.css classes (screen-fade-in/out, page-enter/exit, hover-popup-panel 160ms). Single source for fade durations. */
   --color-background: hsl(30 10% 3%);
   --color-foreground: hsl(40 25% 88%);
   --color-card: hsl(30 8% 6%);

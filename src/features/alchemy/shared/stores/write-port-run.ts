@@ -72,10 +72,6 @@ export function deductGold(draft: GameplayDraft, amount: number): void {
   setGold(draft, (gold) => Math.max(0, gold - amount));
 }
 
-export const setRunGold = setGold;
-export const addRunGold = addGold;
-export const deductRunGold = deductGold;
-export const spendRunGold = deductGold;
 export const setRunPlayerHealth = createRunFieldSetter("runPlayerHealth");
 export const setRunMaxHealth = createRunFieldSetter("runMaxHealth");
 export const setRoomsEncountered = createRunFieldSetter("roomsEncountered");

@@ -258,7 +258,6 @@ describe("verify-changed route catalog", () => {
 
   it("keeps shared script helpers on the tooling route", () => {
     for (const filePath of [
-      "scripts/lib/generated-module.mjs",
       "scripts/lib/is-main-module.mjs",
       "scripts/lib/kebab-to-camel.mjs",
       "scripts/lib/map-pool.mjs",
@@ -273,6 +272,25 @@ describe("verify-changed route catalog", () => {
         plan.commands.map((command) => command.key),
         filePath,
       ).toEqual(["unit-tooling", "typecheck"]);
+    }
+  });
+
+  it("keeps generated asset helpers on the assets route", () => {
+    for (const filePath of [
+      "scripts/lib/generated-module.mjs",
+      "scripts/lib/sync-generated-helpers.mjs",
+      "scripts/lib/asset-constants.mjs",
+      "scripts/sync-art-barrels.mjs",
+    ]) {
+      const plan = resolvePlan([filePath]);
+      expect(
+        plan.routes.map((route) => route.id),
+        filePath,
+      ).toEqual(["assets"]);
+      expect(
+        plan.commands.map((command) => command.key),
+        filePath,
+      ).toEqual(["unit-tooling", "typecheck", "assets-check"]);
     }
   });
 

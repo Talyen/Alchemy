@@ -1,7 +1,7 @@
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
 import {
   createDraftRunRandomSource,
-  deductRunGold,
+  deductGold,
   readDraftGold,
   setRunDeck,
   setShopState,
@@ -64,7 +64,7 @@ export function createMerchantShopCommands({
       if (state.removeUsed || !isValidDeckIndex(index, run.runDeck.length) || readDraftGold(draft) < price) {
         return { committed: false, price, value: undefined };
       }
-      deductRunGold(draft, price);
+      deductGold(draft, price);
       setRunDeck(draft, (previous) => previous.filter((_, cardIndex) => cardIndex !== index));
       setShopState(draft, (previous) => ({ ...previous, removeUsed: true }));
       return { committed: true, price, value: undefined };

@@ -111,9 +111,7 @@ export function useAlchemyRunController() {
 
   const handleBeginLabyrinth = useCallback(() => {
     const hasLabyrinthContext = contentSystemType === "labyrinth" && Boolean(activeRunData || hasActiveBattle);
-    if (!hasLabyrinthContext) {
-      labyrinth.resetMap();
-    }
+    if (!hasLabyrinthContext) labyrinth.resetMap();
     beginLabyrinth();
   }, [activeRunData, beginLabyrinth, contentSystemType, hasActiveBattle, labyrinth]);
 
@@ -252,7 +250,68 @@ export function useAlchemyRunController() {
         continueFromRunEnd: nav.continueFromRunEnd,
       },
     }),
-    [nav, handleBeginLabyrinth, nodeRouting, shop, battle, labyrinth.selectNode, labyrinth.deselectNode],
+    [
+      nav.goToScreen,
+      nav.beginCampaign,
+      nav.beginWildwood,
+      nav.handleCharacterSelect,
+      nav.handleStandardDraftComplete,
+      nav.handleWildwoodDraftComplete,
+      nav.handleWildwoodDraftPick,
+      nav.handleStarterDraftPick,
+      nav.handleDifficultySelect,
+      nav.handleBackFromDifficultySelect,
+      nav.finishRewards,
+      nav.selectRewardChoice,
+      nav.prepareDestinationScreen,
+      nav.handleDestinationChoice,
+      nav.handleCampfireContinue,
+      nav.handleWildwoodRemoveCard,
+      nav.handleWildwoodSkipRemoval,
+      nav.advanceToNextDestination,
+      nav.handleMysteryChoice,
+      nav.handleMysteryChooseCard,
+      nav.handleMysteryRemoveCard,
+      nav.handleMysteryContinue,
+      nav.handleCorruptCard,
+      nav.handleCorruptionExit,
+      nav.continueFromRunEnd,
+      handleBeginLabyrinth,
+      nodeRouting.handleLabyrinthNodeEnter,
+      labyrinth.selectNode,
+      labyrinth.deselectNode,
+      shop.merchant.buyCard,
+      shop.merchant.removeCard,
+      shop.merchant.refresh,
+      shop.merchant.getCardBuyPrice,
+      shop.merchant.getRemoveCardPrice,
+      shop.merchant.getRefreshPrice,
+      shop.alchemist.buyPotion,
+      shop.alchemist.refresh,
+      shop.alchemist.mixPotions,
+      shop.alchemist.getPotionBuyPrice,
+      shop.alchemist.getMixPrice,
+      shop.alchemist.getRefreshPrice,
+      shop.trinket.buy,
+      shop.trinket.refresh,
+      shop.trinket.getBuyPrice,
+      shop.trinket.getRefreshPrice,
+      shop.equipment.buy,
+      shop.equipment.refresh,
+      shop.equipment.getBuyPrice,
+      shop.equipment.getRefreshPrice,
+      battle.handleCardClick,
+      battle.handleWishChoice,
+      battle.handleEndTurn,
+      battle.handleAutoplayCard,
+      battle.skipCombatDevMode,
+      battle.refs,
+      battle.bindPlayback,
+      battle.isCardPlayInProgress,
+      battle.screen,
+      battle.isAutoplayEnabled,
+      battle.setAutoplayEnabled,
+    ],
   );
 
   return {

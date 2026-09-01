@@ -1,20 +1,8 @@
-import type { BattleState } from "@/lib/battle/types";
 import type { BestiaryEntry } from "@/lib/game-data/types";
+import type { BattleStatePatch } from "./battle";
 
-type ResumeMergedFields =
-  | "trinketEffects"
-  | "gearEffects"
-  | "talentEffects"
-  | "flags"
-  | "playerStatuses"
-  | "enemyStatuses"
-  | "playerCC"
-  | "enemyCC"
-  | "enemyMitigation"
-  | "currentEnemy";
-
-export type InjectedBattleState = Partial<Omit<BattleState, ResumeMergedFields>> & {
-  [K in ResumeMergedFields]?: Partial<BattleState[K]>;
+export type InjectedBattleState = BattleStatePatch & {
+  currentEnemy?: Partial<import("@/lib/battle/types").BattleState["currentEnemy"]>;
 };
 
 const GOBLIN_ENEMY: BestiaryEntry = {

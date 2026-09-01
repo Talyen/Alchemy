@@ -15,7 +15,7 @@ import {
 } from "./gear-actions";
 import { discoverUniqueIds } from "./profile-store";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
-import { grantMaterials } from "./run-session-write-port";
+import { addMaterials, awardMaterialsDuringRun } from "./write-port-homestead";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
 
 function gearCommandView(state: GameplayDraft): GearStore {
@@ -69,7 +69,11 @@ export function dispatchGearSalvageWithMaterialGrant(
   return dispatchRunSessionCommand((draft) => {
     const salvageResult = mutateGearWithRunHealthSync(draft, { mutate });
     if (!salvageResult) return null;
-    grantMaterials(draft, salvageResult.yieldedMaterials, { trackRunEarned: draft.session.hasActiveRun });
+    if (draft.session.hasActiveRun) {
+      awardMaterialsDuringRun(draft, salvageResult.yieldedMaterials);
+    } else {
+      addMaterials(draft, salvageResult.yieldedMaterials);
+    }
     return salvageResult;
   });
 }

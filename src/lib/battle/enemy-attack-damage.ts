@@ -79,7 +79,7 @@ export function computeIncomingEnemyAttackDamage(
   remainingDamage = Math.max(0, remainingDamage + (options.flatBonus ?? 0));
   remainingDamage = remainingDamage * (options.amountMultiplier ?? 1);
   const paced = paceCombatMagnitude(state, remainingDamage, "enemy");
-  return Number.isInteger(paced) ? paced : Math.round(paced);
+  return Math.round(paced);
 }
 
 function calculateBlockAndArmorMitigation(

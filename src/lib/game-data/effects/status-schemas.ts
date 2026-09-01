@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { EffectKindDefinition } from "./registry";
-import { AmountSchema, DamageTypeSchema, EnemyStatusIdSchema } from "./shared-schemas";
+import { AmountSchema, DamageTypeSchema, EnemyStatusIdSchema, PositiveAmountSchema } from "./shared-schemas";
 
 export const playerStatusEffectDefinition = {
   kind: "player-status",
@@ -30,7 +30,7 @@ export const removeHarmfulStatusEffectDefinition = {
   kind: "remove-harmful-status",
   schema: z.object({
     kind: z.literal("remove-harmful-status"),
-    amount: AmountSchema,
+    amount: PositiveAmountSchema,
     removeAll: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"remove-harmful-status">;

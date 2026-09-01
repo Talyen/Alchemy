@@ -1,16 +1,26 @@
-import { canAfford, addInventory, subtractInventory } from "@/lib/homestead/inventory";
+import { addInventory } from "@/lib/homestead/inventory";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
+import { COMPANION_BOND_TIERS } from "@/lib/homestead/companions";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
+import { createTierLookup } from "@/lib/homestead/tiers";
+import { defaultCompanionBondLevels } from "@/lib/game-data";
 import { tryUpgradeTierItem } from "@/lib/homestead/upgrades";
 import type { CompanionId } from "@/lib/game-data";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import type { PermanentProgressFields } from "@/features/alchemy/shared/stores/run-state-init";
 import type { Draft } from "immer";
 
-type TierDefinitions = ReadonlyArray<Parameters<typeof tryUpgradeTierItem>[0] & { id: string }>;
+const buildingLookup = createTierLookup(buildings);
+const farmLookup = createTierLookup(farmPlots);
+const researchLookup = createTierLookup(researchUpgrades);
 
 function recomputeEffects(profile: PermanentProgressFields): void {
+  const pruned = Object.fromEntries(
+    Object.entries(profile.bondedCompanions).filter(([key]) => key in defaultCompanionBondLevels),
+  ) as Record<CompanionId, number>;
+  if (Object.keys(pruned).length !== Object.keys(profile.bondedCompanions).length) {
+    profile.bondedCompanions = pruned;
+  }
   profile.effects = computeHomesteadEffects(
     profile.constructedBuildings,
     profile.plantedFarms,
@@ -21,15 +31,12 @@ function recomputeEffects(profile: PermanentProgressFields): void {
 
 function applyTierUpgrade(
   profile: PermanentProgressFields,
-  definitions: TierDefinitions,
+  lookup: Map<string, { tiers: readonly unknown[] }>,
   levels: Record<string, number>,
   id: string,
 ): boolean {
-  const result = tryUpgradeTierItem(
-    definitions.find((definition) => definition.id === id),
-    levels[id] ?? 0,
-    profile.materialInventory,
-  );
+  const definition = lookup.get(id) as Parameters<typeof tryUpgradeTierItem>[0] | undefined;
+  const result = tryUpgradeTierItem(definition, levels[id] ?? 0, profile.materialInventory);
   if (!result.ok) return false;
   profile.materialInventory = result.inventory;
   levels[id] = result.nextLevel;
@@ -46,24 +53,26 @@ export function setMaterials(profile: Draft<PermanentProgressFields>, materials:
 }
 
 export function constructBuilding(profile: Draft<PermanentProgressFields>, id: BuildingId): boolean {
-  return applyTierUpgrade(profile, buildings, profile.constructedBuildings, id);
+  return applyTierUpgrade(profile, buildingLookup, profile.constructedBuildings, id);
 }
 
 export function plantFarm(profile: Draft<PermanentProgressFields>, id: FarmId): boolean {
-  return applyTierUpgrade(profile, farmPlots, profile.plantedFarms, id);
+  return applyTierUpgrade(profile, farmLookup, profile.plantedFarms, id);
 }
 
 export function completeResearch(profile: Draft<PermanentProgressFields>, id: ResearchId): boolean {
-  return applyTierUpgrade(profile, researchUpgrades, profile.completedResearch, id);
+  return applyTierUpgrade(profile, researchLookup, profile.completedResearch, id);
 }
 
 export function bondCompanion(profile: Draft<PermanentProgressFields>, id: CompanionId): boolean {
   const currentLevel = profile.bondedCompanions[id] ?? 0;
-  if (currentLevel >= COMPANION_MAX_TIER) return false;
-  const cost = COMPANION_BOND_TIERS[currentLevel]!;
-  if (!canAfford(profile.materialInventory, cost)) return false;
-  profile.materialInventory = subtractInventory(profile.materialInventory, cost);
-  profile.bondedCompanions[id] = currentLevel + 1;
+  const companionItem = { tiers: COMPANION_BOND_TIERS.map((cost) => ({ cost })) } as Parameters<
+    typeof tryUpgradeTierItem
+  >[0];
+  const result = tryUpgradeTierItem(companionItem, currentLevel, profile.materialInventory);
+  if (!result.ok) return false;
+  profile.materialInventory = result.inventory;
+  profile.bondedCompanions[id] = result.nextLevel;
   recomputeEffects(profile);
   return true;
 }

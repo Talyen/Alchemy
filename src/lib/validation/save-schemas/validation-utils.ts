@@ -5,26 +5,10 @@ export interface ValidationError {
   message: string;
 }
 
-class ErrorCollectorStack {
-  private stack: ValidationError[][] = [];
-
-  push(collector: ValidationError[]): void {
-    this.stack.push(collector);
-  }
-
-  pop(): void {
-    this.stack.pop();
-  }
-
-  current(): ValidationError[] | undefined {
-    return this.stack[this.stack.length - 1];
-  }
-}
-
-const errorCollectorStack = new ErrorCollectorStack();
+let currentCollector: ValidationError[] | null = null;
 
 export function pushValidationError(path: string, message: string): void {
-  errorCollectorStack.current()?.push({ path, message });
+  currentCollector?.push({ path, message });
 }
 
 export function safeParseWithErrors<T>(
@@ -34,14 +18,17 @@ export function safeParseWithErrors<T>(
   | { success: true; data: T; errors: ValidationError[] }
   | { success: false; error: z.ZodError; errors: ValidationError[] } {
   const errors: ValidationError[] = [];
-  errorCollectorStack.push(errors);
+  currentCollector = errors;
   try {
     const result = schema.safeParse(data);
-    return result.success
-      ? { success: true, data: result.data, errors }
-      : { success: false, error: result.error, errors };
+    if (result.success) return { success: true, data: result.data, errors };
+    const zodErrors: ValidationError[] = result.error.issues.map((issue) => ({
+      path: issue.path.join("."),
+      message: issue.message,
+    }));
+    return { success: false, error: result.error, errors: [...errors, ...zodErrors] };
   } finally {
-    errorCollectorStack.pop();
+    currentCollector = null;
   }
 }
 

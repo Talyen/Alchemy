@@ -1,7 +1,8 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { syncGeneratedModule } from "./generated-module.mjs";
+import { loadManifest } from "./asset-manifest-cache.mjs";
+import { writeTextIfChanged } from "./write-text-if-changed.mjs";
 
 export const WEBP_SUFFIX = ".webp";
 export const GEAR_PREFIX = "gear-";
@@ -28,6 +29,13 @@ export function getOptimizedManifestPath(rootDir) {
 
 export function resolveRootDir(importMetaUrl) {
   return path.resolve(path.dirname(fileURLToPath(importMetaUrl)), "..");
+}
+
+export async function syncGeneratedModule({ manifestPath, outputFile, check = false, build }) {
+  const manifest = await loadManifest(manifestPath);
+  const result = build(manifest);
+  const wrote = await writeTextIfChanged(outputFile, result.content, { check });
+  return { ...result, wrote };
 }
 
 export async function runSyncGenerated({ manifestPath, outputFile, rootDir, check = false, build, onCount, label }) {

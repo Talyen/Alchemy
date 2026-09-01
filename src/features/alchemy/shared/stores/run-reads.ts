@@ -20,9 +20,8 @@ import { readGameplayState, useGameplayStateStore, type GameplayState } from "./
 import { mostRecentResumableMode } from "./parked-runs";
 import type { ParkedRunsMap } from "./parked-runs";
 import type { RunDomainBattleState, RunSessionFields } from "./run-domain-types";
-import { createRunSessionCommand } from "./run-session-command";
 import { selectAutosaveAllowed } from "./select-autosave-allowed";
-import { setHasActiveBattle as setHasActiveBattleCommand } from "./run-session-write-port";
+import { deepFreezeInDev } from "./store-utils";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 
 export interface ContentNavigationRunPort {
@@ -49,15 +48,6 @@ export type RunProfileReadView = Readonly<PermanentProgressFields>;
 export type RunSessionReadView = Readonly<RunSessionFields>;
 export type BattleReadView = Readonly<RunDomainBattleState>;
 export type { DisplayOverrides } from "./run-domain-types";
-
-function deepFreezeInDev<T>(value: T): T {
-  if (!import.meta.env.DEV || value === null || typeof value !== "object" || Object.isFrozen(value)) return value;
-  Object.freeze(value);
-  for (const child of Object.values(value as Record<string, unknown>)) {
-    if (child !== null && typeof child === "object") deepFreezeInDev(child);
-  }
-  return value;
-}
 
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
@@ -161,9 +151,7 @@ export function useResumableGameModes(): Record<ContentSystemId, boolean> {
 export function useDisplayOverrides() {
   return useGameplayStateStore(useShallow((state) => state.battle.displayOverrides));
 }
-export function useSetHasActiveBattle(): (active: boolean) => void {
-  return useMemo(() => createRunSessionCommand(setHasActiveBattleCommand), []);
-}
+export { useSetHasActiveBattle } from "./store-actions";
 export function useBondedCompanions() {
   return useGameplayStateStore(useShallow((state) => state.runProfile.bondedCompanions));
 }

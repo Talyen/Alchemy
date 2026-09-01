@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- co-located homestead screen subcomponents and tab helpers */
 import { type ReactNode } from "react";
-import { cn } from "@/lib/utils";
 import {
   agilityTraining,
   alchemyLab,
@@ -29,8 +28,7 @@ import {
   type HomesteadResearch,
   materialLabels,
 } from "@/lib/homestead/types";
-import { tooltipChipClass } from "../../../shared/config";
-import { MaterialIcon, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
+import { MaterialInlineChip } from "../../../shared/ui/material-icons";
 import { TabBar } from "../../../shared/ui/tab-bar";
 import { renderTokenizedDescription } from "../../../shared/ui/card-description-ui";
 import { Hammer, Wheat, FlaskConical, PawPrint } from "lucide-react";
@@ -83,21 +81,7 @@ function renderMaterialPills(text: string, key: number): ReactNode {
   return text.split(MATERIAL_REGEX).map((sub, index) => {
     const mat = MATERIAL_IDS.find((m) => materialLabels[m] === sub);
     if (!mat) return <span key={`${key}-${index}`}>{sub}</span>;
-    return (
-      <span
-        key={`${key}-${index}`}
-        className={cn(
-          "mx-1 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 align-middle shadow-xs",
-          tooltipChipClass,
-          "leading-none",
-          matPillStyle[mat],
-          matTextColor[mat],
-        )}
-      >
-        <MaterialIcon material={mat} size="xs" />
-        <span className="leading-none">{sub}</span>
-      </span>
-    );
+    return <MaterialInlineChip key={`${key}-${index}`} material={mat} label={sub} />;
   });
 }
 
@@ -116,10 +100,11 @@ export function HomesteadTabs({ activeTab, onSelectTab }: { activeTab: Tab; onSe
   return <TabBar tabs={tabs} activeTab={activeTab} onSelectTab={onSelectTab} />;
 }
 
+export function getItems(tab: "buildings", pool: HomesteadBuilding[]): GoalItem[];
+export function getItems(tab: "farm", pool: HomesteadFarm[]): GoalItem[];
+export function getItems(tab: "research", pool: HomesteadResearch[]): GoalItem[];
 export function getItems(tab: Tab, pool: HomesteadBuilding[] | HomesteadFarm[] | HomesteadResearch[]): GoalItem[] {
-  return pool.map((data) => {
-    if (tab === "buildings") return { kind: "building" as const, data: data as HomesteadBuilding };
-    if (tab === "farm") return { kind: "farm" as const, data: data as HomesteadFarm };
-    return { kind: "research" as const, data: data as HomesteadResearch };
-  });
+  if (tab === "buildings") return (pool as HomesteadBuilding[]).map((data) => ({ kind: "building", data }));
+  if (tab === "farm") return (pool as HomesteadFarm[]).map((data) => ({ kind: "farm", data }));
+  return (pool as HomesteadResearch[]).map((data) => ({ kind: "research", data }));
 }

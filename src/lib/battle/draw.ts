@@ -48,7 +48,7 @@ export function takeRandomCardFromDeck(state: BattleState): {
   discard: BattleCard[];
   nextCardUid: number;
 } | null {
-  const refilled = refillDeck([...state.deck], [...state.discard], getBattleRng(state));
+  const refilled = refillDeck(state.deck, state.discard, getBattleRng(state));
   if (!refilled || refilled.deck.length === 0) return null;
   const deck = [...refilled.deck];
   const rawCard = takeRandomItem(deck, getBattleRng(state));

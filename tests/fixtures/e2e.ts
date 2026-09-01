@@ -26,7 +26,7 @@ export const test = base.extend<E2EFixtures>({
       const consoleLogs: string[] = [];
       let droppedLogs = 0;
       const recordLog = (message: string) => {
-        if (consoleLogs.length >= 200) {
+        if (consoleLogs.length >= 40) {
           consoleLogs.shift();
           droppedLogs += 1;
         }

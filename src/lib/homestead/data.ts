@@ -154,8 +154,6 @@ export const farmPlots = [
   ]),
 ];
 
-export const visibleFarmPlots = farmPlots.filter((farm) => !farm.hidden);
-
 export const researchUpgrades = [
   defineResearch("leyline-energy", "Leyline Energy", [
     {

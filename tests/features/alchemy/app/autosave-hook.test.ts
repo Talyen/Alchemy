@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 
 const mockStorage: Record<string, string> = {};
@@ -43,7 +43,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
     act(() => {
-      dispatchRunSessionCommand((draft) => setRunGold(draft, 77));
+      dispatchRunSessionCommand((draft) => setGold(draft, 77));
     });
 
     await act(async () => {
@@ -62,7 +62,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     act(() => {
       dispatchRunSessionCommand((draft) => {
         setHasActiveRun(draft, true);
-        setRunGold(draft, 91);
+        setGold(draft, 91);
       });
       window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
@@ -76,14 +76,14 @@ describe("useAlchemyAutosaveFromStores", () => {
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
     act(() => {
-      dispatchRunSessionCommand((draft) => setRunGold(draft, 1));
+      dispatchRunSessionCommand((draft) => setGold(draft, 1));
     });
     let lastGold = 1;
     for (let i = 0; i < 39; i++) {
       await act(async () => {
         vi.advanceTimersByTime(250);
         lastGold = 2 + i;
-        dispatchRunSessionCommand((draft) => setRunGold(draft, lastGold));
+        dispatchRunSessionCommand((draft) => setGold(draft, lastGold));
       });
     }
     expect(Object.keys(mockStorage)).toHaveLength(0);

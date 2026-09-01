@@ -8,7 +8,7 @@ import {
 } from "../combat-text";
 import { dealSelfDamage, getEnemyDamageMultiplier } from "../status-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
-import type { EffectHandler } from "./handler-types";
+import { defineHandler } from "./handler-types";
 import { processEncounterTraitHealthThreshold } from "../encounter-trait-health-threshold";
 import { dealEnemyScaledDamage } from "../gear-effects";
 import { payKillPayouts } from "../kill-payouts";
@@ -44,6 +44,7 @@ function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatText
   mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount });
   const newMaxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - amount);
   const crystalsLost = state.maxMana - newMaxMana;
+  const previousEnemyHealth = state.enemyHealth;
   let nextState: BattleState = { ...state, maxMana: newMaxMana, mana: Math.min(newMaxMana, state.mana) };
   if (crystalsLost > 0 && nextState.talentEffects.burnDamageOnManaCrystalLoss > 0 && nextState.enemyHealth > 0) {
     nextState = dealEnemyScaledDamage(
@@ -55,8 +56,8 @@ function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatText
         multiplier: getEnemyDamageMultiplier(nextState, "burn"),
         riders: (damagedState) =>
           payKillPayouts(
-            processEncounterTraitHealthThreshold(state.enemyHealth, damagedState, combatTexts),
-            state.enemyHealth > 0,
+            processEncounterTraitHealthThreshold(previousEnemyHealth, damagedState, combatTexts),
+            previousEnemyHealth > 0,
             combatTexts,
           ),
       },
@@ -65,34 +66,38 @@ function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatText
   return nextState;
 }
 
-export const applyRestoreManaEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts, context) => {
-  if (effect.kind !== "restore-mana") return state;
-  if (
-    effect.ifEnemyFrozen &&
-    state.enemyCC.freezeSkipTurns <= (context?.enemyFreezeSkipTurnsAtStart ?? state.enemyCC.freezeSkipTurns)
-  ) {
-    return state;
-  }
-  return restoreMana(state, effect.amount, potionMult, combatTexts);
-};
+export const applyRestoreManaEffect = defineHandler(
+  "restore-mana",
+  (state, _card, effect, potionMult, combatTexts, context) => {
+    if (
+      effect.ifEnemyFrozen &&
+      state.enemyCC.freezeSkipTurns <= (context?.enemyFreezeSkipTurnsAtStart ?? state.enemyCC.freezeSkipTurns)
+    ) {
+      return state;
+    }
+    return restoreMana(state, effect.amount, potionMult, combatTexts);
+  },
+);
 
-export const applyLoseManaEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
-  if (effect.kind !== "lose-mana") return state;
+export const applyLoseManaEffect = defineHandler("lose-mana", (state, _card, effect, _potionMult, combatTexts) => {
   return loseMana(state, effect.amount, combatTexts);
-};
+});
 
-export const applyGainMaxManaEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
-  if (effect.kind !== "gain-max-mana") return state;
-  return gainMaxMana(state, effect.amount, combatTexts);
-};
+export const applyGainMaxManaEffect = defineHandler(
+  "gain-max-mana",
+  (state, _card, effect, _potionMult, combatTexts) => {
+    return gainMaxMana(state, effect.amount, combatTexts);
+  },
+);
 
-export const applyLoseMaxManaEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
-  if (effect.kind !== "lose-max-mana") return state;
-  return loseMaxMana(state, effect.amount, combatTexts);
-};
+export const applyLoseMaxManaEffect = defineHandler(
+  "lose-max-mana",
+  (state, _card, effect, _potionMult, combatTexts) => {
+    return loseMaxMana(state, effect.amount, combatTexts);
+  },
+);
 
-export const applyHealEffect: EffectHandler = (state, card, effect, potionMult, combatTexts) => {
-  if (effect.kind !== "heal") return state;
+export const applyHealEffect = defineHandler("heal", (state, card, effect, potionMult, combatTexts) => {
   const adjustedHeal = applyPotionMultiplier(effect.amount, potionMult);
   const consumeBonus = card.consume
     ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
@@ -100,9 +105,8 @@ export const applyHealEffect: EffectHandler = (state, card, effect, potionMult, 
   const cardSpecificBonus = state.talentEffects.cardHealBonus[card.id] ?? 0;
   const healAmount = Math.round(adjustedHeal * (state.talentEffects.healMultiplier + consumeBonus)) + cardSpecificBonus;
   return applyHealingWithCombatText(state, healAmount, combatTexts);
-};
+});
 
-export const applyLoseHealthEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
-  if (effect.kind !== "lose-health") return state;
+export const applyLoseHealthEffect = defineHandler("lose-health", (state, _card, effect, _potionMult, combatTexts) => {
   return dealSelfDamage(state, effect.amount, "health", combatTexts).state;
-};
+});

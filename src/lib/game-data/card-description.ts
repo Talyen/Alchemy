@@ -79,7 +79,8 @@ function formatEffectiveLine(
       return effect ? `Gain ${adjustedAmount(effect.amount, potionMultiplier)} Gold` : line;
     }
     const effect = getNextEffect("player-status");
-    if (!effect || effect.perManaCrystal) return line;
+    if (!effect) return line;
+    if (effect.perManaCrystal || effect.convertCurrentMana) return line;
     return `Gain ${adjustedAmount(effect.amount, potionMultiplier)} ${displayDamageType(effect.status)}`;
   }
 

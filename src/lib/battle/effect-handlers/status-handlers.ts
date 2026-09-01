@@ -1,12 +1,12 @@
 import { applyPotionMultiplier } from "../amount-helpers";
 import { addEnemyStatus, type BattleState, type CombatTextEvent } from "../types";
 import { mergeCombatText } from "../combat-text";
-import type { EffectHandler } from "./handler-types";
+import { defineHandler } from "./handler-types";
 import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses } from "../status-player";
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
-import { harmfulPlayerStatusIds, type EnemyStatusDamageId, type EnemyStatusId } from "@/lib/game-data";
+import { type EnemyStatusDamageId, type EnemyStatusId } from "@/lib/game-data";
 import { dealPlayerTypedHit } from "../player-typed-hit";
 
 function resolveEnemyStatusCcTrigger(
@@ -24,29 +24,23 @@ function zeroPlayerStatus(state: BattleState, status: EnemyStatusDamageId): Batt
   return { ...state, playerStatuses: { ...state.playerStatuses, [status]: 0 } };
 }
 
-export const applyPlayerStatusEffectHandler: EffectHandler = (
-  state,
-  _card,
-  effect,
-  potionMult,
-  combatTexts,
-  context,
-) => {
-  if (effect.kind !== "player-status") return state;
-  let adjustedAmount = effect.amount;
-  let nextState = state;
-  if (effect.convertCurrentMana) {
-    adjustedAmount = (context?.manaAtStart ?? state.mana) * effect.convertCurrentMana;
-    nextState = { ...state, mana: 0 };
-  } else if (effect.perManaCrystal) {
-    adjustedAmount = effect.perManaCrystal * state.maxMana;
-  }
-  adjustedAmount = applyPotionMultiplier(adjustedAmount, potionMult);
-  return applyPlayerStatusEffect(nextState, { ...effect, amount: adjustedAmount }, combatTexts);
-};
+export const applyPlayerStatusEffectHandler = defineHandler(
+  "player-status",
+  (state, _card, effect, potionMult, combatTexts, context) => {
+    let adjustedAmount = effect.amount;
+    let nextState = state;
+    if (effect.convertCurrentMana) {
+      adjustedAmount = (context?.manaAtStart ?? state.mana) * effect.convertCurrentMana;
+      nextState = { ...state, mana: 0 };
+    } else if (effect.perManaCrystal) {
+      adjustedAmount = effect.perManaCrystal * state.maxMana;
+    }
+    adjustedAmount = applyPotionMultiplier(adjustedAmount, potionMult);
+    return applyPlayerStatusEffect(nextState, { ...effect, amount: adjustedAmount }, combatTexts);
+  },
+);
 
-export const applyEnemyStatusEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
-  if (effect.kind !== "enemy-status") return state;
+export const applyEnemyStatusEffect = defineHandler("enemy-status", (state, _card, effect, potionMult, combatTexts) => {
   const amount = applyPotionMultiplier(effect.amount, potionMult);
   if (effect.status === "stun" || effect.status === "freeze") {
     return dealPlayerTypedHit(state, effect.status, amount, combatTexts);
@@ -56,45 +50,53 @@ export const applyEnemyStatusEffect: EffectHandler = (state, _card, effect, poti
   mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: effect.status, amount: appliedAmount });
 
   return nextState;
-};
+});
 
-export const applyRemoveHarmfulStatusEffect: EffectHandler = (state, _card, effect, potionMult, combatTexts) => {
-  if (effect.kind !== "remove-harmful-status") return state;
-  const adjustedRemove = effect.removeAll
-    ? harmfulPlayerStatusIds.length
-    : applyPotionMultiplier(effect.amount, potionMult);
-  return removeHarmfulPlayerStatuses(state, adjustedRemove, combatTexts);
-};
+export const applyRemoveHarmfulStatusEffect = defineHandler(
+  "remove-harmful-status",
+  (state, _card, effect, potionMult, combatTexts) => {
+    const adjustedRemove = effect.removeAll
+      ? Number.POSITIVE_INFINITY
+      : applyPotionMultiplier(effect.amount, potionMult);
+    return removeHarmfulPlayerStatuses(state, adjustedRemove, combatTexts);
+  },
+);
 
-export const applyRemovePlayerStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
-  if (effect.kind !== "remove-player-status") return state;
-  if (state.playerStatuses[effect.status] <= 0) return state;
-  return applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
-};
+export const applyRemovePlayerStatusEffect = defineHandler(
+  "remove-player-status",
+  (state, _card, effect, _potionMult, combatTexts) => {
+    if (state.playerStatuses[effect.status] <= 0) return state;
+    return applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
+  },
+);
 
-export const applyMultiplyEnemyStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
-  if (effect.kind !== "multiply-enemy-status") return state;
-  const current = state.enemyStatuses[effect.status];
-  if (current <= 0) return state;
+export const applyMultiplyEnemyStatusEffect = defineHandler(
+  "multiply-enemy-status",
+  (state, _card, effect, _potionMult, combatTexts) => {
+    const current = state.enemyStatuses[effect.status];
+    if (current <= 0) return state;
 
-  const nextState = addEnemyStatus(state, effect.status, current * (effect.factor - 1));
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "multiply",
-    stat: effect.status,
-    amount: nextState.enemyStatuses[effect.status] - current,
-  });
+    const nextState = addEnemyStatus(state, effect.status, current * (effect.factor - 1));
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "multiply",
+      stat: effect.status,
+      amount: nextState.enemyStatuses[effect.status] - current,
+    });
 
-  return resolveEnemyStatusCcTrigger(state, nextState, effect.status, combatTexts);
-};
+    return resolveEnemyStatusCcTrigger(state, nextState, effect.status, combatTexts);
+  },
+);
 
-export const applyCleansePlayerStatusToDamageEffect: EffectHandler = (state, card, effect, potionMult, combatTexts) => {
-  if (effect.kind !== "cleanse-player-status-to-damage") return state;
-  const stacks = state.playerStatuses[effect.status];
-  if (stacks <= 0) return state;
+export const applyCleansePlayerStatusToDamageEffect = defineHandler(
+  "cleanse-player-status-to-damage",
+  (state, card, effect, potionMult, combatTexts) => {
+    const stacks = state.playerStatuses[effect.status];
+    if (stacks <= 0) return state;
 
-  const cleansed = applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
-  const amount = applyPotionMultiplier(stacks, potionMult);
+    const cleansed = applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
+    const amount = applyPotionMultiplier(stacks, potionMult);
 
-  return dealDamageToEnemy(cleansed, card, { kind: "damage", damageType: effect.damageType, amount }, combatTexts);
-};
+    return dealDamageToEnemy(cleansed, card, { kind: "damage", damageType: effect.damageType, amount }, combatTexts);
+  },
+);

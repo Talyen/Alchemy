@@ -1,12 +1,10 @@
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import type { PendingRewardSharedFields } from "./pending-reward-shared";
+import type { PendingRewardSharedInput } from "./pending-reward-shared";
 import type { Destination } from "@/lib/routing";
 
-type RewardStateBase = PendingRewardSharedFields & {
-  destinations: Destination[];
-};
+type RewardStateBase = PendingRewardSharedInput;
 
 export type CardRewardState = RewardStateBase & {
   rewardType: "card";
@@ -62,6 +60,7 @@ export function resolveRewardChoice(
 export function createEmptyRewardState(destinations: Destination[] = []): CardRewardState {
   return {
     choices: [],
+    companionChoiceIds: [],
     gold: 0,
     materials: emptyInventory(),
     selectedId: null,

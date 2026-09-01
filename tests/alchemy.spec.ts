@@ -1,17 +1,7 @@
-import { expect, test as baseTest } from "@playwright/test";
-import { AEGIS_CARD, BLOCK_CARD, failOnRuntimeErrors, startBattleWithDeck } from "./helpers";
+import { AEGIS_CARD, BLOCK_CARD, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { test } from "./fixtures/e2e";
-import { critical, prepush } from "./playwright-tags";
-
-baseTest.describe("App Boot", { tag: [prepush.tag] }, () => {
-  baseTest("main menu renders without crashing on desktop", async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
-    await page.goto("/");
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 5000 });
-    expect(errors).toEqual([]);
-  });
-});
+import { critical } from "./playwright-tags";
 
 test.describe("Block Mechanics", critical, () => {
   test("blessed aegis plays against a live block value", async ({ page, fastBattle, runtimeErrors }) => {

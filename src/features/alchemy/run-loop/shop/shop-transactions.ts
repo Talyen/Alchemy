@@ -2,7 +2,7 @@ import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { playGoldSpend } from "@/lib/audio";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { deductRunGold, readDraftGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { deductGold, readDraftGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 type StateUpdate<T> = T | ((previous: T) => T);
 export type DraftStateWriter<T> = (draft: GameplayDraft, value: StateUpdate<T>) => void;
@@ -68,7 +68,7 @@ export function purchaseShopOffering<TState extends { firstPurchaseUsed: boolean
     return { committed: false, price: input.price, value: undefined };
   }
 
-  deductRunGold(input.draft, input.price);
+  deductGold(input.draft, input.price);
   input.setState(input.draft, (previous) => ({
     ...previous,
     firstPurchaseUsed: true,
@@ -94,7 +94,7 @@ export function refreshShopOfferings<T, TItem>(
     return { committed: false, price: input.price, value: null };
   }
 
-  deductRunGold(input.draft, input.price);
+  deductGold(input.draft, input.price);
   const newItems = input.resample();
   input.setState(input.draft, (previous) => input.mapState(previous, newItems));
   return { committed: true, price: input.price, value: newItems };

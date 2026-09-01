@@ -1,12 +1,11 @@
 import { expect } from "@playwright/test";
 import type { GearInstance } from "@/lib/gear/types";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting";
 import {
   activateCurrency,
   applyCurrencyToGear,
   bodyGear,
   confirmSalvage,
-  createEmptyGearInventories,
-  createEmptyGearLoadouts,
   currencyLocator,
   enterSalvageMode,
   equipmentSlotLocator,
@@ -16,6 +15,7 @@ import {
   salvageInventoryItem,
   selectArmorySlot,
 } from "./e2e/armory";
+import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
 import { assertGearFlatDamageBoostsPhysicalDamage } from "./e2e/gear-combat";
 import { seedRandom } from "./e2e/rng";
 import { injectActiveBattle, makeGoblinBattleState } from "./helpers";
@@ -29,16 +29,9 @@ const affixedSword = {
   affixes: [{ id: "flat-physical" as const, value: 1 }],
 };
 
-const emptyCraftingCurrencies = {
-  "discordant-dice": 0,
-  "sprig-of-growth": 0,
-  voidstone: 0,
-  "ascension-seal": 0,
-  "severance-maw": 0,
-  "smiths-whetstone": 0,
-};
+const emptyCraftingCurrencies = { ...EMPTY_CRAFTING_CURRENCIES };
 
-test.describe("Armory equip", () => {
+test.describe("Armory equip", critical, () => {
   test.beforeEach(async ({ runtimeErrors }) => {
     void runtimeErrors;
   });
@@ -144,7 +137,7 @@ test.describe("Armory equip", () => {
   });
 });
 
-test.describe("Armory crafting", () => {
+test.describe("Armory crafting", critical, () => {
   test.beforeEach(async ({ runtimeErrors }) => {
     void runtimeErrors;
   });
@@ -242,7 +235,7 @@ test.describe("Armory crafting", () => {
   });
 });
 
-test.describe("Gear combat", { tag: [critical.tag] }, () => {
+test.describe("Gear combat", critical, () => {
   test("equipped gear increases physical damage in battle", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;

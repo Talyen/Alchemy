@@ -1,7 +1,8 @@
 import { cardById, trinketById, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import { filterValidDestinations, type Destination } from "@/lib/routing";
+import { filterValidDestinations } from "@/lib/routing";
 import type { PersistedPendingReward } from "./types";
+import type { PendingRewardSharedFields } from "./pending-reward-shared";
 import {
   createEmptyRewardState,
   type BoonRewardState,
@@ -38,21 +39,10 @@ function resolveTrinketChoices(choiceIds: string[]): TrinketEntry[] | null {
   return choices.length === 0 ? null : choices;
 }
 
-interface PersistedRewardSharedFields {
-  companionChoiceIds: string[];
-  selectedId: string | null;
-  gold: number;
-  materials: RewardState["materials"];
-  destinations: Destination[];
-  selectedBossId: string | null;
-  lastVictoryEnemyType: RewardState["lastVictoryEnemyType"];
-  lastVictoryContentSystem: RewardState["lastVictoryContentSystem"];
-}
-
 function sharedRewardFields(
   rewardState: RewardState,
   companionRewardCards: BattleCard[] | null = null,
-): PersistedRewardSharedFields {
+): PendingRewardSharedFields {
   return {
     companionChoiceIds: companionRewardCards?.map((choice) => choice.id) ?? [],
     selectedId: rewardState.selectedId,

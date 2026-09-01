@@ -1,57 +1,18 @@
 import os from "node:os";
 import { defineConfig, devices } from "@playwright/test";
-import type { ReporterDescription } from "@playwright/test";
-import { ensureRunId } from "../scripts/lib/current-run.mjs";
 import {
   BROWSER_PREVIEW_PORT,
   ELECTRON_PREVIEW_PORT,
   PERF_PREVIEW_PORT,
-  resolvePort,
-} from "../scripts/lib/dev-port.mjs";
+  TIMEOUTS,
+  playwrightCiSettings,
+  previewPortFromEnv,
+  previewWebServer,
+} from "./playwright-base";
 import { PERF_VIEWPORT } from "../performance/viewport";
 
-export { ELECTRON_PREVIEW_PORT } from "../scripts/lib/dev-port.mjs";
-
-export function previewPortFromEnv(envName: string, fallback: number): number {
-  return resolvePort(envName, fallback);
-}
-
-function previewWebServer(
-  port: number,
-  { mode = "preview" }: { mode?: "dev" | "preview" } = {},
-): { command: string; port: number } {
-  ensureRunId("playwright");
-  return {
-    command: `vite${mode === "dev" ? "" : " preview"} --host 127.0.0.1 --port ${port} --strictPort`,
-    port,
-  };
-}
-
-interface PlaywrightCiSettingsOptions {
-  isCi: boolean;
-  defaultJsonOut: string;
-}
-
-function playwrightCiSettings({ isCi, defaultJsonOut }: PlaywrightCiSettingsOptions): {
-  retries: 0 | 1;
-  forbidOnly: boolean;
-  reporter: ReporterDescription[];
-} {
-  const jsonOutputFile = process.env.PLAYWRIGHT_JSON_OUTPUT_NAME ?? defaultJsonOut;
-  return {
-    retries: isCi ? 1 : 0,
-    forbidOnly: isCi,
-    reporter: isCi
-      ? [
-          ["./scripts/lib/playwright-run-reporter.mjs"],
-          ["github"],
-          ["line"],
-          ["html"],
-          ["json", { outputFile: jsonOutputFile }],
-        ]
-      : [["./scripts/lib/playwright-run-reporter.mjs"], ["line"], ["html", { open: "never" }]],
-  };
-}
+export { ELECTRON_PREVIEW_PORT } from "./playwright-base";
+export { TIMEOUTS, playwrightCiSettings, previewPortFromEnv, previewWebServer } from "./playwright-base";
 
 export type AlchemyPlaywrightPreset = "e2e" | "electron" | "performance";
 
@@ -65,8 +26,8 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       globalSetup: "./tests/electron-global-setup.ts",
       fullyParallel: false,
       workers: 1,
-      timeout: 90_000,
-      globalTimeout: 600_000,
+      timeout: TIMEOUTS.electron.timeout,
+      globalTimeout: TIMEOUTS.electron.global,
       ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-electron-results.json" }),
       preserveOutput: "failures-only",
       webServer: {
@@ -86,15 +47,15 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       fullyParallel: false,
       workers: 1,
       retries: 0,
-      timeout: isTrace ? 180_000 : 300_000,
-      globalTimeout: 1_800_000,
+      timeout: isTrace ? TIMEOUTS.performance.trace : TIMEOUTS.performance.normal,
+      globalTimeout: TIMEOUTS.performance.global,
       forbidOnly: false,
       reporter: [["list"], ["./performance/reporter.ts"]],
       use: {
         baseURL: `http://127.0.0.1:${previewPort}`,
         headless: false,
         trace: "off",
-        actionTimeout: 30_000,
+        actionTimeout: TIMEOUTS.performance.action,
         viewport: { ...PERF_VIEWPORT },
       },
       webServer: {
@@ -141,14 +102,14 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
     fullyParallel: true,
     maxFailures: isPrepush ? 5 : maxFailures,
     workers: isPrepush ? 2 : isNightly || isCi ? Math.min(6, Math.max(4, os.cpus().length)) : defaultWorkers,
-    globalTimeout: 600_000,
-    timeout: isCi ? 30_000 : 20_000,
+    globalTimeout: TIMEOUTS.e2e.global,
+    timeout: isCi ? TIMEOUTS.e2e.ci : TIMEOUTS.e2e.local,
     ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-results.json" }),
     preserveOutput: "failures-only",
     use: {
       baseURL: `http://127.0.0.1:${port}`,
       trace: isPrepush ? "off" : "retain-on-failure",
-      actionTimeout: isCi ? 15_000 : 10_000,
+      actionTimeout: isCi ? TIMEOUTS.e2e.actionCi : TIMEOUTS.e2e.actionLocal,
       launchOptions: { args: ["--mute-audio"] },
       storageState: {
         cookies: [],

@@ -5,6 +5,7 @@ import type { Screen } from "@/lib/routing";
 import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { logError } from "@/lib/error-logger";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { getRunSession } from "./run-reads";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
@@ -82,13 +83,13 @@ export function teardownRun(): void {
 
 function flushSaveAfterRunEnd(): void {
   void flushAlchemySaveNow(null).catch((error: unknown) => {
-    console.error("Failed to flush save after run end", error);
+    logError("Failed to flush save after run end", "storage", undefined, undefined, undefined, error);
   });
 }
 
 export function flushSaveAfterGearMutation(activeRun: ActiveRunData | null): void {
   void flushAlchemySaveNow(activeRun).catch((error: unknown) => {
-    console.error("Failed to flush save after gear mutation", error);
+    logError("Failed to flush save after gear mutation", "storage", undefined, undefined, undefined, error);
   });
 }
 

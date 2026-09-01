@@ -1,9 +1,10 @@
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { syncAssets } from "./sync-assets.mjs";
-import { syncGearArt } from "./sync-gear-art.mjs";
+import { syncArtBarrels, syncAssets, syncGearArt } from "./sync-art-barrels.mjs";
+
+export { syncAssets, syncGearArt, syncArtBarrels };
 
 export async function syncGenerated({ check = false } = {}) {
-  await Promise.all([syncAssets({ check }), syncGearArt({ check })]);
+  await syncArtBarrels({ check });
 }
 
 if (isMainModule(import.meta.url)) {

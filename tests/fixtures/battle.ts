@@ -62,25 +62,29 @@ export function makeTestBattleState(overrides: Partial<BattleState> = {}): Battl
   };
 }
 
-type BattleStatePatch = Omit<
+export type BattleStatePatch = Omit<
   Partial<BattleState>,
   | "playerStatuses"
   | "enemyStatuses"
   | "trinketEffects"
   | "talentEffects"
+  | "gearEffects"
   | "flags"
   | "enemyMitigation"
   | "playerCC"
   | "enemyCC"
+  | "currentEnemy"
 > & {
   playerStatuses?: Partial<BattleState["playerStatuses"]>;
   enemyStatuses?: Partial<BattleState["enemyStatuses"]>;
   trinketEffects?: Partial<BattleState["trinketEffects"]>;
   talentEffects?: Partial<BattleState["talentEffects"]>;
+  gearEffects?: Partial<BattleState["gearEffects"]>;
   flags?: Partial<BattleState["flags"]>;
   enemyMitigation?: Partial<BattleState["enemyMitigation"]>;
   playerCC?: Partial<BattleState["playerCC"]>;
   enemyCC?: Partial<BattleState["enemyCC"]>;
+  currentEnemy?: Partial<BattleState["currentEnemy"]>;
 };
 
 export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
@@ -92,12 +96,14 @@ export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
     enemyStatuses: patch.enemyStatuses ? { ...base.enemyStatuses, ...patch.enemyStatuses } : base.enemyStatuses,
     trinketEffects: patch.trinketEffects ? { ...base.trinketEffects, ...patch.trinketEffects } : base.trinketEffects,
     talentEffects: patch.talentEffects ? { ...base.talentEffects, ...patch.talentEffects } : base.talentEffects,
+    gearEffects: patch.gearEffects ? { ...base.gearEffects, ...patch.gearEffects } : base.gearEffects,
     flags: patch.flags ? { ...base.flags, ...patch.flags } : base.flags,
     enemyMitigation: patch.enemyMitigation
       ? { ...base.enemyMitigation, ...patch.enemyMitigation }
       : base.enemyMitigation,
     playerCC: patch.playerCC ? { ...base.playerCC, ...patch.playerCC } : base.playerCC,
     enemyCC: patch.enemyCC ? { ...base.enemyCC, ...patch.enemyCC } : base.enemyCC,
+    currentEnemy: patch.currentEnemy ? { ...base.currentEnemy, ...patch.currentEnemy } : base.currentEnemy,
   };
 }
 

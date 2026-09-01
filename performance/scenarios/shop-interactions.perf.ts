@@ -1,4 +1,5 @@
 import { ShopPage } from "../../tests/pages/shop-page";
+import { startAtDestination } from "../../tests/e2e/battle-setup";
 import { delay } from "../delay";
 import { expect, test } from "../fixtures";
 
@@ -11,7 +12,9 @@ test.describe("shop-interactions", () => {
       profile: "transition",
       minFrames: Number.parseInt(process.env.PERF_MIN_FRAMES ?? "250", 10),
       setup: async (page) => {
-        await new ShopPage(page).enterFromDestination(9999, "Card Shop");
+        await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Card Shop" });
+        await page.getByRole("button", { name: "Card Shop" }).click();
+        await expect(page.getByRole("heading", { name: "Card Shop" })).toBeVisible();
       },
       interact: async (page, phase) => {
         const shop = new ShopPage(page);

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import type { ElectronApplication, Page } from "playwright";
+import type { ElectronApplication, Page } from "@playwright/test";
 import { getElectronMainWindow, launchElectronApp } from "./electron-helpers";
 import { failOnRuntimeErrors } from "./helpers";
 import { MenuPage } from "./pages/menu-page";

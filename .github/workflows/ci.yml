@@ -230,6 +230,9 @@ jobs:
         env:
           ALCHEMY_SKIP_ASSETS: "1"
 
+      - name: Check bundle budget (index 600k / total 1.55M)
+        run: node scripts/check-bundle-budget.mjs
+
       - name: Smoke test production build
         run: npm run smoke:preview
 
@@ -248,7 +251,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -268,8 +271,8 @@ jobs:
 
       - run: mkdir -p reports
 
-      - name: Run critical e2e tests (shard ${{ matrix.shard }}/2)
-        run: npm run test:e2e:critical -- --shard=${{ matrix.shard }}/2
+      - name: Run critical e2e tests (shard ${{ matrix.shard }}/3)
+        run: npm run test:e2e:critical -- --shard=${{ matrix.shard }}/3
         env:
           PLAYWRIGHT_VITE_MODE: preview
           CI: true
@@ -373,25 +376,6 @@ jobs:
     with:
       script: test:e2e:audio
       report-name: playwright-report-audio-gate
-
-  bundle-budget:
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          sparse-checkout: |
-            /*
-            !Raw Assets
-          sparse-checkout-cone-mode: false
-      - uses: ./.github/actions/setup
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist/
-      - name: Check bundle budget (index 600k / total 1.55M)
-        run: node scripts/check-bundle-budget.mjs
 
   desktop-build:
     needs: changes

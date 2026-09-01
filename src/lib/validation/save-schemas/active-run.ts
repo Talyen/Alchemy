@@ -248,8 +248,7 @@ const InterruptedFlowSchema = z
     z.object({ kind: z.literal("companion-reward"), pending: PersistedPendingRewardUnionSchema }),
     InterruptedFlowDestinationSchema,
   ])
-  .catch({ kind: "none" })
-  .default({ kind: "none" });
+  .catch({ kind: "none" as const });
 
 export type InterruptedFlow = z.infer<typeof InterruptedFlowSchema>;
 

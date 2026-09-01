@@ -13,7 +13,7 @@ import {
   type UnlockedTalents,
   type TalentXP,
 } from "@/lib/game-data";
-import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { canAfford } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -74,7 +74,7 @@ function hasAffordableHomesteadUpgrade(input: {
     return canAfford(materialInventory, tier.cost);
   });
 
-  const affordableFarm = visibleFarmPlots.some((f) => {
+  const affordableFarm = farmPlots.some((f) => {
     const currentLevel = plantedFarms[f.id] ?? 0;
     if (currentLevel >= f.tiers.length) return false;
     const tier = f.tiers[currentLevel];

@@ -1,5 +1,7 @@
-const cardWidth = 420;
-const cardQuality = 80;
+import { QUALITY, WIDTH } from "./asset-defaults.mjs";
+
+const cardWidth = WIDTH.card;
+const cardQuality = QUALITY.card;
 
 export const cardAssets = [
   // Cards
@@ -16,11 +18,16 @@ export const cardAssets = [
   { source: "Cards/Fireball.jpeg", target: "fireball.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Ice Shot.jpeg", target: "ice-shot.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Frostbolt.jpeg", target: "frostbolt.webp", width: cardWidth, quality: cardQuality },
-  { source: "Cards/Haste.jpeg", target: "haste.webp", width: cardWidth, quality: 88 },
+  { source: "Cards/Haste.jpeg", target: "haste.webp", width: cardWidth, quality: QUALITY.cardHaste },
   { source: "Cards/Heal.jpeg", target: "heal.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Health Potion.jpeg", target: "health-potion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Mana Berries.jpeg", target: "mana-berries.webp", width: cardWidth, quality: cardQuality },
-  { source: "Cards/Mana Crystals.jpeg", target: "mana-crystal.webp", width: cardWidth, quality: 88 },
+  {
+    source: "Cards/Mana Crystals.jpeg",
+    target: "mana-crystal.webp",
+    width: cardWidth,
+    quality: QUALITY.cardManaCrystal,
+  },
   { source: "Cards/Mana Potion.jpeg", target: "mana-potion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Meteor.jpeg", target: "meteor.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Panacea Potion.jpeg", target: "panacea-potion.webp", width: cardWidth, quality: cardQuality },
@@ -37,7 +44,12 @@ export const cardAssets = [
     width: cardWidth,
     quality: cardQuality,
   },
-  { source: "Cards/Mixed Potion.jpeg", target: "mixed-potion.webp", width: cardWidth, quality: 84 },
+  {
+    source: "Cards/Mixed Potion.jpeg",
+    target: "mixed-potion.webp",
+    width: cardWidth,
+    quality: QUALITY.cardMixedPotion,
+  },
   { source: "Cards/Stoneskin Potion.jpeg", target: "stoneskin-potion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Acid Potion.jpeg", target: "acid-potion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Luck Potion.jpeg", target: "luck-potion.webp", width: cardWidth, quality: cardQuality },
@@ -138,5 +150,10 @@ export const cardAssets = [
   { source: "Cards/Stargaze.jpeg", target: "stargaze.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Combustion.jpeg", target: "combustion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Ray of Frost.jpeg", target: "ray-of-frost.webp", width: cardWidth, quality: cardQuality },
-  { source: "Cards/Placeholder Card.png", target: "placeholder-card.webp", width: cardWidth, quality: 60 },
+  {
+    source: "Cards/Placeholder Card.png",
+    target: "placeholder-card.webp",
+    width: cardWidth,
+    quality: QUALITY.cardPlaceholder,
+  },
 ];

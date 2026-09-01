@@ -80,8 +80,8 @@ function createChanceEffectSchema(getEffectSchema: () => z.ZodType<BattleCardEff
   return z.object({
     kind: z.literal("chance"),
     probability: z.number().min(0).max(1),
-    successEffects: z.array(z.lazy(getEffectSchema)),
-    failureEffects: z.array(z.lazy(getEffectSchema)),
+    successEffects: z.array(z.lazy(getEffectSchema)).min(1),
+    failureEffects: z.array(z.lazy(getEffectSchema)).min(1),
   });
 }
 

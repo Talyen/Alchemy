@@ -11,7 +11,6 @@ import {
 } from "react";
 
 import { ShineBorder } from "@/components/ui/shine-border";
-import { HAND_HOVER_HANDOFF_MS } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +41,7 @@ interface BattleCardButtonBaseProps {
 
   wrapperStyle?: CSSProperties;
   wrapperDataCardKey?: string;
+  hoverLeaveDelayMs?: number | undefined;
   selected?: boolean;
   disabled?: boolean | undefined;
   dragging?: boolean | undefined;
@@ -61,7 +61,7 @@ export type BattleCardButtonProps = BattleCardButtonBaseProps &
   );
 
 export function BattleCardButton(props: BattleCardButtonProps) {
-  const { wrapperClassName, wrapperStyle, wrapperDataCardKey, dragging = false } = props;
+  const { wrapperClassName, wrapperStyle, wrapperDataCardKey, hoverLeaveDelayMs = 0, dragging = false } = props;
   const inheritedDescriptionContext = useCardDescriptionContext();
   const descriptionContext = props.descriptionContext ?? inheritedDescriptionContext;
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -89,15 +89,15 @@ export function BattleCardButton(props: BattleCardButtonProps) {
 
   function handleHoverLeave(event: MouseEvent<HTMLDivElement>) {
     const next = event.relatedTarget;
-    if (next instanceof Element && next.closest("[data-hand-card='true']")) {
+    if (wrapperDataCardKey && next instanceof Element && next.closest("[data-hand-card='true']")) {
       return;
     }
-    if (!wrapperDataCardKey) {
+    if (!wrapperDataCardKey || hoverLeaveDelayMs <= 0) {
       handleHoverEnd();
       return;
     }
     window.clearTimeout(hoverEndTimerRef.current);
-    hoverEndTimerRef.current = window.setTimeout(handleHoverEnd, HAND_HOVER_HANDOFF_MS);
+    hoverEndTimerRef.current = window.setTimeout(handleHoverEnd, hoverLeaveDelayMs);
   }
 
   return (

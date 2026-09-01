@@ -13,6 +13,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { createInitialProfileState } from "@/features/alchemy/shared/stores/profile-store-types";
 import { createEmptyEquippedTrinkets, createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting";
 import {
   clearTransientSession,
   initializeActiveBattle,
@@ -21,15 +22,6 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
-
-const EMPTY_CRAFTING_CURRENCIES = {
-  "discordant-dice": 0,
-  "sprig-of-growth": 0,
-  voidstone: 0,
-  "ascension-seal": 0,
-  "severance-maw": 0,
-  "smiths-whetstone": 0,
-};
 
 function createInitialGearState() {
   return {

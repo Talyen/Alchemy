@@ -16,7 +16,5 @@ export const cardLibrary: BattleCard[] = [
 export const cardById: Record<string, BattleCard> = Object.fromEntries(cardLibrary.map((card) => [card.id, card]));
 
 if (Object.keys(cardById).length !== cardLibrary.length) {
-  const msg = "Duplicate card id in cardLibrary";
-  if (import.meta.env.DEV) throw new Error(msg);
-  console.error(msg);
+  throw new Error("Duplicate card id in cardLibrary");
 }

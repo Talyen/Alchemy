@@ -1,9 +1,9 @@
 import { expect, type Page } from "@playwright/test";
 import type { CraftingCurrencyId, GearInstance, GearSlot } from "@/lib/gear";
+import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
 import { MenuPage } from "../pages/menu-page";
 
-const characterIds = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid", "wildcard"];
-const gearSlots = ["main-hand", "off-hand", "body", "left-accessory", "right-accessory"] as const;
+export { createEmptyGearInventories, createEmptyGearLoadouts };
 
 export const bodyGear = {
   instanceId: "gear-body",
@@ -16,19 +16,6 @@ const swordGear = {
   definitionId: "longsword-basic" as const,
   affixes: [],
 };
-
-export function createEmptyGearLoadouts() {
-  return Object.fromEntries(
-    characterIds.map((characterId) => [characterId, Object.fromEntries(gearSlots.map((slot) => [slot, null]))]),
-  );
-}
-
-export function createEmptyGearInventories() {
-  return Object.fromEntries(characterIds.map((characterId) => [characterId, [] as unknown[]])) as Record<
-    string,
-    unknown[]
-  >;
-}
 
 export interface OpenArmoryOptions {
   inventory?: GearInstance[];

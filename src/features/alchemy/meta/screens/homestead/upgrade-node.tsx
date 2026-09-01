@@ -1,16 +1,18 @@
 import { useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
+import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford, emptyInventory } from "@/lib/homestead/inventory";
-import { Button } from "@/components/ui/button";
 import { DetailPopup } from "../../../shared/ui/card-popup";
-import { DisabledTooltip } from "../../../shared/ui/shared-ui";
 import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
-import { tooltipChipClass } from "../../../shared/config";
-import { MaterialIcon, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
-import { HOMESTEAD_CONFIG, type GoalItem, MaterialCost, getArt, renderTextWithMaterials } from "./helpers";
-import { HomesteadTileCompletedFooter, HomesteadTileFrame } from "./homestead-tile-node";
+import { HOMESTEAD_CONFIG, type GoalItem, getArt, renderTextWithMaterials } from "./helpers";
+import {
+  HomesteadAffordButton,
+  HomesteadTileCompletedFooter,
+  HomesteadTileFrame,
+  homesteadCompletedSurfaceClass,
+  homesteadTileDimClass,
+} from "./homestead-tile-node";
 
 const ZERO_COST: MaterialInventory = emptyInventory();
 
@@ -36,7 +38,6 @@ export function HomesteadUpgradeNode({
   const tier = item.data.tiers[isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1)];
   const itemCost = tier?.cost ?? ZERO_COST;
   const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
-  const costItems = MATERIAL_IDS.filter((m) => (itemCost[m] ?? 0) > 0);
 
   const detailTooltip = useTooltipContent(item, displayTierIndex, currentLevel, maxTiers);
   const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
@@ -44,21 +45,13 @@ export function HomesteadUpgradeNode({
   const footer = isCompleted ? (
     <HomesteadTileCompletedFooter label={item.data.title} />
   ) : hasCost ? (
-    <div className="mt-1.5 flex items-center gap-2">
-      <DisabledTooltip show={!itemAffordable} message="Not Enough Resources">
-        <Button variant="outline" size="lg" disabled={!itemAffordable} onClick={() => onAction(item)}>
-          {item.data.title}
-          {costItems.map((m) => (
-            <MaterialCost
-              key={m}
-              material={m}
-              amount={itemCost[m] ?? 0}
-              affordable={(materialInventory[m] ?? 0) >= (itemCost[m] ?? 0)}
-            />
-          ))}
-        </Button>
-      </DisabledTooltip>
-    </div>
+    <HomesteadAffordButton
+      title={item.data.title}
+      cost={itemCost}
+      inventory={materialInventory}
+      affordable={itemAffordable}
+      onClick={() => onAction(item)}
+    />
   ) : null;
 
   return (
@@ -67,39 +60,13 @@ export function HomesteadUpgradeNode({
       hoveredItemId={hoveredItemId}
       setHoveredItemId={setHoveredItemId}
       detailTooltip={detailTooltip}
-      surfaceClassName={cn(HOMESTEAD_CONFIG.artAspectRatio, "w-full", isCompleted && "bg-stone-800/70")}
+      surfaceClassName={cn(HOMESTEAD_CONFIG.artAspectRatio, "w-full", isCompleted && homesteadCompletedSurfaceClass)}
       imageSrc={getArt(item.data.id)}
       imageAlt={item.data.title}
-      imageClassName={cn("h-full w-full object-cover", isTier0 && "opacity-60 grayscale")}
+      imageClassName={cn("h-full w-full object-cover", isTier0 && homesteadTileDimClass)}
       footer={footer}
     />
   );
-}
-
-function buildFarmYieldNodes(farm: { yield: Record<string, number> }): ReactNode[] {
-  const nodes: ReactNode[] = [];
-  for (const m of MATERIAL_IDS) {
-    if ((farm.yield[m] ?? 0) > 0) {
-      nodes.push(
-        <span
-          key={`yield-${m}`}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-1.5 py-0.5 shadow-xs",
-            tooltipChipClass,
-            "leading-none",
-            matPillStyle[m],
-            matTextColor[m],
-          )}
-        >
-          <MaterialIcon material={m} size="xs" />
-          <span className="leading-none">
-            +{farm.yield[m]} {materialLabels[m]}
-          </span>
-        </span>,
-      );
-    }
-  }
-  return nodes;
 }
 
 function useTooltipContent(
@@ -110,12 +77,7 @@ function useTooltipContent(
 ): (ctx: PopupContext) => ReactNode {
   return useMemo(() => {
     const nodes: ReactNode[] = [];
-    const farm = item.kind === "farm" ? item.data : null;
     const currentTier = item.data.tiers[displayTierIndex];
-
-    if (farm) {
-      nodes.push(...buildFarmYieldNodes(farm));
-    }
 
     if (currentTier) {
       if (currentTier.benefitDescription) {

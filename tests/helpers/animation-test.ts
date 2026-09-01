@@ -4,23 +4,15 @@ const DISABLE_ANIMATIONS_KEY = "alchemy-disable-animations";
 
 export function installDisabledAnimationsForTests(): void {
   let previousValue: string | null = null;
-  const originalGetContext =
-    typeof HTMLCanvasElement !== "undefined" ? HTMLCanvasElement.prototype.getContext : undefined;
 
   beforeEach(() => {
     previousValue = localStorage.getItem(DISABLE_ANIMATIONS_KEY);
     localStorage.setItem(DISABLE_ANIMATIONS_KEY, "true");
-    if (typeof HTMLCanvasElement !== "undefined") {
-      HTMLCanvasElement.prototype.getContext = vi.fn(() => null);
-    }
   });
 
   afterEach(() => {
     if (previousValue === null) localStorage.removeItem(DISABLE_ANIMATIONS_KEY);
     else localStorage.setItem(DISABLE_ANIMATIONS_KEY, previousValue);
-    if (typeof HTMLCanvasElement !== "undefined" && originalGetContext) {
-      HTMLCanvasElement.prototype.getContext = originalGetContext;
-    }
   });
 }
 

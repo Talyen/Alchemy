@@ -4,6 +4,10 @@ import { makeTestCard } from "../fixtures/cards";
 
 let nextFactoryCardUid = 1;
 
+export function resetCardFactory() {
+  nextFactoryCardUid = 1;
+}
+
 export function makeCard(overrides: Record<string, unknown> = {}) {
   return {
     ...makeTestCard({

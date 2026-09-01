@@ -1,37 +1,35 @@
 import { hexLabyrinthMapFixture } from "./labyrinth-hex-map";
 import { saveEnvelopeFixture } from "./saves";
 
-const FIXTURE_CHARACTER_IDS = [
-  "knight",
-  "rogue",
-  "wizard",
-  "ranger",
-  "alchemist",
-  "warlock",
-  "druid",
-  "wildcard",
-] as const;
-const FIXTURE_GEAR_SLOTS = ["main-hand", "off-hand", "body", "left-ring", "right-ring", "amulet"] as const;
+import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting";
 
 function emptyGearInventories() {
-  return Object.fromEntries(FIXTURE_CHARACTER_IDS.map((id) => [id, [] as unknown[]])) as Record<string, unknown[]>;
+  return createEmptyGearInventories() as unknown as Record<string, unknown[]>;
 }
 
 function emptyGearLoadouts() {
-  return Object.fromEntries(
-    FIXTURE_CHARACTER_IDS.map((id) => [id, Object.fromEntries(FIXTURE_GEAR_SLOTS.map((slot) => [slot, null]))]),
-  ) as Record<string, Record<string, string | null>>;
+  return createEmptyGearLoadouts() as unknown as Record<string, Record<string, string | null>>;
+}
+
+function migrateGearLoadoutToV12(
+  loadout: Record<string, Record<string, string | null>>,
+): Record<string, Record<string, string | null>> {
+  const next: Record<string, Record<string, string | null>> = {};
+  for (const [charId, slots] of Object.entries(loadout)) {
+    next[charId] = {
+      "main-hand": slots["main-hand"] ?? null,
+      "off-hand": slots["off-hand"] ?? null,
+      body: slots.body ?? null,
+      "left-accessory": slots["left-ring"] ?? slots["left-accessory"] ?? null,
+      "right-accessory": (slots.amulet as string | null) ?? slots["right-accessory"] ?? null,
+    };
+  }
+  return next;
 }
 
 function emptyCraftingCurrencies() {
-  return {
-    "discordant-dice": 0,
-    "sprig-of-growth": 0,
-    voidstone: 0,
-    "ascension-seal": 0,
-    "severance-maw": 0,
-    "smiths-whetstone": 0,
-  };
+  return { ...EMPTY_CRAFTING_CURRENCIES };
 }
 
 function currentSaveEnvelope(overrides: Record<string, unknown> = {}) {
@@ -256,8 +254,8 @@ function wildwoodRun(overrides: Record<string, unknown> = {}) {
 }
 
 function currentSchemaWildwoodTrinketRewardSave() {
-  return {
-    ...currentSaveEnvelope({
+  return asV12(
+    currentSaveEnvelope({
       finishedRunCharacters: ["knight", "ranger"],
       activeRun: wildwoodRun({
         wildwoodDraft: nestedWildwoodDraft({
@@ -267,121 +265,104 @@ function currentSchemaWildwoodTrinketRewardSave() {
         }),
       }),
     }),
-    saveSchemaVersion: 12,
-  };
+  );
+}
+
+function withVersion(save: Record<string, unknown>, version: number) {
+  return { ...save, saveSchemaVersion: version };
+}
+
+function asV12(save: Record<string, unknown>) {
+  return withVersion(save, 12);
 }
 
 function currentSchemaV12Save() {
-  return {
-    ...currentSchemaSave(),
-    saveSchemaVersion: 12,
-  };
+  const base = currentSchemaSave() as Record<string, unknown>;
+  const gearLoadouts = base.gearLoadouts as Record<string, Record<string, string | null>>;
+  return withVersion({ ...base, gearLoadouts: migrateGearLoadoutToV12(gearLoadouts) }, 12);
 }
 
 function currentSchemaV13Save() {
-  return {
-    ...currentSchemaSave(),
-    saveSchemaVersion: 13,
-  };
+  const base = currentSchemaSave() as Record<string, unknown>;
+  const gearLoadouts = base.gearLoadouts as Record<string, Record<string, string | null>>;
+  return withVersion({ ...base, gearLoadouts: migrateGearLoadoutToV12(gearLoadouts) }, 13);
+}
+
+function wildwoodV12Envelope(activeRun: Record<string, unknown>) {
+  return asV12(currentSaveEnvelope({ finishedRunCharacters: ["knight"], activeRun }));
 }
 
 function currentSchemaWildwoodCardRewardSave() {
-  return {
-    ...currentSaveEnvelope({
-      finishedRunCharacters: ["knight"],
-      activeRun: wildwoodRun({
-        wildwoodDraft: nestedWildwoodDraft({
-          rewardType: "card",
-          rewardChoiceIds: ["slash", "block"],
-        }),
-      }),
+  return wildwoodV12Envelope(
+    wildwoodRun({
+      wildwoodDraft: nestedWildwoodDraft({ rewardType: "card", rewardChoiceIds: ["slash", "block"] }),
     }),
-    saveSchemaVersion: 12,
-  };
+  );
 }
 
 function currentSchemaWildwoodGearRewardSave() {
-  return {
-    ...currentSaveEnvelope({
-      finishedRunCharacters: ["knight"],
-      activeRun: wildwoodRun({
-        wildwoodDraft: nestedWildwoodDraft({
-          rewardType: "gear",
-          rewardChoiceIds: [],
-          rewardGearChoices: [{ instanceId: "gear-1", definitionId: "ruby-ring-basic", affixes: [] }],
-        }),
+  return wildwoodV12Envelope(
+    wildwoodRun({
+      wildwoodDraft: nestedWildwoodDraft({
+        rewardType: "gear",
+        rewardChoiceIds: [],
+        rewardGearChoices: [{ instanceId: "gear-1", definitionId: "ruby-ring-basic", affixes: [] }],
       }),
     }),
-    saveSchemaVersion: 12,
-  };
+  );
 }
 
 function currentSchemaWildwoodSelectedRewardSave() {
-  return {
-    ...currentSaveEnvelope({
-      finishedRunCharacters: ["knight"],
-      activeRun: wildwoodRun({
-        wildwoodDraft: nestedWildwoodDraft({
-          rewardType: "card",
-          rewardChoiceIds: ["slash", "block"],
-          selectedRewardId: "slash",
-        }),
+  return wildwoodV12Envelope(
+    wildwoodRun({
+      wildwoodDraft: nestedWildwoodDraft({
+        rewardType: "card",
+        rewardChoiceIds: ["slash", "block"],
+        selectedRewardId: "slash",
       }),
     }),
-    saveSchemaVersion: 12,
-  };
+  );
 }
 
 function currentSchemaWildwoodCompanionHandoffSave() {
-  return {
-    ...currentSaveEnvelope({
-      finishedRunCharacters: ["knight"],
-      activeRun: wildwoodRun({
-        interruptedFlow: {
-          kind: "companion-reward",
-          pending: {
-            rewardType: "card",
-            choiceIds: [],
-            companionChoiceIds: ["wolf-companion"],
-            selectedId: null,
-            gold: 0,
-            materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-            destinations: [],
-            selectedBossId: null,
-            lastVictoryEnemyType: "boss",
-            lastVictoryContentSystem: "wildwood",
-          },
-        },
-        wildwoodDraft: nestedWildwoodDraft({
+  return wildwoodV12Envelope(
+    wildwoodRun({
+      interruptedFlow: {
+        kind: "companion-reward",
+        pending: {
           rewardType: "card",
-          rewardChoiceIds: ["slash"],
-        }),
-      }),
+          choiceIds: [],
+          companionChoiceIds: ["wolf-companion"],
+          selectedId: null,
+          gold: 0,
+          materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+          destinations: [],
+          selectedBossId: null,
+          lastVictoryEnemyType: "boss",
+          lastVictoryContentSystem: "wildwood",
+        },
+      },
+      wildwoodDraft: nestedWildwoodDraft({ rewardType: "card", rewardChoiceIds: ["slash"] }),
     }),
-    saveSchemaVersion: 12,
-  };
+  );
 }
 
 function currentSchemaParkedWildwoodNestedRewardSave() {
-  return {
-    ...currentSaveEnvelope({
+  return asV12(
+    currentSaveEnvelope({
       finishedRunCharacters: ["knight"],
       parkedRuns: {
         wildwood: wildwoodRun({
-          wildwoodDraft: nestedWildwoodDraft({
-            rewardType: "card",
-            rewardChoiceIds: ["slash", "bash"],
-          }),
+          wildwoodDraft: nestedWildwoodDraft({ rewardType: "card", rewardChoiceIds: ["slash", "bash"] }),
         }),
       },
     }),
-    saveSchemaVersion: 12,
-  };
+  );
 }
 
 function currentSchemaParkedWildwoodDraftSave() {
-  return {
-    ...currentSaveEnvelope({
+  return asV12(
+    currentSaveEnvelope({
       finishedRunCharacters: ["knight"],
       parkedRuns: {
         wildwood: wildwoodRun({
@@ -396,28 +377,23 @@ function currentSchemaParkedWildwoodDraftSave() {
         }),
       },
     }),
-    saveSchemaVersion: 12,
-  };
+  );
 }
 
 function currentSchemaWildwoodLeftoverNestedRewardSave() {
-  return {
-    ...currentSaveEnvelope({
-      finishedRunCharacters: ["knight"],
-      activeRun: wildwoodRun({
-        currentScreen: "battle",
-        interruptedFlow: { kind: "none" },
-        wildwoodDraft: nestedWildwoodDraft({
-          phase: "battle",
-          currentBossId: "forge-golem",
-          currentCombatTraitIds: ["tempered"],
-          rewardType: "card",
-          rewardChoiceIds: ["slash", "block"],
-        }),
+  return wildwoodV12Envelope(
+    wildwoodRun({
+      currentScreen: "battle",
+      interruptedFlow: { kind: "none" },
+      wildwoodDraft: nestedWildwoodDraft({
+        phase: "battle",
+        currentBossId: "forge-golem",
+        currentCombatTraitIds: ["tempered"],
+        rewardType: "card",
+        rewardChoiceIds: ["slash", "block"],
       }),
     }),
-    saveSchemaVersion: 12,
-  };
+  );
 }
 
 export function currentSchemaMidCombatTrinketSave() {
@@ -575,8 +551,8 @@ function currentSchemaTombstonedPilesSave() {
 }
 
 function currentSchemaLabyrinthGridV13Save() {
-  return {
-    ...currentSaveEnvelope({
+  return withVersion(
+    currentSaveEnvelope({
       finishedRunCharacters: ["rogue"],
       activeRun: {
         characterId: "ranger",
@@ -612,8 +588,8 @@ function currentSchemaLabyrinthGridV13Save() {
         labyrinthPendingNode: { row: 1, col: 4 },
       },
     }),
-    saveSchemaVersion: 13,
-  };
+    13,
+  );
 }
 
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {

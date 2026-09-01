@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { readGameplayState, useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setRunGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import { setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
@@ -17,7 +17,7 @@ beforeEach(() => {
 describe("aggregate read ports", () => {
   it("reads every gameplay lifetime from the authoritative aggregate", () => {
     dispatchRunSessionCommand((draft) => {
-      setRunGold(draft, 23);
+      setGold(draft, 23);
       setHasActiveRun(draft, true);
       setHasActiveBattle(draft, true);
       setRunProfileMaterials(draft, { wood: 4, iron: 0, herbs: 0, food: 0, crystal: 0 });
@@ -32,7 +32,7 @@ describe("aggregate read ports", () => {
   });
 
   it("keeps feature-facing imperative reads data-only", () => {
-    expect(readActiveRun()).not.toHaveProperty("setRunGold");
+    expect(readActiveRun()).not.toHaveProperty("setGold");
     expect(readActiveRun()).not.toHaveProperty("nextRunRandom");
     expect(readRunProfile()).not.toHaveProperty("unlockTalent");
     expect(readRunSession()).not.toHaveProperty("setRewardState");

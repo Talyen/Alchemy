@@ -50,7 +50,8 @@ function normalizeActiveCombat(
     transition &&
     typeof transition === "object" &&
     !Array.isArray(transition) &&
-    (transition as Record<string, unknown>).kind === "enemy-turn"
+    ((transition as Record<string, unknown>).kind === "enemy-turn" ||
+      (transition as Record<string, unknown>).kind === "opening-draw")
   ) {
     const resultState = (transition as Record<string, unknown>).resultState;
     if (resultState && typeof resultState === "object") {
@@ -90,12 +91,6 @@ function createRepairRng(rngState: RunRngState, stream: RunRngStream): () => num
   };
 }
 
-function sanitizeDeckForRepair(cards: BattleCard[]): BattleCard[] {
-  return cards.map((card) =>
-    Array.isArray((card as unknown as { effects?: unknown }).effects) ? card : { ...card, effects: [] },
-  );
-}
-
 function repairEmptyCardChoices(
   rngState: RunRngState,
   stream: RunRngStream,
@@ -110,6 +105,12 @@ function repairEmptyCardChoices(
     toPersistedCard,
   );
   return repaired.length > 0 ? repaired : null;
+}
+
+function sanitizeDeckForRepair(cards: BattleCard[]): BattleCard[] {
+  return cards.map((card) =>
+    Array.isArray((card as unknown as { effects?: unknown }).effects) ? card : { ...card, effects: [] },
+  );
 }
 
 function toPersistedCard(card: BattleCard): Record<string, unknown> {

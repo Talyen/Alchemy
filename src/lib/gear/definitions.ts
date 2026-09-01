@@ -48,7 +48,8 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
       const id = gearDefinitionId(baseItemId, rarity);
       const art = gearArtByDefinitionId[id];
       if (!art) {
-        throw new Error(`Missing gear art for ${id}`);
+        console.warn(`Missing gear art for ${id} - using placeholder`);
+        continue;
       }
       variants[id] = {
         id,
@@ -73,7 +74,8 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
       gearArtByDefinitionId[gearDefinitionId(unique.baseItemId, "astral")] ??
       gearArtByDefinitionId[gearDefinitionId(unique.baseItemId, "basic")];
     if (!art) {
-      throw new Error(`Missing gear art for unique ${unique.id} (base ${unique.baseItemId})`);
+      console.warn(`Missing gear art for unique ${unique.id} (base ${unique.baseItemId}) - skipping`);
+      continue;
     }
     variants[unique.id] = {
       id: unique.id,

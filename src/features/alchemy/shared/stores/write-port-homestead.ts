@@ -10,7 +10,7 @@ import * as homestead from "./homestead-actions";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { addRunMaterialsEarned } from "./write-port-run";
 
-export function grantMaterials(
+function grantMaterials(
   draft: GameplayDraft,
   materials: ProfileMaterialInventory,
   options: { trackRunEarned?: boolean } = {},
@@ -31,26 +31,23 @@ export function addMaterials(draft: GameplayDraft, materials: ProfileMaterialInv
   grantMaterials(draft, materials);
 }
 
-export function constructBuilding(draft: GameplayDraft, id: BuildingId): boolean {
-  const ok = homestead.constructBuilding(draft.runProfile, id);
+function rebindOnSuccess(ok: boolean, draft: GameplayDraft): boolean {
   if (ok) rebindLiveRunMeta(draft);
   return ok;
+}
+
+export function constructBuilding(draft: GameplayDraft, id: BuildingId): boolean {
+  return rebindOnSuccess(homestead.constructBuilding(draft.runProfile, id), draft);
 }
 
 export function plantFarm(draft: GameplayDraft, id: FarmId): boolean {
-  const ok = homestead.plantFarm(draft.runProfile, id);
-  if (ok) rebindLiveRunMeta(draft);
-  return ok;
+  return rebindOnSuccess(homestead.plantFarm(draft.runProfile, id), draft);
 }
 
 export function completeResearch(draft: GameplayDraft, id: ResearchId): boolean {
-  const ok = homestead.completeResearch(draft.runProfile, id);
-  if (ok) rebindLiveRunMeta(draft);
-  return ok;
+  return rebindOnSuccess(homestead.completeResearch(draft.runProfile, id), draft);
 }
 
 export function bondCompanion(draft: GameplayDraft, id: CompanionId): boolean {
-  const ok = homestead.bondCompanion(draft.runProfile, id);
-  if (ok) rebindLiveRunMeta(draft);
-  return ok;
+  return rebindOnSuccess(homestead.bondCompanion(draft.runProfile, id), draft);
 }

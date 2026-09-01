@@ -50,7 +50,6 @@ export default {
     tsConfig: {
       fileName: "tsconfig.json",
     },
-    // Keep the report focused on phase / lib edges; ESLint still owns barrel + facade rules.
     includeOnly: {
       path: "^src/",
     },

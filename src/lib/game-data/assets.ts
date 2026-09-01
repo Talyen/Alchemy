@@ -96,3 +96,18 @@ export const talentArt: Partial<Record<KeywordId, string>> = {
   stun: assetRefs.talentStun,
   wish: assetRefs.talentWish,
 };
+
+export const craftingArt: Record<string, string> = {
+  "discordant-dice": assetRefs.craftingDiscordantDice,
+  "sprig-of-growth": assetRefs.craftingSprigOfGrowth,
+  voidstone: assetRefs.craftingVoidstone,
+  "ascension-seal": assetRefs.craftingAscensionSeal,
+  "severance-maw": assetRefs.craftingSeveranceMaw,
+  "smiths-whetstone": assetRefs.craftingSmithsWhetstone,
+};
+
+export const difficultyArt: Record<string, string> = {
+  "difficulty-1": assetRefs.difficulty1,
+  "difficulty-2": assetRefs.difficulty2,
+  "difficulty-3": assetRefs.difficulty3,
+};

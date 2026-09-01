@@ -1,7 +1,10 @@
 ---
-status: active
-updated: 2026-08-28
+status: cancelled
+updated: 2026-08-31
+reason: "60% shipped in d502f031/197ebb91; worthwhile tail (shop factory I2, controller I5, fixtures I7) merged into codebase-simplification-hardening.md Initiatives 8-10; cosmetic fade/hover/status/build (I1/I3/I4/I6/I8) deferred or intentionally won't fix — strictly technical, Wildwood 33% fix requires product decision"
 ---
+
+> **Archived 2026-08-31 — cancelled/deferred.** ~60% already shipped; remainder merged to `codebase-simplification-hardening.md` Initiatives 8-11. See that plan for active tail. Original content preserved below.
 
 # Elegant Simplification — Next Pass
 
@@ -232,3 +235,7 @@ Existing active plan `codebase-simplification-hardening.md` is preserved. This p
 ## Verification (per-initiative)
 
 Each initiative runs `npm run verify:changed -- --diff` + `npm run lint:ci` + its targeted `npm test -- <path>` / `npm run test:e2e` noted above. Final handoff runs `npm run check:push` if committing to main, then `npm run docs:check:final` to archive this plan.
+
+---
+
+**Handoff 2026-08-31:** Archived per recommendation — gear clone, rngInt, sync-generated-helpers, run-state singleton, knip gear entry, toTargetPath hardening already shipped. Shop factory + god-hook + fixture merge kept as active tail in `codebase-simplification-hardening.md`. Fade/hover/status/build deferred (low ROI, visual-regression risk). Wildwood 11%→33% left as doc-only (needs design decision).

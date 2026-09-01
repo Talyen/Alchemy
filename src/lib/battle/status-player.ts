@@ -13,8 +13,9 @@ export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playe
 function clearHarmfulStatuses(playerStatuses: BattleState["playerStatuses"], statusTypesToClear: number) {
   const nextPlayerStatuses = { ...playerStatuses };
   let removed = 0;
+  const limit = Number.isFinite(statusTypesToClear) ? statusTypesToClear : harmfulPlayerStatusIds.length;
   for (const statusId of harmfulPlayerStatusIds) {
-    if (removed >= statusTypesToClear) break;
+    if (removed >= limit) break;
     if (nextPlayerStatuses[statusId] <= 0) continue;
     nextPlayerStatuses[statusId] = 0;
     removed++;
@@ -75,7 +76,7 @@ function procArmorCleanseThreshold(state: BattleState, newArmor: number, combatT
   ) {
     return state;
   }
-  return removeHarmfulPlayerStatuses(state, harmfulPlayerStatusIds.length, combatTexts);
+  return removeHarmfulPlayerStatuses(state, Number.POSITIVE_INFINITY, combatTexts);
 }
 
 function applyArmorTalentChecks(state: BattleState, amount: number, combatTexts: CombatTextEvent[]) {

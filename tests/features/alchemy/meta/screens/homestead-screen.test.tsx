@@ -53,4 +53,22 @@ describe("HomesteadScreen", () => {
       expect(screen.getByAltText("Wheat Field")).toBeTruthy();
     });
   });
+
+  it("switches to research tab and shows research upgrades", async () => {
+    render(<HomesteadScreen {...defaultProps} />);
+    fireEvent.click(screen.getByRole("button", { name: "Research" }));
+    await waitFor(() => {
+      expect(screen.getByAltText("Leyline Energy")).toBeTruthy();
+    });
+  });
+
+  it("renders companions pagination control", async () => {
+    render(<HomesteadScreen {...defaultProps} />);
+    fireEvent.click(screen.getByRole("button", { name: "Companions" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Companions" })).toBeTruthy();
+    });
+    const nextButtons = screen.getAllByRole("button");
+    expect(nextButtons.length).toBeGreaterThan(0);
+  });
 });

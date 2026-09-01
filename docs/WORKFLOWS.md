@@ -327,12 +327,17 @@ New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
 
 ## Add a homestead upgrade
 
-| Step                                                                       | File(s)                                                                                        |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| 1. Add `BuildingId` / `FarmId` / `ResearchId`                              | `src/lib/homestead/types.ts`                                                                   |
-| 2. Define the item with `defineBuilding` / `defineFarm` / `defineResearch` | `src/lib/homestead/data.ts` (costs via `data-builders.ts` / `costs.ts`)                        |
-| 3. New battle or meta effect keys                                          | `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`; defaults in `defaults.ts` |
-| 4. Tests                                                                   | `tests/lib/homestead.test.ts`, `tests/lib/homestead/tiers.test.ts`                             |
+| Step                                                                       | File(s)                                                                                                                                |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Add `BuildingId` / `FarmId` / `ResearchId`                              | `src/lib/homestead/types.ts`                                                                                                           |
+| 2. Define the item with `defineBuilding` / `defineFarm` / `defineResearch` | `src/lib/homestead/data.ts` (costs via `data-builders.ts` / `costs.ts`; stacking helpers `stackingTiers` + `single/dualMaterialCosts`) |
+| 3. New battle or meta effect keys                                          | `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`; defaults in `defaults.ts`                                         |
+| 4. Companion bond tiers (if companion)                                     | `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`                  |
+| 5. Art & palette                                                           | Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + webp via `WORKFLOWS-ASSETS.md`          |
+| 6. Pagination / constants                                                  | `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)                                                               |
+| 7. Tests                                                                   | `tests/lib/homestead.test.ts`, `tests/lib/homestead/tiers.test.ts`, `tests/features/alchemy/meta/screens/homestead/*.test.tsx`         |
+
+Homestead screens (`src/features/alchemy/meta/screens/homestead/**`) are intentionally excluded from `vitest` coverage thresholds (see `vitest.config.ts`) and are covered by E2E `tests/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:e2e:homestead` for the focused Playwright flow and `npm run test -- tests/lib/homestead` for the lib contract.
 
 ## Add a new keyword
 

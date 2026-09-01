@@ -1,19 +1,11 @@
 import { produce } from "immer";
 import type { Draft } from "immer";
 import { subscribeGameplayCommits, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
+import { deepFreezeInDev } from "./store-utils";
 
 export type GameplayDraft = Draft<GameplayState>;
 
 let inCommand = false;
-
-function deepFreezeInDev<T>(value: T): T {
-  if (!import.meta.env.DEV || value === null || typeof value !== "object" || Object.isFrozen(value)) return value;
-  Object.freeze(value);
-  for (const child of Object.values(value as Record<string, unknown>)) {
-    if (child !== null && typeof child === "object") deepFreezeInDev(child);
-  }
-  return value;
-}
 
 export function dispatchRunSessionCommand<T>(
   execute: (draft: GameplayDraft) => T,

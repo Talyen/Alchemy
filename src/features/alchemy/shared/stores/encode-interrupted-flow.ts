@@ -76,9 +76,6 @@ export function encodeInterruptedFlow(
       return pending ? { kind: "companion-reward", pending } : encodeDestinationFlow(session);
     }
 
-    if (session.rewardState.destinations.length > 0 || currentScreen === "destination" || currentScreen === "rewards") {
-      return encodeDestinationFlow(session);
-    }
     return encodeDestinationFlow(session);
   }
 

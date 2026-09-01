@@ -3,6 +3,7 @@ export type GameMode = "campaign" | "labyrinth" | "wildwood";
 export type DestinationName =
   | "Normal Combat"
   | "Elite Combat"
+  | "Boss Combat"
   | "Card Shop"
   | "Alchemist's Shop"
   | "Trinket Shop"

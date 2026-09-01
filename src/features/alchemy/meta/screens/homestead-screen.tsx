@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
-import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import {
   HamburgerTrigger,
   PageLayout,
@@ -49,7 +49,7 @@ export function HomesteadScreen({
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
   const buildingsItems = useMemo(() => getItems("buildings", buildings), []);
-  const farmItems = useMemo(() => getItems("farm", visibleFarmPlots), []);
+  const farmItems = useMemo(() => getItems("farm", farmPlots), []);
   const researchItems = useMemo(() => getItems("research", researchUpgrades), []);
 
   function handleAction(item: GoalItem) {

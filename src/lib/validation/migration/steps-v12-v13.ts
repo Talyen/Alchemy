@@ -1,9 +1,6 @@
+import { isRecord, migrateParkedRuns } from "./types";
 import type { RawSaveData } from "./types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 const EMPTY_MATERIALS = emptyInventory();
 
@@ -88,12 +85,10 @@ function migrateRun(value: unknown): unknown {
 }
 
 export function migrateV12ToV13(save: RawSaveData): RawSaveData {
-  const parkedRuns = isRecord(save.parkedRuns)
-    ? Object.fromEntries(Object.entries(save.parkedRuns).map(([mode, run]) => [mode, migrateRun(run)]))
-    : save.parkedRuns;
+  const nextParkedRuns = migrateParkedRuns(save.parkedRuns, migrateRun);
   return {
     ...save,
     activeRun: migrateRun(save.activeRun),
-    parkedRuns,
+    parkedRuns: nextParkedRuns,
   };
 }

@@ -15,8 +15,8 @@ import {
   setCompanionRewardCards,
   setDestinationOfferState,
   setHasActiveBattle,
+  setGold,
   setRewardState,
-  setRunGold,
   setRunMaxHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { getCompanionCardChoices, shouldGrantCompanionReward } from "../navigation/reward-flow";
@@ -35,7 +35,7 @@ export function commitVictoryRewards(
     awardMaterialsDuringRun(draft, deps.battleState.pendingMaterials);
   }
 
-  setRunGold(draft, result.persistedGold);
+  setGold(draft, result.persistedGold);
   if (result.maxHealthDelta > 0) {
     setRunMaxHealth(draft, (prev) => prev + result.maxHealthDelta);
   }

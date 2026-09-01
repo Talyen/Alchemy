@@ -74,12 +74,12 @@ interface PersistedShops {
   equipmentShopState: PersistedEquipmentShopState | null;
 }
 
-const EMPTY_PERSISTED_SHOPS: PersistedShops = {
+const EMPTY_PERSISTED_SHOPS: PersistedShops = Object.freeze({
   shopState: null,
   alchemistState: null,
   trinketShopState: null,
   equipmentShopState: null,
-};
+});
 
 export function encodePersistedShops(
   session: RunSession["session"],
@@ -100,6 +100,30 @@ export function encodePersistedShops(
     default:
       return EMPTY_PERSISTED_SHOPS;
   }
+}
+
+function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields {
+  return {
+    characterId: run.characterId,
+    runDeck: run.runDeck,
+    runPlayerHealth: run.runPlayerHealth,
+    runMaxHealth: run.runMaxHealth,
+    runMetaMaxHealth: run.runMetaMaxHealth,
+    roomsEncountered: run.roomsEncountered,
+    currentAct: run.currentAct,
+    destinationIndexInAct: run.destinationIndexInAct,
+    completedDestinations: run.completedDestinations,
+    lastOfferedDestinations: run.lastOfferedDestinations,
+    destinationRoundsSinceOffered: run.destinationRoundsSinceOffered,
+    runBoons: run.runBoons,
+    encounteredRunEnemyIds: run.encounteredRunEnemyIds,
+    selectedDifficulty: run.selectedDifficulty,
+    contentSystemType: run.contentSystemType,
+    rng: run.rng,
+    runTalentXP: run.runTalentXP,
+    runMaterialsEarned: run.runMaterialsEarned,
+    runObtainedItems: run.runObtainedItems,
+  };
 }
 
 interface EncodeResumeFields {
@@ -140,15 +164,7 @@ function encodeScreenGatedFields(
 
 function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFields): ActiveRunData {
   const { run, session, battle } = source;
-
-  const {
-    initialized: _initialized,
-    gold: _gold,
-    talentXP: _talentXP,
-    unlockedTalents: _unlockedTalents,
-    ...runProgress
-  } = run as unknown as ActiveRunProgressFields & Record<string, unknown>;
-  const progress = { ...(runProgress as unknown as ActiveRunProgressFields) };
+  const progress = pickActiveRunProgress(run);
   const activeCombat =
     battle.hasActiveBattle && battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)
       ? {

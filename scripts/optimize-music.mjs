@@ -9,6 +9,7 @@ import {
   resolveSourceHash,
   withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
+import { ASSET_SCHEMA_VERSION } from "./lib/asset-constants.mjs";
 import { discoverAudioFiles, formatProcessError, runAudioScript } from "./lib/audio-optimizer.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
@@ -18,8 +19,7 @@ const sourceDir = path.join(rootDir, "Raw Assets", "Music");
 const outputDir = path.join(rootDir, "public", "Music");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
 
-/** Bump when copy pipeline settings, hash inputs, or manifest entry shape change. */
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 
 const MUSIC_SETTINGS = { mode: "copy" };
 

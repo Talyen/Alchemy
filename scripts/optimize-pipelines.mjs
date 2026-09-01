@@ -37,3 +37,18 @@ export async function runAllOptimizePipelines() {
   );
   return results;
 }
+
+export async function runAllOptimizePipelinesSettled() {
+  const results = await Promise.allSettled(
+    Object.entries(OPTIMIZE_PIPELINES).map(async ([key, { module, entry }]) => {
+      try {
+        const mod = await import(new URL(module, import.meta.url).href);
+        return await mod[entry]();
+      } catch (error) {
+        error.message = `[optimize:${key}] ${error.message}`;
+        throw error;
+      }
+    }),
+  );
+  return results;
+}

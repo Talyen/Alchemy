@@ -30,7 +30,7 @@ export default defineConfig(({ mode, command }) => {
 
   return {
     base: mode === "desktop" ? "./" : "/",
-    cacheDir: "node_modules/.vite",
+
     server: { open: mode !== "desktop", port: devPort, strictPort: true },
     plugins: [
       tailwind(),
@@ -73,6 +73,7 @@ export default defineConfig(({ mode, command }) => {
       reportCompressedSize: Boolean(process.env.ANALYZE),
       sourcemap: process.env.ALCHEMY_SKIP_SOURCEMAP === "1" ? false : mode === "desktop" ? "hidden" : false,
       rolldownOptions: {
+        // Rolldown-only codeSplitting — silently ignored on Rollup fallback; keep Vite >=8 + Rolldown.
         output: {
           codeSplitting: {
             groups: [

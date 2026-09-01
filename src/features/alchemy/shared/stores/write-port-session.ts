@@ -160,7 +160,6 @@ export {
   bondCompanion,
   completeResearch,
   constructBuilding,
-  grantMaterials,
   plantFarm,
   setMaterials,
 } from "./write-port-homestead";

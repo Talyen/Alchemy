@@ -10,3 +10,7 @@ export function scalePerMana(maxMana: number, value: number, unit: "percent" | "
   const divisor = unit === "percent" ? 100 : 2;
   return Math.round((maxMana * value) / divisor);
 }
+
+export function halveRounded(value: number): number {
+  return Math.round(value / 2);
+}

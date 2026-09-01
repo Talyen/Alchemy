@@ -20,10 +20,7 @@ export class MysteryPage {
 
   async handleCardOutcome() {
     const cardChoiceText = this.page.getByText("Choose a Card");
-    const hasPicker = await expect(cardChoiceText)
-      .toBeVisible({ timeout: 5000 })
-      .then(() => true)
-      .catch(() => false);
+    const hasPicker = await cardChoiceText.isVisible().catch(() => false);
 
     if (!hasPicker) return;
 

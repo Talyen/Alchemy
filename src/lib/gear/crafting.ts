@@ -7,12 +7,7 @@ import {
   SALVAGE_BASIC_VOIDSTONE_CHANCE,
   SALVAGE_DICE_HIGH_CHANCE,
 } from "@/lib/game-constants";
-import craftingAscensionSeal from "@/assets/optimized/crafting-ascension-seal.webp";
-import craftingDiscordantDice from "@/assets/optimized/crafting-discordant-dice.webp";
-import craftingSeveranceMaw from "@/assets/optimized/crafting-severance-maw.webp";
-import craftingSmithsWhetstone from "@/assets/optimized/crafting-smiths-whetstone.webp";
-import craftingSprigOfGrowth from "@/assets/optimized/crafting-sprig-of-growth.webp";
-import craftingVoidstone from "@/assets/optimized/crafting-voidstone.webp";
+import { craftingArt } from "@/lib/game-data";
 import { buildEligibleAffixPool, rollAffixes } from "./generation";
 import { rollAffixValue } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
@@ -44,42 +39,42 @@ export const CRAFTING_CURRENCY_LIST: CraftingCurrencyDefinition[] = [
     displayName: "Discordant Dice",
     tooltipEffect: "Reroll All Affixes",
     description: "Rerolls all affixes using normal affinity rules.",
-    art: craftingDiscordantDice,
+    art: craftingArt["discordant-dice"]!,
   },
   {
     id: "sprig-of-growth",
     displayName: "Sprig of Growth",
     tooltipEffect: "Add a Random Affix",
     description: "Adds a random affix using normal affinity rules.",
-    art: craftingSprigOfGrowth,
+    art: craftingArt["sprig-of-growth"]!,
   },
   {
     id: "voidstone",
     displayName: "Voidstone",
     tooltipEffect: "Remove All Affixes",
     description: "Removes all affixes from an item.",
-    art: craftingVoidstone,
+    art: craftingArt.voidstone!,
   },
   {
     id: "ascension-seal",
     displayName: "Ascension Seal",
     tooltipEffect: "Upgrades an item to Astral quality",
     description: "Upgrades a Basic item and its existing affixes to Astral quality.",
-    art: craftingAscensionSeal,
+    art: craftingArt["ascension-seal"]!,
   },
   {
     id: "severance-maw",
     displayName: "Severance Maw",
     tooltipEffect: "Removes a Random Affix",
     description: "Removes a random affix from an item.",
-    art: craftingSeveranceMaw,
+    art: craftingArt["severance-maw"]!,
   },
   {
     id: "smiths-whetstone",
     displayName: "Smith's Whetstone",
     tooltipEffect: "Upgrades a Random Affix",
     description: "Increases a random affix value by 1.",
-    art: craftingSmithsWhetstone,
+    art: craftingArt["smiths-whetstone"]!,
   },
 ];
 

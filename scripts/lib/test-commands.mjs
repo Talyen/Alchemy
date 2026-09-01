@@ -37,6 +37,8 @@ export const E2E_ESCALATIONS = Object.freeze({
   audio: "e2e-audio",
   gear: "e2e-gear",
   mystery: "e2e-mystery",
+  homestead: "e2e-homestead",
+  "homestead-screen": "e2e-homestead",
 });
 
 export const E2E_NAMES = new Set(Object.keys(E2E_ESCALATIONS).filter((k) => k !== "shop-screen"));
@@ -281,7 +283,15 @@ export const COMMANDS = Object.freeze({
     label: "homestead unit tests",
     reason: "homestead progression data is one contract",
     command: NPM,
-    args: ["test", "--", "tests/lib/homestead.test.ts", "tests/lib/homestead"],
+    args: [
+      "test",
+      "--",
+      "tests/lib/homestead.test.ts",
+      "tests/lib/homestead",
+      "tests/features/alchemy/meta/screens/homestead",
+      "tests/features/alchemy/meta/screens/homestead-screen.test.tsx",
+      "tests/features/alchemy/meta/screens/homestead-tile-tooltip.test.tsx",
+    ],
   },
   "e2e-gear": {
     label: "gear Playwright flows",
@@ -294,6 +304,12 @@ export const COMMANDS = Object.freeze({
     reason: "mystery changes require the destination journey",
     command: "npx",
     args: ["playwright", "test", "tests/destination-progression.spec.ts", "-g", "Mystery", "--project", "chromium"],
+  },
+  "e2e-homestead": {
+    label: "homestead Playwright flow",
+    reason: "homestead screen and progression changes require the homestead journey",
+    command: "npx",
+    args: ["playwright", "test", "tests/homestead-flow.spec.ts", "--project", "chromium"],
   },
   typecheck: {
     label: "TypeScript typecheck",

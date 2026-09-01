@@ -1,14 +1,13 @@
-import { optimizeAssets } from "./optimize-assets.mjs";
-import { optimizeMusic } from "./optimize-music.mjs";
-import { optimizeSounds } from "./optimize-sounds.mjs";
+import { runAllOptimizePipelinesSettled } from "./optimize-pipelines.mjs";
 import { syncGenerated } from "./sync-generated.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 /**
  * Single in-process orchestrator for predev/prebuild asset prep.
  * The three transform pipelines (art, sounds, music) are independent — they write
- * to disjoint output directories — so they run concurrently. Art must finish before
- * syncGenerated because it regenerates barrels from its manifest.
+ * to disjoint output directories — so they run concurrently via the shared
+ * OPTIMIZE_PIPELINES table. Art must finish before syncGenerated because it
+ * regenerates barrels from its manifest.
  */
 export async function prepareAssets() {
   if (process.env.ALCHEMY_SKIP_ASSETS === "1") {
@@ -16,7 +15,7 @@ export async function prepareAssets() {
     return;
   }
 
-  const results = await Promise.allSettled([optimizeAssets(), optimizeSounds(), optimizeMusic()]);
+  const results = await runAllOptimizePipelinesSettled();
   const [artResult, soundsResult, musicResult] = results;
   const failures = [];
   const pipelineFailed = (result) => result.status === "rejected" || !result.value?.ok;

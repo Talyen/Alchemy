@@ -53,7 +53,6 @@ export interface HomesteadBuilding {
   description: string;
   tiers: HomesteadUpgradeTier[];
   buttonLabel: string;
-  yield?: MaterialInventory;
 }
 
 export interface HomesteadFarm {
@@ -61,10 +60,7 @@ export interface HomesteadFarm {
   title: string;
   description: string;
   tiers: HomesteadUpgradeTier[];
-  yield: MaterialInventory;
   buttonLabel: string;
-
-  hidden?: boolean;
 }
 
 export interface HomesteadResearch {

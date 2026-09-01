@@ -5,6 +5,7 @@ import {
   HAND_CARD_HOVER_Z_INDEX,
   HAND_FAN_ROTATION_DEGREES,
   HAND_FAN_VERTICAL_STEP_PX,
+  HAND_HOVER_HANDOFF_MS,
   HAND_HOVER_LIFT_PX,
   HAND_HOVER_ROTATION_DEGREES,
   HAND_HOVER_TOOLTIP_PADDING_PX,
@@ -123,6 +124,7 @@ const HandCardItem = memo(function HandCardItem({
             !isVisuallyPlayable && "grayscale",
           )}
           tooltipPadding={HAND_HOVER_TOOLTIP_PADDING_PX}
+          hoverLeaveDelayMs={HAND_HOVER_HANDOFF_MS}
           dragging={isHidden}
           shineColor={getCardKeywordShineColors(card)}
           wrapperClassName="flex justify-center"

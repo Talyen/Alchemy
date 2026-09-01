@@ -12,8 +12,10 @@ import {
   handleCollectionTabChange,
   plantFarm,
   setCollectionPage,
+  setHasActiveBattle,
 } from "./run-session-write-port";
 import { createRunSessionCommand } from "./run-session-command";
+import { useMemo } from "react";
 
 const commandConstructBuilding = createRunSessionCommand(constructBuilding);
 const commandPlantFarm = createRunSessionCommand(plantFarm);
@@ -83,6 +85,10 @@ const homesteadActions: HomesteadActions = {
 
 export function useHomesteadActions(): HomesteadActions {
   return homesteadActions;
+}
+
+export function useSetHasActiveBattle(): (active: boolean) => void {
+  return useMemo(() => createRunSessionCommand(setHasActiveBattle), []);
 }
 
 export type AppSettings = SettingsSaveFields;

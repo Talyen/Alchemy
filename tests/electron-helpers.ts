@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { type ElectronApplication, type Page, _electron as electron } from "playwright";
+import { type ElectronApplication, type Page, _electron as electron } from "@playwright/test";
 import { resolveElectronExecutablePathWithMarker } from "../scripts/electron-path.mjs";
 import { ELECTRON_PREVIEW_PORT, previewPortFromEnv } from "./playwright-shared";
 

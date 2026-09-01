@@ -12,10 +12,10 @@ import { gearBaseItemList } from "@/lib/gear/base-items";
 import { pickRandom } from "@/lib/utils";
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
-  addRunGold,
+  addGold,
   awardMaterialsDuringRun,
   awardMysteryXP,
-  deductRunGold,
+  deductGold,
   recordRunObtainedItem,
   setMysteryCardChoices,
   setMysteryGrantedGearInstances,
@@ -83,13 +83,13 @@ function damageFromMystery(amount: number, context: MysteryEffectContext) {
 }
 
 function gainMysteryGold(amount: number, context: MysteryEffectContext) {
-  addRunGold(context.draft, amount);
+  addGold(context.draft, amount);
   if (amount > 0) return { followUp: null, goldSound: "gain" as const };
   return { followUp: null };
 }
 
 function loseMysteryGold(amount: number, context: MysteryEffectContext) {
-  deductRunGold(context.draft, amount);
+  deductGold(context.draft, amount);
   if (amount > 0) return { followUp: null, goldSound: "spend" as const };
   return { followUp: null };
 }

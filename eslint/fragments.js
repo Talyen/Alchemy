@@ -117,6 +117,20 @@ export const DOMAIN_STORE_PATTERNS = [
 ];
 
 /** @type {ImportPattern[]} */
+export const WRITE_PORT_PATTERNS = [
+  {
+    group: [
+      "**/write-port-run",
+      "@/features/alchemy/shared/stores/write-port-run",
+      "**/write-port-session",
+      "@/features/alchemy/shared/stores/write-port-session",
+    ],
+    message:
+      "Import from @/features/alchemy/shared/stores/run-session-write-port instead of write-port internals — outside shared/stores/* the barrel is the canonical seam.",
+  },
+];
+
+/** @type {ImportPattern[]} */
 export const ORCHESTRATION_NO_SCREENS = [
   {
     group: [
@@ -304,6 +318,15 @@ export const CLASSNAME_NO_TEMPLATE = [
   {
     selector: 'JSXAttribute[name.name="className"][value.type="JSXExpressionContainer"] TemplateLiteral',
     message: "Use cn() from @/lib/utils for class names instead of template literals.",
+  },
+];
+
+/** Direct @/assets/optimized imports bypass the generated barrel — use @/lib/game-data barrels instead. */
+export const NO_DIRECT_ASSET_IMPORT = [
+  {
+    group: ["@/assets/optimized", "@/assets/optimized/*", "**/assets/optimized/*"],
+    message:
+      "Import art via @/lib/game-data (e.g. difficultyArt/craftingArt/characterArt) instead of @/assets/optimized directly. The barrel is the canonical import surface.",
   },
 ];
 

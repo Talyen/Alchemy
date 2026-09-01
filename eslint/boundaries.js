@@ -12,12 +12,14 @@ import {
   LIB_NO_FEATURES,
   LIB_NO_FRAMEWORK_PATHS,
   META_NO_RUN_LOOP,
+  NO_DIRECT_ASSET_IMPORT,
   ORCHESTRATION_NO_SCREENS,
   restrictedSyntax,
   RUN_LOOP_NO_RUN_SETUP,
   RUN_SETUP_NO_RUN_LOOP,
   SCREENS_NO_ORCHESTRATION,
   UI_NO_SESSION_STORES,
+  WRITE_PORT_PATTERNS,
 } from "./fragments.js";
 
 function boundaryBlock(files, ...extra) {
@@ -51,7 +53,11 @@ export function cruiserPathFromGroups(groups) {
 export { LIB_NO_FEATURES, META_NO_RUN_LOOP, RUN_LOOP_NO_RUN_SETUP, RUN_SETUP_NO_RUN_LOOP };
 
 const BOUNDARY_TABLE = [
-  { files: ["src/**/*.{ts,tsx}"], ignores: ["src/features/alchemy/shared/stores/**"], extra: [] },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/features/alchemy/shared/stores/**", "src/lib/game-data/assets.generated.ts"],
+    extra: [WRITE_PORT_PATTERNS, NO_DIRECT_ASSET_IMPORT],
+  },
   { files: ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"], onlyBarrel: true },
   {
     files: ["src/lib/**/*.{ts,tsx}"],

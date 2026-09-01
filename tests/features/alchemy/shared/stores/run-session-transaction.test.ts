@@ -14,7 +14,7 @@ import {
   createDraftRunRandomSource,
   setBattleState,
   setHasActiveBattle,
-  setRunGold,
+  setGold,
   withDraftWorldBattleRng,
   withRestingWorldBattleRng,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -65,7 +65,7 @@ describe("run-session transaction coordinator", () => {
 
     const result = dispatchRunSessionCommand(
       (draft) => {
-        setRunGold(draft, 17);
+        setGold(draft, 17);
         return 17;
       },
       { afterCommit: effect },
@@ -87,7 +87,7 @@ describe("run-session transaction coordinator", () => {
     });
 
     dispatchRunSessionCommand((draft) => {
-      setRunGold(draft, 125);
+      setGold(draft, 125);
       setHasActiveRun(draft, true);
     });
 
@@ -214,7 +214,7 @@ describe("run-session transaction coordinator", () => {
     const before = useGameplayStateStore.getState();
 
     dispatchRunSessionCommand((draft) => {
-      setRunGold(draft, 125);
+      setGold(draft, 125);
       setHasActiveRun(draft, true);
 
       expect(draft.runProfile.gold).toBe(125);
@@ -237,7 +237,7 @@ describe("run-session transaction coordinator", () => {
 
     dispatchRunSessionCommand(
       (draft) => {
-        setRunGold(draft, 42);
+        setGold(draft, 42);
         return 42;
       },
       { afterCommit: effect },
@@ -252,7 +252,7 @@ describe("run-session transaction coordinator", () => {
     expect(() =>
       dispatchRunSessionCommand(
         (draft) => {
-          setRunGold(draft, 42);
+          setGold(draft, 42);
           throw new Error("transaction failed");
         },
         { afterCommit: effect },
@@ -267,9 +267,9 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
     dispatchRunSessionCommand((draft) => {
-      setRunGold(draft, 10);
+      setGold(draft, 10);
       setHasActiveBattle(draft, true);
-      setRunGold(draft, 20);
+      setGold(draft, 20);
     });
 
     unsubscribe();
@@ -283,7 +283,7 @@ describe("run-session transaction coordinator", () => {
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-    dispatchRunSessionCommand((draft) => setRunGold(draft, 7));
+    dispatchRunSessionCommand((draft) => setGold(draft, 7));
 
     unsubscribe();
 
@@ -296,7 +296,7 @@ describe("run-session transaction coordinator", () => {
     dispatchRunSessionCommand((draft) => {
       createDraftRunRandomSource(draft, "rewards")();
       expect(draft.run.activeRun.rng.counters.rewards).toBe(1);
-      setRunGold(draft, 7);
+      setGold(draft, 7);
     });
 
     unsubscribe();
@@ -312,7 +312,7 @@ describe("run-session transaction coordinator", () => {
     expect(() =>
       dispatchRunSessionCommand((draft) => {
         createDraftRunRandomSource(draft, "rewards")();
-        setRunGold(draft, 99);
+        setGold(draft, 99);
         throw new Error("command failed");
       }),
     ).toThrow("command failed");
@@ -342,7 +342,7 @@ describe("run-session transaction coordinator", () => {
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
     dispatchRunSessionCommand((draft) => {
-      setRunGold(draft, 125);
+      setGold(draft, 125);
       setHasActiveRun(draft, true);
       setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 });
       setDiscoveredCardIds(draft, ["slash"]);
@@ -393,7 +393,7 @@ describe("run-session transaction coordinator", () => {
 
     expect(() =>
       dispatchRunSessionCommand((draft) => {
-        setRunGold(draft, 999);
+        setGold(draft, 999);
         setHasActiveRun(draft, true);
         setRunProfileMaterials(draft, { wood: 9, iron: 0, herbs: 0, food: 0, crystal: 0 });
         setDiscoveredCardIds(draft, ["burn"]);
@@ -415,7 +415,7 @@ describe("run-session transaction coordinator", () => {
   });
 
   it("hydrates the complete active run before publishing its commit", () => {
-    dispatchRunSessionCommand((draft) => setRunGold(draft, 125));
+    dispatchRunSessionCommand((draft) => setGold(draft, 125));
     const savedRun = snapshotRun("shop");
     resetRunDomainStore();
 

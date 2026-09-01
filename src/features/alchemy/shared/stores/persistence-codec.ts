@@ -1,3 +1,5 @@
+import { subscribeGameplayCommits } from "./gameplay-state-store";
+
 export interface PersistenceCodec<TSaveFields, THydrateArgs extends unknown[] = []> {
   createDefault: () => TSaveFields;
   encode: () => TSaveFields;
@@ -11,3 +13,7 @@ export type GameplayPersistenceCodec<TSaveFields> = PersistenceCodec<
 >;
 
 export type StandalonePersistenceCodec<TSaveFields> = PersistenceCodec<TSaveFields, []>;
+
+export function subscribeGameplayPersistence(listener: () => void): () => void {
+  return subscribeGameplayCommits(() => listener());
+}

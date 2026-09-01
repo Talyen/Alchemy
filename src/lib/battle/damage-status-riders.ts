@@ -13,11 +13,17 @@ import { applyCrowdControlTriggerBonuses } from "./talent-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
 import { getBattleRng, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
-import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, HALF_DIVISOR } from "../game-constants";
+import {
+  BLEED_STATUS_MULTIPLIER,
+  BATTLE_CONFIG,
+  FREEZE_THRESHOLD_FRACTION,
+  MIN_FREEZE_THRESHOLD_FRACTION,
+} from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { payKillPayouts } from "./kill-payouts";
 import { detonateEnemyStatuses } from "./dot-resolve";
+import { halveRounded } from "./amount-helpers";
 
 const BURN_BLEED_MIRROR_CHANCE = 20;
 
@@ -32,7 +38,7 @@ function applyGearBurnBleedMirrorLeech(
   if (rollPercent(BURN_BLEED_MIRROR_CHANCE, getBattleRng(nextState))) {
     nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
   }
-  const healAmount = Math.max(1, Math.round(actualDamage / HALF_DIVISOR));
+  const healAmount = Math.max(1, halveRounded(actualDamage));
   return applyHealingWithCombatText(nextState, healAmount, combatTexts, { skipFightPacing: true });
 }
 
@@ -123,7 +129,7 @@ function applyBleedStatusRider(
   const bleedAmount = actualDamage * BLEED_STATUS_MULTIPLIER;
   let nextState = stackBleed(state, actualDamage);
   if (actualDamage > 0 && rollPercent(nextState.talentEffects.bleedHalveArmorChance, getBattleRng(nextState))) {
-    const halved = Math.round(nextState.enemyMitigation.armor / 2);
+    const halved = halveRounded(nextState.enemyMitigation.armor);
     const removed = nextState.enemyMitigation.armor - halved;
     if (removed > 0) nextState = reduceEnemyArmor(nextState, removed);
   }
@@ -166,7 +172,10 @@ export function tryTriggerEnemyFreeze(
   combatTexts: CombatTextEvent[],
   preHitHealth = preHitState.enemyHealth,
 ): BattleState {
-  const freezeThreshold = FREEZE_THRESHOLD_FRACTION - preHitState.talentEffects.freezeThresholdReduction;
+  const freezeThreshold = Math.max(
+    MIN_FREEZE_THRESHOLD_FRACTION,
+    FREEZE_THRESHOLD_FRACTION - preHitState.talentEffects.freezeThresholdReduction,
+  );
   const triggered = tryTriggerEnemyCc({
     preHitHealth,
     nextState,
@@ -194,7 +203,7 @@ export function tryTriggerEnemyFreeze(
     combatTexts,
   );
   if (result.gearEffects.freezeGrantsBlockAndMana > 0) {
-    const manaGain = Math.min(4, Math.round(result.playerStatuses.block / 2));
+    const manaGain = Math.min(4, halveRounded(result.playerStatuses.block));
     if (manaGain > 0) {
       result = { ...result, mana: Math.min(result.maxMana, result.mana + manaGain) };
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: manaGain });

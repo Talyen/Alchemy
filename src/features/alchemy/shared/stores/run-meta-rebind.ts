@@ -25,17 +25,15 @@ function applyDerivedMaxHealth(draft: GameplayDraft): void {
   draft.run.activeRun.runPlayerHealth = Math.min(draft.run.activeRun.runMaxHealth, draft.run.activeRun.runPlayerHealth);
 }
 
-export function rebindLiveRunMeta(
-  draft: GameplayDraft,
-  options?: { gearChanged?: boolean; talentChanged?: boolean },
-): void {
+export function rebindMetaHealth(draft: GameplayDraft): void {
   if (!draft.session.hasActiveRun) return;
+  applyDerivedMaxHealth(draft);
+}
 
+function rebindBattleState(draft: GameplayDraft, options?: { gearChanged?: boolean; talentChanged?: boolean }): void {
+  if (!draft.battle.hasActiveBattle) return;
   const gearChanged = options?.gearChanged ?? true;
   const talentChanged = options?.talentChanged ?? true;
-  applyDerivedMaxHealth(draft);
-  if (!draft.battle.hasActiveBattle) return;
-
   const battle = draft.battle.battleState;
   const combatMeta = deriveCombatMeta(draft);
   if (gearChanged) {
@@ -48,4 +46,13 @@ export function rebindLiveRunMeta(
   battle.playerMaxHealth = draft.run.activeRun.runMaxHealth;
   battle.playerHealth = Math.min(battle.playerMaxHealth, battle.playerHealth);
   syncBattleGoldFromPurse(draft);
+}
+
+export function rebindLiveRunMeta(
+  draft: GameplayDraft,
+  options?: { gearChanged?: boolean; talentChanged?: boolean },
+): void {
+  if (!draft.session.hasActiveRun) return;
+  rebindMetaHealth(draft);
+  rebindBattleState(draft, options);
 }

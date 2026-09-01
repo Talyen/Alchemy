@@ -65,22 +65,11 @@ export function subscribeAlchemyPersistence(listener: () => void): () => void {
 
 export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): SaveData {
   const persistenceFields = encodePersistenceFields();
-
-  const {
-    saveSchemaVersion: _saveSchemaVersion,
-    gameBuildVersion: _gameBuildVersion,
-    contentVersion: _contentVersion,
-    ...safeFields
-  } = persistenceFields as AlchemyPersistenceFields & {
-    saveSchemaVersion?: unknown;
-    gameBuildVersion?: unknown;
-    contentVersion?: unknown;
-  };
   return {
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,
-    ...safeFields,
+    ...persistenceFields,
     activeRun,
     parkedRuns: readParkedRuns(),
     runRecency: readRunRecency(),

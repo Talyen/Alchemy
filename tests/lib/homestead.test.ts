@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { MATERIAL_IDS, materialLabels, materialIcons } from "@/lib/homestead/types";
 import { emptyInventory, addInventory, canAfford, subtractInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
-import { buildings, farmPlots, researchUpgrades, visibleFarmPlots } from "@/lib/homestead/data";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
 import {
   applyEndOfRunHomesteadBonuses,
@@ -150,19 +150,6 @@ describe.each([
         for (const mat of MATERIAL_IDS) {
           expect(tier.cost[mat]).toBeGreaterThanOrEqual(0);
         }
-      }
-    }
-  });
-});
-
-describe("farmPlots yields", () => {
-  it("use only valid materials and are non-negative", () => {
-    for (const f of farmPlots) {
-      for (const mat of Object.keys(f.yield)) {
-        expect(MATERIAL_IDS).toContain(mat);
-      }
-      for (const mat of MATERIAL_IDS) {
-        expect(f.yield[mat]).toBeGreaterThanOrEqual(0);
       }
     }
   });
@@ -423,9 +410,8 @@ describe("applyEndOfRunHomesteadBonuses", () => {
 });
 
 describe("homestead content integrity", () => {
-  it("all farm plots are visible", () => {
-    expect(farmPlots.every((farm) => !farm.hidden)).toBe(true);
-    expect(visibleFarmPlots).toHaveLength(6);
+  it("contains 6 farm plots starting with wheat-field", () => {
+    expect(farmPlots).toHaveLength(6);
     expect(farmPlots[0]?.id).toBe("wheat-field");
   });
 

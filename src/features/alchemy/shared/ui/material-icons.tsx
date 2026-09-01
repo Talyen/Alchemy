@@ -238,3 +238,28 @@ export function GoldPill({
     />
   );
 }
+
+export function MaterialInlineChip({
+  material,
+  label,
+  className,
+}: {
+  material: MaterialId;
+  label: string;
+  className?: string | undefined;
+}) {
+  return (
+    <span
+      className={cn(
+        "mx-1 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 align-middle shadow-xs",
+        "text-xs leading-none font-semibold",
+        matPillStyle[material],
+        matTextColor[material],
+        className,
+      )}
+    >
+      <MaterialIcon material={material} size="xs" />
+      <span className="leading-none">{label}</span>
+    </span>
+  );
+}

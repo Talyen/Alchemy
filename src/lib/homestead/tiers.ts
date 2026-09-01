@@ -10,3 +10,7 @@ export function createEmptyTierRecord<T extends string>(items: ReadonlyArray<Tie
   }
   return record;
 }
+
+export function createTierLookup<T extends string>(items: ReadonlyArray<TieredItem<T>>): Map<T, TieredItem<T>> {
+  return new Map(items.map((item) => [item.id, item]));
+}

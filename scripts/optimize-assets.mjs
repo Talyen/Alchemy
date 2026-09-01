@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import sharp from "sharp";
 
+import { QUALITY, WIDTH } from "./assets/asset-defaults.mjs";
 import { staticAssets, validateAssetRegistry } from "./assets/asset-manifest.mjs";
 import {
   isOutputFresh,
@@ -12,6 +13,7 @@ import {
   resolveSourceHash,
   withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
+import { ART_TRANSFORM_CONCURRENCY, ASSET_SCHEMA_VERSION, SHARP_DEFAULTS } from "./lib/asset-constants.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
@@ -21,12 +23,11 @@ const outputDir = path.join(rootDir, "src", "assets", "optimized");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
 const MANIFEST_BASENAME = ".asset-hashes.json";
 
-/** Bump when sharp pipeline settings, hash inputs, or manifest entry shape change. */
-const SCHEMA_VERSION = 3;
-const TRANSFORM_CONCURRENCY = 6;
+const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
+const TRANSFORM_CONCURRENCY = ART_TRANSFORM_CONCURRENCY;
 
-const gearAssetWidth = 420;
-const gearAssetQuality = 82;
+const gearAssetWidth = WIDTH.gear;
+const gearAssetQuality = QUALITY.gear;
 
 const GEAR_SLOT_IDS = ["body", "weapon", "accessory", "trinket"];
 
@@ -57,6 +58,7 @@ async function discoverGearAssets() {
   const discovered = [];
   for (const entry of entries) {
     if (!entry.isFile()) continue;
+    if (entry.name.startsWith(".")) continue;
     const match = entry.name.match(/^(.+?)\s-\s(Basic|Astral)\.(jpe?g|png)$/i);
     if (!match) {
       if (!entry.name.toLowerCase().includes("placeholder")) {
@@ -88,16 +90,17 @@ async function discoverGearSlotBackgrounds() {
   const foundSlotIds = new Set();
   for (const entry of entries) {
     if (!entry.isFile()) continue;
+    if (entry.name.startsWith(".")) continue;
     const match = entry.name.match(/^(.+?)\sSlot\.(jpe?g|png)$/i);
     if (!match) {
-      console.warn(`[gear-slot] Skipping malformed slot background file: ${entry.name}`);
-      continue;
+      throw new Error(
+        `[gear-slot] Malformed slot background file: ${entry.name} (expected "{Slot} Slot.{jpeg|jpg|png}")`,
+      );
     }
     const displayName = match[1].trim().toLowerCase();
     const slotId = GEAR_SLOT_BACKGROUND_NAME_TO_ID[displayName];
     if (!slotId) {
-      console.warn(`[gear-slot] Unknown slot background name: ${match[1]}`);
-      continue;
+      throw new Error(`[gear-slot] Unknown slot background name: ${match[1]} (allowed: ${GEAR_SLOT_IDS.join(", ")})`);
     }
     foundSlotIds.add(slotId);
     discovered.push({
@@ -110,7 +113,7 @@ async function discoverGearSlotBackgrounds() {
 
   for (const slotId of GEAR_SLOT_IDS) {
     if (!foundSlotIds.has(slotId)) {
-      console.warn(`[gear-slot] Missing background art for slot: ${slotId}`);
+      throw new Error(`[gear-slot] Missing background art for slot: ${slotId}`);
     }
   }
 
@@ -121,11 +124,7 @@ function artTransformSettings({ width, quality }) {
   return {
     width,
     quality,
-    alphaQuality: 90,
-    effort: 6,
-    fit: "inside",
-    withoutEnlargement: true,
-    format: "webp",
+    ...SHARP_DEFAULTS,
   };
 }
 
@@ -149,8 +148,8 @@ async function optimizeAsset(asset, storedEntry) {
   }
 
   await sharp(sourcePath)
-    .resize({ width: asset.width, fit: "inside", withoutEnlargement: true })
-    .webp({ quality: asset.quality, alphaQuality: 90, effort: 6 })
+    .resize({ width: asset.width, fit: SHARP_DEFAULTS.fit, withoutEnlargement: SHARP_DEFAULTS.withoutEnlargement })
+    .webp({ quality: asset.quality, alphaQuality: SHARP_DEFAULTS.alphaQuality, effort: SHARP_DEFAULTS.effort })
     .toFile(outputPath);
 
   return { message: `${asset.target} optimized`, entry: await withOutputHash(sourceEntry, outputPath) };

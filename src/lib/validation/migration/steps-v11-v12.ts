@@ -1,10 +1,7 @@
+import { isRecord, migrateParkedRuns } from "./types";
 import type { RawSaveData } from "./types";
 
 const CHARACTER_IDS = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid", "wildcard"];
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function migratePendingReward(value: unknown): unknown {
   if (!isRecord(value)) return value;
@@ -56,13 +53,11 @@ function migrateGearLoadouts(value: unknown): unknown {
 }
 
 export function migrateV11ToV12(save: RawSaveData): RawSaveData {
-  const parkedRuns = isRecord(save.parkedRuns)
-    ? Object.fromEntries(Object.entries(save.parkedRuns).map(([mode, run]) => [mode, migrateRun(run)]))
-    : save.parkedRuns;
+  const nextParkedRuns = migrateParkedRuns(save.parkedRuns, migrateRun);
   return {
     ...save,
     activeRun: migrateRun(save.activeRun),
-    parkedRuns,
+    parkedRuns: nextParkedRuns,
     gearLoadouts: migrateGearLoadouts(save.gearLoadouts),
     ownedTrinketIds: Array.isArray(save.ownedTrinketIds) ? save.ownedTrinketIds : [],
     equippedTrinkets: isRecord(save.equippedTrinkets)

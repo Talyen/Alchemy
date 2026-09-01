@@ -17,6 +17,7 @@ import {
   writeManifestIfChanged,
   withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
+import { ASSET_SCHEMA_VERSION, SOUND_TRANSFORM_CONCURRENCY } from "./lib/asset-constants.mjs";
 import { formatProcessError, runAudioScript } from "./lib/audio-optimizer.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { mapPool } from "./lib/map-pool.mjs";
@@ -30,9 +31,8 @@ const outputDir = path.join(rootDir, "public", "sounds");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
 const MANIFEST_BASENAME = ".asset-hashes.json";
 
-/** Bump when ffmpeg args, hash inputs, or manifest entry shape change. */
-const SCHEMA_VERSION = 3;
-const TRANSFORM_CONCURRENCY = 6;
+const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
+const TRANSFORM_CONCURRENCY = SOUND_TRANSFORM_CONCURRENCY;
 
 const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
 const VORBIS_QUALITY = "4";

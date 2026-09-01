@@ -3,14 +3,24 @@ import { test } from "./fixtures/e2e";
 import { ShopPage } from "./pages/shop-page";
 import { RewardPage } from "./pages/reward-page";
 import { DestinationPage } from "./pages/destination-page";
-import { enterPrimaryRewardScreen, SAVE_KEY } from "./helpers";
+import { enterPrimaryRewardScreen, SAVE_KEY, startAtDestination } from "./helpers";
 import { critical, slow } from "./playwright-tags";
+
+async function enterShop(
+  page: import("@playwright/test").Page,
+  gold: number,
+  destination: "Card Shop" | "Equipment Shop",
+) {
+  await startAtDestination(page, { runGold: gold }, { forceDestination: destination });
+  await page.getByRole("button", { name: destination }).click();
+  await expect(page.getByRole("heading", { name: destination })).toBeVisible();
+}
 
 test.describe("Card Shop", critical, () => {
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page, runtimeErrors }) => {
       void runtimeErrors;
-      await new ShopPage(page).enterFromDestination(9999, "Card Shop");
+      await enterShop(page, 9999, "Card Shop");
     });
 
     test("buying a card deducts gold and marks as purchased", critical, async ({ page }) => {
@@ -33,7 +43,7 @@ test.describe("Shop fade-out", critical, () => {
     test(`keeps ${destination} offerings mounted through route fade-out`, gate, async ({ page, runtimeErrors }) => {
       void runtimeErrors;
       const shop = new ShopPage(page);
-      await shop.enterFromDestination(9999, destination);
+      await enterShop(page, 9999, destination);
       const offeringCount = await shop.buyBtn.count();
       expect(offeringCount).toBeGreaterThan(0);
 

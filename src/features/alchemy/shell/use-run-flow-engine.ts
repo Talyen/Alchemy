@@ -4,8 +4,8 @@ import {
   useContentNavigationTalentPort,
   useTalentEffects,
   useTalentProgressSlice,
-  useSetHasActiveBattle,
 } from "@/features/alchemy/shared/stores/run-reads";
+import { useSetHasActiveBattle } from "@/features/alchemy/shared/stores/store-actions";
 import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-reads";

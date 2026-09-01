@@ -1,6 +1,5 @@
 import {
   BATTLE_CONFIG,
-  HALF_DIVISOR,
   PERCENT_DENOMINATOR,
   POISON_DECAY_PERCENT,
   TRAIT_DAMAGE_RULES,
@@ -9,13 +8,14 @@ import {
 import { addPlayerStatusWithCombatText, mergeCombatText } from "./combat-text";
 import { applyPlayerCombatDamage, type BattleState, type CombatTextEvent, type CombatTextStat } from "./types";
 import { getBattleRng, rollPercent } from "./rng";
+import { halveRounded } from "./amount-helpers";
 
 const DECAY_THRESHOLD = 1;
 const MIN_ARMOR = 0;
 
 export function decayHalvedStatus(value: number) {
   if (value <= DECAY_THRESHOLD) return 0;
-  return Math.round(value / HALF_DIVISOR);
+  return halveRounded(value);
 }
 
 export function decayPoisonStacks(stacks: number): number {

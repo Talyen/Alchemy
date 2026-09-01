@@ -7,28 +7,24 @@ import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scri
 
 const excludedTestPaths = ["tests/performance/**", "tests/balance/**"];
 const domTestPrefixes = ["tests/app/", "tests/features/"];
-const domTypeScriptTestFiles = [
-  "tests/lib/animation/background-particles.test.ts",
-  "tests/lib/animation/combatant-status-effect-loop.test.ts",
-  "tests/lib/animation/keyword-plasma.test.ts",
-  "tests/lib/animation/particle-loop.test.ts",
-  "tests/lib/audio-host.test.ts",
-  "tests/lib/audio-music.test.ts",
-  "tests/lib/audio-preload.test.ts",
-  "tests/lib/audio-sfx.test.ts",
-  "tests/lib/audio-sfx-playback.test.ts",
-  "tests/lib/audio-volume.test.ts",
-  "tests/lib/battle/block-decay.test.ts",
-  "tests/lib/battle/enemy-turn.test.ts",
-  "tests/lib/crash-reporting.test.ts",
-  "tests/lib/image-preload.test.ts",
-  "tests/lib/platform-storage.test.ts",
-  "tests/lib/platform.test.ts",
-  "tests/lib/validation/barrel-side-effects.test.ts",
+const domLibPrefixes = [
+  "tests/lib/animation/",
+  "tests/lib/audio-host",
+  "tests/lib/audio-music",
+  "tests/lib/audio-preload",
+  "tests/lib/audio-sfx",
+  "tests/lib/audio-volume",
+  "tests/lib/battle/block-decay",
+  "tests/lib/battle/enemy-turn",
+  "tests/lib/crash-reporting",
+  "tests/lib/image-preload",
+  "tests/lib/platform",
+  "tests/lib/validation/barrel",
 ];
 const domTypeScriptTests = [
   ...domTestPrefixes.map((prefix) => `${prefix}**/*.test.ts`),
-  ...domTypeScriptTestFiles,
+  ...domLibPrefixes.map((prefix) => `${prefix}*.test.ts`),
+  "tests/lib/animation/**/*.test.ts",
   "tests/**/*.dom.test.ts",
 ];
 
@@ -36,7 +32,9 @@ function testEnvironmentForPath(filePath: string): "dom" | "node" {
   if (filePath.endsWith(".test.tsx")) return "dom";
   if (filePath.endsWith(".dom.test.ts")) return "dom";
   if (domTestPrefixes.some((prefix) => filePath.startsWith(prefix))) return "dom";
-  return domTypeScriptTestFiles.includes(filePath) ? "dom" : "node";
+  if (domLibPrefixes.some((prefix) => filePath.startsWith(prefix))) return "dom";
+  if (filePath.startsWith("tests/lib/animation/")) return "dom";
+  return "node";
 }
 
 const sharedProjectConfig = {

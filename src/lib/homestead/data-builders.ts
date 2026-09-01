@@ -5,15 +5,12 @@ import type {
   HomesteadEffectManifest,
   HomesteadFarm,
   HomesteadResearch,
-  MaterialInventory,
   ResearchId,
 } from "./types";
 import { dualMaterialCosts, materialCost, singleMaterialCosts } from "./costs";
-import { emptyInventory } from "./inventory";
+import type { MaterialInventory } from "./types";
 
 type HomesteadUpgradeTier = HomesteadBuilding["tiers"][number];
-
-const ZERO_YIELD: MaterialInventory = emptyInventory();
 
 export function stackingTiers(
   costs: readonly MaterialInventory[],
@@ -33,15 +30,13 @@ export function defineBuilding(id: BuildingId, title: string, tiers: HomesteadUp
   return { id, title, description: "", buttonLabel: "Build", tiers };
 }
 
-export function defineFarm(id: FarmId, title: string, tiers: HomesteadUpgradeTier[], hidden?: boolean): HomesteadFarm {
+export function defineFarm(id: FarmId, title: string, tiers: HomesteadUpgradeTier[]): HomesteadFarm {
   return {
     id,
     title,
     description: "",
-    yield: { ...ZERO_YIELD },
     buttonLabel: "Build",
     tiers,
-    ...(hidden ? { hidden: true } : {}),
   };
 }
 

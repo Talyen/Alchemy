@@ -151,6 +151,7 @@ export function createInitialPermanentFields(): PermanentProgressFields {
   const constructedBuildings = createEmptyTierRecord(buildings);
   const plantedFarms = createEmptyTierRecord(farmPlots);
   const completedResearch = createEmptyTierRecord(researchUpgrades);
+  const bondedCompanions = createEmptyTierRecord(companionTierItems);
   return {
     gold: 0,
     talentXP: {},
@@ -159,8 +160,8 @@ export function createInitialPermanentFields(): PermanentProgressFields {
     constructedBuildings,
     plantedFarms,
     completedResearch,
-    bondedCompanions: createEmptyTierRecord(companionTierItems),
-    effects: computeHomesteadEffects(constructedBuildings, plantedFarms, completedResearch),
+    bondedCompanions,
+    effects: computeHomesteadEffects(constructedBuildings, plantedFarms, completedResearch, bondedCompanions),
   };
 }
 

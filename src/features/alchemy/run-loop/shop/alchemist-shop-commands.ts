@@ -1,7 +1,7 @@
 import { appendCardToRunWithDiscovery, discoverCardIds } from "@/features/alchemy/run-loop/run/deck-mutations";
 import {
   createDraftRunRandomSource,
-  deductRunGold,
+  deductGold,
   readDraftGold,
   setAlchemistState,
   setRunDeck,
@@ -89,7 +89,7 @@ export function createAlchemistShopCommands({
       if (!mixed) {
         return { committed: false, price, value: null };
       }
-      deductRunGold(draft, price);
+      deductGold(draft, price);
       setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
       setRunDeck(draft, (previous) => applyMixToDeck(previous, indexA, indexB, mixed));
       discoverCardIds(draft, [MIXED_POTION_CARD_ID]);

@@ -1,7 +1,7 @@
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import type { BattleState, CombatTextEvent } from "../types";
-import { getBattleRng } from "../status-helpers";
+import { getBattleRng, rollChance } from "../rng";
 import { applyEffectByKind } from "./registry";
 import type { CardEffectResolutionContext } from "./handler-types";
 
@@ -15,7 +15,7 @@ function applySingleEffect(
 ): BattleState {
   if (effect.kind === "chance") {
     const rng = getBattleRng(state);
-    const branch = rng() < effect.probability ? effect.successEffects : effect.failureEffects;
+    const branch = rollChance(effect.probability, rng) ? effect.successEffects : effect.failureEffects;
 
     return branch.reduce((s, nested) => applySingleEffect(s, card, nested, potionMult, combatTexts, context), state);
   }

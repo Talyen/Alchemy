@@ -29,11 +29,28 @@ function hydrateDescriptionLines(saved: SavedCard, libraryCard: BattleCard): str
   return [...savedLines];
 }
 
+function cloneEffect(effect: BattleCard["effects"][number]): BattleCard["effects"][number] {
+  if (effect.kind === "chance") {
+    return {
+      ...effect,
+      successEffects: effect.successEffects.map(cloneEffect),
+      failureEffects: effect.failureEffects.map(cloneEffect),
+    };
+  }
+  if (effect.kind === "repeat-over-turns") {
+    return { ...effect, effects: effect.effects.map(cloneEffect) };
+  }
+  return { ...effect };
+}
+
 function hydrateEffects(saved: SavedCard, libraryCard: BattleCard): BattleCard["effects"] {
   if (Array.isArray(saved.effects) && saved.effects.length > 0) {
-    return saved.effects.map((e) => (typeof e === "object" ? { ...e } : e));
+    return saved.effects.map((e) =>
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- saved.effects is untyped JSON, runtime guard needed
+      typeof e === "object" ? cloneEffect(e as BattleCard["effects"][number]) : (e as BattleCard["effects"][number]),
+    );
   }
-  return libraryCard.effects.map((e) => ({ ...e }));
+  return libraryCard.effects.map(cloneEffect);
 }
 
 function hydrateCost(saved: SavedCard, libraryCard: BattleCard): number {

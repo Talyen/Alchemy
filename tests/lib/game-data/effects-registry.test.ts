@@ -35,7 +35,7 @@ describe("effect dispatch registry", () => {
         kind: "chance" as const,
         probability: 0.5,
         successEffects: [{ kind: "heal", amount: 1 }],
-        failureEffects: [],
+        failureEffects: [{ kind: "heal", amount: 1 }],
       }).success,
     ).toBe(true);
   });
@@ -52,5 +52,32 @@ describe("effect dispatch registry", () => {
     expect(BattleCardEffectSchema.parse({ kind: "restore-mana", amount: 1, ifEnemyFrozen: true })).toMatchObject({
       ifEnemyFrozen: true,
     });
+  });
+
+  it("rejects mutually exclusive damage flags", () => {
+    expect(
+      BattleCardEffectSchema.safeParse({
+        kind: "damage",
+        damageType: "physical",
+        amount: 3,
+        doubleIfEnemyBurning: true,
+        tripleIfEnemyNotBurning: true,
+      }).success,
+    ).toBe(false);
+    expect(
+      BattleCardEffectSchema.safeParse({
+        kind: "damage",
+        damageType: "physical",
+        amount: 0,
+        equalToBlock: true,
+        equalToArmor: true,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects random-damage with max < min", () => {
+    expect(BattleCardEffectSchema.safeParse({ kind: "random-damage", minAmount: 10, maxAmount: 5 }).success).toBe(
+      false,
+    );
   });
 });
