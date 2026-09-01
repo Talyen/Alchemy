@@ -14,8 +14,8 @@ describe("gearInstanceRarity", () => {
     expect(gearInstanceRarity({ instanceId: "i1", definitionId, affixes: [] })).toBe(expected);
   });
 
-  it("falls back to 'basic' for unknown definition id", () => {
-    expect(gearInstanceRarity({ instanceId: "i1", definitionId: "nonexistent-id", affixes: [] })).toBe("basic");
+  it("returns null for unknown definition id", () => {
+    expect(gearInstanceRarity({ instanceId: "i1", definitionId: "nonexistent-id", affixes: [] })).toBeNull();
   });
 });
 

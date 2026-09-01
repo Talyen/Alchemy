@@ -179,6 +179,23 @@ jobs:
         run: npm run lint:boundaries
       - name: Architecture smoke
         run: npm run lint:architecture-smoke
+      - name: Playwright collection check
+        run: npx playwright test --list --project chromium
+
+  deadcode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            /*
+            !Raw Assets
+          sparse-checkout-cone-mode: false
+
+      - uses: ./.github/actions/setup
+
       - name: Dead code (knip)
         run: npm run deadcode
 

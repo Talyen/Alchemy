@@ -20,6 +20,10 @@ export const EMPTY_CRAFTING_CURRENCIES = Object.fromEntries(CRAFTING_CURRENCY_ID
   number
 >;
 
+function sanitizeCurrencyValue(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
 export function normalizeCraftingCurrencies(
   currencies: Partial<Record<string, unknown>> | null | undefined,
 ): Record<CraftingCurrencyId, number> {
@@ -27,8 +31,7 @@ export function normalizeCraftingCurrencies(
   if (!currencies || typeof currencies !== "object") return normalized;
 
   for (const id of CRAFTING_CURRENCY_IDS) {
-    const value = currencies[id];
-    normalized[id] = typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+    normalized[id] = sanitizeCurrencyValue(currencies[id]);
   }
 
   return normalized;
@@ -42,10 +45,8 @@ export function addCraftingCurrencies(
   if (!added || typeof added !== "object") return next;
 
   for (const id of CRAFTING_CURRENCY_IDS) {
-    const value = added[id];
-    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-      next[id] += Math.floor(value);
-    }
+    const value = sanitizeCurrencyValue(added[id]);
+    if (value > 0) next[id] += value;
   }
 
   return next;

@@ -54,11 +54,12 @@ export interface ArmoryController {
   rng: () => number;
 }
 
-export function useArmoryController(): ArmoryController {
+export function useArmoryController(options?: { rng?: () => number }): ArmoryController {
   const { returnToRunScreen } = useAppScreenChrome();
   const gear = useGearArmorySlice();
   const finishedRunCharacters = useFinishedRunCharacters();
   const hasActiveRun = useHasActiveRun();
+  const rng = options?.rng ?? Math.random;
 
   const flush = useCallback(() => {
     flushSaveAfterGearMutation(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
@@ -109,20 +110,20 @@ export function useArmoryController(): ArmoryController {
 
   const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
     (currencyId, instanceId) =>
-      mutateGearWithFlush(flush, (state) => state.applyCurrency(currencyId, instanceId, { rng: Math.random }), {
+      mutateGearWithFlush(flush, (state) => state.applyCurrency(currencyId, instanceId, { rng }), {
         flushOnSuccessOnly: true,
       }),
-    [flush],
+    [flush, rng],
   );
 
   const onSpawnDevGear = useCallback<NonNullable<ArmoryController["onSpawnDevGear"]>>(
     (characterId) => {
       if (!isAlchemyDevBuild()) return;
       mutateGearWithFlush(flush, (state) => {
-        state.addInstance(generateDevRandomGearInstance(Math.random), characterId);
+        state.addInstance(generateDevRandomGearInstance(rng), characterId);
       });
     },
-    [flush],
+    [flush, rng],
   );
 
   return useMemo(() => {
@@ -141,7 +142,7 @@ export function useArmoryController(): ArmoryController {
       onUnequipTrinket,
       onSalvage,
       onApplyCurrency,
-      rng: Math.random,
+      rng,
     };
     if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
     return controller;
@@ -160,5 +161,6 @@ export function useArmoryController(): ArmoryController {
     onSalvage,
     onApplyCurrency,
     onSpawnDevGear,
+    rng,
   ]);
 }

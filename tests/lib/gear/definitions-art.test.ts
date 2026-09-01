@@ -25,7 +25,7 @@ describe("gear definitions and art", () => {
         expect(gearDefinitions[id]).toBeDefined();
         expect(gearDefinitions[id]?.rarity).toBe(rarity);
         expect(gearDefinitions[id]?.baseItemId).toBe(baseItem.id);
-        expect(gearDefinitions[id]?.requiresTwoHands).toBe(baseItem.requiresTwoHands);
+        expect(gearDefinitions[id]?.slotRule).toBe(baseItem.slotRule);
       }
     }
   });

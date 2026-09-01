@@ -132,15 +132,9 @@ function resolveDropTier(uniqueChance: number, astralChance: number, rng: () => 
 function rollItemDropTier(options: RollItemDropTierOptions, rng: () => number): GearRarity {
   const allowsUnique = options.allowsUnique !== false;
   const astralBonus = Math.max(0, options.astralChanceBonus ?? 0);
-
-  if (options.isBoss) {
-    const uniqueChance = allowsUnique ? DROP_RATES_BOSS.unique : 0;
-    return rng() < uniqueChance ? "unique" : "astral";
-  }
-
-  const uniqueChance = allowsUnique ? DROP_RATES_NORMAL.unique : 0;
-  let astralChance = DROP_RATES_NORMAL.astral + astralBonus;
-  if (!allowsUnique) astralChance += DROP_RATES_NORMAL.unique;
+  const base = options.isBoss ? DROP_RATES_BOSS : DROP_RATES_NORMAL;
+  const uniqueChance = allowsUnique ? base.unique : 0;
+  const astralChance = base.astral + astralBonus + (allowsUnique ? 0 : base.unique);
   return resolveDropTier(uniqueChance, astralChance, rng);
 }
 
@@ -328,11 +322,7 @@ export function generateGearRewardChoices(
   return generateGearOfferings({
     count,
     rng,
-    rollTier: () => {
-      const tier = rollItemDropTier({ isBoss, astralChanceBonus }, rng);
-      if (tier === "unique") return "unique";
-      return tier === "basic" && !isBoss ? "basic" : "astral";
-    },
+    rollTier: () => rollItemDropTier({ isBoss, astralChanceBonus }, rng),
     ownedUniqueIds,
     fillFallback: true,
   });

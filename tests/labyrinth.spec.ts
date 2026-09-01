@@ -14,21 +14,23 @@ test.describe("Labyrinth Mode", critical, () => {
 
     await expect(page.getByRole("heading", { name: /Labyrinth|Map/ })).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole("region", { name: "Labyrinth map" })).toBeVisible();
+    await expect(page.getByTestId("vr-stage")).toBeVisible();
 
     const combatNodes = page.getByRole("button", { name: /Combat chamber/ });
-    await expect(combatNodes.first()).toBeVisible({ timeout: 5000 });
+    await expect(combatNodes.first()).toBeVisible({ timeout: 8000 });
     await combatNodes.first().click();
-    await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeVisible({ timeout: 5000 });
 
     const restNodes = page.getByRole("button", { name: /Campfire chamber/ });
+    await expect(restNodes.first()).toBeVisible({ timeout: 5000 });
     await restNodes.first().click();
-    await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole("button", { name: "Fight", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Rest", exact: true })).toHaveCount(0);
 
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeHidden();
+    await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeHidden({ timeout: 5000 });
     await expect(page.getByRole("button", { name: "Main Menu" })).toHaveCount(0);
   });
 

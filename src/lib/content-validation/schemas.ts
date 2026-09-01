@@ -82,11 +82,9 @@ export const GearDefinitionContentSchema = z.object({
   descriptionLines: z.array(z.string()),
   art: NonEmptyStringSchema,
   compatibleSlots: z.array(z.enum(GEAR_SLOTS)).min(1),
-  requiresTwoHands: z.boolean(),
+  slotRule: z.enum(["two-handed", "ranged", "quiver", "standard"]),
   affinityKeywords: z.array(KeywordIdSchema).min(1),
   salvageValue: z.record(z.string(), NonNegativeIntegerSchema),
-  rangedWeapon: z.boolean().optional(),
-  quiver: z.boolean().optional(),
 });
 
 export const GearAffixContentSchema = z.object({

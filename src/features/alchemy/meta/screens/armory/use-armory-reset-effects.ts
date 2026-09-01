@@ -26,18 +26,30 @@ export function useArmoryResetEffects({
   setSalvagePending: React.Dispatch<React.SetStateAction<ArmorySalvagePending | null>>;
   setActiveCurrencyId: React.Dispatch<React.SetStateAction<CraftingCurrencyId | null>>;
 }) {
-  if (!editable) {
-    if (salvageMode) setSalvageMode(false);
-    if (salvagePending !== null) setSalvagePending(null);
-    if (activeCurrencyId !== null) setActiveCurrencyId(null);
-  } else {
+  useEffect(() => {
+    if (!editable) {
+      if (salvageMode) setSalvageMode(false);
+      if (salvagePending !== null) setSalvagePending(null);
+      if (activeCurrencyId !== null) setActiveCurrencyId(null);
+      return;
+    }
     if (activeCurrencyId !== null && craftingCurrencies[activeCurrencyId] <= 0) {
       setActiveCurrencyId(null);
     }
     if (salvagePending !== null && !inventoryById.has(salvagePending.instance.instanceId)) {
       setSalvagePending(null);
     }
-  }
+  }, [
+    editable,
+    salvageMode,
+    salvagePending,
+    activeCurrencyId,
+    craftingCurrencies,
+    inventoryById,
+    setSalvageMode,
+    setSalvagePending,
+    setActiveCurrencyId,
+  ]);
 
   useEffect(() => {
     if (!editable && document.activeElement instanceof HTMLElement) {

@@ -80,13 +80,15 @@ const CRAFTING_CURRENCIES_BY_ID: Record<CraftingCurrencyId, CraftingCurrencyDefi
 ) as Record<CraftingCurrencyId, CraftingCurrencyDefinition>;
 
 export function getCraftingCurrencyDefinition(id: CraftingCurrencyId): CraftingCurrencyDefinition {
-  return CRAFTING_CURRENCIES_BY_ID[id] ?? CRAFTING_CURRENCY_LIST[0]!;
+  const definition = CRAFTING_CURRENCIES_BY_ID[id];
+  if (!definition) throw new Error(`Unknown crafting currency: ${id}`);
+  return definition;
 }
 
 function addRandomAffix(item: GearInstance, rng: () => number): GearInstance {
   const def = gearDefinitions[item.definitionId];
   if (!def) return item;
-  const rarity = gearInstanceRarity(item);
+  const rarity = gearInstanceRarity(item) ?? "basic";
   const available = availableAffixesForItem(item);
   const chosen = pickRandom(available, rng);
   if (!chosen) return item;
@@ -109,7 +111,7 @@ function affixMaxValue(roll: GearAffixRoll, rarity: GearRarity): number {
 }
 
 function hasUpgradeableAffix(item: GearInstance): boolean {
-  const rarity = gearInstanceRarity(item);
+  const rarity = gearInstanceRarity(item) ?? "basic";
   return item.affixes.some((affix) => affix.value < affixMaxValue(affix, rarity));
 }
 
@@ -144,8 +146,11 @@ const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBe
     },
   },
   "sprig-of-growth": {
-    canApply: (item) =>
-      item.affixes.length < GEAR_AFFIX_COUNT[gearInstanceRarity(item)].max && availableAffixesForItem(item).length > 0,
+    canApply: (item) => {
+      const rarity = gearInstanceRarity(item);
+      if (!rarity) return false;
+      return item.affixes.length < GEAR_AFFIX_COUNT[rarity].max && availableAffixesForItem(item).length > 0;
+    },
     apply: addRandomAffix,
   },
   voidstone: {
@@ -169,13 +174,14 @@ const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBe
     canApply: hasAnyAffix,
     apply: (item, rng) => {
       const index = Math.floor(rng() * item.affixes.length);
+      if (item.affixes.length === 0) return item;
       return { ...item, affixes: item.affixes.filter((_, affixIndex) => affixIndex !== index) };
     },
   },
   "smiths-whetstone": {
     canApply: (item) => hasAnyAffix(item) && hasUpgradeableAffix(item),
     apply: (item, rng) => {
-      const rarity = gearInstanceRarity(item);
+      const rarity = gearInstanceRarity(item) ?? "basic";
       const upgradeableIndexes = item.affixes.flatMap((affix, index) =>
         affix.value < affixMaxValue(affix, rarity) ? [index] : [],
       );
@@ -243,7 +249,7 @@ function homesteadSalvageYield(instance: GearInstance): MaterialInventory {
 
 export function computeSalvageYield(instance: GearInstance, rng: () => number): SalvageYield {
   return {
-    currencies: rollSalvageYield(gearInstanceRarity(instance), rng),
+    currencies: rollSalvageYield(gearInstanceRarity(instance) ?? "basic", rng),
     materials: homesteadSalvageYield(instance),
   };
 }

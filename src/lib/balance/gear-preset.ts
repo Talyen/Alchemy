@@ -35,10 +35,10 @@ function slotConstraints(
 ): boolean {
   if (!itemFitsSlot(item, slot)) return false;
   if (slot === "off-hand") {
-    if (options.rangedMainHand) return item.quiver === true;
-    if (item.quiver) return false;
+    if (options.rangedMainHand) return item.slotRule === "quiver";
+    if (item.slotRule === "quiver") return false;
   }
-  if (options.skipTwoHanded && item.requiresTwoHands) return false;
+  if (options.skipTwoHanded && item.slotRule === "two-handed") return false;
   return true;
 }
 
@@ -75,8 +75,8 @@ export function buildTypicalGearEffects(
     if (!instance) continue;
     effects = mergeGearEffectManifests(effects, resolveAffixEffects(instance.affixes));
     if (slot === "main-hand") {
-      rangedMainHand = chosen.rangedWeapon === true;
-      skipOffHand = chosen.requiresTwoHands;
+      rangedMainHand = chosen.slotRule === "ranged";
+      skipOffHand = chosen.slotRule === "two-handed";
     }
   }
 

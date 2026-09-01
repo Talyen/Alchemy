@@ -8,6 +8,8 @@ import { E2E_NAMES, resolveRoutePlan } from "./lib/change-routes.mjs";
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
+import { unownedAddedSourceFiles } from "./check-test-owners.mjs";
+import { spawnSync } from "node:child_process";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -47,6 +49,38 @@ function testPathCount(command) {
   return command.args.filter((arg) => /^tests\//u.test(arg)).length;
 }
 
+function localAddedSourcePaths(paths) {
+  const result = spawnSync("git", ["diff", "--diff-filter=A", "--name-only", "HEAD"], {
+    cwd: ROOT,
+    encoding: "utf8",
+  });
+  const addedFromGit =
+    result.status === 0
+      ? result.stdout
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean)
+      : [];
+  const untracked = spawnSync("git", ["ls-files", "--others", "--exclude-standard"], {
+    cwd: ROOT,
+    encoding: "utf8",
+  });
+  const untrackedFiles =
+    untracked.status === 0
+      ? untracked.stdout
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean)
+      : [];
+  const addedSet = new Set([...addedFromGit, ...untrackedFiles]);
+  return paths.filter((p) => addedSet.has(p));
+}
+
+function localUnownedOwners(paths) {
+  const added = localAddedSourcePaths(paths);
+  return unownedAddedSourceFiles(added);
+}
+
 export function formatPlan(plan, { verbosePlan = false } = {}) {
   const lines = [`Changed paths: ${plan.paths.length}`];
   for (const filePath of plan.paths.slice(0, 20)) lines.push(`  ${filePath}`);
@@ -56,12 +90,22 @@ export function formatPlan(plan, { verbosePlan = false } = {}) {
     if (route.unknown)
       lines.push("Warning: route ownership is unknown; the static fallback may not exercise this behavior.");
   }
+  const localUnowned = localUnownedOwners(plan.paths);
+  if (localUnowned.length > 0) {
+    lines.push(`Test-owner check: ${localUnowned.length} new source file(s) without mirrored owners`);
+    for (const filePath of localUnowned) lines.push(`  - ${filePath} (needs tests/<path>.test.ts)`);
+  }
   lines.push("Commands:");
   for (const command of plan.commands) {
     const pathCount = testPathCount(command);
     const suffix = pathCount > 0 ? ` (${pathCount} test path${pathCount === 1 ? "" : "s"})` : "";
     lines.push(`  ${command.key}: ${command.label}${suffix} — ${command.reason}`);
     if (verbosePlan) lines.push(`    ${command.command} ${command.args.join(" ")}`);
+  }
+  if (localUnowned.length > 0) {
+    lines.push(
+      "  check:test-owners:local: test owners for new source files — new src files must have mirrored Vitest owners",
+    );
   }
   return `${lines.join("\n")}\n`;
 }
@@ -164,7 +208,53 @@ export function main(argv = process.argv.slice(2)) {
     const plan = resolveRoutePlan(paths, { e2e, full: flags.has("full") });
     console.log(`Run: ${runId}`);
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
-    if (flags.has("plan")) return 0;
+    if (flags.has("plan")) {
+      const localUnowned = localUnownedOwners(plan.paths);
+      return localUnowned.length > 0 ? 1 : 0;
+    }
+    const localUnowned = localUnownedOwners(plan.paths);
+    if (localUnowned.length > 0) {
+      console.error(
+        "New source files have no mirrored test owner (tests/<path>.test.ts; src/lib requires that basename match, other source may use tests/<dir>/*.test.ts):",
+      );
+      for (const filePath of localUnowned) console.error(`- ${filePath}`);
+      const fakeResult = {
+        status: 1,
+        elapsedMs: 0,
+        output: `Unowned new source files:\n${localUnowned.join("\n")}`,
+      };
+      const fakeCommand = {
+        key: "check:test-owners:local",
+        label: "test owners for new source files",
+        command: "npm run check:test-owners",
+        args: ["--", "--base", "HEAD"],
+        reason: "new src files must have mirrored Vitest owners",
+      };
+      const reportsDir = path.join(ROOT, "reports", "runs", runId, "verify-changed");
+      const { digestPath, logPath } = writeFailureDigest(
+        reportsDir,
+        fakeCommand,
+        fakeResult,
+        runId,
+        plan.commands.length,
+      );
+      console.error(`  Failure digest: ${path.relative(ROOT, digestPath)}`);
+      console.error(`  Full output: ${path.relative(ROOT, logPath)}`);
+      writeCurrentRun({
+        rootDir: ROOT,
+        runId,
+        status: "failed",
+        command: "npm run verify:changed",
+        artifacts: [
+          { path: digestPath, role: "primary" },
+          { path: logPath, role: "secondary" },
+        ],
+        counts: { passed: 0, failed: 1 },
+        commandExposures: [],
+        summary: "test owners for new source files failed; create mirrored owners.",
+      });
+      return 1;
+    }
     const outcomes = [];
     for (const [index, command] of plan.commands.entries()) {
       const outcome = runVerificationCommand(command, index, flags.has("verbose"), runId);

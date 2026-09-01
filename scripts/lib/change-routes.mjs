@@ -353,6 +353,20 @@ export const ROUTES = Object.freeze([
     fixture: "docs/WORKFLOWS.md",
   },
   {
+    id: "deadcode-guard",
+    patterns: [
+      "src/lib/**",
+      "src/features/alchemy/shared/stores/**",
+      "src/app/**",
+      "knip.config.js",
+      "eslint.config.js",
+      "eslint/**",
+    ],
+    commands: ["deadcode"],
+    docs: [],
+    fixture: "knip.config.js",
+  },
+  {
     id: "ui-flow",
     patterns: ["src/features/alchemy/**/screens/**", "src/features/alchemy/**/controllers/**"],
     exclude: [

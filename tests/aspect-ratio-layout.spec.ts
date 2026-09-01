@@ -176,30 +176,39 @@ test.describe("Labyrinth map stage fitting", slow, () => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await injectLabyrinthRun(page);
     await expect(page.getByRole("heading", { name: /Labyrinth/i })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Labyrinth map" })).toBeVisible();
+    const labyrinthMap = page.getByRole("region", { name: "Labyrinth map" });
+    await expect(labyrinthMap).toBeVisible();
+    await expect(page.getByTestId("vr-stage")).toBeVisible();
+    await expect.poll(async () => labyrinthMap.boundingBox(), { timeout: 5000 }).not.toBeNull();
 
     await assertNoOverflow(page, "Labyrinth");
 
-    const fit = await page.evaluate(() => {
-      const stage = document.querySelector('[data-testid="vr-stage"]');
-      const map = document.querySelector('[aria-label="Labyrinth map"]');
-      const inspector = document.querySelector('[aria-label="Chamber details"]');
-      if (!stage || !map || !inspector) return { ok: false as const, reason: "missing-nodes" };
-      const stageRect = stage.getBoundingClientRect();
-      const mapRect = map.getBoundingClientRect();
-      const inspectorRect = inspector.getBoundingClientRect();
-      const within = (rect: DOMRect) =>
-        rect.top >= stageRect.top - 2 &&
-        rect.bottom <= stageRect.bottom + 2 &&
-        rect.left >= stageRect.left - 2 &&
-        rect.right <= stageRect.right + 2;
-      return {
-        ok: within(mapRect) && within(inspectorRect),
-        stageBottom: stageRect.bottom,
-        mapBottom: mapRect.bottom,
-        inspectorBottom: inspectorRect.bottom,
-      };
-    });
-    expect(fit, JSON.stringify(fit)).toMatchObject({ ok: true });
+    await expect
+      .poll(
+        async () => {
+          return page.evaluate(() => {
+            const stage = document.querySelector('[data-testid="vr-stage"]');
+            const map = document.querySelector('[aria-label="Labyrinth map"]');
+            const inspector = document.querySelector('[aria-label="Chamber details"]');
+            if (!stage || !map || !inspector) return { ok: false as const, reason: "missing-nodes" };
+            const stageRect = stage.getBoundingClientRect();
+            const mapRect = map.getBoundingClientRect();
+            const inspectorRect = inspector.getBoundingClientRect();
+            const within = (rect: DOMRect) =>
+              rect.top >= stageRect.top - 2 &&
+              rect.bottom <= stageRect.bottom + 2 &&
+              rect.left >= stageRect.left - 2 &&
+              rect.right <= stageRect.right + 2;
+            return {
+              ok: within(mapRect) && within(inspectorRect),
+              stageBottom: stageRect.bottom,
+              mapBottom: mapRect.bottom,
+              inspectorBottom: inspectorRect.bottom,
+            };
+          });
+        },
+        { timeout: 5000 },
+      )
+      .toMatchObject({ ok: true });
   });
 });

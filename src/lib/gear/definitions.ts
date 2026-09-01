@@ -1,7 +1,7 @@
 import type { KeywordId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearArtByDefinitionId } from "@/lib/game-data";
-import { gearBaseItems, type GearBaseItemId } from "./base-items";
+import { gearBaseItems, type GearBaseItemId, type GearSlotRule } from "./base-items";
 import type { GearRarity, GearSlot } from "./types-core";
 import type { GearAffixId } from "./affix-catalog";
 import { uniqueItemList } from "./unique-catalog";
@@ -18,11 +18,9 @@ export interface GearDefinition {
   descriptionLines: string[];
   art: string;
   compatibleSlots: GearSlot[];
-  requiresTwoHands: boolean;
+  slotRule: GearSlotRule;
   affinityKeywords: KeywordId[];
   salvageValue: MaterialInventory;
-  rangedWeapon?: boolean;
-  quiver?: boolean;
 }
 
 export interface GearInstance {
@@ -31,8 +29,8 @@ export interface GearInstance {
   affixes: GearAffixRoll[];
 }
 
-export function gearInstanceRarity(instance: GearInstance): GearRarity {
-  return gearDefinitions[instance.definitionId]?.rarity ?? "basic";
+export function gearInstanceRarity(instance: GearInstance): GearRarity | null {
+  return gearDefinitions[instance.definitionId]?.rarity ?? null;
 }
 
 export function gearDefinitionId(baseItemId: string, rarity: GearRarity): string {
@@ -56,13 +54,11 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
         baseItemId,
         rarity,
         compatibleSlots: [...baseItem.compatibleSlots],
-        requiresTwoHands: baseItem.requiresTwoHands,
+        slotRule: baseItem.slotRule,
         affinityKeywords: [...baseItem.affinityKeywords],
         descriptionLines: [],
         art,
         salvageValue: { ...baseItem.salvageByRarity[rarity] },
-        ...(baseItem.rangedWeapon !== undefined ? { rangedWeapon: baseItem.rangedWeapon } : {}),
-        ...(baseItem.quiver !== undefined ? { quiver: baseItem.quiver } : {}),
       };
     }
   }
@@ -82,13 +78,11 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
       baseItemId: unique.baseItemId,
       rarity: "unique",
       compatibleSlots: [...baseItem.compatibleSlots],
-      requiresTwoHands: baseItem.requiresTwoHands,
+      slotRule: baseItem.slotRule,
       affinityKeywords: [...baseItem.affinityKeywords],
       descriptionLines: [unique.description],
       art,
       salvageValue: { ...baseItem.salvageByRarity.unique },
-      ...(baseItem.rangedWeapon !== undefined ? { rangedWeapon: baseItem.rangedWeapon } : {}),
-      ...(baseItem.quiver !== undefined ? { quiver: baseItem.quiver } : {}),
     };
   }
 

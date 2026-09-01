@@ -7,10 +7,11 @@ The Armory is the permanent meta-progression screen for managing **Gear** (per-c
 ## Layout
 
 The screen implementation lives under
-`src/features/alchemy/meta/screens/armory/`. Start from these owners:
+`src/features/alchemy/meta/screens/armory/` (controller + parts) and
+`src/features/alchemy/meta/screens/armory-screen.tsx` (composition). Start from these owners:
 
 - `use-armory-controller.ts` — read facade and mutation/HP-sync/save-flush boundary consumed by the route.
-- `armory-screen.tsx` — screen composition and interaction wiring.
+- `armory-screen.tsx` (sibling of `armory/`) — screen composition and interaction wiring.
 - `item-picker-grid.tsx` — slot-filtered inventory presentation.
 - Panels, parts, and overlays — presentation only; they receive domain state and commands through props.
 
@@ -77,7 +78,7 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear
 
 Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Battle code never reads the Gear aggregate during a fight.
 
-Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guard `tests/architecture/affix-catalog-guard.test.ts` asserts:
+Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guards `tests/architecture/affix-catalog-guard.test.ts` and `src/lib/content-validation/validators-gear.ts` assert:
 
 - Every `effectKey` in the catalog is a member of `GEAR_EFFECT_KEYS` (catches silent zero-roll typos).
 - Every key in `GEAR_EFFECT_KEYS` is referenced by at least one affix.

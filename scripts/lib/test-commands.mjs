@@ -341,6 +341,12 @@ export const COMMANDS = Object.freeze({
     command: NPM,
     args: ["run", "ci:routing"],
   },
+  deadcode: {
+    label: "dead code (knip)",
+    reason: "lib barrel and store changes can leave unused exports — run knip",
+    command: NPM,
+    args: ["run", "deadcode"],
+  },
   full: {
     label: "full pre-push gate",
     reason: "the caller explicitly requested the full local handoff gate",

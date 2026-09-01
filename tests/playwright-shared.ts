@@ -92,7 +92,7 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
   const isNightly = process.env.PLAYWRIGHT_NIGHTLY === "1";
   const isCi = !!process.env.CI && !isPrepush;
   const isFullE2eSuite = process.env.PLAYWRIGHT_E2E_FULL === "1";
-  const maxFailures = isFullE2eSuite ? 5 : isCi ? 1 : 0;
+  const maxFailures = isFullE2eSuite ? 5 : isCi ? 3 : 0;
   const defaultWorkers = Math.min(6, Math.max(3, os.cpus().length > 1 ? os.cpus().length - 1 : 3));
   return defineConfig({
     testDir: "./tests",

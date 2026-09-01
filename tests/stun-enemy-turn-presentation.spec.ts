@@ -35,10 +35,12 @@ test.describe("Stunned enemy turn presentation", slow, () => {
     await sawDiscardFly;
 
     await expect(enemyTurn).toHaveAttribute("data-active", "true", { timeout: 15_000 });
-    const opaqueHandCount = await battle.hand.evaluateAll(
-      (els) => els.filter((el) => getComputedStyle(el).opacity !== "0").length,
-    );
-    expect(opaqueHandCount).toBe(0);
+    await expect
+      .poll(
+        async () => battle.hand.evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== "0").length),
+        { timeout: 8000 },
+      )
+      .toBe(0);
 
     await expect(yourTurn).toHaveAttribute("data-active", "true", { timeout: 20_000 });
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 20_000 });

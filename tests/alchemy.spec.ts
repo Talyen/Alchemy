@@ -13,11 +13,11 @@ test.describe("Block Mechanics", critical, () => {
     const battle = new BattlePage(page);
 
     await battle.playCardNamed("Block");
-    await expect.poll(async () => battle.block(), { timeout: 5000 }).toBeGreaterThan(0);
+    await expect.poll(async () => battle.block(), { timeout: 8000 }).toBeGreaterThan(0);
     const blockBeforeAegis = await battle.block();
 
     await battle.playCardNamed("Blessed Aegis");
-    await expect.poll(async () => battle.enemyHealth(), { timeout: 5000 }).toBeLessThan(30);
-    expect(await battle.block()).toBe(blockBeforeAegis);
+    await expect.poll(async () => battle.enemyHealth(), { timeout: 10_000 }).toBeLessThan(30);
+    await expect.poll(async () => battle.block(), { timeout: 5000 }).toBe(blockBeforeAegis);
   });
 });

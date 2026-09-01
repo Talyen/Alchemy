@@ -22,6 +22,10 @@ function uniqueRoll(value: number): AffixRollRange {
   };
 }
 
+const ROLL_SMALL = rollRange(1, 2, 3, 4);
+const ROLL_RESIST = rollRange(10, 15, 15, 20);
+const ROLL_MEDIUM = rollRange(3, 4, 5, 6);
+
 interface AffixRow {
   id: string;
   name: string;
@@ -42,7 +46,7 @@ const affixRows = [
     keywordId: "physical",
     descriptionTemplate: "Increases Physical damage by {value}",
     effectKey: "flatPhysicalDamage",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
   },
   {
     id: "flat-stun",
@@ -51,7 +55,7 @@ const affixRows = [
     keywordId: "stun",
     descriptionTemplate: "Increases Stun damage by {value}",
     effectKey: "flatStunDamage",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
   },
   {
     id: "flat-holy",
@@ -60,7 +64,7 @@ const affixRows = [
     keywordId: "holy",
     descriptionTemplate: "Increases Holy damage by {value}",
     effectKey: "flatHolyDamage",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
   },
   {
     id: "flat-burn",
@@ -69,7 +73,7 @@ const affixRows = [
     keywordId: "burn",
     descriptionTemplate: "Increases Burn damage by {value}",
     effectKey: "flatBurnDamage",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
   },
   {
     id: "flat-poison",
@@ -78,7 +82,7 @@ const affixRows = [
     keywordId: "poison",
     descriptionTemplate: "Increases Poison damage by {value}",
     effectKey: "flatPoisonDamage",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
   },
   {
     id: "flat-bleed",
@@ -87,7 +91,7 @@ const affixRows = [
     keywordId: "bleed",
     descriptionTemplate: "Increases Bleed damage by {value}",
     effectKey: "flatBleedDamage",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
   },
   {
     id: "flat-freeze",
@@ -96,7 +100,7 @@ const affixRows = [
     keywordId: "freeze",
     descriptionTemplate: "Increases Freeze damage by {value}",
     effectKey: "flatFreezeDamage",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
   },
   {
     id: "flat-nature",
@@ -105,7 +109,7 @@ const affixRows = [
     keywordId: "nature",
     descriptionTemplate: "Increases Nature damage by {value}",
     effectKey: "flatNatureDamage",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
   },
   {
     id: "start-block",
@@ -132,7 +136,7 @@ const affixRows = [
     keywordId: "physical",
     descriptionTemplate: "Deal {value} Physical damage when you Stun an enemy",
     effectKey: "damageOnStunPhysical",
-    roll: rollRange(3, 4, 5, 6),
+    roll: ROLL_MEDIUM,
   },
   {
     id: "forge-on-stun",
@@ -169,7 +173,7 @@ const affixRows = [
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health at the start of combat",
     effectKey: "startHeal",
-    roll: rollRange(3, 4, 5, 6),
+    roll: ROLL_MEDIUM,
   },
   {
     id: "heal-on-kill",
@@ -178,7 +182,7 @@ const affixRows = [
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health on kill",
     effectKey: "healOnKill",
-    roll: rollRange(3, 4, 5, 6),
+    roll: ROLL_MEDIUM,
   },
   {
     id: "start-forge",
@@ -205,7 +209,7 @@ const affixRows = [
     keywordId: "block",
     descriptionTemplate: "Gain {value} Block when you Stun an enemy",
     effectKey: "blockOnStun",
-    roll: rollRange(3, 4, 5, 6),
+    roll: ROLL_MEDIUM,
   },
   {
     id: "mana-on-stun",
@@ -233,7 +237,7 @@ const affixRows = [
     keywordId: "burn",
     descriptionTemplate: "Increases Burn damage by {value}% per Mana Crystal",
     effectKey: "burnDamagePerManaPercent",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
     secondaryKeywordId: "mana",
   },
   {
@@ -243,7 +247,7 @@ const affixRows = [
     keywordId: "gold",
     descriptionTemplate: "Gain {value} Gold on Wish",
     effectKey: "goldOnWish",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
     secondaryKeywordId: "wish",
   },
   {
@@ -253,7 +257,7 @@ const affixRows = [
     keywordId: "burn",
     descriptionTemplate: "Deal {value} Burn damage on Wish",
     effectKey: "burnOnWish",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
     secondaryKeywordId: "wish",
   },
   {
@@ -311,7 +315,7 @@ const affixRows = [
     keywordId: "consume",
     descriptionTemplate: "Increases Healing from Consumed cards by {value}%",
     effectKey: "consumeHealBonusPercent",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
     secondaryKeywordId: "health",
   },
   {
@@ -330,7 +334,7 @@ const affixRows = [
     keywordId: "physical",
     descriptionTemplate: "Deal {value} Physical damage when you Freeze an enemy",
     effectKey: "damageOnFreezePhysical",
-    roll: rollRange(3, 4, 5, 6),
+    roll: ROLL_MEDIUM,
     secondaryKeywordId: "freeze",
   },
   {
@@ -379,7 +383,7 @@ const affixRows = [
     keywordId: "holy",
     descriptionTemplate: "Increases Holy damage by {value}% of your Block",
     effectKey: "holyDamageFromBlockPercent",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
     secondaryKeywordId: "block",
   },
   {
@@ -389,7 +393,7 @@ const affixRows = [
     keywordId: "leech",
     descriptionTemplate: "Leech restores {value}% more Health",
     effectKey: "leechHealBonusPercent",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "frozen-vulnerable",
@@ -398,7 +402,7 @@ const affixRows = [
     keywordId: "freeze",
     descriptionTemplate: "Frozen enemies take {value}% more damage",
     effectKey: "frozenEnemyDamageBonusPercent",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "companion-forge-power",
@@ -407,8 +411,9 @@ const affixRows = [
     keywordId: "companion",
     descriptionTemplate: "Companions benefit from Forge",
     effectKey: "companionBenefitsFromForge",
-    roll: rollRange(1, 1, 1, 1),
+    roll: uniqueRoll(1),
     secondaryKeywordId: "forge",
+    uniqueOnly: true,
   },
   {
     id: "gold-blessed-holy",
@@ -427,7 +432,7 @@ const affixRows = [
     keywordId: "physical",
     descriptionTemplate: "Reduce Physical damage taken by {value}%",
     effectKey: "resistPhysical",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "resist-stun",
@@ -436,7 +441,7 @@ const affixRows = [
     keywordId: "stun",
     descriptionTemplate: "Reduce Stun damage taken by {value}%",
     effectKey: "resistStun",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "resist-holy",
@@ -445,7 +450,7 @@ const affixRows = [
     keywordId: "holy",
     descriptionTemplate: "Reduce Holy damage taken by {value}%",
     effectKey: "resistHoly",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "resist-burn",
@@ -454,7 +459,7 @@ const affixRows = [
     keywordId: "burn",
     descriptionTemplate: "Reduce Burn damage taken by {value}%",
     effectKey: "resistBurn",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "resist-poison",
@@ -463,7 +468,7 @@ const affixRows = [
     keywordId: "poison",
     descriptionTemplate: "Reduce Poison damage taken by {value}%",
     effectKey: "resistPoison",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "resist-bleed",
@@ -472,7 +477,7 @@ const affixRows = [
     keywordId: "bleed",
     descriptionTemplate: "Reduce Bleed damage taken by {value}%",
     effectKey: "resistBleed",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "resist-freeze",
@@ -481,7 +486,7 @@ const affixRows = [
     keywordId: "freeze",
     descriptionTemplate: "Reduce Freeze damage taken by {value}%",
     effectKey: "resistFreeze",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "resist-nature",
@@ -490,7 +495,7 @@ const affixRows = [
     keywordId: "nature",
     descriptionTemplate: "Reduce Nature damage taken by {value}%",
     effectKey: "resistNature",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "health-per-turn",
@@ -499,7 +504,7 @@ const affixRows = [
     keywordId: "health",
     descriptionTemplate: "Restore {value} Health each turn",
     effectKey: "healthPerTurn",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
   },
   {
     id: "block-gain",
@@ -508,7 +513,7 @@ const affixRows = [
     keywordId: "block",
     descriptionTemplate: "Increases Block gained by {value}",
     effectKey: "flatBlockGained",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
   },
   {
     id: "gold-gain",
@@ -517,7 +522,7 @@ const affixRows = [
     keywordId: "gold",
     descriptionTemplate: "Increases Gold gained by {value}%",
     effectKey: "goldGainPercent",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
   },
   {
     id: "max-health",
@@ -545,7 +550,7 @@ const affixRows = [
     keywordId: "archery",
     descriptionTemplate: "Archery attacks ignore {value} Armor",
     effectKey: "archeryArmorPiercing",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
     secondaryKeywordId: "physical",
   },
   {
@@ -575,7 +580,7 @@ const affixRows = [
     keywordId: "leech",
     descriptionTemplate: "Leech has a {value}% chance to restore 1 Mana",
     effectKey: "manaOnLeechChance",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
     secondaryKeywordId: "mana",
   },
   {
@@ -585,7 +590,7 @@ const affixRows = [
     keywordId: "poison",
     descriptionTemplate: "Poison has a {value}% chance to remove 1 Armor",
     effectKey: "poisonArmorShredChance",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
     secondaryKeywordId: "armor",
   },
   {
@@ -595,7 +600,7 @@ const affixRows = [
     keywordId: "nature",
     descriptionTemplate: "Nature damage has a {value}% chance to restore 1 Mana",
     effectKey: "manaOnNatureDamageChance",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
     secondaryKeywordId: "mana",
   },
   {
@@ -605,7 +610,7 @@ const affixRows = [
     keywordId: "bleed",
     descriptionTemplate: "Burn deals {value}% more damage to Bleeding enemies",
     effectKey: "burnDamageBonusToBleedingPercent",
-    roll: rollRange(10, 15, 15, 20),
+    roll: ROLL_RESIST,
     secondaryKeywordId: "burn",
   },
   {
@@ -625,7 +630,7 @@ const affixRows = [
     keywordId: "companion",
     descriptionTemplate: "Restore {value} Health when your Companion attacks",
     effectKey: "healOnCompanionAttack",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
     secondaryKeywordId: "health",
   },
   {
@@ -635,7 +640,7 @@ const affixRows = [
     keywordId: "armor",
     descriptionTemplate: "Gain {value} Armor when you are Stunned or Frozen",
     effectKey: "armorOnStunOrFreeze",
-    roll: rollRange(1, 2, 3, 4),
+    roll: ROLL_SMALL,
     secondaryKeywordId: "stun",
   },
   {
@@ -722,6 +727,7 @@ const affixRows = [
     descriptionTemplate: "Your next attack is guaranteed to Critically Hit when you Dodge",
     effectKey: "nextAttackCritOnDodge",
     roll: uniqueRoll(1),
+    uniqueOnly: true,
   },
   {
     id: "dodge-bleed",

@@ -21,7 +21,21 @@ import { rebindLiveRunMeta } from "./run-meta-rebind";
 function gearCommandView(state: GameplayDraft): GearStore {
   const gear = state.gear;
   return {
-    ...gear,
+    get inventories() {
+      return gear.inventories;
+    },
+    get loadouts() {
+      return gear.loadouts;
+    },
+    get ownedTrinketIds() {
+      return gear.ownedTrinketIds;
+    },
+    get equippedTrinkets() {
+      return gear.equippedTrinkets;
+    },
+    get craftingCurrencies() {
+      return gear.craftingCurrencies;
+    },
     initialize: (inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets) =>
       initializeGear(gear, inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets),
     addInstance: (instance, characterId) => {

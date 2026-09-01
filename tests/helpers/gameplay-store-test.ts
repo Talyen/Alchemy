@@ -13,7 +13,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { createInitialProfileState } from "@/features/alchemy/shared/stores/profile-store-types";
 import { createEmptyEquippedTrinkets, createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
-import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting-ids";
 import {
   clearTransientSession,
   initializeActiveBattle,

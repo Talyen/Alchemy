@@ -30,11 +30,14 @@ export const EQUIPMENT_SHOP_DROP_RATES = {
 
 export const DROP_RATES_BOSS = {
   unique: 0.3,
+  astral: 0.7,
+  basic: 0,
 } as const;
 
 export const DROP_RATES_NORMAL = {
   unique: 0.05,
   astral: 0.08,
+  basic: 0.87,
 } as const;
 
 export const GEAR_REWARD_PERMANENT_TRINKET_CHANCE = {

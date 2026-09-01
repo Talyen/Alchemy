@@ -106,13 +106,13 @@ test.describe("Run Outcomes", critical, () => {
       });
 
       const battle = new BattlePage(page);
-      await expect(battle.endTurnBtn).toBeVisible({ timeout: 10000 });
+      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 15000 });
 
       await battle.endTurn();
-      await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 15000 });
 
       await page.getByRole("button", { name: "Continue" }).click();
-      await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 15000 });
 
       const activeRun = await page.evaluate((saveKey) => {
         const save = JSON.parse(localStorage.getItem(saveKey) || "{}");

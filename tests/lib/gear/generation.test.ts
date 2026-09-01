@@ -110,7 +110,7 @@ describe("gear generation", () => {
 
   it("rolls defensive Dodge affixes on leather armor and offensive Dodge affixes on dagger, shortbow, and quiver", () => {
     const defensiveDodge = ["dodge-chance", "dodge-block", "dodge-heal", "dodge-armor"];
-    const offensiveDodge = ["dodge-riposte", "dodge-opening", "dodge-crit", "dodge-bleed"];
+    const offensiveDodge = ["dodge-riposte", "dodge-opening", "dodge-bleed"];
 
     const leatherPool = buildEligibleAffixPool(gearDefinitions["leather-armor-basic"]!).map((affix) => affix.id);
     expect(leatherPool).toEqual(expect.arrayContaining(defensiveDodge));

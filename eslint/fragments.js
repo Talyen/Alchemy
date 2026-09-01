@@ -340,6 +340,13 @@ export const ASSET_BARREL_NO_VALUE_IMPORT_REASONS = {
   "@/lib/game-data": "its barrel re-exports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
   "@/lib/gear":
     "it re-exports crafting.ts which imports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
+  "@/lib/game-data/assets": "it re-exports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
+  "@/lib/game-data/assets.generated": "it contains .webp asset paths esbuild can't parse in test collection.",
+  "@/lib/game-data/gear-art": "it re-exports .webp assets esbuild can't parse. Use `import type` instead.",
+  "@/lib/gear/crafting":
+    "it imports craftingArt (.webp) esbuild can't parse. Use `@/lib/gear/crafting-ids` for pure currency ids.",
+  "@/lib/gear/definitions":
+    "it may transitively pull gear art. Prefer `@/lib/gear/crafting-ids` or type-only imports in Playwright-collected files.",
 };
 
 export const ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS = Object.entries(ASSET_BARREL_NO_VALUE_IMPORT_REASONS).map(

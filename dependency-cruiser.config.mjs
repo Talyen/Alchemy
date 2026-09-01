@@ -1,3 +1,6 @@
+// Cruiser mirrors the layer-isolation subset of eslint/boundaries.js.
+// Full boundary table (GAME_DATA_NO_BATTLE, LIB_NO_FRAMEWORK, WRITE_PORT, etc.) is enforced via eslint;
+// see eslint/boundaries.js + eslint.config.js for the complete source of truth.
 import {
   LIB_NO_FEATURES,
   META_NO_RUN_LOOP,
