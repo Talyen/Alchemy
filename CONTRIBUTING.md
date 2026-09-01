@@ -16,9 +16,9 @@ The executable catalog in `scripts/lib/change-routes.mjs` owns path-to-command a
   which verifies complete preparation is idempotent. If preparation would change
   outputs, the check restores them and fails with the changed paths.
 - Inspect without running: add `--plan`; use `--verbose-plan` only when full argv is needed.
-- Local defaults run focused unit suites plus the `@prepush` canary only; no focused browser flow runs by default. All five focused flows (`save`, `shop`, `audio`, `gear`, `mystery`) are opt-in via `--e2e <route>`, or bare `--e2e` for every touched route; `--full` adds the full local handoff gate. CI owns these flows: every-push critical gate, path-filtered `save-gate` / `shop-gate` / `gear-gate` / `mystery-gate` / `audio-gate`, and nightly.
+- Local defaults run focused unit suites plus the `@prepush` canary only; no focused browser flow runs by default. Six focused flows (`save`, `shop`, `audio`, `gear`, `mystery`, `homestead`) are opt-in via `--e2e <route>`, or bare `--e2e` for every touched route; `--full` adds the full local handoff gate. CI owns the every-push critical gate, five path-filtered gates (`save`, `shop`, `gear`, `mystery`, `audio`), and nightly coverage. Homestead remains a local/manual focused flow.
 - Desktop CommonJS and packaging changes route through focused unit coverage locally. The Electron desktop suite (`test:ship:desktop`) remains CI-only: it runs on pushes matching the `desktop_renderer` path filter and unconditionally on nightly. Run it locally only by explicit choice.
-- Unknown paths are labeled `unknown` and receive a TypeScript fallback with a warning that non-TypeScript behavior may not be exercised.
+- Unknown paths are labeled `unknown` and receive a TypeScript fallback with a warning that non-TypeScript behavior may not be exercised. Handoff and CI run `verify:changed -- --strict-routes` which fails when changed executable/test/workflow/build-config paths lack ownership; iteration mode warns only. Documentation-only paths do not trigger strict failure.
 - Canonical route fixtures and selected commands are tested in `tests/scripts/verify-changed.test.ts`.
 - On any push to `main`, use the fast pre-push hook (`check:push`); CI runs after push. CI E2E parity is `test:e2e:prepush:full`.
 
@@ -37,15 +37,13 @@ paths and coverage run across both projects through the existing `npm test -- <p
 
 ## Before you push
 
-Execution plans are short-lived working documents under [`docs/Plans/`](docs/Plans/README.md). Run `npm run plans:check` while a plan is active; `npm run docs:check` includes that check plus repository-wide documentation contracts. When the work ends, mark the plan `complete` (or `cancelled`), refresh its `updated` date, and run `npm run docs:check:final`; the command archives terminal plans and requires no active plans to remain.
+Execution plans are short-lived working documents under [`docs/Plans/`](docs/Plans/README.md). Run `npm run plans:check` while a plan is active; `npm run docs:check` includes that check plus repository-wide documentation contracts. When the work ends, mark the plan `complete` (or `cancelled`), refresh its `updated` date, run `npm run archive:plans` to move terminal plans, then run `npm run docs:check:final` (pure validation — no archiving) which requires no active plans to remain and fails if terminal plans are still unarchived.
 
-The default local hook is `npm run check:push` (format, TypeScript for src and tests, ESLint, a fresh production build, `@prepush` E2E canary). CI is the full gate after every push to `main`. Do **not** require a GitHub **push** status check on `main` — that blocks trunk pushes before CI can run.
+The default local hook is `npm run check:push` — the canonical fast gate: lockfile check (`npm ci --dry-run`), formatting, TypeScript for src and tests, ESLint, generated-output validation (including version metadata via `check:generated`), and a non-mutating production build (`build:verified`). The strong completion gate is `npm run check:handoff -- --diff` (or explicit paths): strict changed-path verification, full static checks/boundaries/CI routing, complete Vitest suite, verified build + preview smoke, `@prepush` browser canary, final docs/plan validation, and `context:hotspots -- --run-id <id> --check` against the gate's single run ID with source-state staleness detection. CI runs the full gate after every push to `main`. Do **not** require a GitHub **push** status check on `main` — that blocks trunk pushes before CI can run.
 
-`lefthook` `pre-push` runs `check:push` against a freshly built bundle (`ALCHEMY_SKIP_ASSETS=1`) so the animation canary never hits stale `dist/`. Default pre-push skips `lint:boundaries` and `deadcode` — those run in CI `lint:ci`.
+`lefthook` `pre-push` runs only `check:push`. `lefthook` `pre-commit` runs Prettier on **staged files** that match `scripts/prettier-paths.mjs` (same set as `npm run format` / `format:check`). Do not hand-duplicate those globs in lefthook. Install hooks once: `npm run prepare` (runs on `npm install`).
 
-Install hooks once: `npm run prepare` (runs on `npm install`).
-
-`lefthook` `pre-commit` runs Prettier on **staged files** that match `scripts/prettier-paths.mjs` (same set as `npm run format` / `format:check`). Do not hand-duplicate those globs in lefthook. Static checks and the lockfile check live in `pre-push` (`lockfile-check` then `check:push`), which blocks the push anyway; CI repeats them.
+CI and handoff enforce strict route ownership for changed executable/test/workflow/build-config paths; iteration mode warns only. Documentation-only changes do not trigger strict failure.
 
 E2E timings / flakiness: `npm run test:e2e:timings`, `npm run test:e2e:audit`.
 Recent local verification/test records: `npm run runs:show -- --last 10`.
@@ -63,13 +61,20 @@ only when intentionally shipping; see [RELEASE.md](./docs/RELEASE.md).
 | `npm run lint:boundaries`         | dependency-cruiser phase / lib edges                                                                                                                                                                                                                                                                                |
 | `npm run lint:architecture-smoke` | Cold ESLint smoke over representative screens and effective-config checks; included in `lint:ci`                                                                                                                                                                                                                    |
 | `npm run deadcode`                | knip (`lint:ci` / CI; not default `pre-push`)                                                                                                                                                                                                                                                                       |
-| `npm run deadcode:strict`         | knip strict + entry exports, deps excluded (nightly)                                                                                                                                                                                                                                                                |
+| `npm run deadcode:entry-exports`  | knip entry-export audit (nightly); production/strict mode remains off until production patterns are configured                                                                                                                                                                                                      |
 | `npm run lint:ci`                 | Nine concurrent static gates (docs:check, CI routing, generated-output check, format:check, typecheck:all, lint, boundaries, architecture-smoke, deadcode); fails fast on the first failure. The GitHub `lint` job runs this, then adds push-only `ci:verify-plan` (informational) and `check:test-owners`          |
 | `npm run check:test-owners`       | CI-only on push: fail when a newly added `src` file has no mirrored Vitest owner. Screens, types, and generated files are excluded. `src/lib` requires a basename match (`src/lib/battle/dot-resolve.ts` → `tests/lib/battle/dot-resolve.test.ts`); other source may share a sibling test in the mirrored directory |
 | `npm run ci:verify-plan`          | CI-only informational: print the `verify:changed --plan` for the push range                                                                                                                                                                                                                                         |
 | `npm run test:mutation`           | Nightly Stryker canary on `damage-calc.ts` and `dot-resolve.ts`; not a local gate                                                                                                                                                                                                                                   |
 
 Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clean:all` (also `dist` / `release-desktop` + configured stale test/preview ports). The main Vite port is left alone unless you pass `--include-dev-port`; use `npm run clean -- --help` for the current target list.
+
+## CI routing ownership
+
+CI topology is owned by `.github/workflows/`; local route selection is owned by
+`scripts/lib/change-routes.mjs`. Keep both synchronized through
+`npm run ci:routing`. Current job-to-local mappings are listed in
+[CI parity](#ci-parity), but do not override those executable owners.
 
 ## CI parity
 

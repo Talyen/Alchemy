@@ -53,10 +53,6 @@ export const PRESERVED_FLAG_VALUES = Object.fromEntries(
 export type PreservedFlagKey = keyof typeof PRESERVED_FLAG_VALUES;
 export const PRESERVED_FLAG_KEYS = Object.keys(PRESERVED_FLAG_VALUES) as PreservedFlagKey[];
 
-export type FirstTimeFlagKey = {
-  [K in PreservedFlagKey]: (typeof FLAG_DEFINITIONS)[K]["preserveAs"] extends false ? never : K;
-}[PreservedFlagKey];
-
 export function createInitialFlags(): CombatFlags {
   return Object.fromEntries(
     Object.entries(FLAG_DEFINITIONS).map(([k, def]) => [k, (def as { default: unknown }).default]),

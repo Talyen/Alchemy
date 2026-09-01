@@ -12,10 +12,7 @@ commit-msg:
 
 pre-push:
   commands:
-    lockfile-check:
-      run: npm ci --dry-run
-    fast-gate:
-      # check:push:quick runs format, typecheck:all, lint, and a build with committed
-      # assets — fast local gate (<60s). Use `npm run check:push` (includes prepush
-      # E2E) before shipping, or set ALCHEMY_PREPUSH=1 to force full gate on push.
-      run: npm run check:push:quick
+    push-gate:
+      # check:push is the canonical fast gate: lockfile, format, typecheck, lint,
+      # generated-output validation, and a non-mutating production build.
+      run: npm run check:push

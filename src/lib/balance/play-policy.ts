@@ -36,7 +36,24 @@ function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
       );
     case "repeat-over-turns":
       return effect.remainingTurns * scoreEffects(effect.effects, state);
-    default:
+    case "wish":
+    case "restore-mana":
+    case "lose-mana":
+    case "lose-max-mana":
+    case "gain-max-mana":
+    case "gain-gold":
+    case "summon-companion":
+    case "remove-player-status":
+    case "self-damage":
+    case "buff-companion":
+    case "lose-health":
+    case "draw-cards":
+    case "remove-enemy-armor":
+    case "multiply-enemy-status":
+    case "cleanse-player-status-to-damage":
+    case "next-hit-crit":
+    case "play-next-card-twice":
+    case "next-hit-poison":
       return 0;
   }
 }

@@ -20,18 +20,8 @@ Player loot earned during a run (mystery choices, combat crystals, reward screen
 - `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts` — material grant coverage.
 - `docs/ARMORY.md#write-paths` — salvage material grant uses `awardMaterialsDuringRun` (active run) vs `addMaterials` (meta).
 
-## Preferred pattern
+## Resolution
 
-- In-run loot: `awardMaterialsDuringRun(materials)` inside `dispatchRunSessionCommand`.
-- Apply `applyMaterialFindBonus()` before award where caller hasn't already (mystery/combat do).
-- Permanent Gear discovery: `recordRunObtainedItem()` per grant; `finalizeRunEndSession` copies `activeRun.runObtainedItems → session.runEndItems`.
-- Do not record Boons/cards via `recordRunObtainedItem`.
-
-## Exceptions
-
-- Meta grants outside a run (shop-salvage in meta context, dev tools) correctly use `addMaterials`.
-- `clearAllPersistentGameData()` wipe path.
-
-## Enforcement opportunity
-
-Strongest: the repository-wide `alchemy/no-run-earned-add-materials` ESLint error rejects imports, exports, and calls outside its explicit owner allowlist.
+[WORKFLOWS.md](../../../docs/WORKFLOWS.md#grant-materials-during-a-run) owns the
+call pattern and explicit exceptions. The repository-wide
+`alchemy/no-run-earned-add-materials` rule enforces the recurring mistake.

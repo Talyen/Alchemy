@@ -2,10 +2,11 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { isMainModule } from "./lib/is-main-module.mjs";
 import { readRepoPackageJson } from "./lib/repo-package.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 
-async function main() {
+export async function syncVersionMetadata({ check = false } = {}) {
   const root = join(dirname(fileURLToPath(import.meta.url)), "..");
   const version = readRepoPackageJson().version;
 
@@ -14,11 +15,19 @@ async function main() {
 export const CURRENT_GAME_BUILD_VERSION = ${JSON.stringify(version)};
 `;
 
-  const wrote = await writeTextIfChanged(outPath, contents);
-  console.log(wrote ? `Synced game build version ${version}` : `Build version ${version} already up to date`);
+  const wrote = await writeTextIfChanged(outPath, contents, { check });
+  if (check && !wrote) console.log(`Version metadata is current (${version}).`);
+  else console.log(wrote ? `Synced game build version ${version}` : `Build version ${version} already up to date`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+async function main() {
+  const check = process.argv.includes("--check");
+  await syncVersionMetadata({ check });
+}
+
+if (isMainModule(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

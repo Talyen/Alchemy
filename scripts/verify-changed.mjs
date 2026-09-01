@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { commandExposure, sanitizeOutput, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
-import { E2E_NAMES, resolveRoutePlan } from "./lib/change-routes.mjs";
+import { E2E_NAMES, resolveRoutePlan, ROUTES } from "./lib/change-routes.mjs";
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
@@ -79,6 +79,47 @@ function localAddedSourcePaths(paths) {
 function localUnownedOwners(paths) {
   const added = localAddedSourcePaths(paths);
   return unownedAddedSourceFiles(added);
+}
+
+function isStrictExecutablePath(filePath) {
+  if (filePath.endsWith(".md")) return false;
+  if (filePath.startsWith("docs/")) return false;
+  if (filePath.startsWith(".agents/") && filePath.endsWith(".md")) return false;
+  if (/^(src|tests|scripts|\.github|desktop|public)\//u.test(filePath)) return true;
+  if (
+    /^(package\.json|vite\.config\.ts|knip\.|lefthook\.yml|eslint|tsconfig|dependency-cruiser|stryker\.config)/u.test(
+      filePath,
+    )
+  )
+    return true;
+  if (/\.(ts|tsx|js|mjs|cjs|json|yml|yaml)$/u.test(filePath)) return true;
+  return false;
+}
+
+function globToRegExpStrict(glob) {
+  let source = "^";
+  for (let i = 0; i < glob.length; i += 1) {
+    const ch = glob[i];
+    if (ch === "*" && glob[i + 1] === "*") {
+      source += ".*";
+      i += 1;
+    } else if (ch === "*") source += "[^/]*";
+    else if (ch === "?") source += "[^/]";
+    else source += ch.replace(/[.+^${}()|[\]\\]/gu, "\\$&");
+  }
+  return new RegExp(`${source}$`, "u");
+}
+
+export function getStrictUnknownPaths(plan) {
+  const isKnown = (filePath) =>
+    ROUTES.some((route) => {
+      const matchesPattern = (pat) => globToRegExpStrict(pat).test(filePath);
+      const matched = route.patterns.some(matchesPattern);
+      if (!matched) return false;
+      const excluded = (route.exclude ?? []).some(matchesPattern);
+      return !excluded;
+    });
+  return plan.paths.filter((p) => !isKnown(p) && isStrictExecutablePath(p));
 }
 
 export function formatPlan(plan, { verbosePlan = false } = {}) {
@@ -208,6 +249,46 @@ export function main(argv = process.argv.slice(2)) {
     const plan = resolveRoutePlan(paths, { e2e, full: flags.has("full") });
     console.log(`Run: ${runId}`);
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
+    const strict = flags.has("strict-routes") || flags.has("strict");
+    if (strict) {
+      const strictUnknown = getStrictUnknownPaths(plan);
+      if (strictUnknown.length > 0) {
+        console.error(`Strict route check failed: ${strictUnknown.length} executable path(s) without ownership:`);
+        for (const p of strictUnknown) console.error(`- ${p}`);
+        console.error(`Add owning route in scripts/lib/change-routes.mjs or move file to owned area.`);
+        if (flags.has("plan")) return 1;
+        const fakeResult = {
+          status: 1,
+          elapsedMs: 0,
+          output: `Strict unknown routes:\n${strictUnknown.join("\n")}`,
+        };
+        const fakeCommand = {
+          key: "strict-routes",
+          label: "strict route ownership",
+          command: "npm run verify:changed",
+          args: ["--", "--strict-routes"],
+          reason: "executable paths must have route ownership",
+        };
+        const reportsDir = path.join(ROOT, "reports", "runs", runId, "verify-changed");
+        const { digestPath, logPath } = writeFailureDigest(reportsDir, fakeCommand, fakeResult, runId, 0);
+        console.error(`  Failure digest: ${path.relative(ROOT, digestPath)}`);
+        console.error(`  Full output: ${path.relative(ROOT, logPath)}`);
+        writeCurrentRun({
+          rootDir: ROOT,
+          runId,
+          status: "failed",
+          command: "npm run verify:changed",
+          artifacts: [
+            { path: digestPath, role: "primary" },
+            { path: logPath, role: "secondary" },
+          ],
+          counts: { passed: 0, failed: 1 },
+          commandExposures: [],
+          summary: "strict route ownership failed; add owning route.",
+        });
+        return 1;
+      }
+    }
     if (flags.has("plan")) {
       const localUnowned = localUnownedOwners(plan.paths);
       return localUnowned.length > 0 ? 1 : 0;

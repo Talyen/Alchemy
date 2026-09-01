@@ -243,9 +243,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-      - run: npm run build
-        env:
-          ALCHEMY_SKIP_ASSETS: "1"
+      - run: npm run build:verified
 
       - name: Check bundle budget (index 600k / total 1.55M)
         run: node scripts/check-bundle-budget.mjs
@@ -329,9 +327,7 @@ jobs:
 
       - uses: ./.github/actions/setup
       - name: Build desktop renderer
-        run: npm run build:desktop
-        env:
-          ALCHEMY_SKIP_ASSETS: "1"
+        run: npm run build:desktop:verified
 
       - uses: actions/upload-artifact@v7
         with:
@@ -409,9 +405,7 @@ jobs:
 
       - uses: ./.github/actions/setup
       - name: Build Windows installer
-        run: npm run dist:desktop
-        env:
-          ALCHEMY_SKIP_ASSETS: "1"
+        run: npm run dist:desktop:verified
 
       - name: Upload desktop artifact
         uses: actions/upload-artifact@v7

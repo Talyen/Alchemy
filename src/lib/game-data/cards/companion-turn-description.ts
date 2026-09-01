@@ -29,7 +29,24 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
       if (!success || !failure) return null;
       return `${success.replace(/ each turn$/, "")} or ${failure.replace(/ each turn$/, "")} each turn`;
     }
-    default:
+    case "wish":
+    case "enemy-status":
+    case "lose-mana":
+    case "lose-max-mana":
+    case "gain-max-mana":
+    case "summon-companion":
+    case "remove-player-status":
+    case "self-damage":
+    case "buff-companion":
+    case "lose-health":
+    case "remove-enemy-armor":
+    case "multiply-enemy-status":
+    case "cleanse-player-status-to-damage":
+    case "random-damage":
+    case "repeat-over-turns":
+    case "next-hit-crit":
+    case "play-next-card-twice":
+    case "next-hit-poison":
       return null;
   }
 }

@@ -171,8 +171,8 @@ jobs:
             reports/runs/
           retention-days: 7
 
-  deadcode-strict:
-    name: Knip strict
+  deadcode-entry-exports:
+    name: Knip entry exports
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -187,8 +187,8 @@ jobs:
         with:
           skip-electron-download: "true"
 
-      - name: Knip strict (entry exports)
-        run: npm run deadcode:strict
+      - name: Knip entry exports
+        run: npm run deadcode:entry-exports
 
   coverage:
     name: Unit coverage

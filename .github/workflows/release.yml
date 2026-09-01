@@ -87,9 +87,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-      - run: npm run build
-        env:
-          ALCHEMY_SKIP_ASSETS: "1"
+      - run: npm run build:verified
 
       - name: Smoke test production build
         run: npm run smoke:preview
@@ -197,10 +195,12 @@ jobs:
         env:
           RELEASE_VERSION: ${{ github.ref_name }}
 
+      - name: Assert committed outputs match preparation
+        run: npm run assets:check
+
       - name: Build desktop installers
-        run: npm run dist:desktop
+        run: npm run dist:desktop:verified
         env:
-          ALCHEMY_SKIP_ASSETS: "1"
           CI_RELEASE: "true"
           STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}

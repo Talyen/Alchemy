@@ -4,5 +4,4 @@ export {
   TEMPLATE_EFFECT_DEFINITIONS,
   BattleCardEffectSchema,
   type BattleCardEffectKind,
-  type EffectKindDefinition,
 } from "./registry";

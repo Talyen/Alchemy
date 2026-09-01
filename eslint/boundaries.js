@@ -19,11 +19,13 @@ import {
   WRITE_PORT_PATTERNS,
 } from "./fragments.js";
 
+const SOURCE_IMPORT_PATTERNS = [BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, WRITE_PORT_PATTERNS, NO_DIRECT_ASSET_IMPORT];
+
 function boundaryBlock(files, ...extra) {
   return {
     files,
     rules: {
-      "no-restricted-imports": layerImports(BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, ...extra),
+      "no-restricted-imports": layerImports(...SOURCE_IMPORT_PATTERNS, ...extra),
     },
   };
 }
@@ -33,7 +35,7 @@ function boundaryBlockWithIgnores(files, ignores, ...extra) {
     files,
     ignores,
     rules: {
-      "no-restricted-imports": layerImports(BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, ...extra),
+      "no-restricted-imports": layerImports(...SOURCE_IMPORT_PATTERNS, ...extra),
     },
   };
 }
@@ -56,13 +58,19 @@ const BOUNDARY_TABLE = [
   {
     files: ["src/**/*.{ts,tsx}"],
     ignores: ["src/features/alchemy/shared/stores/**", "src/lib/game-data/assets.generated.ts"],
-    extra: [WRITE_PORT_PATTERNS, NO_DIRECT_ASSET_IMPORT],
+    extra: [],
   },
   { files: ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"], onlyBarrel: true },
   {
     files: ["src/lib/**/*.{ts,tsx}"],
     paths: LIB_NO_FRAMEWORK_PATHS,
-    patterns: [LIB_BARREL_PATTERNS, LIB_NO_FEATURES, DOMAIN_STORE_PATTERNS],
+    patterns: [
+      LIB_BARREL_PATTERNS,
+      LIB_NO_FEATURES,
+      DOMAIN_STORE_PATTERNS,
+      WRITE_PORT_PATTERNS,
+      NO_DIRECT_ASSET_IMPORT,
+    ],
   },
   {
     files: ["src/lib/game-data/**/*.{ts,tsx}"],
@@ -72,6 +80,8 @@ const BOUNDARY_TABLE = [
       GAME_DATA_NO_BATTLE,
       LIB_NO_FEATURES,
       DOMAIN_STORE_PATTERNS,
+      WRITE_PORT_PATTERNS,
+      NO_DIRECT_ASSET_IMPORT,
     ],
   },
   {
@@ -82,6 +92,8 @@ const BOUNDARY_TABLE = [
       [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],
       BATTLE_NO_FEATURES,
       DOMAIN_STORE_PATTERNS,
+      WRITE_PORT_PATTERNS,
+      NO_DIRECT_ASSET_IMPORT,
     ],
   },
   {
@@ -91,6 +103,8 @@ const BOUNDARY_TABLE = [
       [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],
       BATTLE_NO_FEATURES,
       DOMAIN_STORE_PATTERNS,
+      WRITE_PORT_PATTERNS,
+      NO_DIRECT_ASSET_IMPORT,
     ],
   },
   { files: ["src/features/alchemy/run-setup/**/*.{ts,tsx}"], extra: [RUN_SETUP_NO_RUN_LOOP] },
@@ -115,6 +129,17 @@ const BOUNDARY_TABLE = [
   {
     files: ["src/features/alchemy/meta/screens/**/*.{ts,tsx}"],
     extra: [META_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION],
+  },
+  {
+    files: ["src/lib/game-data/assets.generated.ts"],
+    paths: LIB_NO_FRAMEWORK_PATHS,
+    patterns: [
+      [{ group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." }],
+      GAME_DATA_NO_BATTLE,
+      LIB_NO_FEATURES,
+      DOMAIN_STORE_PATTERNS,
+      WRITE_PORT_PATTERNS,
+    ],
   },
 ];
 
@@ -148,7 +173,7 @@ export const BOUNDARY_CONFIGS = [
   {
     files: ["src/features/alchemy/shared/ui/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": layerImports(BARREL_PATTERNS, UI_NO_SESSION_STORES),
+      "no-restricted-imports": layerImports(...SOURCE_IMPORT_PATTERNS, UI_NO_SESSION_STORES),
       "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
     },
   },
@@ -163,8 +188,7 @@ export const BOUNDARY_CONFIGS = [
             message: "Do not use React.lazy on route screens. All screen routes must be loaded statically upfront.",
           },
         ],
-        BARREL_PATTERNS,
-        DOMAIN_STORE_PATTERNS,
+        ...SOURCE_IMPORT_PATTERNS,
       ),
       "no-restricted-properties": [
         "error",

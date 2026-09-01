@@ -18,7 +18,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { CombatFlags } from "../combat-flags";
 
-export interface PendingTurnStartPulse {
+interface PendingTurnStartPulse {
   remainingTurns: number;
   effects: BattleCardEffect[];
 }
@@ -50,8 +50,7 @@ export function isStunFreezeBuildupBlocked(cc: CcState): boolean {
   return hasActiveCc(cc) || cc.cooldown > 0;
 }
 
-export type { CombatFlags, FlagId, FirstTimeFlagKey, PreservedFlagKey } from "../combat-flags";
-export { FLAG_DEFINITIONS, PRESERVED_FLAG_VALUES, PRESERVED_FLAG_KEYS, createInitialFlags } from "../combat-flags";
+export type { CombatFlags } from "../combat-flags";
 
 export interface BattleState {
   deck: BattleCard[];

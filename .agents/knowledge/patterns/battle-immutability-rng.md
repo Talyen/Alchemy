@@ -20,19 +20,9 @@ Battle logic tempted to mutate `BattleState` in place, use `Math.random()` / `Ma
 - `src/lib/battle/rng.ts` — `placeholderRng` is only allowed constant RNG.
 - `docs/ARCHITECTURE.md#run-randomness` — `createDraftRunRandomSource(draft, stream)`, `withDraftWorldBattleRng` / `withRestingWorldBattleRng`.
 
-## Preferred pattern
+## Resolution
 
-- Never mutate `BattleState` fields; return new state.
-- `Math.round` for all combat math; never `Math.floor`.
-- Live: `withDraftWorldBattleRng(draft, state)` inside command. Engine consumers: `getBattleRng(state)`. Tests/sim: `createRunStreamRng`.
-- Enemy status via `addEnemyStatus` / `setEnemyStatus`; player damage via `scaleReceivedPlayerDamage` where applicable.
-- Keep shared combat tunables in a topical `src/lib/game-constants/` file; keep content-owned magnitudes with their definitions.
-
-## Exceptions
-
-- `Math.random()` for a fresh run seed (`activeRun.rng.seed`) and presentation-only values that cannot affect gameplay or persisted state.
-- `src/lib/battle/rng.ts` `placeholderRng` setup.
-
-## Enforcement opportunity
-
-Strongest existing: lint bans (`no-restricted-syntax`) plus the Immer command boundary. Further: type-level `Readonly<BattleState>` (already largely), Stryker mutation on `damage-calc.ts`/`dot-resolve.ts` nightly (`test:mutation`) ratchets arithmetic coverage.
+[REFERENCE.md](../../../docs/REFERENCE.md#battle-implementation-rules) owns the
+working rules. Lint bans, the command boundary, and nightly mutation coverage
+enforce the repeatable parts; retain this pattern as the reason those gates
+exist rather than a second implementation checklist.

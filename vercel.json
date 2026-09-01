@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "buildCommand": "export ALCHEMY_SKIP_ASSETS=1 && npm run typecheck && npm run build",
+  "buildCommand": "npm run typecheck && npm run build:verified",
   "outputDirectory": "dist",
   "rewrites": [
     {

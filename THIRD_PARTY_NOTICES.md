@@ -4,6 +4,9 @@ Alchemy’s original code and content use the license described in
 [LICENSE.md](./LICENSE.md). Third-party software and content retain their own
 licenses; nothing in the Alchemy license overrides those terms.
 
+The current asset register contains unresolved release blockers. Do not treat
+this document's presence as clearance for public distribution.
+
 ## Software dependencies
 
 Runtime and development dependencies are declared in `package.json` and locked

@@ -31,8 +31,8 @@ catalog-external tests are named inline.
 | Content system / starter draft                | [Content system behavior](#content-system-behavior)                                                                                                                                            |
 | Battle playback                               | [Change battle playback](#change-battle-playback)                                                                                                                                              |
 | Screen, destination, mystery, corruption      | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind) · [Corruption](#adding--changing-corruption-flow) |
-| In-run materials, screen fade                 | [Grant materials during a run](#grant-materials-during-a-run) · [Screen fade motion](#screen-fade-motion) · [Interactive buttons](#interactive-button-conventions)                             |
-| Tooltips                                      | [Hover tooltips](#hover-tooltips)                                                                                                                                                              |
+| In-run materials                              | [Grant materials during a run](#grant-materials-during-a-run)                                                                                                                                  |
+| UI placement, motion, buttons, tooltips       | [UI system](./UI.md)                                                                                                                                                                           |
 | Gameplay session mutation                     | [Gameplay command boundary](#gameplay-command-boundary)                                                                                                                                        |
 
 ---
@@ -71,93 +71,6 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 **Do not** call `addMaterials()` on the run profile store directly from run-loop or mystery code for player loot.
 
 Permanent Gear and Armory Trinkets use `recordRunObtainedItem()` at each grant site (reward Gear/Trinket picks, equipment shop, trinket shop, mystery generated Gear). `finalizeRunEndSession` copies `activeRun.runObtainedItems` into `session.runEndItems` for the run-end recap. Do not record Boons or cards.
-
----
-
-## Screen fade motion
-
-| Step                  | Guidance                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1. Route change       | Opacity-only page fade in `useRenderedScreenTransition` (`src/app/use-app-navigation.ts`). Tokens: `--motion-fade-duration` / `MOTION_FADE_MS` / `PAGE_EXIT_MS`. Autosave, audio, battle playback, and presentation teardown follow **committed** `screen`, not `renderedScreen`. Sequential swap: `useSequentialFadeSwap`. `setScreen` / `assertScreenTransitionAllowed`: `use-screen-transitions.ts`.                                                                                                                                          |
-| 2. In-screen identity | `<FadeSlot swapKey={...}>` for any in-screen identity swap (tabs, shop modes, offerings, keyword trees). First mount is idle so it does not stack on the route fade.                                                                                                                                                                                                                                                                                                                                                                             |
-| 3. Overlays           | Dialogs, wish, and game menu use `useFadePresence` so they fade out before unmount.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| 4. Copy               | `ScreenDescription` is static. Word-by-word `TextAnimate` is mystery narrative only.                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| 5. Anti-flash         | Swap layout only while opacity is 0; clear or structurally replace outgoing route payloads in `navigateTo(..., onRenderedScreenCommit)`, not before navigation. `FadeSlot` holds wrapper `className` until in-screen swaps complete. Shape-changing swaps (tabs, shop modes, mystery phases, talent keywords) add reserved min-height; collection uses inner `grid-rows-2` + aspect fillers + slot `min-h`. Routes must not `return null` for a missing payload — use held values only for recovery or keep screen chrome. Do not stagger items. |
-
-Motion tokens live in `src/styles/theme.css` and `src/styles/components.css`. Hover/tap rules: [Interactive button conventions](#interactive-button-conventions).
-
----
-
-## Interactive button conventions
-
-Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared components before hand-rolling styles.
-
-| Concern        | Standard                                                                                                                                            |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shape          | `rounded-xl` rectangles (`BUTTON_SHAPE`)                                                                                                            |
-| Primary CTA    | `Button variant="primary"` (gold fill) — Play, Continue, Confirm                                                                                    |
-| Secondary CTA  | `Button variant="outline"` — Back, Cancel, Skip, alternate menu nav                                                                                 |
-| Accent CTA     | `ShineAccentButton` — corruption forward actions with shine border                                                                                  |
-| Paired footers | `ActionButtonRow` — secondary left, primary right                                                                                                   |
-| Equal choices  | Destination art tiles (`DestinationChoices` + `Surface`) with a label under the art                                                                 |
-| Tabs           | `TabBar` — `h-11`, `rounded-xl`                                                                                                                     |
-| Hover / press  | Cards and art surfaces use the shared `1.035` CSS hover scale. Press feedback uses CSS `active:`. Do not add Framer hover scale or parallel motion. |
-| Width tiers    | `BUTTON_WIDTH_*` in `src/features/alchemy/shared/config/button-tokens.ts`                                                                           |
-
-| Step               | Guidance                                                                                 |
-| ------------------ | ---------------------------------------------------------------------------------------- |
-| 1. Menu stack      | One `primary` at top (Play); all other items `outline` + `BUTTON_WIDTH_MENU`             |
-| 2. Back + Continue | `ActionButtonRow` with `width="dialog"`                                                  |
-| 3. Skip + confirm  | `ActionButtonRow` with `width="action"`; skip secondary, confirm primary                 |
-| 4. Destinations    | Art tiles via `DestinationChoices`; accessible name on the tile, accent label underneath |
-| 5. Shine           | Only on accent-intent forward actions — never Back/Cancel/Skip                           |
-
----
-
-## Accessibility stance
-
-Alchemy is visual-heavy and intentionally ships no dedicated accessibility
-features beyond what tests and robustness need. Keep semantic buttons and
-programmatic names/states (`aria-label`, `aria-disabled`, `aria-pressed`) —
-Playwright locates through them — and mark decorative art `aria-hidden`. Do not
-add focus traps or restore, screen-reader announcements, contrast tooling, or
-per-component reduced-motion variants. The single global
-`prefers-reduced-motion` block at the bottom of `src/styles/keyframes.css` is
-the only motion accommodation; leave it as-is.
-
----
-
-## Hover tooltips
-
-Every hover tooltip renders in the root-space `#tooltip-root` overlay (registered
-in `App.tsx`) at constant CSS-pixel scale, so it never shrinks with the vr-stage
-transform and cannot be clipped by `overflow-hidden` ancestors. Clip/placement
-bounds are `[data-testid="vr-stage"]` (fallback: `documentElement`), not the raw
-browser window. Prefer above; flip below when the tooltip would clip the stage top;
-place beside the trigger when neither vertical gutter fits (prefer the roomier
-side, then flip/clamp). Explicit `side-start` / `side-end` still anchor beside
-the trigger (locked menu items).
-
-Build tooltips with `PortaledTooltip` (`src/features/alchemy/shared/ui/portaled-tooltip.tsx`):
-
-| Need                         | Prop / helper                                                                                                              |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Basic hover tooltip          | `triggerRef` + `visible`; drive hover with `useHoverVisible()` (`use-hover-visible.ts`)                                    |
-| Placement beside the trigger | `placement="side-start"` / `"side-end"` (flips to the other side when clipped)                                             |
-| Small-window guard           | `maxWidthFraction` — cap against a fraction of the vr-stage width                                                          |
-| Item name shine              | Astral, Unique, and Trinket titles use shine gradient text (`GearItemTitle` / `TrinketItemTitle`). Basic gear stays plain. |
-
-Panels are `pointer-events-none`; visibility follows the trigger only. Nested
-keyword tooltips inside a panel are not supported. State-driven triggers (mount
-on hover) render `PortaledTooltip` only while hovered; CSS-hover converts use
-`useHoverVisible()` and always mount, letting `PortaledTooltip` keep the panel
-mounted through a short fade-out.
-
-`EnemyTooltip`, `HeroTooltip`, `GearTooltipPortal`, `DetailPopup`, and `GearDetailPopup` wrap
-`PortaledTooltip` with their own content. Placement helpers live in
-`src/features/alchemy/shared/ui/portaled-tooltip-placement.ts`; content slots
-(`TooltipHeader` / `TooltipBody` / `TooltipSection`) live in `tooltip-panel.tsx`.
-Astral, Unique, and Trinket names in those panels use shine gradient text; Basic gear titles do not.
 
 ---
 
@@ -369,9 +282,8 @@ resume path in its existing owner, then cover the changed setup/resume route
 with the focused tests selected by `verify:changed`.
 
 Labyrinth maps persist on `activeRun.labyrinthMap` as hex floors (`floors` +
-`nodes`). Resume still returns to `labyrinth-map`. In-progress 8×9 grid maps
-cannot be converted; schema 14 keeps the run and regenerates floor 1 from the
-run seed. See [MIGRATIONS.md](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+`nodes`). Resume still returns to `labyrinth-map`. Historical grid-map recovery
+is recorded in [MIGRATION_HISTORY.md](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-14--labyrinth-hex-floors).
 
 ## Change battle playback
 

@@ -1,6 +1,6 @@
 import type { CompanionId } from "./types";
 
-export interface HealthThresholdBonus {
+interface HealthThresholdBonus {
   threshold: number;
   amount: number;
 }

@@ -60,7 +60,20 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
       return "Your next card is played twice";
     case "next-hit-poison":
       return "Your next attack is converted to Poison damage";
-    default:
+    case "enemy-status":
+    case "lose-mana":
+    case "lose-max-mana":
+    case "summon-companion":
+    case "remove-player-status":
+    case "self-damage":
+    case "buff-companion":
+    case "lose-health":
+    case "draw-cards":
+    case "multiply-enemy-status":
+    case "cleanse-player-status-to-damage":
+    case "random-damage":
+    case "chance":
+    case "repeat-over-turns":
       throw new Error(`effectDescriptionLine: unsupported effect kind ${(effect as BattleCardEffect).kind}`);
   }
 }

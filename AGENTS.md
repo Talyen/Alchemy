@@ -4,7 +4,7 @@ Alchemy is a fantasy roguelite deckbuilder. Router + universal constraints; deta
 
 ## Working style
 
-- Dirty tree is in-flight user work: inspect, preserve intent, keep unrelated paths out. Never `git reset --hard` / `clean -fd` / `checkout --` / `restore` with a dirty tree — the repo guard will stash to `auto-backup pre-<cmd>` and block; recover via `git stash list` / `git reflog`. If another agent has dirty work, use `node scripts/agent-worktree.mjs create --task <slug>` for an isolated checkout under `.worktrees/`.
+- Dirty tree is in-flight user work: inspect, preserve intent, keep unrelated paths out. Never `git reset --hard` / `clean -fd` / `checkout --` / `restore` with a dirty tree — the repo guard (`scripts/bin/git` → `scripts/git-safety-guard.mjs`) creates an `auto-backup pre-<cmd>` stash and blocks. Inspect with `git stash list` / `git stash show`, restore with `git stash apply`, then drop the stash after verification. For parallel work use `node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`).
 - Most pragmatic architectural solution — the best long-term shape, even when larger/harder than the minimal workaround; prefer libs over custom hacks. Compatibility only for concrete consumer (save, shipped behavior, external contract).
 - Surface requirement conflicts with evidence. First failure: use bounded diagnostics; repeated failure class: consult knowledge; after 3 unsuccessful approaches, reassess with docs/tests and ask only when evidence cannot resolve the decision.
 - Run [Audits](./docs/Audits/README.md) only when cited. Zero findings is valid.
@@ -24,15 +24,15 @@ Match level, name a term once.
 
 Start with one owner document; expand only across a demonstrated boundary.
 
-| Need                                          | Read                                                                                                                                                                                                                |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Run state, controllers, boundaries, boot      | [ARCHITECTURE](./docs/ARCHITECTURE.md)                                                                                                                                                                              |
-| Saves, cards, screens, materials, motion      | [WORKFLOWS](./docs/WORKFLOWS.md)                                                                                                                                                                                    |
-| Raw art / sound / generated barrels           | [WORKFLOWS-ASSETS](./docs/WORKFLOWS-ASSETS.md)                                                                                                                                                                      |
-| Commands, battle rules, glossary              | [REFERENCE](./docs/REFERENCE.md)                                                                                                                                                                                    |
-| Hooks, verification, E2E policy               | [CONTRIBUTING](./CONTRIBUTING.md)                                                                                                                                                                                   |
-| Save compatibility                            | [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)                                                                                                                                                   |
-| Armory / gear, card handlers, UI/perf/release | [ARMORY](./docs/ARMORY.md), [BATTLE_HANDLERS](./src/lib/game-data/effects/BATTLE_HANDLERS.md), [UI](./src/features/alchemy/shared/ui/README.md), [PERFORMANCE](./docs/PERFORMANCE.md), [RELEASE](./docs/RELEASE.md) |
+| Need                                                | Read                                                                                                                                                                                                            |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Run state, controllers, boundaries, boot            | [ARCHITECTURE](./docs/ARCHITECTURE.md)                                                                                                                                                                          |
+| Saves, cards, screens, materials, motion            | [WORKFLOWS](./docs/WORKFLOWS.md)                                                                                                                                                                                |
+| Raw art / sound / generated barrels                 | [WORKFLOWS-ASSETS](./docs/WORKFLOWS-ASSETS.md)                                                                                                                                                                  |
+| Commands, battle rules, glossary                    | [REFERENCE](./docs/REFERENCE.md)                                                                                                                                                                                |
+| Hooks, verification, E2E policy                     | [CONTRIBUTING](./CONTRIBUTING.md)                                                                                                                                                                               |
+| Save compatibility                                  | [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)                                                                                                                                               |
+| Armory / gear, card handlers, UI/audio/perf/release | [ARMORY](./docs/ARMORY.md), [BATTLE_HANDLERS](./src/lib/game-data/effects/BATTLE_HANDLERS.md), [UI](./docs/UI.md), [AUDIO](./docs/AUDIO.md), [PERFORMANCE](./docs/PERFORMANCE.md), [RELEASE](./docs/RELEASE.md) |
 
 Discovery: headings first, search touched path/symbol first, `git status --short` before diffs. Opt-in evidence only — `Raw Assets/`, `reports/`, `dist/`, `CHANGELOG.md`, lockfiles excluded.
 
@@ -59,7 +59,7 @@ Knowledge: [.agents/knowledge/](./.agents/knowledge/index.md) — **not auto-loa
 
 ## UI
 
-Plain `function Props` (no `React.FC`), `cn()` for classes. Motion/tooltips/interaction in [WORKFLOWS#screen-fade-motion](./docs/WORKFLOWS.md#screen-fade-motion); cosmetic RNG via `useState(() => ...)` never `Math.random()` in render; a11y constrained — see [WORKFLOWS#accessibility-stance](./docs/WORKFLOWS.md#accessibility-stance).
+Plain `function Props` (no `React.FC`), `cn()` for classes. Motion, tooltips, interaction, placement, and accessibility: [UI](./docs/UI.md). Cosmetic RNG uses `useState(() => ...)`, never `Math.random()` in render.
 
 ## Verification & environment
 

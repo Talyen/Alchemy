@@ -15,7 +15,6 @@ export {
   DamageTypeSchema,
   PlayerStatusIdSchema,
   EnemyStatusIdSchema,
-  DisplayModeSchema,
   MaterialInventorySchema,
   UnlockedTalentsSchema,
   CompletedDifficultiesSchema,
@@ -29,4 +28,3 @@ export {
 } from "./save-schemas/index";
 export type { PersistedPendingReward, InterruptedFlow } from "./save-schemas/active-run";
 export { normalizeActiveRunData } from "./normalize-active-run-data";
-export { isTombstonedCardId } from "./migration/tombstoned-content-ids";

@@ -1,5 +1,7 @@
 # Alchemy privacy notice
 
+Effective: September 1, 2026
+
 Alchemy stores game progress and settings locally on the player’s device. The
 desktop build may mirror saves to Steam Cloud when that service is available.
 Alchemy does not operate an account system or deliberately attach Steam
@@ -16,13 +18,14 @@ Deleting local data through Alchemy’s clear-save or protected-save controls
 removes the candidates those controls identify. Steam may independently retain
 cloud or platform records under its own policies.
 
-## Optional crash reporting
+## Crash reporting
 
-Packaged production desktop builds may enable Sentry crash reporting. Browser
-development, tests, and ordinary local packages do not send these reports.
-When enabled, reports can include the game version, operating system, Electron
-version, crash location, current screen label, and diagnostic context collected
-by Sentry’s Electron SDK.
+Packaged production desktop builds may be configured with Sentry crash
+reporting. When a distributed build includes that configuration, reporting is
+automatic rather than a player-controlled option. Browser development, tests,
+and ordinary local packages do not send these reports. Reports can include the
+game version, operating system, Electron version, crash location, current
+screen label, and diagnostic context collected by Sentry’s Electron SDK.
 
 Alchemy configures Sentry with `sendDefaultPii: false`, disables performance
 tracing and continuous logs, and does not deliberately attach Steam identity or
@@ -42,7 +45,8 @@ Those providers process information under their own privacy policies.
 
 ## Questions and updates
 
-Privacy questions should be sent through the official Alchemy support contact
-listed on its Steam store page or repository. Material changes to collection or
+Privacy questions can be submitted through the
+[Alchemy repository issue tracker](https://github.com/Talyen/Alchemy/issues) or
+the support contact on its Steam store page. Material changes to collection or
 service use require this notice and the store disclosure to be updated before
 the changed build is promoted.

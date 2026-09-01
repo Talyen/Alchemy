@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Rank route prereads and captured command-output exposure from recent runs. */
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROUTINE_EXPOSURE_BUDGET_BYTES } from "./lib/compact-output.mjs";
@@ -15,19 +16,24 @@ export function parseContextHotspotArgs(argv) {
   let minBytes = 4_000;
   let json = false;
   let check = false;
+  let runId;
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--last") last = Number(argv[++index]);
     else if (arg.startsWith("--last=")) last = Number(arg.slice("--last=".length));
+    else if (arg === "--run-id") runId = String(argv[++index] ?? "").trim();
+    else if (arg.startsWith("--run-id=")) runId = String(arg.slice("--run-id=".length)).trim();
     else if (arg === "--min-bytes") minBytes = Number(argv[++index]);
     else if (arg.startsWith("--min-bytes=")) minBytes = Number(arg.slice("--min-bytes=".length));
     else if (arg === "--json") json = true;
     else if (arg === "--check") check = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
+  if (runId !== undefined && runId.length === 0) throw new Error("--run-id requires a value");
+  if (runId !== undefined && last !== 20) throw new Error("Use --run-id or --last, not both");
   if (!Number.isInteger(last) || last < 1) throw new Error("--last must be a positive integer");
   if (!Number.isInteger(minBytes) || minBytes < 0) throw new Error("--min-bytes must be a non-negative integer");
-  return { last, minBytes, json, check };
+  return { last, minBytes, json, check, runId };
 }
 
 export function aggregateCommandExposures(runs, minBytes = 0) {
@@ -76,8 +82,22 @@ export function aggregateCommandExposures(runs, minBytes = 0) {
     .sort((a, b) => b.rawBytes - a.rawBytes || b.maxRawBytes - a.maxRawBytes || a.key.localeCompare(b.key));
 }
 
+export function readRunById(rootDir, runId) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(rootDir, "reports", "runs", runId, "run.json"), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 export function buildContextHotspotReport(rootDir, options = {}) {
-  const runs = readRecentRuns(rootDir, { last: options.last ?? 20 });
+  let runs;
+  if (options.runId) {
+    const single = readRunById(rootDir, options.runId);
+    runs = single ? [single] : [];
+  } else {
+    runs = readRecentRuns(rootDir, { last: options.last ?? 20 });
+  }
   return {
     generatedAt: new Date().toISOString(),
     inspectedRuns: runs.length,

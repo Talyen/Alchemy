@@ -11,21 +11,31 @@ Reference for commands, glossary, battle rules, and file lookup. Strict coding r
 - **Git hooks / local gates:** [CONTRIBUTING.md](../CONTRIBUTING.md). Changelog updates happen at release only ([RELEASE.md](./RELEASE.md)).
 - **Steam / ship gates:** [RELEASE.md](./RELEASE.md).
 
+### Tooling ownership
+
+`package.json` owns script entry points. `scripts/lib/change-routes.mjs` owns
+changed-path selection, and [CONTRIBUTING.md](../CONTRIBUTING.md) owns gate
+tiers. Use the catalog below for discovery rather than duplicating command
+lists in subsystem docs.
+
 ### Script Command Reference
 
 ```sh
 npm run dev                 # Vite dev server
 npm run build               # vite build (typecheck is a separate gate; Vercel runs vercel.json buildCommand)
+npm run build:verified      # Non-mutating vite build (validates generated outputs including version metadata)
 npm run assets:check        # Prepare assets and fail unless the operation is idempotent
 npm test                    # Vitest; `npm test -- <path>` for a single file
-npm run verify:changed -- --diff  # Changed-path verification route (--plan previews; --e2e <route> escalates)
+npm run verify:changed -- --diff  # Changed-path verification route (--plan previews; --e2e <route> escalates; --strict-routes enforces ownership)
 npm run runs:show -- --last 10    # Recent run IDs, outcomes, counts, and evidence availability
-npm run context:hotspots          # Ranked route context and recent command-output exposure
+npm run context:hotspots          # Ranked route context and recent command-output exposure (--run-id <id> checks one exact run)
 npm run typecheck           # tsc --noEmit (fast; also in lint:ci / check:push)
 npm run lint:ci             # Full static gate
-npm run check:push          # Local pre-push gate
+npm run check:push          # Fast push/hook gate (lockfile, format, typecheck:all, lint, check:generated, build:verified)
+npm run check:handoff -- --diff  # Strong completion gate (strict verification + lint:ci + Vitest + verified build + smoke + @prepush + docs:check:final + hotspots --run-id)
 npm run check:ship          # Ship gate before tagging/desktop packaging
 npm run docs:check          # Validate documentation contracts and plan metadata
+npm run docs:check:final    # Pure final validation (no archiving; use archive:plans explicitly)
 npm run plans:check         # Validate active plan metadata only
 npm run new:plan -- <Name>  # Scaffold an execution plan under docs/Plans/
 npm run balance:sim         # Headless balance findings (opens reports/balance-findings.html)
@@ -38,14 +48,15 @@ This is the curated agent subset. The full catalog is `package.json` (exhaustive
 
 ### Build commands decision tree
 
-| Intent                                                  | Command                                                                 |
-| ------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Local web/dev                                           | `npm run dev` / `npm run build` (hooks run asset prep)                  |
-| Vercel web                                              | `vercel.json` buildCommand: `ALCHEMY_SKIP_ASSETS=1` + typecheck + build |
-| Desktop renderer + version/steam/asset sync             | `npm run build:desktop`                                                 |
-| Fast desktop renderer (committed assets / CI ship-gate) | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop`                           |
-| Unpacked Windows app (local iterate)                    | `npm run package:win`                                                   |
-| Windows/mac/linux installers (CI desktop + release)     | `npm run dist:desktop`                                                  |
+| Intent                                              | Command                                                                  |
+| --------------------------------------------------- | ------------------------------------------------------------------------ |
+| Local web/dev                                       | `npm run dev` / `npm run build` (hooks run asset prep)                   |
+| Vercel web                                          | `vercel.json` buildCommand: typecheck + `build:verified` (non-mutating)  |
+| Desktop renderer + version/steam/asset sync         | `npm run build:desktop`                                                  |
+| Verified web (push/handoff/CI)                      | `npm run build:verified` (validates `check:generated` including version) |
+| Verified desktop (ship/CI)                          | `npm run build:desktop:verified` (plus `assets:check` at release)        |
+| Unpacked Windows app (local iterate)                | `npm run package:win`                                                    |
+| Windows/mac/linux installers (CI desktop + release) | `npm run dist:desktop:verified` / `npm run dist:desktop` (local iterate) |
 
 **Skip flags:**
 
@@ -78,7 +89,7 @@ Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI d
 
 `npm run measure:agent-context -- --path <changed-path>` reports a stable preread byte proxy: always-loaded instructions, route-selected owner sections, changed-file bytes, verification/test-path counts, and explicitly named artifact bytes. `--all-routes` compares one canonical fixture per route.
 
-`npm run context:hotspots -- --last 20` ranks every canonical route by preread plus fixture bytes, then aggregates raw versus agent-exposed output for commands captured in recent report-producing runs. The default hides command groups below 4,000 raw bytes; use `--min-bytes 0` for the complete inventory, `--json` for machine-readable output, or `--check` to fail when a recorded command exceeded the 4 KiB routine-exposure budget. Route budgets are ratcheted in the repository-tooling tests. `verify:changed`, `audit:all`, and `test:e2e:audit` enforce the exposure budget on their own current run, while the verifier handoff rechecks the latest record. `--verbose` remains an explicit opt-in that records full exposure without enforcing the routine budget.
+`npm run context:hotspots -- --last 20` ranks every canonical route by preread plus fixture bytes, then aggregates raw versus agent-exposed output for commands captured in recent report-producing runs. The default hides command groups below 4,000 raw bytes; use `--min-bytes 0` for the complete inventory, `--json` for machine-readable output, or `--check` to fail when a recorded command exceeded the 4 KiB routine-exposure budget. Use `--run-id <id> --check` to validate one exact recorded run (handoff passes its single gate ID); `--last` and `--run-id` are mutually exclusive. Route budgets are ratcheted in the repository-tooling tests. `verify:changed`, `audit:all`, and `test:e2e:audit` enforce the exposure budget on their own current run, while the verifier handoff rechecks the gate's exact run via `--run-id`. `--verbose` remains an explicit opt-in that records full exposure without enforcing the routine budget.
 
 ## Balance simulation
 
@@ -199,7 +210,7 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | Game-data types                        | `src/lib/game-data/types.ts`                                                                                                                                                                                                                 |
 | Homestead data                         | `src/lib/homestead/`                                                                                                                                                                                                                         |
 | In-run material grants                 | [WORKFLOWS § Grant materials](./WORKFLOWS.md#grant-materials-during-a-run)                                                                                                                                                                   |
-| Motion UI (`FadeSlot`, `Surface`)      | [WORKFLOWS § Screen fade](./WORKFLOWS.md#screen-fade-motion); files in `src/features/alchemy/shared/ui/`                                                                                                                                     |
+| UI placement, motion, and interaction  | [UI system](./UI.md)                                                                                                                                                                                                                         |
 | Image preload helper                   | `src/lib/image-preload.ts`                                                                                                                                                                                                                   |
 | Potion mixing                          | `src/lib/alchemist/potion-mixer.ts`                                                                                                                                                                                                          |
 | Platform / Steam                       | `src/lib/platform.ts`, `src/lib/desktop-api.ts`, `src/lib/platform-save-backend.ts`, `desktop/`                                                                                                                                              |

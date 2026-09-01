@@ -2,7 +2,7 @@ import { FIGHT_PACING } from "../game-constants";
 import type { EnemyType } from "@/lib/game-data";
 import type { BattleState } from "./types";
 
-export type FightPacingSide = "player" | "enemy";
+type FightPacingSide = "player" | "enemy";
 
 export interface FightPacingPoolMetrics {
   playerFraction: number;

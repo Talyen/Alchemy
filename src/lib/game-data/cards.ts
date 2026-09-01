@@ -1,16 +1,5 @@
 export { cardLibrary, cardById } from "./cards/library/cards";
 
-export {
-  expectedCompanionTurnLine,
-  formatCompanionTurnLineBase,
-  formatCompanionTurnStartLine,
-  type CompanionTurnLineContext,
-} from "./cards/companion-turn-description";
+export { expectedCompanionTurnLine, formatCompanionTurnStartLine } from "./cards/companion-turn-description";
 
-export {
-  isMixedPotionCard,
-  isPotionCard,
-  isStandardPotionCard,
-  getOfferableCardPool,
-  getStandardPotionPool,
-} from "./cards/card-pools";
+export { isMixedPotionCard, isPotionCard, isStandardPotionCard } from "./cards/card-pools";

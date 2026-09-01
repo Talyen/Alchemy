@@ -19,18 +19,9 @@ One loading experience at cold start, then instant navigation. Screen JS in `src
 - `src/app/screen-routes/` — static imports, `RenderAlchemyScreen`, `ALLOWED_SCREEN_TRANSITIONS` (`src/lib/routing/screen-transition-policy.ts`).
 - `docs/WORKFLOWS.md#adding-a-new-screen` — checklist adds to `Screen` union + `ROUTE_SCREENS` + transition policy, wraps in `TitledScreenShell`.
 
-## Preferred pattern
+## Resolution
 
-- Add screen: extend `Screen` union + `ROUTE_SCREENS`, classify via `SCREEN_PHASE`, add edges to `ALLOWED_SCREEN_TRANSITIONS`, create component in `run-loop/screens/` etc., wrap in `TitledScreenShell`, wire in `screen-routes` phase table.
-- Keep `src/app/screen-routes/**/*` free of `React.lazy` and lazy route imports.
-- Keep `allGameArt` eager; no lazy art or per-screen spinners for those assets.
-- E2E bypass only via `alchemy-skip-loading-screen` in `localStorage` for startup gate.
-
-## Exceptions
-
-- `localStorage["alchemy-skip-loading-screen"]` intentionally skips gate for E2E (`shouldSkipStartupLoadingGate`).
-- Boot `restoreRun` hydration bypasses `ALLOWED_SCREEN_TRANSITIONS` intentionally after save validation.
-
-## Enforcement opportunity
-
-Strongest: ESLint `no-restricted-imports` + `no-restricted-properties` bans on `React.lazy` in screen routes + architecture smoke (`lint:architecture-smoke`). Keep as lint; no further prose needed.
+[ARCHITECTURE.md](../../../docs/ARCHITECTURE.md#boot-and-loading) owns loading
+policy and [WORKFLOWS.md](../../../docs/WORKFLOWS.md#adding-a-new-screen) owns
+screen wiring. ESLint and the architecture smoke gate enforce static route
+imports; retain this pattern only as historical rationale.

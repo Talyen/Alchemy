@@ -97,8 +97,33 @@ export function encodePersistedShops(
         ...EMPTY_PERSISTED_SHOPS,
         equipmentShopState: serializeEquipmentShopState(session.equipmentShopState),
       };
-    default:
+    case undefined:
+    case null:
+    case "menu":
+    case "game-mode-select":
+    case "character-select":
+    case "difficulty-select":
+    case "draft-deck":
+    case "battle":
+    case "rewards":
+    case "destination":
+    case "options":
+    case "collection":
+    case "talents":
+    case "homestead":
+    case "armory":
+    case "game-over":
+    case "campfire":
+    case "mystery":
+    case "corruption":
+    case "run-victory":
+    case "labyrinth-map":
+    case "wildwood-removal":
       return EMPTY_PERSISTED_SHOPS;
+    default: {
+      const _exhaustiveCheck: never = currentScreen;
+      throw new Error(`encodePersistedShops: unhandled screen ${String(_exhaustiveCheck)}`);
+    }
   }
 }
 

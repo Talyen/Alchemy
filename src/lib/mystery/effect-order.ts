@@ -9,7 +9,14 @@ export function getMysteryEffectRank(effect: MysteryEffect): number {
       return 2;
     case "gainMaterial":
       return 3;
-    default:
+    case "addCard":
+    case "chooseCard":
+    case "healHealth":
+    case "damageHealth":
+    case "removeCard":
+    case "gainTrinket":
+    case "gainRandomTrinket":
+    case "gainGeneratedGear":
       return 1;
   }
 }

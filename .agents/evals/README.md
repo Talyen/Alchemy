@@ -23,7 +23,7 @@ Create a `tasks/<slug>/README.md` with:
 ```md
 # Task: short name
 
-Setup: branch / seed state
+Setup: isolated eval worktree / seed state
 Goal: what agent should do
 Steps: optional hints (link WORKFLOWS checklist)
 Pass when: objective signals above + domain assertion
@@ -32,27 +32,10 @@ Run: npm run verify:changed -- <paths>
 
 Keep tasks file-backed, not code-generated, and grounded in real repo workflows. Prefer existing `scripts/lib/change-routes.mjs` routes.
 
-## Representative tasks (stubs)
+## Representative tasks
 
-### 1. Battle — add card effect kind
-
-- **Setup:** Add a new `BattleCardEffect` kind per `docs/WORKFLOWS.md#add-a-new-card-effect-kind`.
-- **Goal:** Schema in `effects/`, handler in `battle/effect-handlers/`, registry wiring, metadata.
-- **Pass:** `effects-registry.test.ts` + `effect-handlers-registry.test.ts` + `unit-battle` green; no `Math.floor`/`Math.random` lint errors.
-- **Run:** `npm run verify:changed -- src/lib/game-data/effects src/lib/battle`
-
-### 2. Save — additive field
-
-- **Setup:** Add optional persisted field with Zod `.default()` (no migration bump) per `MIGRATIONS.md`.
-- **Goal:** Schema + defaults + fixtures updated together; old saves load.
-- **Pass:** `test:ship:unit` (save-migration-guard) green; `docs:check` green.
-- **Run:** `npm run verify:changed -- src/lib/validation/save-schemas src/features/alchemy/shared/storage`
-
-### 3. Shop — price refresh
-
-- **Setup:** Change shop pricing via `shop-transactions.ts` draft recipe.
-- **Goal:** Gold guard reads draft; SFX in `afterCommit`; no nested dispatch.
-- **Pass:** `unit-shop` green; `lint:boundaries` green; `no-run-earned-add-materials` not regressed.
-- **Run:** `npm run verify:changed -- src/features/alchemy/run-loop/shop`
+- [Battle — add a card effect kind](./tasks/battle-card-effect/README.md)
+- [Save — add a defaulted field](./tasks/save-additive-field/README.md)
+- [Shop — change price refresh](./tasks/shop-price-refresh/README.md)
 
 Do not invent tasks with no meaningful pass/fail. If a task cannot be checked objectively, document it as `uncertain` and skip promotion.

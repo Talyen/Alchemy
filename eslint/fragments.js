@@ -84,17 +84,16 @@ export const GAME_DATA_NO_BATTLE = [
 ];
 
 /** @type {ImportPath[]} */
-export const BATTLE_NO_FRAMEWORK_PATHS = [
-  { name: "react", message: "lib/battle must stay framework-agnostic." },
-  { name: "zustand", message: "lib/battle must stay framework-agnostic." },
-  { name: "lucide-react", message: "src/lib must stay React-free. Map icon ids in features." },
-];
-
-/** @type {ImportPath[]} */
 export const LIB_NO_FRAMEWORK_PATHS = [
   { name: "react", message: "src/lib must stay React-free." },
   { name: "react-dom", message: "src/lib must stay React-free." },
   { name: "lucide-react", message: "src/lib must stay React-free. Map icon ids in features." },
+];
+
+/** @type {ImportPath[]} */
+export const BATTLE_NO_FRAMEWORK_PATHS = [
+  ...LIB_NO_FRAMEWORK_PATHS,
+  { name: "zustand", message: "lib/battle must stay framework-agnostic." },
 ];
 
 /** @type {ImportPattern[]} */

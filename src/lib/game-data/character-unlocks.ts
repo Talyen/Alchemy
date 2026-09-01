@@ -25,21 +25,19 @@ const GAME_MODE_REQUIREMENTS: Record<GameModeId, CharacterId | null> = {
   wildwood: "ranger",
 };
 
-export function getUnlockMessage(requiredCharacterId: CharacterId): string {
+function getUnlockMessage(requiredCharacterId: CharacterId): string {
   return `Finish a Run as the ${characters[requiredCharacterId].name} to unlock`;
 }
 
 export const KNIGHT_UNLOCK_MESSAGE = getUnlockMessage("knight");
 
-export const characterUnlockRequirements: Record<
-  CharacterId,
-  { requiredChar: CharacterId | null; requiredName: string }
-> = Object.fromEntries(
-  UNLOCK_CHAIN.map((id, index) => {
-    const requiredChar = index === 0 ? null : UNLOCK_CHAIN[index - 1]!;
-    return [id, { requiredChar, requiredName: requiredChar ? characters[requiredChar].name : "" }];
-  }),
-) as Record<CharacterId, { requiredChar: CharacterId | null; requiredName: string }>;
+const characterUnlockRequirements: Record<CharacterId, { requiredChar: CharacterId | null; requiredName: string }> =
+  Object.fromEntries(
+    UNLOCK_CHAIN.map((id, index) => {
+      const requiredChar = index === 0 ? null : UNLOCK_CHAIN[index - 1]!;
+      return [id, { requiredChar, requiredName: requiredChar ? characters[requiredChar].name : "" }];
+    }),
+  ) as Record<CharacterId, { requiredChar: CharacterId | null; requiredName: string }>;
 
 export function getRequiredPreviousCharacter(characterId: CharacterId): CharacterId | null {
   return characterUnlockRequirements[characterId].requiredChar;
@@ -66,7 +64,7 @@ export function getProgressionFeatureUnlockMessage(featureId: ProgressionFeature
   return getUnlockMessage(FEATURE_REQUIREMENTS[featureId]);
 }
 
-export function getGameModeUnlockRequirement(modeId: GameModeId): CharacterId | null {
+function getGameModeUnlockRequirement(modeId: GameModeId): CharacterId | null {
   return GAME_MODE_REQUIREMENTS[modeId];
 }
 

@@ -66,6 +66,14 @@ Result: accepted
 Evidence: User-approved documentation review; stale architecture filenames survived the prior link/path checks; ESLint configuration confirms direct battle RNG access and run-earned material enforcement.
 Reason: Keep active instructions consistent with executable rules and make the demonstrated staleness class mechanically detectable without loading more routine context.
 
+## 2026-09-01 — Consolidate documentation ownership
+
+Pattern: `asset-barrels-are-outputs`, `battle-immutability-rng`, `run-materials-ownership`, `static-route-imports`
+Proposal: Route UI and audio work to dedicated canonical docs; slim the Playwright skill and representative eval index to strategy plus links; reduce enforcement-complete knowledge patterns to rationale; collapse the shared-store README into Architecture; separate migration history from the live save contract.
+Result: accepted
+Evidence: User-approved full documentation review; duplicated skill/README procedures, state tables, UI contracts, and eval task definitions; executable changed-path routes lacked audio and CI owner documents.
+Reason: Preserve non-obvious decisions while removing dual ownership and reducing routine agent context.
+
 ## Template for future entries
 
 ```

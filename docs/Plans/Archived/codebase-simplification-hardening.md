@@ -1,6 +1,7 @@
 ---
 status: complete
 updated: 2026-09-01
+implementation: 03fabdc4..541b3c86
 ---
 
 # Codebase Simplification & Hardening
@@ -9,7 +10,10 @@ updated: 2026-09-01
 
 Reduce over-engineering, fix accidental inconsistencies and silent data-loss paths, and consolidate duplication — without changing player-visible semantics or introducing hitches — across stores, battle, routing/run-flow, scripts/CI/build, shared UI/config, and validation.
 
-Incorporates the worthwhile tail from `Elegant-Simplification-Next-Pass.md` (archived 2026-08-31 — ~60% already shipped in `d502f031`/`197ebb91`; cosmetic fade/hover/status/build churn deferred). Strictly technical — no player-visible rebalancing; Wildwood trinket-chance fix is intentionally doc-only (see Initiative 9).
+Incorporates the worthwhile tail from earlier simplification passes; cosmetic
+fade/hover/status/build churn remained intentionally deferred. Strictly
+technical — no player-visible rebalancing; the Wildwood Trinket chance remained
+documentation-only (see Initiative 9).
 
 ## Plan
 
@@ -129,7 +133,7 @@ Incorporates the worthwhile tail from `Elegant-Simplification-Next-Pass.md` (arc
 - Hitch-free constraint: no React.lazy on route screens; vite code splitting stays eager, independently cached.
 - Mutation expansion nightly-only to avoid lint:ci slowdown.
 - Each initiative verifies via verify:changed plus lint:ci plus targeted tests.
-- Elegant initiatives I1 (gear clone shipped), I3 (fade/hover — PortaledTooltip already reuses useFadePresence), I4 (rngInt + status 11→6 files shipped, only leech trio remains), I6 (sync-generated-helpers + knip gear entry shipped), I8 (toTargetPath already hardened) are archived as complete/deferred — see `docs/Plans/Archived/Elegant-Simplification-Next-Pass.md`.
+- Earlier gear-clone, fade/hover, RNG/status, generated-helper, and path-hardening initiatives shipped or were intentionally deferred; their durable outcomes now live in the current owner docs and git history.
 - Wildwood 11% vs 33% intentionally not rebalanced in this plan — requires product/design decision.
 
 ## Sequencing

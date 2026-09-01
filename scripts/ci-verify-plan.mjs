@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { resolveRoutePlan } from "./lib/change-routes.mjs";
 import { publishCiSummary } from "./lib/ci-summary.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { formatPlan } from "./verify-changed.mjs";
+import { formatPlan, getStrictUnknownPaths } from "./verify-changed.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -56,8 +56,22 @@ function main() {
     return;
   }
   const plan = resolveRoutePlan(paths);
+  const strictUnknown = getStrictUnknownPaths(plan);
   const body = formatPlan(plan);
   const markdown = `## Changed-path plan\n\n\`\`\`\n${body.trimEnd()}\n\`\`\`\n`;
+  if (strictUnknown.length > 0) {
+    const failSummary = `Strict unknown routes: ${strictUnknown.join(", ")}`;
+    publishCiSummary({
+      rootDir: ROOT,
+      markdown: `${markdown}\n**Failed:** ${failSummary}\n`,
+      status: "failed",
+      command: "verify:changed --plan --strict-routes",
+      summary: failSummary,
+    });
+    console.error(`Strict unknown executable paths: ${strictUnknown.join(", ")}`);
+    process.exitCode = 1;
+    return;
+  }
   publishCiSummary({
     rootDir: ROOT,
     markdown,

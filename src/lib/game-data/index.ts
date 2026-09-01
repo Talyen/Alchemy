@@ -1,5 +1,5 @@
 export * from "./types";
-export type { TalentEffectManifest, HealthThresholdBonus } from "./talent-effect-manifest";
+export type { TalentEffectManifest } from "./talent-effect-manifest";
 export type { TrinketManifest } from "./trinket-manifest";
 export * from "./effects";
 export * from "./card-description";

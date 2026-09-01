@@ -272,7 +272,7 @@ export function applyDamageStatuses(
         return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth, true);
       }
       return state;
-    default:
+    case "nature":
       return state;
   }
 }

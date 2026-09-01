@@ -43,7 +43,7 @@ Prefer in order: delete → retarget callers → inline → parameterize proven 
 
 ## Known signals
 
-- `npm run deadcode:strict`; unreferenced types/components; unread state/events; empty or stubbed tests; orphaned support surface (CSS, routes, helpers, docs).
+- `npm run deadcode:entry-exports`; unreferenced types/components; unread state/events; empty or stubbed tests; orphaned support surface (CSS, routes, helpers, docs).
 - `legacy`/`compat`/`shim`/`v1` names imported beside newer owners; side-by-side barrel exports; hub methods that only forward.
 - Parallel screen shells across `meta/`/`run-setup/`/`run-loop/`; repeated empty states, card grids, modal scaffolds, reward wrappers.
 - Interface+single implementer+factory; `*Manager/*Helper/*Coordinator` around one function; boolean parameter soup; defensive cast stacks; complexity > 10 without domain reason.

@@ -4,7 +4,7 @@ Merges the former Design System Consistency (06) and UI Interaction & Feedback (
 
 **Goal:** Keep visual language and interaction behavior on their shared owners — migrate token/primitive drift, and fix confirmed interaction/feedback defects desktop players feel — without flattening justified game UI.
 
-Token/primitive owners: `src/components/ui/README.md`, `src/features/alchemy/shared/ui/README.md`, `src/styles/theme.css`.
+Token/primitive owner: [UI.md](../UI.md), with implementation tokens in `src/styles/theme.css`.
 
 ## Scope
 

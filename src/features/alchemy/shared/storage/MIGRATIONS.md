@@ -4,6 +4,10 @@ Checklist for a schema change: [WORKFLOWS.md § Change persisted save data](../.
 
 This file documents how to change persisted save data without breaking player progress. **CI is the source of truth** — `tests/architecture/save-migration-guard.test.ts` and `tests/architecture/save-migration-contract.test.ts` enforce the contract on every `npm run test:ship:unit`.
 
+Completed schema-specific transformations are recorded in
+[MIGRATION_HISTORY.md](./MIGRATION_HISTORY.md); keep this file focused on the
+current compatibility contract.
+
 ## Supported baseline
 
 `LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the
@@ -69,11 +73,7 @@ Migration tests must verify gameplay progress, not just field presence:
 - Homestead materials and upgrade tiers remain intact.
 - Active campaign, labyrinth, and wildwood runs resume when structurally valid (**`activeRun` must not be silently dropped**).
 - Mid-combat snapshots preserve trinket effects, gear effects, and combat flags.
-- Enemy-trait combat flags are additive battle-only fields with `preserveAs: null`; older mid-combat snapshots receive their defaults during normalization, so this content change does not require a schema bump.
-- Active and parked runs preserve Boons, pending reward meaning, and battle Trinket manifests across the schema-11 to schema-12 rename.
-- Schema-13 Wildwood rewards resume from `interruptedFlow` (card, Boon, Gear, selection, companion handoff) after nested draft reward fields are lifted from a reward-phase draft or dropped.
-- Schema-14 Labyrinth maps are hex floors (`floors` + `nodes`). In-progress 8×9 grid maps cannot be converted: the migration keeps deck, gold, HP, and character, regenerates floor 1 from the run seed, and clears `labyrinthPendingNode`. Do not silently drop `activeRun`.
-- Schema-11 jewelry loadouts map left Ring to left Accessory and Amulet to right Accessory; the old middle right Ring is unequipped but remains in inventory. Permanent Trinket ownership starts empty because discovery does not imply ownership.
+- Version-specific fixtures continue to assert the outcomes recorded in [MIGRATION_HISTORY.md](./MIGRATION_HISTORY.md).
 - Every fixture is **idempotent** after `normalizeSaveData` (`tests/helpers/parse-save-for-tests.ts`).
 
 ## Future schema saves
@@ -147,18 +147,6 @@ When tombstoned cards are stripped from a persisted choice list, an in-progress 
 - **Mystery** (`mysteryVisit.cardChoices`): re-offer `MYSTERY_CARD_CHOICES` (3) via the `events` stream when the filtered list is empty, the original had choices, and `chosenCardId == null` (still awaiting pick).
 
 No duplicate effects are applied — only the choice list is replaced. Each repair advances the corresponding RNG counter so the sequence stays deterministic and the next autosave writes the new counter value.
-
-## Interrupted flow (`activeRun.interruptedFlow`)
-
-Discriminated union (`kind: none | primary-reward | companion-reward | destination`) that records which claim surface the run should resume on. Encode maps live session reward/companion/claim state into one arm; decode switches on `kind` with no legacy inference. Reward payloads live under `pending` on the reward arms; destination-only resume carries destinations and victory metadata on the destination arm. Pre-launch floor raise to schema 11 dropped the prior `resumePhase` + `destinationChoices` + top-level `pendingReward` triad.
-
-Schema 13 makes `interruptedFlow` the sole persisted reward owner for Wildwood as well. Nested `wildwoodDraft` reward fields (`rewardType`, `rewardChoiceIds`, `rewardGearChoices`, `selectedRewardId`) and the nested `version` stamp are stripped; a live nested copy is lifted into `interruptedFlow` only when the generic arm is `none` and the draft phase is `reward` or leftover `recovery`. Leftover nested reward fields on battle, draft, or removal are dropped. Wildwood progression (phase, boss bag, draft choices, encounter traits) stays on `wildwoodDraft`. Unknown boss IDs in the bag are filtered; they do not null the draft.
-
-## Labyrinth hex floors (schema 14)
-
-Schema 14 replaces the 8×9 `grid` + `connections` Labyrinth map with hex floors (`floors`, `nodes`, `currentFloor`). Visual reachability is derived, not persisted. Old in-progress maps cannot be converted losslessly: `migrateV13ToV14` keeps the rest of the run (deck, gold, HP, character) and regenerates floor 1 from `activeRun.rng.seed`, clearing `labyrinthPendingNode`. Parked Labyrinth runs take the same path. Hex maps already in the new shape pass through.
-
-`discoveredUniqueIds` is additive with an empty Zod default — no extra schema step. Hydrate unions owned unique gear into the discovered set so existing inventories appear in Collection; that repair can dirty the save on the first load after upgrade.
 
 ## Battle transition continuation
 

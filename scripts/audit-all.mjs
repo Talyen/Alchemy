@@ -5,7 +5,7 @@
  *
  * Exits non-zero if any audit fails. Prints a summary at the end.
  * Local / agent periodic sweep (docs/Audits); not CI nightly and not a
- * pre-push gate (nightly runs `deadcode:strict` only; use `npm run lint:ci`
+ * pre-push gate (nightly runs `deadcode:entry-exports` only; use `npm run lint:ci`
  * for the static gate).
  */
 import path from "node:path";
@@ -19,7 +19,12 @@ const ROOT = path.resolve(path.dirname(currentFile), "..");
 const verbose = process.argv.includes("--verbose");
 
 const STEPS = [
-  { name: "knip (deadcode:strict)", cmd: "npm", args: ["run", "deadcode:strict"], timeout: 180_000 },
+  {
+    name: "knip (deadcode:entry-exports)",
+    cmd: "npm",
+    args: ["run", "deadcode:entry-exports"],
+    timeout: 180_000,
+  },
   {
     name: "depcruise (circular)",
     cmd: "npx",

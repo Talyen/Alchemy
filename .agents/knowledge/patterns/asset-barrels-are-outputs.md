@@ -20,17 +20,8 @@ Edits directly to `src/lib/game-data/assets.generated.ts`, `src/lib/game-data/ge
 - `scripts/lib/change-routes.mjs` — `assets` route → `assets-check` command.
 - `package.json` scripts — `predev`/`prebuild` run `prepare-assets`; `assets:check` enforces idempotency.
 
-## Preferred pattern
+## Resolution
 
-- Add raw source to `Raw Assets/` (e.g., `Gear/{Name} - {Basic|Astral}.jpeg`, card art, sounds).
-- Run `npm run assets:optimize` then `npm run sync:gear-art` / `sync:assets` to regenerate mappings.
-- Do not hand-edit `*.generated.ts`, `gear-art.ts`, or `src/assets/optimized/`; never value-import `@/lib/game-data` barrel from Playwright specs/fixtures/helpers.
-- Keep game art eager via `allGameArt` `import.meta.glob`; no per-screen lazy loading.
-
-## Exceptions
-
-- Generated files may be committed, but only as output of the pipeline — CI flags drift.
-
-## Enforcement opportunity
-
-Strongest: `assets:check` idempotency + ESLint value-import ban + dependency-cruiser boundaries. Further: gitattributes for generated merge strategy is unnecessary; current `check:generated` gate suffices.
+The asset workflow is canonical. `assets:check`, generated-output checks, ESLint,
+and dependency boundaries enforce the recurring failure class; consult this
+pattern only to understand why direct output edits are discarded.

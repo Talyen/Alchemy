@@ -7,10 +7,8 @@ export { trinketLibrary } from "./compendium/trinkets";
 
 export type EnemyEntry = (typeof enemyBestiary)[number];
 export type EnemyId = EnemyEntry["id"];
-export type BossEnemyEntry = Extract<EnemyEntry, { enemyType: "boss" }>;
-export type BossEnemyId = BossEnemyEntry["id"];
 
-export type TrinketCatalogEntry = (typeof trinketLibrary)[number];
+type TrinketCatalogEntry = (typeof trinketLibrary)[number];
 export type TrinketId = TrinketCatalogEntry["id"];
 
 type EnemyById = { [Entry in EnemyEntry as Entry["id"]]: Entry } & Record<string, EnemyEntry | undefined>;

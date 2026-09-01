@@ -100,6 +100,12 @@ attribution, and redistribution permission. An unknown or incomplete asset
 provenance row is a release blocker; do not infer permission from the presence
 of a file in `Raw Assets/`.
 
+Before the first public release, obtain legal review of the repository license.
+The current CC BY-NC 4.0 notice covers code and content together, while Creative
+Commons [recommends a software-specific license for code](https://creativecommons.org/faq/).
+Decide and document the code/content split without silently changing existing
+grant terms.
+
 ## Windows signing readiness
 
 Unsigned Steam depots remain supported. To opt into Azure Trusted Signing, create the Trusted Signing account and

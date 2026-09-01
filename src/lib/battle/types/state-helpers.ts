@@ -109,10 +109,6 @@ export function setFlag<K extends keyof CombatFlags>(state: BattleState, flag: K
   return { ...state, flags: { ...state.flags, [flag]: value } };
 }
 
-export function withFlags(state: BattleState, updates: Partial<CombatFlags>): BattleState {
-  return { ...state, flags: { ...state.flags, ...updates } };
-}
-
 export function clampHealth(current: number, delta: number, max: number): number {
   if (!Number.isFinite(current) || !Number.isFinite(delta) || !Number.isFinite(max)) {
     const safeCurrent = Number.isFinite(current) ? current : 0;

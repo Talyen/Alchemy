@@ -92,7 +92,7 @@ export default tseslint.config(
       // Additions beyond the preset — type-aware bug catchers.
       "@typescript-eslint/consistent-type-exports": ["error", { fixMixedExportsWithInlineTypeSpecifier: true }],
       "@typescript-eslint/no-deprecated": "error",
-      "@typescript-eslint/switch-exhaustiveness-check": ["error", { considerDefaultExhaustiveForUnions: true }],
+      "@typescript-eslint/switch-exhaustiveness-check": "error",
       "@typescript-eslint/prefer-nullish-coalescing": "error",
       "no-console": ["error", { allow: ["warn", "error"] }],
       "@typescript-eslint/ban-ts-comment": [
