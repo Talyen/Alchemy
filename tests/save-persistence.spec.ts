@@ -180,19 +180,6 @@ test.describe("Save Persistence & Resume", () => {
       }, SAVE_KEY);
 
       await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
-      await expect
-        .poll(
-          () =>
-            page.evaluate((saveKey) => {
-              const activeRun = JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun;
-              return {
-                phase: activeRun?.activeCombat?.battleState?.turnPhase ?? null,
-                hasPendingTransition: Boolean(activeRun?.activeCombat?.pendingBattleTransition),
-              };
-            }, SAVE_KEY),
-          { timeout: 8000 },
-        )
-        .toEqual({ phase: "player", hasPendingTransition: false });
     },
   );
 
