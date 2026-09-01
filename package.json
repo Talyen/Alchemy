@@ -104,7 +104,7 @@
     "format": "node scripts/run-prettier.mjs --write",
     "ensure:electron": "node scripts/ensure-electron.mjs",
     "deadcode": "knip --treat-config-hints-as-errors",
-    "deadcode:strict": "knip --include-entry-exports --treat-config-hints-as-errors",
+    "deadcode:strict": "knip --strict --include-entry-exports --exclude dependencies,unlisted --treat-config-hints-as-errors",
     "deadcode:fix": "knip --fix --allow-remove-files --format",
     "format:check": "node scripts/run-prettier.mjs --check",
     "prepare": "lefthook install",

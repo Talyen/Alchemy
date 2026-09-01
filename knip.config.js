@@ -10,7 +10,9 @@
  * catalogs, or compatibility re-exports — each with a short reason.
  *
  * `npm run deadcode` — CI / `lint:ci`; not default pre-push.
- * `npm run deadcode:strict` — nightly; entry exports + config hints.
+ * `npm run deadcode:strict` — nightly; entry exports + config hints. Strict
+ * production analysis excludes dependency/unlisted classes that cannot trace
+ * the Vite/Electron graph reliably.
  */
 export default {
   entry: [
