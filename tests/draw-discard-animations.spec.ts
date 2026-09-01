@@ -103,7 +103,6 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     test.setTimeout(60_000);
     const errors = failOnRuntimeErrors(page);
     const flyingCards = page.locator("[data-flying-card]");
-    const ghostOverlays = page.locator(".card-ghost-overlay");
     const visibleHandCards = page.locator('[aria-label^="Play "]:not(.opacity-0)');
 
     await startBattleWithDeck(
