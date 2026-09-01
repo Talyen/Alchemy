@@ -21,6 +21,9 @@ NUL
 
 .vercel
 
+# Agent worktrees (isolated checkouts for parallel agents)
+.worktrees/
+
 # Generated at upload / release time
 steam/build/
 release-notes/

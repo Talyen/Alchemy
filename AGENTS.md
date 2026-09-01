@@ -4,7 +4,7 @@ Alchemy is a fantasy roguelite deckbuilder. Router + universal constraints; deta
 
 ## Working style
 
-- Dirty tree is in-flight user work: inspect, preserve intent, keep unrelated paths out.
+- Dirty tree is in-flight user work: inspect, preserve intent, keep unrelated paths out. Never `git reset --hard` / `clean -fd` / `checkout --` / `restore` with a dirty tree — the repo guard will stash to `auto-backup pre-<cmd>` and block; recover via `git stash list` / `git reflog`. If another agent has dirty work, use `node scripts/agent-worktree.mjs create --task <slug>` for an isolated checkout under `.worktrees/`.
 - Most pragmatic architectural solution — the best long-term shape, even when larger/harder than the minimal workaround; prefer libs over custom hacks. Compatibility only for concrete consumer (save, shipped behavior, external contract).
 - Surface requirement conflicts with evidence. First failure: use bounded diagnostics; repeated failure class: consult knowledge; after 3 unsuccessful approaches, reassess with docs/tests and ask only when evidence cannot resolve the decision.
 - Run [Audits](./docs/Audits/README.md) only when cited. Zero findings is valid.
