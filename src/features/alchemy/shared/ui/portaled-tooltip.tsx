@@ -11,8 +11,9 @@ import { getTooltipRoot } from "./tooltip-root";
 import { TooltipPanel } from "./tooltip-panel";
 import { useFadePresence } from "./fade-presence";
 import { usePlasmaInteraction } from "./use-plasma-source";
+import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 
-export const TOOLTIP_FADE_OUT_MS = 160;
+export const TOOLTIP_FADE_OUT_MS = TOOLTIP_FADE_MS;
 
 export interface PortaledTooltipProps {
   triggerRef: RefObject<HTMLElement | null>;

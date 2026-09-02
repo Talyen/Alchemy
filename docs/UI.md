@@ -32,7 +32,7 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 | Copy               | `ScreenDescription` is static. `TextAnimate` is reserved for mystery narrative.                                                                                                                                                 |
 | Anti-flash         | Replace outgoing payloads only at the rendered-screen commit, swap layout while opacity is zero, reserve height for shape-changing swaps, and keep shell chrome mounted when payload data clears. Do not stagger route content. |
 
-Motion tokens live in `src/styles/theme.css` and `src/styles/components.css`.
+Motion tokens live in `src/lib/game-constants/ui-motion.ts` (`MOTION_FADE_MS`, `TOOLTIP_FADE_MS`) and are mirrored to CSS as `var(--motion-fade-duration)` in `src/styles/theme.css` / `src/styles/components.css`. Keep JS `MOTION_FADE_MS` and CSS `var(--motion-fade-duration)` in sync; `npm run lint:architecture-smoke` asserts this.
 
 ## Buttons and interactive surfaces
 
@@ -57,11 +57,13 @@ fallback, so panels keep a constant CSS-pixel scale and avoid clipped ancestors.
 Prefer above, flip below when needed, and use the roomier side when neither
 vertical gutter fits.
 
-- Drive ordinary hover with `useHoverVisible()` and `triggerRef`.
+- Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use `useHoverVisible({ holdMs: TOOLTIP_FADE_MS, interactive, isHovered, onHoverStart, onHoverEnd })` or the thin alias `useTileHoverPopup`.
 - Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.
 - Use `maxWidthFraction` for small-window bounds.
 - Tooltip panels are `pointer-events-none`; nested interactive tooltips are unsupported.
-- State-driven triggers mount the portal only while hovered. CSS-hover conversions keep the portal mounted so its short exit fade can complete.
+- State-driven triggers mount the portal only while hovered; `PortaledTooltip` holds through `useFadePresence(visible, TOOLTIP_FADE_MS)` so the exit fade can complete. `useHoverVisible({ holdMs })` and `useTileHoverPopup` share the same `TOOLTIP_FADE_MS` hold — do not double-hold.
+- Fade primitives are consolidated in `src/features/alchemy/shared/ui/use-fade.tsx` (`useFadePresence`, `useSequentialFadeSwap`, `FadeSlot`); `fade-presence.ts`, `use-sequential-fade-swap.ts`, and `fade-slot.tsx` re-export it.
+- Placement uses a single global `resize`/`scroll` listener shared across tooltips; `ResizeObserver` remains per tooltip. `buildPortaledTooltipStyle` prefers `top` with `tooltipHeight` for above so above/below share one coordinate system.
 - Content slots live in `tooltip-panel.tsx`; placement helpers live in `portaled-tooltip-placement.ts`.
 
 ## Accessibility stance

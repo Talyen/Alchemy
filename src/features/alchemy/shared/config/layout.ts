@@ -91,8 +91,8 @@ export const landscapeArtImageClass = "rounded-shell-hero aspect-[4/3] object-co
 export const gearArtAspectClass = "aspect-[3/4]";
 export const gearArtFillClass = "absolute inset-0 h-full w-full rounded-shell-hero object-cover";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
-export const popupBaseClassName =
-  "absolute left-1/2 z-50 rounded-shell-tooltip border border-border bg-card px-3 py-3 text-left";
+export const tooltipChromeClass = "z-50 rounded-shell-tooltip border border-border bg-card px-3 py-3 text-left";
+export const popupBaseClassName = `absolute left-1/2 ${tooltipChromeClass}`;
 
 export const tooltipWidthClass = "w-fit max-w-72";
 

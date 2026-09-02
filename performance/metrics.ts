@@ -282,7 +282,6 @@ export function aggregateRawSamples(samples: FrameSampleRaw[], options: { minFra
   // Offset each run's timestamps so hitch/phase attribution stays meaningful across the pool.
   let timeOffset = 0;
   const pooledFrameGaps: FrameGapSample[] = [];
-  const pooledFrameTimes: number[] = [];
   const pooledLongTasks: LongTaskSample[] = [];
   const pooledPhaseMarks: Array<{ time: number; phase: string }> = [];
   const pooledHitches: HitchEvent[] = [];
@@ -292,7 +291,6 @@ export function aggregateRawSamples(samples: FrameSampleRaw[], options: { minFra
     const rawGaps = extractValidGaps(s);
     for (const gap of rawGaps) {
       pooledFrameGaps.push({ startTime: gap.startTime + timeOffset, duration: gap.duration });
-      pooledFrameTimes.push(gap.duration);
     }
     for (const task of s.longTasks ?? []) {
       pooledLongTasks.push({ ...task, startTime: task.startTime + timeOffset });
@@ -313,7 +311,6 @@ export function aggregateRawSamples(samples: FrameSampleRaw[], options: { minFra
 
   const pooled: FrameSampleRaw = {
     frameGaps: pooledFrameGaps,
-    frameTimes: pooledFrameTimes,
     longTasks: pooledLongTasks,
     durationMs: timeOffset,
     phaseMarks: pooledPhaseMarks,
@@ -325,7 +322,6 @@ export function aggregateRawSamples(samples: FrameSampleRaw[], options: { minFra
 }
 
 export function classifyContinuous(metrics: FrameMetrics): TargetCheck[] {
-  const durationSec = Math.max(metrics.durationMs / 1000, 1);
   return [
     check("p95", "p95 frame time (ms)", metrics.p95FrameTime, 18, "<="),
     check("p99", "p99 frame time (ms)", metrics.p99FrameTime, 20, "<="),
@@ -337,9 +333,7 @@ export function classifyContinuous(metrics: FrameMetrics): TargetCheck[] {
     check("hitches50", "≥50 ms hitches", metrics.hitchesOver50ms, 0, "<="),
     check("stalls100", "≥100 ms stalls", metrics.stallsOver100ms, 0, "<="),
     check("longTasks", "≥50 ms long tasks", metrics.longTasksOver50ms, 0, "<="),
-    // durationSec reserved for future per-second hitch budgets
-    check("durationNote", "measured duration (s)", durationSec, 0, ">="),
-  ].filter((c) => c.id !== "durationNote");
+  ];
 }
 
 export function classifyTransition(metrics: FrameMetrics): TargetCheck[] {

@@ -86,16 +86,16 @@ export function assertScenarioCompatibility(beforeScenario, afterScenario) {
 export function deriveComparisonMetrics(metrics) {
   if (!metrics) return metrics;
   const durationSec = metrics.durationMs > 0 ? metrics.durationMs / 1000 : 0;
-  const normalizeRate = (count) => {
+  const ratePer30s = (count) => {
     if (!Number.isFinite(count) || count === 0 || durationSec === 0) return count ?? 0;
-    return (count / durationSec) * 30; // normalized to rate per 30 seconds
+    return (count / durationSec) * 30;
   };
 
   return {
     ...metrics,
-    hitchesOver50ms: normalizeRate(metrics.hitchesOver50ms),
-    stallsOver100ms: normalizeRate(metrics.stallsOver100ms),
-    longTasksOver50ms: normalizeRate(metrics.longTasksOver50ms),
+    hitchesOver50ms: ratePer30s(metrics.hitchesOver50ms),
+    stallsOver100ms: ratePer30s(metrics.stallsOver100ms),
+    longTasksOver50ms: ratePer30s(metrics.longTasksOver50ms),
   };
 }
 

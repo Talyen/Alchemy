@@ -171,6 +171,13 @@ const BOUNDARY_TABLE_CONFIGS = BOUNDARY_TABLE.map(createBoundaryConfig);
 export const BOUNDARY_CONFIGS = [
   ...BOUNDARY_TABLE_CONFIGS,
   {
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": layerImports(LIB_NO_FEATURES, ...SOURCE_IMPORT_PATTERNS, UI_NO_SESSION_STORES),
+      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
+    },
+  },
+  {
     files: ["src/features/alchemy/shared/ui/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": layerImports(...SOURCE_IMPORT_PATTERNS, UI_NO_SESSION_STORES),

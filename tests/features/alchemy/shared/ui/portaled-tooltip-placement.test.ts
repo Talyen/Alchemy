@@ -19,8 +19,8 @@ describe("measurePortaledTooltipPlacement", () => {
     expect(placeBelow).toBe(false);
     expect(tooltipSide).toBeNull();
     expect(style.left).toBe("clamp(152px, 640px, 1128px)");
-    expect(style.top).toBe("auto");
-    expect(style.bottom).toBe(`${window.innerHeight - anchor.top + 8}px`);
+    expect(style.top).toBe(`${anchor.top - shortTooltip.height - 8}px`);
+    expect(style.bottom).toBeUndefined();
   });
 
   it("places below when the measured tooltip clips the stage top", () => {

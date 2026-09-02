@@ -1,76 +1,90 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { render, screen, cleanup } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Surface } from "@/features/alchemy/shared/ui/surface";
 
+afterEach(() => cleanup());
+
 describe("Surface", () => {
-  afterEach(cleanup);
-
-  it("renders as a div with base surface class by default", () => {
-    render(<Surface testId="surface">Content</Surface>);
-
-    const surface = screen.getByTestId("surface");
-    expect(surface.tagName).toBe("DIV");
-    expect(surface.classList.contains("surface")).toBe(true);
-    expect(surface.style.getPropertyValue("--card-base-transform")).toBe("translate3d(0px, 0px, 0px)");
-  });
-
-  it("renders as a button when specified", () => {
+  it("renders as button with hover scale attribute", () => {
     render(
-      <Surface as="button" testId="surface-btn" ariaLabel="Action">
-        Button Content
+      <Surface as="button" ariaLabel="Play" hoverScaleActive className="extra">
+        content
       </Surface>,
     );
-
-    const button = screen.getByRole("button", { name: "Action" });
-    expect(button.tagName).toBe("BUTTON");
-    expect(button.classList.contains("surface")).toBe(true);
+    const btn = screen.getByRole("button", { name: "Play" });
+    expect(btn.dataset.hovered).toBe("true");
+    expect(btn.className).toContain("surface");
+    expect(btn.className).toContain("extra");
   });
 
-  it("applies selection ring and disabled styles", () => {
+  it("renders as div with button role when onDivClick is provided", async () => {
+    const onDivClick = vi.fn();
     render(
-      <Surface as="button" testId="surface-btn" selected disabled>
-        Selected Disabled
+      <Surface onDivClick={onDivClick} ariaLabel="Open">
+        content
       </Surface>,
     );
-
-    const button = screen.getByTestId("surface-btn");
-    expect(button.classList.contains("card-interactive-selected")).toBe(true);
-    expect(button.classList.contains("cursor-default")).toBe(true);
-    expect(button.classList.contains("grayscale")).toBe(true);
+    const el = screen.getByRole("button", { name: "Open" });
+    expect(el.tagName).toBe("DIV");
+    expect(el.getAttribute("tabIndex")).toBe("0");
+    await userEvent.click(el);
+    expect(onDivClick).toHaveBeenCalledOnce();
   });
 
-  it("clips contents by default in a surface-clip container", () => {
-    render(
-      <Surface testId="surface">
-        <span>Child</span>
+  it("handles Enter and Space on div role", async () => {
+    const onDivClick = vi.fn();
+    const { container } = render(
+      <Surface onDivClick={onDivClick} ariaLabel="Action">
+        content
       </Surface>,
     );
-
-    const surface = screen.getByTestId("surface");
-    const clipContainer = surface.querySelector(".surface-clip");
-    expect(clipContainer).not.toBeNull();
-    expect(clipContainer?.textContent).toBe("Child");
+    const el = container.querySelector("div[role='button']") as HTMLElement;
+    el.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(onDivClick).toHaveBeenCalledTimes(1);
+    await userEvent.keyboard(" ");
+    expect(onDivClick).toHaveBeenCalledTimes(2);
   });
 
-  it("supports click and keyboard activation when onDivClick is provided", () => {
-    let clicked = 0;
-    render(
-      <Surface testId="clickable-div" onDivClick={() => clicked++} ariaLabel="Interactive Surface">
-        Div Content
+  it("applies dragging and disabled styles", () => {
+    const { container } = render(
+      <Surface dragging disabled>
+        x
       </Surface>,
     );
+    const el = container.firstChild as HTMLElement;
+    expect(el.className).toContain("opacity-0");
+    expect(el.className).toContain("grayscale");
+  });
 
-    const el = screen.getByRole("button", { name: "Interactive Surface" });
-    expect(el.tabIndex).toBe(0);
+  it("forwards selected ring and data-count", () => {
+    const { container } = render(
+      <Surface selected dataCount={3}>
+        x
+      </Surface>,
+    );
+    const el = container.firstChild as HTMLElement;
+    expect(el.className).toContain("card-interactive-selected");
+    expect(el.getAttribute("data-count")).toBe("3");
+  });
 
-    el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(clicked).toBe(1);
+  it("disables button when disabled", () => {
+    render(
+      <Surface as="button" disabled ariaLabel="Disabled">
+        x
+      </Surface>,
+    );
+    expect(screen.getByRole("button", { name: "Disabled" }).hasAttribute("disabled")).toBe(true);
+  });
 
-    el.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-    expect(clicked).toBe(2);
-
-    el.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
-    expect(clicked).toBe(3);
+  it("sets aria-disabled on div when disabled", () => {
+    const { container } = render(
+      <Surface disabled onDivClick={vi.fn()} ariaLabel="Div disabled">
+        x
+      </Surface>,
+    );
+    const el = container.firstChild as HTMLElement;
+    expect(el.getAttribute("aria-disabled")).toBe("true");
   });
 });

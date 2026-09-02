@@ -21,13 +21,25 @@ export function getVrStageBounds(): DOMRect {
   return document.documentElement.getBoundingClientRect();
 }
 
+function horizontalInsetForStage(stage: Pick<DOMRect, "left" | "right">): number {
+  return Math.min(DEFAULT_HORIZONTAL_INSET, Math.max(48, (stage.right - stage.left) / 4));
+}
+
 export function buildPortaledTooltipStyle(
   anchor: PortaledTooltipAnchor,
   placeBelow: boolean,
   padding = 8,
   stage: Pick<DOMRect, "left" | "right" | "top" | "bottom"> = getVrStageBounds(),
+  tooltipHeight?: number,
 ): CSSProperties {
-  const horizontalInset = Math.min(DEFAULT_HORIZONTAL_INSET, Math.max(48, (stage.right - stage.left) / 4));
+  const horizontalInset = horizontalInsetForStage(stage);
+
+  if (!placeBelow && tooltipHeight != null) {
+    return {
+      left: `clamp(${stage.left + horizontalInset}px, ${anchor.centerX}px, ${stage.right - horizontalInset}px)`,
+      top: `${anchor.top - tooltipHeight - padding}px`,
+    };
+  }
 
   return {
     left: `clamp(${stage.left + horizontalInset}px, ${anchor.centerX}px, ${stage.right - horizontalInset}px)`,
@@ -60,7 +72,7 @@ export function measurePortaledTooltipPlacement(
   return {
     placeBelow,
     tooltipSide: null,
-    style: buildPortaledTooltipStyle(anchor, placeBelow, padding, stage),
+    style: buildPortaledTooltipStyle(anchor, placeBelow, padding, stage, tooltipRect.height),
   };
 }
 
@@ -92,6 +104,36 @@ export function buildSideTooltipStyle(
   const top = maxTop < minTop ? (stage.top + stage.bottom) / 2 : Math.min(Math.max(centerY, minTop), maxTop);
 
   return { side, style: { left: `${left}px`, top: `${top}px` } };
+}
+
+const globalPlacementSubscribers = new Set<() => void>();
+let globalRaf: number | null = null;
+let globalListenersAttached = false;
+
+function requestGlobalPlacementUpdate() {
+  if (globalRaf !== null) return;
+  globalRaf = requestAnimationFrame(() => {
+    globalRaf = null;
+    for (const fn of globalPlacementSubscribers) fn();
+  });
+}
+
+function ensureGlobalListeners() {
+  if (globalListenersAttached) return;
+  globalListenersAttached = true;
+  window.addEventListener("resize", requestGlobalPlacementUpdate);
+  document.addEventListener("scroll", requestGlobalPlacementUpdate, true);
+}
+
+function releaseGlobalListeners() {
+  if (globalPlacementSubscribers.size !== 0 || !globalListenersAttached) return;
+  globalListenersAttached = false;
+  window.removeEventListener("resize", requestGlobalPlacementUpdate);
+  document.removeEventListener("scroll", requestGlobalPlacementUpdate, true);
+  if (globalRaf !== null) {
+    cancelAnimationFrame(globalRaf);
+    globalRaf = null;
+  }
 }
 
 export function usePortaledTooltipPlacement(
@@ -158,9 +200,8 @@ export function usePortaledTooltipPlacement(
       });
     };
 
-    window.addEventListener("resize", requestPlacementUpdate);
-
-    document.addEventListener("scroll", requestPlacementUpdate, true);
+    ensureGlobalListeners();
+    globalPlacementSubscribers.add(requestPlacementUpdate);
 
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(requestPlacementUpdate) : null;
     resizeObserver?.observe(trigger);
@@ -168,8 +209,8 @@ export function usePortaledTooltipPlacement(
 
     return () => {
       if (frame !== null) cancelAnimationFrame(frame);
-      window.removeEventListener("resize", requestPlacementUpdate);
-      document.removeEventListener("scroll", requestPlacementUpdate, true);
+      globalPlacementSubscribers.delete(requestPlacementUpdate);
+      releaseGlobalListeners();
       resizeObserver?.disconnect();
       tooltipEl.style.width = "";
       isAdjustingRef.current = false;

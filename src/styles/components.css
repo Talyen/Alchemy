@@ -97,8 +97,8 @@
     box-shadow: 0 8px 24px color-mix(in srgb, var(--color-background) 75%, transparent);
     opacity: 0;
     transition:
-      transform 160ms var(--ease-out-expo),
-      opacity 160ms var(--ease-out-expo);
+      transform var(--motion-fade-duration) var(--ease-out-expo),
+      opacity var(--motion-fade-duration) var(--ease-out-expo);
     will-change: transform, opacity;
   }
 

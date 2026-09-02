@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TextAnimate } from "@/components/ui/text-animate";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
+
+const LazyTextAnimate = lazy(() =>
+  import("@/components/ui/text-animate").then((mod) => ({ default: mod.TextAnimate })),
+);
 
 import {
   bodyTextClass,
@@ -130,9 +133,17 @@ export function MysteryEventIntro({
         </div>
       ) : null}
       <div>
-        <TextAnimate once className={cn("max-w-lg text-center", bodyTextClass)}>
-          {event.narrative}
-        </TextAnimate>
+        <Suspense
+          fallback={
+            <p aria-label={event.narrative} className={cn("max-w-lg text-center whitespace-pre-wrap", bodyTextClass)}>
+              {event.narrative}
+            </p>
+          }
+        >
+          <LazyTextAnimate once className={cn("max-w-lg text-center", bodyTextClass)}>
+            {event.narrative}
+          </LazyTextAnimate>
+        </Suspense>
       </div>
 
       <FadeSlot swapKey={event.id} className="flex flex-wrap justify-center gap-4">

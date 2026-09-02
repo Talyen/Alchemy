@@ -104,12 +104,12 @@ export function writeResultsJson(aggregates: ScenarioAggregate[], environment: E
   return file;
 }
 
-function fmt(n: number, digits = 2): string {
+export function fmt(n: number, digits = 2): string {
   if (!Number.isFinite(n)) return "n/a";
   return n.toFixed(digits);
 }
 
-function bandEmoji(band: TargetCheck["band"]): string {
+export function bandLabel(band: TargetCheck["band"]): string {
   if (band === "green") return "GREEN";
   if (band === "yellow") return "YELLOW";
   return "RED";
@@ -162,7 +162,7 @@ export function renderSummaryMarkdown(options: {
     lines.push("| --- | ---: | ---: | --- |");
     for (const t of agg.targets) {
       const cmp = t.comparator === "<=" ? "≤" : "≥";
-      lines.push(`| ${t.label} | ${fmt(t.actual)} | ${cmp} ${fmt(t.target)} | ${bandEmoji(t.band)} |`);
+      lines.push(`| ${t.label} | ${fmt(t.actual)} | ${cmp} ${fmt(t.target)} | ${bandLabel(t.band)} |`);
     }
     lines.push("");
 

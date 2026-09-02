@@ -3,21 +3,60 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?: {
   holdMs?: number;
   focusWithinGuard?: boolean;
+  interactive?: boolean;
+  isHovered?: boolean;
+  onHoverStart?: () => void;
+  onHoverEnd?: () => void;
 }) {
   const triggerRef = useRef<T>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const {
+    holdMs: holdMsOpt,
+    focusWithinGuard: focusWithinGuardOpt,
+    interactive,
+    isHovered,
+    onHoverStart,
+    onHoverEnd,
+  } = options ?? {};
+  const holdMs = holdMsOpt ?? 0;
+  const focusWithinGuard = focusWithinGuardOpt ?? false;
+  const isControlled = isHovered !== undefined;
+  const [uncontrolledVisible, setUncontrolledVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const holdMs = options?.holdMs ?? 0;
-  const focusWithinGuard = options?.focusWithinGuard ?? false;
 
-  const show = useCallback(() => {
-    setVisible(true);
-  }, []);
-  const hide = useCallback(() => {
-    if (focusWithinGuard && wrapperRef.current?.matches(":focus-within")) return;
-    setVisible(false);
-  }, [focusWithinGuard]);
+  const visible = (() => {
+    const raw = isControlled ? Boolean(isHovered) : uncontrolledVisible;
+    if (interactive === false) return false;
+    return raw;
+  })();
+
+  const doShow = useCallback(() => {
+    if (interactive === false) return;
+    if (isControlled) onHoverStart?.();
+    else {
+      setUncontrolledVisible(true);
+      onHoverStart?.();
+    }
+  }, [interactive, isControlled, onHoverStart]);
+
+  const doHide = useCallback(
+    ({ checkFocusWithin }: { checkFocusWithin: boolean }) => {
+      if (checkFocusWithin && focusWithinGuard && wrapperRef.current?.matches(":focus-within")) return;
+      if (interactive === false) return;
+      if (isControlled) onHoverEnd?.();
+      else {
+        setUncontrolledVisible(false);
+        onHoverEnd?.();
+      }
+    },
+    [focusWithinGuard, interactive, isControlled, onHoverEnd],
+  );
+
+  const show = doShow;
+  const hide = useCallback(() => doHide({ checkFocusWithin: true }), [doHide]);
+  const handleHoverStart = doShow;
+  const handleMouseLeave = useCallback(() => doHide({ checkFocusWithin: true }), [doHide]);
+  const handleBlur = useCallback(() => doHide({ checkFocusWithin: false }), [doHide]);
 
   useEffect(() => {
     if (holdMs <= 0) return;
@@ -36,9 +75,13 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
     wrapperRef,
     visible,
     mounted: holdMs > 0 ? mounted : visible,
-    onMouseEnter: show,
-    onMouseLeave: hide,
-    onFocusCapture: show,
-    onBlurCapture: hide,
+    showPopup: holdMs > 0 ? (interactive === false ? false : visible || mounted) : visible,
+    onMouseEnter: isControlled ? handleHoverStart : show,
+    onMouseLeave: isControlled ? handleMouseLeave : hide,
+    onFocusCapture: isControlled ? handleHoverStart : show,
+    onBlurCapture: isControlled ? handleBlur : hide,
+    handleHoverStart,
+    handleMouseLeave,
+    handleBlur,
   };
 }

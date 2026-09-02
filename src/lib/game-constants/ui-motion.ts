@@ -2,7 +2,8 @@ export const IMAGE_PRELOAD_BATCH_SIZE = 4;
 export const IMAGE_PRELOAD_TIMEOUT_MS = 15_000;
 
 export const MOTION_FADE_MS = 180;
-export const PAGE_EXIT_MS = 180;
+export const PAGE_EXIT_MS = MOTION_FADE_MS;
+export const TOOLTIP_FADE_MS = MOTION_FADE_MS;
 
 export const INITIAL_LOAD_MIN_DURATION_MS = 650;
 export const FONT_PRELOAD_TIMEOUT_MS = 10_000;

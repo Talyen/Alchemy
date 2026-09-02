@@ -18,19 +18,8 @@ class PerformanceReporter implements Reporter {
   }
 
   onEnd(_result: FullResult) {
-    const list = [...this.scenarios];
-    if (list.length === 0) {
-      // Fall back to whatever aggregate files exist / env filter.
-      const filter = process.env.PERF_SCENARIO;
-      const scenarios = filter ? [filter] : [...SCENARIO_IDS];
-      try {
-        const summary = finalizePerformanceReport(scenarios);
-        console.log(`\nPerformance report: ${summary}`);
-      } catch (error) {
-        console.warn("Could not finalize performance report:", error);
-      }
-      return;
-    }
+    const filter = process.env.PERF_SCENARIO;
+    const list = this.scenarios.size > 0 ? [...this.scenarios] : filter ? [filter] : [...SCENARIO_IDS];
     try {
       const summary = finalizePerformanceReport(list);
       console.log(`\nPerformance report: ${summary}`);

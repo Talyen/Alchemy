@@ -2,7 +2,7 @@
 // Slow ESLint smoke: lint representative files and verify their effective stacked rules.
 // Kept in the static-analysis tier because cold ESLint startup does not belong in Vitest.
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { ESLint } from "eslint";
 import { isMainModule } from "./lib/is-main-module.mjs";
@@ -195,6 +195,26 @@ export async function main() {
 
   const libConfig = await getConfig("src/lib/battle/card-play.ts");
   assert.ok(ruleIsError(alchemyRule(libConfig, "no-lib-fetch")), "src/lib must ban fetch");
+
+  const themeCss = readFileSync(path.join(process.cwd(), "src/styles/theme.css"), "utf8");
+  const cssFadeMatch = themeCss.match(/--motion-fade-duration:\s*(\d+)ms/);
+  assert.ok(cssFadeMatch, "theme.css must define --motion-fade-duration");
+  const cssFadeMs = Number(cssFadeMatch[1]);
+  const uiMotion = readFileSync(path.join(process.cwd(), "src/lib/game-constants/ui-motion.ts"), "utf8");
+  const jsFadeMatch = uiMotion.match(/MOTION_FADE_MS[^=]*=\s*(\d+)/);
+  assert.ok(jsFadeMatch, "ui-motion.ts must define MOTION_FADE_MS");
+  assert.equal(Number(jsFadeMatch[1]), cssFadeMs, "MOTION_FADE_MS must equal --motion-fade-duration");
+  const componentsCss = readFileSync(path.join(process.cwd(), "src/styles/components.css"), "utf8");
+  assert.ok(
+    componentsCss.includes("var(--motion-fade-duration)"),
+    "components.css hover-popup-panel must use var(--motion-fade-duration)",
+  );
+  const tooltipFadeMatch = uiMotion.match(/TOOLTIP_FADE_MS[^=]*=\s*MOTION_FADE_MS\b[^\n;]*/);
+  assert.ok(tooltipFadeMatch, "TOOLTIP_FADE_MS must alias MOTION_FADE_MS");
+
+  const componentsUiConfig = await getConfig("src/components/ui/button.tsx");
+  const componentsUiImports = restrictedImports(componentsUiConfig);
+  assertImportGroup(componentsUiImports, "@/features/**", "components/ui must ban features imports");
 
   const results = await eslint.lintFiles(ARCHITECTURE_SMOKE_FILES);
   const errors = results.flatMap((r) =>

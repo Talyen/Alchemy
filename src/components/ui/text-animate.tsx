@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, type Variants } from "motion/react";
 
 import { cn } from "@/lib/utils";
+import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 
 interface TextAnimateProps {
   children: string;
@@ -36,7 +37,6 @@ export function TextAnimate({
 }: TextAnimateProps) {
   const words = useMemo(() => children.trim().split(/\s+/).filter(Boolean), [children]);
   const staggerChildren = words.length > 0 ? duration / words.length : 0.05;
-
   const containerVariants = useMemo<Variants>(
     () => ({
       hidden: { opacity: 1 },
@@ -50,6 +50,21 @@ export function TextAnimate({
     }),
     [delay, staggerChildren],
   );
+  const [animationDisabled, setAnimationDisabled] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const sync = () => setAnimationDisabled(isAnimationDisabled() || Boolean(media?.matches));
+    sync();
+    media?.addEventListener?.("change", sync);
+    return () => media?.removeEventListener?.("change", sync);
+  }, []);
+  if (animationDisabled) {
+    return (
+      <p className={cn("whitespace-pre-wrap", className)} aria-label={children}>
+        {children}
+      </p>
+    );
+  }
 
   return (
     <motion.p

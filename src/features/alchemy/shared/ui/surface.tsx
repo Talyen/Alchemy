@@ -1,4 +1,11 @@
-import { type CSSProperties, type MouseEvent, type PointerEvent, type ReactNode, type Ref } from "react";
+import {
+  type CSSProperties,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+  type Ref,
+} from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -31,23 +38,9 @@ interface SurfaceProps {
   dataCount?: number;
   onMouseEnter?: (e: MouseEvent<HTMLElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLElement>) => void;
-
   clipContents?: boolean | undefined;
-
   hoverScaleActive?: boolean | undefined;
-
   overlay?: ReactNode | undefined;
-}
-
-interface ShimmerProps {
-  active: boolean | undefined;
-  token: number | undefined;
-  rounded: string | undefined;
-}
-function ShimmerSlot({ active, token, rounded }: ShimmerProps) {
-  return active !== undefined ? (
-    <ShimmerOverlay active={active} token={token} rounded={rounded ?? "rounded-shell-hero"} />
-  ) : null;
 }
 
 const SURFACE_CLASSES = "surface";
@@ -68,94 +61,22 @@ function surfaceClassName(
   );
 }
 
-function SurfaceBody({
-  clipContents,
-  shimmerActive,
-  shimmerToken,
-  shimmerRounded,
-  overlay,
-  children,
-}: {
-  clipContents: boolean;
-  shimmerActive: boolean | undefined;
-  shimmerToken: number | undefined;
-  shimmerRounded: string | undefined;
-  overlay: ReactNode | undefined;
-  children: ReactNode;
-}) {
-  return (
-    <>
-      <ShimmerSlot active={shimmerActive} token={shimmerToken} rounded={shimmerRounded} />
-      {clipContents ? <div className={CLIP_CONTENTS_CLASS}>{children}</div> : children}
-      {overlay}
-    </>
-  );
+function handleDivKeyDown(onDivClick: ((e?: MouseEvent<HTMLDivElement>) => void) | undefined) {
+  return onDivClick
+    ? (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onDivClick(event as unknown as MouseEvent<HTMLDivElement>);
+        }
+      }
+    : undefined;
 }
 
-interface SurfaceInner extends SurfaceProps {
-  surfaceStyle: CSSProperties;
-  children: ReactNode;
-}
-
-function SurfaceButton({
-  children,
-  className,
-  shimmerActive,
-  shimmerToken,
-  shimmerRounded,
-  selected,
-  disabled,
-  dragging,
-  onClick,
-  onPointerDown,
-  onFocus,
-  onBlur,
-  ariaLabel,
-  ariaDisabled,
-  ariaPressed,
-  buttonRef,
-  testId,
-  onMouseEnter,
-  onMouseLeave,
-  surfaceStyle,
-  clipContents = true,
-  overlay,
-  hoverScaleActive,
-}: SurfaceInner) {
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      aria-label={ariaLabel}
-      {...(ariaDisabled !== undefined ? { "aria-disabled": ariaDisabled } : {})}
-      {...(ariaPressed !== undefined ? { "aria-pressed": ariaPressed } : {})}
-      disabled={disabled}
-      onClick={onClick}
-      onPointerDown={onPointerDown}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      data-testid={testId}
-      data-hovered={hoverScaleActive ? "true" : undefined}
-      className={surfaceClassName(selected, dragging, disabled, className)}
-      style={surfaceStyle}
-    >
-      <SurfaceBody
-        clipContents={clipContents}
-        shimmerActive={shimmerActive}
-        shimmerToken={shimmerToken}
-        shimmerRounded={shimmerRounded}
-        overlay={overlay}
-      >
-        {children}
-      </SurfaceBody>
-    </button>
-  );
-}
-
-function SurfaceDiv(props: SurfaceInner) {
+export function Surface(props: SurfaceProps) {
   const {
+    as: Component = "div",
+    baseTransform,
+    style,
     children,
     className,
     shimmerActive,
@@ -164,68 +85,81 @@ function SurfaceDiv(props: SurfaceInner) {
     selected,
     disabled,
     dragging,
+    onClick,
     onDivClick,
+    onPointerDown,
+    onFocus,
+    onBlur,
     ariaLabel,
+    ariaDisabled,
+    ariaPressed,
+    buttonRef,
     surfaceRef,
     testId,
     dataCount,
     onMouseEnter,
     onMouseLeave,
-    surfaceStyle,
     clipContents = true,
-    overlay,
     hoverScaleActive,
+    overlay,
   } = props;
+
+  const surfaceStyle = { "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties;
+  const klass = surfaceClassName(selected, dragging, disabled, className);
+  const hoveredAttr = hoverScaleActive ? "true" : undefined;
+  const body = (
+    <>
+      {shimmerActive !== undefined ? (
+        <ShimmerOverlay active={shimmerActive} token={shimmerToken} rounded={shimmerRounded ?? "rounded-shell-hero"} />
+      ) : null}
+      {clipContents ? <div className={CLIP_CONTENTS_CLASS}>{children}</div> : children}
+      {overlay}
+    </>
+  );
+
+  if (Component === "button") {
+    return (
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-label={ariaLabel}
+        {...(ariaDisabled !== undefined ? { "aria-disabled": ariaDisabled } : {})}
+        {...(ariaPressed !== undefined ? { "aria-pressed": ariaPressed } : {})}
+        disabled={disabled}
+        onClick={onClick}
+        onPointerDown={onPointerDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        data-testid={testId}
+        data-hovered={hoveredAttr}
+        className={klass}
+        style={surfaceStyle}
+      >
+        {body}
+      </button>
+    );
+  }
+
   return (
     <div
       ref={surfaceRef}
       data-testid={testId}
-      data-hovered={hoverScaleActive ? "true" : undefined}
+      data-hovered={hoveredAttr}
       {...(dataCount !== undefined ? { "data-count": dataCount } : {})}
+      {...(disabled ? { "aria-disabled": "true" } : {})}
       onClick={onDivClick}
-      onKeyDown={
-        onDivClick
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                (onDivClick as (e?: unknown) => void)();
-              }
-            }
-          : undefined
-      }
+      onKeyDown={handleDivKeyDown(onDivClick)}
       tabIndex={onDivClick ? 0 : undefined}
       role={onDivClick ? "button" : undefined}
       aria-label={onDivClick ? ariaLabel : undefined}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className={surfaceClassName(selected, dragging, disabled, className)}
+      className={klass}
       style={surfaceStyle}
     >
-      <SurfaceBody
-        clipContents={clipContents}
-        shimmerActive={shimmerActive}
-        shimmerToken={shimmerToken}
-        shimmerRounded={shimmerRounded}
-        overlay={overlay}
-      >
-        {children}
-      </SurfaceBody>
+      {body}
     </div>
-  );
-}
-
-export function Surface(props: SurfaceProps) {
-  const { as: Component = "div", baseTransform, style, children, ...rest } = props;
-  const surfaceStyle = { "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties;
-  if (Component === "button")
-    return (
-      <SurfaceButton {...rest} surfaceStyle={surfaceStyle}>
-        {children}
-      </SurfaceButton>
-    );
-  return (
-    <SurfaceDiv {...rest} surfaceStyle={surfaceStyle}>
-      {children}
-    </SurfaceDiv>
   );
 }
