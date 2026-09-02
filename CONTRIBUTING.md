@@ -6,7 +6,7 @@ During implementation run `npm run verify -- --diff`; before push and handoff ru
 
 ## What to run when you change…
 
-The local workflow has three entry points:
+The local workflow has three entry points — one per moment, never interchangeable:
 
 | Moment           | Command                    | Responsibility                                                                                                     |
 | ---------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -50,7 +50,7 @@ Execution plans under `docs/Plans/` are workflow artifacts, not product correctn
 | `npm run assets:check`            | Idempotent authored-asset preparation check                                                           |
 | `npm run test:e2e:critical`       | Every-push representative player journeys                                                             |
 
-Builds never prepare or rewrite tracked sources. Use the explicit `sync:*` and asset authoring commands when intentionally regenerating outputs.
+Builds never prepare or rewrite tracked sources — asset preparation runs automatically in the prepare step before dev/prod builds. Use the explicit `sync:*` and asset authoring commands when intentionally regenerating outputs.
 
 Every push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Only save persistence, prepared assets, desktop packaging, and Electron tests remain path-gated. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/change-routes.mjs`.
 

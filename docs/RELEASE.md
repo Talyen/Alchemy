@@ -68,6 +68,13 @@ or unreviewed build cannot become player-visible automatically.
   `scripts/steam-upload.mjs`. Configure Steam Guard for the build account per
   [Valve's SteamCMD / CI guidance](https://partner.steamgames.com/doc/sdk/uploading).
 
+## One-time setup (rarely touched after initial configuration)
+
+The next four sections — crash reporting, player notices/provenance, Windows
+signing, and GitHub secrets — are one-time setup. They go stale once
+configured; revalidate only when rotating credentials, changing the listing,
+or preparing the first public release.
+
 ## Desktop crash reporting (one-time setup)
 
 Alchemy uses Sentry for error reporting from packaged production desktop releases. Browser development, tests, and

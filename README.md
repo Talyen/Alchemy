@@ -79,21 +79,12 @@ Feature layout and run-state ownership:
 - `src/features/alchemy/` — React UI (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
 - `tests/` — Vitest unit tests and Playwright specs
 
-Asset preparation runs automatically before development and production builds.
-Do not hand-edit generated outputs; authoring lives in
-[`docs/WORKFLOWS-ASSETS.md`](./docs/WORKFLOWS-ASSETS.md).
+Asset preparation runs automatically before dev and prod builds via the prepare step; the build itself never rewrites tracked sources. Use the explicit `sync:*` commands in [`docs/WORKFLOWS-ASSETS.md`](./docs/WORKFLOWS-ASSETS.md) when intentionally regenerating outputs.
+Do not hand-edit generated outputs.
 
 ## Documentation
 
-| Need                                  | Start here                                                                                                                                                    |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Architecture, state, controllers      | [Architecture](./docs/ARCHITECTURE.md)                                                                                                                        |
-| Content and implementation checklists | [Workflows](./docs/WORKFLOWS.md) · [Asset workflow](./docs/WORKFLOWS-ASSETS.md)                                                                               |
-| Commands, battle rules, glossary      | [Developer reference](./docs/REFERENCE.md)                                                                                                                    |
-| Verification and CI                   | [Contributing](./CONTRIBUTING.md) · [E2E helpers](./tests/e2e/README.md)                                                                                      |
-| Saves and migrations                  | [Save migration guide](./src/features/alchemy/shared/storage/MIGRATIONS.md) · [Migration history](./src/features/alchemy/shared/storage/MIGRATION_HISTORY.md) |
-| UI, audio, gear, and profiling        | [UI](./docs/UI.md) · [Audio](./docs/AUDIO.md) · [Armory](./docs/ARMORY.md) · [Performance](./docs/PERFORMANCE.md)                                             |
-| Shipping and player notices           | [Release](./docs/RELEASE.md) · [Privacy](./PRIVACY.md) · [Third-party notices](./THIRD_PARTY_NOTICES.md)                                                      |
+The full owner map lives in [AGENTS.md](./AGENTS.md#documentation-owners) — start with one owner there and expand only across a demonstrated boundary. Human entry points: [Architecture](./docs/ARCHITECTURE.md) for layout and state, [Workflows](./docs/WORKFLOWS.md) for content checklists, [Developer reference](./docs/REFERENCE.md) for commands, [Contributing](./CONTRIBUTING.md) for verification.
 
 ## License
 

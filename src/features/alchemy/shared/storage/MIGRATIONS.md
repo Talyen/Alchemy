@@ -117,6 +117,14 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 - Removed catalog IDs follow the tombstone and hydrate-repair rules above. A meaning or ID remap requires a `contentVersion` handler.
 - Battle-only fields that are rebuilt rather than persisted do not affect the save contract.
 
+> Three layers, in load order: **tombstone** (drop removed catalog IDs at the migration step) → **hydrate** (validate the current shape, strip orphans) → **normalize** (`normalizeActiveRunData` soft-fixes valid shapes, e.g. re-offering emptied choice lists). Never put rename logic in Zod transforms.
+
+## Additive-field appendix
+
+Each subsection below is one additive field that loads through defaults — no
+bump. Version-specific transforms live in
+[MIGRATION_HISTORY.md](./MIGRATION_HISTORY.md).
+
 ## Active-run RNG streams (`activeRun.rng`)
 
 Active runs persist a seed and counters for named run-outcome streams. This is an additive nested field, so it does not require a top-level schema-version bump: `ActiveRunDataSchema` creates a fresh seed with zero counters when loading a legacy active run. After that first load, the normal autosave writes the explicit RNG state and all subsequent resumes continue the same sequence.

@@ -22,8 +22,7 @@ lists in subsystem docs.
 
 ```sh
 npm run dev                 # Vite dev server
-npm run build               # vite build (typecheck is a separate gate; Vercel runs vercel.json buildCommand)
-npm run build               # Non-mutating Vite build; validates generated outputs first
+npm run build               # Non-mutating Vite build; validates generated outputs first (typecheck is a separate gate; Vercel runs vercel.json buildCommand)
 npm run assets:check        # Prepare assets and fail unless the operation is idempotent
 npm test                    # Vitest; `npm test -- <path>` for a single file
 npm run verify -- --diff    # Related tests plus broad risk escalations (--plan previews)
@@ -123,7 +122,7 @@ findings as review input rather than applying tunings automatically. The
 summary opens `reports/balance-findings.html` and writes a JSON companion.
 Numeric environment values must be positive integers. Policy and loadout values
 must exactly match the choices above; pacing accepts `on`/`1`/`true` or
-`off`/`0`/`false` (empty or any other value now fails fast — previously empty string silently defaulted to `on`). Invalid configuration fails before report files are written.
+`off`/`0`/`false` (anything else fails fast). Invalid configuration fails before report files are written.
 Scenario seeds derive from tier, class, enemy, depth, replicate, and sweep identity instead of loop position, so adding or reordering unrelated content does not re-key existing comparisons. Core matchups reuse each tier/class deck sample across enemies while retaining distinct fight randomness; isolation sweeps keep baseline and treatment paired.
 `balance:sim` generates reports; `test:balance` verifies finite full-report
 construction and render purity without touching `reports/`. Changed balance
@@ -160,7 +159,7 @@ Definitions of common terms used in the Alchemy codebase.
 ### Content systems
 
 - **Content System** — `campaign`, `labyrinth`, or `wildwood`; owns map generation and encounter rules. Implementations live under `src/lib/content-systems/`.
-  - **Labyrinth** — infinite hex floors during a run. Each floor is a small hex map (one floor on screen). Reachable rooms are hex-adjacent to a cleared room, or the next floor entry after that floor's boss. Hover a hex for its name and type; click any chamber to pin a floating card, then confirm Enter when that room is reachable. HP carries between rooms. Dying ends the run (game over with XP/items); the next Labyrinth start generates a fresh map. There is no single Labyrinth victory screen.
+  - **Labyrinth** — infinite branching-maze content system; small hex maps per floor with reachable-room and boss-gate rules. HP carries between rooms; dying ends the run.
 
 ### Shared battle and progression terms
 

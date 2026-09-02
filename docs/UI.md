@@ -57,14 +57,12 @@ fallback, so panels keep a constant CSS-pixel scale and avoid clipped ancestors.
 Prefer above, flip below when needed, and use the roomier side when neither
 vertical gutter fits.
 
-- Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use `useHoverVisible({ holdMs: TOOLTIP_FADE_MS, interactive, isHovered, onHoverStart, onHoverEnd })` or the thin alias `useTileHoverPopup`.
+- Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use the `holdMs: TOOLTIP_FADE_MS` form or the thin alias `useTileHoverPopup` (see those hooks for the exact call shape).
 - Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.
 - Use `maxWidthFraction` for small-window bounds.
 - Tooltip panels are `pointer-events-none`; nested interactive tooltips are unsupported.
-- State-driven triggers mount the portal only while hovered; `PortaledTooltip` holds through `useFadePresence(visible, TOOLTIP_FADE_MS)` so the exit fade can complete. `useHoverVisible({ holdMs })` and `useTileHoverPopup` share the same `TOOLTIP_FADE_MS` hold — do not double-hold.
-- Fade primitives are consolidated in `src/features/alchemy/shared/ui/use-fade.tsx` (`useFadePresence`, `useSequentialFadeSwap`, `FadeSlot`); `fade-presence.ts`, `use-sequential-fade-swap.ts`, and `fade-slot.tsx` re-export it.
-- Placement uses a single global `resize`/`scroll` listener shared across tooltips; `ResizeObserver` remains per tooltip. `buildPortaledTooltipStyle` prefers `top` with `tooltipHeight` for above so above/below share one coordinate system.
-- Content slots live in `tooltip-panel.tsx`; placement helpers live in `portaled-tooltip-placement.ts`.
+- State-driven triggers mount the portal only while hovered; exit fades complete via the shared `TOOLTIP_FADE_MS` hold — do not double-hold.
+- Fade primitives are consolidated in `src/features/alchemy/shared/ui/use-fade.tsx`; placement helpers live in `portaled-tooltip-placement.ts`, content slots in `tooltip-panel.tsx`.
 
 ## Accessibility stance
 

@@ -19,18 +19,10 @@ Gear equip/unequip/salvage/crafting mutates `GearStore` and must sync live run h
 - `src/features/alchemy/run-loop/shop/*-shop-commands.ts`, `src/features/alchemy/run-loop/run/run-flow-rewards.ts` — gear grants inside open command use draft variant.
 - `src/app/screen-routes/meta-routes.tsx` via `useArmoryController` — outer dispatch + `flushSaveAfterGearMutation` outside run.
 
-## Preferred pattern
+## Resolution
 
-- **Outside a run-session command** (Armory screen, dev spawn): `dispatchGearMutationWithRunHealthSync({ mutate: (g) => g.equip(...) })` (+ `flushSaveAfterGearMutation` when needed).
-- **Inside an open `dispatchRunSessionCommand((draft) => ...)`** (shop buy, reward claim, mystery): `mutateGearWithRunHealthSync(draft, { mutate: (g) => g.addInstance(...) })`; never nest the outer dispatch.
-- Salvage: freeze `computeSalvageYield` before dispatch; grant materials in same command via `awardMaterialsDuringRun` (active) / `addMaterials` (meta).
-- Read-only Armory views use `useGearArmorySlice`; don't call gear mutations from presentation leaves.
-
-## Exceptions
-
-- Meta-only bulk mutations when no run is active — `syncRunHealth: false` is acceptable (draft check already guards).
-- Persistence adapters subscribe to aggregate commit; they do not use gear dispatch directly.
-
-## Enforcement
-
-Lint: `GEAR_NO_OUTER_DISPATCH` rejects `dispatchGearMutationWithRunHealthSync` / `dispatchGearSalvageWithMaterialGrant` in `src/features/alchemy/run-loop/**` and `shell/**`; use `mutateGearWithRunHealthSync(draft, ...)`. This is part of the [Run-State Command Boundary](./run-state-command-boundary.md#enforcement) draft-variant rule. The pattern stays `medium` until a second independent recurrence proves generalizability.
+[ARMORY.md](../../../docs/ARMORY.md#write-paths) owns the inside/outside
+command decision table and salvage order. The `GEAR_NO_OUTER_DISPATCH` lint
+rejects the outer dispatch wrapper inside `run-loop/**` and `shell/**`. The
+pattern stays `medium` until a second independent recurrence proves
+generalizability.

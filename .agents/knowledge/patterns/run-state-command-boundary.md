@@ -21,20 +21,9 @@ Feature code occasionally bypasses the aggregate command boundary — calling st
 - `eslint/boundaries.js` — `gameplay-state-store.ts` internal; feature code uses ports.
 - `docs/ARMORY.md#write-paths` — `dispatchGearMutationWithRunHealthSync` vs `mutateGearWithRunHealthSync`.
 
-## Preferred pattern
+## Resolution
 
-- Entry: `dispatchRunSessionCommand((draft) => { ... }, { afterCommit })`. Keep command synchronous, no `await`.
-- Pass `draft` explicitly to every gameplay mutator (`setRunGold`, `setBattleState`, etc.).
-- Read transactional guards (gold, refresh counts) from `draft`, not committed port.
-- Audio/nav/timers/presentation after commit (`afterCommit` or post-command).
-- Inside open command: use `mutateGearWithRunHealthSync(draft, ...)` not outer dispatch wrapper.
-- Battle transitions: persist `activeCombat.pendingBattleTransition` in same commit as intermediate state.
-
-## Exceptions
-
-- `profile-store.ts` / `gear-store.ts` adapter subscriptions to aggregate commit signal (persistence adapters).
-- Restoration: `restoreRun` is the sole hydration path (boot bypasses screen transition policy intentionally).
-
-## Enforcement
-
-Current: boundary lint keeps `gameplay-state-store.ts` internal through `DOMAIN_STORE_PATTERNS`; `AGGREGATE_NO_DIRECT_MUTATION` rejects `useGameplayStateStore.getState`/`setState` outside `src/features/alchemy/shared/stores/**`. Allowed owners are `run-session-command.ts`, `gameplay-state-store.ts`, and test helpers. Feature code must use `dispatchRunSessionCommand` plus `run-session-write-port` / `run-session-read-port`.
+[ARCHITECTURE.md](../../../docs/ARCHITECTURE.md#run-state) owns the
+aggregate, ports, and command contract. Boundary lint (`DOMAIN_STORE_PATTERNS`,
+`AGGREGATE_NO_DIRECT_MUTATION`) keeps `gameplay-state-store.ts` internal and
+rejects direct `getState`/`setState` outside `shared/stores/`.

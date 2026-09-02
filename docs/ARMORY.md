@@ -6,9 +6,8 @@ The Armory is the permanent meta-progression screen for managing **Gear** (per-c
 
 ## Layout
 
-The screen implementation lives under
-`src/features/alchemy/meta/screens/armory/` (controller + parts) and
-`src/features/alchemy/meta/screens/armory-screen.tsx` (composition). Start from these owners:
+The screen implementation lives under `src/features/alchemy/meta/screens/`.
+Start from these owners:
 
 - `use-armory-controller.ts` — read facade and mutation/HP-sync/save-flush boundary consumed by the route.
 - `armory-screen.tsx` (sibling of `armory/`) — screen composition and interaction wiring.
@@ -53,12 +52,17 @@ contract and controller seams.
 
 ### Write paths
 
-There is no external `useGearStore` hook. Gear mutations run against a `GearStore` view of the aggregate state and commit through session commands:
+There is no external `useGearStore` hook. Gear mutations run against a `GearStore` view of the aggregate state and commit through session commands. Which wrapper to use:
 
-- `dispatchGearMutationWithRunHealthSync({ mutate, syncRunHealth? })` — for HP-affecting ops (`equip`, `unequip`, `applyCurrency`, `addInstance`) when the caller is **not** already inside `dispatchRunSessionCommand`. Inside an existing command (shop buy, rewards, mystery), call `mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth? })` instead. HP sync runs through `rebindLiveRunMeta` when `syncRunHealth ?? draft.session.hasActiveRun`. `mutate` receives a `GearStore` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
+| Situation                                               | Call                                                                |
+| ------------------------------------------------------- | ------------------------------------------------------------------- |
+| Outside a run command (Armory screen, dev spawn)        | `dispatchGearMutationWithRunHealthSync({ mutate, syncRunHealth? })` |
+| Inside an existing command (shop buy, rewards, mystery) | `mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth? })`    |
+
+HP sync runs through `rebindLiveRunMeta` when `syncRunHealth ?? draft.session.hasActiveRun`. `mutate` receives a `GearStore` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
 1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
-2. **Salvage** — preview rolls `computeSalvageYield` (definition `salvageValue` homestead materials + `rollSalvageYield` crafting currencies). Confirm passes that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta).
+2. **Salvage** — freeze first: preview with `computeSalvageYield` (definition `salvageValue` homestead materials + `rollSalvageYield` crafting currencies), then confirm by passing that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta).
 3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`.
 4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addInstance(instance, characterId) })`.
 5. **Permanent Trinkets** — use `addTrinket`, `equipTrinket`, and `unequipTrinket` on the Gear aggregate. Rewards and the Trinket Shop add ownership inside their existing run-session command; acquisition never auto-equips or creates a Boon.

@@ -82,6 +82,14 @@ Result: accepted
 Evidence: User-approved policy plan; aligned `AGENTS.md`, `CONTRIBUTING.md`, and `run-audits` guidance; changed-path documentation gate passes.
 Reason: Scope wording discouraged agents from making safe incidental fixes even when the issue and remedy were clear; the revised policy protects existing intent without leaving known problems behind.
 
+## 2026-09-02 — Slim remaining enforcement-heavy patterns to rationale-only
+
+Pattern: `run-state-command-boundary`, `save-migration-contract`, `gear-hp-sync`
+Proposal: Replace `Preferred pattern` / `Enforcement` checklists with a `Resolution` pointer to the owning doc plus the enforcing lint/test gate, matching the 2026-09-01 consolidation of the other four patterns.
+Result: accepted
+Evidence: User-approved documentation review; `ARCHITECTURE.md`, `MIGRATIONS.md`, `ARMORY.md` own the procedures; `DOMAIN_STORE_PATTERNS` / `AGGREGATE_NO_DIRECT_MUTATION` / `GEAR_NO_OUTER_DISPATCH` lint plus save-migration guard tests enforce mechanically; `npm run docs:check` passes.
+Reason: Prose checklists duplicated executable gates — keep the why and the pointer, let lint/tests enforce.
+
 ## Template for future entries
 
 ```

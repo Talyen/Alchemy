@@ -21,8 +21,8 @@ npm run perf -- --help
 ```
 
 `reports/current-run.md` and `reports/current-run.json` point to the latest
-report-producing command. Open that pointer first; it is overwritten on the next
-run and is not a historical index.
+report-producing command. Open that pointer first; it is ephemeral — overwritten on the next
+run — and is not a historical index. `reports/` is otherwise opt-in evidence, not committed history.
 
 Agent read order: open the summary first, then the machine-readable result, and
 only then a relevant per-run file or trace. Traces are opt-in evidence and
@@ -140,7 +140,7 @@ Measure → identify failing scenario/phase → perf:trace that scenario → opt
 - rAF sampling detects **main-thread cadence gaps**, not hardware GPU present timing.
 - Trace mode adds overhead — do not treat its FPS numbers as authoritative.
 - Never compare Chromium and Electron results as if they were the same environment.
-- Local Electron profiling keeps the GPU enabled (`enableGpu`); CI Electron smoke still uses `--disable-gpu`.
+- Local Electron profiling keeps the GPU enabled (`enableGpu`); CI Electron smoke still uses `--disable-gpu`. Never compare the two — same-machine, same-runtime comparisons only.
 - Runtime deltas are diagnostic signals, not automatic leak verdicts. Allow for garbage collection and confirm suspicious monotonic growth across repeated runs.
 - A 60 Hz panel cannot report sustained 120+ FPS; use a high-refresh display for that class of measurement.
 

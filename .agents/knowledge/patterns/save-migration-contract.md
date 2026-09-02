@@ -21,18 +21,9 @@ After public launch `LAUNCH_SAVE_SCHEMA_VERSION` freezes; every bump `>= launch`
 - `tests/architecture/save-migration-guard.test.ts` + `save-migration-contract.test.ts` — gameplay assertions (collection, talents, homestead, `activeRun` not dropped, parked runs, battle trinket/gear manifests, interruptedFlow, hex floors).
 - `src/features/alchemy/shared/storage/io.ts` — `safeParseWithErrors` production path vs `normalizeSaveData` test path.
 
-## Preferred pattern
+## Resolution
 
-1. Decide bump vs additive default (Zod `.default()`/`.catch()` — no bump) per `MIGRATIONS.md`.
-2. For `N → N+1`: increment `CURRENT_SAVE_SCHEMA_VERSION`, add `migrateVNToVNPlus1`, chain in `migrateSaveDataToCurrent`, update Zod + `defaults.ts`, add fixture, extend `MIGRATION_SCENARIO_FIXTURES` if `activeRun` touched.
-3. Add tombstoned card IDs to `tombstoned-content-ids.ts` when removing catalog entries; hydrate drops unknown cards silently.
-4. Run `npm run check:ship` (covers `test:ship:unit` + `lint:ci` + `build:desktop`). Keep `activeRun` idempotent after `normalizeSaveData`.
-
-## Exceptions
-
-- Additive nested fields with Zod defaults (e.g., `activeRun.rng`, `pendingBattleTransition`, `discoveredUniqueIds`) — stamp-only, no step.
-- Pre-launch floor raises that intentionally drop prior triads (schema 11 `resumePhase` → `interruptedFlow`, schema 14 grid → hex) — documented, non-silent regeneration.
-
-## Enforcement opportunity
-
-Strongest: tests `save-migration-guard.test.ts` / `save-migration-contract.test.ts` (already ratcheted). Further: tombstone guard + `docs:check` migration fixture completeness. Prose rule should never replace test gate.
+[MIGRATIONS.md](../../../src/features/alchemy/shared/storage/MIGRATIONS.md)
+owns the bump-vs-additive decision, required pattern, and progression gate
+fields. The `save-migration-guard` / `save-migration-contract` tests plus the
+tombstone guard enforce gameplay outcomes; prose never replaces those gates.

@@ -14,7 +14,9 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 | `run-loop/`  | Battle glue, navigation, shop, in-run screens                                          |
 | `shell/`     | Controller hooks                                                                       |
 
-Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-reads`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts); keep that module off the token `config/` barrel so layout/token imports stay catalog-free.
+Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-reads`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts).
+
+> Token-barrel exception: keep `game-data-catalog.ts` off the token `config/` barrel so layout/token imports stay catalog-free.
 
 `shared/run-flow/` is the neutral seam for destination sampling and campaign-start helpers so `run-setup` and `run-loop` do not import each other (ESLint-enforced).
 
@@ -30,6 +32,8 @@ Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/
 | `runProfile`     | Homestead (buildings/farms/research/companions), talent XP / unlocks, derived `effects`, and the shared gold purse — persisted as flat top-level save fields via `run-save-readers` codec              | Profile lifetime                                                                                                      |
 | `profile`        | Compendium discoveries (cards, enemies, trinkets, uniques; collection tab/page UI is transient in-memory, not in `ProfileSaveFields`) — lives in `profile-store`, not to be confused with `runProfile` | Profile lifetime                                                                                                      |
 | `gear`           | Permanent inventories, loadouts, and crafting currencies                                                                                                                                               | Profile lifetime                                                                                                      |
+
+> `runProfile` vs `profile`: one purse lives in `runProfile.gold` alongside homestead and talent progression; `profile` holds Collection discoveries only — never gameplay currency.
 
 Cross-concern writes go through `run-session-write-port.ts`. Multi-concern lifecycle orchestration is exposed through `run-session-lifecycle-port.ts`. Feature-facing reads (`run-session-read-port`, `run-reads`, and `profile-store` / `gear-store` slices) are data-only; command-backed write ports own every gameplay mutation. React orchestration uses narrow hooks from `run-reads.ts`; screens use exact screen-data hooks (battle display via `useBattleScreenRouteData`).
 
@@ -121,7 +125,7 @@ Screen route → routeCommands.battle (props) → BattleScreen
            → useAlchemyRunController → useBattleController (draft-sourced battle commands)
            → run-loop/battle/* → run-session-read-port / run-session-command → lib/battle
 BattleScreenRoute → useBattleScreenRouteData (committed battle display)
-                 → useBattlePlayback (autoplay / auto-end-turn; binds refs via commands.bindPlayback)
+                  → useBattlePlayback (`app/screen-routes/use-battle-playback.ts`; autoplay / auto-end-turn; binds refs via commands.bindPlayback)
                  → battle/presentation/* leaves subscribe to battle-presentation-store
 ```
 
