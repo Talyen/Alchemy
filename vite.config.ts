@@ -32,6 +32,7 @@ export default defineConfig(({ mode, command }) => {
     base: mode === "desktop" ? "./" : "/",
 
     server: { open: mode !== "desktop", port: devPort, strictPort: true },
+    preview: { open: false },
     plugins: [
       tailwind(),
       react(),
