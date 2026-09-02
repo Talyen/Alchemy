@@ -26,7 +26,8 @@ import {
   VORBIS_QUALITY,
   soundTransformSettings,
 } from "./lib/asset-constants.mjs";
-import { formatProcessError, runAudioScript } from "./lib/audio-optimizer.mjs";
+import { runAudioScript } from "./lib/audio-optimizer.mjs";
+import { formatProcessError } from "./lib/process-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { mapPool } from "./lib/map-pool.mjs";
 import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";

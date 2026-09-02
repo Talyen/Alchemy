@@ -15,6 +15,7 @@ describe("parseAuditArgs", () => {
 
   it("accepts each known option", () => {
     expect(parseAuditArgs(["--all"]).hasAll).toBe(true);
+    expect(parseAuditArgs(["--sweep"]).hasAll).toBe(true);
     expect(parseAuditArgs(["--types"]).hasTypes).toBe(true);
     expect(parseAuditArgs(["--amplification"]).hasAmplification).toBe(true);
     expect(parseAuditArgs(["--content"]).hasContent).toBe(true);
@@ -27,7 +28,8 @@ describe("parseAuditArgs", () => {
   });
 
   it("rejects conflicting selections", () => {
-    expect(() => parseAuditArgs(["--all", "--types"])).toThrow("--all cannot be combined");
+    expect(() => parseAuditArgs(["--all", "--types"])).toThrow("--all/--sweep cannot be combined");
+    expect(() => parseAuditArgs(["--sweep", "--hotspots"])).toThrow("--all/--sweep cannot be combined");
     expect(() => parseAuditArgs(["--types", "--content"])).toThrow("choose only one");
   });
 

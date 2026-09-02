@@ -6,15 +6,16 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const ALLOWED = new Set(["--all", "--types", "--amplification", "--content", "--hotspots", "--help", "-h"]);
+const ALLOWED = new Set(["--all", "--sweep", "--types", "--amplification", "--content", "--hotspots", "--help", "-h"]);
 
 function printHelp() {
   console.log(`Usage: node scripts/audit.mjs [command]
-  --all (default)      Run all measurable audits
+  --all/--sweep (default) Periodic measurable sweep (knip, depcruise, complexity, type-escapes, amplification, content)
+                        NOTE: --all is the periodic sweep, not literally every audit — use --hotspots separately
   --types              Run type-escape audit only
   --amplification      Run change-amplification audit only
   --content            Run content audit only
-  --hotspots           Run context hotspots
+  --hotspots           Run context hotspots (route preread budgets + command exposure)
   --help               Show this help`);
 }
 
@@ -25,10 +26,12 @@ export function parseAuditArgs(argv) {
   const hasAmplification = argv.includes("--amplification");
   const hasContent = argv.includes("--content");
   const hasHotspots = argv.includes("--hotspots");
-  const hasAll = argv.includes("--all");
+  const hasAll = argv.includes("--all") || argv.includes("--sweep");
   const specificCount = [hasTypes, hasAmplification, hasContent, hasHotspots].filter(Boolean).length;
   if (hasAll && specificCount > 0)
-    throw new Error("Conflicting options: --all cannot be combined with --types/--amplification/--content/--hotspots");
+    throw new Error(
+      "Conflicting options: --all/--sweep cannot be combined with --types/--amplification/--content/--hotspots",
+    );
   if (specificCount > 1)
     throw new Error("Conflicting options: choose only one of --types/--amplification/--content/--hotspots");
   return { hasTypes, hasAmplification, hasContent, hasHotspots, hasAll };

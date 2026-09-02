@@ -6,6 +6,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
+import { classifyCheckPaths, parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -37,43 +38,17 @@ export function captureSourceDigest() {
 }
 
 export function parseCheckArgs(argv) {
-  const paths = [];
-  let diff = false;
-  for (const arg of argv) {
-    if (arg === "--") continue;
-    if (arg === "--diff") diff = true;
-    else if (arg.startsWith("--")) throw new Error(`Unknown check option: ${arg}`);
-    else paths.push(arg);
+  const { flags, paths } = parseChangedPathsArgs(argv, {
+    usage: "Provide paths or use --diff. Example: npm run check -- --diff",
+  });
+  for (const flag of flags) {
+    if (flag !== "diff") throw new Error(`Unknown check option: --${flag}`);
   }
-  if (diff && paths.length > 0) throw new Error("Choose explicit paths or --diff, not both.");
-  if (!diff && paths.length === 0) throw new Error("Provide paths or use --diff. Example: npm run check -- --diff");
-  let selected = paths.length > 0 ? paths : changedGitPaths(ROOT);
-  if (!selected) throw new Error("git status failed");
-  if (diff && selected.length === 0) {
-    const committed = spawnSync("git", ["diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD"], {
-      cwd: ROOT,
-      encoding: "utf8",
-    });
-    if (committed.status === 0)
-      selected = committed.stdout
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-  }
-  return selected;
-}
-
-function isDocumentation(filePath) {
-  return filePath.endsWith(".md") || /^(docs|\.agents|\.cursor)\//u.test(filePath);
+  return resolveSelectedPaths(ROOT, { flags, paths });
 }
 
 function classify(paths) {
-  const executable = paths.some((filePath) => !isDocumentation(filePath));
-  const lockfile = paths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
-  const desktop = paths.some((filePath) => /^(desktop\/|scripts\/.*desktop|playwright\.electron)/u.test(filePath));
-  const web = paths.some((filePath) =>
-    /^(src\/|public\/|index\.html$|vite\.config\.ts$|vercel\.json$|package\.json$|package-lock\.json$)/u.test(filePath),
-  );
+  const { executable, lockfile, desktop, web } = classifyCheckPaths(paths);
   return { executable, lockfile, desktop, web };
 }
 

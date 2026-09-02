@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-/** Run repository-wide documentation contracts plus active-plan validation. */
+/** Canonical docs gate (npm run docs:check): durable contracts + active-plan validation.
+ * The documentation route in verify-changed reuses this via test-commands docs-check —
+ * do not also run docs:check separately in the same gate to avoid double-running. */
 import { reportDocumentationContracts } from "./check-documentation-contract.mjs";
 import { reportPlanChecks } from "./check-plans.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";

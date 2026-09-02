@@ -2,42 +2,21 @@
 /** Select dependency-related tests plus a small set of risk-based escalations. */
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 
 import { commandExposure, sanitizeOutput, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { resolveRoutePlan } from "./lib/change-routes.mjs";
-import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
+import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
+import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
 function parseArgs(argv) {
-  const flags = new Set();
-  const paths = [];
-  for (const arg of argv) {
-    if (arg === "--") continue;
-    if (arg.startsWith("--")) flags.add(arg.slice(2));
-    else paths.push(arg);
-  }
-  if (paths.length > 0 && flags.has("diff")) throw new Error("Choose explicit paths or --diff, not both.");
-  if (paths.length === 0 && !flags.has("diff")) {
-    throw new Error("Provide paths or use --diff. Example: npm run verify -- --diff --plan");
-  }
-  let selectedPaths = paths.length > 0 ? paths : changedGitPaths(ROOT);
-  if (!selectedPaths) throw new Error("git status failed");
-  if (paths.length === 0 && selectedPaths.length === 0) {
-    const committed = spawnSync("git", ["diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD"], {
-      cwd: ROOT,
-      encoding: "utf8",
-    });
-    if (committed.status === 0)
-      selectedPaths = committed.stdout
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-  }
-  return { flags, paths: selectedPaths };
+  const { flags, paths } = parseChangedPathsArgs(argv, {
+    usage: "Provide paths or use --diff. Example: npm run verify -- --diff --plan",
+  });
+  return { flags, paths: resolveSelectedPaths(ROOT, { flags, paths }) };
 }
 
 export function formatPlan(plan, { verbosePlan = false } = {}) {

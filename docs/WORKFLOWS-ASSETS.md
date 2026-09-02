@@ -22,7 +22,7 @@ art and Gear barrels update only after successful optimization.
 
 Three authoring shapes coexist by design:
 
-- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Used for cards, talents, boons, destinations, etc. where every target is explicitly registered and validated for duplicate `source`/`target`/`exportName`. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/lib/asset-constants.mjs` (re-exported via `scripts/assets/asset-defaults.mjs` for compat).
+- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Used for cards, talents, boons, destinations, etc. where every target is explicitly registered and validated for duplicate `source`/`target`/`exportName`. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/lib/asset-constants.mjs`.
 - **Filesystem discovery** — `Raw Assets/Gear/` (`{Name} - {Basic|Astral}.jpeg`) and `Raw Assets/Music/` are discovered at optimization time. Gear filenames encode rarity; music needs no per-target quality. No hand-maintained manifest entry. Malformed gear filenames now throw (strict, like slot backgrounds) instead of warn+skip.
 - **Mixed manifest + curated** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (WAV→OGG with loudnorm) plus `curatedSoundFiles` (committed OGG without source). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.
 
@@ -46,7 +46,7 @@ The static barrel provides explicit export names (`kebabToCamel`) and the Vite a
 4. Import through the curated map in `src/lib/game-data/assets.ts` (e.g. `craftingArt`, `difficultyArt`, `talentArt`) — do not import `@/assets/optimized` directly.
 5. Run `npm run check:generated` (fast barrel-only) or `npm run check:generated:fast`; review the generated diff.
 
-`npm run sync:assets` / `sync:gear-art` (shims over `sync-art-barrels.mjs`) regenerate `src/lib/game-data/assets.generated.ts` from
+`npm run sync:generated` (or `--art-only` / `--gear-only` for one barrel; `sync:assets` / `sync:gear-art` remain as deprecated shims) regenerates `src/lib/game-data/assets.generated.ts` from
 the manifest targets. Do not add exports to that generated file by hand. Hashes use `ASSET_SCHEMA_VERSION=4` (128-bit truncation) — bump the version to invalidate all caches.
 
 ## Add or replace Gear art
@@ -54,7 +54,7 @@ the manifest targets. Do not add exports to that generated file by hand. Hashes 
 1. Name source files `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` (PNG and
    `.jpg` variants accepted by the optimizer).
 2. Run `npm run assets:optimize`.
-3. Run `npm run sync:gear-art` to regenerate
+3. Run `node scripts/sync-generated.mjs --gear-only` (`npm run sync:gear-art` still works as a deprecated shim) to regenerate
    `src/lib/game-data/gear-art.ts`.
 4. Run `npm run check:generated` and confirm every generated definition ID
    matches the intended Gear definition.

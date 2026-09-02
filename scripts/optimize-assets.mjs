@@ -19,7 +19,7 @@ import {
   SHARP_DEFAULTS,
   WIDTH,
 } from "./lib/asset-constants.mjs";
-import { formatProcessError } from "./lib/audio-optimizer.mjs";
+import { formatProcessError } from "./lib/process-helpers.mjs";
 import { getOptimizedManifestPath, resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 

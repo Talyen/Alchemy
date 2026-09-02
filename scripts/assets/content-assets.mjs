@@ -1,4 +1,4 @@
-import { QUALITY, WIDTH } from "./asset-defaults.mjs";
+import { QUALITY, WIDTH } from "../lib/asset-constants.mjs";
 
 export const contentAssets = [
   // Boons (raw source folder retains its historical name)

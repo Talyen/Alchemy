@@ -16,12 +16,6 @@ export async function discoverAudioFiles(dir, extensions = DEFAULT_AUDIO_EXTENSI
     .sort();
 }
 
-export function formatProcessError(label, error) {
-  const detail = error instanceof Error ? error.message : String(error);
-  console.error(`FAILED ${label}: ${detail}`);
-  return { message: `FAILED ${label}: ${detail}`, entry: null };
-}
-
 export function runAudioScript(label, scriptFn) {
   scriptFn()
     .then(({ ok }) => {

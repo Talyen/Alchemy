@@ -16,7 +16,8 @@ Reference for commands, glossary, battle rules, and file lookup. Strict coding r
 `package.json` owns script entry points. `scripts/lib/change-routes.mjs` owns
 changed-path selection, and [CONTRIBUTING.md](../CONTRIBUTING.md) owns gate
 tiers. Use the catalog below for discovery rather than duplicating command
-lists in subsystem docs.
+lists in subsystem docs. The full script catalog lives in
+[scripts/README.md](../scripts/README.md).
 
 ### Script Command Reference
 

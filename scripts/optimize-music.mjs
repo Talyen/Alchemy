@@ -9,7 +9,8 @@ import {
   withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
 import { ASSET_SCHEMA_VERSION, MANIFEST_BASENAME, MUSIC_SETTINGS } from "./lib/asset-constants.mjs";
-import { discoverAudioFiles, formatProcessError, runAudioScript } from "./lib/audio-optimizer.mjs";
+import { discoverAudioFiles, runAudioScript } from "./lib/audio-optimizer.mjs";
+import { formatProcessError } from "./lib/process-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 

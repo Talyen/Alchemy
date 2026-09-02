@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROUTINE_EXPOSURE_BUDGET_BYTES } from "./lib/compact-output.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { measureAllRoutes } from "./measure-agent-context.mjs";
+import { ROUTE_CONTEXT_BUDGETS, measureAllRoutes } from "./measure-agent-context.mjs";
 import { readRecentRuns } from "./show-runs.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -130,12 +130,44 @@ export function formatContextHotspotReport(report) {
   return lines.join("\n");
 }
 
+export function checkRouteBudgets(routes = measureAllRoutes()) {
+  const over = [];
+  for (const row of routes) {
+    const id = row.routes.length === 1 ? row.routes[0] : null;
+    const budget = id ? ROUTE_CONTEXT_BUDGETS[id] : null;
+    if (!budget) continue;
+    if (row.selectedBytes > budget.preread || row.totalContextBytes > budget.total) {
+      over.push({
+        routes: row.routes,
+        selectedBytes: row.selectedBytes,
+        totalContextBytes: row.totalContextBytes,
+        budget,
+      });
+    }
+  }
+  return over;
+}
+
 export function main(argv = process.argv.slice(2), rootDir = ROOT) {
   try {
     const options = parseContextHotspotArgs(argv);
     const report = buildContextHotspotReport(rootDir, options);
-    console.log(options.json ? JSON.stringify(report, null, 2) : formatContextHotspotReport(report));
-    return options.check && report.commands.some((command) => command.overBudgetOccurrences > 0) ? 1 : 0;
+    const overBudgetRoutes = checkRouteBudgets(report.routes);
+    if (overBudgetRoutes.length > 0 && !options.json) {
+      console.log("Routes over preread/total budget:");
+      for (const row of overBudgetRoutes) {
+        console.log(
+          `  ${row.routes.join("+")}: preread ${row.selectedBytes.toLocaleString()} B (budget ${row.budget.preread.toLocaleString()}); ` +
+            `total ${row.totalContextBytes.toLocaleString()} B (budget ${row.budget.total.toLocaleString()})`,
+        );
+      }
+      console.log("");
+    }
+    console.log(
+      options.json ? JSON.stringify({ ...report, overBudgetRoutes }, null, 2) : formatContextHotspotReport(report),
+    );
+    if (!options.check) return 0;
+    return report.commands.some((command) => command.overBudgetOccurrences > 0) || overBudgetRoutes.length > 0 ? 1 : 0;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     return 2;

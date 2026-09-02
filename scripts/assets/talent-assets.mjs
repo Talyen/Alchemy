@@ -1,4 +1,4 @@
-import { QUALITY, WIDTH } from "./asset-defaults.mjs";
+import { QUALITY, WIDTH } from "../lib/asset-constants.mjs";
 
 export const talentAssets = [
   { source: "Talents/Archery.jpeg", target: "talent-archery.webp", width: WIDTH.talent, quality: QUALITY.talent },

@@ -22,22 +22,47 @@ const IGNORED_DIRECTORIES = new Set([
 const REPO_PATH_PREFIX = /^(?:\.github\/|(?:src|tests|scripts|docs|desktop|public)\/)/u;
 const PATH_TEMPLATE_CHARS = /[*?{}$<>"'`]/u;
 
+let markdownFileCache = null;
+const markdownSourceCache = new Map();
+let repositoryFileCache = null;
+
 function markdownFiles(directory = ROOT) {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+  if (directory !== ROOT || markdownFileCache) {
+    if (directory === ROOT && markdownFileCache) return markdownFileCache;
+    return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      if (entry.isDirectory()) {
+        return IGNORED_DIRECTORIES.has(entry.name) ? [] : markdownFiles(join(directory, entry.name));
+      }
+      return [".md", ".mdx"].includes(extname(entry.name)) ? [join(directory, entry.name)] : [];
+    });
+  }
+  markdownFileCache = readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     if (entry.isDirectory()) {
       return IGNORED_DIRECTORIES.has(entry.name) ? [] : markdownFiles(join(directory, entry.name));
     }
     return [".md", ".mdx"].includes(extname(entry.name)) ? [join(directory, entry.name)] : [];
   });
+  return markdownFileCache;
+}
+
+function readMarkdownSource(file) {
+  const cached = markdownSourceCache.get(file);
+  if (cached !== undefined) return cached;
+  const source = readFileSync(file, "utf8");
+  markdownSourceCache.set(file, source);
+  return source;
 }
 
 function repositoryFiles(directory = ROOT) {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+  if (directory === ROOT && repositoryFileCache) return repositoryFileCache;
+  const files = readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     if (entry.isDirectory()) {
       return IGNORED_DIRECTORIES.has(entry.name) ? [] : repositoryFiles(join(directory, entry.name));
     }
     return [join(directory, entry.name)];
   });
+  if (directory === ROOT) repositoryFileCache = files;
+  return files;
 }
 
 function lineNumberAt(source, index) {
@@ -95,7 +120,7 @@ function stripFencedBlocks(source) {
 export function checkLocalMarkdownLinks() {
   const broken = [];
   for (const file of markdownFiles()) {
-    const source = readFileSync(file, "utf8");
+    const source = readMarkdownSource(file);
     for (const match of source.matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
       const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
       if (!target || /^(?:https?:|mailto:|#)/u.test(target)) continue;
@@ -114,7 +139,7 @@ export function checkInlineRepositoryPaths() {
   const missing = [];
   for (const file of markdownFiles()) {
     if (file.endsWith("CHANGELOG.md")) continue;
-    const source = stripFencedBlocks(readFileSync(file, "utf8"));
+    const source = stripFencedBlocks(readMarkdownSource(file));
     for (const match of source.matchAll(/`([^`\n]+)`/gu)) {
       const candidate = match[1].trim();
       if (!REPO_PATH_PREFIX.test(candidate) || PATH_TEMPLATE_CHARS.test(candidate)) continue;
@@ -141,7 +166,7 @@ export function checkBacktickedCurrentFileReferences() {
   for (const file of markdownFiles()) {
     const relativeDocumentPath = file.slice(ROOT.length + 1).replaceAll("\\", "/");
     if (isHistorical(relativeDocumentPath)) continue;
-    const source = stripFencedBlocks(readFileSync(file, "utf8"));
+    const source = stripFencedBlocks(readMarkdownSource(file));
     for (const match of source.matchAll(/`([^`\n]+)`/gu)) {
       const candidate = match[1]?.trim();
       if (!candidate || PATH_TEMPLATE_CHARS.test(candidate) || candidate.includes(" ")) continue;
@@ -167,7 +192,7 @@ export function checkDocumentedNpmScripts() {
   const packageJson = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
   const missing = [];
   for (const file of markdownFiles()) {
-    const source = readFileSync(file, "utf8");
+    const source = readMarkdownSource(file);
     for (const match of source.matchAll(/npm run ([a-zA-Z0-9:_-]+)/gu)) {
       const script = match[1];
       if (script && !packageJson.scripts[script]) {
@@ -183,14 +208,14 @@ export function checkMarkdownHeadingAnchors() {
   const slugsFor = (absolutePath) => {
     const cached = slugCache.get(absolutePath);
     if (cached) return cached;
-    const slugs = headingSlugs(readFileSync(absolutePath, "utf8"));
+    const slugs = headingSlugs(markdownSourceCache.get(absolutePath) ?? readFileSync(absolutePath, "utf8"));
     slugCache.set(absolutePath, slugs);
     return slugs;
   };
   const broken = [];
   for (const file of markdownFiles()) {
     if (file.endsWith("CHANGELOG.md")) continue;
-    const source = readFileSync(file, "utf8");
+    const source = readMarkdownSource(file);
     for (const match of source.matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
       const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
       if (!target || /^(?:https?:|mailto:)/u.test(target) || !target.includes("#")) continue;
@@ -227,7 +252,7 @@ export function checkDurableDocumentReachability() {
     const relativePath = file.slice(ROOT.length + 1);
     if (isExempt(relativePath)) continue;
     const targets = new Set();
-    for (const match of readFileSync(file, "utf8").matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
+    for (const match of readMarkdownSource(file).matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
       const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
       if (!target || /^(?:https?:|mailto:|#)/u.test(target)) continue;
       const absolutePath = resolve(dirname(file), decodeURIComponent(target.split("#")[0]));
