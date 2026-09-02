@@ -22,7 +22,7 @@ import { setEncounteredEnemyIds } from "../../shared/stores/profile-store";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { preloadBattleSounds } from "@/lib/audio";
-import { applyCombatTextShakeFeedback } from "./battle-feedback";
+import { applyCombatTextShakeFeedback } from "./battle-status";
 import { playCompanionSound, playCombatTextSounds } from "./controller-utils";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
@@ -124,15 +124,9 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
         afterCommit: ({ startingTexts, companionId, outcome, openingCardIds }) => {
           const battleState = readBattle().battleState;
           preloadBattleSounds(openingCardIds, battleState.currentEnemy.id);
-          if (typeof session.prepareBattleSessionForStart === "function") {
-            session.prepareBattleSessionForStart();
-          } else {
-            session.resetBattleSession();
-          }
+          session.prepareBattleSessionForStart();
           const presentationStore = ctx.getPresentation();
-          presentationStore.resetCardTransfers();
-          presentationStore.resetHandTransferUi();
-          presentationStore.clearCardGhosts();
+          presentationStore.resetPresentation();
           presentationStore.setCardTransferInProgress(true);
           if (companionId) {
             playCompanionSound(companionId);

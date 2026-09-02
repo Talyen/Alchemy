@@ -4,8 +4,6 @@ import type { CombatTextEvent } from "@/lib/battle";
 import { CARD_TRANSFER_CONFIG, COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
 import type { CardRect } from "../../shared/types";
 
-export { getHandCardKey as getCardKey } from "./playable-hand";
-
 export function logBattleError(context: string, err: unknown): void {
   logError(`Failed to ${context}`, "battle", { error: String(err) }, err instanceof Error ? err.stack : undefined);
 }

@@ -4,6 +4,7 @@ import { type createBattleSession } from "./battle-session";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { isBattlePlayInputBusy } from "./autoplay-driver";
+import { logBattleError } from "./controller-utils";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import {
@@ -18,7 +19,7 @@ export function createBattleEndTurnUi(
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ) {
   const orch = createTurnOrchestration(ctx, session, transferDeps);
-  let hasteDrawInProgress = false;
+  let didHasteDraw = false;
 
   function resolveEndTurnHandler(currentState: BattleState, sessionNum: number) {
     resolveEndTurn(currentState, sessionNum, session, orch);
@@ -32,25 +33,25 @@ export function createBattleEndTurnUi(
           await transferDeps.animateDiscardedHand(currentState.hand, sessionNum);
         }
       } catch (err) {
-        orch.logBattleError("discard hand animation", err);
+        logBattleError("discard hand animation", err);
       } finally {
         markBattleStage("discard-end");
       }
       session.runIfSessionActive(sessionNum, () => {
         if (resolveEndTurn(currentState, sessionNum, session, orch)) {
-          hasteDrawInProgress = true;
+          didHasteDraw = true;
         }
       });
     } finally {
       session.runIfSessionActive(sessionNum, () => {
-        if (!hasteDrawInProgress) orch.resetHandTransferUi();
+        if (!didHasteDraw) orch.resetHandTransferUi();
         ctx.cardPlayInProgressRef.current = false;
       });
     }
   }
 
   function handleEndTurn() {
-    hasteDrawInProgress = false;
+    didHasteDraw = false;
     const currentState = readBattle().battleState;
     if (
       ctx.screen !== "battle" ||
@@ -68,7 +69,7 @@ export function createBattleEndTurnUi(
     session.clearBattleTimeoutsKeepCompanion();
     const sessionNum = ctx.battleSessionRef.current;
     void animateEndTurnThenResolve(currentState, sessionNum).catch((err: unknown) =>
-      orch.logBattleError("resolve end turn animation sequence", err),
+      logBattleError("resolve end turn animation sequence", err),
     );
   }
 

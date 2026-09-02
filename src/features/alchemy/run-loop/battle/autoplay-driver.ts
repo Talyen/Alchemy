@@ -25,7 +25,9 @@ export function isBattlePlaybackBlocked(options: {
   cardTransferInProgress: boolean;
   hiddenHandCardKeys: HiddenHandCardKeys;
   cardPlayInProgress: boolean;
+  gameMenuOpen?: boolean;
 }): boolean {
+  if (options.gameMenuOpen) return true;
   if (!options.hasActiveBattle || options.screen !== "battle") return true;
   if (isBattlePlayInputBusy(options)) return true;
   if (handHasHiddenCard(options.battleState, options.hiddenHandCardKeys)) return true;

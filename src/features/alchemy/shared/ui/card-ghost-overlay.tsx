@@ -1,8 +1,15 @@
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 
 import type { CardGhost, GhostStyle } from "../types";
 
-export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: () => void }) {
+export const CardGhostOverlay = memo(function CardGhostOverlay({
+  ghost,
+  onDone,
+}: {
+  ghost: CardGhost;
+  onDone: () => void;
+}) {
   return (
     <img
       src={ghost.art}
@@ -25,4 +32,4 @@ export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: 
       }
     />
   );
-}
+});

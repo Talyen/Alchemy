@@ -14,8 +14,8 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
-import { applyCombatTextShakeFeedback } from "./battle-feedback";
-import { logBattleError, playCombatTextSounds, playCompanionSound } from "./controller-utils";
+import { applyCombatTextShakeFeedback } from "./battle-status";
+import { playCombatTextSounds, playCompanionSound } from "./controller-utils";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
@@ -56,7 +56,6 @@ export function createTurnOrchestration(
 
   return {
     getDrawSequenceDeps: () => transferDeps.getDrawSequenceDeps(),
-    logBattleError,
     resetHandTransferUi: () => getPresentation().resetHandTransferUi(),
     scheduleCompanionFollowUp,
     scheduleAutoEndTurn: (resultState) => {

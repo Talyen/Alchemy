@@ -51,6 +51,7 @@ export function useBattlePlayback({
     screen,
     battleState,
     hasActiveBattle,
+    gameMenuOpen,
     isCardPlayInProgress,
     onEndTurn: handleEndTurn,
     presentationGateRef,

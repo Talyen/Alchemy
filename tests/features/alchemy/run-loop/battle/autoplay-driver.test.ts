@@ -40,6 +40,10 @@ describe("isBattlePlaybackBlocked", () => {
     expect(isBattlePlaybackBlocked({ ...openBattle, cardTransferInProgress: true })).toBe(true);
   });
 
+  it("blocks when the game menu is open", () => {
+    expect(isBattlePlaybackBlocked({ ...openBattle, gameMenuOpen: true })).toBe(true);
+  });
+
   it("blocks when wish options are showing", () => {
     expect(
       isBattlePlaybackBlocked({

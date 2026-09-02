@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-victory-grace";
+import { isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-status";
 
 describe("isVictoryGraceActive", () => {
   it("is true on battle screen after victory with enemy at zero", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
-import * as battleFeedback from "@/features/alchemy/run-loop/battle/battle-feedback";
+import * as battleFeedback from "@/features/alchemy/run-loop/battle/battle-status";
 import * as controllerUtils from "@/features/alchemy/run-loop/battle/controller-utils";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeTalentEffects } from "@/lib/game-data";
@@ -21,6 +21,7 @@ beforeEach(() => {
 
 describe("createBattleInit", () => {
   const resetBattleSession = vi.fn();
+  const prepareBattleSessionForStart = vi.fn();
 
   function makeInit() {
     const ctx = {
@@ -29,6 +30,7 @@ describe("createBattleInit", () => {
 
     const session = {
       resetBattleSession,
+      prepareBattleSessionForStart,
     } as unknown as ReturnType<typeof createBattleSession>;
 
     return createBattleInit(ctx, session);
@@ -73,7 +75,7 @@ describe("createBattleInit", () => {
     expect(pending?.kind === "opening-draw" ? pending.resultState.hand.length : 0).toBeGreaterThan(0);
     expect(useBattlePresentationStore.getState().cardTransferInProgress).toBe(true);
     expect(readActiveRun().encounteredRunEnemyIds).toContain(enemyId);
-    expect(resetBattleSession).toHaveBeenCalled();
+    expect(prepareBattleSessionForStart).toHaveBeenCalled();
   });
 
   it("appendUnique avoids duplicate encountered enemy ids", () => {

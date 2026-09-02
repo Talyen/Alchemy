@@ -5,7 +5,7 @@ import type { CombatTextEvent } from "@/lib/battle";
 export type { AspectRatioOption, DisplayMode } from "@/lib/settings-values";
 import type { ArmedFlagChipId, PendingPulseChipId } from "./augment-definitions";
 
-type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
+type CardGhostVariant = "activate" | "play-travel";
 
 export interface CardRect {
   x: number;

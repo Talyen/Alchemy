@@ -27,6 +27,7 @@ export function makePresentationPort(overrides: Partial<MockBattlePresentationPo
     setCardTransfers: vi.fn(),
     setHiddenHandCardKeys: vi.fn(),
     setCardTransferInProgress: vi.fn(),
+    resetPresentation: vi.fn(),
     ...overrides,
   };
 }
@@ -37,7 +38,6 @@ export function makeDrawSequenceDeps(overrides: Partial<HandDrawSequenceDeps> = 
     animateDrawnHand: vi.fn(async () => {}),
     setTransferInProgress: vi.fn(),
     setHiddenHandCardKeys: vi.fn(),
-    runIfSessionActive: (_session, action) => action(),
     ...overrides,
   };
 }
@@ -58,7 +58,6 @@ export function makeTurnOrchestration(
 ): TurnOrchestration {
   return {
     getDrawSequenceDeps: () => makeDrawSequenceDeps(),
-    logBattleError: vi.fn(),
     resetHandTransferUi: vi.fn(),
     scheduleCompanionFollowUp: vi.fn(),
     scheduleAutoEndTurn: vi.fn(),

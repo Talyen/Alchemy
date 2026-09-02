@@ -1,7 +1,7 @@
 import type { CombatTextEvent } from "@/lib/battle";
 import type { CardGhost, CardTransfer } from "../../shared/types";
 import { useBattlePresentationStore } from "./battle-presentation-store";
-import type { CombatTextShakeFeedback } from "./battle-feedback";
+import type { CombatTextShakeFeedback } from "./battle-status";
 import type { HiddenHandCardKeys } from "./playable-hand";
 
 type CombatantAttackSide = "player" | "enemy" | "companion";
@@ -21,6 +21,7 @@ export interface BattlePresentationPort extends CombatTextShakeFeedback {
   setCardTransfers: (transfers: CardTransfer[] | ((prev: CardTransfer[]) => CardTransfer[])) => void;
   setHiddenHandCardKeys: (update: (prev: HiddenHandCardKeys) => Iterable<string>) => void;
   setCardTransferInProgress: (inProgress: boolean | ((prev: boolean) => boolean)) => void;
+  resetPresentation: () => void;
 }
 
 function getStoreBattlePresentationPort(): BattlePresentationPort {

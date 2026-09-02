@@ -12,11 +12,11 @@ import { playCardSound, playGoldGain, playUISound } from "@/lib/audio";
 import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
-import { applyCombatTextShakeFeedback, shouldPlayCardGoldGain } from "./battle-feedback";
-import { playCombatTextSounds, logBattleError } from "./controller-utils";
+import { applyCombatTextShakeFeedback, shouldPlayCardGoldGain } from "./battle-status";
+import { playCombatTextSounds } from "./controller-utils";
 import { PLAYABLE_HAND_OPTIONS, getHandCardKey } from "./playable-hand";
 import { isBattlePlayInputBusy } from "./autoplay-driver";
-import { hideNewlyDrawnHandCards, runHandDrawSequence } from "./draw-sequence";
+import { runBattleDraw } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
@@ -39,7 +39,8 @@ export function createBattleCardPlay(
   const getPresentation = () => ctx.getPresentation();
 
   function finishDrawSequence(sessionNum: number, state: BattleState) {
-    session.finishDrawSequence(sessionNum, state, () => {
+    ctx.cardPlayInProgressRef.current = false;
+    session.runIfSessionActive(sessionNum, () => {
       getPresentation().resetHandTransferUi();
       session.checkBattleEnd(state, sessionNum);
       ctx.scheduleAutoEndTurnRef.current?.(state);
@@ -53,11 +54,15 @@ export function createBattleCardPlay(
     sessionNum: number,
     errorContext: string,
   ) {
-    const drawDeps = transferDeps.getDrawSequenceDeps();
-    hideNewlyDrawnHandCards(oldHand, newState.hand, drawDeps);
-    void runHandDrawSequence(oldHand, newState, onCommitState, sessionNum, drawDeps)
-      .catch((err: unknown) => logBattleError(`handle ${errorContext} draw sequence`, err))
-      .finally(() => finishDrawSequence(sessionNum, newState));
+    void runBattleDraw({
+      oldHand,
+      newState,
+      applyState: onCommitState,
+      session: sessionNum,
+      deps: transferDeps.getDrawSequenceDeps(),
+      errorContext: `handle ${errorContext} draw sequence`,
+      onSettled: () => finishDrawSequence(sessionNum, newState),
+    });
   }
 
   function canPlayCard(card: BattleCard, index: number, state: BattleState) {

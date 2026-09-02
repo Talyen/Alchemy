@@ -7,7 +7,6 @@ import type { Screen } from "@/lib/routing";
 
 import { useLatestRef } from "../../shared/hooks";
 import { driveAutoplay, findFirstPlayableHandCard, isBattlePlaybackBlocked } from "./autoplay-driver";
-import type { HiddenHandCardKeys } from "./playable-hand";
 import type { BattlePlaybackPresentationGate } from "./use-battle-presentation-gate";
 
 interface UseBattleAutoplayOptions {
@@ -22,18 +21,7 @@ interface UseBattleAutoplayOptions {
   wakeRef?: RefObject<(() => void) | null>;
 }
 
-export function isAutoplayBlocked(options: {
-  screen: Screen;
-  battleState: BattleState;
-  hasActiveBattle: boolean;
-  cardTransferInProgress: boolean;
-  hiddenHandCardKeys: HiddenHandCardKeys;
-  cardPlayInProgress: boolean;
-  gameMenuOpen: boolean;
-}): boolean {
-  if (options.gameMenuOpen) return true;
-  return isBattlePlaybackBlocked(options);
-}
+export const isAutoplayBlocked = isBattlePlaybackBlocked;
 
 export function useBattleAutoplay({
   enabled,

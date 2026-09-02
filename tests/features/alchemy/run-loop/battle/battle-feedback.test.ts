@@ -4,7 +4,7 @@ import {
   shouldPlayCardGoldGain,
   shouldShakeEnemyFromCombatTexts,
   shouldShakePlayerFromCombatTexts,
-} from "@/features/alchemy/run-loop/battle/battle-feedback";
+} from "@/features/alchemy/run-loop/battle/battle-status";
 import { makeTestCard, patchBattleState } from "../../../../fixtures/battle";
 
 describe("shouldPlayCardGoldGain", () => {

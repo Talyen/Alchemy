@@ -10,7 +10,7 @@ import {
 } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState, endPlayerTurn, type BattleState } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
-import { runHandDrawSequence } from "@/features/alchemy/run-loop/battle/draw-sequence";
+import { runBattleDraw, runHandDrawSequence } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import {
   makeBattleTurnSession,
@@ -41,6 +41,11 @@ vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", async (importOrigina
     ...actual,
     runHandDrawSequence: vi.fn(async (_oldHand, _newState, applyState) => {
       applyState();
+      return true;
+    }),
+    runBattleDraw: vi.fn(async (request) => {
+      request.applyState();
+      request.onSettled?.();
       return true;
     }),
   };
@@ -90,15 +95,12 @@ describe("resolveEndTurn", () => {
     commitBattleTransition.mockImplementation(() => {
       order.push("commit");
     });
-    vi.mocked(runHandDrawSequence).mockImplementationOnce(
-      async (_oldHand, _newState, applyState, session, drawDeps) => {
-        drawDeps.runIfSessionActive(session, () => {
-          applyState();
-          order.push("apply");
-        });
-        return true;
-      },
-    );
+    vi.mocked(runBattleDraw).mockImplementationOnce(async (request) => {
+      request.applyState();
+      order.push("apply");
+      request.onSettled?.();
+      return true;
+    });
     const state = defaultBattleState();
     state.playerStatuses.haste = 1;
 

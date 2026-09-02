@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import { useMemo, type ComponentProps } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ArtPanel } from "@/features/alchemy/shared/ui/battle/actor-panel";
 import { CombatTextRail } from "@/features/alchemy/shared/ui/battle/combat-text";
@@ -7,9 +7,8 @@ import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useBattlePresentationStore } from "../battle-presentation-store";
 
 export function CombatTextRailSide({ side }: { side: "player" | "enemy" }) {
-  const entries = useBattlePresentationStore(
-    useShallow((s) => s.floatingCombatTexts.filter((text) => text.target === side)),
-  );
+  const texts = useBattlePresentationStore((s) => s.floatingCombatTexts);
+  const entries = useMemo(() => texts.filter((text) => text.target === side), [texts, side]);
   return <CombatTextRail entries={entries} />;
 }
 

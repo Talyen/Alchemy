@@ -16,7 +16,6 @@ function makeDeps(overrides: Partial<CardTransferAnimationDeps> = {}): CardTrans
     runCardTransfer: vi.fn(async () => {}),
     playTransferSound: vi.fn(),
     setHiddenHandCardKeys: vi.fn(),
-    setCardPlayInProgress: vi.fn(),
     setTransferInProgress: vi.fn(),
     stableHandCardDeps: {
       measureHandCard: () => handRect,

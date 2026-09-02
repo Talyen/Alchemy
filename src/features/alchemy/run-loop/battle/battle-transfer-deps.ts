@@ -64,9 +64,6 @@ export function createBattleTransferDeps(
     runCardTransfer,
     playTransferSound,
     setHiddenHandCardKeys: (update) => getPresentation().setHiddenHandCardKeys(update),
-    setCardPlayInProgress: (active) => {
-      ctx.cardPlayInProgressRef.current = active;
-    },
     setTransferInProgress: (active) => getPresentation().setCardTransferInProgress(active),
     stableHandCardDeps,
   };
@@ -77,9 +74,6 @@ export function createBattleTransferDeps(
       animateDrawnHand(cards, allHandCards, session, cardTransferDeps),
     setTransferInProgress: (active) => getPresentation().setCardTransferInProgress(active),
     setHiddenHandCardKeys: (update) => getPresentation().setHiddenHandCardKeys(update),
-    runIfSessionActive: (session, action) => {
-      if (isCurrentBattleSession(session)) action();
-    },
   };
 
   return {

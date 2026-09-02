@@ -75,6 +75,13 @@ reduced-motion variants without a product decision. The global
 `prefers-reduced-motion` block in `src/styles/keyframes.css` is the sole motion
 accommodation.
 
+## Battle motion
+
+Battle VFX (lunge, shake, ghost layers, combat-text rails) is owned by
+`run-loop/battle` + `run-loop/battle/presentation`. Guidance lives in
+[WORKFLOWS.md](./WORKFLOWS.md#change-battle-playback); this file owns only the
+shared widget/motion primitives above.
+
 ## Verification
 
 Use the changed-path route in [CONTRIBUTING.md](../CONTRIBUTING.md). Interaction

@@ -11,8 +11,8 @@ import { delay } from "@/lib/animation/game-timer";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { beginBattleTransition, commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { applyCombatTextShakeFeedback } from "./battle-feedback";
-import { playCombatTextSounds } from "./controller-utils";
+import { applyCombatTextShakeFeedback } from "./battle-status";
+import { logBattleError, playCombatTextSounds } from "./controller-utils";
 import { runHandDrawSequence } from "./draw-sequence";
 import {
   finalizePlayerTurnResume,
@@ -150,7 +150,7 @@ async function continueAfterEnemyDraw(
       orch.getDrawSequenceDeps(),
     );
   } catch (err) {
-    orch.logBattleError("handle enemy resolution draw sequence", err);
+    logBattleError("handle enemy resolution draw sequence", err);
   }
   if (!battleSession.isCurrentBattleSession(sessionNum)) return;
   battleSession.runIfSessionActive(sessionNum, () => {

@@ -141,16 +141,17 @@ describe("createBattleSession", () => {
     expect(result).toBe("ok");
   });
 
-  it("clears cardPlayInProgress even when the session is inactive", () => {
+  it("runIfSessionActive skips stale sessions without side effects", () => {
     const { session, battleSessionRef, cardPlayInProgressRef } = makeSession();
     cardPlayInProgressRef.current = true;
     battleSessionRef.current = 2;
     const onComplete = vi.fn();
 
-    session.finishDrawSequence(1, defaultBattleState(), onComplete);
+    const result = session.runIfSessionActive(1, onComplete, undefined);
 
-    expect(cardPlayInProgressRef.current).toBe(false);
+    expect(result).toBeUndefined();
     expect(onComplete).not.toHaveBeenCalled();
+    expect(cardPlayInProgressRef.current).toBe(true);
   });
 
   it("keeps companion timers when clearing battle timeouts", () => {

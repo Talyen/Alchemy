@@ -13,7 +13,6 @@ export type BattleTurnSession = Pick<
 
 export interface TurnOrchestration {
   getDrawSequenceDeps: () => HandDrawSequenceDeps;
-  logBattleError: (context: string, err: unknown) => void;
   resetHandTransferUi: () => void;
   scheduleCompanionFollowUp: (resultState: BattleState, sessionNum: number) => void;
   scheduleAutoEndTurn: (resultState: BattleState) => void;

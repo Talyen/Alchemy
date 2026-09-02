@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
@@ -5,7 +6,7 @@ import { cardBack } from "@/lib/game-data";
 import { cardSurfaceClass } from "@/features/alchemy/shared/config";
 import type { CardTransfer } from "../../../shared/types";
 
-export function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {
+export const CardTransferOverlay = memo(function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {
   const deltaX = transfer.to.x - transfer.from.x;
   const deltaY = transfer.to.y - transfer.from.y;
 
@@ -53,4 +54,4 @@ export function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {
       </div>
     </motion.div>
   );
-}
+});

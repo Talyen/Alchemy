@@ -125,6 +125,8 @@ Classification bands only — never CI gates. Compare only on the same machine, 
 | ≥100 ms stalls    |         0 |
 | ≥50 ms long tasks | ≤1 / 30 s |
 
+Scenario mapping: `battle-effects` is continuous-motion (sustained FX); `battle-end-turn` is transition-heavy (card bursts / end-turn).
+
 Optimization rule of thumb: improve the targeted p99/hitch by ≥10% or eliminate a reproducible hitch; do not regress another scenario’s p95/p99 by >5%.
 
 ## Workflow

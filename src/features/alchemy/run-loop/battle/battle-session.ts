@@ -9,16 +9,12 @@ export function createBattleSession(ctx: BattleControllerContext) {
   const getStore = () => readBattle();
   const getPresentationStore = () => ctx.getPresentation();
 
-  function isBattleSessionActive(session: number) {
+  function isCurrentBattleSession(session: number) {
     if (session !== ctx.battleSessionRef.current) return false;
     if (ctx.battleAbortControllerRef.current.signal.aborted) return false;
     const store = getStore();
 
     return store.hasActiveBattle || (ctx.victoryDefeatHandledRef.current && store.battleState.enemyHealth <= 0);
-  }
-
-  function isCurrentBattleSession(session: number) {
-    return isBattleSessionActive(session);
   }
 
   function getBattleAbortSignal(): AbortSignal {
@@ -28,7 +24,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
   function runIfSessionActive<T>(session: number, fn: () => T, fallback: T): T;
   function runIfSessionActive<T>(session: number, fn: () => T): T | undefined;
   function runIfSessionActive<T>(session: number, fn: () => T, fallback?: T): T | undefined {
-    if (isBattleSessionActive(session)) {
+    if (isCurrentBattleSession(session)) {
       return fn();
     }
     return fallback;
@@ -95,17 +91,6 @@ export function createBattleSession(ctx: BattleControllerContext) {
     getPresentationStore().clearFloatingCombatTexts();
   }
 
-  function finishDrawSequence(
-    session: number,
-    state: BattleState,
-    onComplete: (session: number, state: BattleState) => void,
-  ) {
-    ctx.cardPlayInProgressRef.current = false;
-    runIfSessionActive(session, () => {
-      onComplete(session, state);
-    });
-  }
-
   return {
     isCurrentBattleSession,
     getBattleAbortSignal,
@@ -118,6 +103,5 @@ export function createBattleSession(ctx: BattleControllerContext) {
     clearBattleTimeoutsKeepCompanion,
     resetBattleSession,
     prepareBattleSessionForStart,
-    finishDrawSequence,
   };
 }

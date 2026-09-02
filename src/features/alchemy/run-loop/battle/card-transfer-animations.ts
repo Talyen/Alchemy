@@ -9,18 +9,19 @@ import {
 } from "@/lib/game-constants";
 import { getBattleCardPlayTarget } from "@/lib/battle";
 import type { CardGhost, CardRect } from "../../shared/types";
+import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { getCardRect } from "../../shared/utils";
 import { CARD_TRANSFER_CONFIG, HAND_FAN_ROTATION_DEGREES } from "@/lib/game-constants";
 import type { CardTransfer } from "../../shared/types";
 import {
   centeredRectForSize,
-  getCardKey,
   getCardTransferBatchSpeed,
   transferCardIntervalSeconds,
   getBattleSceneLocalRect,
   viewportRectToBattleSceneRect,
   type BattleSceneLocalRect,
 } from "./controller-utils";
+import { getHandCardKey } from "./playable-hand";
 import { waitForStableHandCardRect, type StableHandCardRectDeps } from "./hand-card-layout";
 import type { HiddenHandCardKeys } from "./playable-hand";
 
@@ -34,7 +35,6 @@ export interface CardTransferAnimationDeps {
   runCardTransfer: CardTransferRunner;
   playTransferSound: (delay?: number) => void;
   setHiddenHandCardKeys: (update: (current: HiddenHandCardKeys) => Iterable<string>) => void;
-  setCardPlayInProgress: (active: boolean) => void;
   setTransferInProgress: (active: boolean) => void;
   stableHandCardDeps: StableHandCardRectDeps;
 }
@@ -54,15 +54,13 @@ export async function animateDiscardedHand(cards: BattleCard[], session: number,
   }
   if (!deps.isSessionActive(session)) return;
   deps.setTransferInProgress(true);
-  deps.setCardPlayInProgress(true);
   for (let index = cards.length - 1; index >= 0; index -= 1) {
     if (!deps.isSessionActive(session)) {
       deps.setTransferInProgress(false);
-      deps.setCardPlayInProgress(false);
       return;
     }
     const card = cards[index]!;
-    const cardKey = getCardKey(card, index);
+    const cardKey = getHandCardKey(card, index);
     const sourceRect = deps.measureHandCard(cardKey);
     if (!sourceRect) continue;
     const targetRect = centeredRectForSize(discardPileRect, sourceRect.width, sourceRect.height);
@@ -105,7 +103,7 @@ export async function animateDrawnHand(
     const fallbackIndex = allHandCards.findIndex((item) => item.uid === card.uid && item.id === card.id);
     const resolvedIndex = identityIndex >= 0 ? identityIndex : fallbackIndex;
     const safeIndex = resolvedIndex >= 0 ? resolvedIndex : 0;
-    const cardKey = getCardKey(card, resolvedIndex >= 0 ? resolvedIndex : undefined);
+    const cardKey = getHandCardKey(card, resolvedIndex >= 0 ? resolvedIndex : undefined);
     const fallbackRect = centeredRectForSize(drawPileRect, drawPileRect.width, drawPileRect.height);
     const targetRect = await waitForStableHandCardRect(cardKey, fallbackRect, deps.stableHandCardDeps);
     if (!deps.isSessionActive(session)) return;
@@ -158,6 +156,7 @@ export function animateCardActivation(
   battleSceneRef: React.RefObject<HTMLDivElement | null>,
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void,
 ) {
+  if (isAnimationDisabled()) return;
   const sceneRect = getBattleSceneLocalRect(battleSceneRef.current);
   const localSourceRect = sceneRect ? viewportRectToBattleSceneRect(rect, sceneRect) : rect;
   const targetRect = getCardPlayGhostTargetRect(card, playerPanelRef, enemyPanelRef, battleSceneRef, sceneRect);

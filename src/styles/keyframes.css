@@ -36,38 +36,6 @@
   }
 }
 
-@keyframes cardGhostDrawIn {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 3.89cqh, 0) scale3d(0.84, 0.84, 1) rotate(var(--ghost-rotation, 0deg));
-    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  62% {
-    opacity: 0.92;
-    transform: translate3d(0, -0.19cqh, 0) scale3d(1.02, 1.02, 1) rotate(var(--ghost-rotation, 0deg));
-    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate3d(0, 0cqh, 0) scale3d(1, 1, 1) rotate(var(--ghost-rotation, 0deg));
-  }
-}
-
-@keyframes cardGhostDiscardOut {
-  0% {
-    opacity: 1;
-    transform: translate3d(0, 0cqh, 0) scale3d(1, 1, 1) rotate(var(--ghost-rotation, 0deg));
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate3d(0, 3.89cqh, 0) scale3d(0.86, 0.86, 1) rotate(calc(var(--ghost-rotation, 0deg) + 6deg));
-  }
-}
-
 @keyframes cardGhostActivate {
   0% {
     opacity: 1;

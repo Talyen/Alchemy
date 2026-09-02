@@ -145,16 +145,6 @@
     will-change: transform, opacity;
   }
 
-  .card-ghost-overlay[data-variant="draw-in"] {
-    animation-duration: 520ms;
-    animation-name: cardGhostDrawIn;
-  }
-
-  .card-ghost-overlay[data-variant="discard-out"] {
-    animation-duration: 320ms;
-    animation-name: cardGhostDiscardOut;
-  }
-
   .card-ghost-overlay[data-variant="activate"] {
     animation-duration: 672ms;
     animation-name: cardGhostActivate;

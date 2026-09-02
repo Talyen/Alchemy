@@ -15,6 +15,7 @@ interface AutoEndTurnOptions {
   screen: Screen;
   battleState: BattleState;
   hasActiveBattle: boolean;
+  gameMenuOpen?: boolean;
   isCardPlayInProgress?: () => boolean;
   onEndTurn: () => void;
   presentationGateRef: RefObject<BattlePlaybackPresentationGate>;
@@ -26,6 +27,7 @@ export function useBattleAutoEndTurn({
   screen,
   battleState,
   hasActiveBattle,
+  gameMenuOpen = false,
   isCardPlayInProgress,
   onEndTurn,
   presentationGateRef,
@@ -37,6 +39,7 @@ export function useBattleAutoEndTurn({
   const screenRef = useLatestRef(screen);
   const hasActiveBattleRef = useLatestRef(hasActiveBattle);
   const autoEndTurnRef = useLatestRef(autoEndTurn);
+  const gameMenuOpenRef = useLatestRef(gameMenuOpen);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearAutoEndTurn = useCallback(() => {
@@ -58,6 +61,7 @@ export function useBattleAutoEndTurn({
           cardTransferInProgress: presentation.cardTransferInProgress,
           hiddenHandCardKeys: presentation.hiddenHandCardKeys,
           cardPlayInProgress: Boolean(isCardPlayInProgressRef.current?.()),
+          gameMenuOpen: gameMenuOpenRef.current,
         })
       )
         return;
@@ -73,6 +77,7 @@ export function useBattleAutoEndTurn({
       onEndTurnRef,
       presentationGateRef,
       screenRef,
+      gameMenuOpenRef,
     ],
   );
 
