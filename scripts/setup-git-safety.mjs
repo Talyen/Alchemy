@@ -1,32 +1,28 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 import { fileURLToPath } from "node:url";
 
 const currentFile = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(currentFile), "..");
 const shimDir = path.join(root, "scripts/bin");
-const line = `export PATH="${shimDir}:$PATH"  # Alchemy git safety shim (auto-backup on destructive git)`;
 
-function ensureLine(filePath) {
-  let content = "";
-  try {
-    content = fs.readFileSync(filePath, "utf8");
-  } catch {}
-  if (content.includes(shimDir)) {
-    console.log(`ok: ${filePath} already contains shim`);
-    return;
-  }
-  const append = content.endsWith("\n") || content === "" ? "" : "\n";
-  fs.appendFileSync(filePath, `${append}${line}\n`);
-  console.log(`added shim to ${filePath}`);
+const args = process.argv.slice(2);
+if (args.includes("--help") || args.includes("-h")) {
+  console.log(`Usage: node scripts/setup-git-safety.mjs [--repo]
+  --repo    Install repository-scoped shim via .envrc (direnv) only
+  --help    Show this help
+
+This installer is repository-scoped by default. It only edits <repo>/.envrc.
+It does NOT edit shell profiles (~/.zshrc etc.) or install a global git wrapper.
+For manual use: export PATH="${shimDir}:$PATH"`);
+  process.exit(0);
 }
 
-const home = os.homedir();
-for (const rc of [".zshrc", ".bashrc", ".bash_profile"]) {
-  const p = path.join(home, rc);
-  if (fs.existsSync(p) || rc === ".zshrc") ensureLine(p);
+const repoOnly = args.includes("--repo") || args.length === 0;
+if (!repoOnly) {
+  console.error("Unknown option. Only --repo is supported (repository-scoped install).");
+  process.exit(2);
 }
 
 const envrc = path.join(root, ".envrc");
@@ -46,31 +42,6 @@ if (!envrcContent.includes(shimDir)) {
   console.log(`ok: ${envrc} already contains shim`);
 }
 
-const globalWrapperDir = path.join(home, ".local/bin");
-const globalWrapper = path.join(globalWrapperDir, "git");
-try {
-  fs.mkdirSync(globalWrapperDir, { recursive: true });
-  const wrapperContent = `#!/usr/bin/env sh
-# Global harness-agnostic shim: if inside Alchemy repo, delegate to repo guard
-case "$(pwd)" in
-  "${root}"* ) exec "${shimDir}/git" "$@" ;;
-  *) 
-    for cand in /opt/homebrew/bin/git /usr/local/bin/git /usr/bin/git; do
-      if [ -x "$cand" ]; then exec "$cand" "$@"; fi
-    done
-    exec git "$@"
-    ;;
-esac
-`;
-  if (!fs.existsSync(globalWrapper) || !fs.readFileSync(globalWrapper, "utf8").includes(shimDir)) {
-    fs.writeFileSync(globalWrapper, wrapperContent, { mode: 0o755 });
-    console.log(`installed global wrapper at ${globalWrapper}`);
-  } else {
-    console.log(`ok: ${globalWrapper} already installed`);
-  }
-} catch (e) {
-  console.log(`global wrapper skipped: ${e.message}`);
-}
-
-console.log(`\nShim installed at ${shimDir}/git`);
-console.log(`Restart shells or run: export PATH="${shimDir}:$PATH"`);
+console.log(`\nShim available at ${shimDir}/git`);
+console.log(`Activate: export PATH="${shimDir}:$PATH"  (or direnv allow)`);
+console.log("Note: global shell profiles and ~/.local/bin are not modified. Use --repo (default).");

@@ -19,13 +19,14 @@ function runGit(args, opts = {}) {
 
 function usage() {
   console.log(`Usage:
-  node scripts/agent-worktree.mjs create --task <slug> [--base <branch>]
+  node scripts/agent-worktree.mjs create --task <slug> [--base <branch>] [--detached]
   node scripts/agent-worktree.mjs remove --task <slug> [--force]
   node scripts/agent-worktree.mjs list
   node scripts/agent-worktree.mjs prune
 
 Creates isolated worktrees under .worktrees/<slug> on branch agent/<slug>.
 Use when another agent has dirty work on main to avoid shared-checkout races.
+Add --detached for verification-only detached HEAD (replaces agent-worktree.sh).
 `);
 }
 
@@ -77,6 +78,7 @@ if (cmd === "create") {
     console.error("invalid --task slug");
     process.exit(1);
   }
+  const detached = hasFlag("--detached");
   const base = getArg("--base") ?? "main";
   const worktreePath = path.join(WORKTREE_ROOT, task);
   const branch = `agent/${task}`;
@@ -87,9 +89,20 @@ if (cmd === "create") {
     process.exit(1);
   }
 
-  const branchExists = runGit(["show-ref", "--verify", `refs/heads/${branch}`]);
-
   fs.mkdirSync(WORKTREE_ROOT, { recursive: true });
+
+  if (detached) {
+    const args = ["worktree", "add", "--detach", worktreePath, base];
+    console.log(`▸ git ${args.join(" ")}`);
+    const r = runGit(args, { stdio: "inherit" });
+    if (r.status !== 0) process.exit(r.status ?? 1);
+    console.log(`detached worktree ready: ${worktreePath} at ${base} (verification only)`);
+    console.log(`  cd ${path.relative(root, worktreePath)}`);
+    console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after verification`);
+    process.exit(0);
+  }
+
+  const branchExists = runGit(["show-ref", "--verify", `refs/heads/${branch}`]);
 
   const args =
     branchExists.status === 0

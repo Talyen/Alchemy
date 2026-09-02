@@ -1,13 +1,26 @@
 // Shared git helpers for release, changelog sync, and patch notes.
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
 const FIELD_SEPARATOR = "\x1f";
 const RECORD_SEPARATOR = "\x1e";
 const GIT_LOG_MAX_BUFFER = 16 * 1024 * 1024;
 
+export const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+
+export function assertValidSemver(version) {
+  if (!SEMVER_RE.test(version)) throw new Error(`Invalid semantic version: ${version}`);
+}
+
+export function assertValidTag(tag) {
+  if (tag === "HEAD") return;
+  if (!/^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.test(tag)) {
+    throw new Error(`Invalid tag revision: ${tag}`);
+  }
+}
+
 export function listVersionTags(root) {
   try {
-    const output = execSync('git tag --list "v*" --sort=-v:refname', {
+    const output = execFileSync("git", ["tag", "--list", "v*", "--sort=-v:refname"], {
       cwd: root,
       stdio: ["ignore", "pipe", "ignore"],
     })
@@ -35,8 +48,8 @@ export function previousVersionTag(root, currentTag) {
 
 export function latestCommitHash(root, short = true) {
   try {
-    const flag = short ? "--short" : "";
-    return execSync(`git rev-parse ${flag} HEAD`, {
+    const args = short ? ["rev-parse", "--short", "HEAD"] : ["rev-parse", "HEAD"];
+    return execFileSync("git", args, {
       cwd: root,
       stdio: ["ignore", "pipe", "ignore"],
     })
@@ -52,6 +65,7 @@ export function resolvePatchNoteRange(root, releaseTag) {
     return { since: latestVersionTag(root), until: "HEAD" };
   }
   const current = releaseTag.startsWith("v") ? releaseTag : `v${releaseTag}`;
+  assertValidTag(current);
   return { since: previousVersionTag(root, current), until: current };
 }
 
@@ -79,17 +93,21 @@ function parseCommitRecord(record) {
 
 export function getCommitsSinceTag(root, tag, options = {}) {
   const until = options.until ?? "HEAD";
+  assertValidTag(until);
+  if (tag) assertValidTag(tag);
   const range = tag ? `${tag}..${until}` : until;
   let output;
   try {
-    output = execSync(`git log ${range} --no-merges --pretty=format:%x1e%s%x1f%b%x1f --name-only`, {
-      cwd: root,
-      stdio: ["ignore", "pipe", "ignore"],
-      maxBuffer: GIT_LOG_MAX_BUFFER,
-    }).toString();
+    output = execFileSync(
+      "git",
+      ["log", range, "--no-merges", "--pretty=format:%x1e%s%x1f%b%x1f", "--name-only", "--"],
+      {
+        cwd: root,
+        stdio: ["ignore", "pipe", "ignore"],
+        maxBuffer: GIT_LOG_MAX_BUFFER,
+      },
+    ).toString();
   } catch {
-    // Distinguish git failure from an empty range so release tooling can abort
-    // instead of writing a "_No changes yet._" section over real notes.
     return null;
   }
 

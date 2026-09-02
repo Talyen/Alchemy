@@ -73,24 +73,44 @@ async function restoreSnapshot(before, afterHashes) {
 }
 
 /** Verify preparation is idempotent without leaving a mutated tree on failure. */
-async function checkPreparedAssets() {
+export async function checkPreparedAssets() {
   if (process.env.ALCHEMY_SKIP_ASSETS === "1") {
     throw new Error("assets:check cannot run with ALCHEMY_SKIP_ASSETS=1.");
   }
   const before = await outputSnapshot();
   const beforeHashes = await hashSnapshot(before);
   const beforeDigest = snapshotDigestFromHashes(beforeHashes);
-  // Release before buffers from snapshotDigest hashing but keep for restore.
-  await prepareAssets();
-  const after = await outputSnapshot();
-  const afterHashes = await hashSnapshot(after);
-  const afterDigest = snapshotDigestFromHashes(afterHashes);
-  if (beforeDigest !== afterDigest) {
-    const changed = changedPathsFromHashes(beforeHashes, afterHashes);
-    await restoreSnapshot(before, afterHashes);
-    throw new Error(`Prepared asset outputs are stale. Review and regenerate:\n- ${changed.join("\n- ")}`);
+  let prepareError;
+  let afterHashes = null;
+  let afterDigest = null;
+  try {
+    await prepareAssets();
+    const after = await outputSnapshot();
+    afterHashes = await hashSnapshot(after);
+    afterDigest = snapshotDigestFromHashes(afterHashes);
+    if (beforeDigest !== afterDigest) {
+      const changed = changedPathsFromHashes(beforeHashes, afterHashes);
+      throw new Error(`Prepared asset outputs are stale. Review and regenerate:\n- ${changed.join("\n- ")}`);
+    }
+    console.log("Prepared asset outputs are current.");
+  } catch (error) {
+    prepareError = error;
   }
-  console.log("Prepared asset outputs are current.");
+  const needsRestore =
+    prepareError !== undefined || (afterDigest !== null && afterHashes !== null && beforeDigest !== afterDigest);
+  if (needsRestore) {
+    try {
+      const restoreAfterHashes = afterHashes ?? (await hashSnapshot(await outputSnapshot()));
+      await restoreSnapshot(before, restoreAfterHashes);
+    } catch (restoreError) {
+      console.error(
+        "Failed to restore prepared outputs:",
+        restoreError instanceof Error ? restoreError.message : restoreError,
+      );
+      if (!prepareError) throw restoreError;
+    }
+  }
+  if (prepareError) throw prepareError;
 }
 
 if (isMainModule(import.meta.url)) {

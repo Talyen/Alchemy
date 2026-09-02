@@ -616,3 +616,31 @@ declare module "*/electron-path.mjs" {
   export const MIN_BINARY_BYTES: number;
   export const projectRoot: string;
 }
+
+declare module "*/git-classify.mjs" {
+  export function extractSubcommand(argv: string[]): {
+    subcommand: string;
+    subIndex: number;
+    args: string[];
+  };
+  export function isDestructive(parsedArgs: string[]): boolean;
+  export const DESTRUCTIVE: ReadonlySet<string>;
+}
+
+declare module "*/audit.mjs" {
+  export function parseAuditArgs(argv: string[]): {
+    hasTypes: boolean;
+    hasAmplification: boolean;
+    hasContent: boolean;
+    hasHotspots: boolean;
+    hasAll: boolean;
+  };
+}
+
+declare module "*/prepare-assets.mjs" {
+  export function prepareAssets(): Promise<unknown>;
+}
+
+declare module "*/check-prepared-assets.mjs" {
+  export function checkPreparedAssets(): Promise<void>;
+}

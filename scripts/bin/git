@@ -15,10 +15,6 @@ if [ -z "$REAL_GIT" ]; then
   done
   REAL_GIT="${REAL_GIT:-/usr/bin/git}"
 fi
-# Fast path: non-destructive commands go straight to real git
-case "${1:-}" in
-  reset|checkout|restore|clean|switch|branch|push) ;;
-  *) exec "$REAL_GIT" "$@" ;;
-esac
-# Destructive candidates: run guard (which re-exec's REAL_GIT if clean)
+# Fast path: delegate subcommand extraction to guard; do not duplicate classification here
+# The guard handles global options (e.g., git -c alias.reset=... reset --hard)
 exec env REAL_GIT="$REAL_GIT" node "$ROOT/scripts/git-safety-guard.mjs" "$@"

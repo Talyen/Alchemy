@@ -2,6 +2,7 @@
 /** Strong handoff gate: changed-path verification + full static + Vitest + verified build + preview + prepush canary + docs final + exposure check. */
 import { spawnSync } from "node:child_process";
 import crypto from "node:crypto";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,20 +24,85 @@ export function parseHandoffArgs(argv) {
   return { paths, flags };
 }
 
+const GIT_OUTPUT_MAX_BUFFER = 64 * 1024 * 1024;
+
 function gitOutput(args) {
-  const result = spawnSync("git", args, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  const result = spawnSync("git", args, {
+    cwd: ROOT,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+    maxBuffer: GIT_OUTPUT_MAX_BUFFER,
+  });
   return result.status === 0 ? result.stdout : "";
 }
 
-export function captureSourceDigest() {
-  const head = gitOutput(["rev-parse", "HEAD"]).trim() || "no-head";
+function hashFileContent(absolutePath) {
+  try {
+    const stat = fs.lstatSync(absolutePath);
+    if (stat.isSymbolicLink()) {
+      const target = fs.readlinkSync(absolutePath);
+      return `symlink:${target}`;
+    }
+    if (stat.isDirectory()) return `dir:${stat.mode.toString(8)}`;
+    if (stat.isFile()) {
+      const bytes = fs.readFileSync(absolutePath);
+      return `file:${crypto.createHash("sha256").update(bytes).digest("hex")}:${stat.mode.toString(8)}`;
+    }
+    return `other:${stat.mode.toString(8)}`;
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return "missing";
+    return `error:${String(error)}`;
+  }
+}
+
+function collectDirtyPaths() {
   const status = spawnSync("git", ["status", "--porcelain", "--untracked-files=all", "-z"], {
     cwd: ROOT,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
   });
   const raw = status.status === 0 ? (status.stdout ?? "") : "";
-  const payload = `${head}\0${raw}`;
+  if (!raw) return { raw, paths: [] };
+  const tokens = raw.split("\0").filter(Boolean);
+  const paths = [];
+  for (const token of tokens) {
+    if (token.length >= 3 && (token[0] !== " " || token[1] !== " ") && token[2] === " ") {
+      const filePath = token.slice(3);
+      if (filePath) paths.push(filePath);
+      continue;
+    }
+    if (token.length >= 2 && token[1] === " ") {
+      continue;
+    }
+    paths.push(token);
+  }
+  const unique = [...new Set(paths)].sort();
+  return { raw, paths: unique };
+}
+
+export function captureSourceDigest() {
+  const head = gitOutput(["rev-parse", "HEAD"]).trim() || "no-head";
+  const stagedTree = gitOutput(["write-tree"]).trim() || gitOutput(["ls-files", "--stage"]).trim() || "no-index";
+  const { raw, paths } = collectDirtyPaths();
+  const stagedStatus = spawnSync("git", ["diff", "--cached", "--name-only", "-z"], {
+    cwd: ROOT,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  const stagedRaw = stagedStatus.status === 0 ? (stagedStatus.stdout ?? "") : "";
+  const stagedPaths = stagedRaw ? stagedRaw.split("\0").filter(Boolean).sort() : [];
+  const fileHashes = [];
+  for (const relativePath of paths) {
+    const absolutePath = path.join(ROOT, relativePath);
+    fileHashes.push(`${relativePath}\0${hashFileContent(absolutePath)}`);
+  }
+  const stagedHashes = [];
+  for (const relativePath of stagedPaths) {
+    const content = gitOutput(["show", `:${relativePath}`]);
+    const hash = content ? crypto.createHash("sha256").update(content).digest("hex") : "missing-staged";
+    stagedHashes.push(`${relativePath}\0staged:${hash}`);
+  }
+  const payload = `${head}\0${stagedTree}\0${raw}\0${stagedRaw}\0${fileHashes.join("\0")}\0${stagedHashes.join("\0")}`;
   const hash = crypto.createHash("sha256").update(payload).digest("hex").slice(0, 16);
   return { head, hash, raw: payload };
 }
