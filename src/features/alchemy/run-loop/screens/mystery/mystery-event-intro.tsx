@@ -43,8 +43,7 @@ function MysteryEventChoiceButton({
   choice: MysteryChoice;
   onPick: (choice: MysteryChoice) => void;
 } & LookupProps) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
-    useHoverVisible<HTMLDivElement>();
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
 
   return (
     <div

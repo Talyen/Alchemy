@@ -167,7 +167,6 @@ export function useAppDisplayEffects({ displayMode, brightness, stageRef }: AppD
     const el = stageRef.current;
     if (el) {
       const brightnessFactor = brightness / 100;
-      // eslint-disable-next-line react-compiler/react-compiler -- intentional DOM mutation inside useLayoutEffect
       el.style.filter = brightness > 100 ? `brightness(${brightnessFactor})` : "";
     }
   }, [brightness, stageRef]);

@@ -134,6 +134,7 @@ export function LabyrinthMapScreen({
           <div
             ref={mapCanvasRef}
             className="relative w-full"
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- canvas is keyboard-operable entry point for selected chamber with Enter/Space
             tabIndex={0}
             onKeyDown={(event) => {
               if ((event.key === "Enter" || event.key === " ") && selectedCanEnter) {

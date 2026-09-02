@@ -49,8 +49,7 @@ describe("stopOwnedListeners", () => {
       log,
     });
 
-    expect(stopPid).toHaveBeenCalledOnce();
-    expect(stopPid).toHaveBeenCalledWith(11);
+    expect(stopPid).toHaveBeenCalledExactlyOnceWith(11);
     expect(log).toHaveBeenCalledWith(expect.stringContaining("PID 12"));
   });
 

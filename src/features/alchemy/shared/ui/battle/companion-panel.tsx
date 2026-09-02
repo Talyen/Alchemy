@@ -41,7 +41,7 @@ export function CompanionPanel({
   turnActive?: boolean;
   turnShineColors?: readonly string[];
 }) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
+  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible();
   const resolvedShineColors = turnShineColors ?? getCompanionShineColors(companion);
 
   return (

@@ -41,6 +41,7 @@ function applyItemTiers(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- generic preserves record key relation between target and source
 function mergeRecordEffect<K extends HomesteadBattleRecordKey>(
   target: TalentEffectManifest,
   source: HomesteadEffectManifest,

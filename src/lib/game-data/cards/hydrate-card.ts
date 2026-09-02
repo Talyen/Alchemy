@@ -63,6 +63,7 @@ function hydrateCost(saved: SavedCard, libraryCard: BattleCard): number {
   return libraryCard.cost;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- generic preserves optional field type at call sites
 function pickOptionalField<T>(saved: SavedCard, key: keyof SavedCard): T | undefined {
   return saved[key] !== undefined ? (saved[key] as T) : undefined;
 }

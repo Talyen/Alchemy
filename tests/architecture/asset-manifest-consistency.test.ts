@@ -4,7 +4,7 @@ import { gearArtByDefinitionId } from "@/lib/game-data/gear-art";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore scripts are untyped JS helpers
 import { QUALITY, WIDTH } from "../../scripts/lib/asset-constants.mjs";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore scripts are untyped JS helpers
 import { staticAssets } from "../../scripts/assets/asset-manifest.mjs";
 

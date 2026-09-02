@@ -77,7 +77,7 @@ export function applyEffectByKind(
   context?: CardEffectResolutionContext,
 ): BattleState {
   if (!hasEffectApplyHandler(kind)) {
-    console.warn(`[Battle] Missing handler for effect kind: ${String(kind)}`);
+    console.warn(`[Battle] Missing handler for effect kind: ${kind}`);
     return state;
   }
   return EFFECT_APPLY_BY_KIND[kind](state, card, effect, potionMult, combatTexts, context);

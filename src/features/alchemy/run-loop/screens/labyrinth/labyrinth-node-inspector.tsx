@@ -69,6 +69,7 @@ export function LabyrinthNodeInspector({ node, canEnter, onEnter, left, top, sid
   const rewardModifiers: EncounterRewardTraitId[] = node.rewardModifiers;
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Inspector uses click to stop propagation, not as interactive control
     <aside
       aria-label="Chamber details"
       data-side={side}

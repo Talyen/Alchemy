@@ -101,6 +101,10 @@ export async function main() {
     battleImports?.paths?.some((entry) => entry.name === "react-dom"),
     "battle must restrict React DOM",
   );
+  assert.ok(
+    battleImports?.paths?.some((entry) => entry.name === "react-dom/client"),
+    "battle must restrict React DOM subpath",
+  );
   assertImportGroup(battleImports, "features", "src/lib/battle/card-play.ts");
   assert.ok(
     battleSyntax.some((entry) => entry.selector?.includes("random")),
@@ -109,6 +113,18 @@ export async function main() {
   assert.ok(
     battleSyntax.some((entry) => entry.selector?.includes("floor")),
     "battle must restrict Math.floor",
+  );
+  assert.ok(
+    battleSyntax.some((entry) => entry.selector?.includes("ceil")),
+    "battle must restrict Math.ceil",
+  );
+  assert.ok(
+    battleSyntax.some((entry) => entry.selector?.includes("trunc")),
+    "battle must restrict Math.trunc",
+  );
+  assert.ok(
+    battleSyntax.some((entry) => entry.selector?.includes('property.name="rng"') || entry.selector?.includes("rng")),
+    "battle must restrict direct rng access",
   );
 
   const runLoopBattleImports = await calculateImports(
@@ -181,17 +197,11 @@ export async function main() {
     "screens must ban unowned localStorage",
   );
   assert.ok(
-    ruleIsError(alchemyRule(destinationConfig, "no-dependency-graph-comments")),
-    "screens must ban import/consumer graph comments",
-  );
-  assert.ok(
     ruleIsError(alchemyRule(destinationConfig, "no-run-earned-add-materials")),
     "screens must ban progress addMaterials",
   );
-  assert.ok(
-    ruleIsError(alchemyRule(destinationConfig, "no-render-math-random")),
-    "screens must ban render-time Math.random",
-  );
+  assert.ok(ruleIsError(alchemyRule(destinationConfig, "no-comments")), "screens must ban comments");
+  assert.ok(ruleIsError(alchemyRule(destinationConfig, "no-em-dash")), "screens must ban em dashes");
 
   const libConfig = await getConfig("src/lib/battle/card-play.ts");
   assert.ok(ruleIsError(alchemyRule(libConfig, "no-lib-fetch")), "src/lib must ban fetch");

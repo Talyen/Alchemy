@@ -4,6 +4,7 @@ import { applyEnemyHealingWithCombatText } from "./combat-text";
 import { applyEnemyLeechHealing, processEnemyDamageEffect } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { hasEnemyTrait, isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-rules";
+import { getBattleRng } from "./rng";
 import { type BattleState, type CombatTextEvent } from "./types";
 
 function addEnemyStatusText(
@@ -56,7 +57,7 @@ function dealTraitDamage(
 export function processEncounterTraitActionDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (hasEnemyTrait(nextState, "septic")) {
-    nextState = dealTraitDamage(nextState, nextState.rng() < 0.5 ? "poison" : "bleed", 1, combatTexts);
+    nextState = dealTraitDamage(nextState, getBattleRng(nextState)() < 0.5 ? "poison" : "bleed", 1, combatTexts);
   }
   if (hasEnemyTrait(nextState, "caustic")) {
     nextState = dealTraitDamage(nextState, "poison", 1, combatTexts);

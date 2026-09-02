@@ -34,7 +34,7 @@ export function LockedMenuItem({
   size = "default",
   variant = "ghost",
 }: LockedMenuItemProps) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
+  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible();
 
   return (
     <div ref={triggerRef} className="relative overflow-visible" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>

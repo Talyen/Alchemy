@@ -225,7 +225,9 @@ describe("mapPool", () => {
     const results = await mapPool([1, 2, 3, 4, 5], 2, async (n) => {
       active += 1;
       maxActive = Math.max(maxActive, active);
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
       active -= 1;
       return n * 2;
     });

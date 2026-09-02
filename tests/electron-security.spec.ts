@@ -30,7 +30,9 @@ test.describe("packaged Electron security boundary", { ...desktop }, () => {
         download.download = "blocked.txt";
         document.body.appendChild(download);
         download.click();
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100);
+        });
 
         return {
           inlineRan: (window as unknown as Record<string, unknown>)[marker] === true,

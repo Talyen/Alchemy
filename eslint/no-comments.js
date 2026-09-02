@@ -1,10 +1,12 @@
-const DIRECTIVE_RE = /^(eslint|@ts-|prettier-ignore|c8|v8|@vite-|istanbul|#?__PURE__|@__NO_SIDE_EFFECTS__)/;
+const DIRECTIVE_RE =
+  /^(eslint-disable(?:-next-line|-line)?|eslint-enable|@ts-expect-error|@ts-ignore|@ts-nocheck|prettier-ignore|c8 ignore|v8 ignore|@vite-ignore|istanbul ignore|#__PURE__|@__NO_SIDE_EFFECTS__)(?:\s|$)/;
+
+const ESLINT_DISABLE_RE = /^eslint-disable(?:-next-line|-line)?(?:\s|$)/;
 
 /** @type {import("eslint").Rule.RuleModule} */
 export const noComments = {
   meta: {
     type: "problem",
-    fixable: "code",
     docs: {
       description: "Ban comments — use code, types, and tests instead. Only tool directives are allowed.",
     },
@@ -19,6 +21,7 @@ export const noComments = {
     ],
     messages: {
       unexpected: "Comments are not allowed. Express intent via code, types, or tests.",
+      missingReason: "ESLint disable directives must include a reason after -- .",
     },
   },
   create(context) {
@@ -26,14 +29,19 @@ export const noComments = {
     return {
       Program() {
         for (const comment of context.sourceCode.getAllComments()) {
-          if (allowDirectives && DIRECTIVE_RE.test(comment.value.trim())) continue;
+          const trimmed = comment.value.trim();
+          if (allowDirectives && DIRECTIVE_RE.test(trimmed)) {
+            if (ESLINT_DISABLE_RE.test(trimmed) && !trimmed.includes(" -- ")) {
+              context.report({
+                loc: comment.loc,
+                messageId: "missingReason",
+              });
+            }
+            continue;
+          }
           context.report({
             loc: comment.loc,
             messageId: "unexpected",
-            fix(fixer) {
-              if (comment.range) return fixer.removeRange(comment.range);
-              return null;
-            },
           });
         }
       },

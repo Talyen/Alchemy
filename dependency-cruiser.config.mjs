@@ -2,6 +2,7 @@
 // Full boundary table (GAME_DATA_NO_BATTLE, LIB_NO_FRAMEWORK, WRITE_PORT, etc.) is enforced via eslint;
 // see eslint/boundaries.js + eslint.config.js for the complete source of truth.
 import {
+  GAME_DATA_NO_BATTLE,
   LIB_NO_FEATURES,
   META_NO_RUN_LOOP,
   RUN_LOOP_NO_RUN_SETUP,
@@ -38,6 +39,7 @@ export default {
     edge("meta-no-run-setup", META_LAYER, [META_RUN_SETUP]),
     edge("run-setup-no-run-loop", "^src/features/alchemy/run-setup/", RUN_SETUP_NO_RUN_LOOP),
     edge("run-loop-no-run-setup", "^src/features/alchemy/run-loop/", RUN_LOOP_NO_RUN_SETUP),
+    edge("game-data-no-battle", "^src/lib/game-data/", GAME_DATA_NO_BATTLE),
     {
       name: "gameplay-aggregate-is-internal",
       severity: "error",

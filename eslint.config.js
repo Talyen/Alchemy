@@ -3,8 +3,9 @@ import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import prettierConfig from "eslint-config-prettier";
-import reactCompiler from "eslint-plugin-react-compiler";
 import playwright from "eslint-plugin-playwright";
+import jsxA11y from "eslint-plugin-jsx-a11y";
+import vitest from "@vitest/eslint-plugin";
 import { BOUNDARY_CONFIGS } from "./eslint/boundaries.js";
 import { alchemyPlugin } from "./eslint/plugin.js";
 import {
@@ -16,7 +17,6 @@ import {
   CLASSNAME_NO_TEMPLATE,
   GEAR_NO_OUTER_DISPATCH,
   NO_UNOWNED_CONTEXT_CREATION,
-  TESTS_NO_ONLY_SELECTORS,
   restrictedImports,
   restrictedSyntax,
 } from "./eslint/fragments.js";
@@ -41,6 +41,12 @@ export default tseslint.config(
       ".knip-output.json",
       ".eslintcache",
     ],
+  },
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: "error",
+      reportUnusedInlineConfigs: "error",
+    },
   },
 
   // Base recommended configs
@@ -82,13 +88,7 @@ export default tseslint.config(
         },
       ],
       "@typescript-eslint/no-unnecessary-condition": "off",
-      "@typescript-eslint/no-unnecessary-type-parameters": "off",
-      "@typescript-eslint/no-redundant-type-constituents": "off",
-      "@typescript-eslint/no-unnecessary-type-arguments": "off",
       "@typescript-eslint/no-invalid-void-type": "off",
-      "@typescript-eslint/no-duplicate-type-constituents": "off",
-      "@typescript-eslint/no-useless-default-assignment": "off",
-      "@typescript-eslint/no-unnecessary-type-conversion": "off",
       // Additions beyond the preset — type-aware bug catchers.
       "@typescript-eslint/consistent-type-exports": ["error", { fixMixedExportsWithInlineTypeSpecifier: true }],
       "@typescript-eslint/no-deprecated": "error",
@@ -114,15 +114,16 @@ export default tseslint.config(
     ...tseslint.configs.disableTypeChecked,
   },
 
-  // React hooks + refresh
+  // React hooks + refresh — scoped to application source and React unit tests
   {
-    rules: {
-      ...reactHooks.configs.flat.recommended.rules,
-      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
-    },
+    files: ["src/**/*.{ts,tsx}", "tests/**/*.test.tsx", "tests/**/*.dom.test.ts"],
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.flat["recommended-latest"].rules,
+      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
     },
   },
 
@@ -136,16 +137,6 @@ export default tseslint.config(
     },
   },
 
-  // React Compiler rules
-  {
-    plugins: {
-      "react-compiler": reactCompiler,
-    },
-    rules: {
-      "react-compiler/react-compiler": "error",
-    },
-  },
-
   prettierConfig,
 
   // Global style rules (no types needed)
@@ -153,6 +144,7 @@ export default tseslint.config(
     rules: {
       eqeqeq: ["error", "always", { null: "ignore" }],
       "no-empty": ["error", { allowEmptyCatch: true }],
+      "no-promise-executor-return": "error",
       "@typescript-eslint/consistent-type-imports": [
         "error",
         { prefer: "type-imports", fixStyle: "inline-type-imports", disallowTypeAnnotations: false },
@@ -170,7 +162,6 @@ export default tseslint.config(
   {
     files: ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"],
     rules: {
-      "alchemy/no-dependency-graph-comments": "error",
       "alchemy/no-comments": "error",
     },
   },
@@ -203,13 +194,6 @@ export default tseslint.config(
       "alchemy/no-lib-fetch": "error",
     },
   },
-  {
-    files: ["src/**/*.tsx"],
-    rules: {
-      "alchemy/no-render-math-random": "error",
-    },
-  },
-
   {
     files: [
       "src/lib/mystery/**/*.{ts,tsx}",
@@ -271,15 +255,65 @@ export default tseslint.config(
     },
   },
 
-  // Test files — relax rules for test-specific patterns & ban .only focus
+  // Test files — relax rules for test-specific patterns
   {
     files: ["tests/**/*.ts", "tests/**/*.tsx", "performance/**/*.ts"],
     rules: {
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "off",
-      // Playwright fixture `use` is not a React Hook.
+    },
+  },
+
+  // Vitest unit tests — use recommended vitest linting
+  {
+    files: ["tests/**/*.test.ts", "tests/**/*.test.tsx", "tests/**/*.dom.test.ts", "performance/**/*.ts"],
+    plugins: {
+      vitest,
+    },
+    rules: {
+      ...vitest.configs.recommended.rules,
+      "vitest/no-conditional-expect": "off",
+      "vitest/expect-expect": "off",
+      "vitest/valid-expect": "off",
+      "vitest/no-interpolation-in-snapshots": "off",
+    },
+  },
+
+  // Intentionally conditional diagnostic suite — exempt from disabled-test enforcement
+  {
+    files: ["tests/e2e/**/*.ts", "tests/helpers/diagnostics/**/*.{ts,tsx}"],
+    rules: {
+      "vitest/no-disabled-tests": "off",
+    },
+  },
+
+  // Playwright specs/fixtures/pages — not React, disable hook rules there only
+  {
+    files: ["tests/**/*.spec.ts", "tests/pages/**/*.ts", "tests/fixtures/**/*.ts"],
+    rules: {
       "react-hooks/rules-of-hooks": "off",
-      "no-restricted-syntax": restrictedSyntax(...TESTS_NO_ONLY_SELECTORS),
+      "react-hooks/exhaustive-deps": "off",
+    },
+  },
+
+  // jsx-a11y semantic subset for application UI
+  {
+    files: ["src/**/*.tsx", "src/**/*.jsx"],
+    plugins: {
+      "jsx-a11y": jsxA11y,
+    },
+    rules: {
+      "jsx-a11y/alt-text": "error",
+      "jsx-a11y/aria-props": "error",
+      "jsx-a11y/aria-role": ["error", { ignoreNonDOM: true }],
+      "jsx-a11y/aria-unsupported-elements": "error",
+      "jsx-a11y/role-has-required-aria-props": "error",
+      "jsx-a11y/no-noninteractive-element-interactions": "error",
+      "jsx-a11y/interactive-supports-focus": "error",
+      "jsx-a11y/anchor-is-valid": "error",
+      "jsx-a11y/label-has-associated-control": "error",
+      "jsx-a11y/no-noninteractive-tabindex": "error",
+      "jsx-a11y/tabindex-no-positive": "error",
     },
   },
 
@@ -328,7 +362,6 @@ export default tseslint.config(
           message: "Unlock All is dev-only UI. Do not target it in e2e specs.",
         },
         ...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS,
-        ...TESTS_NO_ONLY_SELECTORS,
       ),
     },
   },
@@ -347,7 +380,7 @@ export default tseslint.config(
       "tests/electron-helpers.ts",
     ],
     rules: {
-      "no-restricted-syntax": restrictedSyntax(...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS, ...TESTS_NO_ONLY_SELECTORS),
+      "no-restricted-syntax": restrictedSyntax(...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS),
     },
   },
 
@@ -382,7 +415,6 @@ export default tseslint.config(
           message: "Do not call enableFastMode in animation-focused specs or performance scenarios.",
         },
         ...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS,
-        ...TESTS_NO_ONLY_SELECTORS,
       ),
     },
   },
@@ -421,8 +453,8 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": restrictedSyntax(
         ...BATTLE_NO_MATH_RANDOM,
-        BATTLE_NO_MATH_FLOOR,
-        BATTLE_NO_DIRECT_RNG,
+        ...BATTLE_NO_MATH_FLOOR,
+        ...BATTLE_NO_DIRECT_RNG,
         ...AGGREGATE_NO_DIRECT_MUTATION,
         ...NO_UNOWNED_CONTEXT_CREATION,
       ),
@@ -433,7 +465,7 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": restrictedSyntax(
         ...BATTLE_NO_MATH_RANDOM,
-        BATTLE_NO_MATH_FLOOR,
+        ...BATTLE_NO_MATH_FLOOR,
         ...AGGREGATE_NO_DIRECT_MUTATION,
         ...NO_UNOWNED_CONTEXT_CREATION,
       ),
@@ -444,8 +476,8 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": tsxSyntax(
         ...BATTLE_NO_MATH_RANDOM,
-        BATTLE_NO_MATH_FLOOR,
-        BATTLE_NO_DIRECT_RNG,
+        ...BATTLE_NO_MATH_FLOOR,
+        ...BATTLE_NO_DIRECT_RNG,
         ...AGGREGATE_NO_DIRECT_MUTATION,
         ...NO_UNOWNED_CONTEXT_CREATION,
       ),

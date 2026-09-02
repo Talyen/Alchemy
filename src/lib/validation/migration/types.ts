@@ -13,10 +13,7 @@ export function getRawVersion(parsed: unknown, key: string): number {
   return version;
 }
 
-export function migrateParkedRuns(
-  value: unknown,
-  migrateRun: (run: unknown) => unknown,
-): Record<string, unknown> | unknown {
+export function migrateParkedRuns(value: unknown, migrateRun: (run: unknown) => unknown): unknown {
   if (!isRecord(value)) return value;
   const next: Record<string, unknown> = {};
   for (const [mode, run] of Object.entries(value)) {

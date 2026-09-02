@@ -153,8 +153,7 @@ describe("useScreenTransitions navigation", () => {
       vi.advanceTimersByTime(NAVIGATION_DELAY_MS);
     });
 
-    expect(setScreen).toHaveBeenCalledOnce();
-    expect(setScreen).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER);
+    expect(setScreen).toHaveBeenCalledExactlyOnceWith(ROUTE_SCREENS.GAME_OVER);
     expect(leftoverCommit).not.toHaveBeenCalled();
   });
 });

@@ -28,7 +28,7 @@ export function defineHandler<K extends BattleCardEffectKind>(
 ): EffectHandler {
   return (state, card, effect, potionMult, combatTexts, context) => {
     if (effect.kind !== kind) {
-      throw new Error(`[Battle] handler mismatch: expected ${kind} got ${String(effect.kind)}`);
+      throw new Error(`[Battle] handler mismatch: expected ${kind} got ${effect.kind}`);
     }
     return fn(state, card, effect as Extract<BattleCardEffect, { kind: K }>, potionMult, combatTexts, context);
   };

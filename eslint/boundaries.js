@@ -52,7 +52,7 @@ export function cruiserPathFromGroups(groups) {
   return `^src/features/alchemy/${deep}/`;
 }
 
-export { LIB_NO_FEATURES, META_NO_RUN_LOOP, RUN_LOOP_NO_RUN_SETUP, RUN_SETUP_NO_RUN_LOOP };
+export { GAME_DATA_NO_BATTLE, LIB_NO_FEATURES, META_NO_RUN_LOOP, RUN_LOOP_NO_RUN_SETUP, RUN_SETUP_NO_RUN_LOOP };
 
 const BOUNDARY_TABLE = [
   {

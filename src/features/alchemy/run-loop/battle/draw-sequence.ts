@@ -74,7 +74,9 @@ export async function runHandDrawSequence(
     deps.setHiddenHandCardKeys(() => hiddenDrawKeys);
     applyState();
   });
-  await new Promise((resolve) => requestAnimationFrame(resolve));
+  await new Promise((resolve) => {
+    requestAnimationFrame(resolve);
+  });
   try {
     if (!isAnimationDisabled()) {
       await deps.animateDrawnHand(drawnCards, newState.hand, session);

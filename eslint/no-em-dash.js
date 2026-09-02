@@ -4,7 +4,6 @@ const EM_DASH = "\u2014";
 export const noEmDash = {
   meta: {
     type: "problem",
-    fixable: "code",
     docs: {
       description: "Ban em dashes (—) in player-facing strings. Rewrite without —.",
     },
@@ -19,10 +18,6 @@ export const noEmDash = {
         context.report({
           node,
           messageId: "unexpected",
-          fix(fixer) {
-            const raw = context.sourceCode.getText(node);
-            return fixer.replaceText(node, raw.replaceAll(EM_DASH, "-"));
-          },
         });
       }
     }

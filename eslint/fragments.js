@@ -87,6 +87,8 @@ export const GAME_DATA_NO_BATTLE = [
 export const LIB_NO_FRAMEWORK_PATHS = [
   { name: "react", message: "src/lib must stay React-free." },
   { name: "react-dom", message: "src/lib must stay React-free." },
+  { name: "react-dom/client", message: "src/lib must stay React-free." },
+  { name: "react-dom/server", message: "src/lib must stay React-free." },
   { name: "lucide-react", message: "src/lib must stay React-free. Map icon ids in features." },
 ];
 
@@ -258,27 +260,47 @@ export const UI_NO_SESSION_STORES = [
 /** @type {SyntaxSelector[]} */
 export const BATTLE_NO_MATH_RANDOM = [
   {
-    selector: 'CallExpression[callee.object.name="Math"][callee.property.name="random"]',
-    message: "Use state.rng or getBattleRng(state) instead of Math.random() in battle engine code.",
-  },
-  {
     selector: 'MemberExpression[object.name="Math"][property.name="random"]',
     message:
-      "Reference to Math.random is not allowed in the battle engine. Use state.rng or getBattleRng(state) for seeded combat RNG; placeholderRng from ./rng is only for UI-default battle snapshots.",
+      "Reference to Math.random is not allowed in the battle engine. Use getBattleRng(state) for seeded combat RNG; placeholderRng from ./rng is only for UI-default battle snapshots.",
   },
 ];
 
-/** @type {SyntaxSelector} */
-export const BATTLE_NO_MATH_FLOOR = {
-  selector: 'CallExpression[callee.object.name="Math"][callee.property.name="floor"]',
-  message: "Use Math.round() instead of Math.floor() in battle engine code.",
-};
+/** @type {SyntaxSelector[]} */
+export const BATTLE_NO_MATH_FLOOR = [
+  {
+    selector: 'CallExpression[callee.object.name="Math"][callee.property.name="floor"]',
+    message: "Use Math.round() instead of Math.floor() in battle engine code.",
+  },
+  {
+    selector: 'CallExpression[callee.object.name="Math"][callee.property.name="ceil"]',
+    message: "Use Math.round() instead of Math.ceil() in battle engine code.",
+  },
+  {
+    selector: 'CallExpression[callee.object.name="Math"][callee.property.name="trunc"]',
+    message: "Use Math.round() instead of Math.trunc() in battle engine code.",
+  },
+];
 
-/** @type {SyntaxSelector} */
-export const BATTLE_NO_DIRECT_RNG = {
-  selector: 'MemberExpression[object.name="state"][property.name="rng"]',
-  message: "Use getBattleRng(state) instead of state.rng in battle engine code.",
-};
+/** @type {SyntaxSelector[]} */
+export const BATTLE_NO_DIRECT_RNG = [
+  {
+    selector: 'MemberExpression[property.name="rng"]',
+    message: "Use getBattleRng(state) instead of direct .rng access in battle engine code.",
+  },
+  {
+    selector: 'MemberExpression[property.value="rng"]',
+    message: "Use getBattleRng(state) instead of direct .rng access in battle engine code.",
+  },
+  {
+    selector: 'ObjectPattern Property[key.name="rng"]',
+    message: "Use getBattleRng(state) instead of destructuring .rng in battle engine code.",
+  },
+  {
+    selector: 'ObjectPattern Property[key.value="rng"]',
+    message: "Use getBattleRng(state) instead of destructuring .rng in battle engine code.",
+  },
+];
 
 /** @type {SyntaxSelector[]} */
 export const AGGREGATE_NO_DIRECT_MUTATION = [
@@ -313,11 +335,7 @@ export const GEAR_NO_OUTER_DISPATCH = [
 /** @type {SyntaxSelector[]} */
 export const CLASSNAME_NO_TEMPLATE = [
   {
-    selector: 'JSXAttribute[name.name="className"][value.type="TemplateLiteral"]',
-    message: "Use cn() from @/lib/utils for class names instead of template literals.",
-  },
-  {
-    selector: 'JSXAttribute[name.name="className"][value.type="JSXExpressionContainer"] TemplateLiteral',
+    selector: 'JSXAttribute[name.name="className"] > JSXExpressionContainer > TemplateLiteral',
     message: "Use cn() from @/lib/utils for class names instead of template literals.",
   },
 ];
@@ -355,36 +373,6 @@ export const ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS = Object.entries(ASSET_BARRE
   }),
 );
 
-/** Ban .only and focused tests on test suites so CI never silently skips tests. */
-export const TESTS_NO_ONLY_SELECTORS = [
-  {
-    selector: 'CallExpression[callee.property.name="only"][callee.object.name=/(describe|it|test|suite)/]',
-    message: "Do not commit .only in tests; keep all tests active.",
-  },
-  {
-    selector:
-      'CallExpression[callee.property.name="only"][callee.object.property.name=/(describe|it|test|suite|concurrent|serial)/]',
-    message: "Do not commit .only in tests; keep all tests active.",
-  },
-  {
-    selector: 'MemberExpression[property.name="only"][object.name=/(describe|it|test|suite)/]',
-    message: "Do not commit .only in tests; keep all tests active.",
-  },
-  {
-    selector:
-      'MemberExpression[property.name="only"][object.property.name=/(describe|it|test|suite|concurrent|serial)/]',
-    message: "Do not commit .only in tests; keep all tests active.",
-  },
-  {
-    selector: 'CallExpression[callee.name="fit"]',
-    message: "Do not commit fit in tests; keep all tests active.",
-  },
-  {
-    selector: 'CallExpression[callee.name="fdescribe"]',
-    message: "Do not commit fdescribe in tests; keep all tests active.",
-  },
-];
-
 /** Banned creation of React contexts outside designated provider seams. */
 export const NO_UNOWNED_CONTEXT_CREATION = [
   {
@@ -394,6 +382,11 @@ export const NO_UNOWNED_CONTEXT_CREATION = [
   },
   {
     selector: 'CallExpression[callee.object.name="React"][callee.property.name="createContext"]',
+    message:
+      "Do not create React Contexts here. Allowed providers are AppScreenChromeProvider and CardDescriptionProvider; pass controllers via route/shell props.",
+  },
+  {
+    selector: 'ImportDeclaration[source.value="react"] ImportSpecifier[imported.name="createContext"]',
     message:
       "Do not create React Contexts here. Allowed providers are AppScreenChromeProvider and CardDescriptionProvider; pass controllers via route/shell props.",
   },

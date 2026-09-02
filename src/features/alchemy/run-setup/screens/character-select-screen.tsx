@@ -54,8 +54,7 @@ function CharacterCard({
   isLocked: boolean;
   unlockRequirementText: string;
 }) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
-    useHoverVisible<HTMLDivElement>();
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
   const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard("character-select", id);
   const char = characters[id];
   const art = characterArt[char.id];

@@ -10,7 +10,9 @@ describe("useArmoryTargetingEvents", () => {
 
   async function flushTargetingListeners() {
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
     });
   }
   it("calls clearTargeting on Escape when salvageMode is active", async () => {

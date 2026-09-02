@@ -83,7 +83,7 @@ function DifficultyCard({
   const fullDescription = description + (bonusLine ? "\n" + bonusLine : "");
   const showUnlockedArt = !locked;
   const diffArt = DIFFICULTY_ART[difficultyId] ?? difficultyArt["difficulty-3"]!;
-  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
+  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible();
   const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard("difficulty-select", difficultyId);
 
   return (

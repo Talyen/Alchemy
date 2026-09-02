@@ -51,7 +51,7 @@ describe("smoke preview process lifecycle", () => {
   it("fails immediately when the child exits before readiness", async () => {
     const child = new FakeChildProcess();
     const watcher = watchChildProcess(child.asChildProcess());
-    const neverReady = new Promise<Response>(() => undefined);
+    const neverReady = new Promise<Response>(() => {});
 
     queueMicrotask(() => child.emit("exit", 2, null));
 
@@ -67,7 +67,7 @@ describe("smoke preview process lifecycle", () => {
 
     queueMicrotask(() => child.emit("error", spawnError));
 
-    await expect(waitForProcessReady(new Promise(() => undefined), watcher, "vite preview")).rejects.toBe(spawnError);
+    await expect(waitForProcessReady(new Promise(() => {}), watcher, "vite preview")).rejects.toBe(spawnError);
   });
 
   it("stops gracefully when SIGTERM exits the child", async () => {

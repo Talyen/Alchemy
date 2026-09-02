@@ -151,6 +151,7 @@ export function Surface(props: SurfaceProps) {
       {...(disabled ? { "aria-disabled": "true" } : {})}
       onClick={onDivClick}
       onKeyDown={handleDivKeyDown(onDivClick)}
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Surface renders as interactive button when onDivClick is set, with role and keyboard handling
       tabIndex={onDivClick ? 0 : undefined}
       role={onDivClick ? "button" : undefined}
       aria-label={onDivClick ? ariaLabel : undefined}

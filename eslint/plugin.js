@@ -1,8 +1,6 @@
 import { noComments } from "./no-comments.js";
-import { noDependencyGraphComments } from "./no-dependency-graph-comments.js";
 import { noEmDash } from "./no-em-dash.js";
 import { noLibFetch } from "./no-lib-fetch.js";
-import { noRenderMathRandom } from "./no-render-math-random.js";
 import { noRunEarnedAddMaterials } from "./no-run-earned-add-materials.js";
 import { noUnownedWebStorage } from "./no-unowned-web-storage.js";
 
@@ -10,10 +8,8 @@ import { noUnownedWebStorage } from "./no-unowned-web-storage.js";
 export const alchemyPlugin = {
   rules: {
     "no-comments": noComments,
-    "no-dependency-graph-comments": noDependencyGraphComments,
     "no-em-dash": noEmDash,
     "no-lib-fetch": noLibFetch,
-    "no-render-math-random": noRenderMathRandom,
     "no-run-earned-add-materials": noRunEarnedAddMaterials,
     "no-unowned-web-storage": noUnownedWebStorage,
   },

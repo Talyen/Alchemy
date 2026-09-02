@@ -60,7 +60,9 @@ async function watchRelease({ label, tag }) {
 
   let runId = null;
   for (let attempt = 0; attempt < 6; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 5_000));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 5_000);
+    });
     try {
       runId = capture("gh", [
         "run",

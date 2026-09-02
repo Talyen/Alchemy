@@ -97,7 +97,7 @@ export function useAlchemyRunController() {
 
   const handleBeginLabyrinth = useLabyrinthEntryGuard({
     contentSystemType,
-    activeRunData: Boolean(activeRunData),
+    activeRunData,
     hasActiveBattle,
     resetMap: labyrinth.resetMap,
     beginLabyrinth,

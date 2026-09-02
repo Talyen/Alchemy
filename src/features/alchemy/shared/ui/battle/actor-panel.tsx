@@ -100,7 +100,7 @@ export function ArtPanel({
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
-  const { triggerRef: artWrapperRef, visible: tooltipVisible, ...tooltipHandlers } = useHoverVisible<HTMLDivElement>();
+  const { triggerRef: artWrapperRef, visible: tooltipVisible, ...tooltipHandlers } = useHoverVisible();
 
   const resolvedCardWidthClass =
     cardWidthClass ?? (side === "enemy" ? battleEnemyCardWidthClass : battleCardWidthClass);

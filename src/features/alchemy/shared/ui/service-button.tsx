@@ -17,7 +17,7 @@ export function DisabledTooltip({
   message: ReactNode;
   children: ReactNode;
 }) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible<HTMLDivElement>();
+  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible();
 
   return (
     <div ref={triggerRef} className="relative" {...(show ? { onMouseEnter, onMouseLeave } : {})}>

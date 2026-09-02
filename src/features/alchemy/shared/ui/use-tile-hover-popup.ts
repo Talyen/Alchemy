@@ -12,7 +12,7 @@ export function useTileHoverPopup({
   onHoverStart: () => void;
   onHoverEnd: () => void;
 }) {
-  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useHoverVisible<HTMLDivElement>({
+  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useHoverVisible({
     holdMs: TOOLTIP_FADE_OUT_MS,
     focusWithinGuard: true,
     interactive,

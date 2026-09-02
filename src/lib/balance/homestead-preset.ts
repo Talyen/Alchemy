@@ -41,8 +41,8 @@ const TYPICAL_HOMESTEAD_STARS: Record<TalentPreset, number> = {
   late: 2,
 };
 
-function filledTierRecord<T extends { id: string; tiers: readonly unknown[] }>(
-  items: readonly T[],
+function filledTierRecord(
+  items: ReadonlyArray<{ id: string; tiers: readonly unknown[] }>,
   stars: number,
 ): Record<string, number> {
   const record: Record<string, number> = {};

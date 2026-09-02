@@ -88,48 +88,7 @@ describe("alchemy ESLint plugin", () => {
     expect(banned.length).toBeGreaterThan(0);
   });
 
-  it("allows Math.random inside useState/useCallback and bans render-time calls", async () => {
-    const banned = await lintRule(
-      "src/features/alchemy/meta/screens/menu-screen.tsx",
-      `export function Logo() { const n = Math.random(); return n; }\n`,
-      "no-render-math-random",
-      { jsx: true },
-    );
-    expect(banned.length).toBeGreaterThan(0);
-
-    const bannedEagerUseState = await lintRule(
-      "src/features/alchemy/meta/screens/menu-screen.tsx",
-      `import { useState } from "react";\nexport function Logo() { const [n] = useState(Math.random()); return n; }\n`,
-      "no-render-math-random",
-      { jsx: true },
-    );
-    expect(bannedEagerUseState.length).toBeGreaterThan(0);
-
-    const allowed = await lintRule(
-      "src/app/startup-loading-screen.tsx",
-      `import { useState } from "react";\nexport function Screen() { const [n] = useState(() => Math.random()); return n; }\n`,
-      "no-render-math-random",
-      { jsx: true },
-    );
-    expect(allowed).toEqual([]);
-  });
-
-  it("bans import/consumer graph comments", async () => {
-    const banned = await lintRule(
-      "src/lib/battle/card-play.ts",
-      `// Depends on: effect-handlers.\nexport function ping() {}\n`,
-      "no-dependency-graph-comments",
-    );
-    expect(banned.length).toBeGreaterThan(0);
-    const allowed = await lintRule(
-      "src/lib/battle/card-play.ts",
-      `// Leaf-module imports only, so this file stays import-cycle-free.\nexport function ping() {}\n`,
-      "no-dependency-graph-comments",
-    );
-    expect(allowed).toEqual([]);
-  });
-
-  it("bans em dashes across string literals, template elements, and JSX text, and auto-fixes them", async () => {
+  it("bans em dashes across string literals, template elements, and JSX text", async () => {
     const bannedLiteral = await lintRule(
       "src/lib/mystery/events.ts",
       `export const text = "Rewards \u2014 Choose one";\n`,
@@ -152,12 +111,12 @@ describe("alchemy ESLint plugin", () => {
     );
     expect(bannedJsx.length).toBeGreaterThan(0);
 
-    const fixed = await fixRule(
+    const notFixed = await fixRule(
       "src/lib/mystery/events.ts",
       `export const text = "Rewards \u2014 Choose one";\n`,
       "no-em-dash",
     );
-    expect(fixed).toBe(`export const text = "Rewards - Choose one";\n`);
+    expect(notFixed).toBe(`export const text = "Rewards \u2014 Choose one";\n`);
 
     const allowed = await lintRule(
       "src/lib/mystery/events.ts",
@@ -175,9 +134,23 @@ describe("alchemy ESLint plugin", () => {
     );
     expect(banned.length).toBeGreaterThan(0);
 
-    const allowedEslint = await lintRule(
+    const bannedEslintReasonMissing = await lintRule(
       "src/lib/battle/card-play.ts",
       `// eslint-disable-next-line @typescript-eslint/no-explicit-any\nexport const x: any = 1;\n`,
+      "no-comments",
+    );
+    expect(bannedEslintReasonMissing.length).toBeGreaterThan(0);
+
+    const bannedLoosePrefix = await lintRule(
+      "src/lib/battle/card-play.ts",
+      `// eslint something\n export const x = 1;\n`,
+      "no-comments",
+    );
+    expect(bannedLoosePrefix.length).toBeGreaterThan(0);
+
+    const allowedEslint = await lintRule(
+      "src/lib/battle/card-play.ts",
+      `// eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentional any for test\nexport const x: any = 1;\n`,
       "no-comments",
     );
     expect(allowedEslint).toEqual([]);
@@ -202,5 +175,12 @@ describe("alchemy ESLint plugin", () => {
       "no-comments",
     );
     expect(allowedVite).toEqual([]);
+
+    const notFixed = await fixRule(
+      "src/lib/battle/card-play.ts",
+      `/* helper description */\nexport function ping() {}\n`,
+      "no-comments",
+    );
+    expect(notFixed).toBe(`/* helper description */\nexport function ping() {}\n`);
   });
 });

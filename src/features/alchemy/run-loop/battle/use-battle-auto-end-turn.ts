@@ -76,7 +76,7 @@ export function useBattleAutoEndTurn({
     ],
   );
 
-  // eslint-disable-next-line react-compiler/react-compiler, react-hooks/refs -- latest scheduler; not a render input
+  // eslint-disable-next-line react-hooks/refs -- latest scheduler; not a render input
   scheduleAutoEndTurnRef.current = scheduleAutoEndTurnRaw;
 
   const scheduleAutoEndTurn = useCallback(

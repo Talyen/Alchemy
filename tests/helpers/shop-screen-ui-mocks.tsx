@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- test mock helper exports */
 import type { ReactNode } from "react";
 import { vi } from "vitest";
 import type { BattleCard } from "@/lib/game-data";

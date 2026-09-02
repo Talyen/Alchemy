@@ -86,7 +86,7 @@ export function InteractiveArtTile({
       onMouseLeave={interactive ? handleMouseLeave : undefined}
     >
       {}
-      {/* eslint-disable-next-line react-hooks/refs */}
+      {/* eslint-disable-next-line react-hooks/refs -- popup trigger uses mutable ref provided by useTileHoverPopup */}
       {interactive && popup && showPopup ? popup({ visible: isHovered, triggerRef: wrapperRef }) : null}
       <Surface
         as={as}

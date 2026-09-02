@@ -25,7 +25,7 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
   const [mounted, setMounted] = useState(false);
 
   const visible = (() => {
-    const raw = isControlled ? Boolean(isHovered) : uncontrolledVisible;
+    const raw = isControlled ? (isHovered ?? false) : uncontrolledVisible;
     if (interactive === false) return false;
     return raw;
   })();

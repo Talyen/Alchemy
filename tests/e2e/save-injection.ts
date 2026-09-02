@@ -88,7 +88,9 @@ async function waitForDesktopSaveCandidate(page: Page): Promise<void> {
       })
       .catch(() => false);
     if (hasCandidate) return;
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 25);
+    });
   }
 }
 

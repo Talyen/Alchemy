@@ -56,7 +56,7 @@ export function createRunRngState(rng: Rng = Math.random): RunRngState {
 export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { value: number; nextCounter: number } {
   const counter = state.counters[stream] ?? 0;
   if (!(stream in STREAM_SALTS)) {
-    if (import.meta.env.DEV) throw new Error(`Unknown run RNG stream: ${String(stream)}`);
+    if (import.meta.env.DEV) throw new Error(`Unknown run RNG stream: ${stream}`);
     return { value: 0, nextCounter: counter + 1 };
   }
   const value = mixUint32(state.seed ^ STREAM_SALTS[stream] ^ Math.imul(counter + 1, 0x85eb_ca6b)) / UINT32_RANGE;

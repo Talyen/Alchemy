@@ -49,7 +49,7 @@ export interface DriveAutoplayDeps {
 async function waitForAutoplayRetry(
   delayMs: number,
   signal: AbortSignal,
-  wakeRef?: { current: (() => void) | null } | undefined,
+  wakeRef?: { current: (() => void) | null },
 ): Promise<void> {
   if (signal.aborted) return;
   if (delayMs <= 0) {
