@@ -72,23 +72,23 @@ describe("formatLargeAmount", () => {
 
 describe("shuffle", () => {
   it("returns all items", () => {
-    const result = shuffle([1, 2, 3, 4]);
+    const result = shuffle([1, 2, 3, 4], () => 0.5);
     expect(result).toHaveLength(4);
     expect(result.sort()).toEqual([1, 2, 3, 4]);
   });
 
   it("does not mutate the original array", () => {
     const input = [1, 2, 3];
-    shuffle(input);
+    shuffle(input, () => 0.5);
     expect(input).toEqual([1, 2, 3]);
   });
 
   it("handles empty array", () => {
-    expect(shuffle([])).toEqual([]);
+    expect(shuffle([], () => 0.5)).toEqual([]);
   });
 
   it("handles single element", () => {
-    expect(shuffle([42])).toEqual([42]);
+    expect(shuffle([42], () => 0.5)).toEqual([42]);
   });
 });
 
@@ -113,24 +113,22 @@ describe("sampleItems", () => {
 
 describe("pickRandom", () => {
   it("returns the item at the selected index", () => {
-    vi.spyOn(Math, "random").mockReturnValueOnce(0);
-    expect(pickRandom([10, 20, 30])).toBe(10);
-    vi.spyOn(Math, "random").mockReturnValueOnce(0.5);
-    expect(pickRandom([10, 20, 30])).toBe(20);
+    expect(pickRandom([10, 20, 30], () => 0)).toBe(10);
+    expect(pickRandom([10, 20, 30], () => 0.5)).toBe(20);
   });
 
   it("returns undefined for empty array", () => {
-    expect(pickRandom([])).toBeUndefined();
+    expect(pickRandom([], () => 0.5)).toBeUndefined();
   });
 
   it("returns the only element for single-element array", () => {
-    expect(pickRandom([7])).toBe(7);
+    expect(pickRandom([7], () => 0.5)).toBe(7);
   });
 });
 
 describe("takeRandomItem", () => {
   it("returns undefined for empty array", () => {
-    expect(takeRandomItem([])).toBeUndefined();
+    expect(takeRandomItem([], () => 0.5)).toBeUndefined();
   });
 
   it("removes and returns an item from the array", () => {

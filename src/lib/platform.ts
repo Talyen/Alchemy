@@ -1,3 +1,4 @@
+import { getDesktopApi, isDesktopApiAvailable } from "./desktop-api";
 import type { DisplayMode } from "./settings-values";
 
 export type { DisplayMode } from "./settings-values";
@@ -7,24 +8,20 @@ export interface SteamInitialization {
   cloudSyncEnabled: boolean;
 }
 
-function desktopApi(): Window["alchemyDesktop"] | undefined {
-  return window.alchemyDesktop;
-}
-
 export function isDesktop(): boolean {
-  return desktopApi()?.isDesktop === true;
+  return isDesktopApiAvailable();
 }
 
 export function setDisplayMode(mode: DisplayMode): Promise<void> {
-  return desktopApi()?.setDisplayMode(mode) ?? Promise.resolve();
+  return getDesktopApi()?.setDisplayMode(mode) ?? Promise.resolve();
 }
 
 export function quitDesktopApp(): void {
-  void desktopApi()?.quit();
+  void getDesktopApi()?.quit();
 }
 
 export async function initializeSteam(): Promise<SteamInitialization> {
-  const getPlayerName = desktopApi()?.steamGetName;
+  const getPlayerName = getDesktopApi()?.steamGetName;
   if (!getPlayerName) return { playerName: null, cloudSyncEnabled: false };
 
   try {
@@ -39,5 +36,5 @@ export async function initializeSteam(): Promise<SteamInitialization> {
 }
 
 export function setSteamRichPresence(key: string, value: string): Promise<boolean> {
-  return desktopApi()?.steamSetRichPresence?.(key, value) ?? Promise.resolve(false);
+  return getDesktopApi()?.steamSetRichPresence?.(key, value) ?? Promise.resolve(false);
 }

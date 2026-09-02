@@ -14,10 +14,15 @@ import { validateTypography } from "./validators-typography";
 
 export type { ContentValidationArea } from "./types";
 
+const SEVERITY_RANK: Record<ContentValidationIssue["severity"], number> = {
+  error: 0,
+  warning: 1,
+};
+
 function sortIssues(issues: ContentValidationIssue[]): ContentValidationIssue[] {
   return [...issues].sort(
     (a, b) =>
-      a.severity.localeCompare(b.severity) ||
+      (SEVERITY_RANK[a.severity] ?? 99) - (SEVERITY_RANK[b.severity] ?? 99) ||
       a.area.localeCompare(b.area) ||
       a.id.localeCompare(b.id) ||
       a.message.localeCompare(b.message),

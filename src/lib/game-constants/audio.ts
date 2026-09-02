@@ -1,4 +1,5 @@
 export const MUSIC_BASE_PATH = "Music/";
+export const SOUNDS_BASE_PATH = "sounds/";
 
 export const MUSIC_KEYS = {
   MENU: "menu",

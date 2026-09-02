@@ -1,11 +1,12 @@
+import { getDesktopApi, isDesktopApiAvailable } from "./desktop-api";
+
 type SaveBackendReadResult = { ok: true; candidates: string[] } | { ok: false; error: unknown };
 type SaveBackendWriteResult = { ok: true } | { ok: false; error: unknown };
 
 export interface SaveBackend {
   readCandidates(key: string): Promise<SaveBackendReadResult>;
   write(key: string, value: string): Promise<SaveBackendWriteResult>;
-
-  writeSync?(key: string, value: string): SaveBackendWriteResult | null;
+  writeSync(key: string, value: string): SaveBackendWriteResult | null;
   clear(key: string): Promise<SaveBackendWriteResult>;
 }
 
@@ -13,16 +14,12 @@ interface PlatformSaveBackendOptions {
   cloudSyncEnabled?: boolean;
 }
 
-function desktopApi(): Window["alchemyDesktop"] | undefined {
-  return window.alchemyDesktop;
-}
-
 export function uniqueCandidates(candidates: string[]): string[] {
   return Array.from(new Set(candidates));
 }
 
 async function readDesktopCandidates(): Promise<string[]> {
-  const desktop = desktopApi();
+  const desktop = getDesktopApi();
   if (!desktop) return [];
 
   let localCandidates: string[] = [];
@@ -45,8 +42,7 @@ async function readDesktopCandidates(): Promise<string[]> {
 export function createPlatformSaveBackend({ cloudSyncEnabled = false }: PlatformSaveBackendOptions = {}): SaveBackend {
   return {
     async readCandidates(key) {
-      const desktop = desktopApi();
-      if (desktop?.isDesktop) {
+      if (isDesktopApiAvailable()) {
         return { ok: true, candidates: await readDesktopCandidates() };
       }
 
@@ -59,8 +55,9 @@ export function createPlatformSaveBackend({ cloudSyncEnabled = false }: Platform
     },
 
     async write(key, value) {
-      const desktop = desktopApi();
-      if (desktop?.isDesktop) {
+      if (isDesktopApiAvailable()) {
+        const desktop = getDesktopApi();
+        if (!desktop) return { ok: false, error: new Error("Desktop API unavailable") };
         try {
           const localWritten = await desktop.writeSave(value);
           if (!localWritten) {
@@ -89,8 +86,7 @@ export function createPlatformSaveBackend({ cloudSyncEnabled = false }: Platform
     },
 
     writeSync(key, value) {
-      const desktop = desktopApi();
-      if (desktop?.isDesktop) return null;
+      if (isDesktopApiAvailable()) return null;
 
       try {
         window.localStorage.setItem(key, value);
@@ -101,8 +97,9 @@ export function createPlatformSaveBackend({ cloudSyncEnabled = false }: Platform
     },
 
     async clear(key) {
-      const desktop = desktopApi();
-      if (desktop?.isDesktop) {
+      if (isDesktopApiAvailable()) {
+        const desktop = getDesktopApi();
+        if (!desktop) return { ok: false, error: new Error("Desktop API unavailable") };
         try {
           if (cloudSyncEnabled) {
             const cloudCleared = (await desktop.steamCloudDelete?.()) ?? false;

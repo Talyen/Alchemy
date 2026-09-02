@@ -1,4 +1,4 @@
-import { clamp, lerp, pickRandom } from "../utils";
+import { clamp, lerp, pickRandomUnsafe } from "../utils";
 
 export type ParticleVariant = "embers" | "dust" | "hand_glow";
 
@@ -74,7 +74,7 @@ function resolveParticleBackingScale(width: number, height: number, requestedSca
 
 function spawnParticle(width: number, height: number, config: BackgroundParticleConfig): BackgroundParticle {
   const alpha = lerp(config.minAlpha, config.maxAlpha, Math.random());
-  const rawColor = pickRandom(config.colors);
+  const rawColor = pickRandomUnsafe(config.colors);
   const y = config.spawnBottomWeight
     ? height - Math.random() * height * (1 - config.spawnBottomWeight)
     : Math.random() * height;

@@ -1,4 +1,5 @@
 import { IMAGE_PRELOAD_BATCH_SIZE, IMAGE_PRELOAD_TIMEOUT_MS } from "./game-constants";
+import { batchedPreload, yieldToAnimationFrame } from "./preload/batched";
 
 interface ImageLoadEntry {
   token: object;
@@ -67,32 +68,20 @@ export async function preloadImagesInBatches(
   onProgress?: (loaded: number, total: number) => void,
 ): Promise<void> {
   const uniqueSrcs = Array.from(new Set(srcs.filter(Boolean)));
-  const resolvedBatchSize = Math.max(1, Math.floor(batchSize));
   const total = uniqueSrcs.length;
   let loaded = 0;
   onProgress?.(loaded, total);
 
-  for (let index = 0; index < uniqueSrcs.length; index += resolvedBatchSize) {
-    const batch = uniqueSrcs.slice(index, index + resolvedBatchSize);
-    await Promise.all(
-      batch.map(async (src) => {
-        await preloadImage(src);
-        loaded += 1;
-        onProgress?.(loaded, total);
-      }),
-    );
-    if (index + resolvedBatchSize < uniqueSrcs.length) {
-      await yieldToBrowser();
-    }
-  }
-}
-
-function yieldToBrowser(): Promise<void> {
-  return new Promise((resolve) => {
-    if (typeof requestAnimationFrame === "function") {
-      requestAnimationFrame(() => resolve());
-      return;
-    }
-    globalThis.setTimeout(resolve, 0);
-  });
+  await batchedPreload(
+    uniqueSrcs,
+    async (src) => {
+      await preloadImage(src);
+      loaded += 1;
+      onProgress?.(loaded, total);
+    },
+    {
+      batchSize: Math.max(1, Math.floor(batchSize)),
+      yieldBetweenBatches: yieldToAnimationFrame,
+    },
+  );
 }

@@ -1,3 +1,5 @@
+import { isDesktopApiAvailable } from "./desktop-api";
+
 export function isNonPlayerAudioHost(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;
 
@@ -17,5 +19,5 @@ export function isNonPlayerAudioHost(): boolean {
     return true;
   }
 
-  return navigator.userAgent.includes("Electron") && window.alchemyDesktop?.isDesktop !== true;
+  return navigator.userAgent.includes("Electron") && !isDesktopApiAvailable();
 }

@@ -1,7 +1,8 @@
 import { allRegisteredSoundFiles, battleEventSounds, cardSounds, enemyAttackSounds, uiSounds } from "./sound-registry";
+import { scheduleIdle } from "./preload/batched";
+import { SOUNDS_BASE_PATH } from "./game-constants";
 
 const SOUND_PRELOAD_CONFIG = {
-  SOUNDS_BASE_PATH: "sounds/",
   IDLE_CALLBACK_TIMEOUT_MS: 5000,
   PRELOAD_BATCH_SIZE: 4,
 } as const;
@@ -25,7 +26,7 @@ function browserCanPlayOggVorbis(): boolean {
 export function getSoundUrl(name: string): string {
   const baseUrl = import.meta.env.BASE_URL ?? "/";
   const prefix = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-  return `${prefix}${SOUND_PRELOAD_CONFIG.SOUNDS_BASE_PATH}${playableSoundFileName(name)}`;
+  return `${prefix}${SOUNDS_BASE_PATH}${playableSoundFileName(name)}`;
 }
 
 export function resetSoundPreloadCache() {
@@ -61,9 +62,7 @@ export function preloadBattleSounds(cardIds: readonly string[], enemyId: string)
 
 export function preloadAllSounds() {
   const names = allRegisteredSoundFiles();
-
   preloadSounds([...Object.values(uiSounds), battleEventSounds.drawTransfer]);
-
   preloadSoundsWhenIdle(names);
 }
 
@@ -74,35 +73,8 @@ function preloadSoundsWhenIdle(names: string[]) {
     if (index >= names.length) return;
     preloadSounds(names.slice(index, index + SOUND_PRELOAD_CONFIG.PRELOAD_BATCH_SIZE));
     index += SOUND_PRELOAD_CONFIG.PRELOAD_BATCH_SIZE;
-
-    if (index < names.length) {
-      schedulePreloadBatch(preloadNextBatch);
-    }
+    if (index < names.length) scheduleIdle(preloadNextBatch, SOUND_PRELOAD_CONFIG.IDLE_CALLBACK_TIMEOUT_MS);
   }
 
-  schedulePreloadBatch(preloadNextBatch);
-}
-
-function schedulePreloadBatch(callback: () => void, retries = 0) {
-  if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-    window.requestIdleCallback(
-      () => {
-        const nav =
-          typeof navigator !== "undefined"
-            ? (navigator as Navigator & { scheduling?: { isInputPending?: () => boolean } })
-            : undefined;
-        if (retries < 3 && nav?.scheduling?.isInputPending?.()) {
-          schedulePreloadBatch(callback, retries + 1);
-          return;
-        }
-        callback();
-      },
-      {
-        timeout: SOUND_PRELOAD_CONFIG.IDLE_CALLBACK_TIMEOUT_MS,
-      },
-    );
-    return;
-  }
-
-  globalThis.setTimeout(() => callback(), 0);
+  scheduleIdle(preloadNextBatch, SOUND_PRELOAD_CONFIG.IDLE_CALLBACK_TIMEOUT_MS);
 }

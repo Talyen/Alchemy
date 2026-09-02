@@ -277,18 +277,13 @@ export async function saveAlchemySaveData(data: SaveData) {
 export function saveAlchemySaveDataForExit(data: SaveData): void {
   if (typeof window === "undefined" || writesDisabledForSession || saveQueue.isClearPending) return;
 
-  if (!saveBackend.writeSync) {
-    if (saveQueue.hasPendingTasks) {
-      saveQueue.queueExitSnapshot(data);
-      return;
-    }
-    void saveAlchemySaveData(data);
-    return;
-  }
-
   try {
     const result = saveBackend.writeSync(SAVE_KEY, serializeSaveSnapshot(data));
     if (result === null) {
+      if (saveQueue.hasPendingTasks) {
+        saveQueue.queueExitSnapshot(data);
+        return;
+      }
       void saveAlchemySaveData(data);
       return;
     }

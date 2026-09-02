@@ -8,7 +8,7 @@ import {
 } from "./sound-registry";
 import { audioState } from "./audio-state";
 import { getSoundUrl } from "./audio-preload";
-import { clamp, pickRandom } from "./utils";
+import { clamp, pickRandomUnsafe } from "./utils";
 import {
   SFX_COOLDOWN_MS,
   SFX_DEFEAT_VOLUME,
@@ -108,7 +108,7 @@ function playBuffer(
 }
 
 export function playCardSound(cardId: string) {
-  const sound = pickRandom(cardSounds[cardId] ?? []);
+  const sound = pickRandomUnsafe(cardSounds[cardId] ?? []);
   if (!sound) return;
   playBuffer(sound);
 }
@@ -122,7 +122,7 @@ export function playGoldSpend() {
 }
 
 export function playEnemyAttack(enemyId: string) {
-  const sound = pickRandom(enemyAttackSounds[enemyId] ?? []);
+  const sound = pickRandomUnsafe(enemyAttackSounds[enemyId] ?? []);
   if (!sound) return;
   playBuffer(sound);
 }

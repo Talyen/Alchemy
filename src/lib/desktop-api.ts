@@ -14,3 +14,11 @@ export interface AlchemyDesktopApi {
   steamCloudWrite: (data: string) => Promise<boolean>;
   steamCloudDelete: () => Promise<boolean>;
 }
+
+export function getDesktopApi(): AlchemyDesktopApi | undefined {
+  return window.alchemyDesktop;
+}
+
+export function isDesktopApiAvailable(): boolean {
+  return getDesktopApi()?.isDesktop === true;
+}

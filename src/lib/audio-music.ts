@@ -8,7 +8,7 @@ import {
   MUSIC_KEYS,
 } from "./game-constants";
 import { audioState } from "./audio-state";
-import { clamp, pickRandom } from "./utils";
+import { clamp, pickRandomUnsafe } from "./utils";
 
 const musicBase = import.meta.env.BASE_URL + MUSIC_BASE_PATH;
 
@@ -140,8 +140,8 @@ export function applyMusicVolume(
   key: string | null = musicElementKeys.get(el) ?? audioState.currentMusicKey,
   fadeProgress?: number,
 ) {
-  if (fadeProgress !== undefined) musicElementFadeGains.set(el, fadeProgress);
-  const fadeGain = fadeProgress ?? musicElementFadeGains.get(el) ?? 1;
+  if (fadeProgress !== undefined) musicElementFadeGains.set(el, clamp(fadeProgress, 0, 1));
+  const fadeGain = clamp(fadeProgress ?? musicElementFadeGains.get(el) ?? 1, 0, 1);
   const boost = key && BOSS_MUSIC_KEYS.has(key) ? BOSS_MUSIC_VOLUME_BOOST : 1;
   el.volume = clamp(
     audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * fadeGain * boost,
@@ -170,7 +170,7 @@ function replaceCurrentTrack(key: string, fadeProgress: number): HTMLAudioElemen
   }
 
   const boss = bossMusic(key);
-  const track = pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? boss?.tracks ?? []);
+  const track = pickRandomUnsafe(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? boss?.tracks ?? []);
   if (!track) return undefined;
 
   const el = new Audio(musicBase + track);
