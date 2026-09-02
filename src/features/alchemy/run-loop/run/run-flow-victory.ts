@@ -22,8 +22,14 @@ import {
 import { getCompanionCardChoices, shouldGrantCompanionReward } from "../navigation/reward-flow";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import { emptyInventory } from "@/lib/homestead/inventory";
 
 export type { CommitVictoryRewardsDeps };
+
+function hasAnyPendingMaterial(materials: MaterialInventory): boolean {
+  return Object.values(materials).some((value) => value > 0);
+}
 
 export function commitVictoryRewards(
   draft: GameplayDraft,
@@ -31,9 +37,10 @@ export function commitVictoryRewards(
   deps: CommitVictoryRewardsDeps,
   rng: () => number,
 ): boolean {
-  if (deps.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.gems > 0) {
+  if (deps.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD && hasAnyPendingMaterial(deps.battleState.pendingMaterials)) {
     awardMaterialsDuringRun(draft, deps.battleState.pendingMaterials);
   }
+  draft.battle.battleState.pendingMaterials = { ...emptyInventory() };
 
   setGold(draft, result.persistedGold);
   if (result.maxHealthDelta > 0) {

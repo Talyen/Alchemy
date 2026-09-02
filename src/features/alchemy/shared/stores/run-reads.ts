@@ -18,7 +18,7 @@ import type { PermanentProgressFields } from "./run-state-init";
 import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
 import { readGameplayState, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 import { mostRecentResumableMode } from "./parked-runs";
-import type { ParkedRunsMap } from "./parked-runs";
+import type { ActiveRunData, ParkedRunsMap } from "@/lib/active-run-session";
 import type { RunDomainBattleState, RunSessionFields } from "./run-domain-types";
 import { selectAutosaveAllowed } from "./select-autosave-allowed";
 import { deepFreezeInDev } from "./store-utils";
@@ -81,6 +81,19 @@ export function readParkedRuns(): ParkedRunsMap {
   for (const [mode, rawRun] of Object.entries(parkedRuns)) {
     const run = rawRun as ParkedRunsMap[ContentSystemId];
     if (!run) continue;
+    const maybeRun = run as unknown as { activeCombat?: { battleState?: { rng?: unknown } } };
+    if (maybeRun.activeCombat?.battleState && typeof maybeRun.activeCombat.battleState.rng === "function") {
+      const { rng: _ignored, ...battleStateRest } = maybeRun.activeCombat.battleState as Record<string, unknown>;
+      const runWithoutRng: unknown = {
+        ...(run as unknown as Record<string, unknown>),
+        activeCombat: { ...maybeRun.activeCombat, battleState: battleStateRest },
+      };
+      snapshot[mode as ContentSystemId] = structuredClone(
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- unknown clone needs ActiveRunData bound
+        runWithoutRng as unknown as ActiveRunData,
+      );
+      continue;
+    }
     snapshot[mode as ContentSystemId] = structuredClone(run);
   }
   return snapshot;

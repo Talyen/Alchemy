@@ -14,8 +14,28 @@ export interface HandDrawSequenceDeps {
 }
 
 function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {
-  const oldUidSet = new Set(oldHand.map((c) => c.uid));
-  return newHand.filter((c) => !oldUidSet.has(c.uid));
+  const oldUidSet = new Set(oldHand.map((c) => c.uid).filter((uid): uid is number => uid !== undefined));
+  let oldUndefinedRemaining = oldHand.filter((c) => c.uid === undefined).length;
+  return newHand.filter((c) => {
+    if (c.uid !== undefined) return !oldUidSet.has(c.uid);
+    if (oldUndefinedRemaining > 0) {
+      oldUndefinedRemaining -= 1;
+      return false;
+    }
+    return true;
+  });
+}
+
+function getDrawnKeys(newHand: BattleCard[], drawnCards: BattleCard[]): Set<string> {
+  const drawnSet = new Set(drawnCards);
+  const keys = new Set<string>();
+  for (let index = 0; index < newHand.length; index++) {
+    const card = newHand[index];
+    if (card && drawnSet.has(card)) {
+      keys.add(getCardKey(card, index));
+    }
+  }
+  return keys;
 }
 
 export function hideNewlyDrawnHandCards(
@@ -26,7 +46,7 @@ export function hideNewlyDrawnHandCards(
   const drawnCards = detectNewHandCards(oldHand, newHand);
   if (drawnCards.length === 0) return;
   deps.setTransferInProgress(true);
-  const hiddenDrawKeys = new Set(drawnCards.map(getCardKey));
+  const hiddenDrawKeys = getDrawnKeys(newHand, drawnCards);
   deps.setHiddenHandCardKeys(() => hiddenDrawKeys);
 }
 
@@ -47,7 +67,7 @@ export async function runHandDrawSequence(
     });
     return false;
   }
-  const hiddenDrawKeys = new Set(drawnCards.map(getCardKey));
+  const hiddenDrawKeys = getDrawnKeys(newState.hand, drawnCards);
   deps.setTransferInProgress(true);
   markBattleStage("draw-start");
   deps.runIfSessionActive(session, () => {

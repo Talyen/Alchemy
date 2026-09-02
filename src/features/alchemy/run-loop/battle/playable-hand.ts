@@ -21,8 +21,10 @@ export function handHasPlayableCard(state: BattleState, options: CardPlayOptions
   return findFirstPlayableHandCard(state, options) !== null;
 }
 
-export function getHandCardKey(card: BattleCard): string {
-  return `${card.id}-${card.uid}`;
+export function getHandCardKey(card: BattleCard, index?: number): string {
+  if (card.uid !== undefined) return `${card.id}-${card.uid}`;
+  if (index !== undefined) return `${card.id}-no-uid-${index}`;
+  return `${card.id}-no-uid`;
 }
 
 export type HiddenHandCardKeys = readonly string[];
@@ -47,18 +49,24 @@ export function hiddenHandKeysEqual(a: HiddenHandCardKeys, b: HiddenHandCardKeys
 
 export function handHasHiddenCard(state: BattleState, hiddenHandCardKeys: HiddenHandCardKeys): boolean {
   if (hiddenHandCardKeys.length === 0) return false;
-  for (const card of state.hand) {
-    if (hiddenHandCardKeys.includes(getHandCardKey(card))) return true;
+  for (let index = 0; index < state.hand.length; index++) {
+    const card = state.hand[index];
+    if (!card) continue;
+    if (hiddenHandCardKeys.includes(getHandCardKey(card, index))) return true;
   }
   return false;
 }
 
 export function getPlayableHandCardKeys(battleState: BattleState): Set<string> {
-  return new Set(
-    battleState.hand
-      .filter((card, index) => canPlayCard(battleState, card, index, PLAYABLE_HAND_OPTIONS))
-      .map((card) => getHandCardKey(card)),
-  );
+  const keys: string[] = [];
+  for (let index = 0; index < battleState.hand.length; index++) {
+    const card = battleState.hand[index];
+    if (!card) continue;
+    if (canPlayCard(battleState, card, index, PLAYABLE_HAND_OPTIONS)) {
+      keys.push(getHandCardKey(card, index));
+    }
+  }
+  return new Set(keys);
 }
 
 export function getPlayableHandCardKeysExcludingHidden(

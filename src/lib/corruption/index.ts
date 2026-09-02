@@ -40,27 +40,30 @@ export function isSpecialCorruptionCard(card: Pick<BattleCard, "id">): boolean {
 
 export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
   const targets: CorruptionTarget[] = [];
-  const usedFieldKeys = new Set<string>();
+  const valueQueue = new Map<number, Array<{ effectIndex: number; field: CorruptibleNumericField }>>();
+  for (let idx = 0; idx < card.effects.length; idx += 1) {
+    const effect = card.effects[idx] as Record<string, unknown>;
+    for (const field of CORRUPTIBLE_NUMERIC_FIELDS) {
+      const value = effect[field];
+      if (typeof value !== "number" || !Number.isFinite(value)) continue;
+      if (!valueQueue.has(value)) valueQueue.set(value, []);
+      valueQueue.get(value)!.push({ effectIndex: idx, field });
+    }
+  }
+  const queueCursor = new Map<number, number>();
 
   card.descriptionLines.forEach((line, lineIndex) => {
     for (const match of line.matchAll(CORRUPTION_TEXT_PATTERNS.authoredNumber)) {
       const matchIndex = match.index;
       if (matchIndex === undefined) continue;
       const value = Number(match[0]);
-      let matched: { effectIndex: number; field: CorruptibleNumericField } | null = null;
-      for (let idx = 0; idx < card.effects.length; idx += 1) {
-        const effect = card.effects[idx] as Record<string, unknown>;
-        for (const field of CORRUPTIBLE_NUMERIC_FIELDS) {
-          if (effect[field] !== value) continue;
-          const key = `${idx}:${field}`;
-          if (usedFieldKeys.has(key)) continue;
-          matched = { effectIndex: idx, field };
-          break;
-        }
-        if (matched) break;
-      }
+      const queue = valueQueue.get(value);
+      if (!queue) continue;
+      const cursor = queueCursor.get(value) ?? 0;
+      if (cursor >= queue.length) continue;
+      const matched = queue[cursor];
       if (!matched) continue;
-      usedFieldKeys.add(`${matched.effectIndex}:${matched.field}`);
+      queueCursor.set(value, cursor + 1);
       targets.push({ lineIndex, matchIndex, value, effectIndex: matched.effectIndex, field: matched.field });
     }
   });
@@ -114,8 +117,17 @@ function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delt
   nextCard.descriptionLines[target.lineIndex] = nextLine;
   effect[target.field] = nextValue;
   nextCard.corrupted = true;
+  const deltaLen = String(nextValue).length - String(target.value).length;
+  const shiftedExisting =
+    deltaLen !== 0
+      ? (card.corruptedValuePositions ?? []).map((pos) =>
+          pos.lineIndex === target.lineIndex && pos.matchIndex > target.matchIndex
+            ? { ...pos, matchIndex: pos.matchIndex + deltaLen }
+            : pos,
+        )
+      : (card.corruptedValuePositions ?? []);
   nextCard.corruptedValuePositions = [
-    ...(card.corruptedValuePositions ?? []),
+    ...shiftedExisting,
     { lineIndex: target.lineIndex, matchIndex: target.matchIndex },
   ];
   return nextCard;

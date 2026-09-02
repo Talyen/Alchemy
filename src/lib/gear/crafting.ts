@@ -164,7 +164,9 @@ const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBe
       return baseItemId !== undefined && gearDefinitions[gearDefinitionId(baseItemId, "astral")] !== undefined;
     },
     apply: (item) => {
-      const baseItemId = gearDefinitions[item.definitionId]!.baseItemId;
+      const def = gearDefinitions[item.definitionId];
+      const baseItemId = def?.baseItemId;
+      if (baseItemId === undefined) return item;
       const nextDefId = gearDefinitionId(baseItemId, "astral");
       if (!gearDefinitions[nextDefId]) return item;
       return { ...item, definitionId: nextDefId, affixes: item.affixes.map(upgradeAffixValueToAstral) };
@@ -173,8 +175,8 @@ const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBe
   "severance-maw": {
     canApply: hasAnyAffix,
     apply: (item, rng) => {
-      const index = Math.floor(rng() * item.affixes.length);
       if (item.affixes.length === 0) return item;
+      const index = Math.floor(rng() * item.affixes.length);
       return { ...item, affixes: item.affixes.filter((_, affixIndex) => affixIndex !== index) };
     },
   },

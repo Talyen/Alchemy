@@ -5,28 +5,33 @@ export type SavedCard = BattleCard;
 
 const warnedHydrateIds = new Set<string>();
 
-function hydrateDescriptionLines(saved: SavedCard, libraryCard: BattleCard): string[] {
+function hydrateDescriptionLines(
+  saved: SavedCard,
+  libraryCard: BattleCard,
+): { lines: string[]; usedLibraryFallback: boolean } {
   const savedLines =
     Array.isArray(saved.descriptionLines) && saved.descriptionLines.length > 0 ? saved.descriptionLines : null;
   const libraryLines = libraryCard.descriptionLines;
-  if (!savedLines) return [...libraryLines];
-
-  if (saved.corrupted) return [...savedLines];
+  if (!savedLines) return { lines: [...libraryLines], usedLibraryFallback: true };
 
   const savedEffects = Array.isArray(saved.effects) ? saved.effects : [];
   const libraryEffects = libraryCard.effects;
-  if (savedEffects.length !== libraryEffects.length) {
+  const lengthMismatch = savedEffects.length !== libraryEffects.length;
+  if (lengthMismatch) {
     if (import.meta.env.DEV && !warnedHydrateIds.has(saved.id)) {
       warnedHydrateIds.add(saved.id);
       console.warn(
         `[hydrateCard] descriptionLines fallback for ${saved.id}: saved effects ${savedEffects.length} vs library ${libraryEffects.length}`,
       );
     }
-    return [...libraryLines];
+    return { lines: [...libraryLines], usedLibraryFallback: true };
   }
 
-  if (!savedLines.every((line) => typeof line === "string")) return [...libraryLines];
-  return [...savedLines];
+  if (saved.corrupted) return { lines: [...savedLines], usedLibraryFallback: false };
+
+  if (!savedLines.every((line) => typeof line === "string"))
+    return { lines: [...libraryLines], usedLibraryFallback: true };
+  return { lines: [...savedLines], usedLibraryFallback: false };
 }
 
 function cloneEffect(effect: BattleCard["effects"][number]): BattleCard["effects"][number] {
@@ -68,20 +73,22 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
     return savedCard;
   }
 
+  const { lines: descriptionLines, usedLibraryFallback } = hydrateDescriptionLines(savedCard, libraryCard);
   const corruptedValuePositions =
     Array.isArray(savedCard.corruptedValuePositions) && savedCard.corruptedValuePositions.length > 0
       ? savedCard.corruptedValuePositions
       : undefined;
+  const shouldKeepCorruptedPositions = Boolean(corruptedValuePositions) && !usedLibraryFallback;
 
   return {
     ...libraryCard,
-    descriptionLines: hydrateDescriptionLines(savedCard, libraryCard),
+    descriptionLines,
     effects: hydrateEffects(savedCard, libraryCard),
     cost: hydrateCost(savedCard, libraryCard),
     ...(pickOptionalField<boolean>(savedCard, "consume") !== undefined && { consume: savedCard.consume }),
     ...(pickOptionalField<boolean>(savedCard, "corrupted") !== undefined && { corrupted: savedCard.corrupted }),
     ...(pickOptionalField<string>(savedCard, "baseTitle") !== undefined && { baseTitle: savedCard.baseTitle }),
     ...(pickOptionalField<number>(savedCard, "uid") !== undefined && { uid: savedCard.uid }),
-    ...(corruptedValuePositions && { corruptedValuePositions }),
+    ...(shouldKeepCorruptedPositions && corruptedValuePositions && { corruptedValuePositions }),
   };
 }

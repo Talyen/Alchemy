@@ -69,7 +69,7 @@ export function createBattleCardPlay(
         cardTransferInProgress: presentation.cardTransferInProgress,
       }) &&
       canPlayCardInBattle(state, card, index, PLAYABLE_HAND_OPTIONS) &&
-      !presentation.hiddenHandCardKeys.includes(getHandCardKey(card))
+      !presentation.hiddenHandCardKeys.includes(getHandCardKey(card, index))
     );
   }
 
@@ -134,7 +134,7 @@ export function createBattleCardPlay(
     }
     animatePlayedCard(card, index, sourceRect, currentState.hand.length);
     playCardSound(card.id);
-    ctx.setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
+    ctx.setHoveredCardId((current) => (current === getHoverId("hand", getHandCardKey(card, index)) ? null : current));
 
     runDrawSequenceAndFinalize(
       currentState.hand,
@@ -156,7 +156,7 @@ export function createBattleCardPlay(
   }
 
   function handleAutoplayCard(card: BattleCard, index: number): boolean {
-    const element = ctx.handCardRefs.current[getHandCardKey(card)];
+    const element = ctx.handCardRefs.current[getHandCardKey(card, index)];
     const sourceRect = element ? getCardRect(element.getBoundingClientRect()) : { x: 0, y: 0, width: 0, height: 0 };
     return handlePlayCard(card, index, sourceRect, { silentReject: true });
   }

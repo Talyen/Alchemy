@@ -59,7 +59,7 @@ const HandCardItem = memo(function HandCardItem({
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   descriptionContext: CardDescriptionContext;
 }) {
-  const cardKey = getHandCardKey(card);
+  const cardKey = getHandCardKey(card, index);
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("hand", cardKey);
   const offset = index - (handLength - 1) / 2;
 
@@ -159,7 +159,7 @@ export function BattleHand({
   return (
     <div className={battleHandContainerClass}>
       {battleState.hand.map((card, index) => {
-        const cardKey = getHandCardKey(card);
+        const cardKey = getHandCardKey(card, index);
         return (
           <HandCardItem
             key={cardKey}

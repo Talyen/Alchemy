@@ -62,7 +62,7 @@ export async function animateDiscardedHand(cards: BattleCard[], session: number,
       return;
     }
     const card = cards[index]!;
-    const cardKey = getCardKey(card);
+    const cardKey = getCardKey(card, index);
     const sourceRect = deps.measureHandCard(cardKey);
     if (!sourceRect) continue;
     const targetRect = centeredRectForSize(discardPileRect, sourceRect.width, sourceRect.height);
@@ -101,8 +101,11 @@ export async function animateDrawnHand(
   }
   for (const card of cards) {
     if (!deps.isSessionActive(session)) return;
-    const index = allHandCards.findIndex((item) => item.uid === card.uid && item.id === card.id);
-    const cardKey = getCardKey(card);
+    const identityIndex = allHandCards.indexOf(card);
+    const fallbackIndex = allHandCards.findIndex((item) => item.uid === card.uid && item.id === card.id);
+    const resolvedIndex = identityIndex >= 0 ? identityIndex : fallbackIndex;
+    const safeIndex = resolvedIndex >= 0 ? resolvedIndex : 0;
+    const cardKey = getCardKey(card, resolvedIndex >= 0 ? resolvedIndex : undefined);
     const fallbackRect = centeredRectForSize(drawPileRect, drawPileRect.width, drawPileRect.height);
     const targetRect = await waitForStableHandCardRect(cardKey, fallbackRect, deps.stableHandCardDeps);
     if (!deps.isSessionActive(session)) return;
@@ -115,7 +118,7 @@ export async function animateDrawnHand(
         fromScale: drawPileRect.width / targetRect.width,
         toScale: 1,
         fromRotation: 0,
-        toRotation: (index - (allHandCards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
+        toRotation: (safeIndex - (allHandCards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
         rotateY: [...CARD_TRANSFER_CONFIG.drawFlipKeyframes],
         duration: CARD_TRANSFER_CONFIG.drawDurationSeconds / speedMul,
       },

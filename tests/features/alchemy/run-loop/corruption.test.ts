@@ -117,8 +117,8 @@ describe("card corruption", () => {
     expect(result.result?.originalCard.id).toBe("stab");
   });
 
-  it("transforms when random < 0.2 even with editable targets", () => {
-    const rng = makeRng([0.1, 0, 0, 0.9]);
+  it("transforms when random < 0.1 even with editable targets", () => {
+    const rng = makeRng([0.05, 0, 0, 0.9]);
     const slash = makeCard();
     const bash = makeCard({
       id: "bash",
@@ -137,7 +137,7 @@ describe("card corruption", () => {
   });
 
   it("preserves selectedCard uid when transformed", () => {
-    const rng = makeRng([0.1, 0, 0, 0.9]);
+    const rng = makeRng([0.05, 0, 0, 0.9]);
     const slash = makeCard({ uid: 42 });
     const bash = makeCard({
       id: "bash",
@@ -155,8 +155,8 @@ describe("card corruption", () => {
     expect(result.corruptedCard.uid).toBe(42);
   });
 
-  it("mutates directly when the transform roll reaches 0.2", () => {
-    const rng = makeRng([0.2, 0, 0.9]);
+  it("mutates directly when the transform roll reaches 0.1", () => {
+    const rng = makeRng([0.1, 0, 0.9]);
     const slash = makeCard();
     const bash = makeCard({
       id: "bash",
