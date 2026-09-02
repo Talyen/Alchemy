@@ -1,1 +1,1 @@
-export { applyCardEffects } from "./dispatch";
+export { applyCardEffects } from "./registry";

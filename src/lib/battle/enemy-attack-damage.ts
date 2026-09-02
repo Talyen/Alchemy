@@ -1,5 +1,5 @@
 import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { applyPlayerDamageStatuses, shouldBlockPreventStunBuildup } from "./status-player";
+import { applyPlayerDamageStatuses, applyPlayerStatusEffect, shouldBlockPreventStunBuildup } from "./status-player";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import {
@@ -11,12 +11,11 @@ import {
 } from "./types";
 import { BATTLE_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
 import { computeLeechHeal } from "./damage-rider-leech";
-import { getEnemyTraitSet, hasEnemyTrait, isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-rules";
-import { checkHealthThresholds } from "./player-health-thresholds";
+import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealPlayerTypedHit } from "./player-typed-hit";
-import { addEnemyMitigation, setFlag } from "./types/state-helpers";
+import { addEnemyMitigation, getEnemyTraitSet, hasEnemyTrait, setFlag } from "./types/state-helpers";
 
 function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   if (effect.damageType !== "physical") return effect.amount;
@@ -150,6 +149,39 @@ function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, dam
       forge: Math.max(0, state.enemyMitigation.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT),
     },
   };
+}
+
+export function checkHealthThresholds(
+  prevHealth: number,
+  nextHealth: number,
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+) {
+  let nextState = state;
+
+  function applyHealthThresholdStatBonus(
+    currentState: BattleState,
+    configs: { threshold: number; amount: number } | Array<{ threshold: number; amount: number }> | null,
+    stat: "block" | "armor",
+  ): BattleState {
+    const bonuses = configs == null ? [] : Array.isArray(configs) ? configs : [configs];
+    let next = currentState;
+    for (const config of bonuses) {
+      const thresholdHp = (state.playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
+      if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
+        next = applyPlayerStatusEffect(
+          next,
+          { kind: "player-status", status: stat, amount: config.amount },
+          combatTexts,
+        );
+      }
+    }
+    return next;
+  }
+
+  nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdBlock, "block");
+  nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdArmor, "armor");
+  return nextState;
 }
 
 function resolvePostDamageThresholds(

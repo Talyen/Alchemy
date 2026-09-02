@@ -1,11 +1,9 @@
-import { clampHealth, setFlag, type BattleState, type CombatTextEvent } from "./types";
-import { addGoldWithCombatText, mergeCombatText } from "./combat-text";
-import { applyLuckyCloverGold } from "./trinket-effects";
+import { damageEnemyHealth, hasEnemyTrait, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import { addGoldWithCombatText, mergeCombatText, payKillPayouts } from "./combat-text";
+import { applyLuckyCloverGold } from "./bonus-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
-import { payKillPayouts } from "./kill-payouts";
 import { getEnemyDamageMultiplier } from "./status-helpers";
-import { hasEnemyTrait } from "./enemy-turn-rules";
-import { applyCrowdControlTriggerBonuses } from "./talent-effects";
+import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { BATTLE_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
 
@@ -75,12 +73,8 @@ function applyStunUniqueGearEffects(
       );
       if (holyDamage > 0) {
         mergeCombatText(combatTexts ?? [], { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
-        const enemyWasAlive = nextState.enemyHealth > 0;
-        nextState = {
-          ...nextState,
-          enemyHealth: clampHealth(nextState.enemyHealth, -holyDamage, nextState.enemyMaxHealth),
-        };
-        nextState = payKillPayouts(nextState, enemyWasAlive, combatTexts ?? []);
+        const hit = damageEnemyHealth(nextState, holyDamage);
+        nextState = payKillPayouts(hit.state, hit.enemyWasAlive, combatTexts ?? []);
       }
     }
   }

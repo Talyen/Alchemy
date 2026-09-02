@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { parseActiveRun } from "@/lib/active-run-session";
 import { normalizeSaveData } from "../../../../helpers/parse-save-for-tests";
-import { defaultBattleState, repairPersistedBattleBoonManifest } from "@/lib/battle";
+import { defaultBattleState } from "@/lib/battle";
+import { repairPersistedTrinketManifest } from "@/lib/validation/normalize-persisted-battle-state";
 import { cardLibrary } from "@/lib/game-data";
 import { makeRunCandidate } from "../../../../fixtures/active-run";
 import { createMinimalLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
@@ -248,7 +249,7 @@ describe("parseActiveRun", () => {
 
     expect(parsedBattle!.trinketEffects.boneCharmHealOnKill).toBe(0);
     expect(
-      repairPersistedBattleBoonManifest(parsedBattle!, migrated.activeRun!.runBoons).trinketEffects.boneCharmHealOnKill,
+      repairPersistedTrinketManifest(parsedBattle!, migrated.activeRun!.runBoons).trinketEffects.boneCharmHealOnKill,
     ).toBe(3);
   });
 

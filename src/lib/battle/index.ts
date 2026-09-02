@@ -15,6 +15,5 @@ export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";
 export { endPlayerTurn, recoverLegacyEnemyPhase, type EndPlayerTurnResolution } from "./enemy-turn";
 export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
-export { repairPersistedBattleBoonManifest } from "./repair-persisted-trinket-manifest";
 export { getActiveCcKeyword, isPlayerCcControlled, type ActiveCcKeyword } from "./status-cc";
 export { getBattleCardPlayTarget } from "./card-play-target";

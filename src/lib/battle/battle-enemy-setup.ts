@@ -49,7 +49,7 @@ function buildScaledEnemy(enemy: BestiaryEntry, totalRoomsInRun = 0) {
 }
 
 function applyDifficultyAttackModifiers(effects: EnemyAttackEffect[], modifiers: DifficultyModifier[]) {
-  const dmgMul = modifiers.find((m) => m.kind === "enemy-damage-multiplier")?.amount ?? 1;
+  const dmgMul = modifierAmount(modifiers, "enemy-damage-multiplier", 1);
   const damageBonus = modifiers
     .filter((m) => m.kind === "increase-enemy-physical-damage" || m.kind === "increase-enemy-damage")
     .reduce((sum, m) => sum + m.amount, 0);
@@ -87,13 +87,18 @@ function isStartCompanionMod(mod: DifficultyModifier): mod is Extract<Difficulty
   return mod.kind === "start-companion";
 }
 
+function modifierAmount(modifiers: DifficultyModifier[], kind: DifficultyModifier["kind"], fallback = 0): number {
+  const found = modifiers.find((m) => m.kind === kind) as { amount?: number } | undefined;
+  return found?.amount ?? fallback;
+}
+
 function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: BestiaryEntry, roomMul: number) {
-  const startingArmor = modifiers.find((m) => m.kind === "enemy-starting-armor")?.amount ?? 0;
+  const startingArmor = modifierAmount(modifiers, "enemy-starting-armor");
   const traitStartingArmor = enemy.traits.some((t) => t.id === "living-armor")
     ? Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul)
     : 0;
-  const startBlock = modifiers.find((m) => m.kind === "start-block")?.amount ?? 0;
-  const manaBonus = modifiers.find((m) => m.kind === "start-max-mana")?.amount ?? 0;
+  const startBlock = modifierAmount(modifiers, "start-block");
+  const manaBonus = modifierAmount(modifiers, "start-max-mana");
   const companionMod = modifiers.find(isStartCompanionMod);
   const startCompanion = Boolean(companionMod);
   const startCompanionId = companionMod?.companionId ?? "wolf";
@@ -123,7 +128,7 @@ export function initializeEnemyState(
   const { startingArmor, startBlock, manaBonus, startCompanion, startCompanionId, startingEnemyBlock } =
     computeStartingStatuses(battleDiffs, battleEnemy, roomMul);
 
-  const hpMul = battleDiffs.find((m) => m.kind === "enemy-health-multiplier")?.amount ?? 1;
+  const hpMul = modifierAmount(battleDiffs, "enemy-health-multiplier", 1);
   const enemyMaxHealth = Math.round(scaledEnemyHealth * hpMul);
 
   return {

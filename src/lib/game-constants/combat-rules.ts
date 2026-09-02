@@ -83,6 +83,9 @@ export const BATTLE_CONFIG = {
 
 export const POISON_DECAY_PERCENT = 20;
 export const POISON_GAIN_AMOUNT = 1;
+export const BURN_BLEED_MIRROR_CHANCE = 20;
+export const STATUS_DECAY_THRESHOLD = 1;
+export const MIN_ARMOR_AMOUNT = 0;
 
 export const STATUS_CONFIG = {
   MIN_STACK_AMOUNT: 1,

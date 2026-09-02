@@ -7,9 +7,11 @@ import {
   clampHealth,
   applyPlayerHealing,
   isPlayerDefeated,
+  withPreservedFlags,
 } from "@/lib/battle/types";
 import type { PlayerStatusId, EnemyStatusId } from "@/lib/game-data";
 import { makeTestBattleState } from "../../fixtures/battle";
+import { defaultCombatFlags } from "../../fixtures/default-battle-state";
 
 describe("addPlayerStatus", () => {
   it("adds delta to the given player status", () => {
@@ -205,5 +207,44 @@ describe("isPlayerDefeated", () => {
 
   it("returns true when health <= 0 and Death's Door already expired", () => {
     expect(isPlayerDefeated({ playerHealth: 0, deathsDoorActive: false })).toBe(true);
+  });
+});
+
+describe("withPreservedFlags", () => {
+  it("restores cost/first-use flags mutated inside the callback", () => {
+    const state = makeTestBattleState({
+      flags: defaultCombatFlags({ nextCardCostReduction: 2 }),
+    });
+    const result = withPreservedFlags(state, (s) => ({
+      ...s,
+      flags: { ...s.flags, nextCardCostReduction: 0 },
+    }));
+    expect(result.flags.nextCardCostReduction).toBe(2);
+  });
+
+  it("forces non-card flags inactive during the callback so companions/pulses cannot consume them", () => {
+    const state = makeTestBattleState({
+      flags: defaultCombatFlags({ nextHitCrit: true, playNextCardTwice: true }),
+    });
+    let observedInside: Record<string, unknown> = {};
+    const result = withPreservedFlags(state, (s) => {
+      observedInside = { crit: s.flags.nextHitCrit, twice: s.flags.playNextCardTwice };
+      return s;
+    });
+    expect(observedInside).toEqual({ crit: false, twice: false });
+
+    expect(result.flags.nextHitCrit).toBe(true);
+    expect(result.flags.playNextCardTwice).toBe(true);
+  });
+
+  it("forces first-time-per-combat flags to their used sentinels during the callback", () => {
+    const state = makeTestBattleState();
+    let observedInside = false;
+    withPreservedFlags(state, (s) => {
+      observedInside = s.flags.firstHolyCardFreeUsed;
+      return s;
+    });
+    expect(observedInside).toBe(true);
+    expect(state.flags.firstHolyCardFreeUsed).toBe(false);
   });
 });

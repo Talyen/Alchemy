@@ -2,7 +2,7 @@ import type { ActiveRunData } from "@/lib/active-run-session";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { repairPersistedBattleBoonManifest } from "@/lib/battle";
+import { repairPersistedTrinketManifest } from "@/lib/validation";
 import {
   eventHasUnresolvedRandomTrinket,
   pickResolvedMysteryEvent,
@@ -56,7 +56,7 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
 
   const battleState =
     activeRun?.activeCombat?.battleState != null
-      ? repairPersistedBattleBoonManifest(
+      ? repairPersistedTrinketManifest(
           activeRun.activeCombat.battleState,
           combineTrinketEffectIds(activeRun.runBoons, draft.gear.equippedTrinkets[activeRun.characterId]),
         )

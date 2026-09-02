@@ -1,11 +1,7 @@
-import {
-  getBurnBonusToBleedingMultiplier,
-  getEnemyDamageMultiplier,
-  getBattleRng,
-  rollPercent,
-} from "./status-helpers";
+import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
+import { getBattleRng, rollPercent } from "../rng";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
-import { scalePercent, scalePerMana } from "./amount-helpers";
+import { scalePercent, scalePerMana, halveRounded } from "./amount-helpers";
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
@@ -32,7 +28,7 @@ export function forgeAppliesToDamageType(damageType: DamageType, talentEffects: 
 }
 
 function getPlayerBlockHalf(state: BattleState): number {
-  return Math.round(state.playerStatuses.block / HALF_DIVISOR);
+  return halveRounded(state.playerStatuses.block);
 }
 
 function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {

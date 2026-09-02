@@ -1,20 +1,19 @@
 import {
   BATTLE_CONFIG,
+  MIN_ARMOR_AMOUNT,
   PERCENT_DENOMINATOR,
   POISON_DECAY_PERCENT,
+  STATUS_DECAY_THRESHOLD,
   TRAIT_DAMAGE_RULES,
   TRAIT_DAMAGE_WEAKNESS,
 } from "../game-constants";
 import { addPlayerStatusWithCombatText, mergeCombatText } from "./combat-text";
 import { applyPlayerCombatDamage, type BattleState, type CombatTextEvent, type CombatTextStat } from "./types";
-import { getBattleRng, rollPercent } from "./rng";
+import { getBattleRng, rollPercent } from "../rng";
 import { halveRounded } from "./amount-helpers";
 
-const DECAY_THRESHOLD = 1;
-const MIN_ARMOR = 0;
-
 export function decayHalvedStatus(value: number) {
-  if (value <= DECAY_THRESHOLD) return 0;
+  if (value <= STATUS_DECAY_THRESHOLD) return 0;
   return halveRounded(value);
 }
 
@@ -45,8 +44,6 @@ export function getEnemyDamageMultiplier(
   return multiplier;
 }
 
-export { getBattleRng, rollPercent };
-
 export function dealSelfDamage(
   state: BattleState,
   amount: number,
@@ -73,7 +70,7 @@ export function rollTalentChance(chance: number, state: { rng?: () => number }):
 export type ArmorDecayTarget = "player" | "enemy";
 
 function decayEnemyArmor(state: BattleState): BattleState {
-  if (state.enemyMitigation.armor <= MIN_ARMOR) {
+  if (state.enemyMitigation.armor <= MIN_ARMOR_AMOUNT) {
     return state;
   }
   return {
@@ -86,7 +83,7 @@ function decayEnemyArmor(state: BattleState): BattleState {
 }
 
 function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
-  if (state.playerStatuses.armor <= MIN_ARMOR) {
+  if (state.playerStatuses.armor <= MIN_ARMOR_AMOUNT) {
     return state;
   }
 
@@ -99,7 +96,7 @@ function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): 
     },
   };
 
-  const armorBroke = armorBefore > MIN_ARMOR && nextState.playerStatuses.armor === MIN_ARMOR;
+  const armorBroke = armorBefore > MIN_ARMOR_AMOUNT && nextState.playerStatuses.armor === MIN_ARMOR_AMOUNT;
   const hasArmorBreakTalent = nextState.talentEffects.armorBreakBlock > 0;
 
   if (armorBroke && hasArmorBreakTalent) {

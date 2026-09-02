@@ -4,7 +4,7 @@ import { BASE_ENEMY_HEALTH, FALLBACK_ENEMY_ATTACK, MAX_PLAYER_HEALTH } from "../
 import { EMPTY_ENEMY_MITIGATION, type BattleState, type EnemyStatusValues, type PlayerStatusValues } from "./types";
 import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
-import { placeholderRng } from "./rng";
+import { placeholderRng } from "../rng";
 import { createInitialFlags } from "./combat-flags";
 
 export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();

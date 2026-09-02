@@ -1,8 +1,7 @@
-import { clampHealth, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
-import { payKillPayouts } from "./kill-payouts";
+import { damageEnemyHealth, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
-import { mergeCombatText } from "./combat-text";
+import { mergeCombatText, payKillPayouts } from "./combat-text";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 
 export type EnemyDotStatus = "burn" | "poison" | "bleed";
@@ -20,13 +19,11 @@ export function applyEnemyDotDamage(
   applyRiders?: (state: BattleState) => BattleState,
 ): BattleState {
   const finalDamage = pulses.reduce((sum, pulse) => sum + pulse.finalDamage, 0);
-  const previousHealth = state.enemyHealth;
-  let nextState: BattleState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-  };
+  const hit = damageEnemyHealth(state, finalDamage);
+  const previousHealth = hit.previousHealth;
+  let nextState: BattleState = hit.state;
 
-  nextState = payKillPayouts(nextState, previousHealth > 0, combatTexts);
+  nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
   for (const pulse of pulses) {
     nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
   }

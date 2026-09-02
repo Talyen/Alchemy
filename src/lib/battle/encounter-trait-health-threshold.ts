@@ -1,7 +1,7 @@
 import { mergeCombatText } from "./combat-text";
-import { hasEnemyTrait, scaleByRoomMultiplier } from "./enemy-turn-rules";
+import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { paceCombatMagnitude } from "./fight-pacing";
-import { addEnemyMitigation, type BattleState, type CombatTextEvent } from "./types";
+import { addEnemyMitigation, hasEnemyTrait, type BattleState, type CombatTextEvent } from "./types";
 
 export function addEnemyMitigationWithCombatText(
   state: BattleState,

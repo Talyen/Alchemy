@@ -1,8 +1,14 @@
-import { drawFromState, applyDrawResult } from "./draw";
-import { addPlayerStatusWithCombatText, gainManaWithCombatText } from "./combat-text";
-import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
-import { addForgeToPlayer } from "./status-forge";
+import { getBattleRng, rollPercent } from "../rng";
 import { FREE_CARD_SENTINEL } from "../game-constants";
+import { drawFromState, applyDrawResult } from "./draw";
+import {
+  addGoldWithCombatText,
+  gainManaWithCombatText,
+  addPlayerStatusWithCombatText,
+  mergeCombatText,
+} from "./combat-text";
+import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
+import { addForgeToPlayer } from "./status-player";
 
 export interface CrowdControlTriggerBonuses {
   block?: number;
@@ -46,4 +52,34 @@ export function applyCrowdControlTriggerBonuses(
     nextState = gainManaWithCombatText(nextState, mana, combatTexts);
   }
   return nextState;
+}
+
+export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatTextEvent[]) {
+  if (
+    state.trinketEffects.blockToArmorThreshold > 0 &&
+    state.playerStatuses.block >= state.trinketEffects.blockToArmorThreshold
+  ) {
+    state = {
+      ...state,
+      playerStatuses: {
+        ...state.playerStatuses,
+        armor: state.playerStatuses.armor + state.trinketEffects.blockToArmorAmount,
+      },
+    };
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "armor",
+      amount: state.trinketEffects.blockToArmorAmount,
+    });
+  }
+  return state;
+}
+
+export function applyLuckyCloverGold(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
+  if (state.trinketEffects.luckyCloverGoldChance <= 0 || damage <= 0) return state;
+  if (rollPercent(state.trinketEffects.luckyCloverGoldChance, getBattleRng(state))) {
+    return addGoldWithCombatText(state, damage, combatTexts);
+  }
+  return state;
 }

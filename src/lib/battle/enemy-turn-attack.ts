@@ -11,13 +11,13 @@ import {
   processEnemyDamageEffect,
   type EnemyDamageOptions,
 } from "./enemy-attack-damage";
-import { getEnemyTraitSet, hasEnemyTrait, scaleByRoomMultiplier } from "./enemy-turn-rules";
+import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { handlePostPlayCardDestination } from "./card-play";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { applyPlayerStatusFromAttack, type DirectPlayerStatusAttackEffect } from "./status-player";
-import { getBattleRng, rollPercent } from "./status-helpers";
+import { getBattleRng, rollPercent } from "../rng";
 import { type BattleState, type CombatTextEvent } from "./types";
-import { setEnemyStatus, setFlag } from "./types/state-helpers";
+import { getEnemyTraitSet, hasEnemyTrait, setEnemyStatus, setFlag } from "./types/state-helpers";
 import {
   BANDIT_FIRST_HIT_MULTIPLIER,
   BRAWLER_PENALTY_MULTIPLIER,

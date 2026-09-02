@@ -2,7 +2,8 @@ import { DAMAGE_TYPES } from "@/lib/game-data";
 import { rngInt } from "@/lib/run-rng";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
-import { dealSelfDamage, getBattleRng } from "../status-helpers";
+import { dealSelfDamage } from "../status-helpers";
+import { getBattleRng } from "../../rng";
 import { addPlayerStatus, reduceEnemyArmor } from "../types";
 import { defineHandler } from "./handler-types";
 

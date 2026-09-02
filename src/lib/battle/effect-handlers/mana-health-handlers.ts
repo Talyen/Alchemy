@@ -5,13 +5,13 @@ import {
   gainManaWithCombatText,
   mergeCombatText,
   applyHealingWithCombatText,
+  payKillPayouts,
 } from "../combat-text";
 import { dealSelfDamage, getEnemyDamageMultiplier } from "../status-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
 import { defineHandler } from "./handler-types";
 import { processEncounterTraitHealthThreshold } from "../encounter-trait-health-threshold";
 import { dealEnemyScaledDamage } from "../gear-effects";
-import { payKillPayouts } from "../kill-payouts";
 
 function restoreMana(
   state: BattleState,

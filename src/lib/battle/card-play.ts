@@ -18,7 +18,7 @@ import {
 } from "./types";
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import { getBattleRng, rollPercent } from "./status-helpers";
+import { getBattleRng, rollPercent } from "../rng";
 
 import { cardHasDamageType, computeEffectiveCost, isNatureCard } from "./card-cost-rules";
 import { rngInt } from "@/lib/run-rng";

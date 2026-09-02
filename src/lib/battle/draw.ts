@@ -1,5 +1,5 @@
 import type { BattleCard } from "@/lib/game-data";
-import { getBattleRng } from "./status-helpers";
+import { getBattleRng } from "../rng";
 import type { BattleState } from "./types";
 import { shuffle, takeRandomItem } from "../utils";
 import { MAX_HAND_SIZE } from "../game-constants";

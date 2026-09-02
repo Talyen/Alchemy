@@ -1,13 +1,9 @@
 import { clamp } from "@/lib/utils";
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
-import {
-  CAMPFIRE_HEAL_FRACTION,
-  DEATHS_DOOR_GRACE_TURNS,
-  HALF_DIVISOR,
-  PERCENT_DENOMINATOR,
-} from "../../game-constants";
+import { CAMPFIRE_HEAL_FRACTION, DEATHS_DOOR_GRACE_TURNS, PERCENT_DENOMINATOR } from "../../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "../../rng";
+import { halveRounded } from "../amount-helpers";
 import type { BattleState, CombatFlags, EnemyMitigation } from "./state-types";
 import { isStunFreezeBuildupBlocked } from "./state-types";
 import { PRESERVED_FLAG_KEYS, PRESERVED_FLAG_VALUES, type PreservedFlagKey } from "../combat-flags";
@@ -51,9 +47,7 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
     return state;
   }
   const traitAdjustedDelta =
-    status === "stun" && state.currentEnemy.traits.some((trait) => trait.id === "braced")
-      ? Math.round(delta / HALF_DIVISOR)
-      : delta;
+    status === "stun" && state.currentEnemy.traits.some((trait) => trait.id === "braced") ? halveRounded(delta) : delta;
   let nextState = {
     ...state,
     enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + traitAdjustedDelta },
@@ -72,6 +66,15 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
 
 export function setEnemyStatus(state: BattleState, status: EnemyStatusId, value: number): BattleState {
   return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: value } };
+}
+
+export function hasEnemyTrait(state: BattleState, traitId: string, traitSet?: ReadonlySet<string>): boolean {
+  if (traitSet) return traitSet.has(traitId);
+  return state.currentEnemy.traits.some((trait) => trait.id === traitId);
+}
+
+export function getEnemyTraitSet(state: BattleState): ReadonlySet<string> {
+  return new Set(state.currentEnemy.traits.map((trait) => trait.id));
 }
 
 export function addEnemyMitigation(state: BattleState, field: keyof EnemyMitigation, delta: number): BattleState {
@@ -119,6 +122,21 @@ export function clampHealth(current: number, delta: number, max: number): number
   return clamp(current + delta, 0, max);
 }
 
+export interface EnemyHitHealth {
+  state: BattleState;
+  previousHealth: number;
+  enemyWasAlive: boolean;
+}
+
+export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitHealth {
+  const previousHealth = state.enemyHealth;
+  return {
+    state: { ...state, enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth) },
+    previousHealth,
+    enemyWasAlive: previousHealth > 0,
+  };
+}
+
 export function gainMana(state: BattleState, amount: number): BattleState {
   if (amount <= 0) return state;
   return { ...state, mana: Math.min(state.maxMana, state.mana + amount) };
@@ -145,7 +163,7 @@ export function scaleReceivedPlayerDamage(
     (damageType === "poison" && talentEffects.receiveHalfPoisonDamage) ||
     (damageType === "bleed" && talentEffects.receiveHalfBleedDamage) ||
     (damageType === "nature" && talentEffects.receiveHalfNatureDamage);
-  return receiveHalf ? Math.round(damage / HALF_DIVISOR) : damage;
+  return receiveHalf ? halveRounded(damage) : damage;
 }
 
 export function deathsDoorGraceTurns(extension: number): number {

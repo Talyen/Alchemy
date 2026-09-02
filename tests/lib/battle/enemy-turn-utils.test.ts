@@ -4,8 +4,13 @@ import {
   resetEnemyTurnState,
   resolveDeathsDoorGraceExpiry,
 } from "@/lib/battle/player-turn-transition";
-import { checkHealthThresholds } from "@/lib/battle/player-health-thresholds";
-import { isFreezeActiveForAspect } from "@/lib/battle/enemy-turn-rules";
+import { checkHealthThresholds } from "@/lib/battle/enemy-attack-damage";
+import {
+  isEveryOtherTurnScalingTurn,
+  isFreezeActiveForAspect,
+  scaleByRoomMultiplier,
+} from "@/lib/battle/enemy-turn-traits";
+import { getEnemyTraitSet, hasEnemyTrait } from "@/lib/battle/types";
 import { defaultTalentEffects } from "@/lib/battle";
 import { CARDS_PER_TURN } from "@/lib/game-constants";
 import { defaultGearEffects } from "@/lib/gear";
@@ -165,6 +170,16 @@ describe("isFreezeActiveForAspect", () => {
 });
 
 describe("checkHealthThresholds", () => {
+  it("applies a configured bonus only when health crosses its threshold", () => {
+    const base = makeTestBattleState();
+    const state = makeTestBattleState({
+      playerMaxHealth: 30,
+      talentEffects: { ...base.talentEffects, healthThresholdBlock: { threshold: 50, amount: 4 } },
+    });
+    expect(checkHealthThresholds(20, 10, state, []).playerStatuses.block).toBe(4);
+    expect(checkHealthThresholds(10, 9, state, [])).toBe(state);
+  });
+
   it("triggers block talent when crossing health threshold", () => {
     const state = makeTestBattleState({
       playerMaxHealth: 30,
@@ -225,5 +240,35 @@ describe("resolveDeathsDoorGraceExpiry", () => {
   it("no-ops when Death's Door inactive", () => {
     const state = makeTestBattleState();
     expect(resolveDeathsDoorGraceExpiry(state)).toBe(state);
+  });
+});
+
+describe("enemy turn scaling rules", () => {
+  it("keeps scaling and freeze checks pure", () => {
+    const state = makeTestBattleState({
+      turn: 2,
+      roomScalingMultiplier: 1.5,
+      enemyCC: { ...makeTestBattleState().enemyCC, freezeSkipTurns: 1 },
+      talentEffects: { ...makeTestBattleState().talentEffects, freezeBlocksRegen: true },
+    });
+    expect(isEveryOtherTurnScalingTurn(state)).toBe(true);
+    expect(scaleByRoomMultiplier(state, 3)).toBe(5);
+    expect(isFreezeActiveForAspect(state, "regen")).toBe(true);
+  });
+});
+
+describe("enemy trait query", () => {
+  it("supports direct and cached trait lookup", () => {
+    const base = makeTestBattleState();
+    const state = makeTestBattleState({
+      currentEnemy: {
+        ...base.currentEnemy,
+        traits: [{ id: "vampire", title: "Vampire", description: "" }],
+      },
+    });
+    const traits = getEnemyTraitSet(state);
+    expect(hasEnemyTrait(state, "vampire")).toBe(true);
+    expect(hasEnemyTrait(state, "vampire", traits)).toBe(true);
+    expect(hasEnemyTrait(state, "cleric", traits)).toBe(false);
   });
 });

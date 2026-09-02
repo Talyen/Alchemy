@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import {
   decayHalvedStatus,
   decayPoisonStacks,
-  rollPercent,
   decayArmorAfterDamage,
   getEnemyDamageMultiplier,
 } from "@/lib/battle/status-helpers";
+import { rollPercent } from "@/lib/rng";
 import { BATTLE_CONFIG, PERCENT_DENOMINATOR } from "@/lib/game-constants";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestBattleState } from "../../fixtures/battle";

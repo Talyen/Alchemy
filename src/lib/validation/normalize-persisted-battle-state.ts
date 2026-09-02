@@ -1,5 +1,6 @@
 import { defaultBattleState, type BattleState } from "@/lib/battle";
 import type { TalentEffectManifest } from "@/lib/game-data";
+import { computeTrinketManifest, isDefaultTrinketManifest } from "@/lib/trinkets";
 import { sanitizePersistedEnemyTraits } from "@/lib/content-systems/encounter-traits";
 import {
   LEGACY_FIRST_BURN_BONUS_MULTIPLIER,
@@ -88,4 +89,13 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
   merged.gold = clampNonNegative(merged.gold, defaults.gold);
   merged.turn = Number.isFinite(merged.turn) && merged.turn >= 1 ? Math.trunc(merged.turn) : defaults.turn;
   return merged;
+}
+
+export function repairPersistedTrinketManifest(battleState: BattleState, runBoons: string[]): BattleState {
+  if (runBoons.length === 0) return battleState;
+  if (!isDefaultTrinketManifest(battleState.trinketEffects)) return battleState;
+  return {
+    ...battleState,
+    trinketEffects: computeTrinketManifest(runBoons),
+  };
 }

@@ -8,9 +8,11 @@ import {
   applyHealingWithCombatText,
   gainManaWithCombatText,
   mergeCombatText,
+  payKillPayouts,
 } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
-import { getBattleRng, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
+import { getEnemyDamageMultiplier } from "./status-helpers";
+import { getBattleRng, rollPercent } from "../rng";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import {
   PERCENT_DENOMINATOR,
@@ -21,7 +23,6 @@ import {
 } from "../game-constants";
 import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-content";
 import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
-import { payKillPayouts } from "./kill-payouts";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 function upgradeWishCard(card: BattleCard): BattleCard {

@@ -1,6 +1,6 @@
 import { getOfferableCardPool } from "./game-data/cards/card-pools";
 import { companionLibrary, enemyBestiary, cardLibrary } from "./game-data";
-import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./battle/enemy-turn-traits";
+import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "@/lib/battle";
 import { logError } from "./error-logger";
 
 export function runStartupValidation() {

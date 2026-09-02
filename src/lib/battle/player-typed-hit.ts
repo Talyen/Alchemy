@@ -1,10 +1,9 @@
 import type { BattleCard, DamageType } from "@/lib/game-data";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
-import { payKillPayouts } from "./kill-payouts";
-import { mergeCombatText } from "./combat-text";
+import { mergeCombatText, payKillPayouts } from "./combat-text";
 import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
-import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import { damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 const FOLLOW_UP_CARD: BattleCard = {
@@ -25,12 +24,10 @@ export function dealPlayerTypedHit(
   if (amount <= 0 || state.enemyHealth <= 0) return state;
   const effect = { kind: "damage" as const, damageType, amount };
   const { nextState: afterMods, modifiedDamage } = computeCardDamageToEnemy(state, effect, FOLLOW_UP_CARD);
-  const enemyWasAlive = afterMods.enemyHealth > 0;
-  const preHitHealth = afterMods.enemyHealth;
-  let nextState: BattleState = {
-    ...afterMods,
-    enemyHealth: clampHealth(afterMods.enemyHealth, -modifiedDamage, afterMods.enemyMaxHealth),
-  };
+  const hit = damageEnemyHealth(afterMods, modifiedDamage);
+  const enemyWasAlive = hit.enemyWasAlive;
+  const preHitHealth = hit.previousHealth;
+  let nextState: BattleState = hit.state;
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy", combatTexts);
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts, preHitHealth);
   if (modifiedDamage > 0) {

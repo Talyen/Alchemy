@@ -2,9 +2,7 @@ import {
   companionLibrary,
   type BattleCard,
   type BestiaryEntry,
-  type CompanionDefinition,
   type DifficultyModifier,
-  type EnemyAttackEffect,
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import { BASE_PLAYER_MANA, CARDS_PER_TURN, MAX_PLAYER_HEALTH } from "../game-constants";
@@ -16,7 +14,7 @@ import { applyDrawResult, drawCards } from "./draw";
 import { shuffle } from "../utils";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
-import { placeholderRng } from "./rng";
+import { placeholderRng } from "../rng";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 
@@ -52,82 +50,6 @@ function initializePlayerHealthAndBlock(
   const startingBlock = baseBlock > 0 ? baseBlock + gearEffects.flatBlockGained : 0;
   const startingArmor = talentEffects.startArmor + gearEffects.startArmor;
   return { startingHealth, maxHealth, startingBlock, startingArmor };
-}
-
-function buildInitialBattleState(
-  baseState: BattleState,
-  setup: {
-    deck: BattleCard[];
-    hand: BattleCard[];
-    discard: BattleCard[];
-    mana: number;
-    gold: number;
-    playerHealth: number;
-    playerMaxHealth: number;
-    enemyHealth: number;
-    enemyAttackEffects: EnemyAttackEffect[];
-    enemyRegeneration: number;
-    roomScalingMultiplier: number;
-    enemyArmor: number;
-    startingBlock: number;
-    startingArmor: number;
-    startingEnemyBlock: number;
-    activeCompanion: CompanionDefinition | null;
-    currentEnemy: BestiaryEntry;
-    talentEffects: TalentEffectManifest;
-    trinketEffects: ReturnType<typeof computeTrinketManifest>;
-    gearEffects: GearEffectManifest;
-    discoveredCardIds: string[];
-    nextCardUid: number;
-    difficultyModifiers: DifficultyModifier[];
-    rng: () => number;
-    contentSystemType: ContentSystemId;
-    appliesFightPacing: boolean;
-  },
-): BattleState {
-  return {
-    ...baseState,
-    deck: setup.deck,
-    hand: setup.hand,
-    discard: setup.discard,
-    mana: setup.mana,
-    maxMana: setup.mana,
-    gold: setup.gold,
-    turnPhase: "player",
-    playerHealth: setup.playerHealth,
-    playerMaxHealth: setup.playerMaxHealth,
-    enemyHealth: setup.enemyHealth,
-    enemyMaxHealth: setup.enemyHealth,
-    enemyAttackEffects: setup.enemyAttackEffects,
-    enemyRegeneration: setup.enemyRegeneration,
-    roomScalingMultiplier: setup.roomScalingMultiplier,
-    enemyMitigation: {
-      ...EMPTY_ENEMY_MITIGATION,
-      armor: setup.enemyArmor,
-      block: setup.startingEnemyBlock,
-    },
-    playerStatuses: {
-      ...baseState.playerStatuses,
-      block: setup.startingBlock + (setup.talentEffects.manaBulwarkActive ? setup.mana : 0),
-      forge: setup.talentEffects.startForge + setup.gearEffects.startForge,
-      armor: setup.startingArmor + (setup.talentEffects.manaShellActive ? setup.mana : 0),
-    },
-    enemyStatuses: {
-      ...baseState.enemyStatuses,
-    },
-    activeCompanion: setup.activeCompanion,
-    currentEnemy: setup.currentEnemy,
-    talentEffects: setup.talentEffects,
-    trinketEffects: setup.trinketEffects,
-    gearEffects: setup.gearEffects,
-    flags: baseState.flags,
-    discoveredCardIds: setup.discoveredCardIds,
-    nextCardUid: setup.nextCardUid,
-    difficultyModifiers: setup.difficultyModifiers,
-    rng: setup.rng,
-    contentSystemType: setup.contentSystemType,
-    appliesFightPacing: setup.appliesFightPacing,
-  };
 }
 
 export function drawOpeningHand(state: BattleState): BattleState {
@@ -192,34 +114,51 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     startingArmor: playerStartingArmor,
   } = initializePlayerHealthAndBlock(options, battleTalents, startBlock, battleGearEffects);
 
-  const state = buildInitialBattleState(defaultBattleState(), {
+  const mana = BASE_PLAYER_MANA + manaBonus + battleTalents.startMana + battleTalents.runMaxManaBonus;
+  const baseState = defaultBattleState();
+  const state: BattleState = {
+    ...baseState,
     deck,
     hand: [],
     discard: [],
-    mana: BASE_PLAYER_MANA + manaBonus + battleTalents.startMana + battleTalents.runMaxManaBonus,
+    mana,
+    maxMana: mana,
     gold: battleGold,
+    turnPhase: "player",
     playerHealth: startingHealth,
     playerMaxHealth: finalMaxHealth,
     enemyHealth: enemyMaxHealth,
+    enemyMaxHealth,
     enemyAttackEffects: modifiedEffects,
     enemyRegeneration,
     roomScalingMultiplier,
-    enemyArmor: startingArmor,
-    startingBlock,
-    startingArmor: playerStartingArmor,
-    startingEnemyBlock,
+    enemyMitigation: {
+      ...EMPTY_ENEMY_MITIGATION,
+      armor: startingArmor,
+      block: startingEnemyBlock,
+    },
+    playerStatuses: {
+      ...baseState.playerStatuses,
+      block: startingBlock + (battleTalents.manaBulwarkActive ? mana : 0),
+      forge: battleTalents.startForge + battleGearEffects.startForge,
+      armor: playerStartingArmor + (battleTalents.manaShellActive ? mana : 0),
+    },
+    enemyStatuses: {
+      ...baseState.enemyStatuses,
+    },
     activeCompanion: startCompanion ? (companionLibrary[startCompanionId] ?? companionLibrary["wolf"]) : null,
     currentEnemy: battleEnemy,
     talentEffects: battleTalents,
     trinketEffects,
     gearEffects: battleGearEffects,
+    flags: baseState.flags,
     discoveredCardIds: battleDiscovered,
     nextCardUid: 0,
     difficultyModifiers: battleDiffs,
     rng: activeRng,
     contentSystemType: battleContentSystem,
     appliesFightPacing: battleAppliesFightPacing,
-  });
+  };
   const startFreeze = battleTalents.startFreeze + battleGearEffects.startFreeze;
   if (startFreeze <= 0) return state;
   return dealPlayerTypedHit(state, "freeze", startFreeze, []);

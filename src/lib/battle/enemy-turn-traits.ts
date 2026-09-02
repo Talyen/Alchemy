@@ -1,31 +1,55 @@
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { getBattleRng } from "./status-helpers";
-import { hasEnemyTrait } from "./enemy-turn-rules";
+import { getBattleRng } from "../rng";
 import { rngInt } from "@/lib/run-rng";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
-import { type BattleState, type CombatTextEvent, addEnemyMitigation, addEnemyStatus, setFlag } from "./types";
+import { halveRounded } from "./amount-helpers";
+import {
+  type BattleState,
+  type CombatTextEvent,
+  addEnemyMitigation,
+  addEnemyStatus,
+  hasEnemyTrait,
+  setFlag,
+} from "./types";
 import {
   DIFFICULTY_FORGE_PER_TURN,
-  HALF_DIVISOR,
   IRON_HIDE_ARMOR_PER_TURN,
   IRON_HIDE_BURN_BONUS_PER_TURN,
   REACTION_ONLY_ENEMY_TRAIT_IDS as REACTION_ONLY_IDS,
   TRAIT_FORGE_PER_TURN,
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
-import { ENEMY_TURN_CONSTANTS, isEveryOtherTurnScalingTurn, isFreezeActiveForAspect } from "./enemy-turn-rules";
+export const ENEMY_TURN_CONSTANTS = {
+  IRON_HIDE_OPTIONS_COUNT: 3,
+};
+
+export function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
+  return state.turn % 2 === 0;
+}
+
+type FreezeAspect = "regen" | "scaling";
+
+export function isFreezeActiveForAspect(state: BattleState, aspect: FreezeAspect): boolean {
+  if (state.enemyCC.freezeSkipTurns <= 0) return false;
+  if (aspect === "regen") return state.talentEffects.freezeBlocksRegen;
+  return state.talentEffects.freezePreventsEnemyScaling;
+}
+
+export function scaleByRoomMultiplier(state: BattleState, value: number): number {
+  return Math.round(value * state.roomScalingMultiplier);
+}
 
 export function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyRegeneration <= 0) return state;
   if (isFreezeActiveForAspect(state, "regen")) return state;
   let healAmount = state.enemyRegeneration;
   if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) {
-    healAmount = Math.round(healAmount / HALF_DIVISOR);
+    healAmount = halveRounded(healAmount);
   }
   if (state.enemyStatuses.bleed > 0 && state.talentEffects.bleedHalvesEnemyHealing) {
-    healAmount = Math.round(healAmount / HALF_DIVISOR);
+    healAmount = halveRounded(healAmount);
   }
   if (healAmount <= 0) return state;
   let nextState = applyEnemyHealingWithCombatText(state, healAmount, combatTexts);
@@ -214,7 +238,7 @@ function processTraitHandler(
     return handler(state, combatTexts, { traitRoll });
   }
   if (!PASSIVE_ONLY_TRAITS.has(trait.id) && !REACTION_ONLY_TRAITS.has(trait.id)) {
-    console.warn(`[Enemy Turn] No turn-start handler for trait: ${trait.id}`);
+    console.warn(`[Battle] No turn-start handler for trait: ${trait.id}`);
     reportHandlerFailure(`No turn-start handler for trait ${trait.id}`, new Error("uncovered enemy trait"), {
       traitId: trait.id,
     });
@@ -231,7 +255,7 @@ function processDifficultyModifier(
   const handler = difficultyTurnStartHandlers[modifier.kind];
   if (!handler) {
     if (!PASSIVE_ONLY_MODIFIERS.has(modifier.kind)) {
-      console.warn(`[Enemy Turn] No turn-start handler for difficulty modifier: ${modifier.kind}`);
+      console.warn(`[Battle] No turn-start handler for difficulty modifier: ${modifier.kind}`);
       reportHandlerFailure(
         `No turn-start handler for difficulty modifier ${modifier.kind}`,
         new Error("uncovered difficulty modifier"),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
-import { applyCardEffects } from "@/lib/battle/effect-handlers/dispatch";
+import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { createMixedPotion, tryCreateMixedPotion } from "@/lib/alchemist/potion-mixer";
 import { cardById, isMixedPotionCard, isPotionCard, isStandardPotionCard } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";

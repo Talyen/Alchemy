@@ -16,7 +16,9 @@ import {
   mergeCombatText,
 } from "./combat-text";
 import { scaledGearLeechHeal } from "./gear-effects";
-import { rollPercent, getBattleRng, rollTalentChance } from "./status-helpers";
+import { rollTalentChance } from "./status-helpers";
+import { getBattleRng, rollPercent } from "../rng";
+import { scalePercent } from "./amount-helpers";
 import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, LEECH_HEAL_FRACTION, PERCENT_DENOMINATOR } from "../game-constants";
 
 export function computeLeechHeal(damageDealt: number): number {
@@ -115,14 +117,14 @@ export function applyNatureLeech(state: BattleState, damage: number, combatTexts
 
 export function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
-  const healAmount = Math.round((damage * state.talentEffects.holyLifestealPercent) / PERCENT_DENOMINATOR);
+  const healAmount = scalePercent(damage, state.talentEffects.holyLifestealPercent);
   if (healAmount <= 0) return state;
   return executePlayerHealing(state, healAmount, combatTexts);
 }
 
 export function applyDamageBlock(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyBlockPercentFromDamage <= 0) return state;
-  const blockAmount = Math.round((damage * state.talentEffects.holyBlockPercentFromDamage) / PERCENT_DENOMINATOR);
+  const blockAmount = scalePercent(damage, state.talentEffects.holyBlockPercentFromDamage);
   if (blockAmount <= 0) return state;
   mergeCombatText(combatTexts, {
     target: "player",

@@ -1,10 +1,9 @@
 import type { GearEffectManifest } from "@/lib/gear";
 import { PERCENT_DENOMINATOR } from "../game-constants";
-import { mergeCombatText } from "./combat-text";
+import { mergeCombatText, payKillPayouts } from "./combat-text";
 import { getEnemyDamageMultiplier } from "./status-helpers";
-import { applyLuckyCloverGold } from "./trinket-effects";
-import { payKillPayouts } from "./kill-payouts";
-import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import { applyLuckyCloverGold } from "./bonus-effects";
+import { damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
 
 export function gearFrozenDamageMultiplier(state: BattleState): number {
@@ -35,11 +34,8 @@ export function dealEnemyScaledDamage(
   if (finalDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });
   }
-  const nextState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-  };
-  return options.riders ? options.riders(nextState, finalDamage, combatTexts) : nextState;
+  const hit = damageEnemyHealth(state, finalDamage);
+  return options.riders ? options.riders(hit.state, finalDamage, combatTexts) : hit.state;
 }
 
 export function applyGearCcPhysicalDamage(

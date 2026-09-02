@@ -1,4 +1,4 @@
-import { applyIronwoodBuckler } from "./trinket-effects";
+import { applyIronwoodBuckler } from "./bonus-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import type { BattleState, CombatTextEvent } from "./types";
 import { processEnemyAttack, processEnemyTraitActionStart } from "./enemy-turn-attack";

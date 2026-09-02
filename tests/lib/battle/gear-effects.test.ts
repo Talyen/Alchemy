@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyGearKillRewards } from "@/lib/battle/kill-payouts";
+import { applyGearKillRewards } from "@/lib/battle/combat-text";
 import { gearFrozenDamageMultiplier, scaledGearLeechHeal } from "@/lib/battle/gear-effects";
 import { applyGearDamageResistance, scaleGoldReward, type CombatTextEvent } from "@/lib/battle/types";
 import { defaultGearEffects } from "@/lib/gear";

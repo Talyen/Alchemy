@@ -27,3 +27,4 @@ export {
   type ParsedActiveRunData,
 } from "./save-schemas/index";
 export type { PersistedPendingReward, InterruptedFlow } from "./save-schemas/active-run";
+export { repairPersistedTrinketManifest } from "./normalize-persisted-battle-state";

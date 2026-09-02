@@ -1,11 +1,11 @@
 import type { BattleCard } from "@/lib/game-data";
-import { HALF_DIVISOR } from "../game-constants";
+import { halveRounded } from "./amount-helpers";
 import { applyEnemyHealingWithCombatText } from "./combat-text";
 import { applyEnemyLeechHealing, processEnemyDamageEffect } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
-import { hasEnemyTrait, isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-rules";
-import { getBattleRng } from "./rng";
-import { type BattleState, type CombatTextEvent } from "./types";
+import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { getBattleRng, rollPercent } from "../rng";
+import { hasEnemyTrait, type BattleState, type CombatTextEvent } from "./types";
 
 function addEnemyStatusText(
   state: BattleState,
@@ -31,10 +31,10 @@ export function processEncounterTraitActionStart(state: BattleState, combatTexts
     if (isFreezeActiveForAspect(nextState, "regen")) return nextState;
     let amount = scaleByRoomMultiplier(nextState, 1);
     if (nextState.enemyStatuses.poison > 0 && nextState.talentEffects.poisonHalvesHealing) {
-      amount = Math.round(amount / HALF_DIVISOR);
+      amount = halveRounded(amount);
     }
     if (nextState.enemyStatuses.bleed > 0 && nextState.talentEffects.bleedHalvesEnemyHealing) {
-      amount = Math.round(amount / HALF_DIVISOR);
+      amount = halveRounded(amount);
     }
     nextState = applyEnemyHealingWithCombatText(nextState, amount, combatTexts);
   }
@@ -57,7 +57,12 @@ function dealTraitDamage(
 export function processEncounterTraitActionDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (hasEnemyTrait(nextState, "septic")) {
-    nextState = dealTraitDamage(nextState, getBattleRng(nextState)() < 0.5 ? "poison" : "bleed", 1, combatTexts);
+    nextState = dealTraitDamage(
+      nextState,
+      rollPercent(50, getBattleRng(nextState)) ? "poison" : "bleed",
+      1,
+      combatTexts,
+    );
   }
   if (hasEnemyTrait(nextState, "caustic")) {
     nextState = dealTraitDamage(nextState, "poison", 1, combatTexts);

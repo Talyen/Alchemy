@@ -8,24 +8,23 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { applyCrowdControlTriggerBonuses } from "./talent-effects";
+import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText, payKillPayouts } from "./combat-text";
+import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
-import { getBattleRng, getEnemyDamageMultiplier, rollPercent } from "./status-helpers";
+import { getEnemyDamageMultiplier } from "./status-helpers";
+import { getBattleRng, rollPercent } from "../rng";
 import {
   BLEED_STATUS_MULTIPLIER,
   BATTLE_CONFIG,
+  BURN_BLEED_MIRROR_CHANCE,
   FREEZE_THRESHOLD_FRACTION,
   MIN_FREEZE_THRESHOLD_FRACTION,
 } from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
 import { computeLeechHeal } from "./damage-rider-leech";
-import { payKillPayouts } from "./kill-payouts";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { halveRounded } from "./amount-helpers";
-
-const BURN_BLEED_MIRROR_CHANCE = 20;
 
 function applyGearBurnBleedMirrorLeech(
   state: BattleState,

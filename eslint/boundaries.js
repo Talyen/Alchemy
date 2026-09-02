@@ -86,18 +86,6 @@ const BOUNDARY_TABLE = [
   },
   {
     files: ["src/lib/battle/**/*.{ts,tsx}"],
-    ignores: ["src/lib/battle/rng.ts"],
-    paths: BATTLE_NO_FRAMEWORK_PATHS,
-    patterns: [
-      [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],
-      BATTLE_NO_FEATURES,
-      DOMAIN_STORE_PATTERNS,
-      WRITE_PORT_PATTERNS,
-      NO_DIRECT_ASSET_IMPORT,
-    ],
-  },
-  {
-    files: ["src/lib/battle/rng.ts"],
     paths: BATTLE_NO_FRAMEWORK_PATHS,
     patterns: [
       [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],

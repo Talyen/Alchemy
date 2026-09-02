@@ -1,8 +1,7 @@
 import { forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
-import { mergeCombatText, addGoldWithCombatText } from "./combat-text";
-import { payKillPayouts } from "./kill-payouts";
-import { applyLuckyCloverGold } from "./trinket-effects";
+import { mergeCombatText, addGoldWithCombatText, payKillPayouts } from "./combat-text";
+import { applyLuckyCloverGold } from "./bonus-effects";
 import { applyWishEffect } from "./wish";
 import {
   applyDamageBlock,
@@ -15,8 +14,9 @@ import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
 import { dealPlayerTypedHit, tryPoisonStunProc } from "./player-typed-hit";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import { addEnemyStatus, addPlayerStatus, clampHealth, type BattleState, type CombatTextEvent } from "./types";
-import { BATTLE_CONFIG, HALF_DIVISOR } from "../game-constants";
+import { addEnemyStatus, addPlayerStatus, damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
+import { BATTLE_CONFIG } from "../game-constants";
+import { halveRounded } from "./amount-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 function applyBurnDamageRiders(
@@ -121,15 +121,13 @@ export function applyDamageRiders(
   combatTexts: CombatTextEvent[],
   isExtraHit = false,
 ) {
-  const previousHealth = state.enemyHealth;
-  let nextState: BattleState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -modifiedDamage, state.enemyMaxHealth),
-  };
+  const hit = damageEnemyHealth(state, modifiedDamage);
+  const previousHealth = hit.previousHealth;
+  let nextState: BattleState = hit.state;
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
 
-  nextState = payKillPayouts(nextState, previousHealth > 0, combatTexts);
+  nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
   if (
     card.tags?.includes("archery") &&
     nextState.talentEffects.goldOnArcheryKill > 0 &&
@@ -160,7 +158,7 @@ export function applyDamageRiders(
 
   if (card.tags?.includes("archery") && modifiedDamage > 0) {
     if (!isExtraHit && rollTalentChance(nextState.talentEffects.archeryPlayTwiceChance, nextState)) {
-      const secondHit = Math.round(modifiedDamage / HALF_DIVISOR);
+      const secondHit = halveRounded(modifiedDamage);
       if (secondHit > 0) {
         nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true);
       }

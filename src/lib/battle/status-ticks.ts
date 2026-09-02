@@ -3,19 +3,18 @@ import {
   scaleReceivedPlayerDamage,
   setPlayerStatus,
   setFlag,
+  hasEnemyTrait,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { hasEnemyTrait } from "./enemy-turn-rules";
 import {
   decayArmorAfterDamage,
   decayHalvedStatus,
   decayPoisonStacks,
-  getBattleRng,
   getBurnBonusToBleedingMultiplier,
   getEnemyDamageMultiplier,
-  rollPercent,
 } from "./status-helpers";
+import { getBattleRng, rollPercent } from "../rng";
 import { HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
