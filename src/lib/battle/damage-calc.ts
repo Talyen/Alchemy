@@ -217,8 +217,10 @@ function computeBaseDamage(
   card?: BattleCard,
 ) {
   const rawAmount = computeBaseRawAmount(state, effect, card);
-  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- Boolean flags; || is correct for false vs undefined.
-  const isEqualTo = Boolean(effect.equalToBlock || effect.equalToArmor || effect.equalToGoldPercent);
+  const hasBlock = effect.equalToBlock === true;
+  const hasArmor = effect.equalToArmor === true;
+  const hasGold = effect.equalToGoldPercent !== undefined;
+  const isEqualTo = hasBlock || hasArmor || hasGold;
   if (isEqualTo) return Math.max(0, applyConsumeBonus(rawAmount, state, card));
   const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType];
   if (!modifier) throw new Error(`Missing DamageType handler: ${effect.damageType}`);
@@ -244,12 +246,12 @@ function applyFirstDamageModifiers(
       nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
     }
     if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
-      nextDamage *= FIRST_EFFECT_MULTIPLIER;
+      nextDamage = Math.round(nextDamage * FIRST_EFFECT_MULTIPLIER);
       nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
     }
   } else if (effect.damageType === "holy") {
     if (nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
-      nextDamage *= FIRST_EFFECT_MULTIPLIER;
+      nextDamage = Math.round(nextDamage * FIRST_EFFECT_MULTIPLIER);
       nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
     }
   }

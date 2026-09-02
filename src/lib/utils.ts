@@ -24,7 +24,7 @@ export function formatLargeAmount(amount: number): string {
 export function shuffle<T>(items: readonly T[], rng: () => number = Math.random): T[] {
   const shuffled = [...items];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(rng() * (index + 1));
+    const swapIndex = Math.min(index, Math.floor(rng() * (index + 1)));
 
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!];
   }
@@ -37,12 +37,12 @@ export function sampleItems<T>(items: readonly T[], count: number, rng: () => nu
 
 export function pickRandom<T>(items: readonly T[], rng: () => number = Math.random): T | undefined {
   if (items.length === 0) return undefined;
-  return items[Math.floor(rng() * items.length)];
+  return items[Math.min(items.length - 1, Math.floor(rng() * items.length))];
 }
 
 export function takeRandomItem<T>(items: T[], rng: () => number = Math.random): T | undefined {
   if (items.length === 0) return undefined;
-  const index = Math.floor(rng() * items.length);
+  const index = Math.min(items.length - 1, Math.floor(rng() * items.length));
   const [removed] = items.splice(index, 1);
   return removed;
 }

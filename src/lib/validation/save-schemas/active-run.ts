@@ -104,16 +104,20 @@ const CorruptionResultPersistSchema = z
   .nullable()
   .catch(null);
 
-const RunRngStateSchema = z.object({
-  seed: z.number().int().nonnegative().max(0xffff_ffff),
-  counters: z.object({
-    rewards: z.number().int().nonnegative().catch(0),
-    destinations: z.number().int().nonnegative().catch(0),
-    events: z.number().int().nonnegative().catch(0),
-    shops: z.number().int().nonnegative().catch(0),
-    world: z.number().int().nonnegative().catch(0),
-  }),
-});
+const RunRngStateSchema = z
+  .object({
+    seed: z.number().int().nonnegative().max(0xffff_ffff),
+    counters: z
+      .object({
+        rewards: z.number().int().nonnegative().catch(0),
+        destinations: z.number().int().nonnegative().catch(0),
+        events: z.number().int().nonnegative().catch(0),
+        shops: z.number().int().nonnegative().catch(0),
+        world: z.number().int().nonnegative().catch(0),
+      })
+      .catch({ rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 }),
+  })
+  .catch(createRunRngState());
 
 const PersistedBattleTransitionSchema = z
   .union([

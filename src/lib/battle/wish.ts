@@ -43,9 +43,9 @@ function upgradeWishCard(card: BattleCard): BattleCard {
 
   for (const target of sortedTargets) {
     const nextValue = target.value + 1;
-    const effect = nextCard.effects[target.effectIndex];
-    if (effect && "amount" in effect) {
-      (effect as { amount: number }).amount = nextValue;
+    const effect = nextCard.effects[target.effectIndex] as Record<string, unknown> | undefined;
+    if (effect && effect[target.field] === target.value) {
+      effect[target.field] = nextValue;
     }
     nextCard.descriptionLines[target.lineIndex] = replaceNumberAt(
       nextCard.descriptionLines[target.lineIndex]!,

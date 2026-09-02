@@ -37,9 +37,12 @@ export function LabyrinthMapScreen({
   const [viewedFloor, setViewedFloor] = useState(labyrinthMap?.currentFloor ?? 1);
   const currentFloor = labyrinthMap?.currentFloor ?? 1;
   const playableDepths = useMemo(() => new Set(playableFloors.map((floor) => floor.depth)), [playableFloors]);
-  if (currentFloor > viewedFloor || (labyrinthMap !== null && !playableDepths.has(viewedFloor))) {
-    setViewedFloor(currentFloor);
-  }
+  useEffect(() => {
+    if (currentFloor > viewedFloor || (labyrinthMap !== null && !playableDepths.has(viewedFloor))) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync viewed floor to current floor when advancing
+      setViewedFloor(currentFloor);
+    }
+  }, [currentFloor, viewedFloor, labyrinthMap, playableDepths]);
 
   useEffect(() => {
     if (!selectedNodeId || !labyrinthMap) return;
