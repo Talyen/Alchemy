@@ -18,10 +18,6 @@ jobs:
     timeout-minutes: 5
     outputs:
       save: ${{ steps.filter.outputs.save }}
-      shop: ${{ steps.filter.outputs.shop }}
-      gear: ${{ steps.filter.outputs.gear }}
-      mystery: ${{ steps.filter.outputs.mystery }}
-      audio: ${{ steps.filter.outputs.audio }}
       desktop: ${{ steps.filter.outputs.desktop }}
       desktop_renderer: ${{ steps.filter.outputs.desktop_renderer }}
       assets: ${{ steps.filter.outputs.assets }}
@@ -51,38 +47,6 @@ jobs:
               - "tests/fixtures/legacy-saves*"
               - "tests/e2e/mid-combat-save*"
               - "tests/save-*"
-            shop:
-              - "src/features/alchemy/run-loop/shop/**"
-              - "src/features/alchemy/run-loop/screens/*shop*"
-              - "src/features/alchemy/shell/use-shop-controller.ts"
-              - "src/lib/alchemist/**"
-              - "tests/shop-and-rewards.spec.ts"
-            gear:
-              - "src/lib/gear/**"
-              - "src/features/alchemy/meta/screens/armory/**"
-              - "src/features/alchemy/meta/screens/armory-screen.tsx"
-              - "src/features/alchemy/shared/stores/gear-*.ts"
-              - "tests/armory.spec.ts"
-            mystery:
-              - "src/lib/mystery/**"
-              - "src/lib/active-run-session/mystery-visit-persistence.ts"
-              - "src/features/alchemy/run-loop/navigation/*mystery*"
-              - "src/features/alchemy/run-loop/screens/mystery/**"
-              - "src/app/screen-routes/mystery-screen-route.tsx"
-              - "src/features/alchemy/shell/use-mystery-event-navigation.ts"
-              - "tests/destination-progression.spec.ts"
-            audio:
-              - "src/lib/audio*.ts"
-              - "src/lib/sound-registry.ts"
-              - "src/lib/settings-values.ts"
-              - "src/features/alchemy/shared/stores/settings-store.ts"
-              - "src/features/alchemy/shared/config/options.ts"
-              - "src/features/alchemy/shared/ui/settings-controls.tsx"
-              - "src/features/alchemy/meta/screens/options-*.tsx"
-              - "src/app/screen-routes/options-screen-route.tsx"
-              - "src/app/use-app-effects.ts"
-              - "public/sounds/**"
-              - "tests/audio-sfx.spec.ts"
             desktop:
               - "desktop/**"
               - "index.html"
@@ -156,48 +120,8 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      # Split lint:ci so the failed step name identifies the failure class.
-      - name: Documentation and plan checks
-        run: npm run docs:check
-      - name: CI routing contract
-        run: npm run ci:routing
-      - name: Changed-path verification plan
-        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
-        run: npm run ci:verify-plan -- --base ${{ github.event.before }} --head ${{ github.sha }}
-      - name: Test owners for new source files
-        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
-        run: npm run check:test-owners -- --base ${{ github.event.before }} --head ${{ github.sha }}
-      - name: Generated outputs check
-        run: npm run check:generated
-      - name: Format check
-        run: npm run format:check
-      - name: Typecheck
-        run: npm run typecheck:all
-      - name: ESLint
-        run: npm run lint
-      - name: Import boundaries
-        run: npm run lint:boundaries
-      - name: Architecture smoke
-        run: npm run lint:architecture-smoke
-      - name: Playwright collection check
-        run: npx playwright test --list --project chromium
-
-  deadcode:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          sparse-checkout: |
-            /*
-            !Raw Assets
-          sparse-checkout-cone-mode: false
-
-      - uses: ./.github/actions/setup
-
-      - name: Dead code (knip)
-        run: npm run deadcode
+      - name: Static checks
+        run: npm run lint:ci
 
   test:
     runs-on: ubuntu-latest
@@ -243,7 +167,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-      - run: npm run build:verified
+      - run: npm run build
 
       - name: Check bundle budget (index 600k / total 1.55M)
         run: node scripts/check-bundle-budget.mjs
@@ -327,7 +251,7 @@ jobs:
 
       - uses: ./.github/actions/setup
       - name: Build desktop renderer
-        run: npm run build:desktop:verified
+        run: npm run build:desktop
 
       - uses: actions/upload-artifact@v7
         with:
@@ -349,46 +273,52 @@ jobs:
       - name: Assert committed outputs match preparation
         run: npm run assets:check
 
-  # Path-gated E2E gates — consolidated via reusable workflow_call (Initiative 5).
+  # Save persistence remains path-gated because it intentionally exercises the complete save journeys.
   save-gate:
     needs: [changes, build]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.save == 'true'
-    uses: ./.github/workflows/gated-e2e.yml
-    with:
-      script: test:ship:e2e
-      report-name: playwright-report-save-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !Raw Assets
+          sparse-checkout-cone-mode: false
 
-  shop-gate:
-    needs: [changes, build]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.shop == 'true'
-    uses: ./.github/workflows/gated-e2e.yml
-    with:
-      script: test:e2e:shop
-      report-name: playwright-report-shop-gate
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
 
-  gear-gate:
-    needs: [changes, build]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.gear == 'true'
-    uses: ./.github/workflows/gated-e2e.yml
-    with:
-      script: test:e2e:gear
-      report-name: playwright-report-gear-gate
+      - uses: ./.github/actions/setup-playwright
+        with:
+          install-deps: "false"
 
-  mystery-gate:
-    needs: [changes, build]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.mystery == 'true'
-    uses: ./.github/workflows/gated-e2e.yml
-    with:
-      script: test:e2e:mystery
-      report-name: playwright-report-mystery-gate
+      - run: mkdir -p reports
+      - name: Run complete save journeys
+        run: npm run test:ship:e2e
+        env:
+          PLAYWRIGHT_VITE_MODE: preview
 
-  audio-gate:
-    needs: [changes, build]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.audio == 'true'
-    uses: ./.github/workflows/gated-e2e.yml
-    with:
-      script: test:e2e:audio
-      report-name: playwright-report-audio-gate
+      - name: Summarize save journeys
+        if: always()
+        run: node scripts/ci-summarize-playwright.mjs
+
+      - name: Upload save failure report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-save-gate
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
 
   desktop-build:
     needs: changes
@@ -405,7 +335,7 @@ jobs:
 
       - uses: ./.github/actions/setup
       - name: Build Windows installer
-        run: npm run dist:desktop:verified
+        run: npm run dist:desktop
 
       - name: Upload desktop artifact
         uses: actions/upload-artifact@v7

@@ -5,7 +5,7 @@ const { dryRun } = parseReleaseArgs(process.argv.slice(2));
 
 runRelease({
   label: "Hotfix",
-  gates: [["check:ship"], ["test:e2e:prepush"]],
+  gates: [["check:ship"], ["test:e2e:critical"]],
   bumpArgs: ["--release-as", "patch"],
   dryRun,
 }).catch((error) => {

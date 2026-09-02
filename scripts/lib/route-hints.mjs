@@ -1,4 +1,4 @@
-import { E2E_ESCALATIONS, E2E_NAMES, resolveRoutes } from "./change-routes.mjs";
+import { resolveRoutes } from "./change-routes.mjs";
 
 /**
  * @param {string} filePath
@@ -23,14 +23,7 @@ export function routeHintForPath(filePath, rootDir = process.cwd()) {
   const routes = resolveRoutes([relative]).map((route) => route.id);
   /** @type {string[]} */
   const focusedE2E = [];
-  const add = (name) => {
-    if (!focusedE2E.includes(name)) focusedE2E.push(name);
-  };
-  for (const id of routes) {
-    if (id === "shop" || id === "shop-screen") add("shop");
-    else if (Object.hasOwn(E2E_ESCALATIONS, id)) add(id);
-    else if (E2E_NAMES.has(id)) add(id);
-  }
+  if (routes.includes("save")) focusedE2E.push("save");
   return { routes, focusedE2E };
 }
 

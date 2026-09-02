@@ -59,6 +59,11 @@ describe("context hotspot reporting", () => {
         runId: "fixture",
         status: "passed",
         command: "verify",
+        sourceDigest: "abc123",
+        steps: [
+          { label: "verification", status: "passed", durationMs: 100 },
+          { label: "build", status: "skipped", durationMs: 0, reason: "documentation-only change" },
+        ],
         commandExposures: [
           {
             key: "typecheck",
@@ -76,6 +81,14 @@ describe("context hotspot reporting", () => {
         ],
       });
       const report = buildContextHotspotReport(root, { last: 5, minBytes: 1 });
+      const record = JSON.parse(fs.readFileSync(path.join(root, "reports/runs/fixture/run.json"), "utf8"));
+      expect(record).toMatchObject({
+        sourceDigest: "abc123",
+        steps: [
+          { label: "verification", status: "passed", durationMs: 100 },
+          { label: "build", status: "skipped", reason: "documentation-only change" },
+        ],
+      });
       expect(report.inspectedRuns).toBe(1);
       expect(report.commands[0]).toMatchObject({ key: "typecheck", rawBytes: 5_000, avoidedPercent: 100 });
       expect(formatContextHotspotReport(report)).toContain("TypeScript: 5,000 B raw / 0 B exposed");

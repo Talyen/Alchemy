@@ -41,14 +41,15 @@ Desktop local development is `npm run dev:desktop`.
 
 ## Develop
 
-| Command                            | Action                                |
-| ---------------------------------- | ------------------------------------- |
-| `npm run dev`                      | Start Vite dev server                 |
-| `npm run dev:desktop`              | Start the Electron shell              |
-| `npm test`                         | Run Vitest unit tests                 |
-| `npm run test:e2e`                 | Run Playwright end-to-end tests       |
-| `npm run lint`                     | Lint all source files                 |
-| `npm run verify:changed -- --diff` | Route checks to the paths you changed |
+| Command                    | Action                                                   |
+| -------------------------- | -------------------------------------------------------- |
+| `npm run dev`              | Start Vite dev server                                    |
+| `npm run dev:desktop`      | Start the Electron shell                                 |
+| `npm test`                 | Run Vitest unit tests                                    |
+| `npm run test:e2e`         | Run Playwright end-to-end tests                          |
+| `npm run lint`             | Lint all source files                                    |
+| `npm run verify -- --diff` | Run related tests and risk escalations for changed paths |
+| `npm run check -- --diff`  | Run the source-aware push and handoff gate               |
 
 Install Playwright's browser once before the first local E2E run:
 

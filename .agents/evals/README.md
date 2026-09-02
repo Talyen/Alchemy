@@ -10,9 +10,9 @@ Proposed skill or persistent-knowledge promotion that would affect routine codin
 
 - `npm run typecheck:all` passes (no new errors)
 - `npm run lint` + `npm run lint:boundaries` passes
-- `npm run verify:changed -- --diff --plan` route is minimal and correct
+- `npm run verify -- --diff --plan` selection is minimal and correct
 - `npm run docs:check` passes (no broken links/anchors)
-- Tests for touched route pass (`verify:changed` selected suite)
+- Tests selected for the touched paths pass
 - No unexpected warnings; diff is as large as needed for the best long-term shape and no larger; no redundant abstractions/files, no workaround hacks left behind
 - Task requirements satisfied vs. spec (not just green CI)
 
@@ -27,7 +27,7 @@ Setup: isolated eval worktree / seed state
 Goal: what agent should do
 Steps: optional hints (link WORKFLOWS checklist)
 Pass when: objective signals above + domain assertion
-Run: npm run verify:changed -- <paths>
+Run: npm run verify -- <paths>
 ```
 
 Keep tasks file-backed, not code-generated, and grounded in real repo workflows. Prefer existing `scripts/lib/change-routes.mjs` routes.

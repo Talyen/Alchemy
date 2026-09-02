@@ -132,7 +132,7 @@ documentation-only (see Initiative 9).
 
 - Hitch-free constraint: no React.lazy on route screens; vite code splitting stays eager, independently cached.
 - Mutation expansion nightly-only to avoid lint:ci slowdown.
-- Each initiative verifies via verify:changed plus lint:ci plus targeted tests.
+- Each initiative verifies via `verify` plus `lint:ci` plus targeted tests.
 - Earlier gear-clone, fade/hover, RNG/status, generated-helper, and path-hardening initiatives shipped or were intentionally deferred; their durable outcomes now live in the current owner docs and git history.
 - Wildwood 11% vs 33% intentionally not rebalanced in this plan — requires product/design decision.
 
@@ -144,4 +144,4 @@ documentation-only (see Initiative 9).
 
 ## Verification (per-initiative)
 
-Each initiative runs `npm run verify:changed -- --diff` + `npm run lint:ci` + its targeted `npm test -- <path>` / `npm run test:e2e` noted above. Final handoff runs `npm run check:push` if committing to main, then `npm run docs:check:final` to archive this plan. Strictly technical — no product rebalancing in this tail.
+Each initiative runs `npm run verify -- --diff` + `npm run lint:ci` + its targeted `npm test -- <path>` / `npm run test:e2e` noted above. Final handoff runs `npm run check -- --diff`, then `npm run docs:check:final` to archive this plan. Strictly technical — no product rebalancing in this tail.

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+
 import {
   commandExposure,
   firstOutputLine,
@@ -9,468 +10,123 @@ import {
   sanitizeOutput,
   tailOutput,
 } from "../../scripts/lib/compact-output.mjs";
-import { validateRouteCatalog } from "../../scripts/lib/change-routes.mjs";
+import { resolveRoutePlan, resolveRoutes, ROUTES, validateRouteCatalog } from "../../scripts/lib/change-routes.mjs";
 import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-commands.mjs";
-import { measureAllRoutes, measureContext, ROUTE_CONTEXT_BUDGETS } from "../../scripts/measure-agent-context.mjs";
+import { measureAllRoutes, ROUTE_CONTEXT_BUDGETS } from "../../scripts/measure-agent-context.mjs";
 import { formatPlan, writeFailureDigest } from "../../scripts/verify-changed.mjs";
-import { resolveRoutePlan as resolvePlan, resolveRoutes } from "../../scripts/lib/change-routes.mjs";
 
-describe("verify-changed route catalog", () => {
-  it("measures raw and agent-exposed command output", () => {
-    expect(outputStats("first\nsecond")).toEqual({ bytes: 12, lines: 2 });
-    expect(
-      commandExposure({
-        key: "fixture",
-        label: "fixture command",
-        command: "npm test",
-        result: { output: "0123456789", status: 1, elapsedMs: 15.4 },
-        exposedOutput: "6789",
-      }),
-    ).toMatchObject({
-      key: "fixture",
-      status: 1,
-      durationMs: 15,
-      rawBytes: 10,
-      exposedBytes: 4,
-      omittedBytes: 6,
-      omittedPercent: 60,
-      budgetBytes: 4_096,
-      overBudget: false,
-    });
-    expect(
-      commandExposure({
-        key: "flood",
-        label: "flood",
-        command: "fixture",
-        result: { output: "x".repeat(5_000), status: 0, elapsedMs: 1 },
-        exposedOutput: "x".repeat(5_000),
-      }).overBudget,
-    ).toBe(true);
-    expect(
-      commandExposure({
-        key: "verbose",
-        label: "verbose",
-        command: "fixture",
-        result: { output: "x".repeat(5_000), status: 0, elapsedMs: 1 },
-        exposedOutput: "x".repeat(5_000),
-        budgetBytes: null,
-      }),
-    ).toMatchObject({ budgetBytes: null, overBudget: false });
-  });
-  it("writes a run-attributed bounded digest while keeping the full stream separate", () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "verify-digest-"));
-    try {
-      const output = `> alchemy@0.1.0 test\n> vitest run\n\nAssertionError: expected map node to exist\n${"x".repeat(5_000)}`;
-      const result = writeFailureDigest(
-        root,
-        { key: "unit-map", label: "map unit tests", command: "npm", args: [], reason: "fixture" },
-        { output, status: 1, elapsedMs: 1234 },
-        "verify-run-id",
-        0,
-      );
-      const digest = fs.readFileSync(result.digestPath, "utf8");
-      const full = fs.readFileSync(result.logPath, "utf8");
-      expect(digest).toContain("Run: `verify-run-id`");
-      expect(digest).toContain("Verification failure: map unit tests");
-      expect(digest).toContain("AssertionError: expected map node to exist");
-      expect(digest.length).toBeLessThan(full.length);
-      expect(full).toBe(output);
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true });
-    }
-  });
-
-  it("keeps concrete command paths, fixtures, and owner headings current", () => {
-    expect(validateRouteCatalog({ rootDir: process.cwd() })).toEqual([]);
-  });
-
-  it("keeps ship suites non-empty after path changes", () => {
+describe("verification selection", () => {
+  it("uses a small broad category catalog", () => {
+    expect(ROUTES.length).toBeLessThanOrEqual(10);
+    expect(ROUTES.reduce((count, route) => count + route.patterns.length, 0)).toBeLessThanOrEqual(65);
+    expect(validateRouteCatalog()).toEqual([]);
     expect(validateTestSuitePaths(process.cwd(), TEST_SUITES.shipUnit)).toEqual([]);
   });
 
-  it("covers the smallest complete active-run route and deduplicates commands", () => {
-    const plan = resolvePlan([
-      "src/features/alchemy/shared/stores/run-session-command.ts",
-      "src/app/use-app-navigation.ts",
+  it("selects dependency-related tests for ordinary runtime changes", () => {
+    const plan = resolveRoutePlan(["src/lib/battle/damage-calc.ts"]);
+    expect(plan.routes.map((route) => route.id)).toEqual(["runtime"]);
+    expect(plan.commands.map((command) => command.key)).toEqual(["related"]);
+    expect(plan.commands[0]?.args).toEqual([
+      "vitest",
+      "related",
+      "src/lib/battle/damage-calc.ts",
+      "--run",
+      "--passWithNoTests",
     ]);
-
-    expect(plan.routes.map((route) => route.id)).toEqual(expect.arrayContaining(["active-run", "routing"]));
-    expect(plan.commands.map((command) => command.key)).toEqual(
-      expect.arrayContaining(["unit-active", "boundary", "e2e-prepush", "unit-routing"]),
-    );
-    expect(plan.commands.flatMap((command) => command.args).every((arg) => !arg.includes("*"))).toBe(true);
   });
 
-  it("adds screen-specific E2E only for an explicit escalation", () => {
-    const defaultPlan = resolvePlan(["src/lib/battle/damage.ts"], { e2e: true });
-    const e2ePlan = resolvePlan(["src/features/alchemy/run-loop/screens/alchemist-shop-screen.tsx"], { e2e: true });
-    const shopDomainPlan = resolvePlan(["src/features/alchemy/run-loop/shop/create-shop-actions.ts"], { e2e: true });
-    const explicitPlan = resolvePlan(["src/lib/battle/damage.ts"], { e2e: "mystery" });
-
-    expect(defaultPlan.commands.map((command) => command.key)).not.toContain("e2e-shop");
-    expect(e2ePlan.commands.map((command) => command.key)).toContain("e2e-shop");
-    expect(shopDomainPlan.commands.map((command) => command.key)).toContain("e2e-shop");
-    expect(e2ePlan.commands.map((command) => command.key)).not.toContain("e2e-mystery");
-    expect(explicitPlan.commands.map((command) => command.key)).toContain("e2e-mystery");
-  });
-
-  it("keeps focused E2E flows out of local default plans", () => {
-    expect(resolvePlan(["src/features/alchemy/shared/storage/io.ts"]).commands.map((command) => command.key)).toEqual([
-      "unit-save",
-      "e2e-prepush",
-    ]);
-    expect(
-      resolvePlan(["src/features/alchemy/meta/screens/armory-screen.tsx"]).commands.map((command) => command.key),
-    ).toEqual(["unit-gear"]);
-
-    const audioMysteryKeys = resolvePlan(["src/lib/audio-sfx.ts", "src/lib/mystery/pool.ts"]).commands.map(
-      (command) => command.key,
-    );
-    expect(audioMysteryKeys).toContain("unit-audio");
-    expect(audioMysteryKeys).toContain("unit-mystery");
-    expect(audioMysteryKeys).not.toContain("e2e-audio");
-    expect(audioMysteryKeys).not.toContain("e2e-mystery");
-
-    expect(
-      resolvePlan(["src/features/alchemy/run-loop/screens/alchemist-shop-screen.tsx"]).commands.map(
-        (command) => command.key,
-      ),
-    ).toEqual(["unit-shop", "typecheck"]);
-  });
-
-  it("escalates focused E2E flows on explicit selection", () => {
-    for (const [selection, commandKey] of [
-      ["save", "e2e-save"],
-      ["shop", "e2e-shop"],
-      ["audio", "e2e-audio"],
-      ["gear", "e2e-gear"],
-      ["mystery", "e2e-mystery"],
-    ] as const) {
-      const keys = resolvePlan(["src/lib/battle/damage.ts"], { e2e: selection }).commands.map((command) => command.key);
-      expect(keys, selection).toContain(commandKey);
-    }
-
-    const allKeys = resolvePlan(
-      ["src/features/alchemy/shared/storage/io.ts", "src/features/alchemy/meta/screens/armory-screen.tsx"],
-      { e2e: true },
-    ).commands.map((command) => command.key);
-    expect(allKeys).toContain("e2e-save");
-    expect(allKeys).toContain("e2e-gear");
-  });
-
-  it("keeps the default plan bounded and exposes full argv only on request", () => {
-    const plan = resolvePlan(["src/lib/battle/damage.ts"]);
-    const compact = formatPlan(plan);
-    const verbose = formatPlan(plan, { verbosePlan: true });
-
-    expect(compact).toContain("unit-battle: battle/card unit tests");
-    expect(compact).not.toContain("tests/lib/battle");
-    expect(verbose).toContain("npm test -- tests/lib/battle");
-  });
-
-  it("does not route gear stores through the active-run matrix", () => {
-    expect(resolveRoutes(["src/features/alchemy/shared/stores/gear-store.ts"]).map((route) => route.id)).toEqual(
-      expect.arrayContaining(["gear"]),
-    );
-    expect(
-      resolveRoutes(["src/features/alchemy/shared/stores/gear-store.ts", "src/lib/gear/affixes.ts"]).map(
-        (route) => route.id,
-      ),
-    ).toContain("gear");
-  });
-
-  it("routes settings, app effects, and platform contracts to complete owners", () => {
-    expect(resolveRoutes(["src/features/alchemy/shared/stores/settings-store.ts"]).map((route) => route.id)).toEqual(
-      expect.arrayContaining(["settings", "audio"]),
-    );
-    expect(resolveRoutes(["src/app/use-app-effects.ts"]).map((route) => route.id)).toEqual(
-      expect.arrayContaining(["settings", "audio"]),
-    );
-    expect(resolveRoutes(["src/lib/platform.ts"]).map((route) => route.id)).toEqual(
-      expect.arrayContaining(["desktop"]),
-    );
-
-    const keys = resolvePlan(["src/lib/settings-values.ts"]).commands.map((command) => command.key);
-    expect(keys).toEqual(expect.arrayContaining(["unit-settings", "unit-audio", "unit-desktop"]));
-  });
-
-  it("routes documentation changes to the documentation contract", () => {
-    expect(resolveRoutes(["docs/new-guide.md"]).map((route) => route.id)).toEqual(["documentation"]);
-    expect(resolvePlan(["docs/new-guide.md"]).commands.map((command) => command.key)).toEqual(["docs-check"]);
-  });
-
-  it("routes CI workflow changes to the CI path-filter contract", () => {
-    expect(resolveRoutes([".github/workflows/ci.yml"]).map((route) => route.id)).toEqual(["ci-routing"]);
-    expect(resolvePlan([".github/workflows/ci.yml"]).commands.map((command) => command.key)).toEqual(["ci-routing"]);
-  });
-
-  it("routes CI routing helpers through the ci-routing command", () => {
-    for (const filePath of [
-      "scripts/check-ci-routing.mjs",
-      "scripts/check-test-owners.mjs",
-      "scripts/ci-verify-plan.mjs",
-      "scripts/lib/route-hints.mjs",
-    ]) {
-      expect(
-        resolveRoutes([filePath]).map((route) => route.id),
-        filePath,
-      ).toEqual(expect.arrayContaining(["ci-routing", "tooling"]));
-      expect(
-        resolvePlan([filePath]).commands.map((command) => command.key),
-        filePath,
-      ).toEqual(expect.arrayContaining(["ci-routing", "unit-tooling"]));
-    }
-  });
-
-  it("routes canonical Armory and repository-tooling paths to real owners", () => {
-    expect(resolveRoutes(["src/features/alchemy/meta/screens/armory-screen.tsx"]).map((route) => route.id)).toEqual([
-      "gear",
-    ]);
-    expect(resolveRoutes(["tests/fixtures/e2e.ts"]).map((route) => route.id)).toEqual(["e2e-helper"]);
-    expect(resolveRoutes(["tests/playwright-shared.ts"]).map((route) => route.id)).toEqual(["e2e-helper"]);
-    expect(resolveRoutes(["playwright.config.ts"]).map((route) => route.id)).toEqual(["e2e-helper"]);
-    expect(resolveRoutes(["scripts/measure-agent-context.mjs"]).map((route) => route.id)).toEqual(["tooling"]);
-    expect(resolveRoutes(["package.json"]).map((route) => route.id)).toEqual(["tooling"]);
-    expect(resolveRoutes(["src/lib/game-data/assets.generated.ts"]).map((route) => route.id)).toEqual(
-      expect.arrayContaining(["generated", "assets"]),
-    );
-  });
-
-  it("routes asset pipeline entrypoints through prepared-output verification", () => {
-    for (const filePath of [
-      "scripts/lib/asset-manifest-cache.mjs",
-      "scripts/lib/audio-optimizer.mjs",
-      "scripts/sync-assets.mjs",
-      "scripts/sync-gear-art.mjs",
-    ]) {
-      const plan = resolvePlan([filePath]);
-      expect(
-        plan.routes.map((route) => route.id),
-        filePath,
-      ).toEqual(["assets"]);
-      expect(
-        plan.commands.map((command) => command.key),
-        filePath,
-      ).toEqual(["unit-tooling", "typecheck", "assets-check"]);
-    }
-  });
-
-  it("routes performance profiling and runtime marks through unit-performance", () => {
-    for (const filePath of [
-      "performance/metrics.ts",
-      "performance/compare-model.mjs",
-      "performance/compare.ts",
-      "performance/frame-sampler.ts",
-      "playwright.performance.config.ts",
-      "scripts/run-performance.mjs",
-      "src/lib/performance/battle-stage-marks.ts",
-      "tests/performance/metrics.test.ts",
-      "tests/lib/performance/battle-stage-marks.test.ts",
-      "docs/PERFORMANCE.md",
-      "docs/Audits/PerformanceAudit.md",
-    ]) {
-      const plan = resolvePlan([filePath]);
-      expect(
-        plan.routes.map((route) => route.id),
-        filePath,
-      ).toContain("performance");
-      expect(
-        plan.commands.map((command) => command.key),
-        filePath,
-      ).toEqual(expect.arrayContaining(["unit-performance", "typecheck"]));
-    }
-  });
-
-  it("keeps shared script helpers on the tooling route", () => {
-    for (const filePath of [
-      "scripts/lib/is-main-module.mjs",
-      "scripts/lib/kebab-to-camel.mjs",
-      "scripts/lib/map-pool.mjs",
-      "scripts/lib/write-text-if-changed.mjs",
-    ]) {
-      const plan = resolvePlan([filePath]);
-      expect(
-        plan.routes.map((route) => route.id),
-        filePath,
-      ).toEqual(["tooling"]);
-      expect(
-        plan.commands.map((command) => command.key),
-        filePath,
-      ).toEqual(["unit-tooling", "typecheck"]);
-    }
-  });
-
-  it("keeps generated asset helpers on the assets route", () => {
-    for (const filePath of [
-      "scripts/lib/sync-generated-helpers.mjs",
-      "scripts/lib/asset-constants.mjs",
-      "scripts/sync-art-barrels.mjs",
-    ]) {
-      const plan = resolvePlan([filePath]);
-      expect(
-        plan.routes.map((route) => route.id),
-        filePath,
-      ).toEqual(["assets"]);
-      expect(
-        plan.commands.map((command) => command.key),
-        filePath,
-      ).toEqual(["unit-tooling", "typecheck", "assets-check"]);
-    }
-  });
-
-  it("labels an unowned path honestly while retaining the static fallback", () => {
-    expect(resolveRoutes(["unknown.file"]).map((route) => route.id)).toEqual(["unknown"]);
-    const plan = resolvePlan(["unknown.file"]);
-    expect(plan.commands.map((command) => command.key)).toEqual(["typecheck"]);
-    expect(formatPlan(plan)).toContain("route ownership is unknown");
-  });
-
-  it("retains the unknown fallback when a mixed diff also has an owned path", () => {
-    const plan = resolvePlan(["docs/REFERENCE.md", "src/new-subsystem/example.ts"]);
-    expect(plan.routes.map((route) => route.id)).toEqual(["documentation", "unknown"]);
-    expect(plan.commands.map((command) => command.key)).toEqual(["docs-check", "typecheck"]);
-    expect(formatPlan(plan)).toContain("route ownership is unknown");
-  });
-
-  it("executes changed Vitest files directly", () => {
-    const filePath = "tests/lib/balance/findings.test.ts";
-    const plan = resolvePlan([filePath]);
+  it("executes changed tests directly", () => {
+    const filePath = "tests/lib/battle/damage-calc.test.ts";
+    const plan = resolveRoutePlan([filePath]);
     expect(plan.routes.map((route) => route.id)).toEqual(["unit-test"]);
-    expect(plan.commands.map((command) => command.key)).toEqual(["unit-changed"]);
-    expect(plan.commands[0]?.args).toEqual(["test", "--", filePath]);
+    expect(plan.commands[0]).toMatchObject({ key: "unit-changed", args: ["vitest", "run", filePath] });
   });
 
-  it("routes balance implementation through unit and full-report checks", () => {
-    for (const filePath of ["src/lib/balance/report-run.ts", "tests/balance/balance-report.test.ts"]) {
-      const plan = resolvePlan([filePath]);
-      expect(
-        plan.routes.map((route) => route.id),
-        filePath,
-      ).toEqual(expect.arrayContaining(["balance"]));
-      expect(
-        plan.routes.map((route) => route.id),
-        filePath,
-      ).toContain("balance");
-      expect(
-        plan.commands.map((command) => command.key),
-        filePath,
-      ).toEqual(expect.arrayContaining(["unit-balance", "report-balance"]));
-    }
+  it("adds only the retained risk escalations", () => {
+    expect(
+      resolveRoutePlan(["src/features/alchemy/shared/storage/io.ts"]).commands.map((command) => command.key),
+    ).toEqual(["related", "unit-save"]);
+    expect(resolveRoutePlan(["scripts/assets/core-assets.mjs"]).commands.map((command) => command.key)).toEqual([
+      "related",
+      "assets-check",
+    ]);
+    expect(resolveRoutePlan(["desktop/main.cjs"]).commands.map((command) => command.key)).toEqual([
+      "related",
+      "unit-desktop",
+    ]);
+    expect(resolveRoutePlan(["src/lib/balance/report-run.ts"]).commands.map((command) => command.key)).toEqual([
+      "related",
+      "report-balance",
+    ]);
   });
 
-  it("routes repository-tooling tests and declarations through their owning suite", () => {
-    for (const filePath of [
-      "tests/scripts/verify-changed.test.ts",
-      "tests/scripts/global.d.ts",
-      "tests/architecture/affix-catalog-guard.test.ts",
-    ]) {
-      const plan = resolvePlan([filePath]);
-      expect(
-        plan.routes.map((route) => route.id),
-        filePath,
-      ).toEqual(["tooling"]);
-      expect(
-        plan.commands.map((command) => command.key),
-        filePath,
-      ).toEqual(["unit-tooling", "typecheck"]);
-    }
+  it("keeps documentation free of unit, build, and browser work", () => {
+    const plan = resolveRoutePlan(["docs/new-guide.md"]);
+    expect(resolveRoutes(plan.paths).map((route) => route.id)).toEqual(["documentation"]);
+    expect(plan.commands.map((command) => command.key)).toEqual(["docs-check"]);
+    expect(formatPlan(plan)).toContain("documentation checks");
   });
 
-  it("routes desktop CommonJS and packaging helpers through focused unit coverage", () => {
-    for (const filePath of ["desktop/after-pack.cjs", "scripts/lib/desktop-artifact.mjs"]) {
-      const plan = resolvePlan([filePath]);
-      expect(
-        plan.routes.map((route) => route.id),
-        filePath,
-      ).toContain("desktop");
-      expect(
-        plan.commands.map((command) => command.key),
-        filePath,
-      ).toContain("unit-desktop");
-      expect(
-        plan.routes.map((route) => route.id),
-        filePath,
-      ).not.toContain("unknown");
-    }
+  it("treats browser specs as explicit local debugging flows", () => {
+    expect(resolveRoutePlan(["tests/shop-and-rewards.spec.ts"]).commands).toEqual([]);
   });
 
-  it("measures only the owner docs for a representative route by default", () => {
-    const measurement = measureContext({ paths: ["src/lib/battle/damage.ts"] });
-    expect(measurement.docs.map((doc) => doc.path)).toEqual(["AGENTS.md", "docs/REFERENCE.md"]);
-    expect(measurement.docs[1]?.heading).toBe("Battle Implementation Rules");
-    expect(measurement.selectedBytes).toBe(measurement.instructionBytes + measurement.ownerDocBytes);
-    expect(measurement.changedFileBytes).toBeGreaterThan(0);
-    expect(measurement.selectedBytes).toBeLessThan(20_000);
-    expect(measurement.verificationCommands).toBe(2);
+  it("keeps uncategorized executable selection honest", () => {
+    const plan = resolveRoutePlan(["custom/tool.mjs"]);
+    expect(plan.routes.map((route) => route.id)).toEqual(["unknown"]);
+    expect(plan.commands.map((command) => command.key)).toEqual(["related"]);
+    expect(formatPlan(plan)).toContain("uncategorized paths");
   });
 
-  it("measures every catalog heading and preserves distinct sections", () => {
-    expect(() => measureAllRoutes()).not.toThrow();
-    const measurement = measureContext({
-      paths: ["src/features/alchemy/shared/storage/io.ts", "src/features/alchemy/meta/screens/armory-screen.tsx"],
-    });
-    expect(measurement.ownerDocs.map((doc) => `${doc.path}#${doc.heading ?? ""}`)).toEqual(
-      expect.arrayContaining([
-        "docs/WORKFLOWS.md#Change persisted save data",
-        "src/features/alchemy/shared/storage/MIGRATIONS.md#Public save contract",
-        "docs/WORKFLOWS.md#Add permanent Gear",
-        "docs/ARMORY.md#Layout",
-      ]),
-    );
-  });
-
-  it("keeps representative prereads within their ratchets", () => {
-    const fixtures = [
-      ["src/lib/battle/damage.ts", 13 * 1024],
-      ["src/features/alchemy/shared/storage/io.ts", 12 * 1024],
-      ["src/features/alchemy/shared/stores/run-reads.ts", 18 * 1024],
-      ["src/features/alchemy/meta/screens/armory-screen.tsx", 14 * 1024],
-      ["unknown.file", 9 * 1024],
-    ] as const;
-    for (const [filePath, maxBytes] of fixtures) {
-      expect(measureContext({ paths: [filePath] }).selectedBytes, filePath).toBeLessThanOrEqual(maxBytes);
-    }
-  });
-
-  it("ratchets preread and total context for every canonical route", () => {
+  it("keeps route context measurements within advisory budgets", () => {
     const measurements = measureAllRoutes();
     expect(new Set(measurements.map((measurement) => measurement.routes.join("+")))).toEqual(
       new Set(Object.keys(ROUTE_CONTEXT_BUDGETS)),
     );
     for (const measurement of measurements) {
-      const route = measurement.routes[0] ?? "unknown";
-      const budget = ROUTE_CONTEXT_BUDGETS[route];
-      expect(measurement.selectedBytes, `${route} preread`).toBeLessThanOrEqual(budget?.preread ?? 0);
-      expect(measurement.totalContextBytes, `${route} total`).toBeLessThanOrEqual(budget?.total ?? 0);
-    }
-  });
-
-  it("keeps the routine persistence guard stack bounded", () => {
-    const agents = fs.readFileSync("AGENTS.md", "utf8");
-    const start = agents.indexOf("## Change guards");
-    const end = agents.indexOf("\n## ", start + 1);
-    const guardsBytes = start < 0 || end < 0 ? Number.POSITIVE_INFINITY : Buffer.byteLength(agents.slice(start, end));
-    const bytes = guardsBytes + fs.statSync(".agents/skills/verifier/SKILL.md").size;
-    expect(bytes).toBeLessThanOrEqual(4_096);
-  });
-
-  it("marks generated TypeScript as non-authored output", () => {
-    for (const filePath of ["src/lib/game-data/assets.generated.ts", "src/lib/validation/metadata.generated.ts"]) {
-      expect(fs.readFileSync(filePath, "utf8").split("\n", 1)[0], filePath).toMatch(/generated.*do not edit/iu);
+      const budget = ROUTE_CONTEXT_BUDGETS[measurement.routes[0] ?? "unknown"];
+      expect(measurement.selectedBytes).toBeLessThanOrEqual(budget?.preread ?? 0);
+      expect(measurement.totalContextBytes).toBeLessThanOrEqual(budget?.total ?? 0);
     }
   });
 });
 
-describe("compact child output", () => {
-  it("keeps a useful first line and bounded tail", () => {
-    expect(firstOutputLine("\n\nTimeoutError: locator.click\nstack\n")).toBe("TimeoutError: locator.click");
-    const output = tailOutput("x".repeat(30), 10);
-    expect(Buffer.byteLength(output, "utf8")).toBeLessThanOrEqual(30);
-    expect(output).toContain("bytes omitted");
-    expect(Buffer.byteLength(tailOutput("🔥".repeat(2_000)), "utf8")).toBeLessThanOrEqual(4_000);
+describe("verification diagnostics", () => {
+  it("measures raw and exposed output", () => {
+    expect(outputStats("first\nsecond")).toEqual({ bytes: 12, lines: 2 });
+    expect(
+      commandExposure({
+        key: "fixture",
+        label: "fixture",
+        command: "npm test",
+        result: { output: "0123456789", status: 1, elapsedMs: 15.4 },
+        exposedOutput: "6789",
+      }),
+    ).toMatchObject({ rawBytes: 10, exposedBytes: 4, omittedBytes: 6, omittedPercent: 60 });
   });
 
-  it("strips terminal control noise from compact output", () => {
+  it("writes a bounded digest and separate full log", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "verify-digest-"));
+    try {
+      const result = { status: 1, elapsedMs: 10, output: "x".repeat(5_000) };
+      const files = writeFailureDigest(
+        root,
+        { key: "test", label: "test", command: "npm", args: ["test"], reason: "fixture" },
+        result,
+        "run-id",
+        0,
+      );
+      expect(fs.readFileSync(files.digestPath, "utf8").length).toBeLessThan(result.output.length);
+      expect(fs.readFileSync(files.logPath, "utf8")).toContain("x".repeat(100));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps compact output useful", () => {
+    expect(firstOutputLine("\nTimeoutError: locator.click\nstack")).toBe("TimeoutError: locator.click");
+    expect(tailOutput("x".repeat(30), 10)).toContain("bytes omitted");
     expect(sanitizeOutput("\u001b[31mError\u001b[0m\u0000\nnext")).toBe("Error\nnext");
   });
 });

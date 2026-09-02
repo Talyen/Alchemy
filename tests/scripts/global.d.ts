@@ -303,14 +303,14 @@ interface VerificationCommand {
 }
 
 declare module "*/change-routes.mjs" {
-  export const E2E_NAMES: ReadonlySet<string>;
-  export const E2E_ESCALATIONS: Readonly<Record<string, string>>;
+  export const ROUTES: readonly VerificationRoute[];
   export function validateRouteCatalog(options?: { rootDir?: string }): string[];
   export function resolveRoutes(paths: string[]): VerificationRoute[];
-  export function resolveRoutePlan(
-    paths: string[],
-    options?: { e2e?: boolean | string; includeE2E?: boolean; full?: boolean },
-  ): { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] };
+  export function resolveRoutePlan(paths: string[]): {
+    paths: string[];
+    routes: VerificationRoute[];
+    commands: VerificationCommand[];
+  };
 }
 
 interface PlaywrightDiagnosticInput {
@@ -513,11 +513,7 @@ declare module "*/context-hotspots.mjs" {
 }
 
 declare module "*/verify-changed.mjs" {
-  export function resolveRoutes(paths: string[]): VerificationRoute[];
-  export function resolvePlan(
-    paths: string[],
-    options?: { e2e?: boolean | string; includeE2E?: boolean; full?: boolean },
-  ): { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] };
+  export function main(argv?: string[]): number;
   export function formatPlan(
     plan: { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] },
     options?: { verbosePlan?: boolean },
@@ -559,6 +555,8 @@ declare module "*/current-run.mjs" {
       budgetBytes: number | null;
       overBudget: boolean;
     }>;
+    steps?: Array<{ label: string; status: "passed" | "failed" | "skipped"; durationMs: number; reason?: string }>;
+    sourceDigest?: string;
   }): {
     jsonPath: string;
     markdownPath: string;
@@ -577,23 +575,16 @@ declare module "*/show-runs.mjs" {
   export function formatRecentRun(rootDir: string, record: Record<string, unknown>): string;
 }
 
-declare module "*/check-ci-routing.mjs" {
-  export const FOCUSED_E2E_ROUTE_IDS: readonly string[];
-  export function checkCiRouting(source: string): string[];
-  export function checkChangeRoutePatternsInCi(
-    source: string,
-    routes?: ReadonlyArray<{ id: string; patterns: readonly string[] }>,
-  ): string[];
-  export function checkJobBoundaries(source: string): string[];
-  export function checkDiagnosticRetention(sources: Record<string, string>): string[];
-}
-
-declare module "*/check-test-owners.mjs" {
-  export function isCheckableSourceFile(relativePath: string): boolean;
-  export function hasTestOwner(relativePath: string, rootDir?: string): boolean;
-  export function unownedAddedSourceFiles(addedPaths: readonly string[], rootDir?: string): string[];
-  export function parseTestOwnerArgs(argv: string[]): { base: string | null; head: string; help: boolean };
-  export function gitAddedPaths(base: string, head: string, rootDir?: string): string[] | null;
+declare module "*/check.mjs" {
+  export function captureSourceDigest(): { head: string; hash: string };
+  export function parseCheckArgs(argv: string[]): string[];
+  export function runCheck(
+    argv?: string[],
+    options?: {
+      runner?: (label: string, command: string, args: string[], env: NodeJS.ProcessEnv) => number | Promise<number>;
+      captureDigest?: () => { head: string; hash: string };
+    },
+  ): Promise<number>;
 }
 
 declare module "*/route-hints.mjs" {

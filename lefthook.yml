@@ -13,6 +13,5 @@ commit-msg:
 pre-push:
   commands:
     push-gate:
-      # check:push is the canonical fast gate: lockfile, format, typecheck, lint,
-      # generated-output validation, and a non-mutating production build.
-      run: npm run check:push
+      # check is the canonical source-aware completion gate.
+      run: npm run check -- --diff

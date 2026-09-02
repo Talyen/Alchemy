@@ -37,13 +37,13 @@ Product interaction defects → UIConsistency; structural test-support mass → 
 - **Ownership:** battle/effects → `tests/lib/battle`, `tests/lib/game-data`; gear → `tests/lib/gear` + store tests; saves/migrations → storage + `tests/architecture/`; orchestration → stores/shell/navigation tests. Reuse page objects (`tests/pages/`) and helpers; no new page object for 1–2 call sites.
 - **Quality:** assert outcomes (HP deltas, events, reloaded save shape), not implementation details or log fingerprints; no "function exists" assertions; no soft-fails; seeded RNG for battle edges; reuse corrupt/partial save fixtures.
 - **Fixtures:** extract shared builders at three call sites, two with demonstrated drift, or one canonical invariant builder; track authored declarations separately from expanded executions.
-- **Allowed E2E fixes:** delete duplicate journeys; add missing critical journeys; shorten waits after deterministic bootstrap; move multi-step assertions `@prepush` → `@critical` without retaining copies; stable roles/test ids over text/index hunts; repair isolation; improve diagnostics.
+- **Allowed E2E fixes:** delete duplicate journeys; add missing critical journeys; shorten waits after deterministic bootstrap; keep multi-step assertions in `@critical` without retaining copies; stable roles/test ids over text/index hunts; repair isolation; improve diagnostics.
 - Reduction applies to redundant coverage only; add tests anywhere a confirmed risk lacks a trustworthy owner — extend an existing suite before creating one.
 
 ## Known signals
 
 - `waitForTimeout`/`sleep(` in tests; `.nth(n)` chains or localized-text-only queries; QA-shortcut selectors.
-- Same journey asserted in both `@prepush` and a slower tier; specs passing alone but failing after siblings (state leakage).
+- Same journey asserted in both `@critical` and a slower tier; specs passing alone but failing after siblings (state leakage).
 - Exact catalog counts, pixel tables, plain-struct round trips, empty/commented tests, hidden soft failures, multi-second unit waits.
 - Assertions on error message text instead of typed kinds; mutation-resilient suites; uncontrolled clocks/RNG/shared state.
 - Coverage gaps (discovery: `npm run test:coverage`) on `src/lib/battle`, `src/lib/gear`, storage, validation branches; `npm run test:e2e:audit` timing/flake reports as supporting evidence.

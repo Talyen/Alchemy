@@ -4,7 +4,7 @@ Alchemy is a fantasy roguelite deckbuilder. Router + universal constraints; deta
 
 ## Working style
 
-- Dirty tree is in-flight user work: inspect, preserve intent, keep unrelated paths out. Never `git reset --hard` / `clean -fd` / `checkout --` / `restore` with a dirty tree — the repo guard (`scripts/bin/git` → `scripts/git-safety-guard.mjs`) creates an `auto-backup pre-<cmd>` stash and blocks. Inspect with `git stash list` / `git stash show`, restore with `git stash apply`, then drop the stash after verification. For parallel work use `node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`).
+- Dirty tree is user work: inspect the diff, preserve intent. Fix clear evidenced issues found during normal work—even outside scope—and their cause, with proportionate tests. Surgical edits may coexist; never revert, replace, or delete existing work. Ask if conflicting/ambiguous or subjective design/balance. No broad cleanup/uncited audit. Never `git reset --hard` / `clean -fd` / `checkout --` / `restore` with a dirty tree — the repo guard creates an `auto-backup pre-<cmd>` stash and blocks; inspect/apply/drop it after verification. For parallel work use `node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`).
 - Most pragmatic architectural solution — the best long-term shape, even when larger/harder than the minimal workaround; prefer libs over custom hacks. Compatibility only for concrete consumer (save, shipped behavior, external contract).
 - Surface requirement conflicts with evidence. First failure: use bounded diagnostics; repeated failure class: consult knowledge; after 3 unsuccessful approaches, reassess with docs/tests and ask only when evidence cannot resolve the decision.
 - When docs mislead, behavior surprises, or friction repeats, append a brief row to [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md) (expanded template inside when needed).
@@ -73,4 +73,4 @@ Trunk-based: commit to `main` / branch/PR only when asked. Conventional Commits 
 
 ## Handoff
 
-Game/workflow outcome first in player/design terms (using game vocabulary), then concise verification status. Avoid code/engineering detail unless requested. Name relevant scope intentionally left unchanged. No log/diff dumps.
+Game/workflow outcome first in player/design terms (using game vocabulary), then concise verification status. Avoid code/engineering detail unless requested. Report incidental fixes and ambiguous findings. No log/diff dumps.

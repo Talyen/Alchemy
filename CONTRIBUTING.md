@@ -1,102 +1,67 @@
 # Contributing
 
-Install dependencies with `npm ci`, find the canonical owner for the behavior
-in the [documentation map](./README.md#documentation), and keep the change
-focused on that owner. During implementation, run
-`npm run verify:changed -- --diff`; before pushing, run `npm run check:push`.
-Use Conventional Commits and
-leave `CHANGELOG.md` to the release automation.
+Install dependencies with `npm ci`, find the canonical owner in the [documentation map](./README.md#documentation), and begin the change with that owner. Clear bugs, failing checks, broken docs or invariants, and well-supported maintenance, accessibility, or UX issues encountered elsewhere may be fixed; follow their cause without starting a broad cleanup or uncited audit. Preserve existing edits with surgical changes, and ask when a safe merge or remedy is ambiguous.
+
+During implementation run `npm run verify -- --diff`; before push and handoff run `npm run check -- --diff`. Use Conventional Commits and leave `CHANGELOG.md` to release automation.
 
 ## What to run when you change…
 
-The executable catalog in `scripts/lib/change-routes.mjs` owns path-to-command and path-to-document selection; `scripts/verify-changed.mjs` executes its deduplicated plan.
+The local workflow has three entry points:
 
-- During development: `npm run verify:changed -- --diff` (or pass explicit paths).
-- Asset source or pipeline changes also route through `npm run assets:check`,
-  which verifies complete preparation is idempotent. If preparation would change
-  outputs, the check restores them and fails with the changed paths.
-- Inspect without running: add `--plan`; use `--verbose-plan` only when full argv is needed.
-- Local defaults run focused unit suites plus the `@prepush` canary only; no focused browser flow runs by default. Six focused flows (`save`, `shop`, `audio`, `gear`, `mystery`, `homestead`) are opt-in via `--e2e <route>`, or bare `--e2e` for every touched route; `--full` adds the full local handoff gate. CI owns the every-push critical gate, five path-filtered gates (`save`, `shop`, `gear`, `mystery`, `audio`), and nightly coverage. Homestead remains a local/manual focused flow.
-- Desktop CommonJS and packaging changes route through focused unit coverage locally. The Electron desktop suite (`test:ship:desktop`) remains CI-only: it runs on pushes matching the `desktop_renderer` path filter and unconditionally on nightly. Run it locally only by explicit choice.
-- Unknown paths are labeled `unknown` and receive a TypeScript fallback with a warning that non-TypeScript behavior may not be exercised. Handoff and CI run `verify:changed -- --strict-routes` which fails when changed executable/test/workflow/build-config paths lack ownership; iteration mode warns only. Documentation-only paths do not trigger strict failure.
-- Canonical route fixtures and selected commands are tested in `tests/scripts/verify-changed.test.ts`.
-- On any push to `main`, use the fast pre-push hook (`check:push`); CI runs after push. CI E2E parity is `test:e2e:prepush:full`.
+| Moment           | Command                    | Responsibility                                                                                                     |
+| ---------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| During work      | `npm run verify -- --diff` | Changed Vitest files, dependency-related tests, and save/assets/desktop/balance/performance escalations            |
+| Push and handoff | `npm run check -- --diff`  | Verification, applicable static checks, lockfile consistency when manifests change, pure builds, and preview smoke |
+| Release          | `npm run release`          | Full release, desktop packaging, tag, push, and CI watch                                                           |
+
+`npm run verify -- --diff --plan` previews selection without running it. Explicit paths may replace `--diff`. Browser flows remain available through the `test:e2e:*` scripts when investigation needs them, but local handoff does not rerun the every-push critical suite.
+
+The risk escalations are intentionally broad and few:
+
+- Save changes run the complete save/persistence unit suite.
+- Asset source or pipeline changes run the idempotent prepared-output check.
+- Desktop changes run the desktop boundary unit suite.
+- Balance and performance changes run their dedicated report/harness checks.
+- Other implementation changes use Vitest dependency selection; changed test files execute directly.
+
+The completion gate records every passed, failed, and skipped stage under one run ID and rejects results if tracked source inputs change during the run. Documentation-only changes run documentation and format checks without unit, build, or browser work. Runtime inputs trigger a non-mutating build and preview smoke. Package manifests trigger `npm ci --dry-run --ignore-scripts`; other pushes do not.
 
 ## E2E policy
 
-E2E fixture, bootstrap, page-object, tag, and diagnostic instructions live in
-[tests/e2e/README.md](./tests/e2e/README.md). This document owns only the
-changed-path and CI tier policy. When a test fails, follow
-[failure-first triage](./docs/REFERENCE.md#failure-first-triage) before opening
-raw traces or report directories.
+Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every push runs the `@critical` journeys exactly once. Save changes additionally run the complete save specs. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
 
-Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract,
-and tooling suites run in the `node` project. `vitest.config.ts:testEnvironmentForPath` owns that classification.
-Keep browser-dependent TypeScript tests in its explicit list, while `*.test.tsx` files are always DOM tests. Targeted
-paths and coverage run across both projects through the existing `npm test -- <path>` commands.
+Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. `vitest.config.ts:testEnvironmentForPath` owns that classification.
 
-## Before you push
+## Hooks and workflow hygiene
 
-Execution plans are short-lived working documents under [`docs/Plans/`](docs/Plans/README.md). Run `npm run plans:check` while a plan is active; `npm run docs:check` includes that check plus repository-wide documentation contracts. When the work ends, mark the plan `complete` (or `cancelled`), refresh its `updated` date, run `npm run archive:plans` to move terminal plans, then run `npm run docs:check:final` (pure validation — no archiving) which requires no active plans to remain and fails if terminal plans are still unarchived.
+`lefthook` pre-push invokes only `npm run check -- --diff`. Pre-commit formats staged files selected by `scripts/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
 
-The default local hook is `npm run check:push` — the canonical fast gate: lockfile check (`npm ci --dry-run`), formatting, TypeScript for src and tests, ESLint, generated-output validation (including version metadata via `check:generated`), and a non-mutating production build (`build:verified`). The strong completion gate is `npm run check:handoff -- --diff` (or explicit paths): strict changed-path verification, full static checks/boundaries/CI routing, complete Vitest suite, verified build + preview smoke, `@prepush` browser canary, final docs/plan validation, and `context:hotspots -- --run-id <id> --check` against the gate's single run ID with source-state staleness detection. CI runs the full gate after every push to `main`. Do **not** require a GitHub **push** status check on `main` — that blocks trunk pushes before CI can run.
+Execution plans under `docs/Plans/` are workflow artifacts, not product correctness gates. While a plan is active, run `npm run plans:check`. When this task owns a finished plan, mark it complete or cancelled, refresh its date, run `npm run archive:plans`, then `npm run docs:check:final`.
 
-`lefthook` `pre-push` runs only `check:push`. `lefthook` `pre-commit` runs Prettier on **staged files** that match `scripts/prettier-paths.mjs` (same set as `npm run format` / `format:check`). Do not hand-duplicate those globs in lefthook. Install hooks once: `npm run prepare` (runs on `npm install`).
+`npm run context:hotspots` and `npm run runs:show -- --last 10` are advisory process evidence. They never block push or handoff.
 
-CI and handoff enforce strict route ownership for changed executable/test/workflow/build-config paths; iteration mode warns only. Documentation-only changes do not trigger strict failure.
+## Static, build, and CI policy
 
-E2E timings / flakiness: `npm run test:e2e:timings`, `npm run test:e2e:audit`.
-Recent local verification/test records: `npm run runs:show -- --last 10`.
-Frame pacing (on-demand, not CI): [docs/PERFORMANCE.md](./docs/PERFORMANCE.md).
-Release command: `npm run release` runs `check:ship:full`, creates the release
-commit and tag, pushes `main` and the tag, then watches GitHub Actions. Use it
-only when intentionally shipping; see [RELEASE.md](./docs/RELEASE.md).
+| Command                           | Role                                                                                                  |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `npm run check:static`            | Generated outputs, formatting, source/test types, ESLint, import boundaries, and architecture smoke   |
+| `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, and Playwright collection |
+| `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                 |
+| `npm run assets:check`            | Idempotent authored-asset preparation check                                                           |
+| `npm run test:e2e:critical`       | Every-push representative player journeys                                                             |
 
-### Lint / format / dead-code commands
+Builds never prepare or rewrite tracked sources. Use the explicit `sync:*` and asset authoring commands when intentionally regenerating outputs.
 
-| Command                           | Role                                                                                                                                                                                                                                                                                                                |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run format` / `format:check` | Prettier via `scripts/run-prettier.mjs`                                                                                                                                                                                                                                                                             |
-| `npm run lint`                    | ESLint (`eslint.config.js` + `eslint/`)                                                                                                                                                                                                                                                                             |
-| `npm run lint:boundaries`         | dependency-cruiser phase / lib edges                                                                                                                                                                                                                                                                                |
-| `npm run lint:architecture-smoke` | Cold ESLint smoke over representative screens and effective-config checks; included in `lint:ci`                                                                                                                                                                                                                    |
-| `npm run deadcode`                | knip (`lint:ci` / CI; not default `pre-push`)                                                                                                                                                                                                                                                                       |
-| `npm run deadcode:entry-exports`  | knip entry-export audit (nightly); production/strict mode remains off until production patterns are configured                                                                                                                                                                                                      |
-| `npm run lint:ci`                 | Nine concurrent static gates (docs:check, CI routing, generated-output check, format:check, typecheck:all, lint, boundaries, architecture-smoke, deadcode); fails fast on the first failure. The GitHub `lint` job runs this, then adds push-only `ci:verify-plan` (informational) and `check:test-owners`          |
-| `npm run check:test-owners`       | CI-only on push: fail when a newly added `src` file has no mirrored Vitest owner. Screens, types, and generated files are excluded. `src/lib` requires a basename match (`src/lib/battle/dot-resolve.ts` → `tests/lib/battle/dot-resolve.test.ts`); other source may share a sibling test in the mirrored directory |
-| `npm run ci:verify-plan`          | CI-only informational: print the `verify:changed --plan` for the push range                                                                                                                                                                                                                                         |
-| `npm run test:mutation`           | Nightly Stryker canary on `damage-calc.ts` and `dot-resolve.ts`; not a local gate                                                                                                                                                                                                                                   |
+Every push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Only save persistence, prepared assets, desktop packaging, and Electron tests remain path-gated. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/change-routes.mjs`.
 
-Local leftover reports/builds: `npm run clean` (safe artifacts) or `npm run clean:all` (also `dist` / `release-desktop` + configured stale test/preview ports). The main Vite port is left alone unless you pass `--include-dev-port`; use `npm run clean -- --help` for the current target list.
+[Bugbot](./.cursor/BUGBOT.md) remains an optional post-push review aid for gameplay, save, and battle-rule changes; it is not a required status check.
 
-## CI routing ownership
+Release validation remains deliberately redundant because it protects published artifacts. See [RELEASE.md](./docs/RELEASE.md).
 
-CI topology is owned by `.github/workflows/`; local route selection is owned by
-`scripts/lib/change-routes.mjs`. Keep both synchronized through
-`npm run ci:routing`. Current job-to-local mappings are listed in
-[CI parity](#ci-parity), but do not override those executable owners.
+## Failure-first triage
 
-## CI parity
-
-| Job                                                          | Local equivalent                                                                                                                                                                                                               |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| CI `ship-gate`                                               | `ALCHEMY_SKIP_ASSETS=1 npm run build:desktop` (path-gated by `desktop_renderer` across Electron + renderer routing/boot/screen changes, after unit tests pass); uploads `dist-desktop` artifact                                |
-| CI `assets`                                                  | `npm run assets:check` (path-filtered on Raw Assets, asset scripts/helpers, and committed outputs)                                                                                                                             |
-| CI `save-gate`                                               | `npm run test:ship:e2e` (path-filtered)                                                                                                                                                                                        |
-| CI `shop-gate` / `gear-gate` / `mystery-gate` / `audio-gate` | `npm run test:e2e:shop` (`tests/shop-and-rewards.spec.ts`: shop + primary reward claim/persistence) / `test:e2e:gear` / `test:e2e:mystery` / `test:e2e:audio` (path-filtered; still opt-in locally via `verify:changed --e2e`) |
-| CI `desktop-build` / `electron-e2e`                          | `npm run dist:desktop` / desktop Playwright suite is CI-only (path-filtered job + nightly); manual opt-in: `npm run test:ship:desktop`                                                                                         |
-| CI `e2e` (`@critical` + `@prepush`, every push)              | `npm run build && npm run test:e2e:prepush:full`                                                                                                                                                                               |
-| Nightly `coverage`                                           | `npm run test:coverage` — unit tests with coverage thresholds from `vite.config.ts` (sparse checkout excludes Raw Assets; asset-reading suites self-skip)                                                                      |
-| Nightly `mutation`                                           | `npm run test:mutation` — Stryker canary on `src/lib/battle/damage-calc.ts` and `src/lib/battle/dot-resolve.ts` (informational `break` threshold)                                                                              |
-| Pre-push hook                                                | `npm run check:push`                                                                                                                                                                                                           |
-| Tag `v*` release (`e2e-full` + release job)                  | `npm run release` — see [docs/RELEASE.md](./docs/RELEASE.md); release job runs `dist:desktop` once (no `check:ship` rebuild)                                                                                                   |
-
-CI annotations, summaries, path filters, and shared setup are defined in
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) and
-[`.github/actions/setup`](.github/actions/setup).
-Vitest and Playwright job summaries include a changed-path route hint so the next agent can open the digest instead of the raw report.
-Cursor Bugbot is not a required GitHub check on `main`; use it as a post-push review on gameplay, save, and battle-rule diffs. Custom review focus lives in [`.cursor/BUGBOT.md`](./.cursor/BUGBOT.md).
+Follow [REFERENCE.md](./docs/REFERENCE.md#failure-first-triage). Start with the compact run record or failure digest, then open raw logs or traces only when the digest does not identify the next seam. Do not paste full reports into agent context.
 
 ## Changelog and patch notes
 
-Changelog updates happen at release only; `CHANGELOG.md` is never hand-edited. Player patch notes are generated from git using `feat` / `fix` / `balance` / `perf`, changed paths, and an optional `User-Facing: yes` or `User-Facing: no` commit-body trailer. Release-time changelog promotion, `sync:changelog`, and `generate:patch-notes`: [RELEASE.md](./docs/RELEASE.md).
+Changelog updates happen at release only. Player patch notes are generated from Conventional Commits, changed paths, and an optional `User-Facing: yes` or `User-Facing: no` trailer. Release-time details live in [RELEASE.md](./docs/RELEASE.md).

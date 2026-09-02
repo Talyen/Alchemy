@@ -87,7 +87,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-      - run: npm run build:verified
+      - run: npm run build
 
       - name: Smoke test production build
         run: npm run smoke:preview
@@ -199,7 +199,7 @@ jobs:
         run: npm run assets:check
 
       - name: Build desktop installers
-        run: npm run dist:desktop:verified
+        run: npm run dist:desktop
         env:
           CI_RELEASE: "true"
           STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}

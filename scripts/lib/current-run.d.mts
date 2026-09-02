@@ -36,6 +36,13 @@ export interface CurrentRunOptions {
   counts?: RunCounts;
   commit?: string | null;
   commandExposures?: CommandExposure[];
+  steps?: Array<{
+    label: string;
+    status: "passed" | "failed" | "skipped";
+    durationMs: number;
+    reason?: string;
+  }>;
+  sourceDigest?: string;
 }
 
 export function normalizeRunId(value: unknown): string;

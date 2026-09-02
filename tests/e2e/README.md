@@ -37,7 +37,7 @@ Decision order:
 
 - Card factories are in `cards.ts`; use named presets when the assertion depends on a specific card.
 - `enableFastMode` disables animations and is forbidden in animation-focused specs.
-- `BattlePage.endTurn` must work with animations both on and off; changing it requires the prepush canary.
+- `BattlePage.endTurn` must work with animations both on and off; changing it requires the critical animation canary.
 - Prefer `winViaCombat`, `playCardNamed`, or `playFirstCard`; `playAllCards` is normally internal.
 - Do not use `skipCombatToVictory`, `skipCombatBtn`, or production-hidden Unlock All/Skip Combat strings. Legitimate in-game Skip actions remain valid.
 
@@ -51,13 +51,12 @@ Page objects: `BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPa
 
 ## Tags
 
-- `@prepush` — fast local hook subset: boot, battle animation canary, and SFX smoke. Tag tests individually; describe-level tags are inherited by every child.
-- `@critical` — every-push CI coverage for representative core gameplay and adjacent flows.
+- `@critical` — every-push CI coverage for representative core gameplay, boot, animation, SFX, and adjacent flows.
 - `@slow` — animation canaries and viewport loops; release/full-suite tier.
 
 Combine tags with the array form — `{ tag: [a.tag, b.tag] }` — never object
 spread, which silently drops every tag but the last. Tests with no tag run only
-in the nightly/full suite, not in the every-push `@critical|@prepush` gate;
+in the nightly/full suite, not in the every-push `@critical` gate;
 tag a test `@critical` when its journey must gate every push.
 
 The path-filtered `save-gate` intentionally reruns full save specs, including overlapping `@critical` tests, for save-touching pushes.

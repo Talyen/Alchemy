@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { failOnRuntimeErrors } from "./e2e/errors";
-import { prepush } from "./playwright-tags";
+import { critical } from "./playwright-tags";
 
-test.describe("App Boot", { tag: [prepush.tag] }, () => {
+test.describe("App Boot", critical, () => {
   test("main menu renders without crashing on desktop", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
     await page.goto("/");

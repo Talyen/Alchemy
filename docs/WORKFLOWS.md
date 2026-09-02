@@ -279,7 +279,7 @@ Campaign, labyrinth, and Wildwood differ at setup and resume. Read the
 [run-setup ownership](./ARCHITECTURE.md#run-setup-ownership) section before
 changing the navigation seam. Keep each content system’s persisted draft and
 resume path in its existing owner, then cover the changed setup/resume route
-with the focused tests selected by `verify:changed`.
+with the dependency-related tests selected by `verify`.
 
 Labyrinth maps persist on `activeRun.labyrinthMap` as hex floors (`floors` +
 `nodes`). Resume still returns to `labyrinth-map`. Historical grid-map recovery
@@ -293,7 +293,7 @@ Layout and ownership: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-
 - Reuse the presentation gate and idle-input predicate for autoplay, auto-end-turn, manual card play, and End Turn. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks.
 - Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
 - Attacker lunge is presentation-only: nest it outside shake so hit VFX still compose; do not retime playback delays for it. Player lunge fires only for cards with a damage effect and moves the portrait, not the HP/status column.
-- Run the focused battle playback tests and the route selected by `verify:changed`; use the raw Playwright path for animation coverage.
+- Run the focused battle playback tests and the selection from `verify`; use the raw Playwright path for animation coverage.
 
 ## Adding a new screen
 

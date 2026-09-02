@@ -23,16 +23,15 @@ lists in subsystem docs.
 ```sh
 npm run dev                 # Vite dev server
 npm run build               # vite build (typecheck is a separate gate; Vercel runs vercel.json buildCommand)
-npm run build:verified      # Non-mutating vite build (validates generated outputs including version metadata)
+npm run build               # Non-mutating Vite build; validates generated outputs first
 npm run assets:check        # Prepare assets and fail unless the operation is idempotent
 npm test                    # Vitest; `npm test -- <path>` for a single file
-npm run verify:changed -- --diff  # Changed-path verification route (--plan previews; --e2e <route> escalates; --strict-routes enforces ownership)
+npm run verify -- --diff    # Related tests plus broad risk escalations (--plan previews)
 npm run runs:show -- --last 10    # Recent run IDs, outcomes, counts, and evidence availability
 npm run context:hotspots          # Ranked route context and recent command-output exposure (--run-id <id> checks one exact run)
-npm run typecheck           # tsc --noEmit (fast; also in lint:ci / check:push)
+npm run typecheck           # tsc --noEmit (fast; also in check:static)
 npm run lint:ci             # Full static gate
-npm run check:push          # Fast push/hook gate (lockfile, format, typecheck:all, lint, check:generated, build:verified)
-npm run check:handoff -- --diff  # Strong completion gate (strict verification + lint:ci + Vitest + verified build + smoke + @prepush + docs:check:final + hotspots --run-id)
+npm run check -- --diff     # Source-aware push/handoff gate with conditional pure builds
 npm run check:ship          # Ship gate before tagging/desktop packaging
 npm run docs:check          # Validate documentation contracts and plan metadata
 npm run docs:check:final    # Pure final validation (no archiving; use archive:plans explicitly)
@@ -44,19 +43,19 @@ npm run clean               # Remove local diagnostics/artifacts
 npm run release             # Full release: gates, commit/tag, push, CI watch ([RELEASE.md](./RELEASE.md))
 ```
 
-This is the curated agent subset. The full catalog is `package.json` (exhaustive); what each gate includes and when it applies is owned by [CONTRIBUTING.md](../CONTRIBUTING.md#before-you-push).
+This is the curated agent subset. The full catalog is `package.json` (exhaustive); what each gate includes and when it applies is owned by [CONTRIBUTING.md](../CONTRIBUTING.md#what-to-run-when-you-change).
 
 ### Build commands decision tree
 
-| Intent                                              | Command                                                                  |
-| --------------------------------------------------- | ------------------------------------------------------------------------ |
-| Local web/dev                                       | `npm run dev` / `npm run build` (hooks run asset prep)                   |
-| Vercel web                                          | `vercel.json` buildCommand: typecheck + `build:verified` (non-mutating)  |
-| Desktop renderer + version/steam/asset sync         | `npm run build:desktop`                                                  |
-| Verified web (push/handoff/CI)                      | `npm run build:verified` (validates `check:generated` including version) |
-| Verified desktop (ship/CI)                          | `npm run build:desktop:verified` (plus `assets:check` at release)        |
-| Unpacked Windows app (local iterate)                | `npm run package:win`                                                    |
-| Windows/mac/linux installers (CI desktop + release) | `npm run dist:desktop:verified` / `npm run dist:desktop` (local iterate) |
+| Intent                                              | Command                                                         |
+| --------------------------------------------------- | --------------------------------------------------------------- |
+| Local web/dev                                       | `npm run dev` / `npm run build`                                 |
+| Vercel web                                          | `vercel.json` buildCommand: typecheck + `build`                 |
+| Desktop renderer + version/steam/asset sync         | `npm run build:desktop`                                         |
+| Verified web (push/handoff/CI)                      | `npm run build` (validates generated outputs including version) |
+| Verified desktop (ship/CI)                          | `npm run build:desktop` (plus `assets:check` at release)        |
+| Unpacked Windows app (local iterate)                | `npm run package:win`                                           |
+| Windows/mac/linux installers (CI desktop + release) | `npm run dist:desktop`                                          |
 
 **Skip flags:**
 
@@ -89,7 +88,7 @@ Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI d
 
 `npm run measure:agent-context -- --path <changed-path>` reports a stable preread byte proxy: always-loaded instructions, route-selected owner sections, changed-file bytes, verification/test-path counts, and explicitly named artifact bytes. `--all-routes` compares one canonical fixture per route.
 
-`npm run context:hotspots -- --last 20` ranks every canonical route by preread plus fixture bytes, then aggregates raw versus agent-exposed output for commands captured in recent report-producing runs. The default hides command groups below 4,000 raw bytes; use `--min-bytes 0` for the complete inventory, `--json` for machine-readable output, or `--check` to fail when a recorded command exceeded the 4 KiB routine-exposure budget. Use `--run-id <id> --check` to validate one exact recorded run (handoff passes its single gate ID); `--last` and `--run-id` are mutually exclusive. Route budgets are ratcheted in the repository-tooling tests. `verify:changed`, `audit:all`, and `test:e2e:audit` enforce the exposure budget on their own current run, while the verifier handoff rechecks the gate's exact run via `--run-id`. `--verbose` remains an explicit opt-in that records full exposure without enforcing the routine budget.
+`npm run context:hotspots -- --last 20` ranks broad category prereads and aggregates captured output from recent runs. It is advisory process evidence, not a correctness gate. Use `--min-bytes 0` for the complete inventory, `--json` for machine-readable output, or `--run-id <id>` for one recorded run. `--verbose` remains an explicit opt-in for complete child output.
 
 ## Balance simulation
 

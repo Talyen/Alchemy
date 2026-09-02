@@ -12,4 +12,4 @@ Introduced: 2026-08 (existing), revised 2026-08-28.
 
 Validate via:
 
-- Contract review before implementation; `npm run verify:changed -- --plan` + `npm run typecheck:all` + `npm run lint:boundaries` after.
+- Contract review before implementation; `npm run verify -- --diff --plan` + `npm run check -- --diff` after.

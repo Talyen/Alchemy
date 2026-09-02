@@ -11,4 +11,4 @@ Pass when:
 - `test:ship:unit` (`save-migration-guard` + `save-migration-contract`) green
 - New fixture round-trips idempotently
 
-Run: `npm run verify:changed -- src/lib/validation/save-schemas/active-run.ts src/features/alchemy/shared/storage/io.ts` (or `src/lib/validation/save-schemas/** src/features/alchemy/shared/storage/**` — bare dir without `/**` does not route)
+Run: `npm run verify -- src/lib/validation/save-schemas/active-run.ts src/features/alchemy/shared/storage/io.ts`

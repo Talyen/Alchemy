@@ -141,6 +141,21 @@ function normalizeCommandExposures(exposures) {
   });
 }
 
+function normalizeSteps(steps) {
+  if (!Array.isArray(steps)) return [];
+  return steps.flatMap((step) => {
+    if (!step || typeof step !== "object") return [];
+    return [
+      {
+        label: String(step.label ?? "step").slice(0, 200),
+        status: ["passed", "failed", "skipped"].includes(step.status) ? step.status : "failed",
+        durationMs: Math.max(0, Number(step.durationMs) || 0),
+        ...(step.reason ? { reason: String(step.reason).slice(0, 300) } : {}),
+      },
+    ];
+  });
+}
+
 function renderRunMarkdown(payload) {
   const countText = payload.counts
     ? Object.entries(payload.counts)
@@ -164,7 +179,20 @@ function renderRunMarkdown(payload) {
           `- Captured command output: ${payload.commandExposures.reduce((sum, entry) => sum + entry.rawBytes, 0).toLocaleString()} bytes; exposed ${payload.commandExposures.reduce((sum, entry) => sum + entry.exposedBytes, 0).toLocaleString()} bytes`,
         ]
       : []),
+    ...(payload.sourceDigest ? [`- Source digest: \`${payload.sourceDigest}\``] : []),
     "",
+    ...(payload.steps.length > 0
+      ? [
+          "## Steps",
+          "",
+          ...payload.steps.map(
+            (step) =>
+              `- **${step.status}** ${step.label} (${(step.durationMs / 1000).toFixed(1)}s)` +
+              (step.reason ? ` — ${step.reason}` : ""),
+          ),
+          "",
+        ]
+      : []),
     "## Primary evidence",
     "",
     ...artifactLines(payload.artifacts, "primary"),
@@ -188,6 +216,8 @@ export function writeCurrentRun({
   counts,
   commit,
   commandExposures = [],
+  steps = [],
+  sourceDigest,
 } = {}) {
   if (!rootDir) throw new Error("writeCurrentRun requires rootDir");
   const reportsDir = path.join(rootDir, "reports");
@@ -208,6 +238,8 @@ export function writeCurrentRun({
     summary: summary.slice(0, 500),
     counts: normalizeCounts(counts),
     commandExposures: normalizeCommandExposures(commandExposures),
+    steps: normalizeSteps(steps),
+    sourceDigest: sourceDigest ? String(sourceDigest).slice(0, 120) : null,
   };
   const jsonPath = path.join(reportsDir, "current-run.json");
   const markdownPath = path.join(reportsDir, "current-run.md");

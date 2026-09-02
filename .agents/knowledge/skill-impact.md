@@ -74,6 +74,14 @@ Result: accepted
 Evidence: User-approved full documentation review; duplicated skill/README procedures, state tables, UI contracts, and eval task definitions; executable changed-path routes lacked audio and CI owner documents.
 Reason: Preserve non-obvious decisions while removing dual ownership and reducing routine agent context.
 
+## 2026-09-02 — Allow safe incidental fixes
+
+Pattern: N/A
+Proposal: Replace blanket unrelated-path avoidance with permission to fix clear, evidence-backed issues encountered during normal work; allow surgical edits alongside existing work, follow the causal neighborhood for root-cause fixes, and retain approval boundaries for ambiguous remedies, subjective design or balance changes, broad cleanup, and uncited audits.
+Result: accepted
+Evidence: User-approved policy plan; aligned `AGENTS.md`, `CONTRIBUTING.md`, and `run-audits` guidance; changed-path documentation gate passes.
+Reason: Scope wording discouraged agents from making safe incidental fixes even when the issue and remedy were clear; the revised policy protects existing intent without leaving known problems behind.
+
 ## Template for future entries
 
 ```

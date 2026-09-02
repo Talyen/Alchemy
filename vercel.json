@@ -1,6 +1,6 @@
 {
   "framework": "vite",
-  "buildCommand": "npm run typecheck && npm run build:verified",
+  "buildCommand": "npm run typecheck && npm run build",
   "outputDirectory": "dist",
   "rewrites": [
     {

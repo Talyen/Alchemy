@@ -69,9 +69,9 @@ describe("steam platform config", () => {
     expect(pkg.scripts["build:web:ci"]).toBeUndefined();
     const vercelConfig = JSON.parse(readFileSync(join(ROOT, "vercel.json"), "utf8")) as { buildCommand?: string };
     expect(vercelConfig.buildCommand).toContain("npm run typecheck");
-    expect(vercelConfig.buildCommand).toContain("build:verified");
+    expect(vercelConfig.buildCommand).toContain("npm run build");
     expect(pkg.scripts["smoke:preview"]).toContain("smoke-preview.mjs");
     expect(pkg.scripts["check:ship"]).toContain("assets:check");
-    expect(pkg.scripts["check:ship"]).toContain("build:desktop:verified");
+    expect(pkg.scripts["check:ship"]).toContain("build:desktop");
   });
 });

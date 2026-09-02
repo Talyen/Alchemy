@@ -1,6 +1,6 @@
 # Bugbot review focus
 
-Alchemy is trunk-based. Bugbot is a post-push review aid, not a required GitHub status check and not part of local `verify:changed` / `check:push`.
+Alchemy is trunk-based. Bugbot is a post-push review aid, not a required GitHub status check and not part of local `verify` / `check`.
 
 Prioritize:
 

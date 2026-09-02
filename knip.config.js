@@ -44,8 +44,6 @@ export default {
     "src/features/alchemy/shared/stores/run-reads.ts": ["exports", "types"],
     // Compat barrel: talentPool is single source, per-keyword arrays are filtered views for legacy imports.
     "src/lib/game-data/talents/pool/index.ts": ["exports"],
-    // Backward-compat re-exports for verify:changed consumers; canonical source is scripts/lib/test-commands.mjs.
-    "scripts/lib/change-routes.mjs": ["exports"],
     // run-resume-codec is the canonical resume boundary (shops/interrupted-flow included).
     "src/features/alchemy/shared/stores/run-resume-codec.ts": ["exports"],
     // Test-only / external seams: profile slice and talent catalog are external contracts.

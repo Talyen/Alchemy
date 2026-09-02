@@ -1,9 +1,9 @@
 import { expect, test as baseTest } from "@playwright/test";
 import { failOnRuntimeErrors } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
-import { critical, prepush } from "./playwright-tags";
+import { critical } from "./playwright-tags";
 
-baseTest.describe("SFX playback", { tag: [prepush.tag, critical.tag] }, () => {
+baseTest.describe("SFX playback", critical, () => {
   baseTest("menu interaction starts at least one SFX", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
     await page.addInitScript(() => {
