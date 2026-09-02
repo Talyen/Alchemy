@@ -87,7 +87,7 @@ describe("useRunFlowEngine", () => {
     );
 
     act(() => {
-      result.current.handleWildwoodDraftComplete(draftedCards);
+      result.current.handleWildwoodDraftComplete();
     });
 
     expect(readActiveRun().runDeck).toEqual(draftedCards);
@@ -227,7 +227,7 @@ describe("useRunFlowEngine", () => {
     );
 
     act(() => {
-      result.current.handleWildwoodDraftComplete(draftedCards);
+      result.current.handleWildwoodDraftComplete();
     });
 
     expect(readRunSession().pendingCharacterId).toBe("knight");
@@ -235,7 +235,7 @@ describe("useRunFlowEngine", () => {
     expect(onStartBossById).not.toHaveBeenCalled();
   });
 
-  it("does not advance a Wildwood draft when the screen deck disagrees", () => {
+  it("advances Wildwood draft from authoritative deck regardless of stale screen payload", () => {
     const draftedCards = Array.from({ length: DRAFT_ROUNDS }, (_, index) =>
       makeTestCard({ id: `wildwood-draft-${index}` }),
     );
@@ -247,11 +247,12 @@ describe("useRunFlowEngine", () => {
       wildwoodDraft: createInitialWildwoodDraftState("knight", () => 0.5),
     });
     const onStartBossById = vi.fn(() => true);
+    const navigateTo = vi.fn();
 
     const { result } = renderHook(() =>
       useRunFlowEngine({
         screen: ROUTE_SCREENS.DRAFT_DECK,
-        navigateTo: vi.fn(),
+        navigateTo,
         transition: vi.fn(),
         cancelPending: vi.fn(),
         battle: {
@@ -265,11 +266,10 @@ describe("useRunFlowEngine", () => {
     );
 
     act(() => {
-      result.current.handleWildwoodDraftComplete([makeTestCard({ id: "mismatched-card" })]);
+      result.current.handleWildwoodDraftComplete();
     });
 
-    expect(readRunSession().pendingCharacterId).toBe("knight");
-    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "draft" });
-    expect(onStartBossById).not.toHaveBeenCalled();
+    expect(readRunSession().pendingCharacterId).toBeNull();
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
   });
 });

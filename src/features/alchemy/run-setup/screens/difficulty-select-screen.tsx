@@ -7,10 +7,11 @@ import {
   characterArt,
   difficultyArt,
   difficultyConfigs,
+  getDifficultyXPMultiplier,
   isDifficultyUnlocked,
   type CharacterId,
   type DifficultyId,
-} from "@/lib/game-data";
+} from "@/features/alchemy/shared/config/game-data-catalog";
 
 import { KeywordToken, renderTokenizedDescription } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
@@ -34,12 +35,11 @@ import { renderUnlockMessage } from "../../shared/ui/unlock-text";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
-const DIFFICULTY_CONFIG = {
-  XP_BONUSES: {
-    "difficulty-2": "20% Bonus XP",
-    "difficulty-3": "40% Bonus XP",
-  } as Partial<Record<DifficultyId, string>>,
-} as const;
+function getDifficultyBonusLabel(difficultyId: DifficultyId): string {
+  const multiplier = getDifficultyXPMultiplier(difficultyId);
+  if (multiplier <= 1) return "";
+  return `${String(Math.round((multiplier - 1) * 100))}% Bonus XP`;
+}
 
 const DIFFICULTY_ART: Record<DifficultyId, string> = {
   "difficulty-1": difficultyArt["difficulty-1"]!,
@@ -79,7 +79,7 @@ function DifficultyCard({
   isSelected: boolean;
   onSelect: (id: DifficultyId) => void;
 }) {
-  const bonusLine = DIFFICULTY_CONFIG.XP_BONUSES[difficultyId] ?? "";
+  const bonusLine = getDifficultyBonusLabel(difficultyId);
   const fullDescription = description + (bonusLine ? "\n" + bonusLine : "");
   const showUnlockedArt = !locked;
   const diffArt = DIFFICULTY_ART[difficultyId] ?? difficultyArt["difficulty-3"]!;

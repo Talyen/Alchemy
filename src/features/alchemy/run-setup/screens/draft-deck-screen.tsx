@@ -47,10 +47,10 @@ function DraftedCardItem({ card, onHoverChange }: { card: BattleCard; onHoverCha
 }
 
 interface Props {
-  onComplete: (draftedCards: BattleCard[]) => void;
+  onComplete: () => void;
   draftedCards: BattleCard[];
   draftChoices: BattleCard[];
-  onPick: (card: BattleCard) => void;
+  onPick: (cardId: string) => void;
   onOpenMenu: (rect?: DOMRect) => void;
 }
 
@@ -96,7 +96,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
                 key={`draft-choice-${String(index)}-${card.id}`}
                 card={card}
                 isSelected={false}
-                onSelect={() => onPick(card)}
+                onSelect={() => onPick(card.id)}
                 interactionKey={`draft-choice-${String(index)}`}
                 onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
               />
@@ -107,7 +107,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
 
       {isComplete ? (
         <div className="mt-8 flex justify-center">
-          <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={() => onComplete(draftedCards)}>
+          <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={() => onComplete()}>
             Continue
           </Button>
         </div>

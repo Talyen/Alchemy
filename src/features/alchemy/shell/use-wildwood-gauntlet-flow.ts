@@ -29,7 +29,7 @@ import {
 import type { VictoryRewardsResult } from "@/features/alchemy/run-loop/navigation/victory-flow";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
+import { type DifficultyModifier } from "@/lib/game-data";
 
 interface UseWildwoodGauntletFlowOptions {
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
@@ -45,10 +45,6 @@ interface UseWildwoodGauntletFlowOptions {
 interface OutgoingScreenCommit {
   canCommit: (draft: GameplayDraft) => boolean;
   commit: (draft: GameplayDraft) => void;
-}
-
-function sameCardIds(left: readonly BattleCard[], right: readonly BattleCard[]): boolean {
-  return left.length === right.length && left.every((card, index) => card.id === right[index]?.id);
 }
 
 export function useWildwoodGauntletFlow({
@@ -139,17 +135,17 @@ export function useWildwoodGauntletFlow({
     navigateTo(wildwoodPhaseToScreen(state.phase) ?? ROUTE_SCREENS.MENU);
   }, [navigateTo, onStartBossById]);
 
-  const handleDraftPick = useCallback((card: BattleCard) => {
+  const handleDraftPick = useCallback((cardId: string) => {
     dispatchRunSessionCommand((draft) => {
       const state = draft.session.wildwoodDraft;
       const activeRun = draft.run.activeRun;
       if (activeRun.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD || !state) return;
-      if (!offeredWildwoodDraftCard(state, activeRun.runDeck, card.id)) return;
+      if (!offeredWildwoodDraftCard(state, activeRun.runDeck, cardId)) return;
       const pick = pickWildwoodDraftCard(
         state,
         activeRun.characterId,
         activeRun.runDeck,
-        card.id,
+        cardId,
         createDraftRunRandomSource(draft, "world"),
       );
       if (!pick) return;
@@ -158,22 +154,18 @@ export function useWildwoodGauntletFlow({
     });
   }, []);
 
-  const handleWildwoodDraftComplete = useCallback(
-    (draftedCards: BattleCard[]) => {
-      dispatchRunSessionCommand(
-        (draft) => {
-          const state = draft.session.wildwoodDraft;
-          const runDeck = draft.run.activeRun.runDeck;
-          if (!state || !canCompleteWildwoodDraft(state, runDeck.length)) return false;
-          if (!sameCardIds(runDeck, draftedCards)) return false;
-          setPendingCharacterId(draft, null);
-          return true;
-        },
-        { afterCommit: (completed) => completed && startNextWildwoodBoss() },
-      );
-    },
-    [startNextWildwoodBoss],
-  );
+  const handleWildwoodDraftComplete = useCallback(() => {
+    dispatchRunSessionCommand(
+      (draft) => {
+        const state = draft.session.wildwoodDraft;
+        const runDeck = draft.run.activeRun.runDeck;
+        if (!state || !canCompleteWildwoodDraft(state, runDeck.length)) return false;
+        setPendingCharacterId(draft, null);
+        return true;
+      },
+      { afterCommit: (completed) => completed && startNextWildwoodBoss() },
+    );
+  }, [startNextWildwoodBoss]);
 
   const handleWildwoodRewardComplete = useCallback(
     (onRenderedScreenCommit?: () => void) => {

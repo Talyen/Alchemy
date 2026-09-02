@@ -7,10 +7,11 @@ import {
   createDraftRunRandomSource,
   setRunDeck,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
+import { discoverCardIds, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import {
   readActiveRun,
   readHasActiveRun,
+  readHasActiveBattle,
   readParkedRuns,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
@@ -19,23 +20,20 @@ import {
   hydrateModeRunInDraft,
   parkAndDeactivateForegroundRunInDraft,
 } from "@/features/alchemy/shared/stores/run-park-restore";
-import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
-import {
-  createStarterDraftChoices,
-  wildcardStarterResumeTarget,
-} from "@/features/alchemy/shared/run-flow/starter-draft";
+import { afterCampaignCharacterResolved } from "./campaign-start";
+import { createStarterDraftChoices, wildcardStarterResumeTarget } from "./starter-draft";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
 import { createContentSystemRunInit, restoreResumedCampaignDestinations } from "./content-system-run-init";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
-import { getDifficultyModifiers, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
+import { getDifficultyModifiers, isDifficultyUnlocked, type CharacterId, type DifficultyId } from "@/lib/game-data";
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
   const { initializeRunForDifficulty, initializeLabyrinthRun, initializeWildwoodRun, initializeStarterDraftRun } =
     createContentSystemRunInit(deps);
 
   const noviceCampaignDeps = () => ({
-    completedDifficulties: deps.completedDifficulties,
+    completedDifficulties: readProfileStore().completedDifficulties,
     initializeRunForDifficulty,
     getDifficultyModifiers,
     onStartBattle: deps.onStartBattle,
@@ -77,8 +75,11 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function beginContentSystem(systemId: ContentSystemId) {
-    if (deps.hasActiveRun && deps.run.contentSystemType === systemId) {
-      if (deps.hasActiveBattle) {
+    const hasActiveRun = readHasActiveRun();
+    const hasActiveBattle = readHasActiveBattle();
+    const runType = hasActiveRun ? readActiveRun().contentSystemType : null;
+    if (hasActiveRun && runType === systemId) {
+      if (hasActiveBattle) {
         deps.returnToBattle();
         return;
       }
@@ -116,7 +117,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function handleCharacterSelect(selectedId: CharacterId) {
-    const systemType = deps.pendingContentSystemType;
+    const systemType = readRunSession().pendingContentSystemType;
 
     if (systemType === CONTENT_SYSTEMS.WILDWOOD) {
       initializeWildwoodRun(selectedId);
@@ -149,15 +150,17 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     });
   }
 
-  function handleStarterDraftPick(card: BattleCard) {
+  function handleStarterDraftPick(cardId: string) {
     dispatchRunSessionCommand((draft) => {
       const choices = draft.session.starterDraftChoices;
       if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.WILDWOOD || !choices?.length) return;
       if (draft.run.activeRun.runDeck.length >= DRAFT_ROUNDS) return;
-      if (!choices.some((choice) => choice.id === card.id)) return;
-      const nextDeck = [...draft.run.activeRun.runDeck, card];
+      const picked = choices.find((choice) => choice.id === cardId);
+      if (!picked) return;
+      const cloned = { ...picked, effects: picked.effects ? [...picked.effects] : picked.effects } as typeof picked;
+      const nextDeck = [...draft.run.activeRun.runDeck.map((c) => ({ ...c })), cloned];
       setRunDeck(draft, nextDeck);
-      discoverCardIds(draft, [card.id]);
+      discoverCardIds(draft, [picked.id]);
       setStarterDraftChoices(
         draft,
         nextDeck.length >= DRAFT_ROUNDS
@@ -167,8 +170,8 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     });
   }
 
-  function handleStandardDraftComplete(draftedCards: BattleCard[]) {
-    const systemType = deps.pendingContentSystemType;
+  function handleStandardDraftComplete() {
+    const systemType = readRunSession().pendingContentSystemType;
 
     if (systemType === CONTENT_SYSTEMS.WILDWOOD) {
       logError("[content-system-navigation] handleStandardDraftComplete: unexpected Wildwood draft", "other");
@@ -185,19 +188,12 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     }
 
     const run = readActiveRun();
-    const completedDeck =
-      run.characterId === "wildcard" && run.runDeck.length >= DRAFT_ROUNDS ? run.runDeck : draftedCards;
+    if (run.characterId !== "wildcard" || run.runDeck.length < DRAFT_ROUNDS) return;
+
+    const completedDeck = run.runDeck;
     if (completedDeck.length < DRAFT_ROUNDS) return;
 
     dispatchRunSessionCommand((draft) => {
-      const active = draft.run.activeRun;
-      if (active.characterId !== "wildcard" || active.runDeck.length < DRAFT_ROUNDS) {
-        setRunDeck(draft, completedDeck);
-        discoverCardIds(
-          draft,
-          completedDeck.map((card) => card.id),
-        );
-      }
       setStarterDraftChoices(draft, null);
     });
 
@@ -212,13 +208,18 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function handleDifficultySelect(difficultyId: DifficultyId) {
-    const selectedId = readRunSession().pendingCharacterId ?? readActiveRun().characterId;
+    const pendingCharacterId = readRunSession().pendingCharacterId;
+    const activeCharacterId = readHasActiveRun() ? readActiveRun().characterId : null;
+    const selectedId = pendingCharacterId ?? activeCharacterId;
     if (!selectedId) {
       logError("[content-system-navigation] handleDifficultySelect: no pending character", "other");
       deps.navigateTo(ROUTE_SCREENS.MENU);
       return;
     }
+    const completed = readProfileStore().completedDifficulties[selectedId] ?? [];
+    if (!isDifficultyUnlocked(difficultyId, completed)) return;
     const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);
+    if (!freshDeck || freshDeck.length === 0) return;
     const modifiers = getDifficultyModifiers(selectedId, difficultyId);
     deps.onStartBattle(freshDeck, totalStartGold, DEFAULT_BATTLE_ENEMY_TYPE, modifiers);
     deps.navigateTo(ROUTE_SCREENS.BATTLE, () =>

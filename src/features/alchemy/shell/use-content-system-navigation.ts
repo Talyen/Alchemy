@@ -3,12 +3,6 @@ import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/
 import type { ContentSystemNavigationDeps } from "@/features/alchemy/run-setup/run/content-system-navigation-types";
 
 export function useContentSystemNavigation({
-  run,
-  talents,
-  hasActiveRun,
-  hasActiveBattle,
-  pendingContentSystemType,
-  completedDifficulties,
   navigateTo,
   returnToBattle,
   onStartBattle,
@@ -19,12 +13,6 @@ export function useContentSystemNavigation({
   return useMemo(
     () =>
       createContentSystemNavigation({
-        run,
-        talents,
-        hasActiveRun,
-        hasActiveBattle,
-        pendingContentSystemType,
-        completedDifficulties,
         navigateTo,
         returnToBattle,
         onStartBattle,
@@ -32,19 +20,6 @@ export function useContentSystemNavigation({
         onResumeWildwood,
         clearCardHover,
       }),
-    [
-      run,
-      talents,
-      hasActiveRun,
-      hasActiveBattle,
-      pendingContentSystemType,
-      completedDifficulties,
-      navigateTo,
-      returnToBattle,
-      onStartBattle,
-      getAvailableDestinations,
-      onResumeWildwood,
-      clearCardHover,
-    ],
+    [navigateTo, returnToBattle, onStartBattle, getAvailableDestinations, onResumeWildwood, clearCardHover],
   );
 }

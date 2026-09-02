@@ -102,10 +102,13 @@ Boot: [`use-alchemy-bootstrap.ts`](../src/app/use-alchemy-bootstrap.ts) applies 
 
 `run-setup/run/content-system-navigation.ts` owns content-system selection,
 character/difficulty routing, and resume. Run-start snapshots belong to
-`content-system-run-init.ts` / `run-start-command.ts`; Wildwood post-entry
-progression belongs to `shell/use-wildwood-gauntlet-flow.ts`. The persisted
-draft/resume differences between Campaign, Labyrinth, and Wildwood are covered
-by the [content-system workflow](./WORKFLOWS.md#content-system-behavior).
+`content-system-run-init.ts` / `run-start-command.ts`; wildcard starter-draft
+and novice Campaign helpers belong to `run-setup/run/starter-draft.ts` and
+`run-setup/run/campaign-start.ts` (previously in `shared/run-flow/`).
+Wildwood post-entry progression belongs to
+`shell/use-wildwood-gauntlet-flow.ts`. The persisted draft/resume differences
+between Campaign, Labyrinth, and Wildwood are covered by the [content-system
+workflow](./WORKFLOWS.md#content-system-behavior).
 
 Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
 Callers supply offer history, boss ID, and command-bound RNG; destination
@@ -136,18 +139,18 @@ BattleScreenRoute → useBattleScreenRouteData (committed battle display)
 
 ## Controller entry points
 
-| Concern                | Start here                                                                                                                                                                                                                                               |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Run lifecycle          | `shell/use-alchemy-run-controller.ts`, `run-session-lifecycle-port.ts`                                                                                                                                                                                   |
-| Route command maps     | `shell/use-alchemy-run-controller.ts` composition root                                                                                                                                                                                                   |
-| Navigation / rewards   | `shell/use-run-flow-engine.ts` (React wiring) + `createRunFlowHandlers` / `run-loop/run/run-flow-*.ts` + `shell/use-mystery-event-navigation.ts` + `run-loop/navigation/*`                                                                               |
-| Content-system entry   | `run-setup/run/content-system-navigation.ts` + `content-system-run-init.ts` → `run-start-command.ts`; campaign/labyrinth Wildcard draft uses `shared/run-flow/starter-draft.ts`; Wildwood post-entry flow stays in `shell/use-wildwood-gauntlet-flow.ts` |
-| Run-flow shell actions | `run-loop/run/run-flow-shell-actions.ts` (assembled in `shell/use-run-flow-engine.ts`); destination routers use `DestinationRouteDeps`; reward routing uses `RewardRouteDeps` in `run-flow-rewards.ts`                                                   |
-| Run-flow contracts     | `run-loop/run/run-flow-shell-actions.ts`, `run-destination-handlers.ts` (`DestinationRouteDeps`), `run-flow-rewards.ts` (`RewardRouteDeps`)                                                                                                              |
-| Battle                 | `shell/use-battle-controller.ts` + `app/screen-routes/use-battle-playback.ts` → `lib/battle/*`                                                                                                                                                           |
-| Shops                  | `shell/use-alchemy-run-controller.ts` → `run-loop/shop/create-shop-actions.ts` → domain command modules                                                                                                                                                  |
-| Session reads/writes   | `shared/stores/run-session-read-port.ts`, `run-session-write-port.ts`, `run-session-command.ts`                                                                                                                                                          |
-| Screen routing         | `lib/routing/screen-transition-policy.ts`, `shell/use-screen-transitions.ts`, `useActiveRunScreenValue()`                                                                                                                                                |
+| Concern                | Start here                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Run lifecycle          | `shell/use-alchemy-run-controller.ts`, `run-session-lifecycle-port.ts`                                                                                                                                                                                                                                       |
+| Route command maps     | `shell/use-alchemy-run-controller.ts` composition root                                                                                                                                                                                                                                                       |
+| Navigation / rewards   | `shell/use-run-flow-engine.ts` (React wiring) + `createRunFlowHandlers` / `run-loop/run/run-flow-*.ts` + `shell/use-mystery-event-navigation.ts` + `run-loop/navigation/*`                                                                                                                                   |
+| Content-system entry   | `run-setup/run/content-system-navigation.ts` + `content-system-run-init.ts` → `run-start-command.ts`; campaign/labyrinth Wildcard draft and novice helpers use `run-setup/run/starter-draft.ts` + `run-setup/run/campaign-start.ts`; Wildwood post-entry flow stays in `shell/use-wildwood-gauntlet-flow.ts` |
+| Run-flow shell actions | `run-loop/run/run-flow-shell-actions.ts` (assembled in `shell/use-run-flow-engine.ts`); destination routers use `DestinationRouteDeps`; reward routing uses `RewardRouteDeps` in `run-flow-rewards.ts`                                                                                                       |
+| Run-flow contracts     | `run-loop/run/run-flow-shell-actions.ts`, `run-destination-handlers.ts` (`DestinationRouteDeps`), `run-flow-rewards.ts` (`RewardRouteDeps`)                                                                                                                                                                  |
+| Battle                 | `shell/use-battle-controller.ts` + `app/screen-routes/use-battle-playback.ts` → `lib/battle/*`                                                                                                                                                                                                               |
+| Shops                  | `shell/use-alchemy-run-controller.ts` → `run-loop/shop/create-shop-actions.ts` → domain command modules                                                                                                                                                                                                      |
+| Session reads/writes   | `shared/stores/run-session-read-port.ts`, `run-session-write-port.ts`, `run-session-command.ts`                                                                                                                                                                                                              |
+| Screen routing         | `lib/routing/screen-transition-policy.ts`, `shell/use-screen-transitions.ts`, `useActiveRunScreenValue()`                                                                                                                                                                                                    |
 
 ## Shop commands
 

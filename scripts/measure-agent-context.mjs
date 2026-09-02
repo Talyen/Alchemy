@@ -15,12 +15,12 @@ export const ROUTE_CONTEXT_BUDGETS = Object.freeze({
   save: { preread: 12 * 1024, total: 24 * 1024 },
   settings: { preread: 10 * 1024, total: 14 * 1024 },
   battle: { preread: 14 * 1024, total: 15 * 1024 },
-  "content-systems": { preread: 10 * 1024, total: 17 * 1024 },
+  "content-systems": { preread: 10 * 1024, total: 18 * 1024 },
   homestead: { preread: 11 * 1024, total: 12 * 1024 },
   generated: { preread: 9 * 1024, total: 35 * 1024 },
   balance: { preread: 10 * 1024, total: 31 * 1024 },
-  performance: { preread: 21 * 1024, total: 35 * 1024 },
-  desktop: { preread: 10 * 1024, total: 14 * 1024 },
+  performance: { preread: 22 * 1024, total: 35 * 1024 },
+  desktop: { preread: 11 * 1024, total: 14 * 1024 },
   shop: { preread: 10 * 1024, total: 11 * 1024 },
   "shop-screen": { preread: 10 * 1024, total: 18 * 1024 },
   audio: { preread: 9 * 1024, total: 13 * 1024 },
@@ -37,6 +37,7 @@ export const ROUTE_CONTEXT_BUDGETS = Object.freeze({
   "ci-routing": { preread: 9 * 1024, total: 28 * 1024 },
   documentation: { preread: 10 * 1024, total: 60 * 1024 },
   "ui-flow": { preread: 14 * 1024, total: 23 * 1024 },
+  "run-setup": { preread: 14 * 1024, total: 23 * 1024 },
   unknown: { preread: 9 * 1024, total: 9 * 1024 },
 });
 

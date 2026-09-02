@@ -41,7 +41,7 @@ describe("DraftDeckScreen", () => {
 
     const defendCard = screen.getByRole("button", { name: /Defend/i });
     await user.click(defendCard);
-    expect(onPick).toHaveBeenCalledWith(card2);
+    expect(onPick).toHaveBeenCalledWith(card2.id);
   });
 
   it("renders completed draft state with continue action", async () => {
@@ -67,7 +67,7 @@ describe("DraftDeckScreen", () => {
 
     const continueBtn = screen.getByRole("button", { name: /Continue/i });
     await user.click(continueBtn);
-    expect(onComplete).toHaveBeenCalledWith(drafted);
+    expect(onComplete).toHaveBeenCalledWith();
   });
 
   it("updates plasma interaction on hovering draft choice", () => {

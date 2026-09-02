@@ -197,6 +197,18 @@ export const ROUTES = Object.freeze([
     fixture: "src/app/screen-routes/run-loop-routes.tsx",
   },
   {
+    id: "run-setup",
+    patterns: [
+      "src/features/alchemy/run-setup/**",
+      "src/app/screen-routes/run-setup-routes.tsx",
+      "src/features/alchemy/shell/use-content-system-navigation.ts",
+      "src/features/alchemy/shared/config/game-data-catalog.ts",
+    ],
+    commands: ["unit-run-setup", "boundary", "e2e-prepush"],
+    docs: [doc("docs/ARCHITECTURE.md", "Run setup ownership", "run-setup ownership")],
+    fixture: "src/features/alchemy/run-setup/run/content-system-navigation.ts",
+  },
+  {
     id: "gear",
     patterns: [
       "src/lib/gear/**",

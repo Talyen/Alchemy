@@ -181,6 +181,19 @@ export const COMMANDS = Object.freeze({
       "tests/app/use-battle-playback.test.ts",
     ],
   },
+  "unit-run-setup": {
+    label: "run-setup unit tests",
+    reason: "character/difficulty/draft selection, run init, and Wildwood draft share one setup contract",
+    command: NPM,
+    args: [
+      "test",
+      "--",
+      "tests/features/alchemy/run-setup/",
+      "tests/features/alchemy/shared/run-flow/starter-draft.test.ts",
+      "tests/features/alchemy/shell/use-wildwood-gauntlet-flow.test.ts",
+      "tests/app/screen-routes.test.tsx",
+    ],
+  },
   "unit-gear": {
     label: "gear unit tests",
     reason: "Armory UI, gear state, affixes, crafting, and persistence are one feature contract",

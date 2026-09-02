@@ -1,8 +1,7 @@
-import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
+import { computeTalentEffects, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { readGearMaxHealthBonus } from "@/features/alchemy/shared/stores/gear-store";
+import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
-import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   applyRunStartSnapshot,
@@ -18,23 +17,24 @@ interface CreateRunStartSnapshotInput {
   contentSystemType: ContentSystemId;
   difficultyId?: DifficultyId | null;
   draftedDeck?: BattleCard[];
-  talentStartGold: number;
-  talentXP: TalentXP;
 }
 
 interface ApplyRunStartOptions {
   discoverDeck?: boolean;
 }
 
-export function createConfiguredRunStartSnapshot({
-  characterId,
-  contentSystemType,
-  difficultyId,
-  draftedDeck,
-  talentStartGold,
-  talentXP,
-}: CreateRunStartSnapshotInput): RunStartSnapshot {
-  const runProfile = readRunProfile();
+export function createDraftRunStartSnapshot(
+  draft: GameplayDraft,
+  { characterId, contentSystemType, difficultyId, draftedDeck }: CreateRunStartSnapshotInput,
+): RunStartSnapshot {
+  const talentXP = draft.runProfile.talentXP;
+  const talentStartGold = computeTalentEffects(draft.runProfile.unlockedTalents).startGold;
+  const gearMaxHealthBonus = computeGearManifest(
+    characterId,
+    flattenGearInventories(draft.gear.inventories),
+    draft.gear.loadouts,
+  ).maxHealth;
+  const homesteadMaxHealthBonus = draft.runProfile.effects.runMaxHealthBonus;
   return createRunStartSnapshot({
     characterId,
     contentSystemType,
@@ -42,8 +42,8 @@ export function createConfiguredRunStartSnapshot({
     talentStartGold,
     talentXP,
     ...(draftedDeck === undefined ? {} : { draftedDeck }),
-    gearMaxHealthBonus: readGearMaxHealthBonus(characterId),
-    homesteadMaxHealthBonus: runProfile.effects.runMaxHealthBonus,
+    gearMaxHealthBonus,
+    homesteadMaxHealthBonus,
   });
 }
 

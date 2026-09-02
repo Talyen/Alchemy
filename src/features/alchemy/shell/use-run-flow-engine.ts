@@ -1,12 +1,5 @@
 import { useMemo, useCallback } from "react";
-import {
-  useContentNavigationRunPort,
-  useContentNavigationTalentPort,
-  useTalentEffects,
-  useTalentProgressSlice,
-} from "@/features/alchemy/shared/stores/run-reads";
 import { useSetHasActiveBattle } from "@/features/alchemy/shared/stores/store-actions";
-import { useCompletedDifficulties } from "@/features/alchemy/shared/stores/profile-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-reads";
 import { setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -29,20 +22,13 @@ export function useRunFlowEngine({
   initializeShop,
   labyrinthClearNode,
 }: RunNavigationDeps) {
-  const orchestration = useContentNavigationRunPort();
-  const talentEffects = useTalentEffects();
-  const { talentXP } = useTalentProgressSlice();
-  const contentTalents = useContentNavigationTalentPort(talentEffects, talentXP);
   const setHasActiveBattle = useSetHasActiveBattle();
-  const completedDifficulties = useCompletedDifficulties();
   const nav = useRunSessionNavigationSlice(screen);
   const clearCardHover = useUiStore((s) => s.clearCardHover);
 
   const runPhase = nav.phase;
-  const hasActiveBattle = nav.hasActiveBattle;
   const hasActiveRun = nav.hasActiveRun;
   const pendingCharacterId = nav.pendingCharacterId;
-  const pendingContentSystemType = nav.pendingContentSystemType;
 
   const destinations = useRunDestinationWiring({
     navigateTo,
@@ -57,12 +43,6 @@ export function useRunFlowEngine({
   });
 
   const contentNav = useContentSystemNavigation({
-    run: orchestration,
-    talents: contentTalents,
-    hasActiveRun,
-    hasActiveBattle,
-    pendingContentSystemType,
-    completedDifficulties,
     navigateTo,
     returnToBattle: destinations.returnToBattle,
     onStartBattle: battle.onStartBattle,

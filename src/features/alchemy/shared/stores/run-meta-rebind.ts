@@ -1,9 +1,9 @@
-import { computeStartingMaxHealth } from "@/lib/game-data";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import type { GameplayDraft } from "./run-session-command";
 import { syncBattleGoldFromPurse } from "./write-port-run";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { deriveCombatMeta } from "./combat-meta";
+import { computeRunMaxHealth } from "../run-flow/run-max-health";
 
 function computeDerivedRunMaxHealth(draft: GameplayDraft): number {
   const characterId = draft.run.activeRun.characterId;
@@ -12,7 +12,7 @@ function computeDerivedRunMaxHealth(draft: GameplayDraft): number {
     flattenGearInventories(draft.gear.inventories),
     draft.gear.loadouts,
   ).maxHealth;
-  return computeStartingMaxHealth(draft.runProfile.talentXP) + gearBonus + draft.runProfile.effects.runMaxHealthBonus;
+  return computeRunMaxHealth(draft.runProfile.talentXP, gearBonus, draft.runProfile.effects.runMaxHealthBonus);
 }
 
 function applyDerivedMaxHealth(draft: GameplayDraft): void {

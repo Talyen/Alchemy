@@ -1,13 +1,7 @@
-import {
-  computeStartingMaxHealth,
-  getStartingDeck,
-  type BattleCard,
-  type CharacterId,
-  type DifficultyId,
-  type TalentXP,
-} from "@/lib/game-data";
+import { getStartingDeck, type BattleCard, type CharacterId, type DifficultyId, type TalentXP } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Destination } from "@/lib/routing";
+import { computeRunMaxHealth } from "./run-max-health";
 
 export interface RunStartSnapshot {
   characterId: CharacterId;
@@ -46,7 +40,7 @@ export function createRunStartSnapshot({
   gearMaxHealthBonus = 0,
   homesteadMaxHealthBonus = 0,
 }: RunStartInput): RunStartSnapshot {
-  const runMaxHealth = computeStartingMaxHealth(talentXP) + gearMaxHealthBonus + homesteadMaxHealthBonus;
+  const runMaxHealth = computeRunMaxHealth(talentXP, gearMaxHealthBonus, homesteadMaxHealthBonus);
 
   return {
     characterId,

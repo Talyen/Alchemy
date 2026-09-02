@@ -75,6 +75,9 @@ export function readRunInitialized(): boolean {
 export function readHasActiveRun(): boolean {
   return readGameplayState().session.hasActiveRun;
 }
+export function readHasActiveBattle(): boolean {
+  return readGameplayState().battle.hasActiveBattle;
+}
 export function readParkedRuns(): ParkedRunsMap {
   const parkedRuns = readGameplayState().run.parkedRuns;
   const snapshot: ParkedRunsMap = {};
