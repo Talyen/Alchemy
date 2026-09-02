@@ -5,16 +5,15 @@ import { fileURLToPath } from "node:url";
 
 import { extractSubcommand, isDestructive } from "./lib/git-classify.mjs";
 
-const currentFile = fileURLToPath(import.meta.url);
-const root = path.resolve(path.dirname(currentFile), "..");
+const ownShimDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "scripts", "bin");
 
 const args = process.argv.slice(2);
 
 function hasDirtyTree() {
-  const diff = spawnSync("git", ["diff", "--quiet"], { cwd: root, stdio: "ignore" });
-  const diffCached = spawnSync("git", ["diff", "--cached", "--quiet"], { cwd: root, stdio: "ignore" });
-  const untracked = spawnSync("git", ["ls-files", "--others", "--exclude-standard"], {
-    cwd: root,
+  const diff = spawnSync(realGit, ["diff", "--quiet"], { cwd: process.cwd(), stdio: "ignore" });
+  const diffCached = spawnSync(realGit, ["diff", "--cached", "--quiet"], { cwd: process.cwd(), stdio: "ignore" });
+  const untracked = spawnSync(realGit, ["ls-files", "--others", "--exclude-standard"], {
+    cwd: process.cwd(),
     encoding: "utf8",
   });
   const hasUntracked = untracked.stdout && untracked.stdout.trim().length > 0;
@@ -24,8 +23,8 @@ function hasDirtyTree() {
 function stashBackup(cmd) {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   const msg = `auto-backup pre-${cmd} ${ts}`;
-  const result = spawnSync("git", ["stash", "push", "-m", msg, "--include-untracked"], {
-    cwd: root,
+  const result = spawnSync(realGit, ["stash", "push", "-m", msg, "--include-untracked"], {
+    cwd: process.cwd(),
     encoding: "utf8",
   });
   return { msg, status: result.status, output: (result.stdout ?? "") + (result.stderr ?? "") };
@@ -34,12 +33,11 @@ function stashBackup(cmd) {
 function findRealGit() {
   if (process.env.REAL_GIT) return process.env.REAL_GIT;
   const which = spawnSync("bash", ["-lc", "which -a git 2>/dev/null | head -20"], { encoding: "utf8" });
-  const shimDir = path.resolve(root, "scripts/bin");
   const candidates = (which.stdout ?? "")
     .split("\n")
     .map((s) => s.trim())
     .filter(Boolean)
-    .filter((p) => path.dirname(p) !== shimDir);
+    .filter((p) => path.dirname(p) !== ownShimDir);
   if (candidates.length > 0) return candidates[0];
   return "git";
 }
@@ -57,7 +55,7 @@ function execRealGit(realGit, gitArgs) {
   if (process.env.GIT_CONFIG_COUNT) {
     bypassEnv.GIT_CONFIG_COUNT = String(idx);
   }
-  const result = spawnSync(realGit, gitArgs, { cwd: root, stdio: "inherit", env: bypassEnv });
+  const result = spawnSync(realGit, gitArgs, { cwd: process.cwd(), stdio: "inherit", env: bypassEnv });
   process.exit(result.status ?? 0);
 }
 
