@@ -1,8 +1,9 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- test imports JS fragments without declarations, covered by runtime ESLint checks
+// @ts-nocheck -- test imports JS fragments without declarations, covered by runtime ESLint checks
 import { ESLint } from "eslint";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import tseslint from "typescript-eslint";
-// @ts-expect-error -- test imports JS fragments without declarations
 import {
   BATTLE_NO_DIRECT_RNG,
   BATTLE_NO_MATH_FLOOR,
