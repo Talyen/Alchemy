@@ -1,5 +1,6 @@
 import type { KeywordId } from "./types";
 import * as assetRefs from "./assets.generated";
+import { gearArtByDefinitionId } from "./gear-art";
 
 export * from "./assets.generated";
 
@@ -66,13 +67,15 @@ export const mysteryEventArt: Record<string, string> = {
 
 export const allGameArt: string[] = Object.values(assetRefs);
 
+export const essentialGameArt: string[] = Object.values(assetRefs).filter((src) => !src.includes("gear-"));
+
 export const gearSlotBackgroundArt = {
-  body: assetRefs.gearSlotBody,
-  "main-hand": assetRefs.gearSlotWeapon,
-  "off-hand": assetRefs.gearSlotWeapon,
-  "left-accessory": assetRefs.gearSlotAccessory,
-  trinket: assetRefs.gearSlotTrinket,
-  "right-accessory": assetRefs.gearSlotAccessory,
+  body: gearArtByDefinitionId["slot-body"],
+  "main-hand": gearArtByDefinitionId["slot-weapon"],
+  "off-hand": gearArtByDefinitionId["slot-weapon"],
+  "left-accessory": gearArtByDefinitionId["slot-accessory"],
+  trinket: gearArtByDefinitionId["slot-trinket"],
+  "right-accessory": gearArtByDefinitionId["slot-accessory"],
 } as const;
 
 export const talentArt: Partial<Record<KeywordId, string>> = {

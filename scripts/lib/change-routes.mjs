@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { headingExists, matchesPattern } from "./glob-pattern.mjs";
 import { COMMANDS, E2E_ESCALATIONS, E2E_NAMES, testFilesUnder } from "./test-commands.mjs";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -247,6 +248,7 @@ export const ROUTES = Object.freeze([
       "tests/pages/**",
       "tests/helpers.ts",
       "tests/playwright-shared.ts",
+      "tests/playwright-base.ts",
       "playwright*.config.ts",
     ],
     exclude: ["tests/e2e/README.md"],
@@ -271,6 +273,7 @@ export const ROUTES = Object.freeze([
       "package.json",
       "lefthook.yml",
       "tsconfig*.json",
+      "vitest*.config.ts",
       "eslint.config.js",
       "eslint/**",
       "stryker.config.mjs",
@@ -403,40 +406,11 @@ export const ROUTES = Object.freeze([
   },
 ]);
 
-function globToRegExp(glob) {
-  let source = "^";
-  for (let index = 0; index < glob.length; index += 1) {
-    const char = glob[index];
-    if (char === "*" && glob[index + 1] === "*") {
-      source += ".*";
-      index += 1;
-    } else if (char === "*") source += "[^/]*";
-    else if (char === "?") source += "[^/]";
-    else source += char.replace(/[.+^${}()|[\]\\]/gu, "\\$&");
-  }
-  return new RegExp(`${source}$`, "u");
-}
-
-const patternCache = new Map();
-function matchesPattern(filePath, pattern) {
-  let expression = patternCache.get(pattern);
-  if (!expression) {
-    expression = globToRegExp(pattern);
-    patternCache.set(pattern, expression);
-  }
-  return expression.test(filePath);
-}
-
 function routeMatchesPath(route, filePath) {
   return (
     route.patterns.some((pattern) => matchesPattern(filePath, pattern)) &&
     !(route.exclude ?? []).some((pattern) => matchesPattern(filePath, pattern))
   );
-}
-
-function headingExists(source, heading) {
-  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-  return new RegExp(`^#{1,6}\\s+${escaped}\\s*#*\\s*$`, "mu").test(source);
 }
 
 /**
@@ -532,13 +506,13 @@ export function resolveRoutePlan(paths, options = {}) {
   }
   const e2eSelection = options.e2e ?? (options.includeE2E ? true : false);
   if (e2eSelection) {
+    const resolveE2eKey = (routeId) => E2E_ESCALATIONS[routeId === "shop" ? "shop-screen" : routeId];
     if (typeof e2eSelection === "string") {
-      const routeId = e2eSelection === "shop" ? "shop-screen" : e2eSelection;
-      const commandKey = E2E_ESCALATIONS[routeId];
+      const commandKey = resolveE2eKey(e2eSelection);
       if (commandKey) commandKeys.add(commandKey);
     } else {
       for (const route of routes) {
-        const commandKey = E2E_ESCALATIONS[route.id];
+        const commandKey = resolveE2eKey(route.id);
         if (commandKey) commandKeys.add(commandKey);
       }
     }

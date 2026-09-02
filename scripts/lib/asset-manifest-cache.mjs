@@ -38,7 +38,7 @@ function settingsSignature(settings, schemaVersion) {
   hash.update(String(schemaVersion));
   hash.update("\0");
   hash.update(JSON.stringify(canonicalize(settings)));
-  return hash.digest("hex").slice(0, 16);
+  return hash.digest("hex").slice(0, 32);
 }
 
 /**
@@ -55,7 +55,7 @@ export async function computeContentHash(sourcePath, settings, schemaVersion) {
   hash.update(JSON.stringify(canonicalize(settings)));
   hash.update("\0");
   hash.update(sourceBytes);
-  return hash.digest("hex").slice(0, 16);
+  return hash.digest("hex").slice(0, 32);
 }
 
 /**
@@ -65,7 +65,7 @@ export async function computeContentHash(sourcePath, settings, schemaVersion) {
  */
 export async function computeOutputHash(outputPath) {
   const bytes = await readFile(outputPath);
-  return createHash("sha256").update(bytes).digest("hex").slice(0, 16);
+  return createHash("sha256").update(bytes).digest("hex").slice(0, 32);
 }
 
 /**
@@ -292,9 +292,11 @@ export async function processManifestEntries({
   for (const result of results) {
     if (!result.entry) continue;
     const previous = previousManifest[result.key];
-    // Keep committed fingerprints stable across machines/CI checkouts when the
-    // content hash is unchanged. Fresh checkouts rewrite source mtimes, which
-    // would otherwise dirty .asset-hashes.json on every assets job run.
+    // Preserve filesystem fingerprint (mtimeMs/size) when content and output
+    // hashes are identical. Fresh CI checkouts rewrite mtimes which would
+    // otherwise dirty .asset-hashes.json on every run. A settingsSig bump
+    // changes hash/outputHash so preservation is skipped and new mtimes are
+    // committed.
     if (
       previous &&
       previous.hash === result.entry.hash &&

@@ -18,6 +18,7 @@ const PREPARED_ASSET_OUTPUTS = Object.freeze([
 ]);
 
 /** @typedef {Map<string, Buffer>} AssetSnapshot */
+/** @typedef {Map<string, string>} HashSnapshot */
 
 async function snapshotPath(relativePath, snapshot) {
   const absolutePath = path.join(rootDir, relativePath);
@@ -43,32 +44,30 @@ async function outputSnapshot() {
   return snapshot;
 }
 
-function snapshotDigest(snapshot) {
-  return JSON.stringify(
-    [...snapshot.entries()]
-      .map(([relativePath, bytes]) => [relativePath, createHash("sha256").update(bytes).digest("hex")])
-      .sort(([left], [right]) => left.localeCompare(right)),
-  );
+async function hashSnapshot(snapshot) {
+  const hashes = new Map();
+  for (const [relativePath, bytes] of snapshot) {
+    hashes.set(relativePath, createHash("sha256").update(bytes).digest("hex"));
+  }
+  return hashes;
 }
 
-function changedPaths(before, after) {
-  const paths = new Set([...before.keys(), ...after.keys()]);
-  return [...paths]
-    .filter((relativePath) => {
-      const previous = before.get(relativePath);
-      const next = after.get(relativePath);
-      return !previous || !next || !previous.equals(next);
-    })
-    .sort();
+function snapshotDigestFromHashes(hashes) {
+  return JSON.stringify([...hashes.entries()].sort(([a], [b]) => a.localeCompare(b)));
 }
 
-async function restoreSnapshot(before, after) {
+function changedPathsFromHashes(beforeHashes, afterHashes) {
+  const paths = new Set([...beforeHashes.keys(), ...afterHashes.keys()]);
+  return [...paths].filter((relativePath) => beforeHashes.get(relativePath) !== afterHashes.get(relativePath)).sort();
+}
+
+async function restoreSnapshot(before, afterHashes) {
   for (const [relativePath, bytes] of before) {
     const absolutePath = path.join(rootDir, relativePath);
     await mkdir(path.dirname(absolutePath), { recursive: true });
     await writeFile(absolutePath, bytes);
   }
-  for (const relativePath of after.keys()) {
+  for (const relativePath of afterHashes.keys()) {
     if (!before.has(relativePath)) await unlink(path.join(rootDir, relativePath));
   }
 }
@@ -79,11 +78,16 @@ async function checkPreparedAssets() {
     throw new Error("assets:check cannot run with ALCHEMY_SKIP_ASSETS=1.");
   }
   const before = await outputSnapshot();
+  const beforeHashes = await hashSnapshot(before);
+  const beforeDigest = snapshotDigestFromHashes(beforeHashes);
+  // Release before buffers from snapshotDigest hashing but keep for restore.
   await prepareAssets();
   const after = await outputSnapshot();
-  if (snapshotDigest(before) !== snapshotDigest(after)) {
-    const changed = changedPaths(before, after);
-    await restoreSnapshot(before, after);
+  const afterHashes = await hashSnapshot(after);
+  const afterDigest = snapshotDigestFromHashes(afterHashes);
+  if (beforeDigest !== afterDigest) {
+    const changed = changedPathsFromHashes(beforeHashes, afterHashes);
+    await restoreSnapshot(before, afterHashes);
     throw new Error(`Prepared asset outputs are stale. Review and regenerate:\n- ${changed.join("\n- ")}`);
   }
   console.log("Prepared asset outputs are current.");

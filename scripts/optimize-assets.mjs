@@ -1,10 +1,8 @@
 import { mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import sharp from "sharp";
 
-import { QUALITY, WIDTH } from "./assets/asset-defaults.mjs";
 import { staticAssets, validateAssetRegistry } from "./assets/asset-manifest.mjs";
 import {
   isOutputFresh,
@@ -13,15 +11,22 @@ import {
   resolveSourceHash,
   withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
-import { ART_TRANSFORM_CONCURRENCY, ASSET_SCHEMA_VERSION, SHARP_DEFAULTS } from "./lib/asset-constants.mjs";
+import {
+  ART_TRANSFORM_CONCURRENCY,
+  ASSET_SCHEMA_VERSION,
+  MANIFEST_BASENAME,
+  QUALITY,
+  SHARP_DEFAULTS,
+  WIDTH,
+} from "./lib/asset-constants.mjs";
+import { formatProcessError } from "./lib/audio-optimizer.mjs";
+import { getOptimizedManifestPath, resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
-const currentFile = fileURLToPath(import.meta.url);
-const rootDir = path.resolve(path.dirname(currentFile), "..");
+const rootDir = resolveRootDir(import.meta.url);
 const sourceDir = path.join(rootDir, "Raw Assets");
 const outputDir = path.join(rootDir, "src", "assets", "optimized");
-const manifestPath = path.join(outputDir, ".asset-hashes.json");
-const MANIFEST_BASENAME = ".asset-hashes.json";
+const manifestPath = getOptimizedManifestPath(rootDir);
 
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 const TRANSFORM_CONCURRENCY = ART_TRANSFORM_CONCURRENCY;
@@ -61,10 +66,8 @@ async function discoverGearAssets() {
     if (entry.name.startsWith(".")) continue;
     const match = entry.name.match(/^(.+?)\s-\s(Basic|Astral)\.(jpe?g|png)$/i);
     if (!match) {
-      if (!entry.name.toLowerCase().includes("placeholder")) {
-        console.warn(`[gear] Skipping malformed gear file: ${entry.name}`);
-      }
-      continue;
+      if (entry.name.toLowerCase().includes("placeholder")) continue;
+      throw new Error(`[gear] Malformed gear file: ${entry.name} (expected "{Name} - {Basic|Astral}.{jpeg|jpg|png}")`);
     }
     const [, displayName, rarity] = match;
     discovered.push({
@@ -163,25 +166,28 @@ export async function optimizeAssets() {
   const allAssets = [...staticAssets, ...gearAssets, ...gearSlotBackgrounds];
   await validateAssetRegistry(allAssets, { sourceDir });
 
-  const { results, nextManifest } = await processManifestEntries({
+  const { results, nextManifest, failed } = await processManifestEntries({
     entries: allAssets,
     manifestPath,
     concurrency: TRANSFORM_CONCURRENCY,
     processEntry: optimizeAsset,
+    handleError: (asset, error) => formatProcessError(asset.target, error),
   });
 
-  const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {
-    manifestBasename: MANIFEST_BASENAME,
-    label: "optimized asset",
-  });
-  if (removed > 0) {
-    console.log(`Removed ${removed} orphan optimized assets.`);
+  if (!failed) {
+    const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {
+      manifestBasename: MANIFEST_BASENAME,
+      label: "optimized asset",
+    });
+    if (removed > 0) {
+      console.log(`Removed ${removed} orphan optimized assets.`);
+    }
   }
 
   console.log(
     `Optimized ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
   );
-  return { ok: true };
+  return { ok: !failed, error: failed ? "One or more art assets failed" : undefined };
 }
 
 if (isMainModule(import.meta.url)) {

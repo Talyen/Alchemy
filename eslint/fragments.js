@@ -331,7 +331,10 @@ export const NO_DIRECT_ASSET_IMPORT = [
   },
 ];
 
-/** Playwright esbuild cannot parse .webp barrels — flag value imports only. */
+/** Playwright esbuild cannot parse .webp barrels — flag value imports only.
+ * Keep in sync with scripts/sync-art-barrels.mjs ART_BARRELS + metadata.generated.
+ * Architecture test guards drift (see tests/architecture/barrel-sync.test.ts).
+ */
 export const ASSET_BARREL_NO_VALUE_IMPORT_REASONS = {
   "@/lib/game-data": "its barrel re-exports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
   "@/lib/gear":

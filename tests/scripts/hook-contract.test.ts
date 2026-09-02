@@ -55,8 +55,7 @@ describe("hook and push gate contract", () => {
     expect(pkg.scripts["build:verified"]).toContain("build-verified");
     expect(pkg.scripts["build:desktop:verified"]).toContain("build-verified");
     const verifiedSource = readFileSync(join(ROOT, "scripts/build-verified.mjs"), "utf8");
-    expect(verifiedSource).toContain("syncArtBarrels");
-    expect(verifiedSource).toContain("syncVersionMetadata");
+    expect(verifiedSource).toContain("syncGenerated");
     expect(verifiedSource).toContain("vite");
     const generatedSource = readFileSync(join(ROOT, "scripts/sync-version-metadata.mjs"), "utf8");
     expect(generatedSource).toContain("--check");

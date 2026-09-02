@@ -30,12 +30,32 @@ function linkFromReport(targetPath) {
 
 // Run Playwright E2E tests with JSON reporter outputting to reports/e2e-results.json
 const verbose = process.argv.includes("--verbose");
+const reuseTimings = process.argv.includes("--reuse-timings");
 console.log("Running Playwright test suite; a compact summary will be shown when it finishes...");
-const extraArgs = process.argv.slice(2).filter((arg) => arg !== "--verbose");
-const result = runCommand("npm", ["run", "test:e2e:timings", "--", ...extraArgs], {
-  stdio: ["inherit", "pipe", "pipe"],
-  shell: true,
-});
+const extraArgs = process.argv.slice(2).filter((arg) => arg !== "--verbose" && arg !== "--reuse-timings");
+let result;
+const reportsDirForCheck = path.join(process.cwd(), "reports");
+const existingReport = path.join(reportsDirForCheck, "e2e-results.json");
+if (reuseTimings && fs.existsSync(existingReport)) {
+  const stat = fs.statSync(existingReport);
+  const ageMs = Date.now() - stat.mtimeMs;
+  if (ageMs < 60 * 60 * 1000) {
+    console.log(
+      `Reusing fresh report at ${path.relative(process.cwd(), existingReport)} (age ${(ageMs / 1000).toFixed(0)}s) — skipping test run.`,
+    );
+    result = { status: 0, output: `Reused ${existingReport}`, elapsedMs: 0 };
+  } else {
+    result = runCommand("npm", ["run", "test:e2e:timings", "--", ...extraArgs], {
+      stdio: ["inherit", "pipe", "pipe"],
+      shell: true,
+    });
+  }
+} else {
+  result = runCommand("npm", ["run", "test:e2e:timings", "--", ...extraArgs], {
+    stdio: ["inherit", "pipe", "pipe"],
+    shell: true,
+  });
+}
 const commandOutput = result.output;
 const verboseOutput = verbose && commandOutput ? commandOutput : "";
 let exposedCommandOutput = verboseOutput;

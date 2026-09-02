@@ -12,7 +12,11 @@ const MAX_IMAGE_CACHE_SIZE = 500;
 export function preloadImage(src: string): Promise<void> {
   if (!src) return Promise.resolve();
   const existing = imageLoads.get(src);
-  if (existing) return existing.promise;
+  if (existing) {
+    imageLoads.delete(src);
+    imageLoads.set(src, existing);
+    return existing.promise;
+  }
 
   if (imageLoads.size >= MAX_IMAGE_CACHE_SIZE) {
     const firstKey = imageLoads.keys().next().value;

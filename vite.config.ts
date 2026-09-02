@@ -73,7 +73,7 @@ export default defineConfig(({ mode, command }) => {
       reportCompressedSize: Boolean(process.env.ANALYZE),
       sourcemap: process.env.ALCHEMY_SKIP_SOURCEMAP === "1" ? false : mode === "desktop" ? "hidden" : false,
       rolldownOptions: {
-        // Rolldown-only codeSplitting — silently ignored on Rollup fallback; keep Vite >=8 + Rolldown.
+        // Rolldown-only codeSplitting — falls back to rollupOptions.manualChunks below.
         output: {
           codeSplitting: {
             groups: [
@@ -108,6 +108,19 @@ export default defineConfig(({ mode, command }) => {
                 priority: 7,
               },
             ],
+          },
+        },
+      },
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return "react-vendor";
+            if (/[\\/]node_modules[\\/](motion|framer-motion)[\\/]/.test(id)) return "motion-vendor";
+            if (/[\\/]node_modules[\\/]/.test(id)) return "vendor";
+            if (/[\\/]src[\\/]lib[\\/]game-data[\\/]/.test(id)) return "game-data";
+            if (/[\\/]src[\\/]lib[\\/]battle[\\/]/.test(id)) return "battle-engine";
+            if (/[\\/]src[\\/]lib[\\/]validation[\\/]/.test(id)) return "validation";
+            return undefined;
           },
         },
       },

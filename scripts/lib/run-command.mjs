@@ -38,9 +38,29 @@ export function runCommand(command, args = [], options = {}) {
 export function runCommandAsync(command, args = [], options = {}) {
   const started = Date.now();
   return new Promise((resolve) => {
-    const child = spawn(command, args, spawnOpts(options));
+    const spawnOptions = spawnOpts(options);
+    const timeoutMs = typeof spawnOptions.timeout === "number" && spawnOptions.timeout > 0 ? spawnOptions.timeout : 0;
+    const childSpawnOpts = { ...spawnOptions };
+    if (timeoutMs) delete childSpawnOpts.timeout;
+    const child = spawn(command, args, childSpawnOpts);
     let stdout = "";
     let stderr = "";
+    let timedOut = false;
+    let timeoutHandle;
+    if (timeoutMs) {
+      timeoutHandle = setTimeout(() => {
+        timedOut = true;
+        try {
+          child.kill("SIGTERM");
+        } catch {}
+        setTimeout(() => {
+          try {
+            child.kill("SIGKILL");
+          } catch {}
+        }, 2000);
+      }, timeoutMs);
+      if (timeoutHandle.unref) timeoutHandle.unref();
+    }
     child.stdout?.on("data", (chunk) => {
       stdout += chunk;
     });
@@ -48,13 +68,16 @@ export function runCommandAsync(command, args = [], options = {}) {
       stderr += chunk;
     });
     const finish = (status, error) => {
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+      if (timedOut && !error) error = new Error(`command timed out after ${timeoutMs}ms: ${command} ${args.join(" ")}`);
       resolve({
-        status,
+        status: timedOut ? null : status,
         error,
         stdout,
         stderr,
         output: collectOutput(stdout, stderr, error),
         elapsedMs: Date.now() - started,
+        timedOut,
       });
     };
     child.on("error", (error) => finish(null, error));

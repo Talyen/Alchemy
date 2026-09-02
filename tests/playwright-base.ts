@@ -12,7 +12,7 @@ export function previewWebServer(
   port: number,
   { mode = "preview" }: { mode?: "dev" | "preview" } = {},
 ): { command: string; port: number } {
-  ensureRunId("playwright");
+  if (!process.env.ALCHEMY_RUN_ID) ensureRunId("playwright");
   return {
     command: `vite${mode === "dev" ? "" : " preview"} --host 127.0.0.1 --port ${port} --strictPort`,
     port,

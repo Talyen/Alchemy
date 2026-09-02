@@ -40,6 +40,9 @@ export function preloadSounds(names: string[]) {
     htmlPreloadStarted.add(name);
     const el = new Audio();
     el.preload = "auto";
+    el.onerror = () => {
+      htmlPreloadStarted.delete(name);
+    };
     el.src = getSoundUrl(name);
   }
 }

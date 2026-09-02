@@ -36,10 +36,7 @@ export function captureSourceDigest() {
     stdio: ["ignore", "pipe", "ignore"],
   });
   const raw = status.status === 0 ? (status.stdout ?? "") : "";
-  // Include staged/unstaged/untracked content via hash of porcelain output plus git diff HEAD name-only
-  const diff = gitOutput(["diff", "--name-only", "HEAD"]);
-  const untracked = gitOutput(["ls-files", "--others", "--exclude-standard"]);
-  const payload = `${head}\0${raw}\0${diff}\0${untracked}`;
+  const payload = `${head}\0${raw}`;
   const hash = crypto.createHash("sha256").update(payload).digest("hex").slice(0, 16);
   return { head, hash, raw: payload };
 }
@@ -52,6 +49,32 @@ function runStep(label, command, args, env) {
     shell: process.platform === "win32",
   });
   return result.status ?? 1;
+}
+
+async function runParallelSteps(steps, env, runner) {
+  const { spawn } = await import("node:child_process");
+  const promises = steps.map(
+    (step) =>
+      new Promise((resolve) => {
+        if (runner !== runStep) {
+          Promise.resolve(runner(step.label, step.command, step.args, env))
+            .then((code) => resolve({ label: step.label, code: typeof code === "number" ? code : code ? 0 : 1 }))
+            .catch(() => resolve({ label: step.label, code: 1 }));
+          return;
+        }
+        const child = spawn(step.command, step.args, {
+          cwd: ROOT,
+          env,
+          stdio: "inherit",
+          shell: process.platform === "win32",
+        });
+        child.on("close", (code) => resolve({ label: step.label, code: code ?? 1 }));
+        child.on("error", () => resolve({ label: step.label, code: 1 }));
+      }),
+  );
+  const results = await Promise.all(promises);
+  for (const r of results) if (r.code !== 0) return r;
+  return { code: 0 };
 }
 
 export async function runHandoff(argv = process.argv.slice(2), options = {}) {
@@ -69,14 +92,16 @@ export async function runHandoff(argv = process.argv.slice(2), options = {}) {
 
   const env = { ...process.env, ALCHEMY_RUN_ID: runId };
 
-  const steps = [
-    {
-      label: "changed-path verification",
-      command: "node",
-      args: ["scripts/verify-changed.mjs", ...verifyArgs, "--strict-routes"],
-    },
+  const firstStep = {
+    label: "changed-path verification",
+    command: "node",
+    args: ["scripts/verify-changed.mjs", ...verifyArgs, "--strict-routes"],
+  };
+  const parallelSteps = [
     { label: "static checks (lint:ci)", command: "npm", args: ["run", "lint:ci"] },
     { label: "unit tests (vitest)", command: "npm", args: ["test"] },
+  ];
+  const remainingSteps = [
     { label: "verified build", command: "npm", args: ["run", "build:verified"] },
     { label: "preview smoke", command: "npm", args: ["run", "smoke:preview"] },
     { label: "prepush canary", command: "npm", args: ["run", "test:e2e:prepush"] },
@@ -84,12 +109,31 @@ export async function runHandoff(argv = process.argv.slice(2), options = {}) {
     { label: "exposure check", command: "npm", args: ["run", "context:hotspots", "--", "--run-id", runId, "--check"] },
   ];
 
-  for (const step of steps) {
+  console.log(`\n== ${firstStep.label} ==`);
+  {
+    const code = runner(firstStep.label, firstStep.command, firstStep.args, env);
+    const resolved = code instanceof Promise ? await code : code;
+    if (resolved !== 0) {
+      console.error(`✗ handoff failed at ${firstStep.label} (exit ${resolved}, run ${runId})`);
+      return 1;
+    }
+  }
+
+  console.log(`\n== parallel: ${parallelSteps.map((s) => s.label).join(" + ")} ==`);
+  {
+    const result = await runParallelSteps(parallelSteps, env, runner);
+    if (result.code !== 0) {
+      console.error(`✗ handoff failed at ${result.label} (exit ${result.code}, run ${runId})`);
+      return 1;
+    }
+  }
+
+  for (const step of remainingSteps) {
     console.log(`\n== ${step.label} ==`);
     const code = runner(step.label, step.command, step.args, env);
-    if (code !== 0) {
-      console.error(`✗ handoff failed at ${step.label} (exit ${code}, run ${runId})`);
-      // Write bounded digest handling is delegated to failed step's own reporting
+    const resolved = code instanceof Promise ? await code : code;
+    if (resolved !== 0) {
+      console.error(`✗ handoff failed at ${step.label} (exit ${resolved}, run ${runId})`);
       return 1;
     }
   }

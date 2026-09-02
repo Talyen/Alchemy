@@ -1,15 +1,8 @@
 import type { ZodType } from "zod";
-import {
-  allGameArt,
-  gearArtByDefinitionId,
-  mysteryEventArt,
-  placeholderCard,
-  placeholderDifficulty,
-  placeholderEnemy,
-} from "@/lib/game-data";
+import { allGameArt, placeholderCard, placeholderDifficulty, placeholderEnemy } from "@/lib/game-data";
 import type { ContentValidationArea, ContentValidationIssue, ContentValidationSeverity } from "./types";
 
-const knownArt = new Set([...allGameArt, ...Object.values(mysteryEventArt), ...Object.values(gearArtByDefinitionId)]);
+const knownArt = new Set(allGameArt);
 const placeholderArt = new Set([placeholderCard, placeholderDifficulty, placeholderEnemy]);
 
 function createIssue(

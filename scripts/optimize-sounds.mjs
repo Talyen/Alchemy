@@ -1,7 +1,6 @@
 import { execFile } from "node:child_process";
 import { mkdir, copyFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 // ffmpeg-static downloads a platform-specific ffmpeg binary so we don't rely
@@ -17,40 +16,30 @@ import {
   writeManifestIfChanged,
   withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
-import { ASSET_SCHEMA_VERSION, SOUND_TRANSFORM_CONCURRENCY } from "./lib/asset-constants.mjs";
+import {
+  ASSET_SCHEMA_VERSION,
+  LOUDNORM_FILTER,
+  MANIFEST_BASENAME,
+  MP3_FALLBACK_SETTINGS,
+  SOUND_ENTRY_OWNERS,
+  SOUND_TRANSFORM_CONCURRENCY,
+  VORBIS_QUALITY,
+  soundTransformSettings,
+} from "./lib/asset-constants.mjs";
 import { formatProcessError, runAudioScript } from "./lib/audio-optimizer.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { mapPool } from "./lib/map-pool.mjs";
+import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 
 const execFileAsync = promisify(execFile);
 
-const currentFile = fileURLToPath(import.meta.url);
-const rootDir = path.resolve(path.dirname(currentFile), "..");
+const rootDir = resolveRootDir(import.meta.url);
 const sourceDir = path.join(rootDir, "Raw Assets", "Sound Effects");
 const outputDir = path.join(rootDir, "public", "sounds");
-const manifestPath = path.join(outputDir, ".asset-hashes.json");
-const MANIFEST_BASENAME = ".asset-hashes.json";
+const manifestPath = path.join(outputDir, MANIFEST_BASENAME);
 
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 const TRANSFORM_CONCURRENCY = SOUND_TRANSFORM_CONCURRENCY;
-
-const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
-const VORBIS_QUALITY = "4";
-const MP3_FALLBACK_SETTINGS = { codec: "libmp3lame", quality: "4", stripVideo: true };
-const SOUND_ENTRY_OWNERS = Object.freeze({ generated: "generated", curated: "curated" });
-
-function soundTransformSettings(sourceExt) {
-  if (sourceExt === ".ogg") {
-    return { mode: "copy" };
-  }
-  return {
-    mode: "convert",
-    codec: "libvorbis",
-    quality: VORBIS_QUALITY,
-    af: LOUDNORM_FILTER,
-    stripVideo: true,
-  };
-}
 
 async function optimizeSound({ source, target }, storedEntry) {
   const sourcePath = path.join(sourceDir, source);
@@ -91,8 +80,9 @@ async function optimizeSound({ source, target }, storedEntry) {
 
 export async function optimizeSounds() {
   if (!ffmpegPath) {
-    console.error("ffmpeg-static binary not found. Run: npm install");
-    return { ok: false };
+    const msg = "ffmpeg-static binary not found. Run: npm install";
+    console.error(msg);
+    return { ok: false, error: msg };
   }
 
   await mkdir(outputDir, { recursive: true });

@@ -2,8 +2,7 @@
 /** Non-mutating verified build: validate generated outputs then invoke Vite directly without lifecycle preparation. */
 import { spawnSync } from "node:child_process";
 
-import { syncArtBarrels } from "./sync-art-barrels.mjs";
-import { syncVersionMetadata } from "./sync-version-metadata.mjs";
+import { syncGenerated } from "./sync-generated.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 async function main(argv = process.argv.slice(2)) {
@@ -11,9 +10,8 @@ async function main(argv = process.argv.slice(2)) {
     argv.includes("--desktop") || (argv.includes("--mode") && argv[argv.indexOf("--mode") + 1] === "desktop");
   const viteForward = argv.filter((a) => a !== "--desktop");
 
-  // Validate prepared outputs without mutating. Throws if stale.
-  await syncArtBarrels({ check: true });
-  await syncVersionMetadata({ check: true });
+  // Validate all generated outputs without mutating. Throws if stale.
+  await syncGenerated({ check: true });
 
   const viteArgs = ["vite", "build"];
   if (isDesktop && !viteForward.includes("--mode")) viteArgs.push("--mode", "desktop");

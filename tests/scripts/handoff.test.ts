@@ -44,7 +44,7 @@ describe("handoff orchestrator", () => {
       captureDigest: () => ({ head: "a", hash: "h", raw: "" }),
     });
     expect(code).toBe(1);
-    expect(runner).toHaveBeenCalledTimes(2);
+    expect(runner).toHaveBeenCalledTimes(3);
   });
 
   it("fails when source digest drifts", async () => {

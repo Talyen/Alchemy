@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { commandExposure, sanitizeOutput, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
 import { E2E_NAMES, resolveRoutePlan, ROUTES } from "./lib/change-routes.mjs";
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
+import { globToRegExp } from "./lib/glob-pattern.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 import { unownedAddedSourceFiles } from "./check-test-owners.mjs";
@@ -96,24 +97,10 @@ function isStrictExecutablePath(filePath) {
   return false;
 }
 
-function globToRegExpStrict(glob) {
-  let source = "^";
-  for (let i = 0; i < glob.length; i += 1) {
-    const ch = glob[i];
-    if (ch === "*" && glob[i + 1] === "*") {
-      source += ".*";
-      i += 1;
-    } else if (ch === "*") source += "[^/]*";
-    else if (ch === "?") source += "[^/]";
-    else source += ch.replace(/[.+^${}()|[\]\\]/gu, "\\$&");
-  }
-  return new RegExp(`${source}$`, "u");
-}
-
 export function getStrictUnknownPaths(plan) {
   const isKnown = (filePath) =>
     ROUTES.some((route) => {
-      const matchesPattern = (pat) => globToRegExpStrict(pat).test(filePath);
+      const matchesPattern = (pat) => globToRegExp(pat).test(filePath);
       const matched = route.patterns.some(matchesPattern);
       if (!matched) return false;
       const excluded = (route.exclude ?? []).some(matchesPattern);

@@ -8,7 +8,6 @@ import { waitForHttp } from "./lib/wait-for-http.mjs";
 import { parsePort, SMOKE_PREVIEW_PORT } from "./lib/dev-port.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const viteCli = join(root, "node_modules", "vite", "bin", "vite.js");
 const DEFAULT_PORT = SMOKE_PREVIEW_PORT;
 const TIMEOUT_MS = 30_000;
 const POLL_MS = 250;
@@ -118,11 +117,10 @@ export async function stopChildProcess(child, watcher, { graceMs = 2_000, label 
 export async function smokePreview(options = {}) {
   const port = parsePort(options.port ?? process.env.ALCHEMY_SMOKE_PORT ?? DEFAULT_PORT, "ALCHEMY_SMOKE_PORT");
 
-  const child = spawn(
-    process.execPath,
-    [viteCli, "preview", "--host", "127.0.0.1", "--port", String(port), "--strictPort"],
-    { cwd: root, stdio: "ignore" },
-  );
+  const child = spawn("npx", ["vite", "preview", "--host", "127.0.0.1", "--port", String(port), "--strictPort"], {
+    cwd: root,
+    stdio: "ignore",
+  });
   const watcher = watchChildProcess(child);
   let operationError;
 

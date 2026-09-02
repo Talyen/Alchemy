@@ -1,5 +1,4 @@
-import { access } from "node:fs/promises";
-import path from "node:path";
+import { validateRegistryEntries } from "../lib/registry-validation.mjs";
 
 /** Raw sound sources transformed or copied into public/sounds. */
 export const generatedSoundAssets = [
@@ -71,29 +70,30 @@ export const curatedSoundFiles = [
 /** Validate sound ownership before the optimizer writes outputs. */
 export async function validateSoundAssetRegistry({ sourceDir } = {}) {
   const errors = [];
-  const sources = new Set();
-  const targets = new Set();
-
-  for (const entry of generatedSoundAssets) {
-    if (sources.has(entry.source)) errors.push(`Duplicate sound source "${entry.source}".`);
-    if (targets.has(entry.target)) errors.push(`Duplicate sound target "${entry.target}".`);
-    if (!/\.(ogg|wav|mp3)$/iu.test(entry.source)) errors.push(`Unsupported sound source "${entry.source}".`);
-    if (!entry.target.endsWith(".ogg")) errors.push(`Sound target must be OGG: "${entry.target}".`);
-    sources.add(entry.source);
-    targets.add(entry.target);
-    if (sourceDir) {
-      try {
-        await access(path.join(sourceDir, entry.source));
-      } catch {
-        errors.push(`Missing sound source "${entry.source}" for target "${entry.target}".`);
-      }
+  try {
+    await validateRegistryEntries(generatedSoundAssets, {
+      sourceDir,
+      sourcePattern: /\.(ogg|wav|mp3)$/iu,
+      targetPattern: /\.ogg$/u,
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    const lines = msg.split("\n").filter((line) => line.startsWith("- "));
+    if (lines.length > 0) {
+      for (const line of lines) errors.push(line.slice(2));
+    } else if (msg.includes("Registry validation failed:")) {
+      const after = msg.slice(msg.indexOf("Registry validation failed:") + "Registry validation failed:".length).trim();
+      if (after) errors.push(after);
+      else errors.push(msg);
+    } else {
+      errors.push(msg);
     }
   }
 
+  const generatedTargets = new Set(generatedSoundAssets.map((e) => e.target));
   for (const file of curatedSoundFiles) {
     if (!file.endsWith(".ogg")) errors.push(`Curated sound must be OGG: "${file}".`);
-    if (targets.has(file)) errors.push(`Sound target is both generated and curated: "${file}".`);
-    targets.add(file);
+    if (generatedTargets.has(file)) errors.push(`Sound target is both generated and curated: "${file}".`);
   }
 
   if (errors.length > 0) throw new Error(`Sound asset registry validation failed:\n- ${errors.join("\n- ")}`);

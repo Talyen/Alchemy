@@ -32,6 +32,10 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       webServer: {
         ...previewWebServer(previewPort),
         reuseExistingServer: !isCi,
+        env: {
+          ALCHEMY_DEV_PORT: String(previewPort),
+          ...(process.env.ALCHEMY_RUN_ID ? { ALCHEMY_RUN_ID: process.env.ALCHEMY_RUN_ID } : {}),
+        },
       },
     });
   }
@@ -60,7 +64,10 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       webServer: {
         ...previewWebServer(previewPort),
         reuseExistingServer: false,
-        env: { ALCHEMY_DEV_PORT: String(previewPort) },
+        env: {
+          ALCHEMY_DEV_PORT: String(previewPort),
+          ...(process.env.ALCHEMY_RUN_ID ? { ALCHEMY_RUN_ID: process.env.ALCHEMY_RUN_ID } : {}),
+        },
       },
       projects: [
         isElectron
@@ -110,21 +117,29 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       trace: isPrepush ? "off" : "retain-on-failure",
       actionTimeout: isCi ? TIMEOUTS.e2e.actionCi : TIMEOUTS.e2e.actionLocal,
       launchOptions: { args: ["--mute-audio"] },
-      storageState: {
-        cookies: [],
-        origins: [
-          {
-            origin: `http://127.0.0.1:${port}`,
-            localStorage: [{ name: "alchemy-skip-loading-screen", value: "true" }],
-          },
-        ],
-      },
+      ...(process.env.PLAYWRIGHT_COLD_BOOT === "1"
+        ? {}
+        : {
+            storageState: {
+              cookies: [],
+              origins: [
+                {
+                  origin: `http://127.0.0.1:${port}`,
+                  localStorage: [{ name: "alchemy-skip-loading-screen", value: "true" }],
+                },
+              ],
+            },
+          }),
     },
     webServer: {
       command: webServerCommand,
       port,
       reuseExistingServer: !isCi,
-      env: { ALCHEMY_DEV_PORT: String(port), ALCHEMY_SKIP_CHECKER: "1" },
+      env: {
+        ALCHEMY_DEV_PORT: String(port),
+        ALCHEMY_SKIP_CHECKER: "1",
+        ...(process.env.ALCHEMY_RUN_ID ? { ALCHEMY_RUN_ID: process.env.ALCHEMY_RUN_ID } : {}),
+      },
     },
     projects: [
       {

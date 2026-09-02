@@ -1,42 +1,4 @@
-export const WIDTH = Object.freeze({
-  card: 420,
-  talent: 420,
-  boon: 420,
-  hero: 720,
-  enemy: 720,
-  destination: 900,
-  gameMode: 900,
-  homestead: 900,
-  mystery: 900,
-  difficulty: 720,
-  difficultyPlaceholder: 720,
-  resource: 256,
-  logo: 1200,
-  crafting: 420,
-  cursor: 26,
-  gear: 420,
-});
+import { QUALITY as _QUALITY, WIDTH as _WIDTH } from "../lib/asset-constants.mjs";
 
-export const QUALITY = Object.freeze({
-  card: 80,
-  cardHaste: 88,
-  cardManaCrystal: 88,
-  cardMixedPotion: 84,
-  cardPlaceholder: 60,
-  talent: 82,
-  boon: 82,
-  hero: 82,
-  enemy: 82,
-  enemyPlaceholder: 60,
-  destination: 84,
-  gameMode: 82,
-  homestead: 82,
-  mystery: 84,
-  difficulty: 82,
-  difficultyPlaceholder: 60,
-  resource: 90,
-  logo: 84,
-  crafting: 82,
-  cursor: 90,
-  gear: 82,
-});
+export const WIDTH = _WIDTH;
+export const QUALITY = _QUALITY;

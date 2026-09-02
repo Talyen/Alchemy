@@ -19,6 +19,7 @@ function checkSingleBudget(dir) {
   const assets = jsAssets(dir);
   if (assets.length === 0) return null;
   const INDEX_PATTERN = /^index-[A-Za-z0-9_-]+\.js$/;
+  const GAME_DATA_PATTERN = /^game-data-[A-Za-z0-9_-]+\.js$/;
   const indexAsset = assets.find((a) => INDEX_PATTERN.test(a.name));
   if (!indexAsset) {
     console.error(`[bundle-budget] FAIL ${dir}: index chunk not found (expected index-*.js)`);
@@ -40,6 +41,20 @@ function checkSingleBudget(dir) {
     failed = true;
   } else {
     console.log(`[bundle-budget] pass ${dir} total js ${totalJs} <= ${BUDGETS.totalJsMaxBytes}`);
+  }
+  const gameDataAsset = assets.find((a) => GAME_DATA_PATTERN.test(a.name));
+  if (gameDataAsset) {
+    if (gameDataAsset.bytes > BUDGETS.gameDataMaxBytes) {
+      console.error(
+        `[bundle-budget] FAIL ${dir}/${gameDataAsset.name} ${gameDataAsset.bytes} > ${BUDGETS.gameDataMaxBytes} (game-data chunk). ` +
+          `Reduce barrel size or raise budget with justification.`,
+      );
+      failed = true;
+    } else {
+      console.log(
+        `[bundle-budget] pass ${dir}/${gameDataAsset.name} ${gameDataAsset.bytes} <= ${BUDGETS.gameDataMaxBytes}`,
+      );
+    }
   }
   return !failed;
 }

@@ -22,8 +22,9 @@ import {
 } from "@/lib/audio";
 import { logError } from "@/lib/error-logger";
 import { isDesktop, setDisplayMode as setPlatformDisplayMode } from "@/lib/platform";
-import { allGameArt } from "@/lib/game-data";
+import { allGameArt, essentialGameArt } from "@/lib/game-data";
 import { preloadImagesInBatches } from "@/lib/image-preload";
+import { scheduleIdle } from "@/lib/preload";
 import type { DisplayMode } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
@@ -231,9 +232,17 @@ export function useInitialLoadReady({
   useEffect(() => {
     let cancelled = false;
 
+    function preloadDeferredGearArt() {
+      const deferred = allGameArt.filter((src) => !essentialGameArt.includes(src));
+      if (deferred.length === 0) return;
+      scheduleIdle(() => {
+        void preloadImagesInBatches(deferred, IMAGE_PRELOAD_BATCH_SIZE);
+      });
+    }
+
     if (skipGate) {
       markStartupReady();
-      void preloadImagesInBatches(allGameArt, IMAGE_PRELOAD_BATCH_SIZE);
+      void preloadImagesInBatches(essentialGameArt, IMAGE_PRELOAD_BATCH_SIZE).then(preloadDeferredGearArt);
       void waitForFonts();
       return () => {
         cancelled = true;
@@ -242,7 +251,7 @@ export function useInitialLoadReady({
 
     let display = 0;
     let imageLoaded = 0;
-    let imageTotal = allGameArt.filter(Boolean).length;
+    let imageTotal = essentialGameArt.filter(Boolean).length;
     let fontsReady = false;
     let minElapsed = false;
     let imagesSettled = imageTotal === 0;
@@ -286,12 +295,13 @@ export function useInitialLoadReady({
       minElapsed = true;
     }, minDurationMs);
 
-    void preloadImagesInBatches(allGameArt, IMAGE_PRELOAD_BATCH_SIZE, (loaded, total) => {
+    void preloadImagesInBatches(essentialGameArt, IMAGE_PRELOAD_BATCH_SIZE, (loaded, total) => {
       imageLoaded = loaded;
       imageTotal = total;
       if (total === 0 || loaded >= total) imagesSettled = true;
     }).then(() => {
       imagesSettled = true;
+      preloadDeferredGearArt();
     });
 
     void waitForFonts().then(() => {
