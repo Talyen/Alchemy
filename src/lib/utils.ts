@@ -1,5 +1,5 @@
 export { cn } from "./cn";
-export { clamp, clamp01, lerp, clampNonNegative } from "./math";
+export { clamp, lerp } from "./math";
 
 export function capitalizeWord(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -9,25 +9,7 @@ export function formatLargeAmount(amount: number): string {
   return amount >= 100000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString();
 }
 
-export {
-  createSeededRng,
-  createRunRngState,
-  createRunStreamRng,
-  nextRunRngValue,
-  rngInt,
-  placeholderRng,
-  rollPercent,
-  rollChance,
-  getBattleRng,
-  shuffle,
-  sampleItems,
-  pickRandom,
-  takeRandomItem,
-  shuffleUnsafe,
-  pickRandomUnsafe,
-  takeRandomItemUnsafe,
-} from "./rng";
-export type { Rng, RunRngState, RunRngStream } from "./rng";
+export { createSeededRng, shuffle, sampleItems, pickRandom, takeRandomItem, pickRandomUnsafe } from "./rng";
 
 export function isValidDeckIndex(index: number, deckLength: number): boolean {
   return Number.isInteger(index) && index >= 0 && index < deckLength;

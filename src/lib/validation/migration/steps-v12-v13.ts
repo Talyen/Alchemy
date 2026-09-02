@@ -1,4 +1,4 @@
-import { isRecord, migrateParkedRuns } from "./types";
+import { isRecord, migrateRunTree } from "./types";
 import type { RawSaveData } from "./types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 
@@ -78,10 +78,5 @@ function migrateRun(value: unknown): unknown {
 }
 
 export function migrateV12ToV13(save: RawSaveData): RawSaveData {
-  const nextParkedRuns = migrateParkedRuns(save.parkedRuns, migrateRun);
-  return {
-    ...save,
-    activeRun: migrateRun(save.activeRun),
-    parkedRuns: nextParkedRuns,
-  };
+  return migrateRunTree(save, migrateRun);
 }

@@ -38,6 +38,10 @@ export default {
     "src/features/alchemy/shared/storage/persistence.ts": ["exports"],
     // Semantic alias: corruption weight mirrors default for now, intentional duplicate.
     "src/lib/game-constants/run-rewards.ts": ["duplicates"],
+    // Semantic aliases: page-exit and tooltip fades intentionally mirror the shared fade duration.
+    "src/lib/game-constants/ui-motion.ts": ["duplicates"],
+    // Content-navigation read ports: invariant-tested consumption seam for persisted run/talent fields.
+    "src/features/alchemy/shared/stores/run-reads.ts": ["exports", "types"],
     // Compat barrel: talentPool is single source, per-keyword arrays are filtered views for legacy imports.
     "src/lib/game-data/talents/pool/index.ts": ["exports"],
     // Backward-compat re-exports for verify:changed consumers; canonical source is scripts/lib/test-commands.mjs.

@@ -8,6 +8,7 @@ import { useInitialLoadReady } from "@/app/use-app-effects";
 vi.mock("@/lib/game-data", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/game-data")>()),
   allGameArt: ["first.webp", "second.webp"],
+  essentialGameArt: ["first.webp", "second.webp"],
 }));
 
 vi.mock("@/lib/image-preload", async (importOriginal) => ({

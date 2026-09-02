@@ -1,4 +1,4 @@
-import { isRecord, migrateParkedRuns } from "./types";
+import { isRecord, migrateRunTree } from "./types";
 import type { RawSaveData } from "./types";
 
 const CHARACTER_IDS = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid", "wildcard"];
@@ -53,15 +53,15 @@ function migrateGearLoadouts(value: unknown): unknown {
 }
 
 export function migrateV11ToV12(save: RawSaveData): RawSaveData {
-  const nextParkedRuns = migrateParkedRuns(save.parkedRuns, migrateRun);
-  return {
-    ...save,
-    activeRun: migrateRun(save.activeRun),
-    parkedRuns: nextParkedRuns,
-    gearLoadouts: migrateGearLoadouts(save.gearLoadouts),
-    ownedTrinketIds: Array.isArray(save.ownedTrinketIds) ? save.ownedTrinketIds : [],
-    equippedTrinkets: isRecord(save.equippedTrinkets)
-      ? save.equippedTrinkets
-      : Object.fromEntries(CHARACTER_IDS.map((id) => [id, null])),
-  };
+  return migrateRunTree(
+    {
+      ...save,
+      gearLoadouts: migrateGearLoadouts(save.gearLoadouts),
+      ownedTrinketIds: Array.isArray(save.ownedTrinketIds) ? save.ownedTrinketIds : [],
+      equippedTrinkets: isRecord(save.equippedTrinkets)
+        ? save.equippedTrinkets
+        : Object.fromEntries(CHARACTER_IDS.map((id) => [id, null])),
+    },
+    migrateRun,
+  );
 }

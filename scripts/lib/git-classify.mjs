@@ -79,5 +79,3 @@ export function isDestructive(parsedArgs) {
   }
   return false;
 }
-
-export { DESTRUCTIVE };

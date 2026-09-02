@@ -1,20 +1,12 @@
 import { trinketLibrary } from "@/lib/game-data";
 import { gearBaseItemList } from "@/lib/gear/base-items";
+import { hashStringToUint32 } from "@/lib/rng";
 import { pickRandom } from "@/lib/utils";
 
 import type { MysteryEffect, MysteryEvent } from "./types";
 
-function stableHashSeed(seed: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash ^= seed.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
 function mysteryTrinketFallbackEffect(seed: string): Extract<MysteryEffect, { kind: "gainGeneratedGear" }> {
-  const baseItem = gearBaseItemList[stableHashSeed(seed) % gearBaseItemList.length];
+  const baseItem = gearBaseItemList[hashStringToUint32(seed) % gearBaseItemList.length];
   if (!baseItem) throw new Error("gearBaseItemList is empty");
   return { kind: "gainGeneratedGear", baseItemId: baseItem.id, astral: true };
 }

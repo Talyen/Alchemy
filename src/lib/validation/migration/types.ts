@@ -1,3 +1,5 @@
+import { hashStringToUint32 } from "@/lib/rng";
+
 export type RawSaveData = Record<string, unknown>;
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -13,7 +15,7 @@ export function getRawVersion(parsed: unknown, key: string): number {
   return version;
 }
 
-export function migrateParkedRuns(value: unknown, migrateRun: (run: unknown) => unknown): unknown {
+function migrateParkedRuns(value: unknown, migrateRun: (run: unknown) => unknown): unknown {
   if (!isRecord(value)) return value;
   const next: Record<string, unknown> = {};
   for (const [mode, run] of Object.entries(value)) {
@@ -22,13 +24,12 @@ export function migrateParkedRuns(value: unknown, migrateRun: (run: unknown) => 
   return next;
 }
 
-function hashStringToUint32(value: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < value.length; i++) {
-    hash ^= value.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
+export function migrateRunTree(save: RawSaveData, migrateRun: (run: unknown) => unknown): RawSaveData {
+  return {
+    ...save,
+    activeRun: migrateRun(save.activeRun),
+    parkedRuns: migrateParkedRuns(save.parkedRuns, migrateRun),
+  };
 }
 
 export function rngSeedFromRun(run: Record<string, unknown>): number {

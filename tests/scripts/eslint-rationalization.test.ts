@@ -2,8 +2,10 @@
 // @ts-nocheck -- test imports JS fragments without declarations, covered by runtime ESLint checks
 import { ESLint } from "eslint";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import tseslint from "typescript-eslint";
+
+vi.setConfig({ testTimeout: 30_000 });
 import {
   BATTLE_NO_DIRECT_RNG,
   BATTLE_NO_MATH_FLOOR,

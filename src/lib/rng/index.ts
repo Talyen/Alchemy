@@ -28,6 +28,15 @@ function mixUint32(value: number): number {
   return toUint32(mixed ^ (mixed >>> 15));
 }
 
+export function hashStringToUint32(value: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 export function createSeededRng(seed: number): Rng {
   let s = toUint32(seed);
   return () => {
@@ -126,14 +135,6 @@ export function takeRandomItem<T>(items: T[], rng: Rng): T | undefined {
   return removed;
 }
 
-export function shuffleUnsafe<T>(items: readonly T[]): T[] {
-  return shuffle(items, Math.random);
-}
-
 export function pickRandomUnsafe<T>(items: readonly T[]): T | undefined {
   return pickRandom(items, Math.random);
-}
-
-export function takeRandomItemUnsafe<T>(items: T[]): T | undefined {
-  return takeRandomItem(items, Math.random);
 }

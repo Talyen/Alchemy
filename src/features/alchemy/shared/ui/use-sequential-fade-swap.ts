@@ -1,1 +1,1 @@
-export { useSequentialFadeSwap, type FadePhase } from "./use-fade";
+export { useSequentialFadeSwap } from "./use-fade";

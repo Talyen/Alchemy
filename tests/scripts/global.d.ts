@@ -624,7 +624,6 @@ declare module "*/git-classify.mjs" {
     args: string[];
   };
   export function isDestructive(parsedArgs: string[]): boolean;
-  export const DESTRUCTIVE: ReadonlySet<string>;
 }
 
 declare module "*/audit.mjs" {

@@ -49,3 +49,16 @@ export function baseActiveRunInput(): Record<string, unknown> {
     labyrinthMap: null,
   });
 }
+
+export function makeWildwoodDraft(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    phase: "draft",
+    draftChoices: [],
+    remainingBossIds: [],
+    previousBossId: null,
+    currentBossId: null,
+    currentCombatTraitIds: [],
+    currentRewardTraitIds: [],
+    ...overrides,
+  };
+}

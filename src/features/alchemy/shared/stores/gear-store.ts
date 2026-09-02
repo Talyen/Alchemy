@@ -2,7 +2,6 @@ import type { CharacterId } from "@/lib/game-data";
 import { trinketLibrary } from "@/lib/game-data";
 import { useMemo } from "react";
 import {
-  computeGearManifest,
   createEmptyEquippedTrinkets,
   createEmptyGearInventories,
   createEmptyGearLoadouts,
@@ -114,15 +113,6 @@ function useHasAnyOwnedGear(): boolean {
 
 export function useIsArmoryLocked(): boolean {
   return !useHasAnyOwnedGear();
-}
-
-function readGearManifestForCharacter(characterId: CharacterId) {
-  const { inventories, loadouts } = readGameplayState().gear;
-  return computeGearManifest(characterId, flattenGearInventories(inventories), loadouts);
-}
-
-export function readGearMaxHealthBonus(characterId: CharacterId): number {
-  return readGearManifestForCharacter(characterId).maxHealth;
 }
 
 export function readEquippedTrinketId(characterId: CharacterId): string | null {

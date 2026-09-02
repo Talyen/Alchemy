@@ -10,8 +10,7 @@ import type {
 } from "@/lib/game-data";
 import { computeTalentEffects } from "@/lib/game-data";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
-import { getRunPhase, type RunPhase, type Screen } from "@/lib/routing";
-import type { Destination } from "@/lib/routing";
+import { getRunPhase, type RunPhase, type Screen, type Destination } from "@/lib/routing";
 import type { BattleState } from "@/lib/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import type { PermanentProgressFields } from "./run-state-init";
