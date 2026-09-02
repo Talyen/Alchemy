@@ -2,7 +2,7 @@ import { MATERIAL_IDS, type MaterialId, type MaterialInventory } from "./types";
 import type { HomesteadEffectManifest } from "./types";
 import { addInventory, emptyInventory, materialAmount } from "./inventory";
 import { materialCost } from "./costs";
-import { HOMESTEAD_LOOT_CONFIG } from "../game-constants";
+import { HOMESTEAD_LOOT_MULTIPLIERS } from "../game-constants";
 
 interface MaterialLootEntry {
   material: MaterialId;
@@ -192,14 +192,13 @@ function rollBonuses(table: EnemyLootTable, rng: () => number): MaterialInventor
 }
 
 function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): MaterialInventory {
-  const { enemyTypeMultipliers } = HOMESTEAD_LOOT_CONFIG;
   const multiplier =
     enemyType === "boss"
-      ? enemyTypeMultipliers.boss
+      ? HOMESTEAD_LOOT_MULTIPLIERS.boss
       : enemyType === "elite"
-        ? enemyTypeMultipliers.elite
-        : enemyTypeMultipliers.normal;
-  if (multiplier === enemyTypeMultipliers.normal) return loot;
+        ? HOMESTEAD_LOOT_MULTIPLIERS.elite
+        : HOMESTEAD_LOOT_MULTIPLIERS.normal;
+  if (multiplier === HOMESTEAD_LOOT_MULTIPLIERS.normal) return loot;
   const result = { ...loot };
   for (const mat of MATERIAL_IDS) {
     result[mat] = Math.floor(materialAmount(result, mat) * multiplier);

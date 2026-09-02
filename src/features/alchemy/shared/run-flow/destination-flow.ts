@@ -1,10 +1,9 @@
 import {
-  DEFAULT_DESTINATION_WEIGHT,
   CORRUPTION_DESTINATION_WEIGHT,
+  DEFAULT_DESTINATION_WEIGHT,
   DESTINATION_CHOICES,
   DESTINATION_PITY_WEIGHT_CAP,
   DESTINATION_PITY_WEIGHT_PER_ROUND,
-  DESTINATION_POST_OFFER_DAMPEN,
   DESTINATIONS_PER_ACT,
   LAST_OFFERED_DESTINATION_WEIGHT,
 } from "@/lib/game-constants";
@@ -98,8 +97,7 @@ export function computeDestinationWeight(destination: Destination, context: Dest
   const pity = Math.min(pityRounds * DESTINATION_PITY_WEIGHT_PER_ROUND, DESTINATION_PITY_WEIGHT_CAP);
   const wasLastOffered = context.lastOfferedDestinations.includes(destination);
   const repeatMultiplier = wasLastOffered ? LAST_OFFERED_DESTINATION_WEIGHT / baseWeight : 1;
-  const dampen = wasLastOffered ? DESTINATION_POST_OFFER_DAMPEN : 0;
-  return Math.max(1, (baseWeight + pity) * repeatMultiplier - dampen);
+  return Math.max(1, (baseWeight + pity) * repeatMultiplier);
 }
 
 function weightedPick(pool: Destination[], context: DestinationOfferState, rng: () => number): Destination | null {

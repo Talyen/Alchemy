@@ -1,7 +1,11 @@
 import { defaultBattleState, type BattleState } from "@/lib/battle";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import { sanitizePersistedEnemyTraits } from "@/lib/content-systems/encounter-traits";
-import { LEGACY_MANABURN_PER_CRYSTAL_ENABLED, MANABURN_DAMAGE_PERCENT } from "@/lib/game-constants";
+import {
+  LEGACY_FIRST_BURN_BONUS_MULTIPLIER,
+  LEGACY_MANABURN_PER_CRYSTAL_ENABLED,
+  MANABURN_DAMAGE_PERCENT,
+} from "@/lib/game-constants";
 
 function restingWorldRng(): () => number {
   return () => {
@@ -28,7 +32,7 @@ function normalizeTalentEffects(
     receiveHalfFreezeBuildUp?: boolean;
   };
   if (savedRecord.firstBurnCardDoubled === true && (savedRecord.firstBurnCardBonusMultiplier ?? 0) <= 0) {
-    merged.firstBurnCardBonusMultiplier = 1.5;
+    merged.firstBurnCardBonusMultiplier = LEGACY_FIRST_BURN_BONUS_MULTIPLIER;
   }
   if (savedRecord.receiveHalfFreezeBuildUp === true) {
     merged.receiveHalfFreezeDamage = true;

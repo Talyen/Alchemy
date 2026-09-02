@@ -4,8 +4,10 @@ import {
   FADE_IN_DURATION,
   FADE_OUT_DURATION,
   MUSIC_BASE_PATH,
-  MUSIC_MASTER_GAIN,
+  MUSIC_BOSS_VOLUME_BOOST,
+  MUSIC_FADE_TICK_MS,
   MUSIC_KEYS,
+  MUSIC_MASTER_GAIN,
 } from "./game-constants";
 import { audioState } from "./audio-state";
 import { clamp, pickRandomUnsafe } from "./utils";
@@ -38,8 +40,6 @@ type BossMusicEntry = [key: string, boss: BossMusicRow];
 const BOSS_MUSIC_ENTRIES = Object.entries(BOSS_MUSIC) as BossMusicEntry[];
 
 const BOSS_MUSIC_KEYS: ReadonlySet<string> = new Set(BOSS_MUSIC_ENTRIES.map(([key]) => key));
-
-const BOSS_MUSIC_VOLUME_BOOST = 2;
 
 function bossMusic(key: string): BossMusicRow | undefined {
   return BOSS_MUSIC[key as keyof typeof BOSS_MUSIC];
@@ -97,8 +97,6 @@ function playElement(el: HTMLAudioElement) {
   });
 }
 
-const RAMP_TICK_MS = 30;
-
 function rampVolume({
   transitionToken,
   delayMs = 0,
@@ -131,7 +129,7 @@ function rampVolume({
       if (musicTransitionTimer === timer) musicTransitionTimer = null;
       onComplete?.();
     }
-  }, RAMP_TICK_MS);
+  }, MUSIC_FADE_TICK_MS);
   musicTransitionTimer = timer;
 }
 
@@ -142,7 +140,7 @@ export function applyMusicVolume(
 ) {
   if (fadeProgress !== undefined) musicElementFadeGains.set(el, clamp(fadeProgress, 0, 1));
   const fadeGain = clamp(fadeProgress ?? musicElementFadeGains.get(el) ?? 1, 0, 1);
-  const boost = key && BOSS_MUSIC_KEYS.has(key) ? BOSS_MUSIC_VOLUME_BOOST : 1;
+  const boost = key && BOSS_MUSIC_KEYS.has(key) ? MUSIC_BOSS_VOLUME_BOOST : 1;
   el.volume = clamp(
     audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * fadeGain * boost,
     MUSIC_CONFIG.VOLUME_MIN,

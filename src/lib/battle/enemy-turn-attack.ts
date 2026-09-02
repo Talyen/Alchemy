@@ -18,22 +18,23 @@ import { applyPlayerStatusFromAttack, type DirectPlayerStatusAttackEffect } from
 import { getBattleRng, rollPercent } from "./status-helpers";
 import { type BattleState, type CombatTextEvent } from "./types";
 import { setEnemyStatus, setFlag } from "./types/state-helpers";
+import {
+  BANDIT_FIRST_HIT_MULTIPLIER,
+  BRAWLER_PENALTY_MULTIPLIER,
+  CONDITIONAL_FLAT_BONUS,
+  GIANT_SNAKE_EXTRA_BLOCK_STRIP,
+  HELLHOUND_BURN_MULTIPLIER,
+  ICE_WRAITH_FROZEN_PENALTY,
+  NEXT_ATTACK_CRIT_MULTIPLIER,
+  OGRE_BLOCK_BREAK_MULTIPLIER,
+  VAMPIRE_LEECH_CHANCE,
+} from "../game-constants";
 
 function isDirectPlayerStatusAttack(
   effect: Extract<EnemyAttackEffect, { kind: "player-status" }>,
 ): effect is DirectPlayerStatusAttackEffect {
   return effect.status !== "stun" && effect.status !== "freeze";
 }
-
-const HELLHOUND_BURN_MULTIPLIER = 1.25;
-const BRAWLER_PENALTY_MULTIPLIER = 0.5;
-const BANDIT_FIRST_HIT_MULTIPLIER = 2;
-const NEXT_ATTACK_CRIT_MULTIPLIER = 2;
-const CONDITIONAL_FLAT_BONUS = 1;
-const OGRE_BLOCK_BREAK_MULTIPLIER = 2;
-const GIANT_SNAKE_EXTRA_BLOCK_STRIP = 1;
-const VAMPIRE_LEECH_CHANCE = 10;
-const ICE_WRAITH_FROZEN_PENALTY = 1;
 
 interface ResolvedDamageModifiers {
   amountMultiplier: number;

@@ -13,6 +13,7 @@ export const MIN_MAX_MANA_FLOOR = 1;
 
 export const ROOM_SCALING_INCREMENT = 0.07;
 export const ELITE_HP_MULTIPLIER = 1.3;
+export const BOSS_HEALTH_MULTIPLIER = 1.4;
 export const STARTING_TURN = 1;
 export const ENEMY_BASE_REGENERATION = 1;
 export const ENEMY_BOSS_REGENERATION = 1;
@@ -31,6 +32,7 @@ export const FIRST_EFFECT_MULTIPLIER = 2;
 export const MANABURN_DAMAGE_PERCENT = 35;
 
 export const LEGACY_MANABURN_PER_CRYSTAL_ENABLED = 1;
+export const LEGACY_FIRST_BURN_BONUS_MULTIPLIER = 1.5;
 
 export const BLOCK_SCALED_DAMAGE_PERCENT = 30;
 

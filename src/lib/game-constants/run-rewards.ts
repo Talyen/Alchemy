@@ -1,23 +1,23 @@
-export const SHOP_CONFIG = {
-  shop: { price: 30 },
-  alchemist: { price: 30 },
-  equipment: { price: 40 },
-  trinket: { price: 100 },
-} as const;
-
-export const SHOP_CARD_PRICE = SHOP_CONFIG.shop.price;
+export const SHOP_CARD_PRICE = 30;
 export const SHOP_REMOVE_PRICE = 40;
 export const SHOP_REFRESH_PRICE = 20;
 
-export const ALCHEMIST_POTION_PRICE = SHOP_CONFIG.alchemist.price;
+export const ALCHEMIST_POTION_PRICE = 30;
 export const ALCHEMIST_REFRESH_PRICE = 20;
 export const ALCHEMIST_MIX_PRICE = 40;
 
-export const TRINKET_SHOP_TRINKET_PRICE = SHOP_CONFIG.trinket.price;
+export const TRINKET_SHOP_TRINKET_PRICE = 100;
 export const TRINKET_SHOP_OFFERED = 3;
 export const TRINKET_SHOP_REFRESHES = 1;
 
-export const EQUIPMENT_SHOP_BASIC_PRICE = SHOP_CONFIG.equipment.price;
+export const EQUIPMENT_SHOP_BASIC_PRICE = 40;
+
+export const SHOP_CONFIG = {
+  shop: { price: SHOP_CARD_PRICE },
+  alchemist: { price: ALCHEMIST_POTION_PRICE },
+  equipment: { price: EQUIPMENT_SHOP_BASIC_PRICE },
+  trinket: { price: TRINKET_SHOP_TRINKET_PRICE },
+} as const;
 export const EQUIPMENT_SHOP_ASTRAL_PRICE = 80;
 export const EQUIPMENT_SHOP_UNIQUE_PRICE = 100;
 export const EQUIPMENT_SHOP_OFFERED = 3;
@@ -59,7 +59,6 @@ export const DEFAULT_DESTINATION_WEIGHT = 10;
 export const LAST_OFFERED_DESTINATION_WEIGHT = 3;
 export const DESTINATION_PITY_WEIGHT_PER_ROUND = 3;
 export const DESTINATION_PITY_WEIGHT_CAP = 30;
-export const DESTINATION_POST_OFFER_DAMPEN = 0;
 
 export const CORRUPTION_TRANSFORM_CHANCE = 0.1;
 export const CORRUPTION_DELTA_CHANCE = 0.2;
@@ -81,7 +80,7 @@ export const SHOP_CARDS_OFFERED = 3;
 export const SHOP_REFRESHES = 1;
 export const ALCHEMIST_POTIONS_OFFERED = 3;
 export const ALCHEMIST_REFRESHES = 1;
-export const BOSS_HEALTH_MULTIPLIER = 1.4;
+export { BOSS_HEALTH_MULTIPLIER } from "./combat-rules";
 export const GEAR_REWARD_RARITY_CHANCE = 0.5;
 
 export const GEAR_ASTRAL_GUARANTEE_BONUS = 1;

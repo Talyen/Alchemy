@@ -1,4 +1,4 @@
-import { CAMPFIRE_HEAL_FRACTION } from "./game-constants/combat-rules";
+import { CAMPFIRE_HEAL_FRACTION } from "./game-constants";
 
 export function getCampfireHealFraction(campfireHealBonus = 0): number {
   return CAMPFIRE_HEAL_FRACTION + campfireHealBonus;
