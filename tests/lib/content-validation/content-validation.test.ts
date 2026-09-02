@@ -19,32 +19,7 @@ const ALL_AREAS: ContentValidationArea[] = [
 ];
 
 describe("content authoring validation", () => {
-  const PLACEHOLDER_ENEMY_IDS = [
-    "bandit",
-    "banshee",
-    "blood-countess",
-    "blood-cultist",
-    "brawler",
-    "cleric",
-    "dire-wolf",
-    "earth-elemental",
-    "fire-imp",
-    "giant-snake",
-    "giant-spider",
-    "hellhound",
-    "ice-wraith",
-    "inquisitor",
-    "ogre",
-    "paladin",
-    "pyromancer",
-    "seraph",
-    "stone-golem",
-    "stone-titan",
-    "vampire",
-    "winter-wolf",
-    "yeti",
-    "zealot",
-  ];
+  const PLACEHOLDER_ENEMY_IDS: string[] = [];
 
   it("has no structural content errors", () => {
     const result = runContentValidation();

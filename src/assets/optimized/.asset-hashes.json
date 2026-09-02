@@ -111,6 +111,20 @@
     "settingsSig": "1b71c36b1a1fcd5c187e708d79563ec8",
     "outputHash": "3fc32ce987c5e45ce14142b42617d62d"
   },
+  "bandit.webp": {
+    "hash": "7fdd582065b2692f588a1642d0797a47",
+    "mtimeMs": 1788385275362.0283,
+    "size": 2822522,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "57e4757df0ca9564ec70510a2c787dc8"
+  },
+  "banshee.webp": {
+    "hash": "4a69f94328ac0401b0084511546e5669",
+    "mtimeMs": 1788385203967.6023,
+    "size": 3179405,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "6b5ec65c6c882774da51f68b954fa3da"
+  },
   "bash.webp": {
     "hash": "cdd08c4439116403d03053205aead188",
     "mtimeMs": 1786580076630.6318,
@@ -160,6 +174,13 @@
     "settingsSig": "1b71c36b1a1fcd5c187e708d79563ec8",
     "outputHash": "8f3bee53d375977ab19608f25eea67a5"
   },
+  "blood-cultist.webp": {
+    "hash": "cfac58b18eef2b9bd572041163583ae4",
+    "mtimeMs": 1788385171029.3457,
+    "size": 2641446,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "cfe09362f3d3c9b7850561277722ef90"
+  },
   "blood-offering.webp": {
     "hash": "e2f436d9e39a8a12f86a8fd17c35a4fd",
     "mtimeMs": 1786580076644.0588,
@@ -201,6 +222,13 @@
     "size": 2693311,
     "settingsSig": "879cbf3dcd575cd69630093d9c60e1f1",
     "outputHash": "34f42205cab3c99d31db5bf41b4e5bcb"
+  },
+  "brawler.webp": {
+    "hash": "e9745d7a7150bb2dcbc7edb3d4caef25",
+    "mtimeMs": 1788385197333.4688,
+    "size": 3016052,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "291afd26614511bc5f1c7928888fec57"
   },
   "bread.webp": {
     "hash": "808d41f113be281b2fdf29268a908488",
@@ -271,6 +299,13 @@
     "size": 662754,
     "settingsSig": "1b71c36b1a1fcd5c187e708d79563ec8",
     "outputHash": "0b1983f314b166ba8f18a2e97cbbfb3e"
+  },
+  "cleric.webp": {
+    "hash": "7fa287652387592629fe1122397cfc7e",
+    "mtimeMs": 1788385888337.5637,
+    "size": 3086528,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "37fe80f192b8fc28e9a173f9b4004ebb"
   },
   "cold-snap.webp": {
     "hash": "a687af57245f06a47a54aa5703fe42c6",
@@ -419,6 +454,13 @@
     "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
     "outputHash": "66850a7bb53a25be700125b89a429cc5"
   },
+  "dire-wolf.webp": {
+    "hash": "4e6f38baec53e874dda873673ac21490",
+    "mtimeMs": 1788385235198.9565,
+    "size": 2673888,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "d3dd1e2b7b88425a7e2521ecee113436"
+  },
   "discard-pile.webp": {
     "hash": "1d69964c8368ecac812b8077f7bec61d",
     "mtimeMs": 1782421242051.7576,
@@ -439,6 +481,13 @@
     "size": 1686083,
     "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
     "outputHash": "ea93d1c24812c41fee15342fd5219217"
+  },
+  "earth-elemental.webp": {
+    "hash": "9fe6d08f8f845e3d04473c68f3a03253",
+    "mtimeMs": 1788385183412.9224,
+    "size": 3303046,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "31e4f131bcbae90e5ffe2c66d2afba5d"
   },
   "earthquake.webp": {
     "hash": "9f6e4cd7a52e82c809fca727e781afc0",
@@ -488,6 +537,13 @@
     "size": 840730,
     "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
     "outputHash": "bb0ec0e6012ae6d8547a18c8256c58df"
+  },
+  "fire-imp.webp": {
+    "hash": "57c905b4f573e2d4cdddef81f82c3290",
+    "mtimeMs": 1788385261833.5881,
+    "size": 2941804,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "a080a8b2942e21557799deddeb82bd8e"
   },
   "fireball.webp": {
     "hash": "de97aeec2dbe60c51b3357db38231dd0",
@@ -972,6 +1028,20 @@
     "settingsSig": "879cbf3dcd575cd69630093d9c60e1f1",
     "outputHash": "1b74b1a2101342d61496184b6618878f"
   },
+  "giant-snake.webp": {
+    "hash": "b29f2cf58510e135d24ebe4a17582e53",
+    "mtimeMs": 1788385240049.7173,
+    "size": 3243088,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "fb2b2f9f2562226d2a5eeff6019377ac"
+  },
+  "giant-spider.webp": {
+    "hash": "2836e6882d9fac64e0140b4af281ffa2",
+    "mtimeMs": 1788385247845.602,
+    "size": 3068084,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "c8cd64863ef218a1e82592692763b54b"
+  },
   "glacial-ward.webp": {
     "hash": "7baffd4d6c28a00166bf711f517aee24",
     "mtimeMs": 1786580076684.5222,
@@ -1035,6 +1105,13 @@
     "settingsSig": "1b71c36b1a1fcd5c187e708d79563ec8",
     "outputHash": "26ae1259c8b2f739b320931cb1b03378"
   },
+  "hellhound.webp": {
+    "hash": "6a2e76428ce4e5616c25608fa8a44de2",
+    "mtimeMs": 1788385255368.3872,
+    "size": 2840771,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "6e9c404fc1554719ce524ddd4ea169e9"
+  },
   "hemorrhage.webp": {
     "hash": "fd8bde6eeed15b98102664bd89f45c6a",
     "mtimeMs": 1786580076694.6248,
@@ -1077,12 +1154,26 @@
     "settingsSig": "1b71c36b1a1fcd5c187e708d79563ec8",
     "outputHash": "15ffb8513924be5e45e8fe9404ea4837"
   },
+  "ice-wraith.webp": {
+    "hash": "f62255560f6dcf0efad83e3ad6bee965",
+    "mtimeMs": 1788385165266.4106,
+    "size": 3292185,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "a10607af79efd5380c49968d02ccfd0b"
+  },
   "icy-heart.webp": {
     "hash": "66fb4cca4c2afc74837d8e6b99f682e5",
     "mtimeMs": 1786657568425.3748,
     "size": 2483268,
     "settingsSig": "879cbf3dcd575cd69630093d9c60e1f1",
     "outputHash": "e3cfd1970519dd1de46442e8f7182309"
+  },
+  "inquisitor.webp": {
+    "hash": "f23a76aa8fd0c7202a8243b3244f5369",
+    "mtimeMs": 1788385221416.5461,
+    "size": 3159408,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "88c2c7fb23e5baef66466130ba8ba9cc"
   },
   "iron-bear.webp": {
     "hash": "53746c12efec68837bcfb841cbb89a11",
@@ -1469,6 +1560,13 @@
     "settingsSig": "879cbf3dcd575cd69630093d9c60e1f1",
     "outputHash": "741fa02218b606b88928255a00b6e896"
   },
+  "ogre.webp": {
+    "hash": "60530b5d1c96a3d654ac6326b88476ea",
+    "mtimeMs": 1788385267747.4182,
+    "size": 3460404,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "74efa192ee1548443784890ef04c6162"
+  },
   "orchard.webp": {
     "hash": "92173b893814d66b320923827a43d7e9",
     "mtimeMs": 1782421242006.0845,
@@ -1482,6 +1580,13 @@
     "size": 715085,
     "settingsSig": "1b71c36b1a1fcd5c187e708d79563ec8",
     "outputHash": "e8c554460c10acd84869332d5ed15436"
+  },
+  "paladin.webp": {
+    "hash": "c7d0ddd0261b85d54b6c5ae19048c628",
+    "mtimeMs": 1788385155882.2637,
+    "size": 3422541,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "9cc1d7a3e1d840247ca61c764bbeef4e"
   },
   "panacea-potion.webp": {
     "hash": "a8e69bf4379492675283aafdfa1a7fbc",
@@ -1615,6 +1720,13 @@
     "size": 682950,
     "settingsSig": "1b71c36b1a1fcd5c187e708d79563ec8",
     "outputHash": "28a34d8aeb6f6ef1729fde860932071c"
+  },
+  "pyromancer.webp": {
+    "hash": "ba08734e9974b58d24125788179cdee8",
+    "mtimeMs": 1788385177600.0447,
+    "size": 3194608,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "537b0a5f0bb2c2a116063d5dcbde214c"
   },
   "ranger.webp": {
     "hash": "f82dc2b81e6e18b2235ac5305cf9ae69",
@@ -1868,6 +1980,13 @@
     "settingsSig": "1b71c36b1a1fcd5c187e708d79563ec8",
     "outputHash": "18aedb37bc577fd9645fea31c3b5123c"
   },
+  "stone-golem.webp": {
+    "hash": "32c0e774727501a3f5482503206adbbb",
+    "mtimeMs": 1788385189947.6199,
+    "size": 3314582,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "815e6e4d8013f4c55081198a0d9be04d"
+  },
   "stoneskin-potion.webp": {
     "hash": "d1599f6ba2e1cf13b03b2dec58469b02",
     "mtimeMs": 1786580076788.2163,
@@ -2043,6 +2162,13 @@
     "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
     "outputHash": "e32c0f9860a36e19578fa1c7aaf064c8"
   },
+  "the-blood-countess.webp": {
+    "hash": "97c208fb6698b07be2ed5e0a6d1a26f7",
+    "mtimeMs": 1788385228498.4836,
+    "size": 3191319,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "792084f66c6c7b3021ea22ef5028ad5b"
+  },
   "the-campaign.webp": {
     "hash": "a9b625d56700cd4c9c06ff2cce983261",
     "mtimeMs": 1786580076828.593,
@@ -2071,6 +2197,20 @@
     "settingsSig": "79e9ca9c77b9a6696b810389d3c5ba39",
     "outputHash": "af99f6b0f88a8a03a65b9bc36c38abb5"
   },
+  "the-seraph.webp": {
+    "hash": "63f0953347abf914efdd2875b6ad018b",
+    "mtimeMs": 1788385002595.988,
+    "size": 2981742,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "a7bbbaba897264ff446beb840755e1bd"
+  },
+  "the-stone-titan.webp": {
+    "hash": "ea5158bc09cf89878c035d3d2d7b6acd",
+    "mtimeMs": 1788384999951.3274,
+    "size": 2496381,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "f564cb7e474f434dccac9d5617c18708"
+  },
   "thorn-mail.webp": {
     "hash": "eca0da26d397f5ef470e102da2842c92",
     "mtimeMs": 1786580076792.7937,
@@ -2091,6 +2231,13 @@
     "size": 708130,
     "settingsSig": "1b71c36b1a1fcd5c187e708d79563ec8",
     "outputHash": "7413bd3780be4a197d87a120ae8011fd"
+  },
+  "vampire.webp": {
+    "hash": "b09c3ff059a34d06db6439e74879855b",
+    "mtimeMs": 1788385005112.4163,
+    "size": 2176942,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "13916063de1a0e7aa9801668e2485b7c"
   },
   "vanguards-crest.webp": {
     "hash": "c4f6874c5b2624fc118bb3654be1e183",
@@ -2155,6 +2302,13 @@
     "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
     "outputHash": "0800dad4bea9b1d97f9865d8467fed6c"
   },
+  "winter-wolf.webp": {
+    "hash": "64353d4788294363d33e132fc6ebbd4e",
+    "mtimeMs": 1788385209682.239,
+    "size": 2814915,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "051caf906e1f1cf39f3d4580d948a6c5"
+  },
   "wish.webp": {
     "hash": "cb6c7574a532d5a17eb73c9f6d1accb0",
     "mtimeMs": 1787539493901.706,
@@ -2203,5 +2357,19 @@
     "size": 1024135,
     "settingsSig": "79e9ca9c77b9a6696b810389d3c5ba39",
     "outputHash": "1fe58e6d2380fdb51425a1c84ed48e0b"
+  },
+  "yeti.webp": {
+    "hash": "97dcef58f5238e6a4a19bb02cf182bd2",
+    "mtimeMs": 1788385151713.968,
+    "size": 2764919,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "9c6fe0f64d6c11c1c1bc3b270b000732"
+  },
+  "zealot.webp": {
+    "hash": "029f6358ec5f60d94c460a838e39eac3",
+    "mtimeMs": 1788385718886.808,
+    "size": 3116925,
+    "settingsSig": "ddedaa2f5654f4b8d14f6d672d5c127e",
+    "outputHash": "8c66cb9f16c29ee82bee0d2d094d8064"
   }
 }

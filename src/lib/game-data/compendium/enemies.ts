@@ -140,7 +140,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "bandit",
     title: "Bandit",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.bandit,
     enemyType: "normal",
     traits: [trait("bandit", "Bandit", "Deals double damage on the first attack\nReceives 30% more Holy damage")],
     attackEffects: [phys(7)],
@@ -148,7 +148,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "ogre",
     title: "Ogre",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.ogre,
     enemyType: "elite",
     traits: [trait("ogre", "Ogre", "Physical attacks deal double damage to Block\nReceives 30% more Holy damage")],
     attackEffects: [phys(7)],
@@ -156,7 +156,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "fire-imp",
     title: "Fire Imp",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.fireImp,
     enemyType: "normal",
     traits: [trait("fire-imp", "Fire Imp", "Successful attacks apply 1 Burn\nReceives 30% more Freeze damage")],
     attackEffects: [{ kind: "damage", damageType: "burn", amount: 2 }],
@@ -164,7 +164,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "hellhound",
     title: "Hellhound",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.hellhound,
     enemyType: "elite",
     traits: [
       trait("hellhound", "Hellhound", "Deals 25% more damage against Burning players\nReceives 30% more Freeze damage"),
@@ -174,7 +174,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "pyromancer",
     title: "Pyromancer",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.pyromancer,
     enemyType: "elite",
     traits: [
       trait(
@@ -188,7 +188,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "giant-spider",
     title: "Giant Spider",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.giantSpider,
     enemyType: "normal",
     traits: [trait("giant-spider", "Giant Spider", "Successful attacks apply 1 Poison\nReceives 30% more Burn damage")],
     attackEffects: [{ kind: "damage", damageType: "poison", amount: 2 }],
@@ -196,7 +196,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "giant-snake",
     title: "Giant Snake",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.giantSnake,
     enemyType: "elite",
     traits: [
       trait(
@@ -210,7 +210,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "blood-cultist",
     title: "Blood Cultist",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.bloodCultist,
     enemyType: "elite",
     traits: [
       trait(
@@ -224,7 +224,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "dire-wolf",
     title: "Dire Wolf",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.direWolf,
     enemyType: "normal",
     traits: [
       trait(
@@ -238,7 +238,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "vampire",
     title: "Vampire",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.vampire,
     enemyType: "elite",
     traits: [
       trait(
@@ -252,7 +252,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "blood-countess",
     title: "The Blood Countess",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.theBloodCountess,
     enemyType: "boss",
     traits: [
       trait(
@@ -266,7 +266,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "zealot",
     title: "Zealot",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.zealot,
     enemyType: "normal",
     traits: [
       trait(
@@ -280,7 +280,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "cleric",
     title: "Cleric",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.cleric,
     enemyType: "elite",
     traits: [trait("cleric", "Cleric", "Gains 1 Block each turn\nHoly damage restores 1 Health")],
     attackEffects: [
@@ -291,7 +291,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "inquisitor",
     title: "Inquisitor",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.inquisitor,
     enemyType: "normal",
     traits: [
       trait(
@@ -305,7 +305,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "paladin",
     title: "Paladin",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.paladin,
     enemyType: "elite",
     traits: [
       trait("paladin", "Paladin", "Gains 1 Block after dealing Stun or Holy damage\nReceives 30% less Holy damage"),
@@ -318,7 +318,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "seraph",
     title: "The Seraph",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.theSeraph,
     enemyType: "boss",
     traits: [trait("seraph", "The Seraph", "Receives 30% more Bleed damage\nDeals 1 Holy damage each turn")],
     attackEffects: [phys(4), { kind: "damage", damageType: "holy", amount: 1 }],
@@ -326,7 +326,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "winter-wolf",
     title: "Winter Wolf",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.winterWolf,
     enemyType: "normal",
     traits: [trait("winter-wolf", "Winter Wolf", "Successful attacks apply 1 Freeze\nReceives 30% more Burn damage")],
     attackEffects: [{ kind: "damage", damageType: "bleed", amount: 2 }],
@@ -334,7 +334,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "ice-wraith",
     title: "Ice Wraith",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.iceWraith,
     enemyType: "elite",
     traits: [
       trait(
@@ -348,7 +348,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "yeti",
     title: "Yeti",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.yeti,
     enemyType: "elite",
     traits: [
       trait(
@@ -365,7 +365,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "banshee",
     title: "Banshee",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.banshee,
     enemyType: "normal",
     traits: [
       trait("banshee", "Banshee", "Deals 4 Stun damage and Purges a beneficial effect\nReceives double Holy damage"),
@@ -375,7 +375,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "brawler",
     title: "Brawler",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.brawler,
     enemyType: "elite",
     traits: [
       trait(
@@ -389,7 +389,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "stone-golem",
     title: "Stone Golem",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.stoneGolem,
     enemyType: "elite",
     traits: [trait("stone-golem", "Stone Golem", "Gains 1 Block each turn\nDeals 1 additional damage while Blocked")],
     attackEffects: [{ kind: "damage", damageType: "stun", amount: 1 }, phys(3)],
@@ -397,7 +397,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "earth-elemental",
     title: "Earth Elemental",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.earthElemental,
     enemyType: "normal",
     traits: [
       trait(
@@ -411,7 +411,7 @@ export const enemyBestiary = [
   defineEnemy({
     id: "stone-titan",
     title: "The Stone Titan",
-    art: assetRefs.placeholderEnemy,
+    art: assetRefs.theStoneTitan,
     enemyType: "boss",
     traits: [trait("stone-titan", "The Stone Titan", "Deals 1 Stun damage each turn")],
     attackEffects: [{ kind: "damage", damageType: "stun", amount: 4 }],

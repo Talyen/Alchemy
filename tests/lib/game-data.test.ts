@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { cardLibrary, companionLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
+import { placeholderEnemy } from "@/lib/game-data/assets";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 
 describe("cardLibrary data integrity", () => {
@@ -80,11 +81,13 @@ describe("enemyBestiary data integrity", () => {
     }
   });
 
-  it("uses the imported Will-o-Wisp art and placeholders only for the art backlog", () => {
+  it("uses the imported Will-o-Wisp art and no placeholder art remains", () => {
     const willOWisp = enemyBestiary.find((enemy) => enemy.id === "will-o-wisp")!;
-    const placeholderArt = enemyBestiary.find((enemy) => enemy.id === "bandit")!.art;
-    expect(willOWisp.art).not.toBe(placeholderArt);
-    expect(enemyBestiary.filter((enemy) => enemy.art === placeholderArt)).toHaveLength(24);
+    const bandit = enemyBestiary.find((enemy) => enemy.id === "bandit")!;
+    expect(willOWisp.art).toBeTruthy();
+    expect(bandit.art).toBeTruthy();
+    expect(willOWisp.art).not.toBe(bandit.art);
+    expect(enemyBestiary.filter((enemy) => enemy.art === placeholderEnemy)).toHaveLength(0);
   });
 });
 
