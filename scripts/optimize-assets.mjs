@@ -45,11 +45,10 @@ function slugifyGearName(name) {
     .replace(/^-|-$/g, "");
 }
 
-async function discoverGearAssets() {
-  const gearDir = path.join(sourceDir, "Gear");
+async function discoverFiles({ dir, pattern, validate }) {
   let entries;
   try {
-    entries = await readdir(gearDir, { withFileTypes: true });
+    entries = await readdir(dir, { withFileTypes: true });
   } catch {
     return [];
   }
@@ -58,55 +57,64 @@ async function discoverGearAssets() {
   for (const entry of entries) {
     if (!entry.isFile()) continue;
     if (entry.name.startsWith(".")) continue;
-    const match = entry.name.match(/^(.+?)\s-\s(Basic|Astral)\.(jpe?g|png)$/i);
+    const match = entry.name.match(pattern);
     if (!match) {
-      if (entry.name.toLowerCase().includes("placeholder")) continue;
-      throw new Error(`[gear] Malformed gear file: ${entry.name} (expected "{Name} - {Basic|Astral}.{jpeg|jpg|png}")`);
+      const skip = validate.skip?.(entry.name);
+      if (skip) continue;
+      throw new Error(validate.malformed(entry.name));
     }
-    const [, displayName, rarity] = match;
-    discovered.push({
-      source: `Gear/${entry.name}`,
-      target: `gear-${slugifyGearName(displayName)}-${rarity.toLowerCase()}.webp`,
-      width: gearAssetWidth,
-      quality: gearAssetQuality,
-    });
+    const asset = validate.map(match, entry.name);
+    if (asset) discovered.push(asset);
   }
+  validate.check?.(discovered);
   return discovered;
 }
 
-async function discoverGearSlotBackgrounds() {
-  const slotDir = path.join(sourceDir, "Gear", "Gear Slot Backgrounds");
-  let entries;
-  try {
-    entries = await readdir(slotDir, { withFileTypes: true });
-  } catch {
-    return [];
-  }
+async function discoverGearAssets() {
+  return discoverFiles({
+    dir: path.join(sourceDir, "Gear"),
+    pattern: /^(.+?)\s-\s(Basic|Astral)\.(jpe?g|png)$/i,
+    validate: {
+      skip: (name) => name.toLowerCase().includes("placeholder"),
+      malformed: (name) => `[gear] Malformed gear file: ${name} (expected "{Name} - {Basic|Astral}.{jpeg|jpg|png}")`,
+      map: (match, fileName) => {
+        const [, displayName, rarity] = match;
+        return {
+          source: `Gear/${fileName}`,
+          target: `gear-${slugifyGearName(displayName)}-${rarity.toLowerCase()}.webp`,
+          width: gearAssetWidth,
+          quality: gearAssetQuality,
+        };
+      },
+    },
+  });
+}
 
-  const discovered = [];
+async function discoverGearSlotBackgrounds() {
   const foundSlotIds = new Set();
-  for (const entry of entries) {
-    if (!entry.isFile()) continue;
-    if (entry.name.startsWith(".")) continue;
-    const match = entry.name.match(/^(.+?)\sSlot\.(jpe?g|png)$/i);
-    if (!match) {
-      throw new Error(
-        `[gear-slot] Malformed slot background file: ${entry.name} (expected "{Slot} Slot.{jpeg|jpg|png}")`,
-      );
-    }
-    const displayName = match[1].trim().toLowerCase();
-    const slotId = GEAR_SLOT_IDS.includes(displayName) ? displayName : undefined;
-    if (!slotId) {
-      throw new Error(`[gear-slot] Unknown slot background name: ${match[1]} (allowed: ${GEAR_SLOT_IDS.join(", ")})`);
-    }
-    foundSlotIds.add(slotId);
-    discovered.push({
-      source: `Gear/Gear Slot Backgrounds/${entry.name}`,
-      target: `gear-slot-${slotId}.webp`,
-      width: gearAssetWidth,
-      quality: gearAssetQuality,
-    });
-  }
+  const discovered = await discoverFiles({
+    dir: path.join(sourceDir, "Gear", "Gear Slot Backgrounds"),
+    pattern: /^(.+?)\sSlot\.(jpe?g|png)$/i,
+    validate: {
+      malformed: (name) =>
+        `[gear-slot] Malformed slot background file: ${name} (expected "{Slot} Slot.{jpeg|jpg|png}")`,
+      map: (match, fileName) => {
+        const displayName = match[1].trim().toLowerCase();
+        if (!GEAR_SLOT_IDS.includes(displayName)) {
+          throw new Error(
+            `[gear-slot] Unknown slot background name: ${match[1]} (allowed: ${GEAR_SLOT_IDS.join(", ")})`,
+          );
+        }
+        foundSlotIds.add(displayName);
+        return {
+          source: `Gear/Gear Slot Backgrounds/${fileName}`,
+          target: `gear-slot-${displayName}.webp`,
+          width: gearAssetWidth,
+          quality: gearAssetQuality,
+        };
+      },
+    },
+  });
 
   for (const slotId of GEAR_SLOT_IDS) {
     if (!foundSlotIds.has(slotId)) {
@@ -176,6 +184,8 @@ export async function optimizeAssets() {
     if (removed > 0) {
       console.log(`Removed ${removed} orphan optimized assets.`);
     }
+  } else {
+    console.warn("Skipping orphan optimized-asset sweep because art optimization failed.");
   }
 
   console.log(

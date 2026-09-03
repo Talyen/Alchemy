@@ -7,6 +7,7 @@ import {
   DEFAULT_SFX_VOLUME_PCT,
 } from "@/lib/game-constants";
 import type { StandalonePersistenceCodec } from "./persistence-codec";
+import { resolveAutoplayEnabled } from "@/lib/settings-values";
 
 export interface SettingsSaveFields {
   selectedAspectRatio: AspectRatioOption;
@@ -57,13 +58,13 @@ export function preferredAutoplayEnabled(fields: {
   rememberAutoplayPreference: boolean;
   autoplayEnabled: boolean;
 }): boolean {
-  return fields.rememberAutoplayPreference && fields.autoplayEnabled;
+  return resolveAutoplayEnabled(fields);
 }
 
 function withDerivedAutoplay<T extends { rememberAutoplayPreference: boolean; autoplayEnabled: boolean }>(
   fields: T,
 ): T {
-  return { ...fields, autoplayEnabled: fields.rememberAutoplayPreference && fields.autoplayEnabled };
+  return { ...fields, autoplayEnabled: resolveAutoplayEnabled(fields) };
 }
 
 export const useSettingsStore = create<SettingsStore>()((set) => ({

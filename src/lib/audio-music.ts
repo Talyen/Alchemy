@@ -43,6 +43,10 @@ const BOSS_MUSIC_ENTRIES = Object.entries(BOSS_MUSIC) as BossMusicEntry[];
 
 const BOSS_MUSIC_KEYS: ReadonlySet<string> = new Set(BOSS_MUSIC_ENTRIES.map(([key]) => key));
 
+export function allRegisteredMusicFiles(): string[] {
+  return [...Object.values(MUSIC_CONFIG.TRACKS).flat(), ...BOSS_MUSIC_ENTRIES.flatMap(([, boss]) => boss.tracks)];
+}
+
 function bossMusic(key: string): BossMusicRow | undefined {
   return BOSS_MUSIC[key as keyof typeof BOSS_MUSIC];
 }

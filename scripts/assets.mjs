@@ -6,7 +6,7 @@ import { syncGenerated } from "./sync-generated.mjs";
 
 function printHelp() {
   console.log(`Usage: node scripts/assets.mjs [command]
-  Canonical asset CLI (node scripts/prepare-assets.mjs is the predev library entry over the same pipeline).
+  Canonical asset CLI (predev runs --prepare over the same pipeline).
   --prepare (default)  Run full asset prep (art+sounds+music+sync)
   --optimize           Run art/sound/music optimization only
   --sync               Run barrel sync only (art barrels + version metadata; add --check to verify)

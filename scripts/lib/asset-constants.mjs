@@ -16,6 +16,8 @@ export const ART_TRANSFORM_CONCURRENCY =
 
 export const SOUND_TRANSFORM_CONCURRENCY = Math.min(ciCap, 6);
 
+export const MUSIC_COPY_CONCURRENCY = 4;
+
 export const WIDTH = Object.freeze({
   card: 420,
   talent: 420,
@@ -63,6 +65,7 @@ export const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
 export const VORBIS_QUALITY = "4";
 export const MP3_FALLBACK_SETTINGS = Object.freeze({ codec: "libmp3lame", quality: "4", stripVideo: true });
 export const SOUND_ENTRY_OWNERS = Object.freeze({ generated: "generated", curated: "curated" });
+export const CURATED_SOUND_SETTINGS = Object.freeze({ mode: "curated" });
 
 export function soundTransformSettings(sourceExt) {
   if (sourceExt === ".ogg") return { mode: "copy" };

@@ -18,7 +18,7 @@ import { formatPlan, writeFailureDigest } from "../../scripts/verify-changed.mjs
 describe("verification selection", () => {
   it("uses a small broad category catalog", () => {
     expect(ROUTES.length).toBeLessThanOrEqual(10);
-    expect(ROUTES.reduce((count, route) => count + route.patterns.length, 0)).toBeLessThanOrEqual(65);
+    expect(ROUTES.reduce((count, route) => count + route.patterns.length, 0)).toBeLessThanOrEqual(68);
     expect(validateRouteCatalog()).toEqual([]);
     expect(validateTestSuitePaths(process.cwd(), TEST_SUITES.shipUnit)).toEqual([]);
   });

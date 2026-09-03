@@ -34,6 +34,8 @@ const CHUNK_GROUPS = Object.freeze([
 
 const BY_PRIORITY = [...CHUNK_GROUPS].sort((a, b) => b.priority - a.priority);
 
+export const CHUNK_GROUP_NAMES = Object.freeze(CHUNK_GROUPS.map(({ name }) => name));
+
 export function resolveManualChunk(id) {
   for (const group of BY_PRIORITY) {
     if (group.test.test(id)) return group.name;

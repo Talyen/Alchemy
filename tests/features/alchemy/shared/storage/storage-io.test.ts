@@ -494,9 +494,10 @@ describe("storage io", () => {
     expect(mockStorage[SAVE_KEY]).toBeUndefined();
   });
 
-  it("keeps writes disabled when desktop clear fails due to Steam Cloud", async () => {
+  it("clears local saves even when Steam Cloud delete fails", async () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const futurePayload = JSON.stringify({
       ...currentSchemaCampaignSave(),
@@ -509,11 +510,8 @@ describe("storage io", () => {
     const loaded = await bootstrapAlchemySaveState();
     expect(loaded.status.kind).toBe("unsupported-newer-schema");
 
-    await expect(clearAlchemySaveData()).resolves.toBe(false);
+    await expect(clearAlchemySaveData()).resolves.toBe(true);
+    expect(desktop.clearSave).toHaveBeenCalledOnce();
     expect(desktop.steamCloudDelete).toHaveBeenCalledOnce();
-    expect(desktop.clearSave).not.toHaveBeenCalled();
-
-    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["should-not-write"] });
-    expect(desktop.writeSave).not.toHaveBeenCalled();
   });
 });

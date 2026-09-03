@@ -101,15 +101,18 @@ export function createPlatformSaveBackend({ cloudSyncEnabled = false }: Platform
         const desktop = getDesktopApi();
         if (!desktop) return { ok: false, error: new Error("Desktop API unavailable") };
         try {
-          if (cloudSyncEnabled) {
-            const cloudCleared = (await desktop.steamCloudDelete?.()) ?? false;
-            if (!cloudCleared) {
-              return { ok: false, error: new Error("Failed to clear Steam Cloud save") };
-            }
-          }
           const localCleared = await desktop.clearSave();
           if (!localCleared) {
             return { ok: false, error: new Error("Failed to clear desktop save file") };
+          }
+          if (cloudSyncEnabled) {
+            try {
+              const cloudCleared = (await desktop.steamCloudDelete?.()) ?? false;
+              if (!cloudCleared)
+                console.warn("Steam Cloud delete failed after local wipe; next save will overwrite the mirror");
+            } catch (error) {
+              console.warn("Steam Cloud delete failed after local wipe; next save will overwrite the mirror", error);
+            }
           }
           return { ok: true };
         } catch (error) {

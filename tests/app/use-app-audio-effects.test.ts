@@ -26,6 +26,7 @@ vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({
 vi.mock("@/lib/audio", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/audio")>()),
   setMuted: vi.fn(),
+  initAudioHost: vi.fn(),
   setMasterVolume: vi.fn(),
   setMusicVolume: vi.fn(),
   setSfxVolume: vi.fn(),

@@ -5,8 +5,14 @@ import { readdirSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { BUDGETS } from "./lib/bundle-budget.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
+import { CHUNK_GROUP_NAMES } from "./lib/vite-chunks.mjs";
 
 const DISTS = ["dist/assets", "dist-desktop/assets"];
+
+function chunkPattern(name) {
+  return new RegExp(`^${name}-[A-Za-z0-9_-]+\\.js$`);
+}
 
 function jsAssets(dir) {
   if (!existsSync(dir)) return [];
@@ -18,9 +24,7 @@ function jsAssets(dir) {
 function checkSingleBudget(dir) {
   const assets = jsAssets(dir);
   if (assets.length === 0) return null;
-  const INDEX_PATTERN = /^index-[A-Za-z0-9_-]+\.js$/;
-  const GAME_DATA_PATTERN = /^game-data-[A-Za-z0-9_-]+\.js$/;
-  const indexAsset = assets.find((a) => INDEX_PATTERN.test(a.name));
+  const indexAsset = assets.find((a) => chunkPattern("index").test(a.name));
   if (!indexAsset) {
     console.error(`[bundle-budget] FAIL ${dir}: index chunk not found (expected index-*.js)`);
     return false;
@@ -42,7 +46,7 @@ function checkSingleBudget(dir) {
   } else {
     console.log(`[bundle-budget] pass ${dir} total js ${totalJs} <= ${BUDGETS.totalJsMaxBytes}`);
   }
-  const gameDataAsset = assets.find((a) => GAME_DATA_PATTERN.test(a.name));
+  const gameDataAsset = assets.find((a) => chunkPattern("game-data").test(a.name));
   if (gameDataAsset) {
     if (gameDataAsset.bytes > BUDGETS.gameDataMaxBytes) {
       console.error(
@@ -55,6 +59,11 @@ function checkSingleBudget(dir) {
         `[bundle-budget] pass ${dir}/${gameDataAsset.name} ${gameDataAsset.bytes} <= ${BUDGETS.gameDataMaxBytes}`,
       );
     }
+  }
+  for (const name of CHUNK_GROUP_NAMES) {
+    if (name === "index" || name === "game-data") continue;
+    const asset = assets.find((a) => chunkPattern(name).test(a.name));
+    if (asset) console.log(`[bundle-budget] info ${dir}/${asset.name} ${asset.bytes}`);
   }
   return !failed;
 }
@@ -74,7 +83,7 @@ export function checkBundleBudget(dist = DISTS) {
   return ok;
 }
 
-const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].split("/").pop());
+const isMain = isMainModule(import.meta.url);
 if (isMain || (process.argv[1] && process.argv[1].includes("check-bundle-budget"))) {
   const ok = checkBundleBudget();
   process.exit(ok ? 0 : 1);

@@ -3,8 +3,10 @@ const CONTENT_ID_REMAPS_BY_VERSION: Array<{ toVersion: number; remaps: Record<st
   { toVersion: 3, remaps: { roulette: "roll-the-dice" } },
 ];
 
+const CARD_ID_KEYS = new Set(["id", "cardId", "cardIds", "discoveredCardIds"]);
+
 function isCardIdPosition(key: string): boolean {
-  return key === "id" || key.endsWith("Id") || key.endsWith("Ids");
+  return CARD_ID_KEYS.has(key);
 }
 
 function remapContentIds(value: unknown, remaps: Record<string, string>, idPosition: boolean): unknown {

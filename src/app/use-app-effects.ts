@@ -9,6 +9,7 @@ import {
 } from "@/lib/game-constants";
 import {
   getBossMusicKey,
+  initAudioHost,
   invalidateCacheForKey,
   isMusicPaused,
   isNonPlayerAudioHost,
@@ -80,6 +81,7 @@ export function useAppAudioEffects({
 
   useEffect(() => {
     muteInBackgroundRef.current = muteInBackground;
+    initAudioHost();
     function applyBackgroundMute(event?: Event) {
       setMuted(isNonPlayerAudioHost() || (muteInBackground && isAppInBackground(event)));
     }
@@ -232,7 +234,8 @@ export function useInitialLoadReady({
     let cancelled = false;
 
     function preloadDeferredGearArt() {
-      const deferred = allGameArt.filter((src) => !essentialGameArt.includes(src));
+      const essential = new Set(essentialGameArt);
+      const deferred = allGameArt.filter((src) => !essential.has(src));
       if (deferred.length === 0) return;
       scheduleIdle(() => {
         void preloadImagesInBatches(deferred, IMAGE_PRELOAD_BATCH_SIZE);

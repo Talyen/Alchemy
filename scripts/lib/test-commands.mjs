@@ -7,6 +7,10 @@ export const TEST_SUITES = Object.freeze({
     "tests/features/alchemy/shared/storage",
     "tests/features/alchemy/app/autosave-hook.test.ts",
     "tests/features/alchemy/app/autosave-active-run.test.ts",
+    "tests/lib/validation",
+    "tests/lib/active-run-session",
+    "tests/architecture/save-migration-guard.test.ts",
+    "tests/architecture/save-migration-contract.test.ts",
   ]),
   tooling: Object.freeze(["tests/scripts", "tests/architecture"]),
   shipUnit: Object.freeze([

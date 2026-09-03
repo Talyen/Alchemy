@@ -128,6 +128,19 @@ describe("migrateSaveDataToCurrent", () => {
       deck: [{ id: "slash", title: "roulette", descriptionLines: ["roulette"], art: "roulette" }],
     });
   });
+
+  it("leaves non-card id fields matching a remapped card id untouched", () => {
+    const result = migrateSaveDataToCurrent({
+      contentVersion: 1,
+      discoveredCardIds: ["sunder-armor"],
+      encounteredEnemyIds: ["sunder-armor"],
+      activeRun: {
+        deck: [{ id: "sunder-armor", title: "Sunder Armor" }],
+      },
+    });
+    expect(result.discoveredCardIds).toEqual(["sunder"]);
+    expect(result.encounteredEnemyIds).toEqual(["sunder-armor"]);
+  });
 });
 
 describe("isUnsupportedFutureSaveData", () => {

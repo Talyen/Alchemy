@@ -72,4 +72,38 @@ describe("save version protection", () => {
     ]);
     expect(loaded.status.kind).toBe("unsupported-newer-content");
   });
+
+  it("loads the freshest playable backup regardless of candidate order", () => {
+    const stale = playableSave(1000);
+    const fresh = JSON.stringify({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      contentVersion: CURRENT_CONTENT_VERSION,
+      lastSavedAt: 2000,
+      discoveredCardIds: ["slash", "block"],
+      activeRun: null,
+    });
+    expect(evaluateSaveCandidates([stale, fresh]).data.lastSavedAt).toBe(2000);
+    expect(evaluateSaveCandidates([fresh, stale]).data.lastSavedAt).toBe(2000);
+    expect(evaluateSaveCandidates([fresh, stale]).data.discoveredCardIds).toEqual(["slash", "block"]);
+  });
+
+  it("reports the newest future candidate when several future copies exist", () => {
+    const olderFutureHigherVersion = JSON.stringify({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 2,
+      contentVersion: CURRENT_CONTENT_VERSION,
+      lastSavedAt: 1000,
+      activeRun: null,
+    });
+    const newerFutureLowerVersion = JSON.stringify({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+      contentVersion: CURRENT_CONTENT_VERSION,
+      lastSavedAt: 2000,
+      activeRun: null,
+    });
+    const loaded = evaluateSaveCandidates([newerFutureLowerVersion, olderFutureHigherVersion]);
+    expect(loaded.status).toEqual({
+      kind: "unsupported-newer-schema",
+      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+    });
+  });
 });

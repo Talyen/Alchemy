@@ -1,48 +1,50 @@
-/**
- * Table-driven registry for the three asset optimize pipelines.
- * Each pipeline is independent (disjoint output dirs) but shares manifest
- * hashing / concurrency patterns via `lib/asset-manifest-cache.mjs`.
- * `prepare-assets.mjs` runs them concurrently; this module documents the table
- * so future pipelines (e.g., video) plug in without new glue code.
- */
+import { optimizeAssets } from "./optimize-assets.mjs";
+import { optimizeMusic } from "./optimize-music.mjs";
+import { optimizeSounds } from "./optimize-sounds.mjs";
+
 export const OPTIMIZE_PIPELINES = {
   art: {
     label: "Art",
-    module: "./optimize-assets.mjs",
-    entry: "optimizeAssets",
+    run: optimizeAssets,
   },
   sound: {
     label: "Sound",
-    module: "./optimize-sounds.mjs",
-    entry: "optimizeSounds",
+    run: optimizeSounds,
   },
   music: {
     label: "Music",
-    module: "./optimize-music.mjs",
-    entry: "optimizeMusic",
+    run: optimizeMusic,
   },
 };
 
-async function runPipeline(key, { module, entry }) {
-  try {
-    const mod = await import(new URL(module, import.meta.url).href);
-    return await mod[entry]();
-  } catch (error) {
-    error.message = `[optimize:${key}] ${error.message}`;
-    throw error;
-  }
+export async function runAllOptimizePipelinesSettled() {
+  const results = await Promise.allSettled(
+    Object.entries(OPTIMIZE_PIPELINES).map(async ([key, pipeline]) => {
+      try {
+        return await pipeline.run();
+      } catch (error) {
+        error.message = `[optimize:${key}] ${error.message}`;
+        throw error;
+      }
+    }),
+  );
+  return results;
 }
 
 export async function runAllOptimizePipelines() {
-  const results = await Promise.all(
-    Object.entries(OPTIMIZE_PIPELINES).map(([key, pipeline]) => runPipeline(key, pipeline)),
-  );
-  return results;
-}
-
-export async function runAllOptimizePipelinesSettled() {
-  const results = await Promise.allSettled(
-    Object.entries(OPTIMIZE_PIPELINES).map(([key, pipeline]) => runPipeline(key, pipeline)),
-  );
-  return results;
+  const results = await runAllOptimizePipelinesSettled();
+  const failures = results
+    .map((result, index) => ({ result, key: Object.keys(OPTIMIZE_PIPELINES)[index] }))
+    .filter(({ result }) => result.status === "rejected" || !result.value?.ok);
+  if (failures.length > 0) {
+    const details = failures
+      .map(({ result, key }) =>
+        result.status === "rejected"
+          ? `${key}: ${String(result.reason)}`
+          : `${key}: ${String(result.value?.error ?? "failed")}`,
+      )
+      .join(" ");
+    throw new Error(`Asset optimization failed: ${details}`);
+  }
+  return results.map((result) => (result.status === "fulfilled" ? result.value : undefined));
 }

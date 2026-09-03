@@ -6,3 +6,7 @@
 export function kebabToCamel(name) {
   return name.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
 }
+
+export function toAssetExportName(target) {
+  return kebabToCamel(target.replace(/\.webp$/, ""));
+}

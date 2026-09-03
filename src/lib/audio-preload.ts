@@ -9,6 +9,7 @@ const SOUND_PRELOAD_CONFIG = {
 } as const;
 
 const htmlPreloadStarted = new Set<string>();
+const htmlPreloadElements = new Set<HTMLAudioElement>();
 let cachedOggSupport: boolean | null = null;
 
 function playableSoundFileName(name: string): string {
@@ -36,7 +37,13 @@ export function getSoundUrl(name: string): string {
 
 export function resetSoundPreloadCache() {
   htmlPreloadStarted.clear();
+  htmlPreloadElements.clear();
   cachedOggSupport = null;
+}
+
+function releasePreloadElement(el: HTMLAudioElement, name: string) {
+  htmlPreloadElements.delete(el);
+  htmlPreloadStarted.delete(name);
 }
 
 export function preloadSounds(names: string[]) {
@@ -46,8 +53,12 @@ export function preloadSounds(names: string[]) {
     htmlPreloadStarted.add(name);
     const el = new Audio();
     el.preload = "auto";
+    htmlPreloadElements.add(el);
+    el.oncanplaythrough = () => {
+      htmlPreloadElements.delete(el);
+    };
     el.onerror = () => {
-      htmlPreloadStarted.delete(name);
+      releasePreloadElement(el, name);
     };
     el.src = getSoundUrl(name);
   }

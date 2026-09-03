@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { setMuted, setSfxVolume, setMasterVolume, setMusicVolume } from "@/lib/audio-volume";
+import { initAudioHost, setMuted, setSfxVolume, setMasterVolume, setMusicVolume } from "@/lib/audio-volume";
 import { audioState } from "@/lib/audio-state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
 import { invalidateCacheForKey, playMusic, playMusicImmediate } from "@/lib/audio-music";
@@ -7,6 +7,7 @@ import { installFakeAudio, resetMusicState } from "../helpers/fake-audio";
 
 beforeEach(() => {
   audioState.muted = false;
+  audioState.hostForcesMute = false;
   audioState.sfxVolume = 0.35;
   audioState.masterVolume = 1;
   audioState.musicVolume = 0.0875;
@@ -45,6 +46,8 @@ describe("setMuted", () => {
     vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Electron/28.0.0" });
     const el = { muted: false, pause: vi.fn() } as Partial<HTMLAudioElement>;
     audioState.currentMusic = el as HTMLAudioElement;
+    initAudioHost();
+    expect(audioState.hostForcesMute).toBe(true);
     setMuted(false);
     expect(audioState.muted).toBe(true);
     expect(el.muted).toBe(true);

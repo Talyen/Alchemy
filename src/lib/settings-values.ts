@@ -10,3 +10,10 @@ export const SETTINGS_RANGES = {
   brightness: { min: 50, max: 150 },
   volume: { min: 0, max: 100 },
 } as const;
+
+export function resolveAutoplayEnabled(fields: {
+  rememberAutoplayPreference: boolean;
+  autoplayEnabled: boolean;
+}): boolean {
+  return fields.rememberAutoplayPreference && fields.autoplayEnabled;
+}

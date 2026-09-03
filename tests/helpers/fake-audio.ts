@@ -72,6 +72,7 @@ export function installFakeAudio(options: FakeAudioOptions = {}): void {
 
 export function resetSfxRuntime(): void {
   audioState.muted = false;
+  audioState.hostForcesMute = false;
   audioState.lastPlayedAt = new Map();
   resetHtmlSfxRuntime();
 }

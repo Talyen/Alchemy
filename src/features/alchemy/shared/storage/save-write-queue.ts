@@ -14,10 +14,14 @@ export class SaveWriteQueue {
   private chain: Promise<void> = Promise.resolve();
   private coalesced: SaveData | null = null;
   private clearPending = false;
-  private tasks = 0;
+  private runnerActive = false;
 
   get hasPendingTasks(): boolean {
-    return this.tasks > 0;
+    return this.runnerActive || this.coalesced !== null;
+  }
+
+  get isIdle(): boolean {
+    return !this.runnerActive && this.coalesced === null;
   }
 
   get isClearPending(): boolean {
@@ -30,7 +34,8 @@ export class SaveWriteQueue {
       return;
     }
     this.coalesced = data;
-    this.tasks += 1;
+    if (this.runnerActive) return;
+    this.runnerActive = true;
     const run = this.chain.then(async () => {
       try {
         while (this.coalesced !== null && !this.clearPending) {
@@ -40,7 +45,7 @@ export class SaveWriteQueue {
           await write(snapshot);
         }
       } finally {
-        this.tasks -= 1;
+        this.runnerActive = false;
       }
     });
     this.chain = run.catch(() => {});
@@ -48,7 +53,8 @@ export class SaveWriteQueue {
   }
 
   queueExitSnapshot(data: SaveData): void {
-    if (this.tasks > 0) this.coalesced = data;
+    if (writesDisabledForSession || this.clearPending) return;
+    this.coalesced = data;
   }
 
   async enqueueClear(
@@ -90,6 +96,6 @@ export class SaveWriteQueue {
     this.chain = Promise.resolve();
     this.coalesced = null;
     this.clearPending = false;
-    this.tasks = 0;
+    this.runnerActive = false;
   }
 }

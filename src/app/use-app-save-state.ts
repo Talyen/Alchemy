@@ -21,16 +21,23 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
     let isDirty = false;
     let dirtySince = 0;
 
-    const flush = (terminal = false) => {
-      if (!isDirty || !enabledRef.current) return;
-
+    const dropPending = () => {
       if (timer) {
         clearTimeout(timer);
         timer = null;
       }
-
       isDirty = false;
       dirtySince = 0;
+    };
+
+    const flush = (terminal = false) => {
+      if (!enabledRef.current) {
+        dropPending();
+        return;
+      }
+      if (!isDirty) return;
+
+      dropPending();
 
       const activeRun = resolveActiveRunForSave(readHasActiveRun(), runScreenOverrideRef.current ?? undefined);
 
@@ -43,6 +50,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
     };
 
     const triggerSave = () => {
+      if (!enabledRef.current) return;
       const now = Date.now();
       if (!isDirty) dirtySince = now;
       isDirty = true;
@@ -83,7 +91,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
       window.removeEventListener("pagehide", handlePageExit);
       window.removeEventListener("beforeunload", handlePageExit);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      flush();
+      flush(true);
     };
   }, [enabledRef, runScreenOverrideRef]);
 }

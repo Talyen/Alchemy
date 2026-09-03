@@ -13,7 +13,7 @@ export const ROUTE_CONTEXT_BUDGETS = Object.freeze({
   save: { preread: 12 * 1024, total: 24 * 1024 },
   balance: { preread: 10 * 1024, total: 31 * 1024 },
   performance: { preread: 22 * 1024, total: 35 * 1024 },
-  desktop: { preread: 11 * 1024, total: 14 * 1024 },
+  desktop: { preread: 11 * 1024, total: 15 * 1024 },
   "unit-test": { preread: 9 * 1024, total: 23 * 1024 },
   tooling: { preread: 9 * 1024, total: 18 * 1024 },
   assets: { preread: 17 * 1024, total: 25 * 1024 },

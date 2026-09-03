@@ -23,6 +23,7 @@ const PREPARED_ASSET_OUTPUTS = Object.freeze([
 async function snapshotPath(relativePath, snapshot) {
   const absolutePath = path.join(rootDir, relativePath);
   const entries = await readdir(absolutePath, { withFileTypes: true }).catch((error) => {
+    // Single file (ENOTDIR): snapshot its bytes. Missing path (ENOENT): empty.
     if (error && typeof error === "object" && "code" in error && error.code === "ENOTDIR") return null;
     if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") return [];
     throw error;

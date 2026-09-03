@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { kebabToCamel } from "./lib/kebab-to-camel.mjs";
+import { toAssetExportName } from "./lib/kebab-to-camel.mjs";
 import {
   getAssetFiles,
   getGearFiles,
@@ -11,10 +11,6 @@ import {
 
 const rootDir = resolveRootDir(import.meta.url);
 const manifestPath = getOptimizedManifestPath(rootDir);
-
-function toAssetExportName(target) {
-  return kebabToCamel(target.replace(/\.webp$/, ""));
-}
 
 function buildAssetsContent(manifest) {
   const files = getAssetFiles(manifest);

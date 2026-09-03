@@ -67,7 +67,13 @@ export const mysteryEventArt: Record<string, string> = {
 
 export const allGameArt: string[] = Object.values(assetRefs);
 
-export const essentialGameArt: string[] = Object.values(assetRefs).filter((src) => !src.includes("gear-"));
+const gearItemArt = new Set(
+  Object.entries(gearArtByDefinitionId)
+    .filter(([id]) => !id.startsWith("slot-"))
+    .map(([, src]) => src),
+);
+
+export const essentialGameArt: string[] = Object.values(assetRefs).filter((src) => !gearItemArt.has(src));
 
 export const gearSlotBackgroundArt = {
   body: gearArtByDefinitionId["slot-body"],

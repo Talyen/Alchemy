@@ -76,16 +76,23 @@ export async function validateSoundAssetRegistry({ sourceDir } = {}) {
       targetPattern: /\.ogg$/u,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    const lines = msg.split("\n").filter((line) => line.startsWith("- "));
-    if (lines.length > 0) {
-      for (const line of lines) errors.push(line.slice(2));
-    } else if (msg.includes("Registry validation failed:")) {
-      const after = msg.slice(msg.indexOf("Registry validation failed:") + "Registry validation failed:".length).trim();
-      if (after) errors.push(after);
-      else errors.push(msg);
+    const details = error instanceof Error ? error.cause?.details : undefined;
+    if (Array.isArray(details)) {
+      for (const detail of details) errors.push(String(detail));
     } else {
-      errors.push(msg);
+      const msg = error instanceof Error ? error.message : String(error);
+      const lines = msg.split("\n").filter((line) => line.startsWith("- "));
+      if (lines.length > 0) {
+        for (const line of lines) errors.push(line.slice(2));
+      } else if (msg.includes("Registry validation failed:")) {
+        const after = msg
+          .slice(msg.indexOf("Registry validation failed:") + "Registry validation failed:".length)
+          .trim();
+        if (after) errors.push(after);
+        else errors.push(msg);
+      } else {
+        errors.push(msg);
+      }
     }
   }
 

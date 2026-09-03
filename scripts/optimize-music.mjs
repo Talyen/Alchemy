@@ -8,7 +8,12 @@ import {
   resolveSourceHash,
   withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
-import { ASSET_SCHEMA_VERSION, MANIFEST_BASENAME, MUSIC_SETTINGS } from "./lib/asset-constants.mjs";
+import {
+  ASSET_SCHEMA_VERSION,
+  MANIFEST_BASENAME,
+  MUSIC_COPY_CONCURRENCY,
+  MUSIC_SETTINGS,
+} from "./lib/asset-constants.mjs";
 import { discoverAudioFiles, runAudioScript } from "./lib/audio-optimizer.mjs";
 import { formatProcessError } from "./lib/process-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
@@ -34,6 +39,7 @@ export async function optimizeMusic() {
   const { results, failed } = await processManifestEntries({
     entries: files,
     manifestPath,
+    concurrency: MUSIC_COPY_CONCURRENCY,
     processEntry: async (file, storedEntry) => {
       const sourcePath = path.join(sourceDir, file);
       const outputPath = path.join(outputDir, file);
@@ -57,6 +63,8 @@ export async function optimizeMusic() {
     if (removed > 0) {
       console.log(`Removed ${removed} orphan music files.`);
     }
+  } else {
+    console.warn("Skipping orphan music-file sweep because music optimization failed.");
   }
 
   console.log(`Processed ${results.length} music files.`);

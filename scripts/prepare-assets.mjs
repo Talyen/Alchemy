@@ -8,6 +8,11 @@ import { isMainModule } from "./lib/is-main-module.mjs";
  * to disjoint output directories — so they run concurrently via the shared
  * OPTIMIZE_PIPELINES table. Art must finish before syncGenerated because it
  * regenerates barrels from its manifest.
+ *
+ * Partial-failure rule: art barrels sync whenever art succeeds, even if sounds
+ * or music fail (barrel output depends only on art). The aggregated error still
+ * throws, so a failed run is never silent — but barrels may advance while sound
+ * outputs stay stale until the next green run.
  */
 export async function prepareAssets() {
   if (process.env.ALCHEMY_SKIP_ASSETS === "1") {

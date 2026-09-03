@@ -1,6 +1,6 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
-import { kebabToCamel } from "./kebab-to-camel.mjs";
+import { toAssetExportName } from "./kebab-to-camel.mjs";
 
 export async function validateRegistryEntries(
   entries,
@@ -26,7 +26,7 @@ export async function validateRegistryEntries(
     if (target) targets.set(target, source);
 
     if (checkExport && target) {
-      const exportName = kebabToCamel(target.replace(/\.webp$/u, ""));
+      const exportName = toAssetExportName(target);
       const prev = exports.get(exportName);
       if (prev) errors.push(`Duplicate asset export "${exportName}" (${prev} and ${target}).`);
       exports.set(exportName, target);
@@ -48,6 +48,8 @@ export async function validateRegistryEntries(
     }
   }
 
-  if (errors.length > 0) throw new Error(`Registry validation failed:\n- ${errors.join("\n- ")}`);
+  if (errors.length > 0) {
+    throw new Error(`Registry validation failed:\n- ${errors.join("\n- ")}`, { cause: { details: errors } });
+  }
   return entries;
 }

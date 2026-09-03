@@ -9,7 +9,7 @@ import {
   DEFAULT_SFX_VOLUME_PCT,
 } from "@/lib/game-constants";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "../metadata";
-import { SETTINGS_RANGES } from "@/lib/settings-values";
+import { SETTINGS_RANGES, resolveAutoplayEnabled } from "@/lib/settings-values";
 import { migrateSaveDataToCurrent } from "../migration";
 import {
   CHARACTER_IDS,
@@ -68,6 +68,10 @@ const EquippedTrinketsSchema = z
   .object(characterShape(() => z.string().nullable().catch(null)))
   .catch(emptyEquippedTrinkets)
   .transform((value) => value as EquippedTrinkets);
+
+export function resolvePersistedGold(purseGold: number, liveCombatGold: unknown): number {
+  return typeof liveCombatGold === "number" ? liveCombatGold : purseGold;
+}
 
 export const SaveDataSchema = z.preprocess(
   (raw) => migrateSaveDataToCurrent(raw),
@@ -131,13 +135,10 @@ export const SaveDataSchema = z.preprocess(
     })
     .transform((save) => {
       const flatInventory = flattenGearInventories(save.gearInventories);
-      const liveCombatGold = save.activeRun?.activeCombat?.battleState.gold;
-      const migratedGold = typeof liveCombatGold === "number" ? liveCombatGold : save.gold;
-      const derivedAutoplay = save.rememberAutoplayPreference && save.autoplayEnabled;
       return {
         ...save,
-        gold: migratedGold,
-        autoplayEnabled: derivedAutoplay,
+        gold: resolvePersistedGold(save.gold, save.activeRun?.activeCombat?.battleState.gold),
+        autoplayEnabled: resolveAutoplayEnabled(save),
         gearLoadouts: pruneOrphanGearLoadouts(flatInventory, save.gearLoadouts),
       };
     }),

@@ -18,6 +18,7 @@ export const cardAssets = [
   { source: "Cards/Fireball.jpeg", target: "fireball.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Ice Shot.jpeg", target: "ice-shot.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Frostbolt.jpeg", target: "frostbolt.webp", width: cardWidth, quality: cardQuality },
+  // Per-art quality tuning: fine line art bands visibly at QUALITY.card (80).
   { source: "Cards/Haste.jpeg", target: "haste.webp", width: cardWidth, quality: QUALITY.cardHaste },
   { source: "Cards/Heal.jpeg", target: "heal.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Health Potion.jpeg", target: "health-potion.webp", width: cardWidth, quality: cardQuality },

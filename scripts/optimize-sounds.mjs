@@ -18,6 +18,7 @@ import {
 } from "./lib/asset-manifest-cache.mjs";
 import {
   ASSET_SCHEMA_VERSION,
+  CURATED_SOUND_SETTINGS,
   LOUDNORM_FILTER,
   MANIFEST_BASENAME,
   MP3_FALLBACK_SETTINGS,
@@ -98,6 +99,9 @@ export async function optimizeSounds() {
   });
 
   console.log(`Processed ${results.length} sounds.`);
+  // Owner tags the OGG source (generated transform vs curated commit). MP3s are
+  // always generated artifacts; their owner mirrors their OGG source. MP3 hashes
+  // derive from the committed OGG bytes (transitively the raw source).
   const managedOggs = new Set(generatedSoundAssets.map(({ target }) => target));
   const generatedEntries = Object.fromEntries(
     Object.entries(nextManifest).map(([name, entry]) => [name, { ...entry, owner: SOUND_ENTRY_OWNERS.generated }]),
@@ -110,6 +114,8 @@ export async function optimizeSounds() {
       manifestBasename: MANIFEST_BASENAME,
       label: "sound file",
     });
+  } else {
+    console.warn("Skipping orphan sound-file sweep because sound optimization failed.");
   }
   return { ok: !failed, error: failed ? "One or more sounds failed" : undefined };
 }
@@ -131,7 +137,7 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
     if (!managedOggs.has(ogg)) {
       if (!files.has(ogg)) throw new Error(`Missing curated sound: ${ogg}`);
       const storedOgg = previousManifest[ogg];
-      const oggEntry = await resolveSourceHash(oggPath, { mode: "curated" }, SCHEMA_VERSION, storedOgg);
+      const oggEntry = await resolveSourceHash(oggPath, CURATED_SOUND_SETTINGS, SCHEMA_VERSION, storedOgg);
       const oggFresh = await isOutputFresh(oggPath, storedOgg, oggEntry.hash);
       curatedOggEntries[ogg] = {
         ...(oggFresh ? storedOgg : await withOutputHash(oggEntry, oggPath)),
@@ -140,7 +146,17 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
     }
 
     if (!(await isOutputFresh(mp3Path, stored, sourceEntry.hash))) {
-      await execFileAsync(ffmpegPath, ["-y", "-i", oggPath, "-c:a", "libmp3lame", "-q:a", "4", "-vn", mp3Path]);
+      await execFileAsync(ffmpegPath, [
+        "-y",
+        "-i",
+        oggPath,
+        "-c:a",
+        MP3_FALLBACK_SETTINGS.codec,
+        "-q:a",
+        MP3_FALLBACK_SETTINGS.quality,
+        "-vn",
+        mp3Path,
+      ]);
       converted += 1;
       mp3Entries[mp3Name] = { ...(await withOutputHash(sourceEntry, mp3Path)), owner };
     } else {

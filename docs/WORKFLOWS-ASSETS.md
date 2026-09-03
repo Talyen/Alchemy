@@ -15,9 +15,12 @@ authoring source.
 
 Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) is owned by the release pipeline ([RELEASE_SETUP](./RELEASE_SETUP.md)); it is not an art authoring source.
 
-`scripts/prepare-assets.mjs` is the full pipeline. Art, sound, and music
-optimization run concurrently because their outputs are disjoint; generated
-art and Gear barrels update only after successful optimization.
+`scripts/prepare-assets.mjs` is the full pipeline (invoked via the canonical
+`node scripts/assets.mjs --prepare` CLI, which also powers `predev`). Art, sound, and music
+optimization run concurrently and report every failure (settled, not fail-fast)
+because their outputs are disjoint; generated
+art and Gear barrels update whenever art succeeds, even if sound or music fail —
+the run still throws, so partial success is never silent.
 
 ## Authoring models
 
@@ -32,7 +35,7 @@ Three authoring shapes coexist by design:
 Generated barrels are committed build products (`src/assets/optimized/` + `src/lib/game-data/assets.generated.ts` / `gear-art.ts`). Never import `@/assets/optimized/*.webp` directly outside the barrel — ESLint bans it. Always go through `src/lib/game-data/assets.ts` curated maps:
 
 - `characterArt`, `mysteryEventArt`, `talentArt`, `gearSlotBackgroundArt`, `craftingArt`, `difficultyArt` — typed maps built from `assetRefs` in `assets.ts` (`gearSlotBackgroundArt` derives from `gearArtByDefinitionId`).
-- `allGameArt: string[] = Object.values(assetRefs)` — full manifest. `essentialGameArt` is the startup-critical subset (`allGameArt` filtered to exclude `gear-` assets) decoded in bounded batches (`IMAGE_PRELOAD_BATCH_SIZE` via `preloadImagesInBatches` in `use-app-effects.ts`) before the `StartupLoadingScreen` reveal; gear art defers to idle after reveal. The `game-data` Vite chunk is code-split from one table (`scripts/lib/vite-chunks.mjs`) and eagerly evaluated; bundle budget (`scripts/lib/bundle-budget.mjs` — `index` + `totalJs` + `gameData`) caps growth.
+- `allGameArt: string[] = Object.values(assetRefs)` — full manifest. `essentialGameArt` is the startup-critical subset (everything except per-item gear art, matched by identity against `gearArtByDefinitionId`) decoded in bounded batches (`IMAGE_PRELOAD_BATCH_SIZE` via `preloadImagesInBatches` in `use-app-effects.ts`) before the `StartupLoadingScreen` reveal; per-item gear art defers to idle after reveal. Armory slot backgrounds (`slot-*`) stay in the startup set so empty slots never pop in late. The `game-data` Vite chunk is code-split from one table (`scripts/lib/vite-chunks.mjs`) and eagerly evaluated; bundle budget (`scripts/lib/bundle-budget.mjs` — `index` + `totalJs` + `gameData`) caps growth.
 - `gearArtByDefinitionId` — re-exports `assets.generated` via `gearArtAssets` in `gear-art.ts`.
 
 The static barrel provides explicit export names (`kebabToCamel`) and the Vite asset graph; do not use `import.meta.glob` for art.
@@ -42,12 +45,13 @@ The static barrel provides explicit export names (`kebabToCamel`) and the Vite a
 1. Put the raw file under the matching `Raw Assets/` directory.
 2. Register source, target, width, and quality in the topical manifest under
    `scripts/assets/` (`core`, `content`, `card`, or `talent`) using presets from `scripts/lib/asset-constants.mjs` (`WIDTH`/`QUALITY`). Talent portraits belong in `talent-assets.mjs`.
-3. Run `npm run assets:optimize` for art-only iteration or
-   `node scripts/prepare-assets.mjs` for the complete pipeline.
+3. Run `npm run assets:optimize` for art-only iteration (`assets:optimize:sounds` /
+   `assets:optimize:music` for the audio pipelines) or
+   `node scripts/assets.mjs --prepare` for the complete pipeline.
 4. Import through the curated map in `src/lib/game-data/assets.ts` (e.g. `craftingArt`, `difficultyArt`, `talentArt`) — do not import `@/assets/optimized` directly.
 5. Run `npm run check:generated` (fast barrel-only); review the generated diff.
 
-`npm run sync:generated` (or `--art-only` / `--gear-only` for one barrel; `npm run sync:assets` / `npm run sync:gear-art` forward to the same CLI) regenerates `src/lib/game-data/assets.generated.ts` from
+`npm run sync:generated` (or `--art-only` / `--gear-only` for one barrel) regenerates `src/lib/game-data/assets.generated.ts` from
 the manifest targets. Do not add exports to that generated file by hand. Hashes use `ASSET_SCHEMA_VERSION=4` (128-bit truncation) — bump the version to invalidate all caches.
 
 ## Add or replace Gear art
@@ -78,15 +82,18 @@ and then referenced by `src/lib/sound-registry.ts` or the owning audio module.
 - The generated hash manifest records generated versus curated ownership and
   verifies both source identity and committed output bytes.
 
-Run `node scripts/optimize-sounds.mjs` for sound-only iteration or the complete
+Run `npm run assets:optimize:sounds` for sound-only iteration or the complete
 preparation command before handoff.
 
 ## Add or replace music
 
 Place supported audio files under `Raw Assets/Music/` and run
-`node scripts/optimize-music.mjs`. Music is copied without transcoding into
+`npm run assets:optimize:music`. Music is copied without transcoding into
 `public/Music/`. Unlike sound effects, this output directory is fully managed;
-files without a corresponding source are removed by the optimizer.
+files without a corresponding source are removed by the optimizer. Every track
+listed in-game (`allRegisteredMusicFiles()` in `src/lib/audio-music.ts`) is
+cross-checked against `public/Music/` by `tests/lib/music-assets.test.ts` —
+register new tracks there first.
 
 ## Skip mode and verification
 
@@ -105,7 +112,7 @@ npm run assets:check
 For manual inspection:
 
 ```sh
-node scripts/prepare-assets.mjs
+node scripts/assets.mjs --prepare
 npm run check:generated
 git diff -- src/assets/optimized public/sounds public/Music \
   src/lib/game-data/assets.generated.ts src/lib/game-data/gear-art.ts

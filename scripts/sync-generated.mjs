@@ -1,4 +1,3 @@
-import { deprecated } from "./lib/deprecated.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { syncArtBarrels, syncAssets, syncGearArt } from "./sync-art-barrels.mjs";
 import { syncVersionMetadata } from "./sync-version-metadata.mjs";
@@ -35,10 +34,9 @@ if (isMainModule(import.meta.url)) {
   if (argv.includes("--help") || argv.includes("-h")) {
     printHelp();
   } else {
-    if (argv.includes("--assets-only")) deprecated("--assets-only", "--art-only");
     syncGenerated({
       check: argv.includes("--check"),
-      artOnly: argv.includes("--art-only") || argv.includes("--assets-only"),
+      artOnly: argv.includes("--art-only"),
       gearOnly: argv.includes("--gear-only"),
       versionOnly: argv.includes("--version-only"),
     }).catch((error) => {

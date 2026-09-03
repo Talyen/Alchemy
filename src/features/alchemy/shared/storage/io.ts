@@ -88,10 +88,7 @@ export function saveAlchemySaveDataForExit(data: SaveData): void {
   try {
     const result = saveBackend.writeSync(SAVE_KEY, serializeSaveSnapshot(data));
     if (result === null) {
-      if (saveQueue.hasPendingTasks) {
-        saveQueue.queueExitSnapshot(data);
-        return;
-      }
+      saveQueue.queueExitSnapshot(data);
       void saveAlchemySaveData(data);
       return;
     }

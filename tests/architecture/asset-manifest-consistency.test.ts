@@ -20,13 +20,25 @@ describe("asset manifest consistency", () => {
     }
   });
 
-  it("keeps essentialGameArt as allGameArt minus gear assets", () => {
-    const gearSet = new Set(Object.values(gearArtByDefinitionId));
+  it("keeps essentialGameArt as allGameArt minus non-slot gear assets", () => {
+    const gearItemSet = new Set(
+      Object.entries(gearArtByDefinitionId)
+        .filter(([id]) => !id.startsWith("slot-"))
+        .map(([, src]) => src),
+    );
+    const slotSet = new Set(
+      Object.entries(gearArtByDefinitionId)
+        .filter(([id]) => id.startsWith("slot-"))
+        .map(([, src]) => src),
+    );
     for (const src of essentialGameArt) {
-      expect(gearSet.has(src), `${src} should not be in essentialGameArt`).toBe(false);
+      expect(gearItemSet.has(src), `${src} should not be in essentialGameArt`).toBe(false);
+    }
+    for (const src of slotSet) {
+      expect(essentialGameArt, `${src} slot background should load with startup art`).toContain(src);
     }
     expect(essentialGameArt.length).toBeLessThan(allGameArt.length);
-    expect(essentialGameArt.length + gearSet.size).toBe(allGameArt.length);
+    expect(essentialGameArt.length + gearItemSet.size).toBe(allGameArt.length);
   });
 
   it("has no duplicate targets", () => {

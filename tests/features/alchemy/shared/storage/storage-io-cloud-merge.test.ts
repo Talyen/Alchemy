@@ -38,6 +38,32 @@ describe("storage io cloud merge", () => {
     expect(loaded.data.discoveredCardIds).toEqual(["slash"]);
   });
 
+  it("loads the fresher cloud save over a stale local save", async () => {
+    const localSave = {
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      lastSavedAt: 1000,
+      discoveredCardIds: ["slash"],
+      activeRun: null,
+    };
+    const cloudSave = {
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      lastSavedAt: 2000,
+      discoveredCardIds: ["slash", "block"],
+      activeRun: null,
+    };
+
+    const desktop = setupMockWindowDesktop({
+      saveCandidates: [JSON.stringify(localSave)],
+      steamName: null,
+    });
+    desktop.steamCloudRead.mockResolvedValue(JSON.stringify(cloudSave));
+
+    const loaded = await loadAlchemySaveState();
+
+    expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
+    expect(loaded.data.lastSavedAt).toBe(2000);
+  });
+
   it("falls back to cloud when local save is missing", async () => {
     const cloudSave = {
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,

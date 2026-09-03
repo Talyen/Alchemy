@@ -9,7 +9,7 @@ import {
   isUnsupportedFutureSaveData,
   type ParsedSaveData,
 } from "@/lib/validation";
-import { defaultSaveData } from "./defaults";
+import { createDefaultSaveData } from "./defaults";
 import type { SaveData } from "./types";
 
 type SaveLoadStatus =
@@ -24,7 +24,7 @@ export interface SaveLoadState {
 }
 
 export function fallbackSaveData(): SaveData {
-  return structuredClone(defaultSaveData);
+  return createDefaultSaveData();
 }
 
 function logStorageFailure(message: string, error?: unknown) {
@@ -105,8 +105,10 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     const futureStatus = getFutureSaveStatus(parsed);
     if (futureStatus) {
       const savedAt = getRawLastSavedAt(parsed) ?? -1;
-      if (savedAt > newestFutureSavedAt) newestFutureSavedAt = savedAt;
-      future = { data: fallbackSaveData(), status: futureStatus };
+      if (savedAt >= newestFutureSavedAt) {
+        newestFutureSavedAt = savedAt;
+        future = { data: fallbackSaveData(), status: futureStatus };
+      }
       continue;
     }
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -119,8 +121,8 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
       logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
       continue;
     }
-    if (!playable) {
-      const data = result.data;
+    const data = result.data;
+    if (!playable || data.lastSavedAt > playableSavedAt) {
       const warnings = collectSaveRepairWarnings(parsed, data);
       for (const ve of result.errors) {
         warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);

@@ -13,11 +13,17 @@ function applyMuteToElements() {
 }
 
 export function setMuted(value: boolean) {
-  audioState.muted = value || isNonPlayerAudioHost();
+  audioState.muted = value || audioState.hostForcesMute || isNonPlayerAudioHost();
   applyMuteToElements();
 }
 
-if (isNonPlayerAudioHost()) setMuted(true);
+export function initAudioHost() {
+  audioState.hostForcesMute = isNonPlayerAudioHost();
+  if (audioState.hostForcesMute) {
+    audioState.muted = true;
+    applyMuteToElements();
+  }
+}
 
 export function setSfxVolume(value: number) {
   audioState.sfxVolume = clamp(value, 0, 1);
