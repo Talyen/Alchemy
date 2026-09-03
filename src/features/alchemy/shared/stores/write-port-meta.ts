@@ -1,5 +1,5 @@
 import type { GameplayDraft } from "./run-session-command";
-import { getDifficultyXPMultiplier, tryUnlockTalent, type KeywordId } from "@/lib/game-data";
+import { getDifficultyXPMultiplier, isTalentPlaceholder, tryUnlockTalent, type KeywordId } from "@/lib/game-data";
 import {
   computeRunEndTalentXPSnapshot,
   mergeRunTalentXPIntoPermanent,
@@ -30,6 +30,7 @@ export function unlockAllTalents(draft: GameplayDraft): void {
   const next: UnlockedTalents = {};
   const xp: TalentXP = {};
   for (const talent of talentPool) {
+    if (isTalentPlaceholder(talent)) continue;
     next[talent.keywordId] = [...(next[talent.keywordId] ?? []), talent.id];
   }
   for (const [keyword, ids] of Object.entries(next)) {

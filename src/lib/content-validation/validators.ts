@@ -9,7 +9,6 @@ import {
   PLAYER_STATUS_DISPLAY_ORDER,
   ENEMY_STATUS_DISPLAY_ORDER,
   talentPool,
-  TALENT_ROW_SIZES,
   getTalentTreeKeywordIds,
   type BattleCard,
 } from "@/lib/game-data";
@@ -196,7 +195,6 @@ export function validateTalents(collector: ReturnType<typeof createCollector>): 
   );
 
   const knownKeywords = new Set(Object.keys(keywordDefinitions));
-  const expectedPerKeyword = TALENT_ROW_SIZES.reduce((sum, size) => sum + size, 0);
 
   const treeKeywords = new Set(getTalentTreeKeywordIds());
   const countByKeyword = new Map<string, number>();
@@ -209,12 +207,8 @@ export function validateTalents(collector: ReturnType<typeof createCollector>): 
   }
   for (const keyword of treeKeywords) {
     const count = countByKeyword.get(keyword) ?? 0;
-    if (count !== expectedPerKeyword) {
-      collector.error(
-        "talents",
-        keyword,
-        `Talent pool has ${count} entries; the ${TALENT_ROW_SIZES.join("/")} grid requires exactly ${expectedPerKeyword}`,
-      );
+    if (count < 1) {
+      collector.error("talents", keyword, `Talent pool has no entries for tree keyword "${keyword}"`);
     }
   }
 }

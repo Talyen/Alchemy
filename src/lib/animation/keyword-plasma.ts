@@ -1,9 +1,10 @@
 import { startCanvasKeywordPlasma } from "./keyword-plasma-canvas";
 import type { PlasmaRendererMode, PlasmaRendererOptions, StartPlasmaRenderer } from "./keyword-plasma-types";
+import { startWebGLKeywordPlasma } from "./keyword-plasma-webgl";
 
 const BACKENDS: Record<PlasmaRendererMode, StartPlasmaRenderer> = {
   canvas: startCanvasKeywordPlasma,
-  webgl: startCanvasKeywordPlasma,
+  webgl: startWebGLKeywordPlasma,
 };
 
 export function startKeywordPlasma(mode: PlasmaRendererMode, options: PlasmaRendererOptions): () => void {

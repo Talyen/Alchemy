@@ -7,6 +7,26 @@ export { getTalentsForKeyword } from "./talent-pool-definitions";
 
 export const TALENT_ROW_SIZES = [1, 2, 3, 4] as const;
 
+export function chunkIntoRows<T>(items: T[], sizes: readonly number[] | number): T[][] {
+  if (typeof sizes === "number") {
+    const rows: T[][] = [];
+    for (let i = 0; i < items.length; i += sizes) {
+      rows.push(items.slice(i, i + sizes));
+    }
+    return rows;
+  }
+  const rows: T[][] = [];
+  let index = 0;
+  for (const size of sizes) {
+    rows.push(items.slice(index, index + size));
+    index += size;
+  }
+  if (index < items.length) {
+    rows.push(items.slice(index));
+  }
+  return rows;
+}
+
 export function getTalentTreeKeywordIds(): KeywordId[] {
   return (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => countImplementedTalents(kw) > 0);
 }
@@ -29,14 +49,7 @@ export function getTalentRowIndex(index: number): number {
 }
 
 export function getTalentRows(keywordId: KeywordId): TalentDefinition[][] {
-  const talents = getTalentsForKeyword(keywordId);
-  const rows: TalentDefinition[][] = [];
-  let index = 0;
-  for (const size of TALENT_ROW_SIZES) {
-    rows.push(talents.slice(index, index + size));
-    index += size;
-  }
-  return rows;
+  return chunkIntoRows(getTalentsForKeyword(keywordId), TALENT_ROW_SIZES);
 }
 
 export function isTalentRowUnlocked(keywordId: KeywordId, unlockedIds: string[], rowIndex: number): boolean {

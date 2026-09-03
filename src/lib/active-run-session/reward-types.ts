@@ -11,15 +11,14 @@ export type CardRewardState = RewardStateBase & {
   choices: BattleCard[];
 };
 
-export type BoonRewardState = RewardStateBase & {
-  rewardType: "boon";
+type TrinketChoiceRewardState<RewardType extends "boon" | "trinket"> = RewardStateBase & {
+  rewardType: RewardType;
   choices: TrinketEntry[];
 };
 
-export type TrinketRewardState = RewardStateBase & {
-  rewardType: "trinket";
-  choices: TrinketEntry[];
-};
+export type BoonRewardState = TrinketChoiceRewardState<"boon">;
+
+export type TrinketRewardState = TrinketChoiceRewardState<"trinket">;
 
 export type GearRewardState = RewardStateBase & {
   rewardType: "gear";

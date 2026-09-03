@@ -4,6 +4,7 @@ import {
   talentPool,
   getTalentsForKeyword,
   getAllocatableTalentChoices,
+  chunkIntoRows,
   getTalentRows,
   getTalentRowIndex,
   isTalentRowUnlocked,
@@ -43,14 +44,15 @@ describe("talentPool data integrity", () => {
     }
   });
 
-  it("each talent keyword has exactly 10 talents", () => {
-    const counts: Record<string, number> = {};
-    for (const talent of talentPool) {
-      counts[talent.keywordId] = (counts[talent.keywordId] ?? 0) + 1;
-    }
-    const talentKeywords = [...new Set(talentPool.map((talent) => talent.keywordId))];
-    for (const kw of talentKeywords) {
-      expect(counts[kw], `Keyword "${kw}" has ${counts[kw] ?? 0} talents, expected 10`).toBe(10);
+  it("each talent keyword has at least one talent and rows cover every entry", () => {
+    for (const kw of getTalentTreeKeywordIds()) {
+      const talents = getTalentsForKeyword(kw);
+      expect(talents.length, `Keyword "${kw}" has no talents`).toBeGreaterThan(0);
+      expect(
+        getTalentRows(kw)
+          .flat()
+          .map((t) => t.id),
+      ).toEqual(talents.map((t) => t.id));
     }
   });
 
@@ -73,6 +75,16 @@ describe("getTalentsForKeyword", () => {
 });
 
 describe("talent row layout", () => {
+  it("keeps overflow entries in a final row instead of dropping them", () => {
+    expect(chunkIntoRows([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [1, 2, 3, 4])).toEqual([
+      [1],
+      [2, 3],
+      [4, 5, 6],
+      [7, 8, 9, 10],
+      [11],
+    ]);
+  });
+
   it("splits a full keyword into rows of 1, 2, 3, 4 in pool order", () => {
     const rows = getTalentRows("physical");
     expect(rows.map((row) => row.length)).toEqual([1, 2, 3, 4]);

@@ -1,20 +1,11 @@
 import { memo, useMemo } from "react";
 
-import {
-  countImplementedTalents,
-  getTalentKeywordProgress,
-  keywordDefinitions,
-  talentArt,
-  type KeywordId,
-  type TalentXP,
-  type UnlockedTalents,
-} from "@/lib/game-data";
+import { chunkIntoRows, keywordDefinitions, talentArt, type KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { cardInteractiveGlowClass, cardSurfaceClass } from "../../shared/config";
 
 import { Surface } from "../../shared/ui/surface";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
-import { chunkIntoRows } from "./talent-layout";
 
 const OVERVIEW_ROW_SIZE = 7;
 
@@ -98,36 +89,18 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
 
 export interface TalentOverviewGridProps {
   keywordIds: KeywordId[];
-  talentXP: TalentXP;
-  unlockedTalents: UnlockedTalents;
+  unspentByKeyword: ReadonlyMap<KeywordId, boolean>;
   onSelectKeyword: (keywordId: KeywordId) => void;
   onHoverKeyword?: ((keywordId: KeywordId | null) => void) | undefined;
 }
 
-function layoutKeywordRows(keywordIds: KeywordId[]): KeywordId[][] {
-  return chunkIntoRows(keywordIds, OVERVIEW_ROW_SIZE);
-}
-
 export function TalentOverviewGrid({
   keywordIds,
-  talentXP,
-  unlockedTalents,
+  unspentByKeyword,
   onSelectKeyword,
   onHoverKeyword,
 }: TalentOverviewGridProps) {
-  const rows = useMemo(() => layoutKeywordRows(keywordIds), [keywordIds]);
-  const unspentByKeyword = useMemo(() => {
-    const map = new Map<KeywordId, boolean>();
-    for (const keywordId of keywordIds) {
-      const unlockedCount = (unlockedTalents[keywordId] ?? []).length;
-      map.set(
-        keywordId,
-        getTalentKeywordProgress(talentXP[keywordId] ?? 0, unlockedCount, countImplementedTalents(keywordId))
-          .hasUnspent,
-      );
-    }
-    return map;
-  }, [keywordIds, talentXP, unlockedTalents]);
+  const rows = useMemo(() => chunkIntoRows(keywordIds, OVERVIEW_ROW_SIZE), [keywordIds]);
 
   return (
     <div className="flex w-full flex-col items-center justify-center gap-y-3 sm:gap-y-3.5">

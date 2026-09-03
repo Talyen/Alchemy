@@ -17,6 +17,13 @@ export function isTalentPlaceholder(talent: TalentDefinition): boolean {
   return talent.isPlaceholder === true;
 }
 
+export function isUsableTalentForKeyword(
+  talent: TalentDefinition | undefined,
+  keywordId: KeywordId,
+): talent is TalentDefinition {
+  return !!talent && !isTalentPlaceholder(talent) && talent.keywordId === keywordId;
+}
+
 type NumericTalentEffectField = {
   [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends number ? K : never;
 }[keyof TalentEffectManifest];

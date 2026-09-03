@@ -10,14 +10,13 @@ import {
   getTalentIcon,
 } from "@/features/alchemy/shared/config";
 import { TALENT_UNLOCK_ANIMATION_MS } from "@/lib/game-constants";
-import { keywordDefinitions, isTalentPlaceholder, TALENT_ROW_SIZES } from "@/lib/game-data";
+import { keywordDefinitions, isTalentPlaceholder, TALENT_ROW_SIZES, chunkIntoRows } from "@/lib/game-data";
 import type { TalentDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
 import { TalentUnlockBurst } from "./talent-unlock-burst";
-import { chunkIntoRows } from "./talent-layout";
 
-export interface TalentLayoutProps {
+export interface TalentTreeProps {
   allTalents: TalentDefinition[];
   unlockedIds: string[];
 
@@ -26,10 +25,6 @@ export interface TalentLayoutProps {
   onUnlock?: ((talentId: string) => void) | undefined;
   onUnlockBegin?: ((talentId: string) => void) | undefined;
   onHoverTalent?: ((talent: TalentDefinition | null) => void) | undefined;
-}
-
-function chunkRows(talents: TalentDefinition[]): TalentDefinition[][] {
-  return chunkIntoRows(talents, TALENT_ROW_SIZES);
 }
 
 function TalentCard({
@@ -62,6 +57,7 @@ function TalentCard({
   return (
     <div
       role={interactive ? "button" : undefined}
+      aria-disabled={!isPlaceholder && !isUnlocked && !interactive ? true : undefined}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
       onMouseEnter={() => onHoverTalent?.(talent)}
       onMouseLeave={() => onHoverTalent?.(null)}
@@ -128,11 +124,11 @@ export function TalentTree({
   onUnlock,
   onUnlockBegin,
   onHoverTalent,
-}: TalentLayoutProps) {
+}: TalentTreeProps) {
   const [unlockingTalentId, setUnlockingTalentId] = useState<string | null>(null);
   const unlockTimerRef = useRef<number | null>(null);
   const unlockingTalentIdRef = useRef<string | null>(null);
-  const rows = useMemo(() => chunkRows(allTalents), [allTalents]);
+  const rows = useMemo(() => chunkIntoRows(allTalents, TALENT_ROW_SIZES), [allTalents]);
 
   useEffect(() => {
     return () => {

@@ -9,6 +9,10 @@ import {
   addTalentXP,
   getTalentKeywordProgress,
   normalizeUnlockedTalents,
+  isUsableTalentForKeyword,
+  computeRunEndTalentXPSnapshot,
+  mergeRunTalentXPIntoPermanent,
+  getTalentsForKeyword,
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 
@@ -21,6 +25,52 @@ describe("xpForNextPoint", () => {
 describe("talent save compatibility", () => {
   it("preserves the shipped Bleed talent id", () => {
     expect(normalizeUnlockedTalents({ bleed: ["bleed-execute"] })).toEqual({ bleed: ["bleed-execute"] });
+  });
+
+  it("drops unknown and keyword-mismatched ids", () => {
+    expect(normalizeUnlockedTalents({ burn: ["bleed-execute", "unknown-talent"] })).toEqual({});
+  });
+
+  it("omits keywords left with no valid ids", () => {
+    expect(normalizeUnlockedTalents({ burn: ["bleed-execute"], bleed: ["bleed-execute"] })).toEqual({
+      bleed: ["bleed-execute"],
+    });
+  });
+});
+
+describe("isUsableTalentForKeyword", () => {
+  const flay = getTalentsForKeyword("bleed").find((t) => t.id === "bleed-execute")!;
+
+  it("accepts a real talent under its own keyword", () => {
+    expect(isUsableTalentForKeyword(flay, "bleed")).toBe(true);
+  });
+
+  it("rejects unknown ids", () => {
+    expect(isUsableTalentForKeyword(undefined, "bleed")).toBe(false);
+  });
+
+  it("rejects keyword mismatches", () => {
+    expect(isUsableTalentForKeyword(flay, "burn")).toBe(false);
+  });
+
+  it("rejects placeholders", () => {
+    expect(
+      isUsableTalentForKeyword({ id: "burn-x", keywordId: "burn", description: "x", isPlaceholder: true }, "burn"),
+    ).toBe(false);
+  });
+});
+
+describe("run-end talent XP", () => {
+  it("snapshots run XP through the difficulty multiplier with rounding", () => {
+    expect(computeRunEndTalentXPSnapshot({ burn: 3 }, 0.5)).toEqual({ burn: 2 });
+  });
+
+  it("merges rounded run XP into permanent totals", () => {
+    expect(mergeRunTalentXPIntoPermanent({ burn: 3 }, { burn: 10 }, 0.5)).toEqual({ burn: 12 });
+  });
+
+  it("ignores non-numeric entries", () => {
+    expect(computeRunEndTalentXPSnapshot({ burn: "bad" } as unknown as { burn: number }, 1)).toEqual({});
   });
 });
 

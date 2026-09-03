@@ -65,11 +65,12 @@ export function serializePendingReward(
   if (rewardState.rewardType === "gear") {
     return { ...shared, rewardType: "gear", gearChoices: rewardState.choices };
   }
-  if (rewardState.rewardType === "trinket") {
-    return { ...shared, rewardType: "trinket", choiceIds: rewardState.choices.map((choice) => choice.id) };
-  }
-  if (rewardState.rewardType === "boon") {
-    return { ...shared, rewardType: "boon", choiceIds: rewardState.choices.map((choice) => choice.id) };
+  if (rewardState.rewardType === "trinket" || rewardState.rewardType === "boon") {
+    return {
+      ...shared,
+      rewardType: rewardState.rewardType,
+      choiceIds: rewardState.choices.map((choice) => choice.id),
+    };
   }
   return { ...shared, rewardType: "card", choiceIds: rewardState.choices.map((choice) => choice.id) };
 }

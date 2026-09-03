@@ -45,6 +45,20 @@ export function TalentsScreen({
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const keywordIds = useMemo(() => getTalentTreeKeywordIds(), []);
   const hasAllocatedTalents = Object.values(unlockedTalents).some((talents) => (talents?.length ?? 0) > 0);
+  const unspentByKeyword = useMemo(() => {
+    const map = new Map<KeywordId, boolean>();
+    for (const keywordId of keywordIds) {
+      map.set(
+        keywordId,
+        getTalentKeywordProgress(
+          talentXP[keywordId] ?? 0,
+          (unlockedTalents[keywordId] ?? []).length,
+          countImplementedTalents(keywordId),
+        ).hasUnspent,
+      );
+    }
+    return map;
+  }, [keywordIds, talentXP, unlockedTalents]);
 
   const selectedKeywordDef = selectedKeyword ? keywordDefinitions[selectedKeyword] : undefined;
   const unlockedIds = useMemo(
@@ -124,8 +138,7 @@ export function TalentsScreen({
           <div className={TALENT_PANE_CLASS}>
             <TalentOverviewGrid
               keywordIds={keywordIds}
-              talentXP={talentXP}
-              unlockedTalents={unlockedTalents}
+              unspentByKeyword={unspentByKeyword}
               onSelectKeyword={(kw) => {
                 setHoveredOverviewKeyword(null);
                 setSelectedKeyword(kw);
@@ -163,7 +176,7 @@ export function TalentsScreen({
       <ConfirmationDialog
         open={showResetConfirm}
         title="Reset Talents?"
-        description="This will refund all your talent points so you can choose again. Any unspent talent points will also be available."
+        description="This will refund all your talent points so you can choose again."
         confirmLabel="Reset Talents"
         tone="default"
         dimBackground={false}

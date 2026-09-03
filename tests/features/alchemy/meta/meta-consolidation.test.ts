@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chunkIntoRows } from "@/features/alchemy/meta/talents/talent-layout";
+import { chunkIntoRows } from "@/lib/game-data";
 import {
   pickerFillerCount,
   pickerPageSlice,

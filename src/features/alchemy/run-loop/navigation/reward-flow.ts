@@ -37,7 +37,23 @@ import type {
 } from "./reward-flow-types";
 import { REWARD_ROUTES } from "@/lib/routing";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
-import { ENEMY_TYPES, cardLibrary, selectRewardCards, trinketLibrary, type BattleCard } from "@/lib/game-data";
+import {
+  ENEMY_TYPES,
+  cardLibrary,
+  selectRewardCards,
+  trinketLibrary,
+  type BattleCard,
+  type TrinketEntry,
+} from "@/lib/game-data";
+
+function sampleTrinketRewardChoices(excludedIds: readonly string[], rng: () => number): TrinketEntry[] {
+  const excluded = new Set(excludedIds);
+  return sampleItems(
+    trinketLibrary.filter((entry) => !excluded.has(entry.id)),
+    REWARD_CARD_CHOICES,
+    rng,
+  );
+}
 
 export function createNextRewardState(rewardState: RewardState): CardRewardState {
   return {
@@ -180,15 +196,10 @@ export function createWildwoodRewardState(
     return createGearOrPermanentTrinketReward(ownedTrinketIds, rng, gearAstralChanceBonus, false, ownedUniqueIds);
   }
   if (rewardType === "boon") {
-    const excluded = new Set(excludedBoonIds);
     return {
       ...createEmptyRewardState(),
       rewardType: "boon",
-      choices: sampleItems(
-        trinketLibrary.filter((entry) => !excluded.has(entry.id)),
-        REWARD_CARD_CHOICES,
-        rng,
-      ),
+      choices: sampleTrinketRewardChoices(excludedBoonIds, rng),
     };
   }
   return {
@@ -223,15 +234,10 @@ export function createCombatRewardState({
     goldMultiplier,
   });
   if (battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE) {
-    const excluded = new Set(excludedBoonIds);
     return {
       ...createEmptyRewardState(destinations),
       rewardType: "boon",
-      choices: sampleItems(
-        trinketLibrary.filter((entry) => !excluded.has(entry.id)),
-        REWARD_CARD_CHOICES,
-        rng,
-      ),
+      choices: sampleTrinketRewardChoices(excludedBoonIds, rng),
       gold: goldTotal,
       materials,
     };
