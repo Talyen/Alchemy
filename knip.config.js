@@ -5,6 +5,12 @@
  * eslint-enforced public surface. Feature stores and screens still use on-disk
  * paths (`shared/run-flow/destination-flow`).
  *
+ * Entries cover the barrel public surfaces plus the app shell (`src/App.tsx`).
+ * The Vite runtime (`src/main.tsx`) and the boot script (`src/startup.ts`,
+ * referenced from `index.html`) are auto-inferred by Knip's Vite/HTML plugins
+ * — do not re-list them here (`--treat-config-hints-as-errors` flags
+ * redundant entries).
+ *
  * Prefer removing unused exports over growing `ignoreIssues`.
  * Entries listed under `ignoreIssues` must be intentional seams, generated
  * catalogs, or compatibility re-exports — each with a short reason.
@@ -16,6 +22,7 @@
  */
 export default {
   entry: [
+    "src/App.tsx",
     "src/lib/game-data/index.ts",
     "src/lib/game-constants/index.ts",
     "src/lib/gear/index.ts",

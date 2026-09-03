@@ -78,7 +78,7 @@ describe("eslint rationalization", () => {
   });
 
   it("className template targets only raw template directly on className", async () => {
-    expect(CLASSNAME_NO_TEMPLATE.length).toBe(1);
+    expect(CLASSNAME_NO_TEMPLATE.length).toBe(2);
     expect(CLASSNAME_NO_TEMPLATE[0].selector).toContain("JSXExpressionContainer");
     const selectors = restrictedSyntax(...CLASSNAME_NO_TEMPLATE);
     const banned = await lintSyntax(
@@ -93,6 +93,12 @@ describe("eslint rationalization", () => {
       selectors,
     );
     expect(allowed.length).toBe(0);
+    const bannedConcat = await lintSyntax(
+      "src/features/test.tsx",
+      `export function Foo({ active }: { active: boolean }){ return <div className={"a " + (active ? "b" : "c")} /> }`,
+      selectors,
+    );
+    expect(bannedConcat.length).toBeGreaterThan(0);
   });
 
   it("catches aliased createContext imports", async () => {

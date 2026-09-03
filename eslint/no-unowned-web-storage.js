@@ -10,7 +10,7 @@ const ALLOWED_FILES = new Set([
   "src/lib/animation/animation-prefs.ts",
 ]);
 
-const STORAGE_NAMES = new Set(["localStorage", "sessionStorage"]);
+const STORAGE_NAMES = new Set(["localStorage", "sessionStorage", "indexedDB"]);
 
 function isAllowed(relative) {
   if (ALLOWED_FILES.has(relative)) return true;

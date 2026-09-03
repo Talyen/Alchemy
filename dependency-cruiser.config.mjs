@@ -1,6 +1,11 @@
 // Cruiser mirrors the layer-isolation subset of eslint/boundaries.js.
 // Full boundary table (GAME_DATA_NO_BATTLE, LIB_NO_FRAMEWORK, WRITE_PORT, etc.) is enforced via eslint;
 // see eslint/boundaries.js + eslint.config.js for the complete source of truth.
+// Cruiser covers: lib-no-features, meta/run-loop/run-setup isolation,
+// game-data-no-battle, circular, gameplay-aggregate-internal.
+// Not covered here (eslint-only): barrel deep-import bans, write-port
+// internals, NO_DIRECT_ASSET_IMPORT, UI_NO_SESSION_STORES, orchestration/screens
+// rules. `npm run lint` is the complete gate; `lint:boundaries` is the fast subset.
 import {
   GAME_DATA_NO_BATTLE,
   LIB_NO_FEATURES,

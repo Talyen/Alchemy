@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- fade primitives share a single canonical module per docs/UI.md */
 import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 
 import { resolveGameDelay } from "@/lib/animation/game-timer";

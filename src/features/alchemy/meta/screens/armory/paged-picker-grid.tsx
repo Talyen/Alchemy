@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- co-located pager hook and shell */
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { collectionGridGapXClass } from "../../../shared/config";

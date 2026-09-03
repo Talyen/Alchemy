@@ -25,6 +25,26 @@ function tsxSyntax(...extras) {
   return restrictedSyntax(...CLASSNAME_NO_TEMPLATE, ...extras);
 }
 
+function syntaxBlock(files, ignores, ...fragments) {
+  return {
+    files,
+    ...(ignores ? { ignores } : {}),
+    rules: {
+      "no-restricted-syntax": restrictedSyntax(...fragments),
+    },
+  };
+}
+
+function tsxBlock(files, ignores, ...fragments) {
+  return {
+    files,
+    ...(ignores ? { ignores } : {}),
+    rules: {
+      "no-restricted-syntax": tsxSyntax(...fragments),
+    },
+  };
+}
+
 export default tseslint.config(
   {
     ignores: [
@@ -127,16 +147,6 @@ export default tseslint.config(
     },
   },
 
-  // Route files and context files intentionally colocate hooks with screen
-  // components — fast-refresh hot-replacement works correctly within each
-  // domain route module.
-  {
-    files: ["src/app/screen-routes/*-routes.tsx", "src/app/app-screen-chrome-context.tsx"],
-    rules: {
-      "react-refresh/only-export-components": "off",
-    },
-  },
-
   prettierConfig,
 
   // Global style rules (no types needed)
@@ -231,6 +241,27 @@ export default tseslint.config(
   // Import boundary layers — see eslint/boundaries.js
   ...BOUNDARY_CONFIGS,
 
+  // Co-located UI/route modules must stay off after boundary configs re-enable
+  // react-refresh for shared/components UI. Last block wins in flat config.
+  {
+    files: [
+      "src/app/screen-routes/*-routes.tsx",
+      "src/app/screen-routes/*-route.tsx",
+      "src/app/app-screen-chrome-context.tsx",
+      "src/features/alchemy/shared/context/card-description-context.tsx",
+      "src/features/alchemy/shared/ui/use-fade.tsx",
+      "src/features/alchemy/shared/ui/card-description-ui.tsx",
+      "src/features/alchemy/shared/ui/material-icons.tsx",
+      "src/features/alchemy/shared/ui/collection-ui.tsx",
+      "src/features/alchemy/meta/screens/homestead/helpers.tsx",
+      "src/features/alchemy/meta/screens/armory/paged-picker-grid.tsx",
+      "src/features/alchemy/meta/screens/armory/armory-character-tabs.tsx",
+    ],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
+
   // Source files: warn on `any` type usage.
   {
     files: ["src/**/*.{ts,tsx}"],
@@ -259,7 +290,15 @@ export default tseslint.config(
   {
     files: ["tests/**/*.ts", "tests/**/*.tsx", "performance/**/*.ts"],
     rules: {
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
@@ -421,21 +460,21 @@ export default tseslint.config(
 
   // Final no-restricted-syntax routing. Flat config replaces rule values, so
   // overlapping path policies must be composed in the same path-specific block.
-  {
-    files: ["src/**/*.ts"],
-    ignores: [
+  // ts/tsx pairs are built with syntaxBlock/tsxBlock so new fragments stay in sync.
+  syntaxBlock(
+    ["src/**/*.ts"],
+    [
       "src/features/alchemy/shared/stores/**",
       "src/features/alchemy/run-loop/**",
       "src/features/alchemy/shell/**",
       "src/lib/battle/**",
     ],
-    rules: {
-      "no-restricted-syntax": restrictedSyntax(...AGGREGATE_NO_DIRECT_MUTATION, ...NO_UNOWNED_CONTEXT_CREATION),
-    },
-  },
-  {
-    files: ["src/**/*.tsx"],
-    ignores: [
+    ...AGGREGATE_NO_DIRECT_MUTATION,
+    ...NO_UNOWNED_CONTEXT_CREATION,
+  ),
+  tsxBlock(
+    ["src/**/*.tsx"],
+    [
       "src/features/alchemy/shared/stores/**",
       "src/features/alchemy/run-loop/**",
       "src/features/alchemy/shell/**",
@@ -443,66 +482,49 @@ export default tseslint.config(
       "src/app/app-screen-chrome-context.tsx",
       "src/features/alchemy/shared/context/card-description-context.tsx",
     ],
-    rules: {
-      "no-restricted-syntax": tsxSyntax(...AGGREGATE_NO_DIRECT_MUTATION, ...NO_UNOWNED_CONTEXT_CREATION),
-    },
-  },
-  {
-    files: ["src/lib/battle/**/*.ts"],
-    ignores: ["src/lib/battle/status-helpers.ts", "src/lib/battle/rng.ts", "src/lib/battle/battle-setup.ts"],
-    rules: {
-      "no-restricted-syntax": restrictedSyntax(
-        ...BATTLE_NO_MATH_RANDOM,
-        ...BATTLE_NO_MATH_FLOOR,
-        ...BATTLE_NO_DIRECT_RNG,
-        ...AGGREGATE_NO_DIRECT_MUTATION,
-        ...NO_UNOWNED_CONTEXT_CREATION,
-      ),
-    },
-  },
-  {
-    files: ["src/lib/battle/status-helpers.ts", "src/lib/battle/rng.ts", "src/lib/battle/battle-setup.ts"],
-    rules: {
-      "no-restricted-syntax": restrictedSyntax(
-        ...BATTLE_NO_MATH_RANDOM,
-        ...BATTLE_NO_MATH_FLOOR,
-        ...AGGREGATE_NO_DIRECT_MUTATION,
-        ...NO_UNOWNED_CONTEXT_CREATION,
-      ),
-    },
-  },
-  {
-    files: ["src/lib/battle/**/*.tsx"],
-    rules: {
-      "no-restricted-syntax": tsxSyntax(
-        ...BATTLE_NO_MATH_RANDOM,
-        ...BATTLE_NO_MATH_FLOOR,
-        ...BATTLE_NO_DIRECT_RNG,
-        ...AGGREGATE_NO_DIRECT_MUTATION,
-        ...NO_UNOWNED_CONTEXT_CREATION,
-      ),
-    },
-  },
-  {
-    files: ["src/features/alchemy/run-loop/**/*.ts", "src/features/alchemy/shell/**/*.ts"],
-    rules: {
-      "no-restricted-syntax": restrictedSyntax(
-        ...GEAR_NO_OUTER_DISPATCH,
-        ...AGGREGATE_NO_DIRECT_MUTATION,
-        ...NO_UNOWNED_CONTEXT_CREATION,
-      ),
-    },
-  },
-  {
-    files: ["src/features/alchemy/run-loop/**/*.tsx", "src/features/alchemy/shell/**/*.tsx"],
-    rules: {
-      "no-restricted-syntax": tsxSyntax(
-        ...GEAR_NO_OUTER_DISPATCH,
-        ...AGGREGATE_NO_DIRECT_MUTATION,
-        ...NO_UNOWNED_CONTEXT_CREATION,
-      ),
-    },
-  },
+    ...AGGREGATE_NO_DIRECT_MUTATION,
+    ...NO_UNOWNED_CONTEXT_CREATION,
+  ),
+  syntaxBlock(
+    ["src/lib/battle/**/*.ts"],
+    ["src/lib/battle/status-helpers.ts", "src/lib/battle/rng.ts", "src/lib/battle/battle-setup.ts"],
+    ...BATTLE_NO_MATH_RANDOM,
+    ...BATTLE_NO_MATH_FLOOR,
+    ...BATTLE_NO_DIRECT_RNG,
+    ...AGGREGATE_NO_DIRECT_MUTATION,
+    ...NO_UNOWNED_CONTEXT_CREATION,
+  ),
+  syntaxBlock(
+    ["src/lib/battle/status-helpers.ts", "src/lib/battle/rng.ts", "src/lib/battle/battle-setup.ts"],
+    undefined,
+    ...BATTLE_NO_MATH_RANDOM,
+    ...BATTLE_NO_MATH_FLOOR,
+    ...AGGREGATE_NO_DIRECT_MUTATION,
+    ...NO_UNOWNED_CONTEXT_CREATION,
+  ),
+  tsxBlock(
+    ["src/lib/battle/**/*.tsx"],
+    undefined,
+    ...BATTLE_NO_MATH_RANDOM,
+    ...BATTLE_NO_MATH_FLOOR,
+    ...BATTLE_NO_DIRECT_RNG,
+    ...AGGREGATE_NO_DIRECT_MUTATION,
+    ...NO_UNOWNED_CONTEXT_CREATION,
+  ),
+  syntaxBlock(
+    ["src/features/alchemy/run-loop/**/*.ts", "src/features/alchemy/shell/**/*.ts"],
+    undefined,
+    ...GEAR_NO_OUTER_DISPATCH,
+    ...AGGREGATE_NO_DIRECT_MUTATION,
+    ...NO_UNOWNED_CONTEXT_CREATION,
+  ),
+  tsxBlock(
+    ["src/features/alchemy/run-loop/**/*.tsx", "src/features/alchemy/shell/**/*.tsx"],
+    undefined,
+    ...GEAR_NO_OUTER_DISPATCH,
+    ...AGGREGATE_NO_DIRECT_MUTATION,
+    ...NO_UNOWNED_CONTEXT_CREATION,
+  ),
 
   // Node.js scripts (CommonJS + ESM) — after base rules so overrides take effect.
   {

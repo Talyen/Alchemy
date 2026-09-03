@@ -334,6 +334,10 @@ export const CLASSNAME_NO_TEMPLATE = [
     selector: 'JSXAttribute[name.name="className"] > JSXExpressionContainer > TemplateLiteral',
     message: "Use cn() from @/lib/utils for class names instead of template literals.",
   },
+  {
+    selector: 'JSXAttribute[name.name="className"] > JSXExpressionContainer > BinaryExpression[operator="+"]',
+    message: "Use cn() from @/lib/utils for class names instead of string concatenation.",
+  },
 ];
 
 /** Direct @/assets/optimized imports bypass the generated barrel — use @/lib/game-data barrels instead. */

@@ -226,6 +226,25 @@ export async function main() {
   const componentsUiImports = restrictedImports(componentsUiConfig);
   assertImportGroup(componentsUiImports, "@/features/**", "components/ui must ban features imports");
 
+  const tsxSyntaxRules = restrictedSyntax(await getConfig("src/features/alchemy/shared/ui/game-menu.tsx"));
+  assert.ok(
+    tsxSyntaxRules.some((entry) => entry.selector?.includes("TemplateLiteral")),
+    "tsx must ban className template literals via cn()",
+  );
+  assert.ok(
+    tsxSyntaxRules.some((entry) => entry.selector?.includes('BinaryExpression[operator="+"]')),
+    "tsx must ban className string concatenation via cn()",
+  );
+
+  const tsSyntaxRules = restrictedSyntax(await getConfig("src/lib/battle/card-play.ts"));
+  const tsxBattleSyntaxRules = restrictedSyntax(
+    await getConfig("src/features/alchemy/run-loop/screens/destination-screen.tsx"),
+  );
+  assert.ok(
+    tsSyntaxRules.length > 0 && tsxBattleSyntaxRules.length > 0,
+    "ts/tsx syntax blocks must both compose restrictions",
+  );
+
   const results = await eslint.lintFiles(ARCHITECTURE_SMOKE_FILES);
   const errors = results.flatMap((r) =>
     r.messages.filter((m) => m.severity === 2).map((m) => `${r.filePath}:${m.line}:${m.column} ${m.message}`),

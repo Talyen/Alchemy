@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- co-located homestead screen subcomponents and tab helpers */
 import { type ReactNode } from "react";
 import {
   agilityTraining,

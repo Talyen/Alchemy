@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- co-located card description components and bare-token utility */
 import { Fragment, type ReactNode } from "react";
 
 import type { BattleCard, KeywordId } from "@/lib/game-data";

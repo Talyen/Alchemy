@@ -22,12 +22,13 @@ Add a row to `Open` when docs mislead, behavior surprises, or repeated friction 
 
 ## Resolved
 
-| Date       | Area           | Resolution (commit / pattern link)                                                                                        |
-| ---------- | -------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-02 | Agent scope    | Replaced blanket unrelated-path avoidance with the safe incidental-fix policy in [AGENTS.md](../AGENTS.md#working-style). |
-| 2026-09-02 | Verification   | Replaced duplicated push/handoff gates and incomplete child-only records with one source-aware `check` run.               |
-| 2026-09-02 | Script budgets | `ROUTE_CONTEXT_BUDGETS` assets total went stale (test red on main); budgets now enforced by `context-hotspots --check`.   |
-|            |                |                                                                                                                           |
+| Date       | Area           | Resolution (commit / pattern link)                                                                                                                                                                        |
+| ---------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-02 | Agent scope    | Replaced blanket unrelated-path avoidance with the safe incidental-fix policy in [AGENTS.md](../AGENTS.md#working-style).                                                                                 |
+| 2026-09-02 | Verification   | Replaced duplicated push/handoff gates and incomplete child-only records with one source-aware `check` run.                                                                                               |
+| 2026-09-03 | Knip entries   | Explicit `src/main.tsx` / `src/startup.ts` entries flagged redundant under `--treat-config-hints-as-errors`; Vite/HTML plugins auto-infer them — documented in `knip.config.js`, keep only `src/App.tsx`. |
+| 2026-09-02 | Script budgets | `ROUTE_CONTEXT_BUDGETS` assets total went stale (test red on main); budgets now enforced by `context-hotspots --check`.                                                                                   |
+|            |                |                                                                                                                                                                                                           |
 
 ## Details
 

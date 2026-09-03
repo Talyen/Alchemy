@@ -71,6 +71,13 @@ describe("alchemy ESLint plugin", () => {
       { jsx: true },
     );
     expect(banned.length).toBeGreaterThan(0);
+    const bannedIndexedDb = await lintRule(
+      "src/features/alchemy/run-loop/screens/destination-screen.tsx",
+      `export const db = indexedDB.open("x");\n`,
+      "no-unowned-web-storage",
+      { jsx: true },
+    );
+    expect(bannedIndexedDb.length).toBeGreaterThan(0);
     const allowed = await lintRule(
       "src/lib/animation/animation-prefs.ts",
       `export const flag = localStorage.getItem("alchemy-disable-animations");\n`,
@@ -86,6 +93,12 @@ describe("alchemy ESLint plugin", () => {
       "no-lib-fetch",
     );
     expect(banned.length).toBeGreaterThan(0);
+    const bannedSocket = await lintRule(
+      "src/lib/battle/card-play.ts",
+      `export function ping() { return new WebSocket("wss://x"); }\n`,
+      "no-lib-fetch",
+    );
+    expect(bannedSocket.length).toBeGreaterThan(0);
   });
 
   it("bans em dashes across string literals, template elements, and JSX text", async () => {

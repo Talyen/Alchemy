@@ -7,12 +7,8 @@ export {
   type BattleCardEffectKind,
 } from "./registry";
 export {
-  AmountSchema,
-  CompanionIdSchema,
-  DamageTypeSchema,
   ENEMY_STATUS_DAMAGE_IDS,
   ENEMY_STATUS_IDS,
   EnemyStatusDamageIdSchema,
   EnemyStatusIdSchema,
-  PositiveAmountSchema,
 } from "./shared-schemas";

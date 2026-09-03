@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- co-located character keyword definitions */
 import {
   Crosshair,
   Flame,

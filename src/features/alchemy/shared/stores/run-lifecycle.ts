@@ -198,10 +198,10 @@ export function clearBattlePresentationUi(): void {
   clearPresentationListeners.forEach((listener) => listener());
 }
 
-export function notifyRunTeardown(): void {
+function notifyRunTeardown(): void {
   teardownListeners.forEach((listener) => listener());
 }
 
-export function clearTransientUiOnTeardown(): void {
+function clearTransientUiOnTeardown(): void {
   useUiStore.getState().clearCardHover();
 }

@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- route mapping table colocated here */
 import type { ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { isDesktop } from "@/lib/platform";

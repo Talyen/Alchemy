@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components -- co-located resource artwork, wallet pills, and color maps */
 import { cn, formatLargeAmount } from "@/lib/utils";
 import { MATERIAL_IDS, materialLabels, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
 import {
