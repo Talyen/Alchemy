@@ -15,6 +15,7 @@ import type { TalentDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
 import { TalentUnlockBurst } from "./talent-unlock-burst";
+import { chunkIntoRows } from "./talent-layout";
 
 export interface TalentLayoutProps {
   allTalents: TalentDefinition[];
@@ -28,13 +29,7 @@ export interface TalentLayoutProps {
 }
 
 function chunkRows(talents: TalentDefinition[]): TalentDefinition[][] {
-  const rows: TalentDefinition[][] = [];
-  let index = 0;
-  for (const size of TALENT_ROW_SIZES) {
-    rows.push(talents.slice(index, index + size));
-    index += size;
-  }
-  return rows;
+  return chunkIntoRows(talents, TALENT_ROW_SIZES);
 }
 
 function TalentCard({
@@ -151,6 +146,7 @@ export function TalentTree({
   const handleUnlock = useCallback(
     (talentId: string) => {
       if (!onUnlock) return;
+      if (!hasUnspentPoints) return;
       if (unlockedIds.includes(talentId) || !allocatableIds.has(talentId)) return;
       if (unlockingTalentIdRef.current === talentId) return;
 
@@ -168,7 +164,7 @@ export function TalentTree({
         unlockTimerRef.current = null;
       }, TALENT_UNLOCK_ANIMATION_MS);
     },
-    [allocatableIds, onUnlock, onUnlockBegin, unlockedIds],
+    [allocatableIds, hasUnspentPoints, onUnlock, onUnlockBegin, unlockedIds],
   );
 
   if (allTalents.length === 0) {

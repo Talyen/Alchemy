@@ -1,7 +1,7 @@
 export { ActionButtonRow } from "./action-button-row";
 export { DestinationChoices } from "./destination-choices";
 export { ShineAccentButton } from "./shine-accent-button";
-export { AspectRatioSelect, DisplayModeSelect } from "./settings-controls";
+export { AspectRatioSelect, DisplayModeSelect, SettingsSlider, SettingsToggle } from "./settings-controls";
 export { ConfirmationDialog } from "./dialogs";
 export {
   ScreenHeader,

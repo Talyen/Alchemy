@@ -39,9 +39,11 @@ export function HomesteadTileFrame({
         {detailTooltip({ visible: hoveredItemId === id, triggerRef: frameRef })}
         <div
           ref={frameRef}
-          className={cn("group relative w-full rounded-shell-card p-4", wrapperClassName)}
+          className={cn("group relative w-full rounded-shell-card p-4 focus:outline-none", wrapperClassName)}
           onMouseEnter={() => setHoveredItemId(id)}
           onMouseLeave={() => setHoveredItemId(null)}
+          onFocus={() => setHoveredItemId(id)}
+          onBlur={() => setHoveredItemId(null)}
         >
           <Surface
             className={cn(

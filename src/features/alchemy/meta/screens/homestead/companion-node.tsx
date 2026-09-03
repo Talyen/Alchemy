@@ -106,13 +106,12 @@ export function CompanionCardNode({
   const isComplete = currentLevel >= COMPANION_MAX_TIER;
   const bondTierIndex = Math.min(currentLevel, COMPANION_MAX_TIER - 1);
   const bondCost = COMPANION_BOND_TIERS[bondTierIndex];
-  if (!bondCost) {
-    throw new Error(`Missing companion bond tier at index ${bondTierIndex}`);
-  }
-  const bondAffordable = discovered && !isComplete && canAfford(materialInventory, bondCost);
+  const bondAffordable = Boolean(bondCost) && discovered && !isComplete && canAfford(materialInventory, bondCost!);
 
   const detailTooltip = getCompanionTooltip(card, discovered, currentLevel, bondedCompanions);
-  const footer = getCompanionFooter(discovered, isComplete, card, bondCost, bondAffordable, materialInventory, onBond);
+  const footer = bondCost
+    ? getCompanionFooter(discovered, isComplete, card, bondCost, bondAffordable, materialInventory, onBond)
+    : null;
 
   return (
     <HomesteadTileFrame

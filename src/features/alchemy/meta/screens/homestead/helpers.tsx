@@ -100,11 +100,8 @@ export function HomesteadTabs({ activeTab, onSelectTab }: { activeTab: Tab; onSe
   return <TabBar tabs={tabs} activeTab={activeTab} onSelectTab={onSelectTab} />;
 }
 
-export function getItems(tab: "buildings", pool: HomesteadBuilding[]): GoalItem[];
-export function getItems(tab: "farm", pool: HomesteadFarm[]): GoalItem[];
-export function getItems(tab: "research", pool: HomesteadResearch[]): GoalItem[];
 export function getItems(tab: Tab, pool: HomesteadBuilding[] | HomesteadFarm[] | HomesteadResearch[]): GoalItem[] {
-  if (tab === "buildings") return (pool as HomesteadBuilding[]).map((data) => ({ kind: "building", data }));
   if (tab === "farm") return (pool as HomesteadFarm[]).map((data) => ({ kind: "farm", data }));
-  return (pool as HomesteadResearch[]).map((data) => ({ kind: "research", data }));
+  if (tab === "research") return (pool as HomesteadResearch[]).map((data) => ({ kind: "research", data }));
+  return (pool as HomesteadBuilding[]).map((data) => ({ kind: "building", data }));
 }

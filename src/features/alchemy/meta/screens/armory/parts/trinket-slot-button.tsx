@@ -2,11 +2,6 @@ import { memo } from "react";
 import type { TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import {
-  cardInteractiveGlowClass,
-  cardShineFrameClass,
-  cardSurfaceClass,
-  collectionGridTileWidthClass,
-  gearArtAspectClass,
   getTrinketShineColors,
   getPlasmaColorPairForTrinket,
   trinketArtFillClass,
@@ -16,10 +11,9 @@ import { ShineBorder } from "@/components/ui/shine-border";
 import { DetailPopup } from "@/features/alchemy/shared/ui/card-popup";
 import { TrinketItemTitle } from "@/features/alchemy/shared/ui/gear-item-title";
 import { Surface } from "@/features/alchemy/shared/ui/surface";
-import { useInteractiveCard } from "@/features/alchemy/shared/ui/use-interactive-card";
-import { useTileHoverPopup } from "@/features/alchemy/shared/ui/use-tile-hover-popup";
 import { GearSlotArt } from "./gear-slot-art";
 import { SLOT_ARIA_LABELS } from "./slot-labels";
+import { ARMORY_TRINKET_SLOT_TESTID, armorySlotSurfaceClass, useArmorySlotHover } from "./armory-slot-shell";
 
 export const TrinketSlotButton = memo(function TrinketSlotButton({
   trinket,
@@ -34,13 +28,16 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
   onSelect: () => void;
   onUnequip: () => void;
 }) {
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("armory", "trinket");
-  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useTileHoverPopup({
-    interactive: true,
+  const {
     isHovered,
-    onHoverStart,
-    onHoverEnd,
-  });
+    shimmerActive,
+    shimmerToken,
+    wrapperRef,
+    showPopup,
+    handleHoverStart,
+    handleMouseLeave,
+    handleBlur,
+  } = useArmorySlotHover("trinket");
 
   const shineColors = trinket ? getTrinketShineColors(trinket.id) : [];
   const showShine = shineColors.length > 0;
@@ -48,7 +45,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
   return (
     <div
       ref={wrapperRef}
-      data-testid="armory-equipment-slot"
+      data-testid={ARMORY_TRINKET_SLOT_TESTID}
       data-slot="trinket"
       className="relative"
       onMouseEnter={handleHoverStart}
@@ -73,16 +70,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
         shimmerToken={shimmerToken}
         onFocus={handleHoverStart}
         onBlur={handleBlur}
-        className={cn(
-          cardSurfaceClass,
-          collectionGridTileWidthClass,
-          gearArtAspectClass,
-          "group shadow-md",
-          showShine && cardShineFrameClass,
-          !showShine && "border border-border/80",
-          cardInteractiveGlowClass,
-          editable ? "cursor-pointer" : "cursor-default",
-        )}
+        className={armorySlotSurfaceClass(editable, showShine)}
         onClick={() => {
           if (editable && selected && trinket) onUnequip();
           else onSelect();

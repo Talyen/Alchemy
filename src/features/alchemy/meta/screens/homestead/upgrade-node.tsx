@@ -34,12 +34,12 @@ export function HomesteadUpgradeNode({
   const maxTiers = item.data.tiers.length;
   const isTier0 = currentLevel === 0;
   const isCompleted = currentLevel >= maxTiers;
-  const displayTierIndex = isCompleted ? maxTiers - 1 : Math.max(0, currentLevel - 1);
-  const tier = item.data.tiers[isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1)];
+  const nextTierIndex = isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1);
+  const tier = item.data.tiers[nextTierIndex];
   const itemCost = tier?.cost ?? ZERO_COST;
   const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
 
-  const detailTooltip = useTooltipContent(item, displayTierIndex, currentLevel, maxTiers);
+  const detailTooltip = useTooltipContent(item, nextTierIndex, currentLevel, maxTiers);
   const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
 
   const footer = isCompleted ? (
@@ -71,13 +71,13 @@ export function HomesteadUpgradeNode({
 
 function useTooltipContent(
   item: GoalItem,
-  displayTierIndex: number,
+  nextTierIndex: number,
   currentLevel: number,
   maxTiers: number,
 ): (ctx: PopupContext) => ReactNode {
   return useMemo(() => {
     const nodes: ReactNode[] = [];
-    const currentTier = item.data.tiers[displayTierIndex];
+    const currentTier = item.data.tiers[nextTierIndex];
 
     if (currentTier) {
       if (currentTier.benefitDescription) {
@@ -104,7 +104,7 @@ function useTooltipContent(
         title={
           <span className="inline-flex items-center gap-2">
             {item.data.title}
-            <StarRating current={currentLevel} max={maxTiers} className="h-4 w-4" />
+            <StarRating current={currentLevel} max={maxTiers} className="h-3.5 w-3.5" />
           </span>
         }
         subtitle={undefined}
@@ -114,5 +114,5 @@ function useTooltipContent(
         triggerRef={triggerRef}
       />
     );
-  }, [item, displayTierIndex, currentLevel, maxTiers]);
+  }, [item, nextTierIndex, currentLevel, maxTiers]);
 }

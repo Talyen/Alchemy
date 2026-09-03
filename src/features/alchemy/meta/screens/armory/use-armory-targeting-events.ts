@@ -17,6 +17,8 @@ function isTargetingElement(target: EventTarget | null): boolean {
     !!target.closest('[data-testid="confirmation-dialog"]') ||
     !!target.closest('[data-testid="armory-inventory-item"]') ||
     !!target.closest('[data-testid="armory-equipment-slot"]') ||
+    !!target.closest('[data-testid="armory-trinket-slot"]') ||
+    !!target.closest('[data-testid="armory-trinket-item"]') ||
     !!target.closest('[data-testid="armory-crafting-currency"]') ||
     !!target.closest('[data-testid="armory-crafting-strip"]') ||
     !!target.closest('[data-testid="armory-salvage-toggle"]')
@@ -46,11 +48,15 @@ function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () =
       event.target instanceof HTMLElement &&
       (event.target.closest('[data-testid="armory-crafting-currency"]') ||
         event.target.closest('[data-testid="armory-inventory-item"]') ||
-        event.target.closest('[data-testid="armory-equipment-slot"]'))
+        event.target.closest('[data-testid="armory-trinket-item"]') ||
+        event.target.closest('[data-testid="armory-equipment-slot"]') ||
+        event.target.closest('[data-testid="armory-trinket-slot"]'))
     ) {
       return;
     }
-    event.preventDefault();
+    if (event.target instanceof HTMLElement && event.target.closest('[data-testid="armory-workspace"]')) {
+      event.preventDefault();
+    }
     clearTargeting();
   }
 

@@ -52,14 +52,8 @@ export function useArmoryResetEffects({
   ]);
 
   useEffect(() => {
-    if (!editable && document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  }, [editable]);
-
-  useEffect(() => {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
-  }, [characterId]);
+  }, [editable, characterId]);
 }

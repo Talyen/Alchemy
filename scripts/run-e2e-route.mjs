@@ -18,6 +18,22 @@ export const E2E_ROUTES = Object.freeze({
     label: "homestead Playwright flow",
     args: ["playwright", "test", "tests/homestead-flow.spec.ts", "--project", "chromium"],
   }),
+  collection: Object.freeze({
+    label: "collection Playwright flow",
+    args: ["playwright", "test", "tests/collection.spec.ts", "--project", "chromium"],
+  }),
+  talents: Object.freeze({
+    label: "talents Playwright flow",
+    args: ["playwright", "test", "tests/menu-navigation.spec.ts", "-g", "Talents", "--project", "chromium"],
+  }),
+  options: Object.freeze({
+    label: "options Playwright flow",
+    args: ["playwright", "test", "tests/menu-navigation.spec.ts", "-g", "Options|Auto-End", "--project", "chromium"],
+  }),
+  locks: Object.freeze({
+    label: "progression locks Playwright flow",
+    args: ["playwright", "test", "tests/progression-locks.spec.ts", "--project", "chromium"],
+  }),
   "shop-screen": Object.freeze({
     label: "shop Playwright flow",
     args: ["playwright", "test", "tests/shop-and-rewards.spec.ts", "--project", "chromium"],

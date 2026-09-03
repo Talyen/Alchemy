@@ -53,6 +53,7 @@ export function HomesteadScreen({
   const buildingsItems = useMemo(() => getItems("buildings", buildings), []);
   const farmItems = useMemo(() => getItems("farm", farmPlots), []);
   const researchItems = useMemo(() => getItems("research", researchUpgrades), []);
+  const discoveredIds = useMemo(() => new Set(discoveredCardIds), [discoveredCardIds]);
 
   function handleAction(item: GoalItem) {
     const success =
@@ -102,7 +103,7 @@ export function HomesteadScreen({
                     <CompanionCardNode
                       key={card.id}
                       card={card}
-                      discovered={discoveredCardIds.includes(card.id)}
+                      discovered={discoveredIds.has(card.id)}
                       bondedCompanions={bondedCompanions}
                       materialInventory={materialInventory}
                       hoveredItemId={hoveredItemId}
@@ -136,16 +137,18 @@ export function HomesteadScreen({
             )}
           </FadeSlot>
 
-          <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
-            <PaginationControls
-              page={companionPage}
-              totalPages={tab === "companions" ? companionPages : 1}
-              onPageChange={setCompanionPage}
-              size="sm"
-              reserveSpace
-              className="mt-0"
-            />
-          </div>
+          {tab === "companions" ? (
+            <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+              <PaginationControls
+                page={companionPage}
+                totalPages={companionPages}
+                onPageChange={setCompanionPage}
+                size="sm"
+                reserveSpace
+                className="mt-0"
+              />
+            </div>
+          ) : null}
         </div>
       </ScreenShell>
     </PageLayout>

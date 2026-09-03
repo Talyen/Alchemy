@@ -112,3 +112,10 @@ maintaining a second exhaustive command here. Test ownership is split between
 pure Gear rules, aggregate/persistence contracts, Armory screen behavior,
 architecture guards, and player flows; the changed-path route selects the
 current files for each layer.
+
+Focused suites: `tests/features/alchemy/meta/screens/armory-screen*.test.tsx`,
+`tests/features/alchemy/meta/screens/armory/*.test.ts`,
+`tests/features/alchemy/meta/meta-consolidation.test.ts`,
+`tests/e2e/armory.ts` + `tests/armory.spec.ts`, and the `gear` E2E route
+(`npm run test:e2e:gear`). Meta lib contracts live under `tests/lib/gear`,
+`tests/lib/homestead*`, and `tests/lib/talents*`.

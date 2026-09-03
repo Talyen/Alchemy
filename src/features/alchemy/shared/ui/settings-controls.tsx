@@ -1,4 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { controlLabelClass, settingsPanelShellClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 import type { AspectRatioOption, DisplayMode } from "../types";
@@ -70,5 +71,56 @@ export function DisplayModeSelect({
       options={displayModeOptions}
       onChange={onChange}
     />
+  );
+}
+
+export function SettingsSlider({
+  label,
+  value,
+  onChange,
+  min = 0,
+  max = 100,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+}) {
+  return (
+    <div className={settingsPanelShellClass}>
+      <div className="flex items-center justify-between gap-4">
+        <p className={controlLabelClass}>{label}</p>
+        <p className={cn(controlLabelClass, "text-primary")}>{value}%</p>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        aria-label={label}
+        className="mt-3 w-full accent-primary"
+      />
+    </div>
+  );
+}
+
+export function SettingsToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className={settingsPanelShellClass}>
+      <div className="flex items-center justify-between gap-4">
+        <p className={controlLabelClass}>{label}</p>
+        <Switch checked={checked} onCheckedChange={onChange} />
+      </div>
+    </div>
   );
 }

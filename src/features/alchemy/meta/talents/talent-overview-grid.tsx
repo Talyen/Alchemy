@@ -14,32 +14,25 @@ import { cardInteractiveGlowClass, cardSurfaceClass } from "../../shared/config"
 
 import { Surface } from "../../shared/ui/surface";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
+import { chunkIntoRows } from "./talent-layout";
 
 const OVERVIEW_ROW_SIZE = 7;
 
 interface TalentPortraitCardProps {
   keywordId: KeywordId;
-  talentXP: TalentXP;
-  unlockedTalents: UnlockedTalents;
+  hasUnspent: boolean;
   onSelectKeyword: (keywordId: KeywordId) => void;
   onHoverKeyword?: ((keywordId: KeywordId | null) => void) | undefined;
 }
 
 const TalentPortraitCard = memo(function TalentPortraitCard({
   keywordId,
-  talentXP,
-  unlockedTalents,
+  hasUnspent,
   onSelectKeyword,
   onHoverKeyword,
 }: TalentPortraitCardProps) {
   const definition = keywordDefinitions[keywordId];
   const art = talentArt[keywordId];
-  const unlockedCount = (unlockedTalents[keywordId] ?? []).length;
-  const progress = getTalentKeywordProgress(
-    talentXP[keywordId] ?? 0,
-    unlockedCount,
-    countImplementedTalents(keywordId),
-  );
 
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("talent-overview", keywordId);
 
@@ -94,7 +87,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
           <span className="truncate text-center font-sans text-base font-bold tracking-wide text-foreground/90 transition-colors group-hover:text-amber-300 sm:text-lg">
             {definition.label}
           </span>
-          {progress.hasUnspent ? (
+          {hasUnspent ? (
             <span className="pointer-events-none h-2 w-2 shrink-0 rounded-full bg-red-500/70 select-none" />
           ) : null}
         </div>
@@ -112,11 +105,7 @@ export interface TalentOverviewGridProps {
 }
 
 function layoutKeywordRows(keywordIds: KeywordId[]): KeywordId[][] {
-  const rows: KeywordId[][] = [];
-  for (let i = 0; i < keywordIds.length; i += OVERVIEW_ROW_SIZE) {
-    rows.push(keywordIds.slice(i, i + OVERVIEW_ROW_SIZE));
-  }
-  return rows;
+  return chunkIntoRows(keywordIds, OVERVIEW_ROW_SIZE);
 }
 
 export function TalentOverviewGrid({
@@ -127,6 +116,18 @@ export function TalentOverviewGrid({
   onHoverKeyword,
 }: TalentOverviewGridProps) {
   const rows = useMemo(() => layoutKeywordRows(keywordIds), [keywordIds]);
+  const unspentByKeyword = useMemo(() => {
+    const map = new Map<KeywordId, boolean>();
+    for (const keywordId of keywordIds) {
+      const unlockedCount = (unlockedTalents[keywordId] ?? []).length;
+      map.set(
+        keywordId,
+        getTalentKeywordProgress(talentXP[keywordId] ?? 0, unlockedCount, countImplementedTalents(keywordId))
+          .hasUnspent,
+      );
+    }
+    return map;
+  }, [keywordIds, talentXP, unlockedTalents]);
 
   return (
     <div className="flex w-full flex-col items-center justify-center gap-y-3 sm:gap-y-3.5">
@@ -136,8 +137,7 @@ export function TalentOverviewGrid({
             <TalentPortraitCard
               key={kw}
               keywordId={kw}
-              talentXP={talentXP}
-              unlockedTalents={unlockedTalents}
+              hasUnspent={unspentByKeyword.get(kw) ?? false}
               onSelectKeyword={onSelectKeyword}
               onHoverKeyword={onHoverKeyword}
             />

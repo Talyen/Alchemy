@@ -10,19 +10,11 @@ import {
 } from "@/lib/gear";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
-import {
-  cardSurfaceClass,
-  collectionGridTileWidthClass,
-  gearArtAspectClass,
-  cardInteractiveGlowClass,
-  cardShineFrameClass,
-} from "../../../../shared/config";
 import { Surface } from "../../../../shared/ui/surface";
-import { useInteractiveCard } from "../../../../shared/ui/use-interactive-card";
-import { useTileHoverPopup } from "../../../../shared/ui/use-tile-hover-popup";
 import { GearTooltipPortal } from "../gear-tooltip-portal";
 import { GearSlotArt } from "./gear-slot-art";
 import { SLOT_ARIA_LABELS } from "./slot-labels";
+import { ARMORY_GEAR_SLOT_TESTID, armorySlotSurfaceClass, useArmorySlotHover } from "./armory-slot-shell";
 import {
   SALVAGE_TARGET_RING,
   SALVAGE_TARGET_SHADOW,
@@ -60,18 +52,21 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   const salvageable = salvageMode && Boolean(instance);
   const currencyTarget = Boolean(activeCurrencyId) && canCraft;
   const ariaLabel = SLOT_ARIA_LABELS[slot];
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("armory", slot);
-  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useTileHoverPopup({
-    interactive: true,
+  const {
     isHovered,
-    onHoverStart,
-    onHoverEnd,
-  });
+    shimmerActive,
+    shimmerToken,
+    wrapperRef,
+    showPopup,
+    handleHoverStart,
+    handleMouseLeave,
+    handleBlur,
+  } = useArmorySlotHover(slot);
 
   return (
     <div
       ref={wrapperRef}
-      data-testid="armory-equipment-slot"
+      data-testid={ARMORY_GEAR_SLOT_TESTID}
       data-slot={slot}
       data-salvageable={salvageable ? "true" : undefined}
       className={cn(
@@ -94,16 +89,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         shimmerToken={shimmerToken}
         onFocus={handleHoverStart}
         onBlur={handleBlur}
-        className={cn(
-          cardSurfaceClass,
-          collectionGridTileWidthClass,
-          gearArtAspectClass,
-          "group shadow-md",
-          showShine && cardShineFrameClass,
-          !showShine && "border border-border/80",
-          cardInteractiveGlowClass,
-          editable ? "cursor-pointer" : "cursor-default",
-        )}
+        className={armorySlotSurfaceClass(editable, showShine)}
         onClick={() => {
           if (!editable) {
             onSelect(slot);

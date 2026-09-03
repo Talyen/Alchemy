@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useState } from "react";
 import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -12,10 +12,6 @@ import {
   isProgressionFeatureUnlocked,
   type CharacterId,
 } from "../../shared/config/game-data-catalog";
-
-function MenuNavButton({ children }: { children: ReactNode }) {
-  return <div className="menu-nav-button">{children}</div>;
-}
 
 const MENU_NAV_BUTTON_CLASS = cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU);
 const MENU_NAV_BUTTON_WRAPPER_CLASS = BUTTON_WIDTH_MENU;
@@ -84,7 +80,7 @@ export function MenuScreen({
       </Surface>
 
       <div className="grid gap-2 overflow-visible">
-        <MenuNavButton>
+        <div className="menu-nav-button">
           <Button
             size="lg"
             variant="primary"
@@ -95,8 +91,8 @@ export function MenuScreen({
             <Swords className="h-7 w-7" />
             Play
           </Button>
-        </MenuNavButton>
-        <MenuNavButton>
+        </div>
+        <div className="menu-nav-button">
           <LockedMenuItem
             title="Talents"
             message={getProgressionFeatureUnlockMessage("talents")}
@@ -114,8 +110,8 @@ export function MenuScreen({
           {hasUnspentTalents && !isTalentsLocked && (
             <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
-        </MenuNavButton>
-        <MenuNavButton>
+        </div>
+        <div className="menu-nav-button">
           <LockedMenuItem
             title="Homestead"
             message={getProgressionFeatureUnlockMessage("homestead")}
@@ -133,8 +129,8 @@ export function MenuScreen({
           {hasAffordableHomestead && !isHomesteadLocked && (
             <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
           )}
-        </MenuNavButton>
-        <MenuNavButton>
+        </div>
+        <div className="menu-nav-button">
           <LockedMenuItem
             title="Armory"
             message="Find Gear to unlock"
@@ -149,8 +145,8 @@ export function MenuScreen({
           >
             Armory
           </LockedMenuItem>
-        </MenuNavButton>
-        <MenuNavButton>
+        </div>
+        <div className="menu-nav-button">
           <Button
             size="lg"
             variant="outline"
@@ -161,8 +157,8 @@ export function MenuScreen({
             <BookOpen className="h-7 w-7" />
             Collection
           </Button>
-        </MenuNavButton>
-        <MenuNavButton>
+        </div>
+        <div className="menu-nav-button">
           <Button
             size="lg"
             variant="outline"
@@ -173,9 +169,9 @@ export function MenuScreen({
             <Cog className="h-7 w-7" />
             Options
           </Button>
-        </MenuNavButton>
+        </div>
         {onQuit ? (
-          <MenuNavButton>
+          <div className="menu-nav-button">
             <Button
               size="lg"
               variant="outline"
@@ -185,7 +181,7 @@ export function MenuScreen({
             >
               Quit
             </Button>
-          </MenuNavButton>
+          </div>
         ) : null}
       </div>
     </div>

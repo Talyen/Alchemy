@@ -17,18 +17,28 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
 
   useEffect(() => {
     if (!activeCurrencyId) return;
+    let raf = 0;
+    let pending: { x: number; y: number } | null = null;
+    function flush() {
+      raf = 0;
+      setPoint(pending);
+    }
     function handlePointerMove(event: PointerEvent) {
       const target = event.target instanceof Element ? event.target : null;
-      setPoint(target?.closest('[data-testid="armory-workspace"]') ? { x: event.clientX, y: event.clientY } : null);
+      pending = target?.closest('[data-testid="armory-workspace"]') ? { x: event.clientX, y: event.clientY } : null;
+      if (!raf) raf = requestAnimationFrame(flush);
     }
-    function handlePointerOut(event: PointerEvent) {
-      if (!event.relatedTarget) setPoint(null);
+    function handlePointerLeave() {
+      pending = null;
+      if (!raf) raf = requestAnimationFrame(flush);
+      else setPoint(null);
     }
-    document.addEventListener("pointermove", handlePointerMove);
-    document.addEventListener("pointerout", handlePointerOut);
+    document.addEventListener("pointermove", handlePointerMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", handlePointerLeave);
     return () => {
+      if (raf) cancelAnimationFrame(raf);
       document.removeEventListener("pointermove", handlePointerMove);
-      document.removeEventListener("pointerout", handlePointerOut);
+      document.documentElement.removeEventListener("pointerleave", handlePointerLeave);
       setPoint(null);
     };
   }, [activeCurrencyId]);

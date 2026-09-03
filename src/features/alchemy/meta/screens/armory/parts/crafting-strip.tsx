@@ -1,63 +1,8 @@
 import { Trash2 } from "lucide-react";
-import { CRAFTING_CURRENCY_LIST, type CraftingCurrencyDefinition, type CraftingCurrencyId } from "@/lib/gear";
+import { CRAFTING_CURRENCY_LIST, type CraftingCurrencyId } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { PortaledTooltip } from "../../../../shared/ui/portaled-tooltip";
-import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltip-panel";
-import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
-import { CURRENCY_COUNT_LABEL_CLASS } from "./currency-styles";
 import { sectionTitleClass, surfaceSelectedRingClass } from "../../../../shared/config";
-
-function CurrencyChip({
-  currency,
-  count,
-  armed,
-  editable,
-  onSelect,
-}: {
-  currency: CraftingCurrencyDefinition;
-  count: number;
-  armed: boolean;
-  editable: boolean;
-  onSelect: () => void;
-}) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
-    useHoverVisible<HTMLButtonElement>();
-  const canUse = editable && count > 0;
-  return (
-    <>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible} className="armory-inventory-tooltip !shadow-none">
-        <TooltipHeader>{currency.displayName}</TooltipHeader>
-        <TooltipBody>{currency.tooltipEffect}</TooltipBody>
-      </PortaledTooltip>
-      <button
-        ref={triggerRef}
-        type="button"
-        data-testid="armory-crafting-currency"
-        data-currency-id={currency.id}
-        aria-label={`Use ${currency.displayName}`}
-        aria-pressed={armed}
-        disabled={!canUse}
-        className={cn(
-          "relative h-20 w-20 overflow-hidden rounded-xl border border-border/80 bg-black",
-          armed && surfaceSelectedRingClass,
-          !canUse && "cursor-default opacity-50",
-        )}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        onFocusCapture={onFocusCapture}
-        onBlurCapture={onBlurCapture}
-        onClick={(event) => {
-          event.stopPropagation();
-          if (!canUse) return;
-          onSelect();
-        }}
-      >
-        <img src={currency.art} alt="" className="h-full w-full object-cover" />
-        <span className={CURRENCY_COUNT_LABEL_CLASS}>{count}</span>
-      </button>
-    </>
-  );
-}
+import { CurrencyChip } from "./currency-chip";
 
 export function CraftingStrip({
   craftingCurrencies,
@@ -86,7 +31,8 @@ export function CraftingStrip({
             currency={currency}
             count={craftingCurrencies[currency.id] ?? 0}
             armed={activeCurrencyId === currency.id}
-            editable={editable}
+            disabled={!editable || (craftingCurrencies[currency.id] ?? 0) <= 0}
+            ariaLabel={`Use ${currency.displayName}`}
             onSelect={() => onSelectCurrency(currency.id)}
           />
         ))}

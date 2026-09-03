@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import {
   aspectRatioOptions,
   controlDescriptionClass,
@@ -9,7 +8,7 @@ import {
 } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 import { SETTINGS_RANGES } from "@/lib/settings-values";
-import { AspectRatioSelect, DisplayModeSelect } from "../../shared/ui/shared-ui";
+import { AspectRatioSelect, DisplayModeSelect, SettingsSlider, SettingsToggle } from "../../shared/ui/shared-ui";
 import type { AspectRatioOption, DisplayMode } from "../../shared/types";
 
 export interface DisplayOptionsProps {
@@ -54,57 +53,6 @@ export interface DevOptionsProps {
   onOpenErrorLog?: () => void;
 }
 
-function SliderOption({
-  label,
-  value,
-  onChange,
-  min = 0,
-  max = 100,
-}: {
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-  min?: number;
-  max?: number;
-}) {
-  return (
-    <div className={settingsPanelShellClass}>
-      <div className="flex items-center justify-between gap-4">
-        <p className={controlLabelClass}>{label}</p>
-        <p className={cn(controlLabelClass, "text-primary")}>{value}%</p>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        aria-label={label}
-        className="mt-3 w-full accent-primary"
-      />
-    </div>
-  );
-}
-
-function ToggleOption({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className={settingsPanelShellClass}>
-      <div className="flex items-center justify-between gap-4">
-        <p className={controlLabelClass}>{label}</p>
-        <Switch checked={checked} onCheckedChange={onChange} />
-      </div>
-    </div>
-  );
-}
-
 export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps }) {
   return (
     <div className="space-y-4">
@@ -120,7 +68,7 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
           onChange={display.onDisplayModeChange}
         />
       ) : null}
-      <SliderOption
+      <SettingsSlider
         label="Brightness"
         value={display.brightness}
         onChange={display.onBrightnessChange}
@@ -134,10 +82,10 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
 export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
   return (
     <div className="space-y-4">
-      <SliderOption label="Master Volume" value={audio.masterVolume} onChange={audio.onMasterVolChange} />
-      <SliderOption label="Music Volume" value={audio.musicVolume} onChange={audio.onMusicVolChange} />
-      <SliderOption label="Sound Effects Volume" value={audio.sfxVolume} onChange={audio.onSfxVolChange} />
-      <ToggleOption
+      <SettingsSlider label="Master Volume" value={audio.masterVolume} onChange={audio.onMasterVolChange} />
+      <SettingsSlider label="Music Volume" value={audio.musicVolume} onChange={audio.onMusicVolChange} />
+      <SettingsSlider label="Sound Effects Volume" value={audio.sfxVolume} onChange={audio.onSfxVolChange} />
+      <SettingsToggle
         label="Mute in Background"
         checked={audio.muteInBackground}
         onChange={audio.onMuteInBackgroundChange}
@@ -149,8 +97,8 @@ export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
 export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsProps }) {
   return (
     <div className="space-y-4">
-      <ToggleOption label="Auto-End Turn" checked={gameplay.autoEndTurn} onChange={gameplay.onAutoEndTurnChange} />
-      <ToggleOption
+      <SettingsToggle label="Auto-End Turn" checked={gameplay.autoEndTurn} onChange={gameplay.onAutoEndTurnChange} />
+      <SettingsToggle
         label="Remember Auto-Battle Preference"
         checked={gameplay.rememberAutoplayPreference}
         onChange={gameplay.onRememberAutoplayPreferenceChange}
@@ -159,7 +107,7 @@ export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsPr
   );
 }
 
-export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; dev: DevOptionsProps }) {
+export function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) {
   return (
     <div className="space-y-4">
       <div className={settingsPanelShellClass}>
@@ -184,35 +132,48 @@ export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptions
           </Button>
         </div>
       </div>
-      {import.meta.env.DEV ? (
-        <section className="rounded-shell-panel border border-primary/40 p-5 surface-muted">
-          <p className={cn(controlLabelClass, "mb-4")}>Dev Only</p>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className={controlLabelClass}>Dev / QA Unlocks</p>
-                <p className={controlDescriptionClass}>
-                  Unlock every compendium entry and grant every talent node for testing.
-                </p>
-              </div>
-              <Button size="lg" onClick={dev.onUnlockAll}>
-                Unlock All
-              </Button>
-            </div>
-            {dev.onOpenErrorLog ? (
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className={controlLabelClass}>Error Log</p>
-                  <p className={controlDescriptionClass}>Inspect errors logged during this session for bug reports.</p>
-                </div>
-                <Button size="lg" variant="outline" onClick={dev.onOpenErrorLog}>
-                  View Log
-                </Button>
-              </div>
-            ) : null}
+    </div>
+  );
+}
+
+export function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
+  if (!import.meta.env.DEV) return null;
+  return (
+    <section className="rounded-shell-panel border border-primary/40 p-5 surface-muted">
+      <p className={cn(controlLabelClass, "mb-4")}>Dev Only</p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className={controlLabelClass}>Dev / QA Unlocks</p>
+            <p className={controlDescriptionClass}>
+              Unlock every compendium entry and grant every talent node for testing.
+            </p>
           </div>
-        </section>
-      ) : null}
+          <Button size="lg" onClick={dev.onUnlockAll}>
+            Unlock All
+          </Button>
+        </div>
+        {dev.onOpenErrorLog ? (
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className={controlLabelClass}>Error Log</p>
+              <p className={controlDescriptionClass}>Inspect errors logged during this session for bug reports.</p>
+            </div>
+            <Button size="lg" variant="outline" onClick={dev.onOpenErrorLog}>
+              View Log
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; dev: DevOptionsProps }) {
+  return (
+    <div className="space-y-4">
+      <SaveDataOptionsPanel saveData={saveData} />
+      <DevOptionsPanel dev={dev} />
     </div>
   );
 }
