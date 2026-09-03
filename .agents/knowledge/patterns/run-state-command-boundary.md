@@ -1,6 +1,6 @@
 # Run-State Command Boundary
 
-Status: active
+Status: enforced-rationale
 Confidence: high
 
 ## Observation

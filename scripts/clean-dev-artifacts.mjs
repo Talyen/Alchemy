@@ -60,6 +60,7 @@ function printHelp() {
   console.log(`Usage: node scripts/clean-dev-artifacts.mjs [options]
 
 Removes gitignored Alchemy local artifacts so leftover reports/builds do not accumulate.
+For age-based pruning of stale files only, use npm run prune:transient instead.
 
 Options:
   --builds             Also remove ${BUILD_ARTIFACT_DIRS.join(" + ")}

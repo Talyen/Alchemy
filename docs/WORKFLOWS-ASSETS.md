@@ -31,7 +31,7 @@ Three authoring shapes coexist by design:
 Generated barrels are committed build products (`src/assets/optimized/` + `src/lib/game-data/assets.generated.ts` / `gear-art.ts`). Never import `@/assets/optimized/*.webp` directly outside the barrel — ESLint bans it. Always go through `src/lib/game-data/assets.ts` curated maps:
 
 - `characterArt`, `mysteryEventArt`, `talentArt`, `gearSlotBackgroundArt`, `craftingArt`, `difficultyArt` — typed maps built from `assetRefs` in `assets.ts` (`gearSlotBackgroundArt` derives from `gearArtByDefinitionId`).
-- `allGameArt: string[] = Object.values(assetRefs)` — full manifest. `essentialGameArt` is the startup-critical subset (`allGameArt` filtered to exclude `gear-` assets) decoded in bounded batches (`IMAGE_PRELOAD_BATCH_SIZE` via `preloadImagesInBatches` in `use-app-effects.ts`) before the `StartupLoadingScreen` reveal; gear art defers to idle after reveal. The `game-data` Vite chunk is code-split (Rolldown `codeSplitting.groups` + Rollup `manualChunks` fallback) and eagerly evaluated; bundle budget (`scripts/lib/bundle-budget.mjs` — `index` + `totalJs` + `gameData`) caps growth.
+- `allGameArt: string[] = Object.values(assetRefs)` — full manifest. `essentialGameArt` is the startup-critical subset (`allGameArt` filtered to exclude `gear-` assets) decoded in bounded batches (`IMAGE_PRELOAD_BATCH_SIZE` via `preloadImagesInBatches` in `use-app-effects.ts`) before the `StartupLoadingScreen` reveal; gear art defers to idle after reveal. The `game-data` Vite chunk is code-split from one table (`scripts/lib/vite-chunks.mjs`) and eagerly evaluated; bundle budget (`scripts/lib/bundle-budget.mjs` — `index` + `totalJs` + `gameData`) caps growth.
 - `gearArtByDefinitionId` — re-exports `assets.generated` via `gearArtAssets` in `gear-art.ts`.
 
 The static barrel provides explicit export names (`kebabToCamel`) and the Vite asset graph; do not use `import.meta.glob` for art.
@@ -44,9 +44,9 @@ The static barrel provides explicit export names (`kebabToCamel`) and the Vite a
 3. Run `npm run assets:optimize` for art-only iteration or
    `node scripts/prepare-assets.mjs` for the complete pipeline.
 4. Import through the curated map in `src/lib/game-data/assets.ts` (e.g. `craftingArt`, `difficultyArt`, `talentArt`) — do not import `@/assets/optimized` directly.
-5. Run `npm run check:generated` (fast barrel-only) or `npm run check:generated:fast`; review the generated diff.
+5. Run `npm run check:generated` (fast barrel-only); review the generated diff.
 
-`npm run sync:generated` (or `--art-only` / `--gear-only` for one barrel; `sync:assets` / `sync:gear-art` remain as deprecated shims) regenerates `src/lib/game-data/assets.generated.ts` from
+`npm run sync:generated` (or `--art-only` / `--gear-only` for one barrel; `npm run sync:assets` / `npm run sync:gear-art` forward to the same CLI) regenerates `src/lib/game-data/assets.generated.ts` from
 the manifest targets. Do not add exports to that generated file by hand. Hashes use `ASSET_SCHEMA_VERSION=4` (128-bit truncation) — bump the version to invalidate all caches.
 
 ## Add or replace Gear art
@@ -54,7 +54,7 @@ the manifest targets. Do not add exports to that generated file by hand. Hashes 
 1. Name source files `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` (PNG and
    `.jpg` variants accepted by the optimizer).
 2. Run `npm run assets:optimize`.
-3. Run `node scripts/sync-generated.mjs --gear-only` (`npm run sync:gear-art` still works as a deprecated shim) to regenerate
+3. Run `node scripts/sync-generated.mjs --gear-only` (`npm run sync:gear-art` forwards to the same CLI) to regenerate
    `src/lib/game-data/gear-art.ts`.
 4. Run `npm run check:generated` and confirm every generated definition ID
    matches the intended Gear definition.

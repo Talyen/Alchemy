@@ -62,8 +62,9 @@ This is the curated agent subset. The full catalog is `package.json` (exhaustive
 - `ALCHEMY_SKIP_ASSETS=1` — skip asset optimization/barrel regeneration; semantics owned by [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md).
 - `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
 - `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; `npm run clean` removes existing maps.
+- `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds and preview smoke in `npm run check` for fast local iteration; CI and ship gates still build.
 
-`npm run clean` removes local diagnostics and build artifacts. Its exact
+`npm run clean` removes local diagnostics and build artifacts (explicit reset). `npm run prune:transient` removes only stale files by age. Its exact
 options are owned by `scripts/clean-dev-artifacts.mjs`; do not use it to prune
 shared Playwright caches.
 

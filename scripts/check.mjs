@@ -48,8 +48,8 @@ export function parseCheckArgs(argv) {
 }
 
 function classify(paths) {
-  const { executable, lockfile, desktop, web } = classifyCheckPaths(paths);
-  return { executable, lockfile, desktop, web };
+  const { needsCodeChecks, lockfile, desktop, web } = classifyCheckPaths(paths);
+  return { needsCodeChecks, lockfile, desktop, web };
 }
 
 function defaultRunner(_label, command, args, env) {
@@ -75,16 +75,24 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const env = { ...process.env, ALCHEMY_RUN_ID: runId };
   const before = digestFn();
   const verifyArgs = paths.length > 0 ? paths : ["--diff"];
+  const skipBuilds = process.env.ALCHEMY_CHECK_SKIP_BUILD === "1";
+  const buildReason = skipBuilds ? "skipped via ALCHEMY_CHECK_SKIP_BUILD=1 (CI still builds)" : undefined;
   const definitions = [
     stepDefinition("changed-path verification", "node", ["scripts/verify-changed.mjs", ...verifyArgs], true),
     stepDefinition(
       "documentation format",
       "npm",
       ["run", "format:check"],
-      !selection.executable,
+      !selection.needsCodeChecks,
       "included in static checks",
     ),
-    stepDefinition("static checks", "npm", ["run", "check:static"], selection.executable, "documentation-only change"),
+    stepDefinition(
+      "static checks",
+      "npm",
+      ["run", "check:static"],
+      selection.needsCodeChecks,
+      "documentation-only change",
+    ),
     stepDefinition(
       "lockfile consistency",
       "npm",
@@ -92,9 +100,27 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       selection.lockfile,
       "package manifests unchanged",
     ),
-    stepDefinition("web build", "npm", ["run", "build"], selection.web, "web runtime inputs unchanged"),
-    stepDefinition("preview smoke", "npm", ["run", "smoke:preview"], selection.web, "web build not required"),
-    stepDefinition("desktop build", "npm", ["run", "build:desktop"], selection.desktop, "desktop inputs unchanged"),
+    stepDefinition(
+      "web build",
+      "npm",
+      ["run", "build"],
+      selection.web && !skipBuilds,
+      buildReason ?? "web runtime inputs unchanged",
+    ),
+    stepDefinition(
+      "preview smoke",
+      "npm",
+      ["run", "smoke:preview"],
+      selection.web && !skipBuilds,
+      buildReason ?? "web build not required",
+    ),
+    stepDefinition(
+      "desktop build",
+      "npm",
+      ["run", "build:desktop"],
+      selection.desktop && !skipBuilds,
+      buildReason ?? "desktop inputs unchanged",
+    ),
   ];
   const steps = [];
   let failed = null;

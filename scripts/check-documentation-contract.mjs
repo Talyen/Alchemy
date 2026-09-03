@@ -312,8 +312,8 @@ export function checkSkillIndexCompleteness() {
 }
 
 export function checkSkillImpactLedger({ changedPaths } = {}) {
-  // Enforce skill-impact history when instruction memory changes.
-  // Uses git diff when available; falls back to allowing local edits without git metadata.
+  // Advisory only: remind when instruction memory changes without a ledger entry.
+  // Never fails docs:check — the ledger is history, not a gate.
   let paths = changedPaths;
   if (!paths) {
     try {
@@ -321,7 +321,6 @@ export function checkSkillImpactLedger({ changedPaths } = {}) {
         encoding: "utf8",
       });
       paths = output.split("\n").filter(Boolean);
-      // No diff (e.g. committed tree or fresh clone) — don't gate docs:check.
       if (paths.length === 0) return [];
     } catch {
       return [];
@@ -331,11 +330,10 @@ export function checkSkillImpactLedger({ changedPaths } = {}) {
     (p) => p.startsWith(".agents/skills/") || p.startsWith(".agents/knowledge/"),
   );
   const touchesLedger = paths.includes(".agents/knowledge/skill-impact.md");
-  // Only gate when instruction memory is touched but ledger is not.
   if (touchesInstructionMemory && !touchesLedger) {
-    return [
-      "skill-impact ledger missing: .agents/knowledge/skill-impact.md must be updated when .agents/skills/ or .agents/knowledge/ changes",
-    ];
+    console.warn(
+      "warning: skill-impact ledger advisory: .agents/knowledge/skill-impact.md not updated alongside .agents/skills/ or .agents/knowledge/ change",
+    );
   }
   return [];
 }

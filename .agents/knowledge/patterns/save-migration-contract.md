@@ -1,6 +1,6 @@
 # Save Migration Contract
 
-Status: active
+Status: enforced-rationale
 Confidence: high
 
 ## Observation

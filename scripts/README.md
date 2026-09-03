@@ -1,6 +1,6 @@
 # Scripts catalog
 
-Canonical entries first; deprecated shims forward with a warning via `lib/deprecated.mjs`.
+Canonical entries first.
 
 ## Assets (canonical: `assets.mjs --prepare/--optimize/--sync/--check`)
 
@@ -12,7 +12,7 @@ Canonical entries first; deprecated shims forward with a warning via `lib/deprec
 | Fine-grained sync                                   | `sync-generated.mjs --art-only\|--gear-only\|--version-only`                  |
 | Fast barrel check (no transform)                    | `npm run check:generated` (`check-generated-fast.mjs`)                        |
 | Heavy idempotence check (rebuild + restore)         | `npm run assets:check`                                                        |
-| Deprecated shims (warn + forward)                   | `sync-assets.mjs` → `--art-only`, `sync-gear-art.mjs` → `--gear-only`         |
+| Aliases (`sync:assets`, `sync:gear-art`)            | Forward to `sync-generated.mjs --art-only` / `--gear-only`                    |
 
 Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (freshness),
 `lib/process-helpers.mjs` (generic `formatProcessError`), `lib/audio-optimizer.mjs` (audio discovery/runner).
@@ -44,3 +44,6 @@ Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (fres
 ## Cleanup (`clean` = explicit reset, `prune:transient` = age-based GC)
 
 `npm run clean[--:all]` resets gitignored dirs (+ processes); `npm run prune:transient` deletes stale files only.
+Both share `lib/clean-dev-artifacts.mjs` transient roots. `platforms.json` owns the desktop target list;
+`package.json` build blocks own per-platform packaging config. Sentry release and desktop sourcemap mode are
+owned by `lib/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`.

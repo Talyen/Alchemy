@@ -42,7 +42,7 @@ function isDocumentationPath(filePath) {
 export function classifyCheckPaths(paths) {
   const routes = resolveRoutes(paths);
   const ids = new Set(routes.map((route) => route.id));
-  const executable = paths.some((filePath) => !isDocumentationPath(filePath));
+  const needsCodeChecks = paths.some((filePath) => !isDocumentationPath(filePath));
   const lockfile = paths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
   const desktop = ids.has("desktop");
   const web =
@@ -53,5 +53,5 @@ export function classifyCheckPaths(paths) {
         filePath,
       ),
     );
-  return { executable, lockfile, desktop, web, routeIds: [...ids] };
+  return { needsCodeChecks, executable: needsCodeChecks, lockfile, desktop, web, routeIds: [...ids] };
 }

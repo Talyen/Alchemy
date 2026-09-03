@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 
 import { syncGenerated } from "./sync-generated.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { resolveViteBin } from "./lib/vite-bin.mjs";
 
 async function main(argv = process.argv.slice(2)) {
   const isDesktop =
@@ -13,19 +14,18 @@ async function main(argv = process.argv.slice(2)) {
   // Validate all generated outputs without mutating. Throws if stale.
   await syncGenerated({ check: true });
 
-  const viteArgs = ["vite", "build"];
+  const viteArgs = [resolveViteBin(), "build"];
   if (isDesktop && !viteForward.includes("--mode")) viteArgs.push("--mode", "desktop");
   if (viteForward.length > 0) {
     viteArgs.push(...viteForward.filter((a) => a !== "vite" && a !== "build"));
   }
 
-  const result = spawnSync("npx", viteArgs, {
+  const result = spawnSync(process.execPath, viteArgs, {
     stdio: "inherit",
     env: { ...process.env },
-    shell: process.platform === "win32",
   });
   if (result.error) {
-    console.error(`Failed to run ${["npx", ...viteArgs].join(" ")}:`, result.error.message);
+    console.error(`Failed to run ${["node", ...viteArgs].join(" ")}:`, result.error.message);
   }
   if (result.status !== 0) process.exit(result.status ?? 1);
 }

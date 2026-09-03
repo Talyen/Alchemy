@@ -1,6 +1,6 @@
 # Run-Earned Materials Ownership
 
-Status: active
+Status: enforced-rationale
 Confidence: high
 
 ## Observation

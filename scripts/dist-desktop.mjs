@@ -3,16 +3,15 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { assertSupportedTargets } from "./lib/desktop-artifact.mjs";
-import { readRepoPackageJson } from "./lib/repo-package.mjs";
+import { assertSupportedTargets, targetToBuilderFlag } from "./lib/desktop-artifact.mjs";
+import { resolveSentryRelease } from "./lib/sentry-release.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const config = JSON.parse(readFileSync(join(root, "steam/platforms.json"), "utf8"));
 const targets = config.targets ?? ["win"];
 assertSupportedTargets(targets);
 const sentryDsn = process.env.SENTRY_DSN?.trim() ?? "";
-const releaseVersion = readRepoPackageJson().version;
-const sentryRelease = process.env.SENTRY_RELEASE?.trim() || `alchemy@${releaseVersion}`;
+const sentryRelease = resolveSentryRelease();
 const sentryUploadFields = [
   process.env.SENTRY_AUTH_TOKEN?.trim(),
   process.env.SENTRY_ORG?.trim(),
@@ -48,9 +47,7 @@ const builderCli = join(root, "node_modules", "electron-builder", "out", "cli", 
 const packageDir = process.env.ALCHEMY_PACKAGE_DIR === "1" || process.argv.includes("--dir");
 const builderArgs = ["--publish", "never"];
 for (const target of targets) {
-  if (target === "win") builderArgs.push("--win");
-  if (target === "linux") builderArgs.push("--linux");
-  if (target === "mac") builderArgs.push("--mac");
+  builderArgs.push(targetToBuilderFlag(target));
 }
 if (packageDir) {
   builderArgs.push("--dir");

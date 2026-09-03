@@ -14,10 +14,15 @@ import { CHUNK_SIZE_WARNING_KB } from "./scripts/lib/bundle-budget.mjs";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore no types for vite-aliases.mjs
 import { VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
+// @ts-ignore no types for vite-chunks.mjs
+import { resolveManualChunk, rolldownCodeSplittingGroups } from "./scripts/lib/vite-chunks.mjs";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
+// @ts-ignore no types for sentry-release.mjs
+import { resolveSentryRelease, resolveSourcemapMode } from "./scripts/lib/sentry-release.mjs";
 
 // Single port contract shared with scripts/lib/dev-port.mjs consumers (polling/stop/cleanup).
 const devPort = resolveDevPort(process.env);
-const sentryRelease = process.env.SENTRY_RELEASE?.trim() || `alchemy@${process.env.npm_package_version ?? "0.0.0"}`;
 
 export default defineConfig(({ mode, command }) => {
   const sentryEnabled =
@@ -60,7 +65,7 @@ export default defineConfig(({ mode, command }) => {
           org: process.env.SENTRY_ORG!,
           project: process.env.SENTRY_PROJECT!,
           release: {
-            name: sentryRelease,
+            name: resolveSentryRelease(),
           },
           sourcemaps: {
             filesToDeleteAfterUpload: ["./dist/**/*.map"],
@@ -72,57 +77,17 @@ export default defineConfig(({ mode, command }) => {
       target: "esnext",
       assetsInlineLimit: 4096,
       reportCompressedSize: Boolean(process.env.ANALYZE),
-      sourcemap: process.env.ALCHEMY_SKIP_SOURCEMAP === "1" ? false : mode === "desktop" ? "hidden" : false,
+      sourcemap: resolveSourcemapMode(mode),
       rolldownOptions: {
-        // Rolldown-only codeSplitting — falls back to rollupOptions.manualChunks below.
         output: {
           codeSplitting: {
-            groups: [
-              {
-                name: "react-vendor",
-                test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
-                priority: 40,
-              },
-              {
-                name: "motion-vendor",
-                test: /[\\/]node_modules[\\/](motion|framer-motion)[\\/]/,
-                priority: 30,
-              },
-              {
-                name: "vendor",
-                test: /[\\/]node_modules[\\/]/,
-                priority: 10,
-              },
-              {
-                name: "game-data",
-                test: /[\\/]src[\\/]lib[\\/]game-data[\\/]/,
-                priority: 9,
-              },
-              {
-                name: "battle-engine",
-                test: /[\\/]src[\\/]lib[\\/]battle[\\/]/,
-                priority: 8,
-              },
-              {
-                name: "validation",
-                test: /[\\/]src[\\/]lib[\\/]validation[\\/]/,
-                priority: 7,
-              },
-            ],
+            groups: rolldownCodeSplittingGroups(),
           },
         },
       },
       rollupOptions: {
         output: {
-          manualChunks(id) {
-            if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return "react-vendor";
-            if (/[\\/]node_modules[\\/](motion|framer-motion)[\\/]/.test(id)) return "motion-vendor";
-            if (/[\\/]node_modules[\\/]/.test(id)) return "vendor";
-            if (/[\\/]src[\\/]lib[\\/]game-data[\\/]/.test(id)) return "game-data";
-            if (/[\\/]src[\\/]lib[\\/]battle[\\/]/.test(id)) return "battle-engine";
-            if (/[\\/]src[\\/]lib[\\/]validation[\\/]/.test(id)) return "validation";
-            return undefined;
-          },
+          manualChunks: resolveManualChunk,
         },
       },
       chunkSizeWarningLimit: CHUNK_SIZE_WARNING_KB,

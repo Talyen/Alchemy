@@ -1,6 +1,6 @@
 # Battle Immutability & Seeded RNG
 
-Status: active
+Status: enforced-rationale
 Confidence: high
 
 ## Observation

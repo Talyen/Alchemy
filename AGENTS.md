@@ -6,8 +6,8 @@ Alchemy is a fantasy roguelite deckbuilder. Router + universal constraints; deta
 
 - Dirty tree is user work: inspect the diff, preserve intent. Fix clear evidenced issues found during normal work—even outside scope—and their cause, with proportionate tests. Surgical edits may coexist; never revert, replace, or delete existing work. Ask if conflicting/ambiguous or subjective design/balance. No broad cleanup/uncited audit. Never `git reset --hard` / `clean -fd` / `checkout --` / `restore` with a dirty tree — the repo guard creates an `auto-backup pre-<cmd>` stash and blocks; inspect/apply/drop it after verification. For parallel work use `node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`).
 - Most pragmatic architectural solution — the best long-term shape, even when larger/harder than the minimal workaround; prefer libs over custom hacks. Compatibility only for concrete consumer (save, shipped behavior, external contract).
-- Surface requirement conflicts with evidence. First failure: use bounded diagnostics; repeated failure class: consult knowledge; after 3 unsuccessful approaches, reassess with docs/tests and ask only when evidence cannot resolve the decision.
-- When docs mislead, behavior surprises, or friction repeats, append a brief row to [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md) (expanded template inside when needed).
+- Surface requirement conflicts with evidence. First failure: use bounded diagnostics; repeated failure class: consult the `When to read` entry in knowledge; after 3 unsuccessful approaches, reassess with docs/tests and ask only when evidence cannot resolve the decision.
+- When docs mislead, behavior surprises, or friction repeats, append a brief row to [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md) (expanded template inside when needed). On resolve link a pattern or record `N/A (one-off)`; second same-area recurrence is a pattern candidate.
 - Run [Audits](./docs/Audits/README.md) only when cited. Zero findings is valid.
 - Update canonical owner in same change when altering a documented invariant.
 

@@ -90,6 +90,22 @@ Result: accepted
 Evidence: User-approved documentation review; `ARCHITECTURE.md`, `MIGRATIONS.md`, `ARMORY.md` own the procedures; `DOMAIN_STORE_PATTERNS` / `AGGREGATE_NO_DIRECT_MUTATION` / `GEAR_NO_OUTER_DISPATCH` lint plus save-migration guard tests enforce mechanically; `npm run docs:check` passes.
 Reason: Prose checklists duplicated executable gates — keep the why and the pointer, let lint/tests enforce.
 
+## 2026-09-03 — Build cleanup updates asset pipeline reference
+
+Pattern: `asset-barrels-are-outputs`
+Proposal: Update pattern evidence from deleted `sync-assets.mjs` / `sync-gear-art.mjs` shims to canonical `sync-generated.mjs`; no instruction change.
+Result: accepted
+Evidence: `npm run docs:check` ledger gate; shim files removed in build-cleanup change.
+Reason: Keep knowledge evidence honest after build simplification — pipeline ownership unchanged.
+
+## 2026-09-03 — Fix knowledge feedback loop
+
+Pattern: `run-state-command-boundary`, `battle-immutability-rng`, `save-migration-contract`, `run-materials-ownership`
+Proposal: (1) Friction-log Resolved rows require pattern link or `N/A (one-off)` + reason; 2nd same-area recurrence is a pattern candidate. (2) Split knowledge index into Live (3) vs Enforced rationale (4); mark the 4 lint/test-enforced patterns `enforced-rationale`. (3) Replace generic 2nd-occurrence consult with per-area `When to read` entries in skills routing. (4) Evals required only when routine coding behavior changes; doc-only slimming notes `evals: skipped (doc-only)`. (5) Soften `skill-impact ledger` docs:check contract from hard gate to advisory warning.
+Result: accepted
+Evidence: evals: skipped (doc-only); `npm run docs:check` passes with advisory warning only.
+Reason: Close the friction→pattern loop without adding routine context — live set stays small, enforced lessons survive as rationale, and the ledger stops punishing small doc fixes.
+
 ## Template for future entries
 
 ```

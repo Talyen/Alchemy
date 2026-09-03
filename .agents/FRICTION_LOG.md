@@ -2,13 +2,13 @@
 
 Centralized intake for agent pain points, confusion, and struggle while working in this codebase. Keep entries short — one line in the table is enough. Use the expanded template only when extra context helps.
 
-Add a row to `Open` when docs mislead, behavior surprises, or repeated friction appears. Move it to `Resolved` with a link to the fix when addressed.
+Add a row to `Open` when docs mislead, behavior surprises, or repeated friction appears. Move it to `Resolved` with a fix link plus either a `knowledge/patterns/<name>.md` link or `N/A (one-off)` with a one-line reason. Second recurrence in the same `Area` promotes to a pattern candidate per `knowledge/index.md`.
 
 ## How to log
 
 1. Add a row to `## Open` below.
 2. For longer context, add a `### YYYY-MM-DD — short slug` subsection under `## Details` using the template at the bottom.
-3. When resolved, move the row to `## Resolved` and include a commit, PR, or `knowledge/patterns/<name>.md` link.
+3. When resolved, move the row to `## Resolved` and include a commit, PR, or `knowledge/patterns/<name>.md` link — or `N/A (one-off)` with reason. Flag a second same-area recurrence as a pattern candidate.
 
 ## Open
 
@@ -22,7 +22,7 @@ Add a row to `Open` when docs mislead, behavior surprises, or repeated friction 
 
 ## Resolved
 
-| Date       | Area           | Resolution (commit / pattern link)                                                                                                                                                                        |
+| Date       | Area           | Resolution (commit / pattern link, or N/A + reason)                                                                                                                                                       |
 | ---------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-09-02 | Agent scope    | Replaced blanket unrelated-path avoidance with the safe incidental-fix policy in [AGENTS.md](../AGENTS.md#working-style).                                                                                 |
 | 2026-09-02 | Verification   | Replaced duplicated push/handoff gates and incomplete child-only records with one source-aware `check` run.                                                                                               |

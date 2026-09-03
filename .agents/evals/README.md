@@ -4,7 +4,7 @@ Validate skill/instruction changes against representative tasks before promoting
 
 ## When to use
 
-Proposed skill or persistent-knowledge promotion that would affect routine coding should be checked against 1-2 representative tasks. One-off fixes don't need evals.
+Proposed skill or persistent-knowledge promotion that would affect routine coding should be checked against 1-2 representative tasks. One-off fixes don't need evals. Doc-only slimming, rationale-only reductions, and friction-log entries skip evals — note `evals: skipped (doc-only)` in the proposal evidence.
 
 ## Objective signals
 

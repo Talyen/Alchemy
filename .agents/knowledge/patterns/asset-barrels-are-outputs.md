@@ -15,7 +15,7 @@ Edits directly to `src/lib/game-data/assets.generated.ts`, `src/lib/game-data/ge
 
 - `docs/WORKFLOWS-ASSETS.md` — authored asset workflow, manifest/regeneration pipeline.
 - `docs/ARCHITECTURE.md#boot-and-loading` — `allGameArt` eagerly decoded, no lazy art.
-- `scripts/prepare-assets.mjs`, `sync-assets.mjs`, `sync-gear-art.mjs`, `optimize-assets.mjs` — generation pipeline.
+- `scripts/prepare-assets.mjs`, `sync-generated.mjs`, `optimize-assets.mjs` — generation pipeline.
 - `eslint.config.js` — `ASSET_BARREL_NO_VALUE_IMPORT_REASONS` bans value imports of `@/lib/game-data` / `@/lib/gear` in Playwright-collected files.
 - `scripts/lib/change-routes.mjs` — `assets` route → `assets-check` command.
 - `package.json` scripts — `predev`/`prebuild` run `prepare-assets`; `assets:check` enforces idempotency.
