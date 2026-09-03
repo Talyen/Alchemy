@@ -69,7 +69,7 @@ const EquippedTrinketsSchema = z
   .catch(emptyEquippedTrinkets)
   .transform((value) => value as EquippedTrinkets);
 
-export function resolvePersistedGold(purseGold: number, liveCombatGold: unknown): number {
+function resolvePersistedGold(purseGold: number, liveCombatGold: unknown): number {
   return typeof liveCombatGold === "number" ? liveCombatGold : purseGold;
 }
 
