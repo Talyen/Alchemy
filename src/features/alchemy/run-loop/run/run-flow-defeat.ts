@@ -5,7 +5,6 @@ import {
   finalizeRunEndSession,
 } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { finalizeRunXP } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { MaterialInventory } from "@/lib/homestead/types";
 import { awardRunEndMaterials, clearCombatPresentation, clearCombatState } from "./run-flow-session-helpers";
 import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { ROUTE_SCREENS } from "@/lib/routing";
@@ -40,12 +39,11 @@ export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
     endRunAndShowGameOver();
   }
 
-  function completeRunVictory(displayMaterials: MaterialInventory | null = null, onRenderedScreenCommit?: () => void) {
+  function completeRunVictory(onRenderedScreenCommit?: () => void) {
     clearBattleUi();
     finalizeRunEndSession({
       awardRunEndMaterials,
       finalizeRunXP,
-      displayMaterials,
     });
     deps.actions.navigateTo(ROUTE_SCREENS.RUN_VICTORY, onRenderedScreenCommit);
   }

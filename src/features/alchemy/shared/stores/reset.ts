@@ -2,7 +2,8 @@ import { useSettingsStore } from "./settings-store";
 import { useUiStore } from "./ui-store";
 import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { dispatchRunSessionCommand } from "./run-session-command";
-import { clearPermanentData, clearTransientSession, resetToDefaults } from "./write-port-session";
+import { clearTransientSession } from "./write-port-session";
+import { clearPermanentData, resetToDefaults } from "./write-port-meta";
 import { resetGear } from "./gear-actions";
 import { logError } from "@/lib/error-logger";
 

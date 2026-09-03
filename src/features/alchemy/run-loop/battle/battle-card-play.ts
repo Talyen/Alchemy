@@ -125,7 +125,7 @@ export function createBattleCardPlay(
       const resolution = playBattleCardResolved(bound, card.id, index, PLAYABLE_HAND_OPTIONS);
       setBattleState(draft, resolution.state);
       awardCardXP(draft, card);
-      return { ...resolution, state: withRestingWorldBattleRng(draft, resolution.state) };
+      return { ...resolution, state: withRestingWorldBattleRng(resolution.state) };
     });
     if (!played) {
       if (!options?.silentReject) playUISound("error");
@@ -175,7 +175,7 @@ export function createBattleCardPlay(
       const next = chooseWishCard(bound, cardOrNull?.id ?? null);
       setBattleState(draft, next);
       if (cardOrNull) discoverCardIds(draft, [cardOrNull.id]);
-      return withRestingWorldBattleRng(draft, next);
+      return withRestingWorldBattleRng(next);
     });
     if (!newState) return;
     const sessionNum = ctx.battleSessionRef.current;

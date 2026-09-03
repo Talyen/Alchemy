@@ -203,7 +203,7 @@ describe("run-session transaction coordinator", () => {
       const bound = withDraftWorldBattleRng(draft, draft.battle.battleState);
       const next = { ...bound, playerHealth: Math.max(1, bound.playerHealth - 1) };
       setBattleState(draft, next);
-      return withRestingWorldBattleRng(draft, next);
+      return withRestingWorldBattleRng(next);
     });
 
     expect(() => returned.rng()).toThrow(/withDraftWorldBattleRng/);

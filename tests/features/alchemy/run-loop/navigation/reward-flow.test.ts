@@ -412,43 +412,41 @@ describe("reward flow orchestration", () => {
   });
 
   describe("executeRewardRouteTransition", () => {
-    const materials = emptyInventory();
-
     function makeHandlers() {
       return makeRewardRouteDeps();
     }
 
     it("routes companion rewards back to the rewards screen with the settle hook", () => {
       const handlers = makeHandlers();
-      executeRewardRouteTransition("companion-reward", materials, handlers);
+      executeRewardRouteTransition("companion-reward", handlers);
       expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, handlers.settleClaimSurface);
     });
 
     it("routes labyrinth map rewards to the labyrinth screen", () => {
       const handlers = makeHandlers();
-      executeRewardRouteTransition("labyrinth-map", materials, handlers);
+      executeRewardRouteTransition("labyrinth-map", handlers);
       expect(handlers.labyrinthClearNode).toHaveBeenCalledOnce();
       expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP, handlers.settleClaimSurface);
     });
 
     it("routes wildwood victory through completeRunVictory", () => {
       const handlers = makeHandlers();
-      executeRewardRouteTransition("wildwood-victory", materials, handlers);
-      expect(handlers.completeRunVictory).toHaveBeenCalledWith(materials, handlers.settleClaimSurface);
+      executeRewardRouteTransition("wildwood-victory", handlers);
+      expect(handlers.completeRunVictory).toHaveBeenCalledWith(handlers.settleClaimSurface);
       expect(handlers.navigateTo).not.toHaveBeenCalled();
     });
 
     it("routes act completion without navigation, releasing only the claim", () => {
       const handlers = makeHandlers();
-      executeRewardRouteTransition("act-complete", materials, handlers);
-      expect(handlers.handleActComplete).toHaveBeenCalledWith(materials, handlers.releaseClaim);
+      executeRewardRouteTransition("act-complete", handlers);
+      expect(handlers.handleActComplete).toHaveBeenCalledWith(handlers.releaseClaim);
       expect(handlers.settleClaimSurface).not.toHaveBeenCalled();
       expect(handlers.navigateTo).not.toHaveBeenCalled();
     });
 
     it("routes campaign rewards to destination", () => {
       const handlers = makeHandlers();
-      executeRewardRouteTransition("destination", materials, handlers);
+      executeRewardRouteTransition("destination", handlers);
       expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, handlers.settleClaimSurface);
     });
   });

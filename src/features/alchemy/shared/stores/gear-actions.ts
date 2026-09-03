@@ -24,7 +24,7 @@ import type {
 import type { CharacterId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Draft } from "immer";
-import { initialState } from "./gear-store-initial-state";
+import { createInitialGearState } from "./gear-store-initial-state";
 import type { GearStateFields } from "./gear-store-types";
 import { isTrinketId } from "@/lib/game-data";
 
@@ -161,5 +161,5 @@ export function addGearCurrencies(
 }
 
 export function resetGear(gear: Draft<GearStateFields>): void {
-  Object.assign(gear, initialState, { craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES } });
+  Object.assign(gear, createInitialGearState());
 }

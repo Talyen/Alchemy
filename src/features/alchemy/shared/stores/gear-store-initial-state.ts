@@ -4,11 +4,14 @@ import {
   createEmptyGearLoadouts,
   EMPTY_CRAFTING_CURRENCIES,
 } from "@/lib/gear";
+import type { GearStateFields } from "./gear-store-types";
 
-export const initialState = {
-  inventories: createEmptyGearInventories(),
-  loadouts: createEmptyGearLoadouts(),
-  ownedTrinketIds: [],
-  equippedTrinkets: createEmptyEquippedTrinkets(),
-  craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
-};
+export function createInitialGearState(): GearStateFields {
+  return {
+    inventories: createEmptyGearInventories(),
+    loadouts: createEmptyGearLoadouts(),
+    ownedTrinketIds: [],
+    equippedTrinkets: createEmptyEquippedTrinkets(),
+    craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
+  };
+}

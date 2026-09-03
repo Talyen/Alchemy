@@ -461,7 +461,7 @@ describe("session facade API", () => {
     expect(snapshotRun().mysteryVisit?.pendingRemoval).toBe(true);
   });
 
-  it("rolls a mystery event for a legacy mystery screen with no visit", () => {
+  it("returns a legacy mystery screen with no visit to the destination map", () => {
     const activeRun: ActiveRunData = {
       ...snapshotRun(),
       currentScreen: "mystery",
@@ -471,8 +471,8 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    expect(readActiveRunScreen()).toBe("mystery");
-    expect(readRunSession().mysteryEvent).not.toBeNull();
+    expect(readActiveRunScreen()).toBe("destination");
+    expect(readRunSession().mysteryEvent).toBeNull();
   });
 
   it("repairs unresolved overgrown-temple random trinkets on restore", () => {

@@ -18,7 +18,6 @@ import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-
 import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import type { CompleteRunVictory, RunFlowHandlerDeps } from "./run-flow-handler-deps";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
@@ -73,7 +72,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
     });
   }
 
-  function handleActComplete(displayMaterials?: MaterialInventory, onRenderedScreenCommit?: () => void) {
+  function handleActComplete(onRenderedScreenCommit?: () => void) {
     dispatchRunSessionCommand(
       (draft) => {
         setHasActiveBattle(draft, false);
@@ -101,7 +100,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, { completeRu
         afterCommit: (runComplete) => {
           clearBattlePresentationUi();
           if (runComplete) {
-            completeRunVictory(displayMaterials ?? null, onRenderedScreenCommit);
+            completeRunVictory(onRenderedScreenCommit);
           } else {
             prepareNextDestination(0, onRenderedScreenCommit);
           }

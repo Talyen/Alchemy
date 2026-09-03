@@ -153,31 +153,3 @@ export function clearMysteryVisitState(draft: GameplayDraft): void {
   setMysteryGrantedGearInstances(draft, []);
   setMysteryChosenCardId(draft, null);
 }
-
-export {
-  addMaterials,
-  awardMaterialsDuringRun,
-  bondCompanion,
-  completeResearch,
-  constructBuilding,
-  plantFarm,
-  setMaterials,
-} from "./write-port-homestead";
-
-export {
-  applyTalentState,
-  clearPermanentData,
-  finalizeRunXP,
-  handleCollectionTabChange,
-  resetToDefaults,
-  resetUnlockedTalents,
-  setCollectionPage,
-  setCompletedDifficulties,
-  setDiscoveredCardIds,
-  setDiscoveredTrinketIds,
-  setDiscoveredUniqueIds,
-  setEncounteredEnemyIds,
-  setFinishedRunCharacters,
-  unlockAllTalents,
-  unlockTalent,
-} from "./write-port-meta";

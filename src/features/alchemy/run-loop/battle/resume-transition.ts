@@ -38,7 +38,6 @@ export function resumePendingBattleTransition(
   if (pending.kind === "legacy-enemy-turn") {
     const recovered = dispatchRunSessionCommand((draft) => {
       const next = withRestingWorldBattleRng(
-        draft,
         recoverLegacyEnemyPhase(withDraftWorldBattleRng(draft, draft.battle.battleState)),
       );
       commitBattleTransition(draft, next, null);

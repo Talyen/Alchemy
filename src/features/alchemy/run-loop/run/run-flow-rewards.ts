@@ -16,14 +16,13 @@ import {
 import type { FinalizeRewardResult } from "../navigation/reward-flow-types";
 import { applyAlchemistPotion, applyRewardSelection } from "./run-destination-handlers";
 import type { CompleteRunVictory, HandleActComplete, RunFlowHandlerDeps } from "./run-flow-handler-deps";
-import type { MaterialInventory } from "@/lib/homestead/types";
 import { REWARD_ROUTES, ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
 export interface RewardRouteDeps {
   navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
-  completeRunVictory: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
-  handleActComplete: (materials: MaterialInventory, onRenderedScreenCommit?: () => void) => void;
+  completeRunVictory: (onRenderedScreenCommit?: () => void) => void;
+  handleActComplete: (onRenderedScreenCommit?: () => void) => void;
   labyrinthClearNode: () => void;
 
   settleClaimSurface: () => void;
@@ -31,25 +30,21 @@ export interface RewardRouteDeps {
   releaseClaim: () => void;
 }
 
-export function executeRewardRouteTransition(
-  route: FinalizeRewardResult["route"],
-  materials: MaterialInventory,
-  deps: RewardRouteDeps,
-) {
+export function executeRewardRouteTransition(route: FinalizeRewardResult["route"], deps: RewardRouteDeps) {
   switch (route) {
     case REWARD_ROUTES.COMPANION_REWARD:
       deps.navigateTo(ROUTE_SCREENS.REWARDS, deps.settleClaimSurface);
       break;
     case REWARD_ROUTES.LABYRINTH_VICTORY:
     case REWARD_ROUTES.WILDWOOD_VICTORY:
-      deps.completeRunVictory(materials, deps.settleClaimSurface);
+      deps.completeRunVictory(deps.settleClaimSurface);
       break;
     case REWARD_ROUTES.LABYRINTH_MAP:
       deps.labyrinthClearNode();
       deps.navigateTo(ROUTE_SCREENS.LABYRINTH_MAP, deps.settleClaimSurface);
       break;
     case REWARD_ROUTES.ACT_COMPLETE:
-      deps.handleActComplete(materials, deps.releaseClaim);
+      deps.handleActComplete(deps.releaseClaim);
       break;
     case REWARD_ROUTES.DESTINATION:
       deps.navigateTo(ROUTE_SCREENS.DESTINATION, deps.settleClaimSurface);
@@ -134,7 +129,7 @@ export function createRewardHandlers(
             deps.actions.wildwoodRewardComplete(settleClaimSurface);
             return;
           }
-          executeRewardRouteTransition(result.route, result.materials, {
+          executeRewardRouteTransition(result.route, {
             navigateTo: deps.actions.navigateTo,
             completeRunVictory,
             handleActComplete,

@@ -30,6 +30,7 @@ import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import {
   readActiveRun,
   readActiveRunScreen,
+  readRunInitialized,
   readRunProfile,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
@@ -405,6 +406,7 @@ describe("reset", () => {
     expect(readActiveRun().runTalentXP).toEqual({});
     expect(readRunProfile().gold).toBe(100);
     expect(readActiveRun().runPlayerHealth).toBeGreaterThan(0);
+    expect(readRunInitialized()).toBe(false);
   });
 });
 

@@ -98,6 +98,10 @@ function createEmptyActiveRunCollections(): Pick<
   };
 }
 
+function createFreshRunRngState(): RunRngState {
+  return createRunRngState(Math.random);
+}
+
 function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgressFields {
   return {
     characterId,
@@ -111,7 +115,7 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
     ...createEmptyActiveRunCollections(),
     selectedDifficulty: null,
     contentSystemType: "campaign",
-    rng: createRunRngState(Math.random),
+    rng: createFreshRunRngState(),
   };
 }
 
@@ -132,7 +136,7 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
     encounteredRunEnemyIds: [...activeRun.encounteredRunEnemyIds],
     selectedDifficulty: activeRun.selectedDifficulty,
     contentSystemType: activeRun.contentSystemType,
-    rng: activeRun.rng ?? createRunRngState(Math.random),
+    rng: activeRun.rng ?? createFreshRunRngState(),
     runTalentXP: activeRun.runTalentXP ?? empty.runTalentXP,
     runMaterialsEarned: activeRun.runMaterialsEarned ?? empty.runMaterialsEarned,
     runObtainedItems: [...(activeRun.runObtainedItems ?? empty.runObtainedItems)],

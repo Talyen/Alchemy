@@ -127,28 +127,34 @@ export function encodePersistedShops(
   }
 }
 
-function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields {
-  return {
-    characterId: run.characterId,
-    runDeck: run.runDeck,
-    runPlayerHealth: run.runPlayerHealth,
-    runMaxHealth: run.runMaxHealth,
-    runMetaMaxHealth: run.runMetaMaxHealth,
-    roomsEncountered: run.roomsEncountered,
-    currentAct: run.currentAct,
-    destinationIndexInAct: run.destinationIndexInAct,
-    completedDestinations: run.completedDestinations,
-    lastOfferedDestinations: run.lastOfferedDestinations,
-    destinationRoundsSinceOffered: run.destinationRoundsSinceOffered,
-    runBoons: run.runBoons,
-    encounteredRunEnemyIds: run.encounteredRunEnemyIds,
-    selectedDifficulty: run.selectedDifficulty,
-    contentSystemType: run.contentSystemType,
-    rng: run.rng,
-    runTalentXP: run.runTalentXP,
-    runMaterialsEarned: run.runMaterialsEarned,
-    runObtainedItems: run.runObtainedItems,
-  };
+const ACTIVE_RUN_PROGRESS_KEYS = [
+  "characterId",
+  "runDeck",
+  "runPlayerHealth",
+  "runMaxHealth",
+  "runMetaMaxHealth",
+  "roomsEncountered",
+  "currentAct",
+  "destinationIndexInAct",
+  "completedDestinations",
+  "lastOfferedDestinations",
+  "destinationRoundsSinceOffered",
+  "runBoons",
+  "encounteredRunEnemyIds",
+  "selectedDifficulty",
+  "contentSystemType",
+  "rng",
+  "runTalentXP",
+  "runMaterialsEarned",
+  "runObtainedItems",
+] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
+
+type MissingProgressKey = Exclude<keyof ActiveRunProgressFields, (typeof ACTIVE_RUN_PROGRESS_KEYS)[number]>;
+
+function pickActiveRunProgress(run: RunSession["run"] & Record<MissingProgressKey, never>): ActiveRunProgressFields {
+  return Object.fromEntries(
+    ACTIVE_RUN_PROGRESS_KEYS.map((key) => [key, run[key]]),
+  ) as unknown as ActiveRunProgressFields;
 }
 
 interface EncodeResumeFields {
@@ -162,13 +168,17 @@ interface EncodeResumeFields {
   corruptionResult: CorruptionResult | null;
 }
 
-function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
-  const pending = activeRun.activeCombat?.pendingBattleTransition ?? null;
-  if (pending) return pending;
+function synthesizeLegacyEnemyTurnTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
   if (activeRun.activeCombat?.battleState.turnPhase === "enemy") {
     return { kind: "legacy-enemy-turn" };
   }
   return null;
+}
+
+function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
+  const pending = activeRun.activeCombat?.pendingBattleTransition ?? null;
+  if (pending) return pending;
+  return synthesizeLegacyEnemyTurnTransition(activeRun);
 }
 
 function encodeScreenGatedFields(

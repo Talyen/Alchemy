@@ -18,6 +18,7 @@ Add a row to `Open` when docs mislead, behavior surprises, or repeated friction 
 | 2026-09-03 | Reads/tests    | Early file reads went stale as the dirty tree shifted mid-session (`next-archery-free`, `thorns` missing); one transient parity failure cleared on re-run. Re-read touched files and re-run red tests before concluding.                                                |
 | 2026-09-03 | Parallel edits | Concurrent card-library edits duplicated a card id (`stargaze` in core + defense), failing the whole suite at import via the library guard; also overwrote a doc sentence mid-edit. Asked user, resolved per answer; re-verify shared files after any parallel session. |
 | 2026-09-03 | Save docs      | MIGRATIONS.md described tombstone→hydrate→normalize and dropping of all unknown card IDs; code was migrate→validate→normalize→hydrate→restore and stripped only 2 tombstoned IDs. Fixed in-tree (strict catalog-liveness cleanup + layer-order rewrite).                |
+| 2026-09-03 | Commands       | `dispatchRunSessionCommand` fires `afterCommit` even when Immer returns the base (no-op assignment); idempotent commands rely on it for navigation. Gating `afterCommit` on change would silently drop transitions. Left as-is.                                         |
 
 ## Resolved
 

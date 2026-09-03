@@ -97,7 +97,7 @@ export function resetProgress(draft: GameplayDraft): void {
     ...createInitialActiveRunFields(null, draft.run.activeRun.characterId),
     runTalentXP: {},
   };
-  draft.run.initialized = true;
+  draft.run.initialized = false;
 }
 
 export function nextRunRandom(draft: GameplayDraft, stream: RunRngStream): number {
@@ -211,20 +211,14 @@ function rebindBattleWorldRng(battleState: BattleState): BattleState {
   return { ...battleState, rng: restingWorldRng() };
 }
 
-export function withRestingWorldBattleRng(battleState: BattleState): BattleState;
-export function withRestingWorldBattleRng(draft: GameplayDraft, battleState: BattleState): BattleState;
-export function withRestingWorldBattleRng(...args: [BattleState] | [GameplayDraft, BattleState]): BattleState {
-  const battleState = args.length === 1 ? args[0] : args[1];
+export function withRestingWorldBattleRng(battleState: BattleState): BattleState {
   return rebindBattleWorldRng(battleState);
 }
 
-export function withRestingEndPlayerTurnResolution(
-  _draft: GameplayDraft,
-  result: EndPlayerTurnResolution,
-): EndPlayerTurnResolution {
-  const state = withRestingWorldBattleRng(_draft, result.state);
+export function withRestingEndPlayerTurnResolution(result: EndPlayerTurnResolution): EndPlayerTurnResolution {
+  const state = withRestingWorldBattleRng(result.state);
   const afterAttack = result.afterAttackState
-    ? { afterAttackState: withRestingWorldBattleRng(_draft, result.afterAttackState) }
+    ? { afterAttackState: withRestingWorldBattleRng(result.afterAttackState) }
     : {};
   if (result.kind === "haste") {
     return { ...result, state, ...afterAttack };
@@ -232,7 +226,7 @@ export function withRestingEndPlayerTurnResolution(
   return {
     ...result,
     state,
-    enemyTurnStartState: withRestingWorldBattleRng(_draft, result.enemyTurnStartState),
+    enemyTurnStartState: withRestingWorldBattleRng(result.enemyTurnStartState),
     ...afterAttack,
   };
 }

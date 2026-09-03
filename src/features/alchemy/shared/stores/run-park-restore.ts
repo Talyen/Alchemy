@@ -3,11 +3,7 @@ import type { ContentSystemId } from "@/lib/content-systems/types";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { repairPersistedTrinketManifest } from "@/lib/validation";
-import {
-  eventHasUnresolvedRandomTrinket,
-  pickResolvedMysteryEvent,
-  repairUnresolvedMysteryTrinkets,
-} from "@/lib/mystery";
+import { eventHasUnresolvedRandomTrinket, repairUnresolvedMysteryTrinkets } from "@/lib/mystery";
 import type { GameplayDraft } from "./run-session-command";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "./run-resume-codec";
 import { inferActiveRunScreen } from "./encode-interrupted-flow";
@@ -93,17 +89,8 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
       rebindLiveRunMeta(draft);
       return;
     }
-    const rng = createDraftRunRandomSource(draft, "events");
-    setMysteryEvent(
-      draft,
-      pickResolvedMysteryEvent(
-        rng,
-        combineTrinketEffectIds(
-          draft.run.activeRun.runBoons,
-          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
-        ),
-      ),
-    );
+    clearMysteryVisitState(draft);
+    setScreen(draft, ROUTE_SCREENS.DESTINATION);
   }
   rebindLiveRunMeta(draft);
 }

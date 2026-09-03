@@ -3,6 +3,7 @@ import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { COMPANION_BOND_TIERS } from "@/lib/homestead/companions";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { createTierLookup } from "@/lib/homestead/tiers";
+import { logError } from "@/lib/error-logger";
 import { defaultCompanionBondLevels } from "@/lib/game-data";
 import { tryUpgradeTierItem } from "@/lib/homestead/upgrades";
 import type { CompanionId } from "@/lib/game-data";
@@ -19,6 +20,8 @@ function recomputeEffects(profile: PermanentProgressFields): void {
     Object.entries(profile.bondedCompanions).filter(([key]) => key in defaultCompanionBondLevels),
   ) as Record<CompanionId, number>;
   if (Object.keys(pruned).length !== Object.keys(profile.bondedCompanions).length) {
+    const removed = Object.keys(profile.bondedCompanions).filter((key) => !(key in defaultCompanionBondLevels));
+    logError("Removed companions missing from catalog", "other", { removed });
     profile.bondedCompanions = pruned;
   }
   profile.effects = computeHomesteadEffects(

@@ -13,7 +13,7 @@ import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-com
 import { initializeActiveBattle, setRunEndItems, setRunEndLabyrinthFloor } from "./run-session-write-port";
 import { cloneRunObtainedItem, resetNavigation, resetProgress, setRunPlayerHealth } from "./write-port-run";
 import { clearTransientSession, setHasActiveRun } from "./write-port-session";
-import { applyTalentState, setFinishedRunCharacters } from "./write-port-session";
+import { applyTalentState, setFinishedRunCharacters } from "./write-port-meta";
 import { applyRestoreRunToDraft, clearModeSlotInDraft } from "./run-park-restore";
 import { touchRunRecency, type ParkedRunsMap } from "./parked-runs";
 import type { ContentSystemId } from "@/lib/content-systems/types";
@@ -95,9 +95,8 @@ export function flushSaveAfterGearMutation(activeRun: ActiveRunData | null): voi
 
 function finalizeRunEndSessionState(
   options: {
-    awardRunEndMaterials: (draft: GameplayDraft, displayMaterials?: MaterialInventory | null) => MaterialInventory;
+    awardRunEndMaterials: (draft: GameplayDraft) => MaterialInventory;
     finalizeRunXP: (draft: GameplayDraft) => void;
-    displayMaterials?: MaterialInventory | null;
   },
   draft: GameplayDraft,
 ): MaterialInventory {
@@ -113,7 +112,7 @@ function finalizeRunEndSessionState(
     return [...prev, activeChar];
   });
 
-  const materials = options.awardRunEndMaterials(draft, options.displayMaterials);
+  const materials = options.awardRunEndMaterials(draft);
   options.finalizeRunXP(draft);
   setRunEndItems(draft, draft.run.activeRun.runObtainedItems.map(cloneRunObtainedItem));
   if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {
@@ -127,9 +126,8 @@ function finalizeRunEndSessionState(
 }
 
 export function finalizeRunEndSession(options: {
-  awardRunEndMaterials: (draft: GameplayDraft, displayMaterials?: MaterialInventory | null) => MaterialInventory;
+  awardRunEndMaterials: (draft: GameplayDraft) => MaterialInventory;
   finalizeRunXP: (draft: GameplayDraft) => void;
-  displayMaterials?: MaterialInventory | null;
 }): MaterialInventory {
   return dispatchRunSessionCommand((draft) => finalizeRunEndSessionState(options, draft), {
     afterCommit: () => {
@@ -139,7 +137,7 @@ export function finalizeRunEndSession(options: {
 }
 
 export function applyRunDefeatTeardown(options: {
-  awardRunEndMaterials: (draft: GameplayDraft, displayMaterials?: MaterialInventory | null) => MaterialInventory;
+  awardRunEndMaterials: (draft: GameplayDraft) => MaterialInventory;
   finalizeRunXP: (draft: GameplayDraft) => void;
   clearCombatState: (draft: GameplayDraft) => void;
   clearCombatPresentation?: () => void;

@@ -216,6 +216,6 @@ describe("progress write-port", () => {
     expect(reset.characterId).toBe("rogue");
     expect(reset.runTalentXP).toEqual({});
     expect(reset.roomsEncountered).toBe(0);
-    expect(reset.initialized).toBe(true);
+    expect(reset.initialized).toBe(false);
   });
 });

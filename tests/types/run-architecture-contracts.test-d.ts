@@ -7,13 +7,17 @@ import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 
 type WritePort = typeof import("@/features/alchemy/shared/stores/run-session-write-port");
-type NonDraftFirstWrite = {
-  [Key in keyof WritePort]: WritePort[Key] extends (...args: infer Args) => unknown
-    ? Args extends [GameplayDraft, ...unknown[]]
-      ? never
-      : Key
-    : never;
-}[keyof WritePort];
+type PureBattleRngHelper = "withRestingWorldBattleRng" | "withRestingEndPlayerTurnResolution";
+type NonDraftFirstWrite = Exclude<
+  {
+    [Key in keyof WritePort]: WritePort[Key] extends (...args: infer Args) => unknown
+      ? Args extends [GameplayDraft, ...unknown[]]
+        ? never
+        : Key
+      : never;
+  }[keyof WritePort],
+  PureBattleRngHelper
+>;
 
 describe("run architecture type contracts", () => {
   it("keeps every gameplay write-port mutation draft-first", () => {

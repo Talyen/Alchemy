@@ -91,7 +91,7 @@ export function resolveEndTurn(
       } else {
         persistEnemyTurnTransition(draft, next, currentState);
       }
-      return withRestingEndPlayerTurnResolution(draft, next);
+      return withRestingEndPlayerTurnResolution(next);
     });
 
     switch (result.kind) {

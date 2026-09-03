@@ -12,7 +12,7 @@ import {
   setDiscoveredUniqueIds as setDiscoveredUniqueIdsInDraft,
   setEncounteredEnemyIds as setEncounteredEnemyIdsInDraft,
   setFinishedRunCharacters as setFinishedRunCharactersInDraft,
-} from "./write-port-session";
+} from "./write-port-meta";
 
 export type { ProfileSaveFields } from "./profile-store-types";
 

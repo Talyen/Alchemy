@@ -8,6 +8,7 @@ import {
   type GearInstance,
 } from "@/lib/gear";
 import { mutateGearForTest, resetGearForTest, resetProfileForTest } from "../../../../helpers/gameplay-store-test";
+import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-store-initial-state";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import {
@@ -24,6 +25,16 @@ function knightInventories(...items: GearInstance[]) {
 describe("gear-store", () => {
   const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
   const armor: GearInstance = { instanceId: "armor-1", definitionId: "leather-armor-basic", affixes: [] };
+
+  it("creates fresh state references per call", () => {
+    const first = createInitialGearState();
+    const second = createInitialGearState();
+    expect(first.inventories).not.toBe(second.inventories);
+    expect(first.loadouts).not.toBe(second.loadouts);
+    expect(first.equippedTrinkets).not.toBe(second.equippedTrinkets);
+    expect(first.craftingCurrencies).not.toBe(second.craftingCurrencies);
+    expect(first.ownedTrinketIds).not.toBe(second.ownedTrinketIds);
+  });
 
   it("initializes inventory and loadouts from save data", () => {
     const loadouts = createEmptyGearLoadouts();
