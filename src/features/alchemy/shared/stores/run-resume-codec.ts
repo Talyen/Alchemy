@@ -27,6 +27,7 @@ import {
   type TrinketShopState,
 } from "@/lib/active-run-session";
 import type { CorruptionResult } from "@/lib/corruption";
+import { logError } from "@/lib/error-logger";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
@@ -122,39 +123,34 @@ export function encodePersistedShops(
       return EMPTY_PERSISTED_SHOPS;
     default: {
       const _exhaustiveCheck: never = currentScreen;
-      throw new Error(`encodePersistedShops: unhandled screen ${String(_exhaustiveCheck)}`);
+      logError(`encodePersistedShops: unhandled screen ${String(_exhaustiveCheck)}`, "storage");
+      return EMPTY_PERSISTED_SHOPS;
     }
   }
 }
 
-const ACTIVE_RUN_PROGRESS_KEYS = [
-  "characterId",
-  "runDeck",
-  "runPlayerHealth",
-  "runMaxHealth",
-  "runMetaMaxHealth",
-  "roomsEncountered",
-  "currentAct",
-  "destinationIndexInAct",
-  "completedDestinations",
-  "lastOfferedDestinations",
-  "destinationRoundsSinceOffered",
-  "runBoons",
-  "encounteredRunEnemyIds",
-  "selectedDifficulty",
-  "contentSystemType",
-  "rng",
-  "runTalentXP",
-  "runMaterialsEarned",
-  "runObtainedItems",
-] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
-
-type MissingProgressKey = Exclude<keyof ActiveRunProgressFields, (typeof ACTIVE_RUN_PROGRESS_KEYS)[number]>;
-
-function pickActiveRunProgress(run: RunSession["run"] & Record<MissingProgressKey, never>): ActiveRunProgressFields {
-  return Object.fromEntries(
-    ACTIVE_RUN_PROGRESS_KEYS.map((key) => [key, run[key]]),
-  ) as unknown as ActiveRunProgressFields;
+function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields {
+  return {
+    characterId: run.characterId,
+    runDeck: run.runDeck,
+    runPlayerHealth: run.runPlayerHealth,
+    runMaxHealth: run.runMaxHealth,
+    runMetaMaxHealth: run.runMetaMaxHealth,
+    roomsEncountered: run.roomsEncountered,
+    currentAct: run.currentAct,
+    destinationIndexInAct: run.destinationIndexInAct,
+    completedDestinations: run.completedDestinations,
+    lastOfferedDestinations: run.lastOfferedDestinations,
+    destinationRoundsSinceOffered: run.destinationRoundsSinceOffered,
+    runBoons: run.runBoons,
+    encounteredRunEnemyIds: run.encounteredRunEnemyIds,
+    selectedDifficulty: run.selectedDifficulty,
+    contentSystemType: run.contentSystemType,
+    rng: run.rng,
+    runTalentXP: run.runTalentXP,
+    runMaterialsEarned: run.runMaterialsEarned,
+    runObtainedItems: run.runObtainedItems,
+  };
 }
 
 interface EncodeResumeFields {

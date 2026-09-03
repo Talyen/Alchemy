@@ -535,4 +535,15 @@ describe("finalizeRunEndSession", () => {
     }
     expect(readRunSession().hasActiveRun).toBe(false);
   });
+
+  it("keeps run progress for the recap screens until teardown", () => {
+    setRunSession({ hasActiveRun: true });
+    setRunProgress({ runBoons: ["test-boon"], roomsEncountered: 4 });
+
+    finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP });
+
+    expect(readRunSession().hasActiveRun).toBe(false);
+    expect(readActiveRun().runBoons).toEqual(["test-boon"]);
+    expect(readActiveRun().roomsEncountered).toBe(4);
+  });
 });

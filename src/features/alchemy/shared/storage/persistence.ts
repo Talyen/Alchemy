@@ -13,7 +13,7 @@ import type { GearSaveFields } from "@/features/alchemy/shared/stores/gear-store
 import {
   runProfilePersistenceCodec,
   type RunProfileSaveFields,
-} from "@/features/alchemy/shared/stores/run-save-readers";
+} from "@/features/alchemy/shared/stores/run-profile-codec";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { SaveData } from "./types";

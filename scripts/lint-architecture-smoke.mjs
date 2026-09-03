@@ -159,7 +159,7 @@ export async function main() {
   );
 
   const sharedUiImports = await calculateImports("src/features/alchemy/shared/ui/game-menu.tsx");
-  assertImportGroup(sharedUiImports, "battle-store", "shared UI");
+  assertImportGroup(sharedUiImports, "run-session-write-port", "shared UI");
   assertImportGroup(sharedUiImports, "@/lib/battle/*", "shared UI");
   assertImportGroup(sharedUiImports, "write-port-run", "shared UI");
   assertImportGroup(sharedUiImports, "assets/optimized", "shared UI");

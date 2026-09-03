@@ -8,10 +8,10 @@ import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { mutateGearForTest, resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import {
   handleCollectionTabChange,
   setDiscoveredCardIds,
+  setHasActiveRun,
   setMaterials as setRunProfileMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";

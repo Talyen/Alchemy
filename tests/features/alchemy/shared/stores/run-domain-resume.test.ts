@@ -18,11 +18,11 @@ import {
   releaseRewardClaim as mutateReleaseRewardClaim,
   setCompanionRewardCards as mutateCompanionRewardCards,
   setHasActiveBattle as mutateHasActiveBattle,
+  setHasActiveRun as mutateHasActiveRun,
   setRewardState as mutateRewardState,
   setScreen as mutateSetScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setHasActiveRun as mutateHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import { resetProgress as mutateResetProgress } from "@/features/alchemy/shared/stores/write-port-run";
 import {
   readActiveRun,

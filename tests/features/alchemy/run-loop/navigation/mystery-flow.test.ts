@@ -13,7 +13,7 @@ import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
-import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 function makeContext(rng: () => number = () => 0.5): MysteryEffectContext {
   let context!: MysteryEffectContext;

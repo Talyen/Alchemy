@@ -5,11 +5,11 @@ import { mutateGearForTest, resetGearForTest } from "../../../../../helpers/game
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setHasActiveBattle,
+  setHasActiveRun,
   setMaterials,
   setRunMaxHealth,
   setRunPlayerHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import { initializeActiveRun } from "@/features/alchemy/shared/stores/write-port-run";
 import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";

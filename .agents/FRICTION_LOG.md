@@ -22,13 +22,14 @@ Add a row to `Open` when docs mislead, behavior surprises, or repeated friction 
 
 ## Resolved
 
-| Date       | Area           | Resolution (commit / pattern link, or N/A + reason)                                                                                                                                                       |
-| ---------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-02 | Agent scope    | Replaced blanket unrelated-path avoidance with the safe incidental-fix policy in [AGENTS.md](../AGENTS.md#working-style).                                                                                 |
-| 2026-09-02 | Verification   | Replaced duplicated push/handoff gates and incomplete child-only records with one source-aware `check` run.                                                                                               |
-| 2026-09-03 | Knip entries   | Explicit `src/main.tsx` / `src/startup.ts` entries flagged redundant under `--treat-config-hints-as-errors`; Vite/HTML plugins auto-infer them — documented in `knip.config.js`, keep only `src/App.tsx`. |
-| 2026-09-02 | Script budgets | `ROUTE_CONTEXT_BUDGETS` assets total went stale (test red on main); budgets now enforced by `context-hotspots --check`.                                                                                   |
-|            |                |                                                                                                                                                                                                           |
+| Date       | Area           | Resolution (commit / pattern link, or N/A + reason)                                                                                                                                                                                                      |
+| ---------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-02 | Agent scope    | Replaced blanket unrelated-path avoidance with the safe incidental-fix policy in [AGENTS.md](../AGENTS.md#working-style).                                                                                                                                |
+| 2026-09-02 | Verification   | Replaced duplicated push/handoff gates and incomplete child-only records with one source-aware `check` run.                                                                                                                                              |
+| 2026-09-03 | Knip entries   | Explicit `src/main.tsx` / `src/startup.ts` entries flagged redundant under `--treat-config-hints-as-errors`; Vite/HTML plugins auto-infer them — documented in `knip.config.js`, keep only `src/App.tsx`.                                                |
+| 2026-09-02 | Script budgets | `ROUTE_CONTEXT_BUDGETS` assets total went stale (test red on main); budgets now enforced by `context-hotspots --check`.                                                                                                                                  |
+| 2026-09-03 | Lint guards    | Dead ban entries (`battle-store`, `run-domain-store`) could not be removed from `eslint/fragments.js` because `lint-architecture-smoke` asserted their presence; smoke assertion now targets live `run-session-write-port` (this commit), N/A (one-off). |
+|            |                |                                                                                                                                                                                                                                                          |
 
 ## Details
 

@@ -25,9 +25,9 @@ function setDraftField<T extends object, K extends keyof T>(
   draft[field] = typeof action === "function" ? (action as (prev: T[K]) => T[K])(draft[field]) : action;
 }
 
-export function createDraftFieldSetter<T extends object, Draft>(
-  getTarget: (draft: Draft) => T,
-): <K extends keyof T>(field: K) => (draft: Draft, action: T[K] | ((prev: T[K]) => T[K])) => void {
+export function createDraftFieldSetter<T extends object, TDraft>(
+  getTarget: (draft: TDraft) => T,
+): <K extends keyof T>(field: K) => (draft: TDraft, action: T[K] | ((prev: T[K]) => T[K])) => void {
   return (field) => (draft, action) => setDraftField(getTarget(draft), field, action);
 }
 

@@ -4,8 +4,7 @@ import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storag
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
+import { setHasActiveRun, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetAllTestStores } from "../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../helpers/run-domain-store-test";
 

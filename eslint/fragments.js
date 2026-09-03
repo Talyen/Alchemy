@@ -200,10 +200,6 @@ export const SCREENS_NO_ORCHESTRATION = [
     ],
     message: "Screens must not import run orchestration. Pass data via controller props.",
   },
-  {
-    group: ["@/features/alchemy/shared/stores/run-domain-store"],
-    message: "Screens must not mutate session state directly. Use controller callbacks.",
-  },
 ];
 
 /** @type {ImportPattern[]} */
@@ -238,14 +234,10 @@ export const RUN_LOOP_NO_RUN_SETUP = [
 export const UI_NO_SESSION_STORES = [
   {
     group: [
-      "**/stores/run-session-read",
       "**/stores/run-session-*",
       "**/stores/run-reads",
-      "@/features/alchemy/shared/stores/run-domain-store",
-      "@/features/alchemy/shared/stores/battle-store",
       "@/features/alchemy/shared/stores/run-session-read-port",
       "@/features/alchemy/shared/stores/run-session-write-port",
-      "@/features/alchemy/shared/stores/run-session-react-ports",
       "@/features/alchemy/shared/stores/run-reads",
       "@/features/alchemy/shared/stores/gameplay-state-store",
     ],

@@ -11,6 +11,13 @@ vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
 import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import {
+  readActiveRun,
+  readActiveRunScreen,
+  readBattle,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-reads";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
@@ -18,6 +25,7 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { addMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+import { setHasActiveBattle, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetProfileForTest } from "../../../../helpers/gameplay-store-test";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 
@@ -52,6 +60,20 @@ describe("clearAllPersistentGameData", () => {
     expect(readRunProfile().unlockedTalents).toEqual({});
     expect(readProfileStore().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
     expect(readProfileStore().discoveredCardIds).not.toContain("card-a");
+  });
+
+  it("tears down the live run, session, and battle alongside the wipe", async () => {
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveRun(draft, true);
+      setHasActiveBattle(draft, true);
+    });
+
+    await expect(clearAllPersistentGameData()).resolves.toBe(true);
+
+    expect(readRunSession().hasActiveRun).toBe(false);
+    expect(readBattle().hasActiveBattle).toBe(false);
+    expect(readActiveRun().roomsEncountered).toBe(0);
+    expect(readActiveRunScreen()).toBe(ROUTE_SCREENS.MENU);
   });
 
   it("leaves memory intact when the disk wipe fails", async () => {

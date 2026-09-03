@@ -26,10 +26,10 @@ import {
 import {
   clearPendingTransitionResumeRequired,
   setDisplayOverrides,
+  setHasActiveRun,
   setSyncedBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { nextRunRandom, resetProgress } from "@/features/alchemy/shared/stores/write-port-run";
-import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import {
   readActiveRun,
   readActiveRunScreen,

@@ -82,6 +82,7 @@ export {
   setCompanionRewardCards,
   setCorruptionResult,
   setEquipmentShopState,
+  setHasActiveRun,
   setLabyrinthMap,
   setMysteryCardChoices,
   setMysteryChosenCardId,

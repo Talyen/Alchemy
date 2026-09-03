@@ -14,11 +14,11 @@ import {
   createDraftRunRandomSource,
   setBattleState,
   setHasActiveBattle,
+  setHasActiveRun,
   setGold,
   withDraftWorldBattleRng,
   withRestingWorldBattleRng,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import {
   setDiscoveredCardIds,
   setMaterials as setRunProfileMaterials,

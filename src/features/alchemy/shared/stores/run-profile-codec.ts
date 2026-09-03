@@ -4,6 +4,7 @@ import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/ho
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { pruneUnknownCompanions } from "@/features/alchemy/shared/stores/homestead-actions";
 import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
+import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
 import { readGameplayState } from "./gameplay-state-store";
 
@@ -58,5 +59,6 @@ export const runProfilePersistenceCodec: GameplayPersistenceCodec<RunProfileSave
         prunedCompanions,
       ),
     };
+    rebindLiveRunMeta(draft);
   },
 };

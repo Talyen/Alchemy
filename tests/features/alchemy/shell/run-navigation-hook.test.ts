@@ -7,8 +7,7 @@ import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/
 import { useRunFlowEngine } from "@/features/alchemy/shell/use-run-flow-engine";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
+import { setHasActiveBattle, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeTestCard } from "../../../fixtures/battle";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
 

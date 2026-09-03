@@ -76,26 +76,23 @@ export function readHasActiveRun(): boolean {
 export function readHasActiveBattle(): boolean {
   return readGameplayState().battle.hasActiveBattle;
 }
+function cloneParkedRun(run: ActiveRunData): ActiveRunData {
+  const combat = (run as unknown as { activeCombat?: { battleState?: Record<string, unknown> } }).activeCombat;
+  if (typeof combat?.battleState?.rng !== "function") return structuredClone(run);
+  const { rng: _ignored, ...battleStateRest } = combat.battleState;
+  void _ignored;
+  return structuredClone({
+    ...(run as unknown as Record<string, unknown>),
+    activeCombat: { ...combat, battleState: battleStateRest },
+  } as unknown as ActiveRunData);
+}
 export function readParkedRuns(): ParkedRunsMap {
   const parkedRuns = readGameplayState().run.parkedRuns;
   const snapshot: ParkedRunsMap = {};
   for (const [mode, rawRun] of Object.entries(parkedRuns)) {
     const run = rawRun as ParkedRunsMap[ContentSystemId];
     if (!run) continue;
-    const maybeRun = run as unknown as { activeCombat?: { battleState?: { rng?: unknown } } };
-    if (maybeRun.activeCombat?.battleState && typeof maybeRun.activeCombat.battleState.rng === "function") {
-      const { rng: _ignored, ...battleStateRest } = maybeRun.activeCombat.battleState as Record<string, unknown>;
-      const runWithoutRng: unknown = {
-        ...(run as unknown as Record<string, unknown>),
-        activeCombat: { ...maybeRun.activeCombat, battleState: battleStateRest },
-      };
-      snapshot[mode as ContentSystemId] = structuredClone(
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- unknown clone needs ActiveRunData bound
-        runWithoutRng as unknown as ActiveRunData,
-      );
-      continue;
-    }
-    snapshot[mode as ContentSystemId] = structuredClone(run);
+    snapshot[mode as ContentSystemId] = cloneParkedRun(run);
   }
   return snapshot;
 }

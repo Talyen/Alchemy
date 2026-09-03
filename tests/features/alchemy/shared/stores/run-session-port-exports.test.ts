@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as writePort from "@/features/alchemy/shared/stores/run-session-write-port";
 import * as lifecyclePort from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import * as readPort from "@/features/alchemy/shared/stores/run-session-read-port";
 
 const WRITE_PORT_EXPORTS = [
   "abandonCorruptionDestinationVisit",
@@ -67,6 +68,7 @@ const WRITE_PORT_EXPORTS = [
   "setFinishedRunCharacters",
   "setGold",
   "setHasActiveBattle",
+  "setHasActiveRun",
   "setLabyrinthMap",
   "setMaterials",
   "setMysteryCardChoices",
@@ -101,6 +103,46 @@ const WRITE_PORT_EXPORTS = [
   "withRestingWorldBattleRng",
 ] as const;
 
+const READ_PORT_EXPORTS = [
+  "getRunSession",
+  "getRunSessionFromState",
+  "readActiveRun",
+  "readActiveRunScreen",
+  "readBattle",
+  "readHasActiveBattle",
+  "readHasActiveRun",
+  "readParkedRuns",
+  "readRunInitialized",
+  "readRunPhase",
+  "readRunProfile",
+  "readRunRecency",
+  "readRunSession",
+  "readShopFirstPurchaseUsed",
+  "selectAutosaveAllowed",
+  "useActiveRunBoons",
+  "useActiveRunCharacterId",
+  "useActiveRunScreenValue",
+  "useAutosaveAllowed",
+  "useBattleLifetimeFields",
+  "useBondedCompanions",
+  "useContentNavigationRunPort",
+  "useContentNavigationTalentPort",
+  "useContentSystemType",
+  "useDifficultySelectSlice",
+  "useDisplayOverrides",
+  "useDraftDeckSlice",
+  "useForegroundResumeKind",
+  "useHasActiveBattle",
+  "useHasActiveRun",
+  "useHomesteadEffects",
+  "useHomesteadProgressSlice",
+  "useResumableGameModes",
+  "useRunSessionBattleContext",
+  "useRunSessionNavigationSlice",
+  "useTalentEffects",
+  "useTalentProgressSlice",
+] as const;
+
 const LIFECYCLE_PORT_EXPORTS = [
   "applyRunDefeatTeardown",
   "clearBattlePresentationUi",
@@ -125,5 +167,9 @@ describe("session port export inventory", () => {
 
   it("keeps the lifecycle-port public surface intact", () => {
     expect(Object.keys(lifecyclePort).sort()).toEqual([...LIFECYCLE_PORT_EXPORTS].sort());
+  });
+
+  it("keeps the read-port public surface intact", () => {
+    expect(Object.keys(readPort).sort()).toEqual([...READ_PORT_EXPORTS].sort());
   });
 });

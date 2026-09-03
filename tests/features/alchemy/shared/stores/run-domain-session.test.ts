@@ -18,10 +18,10 @@ import {
 import {
   initializeActiveBattle as mutateInitializeActiveBattle,
   setHasActiveBattle as mutateHasActiveBattle,
+  setHasActiveRun as mutateHasActiveRun,
   setRewardState as mutateRewardState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setHasActiveRun as mutateHasActiveRun } from "@/features/alchemy/shared/stores/write-port-session";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import {
