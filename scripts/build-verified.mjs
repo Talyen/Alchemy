@@ -22,7 +22,11 @@ async function main(argv = process.argv.slice(2)) {
   const result = spawnSync("npx", viteArgs, {
     stdio: "inherit",
     env: { ...process.env },
+    shell: process.platform === "win32",
   });
+  if (result.error) {
+    console.error(`Failed to run ${["npx", ...viteArgs].join(" ")}:`, result.error.message);
+  }
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
