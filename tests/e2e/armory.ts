@@ -3,7 +3,7 @@ import type { CraftingCurrencyId, GearInstance, GearSlot } from "@/lib/gear";
 import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
 import { MenuPage } from "../pages/menu-page";
 
-export { createEmptyGearInventories, createEmptyGearLoadouts };
+export { createEmptyGearLoadouts };
 
 export const bodyGear = {
   instanceId: "gear-body",
@@ -23,15 +23,18 @@ export interface OpenArmoryOptions {
   craftingCurrencies?: Partial<Record<CraftingCurrencyId, number>>;
 }
 
+export function gearUnlockedMeta(inventory: GearInstance[], loadouts = createEmptyGearLoadouts()) {
+  const gearInventories = createEmptyGearInventories();
+  gearInventories.knight = inventory;
+  return { gearInventories, gearLoadouts: loadouts };
+}
+
 export async function openArmory(page: Page, options: GearInstance[] | OpenArmoryOptions = [bodyGear, swordGear]) {
   const resolved: OpenArmoryOptions = Array.isArray(options) ? { inventory: options } : options;
   const inventory = resolved.inventory ?? [bodyGear, swordGear];
-  const gearInventories = createEmptyGearInventories();
-  gearInventories.knight = inventory;
   const menu = new MenuPage(page);
   await menu.gotoWithUnlockedMeta({
-    gearInventories,
-    gearLoadouts: resolved.loadouts ?? createEmptyGearLoadouts(),
+    ...gearUnlockedMeta(inventory, resolved.loadouts ?? createEmptyGearLoadouts()),
     ...(resolved.craftingCurrencies ? { craftingCurrencies: resolved.craftingCurrencies } : {}),
   });
   await page.getByRole("button", { name: "Armory" }).click();

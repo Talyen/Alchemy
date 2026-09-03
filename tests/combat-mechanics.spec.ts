@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import {
   startBattleWithDeck,
   makeStatusCard,
@@ -31,9 +31,15 @@ const DOT_ENCOUNTER_OVERRIDES = { encounteredRunEnemyIds: ["goblin"] };
 
 test.describe("Damage-over-Time Status Effects", critical, () => {
   for (const statusCase of DOT_STATUS_CASES) {
-    const gate = statusCase.damageType === "burn" ? critical : slow;
-
-    test(statusCase.name, gate, async ({ page, fastBattle, runtimeErrors }) => {
+    const body = async ({
+      page,
+      fastBattle,
+      runtimeErrors,
+    }: {
+      page: Page;
+      fastBattle: void;
+      runtimeErrors: string[];
+    }) => {
       void fastBattle;
       void runtimeErrors;
 
@@ -58,7 +64,12 @@ test.describe("Damage-over-Time Status Effects", critical, () => {
       } else if (statusCase.chipVisibleAfterTick) {
         await expect(battle.statusChip(title)).toBeVisible();
       }
-    });
+    };
+    if (statusCase.damageType === "burn") {
+      test(statusCase.name, body);
+    } else {
+      test(statusCase.name, slow, body);
+    }
   }
 });
 

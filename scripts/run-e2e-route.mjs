@@ -38,6 +38,40 @@ export const E2E_ROUTES = Object.freeze({
     label: "shop Playwright flow",
     args: ["playwright", "test", "tests/shop-and-rewards.spec.ts", "--project", "chromium"],
   }),
+  battle: Object.freeze({
+    label: "battle Playwright flows",
+    args: [
+      "playwright",
+      "test",
+      "tests/core-gameplay.spec.ts",
+      "tests/combat-mechanics.spec.ts",
+      "--project",
+      "chromium",
+    ],
+  }),
+  save: Object.freeze({
+    label: "save Playwright flows",
+    args: [
+      "playwright",
+      "test",
+      "tests/save-persistence.spec.ts",
+      "tests/save-error-paths.spec.ts",
+      "--project",
+      "chromium",
+    ],
+  }),
+  labyrinth: Object.freeze({
+    label: "labyrinth Playwright flow",
+    args: ["playwright", "test", "tests/labyrinth.spec.ts", "--project", "chromium"],
+  }),
+  wildwood: Object.freeze({
+    label: "wildwood Playwright flow",
+    args: ["playwright", "test", "tests/wildwood.spec.ts", "--project", "chromium"],
+  }),
+  outcomes: Object.freeze({
+    label: "run-outcome Playwright flows",
+    args: ["playwright", "test", "tests/run-outcomes.spec.ts", "--project", "chromium"],
+  }),
 });
 
 const E2E_ROUTE_ALIASES = Object.freeze({
@@ -46,7 +80,7 @@ const E2E_ROUTE_ALIASES = Object.freeze({
 });
 
 function canonicalRouteNames() {
-  return Object.keys(E2E_ROUTES).filter((name) => name !== "shop-screen");
+  return Object.keys(E2E_ROUTES);
 }
 
 function printHelp() {
@@ -57,7 +91,7 @@ Routes: ${canonicalRouteNames().join(", ")}
 
 Examples:
   npm run test:e2e:route -- shop
-  node scripts/run-e2e-route.mjs gear --headed
+  node scripts/run-e2e-route.mjs battle --headed
 `);
 }
 

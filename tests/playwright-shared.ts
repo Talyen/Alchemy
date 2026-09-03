@@ -92,7 +92,7 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
     });
   }
 
-  const viteMode = process.env.PLAYWRIGHT_VITE_MODE === "preview" ? "preview" : "dev";
+  const viteMode = process.env.PLAYWRIGHT_VITE_MODE === "dev" ? "dev" : "preview";
   const port = BROWSER_PREVIEW_PORT;
   const webServerCommand = previewWebServer(port, { mode: viteMode }).command;
   const isPrepush = process.env.PLAYWRIGHT_PREPUSH === "1";

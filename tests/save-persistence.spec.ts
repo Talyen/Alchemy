@@ -113,7 +113,6 @@ test.describe("Save Persistence & Resume", () => {
 
   test("reload restores an in-progress battle", critical, async ({ page }) => {
     await injectMidCombatSave(page);
-    await page.goto("/");
 
     const battle = new BattlePage(page);
     await expect(battle.endTurnBtn).toBeVisible({ timeout: 10000 });
@@ -226,7 +225,7 @@ test.describe("Autosave Cadence", () => {
     await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBefore);
   });
 
-  test("save is written after claiming a reward", async ({ page, runtimeErrors }) => {
+  test("save is written after claiming a reward", critical, async ({ page, runtimeErrors }) => {
     void runtimeErrors;
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
 

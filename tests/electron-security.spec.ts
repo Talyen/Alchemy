@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { getElectronMainWindow, launchElectronApp } from "./electron-helpers";
 import { desktop } from "./playwright-tags";
 
-test.describe("packaged Electron security boundary", { ...desktop }, () => {
+test.describe("packaged Electron security boundary", { tag: [desktop.tag] }, () => {
   test("boots through alchemy:// with CSP and blocks renderer escape routes", async () => {
     const electronApp = await launchElectronApp({ packagedRenderer: true });
     try {

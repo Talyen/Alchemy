@@ -3,8 +3,10 @@ import type { CraftingCurrencyDefinition } from "@/lib/gear";
 import { PortaledTooltip } from "../../../../shared/ui/portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltip-panel";
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
-import { CURRENCY_COUNT_LABEL_CLASS } from "./currency-styles";
 import { surfaceSelectedRingClass } from "../../../../shared/config";
+
+const CURRENCY_COUNT_LABEL_CLASS =
+  "absolute top-1.5 left-1.5 text-sm font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]";
 
 const ARMORY_CURRENCY_TOOLTIP_CLASS = "armory-inventory-tooltip !shadow-none";
 

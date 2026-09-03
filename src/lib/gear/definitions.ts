@@ -2,7 +2,7 @@ import type { KeywordId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearArtByDefinitionId } from "@/lib/game-data";
 import { gearBaseItems, type GearBaseItemId, type GearSlotRule } from "./base-items";
-import type { GearRarity, GearSlot } from "./types-core";
+import type { GearRarity, GearSlot } from "./types";
 import type { GearAffixId } from "./affix-catalog";
 import { uniqueItemList } from "./unique-catalog";
 

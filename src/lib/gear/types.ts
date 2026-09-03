@@ -1,21 +1,26 @@
-import {
-  ARMORY_SLOTS,
-  GEAR_SLOTS,
-  type ArmorySlot,
-  type GearSlot,
-  type GearRarity,
-  GEAR_RARITIES,
-  GEAR_CHARACTER_IDS,
-  type GearCharacterId,
-} from "./types-core";
+export const GEAR_SLOTS = ["main-hand", "off-hand", "body", "left-accessory", "right-accessory"] as const;
+export const ARMORY_SLOTS = ["main-hand", "off-hand", "body", "left-accessory", "trinket", "right-accessory"] as const;
+
+export type GearSlot = (typeof GEAR_SLOTS)[number];
+export type ArmorySlot = (typeof ARMORY_SLOTS)[number];
+export type GearRarity = "basic" | "astral" | "unique";
+
+export const GEAR_RARITIES = ["basic", "astral", "unique"] as const satisfies readonly GearRarity[];
+
+export const GEAR_CHARACTER_IDS = [
+  "knight",
+  "ranger",
+  "rogue",
+  "wizard",
+  "alchemist",
+  "warlock",
+  "druid",
+  "wildcard",
+] as const satisfies readonly string[];
+export type GearCharacterId = (typeof GEAR_CHARACTER_IDS)[number];
 
 export type { GearEffectManifest } from "./gear-effect-manifest";
 export { defaultGearEffects, GEAR_EFFECT_KEYS } from "./gear-effect-manifest";
-
-export type { GearCharacterId };
-
-export { ARMORY_SLOTS, GEAR_SLOTS, GEAR_RARITIES, GEAR_CHARACTER_IDS };
-export type { ArmorySlot, GearSlot, GearRarity };
 
 export type { GearAffixId } from "./affix-catalog";
 

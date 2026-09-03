@@ -11,6 +11,7 @@ import {
 } from "./helpers";
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
+import { expectRunPhase } from "./pages/game-stage";
 import { MenuPage } from "./pages/menu-page";
 import { LOADING_WORDS } from "@/app/loading-words";
 import { critical, slow } from "./playwright-tags";
@@ -24,7 +25,7 @@ test.describe("Menu", critical, () => {
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.expectMainMenu();
-    await menu.stage.expectRunPhase("meta");
+    await expectRunPhase(page, "meta");
     await expect(menu.playBtn).toBeVisible();
     await expect(menu.collectionBtn).toBeVisible();
     await expect(menu.optionsBtn).toBeVisible();
@@ -39,7 +40,7 @@ test.describe("Menu", critical, () => {
     await injectActiveBattle(page, makeGoblinBattleState());
     const menu = new MenuPage(page);
     const battle = new BattlePage(page);
-    await menu.stage.expectRunPhase("battle");
+    await expectRunPhase(page, "battle");
     await battle.menuBtn.click();
     await page.getByRole("button", { name: "Main Menu" }).click();
     await menu.openGameModeSelect();
@@ -85,7 +86,7 @@ test.describe("Navigation", critical, () => {
 });
 
 test.describe("Options Screen", critical, () => {
-  test("options tabs, clear-save dialog, and volume persistence", critical, async ({ page }) => {
+  test("options tabs, clear-save dialog, and volume persistence", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.openOptions();

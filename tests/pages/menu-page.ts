@@ -2,11 +2,9 @@ import { expect, type Locator, type Page } from "@playwright/test";
 import { openGameModeSelect, selectGameMode } from "../e2e/navigation";
 import { injectHomestead } from "../e2e/save-injection";
 import type { GameMode } from "../e2e/types";
-import { GameStage } from "./game-stage";
 
 export class MenuPage {
   private page: Page;
-  readonly stage: GameStage;
   readonly playBtn: Locator;
   readonly collectionBtn: Locator;
   readonly optionsBtn: Locator;
@@ -15,7 +13,6 @@ export class MenuPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.stage = new GameStage(page);
     this.playBtn = this.page.getByRole("button", { name: "Play", exact: true });
     this.collectionBtn = this.page.getByRole("button", { name: "Collection" });
     this.optionsBtn = this.page.getByRole("button", { name: "Options" });
@@ -90,11 +87,5 @@ export class MenuPage {
   async selectCharacterAndContinue(character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
     await this.page.getByRole("button", { name: `Select ${character}` }).click();
     await expect(this.page.getByRole("heading", { name: "Choose Your Hero" })).toBeHidden();
-  }
-
-  async startCampaign(character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
-    await selectGameMode(this.page, "campaign");
-    await this.selectCharacterAndContinue(character);
-    await expect(this.page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
   }
 }

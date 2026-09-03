@@ -142,7 +142,7 @@ test.describe("Armory crafting", critical, () => {
     void runtimeErrors;
   });
 
-  test("salvages gear and grants crafting materials", critical, async ({ page }) => {
+  test("salvages gear and grants crafting materials", async ({ page }) => {
     await seedRandom(page, 0);
     const sword = {
       instanceId: "gear-sword",
@@ -189,7 +189,7 @@ test.describe("Armory crafting", critical, () => {
     await expect(gearItemLocator(page, "Ruby Ring")).toHaveCount(1);
   });
 
-  test("voidstone targeting lifecycle and affix display", critical, async ({ page }) => {
+  test("voidstone targeting lifecycle and affix display", async ({ page }) => {
     await openArmory(page, {
       inventory: [affixedSword],
       craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },

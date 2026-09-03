@@ -1,10 +1,8 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { startAtDestination } from "../e2e/battle-setup";
-import { GameStage } from "./game-stage";
 
 export class CorruptionPage {
   private page: Page;
-  readonly stage: GameStage;
   readonly altarHeading: Locator;
   readonly corruptBtn: Locator;
   readonly confirmCorruptBtn: Locator;
@@ -14,7 +12,6 @@ export class CorruptionPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.stage = new GameStage(page);
     this.altarHeading = this.page.getByRole("heading", { name: "Altar of Corruption" });
     this.corruptBtn = this.page.getByRole("button", { name: "Corrupt a Card" });
     this.confirmCorruptBtn = this.page.getByRole("button", { name: "Corrupt", exact: true });

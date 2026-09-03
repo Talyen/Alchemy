@@ -4,7 +4,7 @@ import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Progression Locks", critical, () => {
-  test("clean save gates meta buttons and game-mode tiles", critical, async ({ page }) => {
+  test("clean save gates meta buttons and game-mode tiles", async ({ page }) => {
     await injectHomestead(page, { finishedRunCharacters: [] });
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Talents" })).toHaveAttribute("aria-disabled", "true");
@@ -17,7 +17,7 @@ test.describe("Progression Locks", critical, () => {
     await expect(page.getByRole("button", { name: "Wildwood Draft (Locked)" })).toBeVisible();
   });
 
-  test("finished Rogue and Ranger unlock Labyrinth and Wildwood tiles", critical, async ({ page }) => {
+  test("finished Rogue and Ranger unlock Labyrinth and Wildwood tiles", async ({ page }) => {
     await injectHomestead(page, { finishedRunCharacters: ["rogue", "ranger"] });
     const menu = new MenuPage(page);
     await menu.goto();

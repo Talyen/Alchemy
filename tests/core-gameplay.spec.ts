@@ -9,6 +9,7 @@ import {
 import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
+import { expectRunPhase } from "./pages/game-stage";
 import { MenuPage } from "./pages/menu-page";
 import { critical, slow } from "./playwright-tags";
 import { injectHomestead, injectTalentUnlocks } from "./e2e/save-injection";
@@ -117,7 +118,7 @@ test.describe("Card Interactions", slow, () => {
 
     const destination = new DestinationPage(page);
     await destination.pick("Campfire");
-    await new MenuPage(page).stage.expectRunPhase("runLoop");
+    await expectRunPhase(page, "runLoop");
 
     await expect(page.getByRole("button", { name: "Rest" })).toBeVisible({ timeout: 3000 });
     await page.getByRole("button", { name: "Rest" }).click();

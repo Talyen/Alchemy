@@ -67,7 +67,7 @@ export function mutateGearWithRunHealthSync<T>(
   draft: GameplayDraft,
   options: {
     mutate: (gear: GearStore) => T;
-    syncRunHealth?: boolean;
+    syncRunHealth?: boolean | undefined;
   },
 ): T {
   const result = options.mutate(gearCommandView(draft));
@@ -79,9 +79,10 @@ export function mutateGearWithRunHealthSync<T>(
 
 export function dispatchGearSalvageWithMaterialGrant(
   mutate: (gear: GearStore) => ReturnType<GearStore["salvage"]>,
+  options?: { syncRunHealth?: boolean | undefined },
 ): ReturnType<GearStore["salvage"]> {
   return dispatchRunSessionCommand((draft) => {
-    const salvageResult = mutateGearWithRunHealthSync(draft, { mutate });
+    const salvageResult = mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth: options?.syncRunHealth });
     if (!salvageResult) return null;
     grantSalvageMaterials(draft, salvageResult.yieldedMaterials);
     return salvageResult;

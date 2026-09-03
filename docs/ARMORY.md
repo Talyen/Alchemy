@@ -20,7 +20,7 @@ contract and controller seams.
 
 ## Data model
 
-`src/lib/gear/types.ts`, `types-core.ts`, and `crafting.ts` are authoritative. Durable invariants:
+`src/lib/gear/types.ts`, `crafting.ts`, and `crafting-ids.ts` are authoritative. Durable invariants:
 
 - A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
@@ -62,7 +62,7 @@ There is no external `useGearStore` hook. Gear mutations run against a `GearStor
 HP sync runs through `rebindLiveRunMeta` when `syncRunHealth ?? draft.session.hasActiveRun`. `mutate` receives a `GearStore` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
 1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
-2. **Salvage** — freeze first: preview with `computeSalvageYield` (definition `salvageValue` homestead materials + `rollSalvageYield` crafting currencies), then confirm by passing that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta).
+2. **Salvage** — freeze first: preview with `computeSalvageYield` (definition `salvageValue` homestead materials + `rollSalvageYield` crafting currencies), then confirm by passing that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta). The preview is authoritative: confirm always pays exactly the frozen yield.
 3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`.
 4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addInstance(instance, characterId) })`.
 5. **Permanent Trinkets** — use `addTrinket`, `equipTrinket`, and `unequipTrinket` on the Gear aggregate. Rewards and the Trinket Shop add ownership inside their existing run-session command; acquisition never auto-equips or creates a Boon.
@@ -72,7 +72,7 @@ HP sync runs through `rebindLiveRunMeta` when `syncRunHealth ?? draft.session.ha
 The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear directly. It consumes `useArmoryController()`, which:
 
 - Reads `inventories`, `loadouts`, and `craftingCurrencies` from `useGearArmorySlice`.
-- Routes `equip`/`unequip` through `dispatchGearMutationWithRunHealthSync` (HP-sync side effect).
+- Routes `equip`/`unequip`/`equipTrinket`/`unequipTrinket` through `dispatchGearMutationWithRunHealthSync` (HP-sync side effect) and flushes the save on success only — failed taps are feedback-only, no save.
 - Routes `applyCurrency` through `dispatchGearMutationWithRunHealthSync` and flushes the save on success.
 - Routes `salvage` through `dispatchGearSalvageWithMaterialGrant` and flushes the save on success.
 - Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` through `dispatchGearMutationWithRunHealthSync` and flushes the save.
@@ -102,7 +102,7 @@ Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alche
 
 Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) and `src/lib/validation/metadata.ts` own the supported floor and current version. Gear shape changes follow that migration contract: safe additive fields may use schema defaults, while transforms require a versioned migration.
 
-`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session signal (run domain, transient/battle state, run profile, profile, and gear); changes are debounced before writing. `buildAlchemySaveDataFromStores` assembles the snapshot through `encodePersistenceFields`. The gear mutation callbacks in `useArmoryController` also call `flushSaveAfterGearMutation` (lifecycle port) after mutations during an active run.
+`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session revision signal; changes are debounced before writing. `buildAlchemySaveDataFromStores` assembles the snapshot through `encodePersistenceFields`. The gear mutation callbacks in `useArmoryController` also call `flushSaveAfterGearMutation` (lifecycle port) after successful mutations.
 
 ## Tests
 

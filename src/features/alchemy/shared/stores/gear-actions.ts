@@ -63,13 +63,19 @@ export function equipGearInstance(
   characterId: CharacterId,
   slot: GearSlot,
   instance: GearInstance,
-): void {
+): boolean {
+  if (gear.loadouts[characterId]?.[slot] === instance.instanceId) return false;
   const flatInventory = flattenGearInventories(gear.inventories);
-  gear.loadouts = equipGear(gear.loadouts, characterId, slot, instance, flatInventory);
+  const next = equipGear(gear.loadouts, characterId, slot, instance, flatInventory);
+  if (next === gear.loadouts) return false;
+  gear.loadouts = next;
+  return true;
 }
 
-export function unequipGearInstance(gear: Draft<GearStateFields>, characterId: CharacterId, slot: GearSlot): void {
+export function unequipGearInstance(gear: Draft<GearStateFields>, characterId: CharacterId, slot: GearSlot): boolean {
+  if (gear.loadouts[characterId]?.[slot] === null) return false;
   gear.loadouts = unequipGear(gear.loadouts, characterId, slot);
+  return true;
 }
 
 export function addPermanentTrinket(gear: Draft<GearStateFields>, trinketId: string): boolean {
@@ -91,8 +97,10 @@ export function equipPermanentTrinket(
   return true;
 }
 
-export function unequipPermanentTrinket(gear: Draft<GearStateFields>, characterId: CharacterId): void {
+export function unequipPermanentTrinket(gear: Draft<GearStateFields>, characterId: CharacterId): boolean {
+  if (gear.equippedTrinkets[characterId] === null) return false;
   gear.equippedTrinkets[characterId] = null;
+  return true;
 }
 
 export function salvageGearInstance(

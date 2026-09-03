@@ -25,6 +25,6 @@ describe("e2e routes", () => {
   });
 
   it("rejects unknown routes", () => {
-    expect(resolveE2eRoute("save")).toBeUndefined();
+    expect(resolveE2eRoute("not-a-route")).toBeUndefined();
   });
 });

@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { openingPacedDamage } from "@/lib/battle/fight-pacing";
 import type { GearAffixRoll } from "@/lib/gear";
-import { createEmptyGearInventories, createEmptyGearLoadouts } from "./armory";
+import { createEmptyGearLoadouts, gearUnlockedMeta } from "./armory";
 import { startBattleWithDeck } from "./battle-setup";
 import { makeCard } from "./cards";
 import { seedRandom } from "./rng";
@@ -20,14 +20,9 @@ export async function assertGearFlatDamageBoostsPhysicalDamage(page: Page, gear:
 
   const loadouts = createEmptyGearLoadouts();
   (loadouts.knight as Record<string, string | null>)[gear.slot] = gear.instanceId;
-  const gearInventories = createEmptyGearInventories();
-  gearInventories.knight = [{ ...gear, affixes: gear.affixes as GearAffixRoll[] }];
 
   const menu = new MenuPage(page);
-  await menu.gotoWithUnlockedMeta({
-    gearInventories,
-    gearLoadouts: loadouts,
-  });
+  await menu.gotoWithUnlockedMeta(gearUnlockedMeta([{ ...gear, affixes: gear.affixes as GearAffixRoll[] }], loadouts));
 
   const physicalCard = makeCard({
     id: "slash",

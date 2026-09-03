@@ -143,38 +143,38 @@ async function startInDeathsDoorGrace(page: import("@playwright/test").Page, han
 }
 
 test.describe("Death's Door", critical, () => {
-  test(
-    "grace floors damage at 1 HP and expiry ends the run with defeat",
-    critical,
-    async ({ page, fastBattle, runtimeErrors }) => {
-      void fastBattle;
-      void runtimeErrors;
+  test("grace floors damage at 1 HP and expiry ends the run with defeat", async ({
+    page,
+    fastBattle,
+    runtimeErrors,
+  }) => {
+    void fastBattle;
+    void runtimeErrors;
 
-      await startInDeathsDoorGrace(
-        page,
-        Array.from({ length: 6 }, () => makeCard()),
-      );
-      const battle = new BattlePage(page);
-      await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+    await startInDeathsDoorGrace(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
+    const battle = new BattlePage(page);
+    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
 
-      await battle.playFirstCard();
-      await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
-      await expect.poll(() => battle.playerHealth()).toBe(1);
+    await battle.playFirstCard();
+    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+    await expect.poll(() => battle.playerHealth()).toBe(1);
 
-      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
-      await battle.endTurn();
-      await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
-      await expect.poll(() => battle.playerHealth()).toBe(1);
+    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+    await battle.endTurn();
+    await expect(battle.deathsDoorIcon).toBeVisible({ timeout: 5000 });
+    await expect.poll(() => battle.playerHealth()).toBe(1);
 
-      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
-      await battle.endTurn();
-      await expect(battle.deathsDoorIcon).toBeHidden({ timeout: 5000 });
-      await expect.poll(() => battle.playerHealth()).toBe(1);
+    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+    await battle.endTurn();
+    await expect(battle.deathsDoorIcon).toBeHidden({ timeout: 5000 });
+    await expect.poll(() => battle.playerHealth()).toBe(1);
 
-      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
-      await battle.endTurn();
-      await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 10000 });
-      await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
-    },
-  );
+    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+    await battle.endTurn();
+    await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
+  });
 });

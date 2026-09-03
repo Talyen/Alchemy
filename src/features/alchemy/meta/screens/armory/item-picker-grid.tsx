@@ -24,13 +24,8 @@ import {
 import { GearDetailPopup } from "../../../shared/ui/gear-detail-popup";
 import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
 import { CHARACTER_ICONS, CHARACTER_KEYWORDS } from "./armory-character-tabs";
-import {
-  SALVAGE_TARGET_RING,
-  SALVAGE_TARGET_SHADOW,
-  VALID_TARGET_RING,
-  VALID_TARGET_SHADOW,
-} from "./targeting-highlight";
-import { PagedPickerGrid, pickerFillerCount, pickerPageSlice, useContextPagedGrid } from "./paged-picker-grid";
+import { targetingRingClass } from "./targeting-highlight";
+import { PagedPickerGrid, useArmoryPickerPage } from "./paged-picker-grid";
 
 export function ItemPickerGrid({
   slot,
@@ -60,9 +55,7 @@ export function ItemPickerGrid({
   onApplyCurrency: (instance: GearInstance) => void;
 }) {
   const pageContext = `${characterId}:${slot}`;
-  const { safePage, totalPages, onPageChange } = useContextPagedGrid(pageContext, items.length);
-  const pageItems = pickerPageSlice(items, safePage);
-  const fillerCount = pickerFillerCount(pageItems.length);
+  const { pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(pageContext, items);
 
   return (
     <PagedPickerGrid
@@ -103,8 +96,8 @@ export function ItemPickerGrid({
               data-salvageable={salvageable ? "true" : undefined}
               className={cn(
                 "relative",
-                salvageable && [SALVAGE_TARGET_RING, SALVAGE_TARGET_SHADOW, "rounded-shell-hero"],
-                activeCurrencyId && canCraft && [VALID_TARGET_RING, VALID_TARGET_SHADOW, "rounded-shell-hero"],
+                targetingRingClass(salvageable ? "salvage" : null),
+                targetingRingClass(activeCurrencyId && canCraft ? "currency" : null),
                 disabled && "opacity-50",
               )}
               title={disabled ? "Incompatible with the current loadout" : undefined}

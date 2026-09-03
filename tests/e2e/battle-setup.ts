@@ -3,11 +3,10 @@ import type { BattleCard } from "@/lib/game-data/types";
 import { BattlePage } from "../pages/battle-page";
 import { DestinationPage } from "../pages/destination-page";
 import { RewardPage } from "../pages/reward-page";
-import { STARTING_DECK } from "./cards";
+import { makeStartingDeck } from "./cards";
 import { resumeCampaignRun } from "./navigation";
 import { injectSaveState, destinationInterruptedFlow } from "./save-injection";
 import type { DestinationName } from "./types";
-import { completeRunEndToMenu } from "./run-end";
 
 export async function enableFastMode(page: Page) {
   await page.addInitScript(() => {
@@ -24,7 +23,7 @@ export async function startAtDestination(
     runGold: 50,
     runPlayerHealth: 30,
     runMaxHealth: 30,
-    runDeck: STARTING_DECK,
+    runDeck: makeStartingDeck(),
     ...overrides,
     ...(options.forceDestination
       ? { currentScreen: "destination", interruptedFlow: destinationInterruptedFlow([options.forceDestination]) }
@@ -62,7 +61,10 @@ export async function assertDefeatFromEndRun(page: Page, options: { returnToMenu
   await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 5000 });
   await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
   if (options.returnToMenu) {
-    await completeRunEndToMenu(page);
+    const continueBtn = page.getByRole("button", { name: "Continue" });
+    await expect(continueBtn).toBeVisible({ timeout: 5000 });
+    await continueBtn.click();
+    await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 10000 });
   }
 }
 

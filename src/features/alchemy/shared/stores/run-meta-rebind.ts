@@ -22,18 +22,12 @@ export function deriveCombatMeta(draft: GameplayDraft): CombatMeta {
   };
 }
 
-function computeDerivedRunMaxHealth(draft: GameplayDraft): number {
-  const characterId = draft.run.activeRun.characterId;
-  const gearBonus = computeGearManifest(
-    characterId,
-    flattenGearInventories(draft.gear.inventories),
-    draft.gear.loadouts,
-  ).maxHealth;
+function computeDerivedRunMaxHealth(draft: GameplayDraft, gearBonus: number): number {
   return computeRunMaxHealth(draft.runProfile.talentXP, gearBonus, draft.runProfile.effects.runMaxHealthBonus);
 }
 
-function applyDerivedMaxHealth(draft: GameplayDraft): void {
-  const derived = computeDerivedRunMaxHealth(draft);
+function applyDerivedMaxHealth(draft: GameplayDraft, gearBonus: number): void {
+  const derived = computeDerivedRunMaxHealth(draft, gearBonus);
 
   const metaBaseline = draft.run.activeRun.runMetaMaxHealth;
   const combatBonus = Math.max(0, draft.run.activeRun.runMaxHealth - metaBaseline);
@@ -42,34 +36,25 @@ function applyDerivedMaxHealth(draft: GameplayDraft): void {
   draft.run.activeRun.runPlayerHealth = Math.min(draft.run.activeRun.runMaxHealth, draft.run.activeRun.runPlayerHealth);
 }
 
-function rebindMetaHealth(draft: GameplayDraft): void {
+function rebindMetaHealth(draft: GameplayDraft, gearBonus: number): void {
   if (!draft.session.hasActiveRun) return;
-  applyDerivedMaxHealth(draft);
+  applyDerivedMaxHealth(draft, gearBonus);
 }
 
-function rebindBattleState(draft: GameplayDraft, options?: { gearChanged?: boolean; talentChanged?: boolean }): void {
+function rebindBattleState(draft: GameplayDraft, combatMeta: CombatMeta): void {
   if (!draft.battle.hasActiveBattle) return;
-  const gearChanged = options?.gearChanged ?? true;
-  const talentChanged = options?.talentChanged ?? true;
   const battle = draft.battle.battleState;
-  const combatMeta = deriveCombatMeta(draft);
-  if (gearChanged) {
-    battle.gearEffects = combatMeta.gearEffects;
-    battle.trinketEffects = computeTrinketManifest(combatMeta.activeTrinketIds);
-  }
-  if (talentChanged) {
-    battle.talentEffects = combatMeta.talentEffects;
-  }
+  battle.gearEffects = combatMeta.gearEffects;
+  battle.trinketEffects = computeTrinketManifest(combatMeta.activeTrinketIds);
+  battle.talentEffects = combatMeta.talentEffects;
   battle.playerMaxHealth = draft.run.activeRun.runMaxHealth;
   battle.playerHealth = Math.min(battle.playerMaxHealth, battle.playerHealth);
   syncBattleGoldFromPurse(draft);
 }
 
-export function rebindLiveRunMeta(
-  draft: GameplayDraft,
-  options?: { gearChanged?: boolean; talentChanged?: boolean },
-): void {
+export function rebindLiveRunMeta(draft: GameplayDraft): void {
   if (!draft.session.hasActiveRun) return;
-  rebindMetaHealth(draft);
-  rebindBattleState(draft, options);
+  const combatMeta = deriveCombatMeta(draft);
+  rebindMetaHealth(draft, combatMeta.gearEffects.maxHealth);
+  rebindBattleState(draft, combatMeta);
 }

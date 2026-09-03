@@ -1,9 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { GameStage } from "./game-stage";
 
 export class ShopPage {
   private page: Page;
-  readonly stage: GameStage;
   readonly heading: Locator;
   readonly buyBtn: Locator;
   readonly removeCardBtn: Locator;
@@ -18,7 +16,6 @@ export class ShopPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.stage = new GameStage(page);
     this.heading = this.page.getByRole("heading", { name: /(Card Shop|Alchemist|Trinket|Equipment)/ });
     this.buyBtn = this.page.getByRole("button", { name: /^Buy/ });
     this.removeCardBtn = this.page.getByRole("button", { name: /Remove Card/ });

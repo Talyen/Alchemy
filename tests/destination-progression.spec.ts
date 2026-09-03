@@ -5,6 +5,7 @@ import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
 import { MysteryPage } from "./pages/mystery-page";
 import { CorruptionPage } from "./pages/corruption-page";
+import { expectRunPhase } from "./pages/game-stage";
 import { critical } from "./playwright-tags";
 
 test.describe("Destination Progression", () => {
@@ -77,7 +78,7 @@ test.describe("Corruption Full Flow", () => {
   test("corruption destination shows altar screen with intro and leave works", async ({ page }) => {
     const corruption = new CorruptionPage(page);
     await corruption.open();
-    await corruption.stage.expectRunPhase("runLoop");
+    await expectRunPhase(page, "runLoop");
 
     await expect(corruption.altarHeading).toBeVisible({ timeout: 5000 });
     await expect(corruption.corruptBtn).toBeVisible();

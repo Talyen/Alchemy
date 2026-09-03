@@ -15,8 +15,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
-import { createEmptyEquippedTrinkets, createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
-import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting-ids";
+import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-store-initial-state";
 import { createInitialProfileState } from "@/features/alchemy/shared/stores/profile-store-types";
 import {
   clearTransientSession,
@@ -27,16 +26,6 @@ import {
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 
 type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
-
-function createInitialGearState() {
-  return {
-    inventories: createEmptyGearInventories(),
-    loadouts: createEmptyGearLoadouts(),
-    ownedTrinketIds: [] as string[],
-    equippedTrinkets: createEmptyEquippedTrinkets(),
-    craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
-  };
-}
 
 export function resetRunDomainStore(): void {
   const revision = useGameplayStateStore.getState().revision + 1;

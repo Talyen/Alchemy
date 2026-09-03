@@ -16,7 +16,7 @@ test.describe("Homestead Flow", critical, () => {
       });
     });
 
-    test("homestead screen shows injected materials count", critical, async ({ page }) => {
+    test("homestead screen shows injected materials count", async ({ page }) => {
       const homestead = new HomesteadPage(page);
       const pills = [
         homestead.materialPill("Wood", 100),

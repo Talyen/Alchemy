@@ -1,7 +1,7 @@
 import type { KeywordId } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { GearRarity, GearSlot } from "./types-core";
+import type { GearRarity, GearSlot } from "./types";
 
 export type GearSlotRule = "two-handed" | "ranged" | "quiver" | "standard";
 
@@ -33,6 +33,41 @@ const woodLight = salvageBy({ wood: 3 }, { wood: 6 });
 const woodMedium = salvageBy({ wood: 6 }, { wood: 9 });
 const gemLight = salvageBy({ gems: 3 }, { gems: 6 });
 const natureGem = salvageBy({ gems: 3 }, { gems: 3, herbs: 3 });
+
+const JEWELRY_KINDS = ["ring", "amulet"] as const;
+
+type JewelryGemSlug = "ruby" | "sapphire" | "emerald" | "topaz";
+
+type JewelryBaseItemId = `${JewelryGemSlug}-${(typeof JEWELRY_KINDS)[number]}`;
+
+const JEWELRY_GEMS: Array<{
+  slug: JewelryGemSlug;
+  label: string;
+  keywords: KeywordId[];
+  salvage: Record<GearRarity, MaterialInventory>;
+}> = [
+  { slug: "ruby", label: "Ruby", keywords: ["burn", "bleed", "leech"], salvage: gemLight },
+  { slug: "sapphire", label: "Sapphire", keywords: ["freeze", "mana", "block"], salvage: gemLight },
+  { slug: "emerald", label: "Emerald", keywords: ["nature", "poison", "archery", "dodge"], salvage: natureGem },
+  { slug: "topaz", label: "Topaz", keywords: ["holy", "gold", "forge", "stun"], salvage: gemLight },
+];
+
+function jewelryBaseItems(): Record<JewelryBaseItemId, Omit<GearBaseItemDefinition, "id">> {
+  const entries = {} as Record<JewelryBaseItemId, Omit<GearBaseItemDefinition, "id">>;
+  for (const gem of JEWELRY_GEMS) {
+    for (const kind of JEWELRY_KINDS) {
+      const label = kind === "ring" ? "Ring" : "Amulet";
+      entries[`${gem.slug}-${kind}`] = {
+        displayName: `${gem.label} ${label}`,
+        compatibleSlots: ["left-accessory", "right-accessory"],
+        slotRule: "standard",
+        affinityKeywords: [...gem.keywords],
+        salvageByRarity: gem.salvage,
+      };
+    }
+  }
+  return entries;
+}
 
 const gearBaseItemCatalog = {
   "double-axe": {
@@ -182,62 +217,7 @@ const gearBaseItemCatalog = {
     affinityKeywords: ["armor", "block", "stun", "physical"],
     salvageByRarity: ironHeavy,
   },
-  "ruby-ring": {
-    displayName: "Ruby Ring",
-    compatibleSlots: ["left-accessory", "right-accessory"],
-    slotRule: "standard",
-    affinityKeywords: ["burn", "bleed", "leech"],
-    salvageByRarity: gemLight,
-  },
-  "sapphire-ring": {
-    displayName: "Sapphire Ring",
-    compatibleSlots: ["left-accessory", "right-accessory"],
-    slotRule: "standard",
-    affinityKeywords: ["freeze", "mana", "block"],
-    salvageByRarity: gemLight,
-  },
-  "emerald-ring": {
-    displayName: "Emerald Ring",
-    compatibleSlots: ["left-accessory", "right-accessory"],
-    slotRule: "standard",
-    affinityKeywords: ["nature", "poison", "archery", "dodge"],
-    salvageByRarity: natureGem,
-  },
-  "topaz-ring": {
-    displayName: "Topaz Ring",
-    compatibleSlots: ["left-accessory", "right-accessory"],
-    slotRule: "standard",
-    affinityKeywords: ["holy", "gold", "forge", "stun"],
-    salvageByRarity: gemLight,
-  },
-  "ruby-amulet": {
-    displayName: "Ruby Amulet",
-    compatibleSlots: ["left-accessory", "right-accessory"],
-    slotRule: "standard",
-    affinityKeywords: ["burn", "bleed", "leech"],
-    salvageByRarity: gemLight,
-  },
-  "sapphire-amulet": {
-    displayName: "Sapphire Amulet",
-    compatibleSlots: ["left-accessory", "right-accessory"],
-    slotRule: "standard",
-    affinityKeywords: ["freeze", "mana", "block"],
-    salvageByRarity: gemLight,
-  },
-  "emerald-amulet": {
-    displayName: "Emerald Amulet",
-    compatibleSlots: ["left-accessory", "right-accessory"],
-    slotRule: "standard",
-    affinityKeywords: ["nature", "poison", "archery", "dodge"],
-    salvageByRarity: natureGem,
-  },
-  "topaz-amulet": {
-    displayName: "Topaz Amulet",
-    compatibleSlots: ["left-accessory", "right-accessory"],
-    slotRule: "standard",
-    affinityKeywords: ["holy", "gold", "forge", "stun"],
-    salvageByRarity: gemLight,
-  },
+  ...jewelryBaseItems(),
 } satisfies Record<string, Omit<GearBaseItemDefinition, "id">>;
 
 export type GearBaseItemId = keyof typeof gearBaseItemCatalog;

@@ -4,6 +4,11 @@ import { ensureRunId } from "../../scripts/lib/current-run.mjs";
 import { buildFailureDiagnostic, writeFailureDiagnostic } from "../../scripts/lib/playwright-diagnostics.mjs";
 import { enableFastMode } from "../e2e/battle-setup";
 import { failOnRuntimeErrors } from "../e2e/errors";
+import type { Page } from "@playwright/test";
+
+export async function useFastBattle(page: Page) {
+  await enableFastMode(page);
+}
 
 interface E2EFixtures {
   fastBattle: void;

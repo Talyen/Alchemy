@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/e2e";
 import { ShopPage } from "./pages/shop-page";
+import { expectRunPhase } from "./pages/game-stage";
 import { RewardPage } from "./pages/reward-page";
 import { DestinationPage } from "./pages/destination-page";
 import { enterPrimaryRewardScreen, SAVE_KEY, startAtDestination } from "./helpers";
@@ -23,9 +24,9 @@ test.describe("Card Shop", critical, () => {
       await enterShop(page, 9999, "Card Shop");
     });
 
-    test("buying a card deducts gold and marks as purchased", critical, async ({ page }) => {
+    test("buying a card deducts gold and marks as purchased", async ({ page }) => {
       const shop = new ShopPage(page);
-      await shop.stage.expectRunPhase("runLoop");
+      await expectRunPhase(page, "runLoop");
       const goldBefore = await shop.gold();
 
       await shop.buyCard();

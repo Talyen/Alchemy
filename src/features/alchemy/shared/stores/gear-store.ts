@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { flattenGearInventories } from "@/lib/gear";
 import { useShallow } from "zustand/react/shallow";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
-import type { GearSaveFields, GearStateFields, GearStore } from "./gear-store-types";
+import type { GearSaveFields, GearStateFields } from "./gear-store-types";
 import { createInitialGearState } from "./gear-store-initial-state";
 import { initializeGear } from "./gear-actions";
 import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
@@ -62,10 +62,7 @@ export const gearPersistenceCodec: GameplayPersistenceCodec<GearSaveFields> = {
   },
 };
 
-export type GearArmorySlice = Pick<
-  GearStore,
-  "inventories" | "loadouts" | "ownedTrinketIds" | "equippedTrinkets" | "craftingCurrencies"
->;
+export type GearArmorySlice = GearStateFields;
 
 export function useGearArmorySlice(): GearArmorySlice {
   return useGameplayStateStore(
@@ -79,9 +76,13 @@ export function useGearArmorySlice(): GearArmorySlice {
   );
 }
 
+function hasAnyOwnedGear(inventories: GearStateFields["inventories"], ownedTrinketIds: string[]): boolean {
+  return flattenGearInventories(inventories).length > 0 || ownedTrinketIds.length > 0;
+}
+
 export function readHasAnyOwnedGear(): boolean {
   const gear = readGameplayState().gear;
-  return flattenGearInventories(gear.inventories).length > 0 || gear.ownedTrinketIds.length > 0;
+  return hasAnyOwnedGear(gear.inventories, gear.ownedTrinketIds);
 }
 
 export function readGearState(): GearStateFields {
@@ -103,10 +104,7 @@ function useHasAnyOwnedGear(): boolean {
   const { inventories, ownedTrinketIds } = useGameplayStateStore(
     useShallow((state) => ({ inventories: state.gear.inventories, ownedTrinketIds: state.gear.ownedTrinketIds })),
   );
-  return useMemo(
-    () => flattenGearInventories(inventories).length > 0 || ownedTrinketIds.length > 0,
-    [inventories, ownedTrinketIds],
-  );
+  return useMemo(() => hasAnyOwnedGear(inventories, ownedTrinketIds), [inventories, ownedTrinketIds]);
 }
 
 export function useIsArmoryLocked(): boolean {

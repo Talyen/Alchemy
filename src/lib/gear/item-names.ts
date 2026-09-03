@@ -1,4 +1,4 @@
-import { gearDefinitions, gearInstanceRarity } from "./definitions";
+import { gearDefinitions } from "./definitions";
 import { gearBaseItems } from "./base-items";
 import { getUniqueItemDefinition } from "./unique-catalog";
 import type { GearDefinition, GearInstance } from "./types";
@@ -21,7 +21,5 @@ export function getGearDefinitionTitle(definition: GearDefinition): string {
 export function getGearInstanceTitle(instance: GearInstance): string {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return "Gear";
-  if (getUniqueItemDefinition(definition.id)) return titleForDefinition(definition);
-  const name = baseItemDisplayName(definition);
-  return (gearInstanceRarity(instance) ?? definition.rarity) === "astral" ? `Astral ${name}` : name;
+  return getGearDefinitionTitle(definition);
 }

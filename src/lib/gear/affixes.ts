@@ -2,7 +2,8 @@ import type { GearAffixId } from "./affix-catalog";
 import { gearAffixCatalog, type GearAffixDefinition } from "./affix-catalog";
 import type { GearEffectManifest } from "./gear-effect-manifest";
 import { defaultGearEffects } from "./gear-effect-manifest";
-import type { GearAffixRoll, GearRarity } from "./types";
+import { gearDefinitions } from "./definitions";
+import type { GearAffixRoll, GearInstance, GearRarity } from "./types";
 
 function isGearAffixId(value: string): value is GearAffixId {
   return value in gearAffixCatalog;
@@ -62,4 +63,17 @@ export function affixMatchesAffinity(def: GearAffixDefinition, affinityKeywords:
     affinityKeywords.includes(def.keywordId) ||
     (def.secondaryKeywordId !== undefined && affinityKeywords.includes(def.secondaryKeywordId))
   );
+}
+
+export function getGearInstanceTooltipEntries(
+  instance: GearInstance,
+): Array<{ key: string; name?: string; text: string }> {
+  const definition = gearDefinitions[instance.definitionId];
+  const affixEntries = getGearAffixTooltipEntries(instance.affixes);
+  if (affixEntries.length > 0) return affixEntries;
+  return (definition?.descriptionLines ?? []).map((text, index) => ({ key: `definition-${index}`, text }));
+}
+
+export function getGearInstanceTooltipLines(instance: GearInstance): Array<{ key: string; text: string }> {
+  return getGearInstanceTooltipEntries(instance).map(({ key, text }) => ({ key, text }));
 }

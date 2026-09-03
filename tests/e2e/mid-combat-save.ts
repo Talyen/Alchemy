@@ -27,4 +27,5 @@ export async function injectMidCombatSave(page: Page) {
       activeLabyrinthRewardModifiers: [],
     },
   });
+  await page.goto("/");
 }

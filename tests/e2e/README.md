@@ -5,14 +5,14 @@ CI tier policy lives in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 When a command or E2E test fails, follow [failure-first triage](../../docs/REFERENCE.md#failure-first-triage) before opening a raw trace or report directory.
 
-Helpers live in this directory and are re-exported from [`tests/helpers.ts`](../helpers.ts). Layout assertions are in [`layout-assertions.ts`](./layout-assertions.ts), page objects in [`tests/pages/`](../pages/), and fixtures in [`tests/fixtures/e2e.ts`](../fixtures/e2e.ts).
+Helpers live in this directory and are re-exported from [`tests/helpers.ts`](../helpers.ts) (all modules, including `mid-combat-save` and `gear-combat`). Layout assertions are in [`layout-assertions.ts`](./layout-assertions.ts), page objects in [`tests/pages/`](../pages/), and fixtures in [`tests/fixtures/e2e.ts`](../fixtures/e2e.ts). Run-phase assertions use `expectRunPhase(page, phase)` from [`tests/pages/game-stage.ts`](../pages/game-stage.ts).
 
 ## Test import
 
-| Import                                    | Use                                                                                |
-| ----------------------------------------- | ---------------------------------------------------------------------------------- |
-| `import { test } from "./fixtures/e2e"`   | Most battle/flow specs; opt in to `fastBattle` and `runtimeErrors`                 |
-| `import { test } from "@playwright/test"` | Animation specs and boot-only smoke; never enable fast mode for animation coverage |
+| Import                                    | Use                                                                                                                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `import { test } from "./fixtures/e2e"`   | Most battle/flow specs; opt in to `fastBattle` and `runtimeErrors`                                                                                                        |
+| `import { test } from "@playwright/test"` | Animation specs, boot-only smoke, and Electron specs; never enable fast mode for animation coverage. `audio-sfx` uses `baseTest.describe` to opt out of `autoDiagnostic`. |
 
 Decision order:
 
@@ -23,8 +23,8 @@ Decision order:
 ## Navigation and bootstrap
 
 - `openGameModeSelect` retries Play if bootstrap unmounts the menu.
-- `selectGameMode` clicks the mode art card; there is no Play/Resume footer.
-- `selectCharacterAndContinue` clicks a hero portrait; there is no Back/Continue footer.
+- `selectGameMode(page, mode, action?)` clicks the mode card with `Play` (default) or `Resume ${title}`.
+- `selectCharacterAndContinue` clicks a hero portrait; character select has no Back/Continue footer.
 - `resumeCampaignRun` waits for the saved destination rather than clicking Play during hydrate.
 - `startBattleWithDeck` and `startAtDestination` bootstrap battle.
 - `injectActiveBattle` injects a mid-battle snapshot and boots straight into the battle screen.
@@ -44,11 +44,11 @@ Decision order:
 
 ## Fixtures and diagnostics
 
-- `fastBattle` enables fast mode when explicitly requested.
+- `fastBattle` enables fast mode when explicitly requested. New specs may call `useFastBattle(page)` from `tests/fixtures/e2e.ts` instead of destructuring the `void` fixture.
 - `runtimeErrors` collects page errors and asserts that none occurred.
 - `autoDiagnostic` runs for every test. On failure it writes one run-attributed bounded digest with an accessibility snapshot and an exact entry in `test-results/failures/<run-id>/index.json`. If the page can no longer provide that snapshot, the digest falls back to bounded HTML; raw traces remain secondary evidence.
 
-Page objects: `BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPage`, `MysteryPage`, `CorruptionPage`, `HomesteadPage`, `GameStage`.
+Page objects: `BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPage`, `MysteryPage`, `CorruptionPage`, `HomesteadPage`, plus `expectRunPhase(page, phase)`.
 
 ## Tags
 

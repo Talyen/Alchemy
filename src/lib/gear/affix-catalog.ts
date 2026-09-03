@@ -1,6 +1,6 @@
 import type { KeywordId } from "@/lib/game-data";
 import type { GearEffectManifest } from "./gear-effect-manifest";
-import type { GearRarity } from "./types-core";
+import type { GearRarity } from "./types";
 
 export type GearAffixAspect = "offensive" | "defensive";
 
@@ -26,8 +26,8 @@ const ROLL_SMALL = rollRange(1, 2, 3, 4);
 const ROLL_RESIST = rollRange(10, 15, 15, 20);
 const ROLL_MEDIUM = rollRange(3, 4, 5, 6);
 
-interface AffixRow {
-  id: string;
+export interface GearAffixDefinition {
+  id: GearAffixId;
   name: string;
   aspect: GearAffixAspect;
   keywordId: KeywordId;
@@ -37,6 +37,8 @@ interface AffixRow {
   roll: AffixRollRange;
   uniqueOnly?: boolean;
 }
+
+type AffixRowInput = Omit<GearAffixDefinition, "id"> & { id: string };
 
 const affixRows = [
   {
@@ -804,39 +806,14 @@ const affixRows = [
     roll: uniqueRoll(1),
     uniqueOnly: true,
   },
-] as const satisfies readonly AffixRow[];
+] as const satisfies readonly AffixRowInput[];
 
 export type GearAffixId = (typeof affixRows)[number]["id"];
 
 export const GEAR_AFFIX_IDS = affixRows.map((row) => row.id) as [GearAffixId, ...GearAffixId[]];
 
-export interface GearAffixDefinition {
-  id: GearAffixId;
-  name: string;
-  aspect: GearAffixAspect;
-  keywordId: KeywordId;
-  secondaryKeywordId?: KeywordId;
-  descriptionTemplate: string;
-  effectKey: keyof GearEffectManifest;
-  roll: Record<GearRarity, { min: number; max: number }>;
-  uniqueOnly?: boolean;
-}
-
 export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = Object.fromEntries(
-  affixRows.map((row) => [
-    row.id,
-    {
-      id: row.id,
-      name: row.name,
-      aspect: row.aspect,
-      keywordId: row.keywordId,
-      ...("secondaryKeywordId" in row ? { secondaryKeywordId: row.secondaryKeywordId } : {}),
-      descriptionTemplate: row.descriptionTemplate,
-      effectKey: row.effectKey,
-      roll: row.roll,
-      ...("uniqueOnly" in row ? { uniqueOnly: row.uniqueOnly } : {}),
-    },
-  ]),
+  affixRows.map((row) => [row.id, { ...row }]),
 ) as Record<GearAffixId, GearAffixDefinition>;
 
 export const gearAffixList = Object.values(gearAffixCatalog);

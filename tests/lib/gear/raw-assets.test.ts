@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { gearBaseItems } from "@/lib/gear/base-items";
-import { GEAR_RARITIES } from "@/lib/gear/types-core";
+import { GEAR_RARITIES } from "@/lib/gear";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const gearDir = path.join(rootDir, "Raw Assets", "Gear");

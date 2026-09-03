@@ -7,7 +7,7 @@ import { PaginationControls } from "../../../shared/ui/shared-ui";
 export const PICKER_PAGE_SIZE = 6;
 const FILLER_INDICES = Array.from({ length: PICKER_PAGE_SIZE }, (_, i) => i);
 
-export function useContextPagedGrid(context: string, itemCount: number, pageSize = PICKER_PAGE_SIZE) {
+function useContextPagedGrid(context: string, itemCount: number, pageSize = PICKER_PAGE_SIZE) {
   const [paging, setPaging] = useState({ context, page: 0 });
   const page = paging.context === context ? paging.page : 0;
   const totalPages = Math.max(1, Math.ceil(itemCount / pageSize));
@@ -77,4 +77,10 @@ export function pickerPageSlice<T>(items: T[], safePage: number, pageSize = PICK
 
 export function pickerFillerCount(visibleCount: number, pageSize = PICKER_PAGE_SIZE): number {
   return Math.max(0, pageSize - visibleCount);
+}
+
+export function useArmoryPickerPage<T>(context: string, items: T[], pageSize = PICKER_PAGE_SIZE) {
+  const { safePage, totalPages, onPageChange } = useContextPagedGrid(context, items.length, pageSize);
+  const pageItems = pickerPageSlice(items, safePage, pageSize);
+  return { pageItems, fillerCount: pickerFillerCount(pageItems.length, pageSize), safePage, totalPages, onPageChange };
 }

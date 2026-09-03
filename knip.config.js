@@ -65,6 +65,8 @@ export default {
     "src/features/alchemy/shared/storage/io.ts": ["exports", "types"],
     "src/lib/platform-save-backend.ts": ["exports", "types"],
     "src/lib/validation/migration/content-steps.ts": ["exports"],
+    // Documented forward pattern: new specs may call useFastBattle(page) instead of the void fixture.
+    "tests/fixtures/e2e.ts": ["exports"],
   },
   ignore: ["tests/environment.d.ts", "tests/scripts/global.d.ts", "tests/electron-environment.d.ts"],
   ignoreDependencies: [

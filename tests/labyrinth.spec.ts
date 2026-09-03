@@ -9,7 +9,7 @@ test.describe("Labyrinth Mode", critical, () => {
     void runtimeErrors;
   });
 
-  test("labyrinth map pins chamber details on a hex", critical, async ({ page }) => {
+  test("labyrinth map pins chamber details on a hex", async ({ page }) => {
     await injectLabyrinthRun(page, { deck: Array.from({ length: 6 }, () => makeHighDamageCard()), resume: true });
 
     await expect(page.getByRole("heading", { name: /Labyrinth|Map/ })).toBeVisible({ timeout: 5000 });
@@ -34,7 +34,7 @@ test.describe("Labyrinth Mode", critical, () => {
     await expect(page.getByRole("button", { name: "Main Menu" })).toHaveCount(0);
   });
 
-  test("switching floors dismisses the chamber inspector", critical, async ({ page }) => {
+  test("switching floors dismisses the chamber inspector", async ({ page }) => {
     await injectLabyrinthRun(page, { labyrinthMap: productionHexLabyrinthMapFixture(), resume: true });
 
     await expect(page.getByRole("heading", { name: /Labyrinth|Map/ })).toBeVisible({ timeout: 5000 });

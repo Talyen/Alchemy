@@ -3,7 +3,7 @@ import type { EquippedTrinkets } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { collectionGridTileWidthClass, gearArtAspectClass } from "@/features/alchemy/shared/config";
 import { TrinketTile } from "@/features/alchemy/shared/ui/collection-art-tiles";
-import { PagedPickerGrid, pickerFillerCount, pickerPageSlice, useContextPagedGrid } from "./paged-picker-grid";
+import { PagedPickerGrid, useArmoryPickerPage } from "./paged-picker-grid";
 
 export function TrinketPickerGrid({
   characterId,
@@ -19,9 +19,7 @@ export function TrinketPickerGrid({
   onEquip: (trinketId: string) => void;
 }) {
   const pageContext = `trinket:${characterId}`;
-  const { safePage, totalPages, onPageChange } = useContextPagedGrid(pageContext, trinkets.length);
-  const pageItems = pickerPageSlice(trinkets, safePage);
-  const fillerCount = pickerFillerCount(pageItems.length);
+  const { pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(pageContext, trinkets);
 
   return (
     <PagedPickerGrid

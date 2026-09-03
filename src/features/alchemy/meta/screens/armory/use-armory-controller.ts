@@ -67,8 +67,8 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
 
   const onEquip = useCallback<ArmoryController["onEquip"]>(
     (characterId, slot, instance) => {
-      mutateGearWithFlush(flush, (state) => {
-        state.equip(characterId, slot, instance);
+      mutateGearWithFlush(flush, (state) => state.equip(characterId, slot, instance), {
+        flushOnSuccessOnly: true,
       });
     },
     [flush],
@@ -76,23 +76,23 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
 
   const onUnequip = useCallback<ArmoryController["onUnequip"]>(
     (characterId, slot) => {
-      mutateGearWithFlush(flush, (state) => {
-        state.unequip(characterId, slot);
-      });
+      mutateGearWithFlush(flush, (state) => state.unequip(characterId, slot), { flushOnSuccessOnly: true });
     },
     [flush],
   );
 
   const onEquipTrinket = useCallback<ArmoryController["onEquipTrinket"]>(
     (characterId, trinketId) => {
-      mutateGearWithFlush(flush, (state) => state.equipTrinket(characterId, trinketId));
+      mutateGearWithFlush(flush, (state) => state.equipTrinket(characterId, trinketId), {
+        flushOnSuccessOnly: true,
+      });
     },
     [flush],
   );
 
   const onUnequipTrinket = useCallback<ArmoryController["onUnequipTrinket"]>(
     (characterId) => {
-      mutateGearWithFlush(flush, (state) => state.unequipTrinket(characterId));
+      mutateGearWithFlush(flush, (state) => state.unequipTrinket(characterId), { flushOnSuccessOnly: true });
     },
     [flush],
   );

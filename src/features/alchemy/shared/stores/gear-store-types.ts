@@ -37,11 +37,11 @@ export interface GearStore {
     equippedTrinkets?: EquippedTrinkets,
   ) => void;
   addInstance: (instance: GearInstance, characterId: CharacterId) => void;
-  equip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
-  unequip: (characterId: CharacterId, slot: GearSlot) => void;
+  equip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => boolean;
+  unequip: (characterId: CharacterId, slot: GearSlot) => boolean;
   addTrinket: (trinketId: string) => boolean;
   equipTrinket: (characterId: CharacterId, trinketId: string) => boolean;
-  unequipTrinket: (characterId: CharacterId) => void;
+  unequipTrinket: (characterId: CharacterId) => boolean;
   salvage: (
     instanceId: string,
     options?: { rng?: () => number; yield?: SalvageYield },

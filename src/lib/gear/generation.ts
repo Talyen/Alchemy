@@ -12,7 +12,7 @@ import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";
 import { gearDefinitionId, gearDefinitions } from "./definitions";
-import { GEAR_RARITIES } from "./types-core";
+import { GEAR_RARITIES } from "./types";
 import { uniqueItemList, type UniqueItemDefinition } from "./unique-catalog";
 import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity, GearSlot } from "./types";
 
@@ -130,21 +130,34 @@ function resolveDropTier(uniqueChance: number, astralChance: number, rng: () => 
   return "basic";
 }
 
+function rollTierFromChances(
+  uniqueChance: number,
+  astralChance: number,
+  rng: () => number,
+  allowsUnique: boolean,
+  fallbackUniqueChance: number,
+): GearRarity {
+  const unique = allowsUnique ? uniqueChance : 0;
+  const astral = astralChance + (allowsUnique ? 0 : fallbackUniqueChance);
+  return resolveDropTier(unique, astral, rng);
+}
+
 function rollItemDropTier(options: RollItemDropTierOptions, rng: () => number): GearRarity {
   const allowsUnique = options.allowsUnique !== false;
   const astralBonus = Math.max(0, options.astralChanceBonus ?? 0);
   const base = options.isBoss ? DROP_RATES_BOSS : DROP_RATES_NORMAL;
-  const uniqueChance = allowsUnique ? base.unique : 0;
-  const astralChance = base.astral + astralBonus + (allowsUnique ? 0 : base.unique);
-  return resolveDropTier(uniqueChance, astralChance, rng);
+  return rollTierFromChances(base.unique, base.astral + astralBonus, rng, allowsUnique, base.unique);
 }
 
 function rollEquipmentShopDropTier(astralChanceBonus = 0, rng: () => number, allowsUnique = true): GearRarity {
-  const uniqueChance = allowsUnique ? EQUIPMENT_SHOP_DROP_RATES.unique : 0;
   const astralBonus = Math.max(0, astralChanceBonus);
-  const astralChance =
-    EQUIPMENT_SHOP_DROP_RATES.astral + astralBonus + (allowsUnique ? 0 : EQUIPMENT_SHOP_DROP_RATES.unique);
-  return resolveDropTier(uniqueChance, astralChance, rng);
+  return rollTierFromChances(
+    EQUIPMENT_SHOP_DROP_RATES.unique,
+    EQUIPMENT_SHOP_DROP_RATES.astral + astralBonus,
+    rng,
+    allowsUnique,
+    EQUIPMENT_SHOP_DROP_RATES.unique,
+  );
 }
 
 interface GenerateGearOfferingsOptions {

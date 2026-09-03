@@ -74,30 +74,32 @@ export function makeHighDamageCard(amount = 500) {
   });
 }
 
-export const STARTING_DECK: BattleCard[] = [
-  makeCard(),
-  makeTestCard({
-    id: "bash",
-    title: "Bash",
-    descriptionLines: ["Deal 4 Stun damage"],
-    art: "placeholder",
-    effects: [{ kind: "damage", damageType: "stun", amount: 4 }],
-  }),
-  BLOCK_CARD,
-  ANVIL_CARD,
-  makeTestCard({
-    id: "plate-mail",
-    title: "Plate Mail",
-    descriptionLines: ["Gain 2 Armor"],
-    art: "placeholder",
-    effects: [{ kind: "player-status", status: "armor", amount: 2 }],
-  }),
-  makeTestCard({
-    id: "bread",
-    title: "Bread",
-    descriptionLines: ["Gain 5 Health", "Consume"],
-    art: "placeholder",
-    consume: true,
-    effects: [{ kind: "heal", amount: 5 }],
-  }),
-];
+export function makeStartingDeck(): BattleCard[] {
+  return [
+    makeCard(),
+    makeTestCard({
+      id: "bash",
+      title: "Bash",
+      descriptionLines: ["Deal 4 Stun damage"],
+      art: "placeholder",
+      effects: [{ kind: "damage", damageType: "stun", amount: 4 }],
+    }),
+    BLOCK_CARD,
+    ANVIL_CARD,
+    makeTestCard({
+      id: "plate-mail",
+      title: "Plate Mail",
+      descriptionLines: ["Gain 2 Armor"],
+      art: "placeholder",
+      effects: [{ kind: "player-status", status: "armor", amount: 2 }],
+    }),
+    makeTestCard({
+      id: "bread",
+      title: "Bread",
+      descriptionLines: ["Gain 5 Health", "Consume"],
+      art: "placeholder",
+      consume: true,
+      effects: [{ kind: "heal", amount: 5 }],
+    }),
+  ];
+}

@@ -18,10 +18,7 @@ import { type GearInstance, type GearAffixRoll, type GearRarity } from "./types"
 import { clamp, lerp } from "@/lib/math";
 import { pickRandom } from "@/lib/utils";
 import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "./crafting-ids";
-
 export type { CraftingCurrencyId } from "./crafting-ids";
-export { EMPTY_CRAFTING_CURRENCIES } from "./crafting-ids";
-export { addCraftingCurrencies, normalizeCraftingCurrencies } from "./crafting-ids";
 
 export interface CraftingCurrencyDefinition {
   id: CraftingCurrencyId;
