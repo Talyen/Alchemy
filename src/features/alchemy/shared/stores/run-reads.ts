@@ -19,7 +19,6 @@ import { readGameplayState, useGameplayStateStore, type GameplayState } from "./
 import { mostRecentResumableMode } from "./parked-runs";
 import type { ActiveRunData, ParkedRunsMap } from "@/lib/active-run-session";
 import type { RunDomainBattleState, RunSessionFields } from "./run-domain-types";
-import { selectAutosaveAllowed } from "./select-autosave-allowed";
 import { deepFreezeInDev } from "./store-utils";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 
@@ -130,6 +129,20 @@ export function useContentNavigationTalentPort(
 export function useActiveRunScreenValue(): Screen {
   return useGameplayStateStore((state) => state.run.navigation.screen);
 }
+export function selectAutosaveAllowed(
+  state: {
+    battle: { hasActiveBattle: boolean; battleState: { enemyHealth: number } };
+    session: { rewardClaimInFlight: boolean; rewardState: { choices: unknown[] } };
+  },
+  screen: Screen,
+): boolean {
+  const phase = getRunPhase(screen, state.battle.hasActiveBattle);
+  if (phase === "runEnd") return false;
+  if (phase === "battle" && state.battle.battleState.enemyHealth <= 0) return false;
+
+  return true;
+}
+
 export function useAutosaveAllowed(screen: Screen): boolean {
   return useGameplayStateStore((state) => selectAutosaveAllowed(state, screen));
 }

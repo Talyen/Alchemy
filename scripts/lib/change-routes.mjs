@@ -26,7 +26,7 @@ export const ROUTES = Object.freeze([
     "save",
     [
       "src/features/alchemy/shared/storage/**",
-      "src/features/alchemy/shared/stores/**/*save*",
+      "src/features/alchemy/shared/stores/**",
       "src/features/alchemy/app/**/*autosave*",
       "src/lib/validation/save-*.ts",
     ],

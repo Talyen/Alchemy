@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { deriveCombatMeta } from "@/features/alchemy/shared/stores/combat-meta";
+import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { computeTalentEffects } from "@/lib/game-data";

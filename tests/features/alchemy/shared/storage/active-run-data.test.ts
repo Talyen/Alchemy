@@ -78,6 +78,8 @@ describe("encodeRunResumeSnapshot", () => {
       rng: readActiveRun().rng,
       labyrinthMap: null,
       labyrinthPendingNode: null,
+      activeLabyrinthModifiers: [],
+      activeLabyrinthRewardModifiers: [],
       activeCombat: null,
       currentScreen: "menu",
       interruptedFlow: { kind: "none" },

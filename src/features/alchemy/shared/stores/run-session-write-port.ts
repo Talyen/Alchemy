@@ -42,6 +42,7 @@ export {
   bondCompanion,
   completeResearch,
   constructBuilding,
+  grantSalvageMaterials,
   plantFarm,
   setMaterials,
 } from "./write-port-homestead";

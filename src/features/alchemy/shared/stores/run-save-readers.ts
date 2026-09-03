@@ -2,6 +2,7 @@ import type { CompanionId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
+import { pruneUnknownCompanions } from "@/features/alchemy/shared/stores/homestead-actions";
 import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
 import { readGameplayState } from "./gameplay-state-store";
@@ -46,15 +47,16 @@ export const runProfilePersistenceCodec: GameplayPersistenceCodec<RunProfileSave
   createDefault: createDefaultRunProfileSaveFields,
   encode: () => encodeRunProfileSnapshot(readPermanentProgressForSave()),
   hydrate: (fields, draft) => {
-    const next = {
+    const prunedCompanions = pruneUnknownCompanions({ ...fields.bondedCompanions });
+    draft.runProfile = {
       ...fields,
+      bondedCompanions: prunedCompanions,
       effects: computeHomesteadEffects(
         fields.constructedBuildings,
         fields.plantedFarms,
         fields.completedResearch,
-        fields.bondedCompanions,
+        prunedCompanions,
       ),
     };
-    draft.runProfile = next;
   },
 };

@@ -53,6 +53,24 @@ function filterLiveTransition(transition: ActiveCombatData["pendingBattleTransit
   return { ...transition, resultState: filterLiveBattleState(transition.resultState) };
 }
 
+function normalizeLabyrinthModifiers(
+  data: ValidatedActiveRunData,
+): Pick<ValidatedActiveRunData, "activeLabyrinthModifiers" | "activeLabyrinthRewardModifiers"> {
+  if (data.contentSystemType !== "labyrinth") {
+    return { activeLabyrinthModifiers: [], activeLabyrinthRewardModifiers: [] };
+  }
+  return {
+    activeLabyrinthModifiers:
+      data.activeLabyrinthModifiers.length > 0
+        ? data.activeLabyrinthModifiers
+        : (data.activeCombat?.activeLabyrinthModifiers ?? []),
+    activeLabyrinthRewardModifiers:
+      data.activeLabyrinthRewardModifiers.length > 0
+        ? data.activeLabyrinthRewardModifiers
+        : (data.activeCombat?.activeLabyrinthRewardModifiers ?? []),
+  };
+}
+
 const keepLiveCard = (card: { id: string }) => isLiveCardId(card.id);
 const shopCardSlotKey = (card: { id: string }, index: number) => shopItemSlotKey(card.id, index);
 
@@ -190,6 +208,7 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     runDeck,
     labyrinthMap: data.contentSystemType === "labyrinth" ? data.labyrinthMap : null,
     labyrinthPendingNode: data.contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
+    ...normalizeLabyrinthModifiers(data),
     wildwoodDraft,
     starterDraftChoices,
     activeCombat: data.activeCombat ? normalizeActiveCombat(data.activeCombat, data.contentSystemType) : null,

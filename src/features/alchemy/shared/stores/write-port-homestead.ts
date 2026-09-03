@@ -31,6 +31,14 @@ export function addMaterials(draft: GameplayDraft, materials: ProfileMaterialInv
   grantMaterials(draft, materials);
 }
 
+export function grantSalvageMaterials(draft: GameplayDraft, materials: ProfileMaterialInventory): void {
+  if (draft.session.hasActiveRun) {
+    awardMaterialsDuringRun(draft, materials);
+  } else {
+    addMaterials(draft, materials);
+  }
+}
+
 function rebindOnSuccess(ok: boolean, draft: GameplayDraft): boolean {
   if (ok) rebindLiveRunMeta(draft);
   return ok;

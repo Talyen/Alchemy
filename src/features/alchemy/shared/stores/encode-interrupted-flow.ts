@@ -20,21 +20,7 @@ export interface DecodedClaimSurface {
 }
 
 function encodeMidClaimPendingReward(session: RunSession["session"]): PersistedPendingReward | null {
-  const companions = session.companionRewardCards;
-  if (!companions?.length) return null;
-
-  return {
-    rewardType: "card",
-    choiceIds: [],
-    companionChoiceIds: companions.map((choice) => choice.id),
-    selectedId: null,
-    gold: 0,
-    materials: emptyInventory(),
-    destinations: [...session.rewardState.destinations],
-    selectedBossId: session.rewardState.selectedBossId,
-    lastVictoryEnemyType: session.rewardState.lastVictoryEnemyType,
-    lastVictoryContentSystem: session.rewardState.lastVictoryContentSystem,
-  };
+  return serializePendingReward(session.rewardState, session.companionRewardCards);
 }
 
 export function resolveEncodeScreen(

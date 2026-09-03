@@ -15,15 +15,18 @@ const buildingLookup = createTierLookup(buildings);
 const farmLookup = createTierLookup(farmPlots);
 const researchLookup = createTierLookup(researchUpgrades);
 
+export function pruneUnknownCompanions(companions: Record<CompanionId, number>): Record<CompanionId, number> {
+  const removed = Object.keys(companions).filter((key) => !(key in defaultCompanionBondLevels));
+  if (removed.length === 0) return companions;
+  logError("Removed companions missing from catalog", "other", { removed });
+  return Object.fromEntries(Object.entries(companions).filter(([key]) => key in defaultCompanionBondLevels)) as Record<
+    CompanionId,
+    number
+  >;
+}
+
 function recomputeEffects(profile: PermanentProgressFields): void {
-  const pruned = Object.fromEntries(
-    Object.entries(profile.bondedCompanions).filter(([key]) => key in defaultCompanionBondLevels),
-  ) as Record<CompanionId, number>;
-  if (Object.keys(pruned).length !== Object.keys(profile.bondedCompanions).length) {
-    const removed = Object.keys(profile.bondedCompanions).filter((key) => !(key in defaultCompanionBondLevels));
-    logError("Removed companions missing from catalog", "other", { removed });
-    profile.bondedCompanions = pruned;
-  }
+  profile.bondedCompanions = pruneUnknownCompanions(profile.bondedCompanions);
   profile.effects = computeHomesteadEffects(
     profile.constructedBuildings,
     profile.plantedFarms,

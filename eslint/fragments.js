@@ -108,8 +108,6 @@ export const DOMAIN_STORE_PATTERNS = [
       "@/features/alchemy/shared/stores/gameplay-state-store",
       "**/run-lifecycle",
       "@/features/alchemy/shared/stores/run-lifecycle",
-      "**/run-presentation-lifecycle",
-      "@/features/alchemy/shared/stores/run-presentation-lifecycle",
     ],
     message:
       "Import a capability-specific run-session port instead of the low-level gameplay aggregate or lifecycle internals.",
@@ -124,6 +122,10 @@ export const WRITE_PORT_PATTERNS = [
       "@/features/alchemy/shared/stores/write-port-run",
       "**/write-port-session",
       "@/features/alchemy/shared/stores/write-port-session",
+      "**/write-port-homestead",
+      "@/features/alchemy/shared/stores/write-port-homestead",
+      "**/write-port-meta",
+      "@/features/alchemy/shared/stores/write-port-meta",
     ],
     message:
       "Import from @/features/alchemy/shared/stores/run-session-write-port instead of write-port internals — outside shared/stores/* the barrel is the canonical seam.",

@@ -1,9 +1,26 @@
-import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
+import { computeGearManifest, flattenGearInventories, type GearEffectManifest } from "@/lib/gear";
 import type { GameplayDraft } from "./run-session-command";
 import { syncBattleGoldFromPurse } from "./write-port-run";
-import { computeTrinketManifest } from "@/lib/trinkets";
-import { deriveCombatMeta } from "./combat-meta";
+import { combineTrinketEffectIds, computeTrinketManifest } from "@/lib/trinkets";
+import { computeTalentEffects, type TalentEffectManifest } from "@/lib/game-data";
+import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { computeRunMaxHealth } from "../run-flow/run-max-health";
+
+export interface CombatMeta {
+  talentEffects: TalentEffectManifest;
+  gearEffects: GearEffectManifest;
+  activeTrinketIds: string[];
+}
+
+export function deriveCombatMeta(draft: GameplayDraft): CombatMeta {
+  const run = draft.run.activeRun;
+  const characterId = run.characterId;
+  return {
+    talentEffects: mergeIntoManifest(computeTalentEffects(draft.runProfile.unlockedTalents), draft.runProfile.effects),
+    gearEffects: computeGearManifest(characterId, flattenGearInventories(draft.gear.inventories), draft.gear.loadouts),
+    activeTrinketIds: combineTrinketEffectIds(run.runBoons, draft.gear.equippedTrinkets[characterId]),
+  };
+}
 
 function computeDerivedRunMaxHealth(draft: GameplayDraft): number {
   const characterId = draft.run.activeRun.characterId;

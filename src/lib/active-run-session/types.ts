@@ -97,6 +97,8 @@ export interface ActiveRunData {
   rng: RunRngState;
   labyrinthMap: LabyrinthMap | null;
   labyrinthPendingNode: LabyrinthPendingNodeId | null;
+  activeLabyrinthModifiers: EncounterCombatTraitId[];
+  activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   wildwoodDraft: WildwoodDraftState | null;
 
   starterDraftChoices: BattleCard[] | null;

@@ -8,11 +8,9 @@ export {
   flushSaveAfterGearMutation,
   finalizeRunEndSession,
   applyRunDefeatTeardown,
-} from "./run-lifecycle";
-export {
   onRunTeardown,
   onClearBattlePresentation,
   clearBattleUi,
   clearBattlePresentationUi,
-} from "./run-presentation-lifecycle";
+} from "./run-lifecycle";
 export { hydrateModeRunInDraft } from "./run-park-restore";

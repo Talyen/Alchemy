@@ -181,7 +181,7 @@ describe("session facade API", () => {
     expect(readBattle().battleState.turnPhase).toBe("enemy");
   });
 
-  it("persists companion handoff during mid-claim and restores companion as the offer", () => {
+  it("persists companion handoff during mid-claim and restores both offers", () => {
     const primary = cardLibrary.find((card) => card.id === "slash")!;
     const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
     setRewardState({
@@ -197,7 +197,7 @@ describe("session facade API", () => {
     if (snap.interruptedFlow.kind === "companion-reward") {
       expect(snap.interruptedFlow.pending.rewardType).toBe("card");
       if (snap.interruptedFlow.pending.rewardType === "card") {
-        expect(snap.interruptedFlow.pending.choiceIds).toEqual([]);
+        expect(snap.interruptedFlow.pending.choiceIds).toEqual([primary.id]);
       }
       expect(snap.interruptedFlow.pending.companionChoiceIds).toEqual([companion.id]);
     }
@@ -211,9 +211,9 @@ describe("session facade API", () => {
     const restored = readRunSession().rewardState;
     expect(restored.rewardType).toBe("card");
     if (restored.rewardType === "card") {
-      expect(restored.choices.map((choice) => choice.id)).toEqual([companion.id]);
+      expect(restored.choices.map((choice) => choice.id)).toEqual([primary.id]);
     }
-    expect(readRunSession().companionRewardCards).toBeNull();
+    expect(readRunSession().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
     expect(readActiveRunScreen()).toBe("rewards");
   });
 

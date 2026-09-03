@@ -36,6 +36,8 @@ export function makeActiveRunData(overrides: Partial<ActiveRunData> = {}): Activ
     rng: createRunRngState(() => 0.5),
     labyrinthMap: null,
     labyrinthPendingNode: null,
+    activeLabyrinthModifiers: [],
+    activeLabyrinthRewardModifiers: [],
     wildwoodDraft: null,
     starterDraftChoices: null,
     activeCombat: null,
@@ -88,6 +90,8 @@ export function createCompleteActiveRunData(): ActiveRunData {
     rng: createRunRngState(() => 123 / 0x1_0000_0000),
     labyrinthMap,
     labyrinthPendingNode,
+    activeLabyrinthModifiers: ["tempered"],
+    activeLabyrinthRewardModifiers: ["generous"],
     wildwoodDraft: null,
     starterDraftChoices: null,
     activeCombat: {

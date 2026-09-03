@@ -200,14 +200,14 @@ function encodeScreenGatedFields(
 function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFields): ActiveRunData {
   const { run, session, battle } = source;
   const progress = pickActiveRunProgress(run);
+  const isLabyrinth = progress.contentSystemType === "labyrinth";
   const activeCombat =
     battle.hasActiveBattle && battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)
       ? {
           battleState: battle.battleState,
           pendingBattleTransition: battle.pendingBattleTransition ?? null,
-          activeLabyrinthModifiers: progress.contentSystemType === "labyrinth" ? session.activeLabyrinthModifiers : [],
-          activeLabyrinthRewardModifiers:
-            progress.contentSystemType === "labyrinth" ? session.activeLabyrinthRewardModifiers : [],
+          activeLabyrinthModifiers: isLabyrinth ? session.activeLabyrinthModifiers : [],
+          activeLabyrinthRewardModifiers: isLabyrinth ? session.activeLabyrinthRewardModifiers : [],
         }
       : null;
 
@@ -215,8 +215,10 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
     ...progress,
     destinationRoundsSinceOffered: { ...progress.destinationRoundsSinceOffered },
     rng: { seed: progress.rng.seed, counters: { ...progress.rng.counters } },
-    labyrinthMap: progress.contentSystemType === "labyrinth" ? session.labyrinthMap : null,
-    labyrinthPendingNode: progress.contentSystemType === "labyrinth" ? session.activeLabyrinthPendingNode : null,
+    labyrinthMap: isLabyrinth ? session.labyrinthMap : null,
+    labyrinthPendingNode: isLabyrinth ? session.activeLabyrinthPendingNode : null,
+    activeLabyrinthModifiers: isLabyrinth ? [...session.activeLabyrinthModifiers] : [],
+    activeLabyrinthRewardModifiers: isLabyrinth ? [...session.activeLabyrinthRewardModifiers] : [],
     wildwoodDraft: progress.contentSystemType === "wildwood" ? session.wildwoodDraft : null,
     starterDraftChoices:
       progress.contentSystemType === "wildwood" || !session.starterDraftChoices?.length
@@ -264,8 +266,14 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
     session: {
       labyrinthMap: activeRun.labyrinthMap,
       labyrinthPendingNode: activeRun.labyrinthPendingNode,
-      activeLabyrinthModifiers: activeRun.activeCombat?.activeLabyrinthModifiers ?? [],
-      activeLabyrinthRewardModifiers: activeRun.activeCombat?.activeLabyrinthRewardModifiers ?? [],
+      activeLabyrinthModifiers:
+        (activeRun.activeLabyrinthModifiers ?? []).length > 0
+          ? (activeRun.activeLabyrinthModifiers ?? [])
+          : (activeRun.activeCombat?.activeLabyrinthModifiers ?? []),
+      activeLabyrinthRewardModifiers:
+        (activeRun.activeLabyrinthRewardModifiers ?? []).length > 0
+          ? (activeRun.activeLabyrinthRewardModifiers ?? [])
+          : (activeRun.activeCombat?.activeLabyrinthRewardModifiers ?? []),
       wildwoodDraft: activeRun.wildwoodDraft,
       starterDraftChoices: activeRun.starterDraftChoices,
       rewardState,

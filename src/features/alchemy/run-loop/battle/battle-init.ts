@@ -26,7 +26,7 @@ import { applyCombatTextShakeFeedback } from "./battle-status";
 import { playCompanionSound, playCombatTextSounds } from "./controller-utils";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
-import { deriveCombatMeta } from "@/features/alchemy/shared/stores/combat-meta";
+import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
 
 export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function createBattleForEnemy(

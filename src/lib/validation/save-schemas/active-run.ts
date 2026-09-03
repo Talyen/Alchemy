@@ -285,6 +285,8 @@ const ActiveRunDataObjectSchema = z.object({
   })),
   labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
   labyrinthPendingNode: LabyrinthPendingNodeSchema,
+  activeLabyrinthModifiers: EncounterCombatTraitArraySchema.catch([]).default([]),
+  activeLabyrinthRewardModifiers: EncounterRewardTraitArraySchema.catch([]).default([]),
   wildwoodDraft: WildwoodDraftStateSchema.default(null),
   starterDraftChoices: z.array(BattleCardSchema).nullable().catch(null).default(null),
   activeCombat: ActiveCombatDataSchema.catch(null).default(null),

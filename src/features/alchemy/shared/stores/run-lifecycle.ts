@@ -11,7 +11,13 @@ import { getRunSession } from "./run-reads";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
 import { initializeActiveBattle, setRunEndItems, setRunEndLabyrinthFloor } from "./run-session-write-port";
-import { cloneRunObtainedItem, resetNavigation, resetProgress, setRunPlayerHealth } from "./write-port-run";
+import {
+  cloneRunObtainedItem,
+  resetNavigation,
+  resetProgress,
+  setHasActiveBattle,
+  setRunPlayerHealth,
+} from "./write-port-run";
 import { clearTransientSession, setHasActiveRun } from "./write-port-session";
 import { applyTalentState, setFinishedRunCharacters } from "./write-port-meta";
 import { applyRestoreRunToDraft, clearModeSlotInDraft } from "./run-park-restore";
@@ -19,7 +25,7 @@ import { touchRunRecency, type ParkedRunsMap } from "./parked-runs";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
-import { clearTransientUiOnTeardown, notifyRunTeardown } from "./run-presentation-lifecycle";
+import { useUiStore } from "./ui-store";
 
 export function restoreRun(
   activeRun: ActiveRunData | null,
@@ -162,4 +168,40 @@ export function applyRunDefeatTeardown(options: {
       },
     },
   );
+}
+
+type LifecycleListener = () => void;
+const teardownListeners = new Set<LifecycleListener>();
+const clearPresentationListeners = new Set<LifecycleListener>();
+
+export function onRunTeardown(listener: LifecycleListener): () => void {
+  teardownListeners.add(listener);
+  return () => {
+    teardownListeners.delete(listener);
+  };
+}
+
+export function onClearBattlePresentation(listener: LifecycleListener): () => void {
+  clearPresentationListeners.add(listener);
+  return () => {
+    clearPresentationListeners.delete(listener);
+  };
+}
+
+export function clearBattleUi(): void {
+  dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, false));
+  clearBattlePresentationUi();
+}
+
+export function clearBattlePresentationUi(): void {
+  useUiStore.getState().clearCardHover();
+  clearPresentationListeners.forEach((listener) => listener());
+}
+
+export function notifyRunTeardown(): void {
+  teardownListeners.forEach((listener) => listener());
+}
+
+export function clearTransientUiOnTeardown(): void {
+  useUiStore.getState().clearCardHover();
 }

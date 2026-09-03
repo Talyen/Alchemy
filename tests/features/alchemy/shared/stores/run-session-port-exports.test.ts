@@ -33,6 +33,7 @@ const WRITE_PORT_EXPORTS = [
   "deductGold",
   "finalizeRunXP",
   "grantStartGold",
+  "grantSalvageMaterials",
   "handleCollectionTabChange",
   "initializeActiveBattle",
   "plantFarm",

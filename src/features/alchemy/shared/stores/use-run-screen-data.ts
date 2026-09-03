@@ -4,10 +4,6 @@ import type { RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
 
 type ScreenData<S extends RunDataScreen> = RunScreenDataByScreen[S];
 
-function selectGold(state: GameplayState) {
-  return state.runProfile.gold;
-}
-
 function selectShopCardBase(state: GameplayState) {
   return {
     gold: state.runProfile.gold,
@@ -41,12 +37,12 @@ export const useAlchemistScreenData = createShopDataHook<"alchemist">((state) =>
 }));
 
 export const useTrinketShopScreenData = createShopDataHook<"trinket-shop">((state) => ({
-  gold: selectGold(state),
+  gold: state.runProfile.gold,
   trinketShopState: state.session.trinketShopState,
 }));
 
 export const useEquipmentShopScreenData = createShopDataHook<"equipment-shop">((state) => ({
-  gold: selectGold(state),
+  gold: state.runProfile.gold,
   equipmentShopState: state.session.equipmentShopState,
 }));
 

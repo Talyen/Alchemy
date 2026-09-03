@@ -1,16 +1,11 @@
 import type { CharacterId } from "@/lib/game-data";
 import { trinketLibrary } from "@/lib/game-data";
 import { useMemo } from "react";
-import {
-  createEmptyEquippedTrinkets,
-  createEmptyGearInventories,
-  createEmptyGearLoadouts,
-  EMPTY_CRAFTING_CURRENCIES,
-  flattenGearInventories,
-} from "@/lib/gear";
+import { flattenGearInventories } from "@/lib/gear";
 import { useShallow } from "zustand/react/shallow";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
 import type { GearSaveFields, GearStateFields, GearStore } from "./gear-store-types";
+import { createInitialGearState } from "./gear-store-initial-state";
 import { initializeGear } from "./gear-actions";
 import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
 
@@ -35,13 +30,16 @@ function cloneGearLoadouts(loadouts: GearSaveFields["gearLoadouts"]): GearSaveFi
 }
 
 export const gearPersistenceCodec: GameplayPersistenceCodec<GearSaveFields> = {
-  createDefault: () => ({
-    gearInventories: createEmptyGearInventories(),
-    gearLoadouts: createEmptyGearLoadouts(),
-    ownedTrinketIds: [],
-    equippedTrinkets: createEmptyEquippedTrinkets(),
-    craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
-  }),
+  createDefault: () => {
+    const initial = createInitialGearState();
+    return {
+      gearInventories: initial.inventories,
+      gearLoadouts: initial.loadouts,
+      ownedTrinketIds: initial.ownedTrinketIds,
+      equippedTrinkets: initial.equippedTrinkets,
+      craftingCurrencies: initial.craftingCurrencies,
+    };
+  },
   encode: () => {
     const state = readGameplayState().gear;
     return {

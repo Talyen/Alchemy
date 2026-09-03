@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectAutosaveAllowed } from "@/features/alchemy/shared/stores/select-autosave-allowed";
+import { selectAutosaveAllowed } from "@/features/alchemy/shared/stores/run-reads";
 
 function battleState(enemyHealth: number, hasActiveBattle = true) {
   return {
