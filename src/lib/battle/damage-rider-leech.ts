@@ -17,7 +17,7 @@ import {
 } from "./combat-text";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { rollTalentChance } from "./status-helpers";
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import { scalePercent } from "./amount-helpers";
 import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, LEECH_HEAL_FRACTION, PERCENT_DENOMINATOR } from "../game-constants";
 

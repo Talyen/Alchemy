@@ -9,7 +9,7 @@ import {
 } from "../game-constants";
 import { addPlayerStatusWithCombatText, mergeCombatText } from "./combat-text";
 import { applyPlayerCombatDamage, type BattleState, type CombatTextEvent, type CombatTextStat } from "./types";
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import { halveRounded } from "./amount-helpers";
 
 export function decayHalvedStatus(value: number) {

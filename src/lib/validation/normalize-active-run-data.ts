@@ -4,7 +4,7 @@ import type { ContentSystemId } from "@/lib/content-systems/types";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { characters, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { nextRunRngValue, type RunRngState, type RunRngStream } from "@/lib/run-rng";
+import { nextRunRngValue, type RunRngState, type RunRngStream } from "@/lib/rng";
 import { isTombstonedCardId } from "./migration/tombstoned-content-ids";
 import type {
   ActiveCombatData,

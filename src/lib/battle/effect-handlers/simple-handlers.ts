@@ -23,6 +23,9 @@ export const applyBuffCompanionEffect = defineHandler("buff-companion", (state, 
 });
 
 export const applyGainGoldEffect = defineHandler("gain-gold", (state, _card, effect, potionMult, combatTexts) => {
+  if (effect.ifEnemyStunned && state.enemyCC.stunSkipTurns <= 0) {
+    return state;
+  }
   const adjustedGold = applyPotionMultiplier(effect.amount, potionMult);
   return addGoldWithCombatText(state, adjustedGold, combatTexts);
 });
@@ -55,3 +58,7 @@ function makeFlagHandler<K extends keyof typeof FLAG_EFFECTS>(kind: K): ReturnTy
 export const applyNextHitCritEffect = makeFlagHandler("next-hit-crit");
 export const applyPlayNextCardTwiceEffect = makeFlagHandler("play-next-card-twice");
 export const applyNextHitPoisonEffect = makeFlagHandler("next-hit-poison");
+
+export const applyNextArcheryFreeEffect = defineHandler("next-archery-free", (state) => {
+  return { ...state, flags: { ...state.flags, nextArcheryCardFree: true } };
+});

@@ -1,13 +1,19 @@
 import { z } from "zod";
 import type { EffectKindDefinition } from "./registry";
-import { AmountSchema, DamageTypeSchema, EnemyStatusIdSchema, PositiveAmountSchema } from "./shared-schemas";
+import {
+  AmountSchema,
+  DamageTypeSchema,
+  EnemyStatusDamageIdSchema,
+  EnemyStatusIdSchema,
+  PositiveAmountSchema,
+} from "./shared-schemas";
 
 export const playerStatusEffectDefinition = {
   kind: "player-status",
   schema: z
     .object({
       kind: z.literal("player-status"),
-      status: z.enum(["block", "armor", "forge", "haste", "phoenixFeather"]),
+      status: z.enum(["block", "armor", "thorns", "forge", "haste", "phoenixFeather"]),
       amount: AmountSchema,
       perManaCrystal: AmountSchema.optional(),
       convertCurrentMana: z.number().int().min(0).max(100).optional(),
@@ -39,7 +45,7 @@ export const removePlayerStatusEffectDefinition = {
   kind: "remove-player-status",
   schema: z.object({
     kind: z.literal("remove-player-status"),
-    status: EnemyStatusIdSchema,
+    status: EnemyStatusDamageIdSchema,
   }),
 } satisfies EffectKindDefinition<"remove-player-status">;
 
@@ -47,7 +53,7 @@ export const multiplyEnemyStatusEffectDefinition = {
   kind: "multiply-enemy-status",
   schema: z.object({
     kind: z.literal("multiply-enemy-status"),
-    status: EnemyStatusIdSchema,
+    status: EnemyStatusDamageIdSchema,
     factor: z.number().int().min(1).max(10),
   }),
 } satisfies EffectKindDefinition<"multiply-enemy-status">;

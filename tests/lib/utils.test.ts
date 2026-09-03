@@ -37,6 +37,10 @@ describe("clamp", () => {
     expect(clamp(3.5, 0, 10)).toBe(3.5);
     expect(clamp(-0.5, 0, 10)).toBe(0);
   });
+
+  it("throws when min exceeds max", () => {
+    expect(() => clamp(5, 10, 0)).toThrow();
+  });
 });
 
 describe("lerp", () => {
@@ -67,6 +71,11 @@ describe("formatLargeAmount", () => {
     expect(formatLargeAmount(100000)).toBe("100.0k");
     expect(formatLargeAmount(150500)).toBe("150.5k");
     expect(formatLargeAmount(1000000)).toBe("1000.0k");
+  });
+
+  it("maps non-finite amounts to zero", () => {
+    expect(formatLargeAmount(Number.NaN)).toBe("0");
+    expect(formatLargeAmount(Number.POSITIVE_INFINITY)).toBe("0");
   });
 });
 

@@ -2,7 +2,7 @@ import { isNonPlayerAudioHost } from "./audio-host";
 import { audioState } from "./audio-state";
 import { applyMusicVolume, pauseAllMusic } from "./audio-music";
 import { syncActiveHtmlSfxPlayback } from "./audio-sfx";
-import { clamp } from "./utils";
+import { clamp } from "./math";
 
 function applyMuteToElements() {
   syncActiveHtmlSfxPlayback();

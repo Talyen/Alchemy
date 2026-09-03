@@ -1,6 +1,6 @@
 import { ENEMY_DODGE_CHANCE, HALF_DIVISOR, PLAYER_DODGE_CHANCE, STATUS_CONFIG } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import type { BattleState, CombatTextEvent } from "./types";
 
 function getPlayerDodgeChance(

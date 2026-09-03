@@ -1,4 +1,4 @@
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import { FREE_CARD_SENTINEL } from "../game-constants";
 import { drawFromState, applyDrawResult } from "./draw";
 import {

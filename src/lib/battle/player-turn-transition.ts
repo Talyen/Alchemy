@@ -5,7 +5,7 @@ import { drawCards, applyDrawResult } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import { finalizeCcSkipTurnDecrement } from "./status-cc";
 import { decayHalvedStatus } from "./status-helpers";
-import { getBattleRng } from "../rng";
+import { getBattleRng } from "@/lib/rng";
 import { deathsDoorGraceTurns, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 
 function computeDeathsDoorGraceRemaining(state: BattleState): number {

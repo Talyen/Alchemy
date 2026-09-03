@@ -9,7 +9,7 @@ import {
 } from "../combat-text";
 import { dealSelfDamage, getEnemyDamageMultiplier } from "../status-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
-import { defineHandler } from "./handler-types";
+import { ccDeepenedSinceStart, defineHandler } from "./handler-types";
 import { processEncounterTraitHealthThreshold } from "../encounter-trait-health-threshold";
 import { dealEnemyScaledDamage } from "../gear-effects";
 
@@ -40,30 +40,38 @@ function gainMaxMana(state: BattleState, amount: number, combatTexts: CombatText
   return nextState;
 }
 
+function burnEnemyOnManaCrystalLoss(
+  state: BattleState,
+  crystalsLost: number,
+  previousEnemyHealth: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (crystalsLost <= 0 || state.talentEffects.burnDamageOnManaCrystalLoss <= 0 || state.enemyHealth <= 0) {
+    return state;
+  }
+  return dealEnemyScaledDamage(
+    state,
+    state.talentEffects.burnDamageOnManaCrystalLoss * crystalsLost,
+    "burn",
+    combatTexts,
+    {
+      multiplier: getEnemyDamageMultiplier(state, "burn"),
+      riders: (damagedState) =>
+        payKillPayouts(
+          processEncounterTraitHealthThreshold(previousEnemyHealth, damagedState, combatTexts),
+          previousEnemyHealth > 0,
+          combatTexts,
+        ),
+    },
+  );
+}
 function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount });
   const newMaxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - amount);
   const crystalsLost = state.maxMana - newMaxMana;
   const previousEnemyHealth = state.enemyHealth;
-  let nextState: BattleState = { ...state, maxMana: newMaxMana, mana: Math.min(newMaxMana, state.mana) };
-  if (crystalsLost > 0 && nextState.talentEffects.burnDamageOnManaCrystalLoss > 0 && nextState.enemyHealth > 0) {
-    nextState = dealEnemyScaledDamage(
-      nextState,
-      nextState.talentEffects.burnDamageOnManaCrystalLoss * crystalsLost,
-      "burn",
-      combatTexts,
-      {
-        multiplier: getEnemyDamageMultiplier(nextState, "burn"),
-        riders: (damagedState) =>
-          payKillPayouts(
-            processEncounterTraitHealthThreshold(previousEnemyHealth, damagedState, combatTexts),
-            previousEnemyHealth > 0,
-            combatTexts,
-          ),
-      },
-    );
-  }
-  return nextState;
+  const nextState: BattleState = { ...state, maxMana: newMaxMana, mana: Math.min(newMaxMana, state.mana) };
+  return burnEnemyOnManaCrystalLoss(nextState, crystalsLost, previousEnemyHealth, combatTexts);
 }
 
 export const applyRestoreManaEffect = defineHandler(
@@ -71,7 +79,7 @@ export const applyRestoreManaEffect = defineHandler(
   (state, _card, effect, potionMult, combatTexts, context) => {
     if (
       effect.ifEnemyFrozen &&
-      state.enemyCC.freezeSkipTurns <= (context?.enemyFreezeSkipTurnsAtStart ?? state.enemyCC.freezeSkipTurns)
+      !ccDeepenedSinceStart(state.enemyCC.freezeSkipTurns, context?.enemyFreezeSkipTurnsAtStart)
     ) {
       return state;
     }

@@ -11,10 +11,10 @@ import { defaultGearEffects } from "@/lib/gear";
 import { EMPTY_ENEMY_MITIGATION, type BattleState } from "./types";
 import { computeTrinketManifest } from "../trinkets";
 import { applyDrawResult, drawCards } from "./draw";
-import { shuffle } from "../utils";
+import { shuffle } from "@/lib/utils";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
-import { placeholderRng } from "../rng";
+import { placeholderRng } from "@/lib/rng";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 
@@ -145,6 +145,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     },
     enemyStatuses: {
       ...baseState.enemyStatuses,
+      thorns: battleEnemy.traits.some((trait) => trait.id === "thorns") ? 1 : 0,
     },
     activeCompanion: startCompanion ? (companionLibrary[startCompanionId] ?? companionLibrary["wolf"]) : null,
     currentEnemy: battleEnemy,

@@ -1,5 +1,5 @@
 import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { scalePercent, scalePerMana, halveRounded } from "./amount-helpers";
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";

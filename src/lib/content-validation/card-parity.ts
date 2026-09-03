@@ -3,6 +3,7 @@ import type { ContentValidationIssue } from "./types";
 import {
   countByKind,
   countLinesStartingWith,
+  flattenChanceEffects,
   flattenEffects,
   hasKind,
   hasLifesteal,
@@ -106,13 +107,13 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
     countLines: (lines) =>
       lines.filter(
         (line) =>
-          line.startsWith("Gain ") &&
+          (line.startsWith("Gain ") || line.includes(" or Gain ")) &&
           line.includes(" Block") &&
           !line.includes("per Mana Crystal") &&
           !line.endsWith("each turn"),
       ).length,
     countEffects: (effects) =>
-      effects.filter(
+      flattenChanceEffects(effects).filter(
         (effect) =>
           effect.kind === "player-status" &&
           effect.status === "block" &&
@@ -124,7 +125,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
     label: "convert-mana block",
     countLines: (lines) => lines.filter((line) => line.includes("Convert each of your Mana into")).length,
     countEffects: (effects) =>
-      effects.filter(
+      flattenChanceEffects(effects).filter(
         (effect) =>
           effect.kind === "player-status" && effect.status === "block" && effect.convertCurrentMana !== undefined,
       ).length,
@@ -133,7 +134,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
     label: "per-mana block",
     countLines: (lines) => lines.filter((line) => line.includes("per Mana Crystal")).length,
     countEffects: (effects) =>
-      effects.filter(
+      flattenChanceEffects(effects).filter(
         (effect) => effect.kind === "player-status" && effect.status === "block" && effect.perManaCrystal !== undefined,
       ).length,
   },
@@ -141,13 +142,22 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
     label: "armor",
     countLines: (lines) => lines.filter((line) => line.startsWith("Gain ") && line.includes(" Armor")).length,
     countEffects: (effects) =>
-      effects.filter((effect) => effect.kind === "player-status" && effect.status === "armor").length,
+      flattenChanceEffects(effects).filter((effect) => effect.kind === "player-status" && effect.status === "armor")
+        .length,
   },
   {
     label: "forge",
     countLines: (lines) => lines.filter((line) => line.startsWith("Gain ") && line.includes(" Forge")).length,
     countEffects: (effects) =>
-      effects.filter((effect) => effect.kind === "player-status" && effect.status === "forge").length,
+      flattenChanceEffects(effects).filter((effect) => effect.kind === "player-status" && effect.status === "forge")
+        .length,
+  },
+  {
+    label: "thorns",
+    countLines: (lines) => lines.filter((line) => line.startsWith("Gain ") && line.includes(" Thorns")).length,
+    countEffects: (effects) =>
+      flattenChanceEffects(effects).filter((effect) => effect.kind === "player-status" && effect.status === "thorns")
+        .length,
   },
 ];
 

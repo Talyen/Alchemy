@@ -18,10 +18,9 @@ import {
 } from "./types";
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rngInt, rollPercent } from "@/lib/rng";
 
 import { cardHasDamageType, computeEffectiveCost, isNatureCard } from "./card-cost-rules";
-import { rngInt } from "@/lib/run-rng";
 import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
 function resolveCardPlayCost(state: BattleState, card: BattleCard) {

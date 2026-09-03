@@ -3,12 +3,13 @@ import {
   addEnemyStatus,
   endPlayerTurn,
   playBattleCardResolved,
+  regrowEnemyThorns,
   tickEnemyStatuses,
   tickPlayerStatuses,
 } from "@/lib/battle";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import type { BattleCard, BestiaryEntry } from "@/lib/game-data";
-import { makeTestBattleState } from "../../fixtures/battle";
+import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
 function enemyWith(...ids: Array<keyof typeof ENCOUNTER_TRAITS>): BestiaryEntry {
@@ -169,10 +170,11 @@ describe("encounter trait card events", () => {
         { kind: "damage", damageType: "burn", amount: 2 },
       ],
     });
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       currentEnemy,
       enemyHealth: 1,
       enemyMaxHealth: 1,
+      enemyStatuses: { thorns: 1 },
       playerHealth: 10,
       hand: [played],
       mana: 1,
@@ -181,6 +183,29 @@ describe("encounter trait card events", () => {
     const result = playBattleCardResolved(state, played.id, 0);
     expect(result.state.enemyHealth).toBe(0);
     expect(result.state.playerHealth).toBe(8);
+    expect(result.state.enemyStatuses.thorns).toBe(0);
+  });
+
+  it("only retaliates while holding thorns and regrows the stack each round", () => {
+    const currentEnemy = enemyWith("thorns");
+    const played = card({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
+    const state = patchBattleState({
+      currentEnemy,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { thorns: 1 },
+      playerHealth: 10,
+      hand: [played, { ...played, uid: 2 }],
+      mana: 2,
+      turnPhase: "player",
+    });
+    const first = playBattleCardResolved(state, played.id, 0);
+    expect(first.state.playerHealth).toBe(9);
+    expect(first.state.enemyStatuses.thorns).toBe(0);
+    const second = playBattleCardResolved(first.state, played.id, 0);
+    expect(second.state.playerHealth).toBe(9);
+    const regrown = regrowEnemyThorns(second.state, []);
+    expect(regrown.enemyStatuses.thorns).toBe(1);
   });
 
   it("burns the attacker when the enemy has cinder-skin", () => {
@@ -215,8 +240,9 @@ describe("encounter trait card events", () => {
     const currentEnemy = enemyWith("thorns");
     const played = card({ consume: true });
     const result = playBattleCardResolved(
-      makeTestBattleState({
+      patchBattleState({
         currentEnemy,
+        enemyStatuses: { thorns: 1 },
         hand: [played],
         mana: 1,
         playerHealth: 1,

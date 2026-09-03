@@ -469,3 +469,48 @@ describe("processEnemyAttack", () => {
     expect(enemyHealed.enemyHealth).toBe(7);
   });
 });
+
+describe("player Thorns", () => {
+  it("fires held thorns back as nature damage when an attack lands and consumes the stack", () => {
+    const state = makeTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0, thorns: 3 },
+      enemyHealth: 30,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+      rng: () => 0.99,
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerHealth).toBe(25);
+    expect(result.enemyHealth).toBe(27);
+    expect(result.playerStatuses.thorns).toBe(0);
+  });
+
+  it("still fires when block absorbs the hit", () => {
+    const state = makeTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0, thorns: 2 },
+      enemyHealth: 30,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+      rng: () => 0.99,
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerHealth).toBe(30);
+    expect(result.playerStatuses.block).toBe(5);
+    expect(result.enemyHealth).toBe(28);
+    expect(result.playerStatuses.thorns).toBe(0);
+  });
+
+  it("does not fire when the attack is dodged", () => {
+    const state = makeTestBattleState({
+      playerHealth: 30,
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0, thorns: 3 },
+      enemyHealth: 30,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+      rng: () => 0.01,
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    expect(result.playerHealth).toBe(30);
+    expect(result.enemyHealth).toBe(30);
+    expect(result.playerStatuses.thorns).toBe(3);
+  });
+});

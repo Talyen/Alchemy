@@ -1,6 +1,7 @@
 import { type CSSProperties, type HTMLAttributes, type Ref } from "react";
 
-import { clamp, cn } from "@/lib/utils";
+import { clamp } from "@/lib/math";
+import { cn } from "@/lib/utils";
 
 interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
   value?: number;

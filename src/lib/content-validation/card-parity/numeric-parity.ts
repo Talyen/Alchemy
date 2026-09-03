@@ -104,7 +104,10 @@ function checkStatusLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!line.startsWith("Gain ") || !(line.includes(" Block") || line.includes(" Armor") || line.includes(" Forge")))
+  if (
+    !line.startsWith("Gain ") ||
+    !(line.includes(" Block") || line.includes(" Armor") || line.includes(" Thorns") || line.includes(" Forge"))
+  )
     return false;
   const effect = nextPlayerStatus();
   if (
@@ -134,6 +137,38 @@ function checkRemoveHarmfulLine(
   }
   if (effect.removeAll || line.includes("all harmful")) return true;
   if (parseLeadingNumber(line, prefix) !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  return true;
+}
+
+function checkLoseHealthLine(
+  line: string,
+  nextLoseHealth: NextSimpleFn<{ amount: number }>,
+  issues: ContentValidationIssue[],
+  cardId: string,
+): boolean {
+  if (!line.startsWith("Lose ") || !line.includes("Health")) return false;
+  const effect = nextLoseHealth();
+  if (!effect) {
+    pushMissingEffect(issues, cardId, line);
+    return true;
+  }
+  if (parseLeadingNumber(line, "Lose ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  return true;
+}
+
+function checkGainMaxManaLine(
+  line: string,
+  nextGainMaxMana: NextSimpleFn<{ amount: number }>,
+  issues: ContentValidationIssue[],
+  cardId: string,
+): boolean {
+  if (!line.startsWith("Gain ") || !line.includes("Maximum Mana")) return false;
+  const effect = nextGainMaxMana();
+  if (!effect) {
+    pushMissingEffect(issues, cardId, line);
+    return true;
+  }
+  if (parseLeadingNumber(line, "Gain ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
   return true;
 }
 
@@ -172,6 +207,10 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
   const nextGold = getNext("gain-gold");
   const nextWish = getNext("wish");
   const nextRemoveHarmful = getNext("remove-harmful-status");
+  const nextDraw = getNext("draw-cards");
+  const nextLoseHealth = getNext("lose-health");
+  const nextGainMaxMana = getNext("gain-max-mana");
+  const nextRemoveArmor = getNext("remove-enemy-armor");
 
   for (const line of descriptionLines) {
     if (line.startsWith("Deals ")) continue;
@@ -179,10 +218,13 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
     if (checkGoldLine(line, nextGold, issues, card.id)) continue;
     if (checkPerManaBlockLine(line, nextPlayerStatus, issues, card.id)) continue;
     if (checkStatusLine(line, nextPlayerStatus, issues, card.id)) continue;
-    if (checkSimpleValueLine(line, "Heal ", nextHeal, issues, card.id)) continue;
     if (checkRestoreLine(line, "Mana", nextRestoreMana, issues, card.id)) continue;
     if (checkRestoreLine(line, "Health", nextHeal, issues, card.id)) continue;
     if (checkWishLine(line, nextWish, issues, card.id)) continue;
+    if (checkSimpleValueLine(line, "Draw ", nextDraw, issues, card.id)) continue;
+    if (checkLoseHealthLine(line, nextLoseHealth, issues, card.id)) continue;
+    if (checkGainMaxManaLine(line, nextGainMaxMana, issues, card.id)) continue;
+    if (checkSimpleValueLine(line, "Strip ", nextRemoveArmor, issues, card.id)) continue;
     checkRemoveHarmfulLine(line, nextRemoveHarmful, issues, card.id);
   }
 

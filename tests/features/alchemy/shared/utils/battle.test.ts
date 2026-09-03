@@ -56,6 +56,12 @@ describe("getPlayerStatusChips", () => {
     expect(ids.indexOf("burn")).toBeLessThan(ids.indexOf("stun"));
   });
 
+  it("surfaces thorns between armor and forge", () => {
+    const state = makeProductionBattleState();
+    state.playerStatuses.thorns = 2;
+    expect(getPlayerStatusChips(state)).toContainEqual({ id: "thorns", value: 2 });
+  });
+
   it("surfaces armed CombatFlags as badge-less buff chips", () => {
     const state = makeProductionBattleState();
     state.flags.playNextCardTwice = true;
@@ -202,6 +208,12 @@ describe("getEnemyStatusChips", () => {
     const state = makeProductionBattleState();
     state.enemyStatuses.onAttackBleed = 2;
     expect(getEnemyStatusChips(state)).toEqual([{ id: "onAttackBleed", value: 2 }]);
+  });
+
+  it("exposes thorns as a status chip", () => {
+    const state = makeProductionBattleState();
+    state.enemyStatuses.thorns = 1;
+    expect(getEnemyStatusChips(state)).toEqual([{ id: "thorns", value: 1 }]);
   });
 
   it("surfaces the enemy's CC immunity cooldown only after active CC ends", () => {

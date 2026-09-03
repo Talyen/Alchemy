@@ -10,7 +10,7 @@ import {
   type CompanionId,
   type TalentEffectManifest,
 } from "@/lib/game-data";
-import { createRunStreamRng } from "@/lib/run-rng";
+import { createRunStreamRng } from "@/lib/rng";
 import { sampleItems } from "@/lib/utils";
 import {
   buildClassSimDeck,

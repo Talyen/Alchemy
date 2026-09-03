@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { EffectKindDefinition } from "./registry";
-import { AmountSchema, DamageTypeSchema, EnemyStatusIdSchema, PositiveAmountSchema } from "./shared-schemas";
+import { AmountSchema, DamageTypeSchema, EnemyStatusDamageIdSchema, PositiveAmountSchema } from "./shared-schemas";
 
 export const damageEffectDefinition = {
   kind: "damage",
@@ -35,7 +35,7 @@ export const selfDamageEffectDefinition = {
   kind: "self-damage",
   schema: z.object({
     kind: z.literal("self-damage"),
-    damageType: EnemyStatusIdSchema,
+    damageType: EnemyStatusDamageIdSchema,
     amount: AmountSchema,
   }),
 } satisfies EffectKindDefinition<"self-damage">;

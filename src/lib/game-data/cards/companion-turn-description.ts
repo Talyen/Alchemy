@@ -47,6 +47,7 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
     case "next-hit-crit":
     case "play-next-card-twice":
     case "next-hit-poison":
+    case "next-archery-free":
       return null;
   }
 }

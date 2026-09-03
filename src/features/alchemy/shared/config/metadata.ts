@@ -25,6 +25,7 @@ import {
   Skull,
   Snowflake,
   Sparkles,
+  Sprout,
   Sun,
   Swords,
   User,
@@ -188,4 +189,5 @@ export const keywordIcons: Record<KeywordId, LucideIcon> = {
   archery: Crosshair,
   phoenixFeather: Feather,
   dodge: Wind,
+  thorns: Sprout,
 };

@@ -32,6 +32,18 @@ describe("createBattleState", () => {
     expect(result.activeCompanion).toBeNull();
   });
 
+  it("grants the thorns trait holder a thorns stack at battle start", () => {
+    const thorny: BestiaryEntry = {
+      ...skeleton,
+      traits: [...skeleton.traits, { id: "thorns", title: "Thorns", description: "Thorns" }],
+    };
+    const start = createBattleStartState({ runDeck: battleDeck, currentEnemy: thorny, rng: seededRng(42) });
+    expect(start.enemyStatuses.thorns).toBe(1);
+
+    const plain = createBattleStartState({ runDeck: battleDeck, currentEnemy: skeleton, rng: seededRng(42) });
+    expect(plain.enemyStatuses.thorns).toBe(0);
+  });
+
   it("stages battle start with an empty hand before resolving the opening draw", () => {
     const runDeck = Array.from({ length: 8 }, (_, index) => makeTestCard({ id: `card-${index}` }));
     const start = createBattleStartState({

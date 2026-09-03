@@ -1,7 +1,7 @@
 import type { BattleCard } from "@/lib/game-data";
-import { getBattleRng } from "../rng";
+import { getBattleRng } from "@/lib/rng";
 import type { BattleState } from "./types";
-import { shuffle, takeRandomItem } from "../utils";
+import { shuffle, takeRandomItem } from "@/lib/utils";
 import { MAX_HAND_SIZE } from "../game-constants";
 
 function refillDeck(

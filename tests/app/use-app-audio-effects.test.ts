@@ -1,8 +1,27 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { isAppInBackground, useAppAudioEffects } from "@/app/use-app-effects";
-import { isNonPlayerAudioHost, setMuted } from "@/lib/audio";
+import {
+  invalidateCacheForKey,
+  isMusicPaused,
+  isNonPlayerAudioHost,
+  playMusic,
+  playMusicImmediate,
+  setMasterVolume,
+  setMusicVolume,
+  setMuted,
+  setSfxVolume,
+} from "@/lib/audio";
+import { MUSIC_KEYS } from "@/lib/game-constants";
+import type { Screen } from "@/lib/routing";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+
+const battleActive = vi.hoisted(() => ({ value: false }));
+
+vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({
+  readBattle: () => ({ hasActiveBattle: false }),
+  useHasActiveBattle: () => battleActive.value,
+}));
 
 vi.mock("@/lib/audio", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/audio")>()),
@@ -54,14 +73,14 @@ describe("isAppInBackground", () => {
 describe("useAppAudioEffects mute-in-background", () => {
   let unmountAudio: (() => void) | undefined;
 
-  function renderAudio(muteInBackground = true) {
+  function renderAudio(muteInBackground = true, screen: Screen = "menu") {
     const rendered = renderHook(() =>
       useAppAudioEffects({
         masterVolume: 50,
         musicVolume: 50,
         sfxVolume: 50,
         muteInBackground,
-        screen: "menu",
+        screen,
       }),
     );
     unmountAudio = rendered.unmount;
@@ -69,8 +88,16 @@ describe("useAppAudioEffects mute-in-background", () => {
   }
 
   beforeEach(() => {
+    battleActive.value = false;
     useSettingsStore.setState(useSettingsStore.getInitialState(), true);
     vi.mocked(setMuted).mockClear();
+    vi.mocked(setMasterVolume).mockClear();
+    vi.mocked(setMusicVolume).mockClear();
+    vi.mocked(setSfxVolume).mockClear();
+    vi.mocked(playMusic).mockClear();
+    vi.mocked(playMusicImmediate).mockClear();
+    vi.mocked(invalidateCacheForKey).mockClear();
+    vi.mocked(isMusicPaused).mockReturnValue(false);
     vi.mocked(isNonPlayerAudioHost).mockReturnValue(false);
     Object.defineProperty(document, "hidden", { configurable: true, value: false });
   });
@@ -162,6 +189,68 @@ describe("useAppAudioEffects mute-in-background", () => {
     });
 
     expect(setMuted).not.toHaveBeenCalledWith(false);
+    hasFocus.mockRestore();
+  });
+
+  it("syncs settings percentages as fractional volumes", () => {
+    renderAudio(true);
+    expect(setMasterVolume).toHaveBeenCalledWith(0.5);
+    expect(setMusicVolume).toHaveBeenCalledWith(0.5);
+    expect(setSfxVolume).toHaveBeenCalledWith(0.5);
+  });
+
+  it("plays battle music when the screen changes to battle", () => {
+    const rendered = renderHook(
+      ({ screen }: { screen: Screen }) =>
+        useAppAudioEffects({
+          masterVolume: 50,
+          musicVolume: 50,
+          sfxVolume: 50,
+          muteInBackground: true,
+          screen,
+        }),
+      { initialProps: { screen: "menu" as Screen } },
+    );
+    unmountAudio = rendered.unmount;
+    vi.mocked(playMusic).mockClear();
+
+    rendered.rerender({ screen: "battle" });
+
+    expect(playMusic).toHaveBeenCalledWith(MUSIC_KEYS.BATTLE);
+  });
+
+  it("refreshes the menu music cache when a battle starts", () => {
+    const rendered = renderHook(
+      ({ screen }: { screen: Screen }) =>
+        useAppAudioEffects({
+          masterVolume: 50,
+          musicVolume: 50,
+          sfxVolume: 50,
+          muteInBackground: true,
+          screen,
+        }),
+      { initialProps: { screen: "menu" as Screen } },
+    );
+    unmountAudio = rendered.unmount;
+    vi.mocked(invalidateCacheForKey).mockClear();
+    battleActive.value = true;
+
+    rendered.rerender({ screen: "menu" });
+
+    expect(invalidateCacheForKey).toHaveBeenCalledWith(MUSIC_KEYS.MENU);
+  });
+
+  it("resumes paused music on a foreground gesture", () => {
+    vi.mocked(isMusicPaused).mockReturnValue(true);
+    const hasFocus = vi.spyOn(Document.prototype, "hasFocus").mockReturnValue(true);
+    renderAudio(true);
+    vi.mocked(playMusicImmediate).mockClear();
+
+    act(() => {
+      window.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    });
+
+    expect(playMusicImmediate).toHaveBeenCalledWith(MUSIC_KEYS.MENU);
     hasFocus.mockRestore();
   });
 });

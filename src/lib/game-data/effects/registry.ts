@@ -31,6 +31,7 @@ import {
   nextHitCritEffectDefinition,
   playNextCardTwiceEffectDefinition,
   nextHitPoisonEffectDefinition,
+  nextArcheryFreeEffectDefinition,
 } from "./simple-schemas";
 
 export interface EffectKindDefinition<K extends BattleCardEffect["kind"] = BattleCardEffect["kind"]> {
@@ -63,6 +64,7 @@ export const TEMPLATE_EFFECT_DEFINITIONS = [
   nextHitCritEffectDefinition,
   playNextCardTwiceEffectDefinition,
   nextHitPoisonEffectDefinition,
+  nextArcheryFreeEffectDefinition,
 ] as const;
 
 export const RECURSIVE_BATTLE_CARD_EFFECT_KINDS = ["chance", "repeat-over-turns"] as const;
@@ -70,6 +72,21 @@ export const RECURSIVE_BATTLE_CARD_EFFECT_KINDS = ["chance", "repeat-over-turns"
 type TemplateKind = (typeof TEMPLATE_EFFECT_DEFINITIONS)[number]["kind"];
 type RecursiveKind = (typeof RECURSIVE_BATTLE_CARD_EFFECT_KINDS)[number];
 export type BattleCardEffectKind = TemplateKind | RecursiveKind;
+
+type _KindsMatchUnion =
+  Exclude<BattleCardEffect["kind"], BattleCardEffectKind> extends never
+    ? Exclude<BattleCardEffectKind, BattleCardEffect["kind"]> extends never
+      ? true
+      : never
+    : never;
+const _assertKindsMatchUnion: _KindsMatchUnion = true;
+void _assertKindsMatchUnion;
+
+const RECURSIVE_KIND_SET: ReadonlySet<string> = new Set(RECURSIVE_BATTLE_CARD_EFFECT_KINDS);
+
+export function isRecursiveBattleCardEffectKind(kind: string): kind is RecursiveKind {
+  return RECURSIVE_KIND_SET.has(kind);
+}
 
 export const BATTLE_CARD_EFFECT_KINDS = [
   ...TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.kind),

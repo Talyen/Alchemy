@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createRunStreamRng } from "@/lib/run-rng";
+import { createRunStreamRng } from "@/lib/rng";
 import { simulateBatch, simulateBattle } from "@/lib/balance";
 
 describe("balance simulator", () => {

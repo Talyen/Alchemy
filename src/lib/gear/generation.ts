@@ -6,7 +6,8 @@ import {
   GEAR_AFFIX_COUNT_MIN_WEIGHT,
   GEAR_REWARD_RARITY_CHANCE,
 } from "@/lib/game-constants";
-import { clamp, createInstanceId, pickRandom, sampleItems, takeRandomItem } from "@/lib/utils";
+import { clamp } from "@/lib/math";
+import { createInstanceId, pickRandom, sampleItems, takeRandomItem } from "@/lib/utils";
 import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";

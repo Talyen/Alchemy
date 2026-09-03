@@ -4,7 +4,7 @@ import { createEmptyRewardState } from "@/lib/active-run-session";
 import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
-import { createRunRngState } from "@/lib/run-rng";
+import { createRunRngState } from "@/lib/rng";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   addRunMaterialsEarned,

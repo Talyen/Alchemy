@@ -1,16 +1,22 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { setMuted, setSfxVolume, setMasterVolume, setMusicVolume } from "@/lib/audio-volume";
 import { audioState } from "@/lib/audio-state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
 import { invalidateCacheForKey, playMusic, playMusicImmediate } from "@/lib/audio-music";
+import { installFakeAudio, resetMusicState } from "../helpers/fake-audio";
 
 beforeEach(() => {
   audioState.muted = false;
   audioState.sfxVolume = 0.35;
   audioState.masterVolume = 1;
   audioState.musicVolume = 0.0875;
-  audioState.currentMusic = null;
-  audioState.currentMusicKey = null;
+  resetMusicState();
+  installFakeAudio();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("setMuted", () => {
@@ -24,6 +30,15 @@ describe("setMuted", () => {
     audioState.currentMusic = el as HTMLAudioElement;
     setMuted(true);
     expect(el.muted).toBe(true);
+  });
+
+  it("unmutes the current music element on a player host", () => {
+    const el = { muted: true } as Partial<HTMLAudioElement>;
+    audioState.currentMusic = el as HTMLAudioElement;
+    audioState.muted = true;
+    setMuted(false);
+    expect(audioState.muted).toBe(false);
+    expect(el.muted).toBe(false);
   });
 
   it("keeps a non-player host muted when unmute is requested", () => {
@@ -80,25 +95,6 @@ describe("setMasterVolume", () => {
 
   it("preserves the outgoing fade gain when master volume changes during a crossfade", () => {
     vi.useFakeTimers();
-    class MockAudio {
-      currentTime = 0;
-      loop = false;
-      muted = false;
-      paused = true;
-      volume = 0;
-
-      constructor(public readonly src: string) {}
-
-      pause() {
-        this.paused = true;
-      }
-
-      play() {
-        this.paused = false;
-        return Promise.resolve();
-      }
-    }
-    vi.stubGlobal("Audio", MockAudio);
 
     playMusicImmediate(MUSIC_KEYS.MENU);
     const outgoing = audioState.currentMusic;
@@ -113,8 +109,6 @@ describe("setMasterVolume", () => {
     vi.advanceTimersByTime(31);
     invalidateCacheForKey(MUSIC_KEYS.MENU);
     invalidateCacheForKey(MUSIC_KEYS.BOSS_FORGE_GOLEM);
-    vi.unstubAllGlobals();
-    vi.useRealTimers();
   });
 });
 
@@ -145,25 +139,6 @@ describe("setMusicVolume", () => {
 
   it("preserves the incoming fade gain when music volume changes", () => {
     vi.useFakeTimers();
-    class MockAudio {
-      currentTime = 0;
-      loop = false;
-      muted = false;
-      paused = true;
-      volume = 0;
-
-      constructor(public readonly src: string) {}
-
-      pause() {
-        this.paused = true;
-      }
-
-      play() {
-        this.paused = false;
-        return Promise.resolve();
-      }
-    }
-    vi.stubGlobal("Audio", MockAudio);
 
     playMusic(MUSIC_KEYS.MENU);
     vi.advanceTimersByTime(900);
@@ -175,7 +150,5 @@ describe("setMusicVolume", () => {
 
     playMusicImmediate(MUSIC_KEYS.MENU);
     invalidateCacheForKey(MUSIC_KEYS.MENU);
-    vi.unstubAllGlobals();
-    vi.useRealTimers();
   });
 });

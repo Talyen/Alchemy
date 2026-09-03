@@ -23,6 +23,7 @@ export const gainGoldEffectDefinition = {
   schema: z.object({
     kind: z.literal("gain-gold"),
     amount: PositiveAmountSchema,
+    ifEnemyStunned: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"gain-gold">;
 
@@ -56,3 +57,8 @@ export const nextHitPoisonEffectDefinition = {
   kind: "next-hit-poison",
   schema: z.object({ kind: z.literal("next-hit-poison") }),
 } satisfies EffectKindDefinition<"next-hit-poison">;
+
+export const nextArcheryFreeEffectDefinition = {
+  kind: "next-archery-free",
+  schema: z.object({ kind: z.literal("next-archery-free") }),
+} satisfies EffectKindDefinition<"next-archery-free">;

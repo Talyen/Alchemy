@@ -38,6 +38,7 @@ const FORMATTERS: { [K in BattleCardEffect["kind"]]: KeywordFormatter<K> } = {
   "next-hit-crit": () => [],
   "play-next-card-twice": () => [],
   "next-hit-poison": () => [],
+  "next-archery-free": () => ["archery"],
 };
 
 function dedupeKeywords(...iterables: readonly KeywordId[][]): KeywordId[] {

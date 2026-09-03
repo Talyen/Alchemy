@@ -15,9 +15,9 @@ import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { handlePostPlayCardDestination } from "./card-play";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { applyPlayerStatusFromAttack, type DirectPlayerStatusAttackEffect } from "./status-player";
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import { type BattleState, type CombatTextEvent } from "./types";
-import { getEnemyTraitSet, hasEnemyTrait, setEnemyStatus, setFlag } from "./types/state-helpers";
+import { getEnemyTraitSet, hasEnemyTrait, setEnemyStatus, setFlag, setPlayerStatus } from "./types/state-helpers";
 import {
   BANDIT_FIRST_HIT_MULTIPLIER,
   BRAWLER_PENALTY_MULTIPLIER,
@@ -334,6 +334,12 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
     const bleedAmount = nextState.enemyStatuses.onAttackBleed;
     nextState = setEnemyStatus(nextState, "onAttackBleed", 0);
     nextState = dealPlayerTypedHit(nextState, "bleed", bleedAmount, combatTexts);
+  }
+
+  if (attackPacketLanded && nextState.playerStatuses.thorns > 0) {
+    const thorns = nextState.playerStatuses.thorns;
+    nextState = setPlayerStatus(nextState, "thorns", 0);
+    nextState = dealPlayerTypedHit(nextState, "nature", thorns, combatTexts);
   }
 
   return nextState;

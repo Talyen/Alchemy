@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
-import { createRunRngState } from "@/lib/run-rng";
+import { createRunRngState } from "@/lib/rng";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/resume-transition";

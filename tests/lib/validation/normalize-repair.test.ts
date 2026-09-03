@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { baseActiveRunInput, makeWildwoodDraft } from "../../fixtures/active-run";
-import { createRunRngState } from "@/lib/run-rng";
+import { createRunRngState } from "@/lib/rng";
 import { isTombstonedCardId } from "@/lib/validation/migration/tombstoned-content-ids";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";

@@ -15,7 +15,8 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearDefinitionId, gearDefinitions, gearInstanceRarity } from "./definitions";
 import { type GearInstance, type GearAffixRoll, type GearRarity } from "./types";
-import { clamp, lerp, pickRandom } from "@/lib/utils";
+import { clamp, lerp } from "@/lib/math";
+import { pickRandom } from "@/lib/utils";
 import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "./crafting-ids";
 
 export type { CraftingCurrencyId } from "./crafting-ids";

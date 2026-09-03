@@ -17,7 +17,7 @@ function deriveTitle(id: string, customTitle?: string): string {
   return base.split("-").map(capitalizeWord).join(" ");
 }
 
-type PlayerStatusDescriptionStatus = "block" | "armor" | "forge";
+type PlayerStatusDescriptionStatus = "block" | "armor" | "thorns" | "forge";
 
 function playerStatusDescriptionLine(status: PlayerStatusDescriptionStatus, amount: number): string {
   switch (status) {
@@ -25,6 +25,8 @@ function playerStatusDescriptionLine(status: PlayerStatusDescriptionStatus, amou
       return `Gain ${amount} Block`;
     case "armor":
       return `Gain ${amount} Armor`;
+    case "thorns":
+      return `Gain ${amount} Thorns`;
     case "forge":
       return `Gain ${amount} Forge`;
   }
@@ -43,7 +45,12 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
         ? "Remove all harmful status effects"
         : `Remove ${effect.amount} harmful status effect${effect.amount === 1 ? "" : "s"}`;
     case "player-status":
-      if (effect.status === "block" || effect.status === "armor" || effect.status === "forge")
+      if (
+        effect.status === "block" ||
+        effect.status === "armor" ||
+        effect.status === "thorns" ||
+        effect.status === "forge"
+      )
         return playerStatusDescriptionLine(effect.status, effect.amount);
       throw new Error(`effectDescriptionLine: unsupported player-status ${effect.status}`);
     case "damage":
@@ -60,6 +67,8 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
       return "Your next card is played twice";
     case "next-hit-poison":
       return "Your next attack is converted to Poison damage";
+    case "next-archery-free":
+      return "Your next Archery card is free";
     case "enemy-status":
     case "lose-mana":
     case "lose-max-mana":
@@ -87,14 +96,11 @@ export function archeryDamageCard({
   amount,
   cost = 1,
 }: ArcheryDamageCardInput): BattleCard {
+  const card = damageCard({ id, art, damageType, amount, cost, ...(title !== undefined ? { title } : {}) });
   return {
-    id,
-    title: deriveTitle(id, title),
-    descriptionLines: [`Deal ${amount} ${capitalizeWord(damageType)} damage`, "Archery"],
-    art,
-    cost,
+    ...card,
+    descriptionLines: [...card.descriptionLines, "Archery"],
     tags: ["archery"],
-    effects: [{ kind: "damage", damageType, amount }],
   };
 }
 
@@ -127,23 +133,19 @@ interface DamageHit {
 type DualDamageCardInput = CardBaseInput & { hits: [DamageHit, DamageHit] };
 export function dualDamageCard({ id, title, art, hits, cost = 1 }: DualDamageCardInput): BattleCard {
   const [first, second] = hits;
-  return {
+  return effectsCard({
     id,
-    title: deriveTitle(id, title),
-    descriptionLines: [
-      `Deal ${first.amount} ${capitalizeWord(first.damageType)} damage`,
-      `Deal ${second.amount} ${capitalizeWord(second.damageType)} damage`,
-    ],
+    ...(title !== undefined ? { title } : {}),
     art,
     cost,
     effects: [
       { kind: "damage", damageType: first.damageType, amount: first.amount },
       { kind: "damage", damageType: second.damageType, amount: second.amount },
     ],
-  };
+  });
 }
 
-type PlayerStatusCardInput = CardBaseInput & { status: "block" | "armor" | "forge"; amount: number };
+type PlayerStatusCardInput = CardBaseInput & { status: "block" | "armor" | "thorns" | "forge"; amount: number };
 export function playerStatusCard({ id, title, art, status, amount, cost = 1 }: PlayerStatusCardInput): BattleCard {
   return {
     id,
@@ -226,7 +228,7 @@ export function loseHealthBenefitCard({
 }
 
 type StatusThenEffectCardInput = CardBaseInput & {
-  status: "block" | "armor";
+  status: "block" | "armor" | "thorns";
   amount: number;
   effect: BattleCardEffect;
 };

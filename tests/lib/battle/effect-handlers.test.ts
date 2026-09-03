@@ -27,6 +27,7 @@ import {
   applyGainGoldEffect,
   applyWishEffectHandler,
   applyDrawCardsEffect,
+  applyNextArcheryFreeEffect,
 } from "@/lib/battle/effect-handlers/simple-handlers";
 import { makeTestBattleState } from "../../fixtures/battle";
 
@@ -291,5 +292,61 @@ describe("applyRestoreManaEffect ifEnemyFrozen", () => {
       { manaAtStart: 1, enemyFreezeSkipTurnsAtStart: 1 },
     );
     expect(result.mana).toBeGreaterThan(1);
+  });
+});
+
+describe("applyGainGoldEffect ifEnemyStunned", () => {
+  it("no-ops when the enemy is not stunned and ifEnemyStunned is set", () => {
+    const state = makeTestBattleState({ enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 } });
+    const result = applyGainGoldEffect(
+      state,
+      {} as never,
+      { kind: "gain-gold", amount: 2, ifEnemyStunned: true } as never,
+      1,
+      [],
+      { manaAtStart: 0, enemyFreezeSkipTurnsAtStart: 0 },
+    );
+    expect(result).toBe(state);
+  });
+
+  it("pays gold when the enemy is stunned", () => {
+    const state = makeTestBattleState({ gold: 5, enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 2, cooldown: 0 } });
+    const texts: CombatTextEvent[] = [];
+    const result = applyGainGoldEffect(
+      state,
+      {} as never,
+      { kind: "gain-gold", amount: 2, ifEnemyStunned: true } as never,
+      1,
+      texts,
+      { manaAtStart: 0, enemyFreezeSkipTurnsAtStart: 0 },
+    );
+    expect(result.gold).toBe(7);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 2 });
+  });
+
+  it("ignores stun buildup that has not skipped a turn", () => {
+    const state = makeTestBattleState({
+      gold: 0,
+      enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 },
+      enemyStatuses: { ...makeTestBattleState().enemyStatuses, stun: 5 },
+    });
+    const result = applyGainGoldEffect(
+      state,
+      {} as never,
+      { kind: "gain-gold", amount: 2, ifEnemyStunned: true } as never,
+      1,
+      [],
+      { manaAtStart: 0, enemyFreezeSkipTurnsAtStart: 0 },
+    );
+    expect(result.gold).toBe(0);
+  });
+});
+
+describe("applyNextArcheryFreeEffect", () => {
+  it("raises the free-archery flag", () => {
+    const state = makeTestBattleState();
+    expect(state.flags.nextArcheryCardFree).toBe(false);
+    const result = applyNextArcheryFreeEffect(state, {} as never, { kind: "next-archery-free" } as never, 1, []);
+    expect(result.flags.nextArcheryCardFree).toBe(true);
   });
 });

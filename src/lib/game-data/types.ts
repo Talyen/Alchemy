@@ -21,7 +21,8 @@ export type KeywordId =
   | "companion"
   | "archery"
   | "phoenixFeather"
-  | "dodge";
+  | "dodge"
+  | "thorns";
 
 export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature";
 
@@ -30,6 +31,7 @@ export const DAMAGE_TYPES = ["physical", "stun", "holy", "burn", "poison", "blee
 export type PlayerStatusId =
   | "block"
   | "armor"
+  | "thorns"
   | "forge"
   | "haste"
   | "phoenixFeather"
@@ -47,6 +49,7 @@ export type EnemyStatusId =
   | "stun"
   | "burnBonus"
   | "freezeBonus"
+  | "thorns"
   | "onAttackBleed";
 
 export type EnemyStatusDamageId = Exclude<EnemyStatusId, "burnBonus" | "freezeBonus" | "onAttackBleed">;
@@ -91,7 +94,7 @@ export type BattleCardEffect =
     }
   | {
       kind: "player-status";
-      status: Extract<PlayerStatusId, "block" | "armor" | "forge" | "haste" | "phoenixFeather">;
+      status: Extract<PlayerStatusId, "block" | "armor" | "thorns" | "forge" | "haste" | "phoenixFeather">;
       amount: number;
       perManaCrystal?: number;
       convertCurrentMana?: number;
@@ -102,7 +105,7 @@ export type BattleCardEffect =
   | { kind: "lose-mana"; amount: number }
   | { kind: "lose-max-mana"; amount: number }
   | { kind: "gain-max-mana"; amount: number }
-  | { kind: "gain-gold"; amount: number }
+  | { kind: "gain-gold"; amount: number; ifEnemyStunned?: boolean }
   | { kind: "wish"; amount: number }
   | { kind: "summon-companion"; companionId: CompanionId }
   | { kind: "remove-harmful-status"; amount: number; removeAll?: boolean }
@@ -132,7 +135,8 @@ export type BattleCardEffect =
     }
   | { kind: "next-hit-crit" }
   | { kind: "play-next-card-twice" }
-  | { kind: "next-hit-poison" };
+  | { kind: "next-hit-poison" }
+  | { kind: "next-archery-free" };
 
 export interface CompanionDefinition {
   id: CompanionId;
@@ -204,6 +208,7 @@ export const harmfulPlayerStatusIds: PlayerStatusId[] = ["burn", "poison", "blee
 export const PLAYER_STATUS_DISPLAY_ORDER: readonly PlayerStatusId[] = [
   "block",
   "armor",
+  "thorns",
   "forge",
   "haste",
   "phoenixFeather",
@@ -222,5 +227,6 @@ export const ENEMY_STATUS_DISPLAY_ORDER: readonly EnemyStatusId[] = [
   "bleed",
   "freeze",
   "stun",
+  "thorns",
   "onAttackBleed",
 ];

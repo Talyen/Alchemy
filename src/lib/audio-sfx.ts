@@ -8,7 +8,8 @@ import {
 } from "./sound-registry";
 import { audioState } from "./audio-state";
 import { getSoundUrl } from "./audio-preload";
-import { clamp, pickRandomUnsafe } from "./utils";
+import { clamp } from "./math";
+import { pickRandomUnsafe } from "./utils";
 import {
   SFX_COOLDOWN_MS,
   SFX_DEFEAT_VOLUME,

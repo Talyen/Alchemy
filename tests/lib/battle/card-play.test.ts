@@ -8,7 +8,7 @@ import {
 } from "@/lib/battle/card-play";
 import { cardHasDamageType } from "@/lib/battle/card-cost-rules";
 import { defaultBattleState } from "@/lib/battle";
-import { companionLibrary } from "@/lib/game-data";
+import { cardById, companionLibrary } from "@/lib/game-data";
 import { makeState as makeSharedState, makeTestCard, slashDeck } from "../../fixtures/battle";
 
 function makeState(overrides: Parameters<typeof makeSharedState>[0] = {}) {
@@ -460,5 +460,88 @@ describe("enemyAttackDealsDamage", () => {
   it("is true for hit packets and false for status-only packets", () => {
     expect(enemyAttackDealsDamage([{ kind: "damage", damageType: "physical", amount: 4 }])).toBe(true);
     expect(enemyAttackDealsDamage([{ kind: "player-status", status: "bleed", amount: 2 }])).toBe(false);
+  });
+});
+
+describe("reworked cards", () => {
+  it("blackjack steals gold only when the enemy is stunned", () => {
+    const card = { ...cardById["blackjack"] };
+    const unstunned = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
+    expect(unstunned.state.gold).toBe(0);
+
+    const stunned = playBattleCardResolved(
+      makeState({ hand: [{ ...card }], enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 1, cooldown: 0 } }),
+      card.id,
+      0,
+    );
+    expect(stunned.state.gold).toBe(2);
+  });
+
+  it("sniff-out draws a card and makes the next archery card free", () => {
+    const card = { ...cardById["sniff-out"] };
+    const state = makeState({ hand: [card], deck: slashDeck(2) });
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.state.hand).toHaveLength(1);
+    expect(result.state.flags.nextArcheryCardFree).toBe(true);
+    expect(result.state.exhausted).toContainEqual(expect.objectContaining({ id: "sniff-out" }));
+  });
+
+  it("stargaze deals freeze damage and opens a wish", () => {
+    const card = { ...cardById["stargaze"] };
+    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
+    expect(result.state.enemyStatuses.freeze).toBeGreaterThan(0);
+    expect(result.state.wishOptions).toHaveLength(3);
+  });
+
+  it("ray-of-frost hits now and queues a freeze echo", () => {
+    const card = { ...cardById["ray-of-frost"] };
+    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
+    expect(result.state.enemyStatuses.freeze).toBeGreaterThan(0);
+    expect(result.state.pendingTurnStartEffects).toHaveLength(1);
+    expect(result.state.pendingTurnStartEffects[0]?.effects).toEqual([
+      { kind: "damage", damageType: "freeze", amount: 1 },
+    ]);
+  });
+
+  it("briar-shield grants block and thorns", () => {
+    const card = { ...cardById["briar-shield"] };
+    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
+    expect(result.state.playerStatuses.block).toBe(1);
+    expect(result.state.playerStatuses.thorns).toBe(3);
+  });
+
+  it("spiked-shield grants block and thorns", () => {
+    const card = { ...cardById["spiked-shield"] };
+    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
+    expect(result.state.playerStatuses.block).toBe(2);
+    expect(result.state.playerStatuses.thorns).toBe(2);
+  });
+
+  it("thorn-mail grants armor and thorns", () => {
+    const card = { ...cardById["thorn-mail"] };
+    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
+    expect(result.state.playerStatuses.armor).toBe(2);
+    expect(result.state.playerStatuses.thorns).toBe(1);
+  });
+
+  it("luck-potion restores mana on a successful flip", () => {
+    const card = { ...cardById["luck-potion"] };
+    const result = playBattleCardResolved(makeState({ hand: [card], mana: 1, rng: () => 0 }), card.id, 0);
+    expect(result.state.mana).toBe(4);
+  });
+
+  it("luck-potion grants block when both flips fail", () => {
+    const card = { ...cardById["luck-potion"] };
+    const result = playBattleCardResolved(makeState({ hand: [card], rng: () => 0.99 }), card.id, 0);
+    expect(result.state.playerStatuses.block).toBe(4);
+    expect(result.state.gold).toBe(0);
+  });
+
+  it("luck-potion steals gold on a split flip", () => {
+    const card = { ...cardById["luck-potion"] };
+    const draws = [0.99, 0];
+    const result = playBattleCardResolved(makeState({ hand: [card], rng: () => draws.shift() ?? 0.5 }), card.id, 0);
+    expect(result.state.gold).toBe(4);
+    expect(result.state.playerStatuses.block).toBe(0);
   });
 });

@@ -1,7 +1,8 @@
 import type { BattleCard, BattleCardEffect, BattleCardEffectKind } from "@/lib/game-data";
 import { isPotionCard } from "@/lib/game-data/cards/card-pools";
+import { isRecursiveBattleCardEffectKind } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "../types";
-import { getBattleRng, rollChance } from "../../rng";
+import { getBattleRng, rollChance } from "@/lib/rng";
 import type { CardEffectResolutionContext, EffectHandler } from "./handler-types";
 import {
   applyDamageEffect,
@@ -34,6 +35,7 @@ import {
   applyNextHitCritEffect,
   applyPlayNextCardTwiceEffect,
   applyNextHitPoisonEffect,
+  applyNextArcheryFreeEffect,
 } from "./simple-handlers";
 
 type RegisteredEffectKind = Exclude<BattleCardEffectKind, "chance" | "repeat-over-turns">;
@@ -63,10 +65,11 @@ export const EFFECT_APPLY_BY_KIND = {
   "next-hit-crit": applyNextHitCritEffect,
   "play-next-card-twice": applyPlayNextCardTwiceEffect,
   "next-hit-poison": applyNextHitPoisonEffect,
+  "next-archery-free": applyNextArcheryFreeEffect,
 } satisfies Record<RegisteredEffectKind, EffectHandler>;
 
 function hasEffectApplyHandler(kind: BattleCardEffectKind): kind is RegisteredEffectKind {
-  return kind !== "chance" && kind !== "repeat-over-turns" && kind in EFFECT_APPLY_BY_KIND;
+  return !isRecursiveBattleCardEffectKind(kind) && kind in EFFECT_APPLY_BY_KIND;
 }
 
 export function applyEffectByKind(

@@ -17,7 +17,7 @@ import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
-import { createRunRngState, type RunRngState } from "@/lib/run-rng";
+import { createRunRngState, type RunRngState } from "@/lib/rng";
 import { filterValidDestinations, filterValidDestinationRounds } from "@/lib/routing";
 
 export interface ActiveRunProgressFields {
@@ -111,7 +111,7 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
     ...createEmptyActiveRunCollections(),
     selectedDifficulty: null,
     contentSystemType: "campaign",
-    rng: createRunRngState(),
+    rng: createRunRngState(Math.random),
   };
 }
 
@@ -132,7 +132,7 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
     encounteredRunEnemyIds: [...activeRun.encounteredRunEnemyIds],
     selectedDifficulty: activeRun.selectedDifficulty,
     contentSystemType: activeRun.contentSystemType,
-    rng: activeRun.rng ?? createRunRngState(),
+    rng: activeRun.rng ?? createRunRngState(Math.random),
     runTalentXP: activeRun.runTalentXP ?? empty.runTalentXP,
     runMaterialsEarned: activeRun.runMaterialsEarned ?? empty.runMaterialsEarned,
     runObtainedItems: [...(activeRun.runObtainedItems ?? empty.runObtainedItems)],

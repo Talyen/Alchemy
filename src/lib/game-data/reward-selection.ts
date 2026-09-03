@@ -1,5 +1,5 @@
 import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "../game-constants";
-import { pickRandom, shuffle } from "../utils";
+import { pickRandom, shuffle } from "@/lib/utils";
 import { getCardKeywords } from "./keywords";
 import type { BattleCard, KeywordId } from "./types";
 

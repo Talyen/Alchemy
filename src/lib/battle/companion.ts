@@ -6,7 +6,7 @@ import { computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollTalentChance } from "./status-helpers";
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { scalePercent, scalePerMana } from "./amount-helpers";
 

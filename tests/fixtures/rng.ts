@@ -1,4 +1,4 @@
-import { createRunStreamRng } from "@/lib/run-rng";
+import { createRunStreamRng } from "@/lib/rng";
 
 export const LCG_MULTIPLIER = 1664525;
 export const LCG_INCREMENT = 1013904223;

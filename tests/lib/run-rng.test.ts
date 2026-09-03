@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createRunRngState, createRunStreamRng, nextRunRngValue } from "@/lib/run-rng";
+import { createRunRngState, createRunStreamRng, nextRunRngValue } from "@/lib/rng";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
@@ -76,9 +76,25 @@ describe("run RNG", () => {
     expect(createRunRngState(() => 0.5).seed).toBe(((0.5 * 0x1_0000_0000) | 0) >>> 0);
   });
 
-  it("throws in DEV on unknown stream via nextRunRngValue guard", () => {
+  it("throws on unknown stream", () => {
     const state = createRunRngState(() => 0.1);
     // @ts-expect-error — force unknown stream for guard branch
     expect(() => nextRunRngValue(state, "unknown")).toThrow(/Unknown run RNG stream/);
+  });
+
+  it("pins the exact draw sequence for seed 123456", () => {
+    expect(drawSequence(123456, "rewards", 5)).toEqual([
+      0.083078344585374, 0.6497560180723667, 0.965069661848247, 0.0027175310533493757, 0.5301487483084202,
+    ]);
+  });
+
+  it("maps out-of-range seed draws to seed 0", () => {
+    expect(createRunRngState(() => 1).seed).toBe(0);
+    expect(createRunRngState(() => -0.25).seed).toBe(0);
+  });
+
+  it("rejects a non-integer startCounter", () => {
+    expect(() => createRunStreamRng(7, "world", 0.5)).toThrow();
+    expect(() => createRunStreamRng(7, "world", -1)).toThrow();
   });
 });

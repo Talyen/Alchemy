@@ -13,7 +13,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 import type { GearInstance } from "@/lib/gear";
 import type { InterruptedFlow, PersistedPendingReward } from "@/lib/validation";
-import type { RunRngState } from "@/lib/run-rng";
+import type { RunRngState } from "@/lib/rng";
 
 import type { RefreshableShopFields } from "./shop-session-types";
 

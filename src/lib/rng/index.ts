@@ -1,5 +1,7 @@
 export type Rng = () => number;
 
+export type RunRngStream = "rewards" | "destinations" | "events" | "shops" | "world";
+
 const UINT32_RANGE = 0x1_0000_0000;
 
 const STREAM_SALTS: Record<RunRngStream, number> = {
@@ -9,8 +11,6 @@ const STREAM_SALTS: Record<RunRngStream, number> = {
   shops: 0x94d0_49bb,
   world: 0xdead_beef,
 };
-
-export type RunRngStream = "rewards" | "destinations" | "events" | "shops" | "world";
 
 export interface RunRngState {
   seed: number;
@@ -26,6 +26,11 @@ function mixUint32(value: number): number {
   mixed = Math.imul(mixed ^ (mixed >>> 16), 0x21f0_aaad);
   mixed = Math.imul(mixed ^ (mixed >>> 15), 0x735a_2d97);
   return toUint32(mixed ^ (mixed >>> 15));
+}
+
+function assertDraw(draw: number): number {
+  if (!(draw >= 0 && draw < 1)) throw new Error("Rng draw out of range");
+  return draw;
 }
 
 export function hashStringToUint32(value: string): number {
@@ -47,9 +52,9 @@ export function createSeededRng(seed: number): Rng {
   };
 }
 
-export function createRunRngState(rng: Rng = Math.random): RunRngState {
+export function createRunRngState(rng: Rng): RunRngState {
   const raw = rng();
-  const seed = Number.isFinite(raw) ? toUint32(Math.trunc(raw * UINT32_RANGE)) : 0;
+  const seed = raw >= 0 && raw < 1 ? toUint32(Math.trunc(raw * UINT32_RANGE)) : 0;
   return {
     seed,
     counters: {
@@ -65,27 +70,28 @@ export function createRunRngState(rng: Rng = Math.random): RunRngState {
 export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { value: number; nextCounter: number } {
   const counter = state.counters[stream] ?? 0;
   if (!(stream in STREAM_SALTS)) {
-    if (import.meta.env.DEV) throw new Error(`Unknown run RNG stream: ${stream}`);
-    return { value: 0, nextCounter: counter + 1 };
+    throw new Error(`Unknown run RNG stream: ${stream}`);
   }
   const value = mixUint32(state.seed ^ STREAM_SALTS[stream] ^ Math.imul(counter + 1, 0x85eb_ca6b)) / UINT32_RANGE;
   return { value, nextCounter: counter + 1 };
 }
 
 export function rngInt(rng: Rng, n: number): number {
-  return Math.floor(rng() * n);
+  if (!Number.isInteger(n) || n <= 0) throw new Error("rngInt requires a positive integer range");
+  return Math.floor(assertDraw(rng()) * n);
 }
 
 export function createRunStreamRng(seed: number, stream: RunRngStream = "world", startCounter = 0): Rng {
+  if (!Number.isInteger(startCounter) || startCounter < 0)
+    throw new Error("createRunStreamRng requires a non-negative integer startCounter");
   const state: RunRngState = {
     seed: toUint32(seed),
     counters: {
-      rewards: 0,
-      destinations: 0,
-      events: 0,
-      shops: 0,
-      world: 0,
-      [stream]: startCounter,
+      rewards: stream === "rewards" ? startCounter : 0,
+      destinations: stream === "destinations" ? startCounter : 0,
+      events: stream === "events" ? startCounter : 0,
+      shops: stream === "shops" ? startCounter : 0,
+      world: stream === "world" ? startCounter : 0,
     },
   };
   return () => {
@@ -97,12 +103,16 @@ export function createRunStreamRng(seed: number, stream: RunRngStream = "world",
 
 export const placeholderRng: Rng = () => 0;
 
-export function rollPercent(chance: number, rng: Rng): boolean {
-  return chance > 0 && rng() * 100 < chance;
+export function rollChance(probability: number, rng: Rng): boolean {
+  if (Number.isNaN(probability)) throw new Error("rollChance requires a number");
+  if (probability <= 0) return false;
+  if (probability >= 1) return true;
+  return assertDraw(rng()) < probability;
 }
 
-export function rollChance(probability: number, rng: Rng): boolean {
-  return probability > 0 && rng() < probability;
+export function rollPercent(chance: number, rng: Rng): boolean {
+  if (Number.isNaN(chance)) throw new Error("rollPercent requires a number");
+  return rollChance(chance / 100, rng);
 }
 
 export function getBattleRng(state: { rng?: Rng }): Rng {
@@ -113,24 +123,26 @@ export function getBattleRng(state: { rng?: Rng }): Rng {
 export function shuffle<T>(items: readonly T[], rng: Rng): T[] {
   const shuffled = [...items];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.min(index, Math.floor(rng() * (index + 1)));
+    const swapIndex = rngInt(rng, index + 1);
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!];
   }
   return shuffled;
 }
 
 export function sampleItems<T>(items: readonly T[], count: number, rng: Rng): T[] {
+  if (!Number.isInteger(count) || count < 0) throw new Error("sampleItems requires a non-negative integer count");
+  if (count === 0) return [];
   return shuffle(items, rng).slice(0, Math.min(count, items.length));
 }
 
 export function pickRandom<T>(items: readonly T[], rng: Rng): T | undefined {
   if (items.length === 0) return undefined;
-  return items[Math.min(items.length - 1, Math.floor(rng() * items.length))];
+  return items[rngInt(rng, items.length)];
 }
 
 export function takeRandomItem<T>(items: T[], rng: Rng): T | undefined {
   if (items.length === 0) return undefined;
-  const index = Math.min(items.length - 1, Math.floor(rng() * items.length));
+  const index = rngInt(rng, items.length);
   const [removed] = items.splice(index, 1);
   return removed;
 }

@@ -4,7 +4,7 @@ import { BASE_ENEMY_HEALTH, FALLBACK_ENEMY_ATTACK, MAX_PLAYER_HEALTH } from "../
 import { EMPTY_ENEMY_MITIGATION, type BattleState, type EnemyStatusValues, type PlayerStatusValues } from "./types";
 import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
-import { placeholderRng } from "../rng";
+import { placeholderRng } from "@/lib/rng";
 import { createInitialFlags } from "./combat-flags";
 
 export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();
@@ -24,6 +24,7 @@ function createEmptyPlayerStatuses(): PlayerStatusValues {
   return {
     block: 0,
     armor: 0,
+    thorns: 0,
     forge: 0,
     haste: 0,
     phoenixFeather: 0,
@@ -44,6 +45,7 @@ function createEmptyEnemyStatuses(): EnemyStatusValues {
     stun: 0,
     burnBonus: 0,
     freezeBonus: 0,
+    thorns: 0,
     onAttackBleed: 0,
   } satisfies EnemyStatusValues;
 }

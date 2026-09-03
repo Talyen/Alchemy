@@ -15,6 +15,10 @@ export type EffectHandler = (
   context?: CardEffectResolutionContext,
 ) => BattleState;
 
+export function ccDeepenedSinceStart(current: number, atStart: number | undefined): boolean {
+  return current > (atStart ?? current);
+}
+
 export function defineHandler<K extends BattleCardEffectKind>(
   kind: K,
   fn: (

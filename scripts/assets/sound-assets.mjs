@@ -64,7 +64,6 @@ export const curatedSoundFiles = [
   "vibraphone-chime-quick.ogg",
   "whoosh-1.ogg",
   "whoosh-2.ogg",
-  "sci-fi-error.ogg",
 ];
 
 /** Validate sound ownership before the optimizer writes outputs. */

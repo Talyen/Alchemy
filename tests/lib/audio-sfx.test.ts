@@ -12,56 +12,26 @@ import {
   playVictory,
   playDefeat,
   playSliceDeath,
-  resetHtmlSfxRuntime,
 } from "@/lib/audio-sfx";
 import { setMasterVolume, setMuted, setSfxVolume } from "@/lib/audio-volume";
-
-interface FakeAudio {
-  src: string;
-  volume: number;
-  muted: boolean;
-  play: ReturnType<typeof vi.fn>;
-  pause: ReturnType<typeof vi.fn>;
-  removeAttribute: ReturnType<typeof vi.fn>;
-  load: ReturnType<typeof vi.fn>;
-  onended: (() => void) | null;
-}
-
-const created: FakeAudio[] = [];
-
-function lastAudio() {
-  return created.at(-1);
-}
+import {
+  createdFakeAudio,
+  installFakeAudio,
+  lastFakeAudio,
+  resetSfxRuntime,
+  soundedFakeAudio,
+} from "../helpers/fake-audio";
 
 beforeEach(() => {
-  created.length = 0;
-  audioState.muted = false;
   audioState.sfxVolume = 0.35;
   audioState.masterVolume = 1;
-  audioState.lastPlayedAt = new Map();
-  resetHtmlSfxRuntime();
-  vi.stubGlobal(
-    "Audio",
-    class {
-      src = "";
-      volume = 1;
-      muted = false;
-      onended: (() => void) | null = null;
-      play = vi.fn(() => Promise.resolve());
-      pause = vi.fn();
-      removeAttribute = vi.fn();
-      load = vi.fn();
-      currentTime = 0;
-      constructor(src?: string) {
-        this.src = src ?? "";
-        created.push(this);
-      }
-    },
-  );
+  resetSfxRuntime();
+  installFakeAudio();
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("stopAllSfx", () => {
@@ -71,7 +41,7 @@ describe("stopAllSfx", () => {
 
   it("stops battle-tracked sources", () => {
     playCardSound("slash");
-    const el = lastAudio()!;
+    const el = lastFakeAudio()!;
     stopAllSfx();
     expect(el.pause).toHaveBeenCalledOnce();
     expect(el.removeAttribute).toHaveBeenCalledWith("src");
@@ -80,21 +50,21 @@ describe("stopAllSfx", () => {
 
   it("does not stop UI sounds", () => {
     playUISound("error");
-    const el = lastAudio()!;
+    const el = lastFakeAudio()!;
     stopAllSfx();
     expect(el.pause).not.toHaveBeenCalled();
   });
 
   it("does not stop victory stingers", () => {
     playVictory();
-    const el = lastAudio()!;
+    const el = lastFakeAudio()!;
     stopAllSfx();
     expect(el.pause).not.toHaveBeenCalled();
   });
 
   it("does not stop slice death", () => {
     playSliceDeath();
-    const el = lastAudio()!;
+    const el = lastFakeAudio()!;
     stopAllSfx();
     expect(el.pause).not.toHaveBeenCalled();
   });
@@ -103,102 +73,188 @@ describe("stopAllSfx", () => {
 describe("playCardSound", () => {
   it("plays audio for known card id", () => {
     playCardSound("slash");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
-    expect(lastAudio()?.src).toContain("sword-attack-1.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("sword-attack-1.");
   });
 
   it("does nothing for unknown card id", () => {
     playCardSound("nonexistent-card");
-    expect(created).toHaveLength(0);
+    expect(createdFakeAudio).toHaveLength(0);
   });
 });
 
 describe("playGoldGain", () => {
   it("plays gold gain audio", () => {
     playGoldGain();
-    expect(lastAudio()?.src).toContain("coins-gather-quick.");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("coins-gather-quick.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playGoldSpend", () => {
   it("plays gold spend audio via shopBuy sound", () => {
     playGoldSpend();
-    expect(lastAudio()?.src).toContain("coins-gather-quick.");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("coins-gather-quick.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playEnemyAttack", () => {
   it("plays audio for known enemy id", () => {
     playEnemyAttack("skeleton");
-    expect(lastAudio()?.src).toContain("swish-hit.");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("swish-hit.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 
   it("does nothing for unknown enemy id", () => {
     playEnemyAttack("nonexistent-enemy");
-    expect(created).toHaveLength(0);
+    expect(createdFakeAudio).toHaveLength(0);
   });
 });
 
 describe("playBattleEvent", () => {
   it("plays audio for known event", () => {
     playBattleEvent("playerHit");
-    expect(lastAudio()?.src).toContain("punch-3.");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("punch-3.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playUISound", () => {
   it("plays audio for known UI sound", () => {
     playUISound("shopBuy");
-    expect(lastAudio()?.src).toContain("coins-gather-quick.");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("coins-gather-quick.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 
   it("plays audio for error sound", () => {
     playUISound("error");
-    expect(lastAudio()?.src).toContain("denied-03.");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("denied-03.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 
   it("plays salvage with the mine sound", () => {
     expect(uiSounds.salvage).toBe("mine-2.ogg");
     playUISound("salvage");
-    expect(lastAudio()?.src).toContain("mine-2.");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("mine-2.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playVictory", () => {
   it("plays victory stinger", () => {
     playVictory();
-    expect(lastAudio()?.src).toContain("harpsichord-level-complete.");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("harpsichord-level-complete.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playDefeat", () => {
   it("plays defeat stinger", () => {
     playDefeat();
-    expect(lastAudio()?.src).toContain("harpsichord-defeated.");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("harpsichord-defeated.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 describe("playSliceDeath", () => {
   it("plays the sword slice cue", () => {
     playSliceDeath();
-    expect(lastAudio()?.src).toContain("sword-slice.");
-    expect(lastAudio()?.play).toHaveBeenCalledOnce();
+    expect(lastFakeAudio()?.src).toContain("sword-slice.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
+  });
+});
+
+describe("cold runtime playback", () => {
+  it("does not no-op UI, combat, or victory SFX from a cold runtime", () => {
+    playUISound("error");
+    playBattleEvent("enemyHit");
+    playVictory();
+
+    expect(soundedFakeAudio()).toHaveLength(3);
+    expect(soundedFakeAudio().some((el) => el.src.includes("denied-03."))).toBe(true);
+    expect(soundedFakeAudio().some((el) => el.src.includes("sword-impact-hit-1."))).toBe(true);
+    expect(soundedFakeAudio().some((el) => el.src.includes("harpsichord-level-complete."))).toBe(true);
+  });
+
+  it("does not play when muted", () => {
+    audioState.muted = true;
+    playUISound("error");
+    expect(createdFakeAudio).toHaveLength(0);
+  });
+});
+
+describe("cooldown, delay, and stop tokens", () => {
+  it("suppresses a repeat play inside the cooldown window", () => {
+    playCardSound("slash");
+    playCardSound("slash");
+    expect(soundedFakeAudio()).toHaveLength(1);
+  });
+
+  it("honors an explicit zero cooldown", () => {
+    playBattleEvent("playerHit", { cooldownMs: 0 });
+    playBattleEvent("playerHit", { cooldownMs: 0 });
+    expect(soundedFakeAudio()).toHaveLength(2);
+  });
+
+  it("defers playback until the delay elapses", () => {
+    vi.useFakeTimers();
+    playBattleEvent("playerHit", { delay: 1, cooldownMs: 0 });
+    expect(soundedFakeAudio()).toHaveLength(0);
+    vi.advanceTimersByTime(1000);
+    expect(soundedFakeAudio()).toHaveLength(1);
+  });
+
+  it("cancels a delayed play when the stop token moves", () => {
+    vi.useFakeTimers();
+    playBattleEvent("playerHit", { delay: 1, cooldownMs: 0 });
+    stopAllSfx();
+    vi.advanceTimersByTime(1000);
+    expect(soundedFakeAudio()).toHaveLength(0);
+  });
+
+  it("skips a delayed play muted after scheduling", () => {
+    vi.useFakeTimers();
+    playBattleEvent("playerHit", { delay: 1, cooldownMs: 0 });
+    setMuted(true);
+    vi.advanceTimersByTime(1000);
+    expect(soundedFakeAudio()).toHaveLength(0);
+  });
+});
+
+describe("SFX lifetime", () => {
+  it("releases an ended element from later stops", () => {
+    playCardSound("slash");
+    const el = lastFakeAudio()!;
+    el.onended?.();
+    stopAllSfx();
+    expect(el.pause).not.toHaveBeenCalled();
+  });
+
+  it("releases a failed element from later stops", () => {
+    playCardSound("slash");
+    const el = lastFakeAudio()!;
+    el.onerror?.();
+    stopAllSfx();
+    expect(el.pause).not.toHaveBeenCalled();
+  });
+
+  it("releases an element whose play rejects", async () => {
+    installFakeAudio({ rejectPlay: true });
+    playCardSound("slash");
+    const el = lastFakeAudio()!;
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+    stopAllSfx();
+    expect(el.pause).not.toHaveBeenCalled();
   });
 });
 
 describe("in-flight HTMLAudio mute and volume", () => {
   it("mutes a playing combat SFX when background mute turns on", () => {
     playCardSound("slash");
-    const el = lastAudio()!;
+    const el = lastFakeAudio()!;
     expect(el.muted).toBe(false);
     setMuted(true);
     expect(el.muted).toBe(true);
@@ -206,7 +262,7 @@ describe("in-flight HTMLAudio mute and volume", () => {
 
   it("retunes a playing combat SFX when the SFX slider changes", () => {
     playCardSound("slash");
-    const el = lastAudio()!;
+    const el = lastFakeAudio()!;
     const startedAt = el.volume;
     setSfxVolume(1);
     expect(el.volume).toBeGreaterThan(startedAt);
@@ -214,14 +270,14 @@ describe("in-flight HTMLAudio mute and volume", () => {
 
   it("retunes a playing combat SFX when master volume changes", () => {
     playCardSound("slash");
-    const el = lastAudio()!;
+    const el = lastFakeAudio()!;
     setMasterVolume(0.5);
     expect(el.volume).toBeCloseTo(0.35 * 0.5);
   });
 
   it("mutes in-flight UI SFX that are not stopped on screen change", () => {
     playUISound("error");
-    const el = lastAudio()!;
+    const el = lastFakeAudio()!;
     setMuted(true);
     expect(el.muted).toBe(true);
     stopAllSfx();

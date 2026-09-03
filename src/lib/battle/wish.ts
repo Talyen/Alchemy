@@ -12,7 +12,7 @@ import {
 } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
 import { getEnemyDamageMultiplier } from "./status-helpers";
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import {
   PERCENT_DENOMINATOR,

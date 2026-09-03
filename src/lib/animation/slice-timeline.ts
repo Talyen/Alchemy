@@ -1,3 +1,4 @@
+import { clamp01 } from "@/lib/math";
 import { SLICE_NORMAL } from "./slice-crack";
 
 const SLICE_INTENSITY = 0.5;
@@ -26,10 +27,6 @@ export interface SliceVisual {
   lineOpacity: number;
   leftOffset: SliceOffset;
   rightOffset: SliceOffset;
-}
-
-function clamp01(value: number): number {
-  return Math.min(Math.max(value, 0), 1);
 }
 
 export function computeSliceVisual(progress: number, width: number, height: number): SliceVisual {

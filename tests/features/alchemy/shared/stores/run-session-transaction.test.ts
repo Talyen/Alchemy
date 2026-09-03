@@ -35,7 +35,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-reads";
 import { defaultBattleState } from "@/lib/battle";
 import { placeholderRng } from "@/lib/rng";
-import { createRunRngState } from "@/lib/run-rng";
+import { createRunRngState } from "@/lib/rng";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 
 beforeEach(() => {

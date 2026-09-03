@@ -75,7 +75,7 @@ describe("card descriptions vs effects", () => {
   });
 
   it("every 'Gain' line references a known effect type", () => {
-    const knownGainTargets = ["Block", "Armor", "Forge", "Health", "Maximum Mana", "Gold"];
+    const knownGainTargets = ["Block", "Armor", "Thorns", "Forge", "Health", "Maximum Mana", "Gold"];
     for (const card of cardLibrary) {
       for (const line of card.descriptionLines) {
         if (line.startsWith("Gain ")) {

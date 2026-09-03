@@ -1,13 +1,22 @@
 import { expect, it, beforeEach, vi, afterEach } from "vitest";
-import { applyMusicVolume, invalidateCacheForKey, playMusic, playMusicImmediate } from "@/lib/audio-music";
+import {
+  applyMusicVolume,
+  getBossMusicKey,
+  invalidateCacheForKey,
+  isMusicPaused,
+  pauseAllMusic,
+  playMusic,
+  playMusicImmediate,
+} from "@/lib/audio-music";
 import { audioState } from "@/lib/audio-state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
+import { installFakeAudio, resetMusicState, type FakeAudioElement } from "../helpers/fake-audio";
 
 beforeEach(() => {
   audioState.musicVolume = 0.5;
   audioState.masterVolume = 1;
-  audioState.currentMusicKey = null;
-  audioState.currentMusic = null;
+  resetMusicState();
+  installFakeAudio();
   invalidateCacheForKey(MUSIC_KEYS.MENU);
   invalidateCacheForKey(MUSIC_KEYS.BATTLE);
   invalidateCacheForKey(MUSIC_KEYS.BOSS_FORGE_GOLEM);
@@ -15,6 +24,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 it("applies combined volume to an audio element", () => {
@@ -64,27 +74,64 @@ it("applies fade progress and the boss boost exactly once", () => {
   expect(el.volume).toBe(0.5 * 1 * MUSIC_MASTER_GAIN * 0.25 * 2);
 });
 
-it("preserves currentTime on cached track when switching music", () => {
-  class MockAudio {
-    src = "";
-    currentTime = 0;
-    paused = true;
-    volume = 1;
-    muted = false;
-    loop = false;
-    constructor(src?: string) {
-      this.src = src ?? "";
-    }
-    play() {
-      this.paused = false;
-      return Promise.resolve();
-    }
-    pause() {
-      this.paused = true;
-    }
-  }
-  vi.stubGlobal("Audio", MockAudio);
+it("resolves each boss id to its music key", () => {
+  expect(getBossMusicKey("forge-golem")).toBe(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+  expect(getBossMusicKey("frostwarden")).toBe(MUSIC_KEYS.BOSS_FROSTWARDEN);
+  expect(getBossMusicKey("blight-treant")).toBe(MUSIC_KEYS.BOSS_BLIGHT_TREANT);
+  expect(getBossMusicKey("iron-bear")).toBe(MUSIC_KEYS.BOSS_IRON_BEAR);
+  expect(getBossMusicKey("unknown-boss")).toBeUndefined();
+});
 
+it("loops a newly started track", () => {
+  playMusicImmediate(MUSIC_KEYS.BATTLE);
+  expect(audioState.currentMusic?.loop).toBe(true);
+  expect(audioState.currentMusic?.src).toContain("Music/Battle");
+});
+
+it("skips the iron bear intro", () => {
+  playMusicImmediate(MUSIC_KEYS.BOSS_IRON_BEAR);
+  expect(audioState.currentMusic?.currentTime).toBe(6);
+  invalidateCacheForKey(MUSIC_KEYS.BOSS_IRON_BEAR);
+});
+
+it("reports pause state from the current element", () => {
+  expect(isMusicPaused()).toBe(true);
+  playMusicImmediate(MUSIC_KEYS.MENU);
+  expect(isMusicPaused()).toBe(false);
+  audioState.currentMusic?.pause();
+  expect(isMusicPaused()).toBe(true);
+});
+
+it("pauses and mutes every cached track", () => {
+  playMusicImmediate(MUSIC_KEYS.MENU);
+  playMusicImmediate(MUSIC_KEYS.BATTLE);
+  pauseAllMusic();
+  expect(audioState.currentMusic?.paused).toBe(true);
+  expect(audioState.currentMusic?.muted).toBe(true);
+});
+
+it("warns when playback stays blocked", async () => {
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  installFakeAudio({ rejectPlay: true });
+  playMusicImmediate(MUSIC_KEYS.MENU);
+  await new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+  expect(warn).toHaveBeenCalledWith("Music playback blocked until user interaction");
+  warn.mockRestore();
+});
+
+it("resumes the same key without a transition", () => {
+  playMusicImmediate(MUSIC_KEYS.MENU);
+  const el = audioState.currentMusic as unknown as FakeAudioElement;
+  el.pause();
+  const plays = el.play.mock.calls.length;
+  playMusic(MUSIC_KEYS.MENU);
+  expect(el.play.mock.calls.length).toBe(plays + 1);
+  expect(audioState.currentMusic).toBe(el as unknown as HTMLAudioElement);
+});
+
+it("preserves currentTime on cached track when switching music", () => {
   playMusicImmediate(MUSIC_KEYS.BATTLE);
   const battleElement = audioState.currentMusic;
   expect(battleElement).toBeDefined();
@@ -104,26 +151,6 @@ it("preserves currentTime on cached track when switching music", () => {
 });
 
 it("resets currentTime to 0 on invalidateCacheForKey", () => {
-  class MockAudio {
-    src = "";
-    currentTime = 0;
-    paused = true;
-    volume = 1;
-    muted = false;
-    loop = false;
-    constructor(src?: string) {
-      this.src = src ?? "";
-    }
-    play() {
-      this.paused = false;
-      return Promise.resolve();
-    }
-    pause() {
-      this.paused = true;
-    }
-  }
-  vi.stubGlobal("Audio", MockAudio);
-
   playMusicImmediate(MUSIC_KEYS.BATTLE);
   const battleElement = audioState.currentMusic;
   if (battleElement) {
@@ -137,25 +164,6 @@ it("resets currentTime to 0 on invalidateCacheForKey", () => {
 
 it("cancels prior transition when rapid playMusic is invoked", () => {
   vi.useFakeTimers();
-  class MockAudio {
-    src = "";
-    currentTime = 0;
-    paused = true;
-    volume = 1;
-    muted = false;
-    loop = false;
-    constructor(src?: string) {
-      this.src = src ?? "";
-    }
-    play() {
-      this.paused = false;
-      return Promise.resolve();
-    }
-    pause() {
-      this.paused = true;
-    }
-  }
-  vi.stubGlobal("Audio", MockAudio);
 
   playMusic(MUSIC_KEYS.MENU);
   const menuElement = audioState.currentMusic;
@@ -176,31 +184,10 @@ it("cancels prior transition when rapid playMusic is invoked", () => {
   expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.MENU);
   expect(audioState.currentMusic).toBe(menuElement);
   expect(menuElement?.paused).toBe(false);
-
-  vi.useRealTimers();
 });
 
 it("continues fading from the current gain when a transition is interrupted", () => {
   vi.useFakeTimers();
-  class MockAudio {
-    src = "";
-    currentTime = 0;
-    paused = true;
-    volume = 1;
-    muted = false;
-    loop = false;
-    constructor(src?: string) {
-      this.src = src ?? "";
-    }
-    play() {
-      this.paused = false;
-      return Promise.resolve();
-    }
-    pause() {
-      this.paused = true;
-    }
-  }
-  vi.stubGlobal("Audio", MockAudio);
 
   playMusicImmediate(MUSIC_KEYS.MENU);
   const outgoing = audioState.currentMusic;
@@ -214,33 +201,14 @@ it("continues fading from the current gain when a transition is interrupted", ()
   expect(outgoing?.volume).toBeLessThanOrEqual(interruptedVolume);
 
   playMusicImmediate(MUSIC_KEYS.MENU);
-  vi.useRealTimers();
 });
 
 it("does not start playback in a non-player host", () => {
-  class MockAudio {
-    src = "";
-    currentTime = 0;
-    paused = true;
-    volume = 1;
-    muted = false;
-    loop = false;
-    play = vi.fn(() => {
-      this.paused = false;
-      return Promise.resolve();
-    });
-    pause() {
-      this.paused = true;
-    }
-    constructor(src?: string) {
-      this.src = src ?? "";
-    }
-  }
-  vi.stubGlobal("Audio", MockAudio);
   vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Electron/28.0.0" });
 
   playMusicImmediate(MUSIC_KEYS.MENU);
-  expect(audioState.currentMusic?.play).not.toHaveBeenCalled();
+  const el = audioState.currentMusic as unknown as FakeAudioElement | null;
+  expect(el?.play).not.toHaveBeenCalled();
   expect(audioState.currentMusic?.paused).toBe(true);
   expect(audioState.currentMusic?.muted).toBe(true);
 });

@@ -9,6 +9,7 @@ import { generateGearInstanceForBaseItem } from "@/lib/gear";
 import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { gearBaseItemList } from "@/lib/gear/base-items";
+import { rngInt } from "@/lib/rng";
 import { pickRandom } from "@/lib/utils";
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
@@ -97,7 +98,7 @@ function loseMysteryGold(amount: number, context: MysteryEffectContext) {
 function removeMysteryCard(context: MysteryEffectContext) {
   setRunDeck(context.draft, (p) => {
     if (p.length === 0) return p;
-    const idx = Math.floor(context.rng() * p.length);
+    const idx = rngInt(context.rng, p.length);
     return p.filter((_, i) => i !== idx);
   });
   return { followUp: null };

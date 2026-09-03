@@ -6,7 +6,7 @@ import {
   MIXED_POTION_COST,
   MIXED_POTION_TITLE,
 } from "../game-constants";
-import { isValidDeckIndex } from "../utils";
+import { isValidDeckIndex } from "@/lib/utils";
 
 const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 

@@ -1,8 +1,8 @@
-import { clamp } from "@/lib/utils";
+import { clamp } from "@/lib/math";
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
 import { CAMPFIRE_HEAL_FRACTION, DEATHS_DOOR_GRACE_TURNS, PERCENT_DENOMINATOR } from "../../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
-import { getBattleRng, rollPercent } from "../../rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import { halveRounded } from "../amount-helpers";
 import type { BattleState, CombatFlags, EnemyMitigation } from "./state-types";
 import { isStunFreezeBuildupBlocked } from "./state-types";

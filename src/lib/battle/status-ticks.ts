@@ -14,7 +14,7 @@ import {
   getBurnBonusToBleedingMultiplier,
   getEnemyDamageMultiplier,
 } from "./status-helpers";
-import { getBattleRng, rollPercent } from "../rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import { HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { applyPoisonTalentRiders } from "./damage-status-riders";

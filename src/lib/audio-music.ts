@@ -1,4 +1,5 @@
 import { isNonPlayerAudioHost } from "./audio-host";
+import { audioUrl } from "./audio-url";
 import {
   FADE_IN_DELAY,
   FADE_IN_DURATION,
@@ -10,9 +11,10 @@ import {
   MUSIC_MASTER_GAIN,
 } from "./game-constants";
 import { audioState } from "./audio-state";
-import { clamp, pickRandomUnsafe } from "./utils";
+import { clamp } from "./math";
+import { pickRandomUnsafe } from "./utils";
 
-const musicBase = import.meta.env.BASE_URL + MUSIC_BASE_PATH;
+const musicBase = audioUrl(MUSIC_BASE_PATH);
 
 const MUSIC_CONFIG = {
   TRACKS: {

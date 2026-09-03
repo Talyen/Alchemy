@@ -21,7 +21,7 @@ import {
 } from "@/lib/game-data";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
-import { createRunStreamRng } from "@/lib/run-rng";
+import { createRunStreamRng } from "@/lib/rng";
 import { MAX_PLAYER_HEALTH } from "../game-constants";
 import { createEmptyAnomalies, sampleAnomalies, type BattleAnomalies } from "./anomalies";
 import { buildSimCompanionBondLevels } from "./homestead-preset";

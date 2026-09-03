@@ -79,13 +79,16 @@ export const coreCards: BattleCard[] = [
   {
     id: "ray-of-frost",
     title: "Ray of Frost",
-    descriptionLines: ["Deal 1 Freeze damage, twice", "If this Freezes the enemy, Gain 1 Mana"],
+    descriptionLines: ["Deal 1 Freeze damage this turn and next turn"],
     art: assetRefs.rayOfFrost,
     cost: 1,
     effects: [
       { kind: "damage", damageType: "freeze", amount: 1 },
-      { kind: "damage", damageType: "freeze", amount: 1 },
-      { kind: "restore-mana", amount: 1, ifEnemyFrozen: true },
+      {
+        kind: "repeat-over-turns",
+        remainingTurns: 1,
+        effects: [{ kind: "damage", damageType: "freeze", amount: 1 }],
+      },
     ],
   },
   {
@@ -212,12 +215,12 @@ export const coreCards: BattleCard[] = [
   {
     id: "blackjack",
     title: "Blackjack",
-    descriptionLines: ["Deal 2 Stun damage", "Steal 2 Gold"],
+    descriptionLines: ["Deal 2 Stun damage", "Steal 2 Gold if the enemy is Stunned"],
     art: assetRefs.blackjack,
     cost: 1,
     effects: [
       { kind: "damage", damageType: "stun", amount: 2 },
-      { kind: "gain-gold", amount: 2 },
+      { kind: "gain-gold", amount: 2, ifEnemyStunned: true },
     ],
   },
   cardBuilders.healThenDamageCard({
@@ -264,20 +267,28 @@ export const coreCards: BattleCard[] = [
       { damageType: "stun", amount: 2 },
     ],
   }),
-  cardBuilders.playerStatThenScaledDamageCard({
+  {
     id: "briar-shield",
+    title: "Briar Shield",
+    descriptionLines: ["Gain 1 Block", "Gain 3 Thorns"],
     art: assetRefs.briarShield,
-    damageType: "nature",
-    scaleFrom: "block",
-    playerStat: { status: "block", amount: 3 },
-  }),
-  cardBuilders.playerStatThenScaledDamageCard({
+    cost: 1,
+    effects: [
+      { kind: "player-status", status: "block", amount: 1 },
+      { kind: "player-status", status: "thorns", amount: 3 },
+    ],
+  },
+  {
     id: "thorn-mail",
+    title: "Thorn Mail",
+    descriptionLines: ["Gain 2 Armor", "Gain 1 Thorns"],
     art: assetRefs.thornMail,
-    damageType: "nature",
-    scaleFrom: "armor",
-    playerStat: { status: "armor", amount: 2 },
-  }),
+    cost: 1,
+    effects: [
+      { kind: "player-status", status: "armor", amount: 2 },
+      { kind: "player-status", status: "thorns", amount: 1 },
+    ],
+  },
   {
     id: "pack-tactics",
     title: "Pack Tactics",
@@ -343,7 +354,7 @@ export const coreCards: BattleCard[] = [
     art: assetRefs.stargaze,
     effects: [
       { kind: "damage", damageType: "freeze", amount: 2 },
-      { kind: "restore-mana", amount: 1 },
+      { kind: "wish", amount: 1 },
     ],
   }),
   cardBuilders.effectsCard({
@@ -372,11 +383,11 @@ export const coreCards: BattleCard[] = [
   {
     id: "sniff-out",
     title: "Sniff Out",
-    descriptionLines: ["Draw 2 Cards", CONSUME_DESCRIPTION_LINE],
+    descriptionLines: ["Draw 1 Card", "Your next Archery card is free", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.sniffOut,
     cost: 1,
     consume: true,
-    effects: [{ kind: "draw-cards", amount: 2 }],
+    effects: [{ kind: "draw-cards", amount: 1 }, { kind: "next-archery-free" }],
   },
   cardBuilders.singleEffectCard({
     id: "predators-focus",

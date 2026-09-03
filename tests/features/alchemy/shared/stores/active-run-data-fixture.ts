@@ -3,7 +3,7 @@ import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { getStartingDeck } from "@/lib/game-data";
 import type { ActiveRunData, PersistedMysteryVisit } from "@/lib/active-run-session";
-import { createRunRngState } from "@/lib/run-rng";
+import { createRunRngState } from "@/lib/rng";
 import { createSeededRng } from "@/lib/utils";
 
 export const ANCIENT_ALTAR_MYSTERY_VISIT: PersistedMysteryVisit = {

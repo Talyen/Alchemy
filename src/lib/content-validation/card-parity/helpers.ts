@@ -1,4 +1,5 @@
 import type { BattleCardEffect } from "@/lib/game-data";
+import { isRecursiveBattleCardEffectKind } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
 
 export function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
@@ -15,6 +16,15 @@ export function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] 
 
 export function countByKind(effects: BattleCardEffect[], kind: string): number {
   return flattenEffects(effects).filter((effect) => effect.kind === kind).length;
+}
+
+export function flattenChanceEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
+  return effects.flatMap((effect) => {
+    if (effect.kind === "chance") {
+      return [...flattenChanceEffects(effect.successEffects), ...flattenChanceEffects(effect.failureEffects)];
+    }
+    return [effect];
+  });
 }
 
 export function hasKind(effects: BattleCardEffect[], kind: string): boolean {
@@ -38,7 +48,7 @@ export function hasNonStandardDamageEffects(effects: BattleCardEffect[]): boolea
   return (
     hasEqualToBlockOrArmor(flat) ||
     flat.some((effect) => effect.kind === "cleanse-player-status-to-damage" || effect.kind === "random-damage") ||
-    effects.some((effect) => effect.kind === "chance" || effect.kind === "repeat-over-turns")
+    effects.some((effect) => isRecursiveBattleCardEffectKind(effect.kind))
   );
 }
 

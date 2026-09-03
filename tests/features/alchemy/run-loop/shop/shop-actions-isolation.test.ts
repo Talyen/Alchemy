@@ -24,7 +24,7 @@ import {
 } from "@/lib/game-constants";
 import { playGoldSpend } from "@/lib/audio";
 import type { GearInstance } from "@/lib/gear";
-import { createRunRngState } from "@/lib/run-rng";
+import { createRunRngState } from "@/lib/rng";
 
 type Actions = ReturnType<typeof buildActions>;
 

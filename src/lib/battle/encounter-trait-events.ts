@@ -1,11 +1,11 @@
 import type { BattleCard } from "@/lib/game-data";
 import { halveRounded } from "./amount-helpers";
-import { applyEnemyHealingWithCombatText } from "./combat-text";
+import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { applyEnemyLeechHealing, processEnemyDamageEffect } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
-import { getBattleRng, rollPercent } from "../rng";
-import { hasEnemyTrait, type BattleState, type CombatTextEvent } from "./types";
+import { getBattleRng, rollPercent } from "@/lib/rng";
+import { hasEnemyTrait, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 
 function addEnemyStatusText(
   state: BattleState,
@@ -14,6 +14,13 @@ function addEnemyStatusText(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   return addEnemyMitigationWithCombatText(state, field, amount, combatTexts);
+}
+
+export function regrowEnemyThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (state.enemyStatuses.thorns > 0) return state;
+  const nextState = setEnemyStatus(state, "thorns", 1);
+  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "thorns", amount: 1 });
+  return nextState;
 }
 
 export function processEncounterTraitActionStart(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -115,7 +122,10 @@ export function processEncounterTraitCardAction(
     nextState = addEnemyStatusText(nextState, "block", scale(1), combatTexts);
   }
   if (card.effects.some((effect) => effect.kind === "damage")) {
-    if (hasEnemyTrait(nextState, "thorns")) nextState = dealTraitDamage(nextState, "physical", 1, combatTexts);
+    if (hasEnemyTrait(nextState, "thorns") && nextState.enemyStatuses.thorns > 0) {
+      nextState = setEnemyStatus(nextState, "thorns", 0);
+      nextState = dealTraitDamage(nextState, "physical", 1, combatTexts);
+    }
     if (hasEnemyTrait(nextState, "holy-retribution")) nextState = dealTraitDamage(nextState, "holy", 1, combatTexts);
     if (hasEnemyTrait(nextState, "cinder-skin")) nextState = dealTraitDamage(nextState, "burn", 1, combatTexts);
   }

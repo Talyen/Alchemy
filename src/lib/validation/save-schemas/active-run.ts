@@ -23,7 +23,7 @@ import {
   MaterialInventorySchema,
 } from "./core";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
-import { createRunRngState } from "@/lib/run-rng";
+import { createRunRngState } from "@/lib/rng";
 
 const MaterialIdPersistSchema = z.preprocess(
   (val) => (val === "crystal" ? "gems" : val),
@@ -116,7 +116,7 @@ const RunRngStateSchema = z
       })
       .catch({ rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 }),
   })
-  .catch(createRunRngState());
+  .catch(createRunRngState(Math.random));
 
 const PersistedBattleTransitionSchema = z
   .union([
@@ -274,7 +274,7 @@ const ActiveRunDataObjectSchema = z.object({
   encounteredRunEnemyIds: deduplicatedStringArraySchema().default([]),
   selectedDifficulty: DifficultyIdSchema.nullable().catch(null).default(null),
   contentSystemType: ContentSystemIdSchema.catch("campaign"),
-  rng: RunRngStateSchema.default(() => createRunRngState()),
+  rng: RunRngStateSchema.default(() => createRunRngState(Math.random)),
   labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
   labyrinthPendingNode: LabyrinthPendingNodeSchema,
   wildwoodDraft: WildwoodDraftStateSchema.default(null),

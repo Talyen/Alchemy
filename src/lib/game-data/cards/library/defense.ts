@@ -20,9 +20,9 @@ export const defenseCards: BattleCard[] = [
   cardBuilders.statusThenEffectCard({
     id: "spiked-shield",
     art: assetRefs.spikedShield,
-    status: "armor",
+    status: "block",
     amount: 2,
-    effect: { kind: "damage", damageType: "bleed", amount: 1 },
+    effect: { kind: "player-status", status: "thorns", amount: 2 },
   }),
   cardBuilders.statusThenEffectCard({
     id: "golden-plate",

@@ -32,6 +32,8 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Mana", keywordId: "mana" },
   { match: "Nature", keywordId: "nature" },
   { match: "Archery", keywordId: "archery" },
+  { match: "Thorns", keywordId: "thorns" },
+  { match: "Thorn", keywordId: "thorns" },
 ];
 
 export const keywordAliasMap = new Map<string, KeywordId>(

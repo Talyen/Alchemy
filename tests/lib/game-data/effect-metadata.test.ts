@@ -23,6 +23,16 @@ describe("collectKeywordsFromBattleEffect", () => {
     expect(collectKeywordsFromBattleEffect(effect)).toEqual(["block"]);
   });
 
+  it("returns thorns for player-status thorns", () => {
+    const effect: BattleCardEffect = { kind: "player-status", status: "thorns", amount: 2 };
+    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["thorns"]);
+  });
+
+  it("returns archery for next-archery-free", () => {
+    const effect: BattleCardEffect = { kind: "next-archery-free" };
+    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["archery"]);
+  });
+
   it("deduplicates keywords from chance effect branches", () => {
     const inner: BattleCardEffect = { kind: "damage", damageType: "physical", amount: 2, lifesteal: true };
     const effect: BattleCardEffect = {

@@ -27,6 +27,12 @@ describe("registered SFX assets", () => {
     expect(missing).toEqual([]);
   });
 
+  it("references every declared sound from the runtime registry", () => {
+    const referenced = new Set(allRegisteredSoundFiles());
+    const orphaned = [...declaredSounds].filter((file) => !referenced.has(file));
+    expect(orphaned).toEqual([]);
+  });
+
   it("owns every OGG in public/sounds as generated or curated", () => {
     const onDisk = readdirSync(soundsDir).filter((file) => file.endsWith(".ogg"));
     expect(onDisk.filter((file) => !declaredSounds.has(file))).toEqual([]);

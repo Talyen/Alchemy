@@ -11,7 +11,7 @@ import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import { createRunRngState } from "@/lib/run-rng";
+import { createRunRngState } from "@/lib/rng";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
 beforeEach(() => {

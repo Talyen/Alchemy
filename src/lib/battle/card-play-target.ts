@@ -27,6 +27,7 @@ function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
     case "next-hit-crit":
     case "play-next-card-twice":
     case "next-hit-poison":
+    case "next-archery-free":
       return "player";
     case "chance":
       for (const nested of [...effect.successEffects, ...effect.failureEffects]) {

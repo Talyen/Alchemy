@@ -1,13 +1,42 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { E2E_ESCALATIONS } from "./lib/test-commands.mjs";
+
+export const E2E_ROUTES = Object.freeze({
+  audio: Object.freeze({
+    label: "audio Playwright flow",
+    args: ["playwright", "test", "tests/audio-sfx.spec.ts", "--project", "chromium"],
+  }),
+  gear: Object.freeze({
+    label: "gear Playwright flows",
+    args: ["playwright", "test", "tests/armory.spec.ts", "--project", "chromium"],
+  }),
+  mystery: Object.freeze({
+    label: "mystery Playwright flow",
+    args: ["playwright", "test", "tests/destination-progression.spec.ts", "-g", "Mystery", "--project", "chromium"],
+  }),
+  homestead: Object.freeze({
+    label: "homestead Playwright flow",
+    args: ["playwright", "test", "tests/homestead-flow.spec.ts", "--project", "chromium"],
+  }),
+  "shop-screen": Object.freeze({
+    label: "shop Playwright flow",
+    args: ["playwright", "test", "tests/shop-and-rewards.spec.ts", "--project", "chromium"],
+  }),
+});
+
+const E2E_ROUTE_ALIASES = Object.freeze({
+  shop: "shop-screen",
+  "homestead-screen": "homestead",
+});
+
+function canonicalRouteNames() {
+  return Object.keys(E2E_ROUTES).filter((name) => name !== "shop-screen");
+}
 
 function printHelp() {
   console.log(`Usage: node scripts/run-e2e-route.mjs <route> [extra playwright args]
 
-Routes: ${Object.keys(E2E_ESCALATIONS)
-    .filter((k) => k !== "shop-screen")
-    .join(", ")}
+Routes: ${canonicalRouteNames().join(", ")}
   shop aliases to shop-screen
 
 Examples:
@@ -16,34 +45,31 @@ Examples:
 `);
 }
 
-const route = process.argv[2];
-if (!route || route === "--help" || route === "-h") {
-  printHelp();
-  process.exit(route ? 0 : 1);
+export function resolveE2eRoute(route) {
+  const normalized = E2E_ROUTE_ALIASES[route] ?? route;
+  return E2E_ROUTES[normalized];
 }
 
-const normalized = route === "shop" ? "shop-screen" : route;
-const commandKey = E2E_ESCALATIONS[normalized];
-if (!commandKey) {
-  console.error(`Unknown E2E route: ${route}`);
-  console.error(
-    `Known routes: ${Object.keys(E2E_ESCALATIONS)
-      .filter((k) => k !== "shop-screen")
-      .join(", ")}`,
-  );
-  process.exit(1);
-}
+const invokedAsCli = (process.argv[1] ?? "").includes("run-e2e-route.mjs");
 
-const { COMMANDS } = await import("./lib/test-commands.mjs");
-const command = COMMANDS[commandKey];
-if (!command) {
-  console.error(`No command for route: ${route} (${commandKey})`);
-  process.exit(1);
-}
+if (invokedAsCli) {
+  const route = process.argv[2];
+  if (!route || route === "--help" || route === "-h") {
+    printHelp();
+    process.exit(route ? 0 : 1);
+  }
 
-const extra = process.argv.slice(3);
-const result = spawnSync(command.command, [...command.args, ...extra], {
-  stdio: "inherit",
-  shell: process.platform === "win32",
-});
-process.exit(result.status ?? 1);
+  const resolved = resolveE2eRoute(route);
+  if (!resolved) {
+    console.error(`Unknown E2E route: ${route}`);
+    console.error(`Known routes: ${canonicalRouteNames().join(", ")}`);
+    process.exit(1);
+  }
+
+  const extra = process.argv.slice(3);
+  const result = spawnSync("npx", [...resolved.args, ...extra], {
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  process.exit(result.status ?? 1);
+}

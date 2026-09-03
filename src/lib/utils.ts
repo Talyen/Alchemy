@@ -6,6 +6,7 @@ export function capitalizeWord(value: string) {
 }
 
 export function formatLargeAmount(amount: number): string {
+  if (!Number.isFinite(amount)) return "0";
   return amount >= 100000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString();
 }
 
@@ -16,7 +17,7 @@ export function isValidDeckIndex(index: number, deckLength: number): boolean {
 }
 
 export function appendUnique<T>(items: readonly T[], item: T): T[] {
-  return items.includes(item) ? (items as T[]) : [...items, item];
+  return appendUniqueMany(items, [item]);
 }
 
 export function createInstanceId(): string {
@@ -26,7 +27,7 @@ export function createInstanceId(): string {
     globalThis.crypto.getRandomValues(bytes);
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
   }
-  return `id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2) || "0"}`;
 }
 
 export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): T[] {

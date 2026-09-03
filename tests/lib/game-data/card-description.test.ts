@@ -1,160 +1,61 @@
 import { describe, expect, it } from "vitest";
 import { getEffectiveCardDescriptionLines } from "@/lib/game-data";
-import { cardLibrary } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("getEffectiveCardDescriptionLines", () => {
-  it("returns description lines unchanged when no context is given", () => {
+  it("returns authored description lines unchanged when no context is given", () => {
     const card = makeTestCard({ descriptionLines: ["Deal 5 Physical damage", "Gain 3 Block"] });
-    const lines = getEffectiveCardDescriptionLines(card);
-    expect(lines).toEqual(["Deal 5 Physical damage", "Gain 3 Block"]);
+    expect(getEffectiveCardDescriptionLines(card)).toEqual(["Deal 5 Physical damage", "Gain 3 Block"]);
   });
 
-  it("adjusts damage amount with flatPhysicalDamage", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal 5 Physical damage"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 3 });
-    expect(lines).toEqual(["Deal 8 Physical damage"]);
-  });
-
-  it("does not add flatPhysicalDamage to non-physical damage types", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal 5 Holy damage"],
-      effects: [{ kind: "damage", damageType: "holy", amount: 5 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 3 });
-    expect(lines).toEqual(["Deal 5 Holy damage"]);
-  });
-
-  it("adjusts potion damage with potionPotency", () => {
+  it("shows base amounts for potions instead of potency-scaled amounts", () => {
     const card = makeTestCard({
       id: "health-potion",
-      descriptionLines: ["Heal 10", "Gain 5 Block"],
+      descriptionLines: ["Restore 8 Health", "Gain 5 Block"],
       effects: [
-        { kind: "heal", amount: 10 },
+        { kind: "heal", amount: 8 },
         { kind: "player-status", status: "block", amount: 5 },
       ],
     });
-    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 2 });
-    expect(lines).toEqual(["Heal 20", "Gain 10 Block"]);
+    expect(getEffectiveCardDescriptionLines(card, { potionPotency: 2 })).toEqual(["Restore 8 Health", "Gain 5 Block"]);
   });
 
-  it("adjusts potion enemy-status amounts with potionPotency", () => {
+  it("shows base damage instead of flat-bonus-adjusted damage", () => {
     const card = makeTestCard({
-      id: "poison-potion",
-      descriptionLines: ["Apply 5 Poison"],
-      effects: [{ kind: "enemy-status", status: "poison", amount: 5 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 2 });
-    expect(lines).toEqual(["Apply 10 Poison"]);
-  });
-
-  it("does not adjust non-potion amounts with potionPotency", () => {
-    const card = makeTestCard({
-      id: "normal-card",
-      descriptionLines: ["Heal 10"],
-      effects: [{ kind: "heal", amount: 10 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 2 });
-    expect(lines).toEqual(["Heal 10"]);
-  });
-
-  it("adjusts damage amount with both flatPhysicalDamage and potionPotency", () => {
-    const card = makeTestCard({
-      id: "strength-potion",
       descriptionLines: ["Deal 5 Physical damage"],
       effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
-    const lines = getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 2, potionPotency: 3 });
-    expect(lines).toEqual(["Deal 17 Physical damage"]);
+    expect(getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 3 })).toEqual(["Deal 5 Physical damage"]);
   });
 
-  it("replaces companion damage line with dynamic companion damage", () => {
+  it("shows authored companion lines instead of bond-adjusted lines", () => {
     const card = makeTestCard({
-      descriptionLines: ["Deals 1 Bleed damage each turn", "Gain 3 Block"],
-      effects: [
-        { kind: "player-status", status: "block", amount: 3 },
-        { kind: "summon-companion", companionId: "wolf" },
-      ],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { companionBondLevels: { wolf: 2 } });
-    expect(lines[0]).toBe("Deals 3 Bleed damage each turn");
-    expect(lines[1]).toBe("Gain 3 Block");
-  });
-
-  it("companion damage includes bond level and context bonuses", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deals 1 Bleed damage each turn"],
+      descriptionLines: ["Deals 1 Bleed damage each turn", "Companion"],
       effects: [{ kind: "summon-companion", companionId: "wolf" }],
     });
-    const lines = getEffectiveCardDescriptionLines(card, {
-      companionBondLevels: { wolf: 1 },
-      companionDamage: 2,
-      companionDamageBonus: 1,
-      companionDamageBuff: 1,
-    });
-    expect(lines[0]).toBe("Deals 6 Bleed damage each turn");
+    expect(
+      getEffectiveCardDescriptionLines(card, {
+        companionBondLevels: { wolf: 2 },
+        companionDamage: 2,
+        companionDamageBonus: 1,
+        companionDamageBuff: 1,
+      }),
+    ).toEqual(["Deals 1 Bleed damage each turn", "Companion"]);
   });
 
-  it("adjusts gold gain amount", () => {
+  it("leaves scaled and conditional lines exactly as authored", () => {
     const card = makeTestCard({
-      id: "luck-potion",
-      descriptionLines: ["Gain 10 Gold"],
-      effects: [{ kind: "gain-gold", amount: 10 }],
+      descriptionLines: [
+        "Deal Holy damage equal to your Block",
+        "Gain 2 Block per Mana Crystal",
+        "Deal 1 Freeze damage this turn and next turn",
+      ],
     });
-    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 2 });
-    expect(lines).toEqual(["Gain 20 Gold"]);
-  });
-
-  it("adjusts heal amount", () => {
-    const card = makeTestCard({
-      id: "health-potion",
-      descriptionLines: ["Heal 8"],
-      effects: [{ kind: "heal", amount: 8 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 2 });
-    expect(lines).toEqual(["Heal 16"]);
-  });
-
-  it("adjusts mana restore amount", () => {
-    const card = makeTestCard({
-      id: "mana-potion",
-      descriptionLines: ["Restore 4 Mana"],
-      effects: [{ kind: "restore-mana", amount: 4 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 2 });
-    expect(lines).toEqual(["Restore 8 Mana"]);
-  });
-
-  it("adjusts wish amount", () => {
-    const card = makeTestCard({
-      id: "wish-potion",
-      descriptionLines: ["Wish 1"],
-      effects: [{ kind: "wish", amount: 1 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 3 });
-    expect(lines).toEqual(["Wish 3"]);
-  });
-
-  it("adjusts harmful status removal amount with pluralization", () => {
-    const card = makeTestCard({
-      id: "panacea-potion",
-      descriptionLines: ["Remove 2 harmful Statuses"],
-      effects: [{ kind: "remove-harmful-status", amount: 2 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 2 });
-    expect(lines).toEqual(["Remove 4 harmful Statuses"]);
-  });
-
-  it("harmful status removal uses singular when amount is 1", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Remove 1 harmful Status"],
-      effects: [{ kind: "remove-harmful-status", amount: 1 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card);
-    expect(lines).toEqual(["Remove 1 harmful Status"]);
+    expect(getEffectiveCardDescriptionLines(card, { potionPotency: 3, flatPhysicalDamage: 5 })).toEqual([
+      "Deal Holy damage equal to your Block",
+      "Gain 2 Block per Mana Crystal",
+      "Deal 1 Freeze damage this turn and next turn",
+    ]);
   });
 
   it("leaves non-matching lines unchanged", () => {
@@ -162,115 +63,11 @@ describe("getEffectiveCardDescriptionLines", () => {
       descriptionLines: ["Consume", "A mysterious card"],
       effects: [],
     });
-    const lines = getEffectiveCardDescriptionLines(card);
-    expect(lines).toEqual(["Consume", "A mysterious card"]);
-  });
-
-  it("handles multiple damage effects in sequence", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal 3 Physical damage", "Deal 5 Holy damage"],
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 3 },
-        { kind: "damage", damageType: "holy", amount: 5 },
-      ],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 2 });
-    expect(lines).toEqual(["Deal 5 Physical damage", "Deal 5 Holy damage"]);
-  });
-
-  it("rounds potion-adjusted amounts", () => {
-    const card = makeTestCard({
-      id: "odd-potion",
-      descriptionLines: ["Heal 5"],
-      effects: [{ kind: "heal", amount: 5 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 1.3 });
-    expect(lines).toEqual(["Heal 7"]);
+    expect(getEffectiveCardDescriptionLines(card)).toEqual(["Consume", "A mysterious card"]);
   });
 
   it("returns empty array for empty description lines", () => {
     const card = makeTestCard({ descriptionLines: [] });
-    const lines = getEffectiveCardDescriptionLines(card);
-    expect(lines).toEqual([]);
+    expect(getEffectiveCardDescriptionLines(card)).toEqual([]);
   });
-
-  it("preserves original description for equalToArmor damage", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal Nature damage equal to your Armor"],
-      effects: [{ kind: "damage", damageType: "nature", amount: 0, equalToArmor: true }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card);
-    expect(lines).toEqual(["Deal Nature damage equal to your Armor"]);
-  });
-
-  it("preserves original description for equalToBlock damage", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal Holy damage equal to your Block"],
-      effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToBlock: true }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card);
-    expect(lines).toEqual(["Deal Holy damage equal to your Block"]);
-  });
-
-  it("preserves equalToArmor description even with potion context", () => {
-    const card = makeTestCard({
-      id: "thorn-mail",
-      descriptionLines: ["Deal Nature damage equal to your Armor"],
-      effects: [{ kind: "damage", damageType: "nature", amount: 0, equalToArmor: true }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { potionPotency: 3 });
-    expect(lines).toEqual(["Deal Nature damage equal to your Armor"]);
-  });
-
-  it("preserves equalToBlock description even with flatPhysicalDamage context", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal Holy damage equal to your Block"],
-      effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToBlock: true }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 5 });
-    expect(lines).toEqual(["Deal Holy damage equal to your Block"]);
-  });
-
-  it("preserves original description for equalToGoldPercent damage (Tithe)", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal Holy damage equal to 10% of your Gold"],
-      effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToGoldPercent: 10 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card);
-    expect(lines).toEqual(["Deal Holy damage equal to 10% of your Gold"]);
-  });
-
-  it("preserves equalToGoldPercent description even with flatPhysicalDamage context", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal Holy damage equal to 10% of your Gold"],
-      effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToGoldPercent: 10 }],
-    });
-    const lines = getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 5 });
-    expect(lines).toEqual(["Deal Holy damage equal to 10% of your Gold"]);
-  });
-
-  it("preserves perManaCrystal description (Mana Shield)", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Gain 2 Block per Mana Crystal"],
-      effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 }],
-    });
-    expect(getEffectiveCardDescriptionLines(card)).toEqual(["Gain 2 Block per Mana Crystal"]);
-    expect(getEffectiveCardDescriptionLines(card, { potionPotency: 2 })).toEqual(["Gain 2 Block per Mana Crystal"]);
-  });
-
-  const perManaCrystalCards = cardLibrary.filter((card) =>
-    card.descriptionLines.some((line) => line.includes("per Mana Crystal")),
-  );
-
-  it.each(perManaCrystalCards.map((c) => [c.id, c] as const))(
-    "%s — per Mana Crystal lines are preserved in effective descriptions",
-    (_id, card) => {
-      const effective = getEffectiveCardDescriptionLines(card);
-      card.descriptionLines.forEach((line, i) => {
-        if (line.includes("per Mana Crystal")) {
-          expect(effective[i]).toBe(line);
-        }
-      });
-    },
-  );
 });

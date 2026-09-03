@@ -54,6 +54,7 @@ function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
     case "next-hit-crit":
     case "play-next-card-twice":
     case "next-hit-poison":
+    case "next-archery-free":
       return 0;
   }
 }

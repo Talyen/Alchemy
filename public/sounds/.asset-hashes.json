@@ -511,22 +511,6 @@
     "outputHash": "03a28dd627c824a9f4baa913a7f42133",
     "owner": "generated"
   },
-  "sci-fi-error.mp3": {
-    "hash": "83ec77e7b758bdd2334c295f7a5cad35",
-    "mtimeMs": 1782421243543.269,
-    "size": 31994,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
-    "outputHash": "ac796604d57381ec17720b1d3229a155",
-    "owner": "curated"
-  },
-  "sci-fi-error.ogg": {
-    "hash": "bd0dbbce6a1f8a6e3c06f2feb13ad882",
-    "mtimeMs": 1782421243543.269,
-    "size": 31994,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
-    "outputHash": "c54ec704ecedd9690139a5a7fb0e110c",
-    "owner": "curated"
-  },
   "splat-quick.mp3": {
     "hash": "d0953cd3aa45307b22380e3f48f680ce",
     "mtimeMs": 1782421243543.3394,

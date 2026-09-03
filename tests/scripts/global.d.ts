@@ -419,6 +419,11 @@ declare module "*/prune-transient-artifacts.mjs" {
   }): { removed: Array<{ path: string; bytes: number }>; bytes: number };
 }
 
+declare module "*/run-e2e-route.mjs" {
+  export const E2E_ROUTES: Record<string, { label: string; args: readonly string[] }>;
+  export function resolveE2eRoute(route: string): { label: string; args: readonly string[] } | undefined;
+}
+
 declare module "*/test-commands.mjs" {
   export const TEST_SUITES: {
     save: readonly string[];

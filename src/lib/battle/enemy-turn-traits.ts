@@ -1,6 +1,5 @@
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { getBattleRng } from "../rng";
-import { rngInt } from "@/lib/run-rng";
+import { getBattleRng, rngInt } from "@/lib/rng";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
