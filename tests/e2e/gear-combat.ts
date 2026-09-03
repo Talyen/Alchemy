@@ -30,7 +30,7 @@ export async function assertGearFlatDamageBoostsPhysicalDamage(page: Page, gear:
   });
 
   const physicalCard = makeCard({
-    id: "test-slash",
+    id: "slash",
     title: "Test Slash",
     cost: 0,
     effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
@@ -48,7 +48,7 @@ export async function assertGearFlatDamageBoostsPhysicalDamage(page: Page, gear:
 
   const battle = new BattlePage(page);
   const enemyHpBefore = await battle.enemyHealth();
-  await battle.playCardNamed("Test Slash");
+  await battle.playCardNamed("Slash");
 
   const flatBonus = gear.affixes.find((a) => a.id === "flat-physical")?.value ?? 0;
   const expectedDamage = openingPacedDamage(5 + flatBonus);

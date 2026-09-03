@@ -36,6 +36,7 @@ Decision order:
 ## Cards and battle page
 
 - Card factories are in `cards.ts`; use named presets when the assertion depends on a specific card.
+- Injected decks and draft choices must use live library ids as shells (for example `slash`): hydrate drops unknown ids via `filterLiveCards` and `hydrateCard` renders titles from the library while keeping the injected effects and cost, so play cards by the library title.
 - `enableFastMode` disables animations and is forbidden in animation-focused specs.
 - `BattlePage.endTurn` must work with animations both on and off; changing it requires the critical animation canary.
 - Prefer `winViaCombat`, `playCardNamed`, or `playFirstCard`; `playAllCards` is normally internal.

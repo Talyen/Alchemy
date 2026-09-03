@@ -44,7 +44,7 @@ export const ANVIL_CARD = makeTestCard({
 export function makeStatusCard(damageType: string, amount: number, overrides: Record<string, unknown> = {}) {
   return {
     ...makeTestCard({
-      id: `test-${damageType}`,
+      id: "slash",
       title: damageType.charAt(0).toUpperCase() + damageType.slice(1),
       descriptionLines: [`Deal ${amount} ${damageType} damage`],
       art: "placeholder",

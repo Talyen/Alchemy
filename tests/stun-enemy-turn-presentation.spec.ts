@@ -19,7 +19,7 @@ test.describe("Stunned enemy turn presentation", slow, () => {
 
     await expect(page.locator('[aria-label^="Play "]:not(.opacity-0)')).toHaveCount(4, { timeout: 20_000 });
     await expect(yourTurn).toHaveAttribute("data-active", "true");
-    await battle.playCardNamed("Stun");
+    await battle.playCardNamed("Slash");
     await expect(battle.hand).toHaveCount(3, { timeout: 15_000 });
     await expect.poll(async () => battle.enemyHealth(), { timeout: 5000 }).toBeGreaterThan(0);
 

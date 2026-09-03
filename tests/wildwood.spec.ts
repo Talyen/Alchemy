@@ -14,7 +14,7 @@ async function pickDraftCard(page: import("@playwright/test").Page) {
 function wildwoodDraftDefaults(overrides: Record<string, unknown> = {}) {
   return {
     phase: "draft",
-    draftChoices: [makeCard({ id: "boss-killer-final" })],
+    draftChoices: [makeCard()],
     remainingBossIds: [],
     previousBossId: null,
     currentBossId: null,
@@ -31,8 +31,8 @@ function wildwoodBossState(overrides: Record<string, unknown> = {}) {
     currentScreen: "draft-deck",
     runPlayerHealth: 30,
     runMaxHealth: 30,
-    runDeck: Array.from({ length: 5 }, (_, index) => ({
-      ...makeCard({ id: `boss-killer-${index}` }),
+    runDeck: Array.from({ length: 5 }, () => ({
+      ...makeCard(),
       effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 500 }],
     })),
     wildwoodDraft: wildwoodDraftDefaults(),
@@ -66,7 +66,7 @@ function wildwoodRewardFlow(overrides: Record<string, unknown> = {}) {
     },
     runPlayerHealth: 10,
     runMaxHealth: 30,
-    runDeck: Array.from({ length: 6 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
+    runDeck: Array.from({ length: 6 }, () => ({ ...bossKiller })),
     wildwoodDraft: wildwoodDraftDefaults({
       phase: "reward",
       draftChoices: [],
@@ -122,8 +122,8 @@ test.describe("Wildwood Draft", () => {
         wildwoodBossState({
           runPlayerHealth: 10,
           runMaxHealth: 30,
-          runDeck: Array.from({ length: 5 }, (_, index) => ({ ...bossKiller, id: `boss-killer-${index}` })),
-          wildwoodDraft: wildwoodDraftDefaults({ draftChoices: [{ ...bossKiller, id: "boss-killer-final" }] }),
+          runDeck: Array.from({ length: 5 }, () => ({ ...bossKiller })),
+          wildwoodDraft: wildwoodDraftDefaults({ draftChoices: [{ ...bossKiller }] }),
         }),
       );
       await page.goto("/");

@@ -46,7 +46,7 @@ test.describe("Damage-over-Time Status Effects", critical, () => {
       );
       const battle = new BattlePage(page);
 
-      await battle.playCardNamed(title);
+      await battle.playCardNamed("Slash");
       await expect(battle.statusChip(title)).toBeVisible({ timeout: 2000 });
 
       await battle.endTurn();
