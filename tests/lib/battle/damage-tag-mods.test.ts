@@ -32,46 +32,46 @@ describe("computeBaseDamage — archery tag", () => {
     expect(result.enemyHealth).toBe(70);
   });
 
-  it("Longshot doubles archery damage above 75% Health but not at 75%", () => {
+  it("Longshot doubles archery damage against full health enemies", () => {
     const card = makeTestCard({
       tags: ["archery"],
       effects: [makeEffect("physical", 10)],
     });
-    const high = patchBattleState({
+    const full = patchBattleState({
       rng: () => 0.99,
-      enemyHealth: 76,
+      enemyHealth: 100,
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsHighHealth: true },
     });
-    const atThreshold = patchBattleState({
+    const notFull = patchBattleState({
       rng: () => 0.99,
-      enemyHealth: 75,
+      enemyHealth: 99,
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsHighHealth: true },
     });
-    expect(dealDamage(high, card).enemyHealth).toBe(56);
-    expect(dealDamage(atThreshold, card).enemyHealth).toBe(65);
+    expect(dealDamage(full, card).enemyHealth).toBe(80);
+    expect(dealDamage(notFull, card).enemyHealth).toBe(89);
   });
 
-  it("Kill Shot doubles archery damage at or below 30% Health", () => {
+  it("Kill Shot doubles archery damage at or below 20% Health", () => {
     const card = makeTestCard({
       tags: ["archery"],
       effects: [makeEffect("physical", 10)],
     });
     const low = patchBattleState({
       rng: () => 0.99,
-      enemyHealth: 30,
+      enemyHealth: 20,
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsLowHealth: true },
     });
     const above = patchBattleState({
       rng: () => 0.99,
-      enemyHealth: 31,
+      enemyHealth: 21,
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsLowHealth: true },
     });
-    expect(dealDamage(low, card).enemyHealth).toBe(10);
-    expect(dealDamage(above, card).enemyHealth).toBe(21);
+    expect(dealDamage(low, card).enemyHealth).toBe(0);
+    expect(dealDamage(above, card).enemyHealth).toBe(11);
   });
 
   it("Trophy Shot grants gold when an Archery card defeats an enemy", () => {

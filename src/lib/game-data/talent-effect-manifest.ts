@@ -17,6 +17,7 @@ export interface TalentEffectManifest {
   blockToPhysicalDamageMultiplier: number;
   forgeToPhysicalDamageMultiplier: number;
   physicalOnDodgeEqualToAttack: boolean;
+  physicalStripArmorWhileBlocked: boolean;
 
   stunThresholdReduction: number;
   drawOnStun: number;
@@ -83,6 +84,7 @@ export interface TalentEffectManifest {
   firstBurnCardBonusMultiplier: number;
   burnRemovesEnemyArmor: boolean;
   burnDoubleChance: number;
+  burnPreventDecayChance: number;
   receiveHalfBurnDamage: boolean;
   flatBurnDamage: number;
   burnOnWish: number;

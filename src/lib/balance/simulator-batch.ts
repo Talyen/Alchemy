@@ -50,19 +50,36 @@ export function simulateBatch(config: BalanceBatchConfig): BalanceBatchResult {
 
 export interface WinSeries {
   outcomes: Uint8Array;
+  turns: Uint16Array;
   wins: number;
   iterations: number;
   winRate: number;
+  totalTurns: number;
+  averageTurns: number;
 }
 
 export function simulateWinSeries(config: BalanceBatchConfig): WinSeries {
   const baseSeed = config.seed ?? DEFAULT_SEED;
   const outcomes = new Uint8Array(config.iterations);
+  const turns = new Uint16Array(config.iterations);
   let wins = 0;
+  let totalTurns = 0;
   for (let index = 0; index < config.iterations; index += 1) {
-    if (simulateBattle({ ...config, seed: baseSeed + index }).outcome !== "win") continue;
-    outcomes[index] = 1;
-    wins += 1;
+    const result = simulateBattle({ ...config, seed: baseSeed + index });
+    turns[index] = result.turns;
+    totalTurns += result.turns;
+    if (result.outcome === "win") {
+      outcomes[index] = 1;
+      wins += 1;
+    }
   }
-  return { outcomes, wins, iterations: config.iterations, winRate: wins / config.iterations };
+  return {
+    outcomes,
+    turns,
+    wins,
+    iterations: config.iterations,
+    winRate: config.iterations > 0 ? wins / config.iterations : 0,
+    totalTurns,
+    averageTurns: config.iterations > 0 ? totalTurns / config.iterations : 0,
+  };
 }

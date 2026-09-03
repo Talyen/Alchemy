@@ -20,6 +20,7 @@ import {
   runCardSweepInClass,
   runCardSweepIsolated,
   runCompanionSweep,
+  runGearSweep,
   runTalentSweep,
   runTrinketSweep,
 } from "./report-sweeps";
@@ -254,6 +255,9 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
     ),
     companions: withPhaseTiming("companion sweep", () =>
       runCompanionSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
+    ),
+    gear: withPhaseTiming("gear sweep", () =>
+      runGearSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
     ),
     anomalies,
     anomalyMetrics: metrics,

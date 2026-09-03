@@ -18,6 +18,7 @@ export interface ReportRunOptions {
   loadoutMode: BalanceLoadoutMode;
   deckSeeds: number;
   appliesFightPacing?: boolean;
+  findingsCap?: number;
 }
 
 function parsePositiveInteger(name: string, raw: string | undefined, fallback: number): number {
@@ -62,5 +63,6 @@ export function parseBalanceReportOptions(env: NodeJS.ProcessEnv = process.env):
     policy: parseChoice("ALCHEMY_BALANCE_POLICY", env.ALCHEMY_BALANCE_POLICY, "random-playable", PLAY_POLICIES),
     loadoutMode: parseChoice("ALCHEMY_BALANCE_LOADOUT", env.ALCHEMY_BALANCE_LOADOUT, "typical", LOADOUT_MODES),
     appliesFightPacing: appliesFightPacingFromEnv(env.ALCHEMY_BALANCE_PACING),
+    findingsCap: parsePositiveInteger("ALCHEMY_BALANCE_FINDINGS_CAP", env.ALCHEMY_BALANCE_FINDINGS_CAP, 100),
   };
 }

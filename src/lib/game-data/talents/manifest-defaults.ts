@@ -13,6 +13,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   blockToPhysicalDamageMultiplier: 0,
   forgeToPhysicalDamageMultiplier: 0,
   physicalOnDodgeEqualToAttack: false,
+  physicalStripArmorWhileBlocked: false,
 
   stunThresholdReduction: 0,
   drawOnStun: 0,
@@ -79,6 +80,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   firstBurnCardBonusMultiplier: 0,
   burnRemovesEnemyArmor: false,
   burnDoubleChance: 0,
+  burnPreventDecayChance: 0,
   receiveHalfBurnDamage: false,
   flatBurnDamage: 0,
   burnOnWish: 0,

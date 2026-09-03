@@ -25,7 +25,7 @@ try {
   } = await server.ssrLoadModule("/src/lib/balance.ts");
   const options = parseBalanceReportOptions(process.env);
   const model = buildBalanceReport(options);
-  const findings = evaluateBalanceFindings(model);
+  const findings = evaluateBalanceFindings(model, options);
   const reportDir = resolve(process.cwd(), "reports");
   const fullDir = resolve(reportDir, "balance-full");
 

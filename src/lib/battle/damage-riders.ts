@@ -121,6 +121,7 @@ export function applyDamageRiders(
   combatTexts: CombatTextEvent[],
   isExtraHit = false,
 ) {
+  const enemyWasBurningBefore = state.enemyStatuses.burn > 0;
   const hit = damageEnemyHealth(state, modifiedDamage);
   const previousHealth = hit.previousHealth;
   let nextState: BattleState = hit.state;
@@ -137,6 +138,9 @@ export function applyDamageRiders(
     nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnArcheryKill, combatTexts);
   }
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts, previousHealth);
+  if (effect.detonateIfEnemyBurning && enemyWasBurningBefore) {
+    nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
+  }
   nextState = applyForgeStunRider(nextState, effect, combatTexts);
   if (effect.damageType === "physical" && modifiedDamage > 0) {
     const stunChance = nextState.talentEffects.physicalStunChance + nextState.gearEffects.physicalStunChance;

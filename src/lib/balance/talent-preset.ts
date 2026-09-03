@@ -15,24 +15,44 @@ export const MID_AFFINITY_TALENT_COUNT = 5;
 export const MID_OTHER_TALENT_COUNT = 2;
 export const LATE_OTHER_TALENT_COUNT = 5;
 
-function talentCount(preset: TalentPreset, isAffinity: boolean, combatCount: number): number {
-  if (preset === "early") return 0;
-  if (preset === "mid") return isAffinity ? MID_AFFINITY_TALENT_COUNT : MID_OTHER_TALENT_COUNT;
-  return isAffinity ? Math.min(combatCount, LATE_AFFINITY_TALENT_CAP) : LATE_OTHER_TALENT_COUNT;
-}
-
 export function buildPresetUnlockedTalents(keywords: readonly KeywordId[], preset: TalentPreset): UnlockedTalents {
   if (preset === "early") return {};
 
   const allKeywordIds = [...new Set(talentPool.map((talent) => talent.keywordId))];
   const affinitySet = new Set(keywords);
+  const isWildcard = keywords.length === 0;
   const unlockedTalents: UnlockedTalents = {};
 
-  for (const keywordId of allKeywordIds) {
+  if (isWildcard) {
+    let budget = preset === "mid" ? AFFINITY_POINT_FALLBACK.mid : AFFINITY_POINT_FALLBACK.late;
+    for (const keywordId of allKeywordIds) {
+      if (budget <= 0) break;
+      const combatTalents = combatTalentsInPoolOrder(keywordId);
+      const take = Math.min(combatTalents.length, 2, budget);
+      if (take <= 0) continue;
+      unlockedTalents[keywordId] = combatTalents.slice(0, take).map((talent) => talent.id);
+      budget -= take;
+    }
+    return unlockedTalents;
+  }
+
+  for (const keywordId of keywords) {
     const combatTalents = combatTalentsInPoolOrder(keywordId);
-    const count = talentCount(preset, affinitySet.has(keywordId), combatTalents.length);
+    const count =
+      preset === "mid" ? MID_AFFINITY_TALENT_COUNT : Math.min(combatTalents.length, LATE_AFFINITY_TALENT_CAP);
     if (count <= 0) continue;
     unlockedTalents[keywordId] = combatTalents.slice(0, count).map((talent) => talent.id);
+  }
+
+  let otherBudget = preset === "mid" ? MID_OTHER_TALENT_COUNT : LATE_OTHER_TALENT_COUNT;
+  for (const keywordId of allKeywordIds) {
+    if (otherBudget <= 0) break;
+    if (affinitySet.has(keywordId)) continue;
+    const combatTalents = combatTalentsInPoolOrder(keywordId);
+    const take = Math.min(combatTalents.length, otherBudget);
+    if (take <= 0) continue;
+    unlockedTalents[keywordId] = combatTalents.slice(0, take).map((talent) => talent.id);
+    otherBudget -= take;
   }
 
   return unlockedTalents;

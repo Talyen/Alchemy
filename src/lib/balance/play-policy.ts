@@ -36,23 +36,34 @@ function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
       );
     case "repeat-over-turns":
       return effect.remainingTurns * scoreEffects(effect.effects, state);
-    case "wish":
+    case "draw-cards":
+      return effect.amount * 2;
     case "restore-mana":
+      return effect.amount * 2;
+    case "summon-companion":
+      return 6;
+    case "buff-companion":
+      return effect.amount * 2;
+    case "multiply-enemy-status": {
+      const current = state.enemyStatuses[effect.status] ?? 0;
+      return current > 0 ? (effect.factor - 1) * current : 0;
+    }
+    case "remove-enemy-armor":
+      return Math.min(effect.amount, state.enemyMitigation.armor);
+    case "next-hit-crit":
+      return 4;
+    case "play-next-card-twice":
+      return 5;
+    case "wish":
+      return 3;
     case "lose-mana":
     case "lose-max-mana":
     case "gain-max-mana":
     case "gain-gold":
-    case "summon-companion":
     case "remove-player-status":
     case "self-damage":
-    case "buff-companion":
     case "lose-health":
-    case "draw-cards":
-    case "remove-enemy-armor":
-    case "multiply-enemy-status":
     case "cleanse-player-status-to-damage":
-    case "next-hit-crit":
-    case "play-next-card-twice":
     case "next-hit-poison":
     case "next-archery-free":
       return 0;

@@ -44,6 +44,10 @@ export interface PairedDelta {
   winRate: number;
   baseline: number;
   se: number;
+  turnDelta: number;
+  baselineTurns: number;
+  treatmentTurns: number;
+  turnSe: number;
   n: number;
   noisy: boolean;
 }
@@ -53,13 +57,29 @@ export interface PairedWinStats {
   treatmentWins: number;
   baselineWins: number;
   squaredDifferenceSum: number;
+  treatmentTurns: number;
+  baselineTurns: number;
+  squaredTurnDifferenceSum: number;
 }
 
 export function emptyPairedWinStats(): PairedWinStats {
-  return { n: 0, treatmentWins: 0, baselineWins: 0, squaredDifferenceSum: 0 };
+  return {
+    n: 0,
+    treatmentWins: 0,
+    baselineWins: 0,
+    squaredDifferenceSum: 0,
+    treatmentTurns: 0,
+    baselineTurns: 0,
+    squaredTurnDifferenceSum: 0,
+  };
 }
 
-export function pairedWinStats(baseline: Uint8Array, treatment: Uint8Array): PairedWinStats {
+export function pairedWinStats(
+  baseline: Uint8Array,
+  treatment: Uint8Array,
+  baselineTurns?: Uint16Array,
+  treatmentTurns?: Uint16Array,
+): PairedWinStats {
   if (baseline.length !== treatment.length) {
     throw new Error(`paired win series must have equal lengths; received ${baseline.length} and ${treatment.length}`);
   }
@@ -72,6 +92,15 @@ export function pairedWinStats(baseline: Uint8Array, treatment: Uint8Array): Pai
     stats.treatmentWins += treatmentWin;
     const difference = treatmentWin - baselineWin;
     stats.squaredDifferenceSum += difference * difference;
+
+    if (baselineTurns && treatmentTurns) {
+      const bTurn = baselineTurns[index] ?? 0;
+      const tTurn = treatmentTurns[index] ?? 0;
+      stats.baselineTurns += bTurn;
+      stats.treatmentTurns += tTurn;
+      const turnDiff = tTurn - bTurn;
+      stats.squaredTurnDifferenceSum += turnDiff * turnDiff;
+    }
   }
   return stats;
 }
@@ -83,13 +112,30 @@ export function combinePairedWinStats(stats: readonly PairedWinStats[]): PairedW
       treatmentWins: combined.treatmentWins + entry.treatmentWins,
       baselineWins: combined.baselineWins + entry.baselineWins,
       squaredDifferenceSum: combined.squaredDifferenceSum + entry.squaredDifferenceSum,
+      treatmentTurns: combined.treatmentTurns + entry.treatmentTurns,
+      baselineTurns: combined.baselineTurns + entry.baselineTurns,
+      squaredTurnDifferenceSum: combined.squaredTurnDifferenceSum + entry.squaredTurnDifferenceSum,
     }),
     emptyPairedWinStats(),
   );
 }
 
 export function makePairedDelta(id: string, stats: PairedWinStats): PairedDelta {
-  if (stats.n === 0) return { id, delta: 0, winRate: 0, baseline: 0, se: 0, n: 0, noisy: true };
+  if (stats.n === 0) {
+    return {
+      id,
+      delta: 0,
+      winRate: 0,
+      baseline: 0,
+      se: 0,
+      turnDelta: 0,
+      baselineTurns: 0,
+      treatmentTurns: 0,
+      turnSe: 0,
+      n: 0,
+      noisy: true,
+    };
+  }
   const winRate = stats.treatmentWins / stats.n;
   const baseline = stats.baselineWins / stats.n;
   const differenceSum = stats.treatmentWins - stats.baselineWins;
@@ -99,7 +145,30 @@ export function makePairedDelta(id: string, stats: PairedWinStats): PairedDelta 
       ? Math.max(0, (stats.squaredDifferenceSum - (differenceSum * differenceSum) / stats.n) / (stats.n - 1))
       : 0;
   const se = stats.n > 1 ? Math.sqrt(sampleVariance / stats.n) : 0;
-  return { id, delta, winRate, baseline, se, n: stats.n, noisy: stats.n < 2 || isDeltaNoisy(delta, se) };
+
+  const treatmentTurns = stats.treatmentTurns / stats.n;
+  const baselineTurns = stats.baselineTurns / stats.n;
+  const turnDiffSum = stats.treatmentTurns - stats.baselineTurns;
+  const turnDelta = turnDiffSum / stats.n;
+  const turnVariance =
+    stats.n > 1
+      ? Math.max(0, (stats.squaredTurnDifferenceSum - (turnDiffSum * turnDiffSum) / stats.n) / (stats.n - 1))
+      : 0;
+  const turnSe = stats.n > 1 ? Math.sqrt(turnVariance / stats.n) : 0;
+
+  return {
+    id,
+    delta,
+    winRate,
+    baseline,
+    se,
+    turnDelta,
+    baselineTurns,
+    treatmentTurns,
+    turnSe,
+    n: stats.n,
+    noisy: stats.n < 2 || isDeltaNoisy(delta, se),
+  };
 }
 
 export function topPlayedCards(counts: Record<string, number>, limit = 5): Array<{ cardId: string; count: number }> {

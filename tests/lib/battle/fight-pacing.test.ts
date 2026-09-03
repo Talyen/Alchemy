@@ -136,8 +136,8 @@ describe("openingPacedDamage", () => {
     expect(openingPacedDamage(10)).toBe(paceCombatMagnitude(state, 10, "player"));
   });
 
-  it("paces the normal-type opening clock but leaves boss openings ahead of schedule", () => {
-    expect(openingPacedDamage(10, "normal")).toBeGreaterThan(10);
+  it("leaves fresh turn-1 openings at authored amount under lengthened targets", () => {
+    expect(openingPacedDamage(10, "normal")).toBe(10);
     expect(openingPacedDamage(10, "boss")).toBe(10);
   });
 

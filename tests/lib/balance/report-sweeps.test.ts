@@ -7,7 +7,7 @@ const { simulateWinSeries } = vi.hoisted(() => ({
 
 vi.mock("@/lib/balance/simulator-batch", () => ({ simulateWinSeries }));
 
-import { runCardSweepInClass } from "@/lib/balance/report-sweeps";
+import { IN_CLASS_CARD_GAUNTLET, runCardSweepInClass } from "@/lib/balance/report-sweeps";
 
 describe("runCardSweepInClass", () => {
   beforeEach(() => {
@@ -39,7 +39,7 @@ describe("runCardSweepInClass", () => {
       callsBySeed.set(seed, calls);
     }
 
-    expect(callsBySeed.size).toBe(24);
+    expect(callsBySeed.size).toBe(24 * IN_CLASS_CARD_GAUNTLET.length);
     for (const calls of callsBySeed.values()) {
       const baseDeck = calls[0]?.deck;
       expect(baseDeck).toBeDefined();

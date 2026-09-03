@@ -82,7 +82,7 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     startingDeck: resolveDeck([
       "acid-potion",
       "health-potion",
-      "stoneskin-potion",
+      "poison-dagger",
       "wishing-potion",
       "panacea-potion",
       "caustic-jab",

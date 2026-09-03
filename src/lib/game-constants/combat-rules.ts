@@ -12,8 +12,8 @@ export const WISH_CHOICE_COUNT = 3;
 export const MIN_MAX_MANA_FLOOR = 1;
 
 export const ROOM_SCALING_INCREMENT = 0.07;
-export const ELITE_HP_MULTIPLIER = 1.3;
-export const BOSS_HEALTH_MULTIPLIER = 1.4;
+export const ELITE_HP_MULTIPLIER = 1.8;
+export const BOSS_HEALTH_MULTIPLIER = 2.8;
 export const STARTING_TURN = 1;
 export const ENEMY_BASE_REGENERATION = 1;
 export const ENEMY_BOSS_REGENERATION = 1;
@@ -21,7 +21,8 @@ export const ENEMY_BOSS_REGENERATION = 1;
 export const FREE_CARD_SENTINEL = 99;
 
 export const LOW_HEALTH_THRESHOLD_PERCENT = 30;
-export const ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT = 75;
+export const ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT = 100;
+export const ARCHERY_LOW_HEALTH_THRESHOLD_PERCENT = 20;
 export const PERCENT_DENOMINATOR = 100;
 export const HALF_DIVISOR = 2;
 
@@ -64,9 +65,9 @@ export const FIGHT_PACING = {
   burnFractionAtTarget: 0.5,
   backstopSpan: 4,
   clockByEnemyType: {
-    normal: { targetDuration: 3.75, maxRounds: 5 },
-    elite: { targetDuration: 5.25, maxRounds: 7 },
-    boss: { targetDuration: 7.5, maxRounds: 10 },
+    normal: { targetDuration: 7.0, maxRounds: 10 },
+    elite: { targetDuration: 12.0, maxRounds: 16 },
+    boss: { targetDuration: 20.0, maxRounds: 30 },
   },
 } as const;
 

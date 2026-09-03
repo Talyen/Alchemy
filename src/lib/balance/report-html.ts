@@ -28,7 +28,9 @@ function rateCells(cell: RateCell): string {
 function deltaCell(delta: PairedDelta): string {
   const cls = delta.noisy ? "noisy" : delta.delta >= 0 ? "pos" : "neg";
   const mark = delta.noisy ? " (noisy)" : "";
-  return `<td class="${cls}">${percent(delta.delta)}${mark}<div class="meta">SE ${percent(delta.se)} · n=${delta.n}</div></td>`;
+  const turns =
+    delta.n > 0 ? `<div class="meta">${delta.turnDelta >= 0 ? "+" : ""}${delta.turnDelta.toFixed(1)} turns</div>` : "";
+  return `<td class="${cls}">${percent(delta.delta)}${mark}<div class="meta">SE ${percent(delta.se)} · n=${delta.n}</div>${turns}</td>`;
 }
 
 function pairedRows(rows: readonly PairedTierRow[], kind: keyof typeof TITLE_LOOKUPS | "talent"): string {
@@ -180,6 +182,12 @@ ${pairedRows(model.talents, "talent")}
 <p class="meta">Summon card in vs out of class decks on the gauntlet.</p>
 <div class="scroll"><table><thead><tr><th>Companion</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
 ${pairedRows(model.companions, "companion")}
+</tbody></table></div>
+
+<h2>Gear ablation</h2>
+<p class="meta">Target base gear item equipped vs default gear baseline on the gauntlet.</p>
+<div class="scroll"><table><thead><tr><th>Item</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>
+${pairedRows(model.gear, "gear")}
 </tbody></table></div>
 
 <h2>Anomalies</h2>

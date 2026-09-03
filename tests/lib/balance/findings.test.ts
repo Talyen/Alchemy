@@ -50,6 +50,7 @@ function emptyModel(): { -readonly [Key in keyof BalanceReportModel]: BalanceRep
     cardsInClass: [],
     talents: [],
     companions: [],
+    gear: [],
     anomalies: [],
     anomalyMetrics: [],
   };
@@ -114,6 +115,10 @@ describe("evaluateBalanceFindings", () => {
       winRate: 0.51,
       baseline: 0.5,
       se: 0.1,
+      turnDelta: 0,
+      baselineTurns: 5,
+      treatmentTurns: 5,
+      turnSe: 0,
       n: 20,
       noisy: true,
     };
@@ -123,6 +128,10 @@ describe("evaluateBalanceFindings", () => {
       winRate: 0.55,
       baseline: 0.5,
       se: 0.01,
+      turnDelta: 0,
+      baselineTurns: 5,
+      treatmentTurns: 5,
+      turnSe: 0,
       n: 400,
       noisy: false,
     };
@@ -132,6 +141,10 @@ describe("evaluateBalanceFindings", () => {
       winRate: 0.9,
       baseline: 0.5,
       se: 0.02,
+      turnDelta: 0,
+      baselineTurns: 5,
+      treatmentTurns: 5,
+      turnSe: 0,
       n: 400,
       noisy: false,
     };

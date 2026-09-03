@@ -45,7 +45,7 @@ export function dealEnemyDotTick(
 
 export function detonateEnemyStatuses(
   state: BattleState,
-  statuses: ReadonlyArray<"bleed" | "poison">,
+  statuses: ReadonlyArray<"bleed" | "poison" | "burn">,
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const pulses: EnemyDotPulse[] = [];

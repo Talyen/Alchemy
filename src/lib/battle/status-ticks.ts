@@ -15,7 +15,7 @@ import {
   getEnemyDamageMultiplier,
 } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { HALF_DIVISOR, POISON_GAIN_AMOUNT } from "../game-constants";
+import { POISON_GAIN_AMOUNT } from "../game-constants";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
@@ -38,9 +38,10 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
     amount: finalDamage,
   });
   let nextBurn = state.enemyStatuses.burn;
-  if (rollPercent(state.talentEffects.burnDoubleChance, getBattleRng(state))) {
-    nextBurn *= HALF_DIVISOR;
-  } else {
+  const preventsDecay =
+    state.talentEffects.burnPreventDecayChance > 0 &&
+    rollPercent(state.talentEffects.burnPreventDecayChance, getBattleRng(state));
+  if (!preventsDecay) {
     nextBurn = decayHalvedStatus(nextBurn);
   }
   return dealEnemyDotTick(state, "burn", finalDamage, nextBurn, combatTexts);

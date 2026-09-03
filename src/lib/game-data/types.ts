@@ -90,7 +90,9 @@ export type BattleCardEffect =
       equalToArmor?: boolean;
       equalToGoldPercent?: number;
       doubleIfEnemyBurning?: boolean;
+      doubleIfEnemyBleeding?: boolean;
       tripleIfEnemyNotBurning?: boolean;
+      detonateIfEnemyBurning?: boolean;
     }
   | {
       kind: "player-status";

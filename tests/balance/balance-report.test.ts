@@ -42,6 +42,7 @@ describe("balance report", () => {
     expect(model.classes).toHaveLength(8);
     expect(model.cardsIsolatedSkeleton.length).toBeGreaterThan(0);
     expect(model.cardsInClass.length).toBeGreaterThan(0);
+    expect(model.gear.length).toBeGreaterThan(0);
     const json = renderBalanceReportJson(model, options);
     expect(renderBalanceReportHtml(model, options)).toContain("<h1>Balance Report</h1>");
     expect(renderBalanceReportJson(model, options)).toBe(json);

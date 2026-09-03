@@ -316,16 +316,14 @@ export const coreCards: BattleCard[] = [
       { kind: "remove-enemy-armor", amount: 2 },
     ],
   }),
-  cardBuilders.damageThenMultiplyEnemyStatusCard({
+  {
     id: "rend",
+    title: "Rend",
+    descriptionLines: ["Deal 1 Bleed damage", "Doubled if the enemy was already Bleeding"],
     art: assetRefs.rend,
-    damageType: "bleed",
-    damageAmount: 1,
-    status: "bleed",
-    factor: 2,
-    multiplyLine: "Double enemy Bleed",
-    consume: true,
-  }),
+    cost: 1,
+    effects: [{ kind: "damage", damageType: "bleed", amount: 1, doubleIfEnemyBleeding: true }],
+  },
   cardBuilders.dualDamageCard({
     id: "pounce",
     art: assetRefs.pounce,
@@ -433,9 +431,9 @@ export const coreCards: BattleCard[] = [
   {
     id: "combustion",
     title: "Combustion",
-    descriptionLines: ["Deal 2 Burn damage", "Doubled if the enemy was already Burning"],
+    descriptionLines: ["Deal 3 Burn damage", "If the enemy was already Burning, detonate all its Burn"],
     art: assetRefs.combustion,
     cost: 1,
-    effects: [{ kind: "damage", damageType: "burn", amount: 2, doubleIfEnemyBurning: true }],
+    effects: [{ kind: "damage", damageType: "burn", amount: 3, detonateIfEnemyBurning: true }],
   },
 ];

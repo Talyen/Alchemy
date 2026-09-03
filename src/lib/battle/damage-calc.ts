@@ -1,17 +1,16 @@
 import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
-import { scalePercent, scalePerMana, halveRounded } from "./amount-helpers";
+import { scalePercent, scalePerMana } from "./amount-helpers";
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
 import {
   ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT,
+  ARCHERY_LOW_HEALTH_THRESHOLD_PERCENT,
   BLOCK_SCALED_DAMAGE_PERCENT,
   BURN_BLOCK_SCALED_DAMAGE_PERCENT,
-  LOW_HEALTH_THRESHOLD_PERCENT,
   CRIT_MULTIPLIER,
-  FIRST_EFFECT_MULTIPLIER,
   GLOBAL_CRIT_CHANCE,
   HALF_DIVISOR,
   PERCENT_DENOMINATOR,
@@ -25,10 +24,6 @@ export function forgeAppliesToDamageType(damageType: DamageType, talentEffects: 
     (damageType === "holy" && talentEffects.forgeToHoly) ||
     (damageType === "bleed" && talentEffects.forgeToBleed)
   );
-}
-
-function getPlayerBlockHalf(state: BattleState): number {
-  return halveRounded(state.playerStatuses.block);
 }
 
 function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {
@@ -58,12 +53,6 @@ function computeBaseRawAmount(
     return goldDamage + forgeBonus;
   }
   let amount = effect.amount + forgeBonus;
-  if (effect.doubleIfEnemyBurning && state.enemyStatuses.burn > 0) {
-    amount *= 2;
-  }
-  if (effect.tripleIfEnemyNotBurning && state.enemyStatuses.burn === 0) {
-    amount *= 3;
-  }
   if (card?.tags?.includes("archery")) {
     amount += state.talentEffects.flatArrowDamage + state.gearEffects.flatArrowDamage;
   }
@@ -90,24 +79,11 @@ function isBelowHalfHealth(state: BattleState): boolean {
   return state.playerHealth * HALF_DIVISOR <= state.playerMaxHealth;
 }
 
-function applyConsumeBonus(amount: number, state: BattleState, card?: BattleCard): number {
-  if (!card?.consume || state.talentEffects.consumeDamageBonusPercent <= 0) return amount;
-  return Math.round(amount * (1 + state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR));
-}
-
-function applyPhysicalCCAndStatusMultipliers(state: BattleState, amount: number): number {
-  let nextAmount = amount;
-  if (doublingActive(state.talentEffects.physicalDoubledVsStunned, state.enemyCC.stunSkipTurns)) nextAmount *= 2;
-  if (doublingActive(state.talentEffects.physicalDoubledVsFrozen, state.enemyCC.freezeSkipTurns)) nextAmount *= 2;
-  if (isBelowHalfHealth(state) && state.talentEffects.physicalDoubledBelowHalfHealth) nextAmount *= 2;
+function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): number {
+  let nextAmount = applyPhysicalScaling(state, rawAmount);
   if (state.enemyStatuses.poison > 0) nextAmount += state.talentEffects.poisonPhysicalBonus;
   if (state.enemyStatuses.bleed > 0) nextAmount += state.talentEffects.bleedPhysicalBonus;
   return nextAmount;
-}
-
-function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): number {
-  const scaledAmount = applyPhysicalScaling(state, rawAmount);
-  return applyPhysicalCCAndStatusMultipliers(state, scaledAmount);
 }
 
 function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number {
@@ -120,26 +96,13 @@ function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number
   );
   nextAmount += scalePercent(state.gold, state.gearEffects.holyDamageFromGoldPercent, PERCENT_DENOMINATOR);
   if (state.talentEffects.blockToHolyDamage) {
-    nextAmount += getPlayerBlockHalf(state);
-  }
-  if (state.enemyStatuses.burn > 0) {
-    nextAmount = Math.round(nextAmount * (1 + state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR));
+    nextAmount += scalePercent(state.playerStatuses.block, BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR);
   }
   return nextAmount;
 }
 
 function applyBleedDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.gearEffects.flatBleedDamage;
-  if (isBelowHalfHealth(state) && state.talentEffects.bleedDesperateMultiplier > 1) {
-    nextAmount = Math.round(nextAmount * state.talentEffects.bleedDesperateMultiplier);
-  }
-  if (
-    state.talentEffects.bleedExecuteThreshold > 0 &&
-    state.enemyHealth * PERCENT_DENOMINATOR <= state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold
-  ) {
-    nextAmount = Math.round(nextAmount * state.talentEffects.bleedExecuteMultiplier);
-  }
-  return nextAmount;
+  return rawAmount + state.gearEffects.flatBleedDamage;
 }
 
 function applyStunDamageModifiers(state: BattleState, rawAmount: number): number {
@@ -150,7 +113,7 @@ function applyStunDamageModifiers(state: BattleState, rawAmount: number): number
   return nextAmount;
 }
 
-function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: BattleCard): number {
+function applyBurnDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.talentEffects.flatBurnDamage + state.gearEffects.flatBurnDamage;
   if (state.talentEffects.burnDamagePerManaCrystal > 0) {
     nextAmount += scalePerMana(state.maxMana, state.talentEffects.burnDamagePerManaCrystal, "percent");
@@ -160,9 +123,6 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: 
   }
   if (state.talentEffects.blockToBurnDamage) {
     nextAmount += scalePercent(state.playerStatuses.block, BURN_BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR);
-  }
-  if (card?.consume && state.talentEffects.consumeBurnDamageBonusPercent > 0) {
-    nextAmount = Math.round(nextAmount * (1 + state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR));
   }
   return nextAmount;
 }
@@ -217,10 +177,81 @@ function computeBaseDamage(
   const hasArmor = effect.equalToArmor === true;
   const hasGold = effect.equalToGoldPercent !== undefined;
   const isEqualTo = hasBlock || hasArmor || hasGold;
-  if (isEqualTo) return Math.max(0, applyConsumeBonus(rawAmount, state, card));
+  if (isEqualTo) return Math.max(0, rawAmount);
   const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType];
   if (!modifier) throw new Error(`Missing DamageType handler: ${effect.damageType}`);
-  return Math.max(0, applyConsumeBonus(modifier(state, rawAmount, card), state, card));
+  return Math.max(0, modifier(state, rawAmount));
+}
+
+function computeAdditiveDamageBonus(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card?: BattleCard,
+): number {
+  let bonus = 0;
+
+  if (effect.doubleIfEnemyBurning && state.enemyStatuses.burn > 0) bonus += 1;
+  if (effect.doubleIfEnemyBleeding && state.enemyStatuses.bleed > 0) bonus += 1;
+  if (effect.tripleIfEnemyNotBurning && state.enemyStatuses.burn === 0) bonus += 2;
+
+  if (effect.damageType === "physical") {
+    if (doublingActive(state.talentEffects.physicalDoubledVsStunned, state.enemyCC.stunSkipTurns)) bonus += 1;
+    if (doublingActive(state.talentEffects.physicalDoubledVsFrozen, state.enemyCC.freezeSkipTurns)) bonus += 1;
+    if (isBelowHalfHealth(state) && state.talentEffects.physicalDoubledBelowHalfHealth) bonus += 1;
+  }
+
+  if (effect.damageType === "holy" && state.enemyStatuses.burn > 0 && state.talentEffects.holyVsBurnMultiplier > 0) {
+    bonus += state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR;
+  }
+
+  if (effect.damageType === "bleed") {
+    if (isBelowHalfHealth(state) && state.talentEffects.bleedDesperateMultiplier > 1) {
+      bonus += state.talentEffects.bleedDesperateMultiplier - 1;
+    }
+    if (
+      state.talentEffects.bleedExecuteThreshold > 0 &&
+      state.enemyHealth * PERCENT_DENOMINATOR <= state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold
+    ) {
+      bonus += state.talentEffects.bleedExecuteMultiplier - 1;
+    }
+  }
+
+  if (card?.consume && state.talentEffects.consumeDamageBonusPercent > 0) {
+    bonus += state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR;
+  }
+  if (effect.damageType === "burn" && card?.consume && state.talentEffects.consumeBurnDamageBonusPercent > 0) {
+    bonus += state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR;
+  }
+
+  if (card?.tags?.includes("archery")) {
+    const cc = state.enemyCC;
+    const talentEffects = state.talentEffects;
+    if (doublingActive(talentEffects.archeryDoubledVsStunned, cc.stunSkipTurns)) bonus += 1;
+    if (doublingActive(talentEffects.archeryDoubledVsFrozen, cc.freezeSkipTurns)) bonus += 1;
+    if (
+      talentEffects.archeryDoubledVsHighHealth &&
+      state.enemyHealth * PERCENT_DENOMINATOR >= state.enemyMaxHealth * ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT
+    ) {
+      bonus += 1;
+    }
+    if (
+      talentEffects.archeryDoubledVsLowHealth &&
+      state.enemyHealth * PERCENT_DENOMINATOR <= state.enemyMaxHealth * ARCHERY_LOW_HEALTH_THRESHOLD_PERCENT
+    ) {
+      bonus += 1;
+    }
+  }
+
+  const enemyMultiplier = getEnemyDamageMultiplier(state, effect.damageType);
+  if (enemyMultiplier !== 1) bonus += enemyMultiplier - 1;
+
+  const frozenMultiplier = gearFrozenDamageMultiplier(state);
+  if (frozenMultiplier !== 1) bonus += frozenMultiplier - 1;
+
+  const burnBonusToBleeding = computeBurnMultiplier(effect, state);
+  if (burnBonusToBleeding !== 1) bonus += burnBonusToBleeding - 1;
+
+  return bonus;
 }
 
 function applyCrit(damage: number, state: BattleState) {
@@ -228,31 +259,30 @@ function applyCrit(damage: number, state: BattleState) {
   return rollPercent(GLOBAL_CRIT_CHANCE, getBattleRng(state)) ? damage * CRIT_MULTIPLIER : damage;
 }
 
-function applyFirstDamageModifiers(
+function applyFirstDamageBonus(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
-  rawDamage: number,
-): { state: BattleState; rawDamage: number } {
+): { state: BattleState; firstBonus: number } {
   let nextState: BattleState = state;
-  let nextDamage = rawDamage;
+  let firstBonus = 0;
 
   if (effect.damageType === "burn") {
     if (nextState.talentEffects.firstBurnCardBonusMultiplier > 1 && !nextState.flags.firstBurnCardDoubledUsed) {
-      nextDamage = Math.round(nextDamage * nextState.talentEffects.firstBurnCardBonusMultiplier);
+      firstBonus += nextState.talentEffects.firstBurnCardBonusMultiplier - 1;
       nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
     }
     if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
-      nextDamage = Math.round(nextDamage * FIRST_EFFECT_MULTIPLIER);
+      firstBonus += 1;
       nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
     }
   } else if (effect.damageType === "holy") {
     if (nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
-      nextDamage = Math.round(nextDamage * FIRST_EFFECT_MULTIPLIER);
+      firstBonus += 1;
       nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
     }
   }
 
-  return { state: nextState, rawDamage: nextDamage };
+  return { state: nextState, firstBonus };
 }
 
 function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean, card?: BattleCard): BattleState {
@@ -282,24 +312,6 @@ function applyBlockAbsorption(state: BattleState, damage: number): { state: Batt
   return { state: nextState, remainingDamage };
 }
 
-function applyArcheryMultiplier(damage: number, state: BattleState): number {
-  const cc = state.enemyCC;
-  const talentEffects = state.talentEffects;
-  if (doublingActive(talentEffects.archeryDoubledVsStunned, cc.stunSkipTurns)) return damage * 2;
-  if (doublingActive(talentEffects.archeryDoubledVsFrozen, cc.freezeSkipTurns)) return damage * 2;
-  if (
-    talentEffects.archeryDoubledVsHighHealth &&
-    state.enemyHealth * PERCENT_DENOMINATOR > state.enemyMaxHealth * ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT
-  )
-    return damage * 2;
-  if (
-    talentEffects.archeryDoubledVsLowHealth &&
-    state.enemyHealth * PERCENT_DENOMINATOR <= state.enemyMaxHealth * LOW_HEALTH_THRESHOLD_PERCENT
-  )
-    return damage * 2;
-  return damage;
-}
-
 function computeBurnMultiplier(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleState): number {
   if (effect.damageType !== "burn") return 1;
   return getBurnBonusToBleedingMultiplier(state);
@@ -311,13 +323,15 @@ export function computeCardDamageToEnemy(
   card?: BattleCard,
 ) {
   const baseDamage = computeBaseDamage(state, effect, card);
-  const { state: stateAfterFirstMods, rawDamage } = applyFirstDamageModifiers(state, effect, baseDamage);
-  const pacedDamage = paceCombatMagnitude(stateAfterFirstMods, rawDamage, "player");
-  let finalDamage = applyCrit(pacedDamage, stateAfterFirstMods);
-  if (card?.tags?.includes("archery")) finalDamage = applyArcheryMultiplier(finalDamage, stateAfterFirstMods);
+  const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
+  const totalBonus = computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus;
+  const totalMultiplier = Math.max(0.1, 1 + totalBonus);
+  const scaledDamage = Math.round(baseDamage * totalMultiplier);
+  const pacedDamage = paceCombatMagnitude(stateAfterFirst, scaledDamage, "player");
+  const finalDamage = applyCrit(pacedDamage, stateAfterFirst);
 
   const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(
-    stateAfterFirstMods,
+    stateAfterFirst,
     finalDamage,
   );
   const stateWithCritCleared = stateAfterBlock.flags.nextHitCrit
@@ -327,9 +341,5 @@ export function computeCardDamageToEnemy(
   const nextState = applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun, card);
   const effectiveArmor = isPhysicalOrStun ? nextState.enemyMitigation.armor : 0;
   const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
-  const multiplier =
-    getEnemyDamageMultiplier(nextState, effect.damageType) *
-    gearFrozenDamageMultiplier(nextState) *
-    computeBurnMultiplier(effect, nextState);
-  return { nextState, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
+  return { nextState, modifiedDamage: damageAfterArmor };
 }

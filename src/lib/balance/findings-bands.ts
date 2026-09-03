@@ -4,9 +4,19 @@ import type { ReportEnemyType } from "./report-catalog";
 export type EnemyTypeBand = ReportEnemyType;
 export type FindingsTier = AnomalyPreset;
 
-export const FINDINGS_CAP = 25;
+const DEFAULT_FINDINGS_CAP = 25;
+
+function getFindingsCap(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = env.ALCHEMY_BALANCE_FINDINGS_CAP;
+  if (!raw) return DEFAULT_FINDINGS_CAP;
+  const val = Number.parseInt(raw, 10);
+  return Number.isSafeInteger(val) && val > 0 ? val : DEFAULT_FINDINGS_CAP;
+}
+
+export const FINDINGS_CAP = getFindingsCap();
 export const EQUITY_SPREAD = 0.15;
 export const PAIRED_DELTA_FROM_MEDIAN = 0.15;
+export const PAIRED_TURN_DELTA_THRESHOLD = 2.0;
 export const MATERIAL_TIMEOUT_RATE = 0.02;
 
 export const LENGTH_BAND_BY_TYPE: Record<EnemyTypeBand, { min: number; max: number }> = {

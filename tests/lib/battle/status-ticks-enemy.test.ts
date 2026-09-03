@@ -123,15 +123,15 @@ describe("tickEnemyStatuses", () => {
     expect(next.enemyStatuses.bleed).toBe(0);
   });
 
-  it("burnDoubleChance doubles burn when triggered", () => {
+  it("burnPreventDecayChance prevents burn decay when triggered", () => {
     const state = patchBattleState({
       enemyStatuses: defaultEnemyStatusValues({ burn: 10 }),
-      talentEffects: { ...defaultTalentEffects, burnDoubleChance: 50 },
+      talentEffects: { ...defaultTalentEffects, burnPreventDecayChance: 50 },
       rng: () => 0.01,
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
-    expect(next.enemyStatuses.burn).toBe(20);
+    expect(next.enemyStatuses.burn).toBe(10);
   });
 
   it("poisonGainChance increases poison when triggered", () => {
