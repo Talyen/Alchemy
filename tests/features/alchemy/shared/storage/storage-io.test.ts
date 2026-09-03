@@ -514,4 +514,17 @@ describe("storage io", () => {
     expect(desktop.clearSave).toHaveBeenCalledOnce();
     expect(desktop.steamCloudDelete).toHaveBeenCalledOnce();
   });
+
+  it("fails closed without clearing local saves when Steam Cloud delete fails during normal play", async () => {
+    const playablePayload = JSON.stringify(currentSchemaCampaignSave());
+
+    const desktop = setupMockWindowDesktop({ saveCandidates: [playablePayload], steamName: "PlayerOne" });
+    desktop.steamCloudDelete.mockResolvedValue(false);
+
+    const loaded = await bootstrapAlchemySaveState();
+    expect(loaded.status.kind).toBe("ok");
+
+    await expect(clearAlchemySaveData()).resolves.toBe(false);
+    expect(desktop.clearSave).not.toHaveBeenCalled();
+  });
 });

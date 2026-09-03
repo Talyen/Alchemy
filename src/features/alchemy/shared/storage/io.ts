@@ -107,7 +107,8 @@ export function saveAlchemySaveDataForExit(data: SaveData): void {
 
 export async function clearAlchemySaveData(options?: { keepWritesDisabled?: boolean }): Promise<boolean> {
   if (typeof window === "undefined") return true;
-  return saveQueue.enqueueClear(() => saveBackend.clear(SAVE_KEY), {
+  const forceLocalWipe = areWritesDisabled();
+  return saveQueue.enqueueClear(() => saveBackend.clear(SAVE_KEY, { forceLocalWipe }), {
     keepWritesDisabled: options?.keepWritesDisabled,
     onError: (error) => logStorageFailure("Save data could not be cleared", error),
   });
