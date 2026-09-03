@@ -29,16 +29,18 @@ describe("save migration guard", () => {
   it.each(Object.entries(CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION))(
     "stamps version %s fixtures idempotently",
     (_version, createFixture) => {
-      const once = normalizeSaveData(createFixture());
-      const twice = normalizeSaveData(migrateSaveDataToCurrent(once));
+      const raw = createFixture();
+      const once = normalizeSaveData(raw);
+      const twice = normalizeSaveData(migrateSaveDataToCurrent(migrateSaveDataToCurrent(raw)));
       expect(twice).toEqual(once);
       expect(once.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     },
   );
 
   it.each(Object.entries(MIGRATION_SCENARIO_FIXTURES))("stamps scenario %s idempotently", (_name, createFixture) => {
-    const once = normalizeSaveData(createFixture());
-    const twice = normalizeSaveData(migrateSaveDataToCurrent(once));
+    const raw = createFixture();
+    const once = normalizeSaveData(raw);
+    const twice = normalizeSaveData(migrateSaveDataToCurrent(migrateSaveDataToCurrent(raw)));
     expect(twice).toEqual(once);
     expect(once.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
@@ -122,11 +124,12 @@ describe("save migration guard", () => {
     expect(migrated.activeRun?.wildwoodDraft?.currentBossId).toBe("forge-golem");
   });
 
-  it("strips tombstoned cards from every pile while keeping run state playable", () => {
+  it("strips retired cards from every pile while keeping run state playable", () => {
     const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.tombstonedPiles());
     const run = migrated.activeRun;
     expect(run).not.toBeNull();
     expect(run?.runDeck.map((card) => card.id)).toEqual(["slash"]);
+    expect(run?.corruptionResult).toBeNull();
 
     expect(run?.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
     expect(run?.shopState?.refreshesLeft).toBe(1);
@@ -143,6 +146,12 @@ describe("save migration guard", () => {
     expect(battle?.mana).toBe(2);
 
     expect(run?.runMetaMaxHealth).toBe(run?.runMaxHealth);
+  });
+
+  it("migrates legacy gear slots to accessories", () => {
+    const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.legacyGearSlots());
+    expect(migrated.gearLoadouts.knight?.["left-accessory"]).toBe("gear-2");
+    expect(migrated.gearLoadouts.knight?.["right-accessory"]).toBe("gear-3");
   });
 
   it("regenerates a hex Labyrinth map from a legacy 8×9 grid without dropping the run", () => {

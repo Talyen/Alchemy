@@ -2,10 +2,9 @@ import { repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session/s
 import type { BattleState } from "@/lib/battle";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
-import { characters, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
+import { cardById, characters, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { nextRunRngValue, type RunRngState, type RunRngStream } from "@/lib/rng";
-import { isTombstonedCardId } from "./migration/tombstoned-content-ids";
 import type {
   ActiveCombatData,
   AlchemistState,
@@ -16,8 +15,12 @@ import type {
 } from "./save-schemas/active-run";
 import type { PersistedBattleCard } from "./save-schemas/battle-card-schemas";
 
+function isLiveCardId(id: string): boolean {
+  return cardById[id] !== undefined;
+}
+
 function filterLiveCards<T extends { id: string }>(cards: T[]): T[] {
-  return cards.filter((card) => !isTombstonedCardId(card.id));
+  return cards.filter((card) => isLiveCardId(card.id));
 }
 
 function filterLiveBattleState(state: BattleState): BattleState {
@@ -50,7 +53,7 @@ function filterLiveTransition(transition: ActiveCombatData["pendingBattleTransit
   return { ...transition, resultState: filterLiveBattleState(transition.resultState) };
 }
 
-const keepLiveCard = (card: { id: string }) => !isTombstonedCardId(card.id);
+const keepLiveCard = (card: { id: string }) => isLiveCardId(card.id);
 const shopCardSlotKey = (card: { id: string }, index: number) => shopItemSlotKey(card.id, index);
 
 function normalizeShopState(state: ShopState | null): ShopState | null {
@@ -161,6 +164,14 @@ function repairMysteryVisit(
   return { ...visit, cardChoices };
 }
 
+function normalizeCorruptionResult(
+  result: ValidatedActiveRunData["corruptionResult"],
+): ValidatedActiveRunData["corruptionResult"] {
+  if (!result) return result;
+  if (!isLiveCardId(result.originalCard.id) || !isLiveCardId(result.corruptedCard.id)) return null;
+  return result;
+}
+
 export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedActiveRunData {
   const runDeck = filterLiveCards(data.runDeck);
   const rngState: RunRngState = { seed: data.rng.seed, counters: { ...data.rng.counters } };
@@ -184,6 +195,7 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     activeCombat: data.activeCombat ? normalizeActiveCombat(data.activeCombat, data.contentSystemType) : null,
     shopState: normalizeShopState(data.shopState),
     alchemistState: normalizeAlchemistState(data.alchemistState),
+    corruptionResult: normalizeCorruptionResult(data.corruptionResult),
     mysteryVisit,
   };
 }

@@ -43,6 +43,7 @@ const futureSaveCases = [
     label: "newer schema",
     payload: {
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+      lastSavedAt: 2000,
       discoveredCardIds: ["future-card"],
     },
     expectedStatus: {
@@ -55,6 +56,7 @@ const futureSaveCases = [
     payload: {
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       contentVersion: CURRENT_CONTENT_VERSION + 1,
+      lastSavedAt: 2000,
       discoveredCardIds: ["future-card"],
     },
     expectedStatus: {
@@ -323,6 +325,7 @@ describe("storage io", () => {
       const compatibleBackup = JSON.stringify({
         saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
         contentVersion: CURRENT_CONTENT_VERSION,
+        lastSavedAt: 1000,
         discoveredCardIds: ["slash"],
       });
       const { writeSave } = setupDesktopSaveCandidates([JSON.stringify(payload), compatibleBackup]);
@@ -337,10 +340,14 @@ describe("storage io", () => {
 
   it("protects a future backup after a corrupt local candidate", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    const futureBackup = JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });
+    const futureBackup = JSON.stringify({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+      lastSavedAt: 2000,
+    });
     const compatibleOlderBackup = JSON.stringify({
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       contentVersion: CURRENT_CONTENT_VERSION,
+      lastSavedAt: 1000,
       discoveredCardIds: ["slash"],
     });
     const { writeSave } = setupDesktopSaveCandidates(["not-valid-json", futureBackup, compatibleOlderBackup]);

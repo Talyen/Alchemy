@@ -12,22 +12,6 @@ function emptyGearLoadouts() {
   return createEmptyGearLoadouts() as unknown as Record<string, Record<string, string | null>>;
 }
 
-function migrateGearLoadoutToV12(
-  loadout: Record<string, Record<string, string | null>>,
-): Record<string, Record<string, string | null>> {
-  const next: Record<string, Record<string, string | null>> = {};
-  for (const [charId, slots] of Object.entries(loadout)) {
-    next[charId] = {
-      "main-hand": slots["main-hand"] ?? null,
-      "off-hand": slots["off-hand"] ?? null,
-      body: slots.body ?? null,
-      "left-accessory": slots["left-ring"] ?? slots["left-accessory"] ?? null,
-      "right-accessory": (slots.amulet as string | null) ?? slots["right-accessory"] ?? null,
-    };
-  }
-  return next;
-}
-
 function emptyCraftingCurrencies() {
   return { ...EMPTY_CRAFTING_CURRENCIES };
 }
@@ -277,15 +261,40 @@ function asV12(save: Record<string, unknown>) {
 }
 
 function currentSchemaV12Save() {
-  const base = currentSchemaSave() as Record<string, unknown>;
-  const gearLoadouts = base.gearLoadouts as Record<string, Record<string, string | null>>;
-  return withVersion({ ...base, gearLoadouts: migrateGearLoadoutToV12(gearLoadouts) }, 12);
+  return withVersion(currentSchemaSave(), 12);
 }
 
 function currentSchemaV13Save() {
-  const base = currentSchemaSave() as Record<string, unknown>;
-  const gearLoadouts = base.gearLoadouts as Record<string, Record<string, string | null>>;
-  return withVersion({ ...base, gearLoadouts: migrateGearLoadoutToV12(gearLoadouts) }, 13);
+  return withVersion(currentSchemaSave(), 13);
+}
+
+function currentSchemaLegacyGearSlotsSave() {
+  const inventories = emptyGearInventories();
+  inventories.knight = [
+    {
+      instanceId: "gear-2",
+      definitionId: "ruby-ring-basic",
+      affixes: [],
+    },
+    {
+      instanceId: "gear-3",
+      definitionId: "leather-armor-basic",
+      affixes: [],
+    },
+  ];
+  const loadouts = emptyGearLoadouts() as unknown as Record<string, Record<string, string | null>>;
+  loadouts.knight = {
+    "main-hand": null,
+    "off-hand": null,
+    body: null,
+    "left-ring": "gear-2",
+    amulet: "gear-3",
+  };
+  return currentSaveEnvelope({
+    finishedRunCharacters: ["knight"],
+    gearInventories: inventories,
+    gearLoadouts: loadouts,
+  });
 }
 
 function wildwoodV12Envelope(activeRun: Record<string, unknown>) {
@@ -475,12 +484,17 @@ const FIXTURE_TOMBSTONED_ANTIVENOM = {
   id: "antivenom-potion",
 };
 
+const FIXTURE_REMOVED_FROM_CATALOG = {
+  ...FIXTURE_LIVE_SLASH,
+  id: "removed-from-catalog-card",
+};
+
 function currentSchemaTombstonedPilesSave() {
   return currentSaveEnvelope({
     finishedRunCharacters: ["knight"],
     activeRun: {
       characterId: "knight",
-      runDeck: [FIXTURE_TOMBSTONED_ANTIVENOM, FIXTURE_LIVE_SLASH],
+      runDeck: [FIXTURE_TOMBSTONED_ANTIVENOM, FIXTURE_REMOVED_FROM_CATALOG, FIXTURE_LIVE_SLASH],
       runGold: 12,
       runPlayerHealth: 24,
       runMaxHealth: 30,
@@ -508,6 +522,12 @@ function currentSchemaTombstonedPilesSave() {
         eventId: "cardless-shrine",
         cardChoices: [FIXTURE_TOMBSTONED_ANTIVENOM, FIXTURE_LIVE_SLASH],
         grantedTrinketIds: [],
+      },
+      corruptionResult: {
+        originalCard: FIXTURE_REMOVED_FROM_CATALOG,
+        corruptedCard: FIXTURE_LIVE_SLASH,
+        transformed: false,
+        delta: 1,
       },
       activeCombat: {
         battleState: {
@@ -604,5 +624,6 @@ export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, un
   wildwoodLeftoverNestedReward: currentSchemaWildwoodLeftoverNestedRewardSave,
   shippedBaseline: currentSchemaSave,
   tombstonedPiles: currentSchemaTombstonedPilesSave,
+  legacyGearSlots: currentSchemaLegacyGearSlotsSave,
   labyrinthGridRegen: currentSchemaLabyrinthGridV13Save,
 };

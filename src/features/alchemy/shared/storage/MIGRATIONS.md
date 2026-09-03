@@ -78,7 +78,7 @@ Migration tests must verify gameplay progress, not just field presence:
 
 ## Future schema saves
 
-Saves with a schema newer than the current build are intentionally not migrated or overwritten. Candidates are evaluated in authority order; encountering a recognizable future-versioned candidate immediately protects the session instead of falling through to an older backup that autosave could write over it. The load path returns defaults for the session and disables autosave writes so an older build cannot destroy newer progress. The player-facing Save Protected screen offers update guidance plus an explicit “Delete local save and continue” escape hatch. That wipe clears the full candidate set (desktop `save.json` + bak.1–3 + tmp, then Steam Cloud when available) and fails closed if cloud delete fails so a residual mirror cannot re-block boot. Dev builds also accept `?wipeLocalSave=1` to clear before bootstrap.
+Saves with a schema newer than the current build are intentionally not migrated or overwritten. Candidates are evaluated in authority order; a recognizable future-versioned candidate protects the session only when it is fresher (by `lastSavedAt`) than every playable candidate — a stale newer-versioned mirror is skipped in favor of the freshest playable backup, which autosave can safely continue. The load path returns defaults for the session and disables autosave writes so an older build cannot destroy newer progress. The player-facing Save Protected screen offers update guidance plus an explicit “Delete local save and continue” escape hatch. That wipe clears the full candidate set (desktop `save.json` + bak.1–3 + tmp, then Steam Cloud when available) and fails closed if cloud delete fails so a residual mirror cannot re-block boot. Dev builds also accept `?wipeLocalSave=1` to clear before bootstrap.
 
 ## Public save contract
 
@@ -90,7 +90,7 @@ able to load and play the existing save.
 
 ### Policy: local is authoritative
 
-Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation in `desktop/main.cjs` — `save.json` + `bak.1-3` + `tmp`) and then mirror to Steam Cloud. On load, candidates are walked in preference order (local → bak.1 → bak.2 → bak.3 → cloud) as returned by `src/lib/platform-save-backend.ts#createPlatformSaveBackend` (`uniqueCandidates` deduplicates identical Cloud mirrors). Corrupt candidates fall through to the next recovery source. A recognizable future-versioned candidate stops traversal and opens the Save Protected screen with writes disabled; otherwise the first compatible candidate that Zod-validates is used. Evaluation is pure in `src/features/alchemy/shared/storage/io.ts#evaluateSaveCandidates` for testability.
+Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation in `desktop/main.cjs` — `save.json` + `bak.1-3` + `tmp`) and then mirror to Steam Cloud. On load, candidates are walked in preference order (local → bak.1 → bak.2 → bak.3 → cloud) as returned by `src/lib/platform-save-backend.ts#createPlatformSaveBackend` (`uniqueCandidates` deduplicates identical Cloud mirrors). Corrupt candidates fall through to the next recovery source. A recognizable future-versioned candidate that is fresher (by `lastSavedAt`) than every playable candidate opens the Save Protected screen with writes disabled; a stale future-versioned mirror is skipped. Otherwise the first compatible candidate that Zod-validates is used. Evaluation is pure in `src/features/alchemy/shared/storage/save-candidates.ts#evaluateSaveCandidates` for testability.
 
 Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest dirty snapshot to `localStorage` via `writeSync`. Desktop IPC remains on the serialized asynchronous queue, so the earlier visibility/pagehide signals give it time to finish before the window closes. A terminal flush (browser `writeSync` or desktop coalesced `queueExitSnapshot`) supersedes any queued snapshot that has not started writing.
 
@@ -114,54 +114,23 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 
 - Balance-only changes to live definitions do not change the save schema.
 - Additive fields that load safely through schema or manifest defaults do not require a migration step; keep their defaults while supported saves may omit them.
-- Removed catalog IDs follow the tombstone and hydrate-repair rules above. A meaning or ID remap requires a `contentVersion` handler.
+- Removed catalog IDs are stripped against the live catalog at load; record deliberate removals in the tombstone set above. A meaning or ID remap requires a `contentVersion` handler.
 - Battle-only fields that are rebuilt rather than persisted do not affect the save contract.
 
-> Three layers, in load order: **tombstone** (drop removed catalog IDs at the migration step) → **hydrate** (validate the current shape, strip orphans) → **normalize** (`normalizeActiveRunData` soft-fixes valid shapes, e.g. re-offering emptied choice lists). Never put rename logic in Zod transforms.
+> Four layers, in load order: **migrate** (versioned shape and content-ID steps) → **normalize** (`normalizeActiveRunData` strips retired cards against the live catalog and soft-fixes valid shapes, e.g. re-offering emptied choice lists) → **hydrate** (`hydrateCard`, shop and Gear catalog filters) → **restore** (ownership filtering in `restoreRunSession`). Never put rename logic in Zod transforms.
 
 ## Additive-field appendix
 
-Each subsection below is one additive field that loads through defaults — no
-bump. Version-specific transforms live in
+Each row is one additive field that loads through defaults — no bump.
+Behavior lives with the owning module; version-specific transforms live in
 [MIGRATION_HISTORY.md](./MIGRATION_HISTORY.md).
 
-## Active-run RNG streams (`activeRun.rng`)
-
-Active runs persist a seed and counters for named run-outcome streams. This is an additive nested field, so it does not require a top-level schema-version bump: `ActiveRunDataSchema` creates a fresh seed with zero counters when loading a legacy active run. After that first load, the normal autosave writes the explicit RNG state and all subsequent resumes continue the same sequence.
-
-## Shop offerings (`activeRun` shop fields)
-
-Shop inventories (`shopState`, `alchemistState`, `trinketShopState`, `equipmentShopState`) persist only while `currentScreen` is that shop (`encodePersistedShops`). Leaving a shop clears in-memory offerings in the same command as destination advance, so autosave and session state agree. No schema bump: absent shop fields already default to empty.
-
-Resume repair (same pass drops offerings and remaps `purchasedSlotKeys`):
-
-- Normalize strips tombstoned cards from merchant/alchemist shelves.
-- Trinket hydrate drops IDs missing from the live catalog.
-- Equipment hydrate drops gear whose `definitionId` is missing from `gearDefinitions` (Zod preprocess already strips many of these; hydrate clears leftover purchase keys).
-- `restoreRunSession` filters owned trinkets and owned unique gear against live `draft.gear` (parked Campaign + live Labyrinth share profile ownership).
-
-An exhausted restored shelf is a sold-out state that can still be left safely. Schema-12 reinterpreted a saved Trinket Shop as a permanent vendor; ownership filtering above is the restore seam that keeps that contract honest.
-
-## Mystery visit (`activeRun.mysteryVisit`)
-
-Mystery visit blobs persist only while `currentScreen` is mystery. Load nulls a leftover visit when `currentScreen` is set to any other screen. A missing `currentScreen` keeps the visit so resume can still infer the mystery screen. New choices use random card removal and do not set `pendingRemoval`. A loaded visit with legacy `pendingRemoval: true` keeps that flag until the player finishes the already-open picker; encode writes it only while unresolved so repeated saves cannot bypass the removal.
-
-## Draft and mystery choice repair (tombstone recovery)
-
-When tombstoned cards are stripped from a persisted choice list, an in-progress draft or mystery pick could be left empty (0 live choices) and block resume. `normalizeActiveRunData` repairs this once on load by re-offering live choices from the current offerable pool using the run's seeded RNG — then persists the repaired list on the next autosave so the fix is stable.
-
-- **Starter draft** (`starterDraftChoices` for Campaign/Labyrinth Wildcard): re-offer `DRAFT_CHOICES` (3) via the `rewards` stream when `runDeck.length < DRAFT_ROUNDS` and the filtered list is empty but a draft was pending (`starterDraftChoices != null`). If the draft is already complete (`runDeck.length >= DRAFT_ROUNDS`) the empty list is kept.
-- **Wildwood draft** (`wildwoodDraft.draftChoices`): re-offer 3 via the `world` stream (with character keyword affinity) when `phase === "draft"` and `runDeck.length < DRAFT_ROUNDS`.
-- **Mystery** (`mysteryVisit.cardChoices`): re-offer `MYSTERY_CARD_CHOICES` (3) via the `events` stream when the filtered list is empty, the original had choices, and `chosenCardId == null` (still awaiting pick).
-
-No duplicate effects are applied — only the choice list is replaced. Each repair advances the corresponding RNG counter so the sequence stays deterministic and the next autosave writes the new counter value.
-
-## Battle transition continuation
-
-`activeCombat.pendingBattleTransition` is an additive field with a `null` default. New saves use it to carry computed opening-draw and enemy-turn results across presentation delays. Opening draws persist the empty-hand start state plus an `{ kind: "opening-draw" }` result and fast-forward on boot instead of replaying presentation. Enemy-phase battle state without pending transition metadata is recovered on decode as `{ kind: "legacy-enemy-turn" }`; boot resume runs `recoverLegacyEnemyPhase` to force a playable player turn. Persisted `{ kind: "legacy-enemy-turn" }` markers are still accepted by Zod.
-
-## Parked runs and shared gold
-
-`parkedRuns` (`Partial<Record<ContentSystemId, ActiveRunData>>`) and `runRecency` are additive save fields with empty defaults. Load migrates a singular `activeRun` in place and does not hydrate parked slots until that mode is resumed. A corrupt parked slot is dropped; it does not wipe the save.
-
-Gold is the profile purse (`gold`). On load, in-combat `activeCombat.battleState.gold` wins if present; otherwise the saved `gold` value is used. `runMetaMaxHealth` is additive (default 0, treated as `runMaxHealth` when missing) so combat HP bonuses survive a meta rebind.
+| Field                                  | Default                                                                   | Owner                                                                                |
+| -------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `activeRun.rng`                        | fixed fallback seed, zero counters                                        | `save-schemas/active-run.ts`                                                         |
+| `activeRun` shop fields                | empty unless `currentScreen` is that shop                                 | `encodePersistedShops`; repair across normalize → shop hydrate → `restoreRunSession` |
+| `activeRun.mysteryVisit`               | kept only while `currentScreen` is mystery                                | `normalizeActiveRunData`                                                             |
+| Draft/mystery choice repair            | re-offered from the live pool on empty                                    | `normalizeActiveRunData`                                                             |
+| `activeCombat.pendingBattleTransition` | `null`; legacy enemy phases recover to a playable turn                    | battle resume codec                                                                  |
+| `parkedRuns` / `runRecency`            | empty; corrupt slots drop without wiping the save                         | run codecs                                                                           |
+| `gold` / `runMetaMaxHealth`            | profile purse wins unless in-combat gold exists; `0` means `runMaxHealth` | `save-schemas/save-data.ts`                                                          |

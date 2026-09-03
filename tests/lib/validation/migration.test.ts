@@ -115,6 +115,19 @@ describe("migrateSaveDataToCurrent", () => {
     expect(result.discoveredCardIds).toEqual(["roll-the-dice", "slash"]);
     expect(result.activeRun).toEqual({ deck: [{ id: "roll-the-dice", title: "Roulette" }] });
   });
+
+  it("leaves card prose matching a remapped id untouched", () => {
+    const result = migrateSaveDataToCurrent({
+      contentVersion: 2,
+      discoveredCardIds: ["slash"],
+      activeRun: {
+        deck: [{ id: "slash", title: "roulette", descriptionLines: ["roulette"], art: "roulette" }],
+      },
+    });
+    expect(result.activeRun).toEqual({
+      deck: [{ id: "slash", title: "roulette", descriptionLines: ["roulette"], art: "roulette" }],
+    });
+  });
 });
 
 describe("isUnsupportedFutureSaveData", () => {

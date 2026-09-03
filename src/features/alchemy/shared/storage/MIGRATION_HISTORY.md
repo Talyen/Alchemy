@@ -46,3 +46,15 @@ runs take the same path; a valid hex map passes through.
 `discoveredUniqueIds` was additive with an empty default. Hydration unions owned
 unique Gear into discovery so existing inventories remain visible in the
 Collection.
+
+## Unversioned battle-talent shims
+
+`normalizePersistedBattleState` carries renames that predate schema versioning
+and run on every load without a version gate: `firstBurnCardDoubled` to
+`firstBurnCardBonusMultiplier`, `receiveHalfFreezeBuildUp` to
+`receiveHalfFreezeDamage`, `bleedExecuteThreshold` to a multiplier of
+`LEGACY_BLEED_EXECUTE_MULTIPLIER`, `wishBlockBelowHealthPct` to an amount of
+`LEGACY_WISH_BLOCK_AMOUNT`, and the `LEGACY_MANABURN_PER_CRYSTAL_ENABLED`
+sentinel to `MANABURN_DAMAGE_PERCENT`. They stay unversioned because they repair
+single renamed fields rather than a save shape; magnitudes live beside the
+other legacy tuning in `game-constants`.

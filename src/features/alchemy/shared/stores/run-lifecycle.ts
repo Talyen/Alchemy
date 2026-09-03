@@ -3,7 +3,7 @@ import { playDefeat, stopAllSfx } from "@/lib/audio";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
 import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
-import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
+import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { logError } from "@/lib/error-logger";
 import type { MaterialInventory } from "@/lib/homestead/types";

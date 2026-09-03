@@ -52,12 +52,6 @@ export const BARREL_PATTERNS = [
   },
   {
     group: ["@/features/alchemy/shared/storage/*", "**/features/alchemy/shared/storage/*"],
-    allowImportNames: [
-      "flushAlchemySaveNow",
-      "buildAlchemySaveDataFromStores",
-      "bootstrapAlchemySaveState",
-      "applySaveDataToStores",
-    ],
     message: "Import from @/features/alchemy/shared/storage (barrel) instead of deep paths.",
   },
 ];

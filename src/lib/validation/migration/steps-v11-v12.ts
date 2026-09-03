@@ -1,7 +1,6 @@
+import { GEAR_CHARACTER_IDS } from "@/lib/gear/types";
 import { isRecord, migrateRunTree } from "./types";
 import type { RawSaveData } from "./types";
-
-const CHARACTER_IDS = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid", "wildcard"];
 
 function migratePendingReward(value: unknown): unknown {
   if (!isRecord(value)) return value;
@@ -60,7 +59,7 @@ export function migrateV11ToV12(save: RawSaveData): RawSaveData {
       ownedTrinketIds: Array.isArray(save.ownedTrinketIds) ? save.ownedTrinketIds : [],
       equippedTrinkets: isRecord(save.equippedTrinkets)
         ? save.equippedTrinkets
-        : Object.fromEntries(CHARACTER_IDS.map((id) => [id, null])),
+        : Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, null])),
     },
     migrateRun,
   );

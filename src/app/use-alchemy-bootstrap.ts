@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  applySaveDataToStores,
-  bootstrapAlchemySaveState,
-} from "@/features/alchemy/shared/storage/bootstrap-save-state";
+import { applySaveDataToStores, bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";

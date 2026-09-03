@@ -1,48 +1,32 @@
-const CARD_ID_REMAPS: Record<string, string> = {
-  "sunder-armor": "sunder",
-};
+const CONTENT_ID_REMAPS_BY_VERSION: Array<{ toVersion: number; remaps: Record<string, string> }> = [
+  { toVersion: 2, remaps: { "sunder-armor": "sunder" } },
+  { toVersion: 3, remaps: { roulette: "roll-the-dice" } },
+];
 
-const CARD_ID_REMAPS_V2: Record<string, string> = {
-  roulette: "roll-the-dice",
-};
+function isCardIdPosition(key: string): boolean {
+  return key === "id" || key.endsWith("Id") || key.endsWith("Ids");
+}
 
-export const REMAPS_ALL: Record<string, string> = {
-  ...CARD_ID_REMAPS,
-  ...CARD_ID_REMAPS_V2,
-};
-
-function remapContentTree(value: unknown, remapId: (id: string) => string): unknown {
-  if (Array.isArray(value)) return value.map((item) => remapContentTree(item, remapId));
+function remapContentIds(value: unknown, remaps: Record<string, string>, idPosition: boolean): unknown {
+  if (Array.isArray(value)) return value.map((item) => remapContentIds(item, remaps, idPosition));
   if (value && typeof value === "object") {
     const next: Record<string, unknown> = {};
     for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-      if (key === "id" && typeof nested === "string") {
-        next[key] = remapId(nested);
-      } else {
-        next[key] = remapContentTree(nested, remapId);
-      }
+      next[key] = remapContentIds(nested, remaps, isCardIdPosition(key));
     }
     return next;
   }
-  if (typeof value === "string") return remapId(value);
+  if (typeof value === "string") return idPosition ? (remaps[value] ?? value) : value;
   return value;
-}
-
-function migrateContentV1ToV2(parsed: Record<string, unknown>): Record<string, unknown> {
-  return remapContentTree(parsed, (id) => CARD_ID_REMAPS[id] ?? id) as Record<string, unknown>;
-}
-
-function migrateContentV2ToV3(parsed: Record<string, unknown>): Record<string, unknown> {
-  return remapContentTree(parsed, (id) => CARD_ID_REMAPS_V2[id] ?? id) as Record<string, unknown>;
 }
 
 export function migrateContentToCurrentVersion(
   parsed: Record<string, unknown>,
   fromVersion: number,
 ): Record<string, unknown> {
-  if (fromVersion >= 3) return parsed;
-  if (fromVersion < 2) {
-    return migrateContentV2ToV3(migrateContentV1ToV2(parsed));
+  let next = parsed;
+  for (const step of CONTENT_ID_REMAPS_BY_VERSION) {
+    if (fromVersion < step.toVersion) next = remapContentIds(next, step.remaps, false) as Record<string, unknown>;
   }
-  return migrateContentV2ToV3(parsed);
+  return next;
 }

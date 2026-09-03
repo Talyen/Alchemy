@@ -23,7 +23,7 @@ import {
   MaterialInventorySchema,
 } from "./core";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
-import { createRunRngState } from "@/lib/rng";
+import { type RunRngState } from "@/lib/rng";
 
 const MaterialIdPersistSchema = z.preprocess(
   (val) => (val === "crystal" ? "gems" : val),
@@ -103,6 +103,11 @@ const CorruptionResultPersistSchema = z
   .nullable()
   .catch(null);
 
+const FALLBACK_RUN_RNG_STATE: RunRngState = Object.freeze({
+  seed: 1,
+  counters: Object.freeze({ rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 }),
+});
+
 const RunRngStateSchema = z
   .object({
     seed: z.number().int().nonnegative().max(0xffff_ffff),
@@ -116,7 +121,7 @@ const RunRngStateSchema = z
       })
       .catch({ rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 }),
   })
-  .catch(createRunRngState(Math.random));
+  .catch(FALLBACK_RUN_RNG_STATE);
 
 const PersistedBattleTransitionSchema = z
   .union([
@@ -274,7 +279,10 @@ const ActiveRunDataObjectSchema = z.object({
   encounteredRunEnemyIds: deduplicatedStringArraySchema().default([]),
   selectedDifficulty: DifficultyIdSchema.nullable().catch(null).default(null),
   contentSystemType: ContentSystemIdSchema.catch("campaign"),
-  rng: RunRngStateSchema.default(() => createRunRngState(Math.random)),
+  rng: RunRngStateSchema.default(() => ({
+    seed: FALLBACK_RUN_RNG_STATE.seed,
+    counters: { ...FALLBACK_RUN_RNG_STATE.counters },
+  })),
   labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
   labyrinthPendingNode: LabyrinthPendingNodeSchema,
   wildwoodDraft: WildwoodDraftStateSchema.default(null),

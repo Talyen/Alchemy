@@ -3,11 +3,11 @@ import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import {
+  buildAlchemySaveDataFromStores,
   saveAlchemySaveData,
   saveAlchemySaveDataForExit,
   subscribeAlchemyPersistence,
 } from "@/features/alchemy/shared/storage";
-import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_MAX_WAIT_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";
 import type { Screen } from "@/lib/routing";

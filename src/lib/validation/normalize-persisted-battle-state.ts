@@ -3,15 +3,19 @@ import type { TalentEffectManifest } from "@/lib/game-data";
 import { computeTrinketManifest, isDefaultTrinketManifest } from "@/lib/trinkets";
 import { sanitizePersistedEnemyTraits } from "@/lib/content-systems/encounter-traits";
 import {
+  LEGACY_BLEED_EXECUTE_MULTIPLIER,
   LEGACY_FIRST_BURN_BONUS_MULTIPLIER,
   LEGACY_MANABURN_PER_CRYSTAL_ENABLED,
+  LEGACY_WISH_BLOCK_AMOUNT,
   MANABURN_DAMAGE_PERCENT,
 } from "@/lib/game-constants";
 
+const RESTING_WORLD_RNG = (): number => {
+  throw new Error("Battle world RNG must be drawn inside dispatchRunSessionCommand via withDraftWorldBattleRng");
+};
+
 function restingWorldRng(): () => number {
-  return () => {
-    throw new Error("Battle world RNG must be drawn inside dispatchRunSessionCommand via withDraftWorldBattleRng");
-  };
+  return RESTING_WORLD_RNG;
 }
 
 function mergeRecord<T extends object>(defaults: T, saved: Partial<T> | undefined): T {
@@ -39,10 +43,10 @@ function normalizeTalentEffects(
     merged.receiveHalfFreezeDamage = true;
   }
   if ((savedRecord.bleedExecuteThreshold ?? 0) > 0 && !("bleedExecuteMultiplier" in savedRecord)) {
-    merged.bleedExecuteMultiplier = 2;
+    merged.bleedExecuteMultiplier = LEGACY_BLEED_EXECUTE_MULTIPLIER;
   }
   if ((savedRecord.wishBlockBelowHealthPct ?? 0) > 0 && !("wishBlockAmount" in savedRecord)) {
-    merged.wishBlockAmount = 6;
+    merged.wishBlockAmount = LEGACY_WISH_BLOCK_AMOUNT;
   }
 
   if (savedRecord.burnDamagePerManaCrystal === LEGACY_MANABURN_PER_CRYSTAL_ENABLED) {

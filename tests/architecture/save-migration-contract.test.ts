@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION, SaveDataSchema } from "@/lib/validation";
@@ -22,12 +22,11 @@ describe("save migration contract", () => {
   });
 
   it("keeps one migration step for every supported schema increment", () => {
-    const migrationSources = [
-      read("src/lib/validation/migration/index.ts"),
-      read("src/lib/validation/migration/steps-v11-v12.ts"),
-      read("src/lib/validation/migration/steps-v12-v13.ts"),
-      read("src/lib/validation/migration/steps-v13-v14.ts"),
-    ].join("\n");
+    const migrationDir = join(ROOT, "src/lib/validation/migration");
+    const migrationSources = readdirSync(migrationDir)
+      .filter((file) => file === "index.ts" || file.startsWith("steps-"))
+      .map((file) => read(join("src/lib/validation/migration", file)))
+      .join("\n");
     expect(countMigrationSteps(migrationSources)).toBe(CURRENT_SAVE_SCHEMA_VERSION - LAUNCH_SAVE_SCHEMA_VERSION);
   });
 

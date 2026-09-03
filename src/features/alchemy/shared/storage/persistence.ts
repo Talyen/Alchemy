@@ -86,6 +86,6 @@ export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null):
     activeRun,
     parkedRuns: readParkedRuns(),
     runRecency: readRunRecency(),
-    lastSavedAt: Date.now(),
+    lastSavedAt: 0,
   };
 }
