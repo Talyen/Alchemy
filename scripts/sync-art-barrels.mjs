@@ -12,6 +12,10 @@ import {
 const rootDir = resolveRootDir(import.meta.url);
 const manifestPath = getOptimizedManifestPath(rootDir);
 
+function toAssetExportName(target) {
+  return kebabToCamel(target.replace(/\.webp$/, ""));
+}
+
 function buildAssetsContent(manifest) {
   const files = getAssetFiles(manifest);
   const lines = [
@@ -19,16 +23,11 @@ function buildAssetsContent(manifest) {
     "",
   ];
   for (const file of files) {
-    const baseName = file.replace(/\.webp$/, "");
-    const exportName = kebabToCamel(baseName);
+    const exportName = toAssetExportName(file);
     lines.push(`export { default as ${exportName} } from "@/assets/optimized/${file}";`);
   }
   lines.push("");
   return { files, content: `${lines.join("\n")}` };
-}
-
-function toAssetExportName(target) {
-  return kebabToCamel(target.replace(/\.webp$/, ""));
 }
 
 function toDefinitionId(target) {

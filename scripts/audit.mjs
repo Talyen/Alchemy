@@ -11,7 +11,8 @@ const ALLOWED = new Set(["--all", "--sweep", "--types", "--amplification", "--co
 function printHelp() {
   console.log(`Usage: node scripts/audit.mjs [command]
   --all/--sweep (default) Periodic measurable sweep (knip, depcruise, complexity, type-escapes, amplification, content)
-                        NOTE: --all is the periodic sweep, not literally every audit — use --hotspots separately
+                        NOTE: --all is the periodic sweep, not literally every audit — use --hotspots separately.
+                        Type-escape and amplification probes are advisory trends (always exit 0).
   --types              Run type-escape audit only
   --amplification      Run change-amplification audit only
   --content            Run content audit only

@@ -60,7 +60,7 @@ export async function optimizeMusic() {
   }
 
   console.log(`Processed ${results.length} music files.`);
-  return { ok: !failed };
+  return { ok: !failed, error: failed ? "One or more music files failed" : undefined };
 }
 
 if (isMainModule(import.meta.url)) {

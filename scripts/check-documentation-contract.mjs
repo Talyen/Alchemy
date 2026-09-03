@@ -348,11 +348,14 @@ export const DOCUMENTATION_CONTRACTS = [
   ["durable document reachability", checkDurableDocumentReachability],
   ["knowledge index completeness", checkKnowledgeIndexCompleteness],
   ["skill index completeness", checkSkillIndexCompleteness],
-  ["skill-impact ledger", checkSkillImpactLedger],
 ];
 
+export const ADVISORY_DOCUMENTATION_CONTRACTS = [["skill-impact ledger", checkSkillImpactLedger]];
+
 export function checkDocumentationContracts() {
-  return DOCUMENTATION_CONTRACTS.flatMap(([name, check]) => check().map((failure) => `${name}: ${failure}`));
+  return [...DOCUMENTATION_CONTRACTS, ...ADVISORY_DOCUMENTATION_CONTRACTS].flatMap(([name, check]) =>
+    check().map((failure) => `${name}: ${failure}`),
+  );
 }
 
 export function reportDocumentationContracts() {
@@ -362,7 +365,9 @@ export function reportDocumentationContracts() {
     for (const failure of failures) console.error(`- ${failure}`);
     return false;
   }
-  console.log(`Documentation contracts passed (${DOCUMENTATION_CONTRACTS.length} checks).`);
+  console.log(
+    `Documentation contracts passed (${DOCUMENTATION_CONTRACTS.length} gating + ${ADVISORY_DOCUMENTATION_CONTRACTS.length} advisory).`,
+  );
   return true;
 }
 

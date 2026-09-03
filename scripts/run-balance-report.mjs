@@ -2,6 +2,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { createServer } from "vite";
+import { writeCurrentRun } from "./lib/current-run.mjs";
+
+const rootDir = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
 const server = await createServer({
   configFile: false,
@@ -40,6 +43,16 @@ try {
     `Balance report complete: ${findings.findings.length}/${findings.totalBeforeCap} findings shown (${findings.omitted} omitted).`,
   );
   console.info(`Findings written to ${resolve(reportDir, "balance-findings.html")}`);
+  writeCurrentRun({
+    rootDir,
+    status: "passed",
+    command: "npm run balance:sim",
+    artifacts: [
+      { path: "reports/balance-findings.html", role: "primary" },
+      { path: "reports/balance-findings.json", role: "secondary" },
+    ],
+    summary: `Balance report: ${findings.findings.length}/${findings.totalBeforeCap} findings shown.`,
+  });
 } finally {
   await server.close();
 }

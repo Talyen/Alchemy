@@ -387,6 +387,7 @@ declare module "*/check-plans.mjs" {
 
 declare module "*/check-documentation-contract.mjs" {
   export const DOCUMENTATION_CONTRACTS: ReadonlyArray<readonly [string, () => string[]]>;
+  export const ADVISORY_DOCUMENTATION_CONTRACTS: ReadonlyArray<readonly [string, () => string[]]>;
   export function checkLocalMarkdownLinks(): string[];
   export function checkInlineRepositoryPaths(): string[];
   export function checkBacktickedCurrentFileReferences(): string[];

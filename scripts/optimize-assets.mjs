@@ -20,6 +20,7 @@ import {
   WIDTH,
 } from "./lib/asset-constants.mjs";
 import { formatProcessError } from "./lib/process-helpers.mjs";
+import { runAudioScript } from "./lib/audio-optimizer.mjs";
 import { getOptimizedManifestPath, resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
@@ -35,13 +36,6 @@ const gearAssetWidth = WIDTH.gear;
 const gearAssetQuality = QUALITY.gear;
 
 const GEAR_SLOT_IDS = ["body", "weapon", "accessory", "trinket"];
-
-const GEAR_SLOT_BACKGROUND_NAME_TO_ID = {
-  accessory: "accessory",
-  body: "body",
-  trinket: "trinket",
-  weapon: "weapon",
-};
 
 function slugifyGearName(name) {
   return name
@@ -101,7 +95,7 @@ async function discoverGearSlotBackgrounds() {
       );
     }
     const displayName = match[1].trim().toLowerCase();
-    const slotId = GEAR_SLOT_BACKGROUND_NAME_TO_ID[displayName];
+    const slotId = GEAR_SLOT_IDS.includes(displayName) ? displayName : undefined;
     if (!slotId) {
       throw new Error(`[gear-slot] Unknown slot background name: ${match[1]} (allowed: ${GEAR_SLOT_IDS.join(", ")})`);
     }
@@ -191,13 +185,5 @@ export async function optimizeAssets() {
 }
 
 if (isMainModule(import.meta.url)) {
-  optimizeAssets()
-    .then(({ ok }) => {
-      if (!ok) process.exitCode = 1;
-    })
-    .catch((error) => {
-      console.error("Asset optimization failed.");
-      console.error(error);
-      process.exitCode = 1;
-    });
+  runAudioScript("Asset optimization", optimizeAssets);
 }

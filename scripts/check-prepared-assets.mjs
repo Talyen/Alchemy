@@ -2,12 +2,12 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 import { prepareAssets } from "./prepare-assets.mjs";
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const rootDir = resolveRootDir(import.meta.url);
 
 const PREPARED_ASSET_OUTPUTS = Object.freeze([
   "src/assets/optimized",

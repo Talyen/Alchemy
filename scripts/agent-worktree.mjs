@@ -26,7 +26,7 @@ function usage() {
 
 Creates isolated worktrees under .worktrees/<slug> on branch agent/<slug>.
 Use when another agent has dirty work on main to avoid shared-checkout races.
-Add --detached for verification-only detached HEAD (replaces agent-worktree.sh).
+Add --detached for verification-only detached HEAD.
 `);
 }
 

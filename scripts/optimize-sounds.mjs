@@ -111,7 +111,7 @@ export async function optimizeSounds() {
       label: "sound file",
     });
   }
-  return { ok: !failed };
+  return { ok: !failed, error: failed ? "One or more sounds failed" : undefined };
 }
 
 async function ensureMp3Fallbacks(previousManifest, managedOggs) {

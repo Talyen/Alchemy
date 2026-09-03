@@ -23,32 +23,26 @@ export const OPTIMIZE_PIPELINES = {
   },
 };
 
+async function runPipeline(key, { module, entry }) {
+  try {
+    const mod = await import(new URL(module, import.meta.url).href);
+    return await mod[entry]();
+  } catch (error) {
+    error.message = `[optimize:${key}] ${error.message}`;
+    throw error;
+  }
+}
+
 export async function runAllOptimizePipelines() {
   const results = await Promise.all(
-    Object.entries(OPTIMIZE_PIPELINES).map(async ([key, { module, entry }]) => {
-      try {
-        const mod = await import(new URL(module, import.meta.url).href);
-        return await mod[entry]();
-      } catch (error) {
-        error.message = `[optimize:${key}] ${error.message}`;
-        throw error;
-      }
-    }),
+    Object.entries(OPTIMIZE_PIPELINES).map(([key, pipeline]) => runPipeline(key, pipeline)),
   );
   return results;
 }
 
 export async function runAllOptimizePipelinesSettled() {
   const results = await Promise.allSettled(
-    Object.entries(OPTIMIZE_PIPELINES).map(async ([key, { module, entry }]) => {
-      try {
-        const mod = await import(new URL(module, import.meta.url).href);
-        return await mod[entry]();
-      } catch (error) {
-        error.message = `[optimize:${key}] ${error.message}`;
-        throw error;
-      }
-    }),
+    Object.entries(OPTIMIZE_PIPELINES).map(([key, pipeline]) => runPipeline(key, pipeline)),
   );
   return results;
 }
