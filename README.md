@@ -79,7 +79,11 @@ Feature layout and run-state ownership:
 - `src/features/alchemy/` — React UI (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
 - `tests/` — Vitest unit tests and Playwright specs
 
-Asset preparation runs automatically before dev and prod builds via the prepare step; the build itself never rewrites tracked sources. Use the explicit `sync:*` commands in [`docs/WORKFLOWS-ASSETS.md`](./docs/WORKFLOWS-ASSETS.md) when intentionally regenerating outputs.
+`npm run dev` prepares authored assets before starting Vite. Production builds
+only validate committed generated outputs and never rewrite tracked sources.
+Use the explicit authoring and `sync:*` commands in
+[`docs/WORKFLOWS-ASSETS.md`](./docs/WORKFLOWS-ASSETS.md) when intentionally
+regenerating outputs.
 Do not hand-edit generated outputs.
 
 ## Documentation

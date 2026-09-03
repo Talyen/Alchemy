@@ -107,3 +107,36 @@ export function writeDiagnosticLog(reportsDir, name, output) {
   fs.writeFileSync(filePath, output, "utf8");
   return filePath;
 }
+
+export function writeFailureDigest(directory, command, result, runId, index) {
+  fs.mkdirSync(directory, { recursive: true });
+  const stem = `${String(index + 1).padStart(2, "0")}-${command.key}`;
+  const logPath = writeDiagnosticLog(directory, stem, result.output);
+  const digestPath = path.join(directory, `${stem}.md`);
+  const normalized = sanitizeOutput(result.output).trim();
+  const excerpt = (
+    normalized.length <= 4_000
+      ? normalized
+      : `${normalized.slice(0, 1_200)}\n[…${normalized.length - 4_000} chars omitted…]\n${normalized.slice(-2_800)}`
+  ).replaceAll("```", "``\u200b`");
+  fs.writeFileSync(
+    digestPath,
+    [
+      `# Verification failure: ${command.label}`,
+      "",
+      `- Run: \`${runId}\``,
+      `- Command key: \`${command.key}\``,
+      `- Exit: \`${result.status ?? "unknown"}\``,
+      `- Duration: \`${(result.elapsedMs / 1000).toFixed(1)}s\``,
+      "",
+      "## Bounded failure output",
+      "",
+      "```text",
+      excerpt,
+      "```",
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+  return { digestPath, logPath };
+}

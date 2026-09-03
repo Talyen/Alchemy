@@ -41,7 +41,9 @@ describe("canonical verification commands", () => {
   it("uses the same static aggregate locally and in CI", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
     const workflow = readFileSync(join(ROOT, ".github/workflows/ci.yml"), "utf8");
+    const check = readFileSync(join(ROOT, "scripts/check.mjs"), "utf8");
     expect(pkg.scripts["lint:ci"]).toContain("npm run check:static");
+    expect(check).toContain('["run", "lint:ci"]');
     expect(workflow).toContain("run: npm run lint:ci");
     expect(workflow).not.toContain("check:test-owners");
     expect(workflow).not.toContain("ci:verify-plan");

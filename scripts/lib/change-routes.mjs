@@ -95,6 +95,7 @@ export const ROUTES = Object.freeze([
     [
       "scripts/**",
       "tests/scripts/**",
+      "tests/architecture/**",
       ".github/**",
       "package.json",
       "package-lock.json",
@@ -110,7 +111,7 @@ export const ROUTES = Object.freeze([
       "knip*.js",
       "stryker.config.mjs",
     ],
-    ["related"],
+    ["unit-tooling"],
     [doc("docs/REFERENCE.md", "Tooling ownership", "tooling commands")],
     "scripts/measure-agent-context.mjs",
   ),
@@ -127,6 +128,7 @@ export const ROUTES = Object.freeze([
     ["unit-changed"],
     [doc("CONTRIBUTING.md", "E2E policy", "test policy")],
     "tests/lib/utils.test.ts",
+    ["tests/scripts/**", "tests/architecture/**"],
   ),
   route(
     "browser-test",
@@ -186,6 +188,7 @@ export function resolveRoutePlan(paths) {
   const normalized = paths.map(normalize);
   const routes = resolveRoutes(normalized);
   const keys = new Set(routes.flatMap((candidate) => candidate.commands));
+  if (routes.some((candidate) => candidate.id === "tooling")) keys.delete("related");
   const changedTests = normalized.filter(isUnitTest);
   const relatedInputs = normalized.filter((filePath) => !isUnitTest(filePath) && isRelatedInput(filePath));
   if (changedTests.length === 0) keys.delete("unit-changed");

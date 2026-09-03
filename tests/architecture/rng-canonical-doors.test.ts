@@ -1,19 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { execSync } from "node:child_process";
+import { globSync, readFileSync } from "node:fs";
+
+const ROOT = process.cwd();
+const THIS_TEST = "tests/architecture/rng-canonical-doors.test.ts";
+
+function matchingFiles(paths: string[], pattern: RegExp) {
+  return paths
+    .filter((filePath) => filePath !== THIS_TEST)
+    .filter((filePath) => pattern.test(readFileSync(filePath, "utf8")));
+}
 
 describe("rng canonical doors", () => {
   it("has no remaining @/lib/run-rng imports", () => {
-    const hits = execSync(
-      'rg -l "from [\\"\\\']@/lib/run-rng[\\"\\\']|from [\\"\\\']\\.\\./run-rng[\\"\\\']" src tests | rg -v "tests/architecture/rng-canonical-doors" || true',
-      { encoding: "utf8" },
-    ).trim();
-    expect(hits).toBe("");
+    const paths = globSync(["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"], { cwd: ROOT });
+    expect(matchingFiles(paths, /(?:from\s+|import\s*\()["'](?:@\/lib\/run-rng|(?:\.\.\/)+run-rng)["']/u)).toEqual([]);
   });
 
   it("keeps battle on the @/lib/rng door", () => {
-    const hits = execSync('rg -n "from \\"\\.\\./rng\\"|from \\"\\.\\./\\.\\./rng\\"" src/lib/battle || true', {
-      encoding: "utf8",
-    }).trim();
-    expect(hits).toBe("");
+    const paths = globSync("src/lib/battle/**/*.{ts,tsx}", { cwd: ROOT });
+    expect(matchingFiles(paths, /(?:from\s+|import\s*\()["'](?:\.\.\/)+rng["']/u)).toEqual([]);
   });
 });

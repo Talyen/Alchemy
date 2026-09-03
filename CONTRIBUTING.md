@@ -11,7 +11,7 @@ The local workflow has three entry points — one per moment, never interchangea
 | Moment           | Command                    | Responsibility                                                                                                     |
 | ---------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | During work      | `npm run verify -- --diff` | Changed Vitest files, dependency-related tests, and save/assets/desktop/balance/performance escalations            |
-| Push and handoff | `npm run check -- --diff`  | Verification, applicable static checks, lockfile consistency when manifests change, pure builds, and preview smoke |
+| Push and handoff | `npm run check -- --diff`  | Verification, the CI static aggregate for executable changes, lockfile consistency, pure builds, and preview smoke |
 | Release          | `npm run release`          | Full release, desktop packaging, tag, push, and CI watch                                                           |
 
 `npm run verify -- --diff --plan` previews selection without running it. Explicit paths may replace `--diff`. Browser flows remain available through the `test:e2e:*` scripts when investigation needs them, but local handoff does not rerun the every-push critical suite.
@@ -22,9 +22,10 @@ The risk escalations are intentionally broad and few:
 - Asset source or pipeline changes run the idempotent prepared-output check.
 - Desktop changes run the desktop boundary unit suite.
 - Balance and performance changes run their dedicated report/harness checks.
+- Tooling and configuration changes run the complete tooling and architecture unit suite because those tests inspect repository files directly.
 - Other implementation changes use Vitest dependency selection; changed test files execute directly.
 
-The completion gate records every passed, failed, and skipped stage under one run ID and rejects results if tracked source inputs change during the run. Documentation-only changes run documentation and format checks without unit, build, or browser work. Runtime inputs trigger a non-mutating build and preview smoke. Package manifests trigger `npm ci --dry-run --ignore-scripts`; other pushes do not.
+The completion gate records every passed, failed, and skipped stage under one run ID, retains bounded failure evidence, and rejects results if tracked source inputs change during the run. Documentation-only changes run documentation and format checks without unit, build, or browser work. Executable changes run the same static aggregate as CI, but not full Vitest or browser journeys. Runtime inputs trigger a non-mutating build and preview smoke. Package manifests trigger `npm ci --dry-run --ignore-scripts`; other pushes do not.
 
 ## E2E policy
 
@@ -50,7 +51,10 @@ Execution plans under `docs/Plans/` are workflow artifacts, not product correctn
 | `npm run assets:check`            | Idempotent authored-asset preparation check                                                           |
 | `npm run test:e2e:critical`       | Every-push representative player journeys                                                             |
 
-Builds never prepare or rewrite tracked sources — asset preparation runs automatically in the prepare step before dev/prod builds. Use the explicit `sync:*` and asset authoring commands when intentionally regenerating outputs.
+Builds only validate generated outputs and never prepare or rewrite tracked
+sources. `npm run dev` prepares assets through its `predev` lifecycle; use the
+explicit `sync:*` and asset authoring commands when intentionally regenerating
+outputs for a build.
 
 Every push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Only save persistence, prepared assets, desktop packaging, and Electron tests remain path-gated. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/change-routes.mjs`.
 

@@ -38,6 +38,15 @@ export function parseAuditArgs(argv) {
   return { hasTypes, hasAmplification, hasContent, hasHotspots, hasAll };
 }
 
+export function resolveAuditScript(parsed, hasArgs) {
+  if (parsed.hasTypes) return "scripts/audit-type-escapes.mjs";
+  if (parsed.hasAmplification) return "scripts/audit-change-amplification.mjs";
+  if (parsed.hasContent) return "scripts/content-audit.mjs";
+  if (parsed.hasHotspots) return "scripts/context-hotspots.mjs";
+  if (parsed.hasAll || !hasArgs) return "scripts/audit-all.mjs";
+  return null;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   if (args.includes("--help") || args.includes("-h")) {
@@ -52,34 +61,10 @@ async function main() {
     process.exitCode = 2;
     return;
   }
-  const { hasTypes, hasAmplification, hasContent, hasHotspots, hasAll } = parsed;
-  const hasSpecific = hasTypes || hasAmplification || hasContent || hasHotspots;
-  const runAll = hasAll || (!hasSpecific && args.length === 0);
-
-  if (hasTypes) {
-    const r = runCommand("node", ["scripts/audit-type-escapes.mjs"], { cwd: ROOT });
-    if (r.status !== 0) process.exitCode = r.status ?? 1;
-    return;
-  }
-  if (hasAmplification) {
-    const r = runCommand("node", ["scripts/audit-change-amplification.mjs"], { cwd: ROOT });
-    if (r.status !== 0) process.exitCode = r.status ?? 1;
-    return;
-  }
-  if (hasContent) {
-    const r = runCommand("node", ["scripts/content-audit.mjs"], { cwd: ROOT });
-    if (r.status !== 0) process.exitCode = r.status ?? 1;
-    return;
-  }
-  if (hasHotspots) {
-    const r = runCommand("node", ["scripts/context-hotspots.mjs"], { cwd: ROOT });
-    if (r.status !== 0) process.exitCode = r.status ?? 1;
-    return;
-  }
-  if (runAll) {
-    const r = runCommand("node", ["scripts/audit-all.mjs"], { cwd: ROOT });
-    if (r.status !== 0) process.exitCode = r.status ?? 1;
-  }
+  const script = resolveAuditScript(parsed, args.length > 0);
+  if (!script) return;
+  const result = runCommand(process.execPath, [script], { cwd: ROOT, stdio: "inherit" });
+  if (result.status !== 0) process.exitCode = result.status ?? 1;
 }
 
 if (isMainModule(import.meta.url)) {

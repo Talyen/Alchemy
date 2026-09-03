@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /** Select dependency-related tests plus a small set of risk-based escalations. */
-import fs from "node:fs";
 import path from "node:path";
 
-import { commandExposure, sanitizeOutput, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
+import { commandExposure, tailOutput, writeFailureDigest } from "./lib/compact-output.mjs";
 import { resolveRoutePlan } from "./lib/change-routes.mjs";
 import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
@@ -12,10 +11,15 @@ import { runCommand } from "./lib/run-command.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
-function parseArgs(argv) {
+const VERIFY_FLAGS = new Set(["diff", "plan", "verbose-plan", "verbose", "keep-going"]);
+
+export function parseVerifyArgs(argv) {
   const { flags, paths } = parseChangedPathsArgs(argv, {
     usage: "Provide paths or use --diff. Example: npm run verify -- --diff --plan",
   });
+  for (const flag of flags) {
+    if (!VERIFY_FLAGS.has(flag)) throw new Error(`Unknown verify option: --${flag}`);
+  }
   return { flags, paths: resolveSelectedPaths(ROOT, { flags, paths }) };
 }
 
@@ -34,39 +38,6 @@ export function formatPlan(plan, { verbosePlan = false } = {}) {
     if (verbosePlan) lines.push(`    ${command.command} ${command.args.join(" ")}`);
   }
   return `${lines.join("\n")}\n`;
-}
-
-export function writeFailureDigest(directory, command, result, runId, index) {
-  fs.mkdirSync(directory, { recursive: true });
-  const stem = `${String(index + 1).padStart(2, "0")}-${command.key}`;
-  const logPath = writeDiagnosticLog(directory, stem, result.output);
-  const digestPath = path.join(directory, `${stem}.md`);
-  const normalized = sanitizeOutput(result.output).trim();
-  const excerpt = (
-    normalized.length <= 4_000
-      ? normalized
-      : `${normalized.slice(0, 1_200)}\n[…${normalized.length - 4_000} chars omitted…]\n${normalized.slice(-2_800)}`
-  ).replaceAll("```", "``\u200b`");
-  fs.writeFileSync(
-    digestPath,
-    [
-      `# Verification failure: ${command.label}`,
-      "",
-      `- Run: \`${runId}\``,
-      `- Command key: \`${command.key}\``,
-      `- Exit: \`${result.status ?? "unknown"}\``,
-      `- Duration: \`${(result.elapsedMs / 1000).toFixed(1)}s\``,
-      "",
-      "## Bounded failure output",
-      "",
-      "```text",
-      excerpt,
-      "```",
-      "",
-    ].join("\n"),
-    "utf8",
-  );
-  return { digestPath, logPath };
 }
 
 function runVerificationCommand(command, index, verbose, runId) {
@@ -105,7 +76,7 @@ function runVerificationCommand(command, index, verbose, runId) {
 export function main(argv = process.argv.slice(2)) {
   const runId = ensureRunId("verify");
   try {
-    const { flags, paths } = parseArgs(argv);
+    const { flags, paths } = parseVerifyArgs(argv);
     const plan = resolveRoutePlan(paths);
     console.log(`Run: ${runId}`);
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));

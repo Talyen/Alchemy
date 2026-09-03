@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import { captureSourceDigest, parseCheckArgs, runCheck } from "../../scripts/check.mjs";
@@ -26,7 +28,7 @@ describe("source-aware completion gate", () => {
       captureDigest: () => ({ head: "abc", hash: "same" }),
     });
     expect(code).toBe(0);
-    expect(calls).toEqual(["changed-path verification", "static checks", "web build", "preview smoke"]);
+    expect(calls).toEqual(["changed-path verification", "CI static checks", "web build", "preview smoke"]);
   });
 
   it("checks the lockfile only for package changes", async () => {
@@ -48,6 +50,31 @@ describe("source-aware completion gate", () => {
       captureDigest: () => ({ head: "abc", hash: reads++ === 0 ? "before" : "after" }),
     });
     expect(code).toBe(1);
+  });
+
+  it("records bounded evidence for a failed command stage", async () => {
+    const code = await runCheck(["src/App.tsx"], {
+      runner: vi.fn((label: string) =>
+        label === "CI static checks"
+          ? { status: 1, elapsedMs: 25, output: "static failure detail" }
+          : { status: 0, elapsedMs: 10, output: "ok" },
+      ),
+      captureDigest: () => ({ head: "abc", hash: "same" }),
+    });
+    expect(code).toBe(1);
+    const record = JSON.parse(readFileSync(join(process.cwd(), "reports/current-run.json"), "utf8")) as {
+      artifacts: Array<{ role: string; existsAtWrite: boolean }>;
+      commandExposures: Array<{ key: string; rawBytes: number; exposedBytes: number }>;
+      summary: string;
+    };
+    expect(record.artifacts).toEqual([
+      expect.objectContaining({ role: "primary", existsAtWrite: true }),
+      expect.objectContaining({ role: "secondary", existsAtWrite: true }),
+    ]);
+    expect(record.commandExposures).toContainEqual(
+      expect.objectContaining({ key: "ci-static", rawBytes: 21, exposedBytes: 21 }),
+    );
+    expect(record.summary).toBe("Check failed at CI static checks.");
   });
 
   it("parses selections and captures a source digest", () => {

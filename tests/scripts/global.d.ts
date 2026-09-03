@@ -471,6 +471,13 @@ declare module "*/compact-output.mjs" {
   };
   export function firstOutputLine(output: string): string;
   export function tailOutput(output: string, maxBytes?: number): string;
+  export function writeFailureDigest(
+    directory: string,
+    command: VerificationCommand,
+    result: { output: string; status: number | null; elapsedMs: number },
+    runId: string,
+    index: number,
+  ): { digestPath: string; logPath: string };
 }
 
 declare module "*/measure-agent-context.mjs" {
@@ -520,17 +527,11 @@ declare module "*/context-hotspots.mjs" {
 
 declare module "*/verify-changed.mjs" {
   export function main(argv?: string[]): number;
+  export function parseVerifyArgs(argv: string[]): { flags: Set<string>; paths: string[] };
   export function formatPlan(
     plan: { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] },
     options?: { verbosePlan?: boolean },
   ): string;
-  export function writeFailureDigest(
-    directory: string,
-    command: VerificationCommand,
-    result: { output: string; status: number | null; elapsedMs: number },
-    runId: string,
-    index: number,
-  ): { digestPath: string; logPath: string };
 }
 
 declare module "*/current-run.mjs" {
@@ -587,7 +588,15 @@ declare module "*/check.mjs" {
   export function runCheck(
     argv?: string[],
     options?: {
-      runner?: (label: string, command: string, args: string[], env: NodeJS.ProcessEnv) => number | Promise<number>;
+      runner?: (
+        label: string,
+        command: string,
+        args: string[],
+        env: NodeJS.ProcessEnv,
+      ) =>
+        | number
+        | { status: number | null; elapsedMs: number; output: string }
+        | Promise<number | { status: number | null; elapsedMs: number; output: string }>;
       captureDigest?: () => { head: string; hash: string };
     },
   ): Promise<number>;
@@ -624,13 +633,15 @@ declare module "*/git-classify.mjs" {
 }
 
 declare module "*/audit.mjs" {
-  export function parseAuditArgs(argv: string[]): {
+  interface AuditSelection {
     hasTypes: boolean;
     hasAmplification: boolean;
     hasContent: boolean;
     hasHotspots: boolean;
     hasAll: boolean;
-  };
+  }
+  export function parseAuditArgs(argv: string[]): AuditSelection;
+  export function resolveAuditScript(parsed: AuditSelection, hasArgs: boolean): string | null;
 }
 
 declare module "*/prepare-assets.mjs" {

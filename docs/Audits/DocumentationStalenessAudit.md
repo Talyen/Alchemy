@@ -34,7 +34,7 @@ A missing step or invariant is Critical/Moderate only when the document claims t
 ## Known signals
 
 - **Code snippet drift:** fenced `ts`/`tsx` blocks in `docs/`, `AGENTS.md`, `CONTRIBUTING.md`, READMEs whose type names and APIs no longer exist.
-- **Script/link contract:** `tests/scripts/documentation-contract.test.ts` continuously checks local Markdown targets, heading anchors, and documented `npm run` names; inspect flags and factual meaning manually.
+- **Script/link contract:** `npm run docs:check` continuously checks local Markdown targets, heading anchors, and documented `npm run` names through `scripts/check-documentation-contract.mjs`; inspect flags and factual meaning manually.
 - **Architecture & directory mismatches:** claims in `ARCHITECTURE.md` vs on-disk `src/lib`, `src/features/alchemy`, `desktop/`, `tests/`.
 - **Broken relative links & anchors:** markdown links and `#heading` anchors whose targets are missing.
 - **Version / engine staleness:** Node engine, Electron, Playwright, Vitest versions claimed in docs vs `package.json`.

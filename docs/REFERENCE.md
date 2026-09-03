@@ -31,7 +31,7 @@ npm run runs:show -- --last 10    # Recent run IDs, outcomes, counts, and eviden
 npm run context:hotspots          # Ranked route context and recent command-output exposure (--run-id <id> checks one exact run)
 npm run typecheck           # tsc --noEmit (fast; also in check:static)
 npm run lint:ci             # Full static gate
-npm run check -- --diff     # Source-aware push/handoff gate with conditional pure builds
+npm run check -- --diff     # Source-aware handoff gate with CI static checks and conditional pure builds
 npm run check:ship          # Ship gate before tagging/desktop packaging
 npm run docs:check          # Validate documentation contracts and plan metadata
 npm run docs:check:final    # Pure final validation (no archiving; use archive:plans explicitly)
@@ -51,7 +51,7 @@ This is the curated agent subset. The full catalog is `package.json` (exhaustive
 | --------------------------------------------------- | --------------------------------------------------------------- |
 | Local web/dev                                       | `npm run dev` / `npm run build`                                 |
 | Vercel web                                          | `vercel.json` buildCommand: typecheck + `build`                 |
-| Desktop renderer + version/steam/asset sync         | `npm run build:desktop`                                         |
+| Desktop renderer                                    | `npm run build:desktop`                                         |
 | Verified web (push/handoff/CI)                      | `npm run build` (validates generated outputs including version) |
 | Verified desktop (ship/CI)                          | `npm run build:desktop` (plus `assets:check` at release)        |
 | Unpacked Windows app (local iterate)                | `npm run package:win`                                           |
@@ -59,7 +59,10 @@ This is the curated agent subset. The full catalog is `package.json` (exhaustive
 
 **Skip flags:**
 
-- `ALCHEMY_SKIP_ASSETS=1` — skip asset optimization/barrel regeneration; semantics owned by [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md).
+- `ALCHEMY_SKIP_ASSETS=1` — skip optimization and barrel regeneration when
+  invoking the preparation pipeline; ordinary builds do not prepare assets.
+  Semantics are owned by
+  [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md).
 - `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
 - `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; `npm run clean` removes existing maps.
 - `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds and preview smoke in `npm run check` for fast local iteration; CI and ship gates still build.

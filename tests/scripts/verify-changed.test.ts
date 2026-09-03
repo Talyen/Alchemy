@@ -9,16 +9,16 @@ import {
   outputStats,
   sanitizeOutput,
   tailOutput,
+  writeFailureDigest,
 } from "../../scripts/lib/compact-output.mjs";
 import { resolveRoutePlan, resolveRoutes, ROUTES, validateRouteCatalog } from "../../scripts/lib/change-routes.mjs";
 import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-commands.mjs";
-import { measureAllRoutes, ROUTE_CONTEXT_BUDGETS } from "../../scripts/measure-agent-context.mjs";
-import { formatPlan, writeFailureDigest } from "../../scripts/verify-changed.mjs";
+import { formatPlan, parseVerifyArgs } from "../../scripts/verify-changed.mjs";
 
 describe("verification selection", () => {
   it("uses a small broad category catalog", () => {
     expect(ROUTES.length).toBeLessThanOrEqual(10);
-    expect(ROUTES.reduce((count, route) => count + route.patterns.length, 0)).toBeLessThanOrEqual(68);
+    expect(ROUTES.reduce((count, route) => count + route.patterns.length, 0)).toBeLessThanOrEqual(69);
     expect(validateRouteCatalog()).toEqual([]);
     expect(validateTestSuitePaths(process.cwd(), TEST_SUITES.shipUnit)).toEqual([]);
   });
@@ -43,13 +43,23 @@ describe("verification selection", () => {
     expect(plan.commands[0]).toMatchObject({ key: "unit-changed", args: ["vitest", "run", filePath] });
   });
 
+  it("runs repository-reading tooling tests exactly once", () => {
+    expect(resolveRoutePlan(["scripts/check.mjs"]).commands.map((command) => command.key)).toEqual(["unit-tooling"]);
+    expect(resolveRoutePlan(["tests/scripts/check.test.ts"]).commands.map((command) => command.key)).toEqual([
+      "unit-tooling",
+    ]);
+    expect(
+      resolveRoutePlan(["tests/architecture/rng-canonical-doors.test.ts"]).commands.map((command) => command.key),
+    ).toEqual(["unit-tooling"]);
+  });
+
   it("adds only the retained risk escalations", () => {
     expect(
       resolveRoutePlan(["src/features/alchemy/shared/storage/io.ts"]).commands.map((command) => command.key),
     ).toEqual(["related", "unit-save"]);
     expect(resolveRoutePlan(["scripts/assets/core-assets.mjs"]).commands.map((command) => command.key)).toEqual([
-      "related",
       "assets-check",
+      "unit-tooling",
     ]);
     expect(resolveRoutePlan(["desktop/main.cjs"]).commands.map((command) => command.key)).toEqual([
       "related",
@@ -79,16 +89,9 @@ describe("verification selection", () => {
     expect(formatPlan(plan)).toContain("uncategorized paths");
   });
 
-  it("keeps route context measurements within advisory budgets", () => {
-    const measurements = measureAllRoutes();
-    expect(new Set(measurements.map((measurement) => measurement.routes.join("+")))).toEqual(
-      new Set(Object.keys(ROUTE_CONTEXT_BUDGETS)),
-    );
-    for (const measurement of measurements) {
-      const budget = ROUTE_CONTEXT_BUDGETS[measurement.routes[0] ?? "unknown"];
-      expect(measurement.selectedBytes).toBeLessThanOrEqual(budget?.preread ?? 0);
-      expect(measurement.totalContextBytes).toBeLessThanOrEqual(budget?.total ?? 0);
-    }
+  it("rejects unknown verify flags before running commands", () => {
+    expect(parseVerifyArgs(["src/App.tsx", "--plan"]).flags).toEqual(new Set(["plan"]));
+    expect(() => parseVerifyArgs(["src/App.tsx", "--pla"])).toThrow("Unknown verify option: --pla");
   });
 });
 

@@ -6,8 +6,10 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
+import { commandExposure, tailOutput, writeFailureDigest } from "./lib/compact-output.mjs";
 import { classifyCheckPaths, parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { runCommand } from "./lib/run-command.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -53,17 +55,15 @@ function classify(paths) {
 }
 
 function defaultRunner(_label, command, args, env) {
-  const result = spawnSync(command, args, {
+  return runCommand(command, args, {
     cwd: ROOT,
     env,
-    stdio: "inherit",
     shell: process.platform === "win32",
   });
-  return result.status ?? 1;
 }
 
-function stepDefinition(label, command, args, enabled, reason) {
-  return { label, command, args, enabled, reason };
+function stepDefinition(key, label, command, args, enabled, reason) {
+  return { key, label, command, args, enabled, reason };
 }
 
 export async function runCheck(argv = process.argv.slice(2), options = {}) {
@@ -78,8 +78,15 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const skipBuilds = process.env.ALCHEMY_CHECK_SKIP_BUILD === "1";
   const buildReason = skipBuilds ? "skipped via ALCHEMY_CHECK_SKIP_BUILD=1 (CI still builds)" : undefined;
   const definitions = [
-    stepDefinition("changed-path verification", "node", ["scripts/verify-changed.mjs", ...verifyArgs], true),
     stepDefinition(
+      "verification",
+      "changed-path verification",
+      "node",
+      ["scripts/verify-changed.mjs", ...verifyArgs],
+      true,
+    ),
+    stepDefinition(
+      "documentation-format",
       "documentation format",
       "npm",
       ["run", "format:check"],
@@ -87,13 +94,15 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       "included in static checks",
     ),
     stepDefinition(
-      "static checks",
+      "ci-static",
+      "CI static checks",
       "npm",
-      ["run", "check:static"],
+      ["run", "lint:ci"],
       selection.needsCodeChecks,
       "documentation-only change",
     ),
     stepDefinition(
+      "lockfile",
       "lockfile consistency",
       "npm",
       ["ci", "--dry-run", "--ignore-scripts"],
@@ -101,6 +110,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       "package manifests unchanged",
     ),
     stepDefinition(
+      "web-build",
       "web build",
       "npm",
       ["run", "build"],
@@ -108,6 +118,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       buildReason ?? "web runtime inputs unchanged",
     ),
     stepDefinition(
+      "preview-smoke",
       "preview smoke",
       "npm",
       ["run", "smoke:preview"],
@@ -115,6 +126,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       buildReason ?? "web build not required",
     ),
     stepDefinition(
+      "desktop-build",
       "desktop build",
       "npm",
       ["run", "build:desktop"],
@@ -123,6 +135,8 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     ),
   ];
   const steps = [];
+  const artifacts = [];
+  const exposures = [];
   let failed = null;
 
   console.log(`Check run: ${runId} (source ${before.hash})`);
@@ -133,15 +147,40 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     }
     console.log(`\n== ${definition.label} ==`);
     const started = Date.now();
-    const result = runner(definition.label, definition.command, definition.args, env);
-    const code = result instanceof Promise ? await result : result;
+    const runnerResult = await runner(definition.label, definition.command, definition.args, env);
     const durationMs = Date.now() - started;
+    const result =
+      typeof runnerResult === "number"
+        ? { status: runnerResult, elapsedMs: durationMs, output: "" }
+        : {
+            ...runnerResult,
+            status: runnerResult?.status ?? 1,
+            elapsedMs: runnerResult?.elapsedMs ?? durationMs,
+            output: String(runnerResult?.output ?? ""),
+          };
+    const code = result.status ?? 1;
     const status = code === 0 ? "passed" : "failed";
     steps.push({ label: definition.label, status, durationMs });
+    const exposedOutput = code === 0 ? "" : tailOutput(result.output);
+    exposures.push(
+      commandExposure({
+        key: definition.key,
+        label: definition.label,
+        command: `${definition.command} ${definition.args.join(" ")}`,
+        result,
+        exposedOutput,
+      }),
+    );
     if (code !== 0) {
-      failed = { label: definition.label, code };
+      const reportsDir = path.join(ROOT, "reports", "runs", runId, "check");
+      const evidence = writeFailureDigest(reportsDir, definition, result, runId, steps.length - 1);
+      artifacts.push({ path: evidence.digestPath, role: "primary" }, { path: evidence.logPath, role: "secondary" });
+      failed = { label: definition.label, code, ...evidence };
+      console.error(`  ${exposedOutput}`);
+      console.error(`  Failure digest: ${path.relative(ROOT, evidence.digestPath)}`);
       break;
     }
+    console.log(`✓ ${definition.label} (${(durationMs / 1000).toFixed(1)}s)`);
   }
   for (const definition of definitions.slice(steps.length)) {
     steps.push({ label: definition.label, status: "skipped", durationMs: 0, reason: "earlier step failed" });
@@ -165,7 +204,9 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     runId,
     status: failed ? "failed" : "passed",
     command: "npm run check",
+    artifacts,
     counts: { passed, failed: failedCount, skipped },
+    commandExposures: exposures,
     steps,
     sourceDigest: before.hash,
     summary: failed ? `Check failed at ${failed.label}.` : `${passed} steps passed; ${skipped} not applicable.`,

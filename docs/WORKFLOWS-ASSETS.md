@@ -97,9 +97,10 @@ register new tracks there first.
 
 ## Skip mode and verification
 
-Set `ALCHEMY_SKIP_ASSETS=1` only when committed optimized assets and generated
-barrels are already current. CI, Vercel, and release builds use this mode after
-separate generated-output checks; it is not a substitute for regenerating
+Set `ALCHEMY_SKIP_ASSETS=1` only when directly invoking an asset-preparation
+entry point and committed optimized assets and generated barrels are already
+current. Ordinary builds do not run asset preparation; they validate committed
+generated outputs instead. The flag is not a substitute for regenerating
 outputs after source changes.
 
 Before handoff, run the idempotence check. It fails without leaving a mutated

@@ -106,6 +106,14 @@ Result: accepted
 Evidence: evals: skipped (doc-only); `npm run docs:check` passes with advisory warning only.
 Reason: Close the friction→pattern loop without adding routine context — live set stays small, enforced lessons survive as rationale, and the ledger stops punishing small doc fixes.
 
+## 2026-09-03 — Balance local handoff coverage
+
+Pattern: N/A
+Proposal: Keep the three-command verification workflow while making executable-change handoff reuse the CI static aggregate, routing tooling changes through the complete tooling/architecture suite, and recording bounded evidence for failed check stages. Full Vitest and browser execution remain CI-owned.
+Result: accepted
+Evidence: User-approved process review; recent CI escapes from dead exports, documentation drift, and repository-reading tooling tests; focused verifier tests and documentation contracts.
+Reason: Catch inexpensive, recurring CI failures locally without restoring the previous minutes-long handoff gate or duplicating CI browser coverage.
+
 ## Template for future entries
 
 ```

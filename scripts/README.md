@@ -26,12 +26,14 @@ Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (fres
 
 ## Checks / verification (nesting order)
 
-`check.mjs` ⊃ `verify-changed.mjs` → `check:static` ⊃ (`check:generated` +
-`format:check` + `typecheck:all` + `lint` + `lint:boundaries` + `lint:architecture-smoke`).
-`lint:ci` (every-push CI) = `check:static` + `docs:check` + `deadcode` + `playwright --list`.
+For executable changes, `check.mjs` ⊃ `verify-changed.mjs` + `lint:ci` + applicable
+build/smoke steps. `lint:ci` = `check:static` + `docs:check` + `deadcode` +
+`playwright --list`; `check:static` owns generated outputs, formatting, types,
+ESLint, boundaries, and architecture smoke. Documentation-only checks stay on
+the smaller documentation + format route.
 Pre-push runs `npm run check -- --diff` only (lefthook) — do not stack `verify` or
-`docs:check` on top in the same gate; the docs route inside `verify-changed` reuses
-the same contracts.
+`docs:check` on top; `check.mjs` composes the applicable verification and static
+contracts itself.
 
 | Task                  | Command                                                                                                          |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -40,6 +42,11 @@ the same contracts.
 | Docs gate             | `npm run docs:check` (`check-docs.mjs` → 9 gating contracts + plans + 1 advisory ledger reminder)                |
 | Static set            | `npm run check:static` (generated + format + typecheck + eslint + boundaries + arch-smoke)                       |
 | Bundle budget         | `npm run check:bundle` (constants in `lib/bundle-budget.mjs`; ship-only, requires `dist/`)                       |
+
+Tooling and configuration paths run the complete `tests/scripts` +
+`tests/architecture` suite because those tests inspect repository files and are
+not reliably discoverable through the import graph. Full Vitest and browser
+execution remain CI-owned.
 
 `check:bundle` runs in `check:ship` only — it needs a built `dist/` + `dist-desktop/`
 and skips with a warning otherwise. Size regressions surface at ship/release, not per-push.
@@ -58,9 +65,10 @@ Desktop: `ensure-electron.mjs` (orchestrator) → `electron-download.mjs` + `ele
 
 ## Audits (periodic sweep, not a push gate)
 
-`npm run audit` (dispatcher: `--types/--amplification/--content/--hotspots`, default `--all`)
-forwards to `npm run audit:all` (`audit-all.mjs`). Gating probes: knip, depcruise,
-eslint complexity, content-audit. Advisory trend probes (always exit 0):
+`npm run audit` runs `audit-all.mjs` by default. Pass a focused selector after
+the npm separator (`npm run audit -- --types|--amplification|--content|--hotspots`)
+to dispatch one probe instead. Gating probes: knip, depcruise, eslint complexity,
+content-audit. Advisory trend probes (always exit 0):
 `audit-type-escapes.mjs`, `audit-change-amplification.mjs` — direction signals, see
 `docs/Audits/TypeSafetyAudit.md`. `context-hotspots` / `runs:show` are advisory process
 evidence and never block handoff.

@@ -86,7 +86,9 @@ The authored amount remains `1`; recurring action damage follows Alchemy’s exi
 - **Persistence:** content-version migration for active/parked/pending battle snapshots and idempotent normalization.
 - **Balance/docs:** updated cause hints, report methodology, and reference rules.
 
-Run focused unit/content/migration tests first, then `npm run verify -- --diff` and the relevant battle E2E flow when needed. Run `npm run docs:check` while this plan is active. When implementation handoff is complete, mark this plan `complete`, refresh its `updated` date, and run `npm run docs:check:final` to archive it.
+Implementation was completed in `f07bbb72`. Current plan lifecycle and
+verification commands are owned by [the plans guide](../README.md); this
+archived record is not an operational checklist.
 
 ## Acceptance criteria
 

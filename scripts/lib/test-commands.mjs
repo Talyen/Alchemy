@@ -65,6 +65,12 @@ export const COMMANDS = Object.freeze({
       "tests/desktop-package-layout.test.ts",
     ],
   },
+  "unit-tooling": {
+    label: "tooling and architecture unit tests",
+    reason: "tooling checks read repository files and cannot be selected reliably from imports alone",
+    command: NPM,
+    args: ["test", "--", ...TEST_SUITES.tooling],
+  },
   "unit-performance": {
     label: "performance harness unit tests",
     reason: "performance harness and runtime marks share profiling contracts",

@@ -34,7 +34,7 @@
     "smoke:preview": "node scripts/smoke-preview.mjs",
     "generate:patch-notes": "node scripts/generate-patch-notes.mjs",
     "content:audit": "node scripts/content-audit.mjs",
-    "audit": "node scripts/audit.mjs --all",
+    "audit": "node scripts/audit.mjs",
     "audit:all": "node scripts/audit-all.mjs",
     "ci:summarize": "node scripts/ci-summarize.mjs",
     "verify": "node scripts/verify-changed.mjs",
