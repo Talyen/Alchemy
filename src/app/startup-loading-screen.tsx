@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { LOADING_WORDS } from "@/app/loading-words";
+import { screenTitleClass } from "@/features/alchemy/shared/config";
 import { LOADING_WORD_FADE_MS, LOADING_WORD_INTERVAL_MS } from "@/lib/game-constants";
+import { cn } from "@/lib/utils";
 
 interface Props {
   progress: number;
@@ -29,6 +31,7 @@ export function StartupLoadingScreen({ progress }: Props) {
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-3 bg-background">
+      <h1 className={cn("font-sans", screenTitleClass, "text-center")}>Alchemy</h1>
       <div className="h-[4px] w-[192px] overflow-hidden rounded-full bg-border">
         <div className="alchemy-startup-bar h-full w-full rounded-full" style={{ transform: `scaleX(${fill})` }} />
       </div>

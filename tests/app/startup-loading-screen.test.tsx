@@ -24,6 +24,7 @@ describe("StartupLoadingScreen", () => {
   it("advances to a different word when the random source repeats", () => {
     const { unmount } = render(<StartupLoadingScreen progress={0.5} />);
 
+    expect(screen.getByRole("heading", { name: "Alchemy" })).toBeTruthy();
     expect(screen.getByText("Forging...")).toBeTruthy();
 
     act(() => {
