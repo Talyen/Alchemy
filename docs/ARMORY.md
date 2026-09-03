@@ -2,7 +2,7 @@
 
 The Armory is the permanent meta-progression screen for managing **Gear** (per-character equipment with affix rolls), fixed collectible **Trinkets**, and **Crafting Currencies**. It is the primary surface for `useGearArmorySlice` and the gateway to their in-battle effects.
 
-> **Related:** [ARCHITECTURE.md § Permanent Gear](./ARCHITECTURE.md#permanent-gear-gear-store), [REFERENCE.md § Domain Glossary](./REFERENCE.md#domain-glossary), [WORKFLOWS.md § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
+> **Related:** [ARCHITECTURE.md § Permanent Gear](./ARCHITECTURE.md#permanent-gear-gear-store), [GAME_RULES.md § Domain Glossary](./GAME_RULES.md#domain-glossary), [WORKFLOWS.md § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
 ## Layout
 
@@ -112,10 +112,3 @@ maintaining a second exhaustive command here. Test ownership is split between
 pure Gear rules, aggregate/persistence contracts, Armory screen behavior,
 architecture guards, and player flows; the changed-path route selects the
 current files for each layer.
-
-Focused suites: `tests/features/alchemy/meta/screens/armory-screen*.test.tsx`,
-`tests/features/alchemy/meta/screens/armory/*.test.ts`,
-`tests/features/alchemy/meta/meta-consolidation.test.ts`,
-`tests/e2e/armory.ts` + `tests/armory.spec.ts`, and the `gear` E2E route
-(`npm run test:e2e:gear`). Meta lib contracts live under `tests/lib/gear`,
-`tests/lib/homestead*`, and `tests/lib/talents*`.

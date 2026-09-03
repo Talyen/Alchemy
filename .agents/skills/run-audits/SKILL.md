@@ -31,4 +31,4 @@ Do not edit guides to record results. Rejected/deferred proposals and intentiona
 
 ## Handoff
 
-Lead with the outcome: findings fixed by audit, zero-finding audits, proposals awaiting approval, changed authored paths, verification status, toolchain limitations. Summarize diagnostics; never paste long output.
+Report findings fixed by audit, zero-finding audits, proposals awaiting approval, verification status, and toolchain limitations. Summarize diagnostics; never paste long output.

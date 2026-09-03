@@ -11,6 +11,9 @@ Past dispositions live in [decisions.md](decisions.md). Check it before confirmi
 | 10-E2ETestQuality, 17-UnitTest                                                                                                                | [TestQualityAudit.md](TestQualityAudit.md)               |
 | 06-DesignSystemConsistency, 16-UIInteractionFeedback                                                                                          | [UIConsistencyAudit.md](UIConsistencyAudit.md)           |
 
+DocumentationStaleness, SideEffectSurface, Performance, and TypeSafety are new
+in the 2026 pack (no former-name mapping).
+
 ## Shared contract
 
 Every finding states: candidate and confirming evidence; user or maintenance impact; a preferred remedy (delete → reuse → local simplify before parameterizing or abstracting); why this size beats both a smaller patch that leaves the cause and a larger abstraction; expected authored LOC/declaration direction; and matching verification.

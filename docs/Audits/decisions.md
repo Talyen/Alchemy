@@ -1,6 +1,6 @@
 # Audit Decisions Ledger
 
-Durable dispositions from past audit passes. Check this ledger before confirming a candidate; do not re-propose a dispositioned item unless the evidence has changed (new callers, new drift, changed ownership). This is the only file under `docs/Audits/` that records outcomes — run logs, Done tables, and dated status still do not belong in the audit guides.
+Durable dispositions from past audit passes. Check this ledger before confirming a candidate; do not re-propose a dispositioned item unless the evidence has changed (new callers, new drift, changed ownership). This is the only file under `docs/Audits/` that records outcomes — run logs, Done tables, and dated status still do not belong in the audit guides. Not here: instruction-memory changes (see `.agents/knowledge/skill-impact.md`) or agent pain intake (see `.agents/FRICTION_LOG.md`).
 
 ## How to use
 

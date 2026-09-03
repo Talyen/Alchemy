@@ -15,4 +15,3 @@ Run `npm run verify -- --diff` (or explicit paths) over `git status --short`. Us
 2. Finalize or archive execution plans explicitly when this task owns them; plan lifecycle is workflow hygiene, not part of the product correctness gate.
 3. Use `npm run context:hotspots` only as advisory process evidence. It must not block handoff.
 4. If this session used the Cursor IDE browser, list tabs and close every one; unlock is not teardown.
-5. Lead the handoff with the game/workflow outcome, then concise verification status. Do not paste logs, traces, or diff dumps.
