@@ -6,7 +6,7 @@ import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { CURRENCY_COUNT_LABEL_CLASS } from "./currency-styles";
 import { surfaceSelectedRingClass } from "../../../../shared/config";
 
-export const ARMORY_CURRENCY_TOOLTIP_CLASS = "armory-inventory-tooltip !shadow-none";
+const ARMORY_CURRENCY_TOOLTIP_CLASS = "armory-inventory-tooltip !shadow-none";
 
 export function CurrencyChip({
   currency,

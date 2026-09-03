@@ -107,7 +107,7 @@ export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsPr
   );
 }
 
-export function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) {
+function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) {
   return (
     <div className="space-y-4">
       <div className={settingsPanelShellClass}>
@@ -136,7 +136,7 @@ export function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsPr
   );
 }
 
-export function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
+function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
   if (!import.meta.env.DEV) return null;
   return (
     <section className="rounded-shell-panel border border-primary/40 p-5 surface-muted">

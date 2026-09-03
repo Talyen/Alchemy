@@ -3,7 +3,6 @@ export {
   loadAlchemySaveState,
   saveAlchemySaveData,
   saveAlchemySaveDataForExit,
-  evaluateSaveCandidates,
   type SaveLoadState,
 } from "./io";
 export type * from "./types";

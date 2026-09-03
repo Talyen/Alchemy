@@ -12,7 +12,7 @@ import {
 import { defaultSaveData } from "./defaults";
 import type { SaveData } from "./types";
 
-export type SaveLoadStatus =
+type SaveLoadStatus =
   | { kind: "ok"; warnings?: string[] }
   | { kind: "unsupported-newer-schema"; detectedSchemaVersion: number }
   | { kind: "unsupported-newer-content"; detectedContentVersion: number }

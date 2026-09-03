@@ -7,7 +7,7 @@ import { evaluateSaveCandidates, fallbackSaveData, type SaveLoadState } from "./
 import { areWritesDisabled, SaveWriteQueue, setWritesDisabled } from "./save-write-queue";
 
 export { evaluateSaveCandidates, fallbackSaveData } from "./save-candidates";
-export type { SaveLoadState, SaveLoadStatus } from "./save-candidates";
+export type { SaveLoadState } from "./save-candidates";
 
 let saveBackend: SaveBackend = createPlatformSaveBackend();
 

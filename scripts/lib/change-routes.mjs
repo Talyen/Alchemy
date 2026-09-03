@@ -116,7 +116,7 @@ export const ROUTES = Object.freeze([
     ["src/**", "public/**", "index.html"],
     ["related"],
     [doc("docs/ARCHITECTURE.md", "Directory layout (`src/features/alchemy/`)", "runtime architecture")],
-    "src/app.tsx",
+    "src/App.tsx",
   ),
   route(
     "unit-test",

@@ -20,7 +20,7 @@ import {
   TRAIT_FORGE_PER_TURN,
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
-export const ENEMY_TURN_CONSTANTS = {
+const ENEMY_TURN_CONSTANTS = {
   IRON_HIDE_OPTIONS_COUNT: 3,
 };
 

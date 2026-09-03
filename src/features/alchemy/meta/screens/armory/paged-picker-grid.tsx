@@ -79,5 +79,3 @@ export function pickerPageSlice<T>(items: T[], safePage: number, pageSize = PICK
 export function pickerFillerCount(visibleCount: number, pageSize = PICKER_PAGE_SIZE): number {
   return Math.max(0, pageSize - visibleCount);
 }
-
-export { FILLER_INDICES };
