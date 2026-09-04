@@ -91,14 +91,12 @@ export function GameModeSelectScreen({
   onSelectCampaign,
   onSelectLabyrinth,
   onSelectWildwood,
-  onOpenMenu,
 }: {
   resumableModes: Record<GameModeId, boolean>;
   finishedRunCharacters: CharacterId[];
   onSelectCampaign: () => void;
   onSelectLabyrinth: () => void;
   onSelectWildwood: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const handlers: Record<GameModeId, () => void> = {
     campaign: onSelectCampaign,
@@ -109,8 +107,6 @@ export function GameModeSelectScreen({
   return (
     <TitledScreenShell
       title="Choose Your Adventure"
-      onOpenMenu={onOpenMenu}
-      menuLabel="Open game mode menu"
       minHeightClass="min-h-[50cqh]"
       maxWidthClass={gameModeRowShellWidthClass}
     >

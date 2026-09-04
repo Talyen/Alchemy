@@ -130,6 +130,8 @@ describe("SaveDataSchema", () => {
       autoEndTurn: false,
       brightness: 120,
       selectedAspectRatio: "16:10",
+      backgroundParticlesIntensity: 40,
+      backgroundGlowIntensity: 60,
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -140,7 +142,16 @@ describe("SaveDataSchema", () => {
       expect(result.data.autoEndTurn).toBe(false);
       expect(result.data.brightness).toBe(120);
       expect(result.data.selectedAspectRatio).toBe("16:10");
+      expect(result.data.backgroundParticlesIntensity).toBe(40);
+      expect(result.data.backgroundGlowIntensity).toBe(60);
     }
+  });
+
+  it("defaults special effects intensities to full and clamps out-of-range values", () => {
+    expect(SaveDataSchema.parse({}).backgroundParticlesIntensity).toBe(100);
+    expect(SaveDataSchema.parse({}).backgroundGlowIntensity).toBe(100);
+    expect(SaveDataSchema.parse({ backgroundParticlesIntensity: -10 }).backgroundParticlesIntensity).toBe(0);
+    expect(SaveDataSchema.parse({ backgroundGlowIntensity: 250 }).backgroundGlowIntensity).toBe(100);
   });
 
   it("uses default aspect ratio when selectedResolution is omitted", () => {

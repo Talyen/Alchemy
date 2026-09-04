@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { type BattleCard, type KeywordId, type TalentXP, type TrinketEntry } from "@/lib/game-data";
+import { type BattleCard, type TalentXP, type TrinketEntry } from "@/lib/game-data";
 import { type MaterialId } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
@@ -160,11 +160,7 @@ export function MysteryRewardSummary({
     (e) => e.kind !== "gainGold" && e.kind !== "gainMaterial" && e.kind !== "gainXP",
   );
 
-  const xpByKeyword: Partial<Record<KeywordId, number>> = {};
-  for (const effect of xpEffects) {
-    xpByKeyword[effect.keyword] = (xpByKeyword[effect.keyword] ?? 0) + effect.amount;
-  }
-  const xpKeywordEntries = Object.entries(xpByKeyword) as Array<[KeywordId, number]>;
+  const xpKeywords = [...new Set(xpEffects.map((effect) => effect.keyword))];
 
   const totalGold = resourceEffects
     .filter((e): e is typeof e & { kind: "gainGold" } => e.kind === "gainGold")
@@ -183,9 +179,8 @@ export function MysteryRewardSummary({
   return (
     <div className="flex min-h-[56cqh] w-full flex-1 flex-col items-center justify-center space-y-6 text-center">
       <KeywordProgressGrid
-        entries={xpKeywordEntries.map(([kw, amount]) => ({
+        entries={xpKeywords.map((kw) => ({
           kw,
-          runXP: amount,
           totalXP: (talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0),
         }))}
         size="lg"

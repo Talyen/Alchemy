@@ -13,7 +13,6 @@ export function EquipmentShopScreen({
   onBuyGear,
   onRefresh,
   onContinue,
-  onOpenMenu,
 }: {
   gold: number;
   gear: GearInstance[];
@@ -24,7 +23,6 @@ export function EquipmentShopScreen({
   onBuyGear: (instance: GearInstance) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   return (
     <GenericShopScreen
@@ -39,7 +37,6 @@ export function EquipmentShopScreen({
       onBuy={(instance) => onBuyGear(instance)}
       onRefresh={onRefresh}
       onContinue={onContinue}
-      onOpenMenu={onOpenMenu}
       renderItem={(instance, price, purchased, onBuy) => (
         <PurchasableGearItem instance={instance} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />
       )}

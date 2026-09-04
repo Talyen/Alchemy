@@ -100,6 +100,28 @@ describe("item portrait shine", () => {
     );
     expect(container.querySelector(".shine-border")).toBeNull();
   });
+
+  it("reveals undiscovered art in full color on hover while keeping the dim", () => {
+    const trinket = trinketById.meteorite!;
+    const { container } = render(
+      <CompendiumTile
+        item={{
+          id: trinket.id,
+          title: "Undiscovered",
+          subtitle: undefined,
+          descriptionLines: ["hidden"],
+          art: trinket.art,
+          discovered: false,
+          hoverScope: "collection-trinket",
+          frameType: "trinket",
+        }}
+      />,
+    );
+    const img = container.querySelector("img");
+    expect(img?.className).toContain("grayscale");
+    expect(img?.className).toContain("group-hover:grayscale-0");
+    expect(img?.className).toContain("opacity-45");
+  });
 });
 
 describe("boon tooltip chip placement and styling", () => {

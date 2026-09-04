@@ -94,7 +94,6 @@ function routeElement() {
         },
       },
     },
-    onOpenBattleMenu: vi.fn(),
   } as never);
 }
 

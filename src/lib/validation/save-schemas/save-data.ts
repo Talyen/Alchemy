@@ -3,6 +3,8 @@ import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import {
+  DEFAULT_BACKGROUND_GLOW_PCT,
+  DEFAULT_BACKGROUND_PARTICLES_PCT,
   DEFAULT_BRIGHTNESS_PCT,
   DEFAULT_MASTER_VOLUME_PCT,
   DEFAULT_MUSIC_VOLUME_PCT,
@@ -86,6 +88,18 @@ export const SaveDataSchema = z.preprocess(
         .number()
         .catch(DEFAULT_BRIGHTNESS_PCT)
         .transform((v) => Math.max(SETTINGS_RANGES.brightness.min, Math.min(SETTINGS_RANGES.brightness.max, v))),
+      backgroundParticlesIntensity: z
+        .number()
+        .catch(DEFAULT_BACKGROUND_PARTICLES_PCT)
+        .transform((v) =>
+          Math.max(SETTINGS_RANGES.specialEffects.min, Math.min(SETTINGS_RANGES.specialEffects.max, v)),
+        ),
+      backgroundGlowIntensity: z
+        .number()
+        .catch(DEFAULT_BACKGROUND_GLOW_PCT)
+        .transform((v) =>
+          Math.max(SETTINGS_RANGES.specialEffects.min, Math.min(SETTINGS_RANGES.specialEffects.max, v)),
+        ),
       discoveredCardIds: deduplicatedStringArraySchema(),
       encounteredEnemyIds: deduplicatedStringArraySchema(),
       discoveredTrinketIds: deduplicatedStringArraySchema(),

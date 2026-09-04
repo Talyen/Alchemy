@@ -47,7 +47,6 @@ export function ArmoryScreen({
   craftingCurrencies = EMPTY_CRAFTING_CURRENCIES,
   finishedRunCharacters,
   browseOnly,
-  onOpenMenu,
   onEquip,
   onUnequip,
   onEquipTrinket,
@@ -154,7 +153,7 @@ export function ArmoryScreen({
           salvageMode && "armory-salvage-cursor",
         )}
       >
-        <ArmoryScreenHeader onOpenMenu={onOpenMenu} />
+        <ArmoryScreenHeader />
         {browseOnly ? (
           <p className="mx-auto mt-3 rounded-lg border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-center text-sm text-amber-100">
             Equipment can be changed after combat.

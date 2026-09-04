@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { screenDescriptionClass, screenShellPaddingClass, screenTitleClass } from "../config";
-import { HamburgerTrigger } from "./navigation";
 
 export function ScreenHeader({
   title,
@@ -84,8 +83,6 @@ export function ScreenShell({
 export function TitledScreenShell({
   title,
   eyebrow,
-  onOpenMenu,
-  menuLabel,
   children,
   className,
   maxWidthClass,
@@ -95,8 +92,6 @@ export function TitledScreenShell({
 }: {
   title: ReactNode;
   eyebrow?: ReactNode;
-  onOpenMenu: (rect?: DOMRect) => void;
-  menuLabel: string;
   children: ReactNode;
   className?: string;
   maxWidthClass?: string;
@@ -104,15 +99,6 @@ export function TitledScreenShell({
   align?: "center" | "start";
   headerActions?: ReactNode;
 }) {
-  const trailing = headerActions ? (
-    <div className="flex items-center gap-2">
-      {headerActions}
-      <HamburgerTrigger onClick={onOpenMenu} label={menuLabel} />
-    </div>
-  ) : (
-    <HamburgerTrigger onClick={onOpenMenu} label={menuLabel} />
-  );
-
   return (
     <div className="relative h-full w-full overflow-hidden">
       <PageLayout {...(align ? { align } : {})}>
@@ -121,7 +107,7 @@ export function TitledScreenShell({
           {...(maxWidthClass ? { maxWidthClass } : {})}
           {...(minHeightClass ? { minHeightClass } : {})}
         >
-          <ScreenHeaderRow title={title} eyebrow={eyebrow} trailing={trailing} />
+          <ScreenHeaderRow title={title} eyebrow={eyebrow} {...(headerActions ? { trailing: headerActions } : {})} />
           {children}
         </ScreenShell>
       </PageLayout>

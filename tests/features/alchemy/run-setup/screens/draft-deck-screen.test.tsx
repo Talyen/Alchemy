@@ -17,7 +17,6 @@ describe("DraftDeckScreen", () => {
     const user = userEvent.setup();
     const onPick = vi.fn();
     const onComplete = vi.fn();
-    const onOpenMenu = vi.fn();
 
     const card1 = makeTestCard({ id: "strike", title: "Strike" });
     const card2 = makeTestCard({ id: "defend", title: "Defend" });
@@ -29,7 +28,6 @@ describe("DraftDeckScreen", () => {
         draftedCards={[card1]}
         draftChoices={[card1, card2, card3]}
         onPick={onPick}
-        onOpenMenu={onOpenMenu}
       />,
     );
 
@@ -52,15 +50,7 @@ describe("DraftDeckScreen", () => {
       makeTestCard({ id: `card-${index}`, title: `Card ${index}` }),
     );
 
-    render(
-      <DraftDeckScreen
-        onComplete={onComplete}
-        draftedCards={drafted}
-        draftChoices={[]}
-        onPick={onPick}
-        onOpenMenu={vi.fn()}
-      />,
-    );
+    render(<DraftDeckScreen onComplete={onComplete} draftedCards={drafted} draftChoices={[]} onPick={onPick} />);
 
     expect(screen.getByText("Draft Complete")).toBeDefined();
     expect(screen.getByText(`You drafted ${String(DRAFT_ROUNDS)} cards. Ready to begin your run.`)).toBeDefined();
@@ -73,15 +63,7 @@ describe("DraftDeckScreen", () => {
   it("updates plasma interaction on hovering draft choice", () => {
     const card = makeTestCard({ id: "fireball", title: "Fireball", tags: ["burn"] });
 
-    render(
-      <DraftDeckScreen
-        onComplete={vi.fn()}
-        draftedCards={[]}
-        draftChoices={[card]}
-        onPick={vi.fn()}
-        onOpenMenu={vi.fn()}
-      />,
-    );
+    render(<DraftDeckScreen onComplete={vi.fn()} draftedCards={[]} draftChoices={[card]} onPick={vi.fn()} />);
 
     const choiceBtn = screen.getByRole("button", { name: /Fireball/i });
     fireEvent.mouseEnter(choiceBtn);

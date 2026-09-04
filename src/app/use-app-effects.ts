@@ -25,7 +25,6 @@ import { logError } from "@/lib/error-logger";
 import { isDesktop, setDisplayMode as setPlatformDisplayMode } from "@/lib/platform";
 import { allGameArt, essentialGameArt } from "@/lib/game-data";
 import { preloadImagesInBatches } from "@/lib/image-preload";
-import { scheduleIdle } from "@/lib/preload";
 import type { DisplayMode } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
@@ -237,9 +236,7 @@ export function useInitialLoadReady({
       const essential = new Set(essentialGameArt);
       const deferred = allGameArt.filter((src) => !essential.has(src));
       if (deferred.length === 0) return;
-      scheduleIdle(() => {
-        void preloadImagesInBatches(deferred, IMAGE_PRELOAD_BATCH_SIZE);
-      });
+      void preloadImagesInBatches(deferred, IMAGE_PRELOAD_BATCH_SIZE);
     }
 
     if (skipGate) {

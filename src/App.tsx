@@ -25,6 +25,8 @@ import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltip-root";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
+import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
+import { BattleAutoplayToggle } from "@/features/alchemy/run-loop/screens/battle-screen/autoplay-toggle";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { clearAlchemySaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
@@ -40,6 +42,8 @@ import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-ru
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+
+const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" };
 
 type GameMenuState = ReturnType<typeof useGameMenuState>;
 
@@ -58,6 +62,8 @@ function AppMainContent({
   stageStyle,
   aspectMode,
   brightness,
+  backgroundParticlesIntensity,
+  backgroundGlowIntensity,
   run,
   renderedScreen,
   pagePhase,
@@ -70,6 +76,8 @@ function AppMainContent({
   stageStyle: React.CSSProperties;
   aspectMode: "standard" | "narrow" | "ultrawide";
   brightness: number;
+  backgroundParticlesIntensity: number;
+  backgroundGlowIntensity: number;
   run: AlchemyRunCommands;
   renderedScreen: Screen;
   pagePhase: "enter" | "exit";
@@ -110,6 +118,8 @@ function AppMainContent({
   const plasmaColorPair = useUiStore(
     (state) => state.plasmaInteraction?.colorPair ?? state.plasmaBaseline?.colorPair ?? null,
   );
+  const effectivePlasmaColorPair =
+    plasmaColorPair ?? (renderedScreen === "options" ? OPTIONS_PREVIEW_PLASMA_PAIR : null);
 
   const [deletingUnsupportedSave, setDeletingUnsupportedSave] = useState(false);
   const handleDeleteUnsupportedSave = useCallback(() => {
@@ -120,6 +130,12 @@ function AppMainContent({
     });
   }, [deletingUnsupportedSave]);
 
+  const showGlobalMenuButton = renderedScreen !== "menu" && !saveBlockedByNewerVersion;
+  const showBattleAutoplay = showGlobalMenuButton && renderedScreen === "battle";
+  const { isAutoplayEnabled, setAutoplayEnabled } = run.routeCommands.battle;
+  const toggleAutoplay = useCallback(() => {
+    setAutoplayEnabled(!isAutoplayEnabled);
+  }, [isAutoplayEnabled, setAutoplayEnabled]);
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
   const content = saveBlockedByNewerVersion ? (
     <UnsupportedSaveOverlay onDeleteSaveAndContinue={handleDeleteUnsupportedSave} deleting={deletingUnsupportedSave} />
@@ -134,7 +150,6 @@ function AppMainContent({
           {renderAlchemyScreenRoute({
             screen: renderedScreen,
             routeCommands: run.routeCommands,
-            onOpenBattleMenu: gameMenu.openBattleMenu,
             onClearSaveData: dev.clearSaveData,
             onUnlockAllDevMode: dev.unlockAllDevMode,
             onBackFromOptions: nav.backFromOptions,
@@ -162,9 +177,16 @@ function AppMainContent({
           renderedScreen={renderedScreen}
           particleColors={particleColors}
           particleAlphaMultiplier={particleAlphaMultiplier}
+          backgroundParticlesIntensity={backgroundParticlesIntensity}
         />
-        <KeywordPlasmaBackground colorPair={plasmaColorPair} />
+        <KeywordPlasmaBackground colorPair={effectivePlasmaColorPair} intensity={backgroundGlowIntensity} />
         {content}
+        {showGlobalMenuButton ? (
+          <div className="absolute top-4 right-4 z-[80] flex items-center gap-2">
+            {showBattleAutoplay ? <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplay} /> : null}
+            <HamburgerTrigger onClick={gameMenu.openGameMenu} label="Open game menu" />
+          </div>
+        ) : null}
         <div
           className="pointer-events-none absolute inset-0 z-[90] bg-black"
           style={{ opacity: Math.max(0, 1 - brightness / 100) }}
@@ -232,6 +254,8 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
             stageStyle={stageStyle}
             aspectMode={aspectMode}
             brightness={settings.brightness}
+            backgroundParticlesIntensity={settings.backgroundParticlesIntensity}
+            backgroundGlowIntensity={settings.backgroundGlowIntensity}
             run={run}
             renderedScreen={renderedScreen}
             pagePhase={pagePhase}

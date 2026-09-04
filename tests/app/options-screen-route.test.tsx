@@ -37,7 +37,6 @@ vi.mock("@/features/alchemy/meta/screens", () => ({
 }));
 
 const routeContext: OptionsRouteCtx = {
-  onOpenBattleMenu: vi.fn(),
   onClearSaveData: vi.fn(),
   onUnlockAllDevMode: vi.fn(),
   onBackFromOptions: vi.fn(),

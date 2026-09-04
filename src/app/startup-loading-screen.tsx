@@ -1,15 +1,13 @@
-import { LOADING_WORD_FADE_MS } from "@/lib/game-constants";
+import { INITIAL_LOAD_MIN_DURATION_MS, LOADING_WORD_FADE_MS } from "@/lib/game-constants";
 import { useSyncedLoadingWord } from "./use-synced-loading-word";
 
 interface Props {
   progress: number;
 }
 
-const WORD = "Alchemy";
-
 export function StartupLoadingScreen({ progress }: Props) {
   const fill = Math.min(1, Math.max(0, progress));
-  const { wordIndex, loadingWord, litCount } = useSyncedLoadingWord();
+  const { wordIndex, loadingWord } = useSyncedLoadingWord();
 
   return (
     <div
@@ -20,33 +18,25 @@ export function StartupLoadingScreen({ progress }: Props) {
       aria-valuenow={Math.round(fill * 100)}
       aria-label="Loading Alchemy"
     >
-      <h1 className="font-sans text-4xl font-black tracking-[0.15em] uppercase" aria-label="Alchemy">
-        {WORD.split("").map((letter, i) => {
-          const lit = i < litCount;
-          return (
-            <span
-              key={i}
-              aria-hidden
-              className="inline-block"
-              style={{
-                color: lit ? "transparent" : "#44403c",
-                background: lit ? "linear-gradient(180deg in oklch, #fde68a, #b45309)" : undefined,
-                WebkitBackgroundClip: lit ? "text" : undefined,
-                backgroundClip: lit ? "text" : undefined,
-                textShadow: lit ? "0 0 22px hsl(42 100% 60% / 0.45)" : undefined,
-                transform: lit ? "translateY(-2px)" : "translateY(0)",
-                transition: "transform 300ms ease, color 300ms ease",
-              }}
-            >
-              {letter}
-            </span>
-          );
-        })}
+      <h1
+        className="alchemy-loading-logo-pulse relative font-sans text-4xl font-black tracking-[0.15em] uppercase"
+        aria-label="Alchemy"
+      >
+        <span aria-hidden className="text-stone-700">
+          Alchemy
+        </span>
+        <span
+          aria-hidden
+          className="alchemy-loading-logo-fill absolute inset-y-0 left-0 overflow-hidden"
+          style={{ animationDuration: `${INITIAL_LOAD_MIN_DURATION_MS}ms` }}
+        >
+          <span className="w-max text-primary">Alchemy</span>
+        </span>
       </h1>
       <p
         key={wordIndex}
-        className="alchemy-loading-word text-[12px] font-medium tracking-[0.18em] uppercase"
-        style={{ animationDuration: `${LOADING_WORD_FADE_MS}ms, 1100ms` }}
+        className="alchemy-loading-word -mt-3 text-[12px] font-medium tracking-[0.18em] text-muted-foreground uppercase"
+        style={{ animationDuration: `${LOADING_WORD_FADE_MS}ms` }}
       >
         {loadingWord}...
       </p>

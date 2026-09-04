@@ -43,6 +43,8 @@ describe("save migration contract", () => {
       "activeRun",
       "autoEndTurn",
       "autoplayEnabled",
+      "backgroundGlowIntensity",
+      "backgroundParticlesIntensity",
       "bondedCompanions",
       "brightness",
       "completedDifficulties",

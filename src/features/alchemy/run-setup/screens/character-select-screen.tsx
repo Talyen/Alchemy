@@ -131,22 +131,15 @@ function CharacterCard({
 
 export function CharacterSelectScreen({
   onSelect,
-  onOpenMenu,
   finishedRunCharacters,
 }: {
   onSelect: (characterId: CharacterId) => void;
-  onOpenMenu: (rect?: DOMRect) => void;
   finishedRunCharacters: CharacterId[];
 }) {
   const charIds = Object.keys(characters) as CharacterId[];
 
   return (
-    <TitledScreenShell
-      title="Choose Your Hero"
-      onOpenMenu={onOpenMenu}
-      menuLabel="Open character select menu"
-      maxWidthClass={chooserHeroRowShellWidthClass}
-    >
+    <TitledScreenShell title="Choose Your Hero" maxWidthClass={chooserHeroRowShellWidthClass}>
       <div className={cn("mt-6 grid w-full grid-cols-4 justify-items-center gap-y-6", chooserHeroRowGapClass)}>
         {charIds.map((id) => {
           const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);

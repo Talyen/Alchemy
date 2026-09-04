@@ -27,6 +27,7 @@ describe("CompanionCardNode", () => {
     );
     const img = container.querySelector("img");
     expect(img?.className).toContain("grayscale");
+    expect(img?.className).toContain("group-hover:grayscale-0");
     expect(screen.queryByRole("button")).toBeNull();
   });
 

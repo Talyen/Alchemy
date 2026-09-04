@@ -45,7 +45,6 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={onSelectReward}
-        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -66,7 +65,6 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -95,25 +93,23 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
 
     expect(screen.getByText("+13")).toBeTruthy();
   });
 
-  it("places the hamburger menu trigger in the screen header", () => {
+  it("does not render a hamburger menu trigger inside the screen header", () => {
     render(
       <RewardsScreen
         rewardState={readRunSession().rewardState}
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Open rewards menu" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /menu/i })).toBeNull();
   });
 
   it("prompts with the reward kind instead of a generic choose label", () => {
@@ -123,7 +119,6 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -147,7 +142,6 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
     expect(screen.getByRole("heading", { name: "Choose a Trinket to add to your Armory" })).toBeTruthy();
@@ -170,7 +164,6 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
     expect(screen.getByRole("heading", { name: "Choose a Boon for this Run" })).toBeTruthy();
@@ -185,7 +178,6 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
     expect(screen.getByRole("heading", { name: "Add Gear to your Armory" })).toBeTruthy();
@@ -198,7 +190,6 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -219,7 +210,6 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -251,7 +241,6 @@ describe("RewardsScreen", () => {
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
 

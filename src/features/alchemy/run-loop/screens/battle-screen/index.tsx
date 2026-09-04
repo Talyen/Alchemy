@@ -5,8 +5,7 @@ import { CardGhostLayer } from "../../battle/presentation/card-ghost-layer";
 import { CardTransferLayer } from "../../battle/presentation/card-transfer-layer";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
-import { HamburgerTrigger, PageLayout } from "../../../shared/ui/shared-ui";
-import { BattleAutoplayToggle } from "./autoplay-toggle";
+import { PageLayout } from "../../../shared/ui/shared-ui";
 import { BattleTrinketInspectButton, BattleBoonInspectOverlay } from "./trinket-inspect";
 import { uniqueRunBoons } from "./unique-run-trinkets";
 import { WishOverlay } from "./wish-overlay";
@@ -14,6 +13,7 @@ import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleSc
 import { getEnemyStatusChips, getPlayerStatusChips, isAlchemyDevBuild } from "../../../shared/utils";
 import { BackgroundParticles } from "../../../shared/ui/background-particles";
 import { getScreenParticleConfig } from "@/app/screen-particle-config";
+import { useSettingsStore } from "../../../shared/stores/settings-store";
 
 interface BattleScreenProps {
   battleScreenData: BattleScreenData;
@@ -24,12 +24,9 @@ interface BattleScreenProps {
   stagePixelRatio: number;
   refs: BattleRefsProps;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
-  onOpenMenu: (rect?: DOMRect) => void;
   onWishChoice: (card: BattleCard | null) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
-  isAutoplayEnabled: boolean;
-  onToggleAutoplay: () => void;
 }
 
 export function BattleScreen(props: BattleScreenProps) {
@@ -42,12 +39,9 @@ export function BattleScreen(props: BattleScreenProps) {
     stagePixelRatio,
     refs,
     onCardClick,
-    onOpenMenu,
     onWishChoice,
     onSkipCombatDevMode,
     onEndTurn,
-    isAutoplayEnabled,
-    onToggleAutoplay,
   } = props;
 
   const { battleState, displayOverrides, activeLabyrinthModifiers, runBoons } = battleScreenData;
@@ -56,7 +50,8 @@ export function BattleScreen(props: BattleScreenProps) {
 
   const isBossBattle = battleState.currentEnemy.enemyType === "boss";
   const { particleColors, particleAlphaMultiplier, particleCount } = getScreenParticleConfig("battle", isBossBattle);
-  const particleAlpha = particleAlphaMultiplier ?? 1;
+  const backgroundParticlesIntensity = useSettingsStore((s) => s.backgroundParticlesIntensity);
+  const particleAlpha = ((particleAlphaMultiplier ?? 1) * backgroundParticlesIntensity) / 100;
 
   const playerStatusChips = useMemo(() => getPlayerStatusChips(displayState), [displayState]);
   const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
@@ -86,15 +81,12 @@ export function BattleScreen(props: BattleScreenProps) {
   const actions: BattleActionsProps = useMemo(
     () => ({
       onCardClick,
-      onOpenMenu,
       onWishChoice,
       onSkipCombatDevMode,
       onEndTurn,
       isDevMode: isDev,
-      isAutoplayEnabled,
-      onToggleAutoplay,
     }),
-    [onCardClick, onOpenMenu, onWishChoice, onSkipCombatDevMode, onEndTurn, isDev, isAutoplayEnabled, onToggleAutoplay],
+    [onCardClick, onWishChoice, onSkipCombatDevMode, onEndTurn, isDev],
   );
 
   const { battleSceneRef: sceneRef } = refs;
@@ -107,27 +99,27 @@ export function BattleScreen(props: BattleScreenProps) {
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <BackgroundParticles
-          variant="embers"
-          {...(particleColors ? { colors: particleColors } : {})}
-          alphaMultiplier={particleAlpha}
-          {...(particleCount ? { particleCount } : {})}
-        />
+        {backgroundParticlesIntensity > 0 ? (
+          <BackgroundParticles
+            variant="embers"
+            {...(particleColors ? { colors: particleColors } : {})}
+            alphaMultiplier={particleAlpha}
+            {...(particleCount ? { particleCount } : {})}
+          />
+        ) : null}
       </div>
 
       <PageLayout>
         <div className="relative flex w-full max-w-[100rem] flex-1 flex-col p-7 pb-1">
           <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-            <div className="absolute top-0 right-0 z-30 flex items-center gap-2">
-              <BattleAutoplayToggle enabled={actions.isAutoplayEnabled} onToggle={actions.onToggleAutoplay} />
-              {inspectBoons.length > 0 ? (
+            {inspectBoons.length > 0 ? (
+              <div className="absolute top-0 right-0 z-30 flex items-center gap-2">
                 <BattleTrinketInspectButton
                   open={inspectUiOpen}
                   onToggle={() => setTrinketInspectOpen((open) => !open)}
                 />
-              ) : null}
-              <HamburgerTrigger onClick={actions.onOpenMenu} label="Open battle menu" />
-            </div>
+              </div>
+            ) : null}
 
             <div
               ref={sceneRef}

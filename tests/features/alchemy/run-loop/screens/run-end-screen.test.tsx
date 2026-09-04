@@ -39,7 +39,6 @@ function renderRunEnd({
       runEndMaterials={runEndMaterials}
       runEndItems={runEndItems}
       onContinue={() => {}}
-      onOpenMenu={() => {}}
     />,
   );
 }
@@ -55,10 +54,10 @@ describe("RunEndScreen", () => {
       talentXP: { physical: 20, burn: 3 },
     });
 
-    expect(screen.getByText("+12 XP").isConnected).toBe(true);
-    expect(screen.getByText("+3 XP").isConnected).toBe(true);
-    expect(screen.getByText("8/10").isConnected).toBe(true);
-    expect(screen.getByText("0/10").isConnected).toBe(true);
+    expect(screen.queryByText("+12 XP")).toBeNull();
+    expect(screen.queryByText("+3 XP")).toBeNull();
+    expect(screen.queryByText("8/10")).toBeNull();
+    expect(screen.queryByText("0/10")).toBeNull();
 
     expect(screen.getByText("Physical").isConnected).toBe(true);
     expect(screen.getByText("Burn").isConnected).toBe(true);

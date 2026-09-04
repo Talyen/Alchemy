@@ -14,13 +14,11 @@ export function CampfireScreen({
   maxHealth,
   healFraction,
   onContinue,
-  onOpenMenu,
 }: {
   playerHealth: number;
   maxHealth: number;
   healFraction: number;
   onContinue: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [resting, setResting] = useState(false);
   const [done, setDone] = useState(false);
@@ -44,12 +42,7 @@ export function CampfireScreen({
   }
 
   return (
-    <TitledScreenShell
-      title="Campfire"
-      onOpenMenu={onOpenMenu}
-      menuLabel="Open campfire menu"
-      minHeightClass="min-h-[62cqh]"
-    >
+    <TitledScreenShell title="Campfire" minHeightClass="min-h-[62cqh]">
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
         <ScreenDescription>{`Rest to Restore ${Math.round(healFraction * 100)}% Health`}</ScreenDescription>
         <div className="flex w-full max-w-[44.45cqh] flex-col items-center gap-8">

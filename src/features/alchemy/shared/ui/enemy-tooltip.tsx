@@ -4,6 +4,7 @@ import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 
 import { formatEnemyAttackLines } from "../utils";
+import { getPlasmaColorPairForEnemy } from "../config";
 import { DescriptionLines } from "./card-description-ui";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { TooltipBody, TooltipHeader, TooltipSection, TooltipSeparator } from "./tooltip-panel";
@@ -52,7 +53,12 @@ export function EnemyTooltip({
     : [];
 
   return (
-    <PortaledTooltip triggerRef={triggerRef} visible={visible} className="rounded-shell-tooltip">
+    <PortaledTooltip
+      triggerRef={triggerRef}
+      visible={visible}
+      className="rounded-shell-tooltip"
+      plasmaColorPair={getPlasmaColorPairForEnemy(entry, attackEffects)}
+    >
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       {discovered ? (
         <DescriptionLines lines={[...attackLines, ...traitLines]} idPrefix={`enemy-${entry.id}`} />

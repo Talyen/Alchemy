@@ -1,6 +1,7 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MenuScreen } from "@/features/alchemy/meta/screens/menu-screen";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 
 const defaultProps = {
   onPlay: vi.fn(),
@@ -16,6 +17,7 @@ const defaultProps = {
 describe("MenuScreen logo", () => {
   afterEach(() => {
     cleanup();
+    useUiStore.setState({ plasmaInteraction: null });
     vi.unstubAllGlobals();
   });
 
@@ -85,5 +87,41 @@ describe("MenuScreen logo", () => {
       expect(button.parentElement?.className).toContain("w-[19.2rem]");
       expect(button.className).toContain("h-16");
     }
+  });
+
+  it("shows the icon-colored plasma glow on hover even when the button is locked", async () => {
+    render(<MenuScreen {...defaultProps} />);
+    const homestead = screen.getByRole("button", { name: /homestead/i });
+    expect(homestead.getAttribute("aria-disabled")).toBe("true");
+
+    fireEvent.mouseEnter(homestead.closest(".menu-nav-button")!);
+    await waitFor(() =>
+      expect(useUiStore.getState().plasmaInteraction?.colorPair).toEqual({
+        primary: "#34d399",
+        secondary: "#064e3b",
+      }),
+    );
+
+    fireEvent.mouseLeave(homestead.closest(".menu-nav-button")!);
+    await waitFor(() => expect(useUiStore.getState().plasmaInteraction).toBeNull());
+  });
+
+  it("glows gold on Play focus and leaves Quit without plasma", async () => {
+    render(<MenuScreen {...defaultProps} onQuit={vi.fn()} />);
+
+    const play = screen.getByRole("button", { name: /^play$/i });
+    fireEvent.focus(play);
+    await waitFor(() =>
+      expect(useUiStore.getState().plasmaInteraction?.colorPair).toEqual({
+        primary: "#cd9b51",
+        secondary: "#251e18",
+      }),
+    );
+    fireEvent.blur(play);
+    await waitFor(() => expect(useUiStore.getState().plasmaInteraction).toBeNull());
+
+    const quit = screen.getByRole("button", { name: /^quit$/i });
+    fireEvent.mouseEnter(quit.closest(".menu-nav-button")!);
+    expect(useUiStore.getState().plasmaInteraction).toBeNull();
   });
 });

@@ -30,7 +30,7 @@ export function useGameMenuState() {
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
 
-  const openBattleMenu = useCallback((rect?: DOMRect) => {
+  const openGameMenu = useCallback((rect?: DOMRect) => {
     setMenuAnchorRect(rect ?? null);
     setGameMenuOpen(true);
   }, []);
@@ -40,7 +40,7 @@ export function useGameMenuState() {
     setMenuAnchorRect(null);
   }, []);
 
-  return { gameMenuOpen, menuAnchorRect, openBattleMenu, closeGameMenu, setMenuAnchorRect, setGameMenuOpen };
+  return { gameMenuOpen, menuAnchorRect, openGameMenu, closeGameMenu, setMenuAnchorRect, setGameMenuOpen };
 }
 
 export function useRenderedScreenTransition(controllerScreen: Screen, commitPendingTransition: () => void) {

@@ -14,7 +14,6 @@ interface GenericShopScreenProps<T> {
   onBuy: (item: T, slotKey: string) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
   renderItem: (item: T, price: number, purchased: boolean, onBuy: () => void) => ReactNode;
 }
 
@@ -30,11 +29,10 @@ export function GenericShopScreen<T>({
   onBuy,
   onRefresh,
   onContinue,
-  onOpenMenu,
   renderItem,
 }: GenericShopScreenProps<T>) {
   return (
-    <ShopBrowseShell title={title} gold={gold} onOpenMenu={onOpenMenu}>
+    <ShopBrowseShell title={title} gold={gold}>
       <ShopBrowseOfferings
         swapKey={shopOfferingsSwapKey(
           items.map((it, i) => getSlotKey(it, i)),

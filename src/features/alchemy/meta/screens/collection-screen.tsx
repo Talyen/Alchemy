@@ -1,5 +1,5 @@
 import { collectionShellWidthClass } from "../../shared/config";
-import { HamburgerTrigger, PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
+import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
 import {
   CollectionGrid,
   CollectionTabs,
@@ -10,7 +10,6 @@ import type { CharacterId } from "../../shared/config/game-data-catalog";
 import type { CollectionTab } from "../../shared/types";
 
 export function CollectionScreen({
-  onOpenMenu,
   collectionTab,
   onSelectTab,
   discoveredCardIds,
@@ -22,7 +21,6 @@ export function CollectionScreen({
   onPageChange,
   bondedCompanions,
 }: {
-  onOpenMenu: (rect?: DOMRect) => void;
   collectionTab: CollectionTab;
   onSelectTab: (tab: CollectionTab) => void;
   discoveredCardIds: string[];
@@ -44,10 +42,7 @@ export function CollectionScreen({
   return (
     <PageLayout>
       <ScreenShell maxWidthClass={collectionShellWidthClass}>
-        <ScreenHeaderRow
-          title="Collection"
-          trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open collection menu" />}
-        />
+        <ScreenHeaderRow title="Collection" />
         <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
         <div className="mt-6 flex flex-col items-center gap-4 overflow-visible">

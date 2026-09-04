@@ -39,13 +39,7 @@ function renderRewards(choices: BattleCard[] = [slashCard]) {
     materials: emptyInventory(),
   };
   return render(
-    <RewardsScreen
-      rewardState={state}
-      onAddReward={() => {}}
-      onSkip={() => {}}
-      onSelectReward={() => {}}
-      onOpenMenu={() => {}}
-    />,
+    <RewardsScreen rewardState={state} onAddReward={() => {}} onSkip={() => {}} onSelectReward={() => {}} />,
   );
 }
 

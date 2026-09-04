@@ -5,7 +5,6 @@ import { KeywordProgressCard } from "./keyword-progress-card";
 
 export interface KeywordProgressEntry {
   kw: KeywordId;
-  runXP: number;
   totalXP: number;
 }
 
@@ -32,9 +31,9 @@ export function KeywordProgressGrid({
   if (columns) {
     return (
       <div className={cn("mx-auto flex w-full max-w-[73rem] flex-wrap justify-center gap-3", className)}>
-        {entries.map(({ kw, runXP, totalXP }) => (
+        {entries.map(({ kw, totalXP }) => (
           <div key={kw} className="w-56 flex-none">
-            <KeywordProgressCard kw={kw} runXP={runXP} totalXP={totalXP} animate={animate} size={size} />
+            <KeywordProgressCard kw={kw} totalXP={totalXP} animate={animate} size={size} />
           </div>
         ))}
       </div>
@@ -43,9 +42,9 @@ export function KeywordProgressGrid({
 
   return (
     <div className={cn("flex w-full max-w-2xl flex-wrap justify-center gap-2", className)}>
-      {entries.map(({ kw, runXP, totalXP }) => (
+      {entries.map(({ kw, totalXP }) => (
         <div key={kw} className="w-[23.33cqh] flex-none">
-          <KeywordProgressCard kw={kw} runXP={runXP} totalXP={totalXP} animate={animate} size={size} />
+          <KeywordProgressCard kw={kw} totalXP={totalXP} animate={animate} size={size} />
         </div>
       ))}
     </div>

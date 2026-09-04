@@ -53,13 +53,10 @@ export type BattleRefsProps = BattleRefs;
 
 export interface BattleActionsProps {
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
-  onOpenMenu: (rect?: DOMRect) => void;
   onWishChoice: (card: BattleCard | null) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
   isDevMode: boolean;
-  isAutoplayEnabled: boolean;
-  onToggleAutoplay: () => void;
 }
 
 export type RequiredBattleViewProps = Required<BattleScreenViewProps>;

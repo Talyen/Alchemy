@@ -20,6 +20,7 @@ export function KeywordPlasmaBackground({
   focalYOffset = 0,
   active = true,
   className,
+  intensity = 100,
 }: {
   keywordIds?: readonly KeywordId[] | null | undefined;
   colorPair?: PlasmaColorPair | null | undefined;
@@ -27,6 +28,7 @@ export function KeywordPlasmaBackground({
   focalYOffset?: number | undefined;
   active?: boolean | undefined;
   className?: string | undefined;
+  intensity?: number | undefined;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const colorPair =
@@ -108,12 +110,15 @@ export function KeywordPlasmaBackground({
     return () => stop();
   }, [renderer, focalYOffset, active]);
 
+  if (intensity <= 0) return null;
+
   return (
     <canvas
       ref={canvasRef}
       aria-hidden
       data-testid="global-plasma-background"
       className={cn("pointer-events-none absolute inset-0 mix-blend-plus-lighter", className)}
+      style={{ opacity: Math.max(0, Math.min(1, intensity / 100)) }}
     />
   );
 }

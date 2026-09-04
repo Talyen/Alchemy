@@ -200,7 +200,7 @@ function TileImage({ item, className }: { item: CollectionTileItem; className: s
       className={cn(
         "block w-full transition duration-300",
         className,
-        item.discovered ? "opacity-100" : "opacity-45 grayscale",
+        item.discovered ? "opacity-100" : "opacity-45 grayscale group-focus-within:grayscale-0 group-hover:grayscale-0",
       )}
     />
   );

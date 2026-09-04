@@ -156,14 +156,12 @@ export function DifficultySelectScreen({
   completedDifficulties,
   onSelect,
   onBack,
-  onOpenMenu,
 }: {
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
   completedDifficulties: DifficultyId[];
   onSelect: (difficultyId: DifficultyId) => void;
   onBack: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficulty);
   const config = difficultyConfigs[characterId];
@@ -184,12 +182,7 @@ export function DifficultySelectScreen({
   }
 
   return (
-    <TitledScreenShell
-      title={config.headerTitle}
-      onOpenMenu={onOpenMenu}
-      menuLabel="Open difficulty select menu"
-      maxWidthClass={chooserHeroPaddedRowShellWidthClass}
-    >
+    <TitledScreenShell title={config.headerTitle} maxWidthClass={chooserHeroPaddedRowShellWidthClass}>
       <div className={cn("mt-6 flex w-full flex-nowrap items-stretch justify-center", chooserRowGapClass)}>
         <div
           className={cn(

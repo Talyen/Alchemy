@@ -19,7 +19,6 @@ describe("TalentsScreen", () => {
       physical: [],
       bleed: [],
     },
-    onOpenMenu: vi.fn(),
     onUnlockTalent: vi.fn(),
     onResetTalents: vi.fn(),
   };

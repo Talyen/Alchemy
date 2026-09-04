@@ -111,7 +111,8 @@ describe("MysteryRewardSummary", () => {
     );
 
     expect(screen.getByText("Burn")).toBeTruthy();
-    expect(screen.queryByText("+8")).toBeNull();
+    expect(screen.queryByText("+8 XP")).toBeNull();
+    expect(screen.queryByText("8/20")).toBeNull();
     expect(screen.queryByText("10/20")).toBeNull();
 
     const burnLv = screen.getByText("Lv2");
@@ -147,9 +148,11 @@ describe("MysteryRewardSummary", () => {
     );
 
     expect(screen.getByText("Burn")).toBeTruthy();
-    expect(screen.queryByText("+8")).toBeNull();
+    expect(screen.queryByText("+8 XP")).toBeNull();
+    expect(screen.queryByText("8/10")).toBeNull();
     expect(screen.getByText("Freeze")).toBeTruthy();
-    expect(screen.queryByText("+6")).toBeNull();
+    expect(screen.queryByText("+6 XP")).toBeNull();
+    expect(screen.queryByText("6/10")).toBeNull();
 
     const lvLabels = screen.getAllByText("Lv1");
     expect(lvLabels).toHaveLength(2);

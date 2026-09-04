@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { AspectRatioOption, DisplayMode } from "@/features/alchemy/shared/types";
 import {
+  DEFAULT_BACKGROUND_GLOW_PCT,
+  DEFAULT_BACKGROUND_PARTICLES_PCT,
   DEFAULT_BRIGHTNESS_PCT,
   DEFAULT_MASTER_VOLUME_PCT,
   DEFAULT_MUSIC_VOLUME_PCT,
@@ -13,6 +15,8 @@ export interface SettingsSaveFields {
   selectedAspectRatio: AspectRatioOption;
   displayMode: DisplayMode;
   brightness: number;
+  backgroundParticlesIntensity: number;
+  backgroundGlowIntensity: number;
   musicVolume: number;
   sfxVolume: number;
   masterVolume: number;
@@ -28,6 +32,8 @@ export interface SettingsStore extends SettingsSaveFields {
   setSelectedAspectRatio: (value: AspectRatioOption) => void;
   setDisplayMode: (value: DisplayMode) => void;
   setBrightness: (value: number) => void;
+  setBackgroundParticlesIntensity: (value: number) => void;
+  setBackgroundGlowIntensity: (value: number) => void;
   setMusicVolume: (value: number) => void;
   setSfxVolume: (value: number) => void;
   setMasterVolume: (value: number) => void;
@@ -44,6 +50,8 @@ function createDefaultSettingsSaveFields(): SettingsSaveFields {
     selectedAspectRatio: "auto",
     displayMode: "borderless-fullscreen",
     brightness: DEFAULT_BRIGHTNESS_PCT,
+    backgroundParticlesIntensity: DEFAULT_BACKGROUND_PARTICLES_PCT,
+    backgroundGlowIntensity: DEFAULT_BACKGROUND_GLOW_PCT,
     musicVolume: DEFAULT_MUSIC_VOLUME_PCT,
     sfxVolume: DEFAULT_SFX_VOLUME_PCT,
     masterVolume: DEFAULT_MASTER_VOLUME_PCT,
@@ -74,6 +82,8 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
   setSelectedAspectRatio: (selectedAspectRatio) => set({ selectedAspectRatio }),
   setDisplayMode: (displayMode) => set({ displayMode }),
   setBrightness: (brightness) => set({ brightness }),
+  setBackgroundParticlesIntensity: (backgroundParticlesIntensity) => set({ backgroundParticlesIntensity }),
+  setBackgroundGlowIntensity: (backgroundGlowIntensity) => set({ backgroundGlowIntensity }),
   setMusicVolume: (musicVolume) => set({ musicVolume }),
   setSfxVolume: (sfxVolume) => set({ sfxVolume }),
   setMasterVolume: (masterVolume) => set({ masterVolume }),
@@ -101,6 +111,8 @@ export function selectSettingsSaveFields(state: Pick<SettingsStore, keyof Settin
     selectedAspectRatio: state.selectedAspectRatio,
     displayMode: state.displayMode,
     brightness: state.brightness,
+    backgroundParticlesIntensity: state.backgroundParticlesIntensity,
+    backgroundGlowIntensity: state.backgroundGlowIntensity,
     musicVolume: state.musicVolume,
     sfxVolume: state.sfxVolume,
     masterVolume: state.masterVolume,

@@ -14,7 +14,6 @@ describe("DifficultySelectScreen", () => {
   it("renders hero info and difficulties with lock state", () => {
     const onSelect = vi.fn();
     const onBack = vi.fn();
-    const onOpenMenu = vi.fn();
 
     render(
       <DifficultySelectScreen
@@ -23,7 +22,6 @@ describe("DifficultySelectScreen", () => {
         completedDifficulties={[]}
         onSelect={onSelect}
         onBack={onBack}
-        onOpenMenu={onOpenMenu}
       />,
     );
 
@@ -48,7 +46,6 @@ describe("DifficultySelectScreen", () => {
         completedDifficulties={["difficulty-1"]}
         onSelect={vi.fn()}
         onBack={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -69,7 +66,6 @@ describe("DifficultySelectScreen", () => {
         completedDifficulties={[]}
         onSelect={onSelect}
         onBack={onBack}
-        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -96,7 +92,6 @@ describe("DifficultySelectScreen", () => {
         completedDifficulties={[]}
         onSelect={vi.fn()}
         onBack={onBack}
-        onOpenMenu={vi.fn()}
       />,
     );
 
@@ -112,7 +107,6 @@ describe("DifficultySelectScreen", () => {
         completedDifficulties={[]}
         onSelect={vi.fn()}
         onBack={vi.fn()}
-        onOpenMenu={vi.fn()}
       />,
     );
 

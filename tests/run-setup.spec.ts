@@ -56,7 +56,7 @@ test.describe("Character Select", critical, () => {
   test("screen menu returns to main menu", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goToCharacterSelect();
-    await page.getByRole("button", { name: "Open character select menu" }).click();
+    await page.getByRole("button", { name: "Open game menu" }).click();
     await page.getByRole("button", { name: "Main Menu" }).click();
     await menu.expectMainMenu();
   });

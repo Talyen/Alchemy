@@ -41,9 +41,7 @@ describe("CorruptionScreen", () => {
   it("renders the intro view with corrupt and leave buttons", async () => {
     const user = userEvent.setup();
     const onExit = vi.fn();
-    render(
-      <CorruptionScreen runDeck={[testSlash]} result={null} onCorrupt={vi.fn()} onExit={onExit} onOpenMenu={vi.fn()} />,
-    );
+    render(<CorruptionScreen runDeck={[testSlash]} result={null} onCorrupt={vi.fn()} onExit={onExit} />);
 
     expect(screen.getByRole("heading", { name: "Altar of Corruption" })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Corrupt a Card/i })).toBeTruthy();
@@ -57,15 +55,7 @@ describe("CorruptionScreen", () => {
   it("navigates from intro to deck picker and allows corrupting a selected card", async () => {
     const user = userEvent.setup();
     const onCorrupt = vi.fn();
-    render(
-      <CorruptionScreen
-        runDeck={[testSlash, testStab]}
-        result={null}
-        onCorrupt={onCorrupt}
-        onExit={vi.fn()}
-        onOpenMenu={vi.fn()}
-      />,
-    );
+    render(<CorruptionScreen runDeck={[testSlash, testStab]} result={null} onCorrupt={onCorrupt} onExit={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));
 
@@ -85,15 +75,7 @@ describe("CorruptionScreen", () => {
 
   it("shows empty message if all cards are already corrupted", async () => {
     const user = userEvent.setup();
-    render(
-      <CorruptionScreen
-        runDeck={[testCorruptedCard]}
-        result={null}
-        onCorrupt={vi.fn()}
-        onExit={vi.fn()}
-        onOpenMenu={vi.fn()}
-      />,
-    );
+    render(<CorruptionScreen runDeck={[testCorruptedCard]} result={null} onCorrupt={vi.fn()} onExit={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));
     expect(screen.getByText("No uncorrupted cards remain.")).toBeTruthy();
@@ -109,15 +91,7 @@ describe("CorruptionScreen", () => {
       delta: 1,
     };
 
-    render(
-      <CorruptionScreen
-        runDeck={[testCorruptedCard]}
-        result={result}
-        onCorrupt={vi.fn()}
-        onExit={onExit}
-        onOpenMenu={vi.fn()}
-      />,
-    );
+    render(<CorruptionScreen runDeck={[testCorruptedCard]} result={result} onCorrupt={vi.fn()} onExit={onExit} />);
 
     expect(screen.getByText("The altar returns your card changed.")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Original: Slash/i })).toBeTruthy();

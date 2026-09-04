@@ -63,7 +63,10 @@ export function HomesteadUpgradeNode({
       surfaceClassName={cn(HOMESTEAD_CONFIG.artAspectRatio, "w-full", isCompleted && homesteadCompletedSurfaceClass)}
       imageSrc={getArt(item.data.id)}
       imageAlt={item.data.title}
-      imageClassName={cn("h-full w-full object-cover", isTier0 && homesteadTileDimClass)}
+      imageClassName={cn(
+        "h-full w-full object-cover transition-[filter] duration-300",
+        isTier0 && homesteadTileDimClass,
+      )}
       footer={footer}
     />
   );

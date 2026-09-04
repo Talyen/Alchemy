@@ -19,17 +19,9 @@ interface Props {
   onNodeSelect: (nodeId: string) => void;
   onNodeDeselect: () => void;
   onNodeEnter: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }
 
-export function LabyrinthMapScreen({
-  labyrinthMap,
-  selectedNodeId,
-  onNodeSelect,
-  onNodeDeselect,
-  onNodeEnter,
-  onOpenMenu,
-}: Props) {
+export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect, onNodeDeselect, onNodeEnter }: Props) {
   const playableFloors = useMemo(
     () => (labyrinthMap ? labyrinthMap.floors.filter((floor) => floor.depth > 0) : []),
     [labyrinthMap],
@@ -100,8 +92,6 @@ export function LabyrinthMapScreen({
     <TitledScreenShell
       title="Labyrinth"
       eyebrow={`Floor ${viewedFloor}`}
-      onOpenMenu={onOpenMenu}
-      menuLabel="Open labyrinth menu"
       maxWidthClass="max-w-7xl"
       headerActions={
         playableFloors.length > 1 ? (

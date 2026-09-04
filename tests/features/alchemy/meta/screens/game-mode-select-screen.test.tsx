@@ -16,7 +16,6 @@ describe("GameModeSelectScreen", () => {
     onSelectCampaign: vi.fn(),
     onSelectLabyrinth: vi.fn(),
     onSelectWildwood: vi.fn(),
-    onOpenMenu: vi.fn(),
   };
 
   it("renders the game mode chooser title and modes", () => {

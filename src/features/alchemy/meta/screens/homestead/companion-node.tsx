@@ -127,7 +127,10 @@ export function CompanionCardNode({
       )}
       imageSrc={card.art}
       imageAlt={card.title}
-      imageClassName={cn("h-full w-full object-cover", !discovered && homesteadUndiscoveredDimClass)}
+      imageClassName={cn(
+        "h-full w-full object-cover transition-[filter] duration-300",
+        !discovered && homesteadUndiscoveredDimClass,
+      )}
       footer={footer}
     />
   );

@@ -28,7 +28,7 @@ export function RunEndProgressSection({
     () =>
       (Object.keys(runEndTalentXP) as KeywordId[])
         .filter((kw) => visibleKeywords.has(kw) && (runEndTalentXP[kw] ?? 0) > 0)
-        .map((kw) => ({ kw, runXP: runEndTalentXP[kw] ?? 0, totalXP: talentXP[kw] ?? 0 })),
+        .map((kw) => ({ kw, totalXP: talentXP[kw] ?? 0 })),
     [runEndTalentXP, talentXP, visibleKeywords],
   );
   const xpPages = usePaginatedRows(entries, XP_PAGE_SIZE, XP_COLUMNS);

@@ -24,7 +24,6 @@ export function MerchantShopScreen({
   onRemoveCard,
   onRefresh,
   onContinue,
-  onOpenMenu,
 }: {
   gold: number;
   runDeck: BattleCard[];
@@ -39,12 +38,11 @@ export function MerchantShopScreen({
   onRemoveCard: (cardIndex: number) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [removeMode, setRemoveMode] = useState(false);
 
   return (
-    <ShopBrowseShell title="Card Shop" gold={gold} onOpenMenu={onOpenMenu}>
+    <ShopBrowseShell title="Card Shop" gold={gold}>
       <FadeSlot swapKey={removeMode ? "remove" : "browse"} className="w-full">
         {!removeMode ? (
           <ShopBrowseOfferings

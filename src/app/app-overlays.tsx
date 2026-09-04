@@ -10,17 +10,21 @@ export function AppBackgroundParticles({
   renderedScreen,
   particleColors,
   particleAlphaMultiplier,
+  backgroundParticlesIntensity = 100,
 }: {
   renderedScreen: Screen;
   particleColors: readonly string[] | undefined;
   particleAlphaMultiplier: number | undefined;
+  backgroundParticlesIntensity?: number | undefined;
 }) {
   if (renderedScreen === "battle" || renderedScreen === "character-select") return null;
+  if (backgroundParticlesIntensity <= 0) return null;
+  const effectiveAlphaMultiplier = ((particleAlphaMultiplier ?? 1) * backgroundParticlesIntensity) / 100;
   return (
     <BackgroundParticles
       variant="embers"
       {...(particleColors ? { colors: particleColors } : {})}
-      {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})}
+      alphaMultiplier={effectiveAlphaMultiplier}
     />
   );
 }

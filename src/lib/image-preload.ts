@@ -1,5 +1,5 @@
 import { IMAGE_PRELOAD_BATCH_SIZE, IMAGE_PRELOAD_TIMEOUT_MS } from "./game-constants";
-import { batchedPreload, yieldToAnimationFrame } from "./preload/batched";
+import { batchedPreload, yieldToAnimationFrame } from "./preload";
 
 interface ImageLoadEntry {
   token: object;

@@ -57,7 +57,6 @@ function createMockProps(screen: Screen): RenderAlchemyScreenProps {
   return {
     screen,
     routeCommands: createMockRouteCommands(),
-    onOpenBattleMenu: vi.fn(),
     onClearSaveData: vi.fn(),
     onUnlockAllDevMode: vi.fn(),
     onBackFromOptions: vi.fn(),

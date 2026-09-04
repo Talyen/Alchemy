@@ -19,7 +19,6 @@ describe("HomesteadScreen", () => {
     completedResearch: {} as any,
     bondedCompanions: {} as any,
     discoveredCardIds: ["summon-wolf"],
-    onOpenMenu: vi.fn(),
     onConstructBuilding: vi.fn(() => true),
     onPlantFarm: vi.fn(() => true),
     onCompleteResearch: vi.fn(() => true),

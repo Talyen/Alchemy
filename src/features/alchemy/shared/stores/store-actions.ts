@@ -36,6 +36,8 @@ const settingsActionKeys = [
   "setSelectedAspectRatio",
   "setDisplayMode",
   "setBrightness",
+  "setBackgroundParticlesIntensity",
+  "setBackgroundGlowIntensity",
   "setMasterVolume",
   "setMusicVolume",
   "setSfxVolume",

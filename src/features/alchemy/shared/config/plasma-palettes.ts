@@ -5,6 +5,7 @@ import {
   getTrinketKeywords,
   keywordDefinitions,
   type BattleCard,
+  type BestiaryEntry,
   type CharacterId,
   type CompanionDefinition,
   type KeywordId,
@@ -17,7 +18,7 @@ import {
   getUniqueGearTextShineColors,
   type GearInstance,
 } from "@/lib/gear";
-import { keywordAliasMap, keywordPattern } from "./keywords";
+import { keywordAliasMap, keywordAliases, keywordPattern } from "./keywords";
 import {
   getCompanionShineColors,
   getKeywordShineColors,
@@ -127,6 +128,36 @@ export function getPlasmaColorPairForCompanion(companion: CompanionDefinition): 
     getPlasmaColorPair(getCompanionKeywords(companion)) ??
     getPlasmaColorPairFromColors(getCompanionShineColors(companion))
   );
+}
+
+export function getPlasmaKeywordsForEnemy(
+  entry: BestiaryEntry,
+  attackEffects?: BestiaryEntry["attackEffects"],
+): KeywordId[] {
+  const keywords = new Set<KeywordId>();
+
+  const traitText = entry.traits.map((trait) => trait.description).join(" ");
+  for (const alias of keywordAliases) {
+    if (traitText.includes(alias.match)) keywords.add(alias.keywordId);
+  }
+
+  for (const effect of attackEffects ?? entry.attackEffects) {
+    if (effect.kind === "damage" && effect.damageType in keywordDefinitions) {
+      keywords.add(effect.damageType);
+    }
+    if (effect.kind === "player-status" && effect.status in keywordDefinitions) {
+      keywords.add(effect.status as KeywordId);
+    }
+  }
+
+  return [...keywords];
+}
+
+export function getPlasmaColorPairForEnemy(
+  entry: BestiaryEntry,
+  attackEffects?: BestiaryEntry["attackEffects"],
+): PlasmaColorPair | null {
+  return getPlasmaColorPair(getPlasmaKeywordsForEnemy(entry, attackEffects));
 }
 
 export function getPlasmaKeywordLabel(keywordId: KeywordId): string {

@@ -11,7 +11,6 @@ describe("CollectionScreen", () => {
   });
 
   const defaultProps = {
-    onOpenMenu: vi.fn(),
     collectionTab: "cards" as const,
     onSelectTab: vi.fn(),
     discoveredCardIds: ["strike-basic", "defend-basic"],

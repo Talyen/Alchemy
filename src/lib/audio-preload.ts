@@ -1,5 +1,5 @@
 import { allRegisteredSoundFiles, battleEventSounds, cardSounds, enemyAttackSounds, uiSounds } from "./sound-registry";
-import { batchedPreload, scheduleIdle } from "./preload/batched";
+import { batchedPreload, scheduleIdle } from "./preload";
 import { audioUrl } from "./audio-url";
 import { SOUNDS_BASE_PATH } from "./game-constants";
 

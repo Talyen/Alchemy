@@ -43,7 +43,6 @@ function renderPendingRemoval(choice: MysteryChoice) {
       onContinue={onContinue}
       findCard={() => undefined}
       findTrinket={() => undefined}
-      onOpenMenu={vi.fn()}
     />,
   );
   return { onRemoveCard, onContinue };

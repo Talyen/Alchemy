@@ -8,17 +8,14 @@ import type { OptionsRouteCtx } from "./route-ctx";
 
 type OptionsScreenRouteProps = OptionsRouteCtx;
 
-function OptionsScreenRoute({
-  onOpenBattleMenu,
-  onClearSaveData,
-  onUnlockAllDevMode,
-  onBackFromOptions,
-}: OptionsScreenRouteProps) {
+function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBackFromOptions }: OptionsScreenRouteProps) {
   const settings = useSettingsStore(
     useShallow((s) => ({
       selectedAspectRatio: s.selectedAspectRatio,
       displayMode: s.displayMode,
       brightness: s.brightness,
+      backgroundParticlesIntensity: s.backgroundParticlesIntensity,
+      backgroundGlowIntensity: s.backgroundGlowIntensity,
       masterVolume: s.masterVolume,
       musicVolume: s.musicVolume,
       sfxVolume: s.sfxVolume,
@@ -32,7 +29,6 @@ function OptionsScreenRoute({
 
   return (
     <OptionsScreen
-      onOpenMenu={onOpenBattleMenu}
       onBack={onBackFromOptions}
       display={{
         selectedAspectRatio: settings.selectedAspectRatio,
@@ -42,6 +38,10 @@ function OptionsScreenRoute({
         showDisplayMode: isDesktop(),
         brightness: settings.brightness,
         onBrightnessChange: actions.setBrightness,
+        backgroundParticlesIntensity: settings.backgroundParticlesIntensity,
+        onBackgroundParticlesIntensityChange: actions.setBackgroundParticlesIntensity,
+        backgroundGlowIntensity: settings.backgroundGlowIntensity,
+        onBackgroundGlowIntensityChange: actions.setBackgroundGlowIntensity,
       }}
       audio={{
         masterVolume: settings.masterVolume,

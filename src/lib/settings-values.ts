@@ -9,6 +9,7 @@ export type DisplayMode = (typeof DISPLAY_MODE_VALUES)[number];
 export const SETTINGS_RANGES = {
   brightness: { min: 50, max: 150 },
   volume: { min: 0, max: 100 },
+  specialEffects: { min: 0, max: 100 },
 } as const;
 
 export function resolveAutoplayEnabled(fields: {

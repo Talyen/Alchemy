@@ -35,7 +35,6 @@ export function createArmoryScreenProps(overrides: Partial<ArmoryScreenProps> = 
     equippedTrinkets: createEmptyEquippedTrinkets(),
     finishedRunCharacters: ["knight"],
     browseOnly: false,
-    onOpenMenu: vi.fn(),
     onEquip: vi.fn(),
     onUnequip: vi.fn(),
     onEquipTrinket: vi.fn(),

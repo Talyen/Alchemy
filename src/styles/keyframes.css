@@ -108,12 +108,22 @@
   }
 }
 
-@keyframes loadingWordSheen {
+@keyframes loadingLogoPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes loadingLogoFill {
   from {
-    background-position: 120% 0;
+    width: 0%;
   }
   to {
-    background-position: -120% 0;
+    width: 100%;
   }
 }
 

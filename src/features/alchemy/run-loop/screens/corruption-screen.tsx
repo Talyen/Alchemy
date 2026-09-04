@@ -137,13 +137,11 @@ export function CorruptionScreen({
   result,
   onCorrupt,
   onExit,
-  onOpenMenu,
 }: {
   runDeck: BattleCard[];
   result: CorruptionResult | null;
   onCorrupt: (cardIndex: number) => void;
   onExit: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const [selecting, setSelecting] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -155,7 +153,7 @@ export function CorruptionScreen({
   }
 
   return (
-    <TitledScreenShell title="Altar of Corruption" onOpenMenu={onOpenMenu} menuLabel="Open corruption menu">
+    <TitledScreenShell title="Altar of Corruption">
       <div className="mt-6 flex flex-col items-center gap-6 text-center">
         {result ? (
           <CorruptionResultView result={result} onContinue={onExit} />

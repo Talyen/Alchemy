@@ -7,13 +7,13 @@ export function BattleAutoplayToggle({ enabled, onToggle }: { enabled: boolean; 
     <Button
       variant={enabled ? "primary" : "outline"}
       size="icon"
-      className={cn("h-10 w-10", !enabled && "text-muted-foreground")}
+      className={cn("h-12 w-12", !enabled && "text-muted-foreground")}
       onClick={onToggle}
       aria-label="Autoplay"
       aria-pressed={enabled}
       data-testid="autoplay-toggle"
     >
-      <Repeat className="h-5 w-5" />
+      <Repeat className="h-6 w-6" />
     </Button>
   );
 }

@@ -7,12 +7,11 @@ interface Props {
   runDeck: BattleCard[];
   onRemove: (index: number) => void;
   onSkip: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }
 
-export function WildwoodRemovalScreen({ runDeck, onRemove, onSkip, onOpenMenu }: Props) {
+export function WildwoodRemovalScreen({ runDeck, onRemove, onSkip }: Props) {
   return (
-    <TitledScreenShell title="Refine Your Deck" onOpenMenu={onOpenMenu} menuLabel="Open wildwood removal menu">
+    <TitledScreenShell title="Refine Your Deck">
       <div className="mt-6 text-center">
         <RemoveCardPanel
           runDeck={runDeck}

@@ -37,7 +37,6 @@ export function MysteryScreen({
   onContinue,
   findCard,
   findTrinket,
-  onOpenMenu,
 }: {
   event: MysteryEvent;
   runDeck: BattleCard[];
@@ -55,7 +54,6 @@ export function MysteryScreen({
   onContinue: () => void;
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   function handlePick(choice: MysteryChoice) {
     onChoose(choice);
@@ -116,7 +114,7 @@ export function MysteryScreen({
   ]);
 
   return (
-    <MysteryScreenShell title={title} onOpenMenu={onOpenMenu} keywordIds={plasmaKeywordIds}>
+    <MysteryScreenShell title={title} keywordIds={plasmaKeywordIds}>
       <FadeSlot swapKey={phase} className="mt-6 flex min-h-[56cqh] w-full flex-col">
         {mysteryCardChoices ? (
           <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
@@ -148,19 +146,13 @@ export function MysteryScreen({
 
 export function MysteryScreenShell({
   title = "Mystery",
-  onOpenMenu,
   keywordIds,
   children,
 }: {
   title?: string | undefined;
-  onOpenMenu: (rect?: DOMRect) => void;
   keywordIds?: readonly KeywordId[] | null | undefined;
   children?: ReactNode | undefined;
 }) {
   usePlasmaBaseline(keywordIds ? getPlasmaColorPair(keywordIds) : null);
-  return (
-    <TitledScreenShell title={title} onOpenMenu={onOpenMenu} menuLabel="Open mystery menu">
-      {children}
-    </TitledScreenShell>
-  );
+  return <TitledScreenShell title={title}>{children}</TitledScreenShell>;
 }

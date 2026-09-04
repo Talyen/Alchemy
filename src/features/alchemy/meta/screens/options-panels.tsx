@@ -19,6 +19,10 @@ export interface DisplayOptionsProps {
   showDisplayMode: boolean;
   brightness: number;
   onBrightnessChange: (value: number) => void;
+  backgroundParticlesIntensity: number;
+  onBackgroundParticlesIntensityChange: (value: number) => void;
+  backgroundGlowIntensity: number;
+  onBackgroundGlowIntensityChange: (value: number) => void;
 }
 
 export interface AudioOptionsProps {
@@ -74,6 +78,21 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
         onChange={display.onBrightnessChange}
         min={SETTINGS_RANGES.brightness.min}
         max={SETTINGS_RANGES.brightness.max}
+      />
+      <p className={controlLabelClass}>Special Effects</p>
+      <SettingsSlider
+        label="Background Particles"
+        value={display.backgroundParticlesIntensity}
+        onChange={display.onBackgroundParticlesIntensityChange}
+        min={SETTINGS_RANGES.specialEffects.min}
+        max={SETTINGS_RANGES.specialEffects.max}
+      />
+      <SettingsSlider
+        label="Background Glow"
+        value={display.backgroundGlowIntensity}
+        onChange={display.onBackgroundGlowIntensityChange}
+        min={SETTINGS_RANGES.specialEffects.min}
+        max={SETTINGS_RANGES.specialEffects.max}
       />
     </div>
   );

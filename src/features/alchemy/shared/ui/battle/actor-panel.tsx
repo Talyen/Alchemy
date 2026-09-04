@@ -15,8 +15,10 @@ import {
   sectionTitleClass,
 } from "../../config";
 import type { CombatImpactCue, StatusChip } from "../../types";
+import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { Surface } from "../surface";
 import { useHoverVisible } from "../use-hover-visible";
+import { usePlasmaInteraction } from "../use-plasma-source";
 import { PortraitImpactVfx } from "./portrait-hurt-vfx";
 import { useImpactPulse } from "./use-hurt-pulse";
 import { SliceDeath } from "./slice-death";
@@ -64,6 +66,7 @@ interface ArtPanelProps {
   ccKeyword?: ActiveCcKeyword | null;
   attackToken?: number;
   castToken?: number;
+  plasmaColorPair?: PlasmaColorPair | null;
   children?: ReactNode;
 }
 
@@ -96,11 +99,13 @@ export function ArtPanel({
   ccKeyword = null,
   attackToken = 0,
   castToken = 0,
+  plasmaColorPair = null,
   children,
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
   const { triggerRef: artWrapperRef, visible: tooltipVisible, ...tooltipHandlers } = useHoverVisible();
+  usePlasmaInteraction(plasmaColorPair, tooltipVisible);
 
   const resolvedCardWidthClass =
     cardWidthClass ?? (side === "enemy" ? battleEnemyCardWidthClass : battleCardWidthClass);

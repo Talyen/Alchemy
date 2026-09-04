@@ -74,6 +74,7 @@ describe("HomesteadUpgradeNode", () => {
     );
     const img = container.querySelector("img");
     expect(img?.className).toContain("grayscale");
+    expect(img?.className).toContain("group-hover:grayscale-0");
   });
 
   it("does not apply tier0 dim when already leveled", () => {

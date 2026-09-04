@@ -7,7 +7,7 @@ import { useInitialLoadReady } from "@/app/use-app-effects";
 
 vi.mock("@/lib/game-data", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/game-data")>()),
-  allGameArt: ["first.webp", "second.webp"],
+  allGameArt: ["first.webp", "second.webp", "gear.webp"],
   essentialGameArt: ["first.webp", "second.webp"],
 }));
 
@@ -66,7 +66,7 @@ describe("useInitialLoadReady", () => {
       value: { ready: fonts.promise },
     });
 
-    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 650, bootstrapReady: true }));
+    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 2000, bootstrapReady: true }));
 
     expect(preloadImagesInBatches).toHaveBeenCalledWith(
       ["first.webp", "second.webp"],
@@ -75,7 +75,7 @@ describe("useInitialLoadReady", () => {
     );
     expect(result.current.ready).toBe(false);
 
-    await advance(650);
+    await advance(2000);
     expect(result.current.ready).toBe(false);
 
     await act(async () => {
@@ -105,7 +105,7 @@ describe("useInitialLoadReady", () => {
     });
 
     const { result, rerender } = renderHook(
-      ({ bootstrapReady }: { bootstrapReady: boolean }) => useInitialLoadReady({ minDurationMs: 650, bootstrapReady }),
+      ({ bootstrapReady }: { bootstrapReady: boolean }) => useInitialLoadReady({ minDurationMs: 2000, bootstrapReady }),
       { initialProps: { bootstrapReady: false } },
     );
 
@@ -131,7 +131,7 @@ describe("useInitialLoadReady", () => {
       value: { ready: new Promise<void>(() => {}) },
     });
 
-    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 650, bootstrapReady: true }));
+    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 2000, bootstrapReady: true }));
 
     await advance(400);
     expect(result.current.ready).toBe(false);
@@ -159,6 +159,35 @@ describe("useInitialLoadReady", () => {
     expect(warn).toHaveBeenCalledWith("Font loading timed out");
   });
 
+  it("starts deferred gear decode while the minimum display window is still running", async () => {
+    const essential = deferred();
+    vi.mocked(preloadImagesInBatches).mockImplementation(async (srcs, _batchSize, onProgress) => {
+      if (srcs.includes("gear.webp")) return;
+      onProgress?.(0, 2);
+      await essential.promise;
+      onProgress?.(2, 2);
+    });
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: Promise.resolve() },
+    });
+
+    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 2000, bootstrapReady: true }));
+    expect(result.current.ready).toBe(false);
+
+    await act(async () => {
+      essential.resolve();
+      await essential.promise;
+    });
+    await advance(500);
+
+    expect(preloadImagesInBatches).toHaveBeenCalledWith(["gear.webp"], IMAGE_PRELOAD_BATCH_SIZE);
+    expect(result.current.ready).toBe(false);
+
+    await advance(2000);
+    expect(result.current.ready).toBe(true);
+  });
+
   it("keeps warming assets when the test-only presentation gate is skipped", () => {
     vi.mocked(shouldSkipStartupLoadingGate).mockReturnValue(true);
     vi.mocked(preloadImagesInBatches).mockReturnValue(new Promise<void>(() => {}));
@@ -167,7 +196,7 @@ describe("useInitialLoadReady", () => {
       value: { ready: new Promise<void>(() => {}) },
     });
 
-    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 650 }));
+    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 2000 }));
 
     expect(result.current.ready).toBe(true);
     expect(result.current.progress).toBe(1);

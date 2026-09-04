@@ -4,7 +4,6 @@ import type { Screen } from "@/lib/routing";
 export interface RenderAlchemyScreenProps {
   screen: Screen;
   routeCommands: AlchemyRouteCommands;
-  onOpenBattleMenu: (rect?: DOMRect) => void;
   onClearSaveData: () => void;
   onUnlockAllDevMode: () => void;
   onBackFromOptions: () => void;
@@ -19,7 +18,6 @@ export type RunEndCommands = AlchemyRouteCommands["runEnd"];
 
 interface PhaseRouteCtx<K extends keyof AlchemyRouteCommands> {
   routeCommands: Pick<AlchemyRouteCommands, K>;
-  onOpenBattleMenu: RenderAlchemyScreenProps["onOpenBattleMenu"];
 }
 
 export type MetaRouteCtx = PhaseRouteCtx<"meta">;
@@ -33,5 +31,5 @@ export interface BattleRouteCtx extends PhaseRouteCtx<"battle"> {
 
 export type OptionsRouteCtx = Pick<
   RenderAlchemyScreenProps,
-  "onOpenBattleMenu" | "onClearSaveData" | "onUnlockAllDevMode" | "onBackFromOptions"
+  "onClearSaveData" | "onUnlockAllDevMode" | "onBackFromOptions"
 >;

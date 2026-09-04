@@ -51,10 +51,9 @@ interface Props {
   draftedCards: BattleCard[];
   draftChoices: BattleCard[];
   onPick: (cardId: string) => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }
 
-export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick, onOpenMenu }: Props) {
+export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick }: Props) {
   const round = draftedCards.length;
   const isComplete = draftedCards.length >= DRAFT_ROUNDS;
   const [hoveredCard, setHoveredCard] = useState<BattleCard | null>(null);
@@ -66,12 +65,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
   usePlasmaInteraction(plasmaKeywordIds ? getPlasmaColorPair(plasmaKeywordIds) : null, plasmaKeywordIds !== null);
 
   return (
-    <TitledScreenShell
-      title={isComplete ? "Draft Complete" : "Draft a Deck"}
-      onOpenMenu={onOpenMenu}
-      menuLabel="Open draft menu"
-      maxWidthClass="max-w-6xl"
-    >
+    <TitledScreenShell title={isComplete ? "Draft Complete" : "Draft a Deck"} maxWidthClass="max-w-6xl">
       <p className={cn("mt-3 text-center", bodyTextClass)}>
         {isComplete
           ? `You drafted ${String(draftedCards.length)} cards. Ready to begin your run.`

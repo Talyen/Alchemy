@@ -29,13 +29,11 @@ const TALENT_PANE_CLASS = "flex min-h-[50rem] w-full flex-col items-center";
 export function TalentsScreen({
   talentXP,
   unlockedTalents,
-  onOpenMenu,
   onUnlockTalent,
   onResetTalents,
 }: {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
-  onOpenMenu: (rect?: DOMRect) => void;
   onUnlockTalent: (keywordId: KeywordId, talentId: string) => void;
   onResetTalents: () => void;
 }) {
@@ -116,8 +114,6 @@ export function TalentsScreen({
   return (
     <TitledScreenShell
       title={title}
-      onOpenMenu={onOpenMenu}
-      menuLabel="Open talents menu"
       maxWidthClass="max-w-[90rem]"
       minHeightClass="min-h-[76cqh]"
       headerActions={

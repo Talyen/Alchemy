@@ -94,4 +94,12 @@ describe("HamburgerTrigger", () => {
     expect(onClick).toHaveBeenCalledTimes(1);
     expect(onClick).toHaveBeenCalledWith(expect.any(Object));
   });
+
+  it("renders at the enlarged stage-corner size", () => {
+    render(<HamburgerTrigger onClick={vi.fn()} label="Open game menu" />);
+
+    const button = screen.getByRole("button", { name: "Open game menu" });
+    expect(button.className).toMatch(/h-12/);
+    expect(button.className).toMatch(/w-12/);
+  });
 });

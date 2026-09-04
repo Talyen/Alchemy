@@ -24,7 +24,6 @@ export function RunEndScreen({
   runEndMaterials,
   runEndItems,
   onContinue,
-  onOpenMenu,
 }: {
   title: string;
   subtitle: string;
@@ -35,19 +34,13 @@ export function RunEndScreen({
   runEndMaterials: MaterialInventory;
   runEndItems: readonly RunObtainedItem[];
   onContinue: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const plasmaColorPair =
     outcome === "defeat" ? DEATHS_DOOR_PLASMA_PAIR : getPlasmaColorPair(getPlasmaKeywordsForCharacter(characterId));
   usePlasmaBaseline(plasmaColorPair);
 
   return (
-    <TitledScreenShell
-      title={title}
-      onOpenMenu={onOpenMenu}
-      menuLabel={`Open ${title.toLowerCase()} menu`}
-      maxWidthClass="max-w-7xl"
-    >
+    <TitledScreenShell title={title} maxWidthClass="max-w-7xl">
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
         <p className={cn(bodyTextClass, "text-xl")}>{subtitle}</p>
 

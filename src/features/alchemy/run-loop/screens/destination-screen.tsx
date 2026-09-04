@@ -16,12 +16,10 @@ export function DestinationScreen({
   rewardState,
   onChoose,
   onPrepare,
-  onOpenMenu,
 }: {
   rewardState: RewardState;
   onChoose: (destination: Destination) => void;
   onPrepare: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const destinationOptions = rewardState.destinations;
   const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === DESTINATIONS.BOSS_COMBAT;
@@ -51,8 +49,6 @@ export function DestinationScreen({
   return (
     <TitledScreenShell
       title={title}
-      onOpenMenu={onOpenMenu}
-      menuLabel="Open destination menu"
       minHeightClass="min-h-[50cqh]"
       maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}
     >

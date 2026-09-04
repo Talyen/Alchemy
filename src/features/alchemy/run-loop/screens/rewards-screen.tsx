@@ -140,14 +140,12 @@ export function RewardsScreen({
   onSkip,
   onSelectReward,
   claimInFlight = false,
-  onOpenMenu,
 }: {
   rewardState: RewardState;
   onAddReward: () => void;
   onSkip: () => void;
   onSelectReward: (id: string) => void;
   claimInFlight?: boolean;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   const rewardChoices = rewardState.choices;
   const rewardGold = rewardState.gold;
@@ -169,7 +167,7 @@ export function RewardsScreen({
   usePlasmaInteraction(getRewardColorPair(hoveredReward), hoveredReward !== null);
 
   return (
-    <TitledScreenShell title="Victory" onOpenMenu={onOpenMenu} menuLabel="Open rewards menu" maxWidthClass="max-w-6xl">
+    <TitledScreenShell title="Victory" maxWidthClass="max-w-6xl">
       <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>{choicePrompt}</h2>
 
       <FadeSlot

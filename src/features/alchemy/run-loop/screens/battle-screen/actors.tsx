@@ -9,6 +9,7 @@ import {
   getBossShineColors,
   getCharacterShineColors,
   getCompanionShineColors,
+  getPlasmaColorPairForCharacter,
 } from "@/features/alchemy/shared/config";
 import { CombatTextRailSide, ShakingArtPanel, ShakingCompanionPanel } from "../../battle/presentation/actor-vfx";
 import { getActiveCcKeyword } from "@/features/alchemy/shared/utils";
@@ -58,6 +59,7 @@ export function BattleActors({
             turnActive={isPlayerTurn}
             turnShineColors={getCharacterShineColors(characterId)}
             ccKeyword={playerCcKeyword}
+            plasmaColorPair={getPlasmaColorPairForCharacter(characterId)}
             artCorner={
               battleState.activeCompanion ? (
                 <div className={battleCompanionCornerClass}>

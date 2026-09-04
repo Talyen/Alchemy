@@ -13,17 +13,15 @@ export function ShopBrowseShell({
   title,
   gold,
   showGold = true,
-  onOpenMenu,
   children,
 }: {
   title: string;
   gold: number;
   showGold?: boolean;
-  onOpenMenu: (rect?: DOMRect) => void;
   children: ReactNode;
 }) {
   return (
-    <TitledScreenShell title={title} onOpenMenu={onOpenMenu} menuLabel={`Open ${title} menu`}>
+    <TitledScreenShell title={title}>
       <div className="mt-6 flex flex-col items-center gap-6 text-center">
         {showGold ? (
           <GoldDisplay gold={gold} />

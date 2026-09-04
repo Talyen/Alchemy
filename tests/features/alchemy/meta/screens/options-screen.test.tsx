@@ -4,7 +4,6 @@ import { OptionsScreen } from "@/features/alchemy/meta/screens/options-screen";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 
 const defaultProps = {
-  onOpenMenu: vi.fn(),
   onBack: vi.fn(),
   display: {
     selectedAspectRatio: "auto" as const,
@@ -14,6 +13,10 @@ const defaultProps = {
     showDisplayMode: false,
     brightness: 100,
     onBrightnessChange: vi.fn(),
+    backgroundParticlesIntensity: 100,
+    onBackgroundParticlesIntensityChange: vi.fn(),
+    backgroundGlowIntensity: 100,
+    onBackgroundGlowIntensityChange: vi.fn(),
   },
   audio: {
     masterVolume: 100,
@@ -63,6 +66,31 @@ describe("OptionsScreen", () => {
 
     expect(screen.queryByText("UI Scale")).toBeNull();
     expect(screen.getByText("Brightness")).toBeTruthy();
+  });
+
+  it("renders Special Effects sliders that report intensity changes", () => {
+    const onBackgroundParticlesIntensityChange = vi.fn();
+    const onBackgroundGlowIntensityChange = vi.fn();
+    render(
+      <OptionsScreen
+        {...defaultProps}
+        display={{
+          ...defaultProps.display,
+          onBackgroundParticlesIntensityChange,
+          onBackgroundGlowIntensityChange,
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Special Effects")).toBeTruthy();
+    fireEvent.change(screen.getByRole("slider", { name: "Background Particles" }), {
+      target: { value: "40" },
+    });
+    fireEvent.change(screen.getByRole("slider", { name: "Background Glow" }), {
+      target: { value: "60" },
+    });
+    expect(onBackgroundParticlesIntensityChange).toHaveBeenCalledWith(40);
+    expect(onBackgroundGlowIntensityChange).toHaveBeenCalledWith(60);
   });
 
   it("renders the remember auto-battle toggle on the gameplay tab", async () => {

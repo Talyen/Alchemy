@@ -7,6 +7,24 @@ import type { GearInstance } from "./types";
 const ASTRAL_SHINE_FALLBACK = ["#cbd5e1", "#64748b", "#cbd5e1"] as const;
 const UNIQUE_SHINE_COLORS = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"] as const;
 const UNIQUE_TEXT_SHINE_COLORS = ["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"] as const;
+const MAX_TEXT_SHINE_KEYWORDS = 3;
+
+export function selectTextShineKeywordIds(
+  instanceKeywordIds: readonly KeywordId[],
+  affinityKeywords: readonly KeywordId[],
+): KeywordId[] {
+  const affinity = new Set<KeywordId>(affinityKeywords);
+  const preferred: KeywordId[] = [];
+  const rest: KeywordId[] = [];
+  for (const keywordId of instanceKeywordIds) {
+    if (affinity.has(keywordId)) {
+      preferred.push(keywordId);
+    } else {
+      rest.push(keywordId);
+    }
+  }
+  return [...preferred, ...rest].slice(0, MAX_TEXT_SHINE_KEYWORDS);
+}
 
 export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
   const keywordIds = new Set<KeywordId>();
@@ -63,13 +81,21 @@ export function getGearInstanceShineColors(instance: GearInstance): readonly str
 }
 
 export function getGearDefinitionTextShineColors(definition: GearDefinition): readonly string[] {
-  return getShineColorsForRarity(definition.rarity, definition.affinityKeywords, "text");
+  return getShineColorsForRarity(
+    definition.rarity,
+    definition.affinityKeywords.slice(0, MAX_TEXT_SHINE_KEYWORDS),
+    "text",
+  );
 }
 
 export function getGearInstanceTextShineColors(instance: GearInstance): readonly string[] {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return [];
-  return getShineColorsForRarity(definition.rarity, getGearInstanceKeywordIds(instance), "text");
+  return getShineColorsForRarity(
+    definition.rarity,
+    selectTextShineKeywordIds(getGearInstanceKeywordIds(instance), definition.affinityKeywords),
+    "text",
+  );
 }
 
 export const GEAR_ASTRAL_SHINE_BORDER_WIDTH = 2;
@@ -92,8 +118,9 @@ export function getGearAffixTextShineColors(affix: {
   keywordId: KeywordId;
   secondaryKeywordId?: KeywordId;
 }): readonly string[] {
-  return collectShineColors(
-    affix.secondaryKeywordId ? [affix.keywordId, affix.secondaryKeywordId] : [affix.keywordId],
-    "text",
+  const keywordIds = (affix.secondaryKeywordId ? [affix.keywordId, affix.secondaryKeywordId] : [affix.keywordId]).slice(
+    0,
+    MAX_TEXT_SHINE_KEYWORDS,
   );
+  return collectShineColors(keywordIds, "text");
 }

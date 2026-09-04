@@ -1,13 +1,7 @@
 import { useState, useMemo } from "react";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import {
-  HamburgerTrigger,
-  PageLayout,
-  PaginationControls,
-  ScreenHeaderRow,
-  ScreenShell,
-} from "../../shared/ui/shared-ui";
+import { PageLayout, PaginationControls, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
@@ -27,7 +21,6 @@ export function HomesteadScreen({
   completedResearch,
   bondedCompanions,
   discoveredCardIds,
-  onOpenMenu,
   onConstructBuilding,
   onPlantFarm,
   onCompleteResearch,
@@ -40,7 +33,6 @@ export function HomesteadScreen({
   completedResearch: Record<ResearchId, number>;
   bondedCompanions: Record<CompanionId, number>;
   discoveredCardIds: string[];
-  onOpenMenu: (rect?: DOMRect) => void;
   onConstructBuilding: (id: BuildingId) => boolean;
   onPlantFarm: (id: FarmId) => boolean;
   onCompleteResearch: (id: ResearchId) => boolean;
@@ -79,10 +71,7 @@ export function HomesteadScreen({
   return (
     <PageLayout>
       <ScreenShell maxWidthClass="max-w-7xl" className="relative">
-        <ScreenHeaderRow
-          title="Homestead"
-          trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open homestead menu" />}
-        />
+        <ScreenHeaderRow title="Homestead" />
 
         <div className="mt-5 flex flex-col gap-4">
           <MaterialsBar gold={gold} materialInventory={materialInventory} />

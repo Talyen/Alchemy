@@ -14,7 +14,6 @@ export function TrinketShopScreen({
   onBuyTrinket,
   onRefresh,
   onContinue,
-  onOpenMenu,
 }: {
   gold: number;
   trinkets: TrinketEntry[];
@@ -25,7 +24,6 @@ export function TrinketShopScreen({
   onBuyTrinket: (trinket: TrinketEntry, slotKey: string) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
-  onOpenMenu: (rect?: DOMRect) => void;
 }) {
   return (
     <GenericShopScreen
@@ -40,7 +38,6 @@ export function TrinketShopScreen({
       onBuy={onBuyTrinket}
       onRefresh={onRefresh}
       onContinue={onContinue}
-      onOpenMenu={onOpenMenu}
       renderItem={(trinket, price, purchased, onBuy) => (
         <PurchasableTrinketItem trinket={trinket} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />
       )}

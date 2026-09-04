@@ -3,7 +3,7 @@ import { useHeldWhile } from "@/features/alchemy/shared/ui/fade-presence";
 import { cardById, trinketById } from "@/features/alchemy/shared/config/game-data-catalog";
 import { MysteryScreen, MysteryScreenShell } from "@/features/alchemy/run-loop/screens";
 import { useMysteryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import type { RunLoopCommands, RunLoopRouteCtx } from "./route-ctx";
+import type { RunLoopCommands } from "./route-ctx";
 
 function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
   const isMysteryActive = Boolean(r.mysteryEvent);
@@ -19,13 +19,7 @@ function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
   };
 }
 
-export function MysteryScreenRoute({
-  commands,
-  onOpenBattleMenu,
-}: {
-  commands: RunLoopCommands["mystery"];
-  onOpenBattleMenu: RunLoopRouteCtx["onOpenBattleMenu"];
-}) {
+export function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["mystery"] }) {
   const r = useMysteryScreenData();
   const { handleContinue } = commands;
 
@@ -57,7 +51,7 @@ export function MysteryScreenRoute({
   }, [r.mysteryEvent, heldEvent, handleContinue]);
 
   if (!heldEvent) {
-    return <MysteryScreenShell onOpenMenu={onOpenBattleMenu} />;
+    return <MysteryScreenShell />;
   }
 
   return (
@@ -78,7 +72,6 @@ export function MysteryScreenRoute({
       onContinue={commands.handleContinue}
       findCard={(id) => cardById[id]}
       findTrinket={(id) => trinketById[id]}
-      onOpenMenu={onOpenBattleMenu}
     />
   );
 }

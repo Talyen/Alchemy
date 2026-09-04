@@ -17,11 +17,17 @@ describe("ScreenShell", () => {
 
 describe("TitledScreenShell", () => {
   it("clips to the stage so plasma can show through the shell", () => {
-    const { container } = render(
-      <TitledScreenShell title="Test" onOpenMenu={() => {}} menuLabel="Open test menu">
+    const { container } = render(<TitledScreenShell title="Test">Body</TitledScreenShell>);
+    expect(container.firstElementChild?.className).toMatch(/\boverflow-hidden\b/);
+  });
+
+  it("renders header actions without a hamburger trigger", () => {
+    render(
+      <TitledScreenShell title="Test" headerActions={<button type="button">Action</button>}>
         Body
       </TitledScreenShell>,
     );
-    expect(container.firstElementChild?.className).toMatch(/\boverflow-hidden\b/);
+    expect(screen.getByRole("button", { name: "Action" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /menu/i })).toBeNull();
   });
 });

@@ -126,7 +126,7 @@ test.describe("Armory equip", critical, () => {
     });
     await injectActiveBattle(page, makeGoblinBattleState());
 
-    await page.getByRole("button", { name: "Open battle menu" }).click();
+    await page.getByRole("button", { name: "Open game menu" }).click();
     await page.getByRole("button", { name: "Armory" }).click();
     await expect(page.getByText("Equipment can be changed after combat.")).toHaveCount(0);
     await page.getByLabel("Armor equipment slot").click();

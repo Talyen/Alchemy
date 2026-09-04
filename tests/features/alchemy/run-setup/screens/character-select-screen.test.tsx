@@ -14,11 +14,8 @@ describe("CharacterSelectScreen", () => {
 
   it("renders heroes and respects finishedRunCharacters unlock state", () => {
     const onSelect = vi.fn();
-    const onOpenMenu = vi.fn();
 
-    const { rerender } = render(
-      <CharacterSelectScreen onSelect={onSelect} onOpenMenu={onOpenMenu} finishedRunCharacters={[]} />,
-    );
+    const { rerender } = render(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={[]} />);
 
     const knight = screen.getByRole("button", { name: /Knight/i });
     const rogue = screen.getByRole("button", { name: /Rogue/i });
@@ -26,7 +23,7 @@ describe("CharacterSelectScreen", () => {
     expect(knight.getAttribute("aria-disabled")).toBe("false");
     expect(rogue.getAttribute("aria-disabled")).toBe("true");
 
-    rerender(<CharacterSelectScreen onSelect={onSelect} onOpenMenu={onOpenMenu} finishedRunCharacters={["knight"]} />);
+    rerender(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={["knight"]} />);
 
     expect(screen.getByRole("button", { name: /Rogue/i }).getAttribute("aria-disabled")).toBe("false");
   });
@@ -34,16 +31,15 @@ describe("CharacterSelectScreen", () => {
   it("triggers onSelect when clicking an unlocked hero", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
-    const onOpenMenu = vi.fn();
 
-    render(<CharacterSelectScreen onSelect={onSelect} onOpenMenu={onOpenMenu} finishedRunCharacters={[]} />);
+    render(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={[]} />);
 
     await user.click(screen.getByRole("button", { name: /Knight/i }));
     expect(onSelect).toHaveBeenCalledWith("knight");
   });
 
   it("uses the hero tooltip as the plasma owner for pointer and keyboard interaction", async () => {
-    render(<CharacterSelectScreen onSelect={vi.fn()} onOpenMenu={vi.fn()} finishedRunCharacters={[]} />);
+    render(<CharacterSelectScreen onSelect={vi.fn()} finishedRunCharacters={[]} />);
     const knight = screen.getByRole("button", { name: "Select Knight" });
     const wrapper = knight.parentElement!;
 
@@ -65,7 +61,7 @@ describe("CharacterSelectScreen", () => {
   it("rejects selection of a locked hero", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
-    render(<CharacterSelectScreen onSelect={onSelect} onOpenMenu={vi.fn()} finishedRunCharacters={[]} />);
+    render(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={[]} />);
 
     await user.click(screen.getByRole("button", { name: "Rogue (Locked)" }));
     expect(onSelect).not.toHaveBeenCalled();

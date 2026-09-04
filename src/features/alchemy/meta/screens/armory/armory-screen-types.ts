@@ -21,7 +21,6 @@ export interface ArmoryScreenProps {
   equippedTrinkets: EquippedTrinkets;
   finishedRunCharacters: CharacterId[];
   browseOnly: boolean;
-  onOpenMenu: (rect?: DOMRect) => void;
   onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;

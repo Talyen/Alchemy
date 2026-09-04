@@ -50,7 +50,6 @@ describe("MerchantShopScreen remove mode", () => {
         onRemoveCard={onRemoveCard}
         onRefresh={() => {}}
         onContinue={() => {}}
-        onOpenMenu={() => {}}
       />,
     );
   }

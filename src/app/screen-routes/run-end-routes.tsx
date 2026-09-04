@@ -11,15 +11,7 @@ const RUN_END_COPY = {
   },
 } as const;
 
-function RunEndScreenRoute({
-  outcome,
-  commands,
-  onOpenBattleMenu,
-}: {
-  outcome: keyof typeof RUN_END_COPY;
-  commands: RunEndCommands;
-  onOpenBattleMenu: RunEndRouteCtx["onOpenBattleMenu"];
-}) {
+function RunEndScreenRoute({ outcome, commands }: { outcome: keyof typeof RUN_END_COPY; commands: RunEndCommands }) {
   const { characterId, runEndTalentXP, talentXP, runEndMaterials, runEndItems, runEndLabyrinthFloor } =
     useRunEndScreenData();
   const { title } = RUN_END_COPY[outcome];
@@ -38,7 +30,6 @@ function RunEndScreenRoute({
       runEndMaterials={runEndMaterials}
       runEndItems={runEndItems}
       onContinue={commands.continueFromRunEnd}
-      onOpenMenu={onOpenBattleMenu}
     />
   );
 }
@@ -47,10 +38,6 @@ export const runEndScreenRoutes: {
   "game-over": (ctx: RunEndRouteCtx) => ReactNode;
   "run-victory": (ctx: RunEndRouteCtx) => ReactNode;
 } = {
-  "game-over": ({ routeCommands, onOpenBattleMenu }) => (
-    <RunEndScreenRoute outcome="defeat" commands={routeCommands.runEnd} onOpenBattleMenu={onOpenBattleMenu} />
-  ),
-  "run-victory": ({ routeCommands, onOpenBattleMenu }) => (
-    <RunEndScreenRoute outcome="victory" commands={routeCommands.runEnd} onOpenBattleMenu={onOpenBattleMenu} />
-  ),
+  "game-over": ({ routeCommands }) => <RunEndScreenRoute outcome="defeat" commands={routeCommands.runEnd} />,
+  "run-victory": ({ routeCommands }) => <RunEndScreenRoute outcome="victory" commands={routeCommands.runEnd} />,
 };

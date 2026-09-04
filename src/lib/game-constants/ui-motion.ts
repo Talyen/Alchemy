@@ -5,7 +5,7 @@ export const MOTION_FADE_MS = 180;
 export const PAGE_EXIT_MS = MOTION_FADE_MS;
 export const TOOLTIP_FADE_MS = MOTION_FADE_MS;
 
-export const INITIAL_LOAD_MIN_DURATION_MS = 650;
+export const INITIAL_LOAD_MIN_DURATION_MS = 3000;
 export const FONT_PRELOAD_TIMEOUT_MS = 10_000;
 export const STARTUP_LOAD_IMAGE_WEIGHT = 0.85;
 export const STARTUP_LOAD_FONT_WEIGHT = 0.05;

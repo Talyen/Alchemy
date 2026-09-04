@@ -12,6 +12,7 @@ import {
   getGearInstanceShineGradient,
   getGearInstanceTextShineColors,
   getUniqueGearTextShineColors,
+  selectTextShineKeywordIds,
 } from "@/lib/gear/gear-shine";
 import type { GearInstance } from "@/lib/gear/types";
 
@@ -126,5 +127,45 @@ describe("gear shine", () => {
     expect(astral).toMatch(/^linear-gradient\(in oklab/);
     expect(astral).toContain(keywordDefinitions.physical.shineColors[0]!);
     expect(astral).toContain(keywordDefinitions.forge.shineColors[0]!);
+  });
+
+  it("prefers base affinity keywords when selecting text shine keywords", () => {
+    expect(
+      selectTextShineKeywordIds(["bleed", "burn", "freeze", "physical", "poison"], ["physical", "forge", "holy"]),
+    ).toEqual(["physical", "bleed", "burn"]);
+  });
+
+  it("caps instance text shine at three keywords with affinity first", () => {
+    const gear = instance({
+      instanceId: "astral-crowded",
+      definitionId: "longsword-astral",
+      affixes: [
+        { id: "flat-physical", value: 2 },
+        { id: "flat-burn", value: 2 },
+        { id: "flat-freeze", value: 2 },
+        { id: "flat-poison", value: 2 },
+        { id: "flat-bleed", value: 2 },
+      ],
+    });
+
+    const expected = ["physical", "bleed", "burn"].flatMap((keywordId) =>
+      keywordDefinitions[keywordId as keyof typeof keywordDefinitions].shineColors.slice(0, 2),
+    );
+    expect(getGearInstanceTextShineColors(gear)).toEqual(expected);
+    expect(getGearInstanceTextShineColors(gear)).not.toContain(keywordDefinitions.freeze.shineColors[0]!);
+    expect(getGearInstanceTextShineColors(gear)).not.toContain(keywordDefinitions.poison.shineColors[0]!);
+  });
+
+  it("caps definition text shine at the first three affinity keywords", () => {
+    const definition = {
+      ...gearDefinitions["longsword-astral"]!,
+      affinityKeywords: ["physical", "bleed", "poison", "dodge"],
+    } as (typeof gearDefinitions)["longsword-astral"];
+
+    const expected = ["physical", "bleed", "poison"].flatMap((keywordId) =>
+      keywordDefinitions[keywordId as keyof typeof keywordDefinitions].shineColors.slice(0, 2),
+    );
+    expect(getGearDefinitionTextShineColors(definition)).toEqual(expected);
+    expect(getGearDefinitionTextShineColors(definition)).not.toContain(keywordDefinitions.dodge.shineColors[0]!);
   });
 });

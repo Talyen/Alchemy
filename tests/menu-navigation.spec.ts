@@ -53,7 +53,7 @@ test.describe("Menu", critical, () => {
       discoveredCardIds: ["slash", "bash", "block"],
       runOverrides: { roomsEncountered: 1, destinationIndexInAct: 1 },
     });
-    await page.getByLabel("Open labyrinth menu").click();
+    await page.getByRole("button", { name: "Open game menu" }).click();
     await page.getByRole("button", { name: "Main Menu" }).click();
     const menu = new MenuPage(page);
     await menu.openGameModeSelect();

@@ -48,7 +48,7 @@ function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
   );
 }
 
-function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattleMenu">) {
+function ArmoryScreenRoute() {
   const controller = useArmoryController();
   return (
     <ArmoryScreen
@@ -60,7 +60,6 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattl
       onApplyCurrency={controller.onApplyCurrency}
       finishedRunCharacters={controller.finishedRunCharacters}
       browseOnly={controller.browseOnly}
-      onOpenMenu={onOpenBattleMenu}
       onEquip={controller.onEquip}
       onUnequip={controller.onUnequip}
       onEquipTrinket={controller.onEquipTrinket}
@@ -72,13 +71,7 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattl
   );
 }
 
-function GameModeSelectScreenRoute({
-  commands,
-  onOpenBattleMenu,
-}: {
-  commands: MetaCommands;
-  onOpenBattleMenu: MetaRouteCtx["onOpenBattleMenu"];
-}) {
+function GameModeSelectScreenRoute({ commands }: { commands: MetaCommands }) {
   const resumableModes = useResumableGameModes();
   const finishedRunCharacters = useFinishedRunCharacters();
   return (
@@ -88,12 +81,11 @@ function GameModeSelectScreenRoute({
       onSelectCampaign={commands.beginCampaign}
       onSelectLabyrinth={commands.beginLabyrinth}
       onSelectWildwood={commands.beginWildwood}
-      onOpenMenu={onOpenBattleMenu}
     />
   );
 }
 
-function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattleMenu">) {
+function CollectionScreenRoute() {
   const profile = useProfileCollectionSlice();
   const collectionActions = useCollectionActions();
   const bondedCompanions = useBondedCompanions();
@@ -101,7 +93,6 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenB
 
   return (
     <CollectionScreen
-      onOpenMenu={onOpenBattleMenu}
       collectionTab={profile.collectionTab}
       onSelectTab={collectionActions.handleCollectionTabChange}
       onPageChange={collectionActions.setCollectionPage}
@@ -116,14 +107,13 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenB
   );
 }
 
-function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBattleMenu">) {
+function HomesteadScreenRoute() {
   const homesteadValues = useHomesteadProgressSlice();
   const { discoveredCardIds } = useProfileDiscoverySlice();
   const homesteadActions = useHomesteadActions();
 
   return (
     <HomesteadScreen
-      onOpenMenu={onOpenBattleMenu}
       gold={homesteadValues.gold}
       materialInventory={homesteadValues.materialInventory}
       constructedBuildings={homesteadValues.constructedBuildings}
@@ -139,20 +129,13 @@ function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<MetaRouteCtx, "onOpenBa
   );
 }
 
-function TalentsScreenRoute({
-  commands,
-  onOpenBattleMenu,
-}: {
-  commands: MetaCommands;
-  onOpenBattleMenu: MetaRouteCtx["onOpenBattleMenu"];
-}) {
+function TalentsScreenRoute({ commands }: { commands: MetaCommands }) {
   const { talentXP, unlockedTalents } = useTalentProgressSlice();
 
   return (
     <TalentsScreen
       talentXP={talentXP}
       unlockedTalents={unlockedTalents}
-      onOpenMenu={onOpenBattleMenu}
       onUnlockTalent={commands.unlockTalent}
       onResetTalents={commands.resetUnlockedTalents}
     />
@@ -168,13 +151,9 @@ export const metaScreenRoutes: {
   armory: (ctx: MetaRouteCtx) => ReactNode;
 } = {
   menu: ({ routeCommands }) => <MenuScreenRoute commands={routeCommands.meta} />,
-  "game-mode-select": ({ routeCommands, onOpenBattleMenu }) => (
-    <GameModeSelectScreenRoute commands={routeCommands.meta} onOpenBattleMenu={onOpenBattleMenu} />
-  ),
-  collection: ({ onOpenBattleMenu }) => <CollectionScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
-  homestead: ({ onOpenBattleMenu }) => <HomesteadScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
-  talents: ({ routeCommands, onOpenBattleMenu }) => (
-    <TalentsScreenRoute commands={routeCommands.meta} onOpenBattleMenu={onOpenBattleMenu} />
-  ),
-  armory: ({ onOpenBattleMenu }) => <ArmoryScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
+  "game-mode-select": ({ routeCommands }) => <GameModeSelectScreenRoute commands={routeCommands.meta} />,
+  collection: () => <CollectionScreenRoute />,
+  homestead: () => <HomesteadScreenRoute />,
+  talents: ({ routeCommands }) => <TalentsScreenRoute commands={routeCommands.meta} />,
+  armory: () => <ArmoryScreenRoute />,
 };

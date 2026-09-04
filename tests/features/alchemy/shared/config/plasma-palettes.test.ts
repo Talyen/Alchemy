@@ -6,17 +6,26 @@ import {
   getPlasmaColorPairFromColors,
   getPlasmaColorPairForCard,
   getPlasmaColorPairForCharacter,
+  getPlasmaColorPairForEnemy,
   getPlasmaColorPairForGear,
   getPlasmaColorPairForTalent,
   getPlasmaColorPairForTrinket,
   getPlasmaKeywordsForCharacter,
+  getPlasmaKeywordsForEnemy,
   getPlasmaKeywordsForGear,
   getPlasmaKeywordsForTalent,
   lerpPlasmaColor,
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import { parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
 import { SHINE_PALETTES, WILDCARD_KEYWORD_SHINE_COLORS } from "@/features/alchemy/shared/config";
-import { cardById, characters, getCardKeywords, keywordDefinitions, trinketById } from "@/lib/game-data";
+import {
+  cardById,
+  characters,
+  getCardKeywords,
+  keywordDefinitions,
+  trinketById,
+  type BestiaryEntry,
+} from "@/lib/game-data";
 import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
 
 describe("getPlasmaColorPair", () => {
@@ -113,6 +122,55 @@ describe("getPlasmaKeywordsForTalent", () => {
     const keywords = getPlasmaKeywordsForTalent(talent);
     expect(keywords).toEqual(["burn"]);
     expect(getPlasmaColorPairForTalent(talent)).toEqual(getPlasmaColorPair(["burn"]));
+  });
+});
+
+describe("getPlasmaKeywordsForEnemy", () => {
+  const baseEntry: BestiaryEntry = {
+    id: "test-enemy",
+    title: "Test Enemy",
+    subtitle: "",
+    descriptionLines: [],
+    art: "",
+    enemyType: "normal",
+    traits: [],
+    attackEffects: [],
+  };
+
+  it("collects damage types from attack effects", () => {
+    const entry: BestiaryEntry = {
+      ...baseEntry,
+      attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+    };
+    expect(getPlasmaKeywordsForEnemy(entry)).toEqual(["burn"]);
+  });
+
+  it("collects keywords from trait descriptions", () => {
+    const entry: BestiaryEntry = {
+      ...baseEntry,
+      traits: [{ id: "t1", title: "Spores", description: "Applies Poison to the hero." }],
+    };
+    expect(getPlasmaKeywordsForEnemy(entry)).toEqual(["poison"]);
+  });
+
+  it("honors the live attack-effects override", () => {
+    const entry: BestiaryEntry = {
+      ...baseEntry,
+      attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+    };
+    expect(getPlasmaKeywordsForEnemy(entry, [{ kind: "damage", damageType: "freeze", amount: 2 }])).toEqual(["freeze"]);
+  });
+
+  it("maps enemy keywords to a plasma pair with wildcard fallback", () => {
+    const entry: BestiaryEntry = {
+      ...baseEntry,
+      attackEffects: [
+        { kind: "damage", damageType: "burn", amount: 2 },
+        { kind: "damage", damageType: "poison", amount: 1 },
+      ],
+    };
+    expect(getPlasmaColorPairForEnemy(entry)).toEqual(getPlasmaColorPair(["burn", "poison"]));
+    expect(getPlasmaColorPairForEnemy(baseEntry)).toEqual(getPlasmaColorPair([]));
   });
 });
 

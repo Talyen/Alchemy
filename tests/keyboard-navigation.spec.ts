@@ -22,7 +22,7 @@ test.describe("Keyboard Navigation", critical, () => {
     await page.keyboard.press("Escape");
     await expect(mainMenuBtn).toBeHidden({ timeout: 3000 });
 
-    const trigger = page.getByRole("button", { name: "Open battle menu" });
+    const trigger = page.getByRole("button", { name: "Open game menu" });
     await trigger.click();
     const menu = page.getByTestId("game-menu");
     await expect(menu).toBeVisible({ timeout: 3000 });

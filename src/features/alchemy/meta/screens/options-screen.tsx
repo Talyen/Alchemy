@@ -5,14 +5,7 @@ import { BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
 import { ErrorLogViewer } from "./error-log-viewer";
 
 import { FadeSlot } from "../../shared/ui/fade-slot";
-import {
-  ConfirmationDialog,
-  HamburgerTrigger,
-  PageLayout,
-  ScreenHeaderRow,
-  ScreenShell,
-  TabBar,
-} from "../../shared/ui/shared-ui";
+import { ConfirmationDialog, PageLayout, ScreenHeaderRow, ScreenShell, TabBar } from "../../shared/ui/shared-ui";
 import {
   AudioOptionsPanel,
   DisplayOptionsPanel,
@@ -37,7 +30,6 @@ const optionsTabs = [
 ];
 
 export function OptionsScreen({
-  onOpenMenu,
   onBack,
   display,
   audio,
@@ -45,7 +37,6 @@ export function OptionsScreen({
   saveData,
   dev,
 }: {
-  onOpenMenu: (rect?: DOMRect) => void;
   onBack: () => void;
   display: DisplayOptionsProps;
   audio: AudioOptionsProps;
@@ -63,10 +54,7 @@ export function OptionsScreen({
           <ErrorLogViewer onClose={() => setShowErrorLog(false)} />
         ) : (
           <ScreenShell maxWidthClass="max-w-4xl">
-            <ScreenHeaderRow
-              title="Options"
-              trailing={<HamburgerTrigger onClick={onOpenMenu} label="Open options menu" />}
-            />
+            <ScreenHeaderRow title="Options" />
 
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} className="flex-nowrap" />
