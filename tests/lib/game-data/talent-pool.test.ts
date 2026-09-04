@@ -210,7 +210,8 @@ describe("computeTalentEffects", () => {
       armor: ["armor-mitigate-stun"],
     });
 
-    expect(effects.blockToPhysicalDamageMultiplier).toBeCloseTo(0.6);
+    expect(effects.blockToPhysicalDamageMultiplier).toBeCloseTo(0.3);
+    expect(effects.physicalStripArmorWhileBlocked).toBe(true);
     expect(effects.natureLeechChance).toBe(20);
     expect(effects.goldOnWish).toBe(5);
     expect(effects.healthThresholdArmor).toHaveLength(2);
