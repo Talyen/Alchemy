@@ -1,5 +1,4 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MenuScreen } from "@/features/alchemy/meta/screens/menu-screen";
 
@@ -14,7 +13,7 @@ const defaultProps = {
   finishedRunCharacters: [],
 };
 
-describe("MenuScreen logo variants", () => {
+describe("MenuScreen logo", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
@@ -22,26 +21,9 @@ describe("MenuScreen logo variants", () => {
 
   it("applies the shared hover scale to the logo", () => {
     render(<MenuScreen {...defaultProps} />);
-    const logo = screen.getByRole("button", { name: "Flip Alchemy logo" });
-    expect(logo.classList.contains("card-hover-scale")).toBe(true);
-  });
-
-  it("flips without looping when there is only one logo variant", async () => {
-    const user = userEvent.setup();
-    render(<MenuScreen {...defaultProps} logoSrcVariants={["logo-only.png"]} />);
-
-    await user.click(screen.getByRole("button", { name: "Flip Alchemy logo" }));
-
-    expect(screen.getAllByAltText("Alchemy logo")[1]?.getAttribute("src")).toBe("logo-only.png");
-  });
-
-  it("flips to the only back variant when there are two logo variants", async () => {
-    const user = userEvent.setup();
-    render(<MenuScreen {...defaultProps} logoSrcVariants={["logo-front.png", "logo-back.png"]} />);
-
-    await user.click(screen.getByRole("button", { name: "Flip Alchemy logo" }));
-
-    expect(screen.getAllByAltText("Alchemy logo")[1]?.getAttribute("src")).toBe("logo-back.png");
+    const logo = screen.getByAltText("Alchemy logo");
+    expect(logo.getAttribute("src")).toBe("logo-front.png");
+    expect(logo.closest(".card-hover-scale")).not.toBeNull();
   });
 
   it("unlocks talents and homestead independently from finished run characters", () => {
@@ -54,12 +36,54 @@ describe("MenuScreen logo variants", () => {
     expect(screen.getByRole("button", { name: /homestead/i }).getAttribute("aria-disabled")).toBe("false");
   });
 
-  it("keeps every navigation button at the shared menu width", () => {
+  it("stacks Play, paired rows, Options, and Quit top to bottom", () => {
+    render(<MenuScreen {...defaultProps} onQuit={vi.fn()} />);
+    expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual([
+      "Play",
+      "Collection",
+      "Homestead",
+      "Armory",
+      "Talents",
+      "Options",
+      "Quit",
+    ]);
+  });
+
+  it("pairs Collection with Homestead and Armory with Talents", () => {
+    render(<MenuScreen {...defaultProps} />);
+    const collectionRow = screen.getByRole("button", { name: /collection/i }).closest(".grid-cols-2");
+    expect(collectionRow).not.toBeNull();
+    expect(collectionRow).toBe(screen.getByRole("button", { name: /homestead/i }).closest(".grid-cols-2"));
+
+    const armoryRow = screen.getByRole("button", { name: /armory/i }).closest(".grid-cols-2");
+    expect(armoryRow).not.toBeNull();
+    expect(armoryRow).toBe(screen.getByRole("button", { name: /talents/i }).closest(".grid-cols-2"));
+
+    expect(screen.getByRole("button", { name: "Play" }).closest(".grid-cols-2")).toBeNull();
+    expect(screen.getByRole("button", { name: "Options" }).closest(".grid-cols-2")).toBeNull();
+  });
+
+  it("colors each navigation icon thematically except Play", () => {
+    render(<MenuScreen {...defaultProps} />);
+
+    const iconClass = (label: RegExp) =>
+      screen.getByRole("button", { name: label }).querySelector("svg")?.getAttribute("class") ?? "";
+
+    expect(iconClass(/talents/i)).toContain("text-violet-400");
+    expect(iconClass(/homestead/i)).toContain("text-emerald-400");
+    expect(iconClass(/armory/i)).toContain("text-sky-300");
+    expect(iconClass(/collection/i)).toContain("text-amber-300");
+    expect(iconClass(/options/i)).toContain("text-zinc-400");
+    expect(iconClass(/^play$/i)).not.toContain("text-");
+  });
+
+  it("keeps every navigation button at the shared menu size", () => {
     render(<MenuScreen {...defaultProps} />);
 
     for (const label of ["Play", "Talents", "Homestead", "Armory", "Collection", "Options"]) {
       const button = screen.getByRole("button", { name: new RegExp(label, "i") });
       expect(button.parentElement?.className).toContain("w-[19.2rem]");
+      expect(button.className).toContain("h-16");
     }
   });
 });

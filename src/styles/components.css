@@ -105,32 +105,32 @@
   .hover-popup-panel[data-placement="above"],
   .hover-popup-panel:not([data-placement]) {
     transform-origin: bottom center;
-    transform: translateX(-50%) translateY(6px);
+    transform: translateY(6px);
   }
 
   .hover-popup-panel[data-placement="below"] {
     transform-origin: top center;
-    transform: translateX(-50%) translateY(-6px);
+    transform: translateY(-6px);
   }
 
   .hover-popup-panel[data-placement="side-end"] {
     transform-origin: left center;
-    transform: translateY(-50%);
+    transform: translateX(-6px);
   }
 
   .hover-popup-panel[data-placement="side-start"] {
     transform-origin: right center;
-    transform: translateY(-50%);
+    transform: translateX(6px);
   }
 
   .hover-popup-panel[data-visible] {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 
   .hover-popup-panel[data-placement^="side-"][data-visible] {
     opacity: 1;
-    transform: translateY(-50%);
+    transform: none;
   }
 
   .tooltips-disabled .hover-popup-panel {
@@ -210,8 +210,22 @@
   }
 
   .alchemy-loading-word {
-    animation: loadingWordFade 200ms ease-out both;
-    will-change: opacity, transform;
+    background-image: linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--color-foreground) 40%, transparent) 0%,
+      color-mix(in srgb, var(--color-foreground) 40%, transparent) 38%,
+      rgba(255, 246, 224, 0.8) 50%,
+      color-mix(in srgb, var(--color-foreground) 40%, transparent) 62%,
+      color-mix(in srgb, var(--color-foreground) 40%, transparent) 100%
+    );
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation:
+      loadingWordFade 200ms ease-out both,
+      loadingWordSheen 1100ms ease-out both;
+    will-change: opacity, transform, background-position;
   }
 }
 

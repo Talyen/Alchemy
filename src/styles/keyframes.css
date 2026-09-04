@@ -108,6 +108,15 @@
   }
 }
 
+@keyframes loadingWordSheen {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+
 @keyframes numberPop {
   0% {
     transform: translate3d(0, 2px, 0) scale3d(0.96, 0.96, 1);

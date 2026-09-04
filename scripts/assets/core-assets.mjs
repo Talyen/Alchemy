@@ -3,42 +3,6 @@ import { QUALITY, WIDTH } from "../lib/asset-constants.mjs";
 export const coreAssets = [
   // Logo
   { source: "Logo/Alchemy Logo.png", target: "alchemy-logo.webp", width: WIDTH.logo, quality: QUALITY.logo },
-  {
-    source: "Logo/Alchemy Logo Arcane Mana.png",
-    target: "alchemy-logo-arcane-mana.webp",
-    width: WIDTH.logo,
-    quality: QUALITY.logo,
-  },
-  {
-    source: "Logo/Alchemy Logo Fire Iron.png",
-    target: "alchemy-logo-fire-iron.webp",
-    width: WIDTH.logo,
-    quality: QUALITY.logo,
-  },
-  {
-    source: "Logo/Alchemy Logo Frost.png",
-    target: "alchemy-logo-frost.webp",
-    width: WIDTH.logo,
-    quality: QUALITY.logo,
-  },
-  {
-    source: "Logo/Alchemy Logo Holy Block.png",
-    target: "alchemy-logo-holy-block.webp",
-    width: WIDTH.logo,
-    quality: QUALITY.logo,
-  },
-  {
-    source: "Logo/Alchemy Logo Nature Bleed.png",
-    target: "alchemy-logo-nature-bleed.webp",
-    width: WIDTH.logo,
-    quality: QUALITY.logo,
-  },
-  {
-    source: "Logo/Alchemy Logo Poison.png",
-    target: "alchemy-logo-poison.webp",
-    width: WIDTH.logo,
-    quality: QUALITY.logo,
-  },
   // Misc
   // Piles share the boon preset (82): flat graphic fields band at QUALITY.card (80).
   { source: "Misc/Draw Pile.png", target: "draw-pile.webp", width: WIDTH.card, quality: QUALITY.boon },

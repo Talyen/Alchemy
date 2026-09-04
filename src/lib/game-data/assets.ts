@@ -12,15 +12,6 @@ export const normalEnemyBg = assetRefs.normalEnemy;
 const pointerCursor = assetRefs.pointerCShaded;
 
 export const menuLogo = assetRefs.alchemyLogo;
-export const menuLogoVariants = [
-  assetRefs.alchemyLogo,
-  assetRefs.alchemyLogoArcaneMana,
-  assetRefs.alchemyLogoFireIron,
-  assetRefs.alchemyLogoFrost,
-  assetRefs.alchemyLogoHolyBlock,
-  assetRefs.alchemyLogoNatureBleed,
-  assetRefs.alchemyLogoPoison,
-];
 export const pileDrawArt = assetRefs.drawPile;
 export const pileDiscardArt = assetRefs.discardPile;
 

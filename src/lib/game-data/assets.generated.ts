@@ -5,12 +5,6 @@ export { default as agilityTraining } from "@/assets/optimized/agility-training.
 export { default as alchemistShop } from "@/assets/optimized/alchemist-shop.webp";
 export { default as alchemist } from "@/assets/optimized/alchemist.webp";
 export { default as alchemyLab } from "@/assets/optimized/alchemy-lab.webp";
-export { default as alchemyLogoArcaneMana } from "@/assets/optimized/alchemy-logo-arcane-mana.webp";
-export { default as alchemyLogoFireIron } from "@/assets/optimized/alchemy-logo-fire-iron.webp";
-export { default as alchemyLogoFrost } from "@/assets/optimized/alchemy-logo-frost.webp";
-export { default as alchemyLogoHolyBlock } from "@/assets/optimized/alchemy-logo-holy-block.webp";
-export { default as alchemyLogoNatureBleed } from "@/assets/optimized/alchemy-logo-nature-bleed.webp";
-export { default as alchemyLogoPoison } from "@/assets/optimized/alchemy-logo-poison.webp";
 export { default as alchemyLogo } from "@/assets/optimized/alchemy-logo.webp";
 export { default as anvil } from "@/assets/optimized/anvil.webp";
 export { default as apple } from "@/assets/optimized/apple.webp";

@@ -34,54 +34,12 @@
     "settingsSig": "79e9ca9c77b9a6696b810389d3c5ba39",
     "outputHash": "5ca826433650f815655a9a1021228198"
   },
-  "alchemy-logo-arcane-mana.webp": {
-    "hash": "8f4eb4590f434b9eb1e4796829830bc0",
-    "mtimeMs": 1782421242018.4949,
-    "size": 3265337,
-    "settingsSig": "991f5ac38d4aebe92a00fa2c3697a425",
-    "outputHash": "371892ca71ec67d6c3b3270c0e857730"
-  },
-  "alchemy-logo-fire-iron.webp": {
-    "hash": "d46de43f65364a8ce9588ee2d33e40ed",
-    "mtimeMs": 1782421242023.4927,
-    "size": 2009592,
-    "settingsSig": "991f5ac38d4aebe92a00fa2c3697a425",
-    "outputHash": "7bd4e232bb7d6e5ceb4c13bd69f9dc5c"
-  },
-  "alchemy-logo-frost.webp": {
-    "hash": "ea8da38513550c1c9483e57e36d659b1",
-    "mtimeMs": 1782421242025.408,
-    "size": 2842181,
-    "settingsSig": "991f5ac38d4aebe92a00fa2c3697a425",
-    "outputHash": "f1eb730f36ea2a5a66fec6ff8e8329fc"
-  },
-  "alchemy-logo-holy-block.webp": {
-    "hash": "a86fbcea1c60491c752d39bb040b3af3",
-    "mtimeMs": 1782421242027.877,
-    "size": 3360804,
-    "settingsSig": "991f5ac38d4aebe92a00fa2c3697a425",
-    "outputHash": "c4ac18e5c082556d4d16fca7d7ad9ba9"
-  },
-  "alchemy-logo-nature-bleed.webp": {
-    "hash": "99850339f420bc148f30e2e13ed10de2",
-    "mtimeMs": 1782421242031.836,
-    "size": 3227827,
-    "settingsSig": "991f5ac38d4aebe92a00fa2c3697a425",
-    "outputHash": "325897eed737d2a0bb71ac64457a4595"
-  },
-  "alchemy-logo-poison.webp": {
-    "hash": "acd47ae97e88f23aa4c011761b72ac97",
-    "mtimeMs": 1782421242034.6863,
-    "size": 2739989,
-    "settingsSig": "991f5ac38d4aebe92a00fa2c3697a425",
-    "outputHash": "c5d1640e1d11571ced51cf881e940682"
-  },
   "alchemy-logo.webp": {
-    "hash": "561d512e5a908eb056a779b63c23223f",
-    "mtimeMs": 1782421242038.1123,
-    "size": 2822941,
+    "hash": "9de29b725ed70bb416d7280bd12c353e",
+    "mtimeMs": 1788480545366.365,
+    "size": 4339113,
     "settingsSig": "991f5ac38d4aebe92a00fa2c3697a425",
-    "outputHash": "e8957efbea4e52449f6a6054b2e87f55"
+    "outputHash": "9dc47b2a4cd426d352751baee87c5d5d"
   },
   "anvil.webp": {
     "hash": "02ffe9d28e670d3b0e07374fd1007713",

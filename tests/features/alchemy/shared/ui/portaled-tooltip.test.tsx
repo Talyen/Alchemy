@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useRef, useState } from "react";
 
@@ -26,15 +26,15 @@ describe("PortaledTooltip", () => {
     vi.useRealTimers();
   });
 
-  it("places and reveals a tooltip on the first hidden-to-visible transition", () => {
+  it("places and reveals a tooltip on the first hidden-to-visible transition", async () => {
     render(<TooltipHarness />);
 
     act(() => {
       fireEvent.mouseEnter(screen.getByRole("button", { name: "Trigger" }));
     });
 
+    await waitFor(() => expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy());
     const panel = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
-    expect(panel).toBeTruthy();
     expect(panel?.style.left).not.toBe("");
     expect(panel?.style.top).not.toBe("");
   });
@@ -46,6 +46,9 @@ describe("PortaledTooltip", () => {
 
     act(() => {
       fireEvent.mouseEnter(trigger);
+    });
+    await act(async () => {
+      for (let i = 0; i < 20; i++) await Promise.resolve();
     });
     expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
 

@@ -52,10 +52,10 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`.
 ## Hover tooltips
 
 Tooltips render through `PortaledTooltip` into the root-space `#tooltip-root`.
-Placement is bounded to `[data-testid="vr-stage"]` with `documentElement` as a
-fallback, so panels keep a constant CSS-pixel scale and avoid clipped ancestors.
-Prefer above, flip below when needed, and use the roomier side when neither
-vertical gutter fits.
+Placement follows the Floating UI standard (`@floating-ui/dom`: preferred side,
+then automatic flip to a fitting side, then shift to stay in bounds), bounded to
+`[data-testid="vr-stage"]` with `documentElement` as a fallback, so panels keep
+a constant CSS-pixel scale and avoid clipped ancestors.
 
 - Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use the `holdMs: TOOLTIP_FADE_MS` form or the thin alias `useTileHoverPopup` (see those hooks for the exact call shape).
 - Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { isDesktop, quitDesktopApp } from "@/lib/platform";
-import { menuLogo, menuLogoVariants } from "@/lib/game-data";
+import { menuLogo } from "@/lib/game-data";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
   CollectionScreen,
@@ -40,7 +40,6 @@ function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
       onArmory={() => commands.goToScreen("armory")}
       {...(isDesktop() ? { onQuit: quitDesktopApp } : {})}
       logoSrc={menuLogo}
-      logoSrcVariants={menuLogoVariants}
       hasUnspentTalents={hasUnspentTalents}
       hasAffordableHomestead={hasAffordableHomestead}
       isArmoryLocked={isArmoryLocked}

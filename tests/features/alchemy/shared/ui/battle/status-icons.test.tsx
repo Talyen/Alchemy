@@ -1,17 +1,19 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { StatusIcon } from "@/features/alchemy/shared/ui/battle/status-icons";
 
 describe("StatusIcon", () => {
-  it("presents Control Immunity without a numeric badge", () => {
+  it("presents Control Immunity without a numeric badge", async () => {
     render(<StatusIcon chip={{ id: "ccImmunity", value: 2, hideValue: true }} />);
 
     const trigger = screen.getByRole("button", { name: "Control Immunity" });
     fireEvent.mouseEnter(trigger);
 
     expect(screen.getByText("Control Immunity")).toBeTruthy();
-    expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
+    });
     expect(screen.queryByText("2")).toBeNull();
   });
 

@@ -35,14 +35,16 @@ function expectGridTileWidth(element: HTMLElement) {
 describe("ArmoryScreen tooltip integration", () => {
   installArmoryScreenTestHooks();
 
-  it("portals crafting currency tooltips to document.body", () => {
+  it("portals crafting currency tooltips to document.body", async () => {
     renderArmoryScreen({ craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 } });
 
     fireEvent.mouseEnter(screen.getByLabelText("Use Voidstone"));
 
     const tooltipText = screen.getByText("Remove All Affixes");
     expect(tooltipText.closest(".armory-inventory-tooltip")).toBeTruthy();
-    expect(tooltipText.closest(".hover-popup-panel")?.getAttribute("data-visible")).toBe("true");
+    await waitFor(() => {
+      expect(tooltipText.closest(".hover-popup-panel")?.getAttribute("data-visible")).toBe("true");
+    });
     expect(document.body.contains(tooltipText)).toBe(true);
   });
 
