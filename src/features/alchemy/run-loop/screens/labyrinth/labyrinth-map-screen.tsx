@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { floorNodes, labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
 
-import { inspectorPlacement, layoutFloorNodes } from "./labyrinth-map-layout";
+import { inspectorPlacement, clampInspectorTop, layoutFloorNodes } from "./labyrinth-map-layout";
 import { LabyrinthNodeInspector } from "./labyrinth-node-inspector";
 import { LabyrinthNodeSeal } from "./labyrinth-node-seal";
 import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
@@ -71,6 +71,19 @@ export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect,
     selectedNode && selectedPoint && layout
       ? inspectorPlacement(selectedPoint.x, selectedPoint.y, layout.metrics.width, mapWidth)
       : null;
+
+  const [inspectorPanel, setInspectorPanel] = useState<HTMLElement | null>(null);
+  const [inspectorHeight, setInspectorHeight] = useState(0);
+  useEffect(() => {
+    if (!inspectorPanel) return;
+    const updateHeight = () => setInspectorHeight(inspectorPanel.offsetHeight);
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(inspectorPanel);
+    return () => observer.disconnect();
+  }, [inspectorPanel]);
+  const inspectorTop =
+    inspector && layout ? clampInspectorTop(inspector.top, inspectorHeight, layout.height) : inspector?.top;
 
   usePlasmaBaseline(selectedNode ? getLabyrinthNodePlasmaPair(selectedNode) : null);
 
@@ -157,16 +170,17 @@ export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect,
                       />
                     );
                   })}
-                  {selectedNode && inspector ? (
+                  {selectedNode && inspector && inspectorTop !== undefined ? (
                     <LabyrinthNodeInspector
                       key={selectedNode.id}
                       node={selectedNode}
                       canEnter={selectedCanEnter}
                       onEnter={onNodeEnter}
                       left={inspector.left}
-                      top={inspector.top}
+                      top={inspectorTop}
                       side={inspector.side}
                       width={inspector.width}
+                      panelRef={setInspectorPanel}
                     />
                   ) : null}
                 </div>

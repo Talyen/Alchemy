@@ -38,6 +38,14 @@ export function layoutFloorNodes(nodes: LabyrinthNode[], availableWidth: number)
   return { metrics, height, positions };
 }
 
+export function clampInspectorTop(top: number, inspectorHeight: number, canvasHeight: number): number {
+  if (inspectorHeight <= 0 || canvasHeight <= 0) return top;
+  const half = inspectorHeight / 2;
+  const minTop = half;
+  const maxTop = Math.max(minTop, canvasHeight - half);
+  return Math.min(Math.max(top, minTop), maxTop);
+}
+
 export function inspectorPlacement(
   x: number,
   y: number,

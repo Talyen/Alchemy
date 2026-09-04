@@ -69,6 +69,7 @@ export function ScreenHeaderRow({
     <HamburgerTrigger
       variant="ghost"
       onClick={effectiveMenu}
+      label="Open game menu"
       active={chrome?.isMenuOpen}
       className={cn(
         "h-11 w-11 transition-colors hover:bg-muted/40 hover:text-foreground",

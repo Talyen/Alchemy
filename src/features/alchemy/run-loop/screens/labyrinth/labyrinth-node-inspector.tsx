@@ -23,6 +23,7 @@ interface Props {
   top: number;
   side: "left" | "right";
   width: number;
+  panelRef?: ((element: HTMLElement | null) => void) | undefined;
 }
 
 function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; variant: "enemy" | "reward" }) {
@@ -57,7 +58,7 @@ function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; varia
   );
 }
 
-export function LabyrinthNodeInspector({ node, canEnter, onEnter, left, top, side, width }: Props) {
+export function LabyrinthNodeInspector({ node, canEnter, onEnter, left, top, side, width, panelRef }: Props) {
   const meta = LABYRINTH_NODE_META[node.type];
   const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : null;
   const destinationLabel = NODE_TYPE_LABELS[node.type];
@@ -73,6 +74,7 @@ export function LabyrinthNodeInspector({ node, canEnter, onEnter, left, top, sid
     <aside
       aria-label="Chamber details"
       data-side={side}
+      ref={panelRef}
       className="labyrinth-inspector-in absolute z-30 flex max-h-[min(100%,36rem)] -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-[var(--radius-shell-hero)] border border-white/10 bg-black p-4 shadow-[0_12px_32px_rgba(0,0,0,0.55)]"
       style={{ left, top, width }}
       onClick={(event) => event.stopPropagation()}

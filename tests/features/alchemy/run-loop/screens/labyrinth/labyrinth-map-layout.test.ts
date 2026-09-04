@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  clampInspectorTop,
   inspectorPlacement,
   layoutFloorNodes,
 } from "@/features/alchemy/run-loop/screens/labyrinth/labyrinth-map-layout";
@@ -96,5 +97,24 @@ describe("inspectorPlacement", () => {
     const placement = inspectorPlacement(40, 40, 60, 300);
     expect(placement.width).toBe(300 - 24);
     expect(placement.left + placement.width).toBeLessThanOrEqual(300);
+  });
+});
+
+describe("clampInspectorTop", () => {
+  it("leaves a centered inspector untouched", () => {
+    expect(clampInspectorTop(300, 400, 800)).toBe(300);
+  });
+
+  it("pushes a top-anchored inspector down so it stays inside the canvas", () => {
+    expect(clampInspectorTop(40, 400, 800)).toBe(200);
+  });
+
+  it("pulls a bottom-anchored inspector up so it stays inside the canvas", () => {
+    expect(clampInspectorTop(790, 400, 800)).toBe(600);
+  });
+
+  it("returns top unchanged when heights are unknown", () => {
+    expect(clampInspectorTop(40, 0, 800)).toBe(40);
+    expect(clampInspectorTop(40, 400, 0)).toBe(40);
   });
 });
