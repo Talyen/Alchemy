@@ -20,12 +20,12 @@ export function BattleTrinketInspectButton({ open, onToggle }: { open: boolean; 
     <Button
       variant={open ? "primary" : "outline"}
       size="icon"
-      className={cn("h-10 w-10", !open && "text-muted-foreground")}
+      className={cn("h-12 w-12", !open && "text-muted-foreground")}
       onClick={onToggle}
       aria-label={open ? "Close Boons" : "Inspect Boons"}
       data-testid="battle-trinket-inspect-toggle"
     >
-      <ShoppingBag className="h-5 w-5" />
+      <ShoppingBag className="h-6 w-6" />
     </Button>
   );
 }

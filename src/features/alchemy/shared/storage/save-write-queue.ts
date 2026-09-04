@@ -34,7 +34,14 @@ export class SaveWriteQueue {
       return;
     }
     this.coalesced = data;
-    if (this.runnerActive) return;
+    if (this.runnerActive) {
+      await this.chain.catch(() => {});
+      if (this.coalesced === null || writesDisabledForSession || this.clearPending) return;
+      if (this.runnerActive) {
+        await this.chain.catch(() => {});
+        return;
+      }
+    }
     this.runnerActive = true;
     const run = this.chain.then(async () => {
       try {

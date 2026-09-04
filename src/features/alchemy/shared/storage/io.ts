@@ -97,17 +97,19 @@ export function saveAlchemySaveDataForExit(data: SaveData): void {
       void saveAlchemySaveData(data);
       return;
     }
-
-    saveQueue.queueExitSnapshot(data);
+    if (!saveQueue.isIdle) saveQueue.queueExitSnapshot(data);
   } catch (error) {
     logStorageFailure("Save data could not be serialized during page exit", error);
     void saveAlchemySaveData(data);
   }
 }
 
-export async function clearAlchemySaveData(options?: { keepWritesDisabled?: boolean }): Promise<boolean> {
+export async function clearAlchemySaveData(options?: {
+  keepWritesDisabled?: boolean;
+  forceLocalWipe?: boolean;
+}): Promise<boolean> {
   if (typeof window === "undefined") return true;
-  const forceLocalWipe = areWritesDisabled();
+  const forceLocalWipe = options?.forceLocalWipe ?? areWritesDisabled();
   return saveQueue.enqueueClear(() => saveBackend.clear(SAVE_KEY, { forceLocalWipe }), {
     keepWritesDisabled: options?.keepWritesDisabled,
     onError: (error) => logStorageFailure("Save data could not be cleared", error),

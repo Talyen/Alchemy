@@ -20,7 +20,7 @@ export function getVrStageBounds(): DOMRect {
   return document.documentElement.getBoundingClientRect();
 }
 
-function horizontalInsetForStage(stage: Pick<DOMRect, "left" | "right">): number {
+export function horizontalInsetForStage(stage: Pick<DOMRect, "left" | "right">): number {
   return Math.min(DEFAULT_HORIZONTAL_INSET, Math.max(48, (stage.right - stage.left) / 4));
 }
 
@@ -61,10 +61,12 @@ export function usePortaledTooltipPlacement(
       return;
     }
 
-    const stage = getVrStageElement();
-    const horizontalInset = horizontalInsetForStage(stage.getBoundingClientRect());
+    let cancelled = false;
 
     const update = () => {
+      if (cancelled) return;
+      const stage = getVrStageElement();
+      const horizontalInset = horizontalInsetForStage(stage.getBoundingClientRect());
       tooltipEl.style.width = "";
       void computePosition(trigger, tooltipEl, {
         placement: preferredFloatingPlacement(placement),
@@ -81,6 +83,7 @@ export function usePortaledTooltipPlacement(
           }),
         ],
       }).then(({ x, y, placement: finalPlacement }) => {
+        if (cancelled) return;
         const state = floatingPlacementToTooltipState(finalPlacement);
         setPlaceBelow(state.placeBelow);
         setTooltipSide(state.tooltipSide);
@@ -89,7 +92,11 @@ export function usePortaledTooltipPlacement(
     };
 
     update();
-    return autoUpdate(trigger, tooltipEl, update);
+    const cleanup = autoUpdate(trigger, tooltipEl, update);
+    return () => {
+      cancelled = true;
+      cleanup();
+    };
   }, [active, triggerRef, padding, placement]);
 
   return { tooltipRef, placeBelow, tooltipSide, tooltipStyle };

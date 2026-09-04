@@ -61,12 +61,12 @@ describe("preloadSounds", () => {
     expect(soundedFakeAudio()).toHaveLength(1);
   });
 
-  it("retries a name after its warmup errors", () => {
+  it("gives up on a name after its warmup errors instead of retry-storming", () => {
     preloadSounds(["a.ogg"]);
     const el = soundedFakeAudio().at(-1)!;
     el.onerror?.();
     preloadSounds(["a.ogg"]);
-    expect(soundedFakeAudio()).toHaveLength(2);
+    expect(soundedFakeAudio()).toHaveLength(1);
   });
 });
 

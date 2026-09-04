@@ -13,6 +13,7 @@ import {
   CRIT_MULTIPLIER,
   GLOBAL_CRIT_CHANCE,
   HALF_DIVISOR,
+  MIN_DAMAGE_MULTIPLIER,
   PERCENT_DENOMINATOR,
 } from "../game-constants";
 
@@ -325,7 +326,7 @@ export function computeCardDamageToEnemy(
   const baseDamage = computeBaseDamage(state, effect, card);
   const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
   const totalBonus = computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus;
-  const totalMultiplier = Math.max(0.1, 1 + totalBonus);
+  const totalMultiplier = Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);
   const scaledDamage = Math.round(baseDamage * totalMultiplier);
   const pacedDamage = paceCombatMagnitude(stateAfterFirst, scaledDamage, "player");
   const finalDamage = applyCrit(pacedDamage, stateAfterFirst);

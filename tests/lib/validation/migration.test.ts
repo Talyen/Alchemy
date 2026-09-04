@@ -141,6 +141,36 @@ describe("migrateSaveDataToCurrent", () => {
     expect(result.discoveredCardIds).toEqual(["sunder"]);
     expect(result.encounteredEnemyIds).toEqual(["sunder-armor"]);
   });
+
+  it("remaps card ids in reward and mystery choice fields", () => {
+    const result = migrateSaveDataToCurrent({
+      contentVersion: 2,
+      discoveredCardIds: ["slash"],
+      activeRun: {
+        mysteryVisit: { chosenCardId: "roulette" },
+        interruptedFlow: {
+          kind: "primary-reward",
+          pending: {
+            rewardType: "card",
+            choiceIds: ["roulette"],
+            selectedId: "roulette",
+            companionChoiceIds: ["roulette"],
+          },
+        },
+      },
+    });
+    expect(result.activeRun).toMatchObject({
+      mysteryVisit: { chosenCardId: "roll-the-dice" },
+      interruptedFlow: {
+        kind: "primary-reward",
+        pending: {
+          choiceIds: ["roll-the-dice"],
+          selectedId: "roll-the-dice",
+          companionChoiceIds: ["roll-the-dice"],
+        },
+      },
+    });
+  });
 });
 
 describe("isUnsupportedFutureSaveData", () => {

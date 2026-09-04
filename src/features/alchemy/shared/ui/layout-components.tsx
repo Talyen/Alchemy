@@ -107,7 +107,7 @@ export function TitledScreenShell({
           {...(maxWidthClass ? { maxWidthClass } : {})}
           {...(minHeightClass ? { minHeightClass } : {})}
         >
-          <ScreenHeaderRow title={title} eyebrow={eyebrow} {...(headerActions ? { trailing: headerActions } : {})} />
+          <ScreenHeaderRow title={title} eyebrow={eyebrow} trailing={headerActions} />
           {children}
         </ScreenShell>
       </PageLayout>

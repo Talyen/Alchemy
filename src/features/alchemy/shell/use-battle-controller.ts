@@ -57,8 +57,27 @@ export function useBattleController({
     }
   }, []);
 
+  const toggleAutoplayEnabled = useCallback(() => {
+    setIsAutoplayEnabledState((enabled) => {
+      const settings = useSettingsStore.getState();
+      if (settings.rememberAutoplayPreference) {
+        settings.setAutoplayEnabled(!enabled);
+      }
+      return !enabled;
+    });
+  }, []);
+
+  const [boonInspectOpen, setBoonInspectOpen] = useState(false);
+  const toggleBoonInspect = useCallback(() => {
+    setBoonInspectOpen((open) => !open);
+  }, []);
+  const closeBoonInspect = useCallback(() => {
+    setBoonInspectOpen(false);
+  }, []);
+
   const applyPreferredAutoplay = useCallback(() => {
     setIsAutoplayEnabledState(preferredAutoplayEnabled(useSettingsStore.getState()));
+    setBoonInspectOpen(false);
   }, []);
 
   useLayoutEffect(() => {
@@ -194,6 +213,10 @@ export function useBattleController({
       screen,
       isAutoplayEnabled,
       setAutoplayEnabled,
+      toggleAutoplayEnabled,
+      boonInspectOpen,
+      toggleBoonInspect,
+      closeBoonInspect,
       isCardPlayInProgress: () => ctx.cardPlayInProgressRef.current,
       startBattle: actions.init.startBattle,
       startBossBattle: actions.init.startBossBattle,
@@ -205,6 +228,19 @@ export function useBattleController({
       handleEndRun: actions.devOutcomes.handleEndRun,
       skipCombatDevMode: actions.devOutcomes.skipCombatDevMode,
     }),
-    [hasActiveBattle, refs, bindPlayback, ctx, actions, screen, isAutoplayEnabled, setAutoplayEnabled],
+    [
+      hasActiveBattle,
+      refs,
+      bindPlayback,
+      ctx,
+      actions,
+      screen,
+      isAutoplayEnabled,
+      setAutoplayEnabled,
+      toggleAutoplayEnabled,
+      boonInspectOpen,
+      toggleBoonInspect,
+      closeBoonInspect,
+    ],
   );
 }

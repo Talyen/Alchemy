@@ -27,11 +27,14 @@ import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-ru
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
 import { BattleAutoplayToggle } from "@/features/alchemy/run-loop/screens/battle-screen/autoplay-toggle";
+import { BattleTrinketInspectButton } from "@/features/alchemy/run-loop/screens/battle-screen/trinket-inspect";
+import { uniqueRunBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-trinkets";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { clearAlchemySaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
 import {
   useActiveRunScreenValue,
+  useActiveRunBoons,
   useAutosaveAllowed,
   useBondedCompanions,
   useTalentEffects,
@@ -131,11 +134,10 @@ function AppMainContent({
   }, [deletingUnsupportedSave]);
 
   const showGlobalMenuButton = renderedScreen !== "menu" && !saveBlockedByNewerVersion;
-  const showBattleAutoplay = showGlobalMenuButton && renderedScreen === "battle";
-  const { isAutoplayEnabled, setAutoplayEnabled } = run.routeCommands.battle;
-  const toggleAutoplay = useCallback(() => {
-    setAutoplayEnabled(!isAutoplayEnabled);
-  }, [isAutoplayEnabled, setAutoplayEnabled]);
+  const showBattleCluster = showGlobalMenuButton && renderedScreen === "battle";
+  const { isAutoplayEnabled, toggleAutoplayEnabled, boonInspectOpen, toggleBoonInspect } = run.routeCommands.battle;
+  const runBoons = useActiveRunBoons();
+  const hasInspectBoons = uniqueRunBoons(runBoons).length > 0;
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
   const content = saveBlockedByNewerVersion ? (
     <UnsupportedSaveOverlay onDeleteSaveAndContinue={handleDeleteUnsupportedSave} deleting={deletingUnsupportedSave} />
@@ -183,7 +185,12 @@ function AppMainContent({
         {content}
         {showGlobalMenuButton ? (
           <div className="absolute top-4 right-4 z-[80] flex items-center gap-2">
-            {showBattleAutoplay ? <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplay} /> : null}
+            {showBattleCluster ? (
+              <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
+            ) : null}
+            {showBattleCluster && hasInspectBoons ? (
+              <BattleTrinketInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} />
+            ) : null}
             <HamburgerTrigger onClick={gameMenu.openGameMenu} label="Open game menu" />
           </div>
         ) : null}

@@ -527,4 +527,17 @@ describe("storage io", () => {
     await expect(clearAlchemySaveData()).resolves.toBe(false);
     expect(desktop.clearSave).not.toHaveBeenCalled();
   });
+
+  it("wipes local saves on deliberate reset even when Steam Cloud delete fails", async () => {
+    const playablePayload = JSON.stringify(currentSchemaCampaignSave());
+
+    const desktop = setupMockWindowDesktop({ saveCandidates: [playablePayload], steamName: "PlayerOne" });
+    desktop.steamCloudDelete.mockResolvedValue(false);
+
+    const loaded = await bootstrapAlchemySaveState();
+    expect(loaded.status.kind).toBe("ok");
+
+    await expect(clearAlchemySaveData({ forceLocalWipe: true })).resolves.toBe(true);
+    expect(desktop.clearSave).toHaveBeenCalledOnce();
+  });
 });

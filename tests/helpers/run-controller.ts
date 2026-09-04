@@ -76,6 +76,10 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       isCardPlayInProgress: vi.fn(() => false),
       isAutoplayEnabled: false,
       setAutoplayEnabled: fn(),
+      toggleAutoplayEnabled: fn(),
+      boonInspectOpen: false,
+      toggleBoonInspect: fn(),
+      closeBoonInspect: fn(),
     },
     runEnd: { continueFromRunEnd: fn() },
   };

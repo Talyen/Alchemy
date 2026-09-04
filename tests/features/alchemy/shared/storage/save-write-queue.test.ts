@@ -36,4 +36,35 @@ describe("SaveWriteQueue", () => {
     expect(queue.hasPendingTasks).toBe(true);
     expect(queue.isIdle).toBe(false);
   });
+
+  it("waits for a queued snapshot instead of resolving while a write is in flight", async () => {
+    const queue = new SaveWriteQueue();
+    const written: number[] = [];
+    let releaseFirstWrite: (() => void) | undefined;
+    const firstWriteGate = new Promise<void>((resolve) => {
+      releaseFirstWrite = resolve;
+    });
+    const gatedWrite = async (data: SaveData) => {
+      if (written.length === 0) await firstWriteGate;
+      written.push(data.lastSavedAt);
+    };
+
+    const first = queue.enqueue(saveWithTimestamp(1), gatedWrite);
+    await Promise.resolve();
+    await Promise.resolve();
+    const second = queue.enqueue(saveWithTimestamp(2), gatedWrite);
+
+    let secondResolved = false;
+    void second.then(() => {
+      secondResolved = true;
+    });
+    await Promise.resolve();
+    expect(secondResolved).toBe(false);
+
+    releaseFirstWrite?.();
+    await Promise.all([first, second]);
+
+    expect(written.at(-1)).toBe(2);
+    expect(queue.isIdle).toBe(true);
+  });
 });

@@ -73,7 +73,8 @@ export function equipGearInstance(
 }
 
 export function unequipGearInstance(gear: Draft<GearStateFields>, characterId: CharacterId, slot: GearSlot): boolean {
-  if (gear.loadouts[characterId]?.[slot] === null) return false;
+  const loadout = gear.loadouts[characterId];
+  if (!loadout || loadout[slot] == null) return false;
   gear.loadouts = unequipGear(gear.loadouts, characterId, slot);
   return true;
 }

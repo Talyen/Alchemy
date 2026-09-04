@@ -233,6 +233,10 @@ export function useAlchemyRunController() {
         screen: battle.screen,
         isAutoplayEnabled: battle.isAutoplayEnabled,
         setAutoplayEnabled: battle.setAutoplayEnabled,
+        toggleAutoplayEnabled: battle.toggleAutoplayEnabled,
+        boonInspectOpen: battle.boonInspectOpen,
+        toggleBoonInspect: battle.toggleBoonInspect,
+        closeBoonInspect: battle.closeBoonInspect,
       },
       runEnd: {
         continueFromRunEnd: nav.continueFromRunEnd,
@@ -299,6 +303,10 @@ export function useAlchemyRunController() {
       battle.screen,
       battle.isAutoplayEnabled,
       battle.setAutoplayEnabled,
+      battle.toggleAutoplayEnabled,
+      battle.boonInspectOpen,
+      battle.toggleBoonInspect,
+      battle.closeBoonInspect,
     ],
   );
 

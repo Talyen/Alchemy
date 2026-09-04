@@ -48,7 +48,7 @@ function BattleScreenRoute({
     hasActiveBattle,
     gameMenuOpen,
     isAutoplayEnabled: commands.isAutoplayEnabled,
-    setAutoplayEnabled: commands.setAutoplayEnabled,
+    toggleAutoplay: commands.toggleAutoplayEnabled,
     handleEndTurn: commands.handleEndTurn,
     handleAutoplayCard: commands.handleAutoplayCard,
     isCardPlayInProgress: commands.isCardPlayInProgress,
@@ -73,6 +73,8 @@ function BattleScreenRoute({
       onWishChoice={commands.handleWishChoice}
       onSkipCombatDevMode={commands.skipCombatDevMode}
       onEndTurn={commands.handleEndTurn}
+      boonInspectOpen={commands.boonInspectOpen}
+      onCloseBoonInspect={commands.closeBoonInspect}
     />
   );
 }

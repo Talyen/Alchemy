@@ -150,7 +150,7 @@ function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields 
     runTalentXP: run.runTalentXP,
     runMaterialsEarned: run.runMaterialsEarned,
     runObtainedItems: run.runObtainedItems,
-  };
+  } satisfies Record<keyof ActiveRunProgressFields, unknown>;
 }
 
 interface EncodeResumeFields {

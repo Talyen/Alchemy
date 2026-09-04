@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
@@ -13,7 +13,7 @@ interface UseBattlePlaybackProps {
   hasActiveBattle: boolean;
   gameMenuOpen: boolean;
   isAutoplayEnabled: boolean;
-  setAutoplayEnabled: (enabled: boolean) => void;
+  toggleAutoplay: () => void;
   handleEndTurn: () => void;
   handleAutoplayCard: (card: BattleCard, index: number) => boolean;
   isCardPlayInProgress: () => boolean;
@@ -25,7 +25,7 @@ export function useBattlePlayback({
   hasActiveBattle,
   gameMenuOpen,
   isAutoplayEnabled,
-  setAutoplayEnabled,
+  toggleAutoplay,
   handleEndTurn,
   handleAutoplayCard,
   isCardPlayInProgress,
@@ -41,10 +41,6 @@ export function useBattlePlayback({
     wakeAutoplayRef.current?.();
   };
   const presentationGateRef = useBattlePresentationGateRef(onPlaybackGateChangeRef);
-
-  const toggleAutoplay = useCallback(() => {
-    setAutoplayEnabled(!isAutoplayEnabled);
-  }, [isAutoplayEnabled, setAutoplayEnabled]);
 
   const { scheduleAutoEndTurn, clearAutoEndTurn } = useBattleAutoEndTurn({
     autoEndTurn: autoEndTurn || isAutoplayEnabled,

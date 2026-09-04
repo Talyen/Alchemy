@@ -79,7 +79,6 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
 
   firstBurnCardBonusMultiplier: 0,
   burnRemovesEnemyArmor: false,
-  burnDoubleChance: 0,
   burnPreventDecayChance: 0,
   receiveHalfBurnDamage: false,
   flatBurnDamage: 0,

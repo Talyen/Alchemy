@@ -5,6 +5,7 @@ import {
   FINDINGS_CAP,
   LENGTH_BAND_BY_TYPE,
   MATERIAL_TIMEOUT_RATE,
+  MATCHUP_TURN_SPREAD_THRESHOLD,
   PAIRED_DELTA_FROM_MEDIAN,
   PAIRED_TURN_DELTA_THRESHOLD,
   formatLengthBand,
@@ -559,7 +560,7 @@ function collectMatchupFindings(model: BalanceReportModel, add: (finding: Balanc
           });
         } else if (
           effectiveEnemyType &&
-          turnSpread >= 2.5 &&
+          turnSpread >= MATCHUP_TURN_SPREAD_THRESHOLD &&
           isLengthOutsideBand(cell.averageTurns, effectiveEnemyType)
         ) {
           collectRateFindings({

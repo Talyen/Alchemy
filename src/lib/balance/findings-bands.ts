@@ -17,6 +17,7 @@ export const FINDINGS_CAP = getFindingsCap();
 export const EQUITY_SPREAD = 0.15;
 export const PAIRED_DELTA_FROM_MEDIAN = 0.15;
 export const PAIRED_TURN_DELTA_THRESHOLD = 2.0;
+export const MATCHUP_TURN_SPREAD_THRESHOLD = 2.5;
 export const MATERIAL_TIMEOUT_RATE = 0.02;
 
 export const LENGTH_BAND_BY_TYPE: Record<EnemyTypeBand, { min: number; max: number }> = {

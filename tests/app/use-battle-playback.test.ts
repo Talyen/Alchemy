@@ -14,19 +14,20 @@ function renderPlayback(
 ) {
   return renderHook(() => {
     const [isAutoplayEnabled, setAutoplayEnabled] = useState(options?.initialAutoplay ?? false);
+    const toggleAutoplay = () => setAutoplayEnabled((enabled) => !enabled);
     const playback = useBattlePlayback({
       screen: "battle",
       battleState: makeTestBattleState(),
       hasActiveBattle: true,
       gameMenuOpen: false,
       isAutoplayEnabled,
-      setAutoplayEnabled,
+      toggleAutoplay,
       handleEndTurn: vi.fn(),
       handleAutoplayCard: vi.fn(() => false),
       isCardPlayInProgress: () => false,
       ...overrides,
       ...(overrides.isAutoplayEnabled === undefined ? {} : { isAutoplayEnabled: overrides.isAutoplayEnabled }),
-      ...(overrides.setAutoplayEnabled === undefined ? {} : { setAutoplayEnabled: overrides.setAutoplayEnabled }),
+      ...(overrides.toggleAutoplay === undefined ? {} : { toggleAutoplay: overrides.toggleAutoplay }),
     });
     return playback;
   });
@@ -63,9 +64,9 @@ describe("useBattlePlayback", () => {
         hasActiveBattle: true,
         gameMenuOpen: false,
         isAutoplayEnabled,
-        setAutoplayEnabled: (enabled) => {
-          owner.enabled = enabled;
-          setAutoplayEnabled(enabled);
+        toggleAutoplay: () => {
+          owner.enabled = !owner.enabled;
+          setAutoplayEnabled(!isAutoplayEnabled);
         },
         handleEndTurn: vi.fn(),
         handleAutoplayCard: vi.fn(() => false),
@@ -86,8 +87,8 @@ describe("useBattlePlayback", () => {
         hasActiveBattle: true,
         gameMenuOpen: false,
         isAutoplayEnabled: owner.enabled,
-        setAutoplayEnabled: (enabled) => {
-          owner.enabled = enabled;
+        toggleAutoplay: () => {
+          owner.enabled = !owner.enabled;
         },
         handleEndTurn: vi.fn(),
         handleAutoplayCard: vi.fn(() => false),

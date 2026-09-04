@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type MouseEvent } from "react";
+import { useMemo, type MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { CardGhostLayer } from "../../battle/presentation/card-ghost-layer";
@@ -6,7 +6,7 @@ import { CardTransferLayer } from "../../battle/presentation/card-transfer-layer
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
 import { PageLayout } from "../../../shared/ui/shared-ui";
-import { BattleTrinketInspectButton, BattleBoonInspectOverlay } from "./trinket-inspect";
+import { BattleBoonInspectOverlay } from "./trinket-inspect";
 import { uniqueRunBoons } from "./unique-run-trinkets";
 import { WishOverlay } from "./wish-overlay";
 import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleScreenData } from "./types";
@@ -27,6 +27,8 @@ interface BattleScreenProps {
   onWishChoice: (card: BattleCard | null) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
+  boonInspectOpen: boolean;
+  onCloseBoonInspect: () => void;
 }
 
 export function BattleScreen(props: BattleScreenProps) {
@@ -42,6 +44,8 @@ export function BattleScreen(props: BattleScreenProps) {
     onWishChoice,
     onSkipCombatDevMode,
     onEndTurn,
+    boonInspectOpen,
+    onCloseBoonInspect,
   } = props;
 
   const { battleState, displayOverrides, activeLabyrinthModifiers, runBoons } = battleScreenData;
@@ -92,9 +96,7 @@ export function BattleScreen(props: BattleScreenProps) {
   const { battleSceneRef: sceneRef } = refs;
 
   const inspectBoons = useMemo(() => uniqueRunBoons(runBoons), [runBoons]);
-  const [trinketInspectOpen, setTrinketInspectOpen] = useState(false);
-  const closeTrinketInspect = useCallback(() => setTrinketInspectOpen(false), []);
-  const inspectUiOpen = trinketInspectOpen && inspectBoons.length > 0 && !battleState.wishOptions;
+  const inspectUiOpen = boonInspectOpen && inspectBoons.length > 0 && !battleState.wishOptions;
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -112,15 +114,6 @@ export function BattleScreen(props: BattleScreenProps) {
       <PageLayout>
         <div className="relative flex w-full max-w-[100rem] flex-1 flex-col p-7 pb-1">
           <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-            {inspectBoons.length > 0 ? (
-              <div className="absolute top-0 right-0 z-30 flex items-center gap-2">
-                <BattleTrinketInspectButton
-                  open={inspectUiOpen}
-                  onToggle={() => setTrinketInspectOpen((open) => !open)}
-                />
-              </div>
-            ) : null}
-
             <div
               ref={sceneRef}
               data-testid="battle-scene"
@@ -132,7 +125,7 @@ export function BattleScreen(props: BattleScreenProps) {
 
               <WishOverlay open={Boolean(battleState.wishOptions)} battleState={displayState} actions={actions} />
 
-              <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={closeTrinketInspect} />
+              <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={onCloseBoonInspect} />
 
               <CardGhostLayer />
               <CardTransferLayer />

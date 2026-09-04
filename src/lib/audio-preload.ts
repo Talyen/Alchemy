@@ -6,6 +6,7 @@ import { SOUNDS_BASE_PATH } from "./game-constants";
 const SOUND_PRELOAD_CONFIG = {
   IDLE_CALLBACK_TIMEOUT_MS: 5000,
   PRELOAD_BATCH_SIZE: 4,
+  STALLED_PRELOAD_TIMEOUT_MS: 30_000,
 } as const;
 
 const htmlPreloadStarted = new Set<string>();
@@ -36,14 +37,24 @@ export function getSoundUrl(name: string): string {
 }
 
 export function resetSoundPreloadCache() {
+  for (const el of htmlPreloadElements) abortPreloadElement(el);
   htmlPreloadStarted.clear();
   htmlPreloadElements.clear();
   cachedOggSupport = null;
 }
 
-function releasePreloadElement(el: HTMLAudioElement, name: string) {
+function abortPreloadElement(el: HTMLAudioElement) {
+  try {
+    el.oncanplaythrough = null;
+    el.onerror = null;
+    el.pause();
+    el.removeAttribute("src");
+  } catch {}
+}
+
+function dropFailedPreloadElement(el: HTMLAudioElement) {
+  abortPreloadElement(el);
   htmlPreloadElements.delete(el);
-  htmlPreloadStarted.delete(name);
 }
 
 export function preloadSounds(names: string[]) {
@@ -54,11 +65,14 @@ export function preloadSounds(names: string[]) {
     const el = new Audio();
     el.preload = "auto";
     htmlPreloadElements.add(el);
+    const stallTimer = setTimeout(() => dropFailedPreloadElement(el), SOUND_PRELOAD_CONFIG.STALLED_PRELOAD_TIMEOUT_MS);
     el.oncanplaythrough = () => {
+      clearTimeout(stallTimer);
       htmlPreloadElements.delete(el);
     };
     el.onerror = () => {
-      releasePreloadElement(el, name);
+      clearTimeout(stallTimer);
+      dropFailedPreloadElement(el);
     };
     el.src = getSoundUrl(name);
   }

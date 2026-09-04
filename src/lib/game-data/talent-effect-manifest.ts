@@ -83,7 +83,6 @@ export interface TalentEffectManifest {
 
   firstBurnCardBonusMultiplier: number;
   burnRemovesEnemyArmor: boolean;
-  burnDoubleChance: number;
   burnPreventDecayChance: number;
   receiveHalfBurnDamage: boolean;
   flatBurnDamage: number;
