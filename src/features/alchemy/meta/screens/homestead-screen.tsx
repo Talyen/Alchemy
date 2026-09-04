@@ -6,7 +6,7 @@ import { FadeSlot } from "../../shared/ui/fade-slot";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { homesteadGridMinHeightClass } from "../../shared/config";
+import { artTileGridRowsClass, collectionGridGapXClass, collectionGridMinHeightClass } from "../../shared/config";
 import { HOMESTEAD_CONFIG, type GoalItem, type Tab, MaterialsBar, HomesteadTabs, getItems } from "./homestead/helpers";
 import { CompanionCardNode } from "./homestead/companion-node";
 import { HomesteadUpgradeNode } from "./homestead/upgrade-node";
@@ -40,7 +40,7 @@ export function HomesteadScreen({
 }) {
   const [tab, setTab] = useState<Tab>("buildings");
   const [companionPage, setCompanionPage] = useState(0);
-  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  const [upgradePage, setUpgradePage] = useState(0);
 
   const buildingsItems = useMemo(() => getItems("buildings", buildings), []);
   const farmItems = useMemo(() => getItems("farm", farmPlots), []);
@@ -57,7 +57,23 @@ export function HomesteadScreen({
     if (success) playUISound("talentUnlock");
   }
 
+  const upgradeItems = tab === "buildings" ? buildingsItems : tab === "farm" ? farmItems : researchItems;
+  const upgradeLevels = tab === "buildings" ? constructedBuildings : tab === "farm" ? plantedFarms : completedResearch;
+  const upgradePages = Math.max(1, Math.ceil(upgradeItems.length / HOMESTEAD_CONFIG.upgradePageSize));
+  const safeUpgradePage = Math.min(upgradePage, upgradePages - 1);
+  const visibleUpgradeItems = upgradeItems.slice(
+    safeUpgradePage * HOMESTEAD_CONFIG.upgradePageSize,
+    (safeUpgradePage + 1) * HOMESTEAD_CONFIG.upgradePageSize,
+  );
+
   const companionPages = Math.max(1, Math.ceil(companionCards.length / HOMESTEAD_CONFIG.companionPageSize));
+  const safeCompanionPage = Math.min(companionPage, companionPages - 1);
+  const isCompanions = tab === "companions";
+
+  function handleSelectTab(nextTab: Tab) {
+    setTab(nextTab);
+    setUpgradePage(0);
+  }
 
   function handleBondCompanion(card: (typeof cardLibrary)[number]) {
     const effect = card.effects.find(
@@ -73,20 +89,20 @@ export function HomesteadScreen({
       <ScreenShell maxWidthClass="max-w-7xl" className="relative">
         <ScreenHeaderRow title="Homestead" />
 
-        <div className="mt-5 flex flex-col gap-4">
+        <div className="mt-6 flex flex-col gap-4">
           <MaterialsBar gold={gold} materialInventory={materialInventory} />
-          <HomesteadTabs activeTab={tab} onSelectTab={setTab} />
+          <HomesteadTabs activeTab={tab} onSelectTab={handleSelectTab} />
 
           <FadeSlot
-            swapKey={tab === "companions" ? `companions-${companionPage}` : tab}
-            className={cn("mx-auto flex w-full flex-col justify-center", homesteadGridMinHeightClass)}
+            swapKey={isCompanions ? `companions-${safeCompanionPage}` : `${tab}-${safeUpgradePage}`}
+            className={cn("mx-auto flex w-full flex-col justify-center overflow-visible", collectionGridMinHeightClass)}
           >
-            {tab === "companions" ? (
-              <div className="grid grid-cols-4 gap-x-4 gap-y-4">
+            {isCompanions ? (
+              <div className={cn("grid w-full grid-cols-4", collectionGridGapXClass, artTileGridRowsClass)}>
                 {companionCards
                   .slice(
-                    companionPage * HOMESTEAD_CONFIG.companionPageSize,
-                    (companionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,
+                    safeCompanionPage * HOMESTEAD_CONFIG.companionPageSize,
+                    (safeCompanionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,
                   )
                   .map((card) => (
                     <CompanionCardNode
@@ -95,30 +111,18 @@ export function HomesteadScreen({
                       discovered={discoveredIds.has(card.id)}
                       bondedCompanions={bondedCompanions}
                       materialInventory={materialInventory}
-                      hoveredItemId={hoveredItemId}
-                      setHoveredItemId={setHoveredItemId}
                       onBond={handleBondCompanion}
                     />
                   ))}
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-x-4 gap-y-4">
-                {(tab === "buildings" ? buildingsItems : tab === "farm" ? farmItems : researchItems).map((item) => (
+              <div className={cn("grid w-full grid-cols-3", collectionGridGapXClass, artTileGridRowsClass)}>
+                {visibleUpgradeItems.map((item) => (
                   <HomesteadUpgradeNode
                     key={item.data.id}
                     item={item}
-                    currentLevel={
-                      (
-                        (tab === "buildings"
-                          ? constructedBuildings
-                          : tab === "farm"
-                            ? plantedFarms
-                            : completedResearch) as Record<string, number>
-                      )[item.data.id] ?? 0
-                    }
+                    currentLevel={(upgradeLevels as Record<string, number>)[item.data.id] ?? 0}
                     materialInventory={materialInventory}
-                    hoveredItemId={hoveredItemId}
-                    setHoveredItemId={setHoveredItemId}
                     onAction={handleAction}
                   />
                 ))}
@@ -128,10 +132,10 @@ export function HomesteadScreen({
 
           <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
             <PaginationControls
-              page={companionPage}
-              totalPages={tab === "companions" ? companionPages : 1}
-              onPageChange={setCompanionPage}
-              size="sm"
+              page={isCompanions ? safeCompanionPage : safeUpgradePage}
+              totalPages={isCompanions ? companionPages : upgradePages}
+              onPageChange={isCompanions ? setCompanionPage : setUpgradePage}
+              size="default"
               reserveSpace
               className="mt-0"
             />

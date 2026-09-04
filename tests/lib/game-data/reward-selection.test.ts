@@ -1,10 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { getCardKeywords, selectRewardCards } from "@/lib/game-data";
+import { deckHasCompanionCard, getCardKeywords, selectRewardCards } from "@/lib/game-data";
 import { sampleItems } from "@/lib/utils";
 import type { BattleCard } from "@/lib/game-data";
 
 function card(overrides: Partial<BattleCard> = {}): BattleCard {
   return { id: "test", title: "Test", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
+}
+
+function companionCard(id: string): BattleCard {
+  return card({ id, effects: [{ kind: "summon-companion", companionId: "wolf" }] });
+}
+
+function physicalCard(id: string): BattleCard {
+  return card({ id, effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+}
+
+function mulberry32(seed: number): () => number {
+  let state = seed | 0;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 describe("getCardKeywords", () => {
@@ -198,6 +216,52 @@ describe("selectRewardCards", () => {
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("a");
     expect(callCount).toBeGreaterThan(0);
+  });
+});
+
+describe("companionless boost", () => {
+  it("detects companion cards in a deck", () => {
+    expect(deckHasCompanionCard([])).toBe(false);
+    expect(deckHasCompanionCard([card({ id: "stab" })])).toBe(false);
+    expect(deckHasCompanionCard([card({ id: "stab" }), companionCard("wolf-companion")])).toBe(true);
+  });
+
+  it("offers companions more often until the deck has one, then returns to normal", () => {
+    const pool: BattleCard[] = [
+      companionCard("wolf-companion"),
+      ...Array.from({ length: 6 }, (_, index) => physicalCard(`slash-${index}`)),
+      ...Array.from({ length: 6 }, (_, index) => card({ id: `plain-${index}` })),
+    ];
+    const freshDeck = [physicalCard("stab"), physicalCard("jab")];
+    const companionDeck = [...freshDeck, companionCard("owned-wolf")];
+
+    function hitRate(deck: BattleCard[], trials: number): number {
+      let hits = 0;
+      for (let i = 0; i < trials; i += 1) {
+        const picked = selectRewardCards(deck, pool, 3, [], mulberry32(5000 + i));
+        if (picked.some((entry) => entry.id === "wolf-companion")) hits += 1;
+      }
+      return hits / trials;
+    }
+
+    const boosted = hitRate(freshDeck, 1000);
+    const normal = hitRate(companionDeck, 1000);
+    expect(boosted).toBeGreaterThan(normal + 0.1);
+  });
+
+  it("never offers the same card twice when companions carry extra weight", () => {
+    const pool: BattleCard[] = [
+      companionCard("wolf-companion"),
+      companionCard("fox-companion"),
+      card({ id: "a" }),
+      card({ id: "b" }),
+      card({ id: "c" }),
+    ];
+    for (let i = 0; i < 200; i += 1) {
+      const picked = selectRewardCards([], pool, 3, [], mulberry32(9000 + i));
+      expect(picked).toHaveLength(3);
+      expect(new Set(picked.map((entry) => entry.id)).size).toBe(3);
+    }
   });
 });
 

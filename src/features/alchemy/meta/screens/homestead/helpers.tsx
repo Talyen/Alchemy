@@ -25,6 +25,7 @@ import {
   type HomesteadBuilding,
   type HomesteadFarm,
   type HomesteadResearch,
+  type MaterialInventory,
   materialLabels,
 } from "@/lib/homestead/types";
 import { MaterialInlineChip } from "../../../shared/ui/material-icons";
@@ -40,10 +41,9 @@ export type GoalItem =
   | { kind: "research"; data: HomesteadResearch };
 
 export const HOMESTEAD_CONFIG = {
-  companionPageSize: 4,
-  artAspectRatio: "aspect-[4/3]",
-  companionAspectRatio: "aspect-[3/4]",
-  companionPageWidth: "w-full",
+  companionPageSize: 8,
+  upgradePageSize: 6,
+  hoverScope: "homestead",
 } as const;
 
 const itemArt: Record<string, string> = {
@@ -97,6 +97,11 @@ const tabs: Array<{ id: Tab; label: string; icon: typeof Hammer; iconClassName: 
 
 export function HomesteadTabs({ activeTab, onSelectTab }: { activeTab: Tab; onSelectTab: (tab: Tab) => void }) {
   return <TabBar tabs={tabs} activeTab={activeTab} onSelectTab={onSelectTab} />;
+}
+
+export function formatMaterialCostSummary(cost: MaterialInventory): string {
+  const parts = MATERIAL_IDS.filter((m) => (cost[m] ?? 0) > 0).map((m) => `${cost[m] ?? 0} ${materialLabels[m]}`);
+  return parts.join(", ");
 }
 
 export function getItems(tab: Tab, pool: HomesteadBuilding[] | HomesteadFarm[] | HomesteadResearch[]): GoalItem[] {

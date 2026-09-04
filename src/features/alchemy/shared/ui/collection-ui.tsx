@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { PaginationControls } from "./navigation";
 import { FadeSlot } from "./fade-slot";
 import {
+  artTileGridRowsClass,
   collectionBestiaryGridClass,
   collectionCardGridClass,
   collectionCardGridTileWidthClass,
@@ -75,7 +76,7 @@ export function CollectionGrid({
 
   return (
     <FadeSlot swapKey={`${collectionTab}-${page}`} className={cn("overflow-visible", collectionGridMinHeightClass)}>
-      <div className={cn(gridClass, "grid-rows-2 gap-y-8")}>
+      <div className={cn(gridClass, artTileGridRowsClass)}>
         {pageItems.map((item) => (
           <div key={`${item.hoverScope}-${item.id}`} className="relative">
             <CompendiumTile item={item} />

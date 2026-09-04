@@ -31,11 +31,11 @@ export class HomesteadPage {
   }
 
   constructButton() {
-    return this.page.getByRole("button", { name: /Construct|Build|Upgrade|Craft/ }).first();
+    return this.page.getByRole("button", { name: /Construct|Build|Upgrade|Bond|Craft/ }).first();
   }
 
   async getBuildingText(name: string) {
-    return this.page.getByText(name).first();
+    return this.page.getByRole("button", { name: new RegExp(name, "i") }).first();
   }
 
   materialPill(material: "Wood" | "Iron" | "Herbs" | "Food" | "Gems" | "Crystal" | "Gold", amount: number) {

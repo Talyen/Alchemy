@@ -22,7 +22,6 @@ export const FLAG_DEFINITIONS = {
   consumeDrawUsedThisTurn: { default: false as const, preserveAs: true as const },
 
   divineAegisTriggered: { default: false as const, preserveAs: null },
-  saintfallRetributionTriggered: { default: false as const, preserveAs: null },
 
   nextHitCrit: { default: false as const, preserveAs: false as const },
   playNextCardTwice: { default: false as const, preserveAs: false as const },

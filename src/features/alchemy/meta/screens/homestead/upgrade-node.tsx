@@ -3,16 +3,11 @@ import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford, emptyInventory } from "@/lib/homestead/inventory";
 import { DetailPopup } from "../../../shared/ui/card-popup";
-import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
+import { InteractiveArtTile, type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
-import { HOMESTEAD_CONFIG, type GoalItem, getArt, renderTextWithMaterials } from "./helpers";
-import {
-  HomesteadAffordButton,
-  HomesteadTileCompletedFooter,
-  HomesteadTileFrame,
-  homesteadCompletedSurfaceClass,
-  homesteadTileDimClass,
-} from "./homestead-tile-node";
+import { cardSurfaceClass, collectionGridBestiaryWidthClass, landscapeArtImageClass } from "../../../shared/config";
+import { HOMESTEAD_CONFIG, type GoalItem, formatMaterialCostSummary, getArt, renderTextWithMaterials } from "./helpers";
+import { HomesteadTooltipCost, homesteadCompletedSurfaceClass, homesteadTileDimClass } from "./homestead-tile-node";
 
 const ZERO_COST: MaterialInventory = emptyInventory();
 
@@ -20,15 +15,11 @@ export function HomesteadUpgradeNode({
   item,
   currentLevel,
   materialInventory,
-  hoveredItemId,
-  setHoveredItemId,
   onAction,
 }: {
   item: GoalItem;
   currentLevel: number;
   materialInventory: MaterialInventory;
-  hoveredItemId: string | null;
-  setHoveredItemId: (id: string | null) => void;
   onAction: (item: GoalItem) => void;
 }) {
   const maxTiers = item.data.tiers.length;
@@ -39,35 +30,41 @@ export function HomesteadUpgradeNode({
   const itemCost = tier?.cost ?? ZERO_COST;
   const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
 
-  const detailTooltip = useTooltipContent(item, nextTierIndex, currentLevel, maxTiers);
-  const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
+  const detailTooltip = useTooltipContent(
+    item,
+    nextTierIndex,
+    currentLevel,
+    maxTiers,
+    isCompleted ? null : itemCost,
+    isCompleted ? null : currentLevel === 0 ? "Build" : "Upgrade",
+    materialInventory,
+  );
 
-  const footer = isCompleted ? (
-    <HomesteadTileCompletedFooter label={item.data.title} />
-  ) : hasCost ? (
-    <HomesteadAffordButton
-      title={item.data.title}
-      cost={itemCost}
-      inventory={materialInventory}
-      affordable={itemAffordable}
-      onClick={() => onAction(item)}
-    />
-  ) : null;
+  const costSummary = formatMaterialCostSummary(itemCost);
+  const ariaLabel = isCompleted
+    ? `${item.data.title}, max level`
+    : currentLevel === 0
+      ? `Build ${item.data.title}${costSummary ? `, costs ${costSummary}` : ""}`
+      : `Upgrade ${item.data.title}, level ${currentLevel} of ${maxTiers}${costSummary ? `, costs ${costSummary}` : ""}`;
 
   return (
-    <HomesteadTileFrame
+    <InteractiveArtTile
       id={item.data.id}
-      hoveredItemId={hoveredItemId}
-      setHoveredItemId={setHoveredItemId}
-      detailTooltip={detailTooltip}
-      surfaceClassName={cn(HOMESTEAD_CONFIG.artAspectRatio, "w-full", isCompleted && homesteadCompletedSurfaceClass)}
-      imageSrc={getArt(item.data.id)}
-      imageAlt={item.data.title}
+      interactionKey={HOMESTEAD_CONFIG.hoverScope}
+      title={item.data.title}
+      art={getArt(item.data.id)}
+      className={cn(cardSurfaceClass, collectionGridBestiaryWidthClass, isCompleted && homesteadCompletedSurfaceClass)}
       imageClassName={cn(
-        "h-full w-full object-cover transition-[filter] duration-300",
+        "block w-full transition duration-300",
+        landscapeArtImageClass,
         isTier0 && homesteadTileDimClass,
       )}
-      footer={footer}
+      popup={detailTooltip}
+      as={isCompleted ? "div" : "button"}
+      showGlow={itemAffordable}
+      {...(isCompleted ? {} : { ariaDisabled: !itemAffordable })}
+      onClick={itemAffordable ? () => onAction(item) : undefined}
+      ariaLabel={ariaLabel}
     />
   );
 }
@@ -77,6 +74,9 @@ function useTooltipContent(
   nextTierIndex: number,
   currentLevel: number,
   maxTiers: number,
+  cost: MaterialInventory | null,
+  costLabel: string | null,
+  materialInventory: MaterialInventory,
 ): (ctx: PopupContext) => ReactNode {
   return useMemo(() => {
     const nodes: ReactNode[] = [];
@@ -85,20 +85,25 @@ function useTooltipContent(
     if (currentTier) {
       if (currentTier.benefitDescription) {
         for (const line of currentTier.benefitDescription.split("\n")) {
-          nodes.push(
-            <div key={`b-${nodes.length}`} className="text-pretty">
-              {renderTextWithMaterials(line)}
-            </div>,
-          );
+          nodes.push(<div key={`b-${nodes.length}`}>{renderTextWithMaterials(line)}</div>);
         }
       }
       if (currentTier.nonCombatBenefitDescription) {
         nodes.push(
-          <div key={`b-${nodes.length}`} className="text-pretty">
-            {renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}
-          </div>,
+          <div key={`b-${nodes.length}`}>{renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}</div>,
         );
       }
+    }
+
+    if (cost && costLabel && MATERIAL_IDS.some((m) => (cost[m] ?? 0) > 0)) {
+      nodes.push(
+        <HomesteadTooltipCost
+          key={`cost-${nodes.length}`}
+          label={costLabel}
+          cost={cost}
+          inventory={materialInventory}
+        />,
+      );
     }
 
     return ({ visible, triggerRef }) => (
@@ -117,5 +122,5 @@ function useTooltipContent(
         triggerRef={triggerRef}
       />
     );
-  }, [item, nextTierIndex, currentLevel, maxTiers]);
+  }, [item, nextTierIndex, currentLevel, maxTiers, cost, costLabel, materialInventory]);
 }

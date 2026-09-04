@@ -11,6 +11,7 @@ describe("parseBalanceReportOptions", () => {
       policy: "random-playable",
       loadoutMode: "typical",
       appliesFightPacing: true,
+      findingsCap: 100,
     });
   });
 
@@ -31,6 +32,7 @@ describe("parseBalanceReportOptions", () => {
       policy: "greedy-effective-damage",
       loadoutMode: "bare",
       appliesFightPacing: false,
+      findingsCap: 100,
     });
   });
 

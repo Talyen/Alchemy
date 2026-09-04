@@ -116,16 +116,16 @@ export function TalentsScreen({
       title={title}
       maxWidthClass="max-w-[90rem]"
       minHeightClass="min-h-[76cqh]"
-      headerActions={
+      topRightAction={
         <Button
           variant="outline"
           size="icon"
-          className="h-10 w-10 text-muted-foreground"
+          className="h-12 w-12 text-muted-foreground"
           disabled={!hasAllocatedTalents}
           onClick={() => setShowResetConfirm(true)}
           aria-label="Reset talents"
         >
-          <RotateCcw className="h-4 w-4" />
+          <RotateCcw className="h-6 w-6" />
         </Button>
       }
     >

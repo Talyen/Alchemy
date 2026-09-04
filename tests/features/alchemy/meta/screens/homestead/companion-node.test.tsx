@@ -13,25 +13,24 @@ const wolfCard = cardLibrary.find((c) =>
 describe("CompanionCardNode", () => {
   afterEach(() => cleanup());
 
-  it("renders grayscale when undiscovered and no footer button", () => {
+  it("renders grayscale when undiscovered and no tile button", () => {
     const { container } = render(
       <CompanionCardNode
         card={wolfCard}
         discovered={false}
         bondedCompanions={{} as any}
         materialInventory={emptyInventory()}
-        hoveredItemId={null}
-        setHoveredItemId={vi.fn()}
         onBond={vi.fn()}
       />,
     );
     const img = container.querySelector("img");
     expect(img?.className).toContain("grayscale");
     expect(img?.className).toContain("group-hover:grayscale-0");
+    expect(img?.className).toContain("group-hover:opacity-100");
     expect(screen.queryByRole("button")).toBeNull();
   });
 
-  it("renders afford button when discovered and affordable", () => {
+  it("renders clickable art tile when discovered and affordable", () => {
     const onBond = vi.fn();
     const inventory = { ...emptyInventory(), food: 100 };
     render(
@@ -40,46 +39,43 @@ describe("CompanionCardNode", () => {
         discovered
         bondedCompanions={{} as any}
         materialInventory={inventory}
-        hoveredItemId={null}
-        setHoveredItemId={vi.fn()}
         onBond={onBond}
       />,
     );
     const btn = screen.getByRole("button");
-    expect(btn.hasAttribute("disabled")).toBe(false);
+    expect(btn.getAttribute("aria-disabled")).toBe("false");
     fireEvent.click(btn);
     expect(onBond).toHaveBeenCalled();
   });
 
-  it("disables bond button when unaffordable", () => {
+  it("marks tile aria-disabled and ignores clicks when unaffordable", () => {
+    const onBond = vi.fn();
     render(
       <CompanionCardNode
         card={wolfCard}
         discovered
         bondedCompanions={{} as any}
         materialInventory={emptyInventory()}
-        hoveredItemId={null}
-        setHoveredItemId={vi.fn()}
-        onBond={vi.fn()}
+        onBond={onBond}
       />,
     );
     const btn = screen.getByRole("button");
-    expect(btn.hasAttribute("disabled")).toBe(true);
+    expect(btn.getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(btn);
+    expect(onBond).not.toHaveBeenCalled();
   });
 
-  it("renders completed state without button", () => {
+  it("renders art-only tile without button when complete", () => {
     render(
       <CompanionCardNode
         card={wolfCard}
         discovered
         bondedCompanions={{ wolf: 3 } as any}
         materialInventory={emptyInventory()}
-        hoveredItemId={null}
-        setHoveredItemId={vi.fn()}
         onBond={vi.fn()}
       />,
     );
     expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.getByText(wolfCard.title)).toBeTruthy();
+    expect(screen.queryByText(wolfCard.title)).toBeNull();
   });
 });

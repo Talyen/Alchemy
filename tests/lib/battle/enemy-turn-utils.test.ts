@@ -65,7 +65,7 @@ describe("advanceToPlayerTurn", () => {
     expect(result.mana).toBe(5);
   });
 
-  it("CC skip: no draw when stun skip active", () => {
+  it("advances to player turn and draws cards even when player CC is active", () => {
     const state = makeTestBattleState({
       turnPhase: "enemy",
       playerCC: defaultCcState({ stunSkipTurns: 1 }),
@@ -73,9 +73,9 @@ describe("advanceToPlayerTurn", () => {
       hand: [],
     });
     const result = advanceToPlayerTurn(state);
-    expect(result.turnPhase).toBe("enemy");
-    expect(result.hand).toHaveLength(0);
-    expect(result.playerCC.stunSkipTurns).toBe(0);
+    expect(result.turnPhase).toBe("player");
+    expect(result.hand).toHaveLength(2);
+    expect(result.playerCC.stunSkipTurns).toBe(1);
   });
 
   it("Death's Door recovery suppresses CC skip", () => {

@@ -30,4 +30,15 @@ describe("TitledScreenShell", () => {
     expect(screen.getByRole("button", { name: "Action" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /menu/i })).toBeNull();
   });
+
+  it("renders top right action positioned to the left of the global menu hamburger", () => {
+    render(
+      <TitledScreenShell title="Test" topRightAction={<button type="button">Top Action</button>}>
+        Body
+      </TitledScreenShell>,
+    );
+    const button = screen.getByRole("button", { name: "Top Action" });
+    expect(button).toBeTruthy();
+    expect(button.parentElement?.className).toContain("absolute top-4 right-18 z-[80]");
+  });
 });

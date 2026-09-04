@@ -60,7 +60,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     id: "forge",
     label: "Forge",
     description:
-      "Each stack of Forge increases your Physical and Stun damage dealt by 1. Dealing damage removes 1 Forge",
+      "Each stack of Forge increases your Physical and Stun damage dealt by 1, lose 1 Forge when you deal damage",
     colorClass: "text-orange-300",
     borderClass: "border-orange-300",
     shineColors: ["#fdba74", "#ea580c", "#fdba74"],
@@ -68,7 +68,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   armor: {
     id: "armor",
     label: "Armor",
-    description: "Each stack of Armor decreases Physical and Stun damage taken by 1. Taking damage removes 1 Armor",
+    description: "Each stack of Armor decreases Physical and Stun damage taken by 1, lose 1 Armor when taking damage",
     colorClass: "text-gray-400",
     borderClass: "border-gray-400",
     shineColors: ["#9ca3af", "#4b5563", "#9ca3af"],

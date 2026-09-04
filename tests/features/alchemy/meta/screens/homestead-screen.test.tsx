@@ -2,6 +2,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HomesteadScreen } from "@/features/alchemy/meta/screens/homestead-screen";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { cardLibrary } from "@/lib/game-data";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 
 describe("HomesteadScreen", () => {
@@ -9,6 +11,7 @@ describe("HomesteadScreen", () => {
 
   afterEach(() => {
     cleanup();
+    useUiStore.getState().clearCardHover();
   });
 
   const defaultProps = {
@@ -44,6 +47,33 @@ describe("HomesteadScreen", () => {
     expect(onConstructBuilding).toHaveBeenCalled();
   });
 
+  it("shows build cost inside the hover tooltip", async () => {
+    render(<HomesteadScreen {...defaultProps} />);
+
+    const trigger = screen.getByRole("button", { name: /Blacksmith/i }).parentElement as HTMLElement;
+    fireEvent.mouseEnter(trigger);
+
+    await waitFor(() => {
+      const panel = document.querySelector(".hover-popup-panel");
+      expect(panel?.textContent).toContain("Build");
+      expect(panel?.textContent).toContain("20");
+    });
+  });
+
+  it("does not construct when the tile is unaffordable", () => {
+    const onConstructBuilding = vi.fn(() => true);
+    render(
+      <HomesteadScreen
+        {...defaultProps}
+        materialInventory={emptyInventory()}
+        onConstructBuilding={onConstructBuilding}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Blacksmith/i }));
+    expect(onConstructBuilding).not.toHaveBeenCalled();
+  });
+
   it("switches to the farm tab and displays farm plots", async () => {
     render(<HomesteadScreen {...defaultProps} />);
 
@@ -69,5 +99,23 @@ describe("HomesteadScreen", () => {
     });
     const nextButtons = screen.getAllByRole("button");
     expect(nextButtons.length).toBeGreaterThan(0);
+  });
+
+  it("pages companions eight per page across two rows", async () => {
+    const companions = cardLibrary.filter((c) => c.effects.some((e) => e.kind === "summon-companion"));
+    const discovered = companions.slice(0, 9).map((c) => c.id);
+    render(<HomesteadScreen {...defaultProps} discoveredCardIds={discovered} />);
+    fireEvent.click(screen.getByRole("button", { name: "Companions" }));
+
+    const ninth = companions[8]!;
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: /Bond /i })).toHaveLength(8);
+    });
+    expect(screen.queryByRole("button", { name: new RegExp(ninth.title, "i") })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: new RegExp(ninth.title, "i") })).toBeTruthy();
+    });
   });
 });

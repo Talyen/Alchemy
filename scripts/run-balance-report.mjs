@@ -9,7 +9,7 @@ const rootDir = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const server = await createServer({
   configFile: false,
   appType: "custom",
-  server: { middlewareMode: true },
+  server: { middlewareMode: true, hmr: false, ws: false },
   resolve: { alias: { "@": fileURLToPath(new URL("../src", import.meta.url)) } },
 });
 

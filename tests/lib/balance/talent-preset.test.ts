@@ -3,28 +3,23 @@ import {
   buildPresetUnlockedTalents,
   countAffinityCombatTalents,
   countUnlockedCombatTalents,
+  talentsInTreeOrder,
   LATE_AFFINITY_TALENT_CAP,
 } from "@/lib/balance/talent-preset";
-import { combatTalentsInPoolOrder, isCombatTalent } from "@/lib/balance/combat-talent";
-import { talentPool } from "@/lib/game-data";
 
 describe("buildPresetUnlockedTalents", () => {
   it("uses an empty unlock set for early", () => {
     expect(buildPresetUnlockedTalents(["gold"], "early")).toEqual({});
   });
 
-  it("picks combat gold talents in pool order for mid rogue affinity", () => {
+  it("picks talents in tree order for mid rogue affinity", () => {
     const unlocked = buildPresetUnlockedTalents(["poison", "bleed", "gold"], "mid");
     const goldIds = unlocked.gold ?? [];
-    const combatGold = combatTalentsInPoolOrder("gold")
+    const expectedGold = talentsInTreeOrder("gold")
       .slice(0, 5)
       .map((talent) => talent.id);
-    expect(goldIds).toEqual(combatGold);
-    expect(goldIds).not.toContain("gold-shop-discount");
-    for (const id of goldIds) {
-      const talent = talentPool.find((entry) => entry.id === id);
-      expect(talent && isCombatTalent(talent)).toBe(true);
-    }
+    expect(goldIds).toEqual(expectedGold);
+    expect(goldIds).toContain("gold-shop-discount");
   });
 
   it("caps late affinity combat talents", () => {
@@ -39,7 +34,7 @@ describe("buildPresetUnlockedTalents", () => {
   });
 
   it("counts affinity combat talents only for typical HP", () => {
-    expect(countAffinityCombatTalents(["poison", "bleed", "gold"], "mid")).toBe(13);
+    expect(countAffinityCombatTalents(["poison", "bleed", "gold"], "mid")).toBe(15);
     expect(countAffinityCombatTalents([], "mid")).toBe(15);
     expect(countAffinityCombatTalents([], "late")).toBe(21);
   });

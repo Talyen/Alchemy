@@ -14,8 +14,8 @@ const wardbreaker: UniqueItemDefinition = {
   id: "wardbreaker",
   displayName: "Wardbreaker",
   baseItemId: "flail",
-  description: "Purge enemy Armor, Block, and Forge when you Stun an enemy and deal 2 Holy damage per point removed.",
-  signatureAffix: { id: "wardbreaker-purge", value: 2 },
+  description: "Your attacks Purge a beneficial effect and deal 1 Holy damage for each effect removed",
+  signatureAffix: { id: "wardbreaker-purge", value: 1 },
   supportingAffixes: [
     { id: "flat-stun", value: 4 },
     { id: "damage-on-stun", value: 6 },
@@ -27,7 +27,7 @@ const danceOfBlades: UniqueItemDefinition = {
   id: "dance-of-blades",
   displayName: "Dance of Blades",
   baseItemId: "leather-armor",
-  description: "When you Dodge an attack, draw and play a random card.",
+  description: "When you Dodge an attack, draw and play a random card",
   signatureAffix: { id: "dance-of-blades", value: 1 },
   supportingAffixes: [
     { id: "flat-physical", value: 4 },
@@ -40,7 +40,8 @@ const bloodfireSignet: UniqueItemDefinition = {
   id: "bloodfire-signet",
   displayName: "Bloodfire Signet",
   baseItemId: "ruby-ring",
-  description: "Burn and Bleed damage cross-proc with a 20% chance. Burn and Bleed damage gain 50% Leech.",
+  description:
+    "Burn damage has a 20% chance to cause Bleed, Bleed damage has a 20% chance to cause Burn, and both gain Leech",
   signatureAffix: { id: "bloodfire", value: 1 },
   supportingAffixes: [
     { id: "flat-burn", value: 4 },
@@ -53,8 +54,7 @@ const rimeheartLocket: UniqueItemDefinition = {
   id: "rimeheart-locket",
   displayName: "Rimeheart Locket",
   baseItemId: "sapphire-amulet",
-  description:
-    "Dealing Freeze damage grants that amount of Block. Freezing an enemy restores Mana equal to half your Block (max 4).",
+  description: "Dealing Freeze damage grants Block and Freezing an enemy restores Mana equal to half your Block",
   signatureAffix: { id: "rimeheart", value: 1 },
   supportingAffixes: [
     { id: "flat-freeze", value: 4 },
@@ -67,7 +67,7 @@ const blackfletch: UniqueItemDefinition = {
   id: "blackfletch",
   displayName: "Blackfletch",
   baseItemId: "crossbow",
-  description: "Archery attacks detonate and consume all remaining Bleed and Poison damage on the target.",
+  description: "Archery attacks detonate and consume all remaining Bleed and Poison damage on the target",
   signatureAffix: { id: "blackfletch", value: 1 },
   supportingAffixes: [
     { id: "archery-damage", value: 4 },
@@ -80,7 +80,7 @@ const twinCasting: UniqueItemDefinition = {
   id: "twin-casting",
   displayName: "Twin Casting",
   baseItemId: "staff",
-  description: "Playing a Burn card draws a Freeze card, and playing a Freeze card draws a Burn card.",
+  description: "Playing a Burn card draws a Freeze card, and playing a Freeze card draws a Burn card",
   signatureAffix: { id: "twin-casting", value: 1 },
   supportingAffixes: [
     { id: "flat-burn", value: 4 },
@@ -93,9 +93,8 @@ const saintfallPlate: UniqueItemDefinition = {
   id: "saintfall-plate",
   displayName: "Saintfall Plate",
   baseItemId: "plate-armor",
-  description:
-    "The first time each battle your Block is depleted, deal 6 Holy and 6 Stun damage to attacker and restore 6 Health.",
-  signatureAffix: { id: "saintfall", value: 6 },
+  description: "When your Block is depleted, deal 4 Holy damage and gain 4 Health",
+  signatureAffix: { id: "saintfall", value: 4 },
   supportingAffixes: [
     { id: "stun-on-block-hit", value: 5 },
     { id: "heal-on-block-depleted", value: 6 },
@@ -107,7 +106,7 @@ const goldenVerdict: UniqueItemDefinition = {
   id: "golden-verdict",
   displayName: "Golden Verdict",
   baseItemId: "topaz-ring",
-  description: "Holy damage builds an equal amount of Stun. When this Stuns an enemy, gain 1 Gold.",
+  description: "Holy damage causes Stun build-up and you gain 1 Gold when you Stun an enemy",
   signatureAffix: { id: "golden-verdict", value: 1 },
   supportingAffixes: [
     { id: "flat-holy", value: 4 },

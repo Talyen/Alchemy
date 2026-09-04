@@ -1,7 +1,7 @@
 import { cardById, type CharacterId } from "@/lib/game-data";
 import { ANOMALY_METRICS, getAnomalyThreshold } from "./anomalies";
 import { buildClassSimDeck, CLASS_SIM_AFFINITY_EXTRAS, WILDCARD_SIM_DECK_SIZE } from "./class-deck";
-import { TIER_GOLD, TYPICAL_VITALITY_COMBATS } from "./loadout-preset";
+import { TIER_GOLD } from "./loadout-preset";
 import {
   coreScenarioSeeds,
   coreMatchupsForTier,
@@ -270,8 +270,8 @@ export function reportMethodologyLines(options: ReportRunOptions): string[] {
     `Deck: starting deck + affinity extras (Early +${CLASS_SIM_AFFINITY_EXTRAS.early}, Mid +${CLASS_SIM_AFFINITY_EXTRAS.mid}, Late +${CLASS_SIM_AFFINITY_EXTRAS.late}). Wildcard random ${WILDCARD_SIM_DECK_SIZE.early}/${WILDCARD_SIM_DECK_SIZE.mid}/${WILDCARD_SIM_DECK_SIZE.late}. Alchemist +2 mixed potions.`,
     `Talents (combat-eligible only, tree order): Early none; Mid ${MID_AFFINITY_TALENT_COUNT} affinity + ${MID_OTHER_TALENT_COUNT} other; Late up to ${LATE_AFFINITY_TALENT_CAP} affinity + ${LATE_OTHER_TALENT_COUNT} other. Shop/run-only talents are excluded.`,
     `Gold: Early ${TIER_GOLD.early} / Mid ${TIER_GOLD.mid} / Late ${TIER_GOLD.late}, plus startGold from combat talents. Explicit config.gold overrides.`,
-    `Loadout mode=${options.loadoutMode}. typical adds +1 max HP per affinity combat talent (Wildcard uses a 3-keyword equivalent), Vitality max HP (Mid ${TYPICAL_VITALITY_COMBATS.mid} / Late ${TYPICAL_VITALITY_COMBATS.late} estimated combats), Mid 1★ / Late 2★ homestead via computeHomesteadEffects, seeded affinity gear (Mid weapon+body, Late full set), and Mid/Late core trinkets (Grove's Favor / Tattered Pages). bare keeps talent-point HP and tier gold but omits Vitality, homestead, gear, and core trinkets. Gear uses a salted RNG stream from the fight seed so paired isolation sweeps stay matched. Boon/card isolation sweeps force trinketIds to the isolated set.`,
-    `Difficulty: Early none; Mid Adventurer (HP/dmg ×1.3); Late Legend (HP ×2.8, dmg ×1.6). Room scaling uses scenario depth.`,
+    `Loadout mode=${options.loadoutMode}. typical adds +1 max HP per combat talent (Wildcard uses the full budget equivalent), Mid 1★ / Late 2★ homestead via computeHomesteadEffects, seeded affinity gear (Mid weapon+body, Late full set), and Mid/Late core trinkets (Grove's Favor / Tattered Pages). bare keeps talent-point HP and tier gold but omits homestead, gear, and core trinkets. Gear uses a salted RNG stream from the fight seed so paired isolation sweeps stay matched. Boon/card isolation sweeps force trinketIds to the isolated set.`,
+    `Difficulty: Normal (Novice, canonical modifiers). Room scaling uses scenario depth.`,
     `Class rankings weight Normal/Elite/Boss equally while retaining the underlying battle count. Isolation sweeps pair baseline and treatment by deck, matchup, and semantic seed. Delta SE uses the sample variance of per-seed win differences; deltas below 2 SE are marked noisy.`,
     `Play policy=${options.policy} is a skill floor: dump-hand, random wishes, no holds. greedy-damage is face damage only; greedy-effective-damage also scores DoT/status/block.`,
     `Fight pacing ${options.appliesFightPacing === false ? "off" : "on"} (hidden comeback × clock scaler; ALCHEMY_BALANCE_PACING=off measures raw kit).`,

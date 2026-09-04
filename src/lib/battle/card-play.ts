@@ -21,6 +21,7 @@ import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { getBattleRng, rngInt, rollPercent } from "@/lib/rng";
 
 import { cardHasDamageType, computeEffectiveCost, isNatureCard } from "./card-cost-rules";
+import { isPlayerCcControlled } from "./status-cc";
 import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
 function resolveCardPlayCost(state: BattleState, card: BattleCard) {
@@ -68,6 +69,7 @@ export function canPlayCard(state: BattleState, card: BattleCard, index: number,
   if (isPlayerDefeated(state)) return false;
   if (state.wishOptions) return false;
   if (state.turnPhase !== "player") return false;
+  if (isPlayerCcControlled(state.playerCC)) return false;
   if (!isCardInHand(state, card, index)) return false;
   if (!canAffordCard(state, index)) return false;
   if (cardHasOnlyCleanseEffect(card, state)) return false;

@@ -10,7 +10,7 @@ import {
   applyLifestealAndPlayerHitTriggers,
   applyNatureLeech,
 } from "./damage-rider-leech";
-import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
+import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
 import { dealPlayerTypedHit, tryPoisonStunProc } from "./player-typed-hit";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
@@ -113,6 +113,27 @@ function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]
   return detonateEnemyStatuses(state, ["bleed", "poison"], combatTexts);
 }
 
+export function applyAttackPurgeRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (state.gearEffects.attackPurgeDealHolyPerEffect <= 0 || state.enemyHealth <= 0) return state;
+  const mitigation = state.enemyMitigation;
+  const category =
+    mitigation.armor > 0 ? "armor" : mitigation.block > 0 ? "block" : mitigation.forge > 0 ? "forge" : null;
+  if (!category) return state;
+  let nextState: BattleState = {
+    ...state,
+    enemyMitigation: { ...state.enemyMitigation, [category]: 0 },
+  };
+  const holyDamage = Math.round(
+    nextState.gearEffects.attackPurgeDealHolyPerEffect * getEnemyDamageMultiplier(nextState, "holy"),
+  );
+  if (holyDamage > 0) {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
+    const hit = damageEnemyHealth(nextState, holyDamage);
+    nextState = payKillPayouts(hit.state, hit.enemyWasAlive, combatTexts);
+  }
+  return nextState;
+}
+
 export function applyDamageRiders(
   state: BattleState,
   card: BattleCard,
@@ -122,7 +143,8 @@ export function applyDamageRiders(
   isExtraHit = false,
 ) {
   const enemyWasBurningBefore = state.enemyStatuses.burn > 0;
-  const hit = damageEnemyHealth(state, modifiedDamage);
+  const prePurgeState = isExtraHit ? state : applyAttackPurgeRider(state, combatTexts);
+  const hit = damageEnemyHealth(prePurgeState, modifiedDamage);
   const previousHealth = hit.previousHealth;
   let nextState: BattleState = hit.state;
 

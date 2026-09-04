@@ -56,8 +56,9 @@ test.describe("Homestead Flow", critical, () => {
       await homestead.switchTab("Companions");
       await expect(page.getByRole("img", { name: "Wolf" })).toBeVisible({ timeout: 3000 });
       await expect(page.getByRole("img", { name: "Bear" })).toBeVisible();
+      await expect(page.getByRole("img", { name: "Phoenix" })).toBeVisible();
       await page.getByRole("button", { name: "Next page" }).click();
-      await expect(page.getByRole("img", { name: "Phoenix" })).toBeVisible({ timeout: 3000 });
+      await expect(page.getByRole("img", { name: "Will-o'-Wisp" })).toBeVisible({ timeout: 3000 });
     });
   });
 
@@ -84,7 +85,7 @@ test.describe("Homestead Flow", critical, () => {
         completedResearch: { "botanical-distillation": 1 },
       });
       await homestead.switchTab("Research");
-      await expect(page.getByText("Botanical Distillation").first()).toBeVisible({ timeout: 3000 });
+      await expect(page.getByRole("button", { name: /Botanical Distillation/ }).first()).toBeVisible({ timeout: 3000 });
     });
   });
 
@@ -103,7 +104,7 @@ test.describe("Homestead Flow", critical, () => {
       const tabAnchors: Record<"Buildings" | "Farm" | "Research" | "Companions", Locator> = {
         Buildings: page.getByRole("button", { name: /Blacksmith/ }),
         Farm: page.getByRole("button", { name: /Herb Garden/ }),
-        Research: page.getByText("Leyline Energy").first(),
+        Research: page.getByRole("button", { name: /Leyline Energy/ }).first(),
         Companions: page.getByRole("img", { name: "Wolf" }),
       };
 
@@ -140,8 +141,8 @@ test.describe("Homestead Flow", critical, () => {
       await homestead.switchTab("Farm");
       await expect(page.getByRole("button", { name: /Wheat Field/ })).toBeVisible({ timeout: 3000 });
       await homestead.switchTab("Research");
-      await expect(page.getByText("Detect Magic").first()).toBeVisible({ timeout: 3000 });
-      await expect(page.getByText("Agility Training").first()).toBeVisible();
+      await expect(page.getByRole("button", { name: /Detect Magic/ }).first()).toBeVisible({ timeout: 3000 });
+      await expect(page.getByRole("button", { name: /Agility Training/ }).first()).toBeVisible();
 
       const maxHeight = Math.max(...allHeights);
       const minHeight = Math.min(...allHeights);

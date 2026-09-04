@@ -159,11 +159,7 @@ function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number,
   const baseMaxHealth = orFallback(config.playerMaxHealth, MAX_PLAYER_HEALTH);
   const playerMaxHealth =
     config.playerMaxHealth === undefined
-      ? baseMaxHealth +
-        loadout.talentPointHealth +
-        loadout.vitalityHealth +
-        talentEffects.runMaxHealthBonus +
-        gearEffects.maxHealth
+      ? baseMaxHealth + loadout.talentPointHealth + talentEffects.runMaxHealthBonus + gearEffects.maxHealth
       : baseMaxHealth;
 
   return {

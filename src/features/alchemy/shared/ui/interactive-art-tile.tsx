@@ -28,6 +28,8 @@ interface InteractiveArtTileProps {
   interactiveChrome?: boolean | undefined;
   shineColor?: string | readonly string[] | undefined;
   disabled?: boolean | undefined;
+  showGlow?: boolean | undefined;
+  ariaDisabled?: boolean | undefined;
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
   children?: ReactNode | undefined;
@@ -49,6 +51,8 @@ export function InteractiveArtTile({
   interactiveChrome = true,
   shineColor,
   disabled = false,
+  showGlow: showGlowOverride,
+  ariaDisabled,
   onClick,
   ariaLabel,
   children,
@@ -76,7 +80,7 @@ export function InteractiveArtTile({
   const shineColors = shineColor == null ? [] : Array.isArray(shineColor) ? shineColor : [shineColor];
 
   const showShine = shineColors.length > 0 && !disabled;
-  const showGlow = interactiveChrome && interactive && !disabled;
+  const showGlow = showGlowOverride ?? (interactiveChrome && interactive && !disabled);
 
   return (
     <div
@@ -104,6 +108,7 @@ export function InteractiveArtTile({
         onClick={interactive && !disabled ? onClick : undefined}
         {...(interactive ? { onFocus: handleHoverStart, onBlur: handleBlur } : {})}
         ariaLabel={ariaLabel ?? title}
+        {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}
       >
         <img src={art ?? undefined} alt={title} className={imageClassName} />
         {showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}

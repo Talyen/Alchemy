@@ -21,11 +21,11 @@ export const enemyBestiary = [
     traits: [
       trait(
         "glacial-shell",
-        "Glacial Shell",
-        "Receives half Freeze damage\nReceives 50% more Burn damage\nGains Freeze damage every other turn",
+        "Glacial Surge",
+        "Receives half Freeze damage\nReceives 30% more Burn damage\nGains Freeze damage every other turn",
       ),
     ],
-    attackEffects: [phys(4), { kind: "damage", damageType: "freeze", amount: 1 }],
+    attackEffects: [{ kind: "damage", damageType: "freeze", amount: 1 }, phys(4)],
   }),
   defineEnemy({
     id: "blight-treant",
@@ -34,7 +34,7 @@ export const enemyBestiary = [
     enemyType: "boss",
     traits: [
       regeneration("Rotting Regrowth"),
-      trait("burn-vulnerability", "Burn Vulnerability", "Receives 50% more Burn damage"),
+      trait("burn-vulnerability", "Burn Vulnerability", "Receives 30% more Burn damage"),
     ],
     attackEffects: [{ kind: "damage", damageType: "nature", amount: 3 }, playerStatus("poison", 1)],
   }),
@@ -51,7 +51,7 @@ export const enemyBestiary = [
     title: "Goblin",
     art: assetRefs.goblin,
     enemyType: "normal",
-    traits: [trait("trinket-hoarder", "Trinket Hoarder", "Receives 50% more Burn damage")],
+    traits: [trait("trinket-hoarder", "Trinket Hoarder", "Receives 30% more Burn damage")],
     attackEffects: [phys(7)],
   }),
   defineEnemy({
@@ -118,7 +118,7 @@ export const enemyBestiary = [
     title: "Frost Elemental",
     art: assetRefs.frostElemental,
     enemyType: "elite",
-    traits: [trait("burn-vulnerability", "Burn Vulnerability", "Receives 50% more Burn damage")],
+    traits: [trait("burn-vulnerability", "Burn Vulnerability", "Receives 30% more Burn damage")],
     attackEffects: [{ kind: "damage", damageType: "freeze", amount: 3 }],
   }),
   defineEnemy({

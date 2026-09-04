@@ -110,4 +110,6 @@ export const LABYRINTH_REWARD_CONFIG = {
 export const REWARD_SELECTION_CONFIG = {
   newCardScoreBonus: 2,
   affinityPoolMultiplier: 2,
+  companionlessScoreBonus: 2,
+  companionlessRandomWeight: 2,
 } as const;

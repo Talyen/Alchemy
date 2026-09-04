@@ -276,21 +276,8 @@ function applyBlockDepletedHeal(
     finalState = dealPlayerTypedHit(finalState, "stun", prevState.gearEffects.stunOnBlockDepleted, combatTexts);
   }
 
-  if (
-    isBlockDepleted &&
-    prevState.gearEffects.saintfallRetribution > 0 &&
-    !prevState.flags.saintfallRetributionTriggered &&
-    finalState.enemyHealth > 0
-  ) {
-    finalState = {
-      ...finalState,
-      flags: {
-        ...finalState.flags,
-        saintfallRetributionTriggered: true,
-      },
-    };
+  if (isBlockDepleted && prevState.gearEffects.saintfallRetribution > 0 && finalState.enemyHealth > 0) {
     finalState = dealPlayerTypedHit(finalState, "holy", prevState.gearEffects.saintfallRetribution, combatTexts);
-    finalState = dealPlayerTypedHit(finalState, "stun", prevState.gearEffects.saintfallRetribution, combatTexts);
     finalState = applyHealingWithCombatText(finalState, prevState.gearEffects.saintfallRetribution, combatTexts);
   }
 

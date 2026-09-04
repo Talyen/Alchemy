@@ -93,6 +93,7 @@ export type BattleCardEffect =
       doubleIfEnemyBleeding?: boolean;
       tripleIfEnemyNotBurning?: boolean;
       detonateIfEnemyBurning?: boolean;
+      damageTypePool?: DamageType[];
     }
   | {
       kind: "player-status";

@@ -17,6 +17,7 @@ export const damageEffectDefinition = {
       doubleIfEnemyBleeding: z.boolean().optional(),
       tripleIfEnemyNotBurning: z.boolean().optional(),
       detonateIfEnemyBurning: z.boolean().optional(),
+      damageTypePool: z.array(DamageTypeSchema).min(2).optional(),
     })
     .refine((data) => !(data.equalToBlock && data.equalToArmor), {
       message: "damage effect cannot have both equalToBlock and equalToArmor",

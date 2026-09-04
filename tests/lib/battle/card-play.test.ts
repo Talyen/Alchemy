@@ -47,6 +47,18 @@ describe("playBattleCardResolved", () => {
     expect(result.state).toBe(state);
   });
 
+  it("cannot play a card when player is crowd controlled", () => {
+    const card = makeTestCard({ cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 2 }] });
+    const stunnedState = makeState({
+      mana: 2,
+      hand: [card],
+      playerCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
+    });
+    expect(canPlayCard(stunnedState, card, 0)).toBe(false);
+    const result = playBattleCardResolved(stunnedState, card.id, 0);
+    expect(result.state).toBe(stunnedState);
+  });
+
   it("can play a 0-cost card with 0 mana", () => {
     const card = makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
     const state = makeState({ mana: 0, enemyHealth: 30, hand: [card] });

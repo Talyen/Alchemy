@@ -89,14 +89,14 @@ export const defenseCards: BattleCard[] = [
     art: assetRefs.smite,
     hits: [
       { damageType: "holy", amount: 2 },
-      { damageType: "burn", amount: 2 },
+      { damageType: "burn", amount: 1 },
     ],
   }),
   cardBuilders.dualDamageCard({
     id: "judgment",
     art: assetRefs.judgment,
     hits: [
-      { damageType: "holy", amount: 3 },
+      { damageType: "holy", amount: 2 },
       { damageType: "stun", amount: 1 },
     ],
   }),

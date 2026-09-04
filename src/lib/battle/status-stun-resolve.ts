@@ -1,5 +1,5 @@
-import { damageEnemyHealth, hasEnemyTrait, setFlag, type BattleState, type CombatTextEvent } from "./types";
-import { addGoldWithCombatText, mergeCombatText, payKillPayouts } from "./combat-text";
+import { hasEnemyTrait, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import { addGoldWithCombatText, payKillPayouts } from "./combat-text";
 import { applyLuckyCloverGold } from "./bonus-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
 import { getEnemyDamageMultiplier } from "./status-helpers";
@@ -53,32 +53,9 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
   return nextState;
 }
 
-function applyStunUniqueGearEffects(
-  state: BattleState,
-  combatTexts: CombatTextEvent[] | undefined,
-  fromHolyBuildup: boolean,
-  preTriggerMitigation?: BattleState["enemyMitigation"],
-): BattleState {
+function applyStunUniqueGearEffects(state: BattleState, combatTexts: CombatTextEvent[] | undefined): BattleState {
   let nextState = state;
-  if (nextState.gearEffects.stunPurgeDealHolyPerEffect > 0) {
-    const mitigation = preTriggerMitigation ?? nextState.enemyMitigation;
-    const purged = mitigation.armor + mitigation.block + mitigation.forge;
-    if (purged > 0) {
-      nextState = {
-        ...nextState,
-        enemyMitigation: { ...nextState.enemyMitigation, armor: 0, block: 0, forge: 0 },
-      };
-      const holyDamage = Math.round(
-        purged * nextState.gearEffects.stunPurgeDealHolyPerEffect * getEnemyDamageMultiplier(nextState, "holy"),
-      );
-      if (holyDamage > 0) {
-        mergeCombatText(combatTexts ?? [], { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
-        const hit = damageEnemyHealth(nextState, holyDamage);
-        nextState = payKillPayouts(hit.state, hit.enemyWasAlive, combatTexts ?? []);
-      }
-    }
-  }
-  if (fromHolyBuildup && nextState.gearEffects.holyStunBuildupGold > 0) {
+  if (nextState.gearEffects.holyStunBuildupGold > 0) {
     nextState = addGoldWithCombatText(nextState, nextState.gearEffects.holyStunBuildupGold, combatTexts ?? []);
   }
   return nextState;
@@ -88,7 +65,6 @@ export function resolveStunTrigger(
   state: BattleState,
   combatTexts?: CombatTextEvent[],
   preHitHealth = state.enemyHealth,
-  fromHolyBuildup = false,
 ) {
   const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
   const triggered = tryTriggerEnemyCc({
@@ -109,10 +85,9 @@ export function resolveStunTrigger(
   if (hasEnemyTrait(nextState, "brawler")) {
     nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", true);
   }
-  const preTriggerMitigation = nextState.enemyMitigation;
   nextState = applyStunTriggerBonuses(nextState, combatTexts);
   nextState = applyStunGearDamage(nextState, combatTexts);
   nextState = applyStunTrinketEffects(nextState, combatTexts);
-  nextState = applyStunUniqueGearEffects(nextState, combatTexts, fromHolyBuildup, preTriggerMitigation);
+  nextState = applyStunUniqueGearEffects(nextState, combatTexts);
   return nextState;
 }

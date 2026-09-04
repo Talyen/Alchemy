@@ -7,7 +7,16 @@ import { addPlayerStatus, reduceEnemyArmor } from "../types";
 import { defineHandler } from "./handler-types";
 
 export const applyDamageEffect = defineHandler("damage", (state, card, effect, potionMult, combatTexts) => {
-  const adjustedEffect = { ...effect, amount: applyPotionMultiplier(effect.amount, potionMult) };
+  let damageType = effect.damageType;
+  if (effect.damageTypePool && effect.damageTypePool.length > 0) {
+    const rng = getBattleRng(state);
+    damageType = effect.damageTypePool[rngInt(rng, effect.damageTypePool.length)]!;
+  }
+  const adjustedEffect = {
+    ...effect,
+    damageType,
+    amount: applyPotionMultiplier(effect.amount, potionMult),
+  };
   return dealDamageToEnemy(state, card, adjustedEffect, combatTexts);
 });
 

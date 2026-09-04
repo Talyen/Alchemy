@@ -1,85 +1,107 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { useState } from "react";
 
-import { HomesteadTileFrame } from "@/features/alchemy/meta/screens/homestead/homestead-tile-node";
-import { DetailPopup } from "@/features/alchemy/shared/ui/card-popup";
+import { HomesteadTooltipCost } from "@/features/alchemy/meta/screens/homestead/homestead-tile-node";
+import { HomesteadUpgradeNode } from "@/features/alchemy/meta/screens/homestead/upgrade-node";
+import { buildings } from "@/lib/homestead/data";
+import { emptyInventory } from "@/lib/homestead/inventory";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import type { GoalItem } from "@/features/alchemy/meta/screens/homestead/helpers";
 
-function TestTile({ descriptionLines }: { descriptionLines: string[] }) {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  return (
-    <HomesteadTileFrame
-      id="test-node"
-      hoveredItemId={hoveredId}
-      setHoveredItemId={setHoveredId}
-      detailTooltip={({ visible, triggerRef }) => (
-        <DetailPopup
-          idPrefix="test-node"
-          title="Test Homestead Node"
-          descriptionLines={visible ? descriptionLines : []}
-          visible={visible}
-          triggerRef={triggerRef}
-        />
-      )}
-      surfaceClassName="w-32 aspect-[3/4]"
-      imageSrc="test-art.png"
-      imageAlt="Test homestead tile"
-      imageClassName="w-full h-full"
-      footer={<div>footer</div>}
-    />
-  );
-}
-
-function hoverTrigger() {
-  return screen.getByAltText("Test homestead tile").closest(".rounded-shell-card.p-4") as HTMLElement;
-}
+const buildingItem: GoalItem = { kind: "building", data: buildings[0]! };
 
 function panelText() {
   return document.querySelector(".hover-popup-panel")?.textContent ?? "";
 }
 
-describe("HomesteadTileFrame hover tooltip", () => {
-  afterEach(cleanup);
+describe("HomesteadUpgradeNode hover tooltip", () => {
+  afterEach(() => {
+    cleanup();
+    useUiStore.getState().clearCardHover();
+  });
 
-  it("shows tooltip on mouse enter", async () => {
-    render(<TestTile descriptionLines={["Gain 3 wood per run."]} />);
+  it("shows title and build cost on mouse enter", async () => {
+    render(
+      <HomesteadUpgradeNode
+        item={buildingItem}
+        currentLevel={0}
+        materialInventory={{ ...emptyInventory(), iron: 100 }}
+        onAction={() => {}}
+      />,
+    );
 
-    fireEvent.mouseEnter(hoverTrigger());
+    const trigger = screen.getByRole("button", { name: /Blacksmith/ }).parentElement as HTMLElement;
+    fireEvent.mouseEnter(trigger);
 
     await waitFor(() => {
-      expect(screen.getByText("Test Homestead Node")).toBeTruthy();
       expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
-      expect(panelText()).toContain("Gain");
-      expect(panelText()).toContain("wood");
+      expect(panelText()).toContain("Blacksmith");
+      expect(panelText()).toContain("Build");
+      expect(panelText()).toContain("20");
     });
   });
 
   it("hides tooltip content on mouse leave", async () => {
-    render(<TestTile descriptionLines={["Gain 3 wood per run."]} />);
+    render(
+      <HomesteadUpgradeNode
+        item={buildingItem}
+        currentLevel={0}
+        materialInventory={{ ...emptyInventory(), iron: 100 }}
+        onAction={() => {}}
+      />,
+    );
 
-    const trigger = hoverTrigger();
+    const trigger = screen.getByRole("button", { name: /Blacksmith/ }).parentElement as HTMLElement;
     fireEvent.mouseEnter(trigger);
 
     await waitFor(() => {
-      expect(panelText()).toContain("wood");
+      expect(panelText()).toContain("Build");
     });
 
     fireEvent.mouseLeave(trigger);
 
     await waitFor(() => {
-      expect(panelText()).not.toContain("wood");
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeNull();
     });
   });
+});
 
-  it("renders description content only when hovered", async () => {
-    render(<TestTile descriptionLines={["Line A", "Line B"]} />);
-    expect(document.querySelector(".hover-popup-panel")).toBeNull();
+describe("HomesteadTooltipCost", () => {
+  afterEach(cleanup);
 
-    fireEvent.mouseEnter(hoverTrigger());
+  it("renders label with cost icons and amounts", () => {
+    render(
+      <HomesteadTooltipCost
+        label="Build"
+        cost={{ ...emptyInventory(), wood: 5, iron: 3 }}
+        inventory={{ ...emptyInventory(), wood: 10, iron: 10 }}
+      />,
+    );
 
-    await waitFor(() => {
-      expect(panelText()).toContain("Line A");
-      expect(panelText()).toContain("Line B");
-    });
+    expect(screen.getByText("Build")).toBeTruthy();
+    expect(screen.getByText("5")).toBeTruthy();
+    expect(screen.getByText("3")).toBeTruthy();
+  });
+
+  it("marks unaffordable amounts destructive without a message", () => {
+    const { container } = render(
+      <HomesteadTooltipCost
+        label="Upgrade"
+        cost={{ ...emptyInventory(), wood: 5, iron: 3 }}
+        inventory={{ ...emptyInventory(), wood: 10, iron: 1 }}
+      />,
+    );
+
+    expect(screen.getByText("Upgrade")).toBeTruthy();
+    expect(screen.queryByText(/not enough/i)).toBeNull();
+    expect(container.querySelector(".text-destructive")?.textContent).toContain("3");
+  });
+
+  it("renders nothing when the cost is empty", () => {
+    const { container } = render(
+      <HomesteadTooltipCost label="Build" cost={emptyInventory()} inventory={emptyInventory()} />,
+    );
+
+    expect(container.textContent).toBe("");
   });
 });

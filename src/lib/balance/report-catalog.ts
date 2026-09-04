@@ -4,6 +4,7 @@ import {
   companionLibrary,
   enemyBestiary,
   enemiesByType,
+  getDifficultyModifiers,
   trinketLibrary,
   type CharacterId,
   type DifficultyModifier,
@@ -29,20 +30,12 @@ export interface ReportMatchup {
   depth: number;
 }
 
-const ADVENTURER_MODIFIERS: DifficultyModifier[] = [
-  { kind: "enemy-health-multiplier", amount: 1.3 },
-  { kind: "enemy-damage-multiplier", amount: 1.3 },
-];
-
-const LEGEND_MODIFIERS: DifficultyModifier[] = [
-  { kind: "enemy-health-multiplier", amount: 2.8 },
-  { kind: "enemy-damage-multiplier", amount: 1.6 },
-];
+const NORMAL_DIFFICULTY_MODIFIERS: DifficultyModifier[] = getDifficultyModifiers("knight", "difficulty-1");
 
 export const REPORT_TIERS: readonly ReportTier[] = [
-  { label: "Early", preset: "early", depthOffset: 0, difficultyModifiers: [] },
-  { label: "Mid", preset: "mid", depthOffset: 8, difficultyModifiers: ADVENTURER_MODIFIERS },
-  { label: "Late", preset: "late", depthOffset: 16, difficultyModifiers: LEGEND_MODIFIERS },
+  { label: "Early", preset: "early", depthOffset: 0, difficultyModifiers: NORMAL_DIFFICULTY_MODIFIERS },
+  { label: "Mid", preset: "mid", depthOffset: 8, difficultyModifiers: NORMAL_DIFFICULTY_MODIFIERS },
+  { label: "Late", preset: "late", depthOffset: 16, difficultyModifiers: NORMAL_DIFFICULTY_MODIFIERS },
 ];
 
 export function reportTierRecord<T>(valueFor: (preset: TalentPreset) => T): ReportTierRecord<T> {

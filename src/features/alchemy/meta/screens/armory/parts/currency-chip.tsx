@@ -41,8 +41,8 @@ export function CurrencyChip({
       <PortaledTooltip triggerRef={triggerRef} visible={visible} className={ARMORY_CURRENCY_TOOLTIP_CLASS}>
         <TooltipHeader>{currency.displayName}</TooltipHeader>
         <TooltipBody>
-          <p className="text-pretty">{currency.tooltipEffect}</p>
-          {showDescription ? <p className="mt-2 text-pretty">{currency.description}</p> : null}
+          <p>{currency.tooltipEffect}</p>
+          {showDescription ? <p className="mt-2">{currency.description}</p> : null}
         </TooltipBody>
       </PortaledTooltip>
       <button

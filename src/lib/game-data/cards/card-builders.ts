@@ -54,6 +54,11 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
         return playerStatusDescriptionLine(effect.status, effect.amount);
       throw new Error(`effectDescriptionLine: unsupported player-status ${effect.status}`);
     case "damage":
+      if (effect.damageTypePool && effect.damageTypePool.length > 0) {
+        const types = [...effect.damageTypePool].map(capitalizeWord);
+        const last = types.pop();
+        return `Deal ${effect.amount} ${types.join(", ")}, or ${last} damage`;
+      }
       return `Deal ${effect.amount} ${capitalizeWord(effect.damageType)} damage`;
     case "gain-gold":
       return `Gain ${effect.amount} Gold`;

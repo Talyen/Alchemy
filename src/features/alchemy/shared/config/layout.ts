@@ -16,6 +16,7 @@ export const battleTrinketInspectRowMaxWidthClass = "mx-auto w-fit max-w-[min(10
 
 export const collectionGridTileWidthClass = "mx-auto w-full max-w-[clamp(25.2cqh,25.61cqh,38.14cqh)]";
 export const collectionGridGapXClass = "gap-x-5";
+export const artTileGridRowsClass = "grid-rows-2 gap-y-8";
 
 export const collectionShellWidthClass = "max-w-7xl";
 
@@ -43,7 +44,6 @@ export function getTileWidthClass(variant: TileWidthVariant): string {
 }
 
 export const collectionGridMinHeightClass = "min-h-[64cqh]";
-export const homesteadGridMinHeightClass = "min-h-[70.6cqh]";
 export const pileCardWidthClass = "w-[clamp(13.8cqh,14.9cqh,21cqh)]";
 
 export const chooserArtWidthClass = "w-full max-w-[39.11cqh]";

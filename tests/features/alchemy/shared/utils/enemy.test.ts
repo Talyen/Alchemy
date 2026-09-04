@@ -130,8 +130,8 @@ describe("enemyBestiary attack lines integration", () => {
     expect(getAttackLines("forge-golem")).toEqual(["Deals 3 Physical and 1 Stun"]);
   });
 
-  it("The Frostwarden — physical + freeze combined", () => {
-    expect(getAttackLines("frostwarden")).toEqual(["Deals 4 Physical and 1 Freeze"]);
+  it("The Frostwarden — freeze + physical combined", () => {
+    expect(getAttackLines("frostwarden")).toEqual(["Deals 1 Freeze and 4 Physical"]);
   });
 
   it("The Blight Treant — nature + poison combined", () => {

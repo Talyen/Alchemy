@@ -89,6 +89,7 @@ export function TitledScreenShell({
   minHeightClass,
   align,
   headerActions,
+  topRightAction,
 }: {
   title: ReactNode;
   eyebrow?: ReactNode;
@@ -98,9 +99,13 @@ export function TitledScreenShell({
   minHeightClass?: string;
   align?: "center" | "start";
   headerActions?: ReactNode;
+  topRightAction?: ReactNode;
 }) {
   return (
     <div className="relative h-full w-full overflow-hidden">
+      {topRightAction ? (
+        <div className="absolute top-4 right-18 z-[80] flex items-center gap-2">{topRightAction}</div>
+      ) : null}
       <PageLayout {...(align ? { align } : {})}>
         <ScreenShell
           className={cn("relative z-10", className)}

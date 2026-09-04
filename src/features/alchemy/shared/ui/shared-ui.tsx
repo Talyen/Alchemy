@@ -14,5 +14,5 @@ export {
 export { GoldDisplay } from "./display-elements";
 export { GameMenu } from "./game-menu";
 export { PaginationControls } from "./navigation";
-export { DisabledTooltip, ServiceButton } from "./service-button";
+export { ServiceButton } from "./service-button";
 export { TabBar } from "./tab-bar";

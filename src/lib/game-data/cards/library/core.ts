@@ -41,7 +41,7 @@ export const coreCards: BattleCard[] = [
     art: assetRefs.poisonDagger,
     effects: [{ kind: "damage", damageType: "poison", amount: 2 }, { kind: "next-hit-poison" }],
   }),
-  cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 3 }),
+  cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 2 }),
   cardBuilders.damageCard({ id: "fangs", art: assetRefs.fangs, damageType: "physical", amount: 3, lifesteal: true }),
   cardBuilders.damageCard({ id: "frostbolt", art: assetRefs.frostbolt, damageType: "freeze", amount: 3 }),
   cardBuilders.playerStatusCard({ id: "anvil", art: assetRefs.anvil, status: "forge", amount: 1 }),

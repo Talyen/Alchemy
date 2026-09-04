@@ -62,7 +62,7 @@ export const ENCOUNTER_TRAITS = defineEncounterTraits({
   flesheater: combat("Flesheater", "Deals 1 Bleed damage each turn\nLeech"),
   combustible: combat("Combustible", "Deals 1 Burn damage each turn"),
   chilling: combat("Chilling", "Deals 1 Freeze damage each turn"),
-  thorns: combat("Thorns", "Holds 1 Thorns that regrows each turn. Attacking it deals 1 Physical damage back"),
+  thorns: combat("Thorns", "Gains 1 Thorns each turn"),
   zealot: combat("Zealot", "Deals 2 Holy damage each turn"),
   insatiable: combat("Insatiable", "Gains 1 Physical damage each time you Consume a card"),
   jealous: combat("Jealous", "Gains 1 Physical damage each time you Wish"),

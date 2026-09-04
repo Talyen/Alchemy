@@ -143,9 +143,8 @@ function applyStunStatusRider(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
   preHitHealth: number,
-  fromHolyBuildup = false,
 ): BattleState {
-  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth, fromHolyBuildup);
+  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth);
 }
 
 function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -202,7 +201,7 @@ export function tryTriggerEnemyFreeze(
     combatTexts,
   );
   if (result.gearEffects.freezeGrantsBlockAndMana > 0) {
-    const manaGain = Math.min(4, halveRounded(result.playerStatuses.block));
+    const manaGain = halveRounded(result.playerStatuses.block);
     if (manaGain > 0) {
       result = { ...result, mana: Math.min(result.maxMana, result.mana + manaGain) };
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: manaGain });
@@ -274,7 +273,7 @@ export function applyDamageStatuses(
       return applyPhysicalStatusRider(state, actualDamage, combatTexts);
     case "holy":
       if (state.gearEffects.holyStunBuildupGold > 0 && actualDamage > 0) {
-        return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth, true);
+        return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth);
       }
       return state;
     case "nature":

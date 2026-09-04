@@ -10,6 +10,7 @@ import {
   type CompanionId,
   type TalentEffectManifest,
 } from "@/lib/game-data";
+import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { generateGearInstanceForBaseItem, gearBaseItemList, type GearEffectManifest } from "@/lib/gear";
 import { resolveAffixEffects } from "@/lib/gear/affixes";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
@@ -78,7 +79,7 @@ function runSeries(options: ReportRunOptions, config: BalanceScenarioConfig): Wi
 }
 
 function buildRandomDeck(seed: number, size = 10): BattleCard[] {
-  return sampleItems(cardLibrary, size, createRunStreamRng(seed, "world"));
+  return sampleItems(getOfferableCardPool(), size, createRunStreamRng(seed, "world"));
 }
 
 function buildFixedCardDeck(target: BattleCard, seed: number, size = 10): BattleCard[] {

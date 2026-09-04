@@ -63,7 +63,7 @@ export const GEAR_EFFECT_KEYS = [
   "stunOnBlockDepleted",
   "healOnCompanionAttack",
   "armorOnStunOrFreeze",
-  "stunPurgeDealHolyPerEffect",
+  "attackPurgeDealHolyPerEffect",
   "dodgeDrawAndPlay",
   "dodgeChance",
   "blockOnDodge",

@@ -1,37 +1,28 @@
 import { describe, expect, it } from "vitest";
-import {
-  countAffinityCombatTalents,
-  resolveSimLoadout,
-  simulateBattle,
-  TIER_GOLD,
-  TYPICAL_VITALITY_COMBATS,
-} from "@/lib/balance";
+import { countUnlockedCombatTalents, resolveSimLoadout, simulateBattle, TIER_GOLD } from "@/lib/balance";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { characters } from "@/lib/game-data";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 
 describe("resolveSimLoadout", () => {
-  it("seeds gold by tier and omits homestead, gear, and Vitality in bare mode", () => {
+  it("seeds gold by tier and omits homestead, gear in bare mode", () => {
     const mid = resolveSimLoadout({ preset: "mid", characterId: "rogue", mode: "bare" });
     expect(mid.gold).toBe(TIER_GOLD.mid);
     expect(mid.gearEffects).toEqual(defaultGearEffects);
     expect(mid.coreTrinketIds).toEqual([]);
-    expect(mid.vitalityHealth).toBe(0);
     expect(mid.homesteadCombat.runMaxHealthBonus).toBe(0);
-    expect(mid.talentPointHealth).toBe(countAffinityCombatTalents(characters.rogue.keywords, "mid"));
+    expect(mid.talentPointHealth).toBe(countUnlockedCombatTalents(characters.rogue.keywords, "mid"));
     expect(mid.talentPointHealth).toBeGreaterThan(0);
   });
 
-  it("adds Vitality, homestead stars, seeded gear, and core trinkets in typical mode", () => {
+  it("adds homestead stars, seeded gear, and core trinkets in typical mode", () => {
     const late = resolveSimLoadout({ preset: "late", characterId: "knight", mode: "typical", seed: 11 });
     expect(late.gold).toBe(TIER_GOLD.late);
-    expect(late.vitalityHealth).toBe(TYPICAL_VITALITY_COMBATS.late);
     expect(late.homesteadCombat.runMaxHealthBonus).toBe(10);
     expect(late.coreTrinketIds).toContain("tattered-pages");
     expect(late.gearEffects).not.toEqual(defaultGearEffects);
 
     const mid = resolveSimLoadout({ preset: "mid", characterId: "rogue", mode: "typical", seed: 11 });
-    expect(mid.vitalityHealth).toBe(TYPICAL_VITALITY_COMBATS.mid);
     expect(mid.homesteadCombat.runMaxHealthBonus).toBe(5);
     expect(mid.coreTrinketIds).toEqual(["groves-favor"]);
   });
@@ -122,7 +113,6 @@ describe("simulateBattle loadout", () => {
     expect(typical.playerMaxHealth).toBe(
       MAX_PLAYER_HEALTH +
         loadout.talentPointHealth +
-        loadout.vitalityHealth +
         loadout.homesteadCombat.runMaxHealthBonus +
         loadout.gearEffects.maxHealth,
     );

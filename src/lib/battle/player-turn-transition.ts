@@ -3,7 +3,7 @@ import { CARDS_PER_TURN } from "../game-constants";
 import { applyHealingWithCombatText } from "./combat-text";
 import { drawCards, applyDrawResult } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
-import { finalizeCcSkipTurnDecrement } from "./status-cc";
+import { finalizeCcSkipTurnDecrement, isPlayerCcControlled } from "./status-cc";
 import { decayHalvedStatus } from "./status-helpers";
 import { getBattleRng } from "@/lib/rng";
 import { deathsDoorGraceTurns, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
@@ -72,17 +72,16 @@ export function resetEnemyTurnState(state: BattleState): BattleState {
   };
 }
 
-function handleCCSkipTurn(state: BattleState, options?: { preserveBlock?: boolean }): BattleState {
-  const nextState = resetPlayerTurnState(state, options);
+export function reducePlayerSkipTurns(state: BattleState): BattleState {
   const prevCc = state.playerCC;
+  if (!isPlayerCcControlled(prevCc)) return state;
   const decrementedCc = {
-    ...nextState.playerCC,
+    ...prevCc,
     stunSkipTurns: Math.max(0, prevCc.stunSkipTurns - 1),
     freezeSkipTurns: Math.max(0, prevCc.freezeSkipTurns - 1),
   };
   return {
-    ...nextState,
-    turnPhase: "enemy",
+    ...state,
     playerCC: finalizeCcSkipTurnDecrement(prevCc, decrementedCc),
   };
 }
@@ -122,10 +121,6 @@ export function advanceToPlayerTurn(
       ...state,
       deathsDoorGraceTurnsRemaining: computeDeathsDoorGraceRemaining(state) - 1,
     };
-  }
-
-  if (!deathsDoorNeedsRecoveryTurn && state.playerCC.stunSkipTurns + state.playerCC.freezeSkipTurns > 0) {
-    return handleCCSkipTurn(nextState, options);
   }
 
   const drawnState = processPendingTurnStartEffects(

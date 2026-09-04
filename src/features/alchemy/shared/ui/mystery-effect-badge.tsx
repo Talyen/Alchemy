@@ -87,7 +87,7 @@ const renderAddCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "addCard"
   const colors: readonly string[] = [];
 
   return ctx.tooltip ? (
-    <span className="text-sm text-pretty text-muted-foreground">
+    <span className="text-sm text-muted-foreground">
       Add{" "}
       <ShineText colors={colors} {...mysteryShineTextProps}>
         {title}
@@ -105,7 +105,7 @@ const renderChooseCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "choos
     ? `Choose 1 of ${MYSTERY_CARD_CHOICES} ${tagLabel} cards`
     : `Choose 1 of ${MYSTERY_CARD_CHOICES} cards`;
   return ctx.tooltip ? (
-    <span className="text-sm text-pretty text-muted-foreground">{chooseLabel} to add to your deck</span>
+    <span className="text-sm text-muted-foreground">{chooseLabel} to add to your deck</span>
   ) : (
     <span className="text-sm text-pretty text-muted-foreground">{chooseLabel}</span>
   );
@@ -116,7 +116,7 @@ const renderTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainTrin
   const colors = getTrinketShineColors(effect.trinketId);
 
   return ctx.tooltip ? (
-    <span className="text-sm text-pretty text-muted-foreground">
+    <span className="text-sm text-muted-foreground">
       Gain{" "}
       <ShineText colors={colors} {...mysteryShineTextProps}>
         {title}
@@ -136,7 +136,7 @@ const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
     effect.fromIds && effect.fromIds.length === 1 ? getTrinketShineColors(effect.fromIds[0]!) : SHINE_PALETTES.boon;
 
   return ctx.tooltip ? (
-    <span className="text-sm text-pretty text-muted-foreground">
+    <span className="text-sm text-muted-foreground">
       Gain a random{" "}
       <ShineText colors={colors} {...mysteryShineTextProps}>
         Boon
@@ -173,14 +173,14 @@ const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
       ) : (
         <span className="font-bold text-foreground">{title}</span>
       );
-    return <span className="text-sm text-pretty text-muted-foreground">Add {titleNode} to your Armory</span>;
+    return <span className="text-sm text-muted-foreground">Add {titleNode} to your Armory</span>;
   }
 
   return <span className="text-sm text-pretty text-muted-foreground">Add {title} to your Armory</span>;
 };
 
 const renderRemoveCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "removeCard" }>> = () => (
-  <span className="text-sm text-pretty text-muted-foreground">Remove a random card</span>
+  <span className="text-sm text-muted-foreground">Remove a random card</span>
 );
 
 export function MysteryEffectBadge({

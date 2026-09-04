@@ -7,15 +7,32 @@ import {
   companionLibrary,
   keywordDefinitions,
 } from "@/lib/game-data";
-import { gearDefinitionList } from "@/lib/gear";
+import { gearAffixList, gearDefinitionList } from "@/lib/gear";
 import { mysteryPool } from "@/lib/mystery/pool";
 import { ENCOUNTER_TRAITS } from "../content-systems/encounter-traits";
 import type { createCollector } from "./utils";
+import type { ContentValidationArea } from "./types";
 
 const EM_DASH = "\u2014";
 
 function hasEmDash(text: string): boolean {
   return text.includes(EM_DASH);
+}
+
+function hasPeriod(text: string): boolean {
+  return text.includes(".");
+}
+
+function checkNoPeriod(
+  collector: ReturnType<typeof createCollector>,
+  group: ContentValidationArea,
+  id: string,
+  label: string,
+  text: string,
+): void {
+  if (hasPeriod(text)) {
+    collector.error(group, id, `${label} contains a period — rewrite without periods: "${text}"`);
+  }
 }
 
 export function validateTypography(collector: ReturnType<typeof createCollector>): void {
@@ -49,6 +66,7 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
       if (hasEmDash(line)) {
         collector.error("cards", card.id, `Card description contains em dash — rewrite without —: "${line}"`);
       }
+      checkNoPeriod(collector, "cards", card.id, "Card description", line);
     }
   }
 
@@ -60,6 +78,7 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
       if (hasEmDash(line)) {
         collector.error("trinkets", trinket.id, `Trinket description contains em dash — rewrite without —: "${line}"`);
       }
+      checkNoPeriod(collector, "trinkets", trinket.id, "Trinket description", line);
     }
   }
 
@@ -85,6 +104,7 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
           `Enemy trait description contains em dash — rewrite without —: "${trait.description}"`,
         );
       }
+      checkNoPeriod(collector, "enemies", trait.id, "Enemy trait description", trait.description);
     }
   }
 
@@ -99,6 +119,7 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
       if (hasEmDash(line)) {
         collector.error("gear", definition.id, `Gear description contains em dash — rewrite without —: "${line}"`);
       }
+      checkNoPeriod(collector, "gear", definition.id, "Gear description", line);
     }
     if (hasEmDash(definition.id)) {
       collector.error("gear", definition.id, `Gear id contains em dash — rewrite without —: "${definition.id}"`);
@@ -129,6 +150,7 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
         `Talent description contains em dash — rewrite without —: "${talent.description}"`,
       );
     }
+    checkNoPeriod(collector, "talents", talent.id, "Talent description", talent.description);
   }
 
   for (const [id, definition] of Object.entries(keywordDefinitions)) {
@@ -142,6 +164,7 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
         `Keyword description contains em dash — rewrite without —: "${definition.description}"`,
       );
     }
+    checkNoPeriod(collector, "keywords", id, "Keyword description", definition.description);
   }
 
   for (const [id, trait] of Object.entries(ENCOUNTER_TRAITS)) {
@@ -159,6 +182,7 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
         `Encounter trait description contains em dash — rewrite without —: "${trait.description}"`,
       );
     }
+    checkNoPeriod(collector, "encounter-traits", id, "Encounter trait description", trait.description);
     if (hasEmDash(trait.enemyTrait.title)) {
       collector.error(
         "encounter-traits",
@@ -173,5 +197,10 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
         `Encounter trait enemy description contains em dash — rewrite without —: "${trait.enemyTrait.description}"`,
       );
     }
+    checkNoPeriod(collector, "encounter-traits", id, "Encounter trait enemy description", trait.enemyTrait.description);
+  }
+
+  for (const affix of gearAffixList) {
+    checkNoPeriod(collector, "gear", affix.id, "Gear affix description", affix.descriptionTemplate);
   }
 }

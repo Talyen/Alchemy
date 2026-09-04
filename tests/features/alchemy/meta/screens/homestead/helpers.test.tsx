@@ -74,9 +74,9 @@ describe("getItems", () => {
 });
 
 describe("HOMESTEAD_CONFIG", () => {
-  it("has expected pagination and aspect constants", () => {
-    expect(HOMESTEAD_CONFIG.companionPageSize).toBe(4);
-    expect(HOMESTEAD_CONFIG.artAspectRatio).toContain("aspect");
-    expect(HOMESTEAD_CONFIG.companionAspectRatio).toContain("aspect");
+  it("has expected pagination constants", () => {
+    expect(HOMESTEAD_CONFIG.companionPageSize).toBe(8);
+    expect(HOMESTEAD_CONFIG.upgradePageSize).toBe(6);
+    expect(HOMESTEAD_CONFIG.hoverScope).toBe("homestead");
   });
 });

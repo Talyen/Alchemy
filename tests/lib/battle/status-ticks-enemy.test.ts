@@ -204,7 +204,7 @@ describe("tickEnemyStatuses", () => {
         art: "",
         enemyType: "boss",
         traits: [
-          { id: "burn-vulnerability", title: "Burn Vulnerability", description: "Receives 50% more Burn damage" },
+          { id: "burn-vulnerability", title: "Burn Vulnerability", description: "Receives 30% more Burn damage" },
         ],
         attackEffects: [],
       },
@@ -212,7 +212,7 @@ describe("tickEnemyStatuses", () => {
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
 
-    expect(next.enemyHealth).toBe(35);
+    expect(next.enemyHealth).toBe(37);
   });
 
   it("applies resistance multiplier for bleed against living-armor", () => {

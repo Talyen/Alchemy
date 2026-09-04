@@ -72,9 +72,12 @@ export const archeryCards: BattleCard[] = [
     consume: true,
     tags: ["archery"],
     effects: [
-      { kind: "damage", damageType: "stun", amount: 2 },
-      { kind: "damage", damageType: "freeze", amount: 2 },
-      { kind: "damage", damageType: "burn", amount: 2 },
+      {
+        kind: "damage",
+        damageType: "holy",
+        damageTypePool: ["freeze", "burn", "holy"],
+        amount: 4,
+      },
     ],
   }),
 ];

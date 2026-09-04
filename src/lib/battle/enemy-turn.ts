@@ -6,6 +6,7 @@ import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-trait
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
 import {
   advanceToPlayerTurn,
+  reducePlayerSkipTurns,
   reduceSkipTurns,
   resetEnemyTurnState,
   resolveDeathsDoorGraceExpiry,
@@ -167,15 +168,16 @@ function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?
 }
 
 export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number }): EndPlayerTurnResolution {
-  const nextState = beginEnemyPhase(state);
+  const turnEndedState = reducePlayerSkipTurns(state);
+  const nextState = beginEnemyPhase(turnEndedState);
 
-  if (state.playerStatuses.haste > 0) {
+  if (turnEndedState.playerStatuses.haste > 0) {
     return resolveHasteTurn(nextState);
   }
 
   const enemyPhaseState = resetEnemyTurnState(nextState);
 
-  if (state.enemyCC.stunSkipTurns + state.enemyCC.freezeSkipTurns > 0) {
+  if (turnEndedState.enemyCC.stunSkipTurns + turnEndedState.enemyCC.freezeSkipTurns > 0) {
     return resolveSkippedEnemyTurn(enemyPhaseState, options);
   }
 

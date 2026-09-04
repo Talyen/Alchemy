@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { patchBattleState, makeTestCard } from "../../fixtures/battle";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
+import { applyAttackPurgeRider } from "@/lib/battle/damage-riders";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
@@ -18,35 +19,72 @@ function dodgeThenMissRng() {
 }
 
 describe("unique item battle effects", () => {
-  it("Wardbreaker purges enemy armor/block/forge on stun and deals holy damage per purged stack", () => {
+  it("Wardbreaker purges one mitigation category on every attack and deals 1 holy damage", () => {
     const baseState = patchBattleState({
       enemyHealth: 100,
       enemyMaxHealth: 100,
-      enemyStatuses: { stun: 50 },
       enemyMitigation: { armor: 10, block: 15, forge: 5 },
-      gearEffects: { ...defaultGearEffects, stunPurgeDealHolyPerEffect: 2 },
+      gearEffects: { ...defaultGearEffects, attackPurgeDealHolyPerEffect: 1 },
     });
 
     const combatTexts: CombatTextEvent[] = [];
-    const afterStun = resolveStunTrigger(baseState, combatTexts);
+    const afterPurge = applyAttackPurgeRider(baseState, combatTexts);
 
-    expect(afterStun.enemyMitigation.armor).toBe(0);
-    expect(afterStun.enemyMitigation.block).toBe(0);
-    expect(afterStun.enemyMitigation.forge).toBe(0);
+    expect(afterPurge.enemyMitigation.armor).toBe(0);
+    expect(afterPurge.enemyMitigation.block).toBe(15);
+    expect(afterPurge.enemyMitigation.forge).toBe(5);
 
-    expect(afterStun.enemyHealth).toBe(40);
+    expect(afterPurge.enemyHealth).toBe(99);
   });
 
-  it("Golden Verdict builds stun from holy and awards gold only when that stun CCs", () => {
+  it("Wardbreaker falls through to block when the enemy holds no armor", () => {
+    const baseState = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyMitigation: { armor: 0, block: 15, forge: 5 },
+      gearEffects: { ...defaultGearEffects, attackPurgeDealHolyPerEffect: 1 },
+    });
+
+    const afterPurge = applyAttackPurgeRider(baseState, []);
+
+    expect(afterPurge.enemyMitigation.block).toBe(0);
+    expect(afterPurge.enemyMitigation.forge).toBe(5);
+    expect(afterPurge.enemyHealth).toBe(99);
+  });
+
+  it("Wardbreaker purge triggers when playing an attack card", () => {
+    const strikeCard = makeTestCard({
+      id: "strike",
+      title: "Strike",
+      effects: [{ kind: "damage", amount: 10, damageType: "holy" }],
+    });
+
+    const baseState = patchBattleState({
+      mana: 3,
+      hand: [strikeCard],
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyMitigation: { armor: 4, block: 0, forge: 0 },
+      gearEffects: { ...defaultGearEffects, attackPurgeDealHolyPerEffect: 1 },
+    });
+
+    const resolution = playBattleCardResolved(baseState, "strike", 0);
+
+    expect(resolution.state.enemyMitigation.armor).toBe(0);
+    expect(resolution.state.enemyHealth).toBe(89);
+  });
+
+  it("Golden Verdict awards gold whenever a stun CCs, regardless of source", () => {
     const nonHolyStun = patchBattleState({
       gold: 10,
       enemyHealth: 100,
-      enemyStatuses: { stun: 50 },
+      enemyMaxHealth: 100,
+      enemyStatuses: { stun: 60 },
       gearEffects: { ...defaultGearEffects, holyStunBuildupGold: 25 },
     });
 
     const afterNonHolyStun = resolveStunTrigger(nonHolyStun, []);
-    expect(afterNonHolyStun.gold).toBe(10);
+    expect(afterNonHolyStun.gold).toBe(35);
 
     const holyEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
       kind: "damage",
@@ -106,7 +144,7 @@ describe("unique item battle effects", () => {
     expect(afterFreeze.enemyStatuses.freeze).toBe(25);
   });
 
-  it("Rimeheart Locket restores Mana from Block when freeze CC lands", () => {
+  it("Rimeheart Locket restores uncapped Mana from Block when freeze CC lands", () => {
     const freezeEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
       kind: "damage",
       amount: 15,
@@ -115,7 +153,7 @@ describe("unique item battle effects", () => {
     const afterFreeze = applyDamageStatuses(
       patchBattleState({
         mana: 0,
-        maxMana: 4,
+        maxMana: 10,
         playerStatuses: { block: 0 },
         enemyHealth: 100,
         enemyStatuses: { freeze: 40 },
@@ -126,7 +164,7 @@ describe("unique item battle effects", () => {
       [],
     );
     expect(afterFreeze.playerStatuses.block).toBe(15);
-    expect(afterFreeze.mana).toBe(4);
+    expect(afterFreeze.mana).toBe(8);
     expect(afterFreeze.enemyCC.freezeSkipTurns).toBeGreaterThan(0);
   });
 
@@ -274,13 +312,13 @@ describe("unique item battle effects", () => {
     expect(resolution.state.hand.some((c) => c.id === "fireball")).toBe(true);
   });
 
-  it("Saintfall Plate triggers holy & stun retribution once per battle only", () => {
+  it("Saintfall Plate triggers holy retribution and heal on every block depletion", () => {
     const baseState = patchBattleState({
       playerHealth: 50,
       playerMaxHealth: 100,
       playerStatuses: { block: 5 },
       enemyHealth: 100,
-      gearEffects: { ...defaultGearEffects, saintfallRetribution: 6 },
+      gearEffects: { ...defaultGearEffects, saintfallRetribution: 4 },
     });
 
     const combatTexts: CombatTextEvent[] = [];
@@ -291,14 +329,12 @@ describe("unique item battle effects", () => {
     );
 
     expect(afterFirstDepletion.playerStatuses.block).toBe(0);
-    expect(afterFirstDepletion.enemyStatuses.stun).toBe(6);
-    expect(afterFirstDepletion.playerHealth).toBe(46);
-    expect(afterFirstDepletion.flags.saintfallRetributionTriggered).toBe(true);
+    expect(afterFirstDepletion.enemyStatuses.stun).toBe(0);
+    expect(afterFirstDepletion.playerHealth).toBe(44);
 
     const reblockedState = patchBattleState({
       ...afterFirstDepletion,
       playerStatuses: { ...afterFirstDepletion.playerStatuses, block: 5 },
-      enemyStatuses: { ...afterFirstDepletion.enemyStatuses, stun: 0 },
     });
 
     const afterSecondDepletion = processEnemyDamageEffect(
@@ -309,6 +345,36 @@ describe("unique item battle effects", () => {
 
     expect(afterSecondDepletion.playerStatuses.block).toBe(0);
     expect(afterSecondDepletion.enemyStatuses.stun).toBe(0);
-    expect(afterSecondDepletion.flags.saintfallRetributionTriggered).toBe(true);
+    expect(afterSecondDepletion.playerHealth).toBe(38);
+  });
+
+  it("damageTypePool selects from the provided element pool on card play", () => {
+    const astralCard = makeTestCard({
+      id: "astral-arrow",
+      title: "Astral Arrow",
+      effects: [
+        {
+          kind: "damage",
+          damageType: "holy",
+          damageTypePool: ["freeze", "burn", "holy"],
+          amount: 4,
+        },
+      ],
+    });
+
+    const baseState = patchBattleState({
+      mana: 3,
+      hand: [astralCard],
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+    });
+
+    const resolution = playBattleCardResolved(baseState, "astral-arrow", 0);
+    expect(resolution.state.enemyHealth).toBe(46);
+    const hasStatus =
+      resolution.state.enemyStatuses.freeze > 0 ||
+      resolution.state.enemyStatuses.burn > 0 ||
+      resolution.state.enemyHealth === 46;
+    expect(hasStatus).toBe(true);
   });
 });

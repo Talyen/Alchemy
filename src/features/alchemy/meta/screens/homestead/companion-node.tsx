@@ -1,56 +1,29 @@
 import { cn } from "@/lib/utils";
 import { type ReactNode } from "react";
-import { type MaterialInventory } from "@/lib/homestead/types";
+import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford } from "@/lib/homestead/inventory";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { renderUnlockMessage } from "../../../shared/ui/unlock-text";
-import { type PopupContext } from "../../../shared/ui/interactive-art-tile";
+import { InteractiveArtTile, type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
 import { type BattleCard, type CompanionId, getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
-import { HOMESTEAD_CONFIG } from "./helpers";
+import { cardSurfaceClass, collectionCardGridTileWidthClass, cardArtImageClass } from "../../../shared/config";
+import { HOMESTEAD_CONFIG, formatMaterialCostSummary } from "./helpers";
 import {
-  HomesteadAffordButton,
-  HomesteadTileCompletedFooter,
-  HomesteadTileFrame,
+  HomesteadTooltipCost,
   homesteadCompletedSurfaceClass,
   homesteadUndiscoveredDimClass,
 } from "./homestead-tile-node";
 import { getPlasmaColorPairForCard } from "@/features/alchemy/shared/config";
-
-function getCompanionFooter(
-  discovered: boolean,
-  isComplete: boolean,
-  card: BattleCard,
-  bondCost: MaterialInventory,
-  bondAffordable: boolean,
-  materialInventory: MaterialInventory,
-  onBond: (card: BattleCard) => void,
-): ReactNode {
-  if (!discovered) {
-    return null;
-  }
-  if (isComplete) {
-    return <HomesteadTileCompletedFooter label={card.title} wrapperClassName="mt-0.5" />;
-  }
-  return (
-    <HomesteadAffordButton
-      title={card.title}
-      cost={bondCost}
-      inventory={materialInventory}
-      affordable={bondAffordable}
-      onClick={() => {
-        if (discovered && !isComplete && bondAffordable) onBond(card);
-      }}
-    />
-  );
-}
 
 function getCompanionTooltip(
   card: BattleCard,
   discovered: boolean,
   currentLevel: number,
   bondedCompanions: Record<CompanionId, number>,
+  bondCost: MaterialInventory | undefined,
+  materialInventory: MaterialInventory,
 ): (ctx: PopupContext) => ReactNode {
   const title = discovered ? (
     <span className="inline-flex items-center gap-2">
@@ -60,6 +33,9 @@ function getCompanionTooltip(
   ) : (
     "Undiscovered"
   );
+
+  const showCost =
+    discovered && currentLevel < COMPANION_MAX_TIER && bondCost && MATERIAL_IDS.some((m) => (bondCost[m] ?? 0) > 0);
 
   return ({ visible, triggerRef }) => (
     <DetailPopup
@@ -72,7 +48,9 @@ function getCompanionTooltip(
       descriptionNodes={
         visible && !discovered
           ? [<p key="undiscovered">{renderUnlockMessage("Discover this Companion during a Run to reveal it here.")}</p>]
-          : undefined
+          : showCost && bondCost
+            ? [<HomesteadTooltipCost key="cost" label="Bond" cost={bondCost} inventory={materialInventory} />]
+            : undefined
       }
       visible={visible}
       triggerRef={triggerRef}
@@ -86,16 +64,12 @@ export function CompanionCardNode({
   discovered,
   bondedCompanions,
   materialInventory,
-  hoveredItemId,
-  setHoveredItemId,
   onBond,
 }: {
   card: BattleCard;
   discovered: boolean;
   bondedCompanions: Record<CompanionId, number>;
   materialInventory: MaterialInventory;
-  hoveredItemId: string | null;
-  setHoveredItemId: (id: string | null) => void;
   onBond: (card: BattleCard) => void;
 }) {
   const companionEffect = card.effects.find(
@@ -108,30 +82,47 @@ export function CompanionCardNode({
   const bondCost = COMPANION_BOND_TIERS[bondTierIndex];
   const bondAffordable = Boolean(bondCost) && discovered && !isComplete && canAfford(materialInventory, bondCost!);
 
-  const detailTooltip = getCompanionTooltip(card, discovered, currentLevel, bondedCompanions);
-  const footer = bondCost
-    ? getCompanionFooter(discovered, isComplete, card, bondCost, bondAffordable, materialInventory, onBond)
-    : null;
+  const detailTooltip = getCompanionTooltip(
+    card,
+    discovered,
+    currentLevel,
+    bondedCompanions,
+    bondCost,
+    materialInventory,
+  );
+  const interactive = discovered && !isComplete && Boolean(bondCost);
+
+  const costSummary = bondCost ? formatMaterialCostSummary(bondCost) : "";
+  const ariaLabel = !discovered
+    ? "Undiscovered companion"
+    : isComplete
+      ? `${card.title}, max bond`
+      : `Bond ${card.title}, level ${currentLevel} of ${COMPANION_MAX_TIER}${costSummary ? `, costs ${costSummary}` : ""}`;
 
   return (
-    <HomesteadTileFrame
+    <InteractiveArtTile
       id={card.id}
-      hoveredItemId={hoveredItemId}
-      setHoveredItemId={setHoveredItemId}
-      detailTooltip={detailTooltip}
-      wrapperClassName="p-1.5"
-      surfaceClassName={cn(
-        HOMESTEAD_CONFIG.companionPageWidth,
-        HOMESTEAD_CONFIG.companionAspectRatio,
-        isComplete && homesteadCompletedSurfaceClass,
-      )}
-      imageSrc={card.art}
-      imageAlt={card.title}
+      interactionKey={HOMESTEAD_CONFIG.hoverScope}
+      title={card.title}
+      art={card.art}
+      className={cn(cardSurfaceClass, collectionCardGridTileWidthClass, isComplete && homesteadCompletedSurfaceClass)}
       imageClassName={cn(
-        "h-full w-full object-cover transition-[filter] duration-300",
+        "block w-full transition duration-300",
+        cardArtImageClass,
         !discovered && homesteadUndiscoveredDimClass,
       )}
-      footer={footer}
+      popup={detailTooltip}
+      as={interactive ? "button" : "div"}
+      showGlow={bondAffordable}
+      {...(interactive ? { ariaDisabled: !bondAffordable } : {})}
+      onClick={
+        interactive && bondAffordable
+          ? () => {
+              if (discovered && !isComplete) onBond(card);
+            }
+          : undefined
+      }
+      ariaLabel={ariaLabel}
     />
   );
 }

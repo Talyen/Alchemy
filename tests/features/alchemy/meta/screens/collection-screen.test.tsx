@@ -56,4 +56,15 @@ describe("CollectionScreen", () => {
     fireEvent.click(nextButton);
     expect(onPageChange).toHaveBeenCalledWith("cards", 1);
   });
+
+  it("renders undiscovered items with hover opacity and grayscale classes", () => {
+    const { container } = render(<CollectionScreen {...defaultProps} discoveredCardIds={[]} />);
+
+    const images = container.querySelectorAll("img");
+    const undiscoveredImg = Array.from(images).find((img) => img.className.includes("grayscale"));
+    expect(undiscoveredImg).toBeTruthy();
+    expect(undiscoveredImg?.className).toContain("opacity-45");
+    expect(undiscoveredImg?.className).toContain("group-hover:grayscale-0");
+    expect(undiscoveredImg?.className).toContain("group-hover:opacity-100");
+  });
 });

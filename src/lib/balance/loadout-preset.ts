@@ -6,7 +6,7 @@ import { defaultGearEffects, type GearEffectManifest } from "@/lib/gear/gear-eff
 import { createSeededRng } from "@/lib/utils";
 import { buildTypicalGearEffects } from "./gear-preset";
 import { buildTypicalHomesteadEffects } from "./homestead-preset";
-import { countAffinityCombatTalents } from "./talent-preset";
+import { countUnlockedCombatTalents } from "./talent-preset";
 import type { TalentPreset } from "./types";
 
 export type BalanceLoadoutMode = "bare" | "typical";
@@ -15,12 +15,6 @@ export const TIER_GOLD: Record<TalentPreset, number> = {
   early: 0,
   mid: 40,
   late: 80,
-};
-
-export const TYPICAL_VITALITY_COMBATS: Record<TalentPreset, number> = {
-  early: 0,
-  mid: 8,
-  late: 18,
 };
 
 const LATE_CORE_TRINKETS = ["tattered-pages", "groves-favor"] as const;
@@ -34,11 +28,10 @@ export interface SimLoadout {
   gearEffects: GearEffectManifest;
   coreTrinketIds: string[];
   talentPointHealth: number;
-  vitalityHealth: number;
 }
 
 function talentPointHealthForCharacter(characterId: CharacterId, preset: TalentPreset): number {
-  return countAffinityCombatTalents(characters[characterId].keywords, preset) * MAX_HEALTH_PER_TALENT_POINT;
+  return countUnlockedCombatTalents(characters[characterId].keywords, preset) * MAX_HEALTH_PER_TALENT_POINT;
 }
 
 export function resolveSimLoadout(options: {
@@ -63,12 +56,10 @@ export function resolveSimLoadout(options: {
       gearEffects: { ...defaultGearEffects },
       coreTrinketIds: [],
       talentPointHealth,
-      vitalityHealth: 0,
     };
   }
 
   const homesteadCombat = buildTypicalHomesteadEffects(options.preset);
-  const vitalityHealth = TYPICAL_VITALITY_COMBATS[options.preset];
   const gearRng = createSeededRng((options.seed ?? 1) + TYPICAL_GEAR_RNG_SALT);
   const gearEffects =
     options.preset === "early"
@@ -83,6 +74,5 @@ export function resolveSimLoadout(options: {
     coreTrinketIds:
       options.preset === "late" ? [...LATE_CORE_TRINKETS] : options.preset === "mid" ? [...MID_CORE_TRINKETS] : [],
     talentPointHealth,
-    vitalityHealth,
   };
 }
