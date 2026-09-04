@@ -2,7 +2,7 @@ export { BattleScreen } from "./battle-screen";
 export { RewardsScreen } from "./rewards-screen";
 export { DestinationScreen } from "./destination-screen";
 export { CampfireScreen } from "./campfire-screen";
-export { MerchantShopScreen } from "./merchant-shop-screen";
+export { CardShopScreen } from "./card-shop-screen";
 export { AlchemistShopScreen } from "./alchemist-shop-screen";
 export { TrinketShopScreen } from "./trinket-shop-screen";
 export { EquipmentShopScreen } from "./equipment-shop-screen";

@@ -112,6 +112,9 @@ export interface AppScreenChrome {
   hasUnspentTalents: boolean;
   hasAffordableHomestead: boolean;
   returnToRunScreen: Screen | null;
+  openGameMenu?: ((rect?: DOMRect) => void) | undefined;
+  isMenuOpen?: boolean | undefined;
+  onBack?: (() => void) | undefined;
 }
 
 const AppScreenChromeContext = createContext<AppScreenChrome | null>(null);
@@ -120,11 +123,17 @@ export function AppScreenChromeProvider({
   aspectMode,
   stagePixelRatio,
   returnToRunScreen,
+  openGameMenu,
+  isMenuOpen,
+  onBack,
   children,
 }: {
   aspectMode: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
   returnToRunScreen: Screen | null;
+  openGameMenu?: ((rect?: DOMRect) => void) | undefined;
+  isMenuOpen?: boolean | undefined;
+  onBack?: (() => void) | undefined;
   children: ReactNode;
 }) {
   const characterId = useActiveRunCharacterId();
@@ -162,6 +171,9 @@ export function AppScreenChromeProvider({
       hasUnspentTalents: hasUnspentTalentsBadge,
       hasAffordableHomestead,
       returnToRunScreen,
+      openGameMenu,
+      isMenuOpen,
+      onBack,
     }),
     [
       aspectMode,
@@ -169,6 +181,9 @@ export function AppScreenChromeProvider({
       hasAffordableHomestead,
       hasUnspentTalentsBadge,
       heroArt,
+      isMenuOpen,
+      onBack,
+      openGameMenu,
       playerName,
       returnToRunScreen,
       stagePixelRatio,
@@ -184,4 +199,8 @@ export function useAppScreenChrome(): AppScreenChrome {
     throw new Error("useAppScreenChrome must be used within AppScreenChromeProvider");
   }
   return value;
+}
+
+export function useOptionalAppScreenChrome(): AppScreenChrome | null {
+  return useContext(AppScreenChromeContext);
 }

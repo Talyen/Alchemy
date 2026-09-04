@@ -26,7 +26,7 @@ export function EquipmentShopScreen({
 }) {
   return (
     <GenericShopScreen
-      title="Equipment Shop"
+      title="Gear Shop"
       gold={gold}
       items={gear}
       refreshesLeft={refreshesLeft}

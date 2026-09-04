@@ -16,7 +16,7 @@ const ROUTE_CASES: Array<{
   { destination: DESTINATIONS.CARD_SHOP, expectedScreen: "shop", shopKind: "merchant" },
   { destination: DESTINATIONS.ALCHEMIST_SHOP, expectedScreen: "alchemist", shopKind: "alchemist" },
   { destination: DESTINATIONS.TRINKET_SHOP, expectedScreen: "trinket-shop", shopKind: "trinket" },
-  { destination: DESTINATIONS.EQUIPMENT_SHOP, expectedScreen: "equipment-shop", shopKind: "equipment" },
+  { destination: DESTINATIONS.GEAR_SHOP, expectedScreen: "equipment-shop", shopKind: "equipment" },
   { destination: DESTINATIONS.MYSTERY, expectedScreen: "", beginMystery: true },
   { destination: DESTINATIONS.CORRUPTION, expectedScreen: "corruption", resetCorruption: true },
   { destination: DESTINATIONS.ELITE_COMBAT, expectedScreen: "battle", battleType: "elite" },

@@ -11,11 +11,11 @@ import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { PaginationControls, ScreenHeader } from "../../../shared/ui/shared-ui";
 import { TrinketTile } from "../../../shared/ui/collection-art-tiles";
 import { usePaginatedRows } from "../../../shared/ui/use-paginated-rows";
-import { uniqueRunBoons } from "./unique-run-trinkets";
+import { uniqueRunBoons } from "./unique-run-boons";
 
 const INSPECT_COLUMNS = 4;
 
-export function BattleTrinketInspectButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+export function BattleBoonInspectButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   return (
     <Button
       variant={open ? "primary" : "outline"}
@@ -23,7 +23,7 @@ export function BattleTrinketInspectButton({ open, onToggle }: { open: boolean; 
       className={cn("h-12 w-12", !open && "text-muted-foreground")}
       onClick={onToggle}
       aria-label={open ? "Close Boons" : "Inspect Boons"}
-      data-testid="battle-trinket-inspect-toggle"
+      data-testid="battle-boon-inspect-toggle"
     >
       <ShoppingBag className="h-6 w-6" />
     </Button>
@@ -50,11 +50,11 @@ export function BattleBoonInspectOverlay({
   return (
     <ModalOverlayShell
       open={open}
-      escapeId="battle-trinket-inspect"
+      escapeId="battle-boon-inspect"
       onClose={onClose}
       dismissOnBackdrop
       zIndex={80}
-      testId="battle-trinket-inspect-overlay"
+      testId="battle-boon-inspect-overlay"
       mount={trinkets.length > 0}
       className="flex items-center justify-center px-6 py-8"
     >

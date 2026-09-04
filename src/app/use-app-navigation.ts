@@ -143,6 +143,15 @@ export function useReturnToRunNavigation({
     run.goToScreen("menu");
   }
 
+  const screenBackHandler = resolveScreenBackHandler({
+    renderedScreen,
+    returnToRunTarget,
+    returnToRun,
+    handleMainMenu,
+    backFromOptions,
+    goToScreen: run.goToScreen,
+  });
+
   return {
     returnToRunScreen,
     optionsReturnScreen,
@@ -152,7 +161,41 @@ export function useReturnToRunNavigation({
     handleMainMenu,
     returnToRunTarget,
     hasActiveBattle,
+    screenBackHandler,
   };
+}
+
+function resolveScreenBackHandler({
+  renderedScreen,
+  returnToRunTarget,
+  returnToRun,
+  handleMainMenu,
+  backFromOptions,
+  goToScreen,
+}: {
+  renderedScreen: Screen;
+  returnToRunTarget: Screen | null;
+  returnToRun: () => void;
+  handleMainMenu: () => void;
+  backFromOptions: () => void;
+  goToScreen: (screen: Screen) => void;
+}): (() => void) | undefined {
+  if (renderedScreen === "options") return backFromOptions;
+  if (
+    renderedScreen === "collection" ||
+    renderedScreen === "homestead" ||
+    renderedScreen === "talents" ||
+    renderedScreen === "armory"
+  ) {
+    return returnToRunTarget ? returnToRun : handleMainMenu;
+  }
+  if (renderedScreen === "game-mode-select") {
+    return handleMainMenu;
+  }
+  if (renderedScreen === "character-select") {
+    return () => goToScreen("game-mode-select");
+  }
+  return undefined;
 }
 
 function isRadixEscapeTargetOpen(): boolean {
@@ -171,19 +214,36 @@ function isRadixEscapeTargetOpen(): boolean {
 export function useAppKeyboardShortcuts({
   renderedScreen,
   gameMenuOpen,
+  onBack,
   setMenuAnchorRect,
   setGameMenuOpen,
 }: {
   renderedScreen: Screen;
   gameMenuOpen: boolean;
+  onBack?: (() => void) | undefined;
   setMenuAnchorRect: (rect: DOMRect | null | ((prev: DOMRect | null) => DOMRect | null)) => void;
   setGameMenuOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
 }) {
   const gameMenuOpenRef = useLatestRef(gameMenuOpen);
   const renderedScreenRef = useLatestRef(renderedScreen);
+  const onBackRef = useLatestRef(onBack);
 
   useEffect(() => {
-    return pushEscapeHandler({
+    const removeBackHandler = pushEscapeHandler({
+      id: "app-screen-back",
+      priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
+      onEscape: () => {
+        if (isRadixEscapeTargetOpen()) return false;
+        if (gameMenuOpenRef.current) return false;
+        if (onBackRef.current) {
+          onBackRef.current();
+          return;
+        }
+        return false;
+      },
+    });
+
+    const removeMenuHandler = pushEscapeHandler({
       id: "app-game-menu",
       priority: ESCAPE_PRIORITY.APP_MENU,
       onEscape: () => {
@@ -194,7 +254,12 @@ export function useAppKeyboardShortcuts({
         return;
       },
     });
-  }, [gameMenuOpenRef, renderedScreenRef, setMenuAnchorRect, setGameMenuOpen]);
+
+    return () => {
+      removeBackHandler();
+      removeMenuHandler();
+    };
+  }, [gameMenuOpenRef, onBackRef, renderedScreenRef, setMenuAnchorRect, setGameMenuOpen]);
 }
 
 export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | "unlockAllTalents">) {

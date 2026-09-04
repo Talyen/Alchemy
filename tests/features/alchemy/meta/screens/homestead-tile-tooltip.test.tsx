@@ -34,10 +34,19 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
     fireEvent.mouseEnter(trigger);
 
     await waitFor(() => {
-      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
+      const panel = document.querySelector(".hover-popup-panel[data-visible]");
+      expect(panel).toBeTruthy();
       expect(panelText()).toContain("Blacksmith");
       expect(panelText()).toContain("Build");
       expect(panelText()).toContain("20");
+
+      const header = panel?.querySelector("p.font-bold");
+      expect(header?.textContent).toBe("Blacksmith");
+      expect(header?.querySelector("svg")).toBeNull();
+
+      const subheader = panel?.querySelector("p.uppercase");
+      expect(subheader?.textContent).toContain("Build");
+      expect(subheader?.querySelectorAll("svg").length).toBe(buildingItem.data.tiers.length);
     });
   });
 
@@ -62,6 +71,27 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
 
     await waitFor(() => {
       expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeNull();
+    });
+  });
+
+  it("shows Max Level with all stars filled when completed", async () => {
+    const maxLevel = buildingItem.data.tiers.length;
+    const { container } = render(
+      <HomesteadUpgradeNode
+        item={buildingItem}
+        currentLevel={maxLevel}
+        materialInventory={emptyInventory()}
+        onAction={() => {}}
+      />,
+    );
+
+    const trigger = container.firstChild as HTMLElement;
+    fireEvent.mouseEnter(trigger);
+
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
+      expect(panelText()).toContain("Blacksmith");
+      expect(panelText()).toContain("Max Level");
     });
   });
 });
@@ -97,11 +127,18 @@ describe("HomesteadTooltipCost", () => {
     expect(container.querySelector(".text-destructive")?.textContent).toContain("3");
   });
 
-  it("renders nothing when the cost is empty", () => {
+  it("renders nothing when the cost is empty and no stars provided", () => {
     const { container } = render(
       <HomesteadTooltipCost label="Build" cost={emptyInventory()} inventory={emptyInventory()} />,
     );
 
     expect(container.textContent).toBe("");
+  });
+
+  it("renders label with stars even when cost is empty", () => {
+    render(<HomesteadTooltipCost label="Max Level" stars={<span data-testid="stars">★★★</span>} />);
+
+    expect(screen.getByText("Max Level")).toBeTruthy();
+    expect(screen.getByTestId("stars")).toBeTruthy();
   });
 });

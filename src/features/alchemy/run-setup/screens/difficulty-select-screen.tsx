@@ -13,11 +13,13 @@ import {
   type DifficultyId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 
+import { Button } from "@/components/ui/button";
 import { KeywordToken, renderTokenizedDescription } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
-import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { Surface } from "../../shared/ui/surface";
 import {
+  BUTTON_WIDTH_ACTION,
   cardInteractiveGlowClass,
   cardSurfaceClass,
   bodyTextClass,
@@ -156,12 +158,14 @@ export function DifficultySelectScreen({
   completedDifficulties,
   onSelect,
   onBack,
+  onMenu,
 }: {
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
   completedDifficulties: DifficultyId[];
   onSelect: (difficultyId: DifficultyId) => void;
   onBack: () => void;
+  onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
   const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficulty);
   const config = difficultyConfigs[characterId];
@@ -182,7 +186,12 @@ export function DifficultySelectScreen({
   }
 
   return (
-    <TitledScreenShell title={config.headerTitle} maxWidthClass={chooserHeroPaddedRowShellWidthClass}>
+    <TitledScreenShell
+      title={config.headerTitle}
+      maxWidthClass={chooserHeroPaddedRowShellWidthClass}
+      onBack={onBack}
+      onMenu={onMenu}
+    >
       <div className={cn("mt-6 flex w-full flex-nowrap items-stretch justify-center", chooserRowGapClass)}>
         <div
           className={cn(
@@ -231,21 +240,12 @@ export function DifficultySelectScreen({
         ))}
       </div>
 
-      <ActionButtonRow
-        className="mt-6"
-        width="dialog"
-        secondary={{ label: "Back", onClick: onBack }}
-        primary={{
-          label: (
-            <>
-              <Swords className="h-4 w-4" />
-              Play
-            </>
-          ),
-          disabled: !canPlay,
-          onClick: handlePlay,
-        }}
-      />
+      <div className="mt-6 flex justify-center">
+        <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} disabled={!canPlay} onClick={handlePlay}>
+          <Swords className="h-4 w-4" />
+          Play
+        </Button>
+      </div>
     </TitledScreenShell>
   );
 }

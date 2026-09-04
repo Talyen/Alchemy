@@ -7,11 +7,7 @@ import { DestinationPage } from "./pages/destination-page";
 import { enterPrimaryRewardScreen, SAVE_KEY, startAtDestination } from "./helpers";
 import { critical, slow } from "./playwright-tags";
 
-async function enterShop(
-  page: import("@playwright/test").Page,
-  gold: number,
-  destination: "Card Shop" | "Equipment Shop",
-) {
+async function enterShop(page: import("@playwright/test").Page, gold: number, destination: "Card Shop" | "Gear Shop") {
   await startAtDestination(page, { runGold: gold }, { forceDestination: destination });
   await page.getByRole("button", { name: destination }).click();
   await expect(page.getByRole("heading", { name: destination })).toBeVisible();
@@ -38,7 +34,7 @@ test.describe("Card Shop", critical, () => {
 });
 
 test.describe("Shop fade-out", critical, () => {
-  for (const destination of ["Card Shop", "Equipment Shop"] as const) {
+  for (const destination of ["Card Shop", "Gear Shop"] as const) {
     const gate = destination === "Card Shop" ? critical : slow;
 
     test(`keeps ${destination} offerings mounted through route fade-out`, gate, async ({ page, runtimeErrors }) => {

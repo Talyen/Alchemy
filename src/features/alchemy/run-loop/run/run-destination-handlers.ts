@@ -29,7 +29,7 @@ const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps) => 
     deps.initializeShop("trinket");
     deps.navigateTo(ROUTE_SCREENS.TRINKET_SHOP);
   },
-  [DESTINATIONS.EQUIPMENT_SHOP]: (deps) => {
+  [DESTINATIONS.GEAR_SHOP]: (deps) => {
     deps.initializeShop("equipment");
     deps.navigateTo(ROUTE_SCREENS.EQUIPMENT_SHOP);
   },

@@ -15,7 +15,7 @@ import {
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import type { CollectionTab } from "../types";
 import { TabBar } from "./tab-bar";
-import { CompendiumTile } from "./collection-tile";
+import { CollectionTile } from "./collection-tile";
 import { getCollectionFillerCount, getCollectionPageItems } from "./collection-items";
 
 export { getCollectionTotalPages } from "./collection-items";
@@ -79,7 +79,7 @@ export function CollectionGrid({
       <div className={cn(gridClass, artTileGridRowsClass)}>
         {pageItems.map((item) => (
           <div key={`${item.hoverScope}-${item.id}`} className="relative">
-            <CompendiumTile item={item} />
+            <CollectionTile item={item} />
           </div>
         ))}
         {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (

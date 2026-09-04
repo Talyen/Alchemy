@@ -82,18 +82,18 @@ describe("applyDamageStatuses", () => {
     expect(result.gold).toBe(10);
   });
 
-  it("bleed adds 2x status to bleed stack", () => {
+  it("bleed adds status to bleed stack", () => {
     const state = makeTestBattleState();
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 5 };
     const result = applyDamageStatuses(state, effect, 5, []);
-    expect(result.enemyStatuses.bleed).toBe(10);
+    expect(result.enemyStatuses.bleed).toBe(5);
   });
 
   it("bleed with lifesteal adds pending bleed leech healing", () => {
     const state = makeTestBattleState();
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 5, lifesteal: true };
     const result = applyDamageStatuses(state, effect, 5, []);
-    expect(result.pendingBleedLeechHealing).toBe(10);
+    expect(result.pendingBleedLeechHealing).toBe(5);
   });
 
   it("cutpurseGoldOnBleed grants gold on bleed", () => {

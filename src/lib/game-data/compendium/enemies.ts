@@ -261,7 +261,7 @@ export const enemyBestiary = [
         "Receives 30% more Holy damage\nReceives 1 Holy damage when any combatant restores Health",
       ),
     ],
-    attackEffects: [{ kind: "damage", damageType: "bleed", amount: 4 }],
+    attackEffects: [phys(2), { kind: "damage", damageType: "bleed", amount: 2 }],
   }),
   defineEnemy({
     id: "zealot",

@@ -10,7 +10,7 @@ import { shopItemSlotKey, shopOfferingsSwapKey } from "../shop/shop-slot-keys";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 
-export function MerchantShopScreen({
+export function CardShopScreen({
   gold,
   runDeck,
   shopCards,

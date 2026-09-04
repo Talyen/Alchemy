@@ -25,22 +25,14 @@ function getCompanionTooltip(
   bondCost: MaterialInventory | undefined,
   materialInventory: MaterialInventory,
 ): (ctx: PopupContext) => ReactNode {
-  const title = discovered ? (
-    <span className="inline-flex items-center gap-2">
-      {card.title}
-      <StarRating current={currentLevel} max={COMPANION_MAX_TIER} className="h-3.5 w-3.5" />
-    </span>
-  ) : (
-    "Undiscovered"
-  );
-
+  const isMaxTier = currentLevel >= COMPANION_MAX_TIER;
   const showCost =
     discovered && currentLevel < COMPANION_MAX_TIER && bondCost && MATERIAL_IDS.some((m) => (bondCost[m] ?? 0) > 0);
 
   return ({ visible, triggerRef }) => (
     <DetailPopup
       idPrefix={card.id}
-      title={title}
+      title={discovered ? card.title : "Undiscovered"}
       subtitle={undefined}
       descriptionLines={
         visible && discovered ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions }) : []
@@ -48,8 +40,16 @@ function getCompanionTooltip(
       descriptionNodes={
         visible && !discovered
           ? [<p key="undiscovered">{renderUnlockMessage("Discover this Companion during a Run to reveal it here.")}</p>]
-          : showCost && bondCost
-            ? [<HomesteadTooltipCost key="cost" label="Bond" cost={bondCost} inventory={materialInventory} />]
+          : discovered
+            ? [
+                <HomesteadTooltipCost
+                  key="cost"
+                  label={isMaxTier ? "Max Bond" : "Bond"}
+                  cost={showCost ? bondCost : undefined}
+                  inventory={materialInventory}
+                  stars={<StarRating current={currentLevel} max={COMPANION_MAX_TIER} />}
+                />,
+              ]
             : undefined
       }
       visible={visible}

@@ -91,12 +91,16 @@ export function GameModeSelectScreen({
   onSelectCampaign,
   onSelectLabyrinth,
   onSelectWildwood,
+  onBack,
+  onMenu,
 }: {
   resumableModes: Record<GameModeId, boolean>;
   finishedRunCharacters: CharacterId[];
   onSelectCampaign: () => void;
   onSelectLabyrinth: () => void;
   onSelectWildwood: () => void;
+  onBack?: (() => void) | undefined;
+  onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
   const handlers: Record<GameModeId, () => void> = {
     campaign: onSelectCampaign,
@@ -106,9 +110,11 @@ export function GameModeSelectScreen({
 
   return (
     <TitledScreenShell
-      title="Choose Your Adventure"
+      title="Choose a Path"
       minHeightClass="min-h-[50cqh]"
       maxWidthClass={gameModeRowShellWidthClass}
+      onBack={onBack}
+      onMenu={onMenu}
     >
       <div className="my-auto flex flex-1 flex-col justify-center py-4">
         <div className={cn("flex w-full flex-nowrap items-start justify-center", chooserRowGapClass)}>

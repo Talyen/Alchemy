@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { MerchantShopScreen } from "@/features/alchemy/run-loop/screens/merchant-shop-screen";
+import { CardShopScreen } from "@/features/alchemy/run-loop/screens/card-shop-screen";
 import type { BattleCard } from "@/lib/game-data";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 import { installShopScreenIntersectionObserver } from "../../../../helpers/shop-screen-ui-mocks";
@@ -27,16 +27,16 @@ const deckCard = {
   effects: [],
 } as BattleCard;
 
-describe("MerchantShopScreen remove mode", () => {
+describe("CardShopScreen remove mode", () => {
   installDisabledAnimationsForTests();
 
   afterEach(() => {
     cleanup();
   });
 
-  function renderMerchant(onRemoveCard: (index: number) => boolean) {
+  function renderCardShop(onRemoveCard: (index: number) => boolean) {
     return render(
-      <MerchantShopScreen
+      <CardShopScreen
         gold={100}
         runDeck={[deckCard]}
         shopCards={[deckCard]}
@@ -57,7 +57,7 @@ describe("MerchantShopScreen remove mode", () => {
   it("stays in remove mode when removal fails", async () => {
     const user = userEvent.setup();
     const onRemoveCard = vi.fn(() => false);
-    renderMerchant(onRemoveCard);
+    renderCardShop(onRemoveCard);
 
     await user.click(screen.getByRole("button", { name: /Remove Card/i }));
     expect(await screen.findByText("Select a card to remove from your deck")).toBeTruthy();
@@ -71,7 +71,7 @@ describe("MerchantShopScreen remove mode", () => {
 
   it("returns to browse when removal succeeds", async () => {
     const user = userEvent.setup();
-    renderMerchant(() => true);
+    renderCardShop(() => true);
 
     await user.click(screen.getByRole("button", { name: /Remove Card/i }));
     await user.click(screen.getByRole("button", { name: "Select shop card" }));

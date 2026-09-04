@@ -30,10 +30,10 @@ describe("dealDamageToEnemy — full calc/rider/status chain per wound kind", ()
     expect(result.enemyStatuses.poison).toBeGreaterThan(0);
   });
 
-  it("bleed stacks double as bleed", () => {
+  it("bleed stacks equal to damage as bleed", () => {
     const state = patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30 });
     const result = dealDamage(state, makeTestCard({ effects: [makeEffect("bleed", 5)] }));
-    expect(result.enemyStatuses.bleed).toBe(10);
+    expect(result.enemyStatuses.bleed).toBe(5);
   });
 
   it("freeze and stun build their own stacks", () => {

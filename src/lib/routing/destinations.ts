@@ -4,7 +4,7 @@ export const DESTINATIONS = {
   CARD_SHOP: "Card Shop",
   ALCHEMIST_SHOP: "Alchemist's Shop",
   TRINKET_SHOP: "Trinket Shop",
-  EQUIPMENT_SHOP: "Equipment Shop",
+  GEAR_SHOP: "Gear Shop",
   MYSTERY: "Mystery",
   CORRUPTION: "Corruption",
   CAMPFIRE: "Campfire",
@@ -23,7 +23,7 @@ export const SHOP_DESTINATIONS = [
   DESTINATIONS.CARD_SHOP,
   DESTINATIONS.ALCHEMIST_SHOP,
   DESTINATIONS.TRINKET_SHOP,
-  DESTINATIONS.EQUIPMENT_SHOP,
+  DESTINATIONS.GEAR_SHOP,
 ] as const satisfies readonly Destination[];
 
 export function isCombatDestination(destination: Destination): boolean {

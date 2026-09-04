@@ -44,7 +44,7 @@ vi.mock("@/features/alchemy/run-loop/screens", () => {
     DestinationScreen: Screen,
     EquipmentShopScreen: Screen,
     LabyrinthMapScreen: Screen,
-    MerchantShopScreen: Screen,
+    CardShopScreen: Screen,
     MysteryScreen: Screen,
     MysteryScreenShell: Screen,
     RewardsScreen: Screen,

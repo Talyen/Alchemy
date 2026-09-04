@@ -98,7 +98,7 @@ export const destinationMeta: Record<Destination, ThemedChooserMeta> = {
     art: alchemistShopBg,
     plasmaColorPair: { primary: "#c084fc", secondary: "#581c87" },
   },
-  "Equipment Shop": {
+  "Gear Shop": {
     icon: Anvil,
     accentClassName: "text-slate-300",
     art: merchantShopBg,

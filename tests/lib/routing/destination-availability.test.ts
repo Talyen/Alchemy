@@ -7,14 +7,14 @@ const campfireFloor = Math.round(MAX_HEALTH * CAMPFIRE_HEALTH_THRESHOLD);
 const eliteFloor = Math.round(MAX_HEALTH * ELITE_HEALTH_THRESHOLD);
 
 describe("getAvailableDestinations", () => {
-  it("excludes Equipment Shop when no gear is owned (Armory locked)", () => {
+  it("excludes Gear Shop when no gear is owned (Armory locked)", () => {
     const destinations = getAvailableDestinations(MAX_HEALTH, 100, MAX_HEALTH, false);
-    expect(destinations).not.toContain("Equipment Shop");
+    expect(destinations).not.toContain("Gear Shop");
   });
 
-  it("includes Equipment Shop when gear is owned and gold meets the shop minimum", () => {
+  it("includes Gear Shop when gear is owned and gold meets the shop minimum", () => {
     const destinations = getAvailableDestinations(MAX_HEALTH, SHOP_MIN_GOLD, MAX_HEALTH, true);
-    expect(destinations).toContain("Equipment Shop");
+    expect(destinations).toContain("Gear Shop");
   });
   it("never includes Boss Combat", () => {
     const destinations = getAvailableDestinations(MAX_HEALTH, 100, MAX_HEALTH);
@@ -38,14 +38,14 @@ describe("getAvailableDestinations", () => {
   });
 
   it("excludes shops when gold is just below the shop minimum", () => {
-    for (const shop of ["Card Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"]) {
+    for (const shop of ["Card Shop", "Alchemist's Shop", "Trinket Shop", "Gear Shop"]) {
       const destinations = getAvailableDestinations(MAX_HEALTH, SHOP_MIN_GOLD - 1, MAX_HEALTH);
       expect(destinations).not.toContain(shop);
     }
   });
 
   it("includes shops when gold meets the shop minimum", () => {
-    for (const shop of ["Card Shop", "Alchemist's Shop", "Trinket Shop", "Equipment Shop"]) {
+    for (const shop of ["Card Shop", "Alchemist's Shop", "Trinket Shop", "Gear Shop"]) {
       const destinations = getAvailableDestinations(MAX_HEALTH, SHOP_MIN_GOLD, MAX_HEALTH, true);
       expect(destinations).toContain(shop);
     }

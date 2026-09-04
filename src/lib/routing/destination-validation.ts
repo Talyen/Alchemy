@@ -3,7 +3,9 @@ import { DESTINATIONS, type Destination } from "./destinations";
 const VALID_DESTINATIONS = new Set<string>(Object.values(DESTINATIONS));
 
 function canonicalizeDestination(value: string): string {
-  return value === "Merchant's Shop" ? DESTINATIONS.CARD_SHOP : value;
+  if (value === "Merchant's Shop") return DESTINATIONS.CARD_SHOP;
+  if (value === "Equipment Shop") return DESTINATIONS.GEAR_SHOP;
+  return value;
 }
 
 function isValidDestination(value: string): value is Destination {

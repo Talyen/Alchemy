@@ -206,12 +206,12 @@ describe("applyPlayerDamageStatuses", () => {
     expect(result.playerStatuses.burn).toBe(7);
   });
 
-  it("adds doubled bleed stacks from incoming bleed damage", () => {
+  it("adds bleed stacks from incoming bleed damage", () => {
     const state = patchBattleState({
       playerStatuses: defaultPlayerStatusValues({ bleed: 2 }),
     });
     const result = applyPlayerDamageStatuses(state, { damageType: "bleed" }, 5);
-    expect(result.playerStatuses.bleed).toBe(12);
+    expect(result.playerStatuses.bleed).toBe(7);
   });
 
   it("adds freeze stacks equal to actual damage dealt, halved only once", () => {

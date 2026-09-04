@@ -4,15 +4,34 @@ import { useCompletedDifficulties, useFinishedRunCharacters } from "@/features/a
 import { useDifficultySelectSlice, useDraftDeckSlice } from "@/features/alchemy/shared/stores/run-reads";
 import type { RunSetupCommands, RunSetupRouteCtx } from "./route-ctx";
 
-function CharacterSelectScreenRoute({ commands }: { commands: RunSetupCommands }) {
+function CharacterSelectScreenRoute({
+  commands,
+  onBack,
+  onOpenGameMenu,
+}: {
+  commands: RunSetupCommands;
+  onBack?: (() => void) | undefined;
+  onOpenGameMenu: (rect: DOMRect) => void;
+}) {
   const finishedRunCharacters = useFinishedRunCharacters();
 
   return (
-    <CharacterSelectScreen onSelect={commands.handleCharacterSelect} finishedRunCharacters={finishedRunCharacters} />
+    <CharacterSelectScreen
+      onSelect={commands.handleCharacterSelect}
+      finishedRunCharacters={finishedRunCharacters}
+      onBack={onBack}
+      onMenu={onOpenGameMenu}
+    />
   );
 }
 
-function DifficultySelectScreenRoute({ commands }: { commands: RunSetupCommands }) {
+function DifficultySelectScreenRoute({
+  commands,
+  onOpenGameMenu,
+}: {
+  commands: RunSetupCommands;
+  onOpenGameMenu: (rect: DOMRect) => void;
+}) {
   const { characterId, selectedDifficulty } = useDifficultySelectSlice();
   const completedDifficulties = useCompletedDifficulties()[characterId];
 
@@ -23,6 +42,7 @@ function DifficultySelectScreenRoute({ commands }: { commands: RunSetupCommands 
       completedDifficulties={completedDifficulties}
       onSelect={commands.handleDifficultySelect}
       onBack={commands.handleBackFromDifficultySelect}
+      onMenu={onOpenGameMenu}
     />
   );
 }
@@ -46,7 +66,11 @@ export const runSetupScreenRoutes: {
   "draft-deck": (ctx: RunSetupRouteCtx) => ReactNode;
   "difficulty-select": (ctx: RunSetupRouteCtx) => ReactNode;
 } = {
-  "character-select": ({ routeCommands }) => <CharacterSelectScreenRoute commands={routeCommands.runSetup} />,
+  "character-select": ({ routeCommands, onBack, onOpenGameMenu }) => (
+    <CharacterSelectScreenRoute commands={routeCommands.runSetup} onBack={onBack} onOpenGameMenu={onOpenGameMenu} />
+  ),
   "draft-deck": ({ routeCommands }) => <DraftDeckScreenRoute commands={routeCommands.runSetup} />,
-  "difficulty-select": ({ routeCommands }) => <DifficultySelectScreenRoute commands={routeCommands.runSetup} />,
+  "difficulty-select": ({ routeCommands, onOpenGameMenu }) => (
+    <DifficultySelectScreenRoute commands={routeCommands.runSetup} onOpenGameMenu={onOpenGameMenu} />
+  ),
 };

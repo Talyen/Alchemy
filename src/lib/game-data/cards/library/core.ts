@@ -42,7 +42,17 @@ export const coreCards: BattleCard[] = [
     effects: [{ kind: "damage", damageType: "poison", amount: 2 }, { kind: "next-hit-poison" }],
   }),
   cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 2 }),
-  cardBuilders.damageCard({ id: "fangs", art: assetRefs.fangs, damageType: "physical", amount: 3, lifesteal: true }),
+  {
+    id: "fangs",
+    title: "Fangs",
+    descriptionLines: ["Deal 1 Bleed damage", "Deal 1 Physical damage", "Leech"],
+    art: assetRefs.fangs,
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "bleed", amount: 1, lifesteal: true },
+      { kind: "damage", damageType: "physical", amount: 1, lifesteal: true },
+    ],
+  },
   cardBuilders.damageCard({ id: "frostbolt", art: assetRefs.frostbolt, damageType: "freeze", amount: 3 }),
   cardBuilders.playerStatusCard({ id: "anvil", art: assetRefs.anvil, status: "forge", amount: 1 }),
   cardBuilders.damageCard({ id: "bash", art: assetRefs.bash, damageType: "stun", amount: 3 }),
@@ -161,11 +171,12 @@ export const coreCards: BattleCard[] = [
   {
     id: "phoenix-feather",
     title: "Phoenix Feather",
-    descriptionLines: ["Lose 1 Mana Crystal", "If you would die, instead restore 30% Health"],
+    descriptionLines: ["Deal 1 Burn damage", "If you would die, instead restore 30% Health", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.phoenixFeather,
     cost: 1,
+    consume: true,
     effects: [
-      { kind: "lose-max-mana", amount: 1 },
+      { kind: "damage", damageType: "burn", amount: 1 },
       { kind: "player-status", status: "phoenixFeather", amount: 1 },
     ],
   },

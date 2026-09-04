@@ -25,6 +25,8 @@ export function HomesteadScreen({
   onPlantFarm,
   onCompleteResearch,
   onBondCompanion,
+  onBack,
+  onMenu,
 }: {
   gold?: number;
   materialInventory: MaterialInventory;
@@ -37,6 +39,8 @@ export function HomesteadScreen({
   onPlantFarm: (id: FarmId) => boolean;
   onCompleteResearch: (id: ResearchId) => boolean;
   onBondCompanion: (id: CompanionId) => boolean;
+  onBack?: (() => void) | undefined;
+  onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
   const [tab, setTab] = useState<Tab>("buildings");
   const [companionPage, setCompanionPage] = useState(0);
@@ -87,7 +91,7 @@ export function HomesteadScreen({
   return (
     <PageLayout>
       <ScreenShell maxWidthClass="max-w-7xl" className="relative">
-        <ScreenHeaderRow title="Homestead" />
+        <ScreenHeaderRow title="Homestead" onBack={onBack} onMenu={onMenu} />
 
         <div className="mt-6 flex flex-col gap-4">
           <MaterialsBar gold={gold} materialInventory={materialInventory} />

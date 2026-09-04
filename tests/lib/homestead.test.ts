@@ -191,6 +191,13 @@ describe("computeHomesteadEffects", () => {
     expect(effects.flatArrowDamage).toBe(3);
     expect(effects.flatNatureDamage).toBe(3);
     expect(effects.endRunFoodPerRoom).toBe(3);
+
+    const huntersLodge = buildings.find((b) => b.id === "hunters-lodge");
+    expect(huntersLodge).toBeDefined();
+    for (const tier of huntersLodge!.tiers) {
+      expect(tier.benefitDescription).toContain("Archery");
+      expect(tier.benefitDescription).not.toContain("Arrow");
+    }
   });
 
   it("herb-garden adds poisonDamageReduction and natureDamageReduction", () => {

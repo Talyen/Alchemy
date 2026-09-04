@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
+import { type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford, emptyInventory } from "@/lib/homestead/inventory";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { InteractiveArtTile, type PopupContext } from "../../../shared/ui/interactive-art-tile";
@@ -36,7 +36,7 @@ export function HomesteadUpgradeNode({
     currentLevel,
     maxTiers,
     isCompleted ? null : itemCost,
-    isCompleted ? null : currentLevel === 0 ? "Build" : "Upgrade",
+    isCompleted ? "Max Level" : currentLevel === 0 ? "Build" : "Upgrade",
     materialInventory,
   );
 
@@ -75,7 +75,7 @@ function useTooltipContent(
   currentLevel: number,
   maxTiers: number,
   cost: MaterialInventory | null,
-  costLabel: string | null,
+  costLabel: string,
   materialInventory: MaterialInventory,
 ): (ctx: PopupContext) => ReactNode {
   return useMemo(() => {
@@ -95,26 +95,20 @@ function useTooltipContent(
       }
     }
 
-    if (cost && costLabel && MATERIAL_IDS.some((m) => (cost[m] ?? 0) > 0)) {
-      nodes.push(
-        <HomesteadTooltipCost
-          key={`cost-${nodes.length}`}
-          label={costLabel}
-          cost={cost}
-          inventory={materialInventory}
-        />,
-      );
-    }
+    nodes.push(
+      <HomesteadTooltipCost
+        key={`cost-${nodes.length}`}
+        label={costLabel}
+        cost={cost}
+        inventory={materialInventory}
+        stars={<StarRating current={currentLevel} max={maxTiers} />}
+      />,
+    );
 
     return ({ visible, triggerRef }) => (
       <DetailPopup
         idPrefix={item.data.id}
-        title={
-          <span className="inline-flex items-center gap-2">
-            {item.data.title}
-            <StarRating current={currentLevel} max={maxTiers} className="h-3.5 w-3.5" />
-          </span>
-        }
+        title={item.data.title}
         subtitle={undefined}
         descriptionLines={item.data.description ? [item.data.description] : []}
         descriptionNodes={nodes}

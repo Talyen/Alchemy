@@ -4,7 +4,7 @@ export const PLAYER_DODGE_CHANCE = 5;
 
 export const ENEMY_DODGE_CHANCE = 5;
 export const CRIT_MULTIPLIER = 2;
-export const BLEED_STATUS_MULTIPLIER = 2;
+export const BLEED_STATUS_MULTIPLIER = 1;
 export const STUN_THRESHOLD_FRACTION = 0.5;
 export const FREEZE_THRESHOLD_FRACTION = 0.5;
 export const MIN_FREEZE_THRESHOLD_FRACTION = 0.1;

@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-const DESTINATION_NAME = /Combat|Campfire|Card Shop|Alchemist|Mystery|Corruption|Trinket Shop|Equipment Shop/;
+const DESTINATION_NAME = /Combat|Campfire|Card Shop|Alchemist|Mystery|Corruption|Trinket Shop|Gear Shop/;
 
 export class DestinationPage {
   private page: Page;

@@ -133,7 +133,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   bleed: {
     id: "bleed",
     label: "Bleed",
-    description: "Bleed deals damage once, and then twice as much next turn",
+    description: "Bleed deals damage once, and then deals the same amount next turn",
     colorClass: "text-red-600",
     borderClass: "border-red-600",
     shineColors: ["#dc2626", "#7f1d1d", "#dc2626"],

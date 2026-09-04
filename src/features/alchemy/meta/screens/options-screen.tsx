@@ -1,7 +1,5 @@
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
 import { ErrorLogViewer } from "./error-log-viewer";
 
 import { FadeSlot } from "../../shared/ui/fade-slot";
@@ -31,6 +29,7 @@ const optionsTabs = [
 
 export function OptionsScreen({
   onBack,
+  onMenu,
   display,
   audio,
   gameplay,
@@ -38,6 +37,7 @@ export function OptionsScreen({
   dev,
 }: {
   onBack: () => void;
+  onMenu?: ((rect: DOMRect) => void) | undefined;
   display: DisplayOptionsProps;
   audio: AudioOptionsProps;
   gameplay: GameplayOptionsProps;
@@ -54,7 +54,7 @@ export function OptionsScreen({
           <ErrorLogViewer onClose={() => setShowErrorLog(false)} />
         ) : (
           <ScreenShell maxWidthClass="max-w-4xl">
-            <ScreenHeaderRow title="Options" />
+            <ScreenHeaderRow title="Options" onBack={onBack} onMenu={onMenu} />
 
             <div className="mt-6 flex flex-wrap justify-center gap-2">
               <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} className="flex-nowrap" />
@@ -68,12 +68,6 @@ export function OptionsScreen({
                 <OtherOptionsPanel saveData={saveData} dev={{ ...dev, onOpenErrorLog: () => setShowErrorLog(true) }} />
               ) : null}
             </FadeSlot>
-
-            <div className="mt-6 flex justify-center">
-              <Button size="lg" variant="outline" className={BUTTON_WIDTH_DIALOG} onClick={onBack}>
-                Back
-              </Button>
-            </div>
           </ScreenShell>
         )}
       </FadeSlot>

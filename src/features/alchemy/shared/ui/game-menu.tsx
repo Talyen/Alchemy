@@ -37,6 +37,7 @@ interface MenuItem {
   key: string;
   label: string;
   Icon: typeof Swords;
+  iconClassName?: string;
   show: boolean;
   gate?: Gate;
   danger?: boolean;
@@ -89,6 +90,7 @@ function buildMenuItems({
       key: "collection",
       label: "Collection",
       Icon: BookOpen,
+      iconClassName: "text-amber-300",
       show: currentScreen !== "collection",
       handler: closeAfter(onCollection),
     },
@@ -96,6 +98,7 @@ function buildMenuItems({
       key: "talents",
       label: "Talents",
       Icon: WandSparkles,
+      iconClassName: "text-violet-400",
       gate: "talents",
       show: currentScreen !== "talents",
       handler: closeAfter(onTalents),
@@ -104,6 +107,7 @@ function buildMenuItems({
       key: "homestead",
       label: "Homestead",
       Icon: TreePine,
+      iconClassName: "text-emerald-400",
       gate: "homestead",
       show: currentScreen !== "homestead",
       handler: closeAfter(onHomestead),
@@ -112,6 +116,7 @@ function buildMenuItems({
       key: "armory",
       label: "Armory",
       Icon: Shield,
+      iconClassName: "text-sky-300",
       gate: "armory",
       show: currentScreen !== "armory",
       handler: closeAfter(onArmory),
@@ -120,6 +125,7 @@ function buildMenuItems({
       key: "options",
       label: "Options",
       Icon: Cog,
+      iconClassName: "text-zinc-400",
       show: currentScreen !== "options",
       handler: closeAfter(onOptions),
     },
@@ -161,7 +167,7 @@ function GameMenuPanel({
                 message={item.gate ? messages[item.gate] : ""}
                 locked={item.gate ? locks[item.gate] : false}
                 onSelect={item.handler}
-                icon={<item.Icon className="h-4 w-4" />}
+                icon={<item.Icon className={cn("h-4 w-4", item.iconClassName)} />}
                 className={cn("h-11 justify-start", item.danger && "text-red-400")}
               >
                 {item.label}

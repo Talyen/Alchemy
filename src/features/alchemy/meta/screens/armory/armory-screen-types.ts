@@ -30,4 +30,6 @@ export interface ArmoryScreenProps {
   craftingCurrencies?: Record<CraftingCurrencyId, number>;
   onApplyCurrency?: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   rng: () => number;
+  onBack?: (() => void) | undefined;
+  onMenu?: ((rect: DOMRect) => void) | undefined;
 }

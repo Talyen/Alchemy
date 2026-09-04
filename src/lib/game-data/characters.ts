@@ -97,7 +97,7 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     description: "A dark pact caster who can Leech from his foes while they Burn and Bleed.",
     startingDeck: resolveDeck([
       "fangs",
-      "cauterize",
+      "kindling",
       "faustian-bargain",
       "blood-offering",
       "combustion",

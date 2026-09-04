@@ -101,18 +101,19 @@ describe("applyCardEffects", () => {
 });
 
 describe("applyCardEffects — phoenix-feather card", () => {
-  it("loses one mana crystal and grants phoenix feather status", () => {
-    const state = makeState({ maxMana: 4, mana: 4 });
+  it("deals burn damage and grants phoenix feather status", () => {
+    const state = makeState({ enemyHealth: 20 });
     const card = makeTestCard({
       id: "phoenix-feather",
       effects: [
-        { kind: "lose-max-mana", amount: 1 },
+        { kind: "damage", damageType: "burn", amount: 1 },
         { kind: "player-status", status: "phoenixFeather", amount: 1 },
       ],
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    expect(result.maxMana).toBe(3);
+    expect(result.enemyHealth).toBe(19);
+    expect(result.enemyStatuses.burn).toBe(1);
     expect(result.playerStatuses.phoenixFeather).toBe(1);
   });
 });

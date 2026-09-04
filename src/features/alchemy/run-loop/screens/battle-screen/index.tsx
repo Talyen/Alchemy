@@ -6,8 +6,8 @@ import { CardTransferLayer } from "../../battle/presentation/card-transfer-layer
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
 import { PageLayout } from "../../../shared/ui/shared-ui";
-import { BattleBoonInspectOverlay } from "./trinket-inspect";
-import { uniqueRunBoons } from "./unique-run-trinkets";
+import { BattleBoonInspectOverlay } from "./boon-inspect";
+import { uniqueRunBoons } from "./unique-run-boons";
 import { WishOverlay } from "./wish-overlay";
 import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleScreenData } from "./types";
 import { getEnemyStatusChips, getPlayerStatusChips, isAlchemyDevBuild } from "../../../shared/utils";

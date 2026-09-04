@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resetEscapeStackForTests } from "@/app/escape-stack";
-import { BattleBoonInspectOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/trinket-inspect";
-import { uniqueRunBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-trinkets";
+import { BattleBoonInspectOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
+import { uniqueRunBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { trinketLibrary, type TrinketEntry } from "@/lib/game-data";
 
@@ -60,7 +60,7 @@ describe("BattleBoonInspectOverlay", () => {
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByTestId("battle-trinket-inspect-overlay"));
+    fireEvent.click(screen.getByTestId("battle-boon-inspect-overlay"));
     expect(onClose).toHaveBeenCalledTimes(2);
 
     fireEvent.click(screen.getByRole("img", { name: "Brass Censer" }));

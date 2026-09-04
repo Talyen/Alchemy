@@ -20,6 +20,8 @@ export function CollectionScreen({
   collectionPages,
   onPageChange,
   bondedCompanions,
+  onBack,
+  onMenu,
 }: {
   collectionTab: CollectionTab;
   onSelectTab: (tab: CollectionTab) => void;
@@ -31,6 +33,8 @@ export function CollectionScreen({
   collectionPages: Record<CollectionTab, number>;
   onPageChange: (tab: CollectionTab, page: number) => void;
   bondedCompanions: Record<string, number>;
+  onBack?: (() => void) | undefined;
+  onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
   const totalPages = getCollectionTotalPages(collectionTab);
   const activePage = Math.min(Math.max(0, collectionPages[collectionTab] ?? 0), totalPages - 1);
@@ -42,7 +46,7 @@ export function CollectionScreen({
   return (
     <PageLayout>
       <ScreenShell maxWidthClass={collectionShellWidthClass}>
-        <ScreenHeaderRow title="Collection" />
+        <ScreenHeaderRow title="Collection" onBack={onBack} onMenu={onMenu} />
         <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
         <div className="mt-6 flex flex-col items-center gap-4 overflow-visible">

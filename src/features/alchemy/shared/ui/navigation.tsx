@@ -105,15 +105,21 @@ export function FlankingPagination({
 export function HamburgerTrigger({
   onClick,
   label = "Open menu",
+  className,
+  variant = "outline",
+  active = false,
 }: {
   onClick: (rect: DOMRect) => void;
   label?: string;
+  className?: string;
+  variant?: "outline" | "ghost";
+  active?: boolean | undefined;
 }) {
   return (
     <Button
-      variant="outline"
+      variant={variant}
       size="icon"
-      className="h-12 w-12 text-muted-foreground"
+      className={cn("h-12 w-12 text-muted-foreground", active && "bg-muted/40 text-foreground", className)}
       onClick={(e) => onClick(e.currentTarget.getBoundingClientRect())}
       aria-label={label}
     >

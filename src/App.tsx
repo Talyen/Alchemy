@@ -27,8 +27,8 @@ import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-ru
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
 import { BattleAutoplayToggle } from "@/features/alchemy/run-loop/screens/battle-screen/autoplay-toggle";
-import { BattleTrinketInspectButton } from "@/features/alchemy/run-loop/screens/battle-screen/trinket-inspect";
-import { uniqueRunBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-trinkets";
+import { BattleBoonInspectButton } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
+import { uniqueRunBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { clearAlchemySaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
@@ -92,13 +92,14 @@ function AppMainContent({
   const { screen: controllerScreen } = run;
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
   const autosaveEnabled = useAutosaveAllowed(controllerScreen);
+  const nav = useReturnToRunNavigation({ run, renderedScreen });
   useAppKeyboardShortcuts({
     renderedScreen,
     gameMenuOpen: gameMenu.gameMenuOpen,
+    onBack: nav.screenBackHandler,
     setMenuAnchorRect: gameMenu.setMenuAnchorRect,
     setGameMenuOpen: gameMenu.setGameMenuOpen,
   });
-  const nav = useReturnToRunNavigation({ run, renderedScreen });
 
   useAlchemyAutosaveFromStores(autosaveEnabled, nav.returnToRunScreen);
 
@@ -133,8 +134,7 @@ function AppMainContent({
     });
   }, [deletingUnsupportedSave]);
 
-  const showGlobalMenuButton = renderedScreen !== "menu" && !saveBlockedByNewerVersion;
-  const showBattleCluster = showGlobalMenuButton && renderedScreen === "battle";
+  const showBattleCluster = renderedScreen === "battle" && !saveBlockedByNewerVersion;
   const { isAutoplayEnabled, toggleAutoplayEnabled, boonInspectOpen, toggleBoonInspect } = run.routeCommands.battle;
   const runBoons = useActiveRunBoons();
   const hasInspectBoons = uniqueRunBoons(runBoons).length > 0;
@@ -148,6 +148,9 @@ function AppMainContent({
           aspectMode={aspectMode}
           stagePixelRatio={stagePixelRatio}
           returnToRunScreen={nav.returnToRunScreen}
+          openGameMenu={gameMenu.openGameMenu}
+          isMenuOpen={gameMenu.gameMenuOpen}
+          onBack={nav.screenBackHandler}
         >
           {renderAlchemyScreenRoute({
             screen: renderedScreen,
@@ -156,6 +159,8 @@ function AppMainContent({
             onUnlockAllDevMode: dev.unlockAllDevMode,
             onBackFromOptions: nav.backFromOptions,
             gameMenuOpen: gameMenu.gameMenuOpen,
+            onOpenGameMenu: gameMenu.openGameMenu,
+            onBack: nav.screenBackHandler,
           })}
         </AppScreenChromeProvider>
       </CardDescriptionProvider>
@@ -183,15 +188,11 @@ function AppMainContent({
         />
         <KeywordPlasmaBackground colorPair={effectivePlasmaColorPair} intensity={backgroundGlowIntensity} />
         {content}
-        {showGlobalMenuButton ? (
+        {showBattleCluster ? (
           <div className="absolute top-4 right-4 z-[80] flex items-center gap-2">
-            {showBattleCluster ? (
-              <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
-            ) : null}
-            {showBattleCluster && hasInspectBoons ? (
-              <BattleTrinketInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} />
-            ) : null}
-            <HamburgerTrigger onClick={gameMenu.openGameMenu} label="Open game menu" />
+            <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
+            {hasInspectBoons ? <BattleBoonInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} /> : null}
+            <HamburgerTrigger onClick={gameMenu.openGameMenu} label="Open game menu" active={gameMenu.gameMenuOpen} />
           </div>
         ) : null}
         <div

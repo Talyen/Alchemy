@@ -29,11 +29,11 @@ import { Surface } from "./surface";
 import { useInteractiveCard } from "./use-interactive-card";
 import { useTileHoverPopup } from "./use-tile-hover-popup";
 
-interface CompendiumTileProps {
+interface CollectionTileProps {
   item: CollectionTileItem;
 }
 
-export const CompendiumTile = memo(function CompendiumTile({ item }: CompendiumTileProps) {
+export const CollectionTile = memo(function CollectionTile({ item }: CollectionTileProps) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     item.hoverScope,
     item.id,

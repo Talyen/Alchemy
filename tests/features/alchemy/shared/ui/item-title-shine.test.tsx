@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { GearItemTitle, TrinketItemTitle } from "@/features/alchemy/shared/ui/gear-item-title";
 import { GearTooltipContent } from "@/features/alchemy/shared/ui/gear-tooltip-content";
 import { GearTile, TrinketTile } from "@/features/alchemy/shared/ui/collection-art-tiles";
-import { CompendiumTile } from "@/features/alchemy/shared/ui/collection-tile";
+import { CollectionTile } from "@/features/alchemy/shared/ui/collection-tile";
 import { trinketById } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear";
 
@@ -69,7 +69,7 @@ describe("item portrait shine", () => {
   it("shines discovered collection trinkets and leaves undiscovered plain", () => {
     const trinket = trinketById.meteorite!;
     const { container, rerender } = render(
-      <CompendiumTile
+      <CollectionTile
         item={{
           id: trinket.id,
           title: trinket.title,
@@ -85,7 +85,7 @@ describe("item portrait shine", () => {
     expect(container.querySelector(".shine-border")).not.toBeNull();
 
     rerender(
-      <CompendiumTile
+      <CollectionTile
         item={{
           id: trinket.id,
           title: "Undiscovered",
@@ -104,7 +104,7 @@ describe("item portrait shine", () => {
   it("reveals undiscovered art in full color on hover while keeping the dim", () => {
     const trinket = trinketById.meteorite!;
     const { container } = render(
-      <CompendiumTile
+      <CollectionTile
         item={{
           id: trinket.id,
           title: "Undiscovered",

@@ -11,7 +11,7 @@ export const LABYRINTH_TYPE_TO_DESTINATION: Record<LabyrinthNodeType, Destinatio
   shop: DESTINATIONS.CARD_SHOP,
   alchemist: DESTINATIONS.ALCHEMIST_SHOP,
   "trinket-shop": DESTINATIONS.TRINKET_SHOP,
-  "equipment-shop": DESTINATIONS.EQUIPMENT_SHOP,
+  "equipment-shop": DESTINATIONS.GEAR_SHOP,
 };
 
 export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
@@ -23,7 +23,7 @@ export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
   shop: DESTINATIONS.CARD_SHOP,
   alchemist: DESTINATIONS.ALCHEMIST_SHOP,
   "trinket-shop": DESTINATIONS.TRINKET_SHOP,
-  "equipment-shop": DESTINATIONS.EQUIPMENT_SHOP,
+  "equipment-shop": DESTINATIONS.GEAR_SHOP,
   boss: DESTINATIONS.BOSS_COMBAT,
 };
 
@@ -35,7 +35,7 @@ export const NODE_TYPE_TOOLTIPS: Record<LabyrinthNodeType, string> = {
   mystery: "Encounter an unpredictable event",
   shop: "Spend gold on cards and services",
   alchemist: "Buy or mix potions",
-  "trinket-shop": "Buy trinkets for your run",
+  "trinket-shop": "Buy trinkets for your armory",
   "equipment-shop": "Buy gear for your armory",
   boss: "Challenge the Labyrinth guardian",
 };

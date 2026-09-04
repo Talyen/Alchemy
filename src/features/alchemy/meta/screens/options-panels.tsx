@@ -165,7 +165,7 @@ function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
           <div>
             <p className={controlLabelClass}>Dev / QA Unlocks</p>
             <p className={controlDescriptionClass}>
-              Unlock every compendium entry and grant every talent node for testing.
+              Unlock every collection entry and grant every talent node for testing.
             </p>
           </div>
           <Button size="lg" onClick={dev.onUnlockAll}>

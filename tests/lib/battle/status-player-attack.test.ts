@@ -14,7 +14,7 @@ describe("applyPlayerStatusFromAttack", () => {
     it.each([
       { status: "burn", expectedAmount: 5 },
       { status: "poison", expectedAmount: 5 },
-      { status: "bleed", expectedAmount: 10 },
+      { status: "bleed", expectedAmount: 5 },
     ] as const)("applies $status status from enemy attack", ({ status, expectedAmount }) => {
       const state = makeTestBattleState();
       const texts: CombatTextEvent[] = [];
@@ -81,7 +81,7 @@ describe("applyPlayerStatusFromAttack", () => {
       });
       const texts: CombatTextEvent[] = [];
       const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status, amount: 4 }, texts);
-      expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(status === "bleed" ? 8 : 4);
+      expect(result.playerStatuses[status as keyof typeof result.playerStatuses]).toBe(4);
     });
 
     it("does not block burn even with block and talents", () => {

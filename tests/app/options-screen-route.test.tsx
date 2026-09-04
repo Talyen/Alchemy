@@ -40,6 +40,7 @@ const routeContext: OptionsRouteCtx = {
   onClearSaveData: vi.fn(),
   onUnlockAllDevMode: vi.fn(),
   onBackFromOptions: vi.fn(),
+  onOpenGameMenu: vi.fn(),
 };
 
 describe("options screen route", () => {

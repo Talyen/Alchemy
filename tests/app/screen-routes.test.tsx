@@ -28,7 +28,7 @@ vi.mock("@/features/alchemy/run-loop/screens", () => ({
   DestinationScreen: () => <div data-testid="destination-screen" />,
   EquipmentShopScreen: () => <div data-testid="equipment-shop-screen" />,
   LabyrinthMapScreen: () => <div data-testid="labyrinth-map-screen" />,
-  MerchantShopScreen: () => <div data-testid="merchant-shop-screen" />,
+  CardShopScreen: () => <div data-testid="card-shop-screen" />,
   MysteryScreen: () => <div data-testid="mystery-screen" />,
   MysteryScreenShell: () => <div data-testid="mystery-screen-shell" />,
   RewardsScreen: () => <div data-testid="rewards-screen" />,
@@ -61,6 +61,7 @@ function createMockProps(screen: Screen): RenderAlchemyScreenProps {
     onUnlockAllDevMode: vi.fn(),
     onBackFromOptions: vi.fn(),
     gameMenuOpen: false,
+    onOpenGameMenu: vi.fn(),
   };
 }
 

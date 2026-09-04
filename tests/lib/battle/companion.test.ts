@@ -31,7 +31,7 @@ describe("processCompanionTurnStart", () => {
     const result = processCompanionTurnStart(state, texts);
 
     expect(result.enemyHealth).toBe(29);
-    expect(result.enemyStatuses.bleed).toBe(2);
+    expect(result.enemyStatuses.bleed).toBe(1);
   });
 
   it("Lizard Scout companion deals poison damage", () => {
@@ -72,7 +72,7 @@ describe("processCompanionTurnStart", () => {
     const result = processCompanionTurnStart(state, texts);
 
     expect(result.enemyHealth).toBe(29);
-    expect(result.enemyStatuses.bleed).toBe(2);
+    expect(result.enemyStatuses.bleed).toBe(1);
   });
 
   it("Phoenix companion deals burn damage", () => {
@@ -94,7 +94,7 @@ describe("processCompanionTurnStart", () => {
     const result = processCompanionTurnStart(state, texts);
 
     expect(result.enemyHealth).toBe(27);
-    expect(result.enemyStatuses.bleed).toBe(6);
+    expect(result.enemyStatuses.bleed).toBe(3);
   });
 
   it("companionDamage talent adds to base damage", () => {
@@ -141,7 +141,7 @@ describe("processCompanionTurnStart", () => {
     });
     const texts = makeTexts();
     const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyStatuses.bleed).toBe(14);
+    expect(result.enemyStatuses.bleed).toBe(7);
   });
 
   it("processCompanionTurnStart produces combat texts for damage", () => {
@@ -207,7 +207,7 @@ describe("processCompanionTurnStart", () => {
     });
     const result = processCompanionTurnStart(state, makeTexts());
 
-    expect(result.enemyStatuses.bleed).toBe(8);
+    expect(result.enemyStatuses.bleed).toBe(4);
   });
 
   it("companionVsFrozenBonus adds when enemy has freeze skip turns", () => {

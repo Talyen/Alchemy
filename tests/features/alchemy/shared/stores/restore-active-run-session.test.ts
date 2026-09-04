@@ -67,7 +67,7 @@ describe("restoreRunSession shop offering repair", () => {
     expect(readActiveRunScreen()).toBe("trinket-shop");
   });
 
-  it("strips owned unique gear from a restored Equipment Shop", () => {
+  it("strips owned unique gear from a restored Gear Shop", () => {
     const ownedUnique = { instanceId: "owned-wardbreaker", definitionId: "wardbreaker", affixes: [] };
     const shelfUnique = { instanceId: "shelf-wardbreaker", definitionId: "wardbreaker", affixes: [] };
     const shelfBasic = { instanceId: "shelf-basic", definitionId: "leather-armor-basic", affixes: [] };

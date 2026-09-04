@@ -27,7 +27,7 @@ export const buildings = [
     stackingTiers(
       dualMaterialCosts("wood", "food"),
       { flatArrowDamage: 1, flatNatureDamage: 1, endRunFoodPerRoom: 1 },
-      (tier) => `Increases Arrow and Nature damage by ${tier}`,
+      (tier) => `Increases Archery and Nature damage by ${tier}`,
       "Gain Food after each run",
     ),
   ),

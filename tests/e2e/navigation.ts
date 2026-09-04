@@ -2,7 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import { GAME_MODE_TITLES, type GameMode } from "./types";
 
 export async function openGameModeSelect(page: Page) {
-  const adventureHeading = page.getByRole("heading", { name: "Choose Your Adventure" });
+  const adventureHeading = page.getByRole("heading", { name: "Choose a Path" });
   if (await adventureHeading.isVisible()) return;
 
   const playButton = page.getByRole("button", { name: "Play", exact: true });

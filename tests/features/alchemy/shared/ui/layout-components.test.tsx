@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { ScreenShell, TitledScreenShell } from "@/features/alchemy/shared/ui/layout-components";
 
@@ -16,12 +16,16 @@ describe("ScreenShell", () => {
 });
 
 describe("TitledScreenShell", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("clips to the stage so plasma can show through the shell", () => {
     const { container } = render(<TitledScreenShell title="Test">Body</TitledScreenShell>);
     expect(container.firstElementChild?.className).toMatch(/\boverflow-hidden\b/);
   });
 
-  it("renders header actions without a hamburger trigger", () => {
+  it("renders header actions without a hamburger trigger when onMenu is omitted", () => {
     render(
       <TitledScreenShell title="Test" headerActions={<button type="button">Action</button>}>
         Body
@@ -31,14 +35,31 @@ describe("TitledScreenShell", () => {
     expect(screen.queryByRole("button", { name: /menu/i })).toBeNull();
   });
 
-  it("renders top right action positioned to the left of the global menu hamburger", () => {
+  it("renders header actions alongside the hamburger trigger when onMenu is provided", () => {
     render(
-      <TitledScreenShell title="Test" topRightAction={<button type="button">Top Action</button>}>
+      <TitledScreenShell title="Test" headerActions={<button type="button">Action</button>} onMenu={() => {}}>
         Body
       </TitledScreenShell>,
     );
-    const button = screen.getByRole("button", { name: "Top Action" });
-    expect(button).toBeTruthy();
-    expect(button.parentElement?.className).toContain("absolute top-4 right-18 z-[80]");
+    expect(screen.getByRole("button", { name: "Action" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /menu/i })).toBeTruthy();
+  });
+
+  it("renders a back button on the left when onBack is provided", () => {
+    let backClicked = false;
+    render(
+      <TitledScreenShell
+        title="Test"
+        onBack={() => {
+          backClicked = true;
+        }}
+      >
+        Body
+      </TitledScreenShell>,
+    );
+    const backButton = screen.getByRole("button", { name: "Back" });
+    expect(backButton).toBeTruthy();
+    backButton.click();
+    expect(backClicked).toBe(true);
   });
 });

@@ -9,7 +9,7 @@ import {
   DestinationScreen,
   EquipmentShopScreen,
   LabyrinthMapScreen,
-  MerchantShopScreen,
+  CardShopScreen,
   RewardsScreen,
   TrinketShopScreen,
   WildwoodRemovalScreen,
@@ -145,10 +145,10 @@ function createShopScreenRoute<Data, Commands>({
   };
 }
 
-const MerchantShopScreenRoute = createShopScreenRoute({
+const CardShopScreenRoute = createShopScreenRoute({
   useData: useShopScreenData,
   render: (r, commands: RunLoopCommands["shop"]["merchant"]) => (
-    <MerchantShopScreen
+    <CardShopScreen
       gold={r.gold}
       runDeck={r.runDeck}
       shopCards={r.shopState.cards}
@@ -279,7 +279,7 @@ export const runLoopScreenRoutes: {
   ),
   shop: createRunLoopRoute(
     (commands) => commands.shop.merchant,
-    (commands) => <MerchantShopScreenRoute commands={commands} />,
+    (commands) => <CardShopScreenRoute commands={commands} />,
   ),
   alchemist: createRunLoopRoute(
     (commands) => commands.shop.alchemist,

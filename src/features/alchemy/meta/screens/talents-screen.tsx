@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { TalentOverviewGrid } from "../talents/talent-overview-grid";
 import { ConfirmationDialog, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
-import { BUTTON_WIDTH_DIALOG, getPlasmaColorPair, getPlasmaKeywordsForTalent } from "../../shared/config";
+import { getPlasmaColorPair, getPlasmaKeywordsForTalent } from "../../shared/config";
 import { FadeSlot } from "../../shared/ui/fade-slot";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
@@ -31,11 +31,15 @@ export function TalentsScreen({
   unlockedTalents,
   onUnlockTalent,
   onResetTalents,
+  onBack,
+  onMenu,
 }: {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   onUnlockTalent: (keywordId: KeywordId, talentId: string) => void;
   onResetTalents: () => void;
+  onBack?: (() => void) | undefined;
+  onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId | null>(null);
   const [hoveredOverviewKeyword, setHoveredOverviewKeyword] = useState<KeywordId | null>(null);
@@ -111,16 +115,27 @@ export function TalentsScreen({
 
   const title = selectedKeywordDef ? selectedKeywordDef.label : "Talents";
 
+  const handleBack = () => {
+    if (selectedKeyword !== null) {
+      setHoveredTalent(null);
+      setSelectedKeyword(null);
+    } else {
+      onBack?.();
+    }
+  };
+
   return (
     <TitledScreenShell
       title={title}
       maxWidthClass="max-w-[90rem]"
       minHeightClass="min-h-[76cqh]"
-      topRightAction={
+      onBack={selectedKeyword ? handleBack : onBack}
+      onMenu={onMenu}
+      headerActions={
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="h-12 w-12 text-muted-foreground"
+          className="h-11 w-11 text-muted-foreground/60 transition-colors hover:bg-muted/40 hover:text-foreground"
           disabled={!hasAllocatedTalents}
           onClick={() => setShowResetConfirm(true)}
           aria-label="Reset talents"
@@ -154,17 +169,6 @@ export function TalentsScreen({
               onUnlockBegin={handleUnlockTalentBegin}
               onHoverTalent={setHoveredTalent}
             />
-            <Button
-              size="lg"
-              variant="outline"
-              className={BUTTON_WIDTH_DIALOG}
-              onClick={() => {
-                setHoveredTalent(null);
-                setSelectedKeyword(null);
-              }}
-            >
-              Back
-            </Button>
           </div>
         )}
       </FadeSlot>
