@@ -37,7 +37,7 @@ test.describe("Collection", critical, () => {
       const inspectBtn = page.getByRole("button", { name: /Inspect Wardbreaker/ });
       await expect(inspectBtn).toBeVisible({ timeout: 5000 });
       await inspectBtn.hover();
-      await expect(page.getByText(/Purge enemy Armor/)).toBeVisible();
+      await expect(page.getByText(/Purge a beneficial effect/)).toBeVisible();
     });
   });
 
@@ -47,8 +47,8 @@ test.describe("Collection", critical, () => {
       await expect(page.getByRole("button", { name: "Inspect Knight" })).toBeVisible();
 
       await page.getByRole("button", { name: "Inspect Knight" }).hover();
-      await expect(page.getByText("Starting Deck")).toBeVisible();
-      await expect(page.getByText(/Anvil/)).toBeVisible();
+      await expect(page.getByText("Starting Deck").first()).toBeVisible();
+      await expect(page.getByText(/Anvil/).first()).toBeVisible();
     });
 
     test("locked heroes keep their name and unlock tooltip", async ({ page }) => {
