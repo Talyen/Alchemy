@@ -32,5 +32,9 @@ export function GoldCost({ amount }: { amount: number }) {
 }
 
 export function GoldDisplay({ gold }: { gold: number }) {
-  return <GoldPill amount={gold} />;
+  return (
+    <div data-testid="run-gold">
+      <GoldPill amount={gold} />
+    </div>
+  );
 }

@@ -7,6 +7,12 @@ baseTest.describe("SFX playback", critical, () => {
   baseTest("menu interaction starts at least one SFX", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
     await page.addInitScript(() => {
+      const headlessUserAgent = navigator.userAgent;
+      Object.defineProperty(navigator, "webdriver", { configurable: true, get: () => false });
+      Object.defineProperty(navigator, "userAgent", {
+        configurable: true,
+        get: () => headlessUserAgent.replace("HeadlessChrome", "Chrome"),
+      });
       const runtime = window as Window & { __alchemySfxPlays?: number };
       runtime.__alchemySfxPlays = 0;
       const NativeAudio = window.Audio;

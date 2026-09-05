@@ -23,7 +23,7 @@ export class ShopPage {
     this.mixBtn = this.page.getByRole("button", { name: /Mix Potions/ });
     this.combineBtn = this.page.getByRole("button", { name: "Combine" });
     this.continueBtn = this.page.getByRole("button", { name: "Continue" });
-    this.goldText = this.page.getByText(/\d+ Gold/).first();
+    this.goldText = this.page.getByTestId("run-gold");
     this.purchasedText = this.page.getByText("Purchased").first();
     this.cardGrid = this.page.locator('[data-testid="card-selection-grid"]');
     this.inspectButtons = this.page.locator('button[aria-label^="Buy "]');
