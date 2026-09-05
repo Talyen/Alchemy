@@ -127,7 +127,7 @@ function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
           style: { width: iconSize, height: iconSize },
           strokeWidth: 2.75,
         })}
-        <span>{entry.displayText}</span>
+        {entry.displayText ? <span>{entry.displayText}</span> : null}
       </motion.div>
     </div>
   );

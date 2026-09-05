@@ -1,3 +1,4 @@
+import { isPlayerDefeated } from "@/lib/battle";
 import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,8 @@ export function BattleActors({
             maxHealth={battleState.playerMaxHealth}
             statuses={playerStatusChips}
             shimmerId="player-card"
+            isDead={isPlayerDefeated(battleState)}
+            turnUrgentHide={isPlayerDefeated(battleState)}
             deathsDoorActive={battleState.deathsDoorActive}
             surfaceRef={playerPanelRef}
             turnActive={isPlayerTurn}

@@ -1,35 +1,38 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { CombatTextRail } from "@/features/alchemy/shared/ui/battle/combat-text";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import type { FloatingCombatText } from "@/features/alchemy/shared/types";
-
-beforeEach(() => {
-  useUiStore.setState(useUiStore.getInitialState(), true);
-});
-
-afterEach(() => {
-  cleanup();
-});
 
 describe("CombatTextRail", () => {
-  const sampleEntry: FloatingCombatText = {
-    id: "test-1",
-    target: "enemy",
-    kind: "damage",
-    stat: "physical",
-    amount: 15,
-    displayText: "-15",
-    lane: 0,
-  };
-
-  it("renders null when entries array is empty", () => {
-    const { container } = render(<CombatTextRail entries={[]} />);
-    expect(container.firstChild).toBeNull();
+  it("renders Death's Door as a centered skull without text", () => {
+    const { container } = render(
+      <CombatTextRail
+        entries={[
+          {
+            id: "protected-hit",
+            target: "player",
+            kind: "notice",
+            stat: "deathsDoor",
+            text: "",
+            displayText: "",
+            lane: 0,
+          },
+        ]}
+      />,
+    );
+    expect(container.querySelector("svg.lucide-skull")).not.toBeNull();
+    expect(container.querySelector(".text-red-200")).not.toBeNull();
+    expect(container.textContent).toBe("");
+    expect(container.querySelector("span")).toBeNull();
   });
 
-  it("renders combat text bubble with display text", () => {
-    render(<CombatTextRail entries={[sampleEntry]} />);
-    expect(screen.getByText("-15")).toBeDefined();
+  it("keeps numeric damage feedback", () => {
+    const { container } = render(
+      <CombatTextRail
+        entries={[
+          { id: "damage", target: "player", kind: "damage", stat: "physical", amount: 5, displayText: "-5", lane: 0 },
+        ]}
+      />,
+    );
+    expect(container.textContent).toBe("-5");
   });
 });

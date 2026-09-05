@@ -124,7 +124,11 @@ function dealPlayerDotTick(
   damageType?: string,
   applyRiders?: (state: BattleState) => BattleState,
 ): BattleState {
-  let nextState = setPlayerStatus(applyPlayerCombatDamage(state, reducedDamage, damageType), status, nextStacks);
+  let nextState = setPlayerStatus(
+    applyPlayerCombatDamage(state, reducedDamage, damageType, undefined, combatTexts),
+    status,
+    nextStacks,
+  );
   if (applyRiders) nextState = applyRiders(nextState);
   const healthLost = state.playerHealth - nextState.playerHealth;
   if (healthLost > 0) {

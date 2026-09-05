@@ -301,9 +301,13 @@ export function processEnemyDamageEffect(
   );
 
   const prevHealth = state.playerHealth;
-  const damagedState = applyPlayerCombatDamage(state, actualDamage, effect.damageType, {
-    ignoreMitigation: options.ignorePlayerMitigation === true,
-  });
+  const damagedState = applyPlayerCombatDamage(
+    state,
+    actualDamage,
+    effect.damageType,
+    { ignoreMitigation: options.ignorePlayerMitigation === true },
+    combatTexts,
+  );
   let nextState: BattleState = {
     ...damagedState,
     playerStatuses: {

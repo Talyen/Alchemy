@@ -1,3 +1,5 @@
+import { act, renderHook } from "@testing-library/react";
+import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import "../../../../helpers/mock-audio";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
@@ -23,16 +25,13 @@ vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (im
 
 import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { playGoldGain } from "@/lib/audio";
+import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
 beforeEach(() => {
   resetAllTestStores();
 });
-
-function makeHandlers() {
-  return createRunFlowHandlers(makeFlowHandlerDeps());
-}
 
 describe("createRunFlowHandlers victory paths", () => {
   it("awardRunEndMaterials applies homestead end-of-run per-room bonuses", () => {
@@ -90,8 +89,11 @@ describe("createRunFlowHandlers victory paths", () => {
 
   it("handleBattleDefeat invokes applyRunDefeatTeardown for campaign", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
-    const handlers = makeHandlers();
+    const transition = vi.fn();
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ transition }));
     handlers.handleBattleDefeat();
+    expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
+    transition.mock.calls[0][1].onCommit();
     expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
       expect.objectContaining({
         awardRunEndMaterials,
@@ -106,6 +108,12 @@ describe("createRunFlowHandlers victory paths", () => {
     const transition = vi.fn();
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ transition }));
     handlers.handleBattleDefeat();
+    expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
+    expect(transition).toHaveBeenCalledWith(
+      ROUTE_SCREENS.GAME_OVER,
+      expect.objectContaining({ delayMs: BATTLE_END_TRANSITION_DELAY }),
+    );
+    transition.mock.calls[0][1].onCommit();
     expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
       expect.objectContaining({
         awardRunEndMaterials,
@@ -113,7 +121,28 @@ describe("createRunFlowHandlers victory paths", () => {
         clearCombatState,
       }),
     );
-    expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
+  });
+
+  it.each([false, true])("defeat delay respects cancellation: %s", (cancelled) => {
+    vi.useFakeTimers();
+    try {
+      setRunSession({ hasActiveRun: true });
+      const setScreen = vi.fn();
+      const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
+      const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ transition: result.current.transition }));
+      act(() => handlers.handleBattleDefeat());
+      act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY - 1));
+      expect(setScreen).not.toHaveBeenCalled();
+      expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
+      if (cancelled) result.current.cancelPending();
+      act(() => vi.advanceTimersByTime(1));
+      expect(setScreen).toHaveBeenCalledTimes(cancelled ? 0 : 1);
+      expect(applyRunDefeatTeardown).toHaveBeenCalledTimes(cancelled ? 0 : 1);
+      act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY));
+      expect(applyRunDefeatTeardown).toHaveBeenCalledTimes(cancelled ? 0 : 1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("handleAbandonRun invokes applyRunDefeatTeardown for campaign", () => {

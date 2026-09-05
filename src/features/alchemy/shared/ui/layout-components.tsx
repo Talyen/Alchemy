@@ -18,7 +18,7 @@ export function ScreenHeader({
   return (
     <div className={cn("flex flex-col items-center text-center", className)}>
       {eyebrow ? (
-        <p className="mb-1 text-xs font-semibold tracking-[0.22em] text-amber-100/60 uppercase">{eyebrow}</p>
+        <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-amber-100/60 uppercase">{eyebrow}</p>
       ) : null}
       <h1 className={cn("font-sans", screenTitleClass)}>{title}</h1>
       <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
@@ -89,7 +89,7 @@ export function ScreenHeaderRow({
     <div className={cn("flex min-h-10 w-full items-center justify-center", className)}>
       <div className="relative flex w-full max-w-2xl flex-col items-center px-12">
         {eyebrow ? (
-          <p className="mb-1 text-xs font-semibold tracking-[0.22em] text-amber-100/60 uppercase">{eyebrow}</p>
+          <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-amber-100/60 uppercase">{eyebrow}</p>
         ) : null}
         <div className="relative flex w-full items-center justify-center">
           {leadingContent ? (

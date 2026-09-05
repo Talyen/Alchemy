@@ -475,7 +475,7 @@ describe("session facade API", () => {
     expect(readRunSession().mysteryEvent).toBeNull();
   });
 
-  it("repairs unresolved overgrown-temple random trinkets on restore", () => {
+  it("restores overgrown-temple random gear without introducing trinkets", () => {
     const activeRun: ActiveRunData = {
       ...snapshotRun(),
       currentScreen: "mystery",
@@ -494,10 +494,8 @@ describe("session facade API", () => {
     restoreRun(activeRun, {}, {});
 
     const search = readRunSession().mysteryEvent?.choices.find((choice) => choice.label === "Search the Crypt");
-    const trinket = search?.effects.find((effect) => effect.kind === "gainTrinket");
-    expect(trinket?.kind).toBe("gainTrinket");
-    if (trinket?.kind !== "gainTrinket") return;
-    expect(["bone-charm", "sin-eaters-lantern"]).toContain(trinket.trinketId);
+    expect(search?.effects).toContainEqual({ kind: "gainRandomGear" });
+    expect(search?.effects.some((effect) => effect.kind === "gainTrinket")).toBe(false);
   });
 
   it("abandons a mystery visit with an unknown event id instead of re-rolling", () => {

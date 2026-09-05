@@ -3,7 +3,7 @@ import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
-import { VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
+import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards } from "../navigation/victory-flow";
 import type { CommitVictoryRewardsDeps, VictoryRewardsResult } from "../navigation/victory-flow-types";
@@ -138,7 +138,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
     if (readRunSession().hasActiveRun) {
       const nextScreen = ROUTE_SCREENS.REWARDS;
       deps.actions.transition(nextScreen, {
-        delayMs: resolveGameDelay(VICTORY_TRANSITION_DELAY),
+        delayMs: resolveGameDelay(BATTLE_END_TRANSITION_DELAY),
         guard: () => readRunSession().hasActiveRun,
       });
     }

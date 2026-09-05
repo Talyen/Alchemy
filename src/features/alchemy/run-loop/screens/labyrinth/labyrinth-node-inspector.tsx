@@ -1,12 +1,14 @@
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION, LABYRINTH_NODE_META, tooltipBodyClass } from "@/features/alchemy/shared/config";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getKeywordListShineColors, SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
+import { Surface } from "@/features/alchemy/shared/ui/surface";
 import { ShineText } from "@/features/alchemy/shared/ui/shine-text";
 import { renderColoredKeywords } from "@/features/alchemy/shared/ui/card-description-ui";
 import { cn } from "@/lib/utils";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
-import { NODE_TYPE_LABELS, NODE_TYPE_TOOLTIPS } from "@/lib/content-systems/labyrinth/data";
+import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { LABYRINTH_COMBAT_TRAIT_KEYWORDS, LABYRINTH_REWARD_TRAIT_KEYWORDS } from "./labyrinth-plasma";
 import type {
   EncounterCombatTraitId,
@@ -19,11 +21,7 @@ interface Props {
   node: LabyrinthNode;
   canEnter: boolean;
   onEnter: () => void;
-  left: number;
-  top: number;
-  side: "left" | "right";
-  width: number;
-  panelRef?: ((element: HTMLElement | null) => void) | undefined;
+  onClose: () => void;
 }
 
 function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; variant: "enemy" | "reward" }) {
@@ -40,8 +38,8 @@ function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; varia
   return (
     <div
       className={cn(
-        "rounded-lg bg-white/[0.03] px-4 py-3",
-        variant === "enemy" ? "border-[3px] border-red-500/40" : "border-[3px] border-emerald-500/40",
+        "rounded-lg border bg-white/[0.03] px-3 py-2",
+        variant === "enemy" ? "border-red-500/30" : "border-emerald-500/30",
       )}
     >
       <ShineText
@@ -58,54 +56,56 @@ function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; varia
   );
 }
 
-export function LabyrinthNodeInspector({ node, canEnter, onEnter, left, top, side, width, panelRef }: Props) {
+export function LabyrinthNodeInspector({ node, canEnter, onEnter, onClose }: Props) {
   const meta = LABYRINTH_NODE_META[node.type];
   const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : null;
   const destinationLabel = NODE_TYPE_LABELS[node.type];
-  const isBoss = node.type === "boss";
-  const title = isBoss && enemy ? enemy.title : destinationLabel;
-  const subtitle = isBoss ? destinationLabel : (enemy?.title ?? null);
+  const merchant = ["shop", "alchemist", "trinket-shop", "equipment-shop"].includes(node.type);
+  const category = merchant ? "Merchant" : destinationLabel;
+  const title = enemy?.title ?? destinationLabel;
   const art = enemy?.art ?? meta.art;
-  const enemyModifiers: EncounterCombatTraitId[] = node.modifiers;
-  const rewardModifiers: EncounterRewardTraitId[] = node.rewardModifiers;
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Inspector uses click to stop propagation, not as interactive control
     <aside
       aria-label="Chamber details"
-      data-side={side}
-      ref={panelRef}
-      className="labyrinth-inspector-in absolute z-30 flex max-h-[min(100%,calc(36*var(--content-rem,1rem)))] -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-[var(--radius-shell-hero)] border border-white/10 bg-black p-4 shadow-[0_12px_32px_rgba(0,0,0,0.55)]"
-      style={{ left, top, width }}
-      onClick={(event) => event.stopPropagation()}
+      className="labyrinth-inspector-in flex max-h-full min-h-0 w-full flex-col overflow-hidden rounded-shell-hero border border-white/10 bg-black shadow-xl motion-reduce:animate-none"
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[var(--radius-shell-hero)] border border-white/15">
-        <img src={art} alt="" className="h-full w-full object-cover object-top" />
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
-          <p className="text-base font-bold tracking-wide text-amber-100/80 uppercase">{destinationLabel}</p>
-          <p className="text-3xl font-semibold text-amber-50">{title}</p>
-          {subtitle && subtitle !== title ? (
-            <p className="text-sm font-semibold tracking-wide text-amber-100/70">{subtitle}</p>
-          ) : null}
-        </div>
-      </div>
-      <p className={cn(tooltipBodyClass, "text-left text-base leading-relaxed text-amber-100/80")}>
-        {renderColoredKeywords(NODE_TYPE_TOOLTIPS[node.type])}
-      </p>
-      {enemyModifiers.length > 0 || rewardModifiers.length > 0 ? (
-        <div className="grid gap-2">
-          {enemyModifiers.map((modifier) => (
-            <ModifierCard key={modifier} modifier={modifier} variant="enemy" />
-          ))}
-          {rewardModifiers.map((modifier) => (
-            <ModifierCard key={modifier} modifier={modifier} variant="reward" />
-          ))}
-        </div>
-      ) : null}
-      {canEnter ? (
-        <Button size="lg" variant="primary" className={cn(BUTTON_WIDTH_ACTION, "mt-auto w-full")} onClick={onEnter}>
-          {meta.actionLabel}
+      <div className="flex shrink-0 justify-end px-2 pt-2">
+        <Button variant="ghost" size="icon" aria-label="Close chamber details" onClick={onClose}>
+          <X className="h-5 w-5" />
         </Button>
+      </div>
+      <div className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-4">
+        <Surface
+          clipContents={false}
+          className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-shell-card border border-border/80 bg-black shadow-md"
+          testId="chamber-art"
+        >
+          <img src={art} alt="" className="block h-full w-full object-cover" draggable={false} />
+        </Surface>
+        <div className="mt-3">
+          {category !== title ? (
+            <p className="text-sm font-bold tracking-wide text-amber-100/70 uppercase">{category}</p>
+          ) : null}
+          <h2 className="text-2xl font-semibold text-amber-50">{title}</h2>
+        </div>
+        {node.modifiers.length > 0 || node.rewardModifiers.length > 0 ? (
+          <div className="mt-4 grid gap-2">
+            {node.modifiers.map((modifier) => (
+              <ModifierCard key={modifier} modifier={modifier} variant="enemy" />
+            ))}
+            {node.rewardModifiers.map((modifier) => (
+              <ModifierCard key={modifier} modifier={modifier} variant="reward" />
+            ))}
+          </div>
+        ) : null}
+      </div>
+      {canEnter ? (
+        <div className="shrink-0 border-t border-white/10 p-4">
+          <Button size="lg" variant="primary" className={cn(BUTTON_WIDTH_ACTION, "w-full")} onClick={onEnter}>
+            {meta.actionLabel}
+          </Button>
+        </div>
       ) : null}
     </aside>
   );

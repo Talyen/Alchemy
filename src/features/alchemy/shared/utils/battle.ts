@@ -17,6 +17,7 @@ import type { CombatImpactCue, StatusChip } from "../types";
 const ENEMY_MITIGATION_DISPLAY_ORDER: ReadonlyArray<keyof BattleState["enemyMitigation"]> = ["block", "armor", "forge"];
 
 export function getCombatTextColorClass(event: CombatTextEvent): string {
+  if (event.stat === "deathsDoor") return "text-red-200";
   if (event.kind === "heal") return "text-green-400";
   const augment = augmentDefinitions[event.stat as keyof typeof augmentDefinitions];
   if (augment) return augment.colorClass;

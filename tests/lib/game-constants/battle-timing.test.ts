@@ -13,7 +13,7 @@ import {
   NAVIGATION_DELAY_MS,
   SHAKE_DURATION,
   SLICE_DEATH_DURATION_MS,
-  VICTORY_TRANSITION_DELAY,
+  BATTLE_END_TRANSITION_DELAY,
 } from "@/lib/game-constants/battle-timing";
 
 describe("battle timing constants", () => {
@@ -23,7 +23,7 @@ describe("battle timing constants", () => {
       AUTOPLAY_RETRY_DELAY_MS,
       AUTOPLAY_POST_PLAY_DELAY_MS,
       SLICE_DEATH_DURATION_MS,
-      VICTORY_TRANSITION_DELAY,
+      BATTLE_END_TRANSITION_DELAY,
       ENEMY_PHASE_DELAY,
       ENEMY_ATTACK_RECOVERY_DELAY,
       HIT_SHAKE_DELAY_MS,
@@ -36,7 +36,7 @@ describe("battle timing constants", () => {
       expect(value).toBeGreaterThan(0);
     }
 
-    expect(VICTORY_TRANSITION_DELAY).toBeGreaterThanOrEqual(SLICE_DEATH_DURATION_MS);
+    expect(BATTLE_END_TRANSITION_DELAY).toBeGreaterThanOrEqual(SLICE_DEATH_DURATION_MS);
     expect(SHAKE_DURATION).toBeGreaterThan(HIT_SHAKE_DELAY_MS);
     expect(ATTACK_LUNGE_DURATION_MS).toBeGreaterThan(HIT_SHAKE_DELAY_MS);
   });

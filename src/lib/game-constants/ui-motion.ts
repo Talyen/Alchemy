@@ -87,10 +87,6 @@ export const HAND_CARD_HOVER_Z_INDEX = 40;
 
 export const WISH_OVERLAY_Z_INDEX = 90;
 
-export const LABYRINTH_MAP_UI = {
-  inspectorWidthPx: 480,
-} as const;
-
 export const BUTTON_HOVER_TRANSITION = "transition-[background-color,box-shadow] duration-150";
 export const BUTTON_HOVER_PRIMARY = "button-primary-bloom";
 export const BUTTON_HOVER_DESTRUCTIVE = "hover:bg-destructive/90";

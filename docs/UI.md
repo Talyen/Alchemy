@@ -80,6 +80,24 @@ Game Size and Tooltip Size are device-local preferences, separate from game
 saves and cloud mirroring. Reset Sizes and Reset Options reset both. Clearing
 progress or importing a save does not change them.
 
+## Labyrinth map
+
+The floor fits the available map width and height, with padding for hover
+expansion. Cleared chambers retain faint outlines and never change the floor's
+bounds. Wide layouts reserve a stable inspector column; narrow layouts open a
+dismissible sheet. Fit and zoom/pan are screen-local and reset on floor changes.
+
+Hexes touch at rest. Hover and keyboard focus enlarge an opaque hex above its
+neighbors without moving them; hover takes precedence over focus and selection.
+Locked hexes can be inspected but never entered. Hexes have no tooltips.
+
+The inspector uses standard 4:3 card artwork without text or scrims. Category
+and name appear below the artwork, with duplicate labels omitted and shops
+categorized as Merchant. Only mechanical modifier descriptions remain. The
+content scrolls without shrinking artwork, and the available action stays in a
+separate footer. Close and Escape dismiss details. Shared screen-header eyebrows
+use the small text size, one step above extra-small.
+
 ## Hover tooltips
 
 Tooltips render through `PortaledTooltip` into the root-space `#tooltip-root`.

@@ -27,19 +27,6 @@ export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
   boss: DESTINATIONS.BOSS_COMBAT,
 };
 
-export const NODE_TYPE_TOOLTIPS: Record<LabyrinthNodeType, string> = {
-  entrance: "Where this descent began",
-  combat: "Fight a standard enemy encounter",
-  elite: "Face a stronger foe with extra danger",
-  rest: "Recover before pressing deeper",
-  mystery: "Encounter an unpredictable event",
-  shop: "Spend gold on cards and services",
-  alchemist: "Buy or mix potions",
-  "trinket-shop": "Buy trinkets for your armory",
-  "equipment-shop": "Buy gear for your armory",
-  boss: "Challenge the Labyrinth guardian",
-};
-
 export const LABYRINTH_ENTRANCE_NODE_ID = "labyrinth-entrance";
 export const LABYRINTH_ENTRANCE_FLOOR_ID = "labyrinth-floor-0";
 

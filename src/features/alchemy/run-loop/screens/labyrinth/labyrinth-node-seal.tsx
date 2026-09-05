@@ -6,9 +6,6 @@ import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 import { cardHoverScaleClass, LABYRINTH_HEX_CLIP, LABYRINTH_NODE_META } from "@/features/alchemy/shared/config";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
-import { PortaledTooltip } from "@/features/alchemy/shared/ui/portaled-tooltip";
-import { TooltipHeader, TooltipSubheader } from "@/features/alchemy/shared/ui/tooltip-panel";
-import { useHoverVisible } from "@/features/alchemy/shared/ui/use-hover-visible";
 import { usePlasmaInteraction } from "@/features/alchemy/shared/ui/use-plasma-source";
 import { cn } from "@/lib/utils";
 import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
@@ -39,26 +36,14 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
   const meta = LABYRINTH_NODE_META[node.type];
   const reachable = visual === "reachable";
   const art = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId].art : meta.art;
-  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
-    useHoverVisible<HTMLButtonElement>();
-  const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : null;
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const typeLabel = NODE_TYPE_LABELS[node.type];
-  const hoverTitle = typeLabel;
-  const hoverSubtitle = enemy?.title ?? null;
-
   const isLocked = visual === "locked";
   const isCleared = visual === "cleared";
-  const isSelectable = !isCleared;
-  const isHovered = visible && isSelectable;
-  const zIndex = selected ? 10 : isHovered ? 5 : reachable ? 1 : 0;
-  const strokeClass =
-    visual === "cleared"
-      ? "text-emerald-300"
-      : selected
-        ? "text-amber-400"
-        : reachable
-          ? typeStrokeClass(node.type)
-          : "text-white/15";
+  const emphasized = hovered || focused || selected;
+  const zIndex = hovered ? 30 : focused ? 20 : selected ? 10 : reachable ? 1 : 0;
+  const strokeClass = selected ? "text-amber-400" : reachable ? typeStrokeClass(node.type) : "text-white/15";
 
   const [reducedMotion] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -76,48 +61,60 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
   } satisfies CSSProperties;
 
   const hoverPlasmaPair = reachable && !isLocked && !isCleared && !selected ? getLabyrinthNodePlasmaPair(node) : null;
-  usePlasmaInteraction(hoverPlasmaPair, visible && reachable && !selected);
+  usePlasmaInteraction(hoverPlasmaPair, (hovered || focused) && reachable && !selected);
 
-  if (isCleared) return null;
+  if (isCleared) {
+    return (
+      <svg
+        aria-hidden
+        data-testid="cleared-chamber"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-amber-100/15"
+        style={{ left: x, top: y, width, height }}
+      >
+        <polygon points={HEX_POINTS_INSET_1} fill="none" stroke="currentColor" strokeWidth={1} />
+      </svg>
+    );
+  }
 
   return (
     <div
-      className="group absolute -translate-x-1/2 -translate-y-1/2 transition-[left,top] duration-300 ease-out"
+      className="group absolute -translate-x-1/2 -translate-y-1/2"
       style={{ left: x, top: y, width, height, zIndex }}
     >
       <button
-        ref={triggerRef}
         type="button"
-        disabled={isCleared}
-        tabIndex={isSelectable ? 0 : -1}
         aria-label={`${typeLabel} chamber, ${visual}${reachable ? ", enterable" : ""}`}
         onClick={(event) => {
           event.stopPropagation();
-          if (!isSelectable) return;
           onSelect(node.id);
         }}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        onFocusCapture={onFocusCapture}
-        onBlurCapture={onBlurCapture}
-        data-hovered={selected ? "true" : undefined}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        aria-pressed={selected}
+        data-hovered={emphasized ? "true" : undefined}
         style={buttonStyle}
         className={cn(
-          isSelectable && cardHoverScaleClass,
-          "relative h-full w-full outline-none",
-          isSelectable && "cursor-pointer active:scale-[0.97]",
-          isLocked && "opacity-[0.42]",
-          !isSelectable && "cursor-default opacity-[0.42]",
+          cardHoverScaleClass,
+          "relative h-full w-full bg-black outline-none motion-reduce:transition-none",
+          "cursor-pointer active:scale-[0.97]",
+          isLocked && !emphasized && "opacity-[0.42]",
         )}
       >
-        <span className="absolute inset-0 overflow-hidden" style={{ clipPath: LABYRINTH_HEX_CLIP_INSET_1 }}>
+        <span
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+          style={{ clipPath: LABYRINTH_HEX_CLIP_INSET_1 }}
+        >
           <img
             src={art}
             alt=""
             aria-hidden
             className="absolute inset-0 h-full w-full scale-[1.14] object-cover object-top"
           />
-          <span className="absolute inset-0 bg-black/25" />
+          {!emphasized ? <span className="absolute inset-0 bg-black/25" /> : null}
         </span>
         {!hasShine ? (
           <svg
@@ -184,10 +181,6 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
           </svg>
         ) : null}
       </button>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible && !selected}>
-        <TooltipHeader>{hoverTitle}</TooltipHeader>
-        {hoverSubtitle ? <TooltipSubheader className="mt-1">{hoverSubtitle}</TooltipSubheader> : null}
-      </PortaledTooltip>
     </div>
   );
 }

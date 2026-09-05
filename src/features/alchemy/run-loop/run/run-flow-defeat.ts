@@ -1,4 +1,6 @@
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
+import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
+import { resolveGameDelay } from "@/lib/animation/game-timer";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   applyRunDefeatTeardown,
   clearBattleUi,
@@ -11,18 +13,26 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 
 export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
-  function endRunAndShowGameOver() {
+  function finalizeDefeat() {
     applyRunDefeatTeardown({
       awardRunEndMaterials,
       finalizeRunXP,
       clearCombatState,
       clearCombatPresentation,
     });
+  }
+
+  function endRunAndShowGameOver() {
+    finalizeDefeat();
     deps.actions.transition(ROUTE_SCREENS.GAME_OVER, { immediate: true });
   }
 
   function handleBattleDefeat() {
-    endRunAndShowGameOver();
+    deps.actions.transition(ROUTE_SCREENS.GAME_OVER, {
+      delayMs: resolveGameDelay(BATTLE_END_TRANSITION_DELAY),
+      guard: () => readRunSession().hasActiveRun,
+      onCommit: finalizeDefeat,
+    });
   }
 
   function isLabyrinthRun() {

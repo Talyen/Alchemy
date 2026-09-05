@@ -75,7 +75,7 @@ describe("generateLabyrinthMap", () => {
 });
 
 describe("hex floor layouts", () => {
-  it("generated floor positions branch and merge without dead-end rooms", () => {
+  it("generated floor positions remain connected with a distant terminal boss", () => {
     for (const seed of [1, 8, 15, 22, 29, 36, 43, 50]) {
       const map = generateLabyrinthMap(createSeededRng(seed));
       const positions = floorNodes(map, 1).map((node) => node.gridPosition);
@@ -125,5 +125,37 @@ describe("withClearedLabyrinthNode boss expansion", () => {
     const boss = Object.values(map.nodes).find((node) => node.type === "boss")!;
     const next = expandBeyondBoss(map, boss.id, createSeededRng(9));
     expect(next.floors).toHaveLength(map.floors.length);
+  });
+});
+
+describe("optional Labyrinth chambers", () => {
+  it("advances after an adjacent boss route without clearing all detours", () => {
+    const rng = createSeededRng(42);
+    const original = generateLabyrinthMap(rng);
+    const nodes = floorNodes(original, 1);
+    const entry = nodes[0]!;
+    const boss = nodes.find((node) => node.type === "boss")!;
+    const paths = new Map([[entry.id, [entry.id]]]);
+    const queue = [entry];
+    for (const source of queue) {
+      for (const target of nodes) {
+        if (paths.has(target.id) || !areHexesAdjacent(source.gridPosition, target.gridPosition)) continue;
+        paths.set(target.id, [...paths.get(source.id)!, target.id]);
+        queue.push(target);
+      }
+    }
+    const path = paths.get(boss.id)!;
+    expect(path.length).toBeLessThan(nodes.length);
+    let map = original;
+    for (const id of path) {
+      expect(canEnterLabyrinthNode(map, id)).toBe(true);
+      map = withClearedLabyrinthNode(map, id, rng);
+    }
+    expect(map.currentFloor).toBe(2);
+    for (const node of nodes.filter((node) => !path.includes(node.id))) {
+      expect(map.nodes[node.id]).toEqual(node);
+    }
+    expect(floorNodes(original, 1).every((node) => !node.cleared)).toBe(true);
+    expect(floorNodes(map, 2).filter((node) => node.type === "boss")).toHaveLength(1);
   });
 });

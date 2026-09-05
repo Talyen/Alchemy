@@ -4,7 +4,7 @@ import { CAMPFIRE_HEAL_FRACTION, DEATHS_DOOR_GRACE_TURNS, PERCENT_DENOMINATOR } 
 import type { GearEffectManifest } from "@/lib/gear";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { halveRounded } from "../amount-helpers";
-import type { BattleState, CombatFlags, EnemyMitigation } from "./state-types";
+import type { BattleState, CombatFlags, CombatTextEvent, EnemyMitigation } from "./state-types";
 import { isStunFreezeBuildupBlocked } from "./state-types";
 import { PRESERVED_FLAG_KEYS, PRESERVED_FLAG_VALUES, type PreservedFlagKey } from "../combat-flags";
 
@@ -179,6 +179,7 @@ export function applyPlayerCombatDamage(
   damage: number,
   damageType?: string,
   options?: EnemyTraitIgnoreMitigationOptions,
+  combatTexts?: CombatTextEvent[],
 ): BattleState {
   if (!Number.isFinite(damage) || damage <= 0) return state;
   let reducedDamage = damage;
@@ -215,6 +216,9 @@ export function applyPlayerCombatDamage(
     };
   }
   if (state.deathsDoorActive) {
+    if (state.playerHealth === 1 && reducedDamage > 0) {
+      combatTexts?.push({ target: "player", kind: "notice", stat: "deathsDoor", text: "" });
+    }
     return { ...state, playerHealth: 1 };
   }
   return { ...state, playerHealth: 0, deathsDoorActive: false };

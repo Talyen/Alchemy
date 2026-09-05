@@ -14,13 +14,13 @@ import {
   SHOP_REMOVE_PRICE,
   SLICE_DEATH_DURATION_MS,
   STUN_THRESHOLD_FRACTION,
-  VICTORY_TRANSITION_DELAY,
+  BATTLE_END_TRANSITION_DELAY,
   WISH_OVERLAY_Z_INDEX,
 } from "@/lib/game-constants";
 
 describe("game-constants contracts", () => {
   it("keeps presentation and economy orderings", () => {
-    expect(VICTORY_TRANSITION_DELAY).toBeGreaterThanOrEqual(SLICE_DEATH_DURATION_MS);
+    expect(BATTLE_END_TRANSITION_DELAY).toBeGreaterThanOrEqual(SLICE_DEATH_DURATION_MS);
     expect(SHOP_REMOVE_PRICE).toBeGreaterThan(SHOP_CARD_PRICE);
     expect(GOLD_REWARD_MIN).toBeLessThanOrEqual(GOLD_REWARD_MAX);
     expect(WISH_OVERLAY_Z_INDEX).toBe(90);

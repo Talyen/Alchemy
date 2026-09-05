@@ -111,7 +111,8 @@ export type CombatTextStat =
   | "mana"
   | "gold"
   | "gems"
-  | "dodge";
+  | "dodge"
+  | "deathsDoor";
 
 export interface NumericCombatTextEvent {
   target: CombatTextTarget;
