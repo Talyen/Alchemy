@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
+const SUBPIXEL_GAP_TOLERANCE = 0.5;
+
 export async function assertNoOverflow(page: Page, screenName: string) {
   const layout = await page.evaluate(() => ({
     width: document.documentElement.scrollWidth,
@@ -55,7 +57,7 @@ export async function assertHorizontalNeighborGap(
   }).toPass({ timeout: 5_000 });
 
   const gap = second!.x - (first!.x + first!.width);
-  expect(gap).toBeGreaterThanOrEqual(minGap);
+  expect(gap).toBeGreaterThanOrEqual(minGap - SUBPIXEL_GAP_TOLERANCE);
 }
 
 export async function assertRowAlignment(locators: Locator[], maxDelta = 8) {
