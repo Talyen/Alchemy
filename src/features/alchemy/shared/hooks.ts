@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { MAX_STAGE_SCALE, MIN_STAGE_SCALE, STAGE_HEIGHT } from "@/lib/game-constants";
+import { STAGE_HEIGHT } from "@/lib/game-constants";
+import { DEFAULT_DEVICE_DISPLAY, normalizeDisplayPercent, type DeviceDisplayPreferences } from "@/lib/settings-values";
 import type { AspectRatioOption } from "./types";
 
 const LAYOUT_CONFIG = {
@@ -55,15 +56,6 @@ function getVirtualStageDimensions(resolvedAspect: Exclude<AspectRatioOption, "a
   };
 }
 
-function getStageScale(viewportWidth: number, viewportHeight: number, stageWidth: number, stageHeight: number): number {
-  const availableWidth = Math.max(0, viewportWidth);
-  const availableHeight = Math.max(0, viewportHeight);
-  const viewportAspect = availableWidth / availableHeight;
-  const stageAspect = stageWidth / stageHeight;
-  const rawScale = viewportAspect > stageAspect ? availableHeight / stageHeight : availableWidth / stageWidth;
-  return Math.max(MIN_STAGE_SCALE, Math.min(MAX_STAGE_SCALE, rawScale));
-}
-
 function getAspectModeFromRatio(aspectRatio: number): "standard" | "narrow" | "ultrawide" {
   if (aspectRatio < 1.68) {
     return "narrow";
@@ -84,70 +76,68 @@ function getAspectMode(resolvedAspect: Exclude<AspectRatioOption, "auto">): "sta
   return "standard";
 }
 
-const BYPASS_RESOLUTION_RESULT = {
-  frameStyle: { width: "100%", height: "100%" },
-  stageStyle: { width: "100%", height: "100%", transform: "none", transformOrigin: "top left", left: 0, top: 0 },
-  aspectMode: "standard" as const,
-  stagePixelRatio: 1,
-} as const;
+const MAX_CONTENT_SCALE = 1.75;
+const CONTENT_GROWTH_EXPONENT = 0.8;
 
 export function getVirtualResolutionLayout(
   selectedAspectRatio: AspectRatioOption,
   viewportWidth: number,
   viewportHeight: number,
+  preferences: DeviceDisplayPreferences = DEFAULT_DEVICE_DISPLAY,
 ) {
-  const availableWidth = Math.max(0, viewportWidth);
-  const availableHeight = Math.max(0, viewportHeight);
-
-  if (selectedAspectRatio === "auto") {
-    const viewportAspect = availableHeight > 0 ? availableWidth / availableHeight : 16 / 9;
-    const stageWidth = Math.round(STAGE_HEIGHT * viewportAspect);
-    const stageHeight = STAGE_HEIGHT;
-    const rawScale = availableHeight > 0 ? availableHeight / STAGE_HEIGHT : 1;
-    const scale = Math.max(MIN_STAGE_SCALE, Math.min(MAX_STAGE_SCALE, rawScale));
-
-    const frameWidth = availableWidth;
-    const frameHeight = availableHeight;
-
-    return {
-      frameStyle: { width: `${frameWidth}px`, height: `${frameHeight}px` },
-      stageStyle: {
-        width: `${stageWidth}px`,
-        height: `${stageHeight}px`,
-        transform: `scale(${scale})`,
-        transformOrigin: "top left",
-        left: 0,
-        top: 0,
-      },
-      aspectMode: getAspectModeFromRatio(viewportAspect),
-      stagePixelRatio: LAYOUT_CONFIG.STAGE_PIXEL_RATIO_DEFAULT,
-    };
-  }
-
-  const dims = getVirtualStageDimensions(selectedAspectRatio);
-  const scale = getStageScale(availableWidth, availableHeight, dims.stageWidth, dims.stageHeight);
-  const frameWidth = dims.stageWidth * scale;
-  const frameHeight = dims.stageHeight * scale;
+  const width = Number.isFinite(viewportWidth) ? Math.max(0, viewportWidth) : 0;
+  const height = Number.isFinite(viewportHeight) ? Math.max(0, viewportHeight) : 0;
+  const viewportAspect = width > 0 && height > 0 ? width / height : 16 / 9;
+  const { stageWidth, stageHeight } =
+    selectedAspectRatio === "auto"
+      ? { stageWidth: STAGE_HEIGHT * viewportAspect, stageHeight: STAGE_HEIGHT }
+      : getVirtualStageDimensions(selectedAspectRatio);
+  const stageScale = Math.min(width / stageWidth, height / stageHeight);
+  const automaticScale =
+    stageScale <= 1 ? stageScale : Math.min(MAX_CONTENT_SCALE, stageScale ** CONTENT_GROWTH_EXPONENT);
+  const contentScale = automaticScale * (normalizeDisplayPercent("gameSizePercent", preferences.gameSizePercent) / 100);
+  const stageContentScale = stageScale > 0 ? contentScale / stageScale : 1;
+  const tooltipScale = normalizeDisplayPercent("tooltipSizePercent", preferences.tooltipSizePercent) / 100;
 
   return {
-    frameStyle: { width: `${frameWidth}px`, height: `${frameHeight}px` },
+    frameStyle: {
+      width: `${stageWidth * stageScale}px`,
+      height: `${stageHeight * stageScale}px`,
+      "--content-scale": contentScale,
+    },
     stageStyle: {
-      width: `${dims.stageWidth}px`,
-      height: `${dims.stageHeight}px`,
-      transform: `scale(${scale})`,
+      width: `${stageWidth}px`,
+      height: `${stageHeight}px`,
+      transform: `scale(${stageScale})`,
       transformOrigin: "top left",
       left: 0,
       top: 0,
+      "--content-scale": stageContentScale,
     },
-    aspectMode: getAspectMode(selectedAspectRatio),
+    tooltipStyle: { "--content-scale": tooltipScale } as React.CSSProperties,
+    aspectMode:
+      selectedAspectRatio === "auto" ? getAspectModeFromRatio(viewportAspect) : getAspectMode(selectedAspectRatio),
     stagePixelRatio: LAYOUT_CONFIG.STAGE_PIXEL_RATIO_DEFAULT,
+    stageScale,
+    contentScale,
+    stageContentScale,
+    tooltipScale,
   };
 }
 
-export function useVirtualResolution(selectedAspectRatio: AspectRatioOption, bypassVr = false) {
+export function useVirtualResolution(
+  selectedAspectRatio: AspectRatioOption,
+  bypassVr = false,
+  preferences: DeviceDisplayPreferences = DEFAULT_DEVICE_DISPLAY,
+) {
   const { width, height } = useViewportSize(!bypassVr);
-  if (bypassVr) return BYPASS_RESOLUTION_RESULT;
-  return getVirtualResolutionLayout(selectedAspectRatio, width, height);
+  const layout = getVirtualResolutionLayout(selectedAspectRatio, width, height, preferences);
+  if (!bypassVr) return layout;
+  return {
+    ...layout,
+    frameStyle: { ...layout.frameStyle, width: "100%", height: "100%" },
+    stageStyle: { ...layout.stageStyle, width: "100%", height: "100%", transform: "none" },
+  };
 }
 
 export function useLatestRef<T>(value: T): RefObject<T> {

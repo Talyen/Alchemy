@@ -221,6 +221,19 @@ export async function main() {
   );
   const tooltipFadeMatch = uiMotion.match(/TOOLTIP_FADE_MS[^=]*=\s*MOTION_FADE_MS\b[^\n;]*/);
   assert.ok(tooltipFadeMatch, "TOOLTIP_FADE_MS must alias MOTION_FADE_MS");
+  assert.ok(
+    !uiMotion.includes("TOOLTIP_FADE_OUT_MS"),
+    "TOOLTIP_FADE_OUT_MS alias must stay removed; use TOOLTIP_FADE_MS directly",
+  );
+  const loadingWordJsMatch = uiMotion.match(/LOADING_WORD_FADE_MS[^=]*=\s*(\d+)/);
+  assert.ok(loadingWordJsMatch, "ui-motion.ts must define LOADING_WORD_FADE_MS");
+  const loadingWordCssMatch = componentsCss.match(/loadingWordFade\s+(\d+)ms/);
+  assert.ok(loadingWordCssMatch, "components.css must define loadingWordFade duration");
+  assert.equal(
+    Number(loadingWordJsMatch[1]),
+    Number(loadingWordCssMatch[1]),
+    "LOADING_WORD_FADE_MS must equal loadingWordFade duration",
+  );
 
   const componentsUiConfig = await getConfig("src/components/ui/button.tsx");
   const componentsUiImports = restrictedImports(componentsUiConfig);

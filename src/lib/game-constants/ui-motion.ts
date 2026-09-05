@@ -66,13 +66,10 @@ export const BATTLE_PARTICLE_COUNT = 80;
 export const BATTLE_PARTICLE_INTENSITY_NORMAL = 2.0;
 export const BATTLE_PARTICLE_INTENSITY_BOSS = 2.9;
 export const STAGE_HEIGHT = 1080;
-export const MIN_STAGE_SCALE = 0.3;
-export const MAX_STAGE_SCALE = 2.0;
 
 export const COLLECTION_PAGE_SIZE = 8;
 export const BESTIARY_PAGE_SIZE = 6;
 export const TRINKET_PAGE_SIZE = 8;
-export const SELECTION_GRID_PAGE_SIZE = 8;
 export const BATTLE_ACTOR_TOP = "34%";
 export const HAND_FAN_VERTICAL_STEP_PX = 10;
 export const HAND_FAN_ROTATION_DEGREES = 4.2;

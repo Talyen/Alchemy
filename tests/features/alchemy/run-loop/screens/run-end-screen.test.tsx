@@ -107,28 +107,23 @@ describe("RunEndScreen", () => {
     const firstLabel = keywordDefinitions[keywords[0]!]!.label;
     const grid = screen.getByText(firstLabel).closest(".justify-center");
     expect(grid?.children).toHaveLength(10);
-    expect(grid?.className).toContain("max-w-[73rem]");
+    expect(grid?.className).toContain("max-w-[calc(73*var(--content-rem,1rem))]");
     expect(grid?.firstElementChild?.className).toContain("w-56");
     expect(screen.queryByRole("button", { name: "Next page" })).toBeNull();
   });
 
-  it("pages talent XP beginning with the eleventh type", async () => {
-    const user = userEvent.setup();
-    const keywords = getTalentTreeKeywordIds().slice(0, 11);
-    expect(keywords).toHaveLength(11);
+  it("shows all talent categories within four five-column rows without paging", () => {
+    const keywords = getTalentTreeKeywordIds();
+    expect(keywords.length).toBeGreaterThan(15);
+    expect(keywords.length).toBeLessThanOrEqual(20);
     const runEndTalentXP = Object.fromEntries(keywords.map((kw) => [kw, 1]));
     renderRunEnd({ runEndTalentXP, talentXP: runEndTalentXP });
 
-    const firstTen = keywords.slice(0, 10).map((kw) => keywordDefinitions[kw]!.label);
-    const eleventh = keywordDefinitions[keywords[10]!]!.label;
-    for (const label of firstTen) {
-      expect(screen.getByText(label).isConnected).toBe(true);
+    for (const kw of keywords) {
+      expect(screen.getByText(keywordDefinitions[kw]!.label).isConnected).toBe(true);
     }
-    expect(screen.queryByText(eleventh)).toBeNull();
-
-    await user.click(screen.getByRole("button", { name: "Next page" }));
-    expect(await screen.findByText(eleventh)).toBeTruthy();
-    expect(screen.queryByText(firstTen[0]!)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Next page" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Previous page" })).toBeNull();
   });
 
   it("hides obtained items when the recap is empty", () => {
@@ -143,7 +138,7 @@ describe("RunEndScreen", () => {
     const portraits = screen.getAllByRole("img", { name: "Leather Armor" });
     expect(portraits).toHaveLength(4);
     const sizeWrapper = portraits[0]!.parentElement?.parentElement?.parentElement?.parentElement;
-    expect(sizeWrapper?.className).toContain("w-[clamp(20.16cqh,20.49cqh,30.51cqh)]");
+    expect(sizeWrapper?.className).toContain("w-[calc(13.8308*var(--content-rem,1rem))]");
     expect(sizeWrapper?.className).toContain("[&>*>*]:!w-full");
     expect(screen.queryByRole("button", { name: "Next page" })).toBeNull();
   });

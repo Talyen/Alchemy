@@ -1,22 +1,19 @@
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { PaginationControls } from "./navigation";
-import { FadeSlot } from "./fade-slot";
+import { FadeSlot } from "./use-fade";
 import {
   artTileGridRowsClass,
-  collectionBestiaryGridClass,
-  collectionCardGridClass,
   collectionCardGridTileWidthClass,
   collectionGridBestiaryWidthClass,
   collectionGridMinHeightClass,
   collectionTabMeta,
-  collectionTrinketGridClass,
 } from "../config";
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import type { CollectionTab } from "../types";
 import { TabBar } from "./tab-bar";
 import { CollectionTile } from "./collection-tile";
-import { getCollectionFillerCount, getCollectionPageItems } from "./collection-items";
+import { getCollectionPageItems } from "./collection-items";
 
 export { getCollectionTotalPages } from "./collection-items";
 
@@ -28,6 +25,8 @@ export function CollectionGrid({
   discoveredUniqueIds,
   finishedRunCharacters,
   page,
+  pageSize,
+  columns,
   bondedCompanions,
 }: {
   collectionTab: CollectionTab;
@@ -37,6 +36,8 @@ export function CollectionGrid({
   discoveredUniqueIds: string[];
   finishedRunCharacters: CharacterId[];
   page: number;
+  pageSize: number;
+  columns: number;
   bondedCompanions: Record<string, number>;
 }) {
   const pageItems = useMemo(
@@ -50,6 +51,7 @@ export function CollectionGrid({
         finishedRunCharacters,
         bondedCompanions,
         page,
+        pageSize,
       }),
     [
       collectionTab,
@@ -60,15 +62,10 @@ export function CollectionGrid({
       finishedRunCharacters,
       bondedCompanions,
       page,
+      pageSize,
     ],
   );
 
-  const gridClass =
-    collectionTab === "bestiary"
-      ? collectionBestiaryGridClass
-      : collectionTab === "trinkets" || collectionTab === "uniques"
-        ? collectionTrinketGridClass
-        : collectionCardGridClass;
   const fillerClass =
     collectionTab === "bestiary"
       ? cn(collectionGridBestiaryWidthClass, "aspect-[4/3]")
@@ -76,13 +73,19 @@ export function CollectionGrid({
 
   return (
     <FadeSlot swapKey={`${collectionTab}-${page}`} className={cn("overflow-visible", collectionGridMinHeightClass)}>
-      <div className={cn(gridClass, artTileGridRowsClass)}>
+      <div
+        className={cn("grid w-full gap-x-5", artTileGridRowsClass)}
+        style={{
+          gridTemplateColumns: `repeat(${columns}, minmax(0, calc(${collectionTab === "bestiary" ? 390 : 244.512}px * var(--content-scale, 1))))`,
+          justifyContent: "center",
+        }}
+      >
         {pageItems.map((item) => (
           <div key={`${item.hoverScope}-${item.id}`} className="relative">
             <CollectionTile item={item} />
           </div>
         ))}
-        {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (
+        {Array.from({ length: Math.max(0, pageSize - pageItems.length) }).map((_, index) => (
           <div key={`collection-filler-${index}`} className={fillerClass} />
         ))}
       </div>

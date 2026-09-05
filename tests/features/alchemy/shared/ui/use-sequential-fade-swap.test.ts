@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-sequential-fade-swap";
+import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 

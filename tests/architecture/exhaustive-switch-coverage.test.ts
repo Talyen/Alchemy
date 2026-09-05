@@ -51,6 +51,7 @@ describe("exhaustive switch coverage", () => {
       "removeCard",
       "gainTrinket",
       "gainRandomTrinket",
+      "gainRandomGear",
       "gainGeneratedGear",
       "gainMaterial",
     ] as const;

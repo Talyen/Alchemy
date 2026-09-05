@@ -1,6 +1,6 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FadeSlot } from "@/features/alchemy/shared/ui/fade-slot";
+import { FadeSlot } from "@/features/alchemy/shared/ui/use-fade";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 

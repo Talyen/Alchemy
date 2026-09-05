@@ -1,4 +1,4 @@
-import { TOOLTIP_FADE_OUT_MS } from "./portaled-tooltip";
+import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import { useHoverVisible } from "./use-hover-visible";
 
 export function useTileHoverPopup({
@@ -13,7 +13,7 @@ export function useTileHoverPopup({
   onHoverEnd: () => void;
 }) {
   const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useHoverVisible({
-    holdMs: TOOLTIP_FADE_OUT_MS,
+    holdMs: TOOLTIP_FADE_MS,
     focusWithinGuard: true,
     interactive,
     isHovered,

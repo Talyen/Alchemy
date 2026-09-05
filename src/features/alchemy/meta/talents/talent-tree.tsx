@@ -64,7 +64,7 @@ function TalentCard({
       onFocus={() => onHoverTalent?.(talent)}
       onBlur={() => onHoverTalent?.(null)}
       className={cn(
-        "talent-node relative h-[10.5rem] w-[20.5rem] shrink-0 rounded-lg bg-stone-900",
+        "talent-node relative h-[calc(10.5*var(--content-rem,1rem))] w-[calc(20.5*var(--content-rem,1rem))] shrink-0 rounded-lg bg-stone-900",
         showShine && "talent-card-available",
         !isPlaceholder && cardInteractiveGlowClass,
         !isPlaceholder && cardShineFrameClass,
@@ -95,7 +95,7 @@ function TalentCard({
             </span>
             <span
               className={cn(
-                "max-w-[15rem] truncate text-xl font-bold sm:text-2xl",
+                "max-w-[calc(15*var(--content-rem,1rem))] truncate text-xl font-bold sm:text-2xl",
                 isPlaceholder ? "text-muted-foreground" : def?.colorClass,
               )}
             >

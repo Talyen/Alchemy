@@ -284,7 +284,10 @@ resume path in its existing owner, then cover the changed setup/resume route
 with the dependency-related tests selected by `verify`.
 
 Labyrinth maps persist on `activeRun.labyrinthMap` as hex floors (`floors` +
-`nodes`). Resume still returns to `labyrinth-map`. Historical grid-map recovery
+`nodes`). Run initialization generates the map with the run's seeded world RNG
+in the same command as the starting deck, before opening `labyrinth-map`,
+including after a Wildcard starter draft. Resume preserves the existing map.
+Historical grid-map recovery
 is recorded in [MIGRATION_HISTORY.md](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-14--labyrinth-hex-floors).
 
 ## Change battle playback

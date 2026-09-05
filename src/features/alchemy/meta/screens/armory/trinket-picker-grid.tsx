@@ -19,10 +19,15 @@ export function TrinketPickerGrid({
   onEquip: (trinketId: string) => void;
 }) {
   const pageContext = `trinket:${characterId}`;
-  const { pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(pageContext, trinkets);
+  const { grid, pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(
+    pageContext,
+    trinkets,
+    trinkets.findIndex((item) => item.id === equippedTrinkets[characterId]),
+  );
 
   return (
     <PagedPickerGrid
+      grid={grid}
       testId="armory-trinket-picker"
       swapKey={characterId}
       isEmpty={trinkets.length === 0}

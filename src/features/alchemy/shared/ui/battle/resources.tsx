@@ -1,10 +1,11 @@
-import { Coins, Gem } from "lucide-react";
+import { Gem } from "lucide-react";
 
 import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
 import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass } from "../../config";
 import { Surface } from "../surface";
+import { GoldPill } from "../material-icons";
 import { useChangeToken } from "./use-change-token";
 
 export function PilePanel({
@@ -52,10 +53,7 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
 
   return (
     <div className="flex flex-col items-center gap-2" data-testid="mana-panel" data-mana={mana}>
-      <div className="flex items-center gap-1.5 text-lg font-medium text-yellow-300">
-        <Coins className="h-[2.7cqh] w-[2.7cqh]" />
-        <span>{gold}</span>
-      </div>
+      <GoldPill amount={gold} />
       <div className="flex items-center justify-center gap-1.5">
         {Array.from({ length: displayCount }).map((_, index) => {
           const isFilled = index < mana;
@@ -64,7 +62,7 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
             <Gem
               key={`mana-${index}-${manaToken}-${isFilled}`}
               className={cn(
-                "h-[2.7cqh] w-[2.7cqh] transition-opacity duration-200",
+                "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))] transition-opacity duration-200",
                 isFilled && "mana-gem-active",
                 isFilled && isOverflow && "text-sky-300 drop-shadow-mana-overflow-glow",
                 isFilled && !isOverflow && "text-mana-gem",

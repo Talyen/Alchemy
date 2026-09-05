@@ -126,6 +126,12 @@ function gainRandomMysteryTrinket(
   return { followUp: null };
 }
 
+function gainRandomMysteryGear(context: MysteryEffectContext) {
+  const baseItem = pickRandom(gearBaseItemList, context.rng);
+  if (!baseItem) return { followUp: null };
+  return gainMysteryGeneratedGear(baseItem.id, context);
+}
+
 function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectContext, forceAstral = false) {
   const instance = generateGearInstanceForBaseItem(
     baseItemId,
@@ -175,6 +181,8 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
       return gainMysteryTrinket(effect.trinketId, context);
     case "gainRandomTrinket":
       return gainRandomMysteryTrinket(effect, context);
+    case "gainRandomGear":
+      return gainRandomMysteryGear(context);
     case "gainGeneratedGear":
       return gainMysteryGeneratedGear(effect.baseItemId, context, effect.astral === true);
     case "gainMaterial":

@@ -91,7 +91,7 @@ const HandCardItem = memo(function HandCardItem({
   return (
     <div
       ref={slotRef}
-      className="relative -mx-5 flex justify-center sm:-mx-6"
+      className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-3*var(--content-rem,1rem))] justify-center"
       style={{
         zIndex: isHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,
       }}
@@ -123,7 +123,7 @@ const HandCardItem = memo(function HandCardItem({
           hoverLeaveDelayMs={HAND_HOVER_HANDOFF_MS}
           dragging={isHidden}
           shineColor={getCardKeywordShineColors(card)}
-          wrapperClassName="flex justify-center"
+          wrapperClassName="flex shrink-0 justify-center"
           wrapperDataCardKey={cardKey}
         />
       </CombatantStatusEffectPresentation>
@@ -153,7 +153,12 @@ export function BattleHand({
   const ccKeyword = getActiveCcKeyword(battleState.playerCC);
 
   return (
-    <div className={battleHandContainerClass}>
+    <div
+      className={battleHandContainerClass}
+      style={{
+        paddingBottom: `calc(${12 + Math.max(0, battleState.hand.length - 4) * 12}px * var(--content-scale, 1))`,
+      }}
+    >
       {battleState.hand.map((card, index) => {
         const cardKey = getHandCardKey(card, index);
         return (
@@ -180,10 +185,10 @@ export function BattleHand({
 
 function getRestingHandTransform(offset: number, stagePixelRatio: number) {
   const y = (HAND_REST_DROP_PX + Math.abs(offset) * HAND_FAN_VERTICAL_STEP_PX) * stagePixelRatio;
-  return `translateY(${y}px) rotate(${offset * HAND_FAN_ROTATION_DEGREES}deg)`;
+  return `translateY(calc(${y}px * var(--content-scale, 1))) rotate(${offset * HAND_FAN_ROTATION_DEGREES}deg)`;
 }
 
 function getHoverHandTransform(offset: number, stagePixelRatio: number) {
   const y = (HAND_REST_DROP_PX - HAND_HOVER_LIFT_PX) * stagePixelRatio;
-  return `translateY(${y}px) rotate(${offset * HAND_HOVER_ROTATION_DEGREES}deg)`;
+  return `translateY(calc(${y}px * var(--content-scale, 1))) rotate(${offset * HAND_HOVER_ROTATION_DEGREES}deg)`;
 }

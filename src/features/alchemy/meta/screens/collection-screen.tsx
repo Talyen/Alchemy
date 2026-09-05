@@ -1,3 +1,7 @@
+import { useState } from "react";
+import { anchoredPage, useAdaptiveGrid } from "../../shared/ui/adaptive-grid";
+import { GridMeasurement } from "../../shared/ui/grid-measurement";
+import { getCollectionLibraryLength } from "../../shared/ui/collection-items";
 import { collectionShellWidthClass } from "../../shared/config";
 import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
 import {
@@ -36,10 +40,29 @@ export function CollectionScreen({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
-  const totalPages = getCollectionTotalPages(collectionTab);
-  const activePage = Math.min(Math.max(0, collectionPages[collectionTab] ?? 0), totalPages - 1);
+  const { onContainer, onMeasure, referenceTileWidth, pageSize, columns } = useAdaptiveGrid(
+    collectionTab === "bestiary" ? 390 : 244.512,
+    collectionTab === "bestiary" ? 3 : 4,
+    collectionTab === "bestiary" ? 6 : 8,
+  );
+  const [paging, setPaging] = useState({
+    tab: collectionTab,
+    pageSize: pageSize,
+    page: collectionPages[collectionTab] ?? 0,
+  });
+  let activePage = paging.page;
+  if (paging.tab !== collectionTab || paging.pageSize !== pageSize) {
+    activePage =
+      paging.tab !== collectionTab
+        ? (collectionPages[collectionTab] ?? 0)
+        : anchoredPage(paging.page, paging.pageSize, pageSize, getCollectionLibraryLength(collectionTab));
+    setPaging({ tab: collectionTab, pageSize: pageSize, page: activePage });
+  }
+  const totalPages = getCollectionTotalPages(collectionTab, pageSize);
+  activePage = Math.min(Math.max(0, activePage), totalPages - 1);
 
   function handlePageChange(page: number) {
+    setPaging({ tab: collectionTab, pageSize: pageSize, page });
     onPageChange(collectionTab, page);
   }
 
@@ -50,7 +73,8 @@ export function CollectionScreen({
         <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
         <div className="mt-6 flex flex-col items-center gap-4 overflow-visible">
-          <div className="w-full overflow-visible">
+          <div ref={onContainer} className="relative w-full overflow-visible">
+            <GridMeasurement onMeasure={onMeasure} referenceTileWidth={referenceTileWidth} />
             <CollectionGrid
               collectionTab={collectionTab}
               discoveredCardIds={discoveredCardIds}
@@ -59,6 +83,8 @@ export function CollectionScreen({
               discoveredUniqueIds={discoveredUniqueIds}
               finishedRunCharacters={finishedRunCharacters}
               page={activePage}
+              pageSize={pageSize}
+              columns={columns}
               bondedCompanions={bondedCompanions}
             />
           </div>

@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Dices, MoveRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import type { CorruptionResult } from "@/lib/corruption";
 import {
@@ -39,9 +38,9 @@ function CorruptionDeckPicker({
   return (
     <CardSelectionGrid
       items={corruptionOptions}
+      selectedIndex={corruptionOptions.findIndex((item) => item.index === selectedIndex)}
       page={page}
       onPageChange={onPageChange}
-      pageSize={SELECTION_GRID_PAGE_SIZE}
       emptyMessage="No uncorrupted cards remain."
       paginationReserveSpace
       renderItem={({ card, index }) => (
@@ -66,7 +65,7 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
         <img
           src={corruptionAltar}
           alt="Altar of Corruption"
-          className="block w-full max-w-[46.67cqh] rounded-shell-panel object-contain"
+          className="block w-full max-w-[calc(31.5023*var(--content-rem,1rem))] rounded-shell-panel object-contain"
           loading="eager"
           decoding="sync"
         />

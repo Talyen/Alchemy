@@ -113,7 +113,14 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
   return (
     <StatusChipShell
       ariaLabel={`${definition.label} ${chip.value}`}
-      icon={<Icon className={cn("h-[2.7cqh] w-[2.7cqh]", definition.colorClass)} />}
+      icon={
+        <Icon
+          className={cn(
+            "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))]",
+            definition.colorClass,
+          )}
+        />
+      }
       tooltip={
         <StatusTooltip
           labelNode={<KeywordTag keywordId={kw} className="text-sm sm:text-base" />}
@@ -139,7 +146,14 @@ function AugmentStatusIcon({
   return (
     <StatusChipShell
       ariaLabel={chip.hideValue ? augment.label : `${augment.label} ${chip.value}`}
-      icon={<Icon className={cn("h-[2.7cqh] w-[2.7cqh]", augment.colorClass)} />}
+      icon={
+        <Icon
+          className={cn(
+            "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))]",
+            augment.colorClass,
+          )}
+        />
+      }
       tooltip={
         <StatusTooltip
           labelNode={<TooltipHeader className="mb-0">{augment.label}</TooltipHeader>}
@@ -158,7 +172,9 @@ function HasteStatusIcon({ value }: { value: number }) {
   return (
     <StatusChipShell
       ariaLabel={`Haste ${value}`}
-      icon={<Sparkles className="h-[2.7cqh] w-[2.7cqh] text-fuchsia-300" />}
+      icon={
+        <Sparkles className="h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))] text-fuchsia-300" />
+      }
       tooltip={
         <StatusTooltip
           labelNode={<TooltipHeader className="mb-0">Haste</TooltipHeader>}
@@ -177,7 +193,7 @@ export function DeathsDoorStatusIcon() {
     <StatusChipShell
       ariaLabel="Death's Door"
       buttonClassName="rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60"
-      icon={<Skull className="h-[2.7cqh] w-[2.7cqh]" />}
+      icon={<Skull className="h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))]" />}
       tooltip={
         <>
           <TooltipHeader>Death's Door</TooltipHeader>

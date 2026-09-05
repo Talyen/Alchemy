@@ -2,7 +2,6 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +52,7 @@ export function RemoveCardPanel({
         items={items}
         page={page}
         onPageChange={setPage}
-        pageSize={SELECTION_GRID_PAGE_SIZE}
+        selectedIndex={selectedIndex ?? -1}
         paginationSize="default"
         paginationReserveSpace={!compact}
         renderItem={({ card, index }) => (

@@ -7,7 +7,7 @@ import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
 import { GoldDisplay, ServiceButton, TitledScreenShell } from "../../shared/ui/shared-ui";
-import { FadeSlot } from "../../shared/ui/fade-slot";
+import { FadeSlot } from "../../shared/ui/use-fade";
 
 export function ShopBrowseShell({
   title,

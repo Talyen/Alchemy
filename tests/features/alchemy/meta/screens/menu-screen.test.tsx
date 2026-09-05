@@ -84,7 +84,7 @@ describe("MenuScreen logo", () => {
 
     for (const label of ["Play", "Talents", "Homestead", "Armory", "Collection", "Options"]) {
       const button = screen.getByRole("button", { name: new RegExp(label, "i") });
-      expect(button.parentElement?.className).toContain("w-[19.2rem]");
+      expect(button.parentElement?.className).toContain("w-[calc(19.2*var(--content-rem,1rem))]");
       expect(button.className).toContain("h-16");
     }
   });

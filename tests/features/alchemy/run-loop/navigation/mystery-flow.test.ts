@@ -126,6 +126,19 @@ describe("applyMysteryEffect", () => {
     expect(readActiveRun().runObtainedItems).toEqual([{ kind: "gear", instance: granted[0] }]);
   });
 
+  it("gainRandomGear adds a generated non-unique instance to the armory and records it", () => {
+    setRunProgress({ characterId: "knight" });
+    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, true));
+
+    apply({ kind: "gainRandomGear" }, () => 0.5);
+
+    const granted = readRunSession().mysteryGrantedGearInstances;
+    expect(granted).toHaveLength(1);
+    expect(granted[0]!.definitionId).toMatch(/-(basic|astral)$/);
+    expect(readGearState().inventories.knight.some((item) => item.instanceId === granted[0]!.instanceId)).toBe(true);
+    expect(readActiveRun().runObtainedItems).toEqual([{ kind: "gear", instance: granted[0] }]);
+  });
+
   it("gainMaterial awards the material during the run", () => {
     apply({ kind: "gainMaterial", material: "wood", amount: 1 });
     expect(readRunProfile().materialInventory.wood).toBeGreaterThanOrEqual(1);

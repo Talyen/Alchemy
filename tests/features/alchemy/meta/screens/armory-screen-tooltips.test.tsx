@@ -28,8 +28,8 @@ function expectNoCategoryChip(panel: HTMLElement) {
 
 function expectGridTileWidth(element: HTMLElement) {
   expect(element.className).toMatch(/\bw-full\b/);
-  expect(element.className).toMatch(/max-w-\[clamp/);
-  expect(element.className).not.toMatch(/(?:^|\s)w-\[clamp/);
+  expect(element.className).toMatch(/max-w-\[calc/);
+  expect(element.className).not.toMatch(/(?:^|\s)w-\[calc/);
 }
 
 describe("ArmoryScreen tooltip integration", () => {

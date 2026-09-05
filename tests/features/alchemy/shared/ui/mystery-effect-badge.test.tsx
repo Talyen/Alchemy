@@ -121,6 +121,14 @@ describe("MysteryEffectBadge", () => {
     expect(title.classList.contains("boss-title-shine")).toBe(true);
   });
 
+  it("describes random gear as an Armory reward", () => {
+    render(
+      <MysteryEffectBadge effect={{ kind: "gainRandomGear" }} findCard={undefined} findTrinket={undefined} tooltip />,
+    );
+
+    expect(screen.getByText("Add random Gear to your Armory")).toBeTruthy();
+  });
+
   it("renders addCard without shine", () => {
     const { container } = render(
       <MysteryEffectBadge

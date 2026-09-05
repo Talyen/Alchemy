@@ -62,7 +62,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
           shimmerRounded="rounded-shell-hero"
           className={cn(
             cardSurfaceClass,
-            "aspect-[3/4] w-[clamp(13cqh,15.2cqh,19.5cqh)] max-w-44 border border-border/80 shadow-md",
+            "aspect-[3/4] w-[calc(10.26*var(--content-rem,1rem))] max-w-44 border border-border/80 shadow-md",
             cardInteractiveGlowClass,
           )}
         >

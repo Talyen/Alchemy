@@ -19,7 +19,7 @@ import {
   trinketLibrary,
   trinketById,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-import { FadeSlot } from "../../shared/ui/fade-slot";
+import { FadeSlot } from "../../shared/ui/use-fade";
 import { PageLayout } from "../../shared/ui/shared-ui";
 import { renderUnlockMessage } from "../../shared/ui/unlock-text";
 import {
@@ -150,7 +150,7 @@ export function ArmoryScreen({
       <div
         data-testid="armory-screen"
         className={cn(
-          "my-auto flex w-full max-w-[96rem] flex-1 flex-col pb-1",
+          "my-auto flex w-full max-w-[1536px] flex-1 flex-col pb-1",
           screenShellPaddingClass,
           salvageMode && "armory-salvage-cursor",
         )}

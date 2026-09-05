@@ -10,6 +10,7 @@ const POSITIVE_MYSTERY_EFFECT_KINDS = new Set<MysteryEffect["kind"]>([
   "chooseCard",
   "gainTrinket",
   "gainRandomTrinket",
+  "gainRandomGear",
   "gainGeneratedGear",
   "healHealth",
   "gainGold",
@@ -66,7 +67,7 @@ export function getPlasmaKeywordsForMysteryReward({
       if (trinketId) {
         for (const kw of getTrinketKeywords(trinketId)) keywords.add(kw);
       }
-    } else if (effect.kind === "gainGeneratedGear") {
+    } else if (effect.kind === "gainRandomGear" || effect.kind === "gainGeneratedGear") {
       const gear = grantedGearInstances[generatedGearCursor++];
       if (gear) {
         for (const kw of getPlasmaKeywordsForGear(gear)) keywords.add(kw);

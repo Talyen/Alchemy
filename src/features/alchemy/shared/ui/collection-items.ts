@@ -49,7 +49,7 @@ function getCollectionPageSize(tab: CollectionTab): number {
   return COLLECTION_PAGE_SIZE;
 }
 
-function getCollectionLibraryLength(collectionTab: CollectionTab): number {
+export function getCollectionLibraryLength(collectionTab: CollectionTab): number {
   switch (collectionTab) {
     case "heroes":
       return heroRoster.length;
@@ -64,8 +64,8 @@ function getCollectionLibraryLength(collectionTab: CollectionTab): number {
   }
 }
 
-export function getCollectionTotalPages(collectionTab: CollectionTab) {
-  return Math.max(1, Math.ceil(getCollectionLibraryLength(collectionTab) / getCollectionPageSize(collectionTab)));
+export function getCollectionTotalPages(collectionTab: CollectionTab, pageSize = getCollectionPageSize(collectionTab)) {
+  return Math.max(1, Math.ceil(getCollectionLibraryLength(collectionTab) / pageSize));
 }
 
 export function getCollectionPageItems({
@@ -77,6 +77,7 @@ export function getCollectionPageItems({
   finishedRunCharacters = [],
   bondedCompanions = {},
   page,
+  pageSize = getCollectionPageSize(collectionTab),
 }: {
   collectionTab: CollectionTab;
   discoveredCardIds: string[];
@@ -86,9 +87,9 @@ export function getCollectionPageItems({
   finishedRunCharacters?: readonly CharacterId[];
   bondedCompanions?: Record<string, number>;
   page: number;
+  pageSize?: number;
 }) {
-  const pageSize = getCollectionPageSize(collectionTab);
-  const totalPages = getCollectionTotalPages(collectionTab);
+  const totalPages = getCollectionTotalPages(collectionTab, pageSize);
   const safePage = Math.min(Math.max(0, page), totalPages - 1);
   const start = safePage * pageSize;
   if (collectionTab === "heroes") {

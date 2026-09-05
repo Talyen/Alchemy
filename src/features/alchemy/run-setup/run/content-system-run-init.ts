@@ -5,6 +5,7 @@ import {
   setStarterDraftChoices,
   setDestinationOfferState,
   setRewardState,
+  setLabyrinthMap,
   createDraftRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
@@ -16,6 +17,7 @@ import { createStarterDraftChoices } from "./starter-draft";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
+import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { applyRunStartToDraft, createDraftRunStartSnapshot } from "./run-start-command";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
@@ -122,6 +124,7 @@ export function createContentSystemRunInit(deps: ContentSystemNavigationDeps) {
         const snapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.LABYRINTH);
         shouldPlayGold = isFreshStart && snapshot.startGoldGrant > 0;
         applyRunStartToDraft(draft, snapshot, { discoverDeck: true });
+        setLabyrinthMap(draft, generateLabyrinthMap(createDraftRunRandomSource(draft, "world")));
         setStarterDraftChoices(draft, null);
       },
       {

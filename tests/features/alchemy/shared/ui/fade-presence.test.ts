@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fadePhaseClass } from "@/features/alchemy/shared/ui/fade-presence";
+import { fadePhaseClass } from "@/features/alchemy/shared/ui/use-fade";
 
 describe("fadePhaseClass", () => {
   it("maps enter and exit to screen fade classes", () => {

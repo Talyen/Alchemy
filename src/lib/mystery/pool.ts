@@ -6,9 +6,10 @@ import { resolveMysteryEventTrinkets } from "./resolve-trinkets";
 import type { MysteryEffect, MysteryEvent } from "./types";
 
 const xp = (keyword: KeywordId, amount = 8): MysteryEffect => ({ kind: "gainXP", keyword, amount });
-const mat = (material: MaterialId, amount: number): MysteryEffect => ({ kind: "gainMaterial", material, amount });
-const gold = (amount: number): MysteryEffect => ({ kind: "gainGold", amount });
+const mat = (material: MaterialId, amount = 3): MysteryEffect => ({ kind: "gainMaterial", material, amount });
+const gold = (amount = 20): MysteryEffect => ({ kind: "gainGold", amount });
 const trinket = (trinketId: string): MysteryEffect => ({ kind: "gainTrinket", trinketId });
+const randomGear = (): MysteryEffect => ({ kind: "gainRandomGear" });
 const gear = (baseItemId: string): MysteryEffect => ({ kind: "gainGeneratedGear", baseItemId });
 const card = (cardId: string): MysteryEffect => ({ kind: "addCard", cardId });
 
@@ -33,7 +34,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Mana Berries",
     "You stumble upon a lush field of glowing Mana Berries. Crystal has formed along the stems, and a sapphire ring lies half-buried in the tangle, pulsing with the same blue light.",
     [
-      ["Harvest Berries", [gear("sapphire-ring"), mat("herbs", 2)]],
+      ["Harvest Berries", [xp("mana"), gear("sapphire-ring"), mat("herbs")]],
       ["Gather Crystals", [xp("mana"), card("mana-berries"), mat("gems", 3)]],
     ],
   ),
@@ -42,8 +43,8 @@ export const mysteryPool: MysteryEvent[] = [
     "Enchanted Spring",
     "A pool of iridescent water steams gently in the cool air. Moss carpets the bank, and a charm of icy crystal rests just below the surface.",
     [
-      ["Gather the Moss", [xp("nature"), trinket("groves-favor"), mat("herbs", 2)]],
-      ["Take the Charm", [trinket("icy-heart"), mat("gems", 3)]],
+      ["Gather the Moss", [xp("nature"), trinket("groves-favor"), mat("herbs")]],
+      ["Take the Charm", [xp("nature"), trinket("icy-heart"), mat("gems")]],
     ],
   ),
   ev(
@@ -51,7 +52,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Fungal Grotto",
     "Bioluminescent mushrooms pulse in the dark, their spores hanging thick in the air. Crystals glitter on the cave walls, and an emerald ring sits among the caps.",
     [
-      ["Harvest Mushrooms", [gear("emerald-ring"), mat("herbs", 4)]],
+      ["Harvest Mushrooms", [xp("nature"), trinket("plague-doctors-mask"), mat("herbs")]],
       ["Collect Crystals", [xp("mana"), trinket("frozen-pocketwatch"), mat("gems", 3)]],
     ],
   ),
@@ -61,7 +62,7 @@ export const mysteryPool: MysteryEvent[] = [
     "An immense oak with a weathered face carved into its bark speaks in rustling leaves. Fallen branches litter the ground, and herbs crowd the roots.",
     [
       ["Collect Branches", [xp("nature"), gear("staff"), mat("wood", 3)]],
-      ["Forage Herbs", [xp("nature"), gear("emerald-amulet"), mat("herbs", 2)]],
+      ["Forage Herbs", [xp("nature"), gear("emerald-amulet"), mat("herbs")]],
     ],
   ),
   ev(
@@ -69,7 +70,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Fairy Ring",
     "A circle of glowing mushrooms hums with fey energy in a moonlit clearing. Gold coins and a lucky clover rest in the grass as if left for you.",
     [
-      ["Take the Gold", [trinket("lucky-clover"), gold(25)]],
+      ["Take the Gold", [trinket("lucky-clover"), gold()]],
       ["Pick Mushrooms", [trinket("parasitic-bloom"), mat("herbs", 3)]],
     ],
   ),
@@ -79,7 +80,7 @@ export const mysteryPool: MysteryEvent[] = [
     "A weathered stone altar stands beneath a shaft of light piercing the canopy. Gold fills a rusted offering bowl, and a topaz relic set with crystal rests beside it.",
     [
       ["Take the Offering", [xp("holy"), gear("topaz-ring"), gold(20)]],
-      ["Claim the Relic", [gear("topaz-amulet"), mat("gems", 3)]],
+      ["Claim the Relic", [xp("holy"), gear("topaz-amulet"), mat("gems")]],
     ],
   ),
   ev(
@@ -88,15 +89,15 @@ export const mysteryPool: MysteryEvent[] = [
     "A leather-wrapped bundle tucked between exposed roots catches your eye. Inside wait a coinpurse and a blade, hidden here for a long time.",
     [
       ["Take the Coinpurse", [trinket("merchants-favor"), gold(20), mat("food", 3)]],
-      ["Claim the Blade", [gear("dagger"), mat("food", 3)]],
+      ["Claim the Blade", [xp("bleed"), gear("dagger"), mat("iron")]],
     ],
   ),
   ev(
     "overgrown-temple",
     "Overgrown Temple",
-    "Vines carpet ancient mosaic tiles. A faint glow pulses from a cracked sarcophagus in the crypt beyond, hinting at gold and preserved treasures.",
+    "Vines carpet ancient mosaic tiles. A faint glow pulses from a cracked, iron-banded sarcophagus in the crypt beyond, hinting at gold, iron fittings, and preserved treasures.",
     [
-      ["Search the Crypt", [{ kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }, gold(20)]],
+      ["Search the Crypt", [randomGear(), gold(), mat("iron")]],
       ["Take a Tile", [xp("nature"), trinket("vanguards-crest"), mat("iron", 3)]],
     ],
   ),
@@ -123,7 +124,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Crystal Geode",
     "A massive amethyst geode splits the cave floor, gems crowding its hollow. A sapphire ring has formed among the crystal, and the stone shell has broken open beside it.",
     [
-      ["Collect Gems", [gear("sapphire-ring"), mat("gems", 3)]],
+      ["Collect Gems", [xp("mana"), gear("sapphire-ring"), mat("gems")]],
       ["Take the Shell", [xp("mana"), gear("sapphire-amulet"), mat("iron", 3)]],
     ],
   ),
@@ -132,7 +133,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Meteorite Crash",
     "A smoldering crater scars the forest floor. A metallic meteorite from beyond the sky sits at its center, iron fragments in the stone where the pit was torn open.",
     [
-      ["Take a Fragment", [trinket("meteorite"), mat("iron", 3)]],
+      ["Take a Fragment", [xp("burn"), trinket("meteorite"), mat("iron")]],
       ["Search the Crater", [xp("burn"), gear("ruby-ring"), mat("iron", 3)]],
     ],
   ),
@@ -142,7 +143,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Scattered bones and a bone charm lie beside a massive, ancient skeleton. Iron scraps rest among the remains, and gold coins spill around a shield the beast still guards.",
     [
       ["Collect the Bones", [trinket("bone-charm"), mat("iron", 3)]],
-      ["Claim the Shield", [gear("kite-shield"), gold(30)]],
+      ["Claim the Shield", [gear("kite-shield"), gold()]],
     ],
   ),
   ev(
@@ -151,7 +152,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Sunlight breaks through the canopy in golden rays, falling on wild blooms and herbs. An emerald ring hangs in the roots of a fallen wooden bough.",
     [
       ["Pick the Blooms", [xp("nature"), gear("emerald-amulet"), mat("herbs", 3)]],
-      ["Take the Ring", [gear("emerald-ring"), mat("wood", 3)]],
+      ["Take the Ring", [xp("nature"), gear("emerald-ring"), mat("wood")]],
     ],
   ),
   ev(
@@ -159,8 +160,8 @@ export const mysteryPool: MysteryEvent[] = [
     "Mountain Pass",
     "A narrow pass winds through jagged peaks. Iron and a thunderstone glint in the cliffside, and alpine herbs cling to the rocks where the wind howls.",
     [
-      ["Mine the Cliffside", [trinket("thunderstone"), mat("iron", 4)]],
-      ["Gather Herbs", [xp("nature"), card("fox-companion"), mat("herbs", 2)]],
+      ["Mine the Cliffside", [xp("stun"), trinket("thunderstone"), mat("iron")]],
+      ["Gather Herbs", [xp("nature"), card("fox-companion"), mat("herbs")]],
     ],
   ),
   ev(
@@ -168,8 +169,8 @@ export const mysteryPool: MysteryEvent[] = [
     "Murky Pond",
     "A still pond reflects the gnarled trees surrounding it. Fish drift in the murky depths, and medicinal reeds crowd the bank as bubbles rise from below.",
     [
-      ["Catch Fish", [xp("nature"), card("lizard-scout-companion"), mat("food", 6)]],
-      ["Pull the Reeds", [xp("nature"), card("will-o-wisp-companion"), mat("herbs", 4)]],
+      ["Catch Fish", [xp("nature"), card("lizard-scout-companion"), mat("food")]],
+      ["Pull the Reeds", [xp("nature"), card("will-o-wisp-companion"), mat("herbs")]],
     ],
   ),
   ev(
@@ -186,7 +187,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Medicinal Herb Garden",
     "Cultivated beds have run wild as medicinal herbs grow through cracked paving. A mortar and pestle sit beside a sheaf of notes, rich with scent and curative promise.",
     [
-      ["Harvest Remedies", [trinket("mortar-and-pestle"), mat("herbs", 5)]],
+      ["Harvest Remedies", [trinket("mortar-and-pestle"), mat("herbs")]],
       ["Take the Notes", [xp("nature"), trinket("tattered-pages")]],
     ],
   ),
@@ -195,7 +196,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Crystal Garden",
     "Faceted crystalline blooms catch stray light, and chimes hang among the shards. A sapphire amulet rests in the bed, each shard thrumming with latent power.",
     [
-      ["Harvest Shards", [gear("sapphire-amulet"), mat("gems", 4)]],
+      ["Harvest Shards", [gear("sapphire-amulet"), mat("gems")]],
       ["Take the Chimes", [xp("mana"), trinket("resonant-chimes")]],
     ],
   ),
@@ -214,7 +215,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Incense smoke coils from a hanging brass censer at a fork in the path. Gold coins lie at its base, and the air tastes of sanctified ash and old vows.",
     [
       ["Gather Incense", [xp("holy"), gear("mace"), mat("herbs", 3)]],
-      ["Claim the Censer", [trinket("brass-censer"), gold(20)]],
+      ["Claim the Censer", [xp("holy"), trinket("brass-censer"), gold()]],
     ],
   ),
   ev(

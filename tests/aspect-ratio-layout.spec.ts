@@ -99,7 +99,7 @@ function isIdentityTransform(transform: string): boolean {
 }
 
 test.describe("Ultra HD 3840x2160 (4K) additional checks", slow, () => {
-  test("stage uniformly scales fixed-size and container-relative UI", async ({ page }) => {
+  test("stage fills 4K while content grows more slowly", async ({ page }) => {
     await setAspectRatio(page, "16:9");
     await page.setViewportSize({ width: 3840, height: 2160 });
     await page.goto("/");
@@ -124,7 +124,7 @@ test.describe("Ultra HD 3840x2160 (4K) additional checks", slow, () => {
     expect(fixedUiMetrics.rootFontSize).toBe(16);
 
     expect(fixedUiMetrics.buttonWidth).toBeCloseTo(
-      19.2 * fixedUiMetrics.rootFontSize * fixedUiMetrics.stageTransformScale,
+      19.2 * fixedUiMetrics.rootFontSize * Math.pow(fixedUiMetrics.stageTransformScale, 0.8),
       0,
     );
     await assertStageFitsViewport(page);

@@ -1,4 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
+import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Screen } from "@/lib/routing";
 import {
@@ -138,11 +140,17 @@ function AppMainContent({
   const { isAutoplayEnabled, toggleAutoplayEnabled, boonInspectOpen, toggleBoonInspect } = run.routeCommands.battle;
   const runBoons = useActiveRunBoons();
   const hasInspectBoons = uniqueRunBoons(runBoons).length > 0;
+  const { ref: artworkRef, pending: artworkPending } = useArtworkReady(renderedScreen);
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
   const content = saveBlockedByNewerVersion ? (
     <UnsupportedSaveOverlay onDeleteSaveAndContinue={handleDeleteUnsupportedSave} deleting={deletingUnsupportedSave} />
   ) : (
-    <div key={renderedScreen} className={cn(pagePhaseClass, "h-full w-full overflow-hidden")}>
+    <div
+      ref={artworkRef}
+      data-artwork-pending={artworkPending}
+      key={renderedScreen}
+      className={cn(pagePhaseClass, "h-full w-full overflow-hidden")}
+    >
       <CardDescriptionProvider cardDescriptionContext={cardDescriptionContext}>
         <AppScreenChromeProvider
           aspectMode={aspectMode}
@@ -215,15 +223,18 @@ function AppMainContent({
   );
 }
 
-function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
+function AppInner({
+  bootstrapResult,
+  displayLayout,
+}: {
+  bootstrapResult: SaveLoadState;
+  displayLayout: ReturnType<typeof useVirtualResolution>;
+}) {
   const { status: saveLoadStatus } = bootstrapResult;
 
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
-  const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(
-    settings.selectedAspectRatio,
-    false,
-  );
+  const { frameStyle, stageStyle, tooltipStyle, aspectMode, stagePixelRatio } = displayLayout;
   useAppDisplayEffects({
     displayMode: settings.displayMode,
     brightness: settings.brightness,
@@ -273,6 +284,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
           <div
             ref={(el) => setTooltipRoot(el)}
             id="tooltip-root"
+            style={tooltipStyle}
             className={cn("pointer-events-none fixed inset-0 z-[130]", tooltipBlocked && "tooltips-disabled")}
           />
         </div>
@@ -282,6 +294,16 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 }
 
 export default function App() {
+  const settings = useAppSettings();
+  const displayPreferences = useDeviceDisplayStore();
+  const displayLayout = useVirtualResolution(settings.selectedAspectRatio, false, displayPreferences);
+  const { contentScale } = displayLayout;
+  useLayoutEffect(() => {
+    document.documentElement.style.setProperty("--content-scale", String(contentScale));
+    return () => {
+      document.documentElement.style.removeProperty("--content-scale");
+    };
+  }, [contentScale]);
   const bootstrapResult = useAlchemyBootstrap();
 
   const { ready: initialLoadReady, progress: startupProgress } = useInitialLoadReady({
@@ -296,5 +318,5 @@ export default function App() {
     return <StartupLoadingScreen progress={startupProgress} />;
   }
 
-  return <AppInner bootstrapResult={bootstrapResult} />;
+  return <AppInner bootstrapResult={bootstrapResult} displayLayout={displayLayout} />;
 }

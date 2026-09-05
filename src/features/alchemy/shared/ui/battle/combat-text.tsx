@@ -107,8 +107,8 @@ function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
   const icon = getCombatTextIcon(entry);
   const colorClass = getCombatTextColorClass(entry);
 
-  const fontSize = `${FCT_BASE_SIZE_CQH}cqh`;
-  const iconSize = `${FCT_BASE_SIZE_CQH * 0.94}cqh`;
+  const fontSize = `calc(${FCT_BASE_SIZE_CQH * 10.8}px * var(--content-scale, 1))`;
+  const iconSize = `calc(${FCT_BASE_SIZE_CQH * 0.94 * 10.8}px * var(--content-scale, 1))`;
 
   return (
     <div className="absolute left-1/2" style={{ top: `${entry.lane * 56}px`, transform: "translate3d(-50%, 0, 0)" }}>

@@ -51,9 +51,10 @@ export function inspectorPlacement(
   y: number,
   hexWidth: number,
   mapWidth: number,
+  contentScale = 1,
 ): { left: number; top: number; side: "left" | "right"; width: number } {
-  const gap = 12;
-  const width = Math.min(LABYRINTH_MAP_UI.inspectorWidthPx, Math.max(0, mapWidth - gap * 2));
+  const gap = 12 * contentScale;
+  const width = Math.min(LABYRINTH_MAP_UI.inspectorWidthPx * contentScale, Math.max(0, mapWidth - gap * 2));
   const right = x + hexWidth / 2 + gap;
   if (right + width <= mapWidth) {
     return { left: right, top: y, side: "right", width };

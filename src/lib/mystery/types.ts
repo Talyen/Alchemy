@@ -12,6 +12,7 @@ export type MysteryEffect =
   | { kind: "removeCard" }
   | { kind: "gainTrinket"; trinketId: string }
   | { kind: "gainRandomTrinket"; fromIds?: string[] }
+  | { kind: "gainRandomGear" }
   | { kind: "gainGeneratedGear"; baseItemId: string; astral?: true }
   | { kind: "gainMaterial"; material: MaterialId; amount: number };
 

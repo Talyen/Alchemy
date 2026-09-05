@@ -1,3 +1,4 @@
+import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
 import type { ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { isDesktop } from "@/lib/platform";
@@ -31,6 +32,7 @@ function OptionsScreenRoute({
     })),
   );
   const actions = useSettingsActions();
+  const sizing = useDeviceDisplayStore();
 
   return (
     <OptionsScreen
@@ -48,6 +50,12 @@ function OptionsScreenRoute({
         onBackgroundParticlesIntensityChange: actions.setBackgroundParticlesIntensity,
         backgroundGlowIntensity: settings.backgroundGlowIntensity,
         onBackgroundGlowIntensityChange: actions.setBackgroundGlowIntensity,
+      }}
+      interface={{
+        gameSizePercent: sizing.gameSizePercent,
+        tooltipSizePercent: sizing.tooltipSizePercent,
+        onGameSizeChange: sizing.setGameSizePercent,
+        onTooltipSizeChange: sizing.setTooltipSizePercent,
       }}
       audio={{
         masterVolume: settings.masterVolume,
@@ -70,7 +78,10 @@ function OptionsScreenRoute({
         onOpenClearSaveConfirm: () => actions.setShowClearSaveConfirm(true),
         onCloseClearSaveConfirm: () => actions.setShowClearSaveConfirm(false),
         onConfirmClearSave: onClearSaveData,
-        onResetOptions: actions.resetToDefaults,
+        onResetOptions: () => {
+          actions.resetToDefaults();
+          sizing.resetSizes();
+        },
       }}
       dev={{ onUnlockAll: onUnlockAllDevMode }}
     />

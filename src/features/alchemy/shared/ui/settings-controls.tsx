@@ -80,12 +80,14 @@ export function SettingsSlider({
   onChange,
   min = 0,
   max = 100,
+  step = 1,
 }: {
   label: string;
   value: number;
   onChange: (value: number) => void;
   min?: number;
   max?: number;
+  step?: number;
 }) {
   return (
     <div className={settingsPanelShellClass}>
@@ -97,6 +99,7 @@ export function SettingsSlider({
         type="range"
         min={min}
         max={max}
+        step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
         aria-label={label}

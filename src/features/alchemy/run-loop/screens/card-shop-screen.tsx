@@ -8,7 +8,7 @@ import { RemoveCardPanel } from "../../shared/ui/remove-card-panel";
 import { ScreenDescription, ServiceButton } from "../../shared/ui/shared-ui";
 import { shopItemSlotKey, shopOfferingsSwapKey } from "../shop/shop-slot-keys";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
-import { FadeSlot } from "../../shared/ui/fade-slot";
+import { FadeSlot } from "../../shared/ui/use-fade";
 
 export function CardShopScreen({
   gold,

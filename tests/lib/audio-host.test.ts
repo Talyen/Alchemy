@@ -31,6 +31,18 @@ describe("isNonPlayerAudioHost", () => {
     expect(isNonPlayerAudioHost()).toBe(false);
   });
 
+  it("treats headless Chromium as a non-player host", () => {
+    stubWindowSize({ innerWidth: 1280, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
+    vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 HeadlessChrome/152.0.0.0" });
+    expect(isNonPlayerAudioHost()).toBe(true);
+  });
+
+  it("treats WebDriver browsers as non-player hosts", () => {
+    stubWindowSize({ innerWidth: 1280, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
+    vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Chrome/120.0.0.0", webdriver: true });
+    expect(isNonPlayerAudioHost()).toBe(true);
+  });
+
   it("treats Electron without alchemyDesktop as a non-player host", () => {
     stubWindowSize({ innerWidth: 1280, innerHeight: 720, outerWidth: 1280, outerHeight: 720 });
     vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Electron/28.0.0" });

@@ -6,7 +6,7 @@ import { battleTrinketInspectRowMaxWidthClass } from "@/features/alchemy/shared/
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
-import { FadeSlot } from "../../../shared/ui/fade-slot";
+import { FadeSlot } from "../../../shared/ui/use-fade";
 import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { PaginationControls, ScreenHeader } from "../../../shared/ui/shared-ui";
 import { TrinketTile } from "../../../shared/ui/collection-art-tiles";
@@ -62,7 +62,7 @@ export function BattleBoonInspectOverlay({
         className="alchemy-shell relative w-fit max-w-full rounded-shell-screen border border-border/80 px-8 py-8"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="grid w-full grid-cols-[2.5rem_1fr_2.5rem] items-start">
+        <div className="grid w-full grid-cols-[calc(2.5*var(--content-rem,1rem))_1fr_calc(2.5*var(--content-rem,1rem))] items-start">
           <span />
           <ScreenHeader title="Boons" />
           <Button

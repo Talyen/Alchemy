@@ -2,6 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { CurrencyAmount, GoldCost, GoldDisplay } from "@/features/alchemy/shared/ui/display-elements";
+import { resourceGold } from "@/lib/game-data";
 
 describe("display elements", () => {
   afterEach(cleanup);
@@ -18,13 +19,13 @@ describe("display elements", () => {
     expect(container.firstChild).toBeTruthy();
     expect(screen.getByText("75")).toBeTruthy();
     expect((container.firstChild as HTMLElement).className).toContain("text-yellow-300");
+    expect(screen.getByRole("img", { name: "Gold" }).getAttribute("src")).toBe(resourceGold);
   });
 
-  it("renders GoldDisplay with Gold suffix and large icon", () => {
-    const { container } = render(<GoldDisplay gold={250} />);
-    expect(screen.getByText("250 Gold")).toBeTruthy();
-    const svg = container.querySelector("svg");
-    expect(svg?.getAttribute("class")).toContain("h-7");
-    expect(svg?.getAttribute("class")).toContain("w-7");
+  it("renders GoldDisplay with the Homestead wallet label and artwork", () => {
+    render(<GoldDisplay gold={250} />);
+    expect(screen.getByText("Gold")).toBeTruthy();
+    expect(screen.getByText("250")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Gold" }).getAttribute("src")).toBe(resourceGold);
   });
 });

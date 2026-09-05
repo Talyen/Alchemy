@@ -50,7 +50,7 @@ export function ConfirmationDialog({
       className="motion-overlay flex items-center justify-center px-6"
     >
       <div
-        className="motion-panel alchemy-shell w-full max-w-[49.78cqh] rounded-shell-dialog border border-border/80 px-7 py-7 text-center"
+        className="motion-panel alchemy-shell w-full max-w-[calc(33.6015*var(--content-rem,1rem))] rounded-shell-dialog border border-border/80 px-7 py-7 text-center"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-200">

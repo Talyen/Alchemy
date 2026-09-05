@@ -3,6 +3,8 @@ import { isDesktopApiAvailable } from "./desktop-api";
 export function isNonPlayerAudioHost(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;
 
+  if (navigator.webdriver || navigator.userAgent.includes("HeadlessChrome")) return true;
+
   const innerW = window.innerWidth;
   const innerH = window.innerHeight;
   const outerW = window.outerWidth;

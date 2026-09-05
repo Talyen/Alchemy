@@ -7,7 +7,7 @@ import {
   settingsPanelShellClass,
 } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
-import { SETTINGS_RANGES } from "@/lib/settings-values";
+import { DEVICE_DISPLAY_RANGES, SETTINGS_RANGES } from "@/lib/settings-values";
 import { AspectRatioSelect, DisplayModeSelect, SettingsSlider, SettingsToggle } from "../../shared/ui/shared-ui";
 import type { AspectRatioOption, DisplayMode } from "../../shared/types";
 
@@ -23,6 +23,13 @@ export interface DisplayOptionsProps {
   onBackgroundParticlesIntensityChange: (value: number) => void;
   backgroundGlowIntensity: number;
   onBackgroundGlowIntensityChange: (value: number) => void;
+}
+
+export interface InterfaceOptionsProps {
+  gameSizePercent: number;
+  tooltipSizePercent: number;
+  onGameSizeChange: (value: number) => void;
+  onTooltipSizeChange: (value: number) => void;
 }
 
 export interface AudioOptionsProps {
@@ -93,6 +100,25 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
         onChange={display.onBackgroundGlowIntensityChange}
         min={SETTINGS_RANGES.specialEffects.min}
         max={SETTINGS_RANGES.specialEffects.max}
+      />
+    </div>
+  );
+}
+
+export function InterfaceOptionsPanel({ interfaceOptions }: { interfaceOptions: InterfaceOptionsProps }) {
+  return (
+    <div className="space-y-4">
+      <SettingsSlider
+        label="Game Size"
+        value={interfaceOptions.gameSizePercent}
+        onChange={interfaceOptions.onGameSizeChange}
+        {...DEVICE_DISPLAY_RANGES.gameSizePercent}
+      />
+      <SettingsSlider
+        label="Tooltip Size"
+        value={interfaceOptions.tooltipSizePercent}
+        onChange={interfaceOptions.onTooltipSizeChange}
+        {...DEVICE_DISPLAY_RANGES.tooltipSizePercent}
       />
     </div>
   );

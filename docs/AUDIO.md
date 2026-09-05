@@ -17,7 +17,7 @@ optimization remain in [WORKFLOWS-ASSETS.md](./WORKFLOWS-ASSETS.md).
 ## Runtime contract
 
 - Critical UI sounds load before the startup reveal. Battle initialization prioritizes the visible hand and current enemy sounds; the remaining manifest warms during input-idle work.
-- Only the active audible host plays sound. Foreign Electron hosts and undisplayed windows remain silent.
+- Only the active audible host plays sound. Foreign Electron hosts, automated browsers, and undisplayed windows remain silent.
 - Player volume and mute behavior use the shared settings values; do not introduce audio-local bounds or persisted preferences.
 - Playback failures are non-fatal: report useful diagnostics and continue. Audio failure must not block startup, navigation, battle, saves, or quit.
 - Cache, preload, deduplication, and playback lifetime remain below UI callers. Screens request semantic sounds rather than managing media elements.

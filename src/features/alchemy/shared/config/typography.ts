@@ -21,6 +21,6 @@ export const tooltipBodyLineClass = "text-sm leading-relaxed text-muted-foregrou
 
 export const tooltipChipClass = "text-xs font-semibold";
 
-export const tooltipFooterChipClass = "text-[0.625rem] font-semibold";
+export const tooltipFooterChipClass = "text-[calc(0.625*var(--content-rem,1rem))] font-semibold";
 
 export const tooltipChipIconClass = "h-3.5 w-3.5";

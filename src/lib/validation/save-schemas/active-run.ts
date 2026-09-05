@@ -71,6 +71,7 @@ const MysteryEffectSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("removeCard") }),
   z.object({ kind: z.literal("gainTrinket"), trinketId: z.string() }),
   z.object({ kind: z.literal("gainRandomTrinket"), fromIds: z.array(z.string()).optional() }),
+  z.object({ kind: z.literal("gainRandomGear") }),
   z.object({ kind: z.literal("gainGeneratedGear"), baseItemId: z.string(), astral: z.literal(true).optional() }),
   z.object({ kind: z.literal("gainMaterial"), material: MaterialIdPersistSchema, amount: z.number() }),
 ]);

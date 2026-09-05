@@ -6,14 +6,12 @@ import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 import { tooltipWidthClass } from "../config";
 
-import { getVrStageBounds, usePortaledTooltipPlacement, type PortaledTooltipSide } from "./portaled-tooltip-placement";
+import { usePortaledTooltipPlacement, type PortaledTooltipSide } from "./portaled-tooltip-placement";
 import { getTooltipRoot } from "./tooltip-root";
 import { TooltipPanel } from "./tooltip-panel";
-import { useFadePresence } from "./fade-presence";
+import { useFadePresence, useHeldWhile } from "./use-fade";
 import { usePlasmaInteraction } from "./use-plasma-source";
 import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
-
-export const TOOLTIP_FADE_OUT_MS = TOOLTIP_FADE_MS;
 
 export interface PortaledTooltipProps {
   triggerRef: RefObject<HTMLElement | null>;
@@ -41,22 +39,23 @@ export function PortaledTooltip({
   padding = 8,
   placement = "above",
   maxWidthFraction,
-  fadeOutMs = TOOLTIP_FADE_OUT_MS,
+  fadeOutMs = TOOLTIP_FADE_MS,
   plasmaColorPair = null,
 }: PortaledTooltipProps) {
   usePlasmaInteraction(plasmaColorPair, visible);
   const { mounted } = useFadePresence(visible, fadeOutMs);
+  const content = useHeldWhile(visible, children);
   const { tooltipRef, placeBelow, tooltipSide, tooltipStyle } = usePortaledTooltipPlacement(
     triggerRef,
     mounted,
     padding,
     placement,
+    maxWidthFraction,
   );
 
   if (!mounted) return null;
 
   const placed = Boolean(tooltipStyle);
-  const maxWidth = maxWidthFraction ? `${Math.floor(getVrStageBounds().width * maxWidthFraction)}px` : undefined;
 
   return createPortal(
     <TooltipPanel
@@ -69,9 +68,9 @@ export function PortaledTooltip({
         !placed && "invisible opacity-0",
         className,
       )}
-      style={{ ...tooltipStyle, ...(maxWidth ? { maxWidth } : {}) }}
+      style={tooltipStyle}
     >
-      {children}
+      {content}
     </TooltipPanel>,
     getTooltipRoot() ?? document.body,
   );

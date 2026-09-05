@@ -47,6 +47,31 @@ describe("serializeMysteryVisit", () => {
       resolvedTrinketIds: [],
     });
   });
+
+  it("round-trips a claimed random Gear reward through grantedGear", () => {
+    const event = findMysteryEvent("overgrown-temple");
+    const choice = event?.choices.find((candidate) => candidate.label === "Search the Crypt");
+    const instance = { instanceId: "mystery-random-gear", definitionId: "emerald-ring-basic", affixes: [] };
+    expect(event).not.toBeUndefined();
+    expect(choice).not.toBeUndefined();
+
+    const persisted = serializeMysteryVisit({
+      mysteryEvent: event!,
+      mysteryChosenChoice: choice!,
+      mysteryPendingRemoval: false,
+      mysteryCardChoices: null,
+      mysteryGrantedTrinketIds: [],
+      mysteryGrantedGearInstances: [instance],
+      mysteryChosenCardId: null,
+    });
+
+    expect(persisted?.chosenChoice).toEqual(choice);
+    expect(persisted?.grantedGear).toEqual([instance]);
+
+    const hydrated = hydrateMysteryVisit(persisted);
+    expect(hydrated.mysteryChosenChoice).toEqual(choice);
+    expect(hydrated.mysteryGrantedGearInstances).toEqual([instance]);
+  });
 });
 
 describe("hydrateMysteryVisit", () => {
@@ -93,25 +118,20 @@ describe("hydrateMysteryVisit", () => {
     expect(charm?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "merchants-favor" });
   });
 
-  it("resolves leftover random trinkets when a legacy visit omitted resolvedTrinketIds", () => {
-    const hydrated = hydrateMysteryVisit(
-      {
-        eventId: "overgrown-temple",
-        chosenChoice: null,
-        cardChoices: null,
-        grantedTrinketIds: [],
-        grantedGear: [],
-        chosenCardId: null,
-        resolvedTrinketIds: [],
-      },
-      { ownedTrinketIds: [], rng: () => 0 },
-    );
+  it("keeps the revised random Gear reward when a visit is hydrated", () => {
+    const hydrated = hydrateMysteryVisit({
+      eventId: "overgrown-temple",
+      chosenChoice: null,
+      cardChoices: null,
+      grantedTrinketIds: [],
+      grantedGear: [],
+      chosenCardId: null,
+      resolvedTrinketIds: [],
+    });
 
     const search = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Search the Crypt");
-    const trinket = search?.effects.find((effect) => effect.kind === "gainTrinket");
-    expect(trinket?.kind).toBe("gainTrinket");
-    if (trinket?.kind !== "gainTrinket") return;
-    expect(["bone-charm", "sin-eaters-lantern"]).toContain(trinket.trinketId);
+    expect(search?.effects).toContainEqual({ kind: "gainRandomGear" });
+    expect(search?.effects).toContainEqual({ kind: "gainMaterial", material: "iron", amount: 3 });
   });
 
   it("applies astral fallback gear substitution when resolvedTrinketIds contains empty string", () => {

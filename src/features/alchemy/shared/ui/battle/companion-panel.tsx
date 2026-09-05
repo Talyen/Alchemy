@@ -59,7 +59,7 @@ export function CompanionPanel({
           className={cn(
             "relative",
             cardSurfaceClass,
-            compact ? "w-[clamp(10.71cqh,21cqh,16.46cqh)]" : battleCompanionWidthClass,
+            compact ? "w-[calc(11.1105*var(--content-rem,1rem))]" : battleCompanionWidthClass,
             "border border-border/80",
             shaking && "animate-shake",
           )}

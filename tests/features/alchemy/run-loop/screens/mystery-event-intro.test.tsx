@@ -53,4 +53,22 @@ describe("MysteryEventIntro", () => {
     expect(artSurface.querySelector(".card-shimmer-sweep")).toBeTruthy();
     expect(screen.getByLabelText(sampleEvent.narrative).classList.contains("text-center")).toBe(true);
   });
+
+  it("renders the narrative as animated word tokens immediately", () => {
+    localStorage.removeItem("alchemy-disable-animations");
+
+    render(
+      <MysteryEventIntro
+        event={sampleEvent}
+        findCard={() => undefined}
+        findTrinket={() => undefined}
+        onPick={vi.fn()}
+      />,
+    );
+
+    const narrative = screen.getByLabelText(sampleEvent.narrative);
+    const wordTokens = Array.from(narrative.children).filter((child) => child.classList.contains("inline-block"));
+
+    expect(wordTokens).toHaveLength(sampleEvent.narrative.trim().split(/\s+/).length);
+  });
 });

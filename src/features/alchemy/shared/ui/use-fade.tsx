@@ -1,3 +1,4 @@
+import { useArtworkReady } from "./use-artwork-ready";
 import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 
 import { resolveGameDelay } from "@/lib/animation/game-timer";
@@ -96,6 +97,7 @@ export function FadeSlot({
     target: swapKey,
     durationMs: MOTION_FADE_MS,
   });
+  const { ref: artworkRef, pending: artworkPending } = useArtworkReady(shownKey);
   const heldRef = useRef(children);
   const heldClassNameRef = useRef(className);
   const heldStyleRef = useRef((props as { style?: React.CSSProperties }).style);
@@ -112,6 +114,8 @@ export function FadeSlot({
 
   return (
     <div
+      ref={artworkRef}
+      data-artwork-pending={artworkPending}
       className={cn(
         fadePhaseClass(phase),
         // eslint-disable-next-line react-hooks/refs -- hold outgoing layout while opacity is 0

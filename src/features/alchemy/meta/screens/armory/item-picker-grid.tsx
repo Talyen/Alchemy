@@ -55,10 +55,15 @@ export function ItemPickerGrid({
   onApplyCurrency: (instance: GearInstance) => void;
 }) {
   const pageContext = `${characterId}:${slot}`;
-  const { pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(pageContext, items);
+  const { grid, pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(
+    pageContext,
+    items,
+    items.findIndex((item) => item.instanceId === loadout[slot]),
+  );
 
   return (
     <PagedPickerGrid
+      grid={grid}
       testId="armory-item-picker"
       swapKey={slot}
       isEmpty={items.length === 0}

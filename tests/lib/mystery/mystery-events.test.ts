@@ -3,8 +3,18 @@ import { getMysteryEffectRank, mysteryPool, pickMysteryEvent } from "@/lib/myste
 import { cardLibrary, mysteryEventArt, trinketLibrary } from "@/lib/game-data";
 import { gearBaseItems } from "@/lib/gear";
 
-const PORTRAIT_EFFECT_KINDS = new Set(["addCard", "gainTrinket", "gainRandomTrinket", "gainGeneratedGear"]);
+const PORTRAIT_EFFECT_KINDS = new Set([
+  "addCard",
+  "gainTrinket",
+  "gainRandomTrinket",
+  "gainRandomGear",
+  "gainGeneratedGear",
+]);
 const SIDE_LOOT_KINDS = new Set(["gainXP", "gainGold", "gainMaterial"]);
+
+function rewardCategory(effect: { kind: string }): string {
+  return PORTRAIT_EFFECT_KINDS.has(effect.kind) ? "portrait" : effect.kind;
+}
 
 describe("mysteryPool", () => {
   it("contains events", () => {
@@ -48,6 +58,27 @@ describe("mysteryPool", () => {
         for (const effect of choice.effects) {
           if (PORTRAIT_EFFECT_KINDS.has(effect.kind)) continue;
           expect(SIDE_LOOT_KINDS.has(effect.kind), `${label} extra ${effect.kind}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("keeps the same number of reward categories across an event's choices", () => {
+    for (const event of mysteryPool) {
+      const categoryCounts = event.choices.map(
+        (choice) => new Set(choice.effects.map((effect) => rewardCategory(effect))).size,
+      );
+      expect(new Set(categoryCounts).size, event.id).toBe(1);
+    }
+  });
+
+  it("uses standardized side-reward quantities", () => {
+    for (const event of mysteryPool) {
+      for (const choice of event.choices) {
+        for (const effect of choice.effects) {
+          if (effect.kind === "gainXP") expect(effect.amount, `${event.id}/${choice.label}`).toBe(8);
+          if (effect.kind === "gainGold") expect(effect.amount, `${event.id}/${choice.label}`).toBe(20);
+          if (effect.kind === "gainMaterial") expect(effect.amount, `${event.id}/${choice.label}`).toBe(3);
         }
       }
     }
@@ -112,16 +143,14 @@ describe("mysteryPool", () => {
     }
   });
 
-  it("Overgrown Temple Search the Crypt constrains random trinkets", () => {
+  it("Overgrown Temple Search the Crypt offers random Gear and Iron", () => {
     const temple = mysteryPool.find((e) => e.id === "overgrown-temple");
     expect(temple).toBeDefined();
     const search = temple!.choices.find((c) => c.label === "Search the Crypt");
     expect(search).toBeDefined();
-    const effect = search!.effects.find((e) => e.kind === "gainRandomTrinket");
-    expect(effect?.kind).toBe("gainRandomTrinket");
-    if (effect?.kind === "gainRandomTrinket") {
-      expect(effect.fromIds).toEqual(["bone-charm", "sin-eaters-lantern"]);
-    }
+    expect(search!.effects).toContainEqual({ kind: "gainRandomGear" });
+    expect(search!.effects).toContainEqual({ kind: "gainGold", amount: 20 });
+    expect(search!.effects).toContainEqual({ kind: "gainMaterial", material: "iron", amount: 3 });
   });
 
   it("companion events still grant companion cards", () => {
@@ -156,6 +185,10 @@ describe("mysteryPool", () => {
     expect(portraitOf("enchanted-spring", "Gather the Moss")).toEqual({
       kind: "gainTrinket",
       trinketId: "groves-favor",
+    });
+    expect(portraitOf("fungal-grotto", "Harvest Mushrooms")).toEqual({
+      kind: "gainTrinket",
+      trinketId: "plague-doctors-mask",
     });
     expect(portraitOf("fungal-grotto", "Collect Crystals")).toEqual({
       kind: "gainTrinket",

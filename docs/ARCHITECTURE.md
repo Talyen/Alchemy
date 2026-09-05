@@ -162,7 +162,8 @@ BattleScreenRoute → useBattleScreenRouteData (committed battle display)
 
 ## Settings and meta profile
 
-- `settings-store` owns display, audio, and gameplay preferences. It does not contain gameplay progression.
+- `settings-store` owns synchronized display, audio, and gameplay preferences. It does not contain gameplay progression.
+- `device-display-store` owns Game Size and Tooltip Size. Its storage seam writes a versioned device-local record, outside the settings save codec and Steam Cloud. Defaults load synchronously before layout; unavailable storage falls back to in-memory preferences. Options receives values and actions through its route props.
 - `lib/settings-values.ts` owns the shared value sets and numeric bounds consumed by save validation, Options, audio,
   and the desktop bridge; the settings codec still owns defaults, encoding, and hydration.
 - `profile-store` owns compendium discoveries (cards, encountered enemies, trinkets, and uniques), completed difficulties, finished-run characters, and transient collection browsing state.
@@ -206,7 +207,7 @@ Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/b
 
 ## Boot and loading
 
-One loading experience at cold start, then instant navigation — no per-route "Loading …" fallbacks.
+One loading experience at cold start, then navigation through the shared fade — no per-route "Loading …" fallbacks. Route and in-screen reveals hold the fade until mounted artwork has decoded; see [UI](./UI.md#screen-fade-motion).
 
 | Layer     | Where                                                                 | Policy                                                                                                                                  |
 | --------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |

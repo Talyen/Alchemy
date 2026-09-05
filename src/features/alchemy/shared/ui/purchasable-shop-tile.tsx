@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 import { CurrencyAmount } from "./display-elements";
-import { DisabledTooltip } from "./service-button";
+import { DisabledTooltip } from "./disabled-tooltip";
 import type { ShopPurchaseState } from "./purchasable-shop-helpers";
 
 export function ShopPriceChip({

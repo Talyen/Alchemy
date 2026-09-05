@@ -20,11 +20,11 @@ import { TalentOverviewGrid } from "../talents/talent-overview-grid";
 import { ConfirmationDialog, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { getPlasmaColorPair, getPlasmaKeywordsForTalent } from "../../shared/config";
-import { FadeSlot } from "../../shared/ui/fade-slot";
+import { FadeSlot } from "../../shared/ui/use-fade";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
 
-const TALENT_PANE_CLASS = "flex min-h-[50rem] w-full flex-col items-center";
+const TALENT_PANE_CLASS = "flex min-h-[calc(50*var(--content-rem,1rem))] w-full flex-col items-center";
 
 export function TalentsScreen({
   talentXP,
@@ -127,7 +127,7 @@ export function TalentsScreen({
   return (
     <TitledScreenShell
       title={title}
-      maxWidthClass="max-w-[90rem]"
+      maxWidthClass="max-w-[calc(90*var(--content-rem,1rem))]"
       minHeightClass="min-h-[76cqh]"
       onBack={selectedKeyword ? handleBack : onBack}
       onMenu={onMenu}

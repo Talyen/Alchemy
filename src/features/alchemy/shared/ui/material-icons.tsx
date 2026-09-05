@@ -112,7 +112,9 @@ function TrinketWalletResourcePill({
     <div
       className={cn(
         "flex items-center rounded-xl border border-border/60 bg-card/65 shadow-sm backdrop-blur-sm transition-colors",
-        large ? "min-h-[64px] gap-3.5 px-5 py-3" : "min-h-[52px] gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-3.5",
+        large
+          ? "min-h-[calc(64px*var(--content-scale,1))] gap-3.5 px-5 py-3"
+          : "min-h-[calc(52px*var(--content-scale,1))] gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-3.5",
         fillsAvailableWidth ? "w-full" : "w-auto",
         className,
       )}
@@ -200,7 +202,9 @@ export function MaterialPill({
       showsIncreasePrefix={showsIncreasePrefix}
       fillsAvailableWidth={false}
       size={size}
-      className={size === "lg" ? "min-w-[160px]" : "min-w-[136px]"}
+      className={
+        size === "lg" ? "min-w-[calc(160px*var(--content-scale,1))]" : "min-w-[calc(136px*var(--content-scale,1))]"
+      }
     />
   );
 }
@@ -221,7 +225,9 @@ export function GoldPill({
       showsIncreasePrefix={showsIncreasePrefix}
       fillsAvailableWidth={false}
       size={size}
-      className={size === "lg" ? "min-w-[160px]" : "min-w-[136px]"}
+      className={
+        size === "lg" ? "min-w-[calc(160px*var(--content-scale,1))]" : "min-w-[calc(136px*var(--content-scale,1))]"
+      }
     />
   );
 }

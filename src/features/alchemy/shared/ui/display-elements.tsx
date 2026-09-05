@@ -1,6 +1,5 @@
-import { Coins } from "lucide-react";
-
 import { cn, formatLargeAmount } from "@/lib/utils";
+import { GoldPill, HomesteadResourceArtwork } from "./material-icons";
 
 export function CurrencyAmount({
   amount,
@@ -15,7 +14,7 @@ export function CurrencyAmount({
 }) {
   return (
     <>
-      <Coins className={cn("h-4 w-4 shrink-0", iconClassName)} />
+      <HomesteadResourceArtwork resource="gold" size="md" className={iconClassName} alt={suffix ? "" : "Gold"} />
       <span className={cn("tabular-nums", className)}>
         {formatLargeAmount(amount)}
         {suffix}
@@ -33,9 +32,5 @@ export function GoldCost({ amount }: { amount: number }) {
 }
 
 export function GoldDisplay({ gold }: { gold: number }) {
-  return (
-    <p className="flex items-center gap-2 text-2xl font-medium text-yellow-300">
-      <CurrencyAmount amount={gold} suffix=" Gold" iconClassName="h-7 w-7" />
-    </p>
-  );
+  return <GoldPill amount={gold} />;
 }

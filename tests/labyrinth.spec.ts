@@ -3,10 +3,23 @@ import { test } from "./fixtures/e2e";
 import { productionHexLabyrinthMapFixture } from "./fixtures/labyrinth-hex-map";
 import { critical } from "./playwright-tags";
 import { injectLabyrinthRun, makeHighDamageCard } from "./helpers";
+import { MenuPage } from "./pages/menu-page";
 
 test.describe("Labyrinth Mode", critical, () => {
   test.beforeEach(async ({ runtimeErrors }) => {
     void runtimeErrors;
+  });
+
+  test("a new Labyrinth run displays enterable chambers", async ({ page }) => {
+    const menu = new MenuPage(page);
+    await menu.goToCharacterSelectUnlocked("labyrinth");
+    await menu.selectCharacterAndContinue("Knight");
+
+    await expect(page.getByRole("heading", { name: "Labyrinth", exact: true })).toBeVisible();
+    const chamber = page.getByRole("button", { name: /chamber, reachable, enterable/ }).first();
+    await expect(chamber).toBeVisible();
+    await chamber.click();
+    await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeVisible();
   });
 
   test("labyrinth map pins chamber details on a hex", async ({ page }) => {

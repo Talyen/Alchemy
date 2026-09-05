@@ -1,30 +1,28 @@
-export const battleCardWidthClass = "w-[clamp(28.5cqh,28.9cqh,43.1cqh)]";
+export const battleCardWidthClass = "w-[calc(19.5075*var(--content-rem,1rem))]";
 
-export const battleCompanionWidthClass = "w-[clamp(18.4cqh,18.7cqh,27.9cqh)]";
+export const battleCompanionWidthClass = "w-[calc(12.6225*var(--content-rem,1rem))]";
 
-export const battleCompanionCornerClass = "absolute bottom-0 left-full z-20 -translate-x-[42%] translate-y-[1.6cqh]";
+export const battleCompanionCornerClass =
+  "absolute bottom-0 left-full z-20 -translate-x-[42%] translate-y-[calc(1.08*var(--content-rem,1rem))]";
 
-export const battleEnemyCardWidthClass = "w-[clamp(50.67cqh,51.38cqh,76.62cqh)]";
-export const handCardWidthClass = "w-[clamp(24.06cqh,24.45cqh,36.43cqh)]";
+export const battleEnemyCardWidthClass = "w-[calc(34.6815*var(--content-rem,1rem))]";
+export const handCardWidthClass = "w-[var(--hand-card-width)]";
 
-export const collectionCardGridTileWidthClass = "mx-auto w-full max-w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
+export const collectionCardGridTileWidthClass = "mx-auto w-full max-w-[calc(15.282*var(--content-rem,1rem))]";
 
-export const viewCardWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]";
-export const collectionTileWidthClass = "w-[clamp(25.2cqh,25.61cqh,38.14cqh)]";
+export const viewCardWidthClass = "w-[calc(14.4045*var(--content-rem,1rem))]";
+export const collectionTileWidthClass = "w-[calc(17.2868*var(--content-rem,1rem))]";
 
-export const battleTrinketInspectRowMaxWidthClass = "mx-auto w-fit max-w-[min(100%,calc(4*38.14cqh+3*1.5rem))]";
+export const battleTrinketInspectRowMaxWidthClass =
+  "mx-auto w-fit max-w-[min(100%,calc(107.478*var(--content-rem,1rem)))]";
 
-export const collectionGridTileWidthClass = "mx-auto w-full max-w-[clamp(25.2cqh,25.61cqh,38.14cqh)]";
+export const collectionGridTileWidthClass = "mx-auto w-full max-w-[calc(17.2868*var(--content-rem,1rem))]";
 export const collectionGridGapXClass = "gap-x-5";
 export const artTileGridRowsClass = "grid-rows-2 gap-y-8";
 
-export const collectionShellWidthClass = "max-w-7xl";
+export const collectionShellWidthClass = "max-w-[1280px]";
 
-export const collectionCardGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-4`;
-export const collectionTrinketGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-4`;
-export const collectionBestiaryGridClass = `grid w-full ${collectionGridGapXClass} grid-cols-3`;
-
-export const collectionGridBestiaryWidthClass = "mx-auto w-full max-w-[clamp(36cqh,38.27cqh,40.25cqh)]";
+export const collectionGridBestiaryWidthClass = "mx-auto w-full max-w-[calc(25.8323*var(--content-rem,1rem))]";
 
 export type TileWidthVariant = "collection" | "view" | "bestiary" | "collectionCard";
 
@@ -44,36 +42,37 @@ export function getTileWidthClass(variant: TileWidthVariant): string {
 }
 
 export const collectionGridMinHeightClass = "min-h-[64cqh]";
-export const pileCardWidthClass = "w-[clamp(13.8cqh,14.9cqh,21cqh)]";
+export const pileCardWidthClass = "w-[calc(10.0575*var(--content-rem,1rem))]";
 
-export const chooserArtWidthClass = "w-full max-w-[39.11cqh]";
+export const chooserArtWidthClass = "w-full max-w-[calc(26.3993*var(--content-rem,1rem))]";
 
-export const gameModeArtWidthClass = "w-full max-w-[43cqh]";
+export const gameModeArtWidthClass = "w-full max-w-[calc(29.025*var(--content-rem,1rem))]";
 
-export const standaloneLandscapeArtWidthClass = "w-[min(100%,39.11cqh)]";
+export const standaloneLandscapeArtWidthClass = "w-[min(100%,calc(26.3993*var(--content-rem,1rem)))]";
 
-export const chooserPaddedTileClass = "relative min-w-0 w-full max-w-[calc(39.11cqh+2.5rem)] flex-1";
-export const gameModePaddedTileClass = "relative min-w-0 w-full max-w-[calc(43cqh+2.5rem)] flex-1";
+export const chooserPaddedTileClass = "relative min-w-0 w-full max-w-[calc(28.8993*var(--content-rem,1rem))] flex-1";
+export const gameModePaddedTileClass = "relative min-w-0 w-full max-w-[calc(31.525*var(--content-rem,1rem))] flex-1";
 export const chooserRowGapClass = "gap-5";
 
-export const chooserRowShellWidthClass = "max-w-[min(100%,calc(3*39.11cqh+3*2.5rem+2*1.25rem+4.2rem))]";
-export const gameModeRowShellWidthClass = "max-w-[min(100%,calc(3*43cqh+3*2.5rem+2*1.25rem+4.2rem))]";
+export const chooserRowShellWidthClass = "max-w-[min(100%,calc(93.3979*var(--content-rem,1rem)))]";
+export const gameModeRowShellWidthClass = "max-w-[min(100%,calc(101.275*var(--content-rem,1rem)))]";
 
-export const chooserHeroArtWidthClass = "w-full max-w-[25.5cqh]";
+export const chooserHeroArtWidthClass = "w-full max-w-[calc(17.2125*var(--content-rem,1rem))]";
 export const chooserHeroRowGapClass = "gap-x-8";
 
-export const chooserHeroRowShellWidthClass = "max-w-[min(100%,calc(4*25.5cqh+3*2rem+4.2rem))]";
+export const chooserHeroRowShellWidthClass = "max-w-[min(100%,calc(79.05*var(--content-rem,1rem)))]";
 
-export const chooserHeroPaddedTileClass = "relative min-w-0 w-full max-w-[calc(25.5cqh+2rem)] flex-1";
+export const chooserHeroPaddedTileClass =
+  "relative min-w-0 w-full max-w-[calc(19.2125*var(--content-rem,1rem))] flex-1";
 
-export const chooserHeroPaddedRowShellWidthClass = "max-w-[min(100%,calc(4*(25.5cqh+2rem)+3*1.25rem+1rem+4.2rem))]";
+export const chooserHeroPaddedRowShellWidthClass = "max-w-[min(100%,calc(85.8*var(--content-rem,1rem)))]";
 
 export const cardSurfaceClass = "relative overflow-hidden rounded-shell-hero bg-black";
 
 export const cardInteractiveGlowClass = "card-interactive-glow";
 
 export const cardHoverScaleClass = "card-hover-scale";
-export const screenShellPaddingClass = "p-[2.1rem]";
+export const screenShellPaddingClass = "p-[calc(2.1*var(--content-rem,1rem))]";
 
 export const settingsPanelShellClass = "rounded-shell-panel border border-border/70 p-5 surface-muted";
 
@@ -119,4 +118,5 @@ export const battleBottomBarClass =
 
 export const battleBottomColumnClass = "flex flex-col items-center justify-end gap-4 pb-4";
 
-export const battleHandContainerClass = "flex min-w-0 items-end justify-center min-h-[33.37cqh] pb-3 pt-10";
+export const battleHandContainerClass =
+  "flex min-w-0 items-end justify-center min-h-[33.37cqh] [--hand-card-width:min(calc(16.5038*var(--content-rem,1rem)),24.45cqh)] px-[calc(var(--hand-card-width)/2)] pt-10";

@@ -10,6 +10,7 @@ describe("getMysteryEffectRank", () => {
     const mat: MysteryEffect = { kind: "gainMaterial", material: "herbs", amount: 2 };
     const card: MysteryEffect = { kind: "addCard", cardId: "test" };
     const trinket: MysteryEffect = { kind: "gainTrinket", trinketId: "test" };
+    const randomGear: MysteryEffect = { kind: "gainRandomGear" };
     const gear: MysteryEffect = { kind: "gainGeneratedGear", baseItemId: "dagger" };
 
     expect(getMysteryEffectRank(xp)).toBe(0);
@@ -18,6 +19,7 @@ describe("getMysteryEffectRank", () => {
     expect(getMysteryEffectRank(mat)).toBe(3);
     expect(getMysteryEffectRank(card)).toBe(1);
     expect(getMysteryEffectRank(trinket)).toBe(1);
+    expect(getMysteryEffectRank(randomGear)).toBe(1);
     expect(getMysteryEffectRank(gear)).toBe(1);
   });
 });

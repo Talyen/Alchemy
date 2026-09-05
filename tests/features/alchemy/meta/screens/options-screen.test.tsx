@@ -18,6 +18,12 @@ const defaultProps = {
     backgroundGlowIntensity: 100,
     onBackgroundGlowIntensityChange: vi.fn(),
   },
+  interface: {
+    gameSizePercent: 100,
+    tooltipSizePercent: 100,
+    onGameSizeChange: vi.fn(),
+    onTooltipSizeChange: vi.fn(),
+  },
   audio: {
     masterVolume: 100,
     musicVolume: 100,
@@ -61,11 +67,23 @@ describe("OptionsScreen", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it("renders display options without a UI Scale control", () => {
+  it("keeps interface sizing controls out of Display and removes the previews and reset button", async () => {
     render(<OptionsScreen {...defaultProps} />);
 
     expect(screen.queryByText("UI Scale")).toBeNull();
     expect(screen.getByText("Brightness")).toBeTruthy();
+    expect(screen.queryByRole("slider", { name: "Game Size" })).toBeNull();
+    expect(screen.queryByRole("slider", { name: "Tooltip Size" })).toBeNull();
+    expect(screen.queryByText("Interface Size")).toBeNull();
+    expect(screen.queryByText("Card Preview")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Control Preview" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Reset Sizes" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Interface" }));
+    await waitFor(() => {
+      expect(screen.getByRole("slider", { name: "Game Size" })).toBeTruthy();
+      expect(screen.getByRole("slider", { name: "Tooltip Size" })).toBeTruthy();
+    });
   });
 
   it("renders Special Effects sliders that report intensity changes", () => {

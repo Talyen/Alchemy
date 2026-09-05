@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { SelectableCard } from "../../shared/ui/selectable-card";
-import { FadeSlot } from "../../shared/ui/fade-slot";
+import { FadeSlot } from "../../shared/ui/use-fade";
 import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";

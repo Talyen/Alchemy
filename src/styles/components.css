@@ -263,33 +263,33 @@
 .surface {
   position: relative;
   overflow: visible;
-  --surface-radius: var(--radius-shell-hero);
+  --surface-radius: --theme(--radius-shell-hero);
   --surface-frame-border-width: 0px;
 }
 
 .rounded-shell-compact {
-  --surface-radius: var(--radius-shell-compact);
+  --surface-radius: --theme(--radius-shell-compact);
 }
 .rounded-shell-card {
-  --surface-radius: var(--radius-shell-card);
+  --surface-radius: --theme(--radius-shell-card);
 }
 .rounded-shell-tooltip {
-  --surface-radius: var(--radius-shell-tooltip);
+  --surface-radius: --theme(--radius-shell-tooltip);
 }
 .rounded-shell-panel {
-  --surface-radius: var(--radius-shell-panel);
+  --surface-radius: --theme(--radius-shell-panel);
 }
 .rounded-shell-inner {
-  --surface-radius: var(--radius-shell-inner);
+  --surface-radius: --theme(--radius-shell-inner);
 }
 .rounded-shell-dialog {
-  --surface-radius: var(--radius-shell-dialog);
+  --surface-radius: --theme(--radius-shell-dialog);
 }
 .rounded-shell-screen {
-  --surface-radius: var(--radius-shell-screen);
+  --surface-radius: --theme(--radius-shell-screen);
 }
 .rounded-shell-hero {
-  --surface-radius: var(--radius-shell-hero);
+  --surface-radius: --theme(--radius-shell-hero);
 }
 
 /* Glow requires overflow:visible, which disables cardSurfaceClass clipping.
@@ -491,4 +491,10 @@
 
 .labyrinth-inspector-in {
   animation: labyrinth-inspector-in 200ms ease-out;
+}
+
+[data-artwork-pending] {
+  visibility: hidden;
+  animation-play-state: paused;
+  pointer-events: none;
 }

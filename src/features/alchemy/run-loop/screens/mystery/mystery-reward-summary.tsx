@@ -118,6 +118,12 @@ function MysteryRewardEffectItem({
       if (!grantedGear) return <p className={cn(controlLabelClass, "text-balance")}>Added Gear to your Armory</p>;
       return <MysteryGearRewardItem instance={grantedGear} />;
     },
+    gainRandomGear: () => {
+      if (!grantedGear) {
+        return <p className={cn(controlLabelClass, "text-balance")}>Added random Gear to your Armory</p>;
+      }
+      return <MysteryGearRewardItem instance={grantedGear} />;
+    },
     gainGold: () => renderFoundOrLost(effect, "Found"),
     gainMaterial: () => renderFoundOrLost(effect, "Found"),
     loseGold: () => renderFoundOrLost(effect, "Lost"),
@@ -191,7 +197,9 @@ export function MysteryRewardSummary({
         const grantedTrinketId =
           effect.kind === "gainRandomTrinket" ? grantedTrinketIds[randomTrinketCursor++] : undefined;
         const grantedGear =
-          effect.kind === "gainGeneratedGear" ? grantedGearInstances[generatedGearCursor++] : undefined;
+          effect.kind === "gainGeneratedGear" || effect.kind === "gainRandomGear"
+            ? grantedGearInstances[generatedGearCursor++]
+            : undefined;
         return (
           <div key={i}>
             <MysteryRewardEffectItem

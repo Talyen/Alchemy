@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { cn } from "@/lib/utils";
-import { fadePhaseClass, useFadePresence } from "./fade-presence";
+import { fadePhaseClass, useFadePresence } from "./use-fade";
 import { useModalEscapeDismiss } from "./use-modal-escape-dismiss";
 
 interface ModalOverlayShellProps {

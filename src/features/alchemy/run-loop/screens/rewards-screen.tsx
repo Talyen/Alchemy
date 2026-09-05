@@ -10,7 +10,7 @@ import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
 import { SelectableCard } from "../../shared/ui/selectable-card";
 import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { usePlasmaBaseline, usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
-import { FadeSlot } from "../../shared/ui/fade-slot";
+import { FadeSlot } from "../../shared/ui/use-fade";
 import { getPlasmaKeywordsForGear, getPlasmaColorPair, sectionTitleClass } from "@/features/alchemy/shared/config";
 import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
@@ -103,7 +103,7 @@ function RewardsFound({
 }) {
   const hasRewards = rewardGold > 0 || MATERIAL_IDS.some((mat) => (rewardMaterials[mat] ?? 0) > 0);
   if (!hasRewards) {
-    return <div className="min-h-[2.5rem]" />;
+    return <div className="min-h-[calc(2.5*var(--content-rem,1rem))]" />;
   }
   return <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />;
 }

@@ -199,4 +199,21 @@ describe("MysteryRewardSummary", () => {
     expect(surface?.className).toMatch(/card-interactive-glow/);
     expect(surface?.className).toMatch(/has-shine-border/);
   });
+
+  it("shows the granted gear tile for gainRandomGear", () => {
+    const instance = { instanceId: "mystery-random-gear", definitionId: "emerald-ring-basic", affixes: [] };
+    render(
+      <MysteryRewardSummary
+        choice={{ label: "Search the Crypt", effects: [{ kind: "gainRandomGear" }] }}
+        findCard={() => undefined}
+        findTrinket={() => undefined}
+        grantedTrinketIds={[]}
+        grantedGearInstances={[instance]}
+        chosenCardId={null}
+        onContinue={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(getGearInstanceTitle(instance))).toBeTruthy();
+  });
 });

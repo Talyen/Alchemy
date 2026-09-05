@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { InteractiveArtTile } from "@/features/alchemy/shared/ui/interactive-art-tile";
-import { TOOLTIP_FADE_OUT_MS } from "@/features/alchemy/shared/ui/portaled-tooltip";
+import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 
 function renderTile() {
   return render(
@@ -58,7 +58,7 @@ describe("InteractiveArtTile hover popup", () => {
     expect(screen.getByTestId("tile-popup").textContent).toBe("hidden");
 
     act(() => {
-      vi.advanceTimersByTime(TOOLTIP_FADE_OUT_MS);
+      vi.advanceTimersByTime(TOOLTIP_FADE_MS);
     });
     expect(screen.queryByTestId("tile-popup")).toBeNull();
   });

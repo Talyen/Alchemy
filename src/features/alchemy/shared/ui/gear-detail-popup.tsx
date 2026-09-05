@@ -10,11 +10,13 @@ export function GearDetailPopup({
   instance,
   triggerRef,
   visible,
+  padding,
 }: {
   definition: GearDefinition | undefined;
   instance: GearInstance;
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
+  padding?: number | undefined;
 }) {
   if (!definition) return null;
   return (
@@ -23,6 +25,7 @@ export function GearDetailPopup({
       visible={visible}
       className="rounded-shell-tooltip"
       plasmaColorPair={getPlasmaColorPairForGear(instance)}
+      {...(padding !== undefined ? { padding } : {})}
     >
       <GearTooltipContent definition={definition} instance={instance} />
     </PortaledTooltip>

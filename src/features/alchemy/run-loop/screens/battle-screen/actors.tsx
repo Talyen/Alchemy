@@ -37,7 +37,7 @@ export function BattleActors({
   return (
     <section
       className={cn(aspectMode === "ultrawide" ? battleActorSectionClass.ultrawide : battleActorSectionClass.desktop)}
-      style={{ top: BATTLE_ACTOR_TOP }}
+      style={{ top: `calc(${BATTLE_ACTOR_TOP} - max(0px, calc((var(--content-scale, 1) - 1) * 120px)))` }}
     >
       <div className={battleActorHeroCellClass}>
         <div

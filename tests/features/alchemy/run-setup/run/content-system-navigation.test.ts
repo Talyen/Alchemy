@@ -15,6 +15,7 @@ import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getStartingDeck } from "@/lib/game-data";
+import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 
 vi.mock("@/features/alchemy/run-setup/run/campaign-start", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/run-setup/run/campaign-start")>();
@@ -52,13 +53,22 @@ describe("createContentSystemNavigation", () => {
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT);
   });
 
-  it("initializeLabyrinthRun navigates to labyrinth map", () => {
+  it("initializeLabyrinthRun creates enterable chambers before navigating to the map", () => {
     setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH });
-    const deps = makeDeps();
+    const deps = makeDeps({
+      navigateTo: vi.fn(() => {
+        const map = readRunSession().labyrinthMap;
+        expect(map).not.toBeNull();
+        expect(map && Object.keys(map.nodes).some((id) => canEnterLabyrinthNode(map, id))).toBe(true);
+      }),
+    });
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
     expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
+    const map = readRunSession().labyrinthMap;
+    nav.beginLabyrinth();
+    expect(readRunSession().labyrinthMap).toBe(map);
   });
 
   it("initializeWildwoodRun creates a resumable draft and navigates to draft deck", () => {
@@ -206,12 +216,17 @@ describe("createContentSystemNavigation", () => {
     });
     setRunSession({
       hasActiveRun: true,
+      pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH,
       starterDraftChoices: [],
     });
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.beginLabyrinth();
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
+    nav.handleStandardDraftComplete();
+    expect(readRunSession().labyrinthMap).not.toBeNull();
+    expect(readActiveRun().runDeck).toEqual(drafted);
+    expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
   });
 
   it("uses the standard draft owner to start a wildcard campaign", () => {

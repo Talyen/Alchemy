@@ -22,6 +22,19 @@ const eventWithTwoTrinkets = {
   ],
 };
 
+const eventWithConstrainedRandomTrinket = {
+  id: "constrained-random-trinket-test",
+  title: "Constrained Random Trinket",
+  art: "test-art",
+  narrative: "Test",
+  choices: [
+    {
+      label: "A",
+      effects: [{ kind: "gainRandomTrinket" as const, fromIds: ["bone-charm", "sin-eaters-lantern"] }],
+    },
+  ],
+};
+
 function trinketIdsOn(event: ReturnType<typeof resolveMysteryEventTrinkets>): string[] {
   return event.choices.flatMap((choice) =>
     choice.effects.flatMap((effect) => (effect.kind === "gainTrinket" ? [effect.trinketId] : [])),
@@ -69,22 +82,20 @@ describe("resolveMysteryEventTrinkets", () => {
   });
 
   it("concretizes a random trinket from its pool when those ids are free", () => {
-    const event = findMysteryEvent("overgrown-temple");
-    expect(event).not.toBeNull();
-    const resolved = resolveMysteryEventTrinkets(event!, [], () => 0);
-    const search = resolved.choices.find((choice) => choice.label === "Search the Crypt");
-    const trinket = search?.effects.find((effect) => effect.kind === "gainTrinket");
+    const resolved = resolveMysteryEventTrinkets(eventWithConstrainedRandomTrinket, [], () => 0);
+    const trinket = resolved.choices[0]?.effects.find((effect) => effect.kind === "gainTrinket");
     expect(trinket?.kind).toBe("gainTrinket");
     if (trinket?.kind !== "gainTrinket") return;
     expect(["bone-charm", "sin-eaters-lantern"]).toContain(trinket.trinketId);
   });
 
   it("falls back to any unowned trinket when a random pool is already owned", () => {
-    const event = findMysteryEvent("overgrown-temple");
-    expect(event).not.toBeNull();
-    const resolved = resolveMysteryEventTrinkets(event!, ["bone-charm", "sin-eaters-lantern"], () => 0);
-    const search = resolved.choices.find((choice) => choice.label === "Search the Crypt");
-    const trinket = search?.effects.find((effect) => effect.kind === "gainTrinket");
+    const resolved = resolveMysteryEventTrinkets(
+      eventWithConstrainedRandomTrinket,
+      ["bone-charm", "sin-eaters-lantern"],
+      () => 0,
+    );
+    const trinket = resolved.choices[0]?.effects.find((effect) => effect.kind === "gainTrinket");
     expect(trinket?.kind).toBe("gainTrinket");
     if (trinket?.kind !== "gainTrinket") return;
     expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(trinket.trinketId);
@@ -162,11 +173,8 @@ describe("collect and apply resolved mystery trinket ids", () => {
   });
 
   it("repairs a legacy visit that still has gainRandomTrinket", () => {
-    const event = findMysteryEvent("overgrown-temple");
-    expect(event).not.toBeNull();
-    const repaired = repairUnresolvedMysteryTrinkets(event!, [], () => 0);
-    const search = repaired.choices.find((choice) => choice.label === "Search the Crypt");
-    const trinket = search?.effects.find((effect) => effect.kind === "gainTrinket");
+    const repaired = repairUnresolvedMysteryTrinkets(eventWithConstrainedRandomTrinket, [], () => 0);
+    const trinket = repaired.choices[0]?.effects.find((effect) => effect.kind === "gainTrinket");
     expect(trinket?.kind).toBe("gainTrinket");
     if (trinket?.kind !== "gainTrinket") return;
     expect(["bone-charm", "sin-eaters-lantern"]).toContain(trinket.trinketId);

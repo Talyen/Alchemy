@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useHeldWhile } from "@/features/alchemy/shared/ui/fade-presence";
+import { useHeldWhile } from "@/features/alchemy/shared/ui/use-fade";
 import { cardById, trinketById } from "@/features/alchemy/shared/config/game-data-catalog";
 import { MysteryScreen, MysteryScreenShell } from "@/features/alchemy/run-loop/screens";
 import { useMysteryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";

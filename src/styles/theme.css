@@ -24,28 +24,11 @@
   --motion-fade-duration: 180ms;
   --motion-fade-ease: ease-out;
 
-  --radius: 1.5rem;
-  --radius-lg: 1.5rem;
-  --radius-md: 1.375rem;
-  --radius-sm: 1.25rem;
-
-  --radius-shell-compact: 0.875rem;
-  --radius-shell-card: 1.125rem;
-  --radius-shell-tooltip: var(--radius-sm);
-  --radius-shell-panel: var(--radius-md);
-  --radius-shell-inner: var(--radius-lg);
-  --radius-shell-dialog: 1.625rem;
-  --radius-shell-screen: 1.75rem;
-  --radius-shell-hero: 1.875rem;
-
   --font-sans: "Inter", sans-serif;
 
   /* Readable scale at 16px root: base 18, lg 20, xl 22. sm/2xl stay Tailwind defaults. */
-  --text-base: 1.125rem;
   --text-base--line-height: calc(1.5 / 1.125);
-  --text-lg: 1.25rem;
   --text-lg--line-height: calc(1.75 / 1.25);
-  --text-xl: 1.375rem;
   --text-xl--line-height: calc(1.75 / 1.375);
 
   --animate-shine: shine 14s linear infinite;
@@ -61,4 +44,51 @@
   --shadow-deaths-door-glow: 0 0 30px rgba(127, 29, 29, 0.45);
   --shadow-labyrinth-current-glow: 0 0 10px rgba(251, 191, 36, 0.5);
   --drop-shadow-mana-overflow-glow: 0 0 3px rgba(125, 211, 252, 0.6);
+}
+
+@theme inline {
+  --spacing: calc(0.25rem * var(--content-scale, 1));
+  --container-3xs: calc(16rem * var(--content-scale, 1));
+  --container-2xs: calc(18rem * var(--content-scale, 1));
+  --container-xs: calc(20rem * var(--content-scale, 1));
+  --container-sm: calc(24rem * var(--content-scale, 1));
+  --container-md: calc(28rem * var(--content-scale, 1));
+  --container-lg: calc(32rem * var(--content-scale, 1));
+  --container-xl: calc(36rem * var(--content-scale, 1));
+  --container-2xl: calc(42rem * var(--content-scale, 1));
+  --container-3xl: calc(48rem * var(--content-scale, 1));
+  --container-4xl: calc(56rem * var(--content-scale, 1));
+  --container-5xl: calc(64rem * var(--content-scale, 1));
+  --container-6xl: calc(72rem * var(--content-scale, 1));
+  --container-7xl: calc(80rem * var(--content-scale, 1));
+  --text-xs: calc(0.75rem * var(--content-scale, 1));
+  --text-sm: calc(0.875rem * var(--content-scale, 1));
+  --text-base: calc(1.125rem * var(--content-scale, 1));
+  --text-lg: calc(1.25rem * var(--content-scale, 1));
+  --text-xl: calc(1.375rem * var(--content-scale, 1));
+  --text-2xl: calc(1.5rem * var(--content-scale, 1));
+  --text-3xl: calc(1.875rem * var(--content-scale, 1));
+  --text-4xl: calc(2.25rem * var(--content-scale, 1));
+  --text-5xl: calc(3rem * var(--content-scale, 1));
+  --text-6xl: calc(3.75rem * var(--content-scale, 1));
+  --text-7xl: calc(4.5rem * var(--content-scale, 1));
+  --text-8xl: calc(6rem * var(--content-scale, 1));
+  --text-9xl: calc(8rem * var(--content-scale, 1));
+  --radius-xs: calc(0.125rem * var(--content-scale, 1));
+  --radius-sm: calc(1.25rem * var(--content-scale, 1));
+  --radius-md: calc(1.375rem * var(--content-scale, 1));
+  --radius-lg: calc(1.5rem * var(--content-scale, 1));
+  --radius-xl: calc(0.75rem * var(--content-scale, 1));
+  --radius-2xl: calc(1rem * var(--content-scale, 1));
+  --radius-3xl: calc(1.5rem * var(--content-scale, 1));
+  --radius-4xl: calc(2rem * var(--content-scale, 1));
+  --radius: calc(1.5rem * var(--content-scale, 1));
+  --radius-shell-compact: calc(0.875rem * var(--content-scale, 1));
+  --radius-shell-card: calc(1.125rem * var(--content-scale, 1));
+  --radius-shell-dialog: calc(1.625rem * var(--content-scale, 1));
+  --radius-shell-screen: calc(1.75rem * var(--content-scale, 1));
+  --radius-shell-hero: calc(1.875rem * var(--content-scale, 1));
+  --radius-shell-tooltip: calc(1.25rem * var(--content-scale, 1));
+  --radius-shell-panel: calc(1.375rem * var(--content-scale, 1));
+  --radius-shell-inner: calc(1.5rem * var(--content-scale, 1));
 }

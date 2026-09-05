@@ -1,6 +1,6 @@
 import { Sparkles } from "lucide-react";
 import { type CraftingCurrencyId } from "@/lib/gear";
-import { useHeldWhile } from "../../../shared/ui/fade-presence";
+import { useHeldWhile } from "../../../shared/ui/use-fade";
 import { ConfirmationDialog } from "../../../shared/ui/shared-ui";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { ArmoryCurrencyCursor } from "./armory-currency-targeting";

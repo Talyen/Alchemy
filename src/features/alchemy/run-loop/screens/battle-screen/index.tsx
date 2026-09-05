@@ -112,12 +112,12 @@ export function BattleScreen(props: BattleScreenProps) {
       </div>
 
       <PageLayout>
-        <div className="relative flex w-full max-w-[100rem] flex-1 flex-col p-7 pb-1">
+        <div className="relative flex w-full max-w-[calc(100*var(--content-rem,1rem))] flex-1 flex-col p-7 pb-1">
           <div className="relative z-10 flex min-h-0 flex-1 flex-col">
             <div
               ref={sceneRef}
               data-testid="battle-scene"
-              className="[container-type:size] absolute inset-0 overflow-hidden"
+              className="[container-type:size] absolute inset-0 overflow-visible"
             >
               <BattleActors view={view} feedback={feedback} refs={refs} />
 

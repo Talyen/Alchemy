@@ -1,6 +1,6 @@
 export const BUTTON_SHAPE = "rounded-xl";
 
-export const BUTTON_WIDTH_MENU = "w-[19.2rem]";
+export const BUTTON_WIDTH_MENU = "w-[calc(19.2*var(--content-rem,1rem))]";
 export const BUTTON_WIDTH_DIALOG = "w-56";
 export const BUTTON_WIDTH_ACTION = "min-w-56";
 

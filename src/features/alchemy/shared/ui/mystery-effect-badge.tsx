@@ -148,6 +148,10 @@ const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
   );
 };
 
+const renderRandomGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainRandomGear" }>> = () => (
+  <span className="text-sm text-pretty text-muted-foreground">Add random Gear to your Armory</span>
+);
+
 const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainGeneratedGear" }>> = (
   effect,
   ctx,
@@ -216,6 +220,8 @@ export function MysteryEffectBadge({
       return renderTrinketBadge(effect, ctx);
     case "gainRandomTrinket":
       return renderRandomTrinketBadge(effect, ctx);
+    case "gainRandomGear":
+      return renderRandomGearBadge(effect, ctx);
     case "gainGeneratedGear":
       return renderGeneratedGearBadge(effect, ctx);
     case "removeCard":

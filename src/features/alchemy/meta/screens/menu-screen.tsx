@@ -73,8 +73,15 @@ export function MenuScreen({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-10 text-center">
-      <Surface className={cn("relative w-full max-w-[52.5cqh]", cardHoverScaleClass)}>
-        <img src={logoSrc} alt="Alchemy logo" className="h-auto w-full brightness-90" loading="eager" />
+      <Surface className={cn("relative w-full max-w-[calc(35.4375*var(--content-rem,1rem))]", cardHoverScaleClass)}>
+        <img
+          width={1200}
+          height={1219}
+          src={logoSrc}
+          alt="Alchemy logo"
+          className="h-auto w-full brightness-90"
+          loading="eager"
+        />
       </Surface>
 
       <div className="grid justify-items-center gap-3 overflow-visible">

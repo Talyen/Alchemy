@@ -1,7 +1,10 @@
 import { expect } from "@playwright/test";
+import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import {
+  injectActiveBattle,
   makeCard,
   makeHighDamageCard,
+  makeGoblinBattleState,
   startAtDestination,
   startBattleWithDeck,
   winBattleAndClaimReward,
@@ -43,6 +46,45 @@ test.describe("Battle Flow", critical, () => {
     await battle.endTurn();
     const handAfterTurn = await battle.handCount();
     expect(handAfterTurn).toBe(4);
+  });
+
+  test("maximum hand remains visible beyond the battle scene boundary", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await injectActiveBattle(
+      page,
+      makeGoblinBattleState({
+        hand: Array.from({ length: MAX_HAND_SIZE }, () => makeCard()),
+      }),
+    );
+
+    const battle = new BattlePage(page);
+    await expect(battle.hand).toHaveCount(MAX_HAND_SIZE);
+    await expect(battle.hand.first()).toBeVisible();
+    await expect(battle.hand.last()).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const scene = document.querySelector<HTMLElement>('[data-testid="battle-scene"]');
+      const stage = document.querySelector<HTMLElement>('[data-testid="vr-stage"]');
+      const cards = Array.from(document.querySelectorAll<HTMLElement>('[aria-label^="Play "]'));
+      if (!scene || !stage) throw new Error("Battle layout roots are missing");
+
+      const rect = (element: HTMLElement) => {
+        const bounds = element.getBoundingClientRect();
+        return { top: bounds.top, bottom: bounds.bottom };
+      };
+
+      return {
+        sceneOverflow: getComputedStyle(scene).overflow,
+        scene: rect(scene),
+        stage: rect(stage),
+        cards: cards.map(rect),
+      };
+    });
+
+    expect(layout.sceneOverflow).toBe("visible");
+    expect(layout.cards.some((card) => card.bottom > layout.scene.bottom + 0.5)).toBe(true);
+    expect(Math.max(...layout.cards.map((card) => card.bottom))).toBeLessThanOrEqual(layout.stage.bottom + 1);
   });
 });
 

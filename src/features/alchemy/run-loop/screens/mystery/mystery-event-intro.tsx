@@ -1,11 +1,8 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { TextAnimate } from "@/components/ui/text-animate";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-
-const LazyTextAnimate = lazy(() =>
-  import("@/components/ui/text-animate").then((mod) => ({ default: mod.TextAnimate })),
-);
 
 import {
   bodyTextClass,
@@ -19,7 +16,7 @@ import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import { Surface } from "../../../shared/ui/surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { MysteryEffectList } from "../../../shared/ui/mystery-effect-badge";
-import { FadeSlot } from "../../../shared/ui/fade-slot";
+import { FadeSlot } from "../../../shared/ui/use-fade";
 import { PortaledTooltip } from "../../../shared/ui/portaled-tooltip";
 import { useHoverVisible } from "../../../shared/ui/use-hover-visible";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
@@ -132,17 +129,9 @@ export function MysteryEventIntro({
         </div>
       ) : null}
       <div>
-        <Suspense
-          fallback={
-            <p aria-label={event.narrative} className={cn("max-w-lg text-center whitespace-pre-wrap", bodyTextClass)}>
-              {event.narrative}
-            </p>
-          }
-        >
-          <LazyTextAnimate once className={cn("max-w-lg text-center", bodyTextClass)}>
-            {event.narrative}
-          </LazyTextAnimate>
-        </Suspense>
+        <TextAnimate once className={cn("max-w-lg text-center", bodyTextClass)}>
+          {event.narrative}
+        </TextAnimate>
       </div>
 
       <FadeSlot swapKey={event.id} className="flex flex-wrap justify-center gap-4">

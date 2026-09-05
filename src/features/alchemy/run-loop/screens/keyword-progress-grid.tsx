@@ -30,7 +30,12 @@ export function KeywordProgressGrid({
 
   if (columns) {
     return (
-      <div className={cn("mx-auto flex w-full max-w-[73rem] flex-wrap justify-center gap-3", className)}>
+      <div
+        className={cn(
+          "mx-auto flex w-full max-w-[calc(73*var(--content-rem,1rem))] flex-wrap justify-center gap-3",
+          className,
+        )}
+      >
         {entries.map(({ kw, totalXP }) => (
           <div key={kw} className="w-56 flex-none">
             <KeywordProgressCard kw={kw} totalXP={totalXP} animate={animate} size={size} />
@@ -43,7 +48,7 @@ export function KeywordProgressGrid({
   return (
     <div className={cn("flex w-full max-w-2xl flex-wrap justify-center gap-2", className)}>
       {entries.map(({ kw, totalXP }) => (
-        <div key={kw} className="w-[23.33cqh] flex-none">
+        <div key={kw} className="w-[calc(15.7477*var(--content-rem,1rem))] flex-none">
           <KeywordProgressCard kw={kw} totalXP={totalXP} animate={animate} size={size} />
         </div>
       ))}

@@ -51,7 +51,7 @@ export function ChooserArtTile({
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, interactionId);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const trackTooltip = renderTooltip !== undefined;
-  usePlasmaInteraction(plasmaColorPair, tooltipVisible);
+  usePlasmaInteraction(plasmaColorPair, tooltipVisible && !disabled);
 
   const hoverIn = () => {
     setTooltipVisible(true);

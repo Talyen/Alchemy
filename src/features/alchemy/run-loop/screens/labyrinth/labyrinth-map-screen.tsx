@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
-import { FadeSlot } from "../../../shared/ui/fade-slot";
+import { FadeSlot } from "../../../shared/ui/use-fade";
 import { TitledScreenShell } from "../../../shared/ui/shared-ui";
 import { cn } from "@/lib/utils";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
@@ -44,17 +44,25 @@ export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect,
 
   const mapCanvasRef = useRef<HTMLDivElement>(null);
   const [mapWidth, setMapWidth] = useState(0);
+  const [contentScale, setContentScale] = useState(1);
   useLayoutEffect(() => {
     const element = mapCanvasRef.current;
     if (!element) return;
     const updateWidth = () => {
       const next = element.clientWidth;
+      setContentScale(Number(getComputedStyle(element).getPropertyValue("--content-scale")) || 1);
       setMapWidth((prev) => (prev === next ? prev : next));
     };
     updateWidth();
     const observer = new ResizeObserver(updateWidth);
     observer.observe(element);
-    return () => observer.disconnect();
+    const stage = element.closest('[data-testid="vr-stage"]');
+    const styleObserver = new MutationObserver(updateWidth);
+    if (stage) styleObserver.observe(stage, { attributes: true, attributeFilter: ["style"] });
+    return () => {
+      observer.disconnect();
+      styleObserver.disconnect();
+    };
   }, []);
 
   const nodes = labyrinthMap ? floorNodes(labyrinthMap, viewedFloor) : [];
@@ -69,7 +77,7 @@ export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect,
   const inspectorNodeId = selectedNode?.id ?? null;
   const inspector =
     selectedNode && selectedPoint && layout
-      ? inspectorPlacement(selectedPoint.x, selectedPoint.y, layout.metrics.width, mapWidth)
+      ? inspectorPlacement(selectedPoint.x, selectedPoint.y, layout.metrics.width, mapWidth, contentScale)
       : null;
 
   const [inspectorPanel, setInspectorPanel] = useState<HTMLElement | null>(null);

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/card-button";
-import { useHeldWhile } from "../../../shared/ui/fade-presence";
+import { useHeldWhile } from "../../../shared/ui/use-fade";
 import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { ScreenHeader } from "../../../shared/ui/shared-ui";

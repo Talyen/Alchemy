@@ -3,7 +3,8 @@ import { Fragment } from "react";
 import { getProgressionFeatureUnlockMessage } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { Screen } from "@/lib/routing";
-import { useHeldWhile } from "./fade-presence";
+import { controlLabelClass } from "../config/typography";
+import { useHeldWhile } from "./use-fade";
 import { LockedMenuItem } from "./locked-menu-item";
 import { ModalOverlayShell } from "./modal-overlay-shell";
 
@@ -153,7 +154,7 @@ function GameMenuPanel({
   return (
     <div
       data-testid="game-menu"
-      className="motion-panel alchemy-shell w-full max-w-[42.67cqh] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-4"
+      className="motion-panel alchemy-shell w-full max-w-[calc(28.8023*var(--content-rem,1rem))] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-4"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="grid gap-0.5">
@@ -167,8 +168,8 @@ function GameMenuPanel({
                 message={item.gate ? messages[item.gate] : ""}
                 locked={item.gate ? locks[item.gate] : false}
                 onSelect={item.handler}
-                icon={<item.Icon className={cn("h-4 w-4", item.iconClassName)} />}
-                className={cn("h-11 justify-start", item.danger && "text-red-400")}
+                icon={<item.Icon className={cn("h-5 w-5", item.iconClassName)} />}
+                className={cn(controlLabelClass, "h-11 justify-start", item.danger && "text-red-400")}
               >
                 {item.label}
               </LockedMenuItem>

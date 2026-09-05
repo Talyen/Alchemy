@@ -107,6 +107,11 @@ export function Surface(props: SurfaceProps) {
   const surfaceStyle = { "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties;
   const klass = surfaceClassName(selected, dragging, disabled, className);
   const hoveredAttr = hoverScaleActive ? "true" : undefined;
+  const divClick = onDivClick ?? onClick;
+  const handleDivClick =
+    divClick !== undefined
+      ? (e?: MouseEvent<HTMLDivElement>) => (divClick as (e?: MouseEvent<HTMLDivElement>) => void)(e)
+      : undefined;
   const body = (
     <>
       {shimmerActive !== undefined ? (
@@ -149,12 +154,12 @@ export function Surface(props: SurfaceProps) {
       data-hovered={hoveredAttr}
       {...(dataCount !== undefined ? { "data-count": dataCount } : {})}
       {...(disabled ? { "aria-disabled": "true" } : {})}
-      onClick={onDivClick}
-      onKeyDown={handleDivKeyDown(onDivClick)}
+      onClick={handleDivClick}
+      onKeyDown={handleDivKeyDown(handleDivClick)}
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Surface renders as interactive button when onDivClick is set, with role and keyboard handling
-      tabIndex={onDivClick ? 0 : undefined}
-      role={onDivClick ? "button" : undefined}
-      aria-label={onDivClick ? ariaLabel : undefined}
+      tabIndex={handleDivClick ? 0 : undefined}
+      role={handleDivClick ? "button" : undefined}
+      aria-label={handleDivClick ? ariaLabel : undefined}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       className={klass}

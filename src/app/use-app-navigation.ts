@@ -10,7 +10,7 @@ import {
   useForegroundResumeKind,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
-import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-sequential-fade-swap";
+import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 import { uniqueItemList } from "@/lib/gear";

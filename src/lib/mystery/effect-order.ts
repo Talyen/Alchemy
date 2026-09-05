@@ -16,6 +16,7 @@ export function getMysteryEffectRank(effect: MysteryEffect): number {
     case "removeCard":
     case "gainTrinket":
     case "gainRandomTrinket":
+    case "gainRandomGear":
     case "gainGeneratedGear":
       return 1;
   }

@@ -12,14 +12,6 @@ function getVrStageElement(): Element {
   return document.querySelector(VR_STAGE_SELECTOR) ?? document.documentElement;
 }
 
-export function getVrStageBounds(): DOMRect {
-  const stage = document.querySelector(VR_STAGE_SELECTOR);
-  if (stage) {
-    return stage.getBoundingClientRect();
-  }
-  return document.documentElement.getBoundingClientRect();
-}
-
 export function horizontalInsetForStage(stage: Pick<DOMRect, "left" | "right">): number {
   return Math.min(DEFAULT_HORIZONTAL_INSET, Math.max(48, (stage.right - stage.left) / 4));
 }
@@ -46,6 +38,7 @@ export function usePortaledTooltipPlacement(
   active: boolean,
   padding = 8,
   placement: PortaledTooltipPlacement = "above",
+  maxWidthFraction?: number,
 ) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [placeBelow, setPlaceBelow] = useState(false);
@@ -66,8 +59,20 @@ export function usePortaledTooltipPlacement(
     const update = () => {
       if (cancelled) return;
       const stage = getVrStageElement();
-      const horizontalInset = horizontalInsetForStage(stage.getBoundingClientRect());
+      const bounds = stage.getBoundingClientRect();
+      const horizontalInset = horizontalInsetForStage(bounds);
       tooltipEl.style.width = "";
+      tooltipEl.style.maxWidth = "";
+      const preferredMax = parseFloat(getComputedStyle(tooltipEl).maxWidth);
+      const availableWidth = Math.max(
+        0,
+        Math.min(bounds.width - 2 * horizontalInset, maxWidthFraction ? bounds.width * maxWidthFraction : Infinity),
+      );
+      tooltipEl.style.maxWidth = `${Math.min(Number.isFinite(preferredMax) ? preferredMax : availableWidth, availableWidth)}px`;
+      if (tooltipEl.getBoundingClientRect().height > bounds.height - 2 * padding) {
+        tooltipEl.style.maxWidth = `${availableWidth}px`;
+        tooltipEl.style.width = `${availableWidth}px`;
+      }
       void computePosition(trigger, tooltipEl, {
         placement: preferredFloatingPlacement(placement),
         strategy: "fixed",
@@ -92,12 +97,25 @@ export function usePortaledTooltipPlacement(
     };
 
     update();
-    const cleanup = autoUpdate(trigger, tooltipEl, update);
+    let frame: number | null = null;
+    const scheduleUpdate = () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        update();
+      });
+    };
+    const cleanup = autoUpdate(trigger, tooltipEl, scheduleUpdate);
+    const stage = getVrStageElement();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(scheduleUpdate);
+    observer?.observe(stage);
     return () => {
       cancelled = true;
+      observer?.disconnect();
+      if (frame !== null) cancelAnimationFrame(frame);
       cleanup();
     };
-  }, [active, triggerRef, padding, placement]);
+  }, [active, triggerRef, padding, placement, maxWidthFraction]);
 
   return { tooltipRef, placeBelow, tooltipSide, tooltipStyle };
 }

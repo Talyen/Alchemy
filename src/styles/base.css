@@ -1,5 +1,6 @@
 @layer base {
   * {
+    --content-rem: calc(1rem * var(--content-scale, 1));
     border-color: var(--color-border);
     scrollbar-width: none;
     -webkit-user-drag: none;

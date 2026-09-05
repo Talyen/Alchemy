@@ -19,7 +19,7 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 - Use plain prop functions rather than `React.FC`; React 19 components receive `ref` directly as a prop.
 - Use `cn()` for conditional classes and existing CVA variants for semantic states.
 - Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states.
-- `Surface` is the shared interactive card/tile owner. `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText`, `GearItemTitle`, and `TrinketItemTitle` own keyword/item shine typography.
+- `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography.
 - Modals and panels use `useModalEscapeDismiss` or `useCaptureEscapeCancel` so the global Escape stack remains ordered.
 
 ## Screen fade motion
@@ -31,6 +31,8 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 | Overlays           | Dialogs, wish, and the game menu use `useFadePresence` so exit completes before unmount.                                                                                                                                        |
 | Copy               | `ScreenDescription` is static. `TextAnimate` is reserved for mystery narrative.                                                                                                                                                 |
 | Anti-flash         | Replace outgoing payloads only at the rendered-screen commit, swap layout while opacity is zero, reserve height for shape-changing swaps, and keep shell chrome mounted when payload data clears. Do not stagger route content. |
+
+Screen and `FadeSlot` reveals wait for the mounted images to load and decode through `useArtworkReady`, then allow a layout frame before starting the fade. Startup preloading is a warm-up, not proof that a later mounted image is paint-ready. Failed or timed-out images stay hidden for that mount so they cannot pop in after the screen is revealed. Reserve intrinsic artwork dimensions when image height determines layout, including the menu logo.
 
 Motion tokens live in `src/lib/game-constants/ui-motion.ts` (`MOTION_FADE_MS`, `TOOLTIP_FADE_MS`) and are mirrored to CSS as `var(--motion-fade-duration)` in `src/styles/theme.css` / `src/styles/components.css`. Keep JS `MOTION_FADE_MS` and CSS `var(--motion-fade-duration)` in sync; `npm run lint:architecture-smoke` asserts this.
 
@@ -49,20 +51,53 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`.
 | Tabs           | `TabBar`                                                                                |
 | Hover / press  | Shared CSS hover scale and `active:` feedback; do not add parallel Motion hover scaling |
 
+Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
+
+## Display sizing
+
+The virtual stage owns available-space geometry and battle coordinates. Its fit
+scale is not capped; content growth is. At fit scale `s <= 1`, content follows
+`s`. Above that, automatic content scale is `min(1.75, s ** 0.8)`, multiplied by
+Game Size (80–120%, 5% steps). Use CSS viewport dimensions, never device pixel
+ratio, for layout. The root font remains 16px.
+
+The stage's `--content-scale` is visible content scale divided by stage scale.
+Inline Tailwind theme tokens and `--content-rem` size text, controls, cards,
+spacing, and panels once. Percentage anchors and layout regions follow the
+stage. Authored arbitrary content dimensions must use the content unit; do not
+use raw container-height units as the primary card size. Available-space caps
+are allowed: the battle hand caps card height, compresses its fan into the
+reserved center region, and reserves extra bottom space for larger hands.
+Enlarged actors shift upward to keep health and battle controls clear. Backgrounds
+fill the frame.
+
+Collection and Armory browsing measure their available grid width and scaled
+tile size. Page size is two rows times the resolved column count, capped at eight
+portrait or six landscape columns. Resize retains the selected or first visible
+item. Offered choices remain content-owned, independent of browsing capacity.
+
+Game Size and Tooltip Size are device-local preferences, separate from game
+saves and cloud mirroring. Reset Sizes and Reset Options reset both. Clearing
+progress or importing a save does not change them.
+
 ## Hover tooltips
 
 Tooltips render through `PortaledTooltip` into the root-space `#tooltip-root`.
 Placement follows the Floating UI standard (`@floating-ui/dom`: preferred side,
 then automatic flip to a fitting side, then shift to stay in bounds), bounded to
 `[data-testid="vr-stage"]` with `documentElement` as a fallback, so panels keep
-a constant CSS-pixel scale and avoid clipped ancestors.
+an independent CSS-pixel scale and avoid clipped ancestors. Tooltip Size
+(90–125%, 5% steps; default 100%) scales text, chrome, and preferred width
+together. Placement recomputes width bounds on resize and size changes. Long
+descriptions can use available width to fit; tooltips never scroll or truncate.
 
-- Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use the `holdMs: TOOLTIP_FADE_MS` form or the thin alias `useTileHoverPopup` (see those hooks for the exact call shape).
+- Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use `useTileHoverPopup` (a `useHoverVisible` preset with the shared `TOOLTIP_FADE_MS` hold) — see those hooks for the exact call shape.
 - Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.
 - Use `maxWidthFraction` for small-window bounds.
 - Tooltip panels are `pointer-events-none`; nested interactive tooltips are unsupported.
-- State-driven triggers mount the portal only while hovered; exit fades complete via the shared `TOOLTIP_FADE_MS` hold — do not double-hold.
-- Fade primitives are consolidated in `src/features/alchemy/shared/ui/use-fade.tsx`; placement helpers live in `portaled-tooltip-placement.ts`, content slots in `tooltip-panel.tsx`.
+- `PortaledTooltip` retains the complete last visible content through fade-out, including descriptions computed only while hovered. Header and body enter and exit as one panel.
+- State-driven triggers mount the portal only while hovered; exit fades complete via the shared `TOOLTIP_FADE_MS` hold — do not add a second hold alongside `PortaledTooltip`.
+- Fade primitives are consolidated in `src/features/alchemy/shared/ui/use-fade.tsx` (import `FadeSlot`, `useFadePresence`, `useSequentialFadeSwap`, `useHeldWhile` from there directly); placement helpers live in `portaled-tooltip-placement.ts`, content slots in `tooltip-panel.tsx`. `DisabledTooltip` lives in `disabled-tooltip.tsx`.
 
 ## Accessibility stance
 

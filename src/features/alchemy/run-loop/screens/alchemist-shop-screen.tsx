@@ -3,7 +3,7 @@ import { FlaskConical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { isMixedPotionCard, isStandardPotionCard, type BattleCard } from "@/lib/game-data";
-import { MIXED_POTION_TITLE, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
+import { MIXED_POTION_TITLE } from "@/lib/game-constants";
 import { collectionTileWidthClass, BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 
 import { BattleCardButton } from "../../shared/ui/card-button";
@@ -13,7 +13,7 @@ import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { ScreenDescription, ServiceButton } from "../../shared/ui/shared-ui";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
-import { FadeSlot } from "../../shared/ui/fade-slot";
+import { FadeSlot } from "../../shared/ui/use-fade";
 import { shopItemSlotKey, shopOfferingsSwapKey } from "../shop/shop-slot-keys";
 
 export function AlchemistShopScreen({
@@ -175,9 +175,9 @@ export function AlchemistShopScreen({
             <ScreenDescription className="mb-3">Select two Potions to Combine</ScreenDescription>
             <CardSelectionGrid
               items={mixableCards}
+              selectedIndex={mixableCards.findIndex((item) => item.index === (mix.b ?? mix.a))}
               page={mix.page}
               onPageChange={(page) => setMix((s) => ({ ...s, page }))}
-              pageSize={SELECTION_GRID_PAGE_SIZE}
               paginationSize="default"
               paginationReserveSpace
               renderItem={({ card, index }) => (

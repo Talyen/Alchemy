@@ -7,7 +7,7 @@ import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/shared-ui";
 import { usePlasmaBaseline } from "../../../shared/ui/use-plasma-source";
 import { getPlasmaColorPair } from "@/features/alchemy/shared/config";
-import { FadeSlot } from "../../../shared/ui/fade-slot";
+import { FadeSlot } from "../../../shared/ui/use-fade";
 import { RemoveCardPanel } from "../../../shared/ui/remove-card-panel";
 
 import { CardChoicePicker } from "./mystery-deck-pickers";
