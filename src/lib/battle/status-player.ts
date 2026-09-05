@@ -262,9 +262,6 @@ function applyHarmfulStatusFromAttack(
     return state;
   }
 
-  if (state.trinketEffects.plagueDoctorImmunity && !state.flags.firstHarmfulStatusPrevented) {
-    return { ...state, flags: { ...state.flags, firstHarmfulStatusPrevented: true } };
-  }
   const appliedAmount = status === "bleed" ? amount * BLEED_STATUS_MULTIPLIER : amount;
   const nextState = addPlayerStatus(state, status, appliedAmount);
 

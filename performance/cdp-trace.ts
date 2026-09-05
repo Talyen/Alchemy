@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import type { CDPSession, Page } from "@playwright/test";
 import { ensureOutputDirs } from "./report";
+import { summarizeTrace, type TraceInsight } from "./trace-insights";
+import type { FrameSampleRaw } from "./metrics";
 
 const TRACE_CATEGORIES = [
   "-*",
@@ -15,7 +17,6 @@ const TRACE_CATEGORIES = [
   "blink.user_timing",
   "loading",
   "latencyInfo",
-  "disabled-by-default-devtools.screenshot",
 ].join(",");
 
 interface TraceSession {
@@ -32,10 +33,15 @@ export async function startCdpTrace(page: Page): Promise<TraceSession> {
     if (params.value) events.push(...params.value);
   });
 
-  await client.send("Tracing.start", {
-    categories: TRACE_CATEGORIES,
-    transferMode: "ReportEvents",
-  });
+  try {
+    await client.send("Tracing.start", {
+      categories: TRACE_CATEGORIES,
+      transferMode: "ReportEvents",
+    });
+  } catch (error) {
+    await client.detach().catch(() => undefined);
+    throw error;
+  }
   return { client, events };
 }
 
@@ -44,71 +50,31 @@ export async function stopCdpTrace(session: TraceSession, scenario: string, runI
   const outPath = path.join(traces, `${scenario}-${runIndex}.json`);
   const { client, events } = session;
 
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error("CDP Tracing.end timed out")), 60_000);
-    client.on("Tracing.tracingComplete", () => {
-      clearTimeout(timeout);
-      resolve();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const finish = (error?: Error) => {
+        clearTimeout(timeout);
+        client.off("Tracing.tracingComplete", complete);
+        if (error) reject(error);
+        else resolve();
+      };
+      const complete = (result: { dataLossOccurred?: boolean }) => {
+        finish(
+          result.dataLossOccurred ? new Error("Chrome trace lost events; attribution would be incomplete") : undefined,
+        );
+      };
+      const timeout = setTimeout(() => finish(new Error("CDP Tracing.end timed out")), 60_000);
+      client.on("Tracing.tracingComplete", complete);
+      void client.send("Tracing.end").catch((error: Error) => finish(error));
     });
-    void client.send("Tracing.end").catch(reject);
-  });
-
-  // Chrome DevTools expects a raw JSON array of trace events.
-  fs.writeFileSync(outPath, JSON.stringify(events));
-  await client.detach().catch(() => undefined);
+    fs.writeFileSync(outPath, JSON.stringify(events));
+  } finally {
+    await client.detach().catch(() => undefined);
+  }
   return outPath;
 }
 
-export interface TraceInsight {
-  largestTasks: Array<{ name: string; durationMs: number; category: string }>;
-  dominantCategory: string;
-}
-
-/** Lightweight parse of Chrome trace events for report insights. */
-export function summarizeTraceFile(tracePath: string): TraceInsight {
-  if (!fs.existsSync(tracePath)) {
-    return { largestTasks: [], dominantCategory: "unknown" };
-  }
-  let events: Array<Record<string, unknown>>;
-  try {
-    events = JSON.parse(fs.readFileSync(tracePath, "utf8")) as Array<Record<string, unknown>>;
-  } catch {
-    return { largestTasks: [], dominantCategory: "unknown" };
-  }
-
-  const tasks: Array<{ name: string; durationMs: number; category: string }> = [];
-  const categoryMs: Record<string, number> = {};
-
-  for (const event of events) {
-    if (event.ph !== "X" && event.ph !== "B") continue;
-    const durUs = typeof event.dur === "number" ? event.dur : 0;
-    if (durUs < 16_000) continue; // <16ms
-    const name = String(event.name ?? "unknown");
-    const cat = classifyTraceCategory(String(event.cat ?? ""), name);
-    const durationMs = durUs / 1000;
-    tasks.push({ name, durationMs, category: cat });
-    categoryMs[cat] = (categoryMs[cat] ?? 0) + durationMs;
-  }
-
-  tasks.sort((a, b) => b.durationMs - a.durationMs);
-  const dominantCategory = Object.entries(categoryMs).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "unknown";
-
-  return {
-    largestTasks: tasks.slice(0, 15),
-    dominantCategory,
-  };
-}
-
-function classifyTraceCategory(cat: string, name: string): string {
-  const lower = `${cat} ${name}`.toLowerCase();
-  if (lower.includes("paint") || lower.includes("raster") || lower.includes("composite")) {
-    return "paint/raster";
-  }
-  if (lower.includes("layout") || lower.includes("reflow") || lower.includes("update_layout")) {
-    return "style/layout";
-  }
-  if (lower.includes("v8") || lower.includes("evaluate") || lower.includes("function call")) {
-    return "scripting";
-  }
-  return "other";
+export function summarizeTraceFile(tracePath: string, sample: FrameSampleRaw): TraceInsight {
+  const parsed: unknown = JSON.parse(fs.readFileSync(tracePath, "utf8"));
+  return summarizeTrace(parsed, sample);
 }

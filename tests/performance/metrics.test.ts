@@ -441,6 +441,19 @@ describe("renderSummaryMarkdown", () => {
             metrics,
             targets: classifyTargets(metrics, "continuous"),
             observations: { rendererStartupReadyMs: 2400 },
+            rawSamplePath: "/reports/battle-effects-1-sample.json",
+            traceInsight: {
+              status: "available",
+              slowFrames: [
+                {
+                  timeMs: 10,
+                  gapMs: 80,
+                  phases: ["play-card", "damage-feedback"],
+                  work: [{ name: "Layout", category: "style/layout", source: "app.js", selfMs: 60 }],
+                  unaccountedMs: 20,
+                },
+              ],
+            },
           },
         ],
       },
@@ -451,5 +464,9 @@ describe("renderSummaryMarkdown", () => {
     expect(md).toContain("GREEN");
     expect(md).toContain("abc123");
     expect(md).toContain("rendererStartupReadyMs");
+    expect(md).toContain("[sample](/reports/battle-effects-1-sample.json)");
+    expect(md).toContain("Slow-frame evidence — run 1");
+    expect(md).toContain("play-card → damage-feedback");
+    expect(md).toContain("Layout (style/layout): 60.0 ms — app.js");
   });
 });

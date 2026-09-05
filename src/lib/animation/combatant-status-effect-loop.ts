@@ -64,20 +64,20 @@ export function startCombatantStatusEffectLoop({
     };
   }
 
+  let observer: ResizeObserver | null = null;
+
   const frame = (now: number) => {
     rafId = null;
     if (!running) return;
 
-    resize();
+    if (!observer || Math.max(window.devicePixelRatio || 1, 1) !== lastPixelRatio) resize();
     const progress = combatantStatusProgress(now - startTime);
     drawCombatantStatusEffect(ctx, lastWidth, lastHeight, kind, progress, palette);
     onFrame({ progress, wobbleDegrees: combatantStatusWobbleDegrees(kind, progress) });
     rafId = requestAnimationFrame(frame);
   };
 
-  frame(startTime);
-
-  let observer: ResizeObserver | null = null;
+  resize();
   if (typeof ResizeObserver !== "undefined" && canvas.parentElement) {
     observer = new ResizeObserver(() => {
       if (!running) return;
@@ -85,6 +85,8 @@ export function startCombatantStatusEffectLoop({
     });
     observer.observe(canvas.parentElement);
   }
+
+  frame(startTime);
 
   return () => {
     running = false;

@@ -2,13 +2,13 @@
 
 Centralized intake for agent pain points, confusion, and struggle while working in this codebase. Keep entries short — one line in the table is enough. Use the expanded template only when extra context helps.
 
-Add a row to `Open` when docs mislead, behavior surprises, or repeated friction appears. Move it to `Resolved` with a fix link plus either a `knowledge/patterns/<name>.md` link or `N/A (one-off)` with a one-line reason. Second recurrence in the same `Area` promotes to a pattern candidate per `knowledge/index.md`.
+Add a row to `Open` when docs mislead, behavior surprises, or repeated friction appears. Move it to `Resolved` with a fix link plus either a `knowledge/patterns/<name>.md` link or `N/A (one-off)` with a one-line reason. Repeated friction is evidence for reusable prevention; add a knowledge note only when the explanation will help future work.
 
 ## How to log
 
 1. Add a row to `## Open` below.
 2. For longer context, add a `### YYYY-MM-DD — short slug` subsection under `## Details` using the template at the bottom.
-3. When resolved, move the row to `## Resolved` and include a commit, PR, or `knowledge/patterns/<name>.md` link — or `N/A (one-off)` with reason. Flag a second same-area recurrence as a pattern candidate.
+3. When resolved, move the row to `## Resolved` and include a commit, PR, or `knowledge/patterns/<name>.md` link — or `N/A (one-off)` with reason. Link an existing lesson before creating another.
 
 ## Open
 
@@ -29,6 +29,20 @@ Add a row to `Open` when docs mislead, behavior surprises, or repeated friction 
 | 2026-09-04 | Browser checks | Overlapping Playwright invocations shared a dev server; one invocation teardown disconnected the other. Run browser batches serially or in one invocation. N/A (one-off). |
 
 ## Resolved
+
+2026-09-05 — Canvas animation loops did redundant sizing work: status effects polled layout every frame despite observing size, and background particles reset unchanged backing dimensions on the observer’s initial notification. Fixed in the [status loop](../src/lib/animation/combatant-status-effect-loop.ts) and [particle renderer](../src/lib/animation/background-particles.ts). N/A (one-off); old/new browser output matched at 18 sampled frames, including resize and DPR changes.
+
+2026-09-05 — The full performance run failed Armory and startup navigation because scenarios used screen-specific menu labels while the shared header exposes “Open game menu.” Updated the three affected scenarios. Trace source locations also added one to Chrome’s already one-based line numbers; corrected against the built script. N/A (one-off profiling reconciliation).
+
+2026-09-05 — Performance profiling could reuse stale build output on a clean checkout, and trace summaries mixed threads and counted nested work repeatedly. Fixed the [runner](../scripts/run-performance.mjs) and [slow-frame attribution](../performance/trace-insights.ts); the [profiling workflow](../docs/PERFORMANCE.md#finding-the-work-behind-a-slow-frame) now explains retained evidence. N/A (one-off tooling reconciliation); verified with a battle trace and an injected main-thread stall.
+
+2026-09-05 — Skill review found broken routing links, duplicate purpose files, optional rationale routed as mandatory procedure, and audit delegation pointing to a nonexistent policy. Consolidated [skill routing](./skills/README.md) and [knowledge](./knowledge/index.md), corrected skill workflows and stale asset/battle references. N/A (documentation consolidation).
+
+2026-09-05 — Build review found asset gates excluding raw sources, browser cache hits skipping OS dependencies, and bundle checks succeeding without outputs. Fixed the [workflows](../.github/workflows/ci.yml), [browser setup](../.github/actions/setup-playwright/action.yml), and [bundle gate](../scripts/check-bundle-budget.mjs); corrected the [script catalog](../scripts/README.md). N/A (one-off pipeline reconciliation).
+
+2026-09-05 — Agent routing contradicted optional knowledge reads and mandatory post-edit verification; aligned [agent rules](../AGENTS.md), [skill routing](./skills/README.md), and [knowledge triggers](./knowledge/index.md). Browser invocation lessons now live in the [E2E guide](../tests/e2e/README.md#running-focused-checks). N/A (one-off documentation reconciliation).
+
+2026-09-05 — Focused browser layout checks used an old preview build by default. Use `PLAYWRIGHT_VITE_MODE=dev` when verifying current source edits; see [Playwright configuration](../tests/playwright-shared.ts). N/A (one-off).
 
 2026-09-04 — Labyrinth input: removing a decorative dimming layer during hover could lose mouse clicks; the artwork now ignores pointer events so the hex button remains the target. Browser coverage in [Labyrinth tests](../tests/labyrinth.spec.ts). N/A (one-off).
 

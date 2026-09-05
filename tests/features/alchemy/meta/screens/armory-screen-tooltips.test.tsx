@@ -92,7 +92,7 @@ describe("ArmoryScreen tooltip integration", () => {
 
     fireEvent.mouseEnter(trinketTile.parentElement!);
     await waitFor(() => {
-      const panel = tooltipPanelFor(/doubled/);
+      const panel = tooltipPanelFor("Brass Censer");
       expect(within(panel).getByText("Brass Censer")).toBeTruthy();
       expectNoCategoryChip(panel);
     });
@@ -106,7 +106,7 @@ describe("ArmoryScreen tooltip integration", () => {
     const slot = screen.getByLabelText("Trinket equipment slot");
     fireEvent.mouseEnter(slot.parentElement!);
     await waitFor(() => {
-      const panel = tooltipPanelFor(/doubled/);
+      const panel = tooltipPanelFor("Brass Censer");
       expect(within(panel).getByText("Brass Censer")).toBeTruthy();
       expectNoCategoryChip(panel);
     });

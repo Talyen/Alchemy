@@ -1,17 +1,15 @@
 ---
 name: architect
-description: Public-contract design guard. Auto-triggers only when adding or structurally revising a cross-boundary type, capability port, store schema, persistence contract, or screen-controller contract.
+description: Design new or structurally revised contracts across Alchemy feature boundaries, including capability ports, store schemas, persistence contracts, and screen-controller props. Excludes private helpers and ordinary use of existing contracts.
 ---
 
-# Public-contract design guard
+# Public-contract design
 
-## Trigger
+Read the relevant [architecture owner](../../../AGENTS.md#documentation-owners), then inspect the existing contract and its consumers before choosing a shape.
 
-Use for a **new or structurally revised public contract** imported across a feature boundary. Do not trigger for ordinary implementation, a private helper, test-only types, or a change to an existing contract that does not redesign its shape; [AGENTS.md § Change guards](../../../AGENTS.md#change-guards) owns those existing-boundary changes.
+- Reuse the current owner when it can express the requirement. Introduce a new boundary only for a concrete consumer or invariant.
+- Model valid states and operations in TypeScript before wiring handlers or React components. Check how each consumer will read, write, and handle failure; avoid speculative options and duplicate representations.
+- For persisted changes, follow [MIGRATIONS.md](../../../src/features/alchemy/shared/storage/MIGRATIONS.md) for compatibility. For run commands, follow [run-state ownership](../../../docs/ARCHITECTURE.md#run-state) for atomicity and side effects.
+- Update consumers and the canonical owner together. Use [verifier](../verifier/SKILL.md) for validation.
 
-## Steps
-
-1. Read the exact route-selected owner section.
-2. Draft the most pragmatic honest TypeScript contract — the cleanest shape that makes invalid states unrepresentable without over- or under-modeling — before concrete React/handler code. Keep invalid states out of the model. Follow [AGENTS.md § Change guards](../../../AGENTS.md#change-guards): express invariants through the contract, names, and tests; do not add explanatory comments.
-3. Search only the public symbol’s known consumers and boundary entry points; expand when evidence shows another owner.
-4. Preview the changed-path route. The `verifier` skill owns commands and handoff gates.
+Ordinary changes within an existing contract follow [AGENTS.md](../../../AGENTS.md#change-guards) without a separate design workflow.

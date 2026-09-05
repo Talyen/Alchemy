@@ -1,4 +1,6 @@
 import type { BattleCard, DamageType } from "@/lib/game-data";
+import { getBattleRng, rollPercent } from "@/lib/rng";
+import { applyLifestealAndPlayerHitTriggers } from "./damage-rider-leech";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { mergeCombatText, payKillPayouts } from "./combat-text";
@@ -34,11 +36,20 @@ export function dealPlayerTypedHit(
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: damageType, amount: modifiedDamage });
   }
   nextState = processEncounterTraitHealthThreshold(preHitHealth, nextState, combatTexts);
-  return payKillPayouts(nextState, enemyWasAlive, combatTexts);
+  nextState = payKillPayouts(nextState, enemyWasAlive, combatTexts);
+  return damageType === "holy" ? applyBrassCenser(nextState, modifiedDamage, combatTexts) : nextState;
 }
 
 export function tryPoisonStunProc(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   if (!rollTalentChance(state.talentEffects.poisonStunChance, state)) return state;
   return dealPlayerTypedHit(state, "stun", damage, combatTexts);
+}
+
+export function applyBrassCenser(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
+  if (damage <= 0 || !rollPercent(state.trinketEffects.brassCenserProcChance, getBattleRng(state))) return state;
+  if (rollPercent(50, getBattleRng(state))) {
+    return dealPlayerTypedHit(state, "burn", damage, combatTexts);
+  }
+  return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts);
 }

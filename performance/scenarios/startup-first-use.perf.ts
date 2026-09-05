@@ -24,7 +24,7 @@ test.describe("startup-first-use", () => {
         await menu.openOptions();
         await delay(250);
         await phase("first-menu-return");
-        await page.getByRole("button", { name: "Open options menu" }).click();
+        await page.getByRole("button", { name: "Open game menu" }).click();
         await page.getByRole("button", { name: "Main Menu", exact: true }).click();
         await expect(menu.playBtn).toBeVisible();
         await delay(2500);

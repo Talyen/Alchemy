@@ -60,13 +60,14 @@ describe("CardShopScreen remove mode", () => {
     renderCardShop(onRemoveCard);
 
     await user.click(screen.getByRole("button", { name: /Remove Card/i }));
-    expect(await screen.findByText("Select a card to remove from your deck")).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Remove Card" })).toBeTruthy();
+    expect(screen.queryByText("Select a card to remove from your deck")).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Select shop card" }));
-    await user.click(screen.getByRole("button", { name: /Remove Card/i }));
+    await user.click(await screen.findByRole("button", { name: "Select shop card" }));
+    await user.click(screen.getByRole("button", { name: /^Remove(?! Card)/i }));
 
     expect(onRemoveCard).toHaveBeenCalledWith(0);
-    expect(screen.getByText("Select a card to remove from your deck")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Remove Card" })).toBeTruthy();
   });
 
   it("returns to browse when removal succeeds", async () => {
@@ -74,8 +75,8 @@ describe("CardShopScreen remove mode", () => {
     renderCardShop(() => true);
 
     await user.click(screen.getByRole("button", { name: /Remove Card/i }));
-    await user.click(screen.getByRole("button", { name: "Select shop card" }));
-    await user.click(screen.getByRole("button", { name: /Remove Card/i }));
+    await user.click(await screen.findByRole("button", { name: "Select shop card" }));
+    await user.click(screen.getByRole("button", { name: /^Remove(?! Card)/i }));
 
     expect(await screen.findByRole("button", { name: /Remove Card/i })).toBeTruthy();
     expect(screen.queryByText("Select a card to remove from your deck")).toBeNull();

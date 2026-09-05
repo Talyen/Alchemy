@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import type { FrameMetrics, InputEventSample, TargetCheck, TargetProfile } from "./metrics";
+import type { TraceInsight } from "./trace-insights";
 import type { MetricDelta } from "./compare";
 
 export interface ScenarioRunResult {
@@ -12,6 +13,8 @@ export interface ScenarioRunResult {
   metrics: FrameMetrics;
   targets: TargetCheck[];
   tracePath?: string;
+  rawSamplePath?: string;
+  traceInsight?: TraceInsight;
   notes?: string[];
   runtimeBefore?: RuntimeSnapshot;
   runtimeAfter?: RuntimeSnapshot;
@@ -254,6 +257,39 @@ export function renderSummaryMarkdown(options: {
       }
     }
     lines.push("");
+    for (const run of agg.runs.filter((r) => r.measured)) {
+      if (run.rawSamplePath)
+        lines.push(
+          `Raw frame timeline, phases, long tasks and inputs (run ${run.runIndex}): [sample](${run.rawSamplePath}).`,
+          "",
+        );
+      if (!run.traceInsight) continue;
+      lines.push(`### Slow-frame evidence — run ${run.runIndex}`, "");
+      if (run.traceInsight.status === "unavailable") {
+        lines.push(`Trace attribution unavailable: ${run.traceInsight.reason ?? "unknown"}.`, "");
+        continue;
+      }
+      lines.push(
+        "Renderer main-thread work overlapping the worst gaps >20 ms. Self time excludes nested work; overlap is evidence, not proof of causation. Unaccounted time is not automatically GPU time.",
+        "",
+      );
+      lines.push("| Start (ms) | Gap (ms) | Phases crossed | Largest work by self time | Unaccounted (ms) |");
+      lines.push("| ---: | ---: | --- | --- | ---: |");
+      for (const frame of run.traceInsight.slowFrames) {
+        const work = frame.work
+          .slice(0, 4)
+          .map(
+            (item) =>
+              `${item.name} (${item.category}): ${fmt(item.selfMs, 1)} ms${item.source ? ` — ${item.source}` : ""}`,
+          )
+          .join("; ");
+        lines.push(
+          `| ${fmt(frame.timeMs, 1)} | ${fmt(frame.gapMs, 1)} | ${escapeCell(frame.phases.join(" → "))} | ${escapeCell(work || "No recorded work")} | ${fmt(frame.unaccountedMs, 1)} |`,
+        );
+      }
+      if (run.traceInsight.slowFrames.length === 0) lines.push("", "No frame gaps >20 ms.");
+      lines.push("");
+    }
   }
 
   if (comparisons && comparisons.length > 0) {
@@ -303,7 +339,7 @@ export function loadRunResults(dir: string): ScenarioRunResult[] {
   if (!fs.existsSync(runsDir)) return [];
   return fs
     .readdirSync(runsDir)
-    .filter((f) => f.endsWith(".json"))
+    .filter((f) => f.endsWith(".json") && !f.endsWith("-sample.json"))
     .map((f) => JSON.parse(fs.readFileSync(path.join(runsDir, f), "utf8")) as ScenarioRunResult);
 }
 
@@ -314,4 +350,8 @@ export function loadResultsJson(dir: string): {
   const file = path.join(dir, "results.json");
   if (!fs.existsSync(file)) return null;
   return JSON.parse(fs.readFileSync(file, "utf8"));
+}
+
+function escapeCell(value: string): string {
+  return value.replaceAll("|", "\\|").replaceAll(/\r?\n/g, " ");
 }

@@ -19,7 +19,7 @@ describe("canonical verification commands", () => {
     expect(lefthook).toContain("npm run check -- --diff");
     expect(contributing).toContain("npm run verify -- --diff");
     expect(contributing).toContain("npm run check -- --diff");
-    expect(skill).toContain("npm run check -- --diff");
+    expect(skill).toMatch(/npm run check -- (?:--diff|<paths>)/);
   });
 
   it("makes ordinary builds pure and generated-output-validating", () => {

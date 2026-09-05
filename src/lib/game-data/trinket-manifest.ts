@@ -1,6 +1,6 @@
 export interface TrinketManifest {
   extraDrawPerBattle: number;
-  firstHolyDamageDoubled: boolean;
+  brassCenserProcChance: number;
   firstBurnDoubled: boolean;
   boneCharmHealOnKill: number;
   forgeStunThreshold: number;
@@ -14,7 +14,7 @@ export interface TrinketManifest {
   parasiticBloomLeechChance: number;
   cutpurseGoldOnBleed: number;
   wishingWellGoldOnWish: number;
-  plagueDoctorImmunity: boolean;
+  plagueDoctorPoisonCleanse: number;
   mortarPestleFreeFirstPotion: boolean;
   sunderingArmorPiercing: number;
   resonantChimeCardsRequired: number;
@@ -30,7 +30,7 @@ export interface TrinketManifest {
 
 export const defaultTrinketEffects: TrinketManifest = {
   extraDrawPerBattle: 0,
-  firstHolyDamageDoubled: false,
+  brassCenserProcChance: 0,
   firstBurnDoubled: false,
   boneCharmHealOnKill: 0,
   forgeStunThreshold: 0,
@@ -44,7 +44,7 @@ export const defaultTrinketEffects: TrinketManifest = {
   parasiticBloomLeechChance: 0,
   cutpurseGoldOnBleed: 0,
   wishingWellGoldOnWish: 0,
-  plagueDoctorImmunity: false,
+  plagueDoctorPoisonCleanse: 0,
   mortarPestleFreeFirstPotion: false,
   sunderingArmorPiercing: 0,
   resonantChimeCardsRequired: 0,

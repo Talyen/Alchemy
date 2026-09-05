@@ -30,7 +30,8 @@ should not be loaded for an ordinary FPS question.
 
 Open a deep trace in Chrome: DevTools → Performance → Load profile → select the `.json` file.
 
-Reuse an existing `dist/` with `--skip-build` when iterating on the harness itself.
+Ordinary runs rebuild the renderer so a clean Git checkout cannot silently reuse an older build.
+Reuse an existing `dist/` with `--skip-build` only when intentionally profiling that build, such as when iterating on the harness itself.
 
 Keep ordinary profiling at the default **one measured run per scenario** to limit
 local CPU/GPU use. The harness also performs one unmeasured warm-up so cold JIT,
@@ -69,6 +70,8 @@ Collected via `requestAnimationFrame` timestamps and `PerformanceObserver` long 
 | Startup observations               | Renderer-ready and Electron launch-to-ready time   |
 
 Phases (`play-card`, `damage-feedback`, `enemy-turn`, `draw-hand`) label hitches, long tasks, and input events based on their exact recorded start timestamps against the phase timeline. Observers drain pending records (`takeRecords()`) at shutdown before disconnection to preserve terminal events.
+
+The sampler waits for its first frame callback before scenario actions begin, so immediate interaction stalls have a baseline.
 
 Average FPS is computed strictly across sampled frame gaps, avoiding distortion from unsampled window edges, while total measured duration is retained for rate budgets.
 
@@ -136,6 +139,25 @@ Measure → identify failing scenario/phase → perf:trace that scenario → opt
 ```
 
 `perf:compare` derives duration-normalized rates for hitches, stalls, and long tasks (per 30 s) so runs of unequal duration are compared fairly. Material environment differences (runtime, trace mode, cold mode, platform, viewport, DPR, refresh rate, browser, target profile) are rejected with clear compatibility errors.
+
+### Finding the work behind a slow frame
+
+Every measured run retains a `runs/<scenario>-<run>-sample.json` containing the full
+frame timeline, phase marks, long tasks, and input events. The summary links to it;
+aggregate timestamps concatenate runs, while this file keeps run-local timestamps.
+
+Trace runs add a **Slow-frame evidence** table for the worst twenty gaps over 20 ms,
+including drops below the 50 ms hitch cutoff. Sampler start/end marks align the
+browser trace clock with the frame timeline and identify the renderer main thread.
+The table lists phases crossed during each gap, recorded work by self time, and
+unaccounted time. Nested events count once; other threads and work outside the
+measured window are excluded. Function names and source locations appear when
+Chrome provides them. Detailed evidence remains in the adjacent `-insight.json`.
+
+Treat this as a shortlist for investigation, not an automatic root-cause verdict.
+Open the full trace around that interval to inspect call stacks, rendering, and
+other threads. Missing trace markers report attribution as unavailable; dropped
+trace events fail capture. Screenshots are omitted to reduce trace overhead.
 
 ## Limitations
 

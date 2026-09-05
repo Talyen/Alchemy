@@ -28,7 +28,7 @@ test.describe("armory-homestead", () => {
           if (await inventoryItem.isVisible().catch(() => false)) await inventoryItem.hover();
 
           await phase("armory-to-homestead");
-          await page.getByRole("button", { name: "Open armory menu" }).click();
+          await page.getByRole("button", { name: "Open game menu" }).click();
           await page.getByRole("button", { name: "Homestead", exact: true }).click();
           await expect(homestead.heading).toBeVisible();
 
@@ -36,7 +36,7 @@ test.describe("armory-homestead", () => {
           await homestead.switchTab(index % 2 === 0 ? "Research" : "Companions");
 
           await phase("homestead-to-armory");
-          await page.getByRole("button", { name: "Open homestead menu" }).click();
+          await page.getByRole("button", { name: "Open game menu" }).click();
           await page.getByRole("button", { name: "Armory", exact: true }).click();
           await expect(page.getByRole("heading", { name: "Armory" })).toBeVisible();
 

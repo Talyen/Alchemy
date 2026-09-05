@@ -78,25 +78,8 @@ Options:
 `);
 }
 
-function shouldSkipBuildForCache() {
-  const diff = spawnSync("git", ["diff", "--name-only", "HEAD"], { cwd: root, encoding: "utf8" });
-  if (diff.status !== 0) return false;
-  const changed = diff.stdout.trim().split("\n").filter(Boolean);
-  const untracked = spawnSync("git", ["ls-files", "--others", "--exclude-standard"], { cwd: root, encoding: "utf8" });
-  const untrackedFiles = untracked.status === 0 ? untracked.stdout.trim().split("\n").filter(Boolean) : [];
-  const allChanged = [...changed, ...untrackedFiles];
-  if (allChanged.length === 0) return true;
-  return allChanged.every(
-    (file) => file.startsWith("docs/") || file.startsWith("tests/") || file.startsWith("reports/"),
-  );
-}
-
 function buildDist({ onlyIfMissing = false } = {}) {
   if (onlyIfMissing && fs.existsSync(path.join(root, "dist", "index.html"))) return;
-  if (!onlyIfMissing && fs.existsSync(path.join(root, "dist", "index.html")) && shouldSkipBuildForCache()) {
-    console.log("Skipping rebuild — only docs/tests/reports changed since HEAD, reusing dist/.");
-    return;
-  }
   console.log("Building production renderer for performance profiling…");
   const result = spawnSync("npm", ["run", "build"], {
     cwd: root,

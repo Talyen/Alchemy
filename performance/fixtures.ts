@@ -11,6 +11,7 @@ import {
 } from "./metrics";
 import { installFrameSampler, setPerfPhase, startFrameSampler, stopFrameSampler } from "./frame-sampler";
 import { startCdpTrace, stopCdpTrace, summarizeTraceFile } from "./cdp-trace";
+import type { TraceInsight } from "./trace-insights";
 import { PERF_PREVIEW_PORT } from "../scripts/lib/dev-port.mjs";
 import { previewPortFromEnv } from "../tests/playwright-shared";
 import {
@@ -192,6 +193,8 @@ export const test = base.extend<PerfFixtures>({
           }
 
           let tracePath: string | undefined;
+          let traceInsight: TraceInsight | undefined;
+          let rawSamplePath: string | undefined;
           let cdpSession: Awaited<ReturnType<typeof startCdpTrace>> | null = null;
           if (isTrace && measured) {
             cdpSession = await startCdpTrace(activePage);
@@ -218,13 +221,15 @@ export const test = base.extend<PerfFixtures>({
           if (measured) {
             sample = await stopFrameSampler(activePage);
             measuredSamples.push(sample);
+            rawSamplePath = path.join(ensureOutputDirs().runs, `${scenario}-${runIndex}-sample.json`);
+            fs.writeFileSync(rawSamplePath, JSON.stringify(sample));
           }
 
           if (cdpSession) {
             tracePath = await stopCdpTrace(cdpSession, scenario, runIndex);
-            const insight = summarizeTraceFile(tracePath);
+            traceInsight = summarizeTraceFile(tracePath, sample);
             const insightPath = path.join(ensureOutputDirs().traces, `${scenario}-${runIndex}-insight.json`);
-            fs.writeFileSync(insightPath, JSON.stringify(insight, null, 2));
+            fs.writeFileSync(insightPath, JSON.stringify(traceInsight, null, 2));
           }
 
           if (measured) {
@@ -243,6 +248,8 @@ export const test = base.extend<PerfFixtures>({
               metrics,
               targets,
               ...(tracePath ? { tracePath } : {}),
+              ...(traceInsight ? { traceInsight } : {}),
+              ...(rawSamplePath ? { rawSamplePath } : {}),
               ...(metrics.valid ? {} : { notes: [metrics.invalidReason ?? "invalid"] }),
               ...(runtimeBefore ? { runtimeBefore } : {}),
               runtimeAfter,

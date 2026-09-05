@@ -89,6 +89,8 @@ jobs:
       - uses: ./.github/actions/setup
       - run: npm run build
 
+      - run: npm run check:bundle
+
       - name: Smoke test production build
         run: npm run smoke:preview
 
@@ -127,24 +129,7 @@ jobs:
 
       - run: mkdir -p reports
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v6
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: Install Playwright Chromium (with system deps)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        timeout-minutes: 15
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright Chromium
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        timeout-minutes: 15
-        run: npx playwright install chromium
+      - uses: ./.github/actions/setup-playwright
 
       - name: Run full e2e shard
         run: npm run test:e2e:full -- --shard=${{ matrix.shard }}/3
@@ -178,12 +163,10 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          sparse-checkout: |
-            /*
-            !Raw Assets
-          sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
+        with:
+          skip-electron-download: "false"
 
       - name: Verify release tag matches package.json
         run: node scripts/verify-release-version.mjs
@@ -215,6 +198,9 @@ jobs:
           AZURE_CODE_SIGNING_ACCOUNT_NAME: ${{ secrets.AZURE_CODE_SIGNING_ACCOUNT_NAME }}
           AZURE_CODE_SIGNING_CERTIFICATE_PROFILE_NAME: ${{ secrets.AZURE_CODE_SIGNING_CERTIFICATE_PROFILE_NAME }}
           REQUIRE_CODE_SIGNING: ${{ vars.REQUIRE_CODE_SIGNING }}
+
+      - name: Check desktop bundle budget
+        run: npm run check:bundle
 
       # windows-latest does not ship SteamCMD; pin a known setup action by version tag.
       - name: Install SteamCMD

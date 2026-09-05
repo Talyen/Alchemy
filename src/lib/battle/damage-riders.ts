@@ -11,7 +11,7 @@ import {
   applyNatureLeech,
 } from "./damage-rider-leech";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
-import { dealPlayerTypedHit, tryPoisonStunProc } from "./player-typed-hit";
+import { applyBrassCenser, dealPlayerTypedHit, tryPoisonStunProc } from "./player-typed-hit";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { addEnemyStatus, addPlayerStatus, damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
@@ -87,7 +87,7 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
     nextState = applyWishEffect(nextState, card, 1, combatTexts);
   }
 
-  return nextState;
+  return applyBrassCenser(nextState, damage, combatTexts);
 }
 
 function consumeForgeAfterDamage(
@@ -130,6 +130,7 @@ export function applyAttackPurgeRider(state: BattleState, combatTexts: CombatTex
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
     const hit = damageEnemyHealth(nextState, holyDamage);
     nextState = payKillPayouts(hit.state, hit.enemyWasAlive, combatTexts);
+    nextState = applyBrassCenser(nextState, holyDamage, combatTexts);
   }
   return nextState;
 }

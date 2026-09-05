@@ -6,7 +6,6 @@ import {
   defaultPlayerStatusValues,
   defaultTalentEffects,
   defaultTrinketManifest,
-  defaultCombatFlags,
 } from "../../fixtures/default-battle-state";
 
 describe("applyPlayerStatusFromAttack", () => {
@@ -100,44 +99,11 @@ describe("applyPlayerStatusFromAttack", () => {
     });
   });
 
-  describe("plague doctor immunity boon", () => {
-    it("prevents first harmful status application when boon is active", () => {
-      const state = makeTestBattleState({
-        trinketEffects: defaultTrinketManifest({
-          ...makeTestBattleState().trinketEffects,
-          plagueDoctorImmunity: true,
-        }),
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "poison", amount: 3 }, texts);
-      expect(result.playerStatuses.poison).toBe(0);
-      expect(result.flags.firstHarmfulStatusPrevented).toBe(true);
+  it("the Mask allows incoming Poison before cleansing on the next turn", () => {
+    const state = makeTestBattleState({
+      trinketEffects: defaultTrinketManifest({ plagueDoctorPoisonCleanse: 2 }),
     });
-
-    it("allows second harmful status after first was already prevented", () => {
-      const state = makeTestBattleState({
-        playerStatuses: defaultPlayerStatusValues({ ...makeTestBattleState().playerStatuses, poison: 2 }),
-        trinketEffects: defaultTrinketManifest({
-          ...makeTestBattleState().trinketEffects,
-          plagueDoctorImmunity: true,
-        }),
-        flags: defaultCombatFlags({ ...makeTestBattleState().flags, firstHarmfulStatusPrevented: true }),
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "poison", amount: 3 }, texts);
-      expect(result.playerStatuses.poison).toBe(5);
-    });
-
-    it("does not prevent beneficial statuses", () => {
-      const state = makeTestBattleState({
-        trinketEffects: defaultTrinketManifest({
-          ...makeTestBattleState().trinketEffects,
-          plagueDoctorImmunity: true,
-        }),
-      });
-      const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "armor", amount: 3 }, texts);
-      expect(result.playerStatuses.armor).toBe(3);
-    });
+    const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "poison", amount: 3 }, []);
+    expect(result.playerStatuses.poison).toBe(3);
   });
 });

@@ -44,8 +44,14 @@ export function classifyCheckPaths(paths) {
   const ids = new Set(routes.map((route) => route.id));
   const needsCodeChecks = paths.some((filePath) => !isDocumentationPath(filePath));
   const lockfile = paths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
-  const desktop = ids.has("desktop");
+  const sharedBuild = paths.some((filePath) =>
+    /^(package(?:-lock)?\.json$|tsconfig.*\.json$|vite\.config\.ts$|scripts\/build-verified\.mjs$|scripts\/lib\/(?:vite-.*|sentry-release)\.mjs$)/u.test(
+      filePath,
+    ),
+  );
+  const desktop = ids.has("desktop") || sharedBuild;
   const web =
+    sharedBuild ||
     ids.has("runtime") ||
     ids.has("assets") ||
     paths.some((filePath) =>

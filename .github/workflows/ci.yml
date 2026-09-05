@@ -37,6 +37,9 @@ jobs:
         with:
           filters: |
             save:
+              - ".github/**"
+              - "package.json"
+              - "package-lock.json"
               - "src/lib/validation/**"
               - "src/features/alchemy/shared/storage/**"
               - "src/lib/active-run-session/**"
@@ -48,6 +51,12 @@ jobs:
               - "tests/e2e/mid-combat-save*"
               - "tests/save-*"
             desktop:
+              - "scripts/build-verified.mjs"
+              - "scripts/lib/vite-*.mjs"
+              - "scripts/lib/sentry-release.mjs"
+              - ".github/**"
+              - "package.json"
+              - "package-lock.json"
               - "desktop/**"
               - "index.html"
               - "src/main.tsx"
@@ -57,13 +66,18 @@ jobs:
               - "src/lib/crash-reporting.ts"
               - "src/features/alchemy/shared/storage/**"
               - "vite.config.ts"
-              - "package.json"
               - "steam/**"
               - "scripts/dist-desktop*"
               - "scripts/lib/desktop-artifact*"
               - "scripts/verify-desktop-package*"
               - "scripts/sync-steam-appid*"
             desktop_renderer:
+              - "scripts/build-verified.mjs"
+              - "scripts/lib/vite-*.mjs"
+              - "scripts/lib/sentry-release.mjs"
+              - ".github/**"
+              - "package.json"
+              - "package-lock.json"
               - "desktop/**"
               - "index.html"
               - "src/main.tsx"
@@ -83,13 +97,15 @@ jobs:
               - "tests/electron-*"
               - "playwright.electron*"
               - "vite.config.ts"
-              - "package.json"
               - "scripts/prepare-assets.mjs"
               - "scripts/electron-path*"
               - "scripts/ensure-electron*"
               - "scripts/electron-download*"
               - "scripts/verify-desktop-package*"
             assets:
+              - ".github/**"
+              - "package.json"
+              - "package-lock.json"
               - "Raw Assets/**"
               - "scripts/assets/**"
               - "scripts/prepare-assets.mjs"
@@ -99,7 +115,11 @@ jobs:
               - "scripts/optimize-music.mjs"
               - "scripts/sync-generated.mjs"
               - "scripts/sync-art-barrels.mjs"
-              - "scripts/lib/asset-manifest-cache.mjs"
+              - "scripts/assets.mjs"
+              - "scripts/optimize-pipelines.mjs"
+              - "scripts/lib/*asset*.mjs"
+              - "scripts/lib/registry-validation.mjs"
+              - "scripts/lib/process-helpers.mjs"
               - "scripts/lib/audio-optimizer.mjs"
               - "src/assets/optimized/**"
               - "public/sounds/**"
@@ -235,7 +255,7 @@ jobs:
           retention-days: 7
 
   ship-gate:
-    needs: [changes, test]
+    needs: changes
     # Only produces the dist-desktop artifact consumed by electron-e2e, so it is
     # path-gated on the same electron filter rather than running on every push.
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop_renderer == 'true'
@@ -294,8 +314,6 @@ jobs:
           path: dist/
 
       - uses: ./.github/actions/setup-playwright
-        with:
-          install-deps: "false"
 
       - run: mkdir -p reports
       - name: Run complete save journeys
@@ -334,6 +352,8 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
+        with:
+          skip-electron-download: "false"
       - name: Build Windows installer
         run: npm run dist:desktop
 
@@ -358,8 +378,6 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-        with:
-          skip-electron-download: "true"
 
       - uses: actions/download-artifact@v8
         with:

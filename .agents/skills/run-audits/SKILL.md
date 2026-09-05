@@ -17,11 +17,11 @@ Do not run an uncited sibling audit, broaden into standing cleanup, or manufactu
 
 ## Investigate
 
-Follow the README repeat-runs and discovery-breadth policy: start from paths changed since the prior pass, follow confirmed candidates through their causal neighborhood, prefer scoped `rg`, compiler/linter diagnostics, existing gates, and targeted reads. Keep probe output compact (`npm run audit:all`; bounded failure tail first). For multiple findings, publish a concise plan with disjoint file/symbol ownership and the cheapest matching verification per slice.
+Follow the README discovery policy: start from paths changed since the prior pass, follow confirmed candidates through their causal neighborhood, prefer scoped `rg`, compiler/linter diagnostics, existing gates, and targeted reads. Keep probe output compact (`npm run audit:all`; bounded failure tail first). For multiple findings, publish a concise plan with disjoint file/symbol ownership and the cheapest matching verification per slice.
 
 ## Delegate implementation efficiently
 
-Follow the README orchestration contract. For a single audit stay in the root unless delegation is materially useful. Delegate only confirmed independent slices with a brief naming evidence, remedy, owned files, hard stops, and focused verification; never hand a subagent the full conversation history; warn workers sharing the worktree to inspect and preserve existing edits while allowing separable incidental fixes.
+Delegate only when confirmed independent slices justify it; a single finding usually stays in the root. Give each worker the evidence, expected outcome, owned files, hard stops, and focused verification. Use isolated worktrees per [AGENTS.md](../../../AGENTS.md#working-style), with disjoint ownership; integrate and review worker changes before the final gate. Supply the relevant context rather than the entire conversation.
 
 ## Review and verify
 

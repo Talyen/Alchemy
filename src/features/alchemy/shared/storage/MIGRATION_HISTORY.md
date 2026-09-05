@@ -58,3 +58,11 @@ and run on every load without a version gate: `firstBurnCardDoubled` to
 sentinel to `MANABURN_DAMAGE_PERCENT`. They stay unversioned because they repair
 single renamed fields rather than a save shape; magnitudes live beside the
 other legacy tuning in `game-constants`.
+
+## Schema 15 — recurring Mask and Censer effects
+
+Active and parked combat snapshots replace Brass Censer's first-Holy doubling
+with its 20% Burn-or-Leech chance, and Plague Doctor's Mask's first-status
+immunity with its turn-start 2-Poison cleanse and retaliation. The obsolete
+one-use flags are removed even when already spent. Ownership, Boons, other
+combat effects, and battle progress are preserved.

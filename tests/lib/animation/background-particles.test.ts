@@ -53,6 +53,32 @@ function makeMockCanvas(
 }
 
 describe("startBackgroundParticles", () => {
+  it("does not clear the backing store on unchanged resize notifications", () => {
+    const { canvas, parent } = makeMockCanvas();
+    vi.spyOn(window, "requestAnimationFrame").mockReturnValue(1);
+    let width = 0;
+    let height = 0;
+    const writeWidth = vi.fn((value: number) => {
+      width = value;
+    });
+    const writeHeight = vi.fn((value: number) => {
+      height = value;
+    });
+    Object.defineProperty(canvas, "width", { get: () => width, set: writeWidth });
+    Object.defineProperty(canvas, "height", { get: () => height, set: writeHeight });
+    const stop = startBackgroundParticles({ current: canvas }, "embers");
+    resizeObserverCallback?.([], {} as ResizeObserver);
+    resizeObserverCallback?.([], {} as ResizeObserver);
+    expect(writeWidth).toHaveBeenCalledTimes(1);
+    expect(writeHeight).toHaveBeenCalledTimes(1);
+    Object.defineProperty(parent, "clientWidth", { value: 1280 });
+    resizeObserverCallback?.([], {} as ResizeObserver);
+    expect(canvas.width).toBe(1280);
+    expect(writeWidth).toHaveBeenCalledTimes(2);
+    expect(writeHeight).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
   it("returns noop cleanup when canvas is null", () => {
     const ref = { current: null };
     const cleanup = startBackgroundParticles(ref as never, "embers");

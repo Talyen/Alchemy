@@ -10,6 +10,7 @@ import {
   getPlasmaColorPairForGear,
   getPlasmaColorPairForTalent,
   getPlasmaColorPairForTrinket,
+  getEnemyKeywordShineColors,
   getPlasmaKeywordsForCharacter,
   getPlasmaKeywordsForEnemy,
   getPlasmaKeywordsForGear,
@@ -17,7 +18,11 @@ import {
   lerpPlasmaColor,
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import { parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
-import { SHINE_PALETTES, WILDCARD_KEYWORD_SHINE_COLORS } from "@/features/alchemy/shared/config";
+import {
+  getKeywordListShineColors,
+  SHINE_PALETTES,
+  WILDCARD_KEYWORD_SHINE_COLORS,
+} from "@/features/alchemy/shared/config";
 import {
   cardById,
   characters,
@@ -159,6 +164,18 @@ describe("getPlasmaKeywordsForEnemy", () => {
       attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
     };
     expect(getPlasmaKeywordsForEnemy(entry, [{ kind: "damage", damageType: "freeze", amount: 2 }])).toEqual(["freeze"]);
+  });
+
+  it("maps trait and live attack keywords to the enemy shine palette", () => {
+    const entry: BestiaryEntry = {
+      ...baseEntry,
+      traits: [{ id: "t1", title: "Spores", description: "Applies Poison to the hero." }],
+      attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+    };
+
+    expect(getEnemyKeywordShineColors(entry, [{ kind: "damage", damageType: "freeze", amount: 2 }])).toEqual(
+      getKeywordListShineColors(["poison", "freeze"]),
+    );
   });
 
   it("maps enemy keywords to a plasma pair with wildcard fallback", () => {

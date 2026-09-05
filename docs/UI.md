@@ -76,6 +76,12 @@ tile size. Page size is two rows times the resolved column count, capped at eigh
 portrait or six landscape columns. Resize retains the selected or first visible
 item. Offered choices remain content-owned, independent of browsing capacity.
 
+Shop card removal reserves a fixed available-height card area between its header
+and pagination/actions. It shows two rows when they fit and one otherwise, keeping
+card size readable and the header and actions stationary across pages. Only the
+card area scrolls if even one row cannot fit. The removal header replaces the shop
+header, gold counter, and instruction text; the Remove action retains its gold cost.
+
 Game Size and Tooltip Size are device-local preferences, separate from game
 saves and cloud mirroring. Reset Sizes and Reset Options reset both. Clearing
 progress or importing a save does not change them.
@@ -106,7 +112,8 @@ then automatic flip to a fitting side, then shift to stay in bounds), bounded to
 `[data-testid="vr-stage"]` with `documentElement` as a fallback, so panels keep
 an independent CSS-pixel scale and avoid clipped ancestors. Tooltip Size
 (90–125%, 5% steps; default 100%) scales text, chrome, and preferred width
-together. Placement recomputes width bounds on resize and size changes. Long
+together. Placement recomputes width bounds when the stage or tooltip changes
+size; position-only updates preserve the resolved width to avoid forced layout. Long
 descriptions can use available width to fit; tooltips never scroll or truncate.
 
 - Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use `useTileHoverPopup` (a `useHoverVisible` preset with the shared `TOOLTIP_FADE_MS` hold) — see those hooks for the exact call shape.

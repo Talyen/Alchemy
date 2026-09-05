@@ -47,14 +47,4 @@ describe("applyFirstDamageModifiers", () => {
     const result = dealDamage(state, card);
     expect(result.flags.firstBurnTrinketDoubledUsed).toBe(true);
   });
-
-  it("doubles first holy damage when boon effect active", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      trinketEffects: defaultTrinketManifest({ firstHolyDamageDoubled: true }),
-    });
-    const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.flags.firstHolyDamageBonusUsed).toBe(true);
-  });
 });

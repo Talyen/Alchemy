@@ -1,6 +1,6 @@
 # Asset Barrels Are Outputs
 
-Status: active
+Status: enforced-rationale
 Confidence: high
 
 ## Observation
@@ -18,7 +18,7 @@ Edits directly to `src/lib/game-data/assets.generated.ts`, `src/lib/game-data/ge
 - `scripts/prepare-assets.mjs`, `sync-generated.mjs`, `optimize-assets.mjs` — generation pipeline.
 - `eslint.config.js` — `ASSET_BARREL_NO_VALUE_IMPORT_REASONS` bans value imports of `@/lib/game-data` / `@/lib/gear` in Playwright-collected files.
 - `scripts/lib/change-routes.mjs` — `assets` route → `assets-check` command.
-- `package.json` scripts — `predev`/`prebuild` run `prepare-assets`; `assets:check` enforces idempotency.
+- `package.json` scripts — `predev` prepares assets; builds validate outputs without rewriting them; `assets:check` enforces idempotency.
 
 ## Resolution
 

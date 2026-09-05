@@ -19,12 +19,12 @@ test.describe("memory-soak", () => {
         const deadline = Date.now() + MEASURE_MS;
         while (Date.now() < deadline) {
           await phase("collection-route");
-          await page.getByRole("button", { name: "Open collection menu" }).click();
+          await page.getByRole("button", { name: "Open game menu" }).click();
           await page.getByRole("button", { name: "Talents" }).click();
           await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
           await delay(150);
           await phase("talents-route");
-          await page.getByRole("button", { name: "Open talents menu" }).click();
+          await page.getByRole("button", { name: "Open game menu" }).click();
           await page.getByRole("button", { name: "Collection" }).click();
           await expect(page.getByRole("heading", { name: "Collection" })).toBeVisible();
           await delay(150);

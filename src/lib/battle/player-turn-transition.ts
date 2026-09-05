@@ -1,12 +1,26 @@
 import type { BattleCard } from "@/lib/game-data";
 import { CARDS_PER_TURN } from "../game-constants";
 import { applyHealingWithCombatText } from "./combat-text";
+import { halveRounded } from "./amount-helpers";
+import { dealPlayerTypedHit } from "./player-typed-hit";
+import { applyCleanseHeals } from "./status-player";
 import { drawCards, applyDrawResult } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import { finalizeCcSkipTurnDecrement, isPlayerCcControlled } from "./status-cc";
 import { decayHalvedStatus } from "./status-helpers";
 import { getBattleRng } from "@/lib/rng";
 import { deathsDoorGraceTurns, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
+
+function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (state.playerHealth <= 0 || state.enemyHealth <= 0) return state;
+  const removed = Math.min(state.playerStatuses.poison, state.trinketEffects.plagueDoctorPoisonCleanse);
+  if (removed <= 0) return state;
+  const cleansed = applyCleanseHeals(
+    { ...state, playerStatuses: { ...state.playerStatuses, poison: state.playerStatuses.poison - removed } },
+    combatTexts,
+  );
+  return dealPlayerTypedHit(cleansed, "poison", halveRounded(removed), combatTexts);
+}
 
 function computeDeathsDoorGraceRemaining(state: BattleState): number {
   if (state.deathsDoorGraceTurnsRemaining !== null) return state.deathsDoorGraceTurnsRemaining;
@@ -124,7 +138,7 @@ export function advanceToPlayerTurn(
   }
 
   const drawnState = processPendingTurnStartEffects(
-    performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options),
+    applyPlagueDoctorMask(performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options), combatTexts),
     combatTexts,
   );
   if (drawnState.gearEffects.healthPerTurn <= 0) return drawnState;

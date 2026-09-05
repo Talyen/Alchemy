@@ -2,7 +2,7 @@ import { isTrinketId, type TrinketEntry, type TrinketId } from "@/lib/game-data"
 import type { ContentValidationIssue } from "../types";
 
 export const TRINKET_REQUIRED_PATTERNS: Record<TrinketId, { pattern: RegExp; term: string }> = {
-  "brass-censer": { pattern: /holy/, term: "holy" },
+  "brass-censer": { pattern: /holy.*20%.*burn.*leech/, term: "Holy, 20% chance, Burn, and Leech" },
   "tattered-pages": { pattern: /draw|additional|card/, term: "draw/card" },
   meteorite: { pattern: /burn/, term: "burn" },
   "bone-charm": { pattern: /health|heal/, term: "health or heal" },
@@ -16,7 +16,10 @@ export const TRINKET_REQUIRED_PATTERNS: Record<TrinketId, { pattern: RegExp; ter
   "cutpurse-knife": { pattern: /bleed.*gold|gold.*bleed/, term: "bleed and gold" },
   "wishing-well-coin": { pattern: /wish.*gold|gold.*wish/, term: "wish and gold" },
   "merchants-favor": { pattern: /purchase|shop|gold|less/, term: "shop discount" },
-  "plague-doctors-mask": { pattern: /immune|harmful.*status/, term: "immunity to harmful status" },
+  "plague-doctors-mask": {
+    pattern: /start.*turn.*cleanse.*2 poison.*half.*poison damage/,
+    term: "turn-start Poison cleansing and retaliation",
+  },
   "mortar-and-pestle": { pattern: /potion|free/, term: "free potion" },
   "sundering-charm": { pattern: /armor/, term: "armor" },
   "resonant-chimes": { pattern: /cards.*mana|mana.*cards/, term: "cards and mana" },

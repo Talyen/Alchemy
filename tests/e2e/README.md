@@ -7,6 +7,12 @@ When a command or E2E test fails, follow [failure-first triage](../../docs/REFER
 
 Helpers live in this directory and are re-exported from [`tests/helpers.ts`](../helpers.ts) (all modules, including `mid-combat-save` and `gear-combat`). Layout assertions are in [`layout-assertions.ts`](./layout-assertions.ts), page objects in [`tests/pages/`](../pages/), and fixtures in [`tests/fixtures/e2e.ts`](../fixtures/e2e.ts). Run-phase assertions use `expectRunPhase(page, phase)` from [`tests/pages/game-stage.ts`](../pages/game-stage.ts).
 
+## Running focused checks
+
+For current source edits, run `PLAYWRIGHT_VITE_MODE=dev npx playwright test <spec> --project=chromium`. Preview mode is the default and serves the existing build; rebuild before using it to verify source changes. Use `--project=chromium` with an equals sign so a following spec is not consumed as another project name.
+
+Run browser batches serially or combine specs in one invocation. Local runs can reuse a server, and teardown from an overlapping invocation can disconnect another run. Ensure any reused server belongs to the intended checkout; see [Playwright configuration](../playwright-shared.ts).
+
 ## Test import
 
 | Import                                    | Use                                                                                                                                                                       |

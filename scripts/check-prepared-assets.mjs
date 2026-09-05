@@ -15,6 +15,7 @@ const PREPARED_ASSET_OUTPUTS = Object.freeze([
   "public/Music",
   "src/lib/game-data/assets.generated.ts",
   "src/lib/game-data/gear-art.ts",
+  "src/lib/validation/metadata.generated.ts",
 ]);
 
 /** @typedef {Map<string, Buffer>} AssetSnapshot */
@@ -62,8 +63,9 @@ function changedPathsFromHashes(beforeHashes, afterHashes) {
   return [...paths].filter((relativePath) => beforeHashes.get(relativePath) !== afterHashes.get(relativePath)).sort();
 }
 
-async function restoreSnapshot(before, afterHashes) {
+async function restoreSnapshot(before, beforeHashes, afterHashes) {
   for (const [relativePath, bytes] of before) {
+    if (beforeHashes.get(relativePath) === afterHashes.get(relativePath)) continue;
     const absolutePath = path.join(rootDir, relativePath);
     await mkdir(path.dirname(absolutePath), { recursive: true });
     await writeFile(absolutePath, bytes);
@@ -102,7 +104,7 @@ export async function checkPreparedAssets() {
   if (needsRestore) {
     try {
       const restoreAfterHashes = afterHashes ?? (await hashSnapshot(await outputSnapshot()));
-      await restoreSnapshot(before, restoreAfterHashes);
+      await restoreSnapshot(before, beforeHashes, restoreAfterHashes);
     } catch (restoreError) {
       console.error(
         "Failed to restore prepared outputs:",

@@ -4,6 +4,7 @@ import { migrateContentToCurrentVersion } from "./content-steps";
 import { migrateV11ToV12 } from "./steps-v11-v12";
 import { migrateV12ToV13 } from "./steps-v12-v13";
 import { migrateV13ToV14 } from "./steps-v13-v14";
+import { migrateV14ToV15 } from "./steps-v14-v15";
 
 export function getRawSaveSchemaVersion(parsed: unknown): number {
   return getRawVersion(parsed, "saveSchemaVersion");
@@ -17,6 +18,7 @@ const SCHEMA_MIGRATIONS: Array<{ from: number; migrate: (data: RawSaveData) => R
   { from: 11, migrate: migrateV11ToV12 },
   { from: 12, migrate: migrateV12ToV13 },
   { from: 13, migrate: migrateV13ToV14 },
+  { from: 14, migrate: migrateV14ToV15 },
 ];
 
 function migrateContentToCurrent(next: RawSaveData): RawSaveData {

@@ -25,6 +25,7 @@
     "predev": "node scripts/prune-transient-artifacts.mjs && node scripts/stop-dev-server.mjs && node scripts/assets.mjs --prepare",
     "predev:desktop": "npm run predev && node scripts/sync-steam-appid.mjs",
     "dev": "vite",
+    "predev:checked": "npm run predev",
     "dev:checked": "cross-env ALCHEMY_ENABLE_CHECKER=1 vite",
     "dev:desktop": "concurrently \"vite --mode desktop --host 127.0.0.1\" \"node scripts/wait-dev-server.mjs && electron .\"",
     "build": "node scripts/build-verified.mjs",

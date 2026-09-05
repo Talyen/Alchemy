@@ -8,7 +8,7 @@ import { BUDGETS } from "./lib/bundle-budget.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { CHUNK_GROUP_NAMES } from "./lib/vite-chunks.mjs";
 
-const DISTS = ["dist/assets", "dist-desktop/assets"];
+const DEFAULT_ASSETS_DIR = "dist/assets";
 
 function chunkPattern(name) {
   return new RegExp(`^${name}-[A-Za-z0-9_-]+\\.js$`);
@@ -23,7 +23,10 @@ function jsAssets(dir) {
 
 function checkSingleBudget(dir) {
   const assets = jsAssets(dir);
-  if (assets.length === 0) return null;
+  if (assets.length === 0) {
+    console.error(`[bundle-budget] FAIL ${dir}: no JavaScript assets (run npm run build first)`);
+    return false;
+  }
   const indexAsset = assets.find((a) => chunkPattern("index").test(a.name));
   if (!indexAsset) {
     console.error(`[bundle-budget] FAIL ${dir}: index chunk not found (expected index-*.js)`);
@@ -68,23 +71,11 @@ function checkSingleBudget(dir) {
   return !failed;
 }
 
-export function checkBundleBudget(dist = DISTS) {
+export function checkBundleBudget(dist = DEFAULT_ASSETS_DIR) {
   const dirs = Array.isArray(dist) ? dist : [dist];
-  const existing = dirs.filter((dir) => existsSync(dir) && jsAssets(dir).length > 0);
-  if (existing.length === 0) {
-    console.warn(`[bundle-budget] no ${dirs.join(" or ")} — skip (run npm run build first)`);
-    return true;
-  }
-  let ok = true;
-  for (const dir of existing) {
-    const result = checkSingleBudget(dir);
-    if (result === false) ok = false;
-  }
-  return ok;
+  return dirs.map(checkSingleBudget).every(Boolean);
 }
 
-const isMain = isMainModule(import.meta.url);
-if (isMain || (process.argv[1] && process.argv[1].includes("check-bundle-budget"))) {
-  const ok = checkBundleBudget();
-  process.exit(ok ? 0 : 1);
+if (isMainModule(import.meta.url)) {
+  process.exitCode = checkBundleBudget() ? 0 : 1;
 }

@@ -26,26 +26,8 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-        with:
-          skip-electron-download: "true"
-
-      - name: Cache Electron binary
-        uses: actions/cache@v6
-        id: electron-binary-cache
-        with:
-          path: |
-            ~/.cache/electron
-            node_modules/electron/dist
-            node_modules/electron/path.txt
-          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Ensure Electron binary
-        timeout-minutes: 15
-        run: node scripts/ensure-electron.mjs
 
       - run: npm run build
-        env:
-          ALCHEMY_SKIP_ASSETS: "1"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -75,8 +57,6 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-        with:
-          skip-electron-download: "true"
 
       - uses: actions/download-artifact@v8
         with:
@@ -113,23 +93,16 @@ jobs:
 
   ship-gate-full:
     name: Ship gate (full)
-    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          sparse-checkout: |
-            /*
-            !Raw Assets
-          sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-        with:
-          skip-electron-download: "true"
 
-      - uses: actions/cache/restore@v6
+      - uses: actions/cache@v6
         id: electron-binary-cache
         with:
           path: |
@@ -144,7 +117,6 @@ jobs:
       - name: Setup Playwright Chromium
         uses: ./.github/actions/setup-playwright
 
-      - run: node scripts/sync-version-metadata.mjs
       - run: npm run check:ship:full
 
       - run: mkdir -p reports
@@ -184,8 +156,6 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-        with:
-          skip-electron-download: "true"
 
       - name: Knip entry exports
         run: npm run deadcode:entry-exports
@@ -203,8 +173,6 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-        with:
-          skip-electron-download: "true"
 
       - run: mkdir -p reports
       - name: Unit tests with coverage (thresholds in vite.config.ts)
@@ -230,8 +198,6 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-        with:
-          skip-electron-download: "true"
 
       - run: mkdir -p reports
       - name: Mutate battle damage calculation

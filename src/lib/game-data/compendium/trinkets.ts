@@ -2,9 +2,15 @@ import * as assetRefs from "../assets";
 import { trinket } from "../compendium-builders";
 
 export const trinketLibrary = [
-  trinket("brass-censer", "Brass Censer", "Your first Holy damage each combat is doubled", assetRefs.brassCenser, {
-    firstHolyDamageDoubled: true,
-  }),
+  trinket(
+    "brass-censer",
+    "Brass Censer",
+    "Holy damage has a 20% chance to either deal equal Burn damage or Leech",
+    assetRefs.brassCenser,
+    {
+      brassCenserProcChance: 20,
+    },
+  ),
   trinket("tattered-pages", "Tattered Pages", "Draw 1 at the start of combat", assetRefs.tatteredPages, {
     extraDrawPerBattle: 1,
   }),
@@ -71,9 +77,9 @@ export const trinketLibrary = [
   trinket(
     "plague-doctors-mask",
     "Plague Doctor's Mask",
-    "You are immune to the first harmful status effect you would receive each combat",
+    "At the start of your turn, Cleanse up to 2 Poison and deal half the amount cleansed as Poison damage",
     assetRefs.plagueDoctorsMask,
-    { plagueDoctorImmunity: true },
+    { plagueDoctorPoisonCleanse: 2 },
   ),
   trinket(
     "mortar-and-pestle",

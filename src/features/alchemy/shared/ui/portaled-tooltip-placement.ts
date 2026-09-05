@@ -55,23 +55,31 @@ export function usePortaledTooltipPlacement(
     }
 
     let cancelled = false;
+    let needsSizing = true;
+    let sizedWidth = 0;
+    let sizedHeight = 0;
 
     const update = () => {
       if (cancelled) return;
       const stage = getVrStageElement();
       const bounds = stage.getBoundingClientRect();
       const horizontalInset = horizontalInsetForStage(bounds);
-      tooltipEl.style.width = "";
-      tooltipEl.style.maxWidth = "";
-      const preferredMax = parseFloat(getComputedStyle(tooltipEl).maxWidth);
-      const availableWidth = Math.max(
-        0,
-        Math.min(bounds.width - 2 * horizontalInset, maxWidthFraction ? bounds.width * maxWidthFraction : Infinity),
-      );
-      tooltipEl.style.maxWidth = `${Math.min(Number.isFinite(preferredMax) ? preferredMax : availableWidth, availableWidth)}px`;
-      if (tooltipEl.getBoundingClientRect().height > bounds.height - 2 * padding) {
-        tooltipEl.style.maxWidth = `${availableWidth}px`;
-        tooltipEl.style.width = `${availableWidth}px`;
+      if (needsSizing || bounds.width !== sizedWidth || bounds.height !== sizedHeight) {
+        needsSizing = false;
+        sizedWidth = bounds.width;
+        sizedHeight = bounds.height;
+        tooltipEl.style.width = "";
+        tooltipEl.style.maxWidth = "";
+        const preferredMax = parseFloat(getComputedStyle(tooltipEl).maxWidth);
+        const availableWidth = Math.max(
+          0,
+          Math.min(bounds.width - 2 * horizontalInset, maxWidthFraction ? bounds.width * maxWidthFraction : Infinity),
+        );
+        tooltipEl.style.maxWidth = `${Math.min(Number.isFinite(preferredMax) ? preferredMax : availableWidth, availableWidth)}px`;
+        if (tooltipEl.getBoundingClientRect().height > bounds.height - 2 * padding) {
+          tooltipEl.style.maxWidth = `${availableWidth}px`;
+          tooltipEl.style.width = `${availableWidth}px`;
+        }
       }
       void computePosition(trigger, tooltipEl, {
         placement: preferredFloatingPlacement(placement),
@@ -92,7 +100,9 @@ export function usePortaledTooltipPlacement(
         const state = floatingPlacementToTooltipState(finalPlacement);
         setPlaceBelow(state.placeBelow);
         setTooltipSide(state.tooltipSide);
-        setTooltipStyle({ left: `${x}px`, top: `${y}px` });
+        const left = `${x}px`;
+        const top = `${y}px`;
+        setTooltipStyle((previous) => (previous?.left === left && previous.top === top ? previous : { left, top }));
       });
     };
 
@@ -105,10 +115,18 @@ export function usePortaledTooltipPlacement(
         update();
       });
     };
-    const cleanup = autoUpdate(trigger, tooltipEl, scheduleUpdate);
+    const cleanup = autoUpdate(trigger, tooltipEl, scheduleUpdate, { elementResize: false });
     const stage = getVrStageElement();
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(scheduleUpdate);
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver((entries) => {
+            if (entries.some((entry) => entry.target !== trigger)) needsSizing = true;
+            scheduleUpdate();
+          });
     observer?.observe(stage);
+    observer?.observe(tooltipEl);
+    observer?.observe(trigger);
     return () => {
       cancelled = true;
       observer?.disconnect();

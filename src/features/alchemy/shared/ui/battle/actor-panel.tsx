@@ -11,6 +11,7 @@ import {
   cardArtImageClass,
   cardHoverScaleClass,
   cardSurfaceClass,
+  getEnemyKeywordShineColors,
   landscapeArtImageClass,
   sectionTitleClass,
 } from "../../config";
@@ -25,7 +26,13 @@ import { SliceDeath } from "./slice-death";
 import { DeathsDoorStatusIcon, StatusIcon } from "./status-icons";
 import { useChangeToken } from "./use-change-token";
 
-import { ActorTooltip, ArtDeathDoorBorder, ArtTurnActiveBorder, StatsDeathDoorBorder } from "./actor-panel-helpers";
+import {
+  ActorTooltip,
+  ArtDeathDoorBorder,
+  ArtHoverKeywordBorder,
+  ArtTurnActiveBorder,
+  StatsDeathDoorBorder,
+} from "./actor-panel-helpers";
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
 import { CombatantAttackLunge } from "./combatant-attack-lunge";
 import type { ActiveCcKeyword } from "../../utils/cc-presentation";
@@ -110,6 +117,8 @@ export function ArtPanel({
   const resolvedCardWidthClass =
     cardWidthClass ?? (side === "enemy" ? battleEnemyCardWidthClass : battleCardWidthClass);
   const artWrapClass = cn("relative overflow-visible", isBoss && side === "player" && "origin-bottom scale-[1.3]");
+  const hoverShineColors =
+    side === "enemy" && currentEnemy ? getEnemyKeywordShineColors(currentEnemy, currentEnemyAttackEffects) : undefined;
 
   return (
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
@@ -151,6 +160,8 @@ export function ArtPanel({
               turnActive={turnActive}
               turnUrgentHide={turnUrgentHide}
               ccKeyword={ccKeyword}
+              hoverShineActive={side === "enemy" && tooltipVisible}
+              {...(hoverShineColors === undefined ? {} : { hoverShineColors })}
               {...(turnShineColors === undefined ? {} : { turnShineColors })}
             />
             {children ? (
@@ -194,6 +205,8 @@ function ActorArtFrame({
   turnActive = false,
   turnUrgentHide = false,
   turnShineColors,
+  hoverShineActive = false,
+  hoverShineColors,
   ccKeyword = null,
 }: {
   side: "player" | "enemy";
@@ -211,6 +224,8 @@ function ActorArtFrame({
   turnActive?: boolean;
   turnUrgentHide?: boolean;
   turnShineColors?: readonly string[];
+  hoverShineActive?: boolean;
+  hoverShineColors?: readonly string[];
   ccKeyword?: ActiveCcKeyword | null;
 }) {
   const { pulse, sparksOverflow } = useImpactPulse(impactCue);
@@ -243,6 +258,10 @@ function ActorArtFrame({
           {...(turnShineColors === undefined ? {} : { shineColor: turnShineColors })}
         />
         {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
+        <ArtHoverKeywordBorder
+          active={hoverShineActive && !isDead}
+          {...(hoverShineColors === undefined ? {} : { shineColor: hoverShineColors })}
+        />
         {isDead ? (
           <SliceDeath
             imageUrl={art}

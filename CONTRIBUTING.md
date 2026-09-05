@@ -14,7 +14,7 @@ The local workflow has three entry points — one per moment, never interchangea
 | Push and handoff | `npm run check -- --diff`  | Verification, the CI static aggregate for executable changes, lockfile consistency, pure builds, and preview smoke |
 | Release          | `npm run release`          | Full release, desktop packaging, tag, push, and CI watch                                                           |
 
-`npm run verify -- --diff --plan` previews selection without running it. Explicit paths may replace `--diff`. Browser flows remain available through the `test:e2e:*` scripts when investigation needs them, but local handoff does not rerun the every-push critical suite.
+`npm run verify -- --diff --plan` previews selection without running it. Explicit paths may replace `--diff`. When the checkout contains unrelated work, use the complete set of task-owned paths (including incidental fixes) for task verification and state that scope at handoff; the pre-push hook still checks the full diff. A failure elsewhere must be reported or resolved under the incidental-fix policy, not hidden by narrowing a failed check. Browser flows remain available through the `test:e2e:*` scripts when investigation needs them, but local handoff does not rerun the every-push critical suite.
 
 The risk escalations are intentionally broad and few:
 
@@ -56,7 +56,7 @@ sources. `npm run dev` prepares assets through its `predev` lifecycle; use the
 explicit `sync:*` and asset authoring commands when intentionally regenerating
 outputs for a build.
 
-Every push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Only save persistence, prepared assets, desktop packaging, and Electron tests remain path-gated. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/change-routes.mjs`.
+Every push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Only save persistence, prepared assets, desktop packaging, and Electron tests remain path-gated. Dependency setup skips Electron downloads by default; only packaging and Electron test jobs install the binary. Browser setup installs OS dependencies even when browser binaries are cached. Asset idempotence jobs use a full checkout. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/change-routes.mjs`.
 
 [Bugbot](./.cursor/BUGBOT.md) remains an optional post-push review aid for gameplay, save, and battle-rule changes; it is not a required status check.
 

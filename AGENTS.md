@@ -1,15 +1,16 @@
 # Alchemy Agent Rules
 
-Alchemy is a fantasy roguelite deckbuilder. Router + universal constraints; detail lives in linked owners and skills.
+Alchemy is a fantasy roguelite deckbuilder. This file routes work and records universal constraints; linked owners hold the details.
 
 ## Working style
 
-- Dirty tree is user work: inspect the diff, preserve intent. Fix clear evidenced issues found during normal work—even outside scope—and their cause, with proportionate tests. Surgical edits may coexist; never revert, replace, or delete existing work. Ask if conflicting/ambiguous or subjective design/balance. No broad cleanup/uncited audit. Never `git reset --hard` / `clean -fd` / `checkout --` / `restore` with a dirty tree — the repo guard creates an `auto-backup pre-<cmd>` stash and blocks; inspect/apply/drop it after verification. For parallel work use `node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`).
-- Most pragmatic architectural solution — the best long-term shape, even when larger/harder than the minimal workaround; prefer libs over custom hacks. Compatibility only for concrete consumer (save, shipped behavior, external contract).
-- Surface requirement conflicts with evidence. First failure: use bounded diagnostics; repeated failure class: consult the `When to read` entry in knowledge; after 3 unsuccessful approaches, reassess with docs/tests and ask only when evidence cannot resolve the decision.
-- When docs mislead, behavior surprises, or friction repeats, append a brief row to [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md) (expanded template inside when needed). On resolve link a pattern or record `N/A (one-off)`; second same-area recurrence is a pattern candidate.
-- Run [Audits](./docs/Audits/README.md) only when cited. Zero findings is valid.
-- Update canonical owner in same change when altering a documented invariant.
+- Inspect `git status --short` and relevant diffs before editing. Existing edits are user work: preserve their intent and make separable changes surgically. Re-read shared files before editing if another session may have changed them. Ask only when intent or a safe merge remains ambiguous.
+- Fix evidenced issues encountered during the task, including their cause outside the initial paths. Do not turn incidental fixes into broad cleanup or an uncited [audit](./docs/Audits/README.md). Make design and balance decisions within the user's requested scope; ask about consequential choices the request and evidence do not resolve.
+- Choose the most maintainable complete solution for the demonstrated problem, even when larger than a workaround. Reuse existing owners and libraries before adding mechanisms; justify new dependencies or abstractions with concrete consumers. Preserve compatibility for saves, shipped behavior, and external contracts.
+- Start with bounded diagnostics after a failure. For recurring failures or surprising behavior, consult the relevant lesson in [knowledge](./.agents/knowledge/index.md). After three unsuccessful approaches, reassess the assumption using docs, tests, and focused history; ask only if evidence cannot resolve the decision.
+- Record misleading docs, surprising repository behavior, or repeated friction in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md). Put reusable prevention in the canonical owner; the log records evidence, not a second procedure manual.
+- Never use destructive Git commands to clear existing work. A guard may stash and block the command; inspect the reported backup, apply it, verify recovery, and only then drop that backup. Do not rely on the guard as authorization or protection.
+- For parallel implementation use `node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`); assign disjoint ownership and review integration before handoff.
 
 ## Communication
 
@@ -17,7 +18,7 @@ Write for a product manager, designer, player, or user who knows Alchemy as a ga
 
 ## Documentation owners
 
-Start with one owner document; expand only across a demonstrated boundary.
+Start with the relevant section of one owner document; expand when a dependency or unresolved question crosses its boundary. When docs, tests, and implementation disagree, investigate intent rather than treating any one as automatically correct. Update the canonical owner in the same change as its invariant.
 
 | Need                                                | Read                                                                                                                                                                                                                                               |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,19 +30,18 @@ Start with one owner document; expand only across a demonstrated boundary.
 | Save compatibility                                  | [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)                                                                                                                                                                                  |
 | Armory / gear, card handlers, UI/audio/perf/release | [ARMORY](./docs/ARMORY.md), [BATTLE_HANDLERS](./src/lib/game-data/effects/BATTLE_HANDLERS.md), [UI](./docs/UI.md), [AUDIO](./docs/AUDIO.md), [PERFORMANCE](./docs/PERFORMANCE.md), [RELEASE](./docs/RELEASE.md) ([setup](./docs/RELEASE_SETUP.md)) |
 
-Discovery: headings first, search touched path/symbol first, `git status --short` before diffs. Opt-in evidence only — `Raw Assets/`, `reports/`, `dist/`, `CHANGELOG.md`, lockfiles excluded.
+Discovery: headings and touched paths/symbols first. Exclude `Raw Assets/`, `reports/`, `dist/`, `CHANGELOG.md`, and lockfiles from broad searches; inspect them when the task or diagnostics specifically require them.
 
 ## Skills & knowledge
 
-Skills: [.agents/skills/](./.agents/skills/README.md) — short, task-oriented, auto-triggered. Routine edits need none.
-Knowledge: [.agents/knowledge/](./.agents/knowledge/index.md) — **not auto-loaded**. Read on recurring failure or surprising behavior. Progression `one-off → pattern → skill (validate via evals) → enforcement (types/lint/tests)`.
-Friction log: [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md) — append when docs mislead, behavior surprises, or repeated friction appears. Not auto-loaded; one-line row is enough — move to Resolved with a fix link when addressed.
+[Skill routing](./.agents/skills/README.md) identifies specialized pre-edit workflows; ordinary edits need no pre-edit skill. After edits, use `verifier`.
+[Knowledge](./.agents/knowledge/index.md) explains recurring failures and rejected approaches. Read it when that context is needed; implementation procedures stay in the canonical owners.
 
 ## High-risk invariants
 
 - **Run state:** outside `shared/stores/` use capability ports; writes via `dispatchRunSessionCommand()` + `run-session-write-port.ts` ([ARCHITECTURE#run-state](./docs/ARCHITECTURE.md#run-state)).
 - **Controllers:** run/battle bindings travel through route/shell props, not context. Allowed providers are `AppScreenChromeProvider` and `CardDescriptionProvider`; presentation-only state may use `ui-store`.
-- **Battle:** `BattleState` immutable, seeded `world` RNG, `Math.round` only; shared combat tuning lives in `src/lib/game-constants/`, while content-owned magnitudes stay with their definitions ([GAME_RULES](./docs/GAME_RULES.md#battle-implementation-rules)).
+- **Battle:** `BattleState` immutable, seeded `world` RNG, combat magnitudes use `Math.round`; shared combat tuning lives in `src/lib/game-constants/`, while content-owned magnitudes stay with their definitions ([GAME_RULES](./docs/GAME_RULES.md#battle-implementation-rules)).
 - **Content:** `descriptionLines` matches effects; run materials via `awardMaterialsDuringRun()` (lint-enforced).
 - **Persistence:** change schemas/defaults/hydration/fixtures together ([MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)).
 - **Routes/assets:** screens statically imported; art eager; generated barrels are outputs — edit manifest, regenerate.
@@ -49,13 +49,13 @@ Friction log: [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md) — append wh
 
 ## Change guards
 
-- Before store/port/save/constant/routing change, search touched subsystem first; expand to public consumers only.
-- If docs + nearest tests leave rule ambiguous, recover intent from tests + ≤5 commits; record invariant.
-- Post-edit: review diff only — within the pragmatic solution, prefer delete → reuse → simplify → parameterize → abstract. No comments — express intent via code, types, and tests; only tool directives allowed by `alchemy/no-comments`. New cross-boundary contract → `architect` skill.
+- Before store/port/save/constant/routing change, search the touched subsystem and its consumers; follow further dependencies when evidence requires it.
+- If docs + nearest tests leave rule ambiguous, inspect focused history (start with at most five relevant commits); record the resolved invariant.
+- Post-edit: review the diff and enough surrounding code to check behavior and integration. Prefer removing redundancy and reusing owners before introducing abstractions. No comments — express intent via code, types, and tests; only tool directives allowed by `alchemy/no-comments`. New cross-boundary contract → `architect` skill.
 
 ## UI
 
-Plain `function Props` (no `React.FC`), `cn()` for classes. Motion, tooltips, interaction, placement, and accessibility: [UI](./docs/UI.md). Cosmetic RNG uses `useState(() => ...)`, never `Math.random()` in render.
+Plain function components with typed props (no `React.FC`), `cn()` for classes. Motion, tooltips, interaction, placement, and accessibility: [UI](./docs/UI.md). Cosmetic RNG uses `useState(() => ...)`, never `Math.random()` in render.
 
 ## Verification & environment
 
@@ -63,8 +63,8 @@ After edits use `verifier` skill. Tiers in [CONTRIBUTING](./CONTRIBUTING.md#what
 
 ## Branch and commits
 
-Trunk-based: commit to `main` / branch/PR only when asked. Conventional Commits (`feat`/`fix`/`balance`/`perf` player-facing, `User-Facing` trailer owned by [CONTRIBUTING](./CONTRIBUTING.md#changelog-and-patch-notes)). Do not edit `CHANGELOG.md`.
+Trunk-based: use the current checkout; default to `main` for commits. Commit, push, or create a branch/PR only when requested; do not switch away from an existing branch implicitly. Conventional Commits (`feat`/`fix`/`balance`/`perf` player-facing, `User-Facing` trailer owned by [CONTRIBUTING](./CONTRIBUTING.md#changelog-and-patch-notes)). Do not edit `CHANGELOG.md`.
 
 ## Handoff
 
-Briefly report the result, verification status, incidental fixes, and ambiguous findings. Follow Communication for the level of detail. Do not paste logs or diff dumps.
+Check that the requested behavior is complete, not merely that checks pass. Briefly report the result, checks actually run, remaining limitations, incidental fixes, and unresolved decisions. Follow Communication for the level of detail. Do not paste logs or diff dumps.

@@ -162,19 +162,23 @@ export function startBackgroundParticles(
   function resize() {
     const w = activeParent.clientWidth;
     const h = activeParent.clientHeight;
-    activeCanvas.style.width = `${w}px`;
-    activeCanvas.style.height = `${h}px`;
+    const cssWidth = `${w}px`;
+    const cssHeight = `${h}px`;
+    if (activeCanvas.style.width !== cssWidth) activeCanvas.style.width = cssWidth;
+    if (activeCanvas.style.height !== cssHeight) activeCanvas.style.height = cssHeight;
     if (w <= 0 || h <= 0) {
-      activeCanvas.width = 1;
-      activeCanvas.height = 1;
+      if (activeCanvas.width !== 1) activeCanvas.width = 1;
+      if (activeCanvas.height !== 1) activeCanvas.height = 1;
       logicalWidth = 0;
       logicalHeight = 0;
       return;
     }
 
     const backingScale = resolveParticleBackingScale(w, h, devicePixelRatio || 1);
-    activeCanvas.width = Math.max(1, Math.floor(w * backingScale));
-    activeCanvas.height = Math.max(1, Math.floor(h * backingScale));
+    const backingWidth = Math.max(1, Math.floor(w * backingScale));
+    const backingHeight = Math.max(1, Math.floor(h * backingScale));
+    if (activeCanvas.width !== backingWidth) activeCanvas.width = backingWidth;
+    if (activeCanvas.height !== backingHeight) activeCanvas.height = backingHeight;
     activeCtx.setTransform(activeCanvas.width / w, 0, 0, activeCanvas.height / h, 0, 0);
     if (particles.length === 0 || logicalWidth <= 0 || logicalHeight <= 0) {
       particles = Array.from({ length: patchedConfig.particleCount }, () => spawnParticle(w, h, patchedConfig));

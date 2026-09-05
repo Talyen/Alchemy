@@ -205,7 +205,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   thorns: {
     id: "thorns",
     label: "Thorns",
-    description: "When hit, deal held Thorns back as Nature damage, then lose them",
+    description: "When hit, consume Thorns to deal Nature damage",
     colorClass: "text-emerald-600",
     borderClass: "border-emerald-600",
     shineColors: ["#059669", "#064e3b", "#059669"],

@@ -1,7 +1,7 @@
 # Gear HP-Sync Write Path
 
-Status: active
-Confidence: medium — single occurrence at introduction (2026-08-28); promote to high after second independent recurrence per `index.md:When to consult`
+Status: rationale
+Evidence: one recorded occurrence at introduction (2026-08-28).
 
 ## Observation
 
@@ -23,6 +23,4 @@ Gear equip/unequip/salvage/crafting mutates `GearStore` and must sync live run h
 
 [ARMORY.md](../../../docs/ARMORY.md#write-paths) owns the inside/outside
 command decision table and salvage order. The `GEAR_NO_OUTER_DISPATCH` lint
-rejects the outer dispatch wrapper inside `run-loop/**` and `shell/**`. The
-pattern stays `medium` until a second independent recurrence proves
-generalizability.
+rejects the outer dispatch wrapper inside `run-loop/**` and `shell/**`. The owner document covers health synchronization beyond that lint restriction.

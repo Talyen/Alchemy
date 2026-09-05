@@ -7,7 +7,7 @@ declare module "*/assets/asset-manifest.mjs" {
 }
 
 declare module "*/check-bundle-budget.mjs" {
-  export function checkBundleBudget(dist?: string): boolean;
+  export function checkBundleBudget(dist?: string | string[]): boolean;
 }
 
 declare module "*/bundle-budget.mjs" {

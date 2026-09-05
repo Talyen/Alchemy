@@ -276,11 +276,6 @@ function applyFirstDamageBonus(
       firstBonus += 1;
       nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
     }
-  } else if (effect.damageType === "holy") {
-    if (nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
-      firstBonus += 1;
-      nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
-    }
   }
 
   return { state: nextState, firstBonus };

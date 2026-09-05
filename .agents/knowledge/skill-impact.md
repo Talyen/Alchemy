@@ -114,6 +114,22 @@ Result: accepted
 Evidence: User-approved process review; recent CI escapes from dead exports, documentation drift, and repository-reading tooling tests; focused verifier tests and documentation contracts.
 Reason: Catch inexpensive, recurring CI failures locally without restoring the previous minutes-long handoff gate or duplicating CI browser coverage.
 
+## 2026-09-05 — Reconcile agent instructions and discovery routes
+
+Pattern: `run-state-command-boundary`, `battle-immutability-rng`, `save-migration-contract`, `run-materials-ownership`
+Proposal: Route enforced rules to canonical owners instead of mandatory rationale reads; distinguish pre-edit skills from verification; clarify preservation, discovery, Git authorization, and task completion; put browser invocation lessons in the E2E owner and document task-scoped verification in a dirty checkout.
+Result: accepted
+Evidence: User-requested documentation review; contradictory routing and missing E2E invocation guidance checked against existing owner docs and Playwright configuration. Evals: skipped (doc-only reconciliation; no new coding skill or gameplay contract).
+Reason: Remove competing instructions without weakening game invariants or verification gates. Remove the stale claim that the verifier test byte-ratchets the persistence instruction stack.
+
+## 2026-09-05 — Keep skills focused on distinct workflows
+
+Pattern: `asset-barrels-are-outputs`, `static-route-imports`, `gear-hp-sync`
+Proposal: Retain four skills; remove duplicate purpose files and implementation routing; route directly to canonical owners; keep knowledge as optional rationale without automatic recurrence-to-skill promotion. Correct audit worktree guidance and limit browser cleanup to task-created tabs.
+Result: accepted
+Evidence: Routing links resolved from the wrong directory; asset and route notes already described themselves as rationale; audit README has no orchestration contract; purpose files repeated skill scope and gates. Evals: skipped (workflow consolidation, no new gameplay implementation strategy). Skill validation and the task-scoped documentation completion gate verify structure and references.
+Reason: Reduce competing instructions and paperwork while retaining compatibility, ownership, verification, and useful failure history.
+
 ## Template for future entries
 
 ```

@@ -510,16 +510,4 @@ describe("endPlayerTurn — pending turn-start pulses", () => {
     expect(result.state.enemyHealth).toBe(28);
     expect(result.state.flags.nextHitCrit).toBe(true);
   });
-
-  it("does not consume first-holy doubling on delayed pulses", () => {
-    const state = battleState({
-      enemyHealth: 30,
-      enemyAttackEffects: [],
-      trinketEffects: { ...makeTestBattleState().trinketEffects, firstHolyDamageDoubled: true },
-      pendingTurnStartEffects: [{ remainingTurns: 1, effects: [{ kind: "damage", damageType: "holy", amount: 4 }] }],
-    });
-    const result = endPlayerTurn(state);
-    expect(result.state.enemyHealth).toBe(26);
-    expect(result.state.flags.firstHolyDamageBonusUsed).toBe(false);
-  });
 });

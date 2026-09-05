@@ -137,7 +137,7 @@ describe("Trinket manifest engine", () => {
 
   it("merges active trinket effects correctly", () => {
     const manifest = computeTrinketManifest(["brass-censer", "tattered-pages"]);
-    expect(manifest.firstHolyDamageDoubled).toBe(true);
+    expect(manifest.brassCenserProcChance).toBe(20);
     expect(manifest.extraDrawPerBattle).toBe(1);
     expect(isDefaultTrinketManifest(manifest)).toBe(false);
   });

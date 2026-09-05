@@ -19,9 +19,9 @@ describe("computeTrinketManifest", () => {
     expect(manifest).toEqual(defaultTrinketEffects);
   });
 
-  it("Brass Censer → firstHolyDamageDoubled: true", () => {
+  it("Brass Censer → brassCenserProcChance: 20", () => {
     const manifest = computeTrinketManifest(["brass-censer"]);
-    expect(manifest.firstHolyDamageDoubled).toBe(true);
+    expect(manifest.brassCenserProcChance).toBe(20);
   });
 
   it("Tattered Pages → extraDrawPerBattle: 1", () => {
@@ -91,9 +91,9 @@ describe("computeTrinketManifest", () => {
     expect(manifest.merchantsFavorDiscount).toBe(7);
   });
 
-  it("Plague Doctor's Mask → plagueDoctorImmunity: true", () => {
+  it("Plague Doctor's Mask → plagueDoctorPoisonCleanse: 2", () => {
     const manifest = computeTrinketManifest(["plague-doctors-mask"]);
-    expect(manifest.plagueDoctorImmunity).toBe(true);
+    expect(manifest.plagueDoctorPoisonCleanse).toBe(2);
   });
 
   it("Mortar and Pestle → mortarPestleFreeFirstPotion: true", () => {
@@ -114,20 +114,32 @@ describe("computeTrinketManifest", () => {
 
   it("combines multiple boons", () => {
     const manifest = computeTrinketManifest(["brass-censer", "tattered-pages", "sundering-charm"]);
-    expect(manifest.firstHolyDamageDoubled).toBe(true);
+    expect(manifest.brassCenserProcChance).toBe(20);
     expect(manifest.extraDrawPerBattle).toBe(1);
     expect(manifest.sunderingArmorPiercing).toBe(2);
   });
 
   it("handles duplicate boon IDs (no double-counting)", () => {
     const manifest = computeTrinketManifest(["brass-censer", "brass-censer"]);
-    expect(manifest.firstHolyDamageDoubled).toBe(true);
+    expect(manifest.brassCenserProcChance).toBe(20);
   });
 
   it("deduplicates an equipped trinket that matches an active boon", () => {
     expect(combineTrinketEffectIds(["bone-charm"], "bone-charm")).toEqual(["bone-charm"]);
     expect(combineTrinketEffectIds(["bone-charm"], "meteorite")).toEqual(["bone-charm", "meteorite"]);
   });
+
+  it.each(["brass-censer", "plague-doctors-mask"])(
+    "%s has identical Boon, Trinket, and matching-pair effects",
+    (id) => {
+      const boon = computeTrinketManifest(combineTrinketEffectIds([id], null));
+      const trinket = computeTrinketManifest(combineTrinketEffectIds([], id));
+      const both = computeTrinketManifest(combineTrinketEffectIds([id], id));
+      expect(boon).not.toEqual(defaultTrinketEffects);
+      expect(trinket).toEqual(boon);
+      expect(both).toEqual(boon);
+    },
+  );
 
   it("Companion's Collar → companionDamageBonus: 1", () => {
     const manifest = computeTrinketManifest(["companions-collar"]);

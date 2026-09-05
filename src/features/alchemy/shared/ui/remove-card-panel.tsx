@@ -20,6 +20,7 @@ export function RemoveCardPanel({
   cancelLabel = "Cancel",
   escapeCancels = true,
   compact = false,
+  fitHeight = false,
 }: {
   runDeck: BattleCard[];
   intro?: ReactNode;
@@ -31,6 +32,7 @@ export function RemoveCardPanel({
 
   escapeCancels?: boolean;
   compact?: boolean;
+  fitHeight?: boolean;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);
@@ -46,9 +48,10 @@ export function RemoveCardPanel({
   }
 
   return (
-    <div className={cn(compact ? "space-y-3" : "space-y-6")}>
+    <div className={cn(fitHeight ? "flex min-h-0 flex-1 flex-col gap-3" : compact ? "space-y-3" : "space-y-6")}>
       {intro}
       <CardSelectionGrid
+        fitHeight={fitHeight}
         items={items}
         page={page}
         onPageChange={setPage}
@@ -64,14 +67,15 @@ export function RemoveCardPanel({
           />
         )}
       />
-      <div className={cn("flex justify-center gap-3", !compact && "mt-5")}>
+      <div className={cn("flex shrink-0 justify-center gap-3", !compact && !fitHeight && "mt-5")}>
         {onCancel ? (
           <Button size="lg" variant="outline" onClick={onCancel}>
             {cancelLabel}
           </Button>
         ) : null}
         <Button size="lg" variant="outline" disabled={confirmDisabled} onClick={handleConfirm}>
-          <Trash2 className="h-7 w-7" /> Remove Card{removePrice !== undefined && <GoldCost amount={removePrice} />}
+          <Trash2 className="h-7 w-7" /> {fitHeight ? "Remove" : "Remove Card"}
+          {removePrice !== undefined && <GoldCost amount={removePrice} />}
         </Button>
       </div>
     </div>

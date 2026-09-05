@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
+import { applyBrassCenser } from "@/lib/battle/player-typed-hit";
 import { normalizeSaveData } from "../helpers/parse-save-for-tests";
 import { migrateSaveDataToCurrent } from "@/lib/validation/migration";
 import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION } from "@/lib/validation";
@@ -173,6 +175,48 @@ describe("save migration guard", () => {
     expect(midCombat.activeRun?.activeCombat?.battleState.trinketEffects.boneCharmHealOnKill).toBe(3);
     expect(midCombat.activeRun?.activeCombat?.battleState.flags.firstBurnTrinketDoubledUsed).toBe(true);
     expect(midCombat.activeRun?.runBoons).toEqual(["meteorite", "bone-charm"]);
+  });
+
+  it("upgrades spent Mask and Censer effects in a resumed fight", () => {
+    const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.recurringTrinkets());
+    const battle = migrated.activeRun?.activeCombat?.battleState;
+    expect(battle).toBeDefined();
+    expect(migrated.ownedTrinketIds).toContain("plague-doctors-mask");
+    expect(migrated.equippedTrinkets.knight).toBe("plague-doctors-mask");
+    expect(migrated.activeRun?.runBoons).toEqual(["brass-censer"]);
+    expect(migrated.discoveredTrinketIds).toEqual(expect.arrayContaining(["brass-censer", "plague-doctors-mask"]));
+    expect(battle?.trinketEffects).toMatchObject({
+      brassCenserProcChance: 20,
+      plagueDoctorPoisonCleanse: 2,
+      boneCharmHealOnKill: 3,
+    });
+    expect(battle?.trinketEffects).not.toHaveProperty("firstHolyDamageDoubled");
+    expect(battle?.trinketEffects).not.toHaveProperty("plagueDoctorImmunity");
+    expect(battle?.flags).not.toHaveProperty("firstHolyDamageBonusUsed");
+    expect(battle?.flags).not.toHaveProperty("firstHarmfulStatusPrevented");
+    expect(battle?.flags.firstBurnTrinketDoubledUsed).toBe(true);
+    const turned = advanceToPlayerTurn({ ...battle!, appliesFightPacing: false, rng: () => 0.99 });
+    expect(turned.playerStatuses.poison).toBe(2);
+    expect(turned.enemyHealth).toBe(battle!.enemyHealth - 1);
+    const burned = applyBrassCenser({ ...turned, rng: () => 0.1 }, 6, []);
+    expect(burned.enemyStatuses.burn).toBe(6);
+    expect(burned.enemyHealth).toBe(turned.enemyHealth - 6);
+  });
+
+  it("upgrades parked combat effects without mutating the original payload", () => {
+    const raw = MIGRATION_SCENARIO_FIXTURES.recurringTrinkets();
+    const parked = { ...raw, activeRun: null, parkedRuns: { campaign: raw.activeRun } };
+    const result = migrateSaveDataToCurrent(parked);
+    const runs = result.parkedRuns as Record<
+      string,
+      { activeCombat: { battleState: { trinketEffects: Record<string, unknown> } } }
+    >;
+    expect(runs.campaign.activeCombat.battleState.trinketEffects).toMatchObject({
+      brassCenserProcChance: 20,
+      plagueDoctorPoisonCleanse: 2,
+    });
+    expect(JSON.stringify(parked)).toContain("firstHolyDamageDoubled");
+    expect(migrateSaveDataToCurrent(result)).toEqual(result);
   });
 
   it("does not drop wildwood active runs during migration", () => {

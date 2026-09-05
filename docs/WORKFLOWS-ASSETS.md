@@ -104,7 +104,9 @@ generated outputs instead. The flag is not a substitute for regenerating
 outputs after source changes.
 
 Before handoff, run the idempotence check. It fails without leaving a mutated
-tree if preparation would change committed outputs:
+tree if preparation would change committed outputs, including version metadata.
+It requires the full `Raw Assets/` checkout; CI jobs running this check must not
+exclude raw sources. Restoration rewrites only changed files:
 
 ```sh
 npm run assets:check

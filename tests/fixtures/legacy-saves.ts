@@ -468,6 +468,7 @@ export const CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () =
   11: currentSchemaSave,
   12: currentSchemaV12Save,
   13: currentSchemaV13Save,
+  14: () => withVersion(currentSchemaSave(), 14),
 };
 
 const FIXTURE_LIVE_SLASH = {
@@ -612,8 +613,42 @@ function currentSchemaLabyrinthGridV13Save() {
   );
 }
 
+function recurringTrinketsV14Save() {
+  const save = currentSchemaMidCombatTrinketSave();
+  const run = save.activeRun as unknown as Record<string, unknown>;
+  const combat = run.activeCombat as Record<string, unknown>;
+  const battle = combat.battleState as Record<string, unknown>;
+  return withVersion(
+    {
+      ...save,
+      ownedTrinketIds: ["plague-doctors-mask"],
+      equippedTrinkets: { knight: "plague-doctors-mask" },
+      discoveredTrinketIds: ["plague-doctors-mask", "brass-censer"],
+      activeRun: {
+        ...run,
+        runBoons: ["brass-censer"],
+        activeCombat: {
+          ...combat,
+          battleState: {
+            ...battle,
+            playerStatuses: { poison: 4 },
+            trinketEffects: { firstHolyDamageDoubled: true, plagueDoctorImmunity: true, boneCharmHealOnKill: 3 },
+            flags: {
+              firstHolyDamageBonusUsed: true,
+              firstHarmfulStatusPrevented: true,
+              firstBurnTrinketDoubledUsed: true,
+            },
+          },
+        },
+      },
+    },
+    14,
+  );
+}
+
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {
   midCombatTrinket: currentSchemaMidCombatTrinketSave,
+  recurringTrinkets: recurringTrinketsV14Save,
   wildwoodTrinketReward: currentSchemaWildwoodTrinketRewardSave,
   wildwoodCardReward: currentSchemaWildwoodCardRewardSave,
   wildwoodGearReward: currentSchemaWildwoodGearRewardSave,

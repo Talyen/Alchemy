@@ -69,7 +69,7 @@ export async function startFrameSampler(page: Page): Promise<void> {
     perf.inputEvents = [];
     perf.phaseMarks = [];
     perf.running = true;
-    perf.startTs = performance.now();
+    perf.startTs = performance.mark("alchemy-perf-window-start").startTime;
     perf.lastTs = 0;
     perf.phaseMarks.push({ time: 0, phase: perf.phase });
 
@@ -139,7 +139,12 @@ export async function startFrameSampler(page: Page): Promise<void> {
       perf.lastTs = ts;
       perf.rafId = requestAnimationFrame(tick);
     };
-    perf.rafId = requestAnimationFrame(tick);
+    return new Promise<void>((resolve) => {
+      perf.rafId = requestAnimationFrame((ts) => {
+        tick(ts);
+        resolve();
+      });
+    });
   });
 }
 
@@ -218,7 +223,7 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
       }
       perf.eventObserver = null;
     }
-    const durationMs = performance.now() - perf.startTs;
+    const durationMs = performance.mark("alchemy-perf-window-end").startTime - perf.startTs;
     return {
       frameGaps: [...perf.frameGaps],
       frameTimes: [...perf.frameTimes],

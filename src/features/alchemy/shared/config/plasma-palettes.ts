@@ -21,6 +21,7 @@ import {
 import { keywordAliasMap, keywordAliases, keywordPattern } from "./keywords";
 import {
   getCompanionShineColors,
+  getKeywordListShineColors,
   getKeywordShineColors,
   SHINE_PALETTES,
   WILDCARD_KEYWORD_SHINE_COLORS,
@@ -151,6 +152,13 @@ export function getPlasmaKeywordsForEnemy(
   }
 
   return [...keywords];
+}
+
+export function getEnemyKeywordShineColors(
+  entry: BestiaryEntry,
+  attackEffects?: BestiaryEntry["attackEffects"],
+): readonly string[] {
+  return getKeywordListShineColors(getPlasmaKeywordsForEnemy(entry, attackEffects));
 }
 
 export function getPlasmaColorPairForEnemy(

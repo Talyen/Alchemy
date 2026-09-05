@@ -1,45 +1,21 @@
-# Persistent Knowledge Index
+# Knowledge index
 
-Institutional memory for recurring bugs, surprising repo behavior, and rejected approaches. **Not auto-loaded** — consult on-demand when a recurring failure or cross-session lesson is suspected.
+Read on demand when a failure, surprising behavior, or proposed approach needs historical context. Implementation instructions belong in the canonical owners linked from [AGENTS.md](../../AGENTS.md#documentation-owners); these notes explain why those instructions exist.
 
-## When to consult
-
-- Consult the `When to read` entry for your change area (see tables below and skills routing) — not a generic second-occurrence check.
-- One-off mistakes stay in session history; do not promote eagerly. Second same-area recurrence in the friction log is a pattern candidate.
-- Before proposing a skill/instruction change, check the relevant pattern plus `skill-impact.md`.
-
-## Live patterns
-
-| Pattern                                                              | Status | Confidence | When to read                                                                                                         |
-| -------------------------------------------------------------------- | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------- |
-| [Asset Barrels Are Outputs](./patterns/asset-barrels-are-outputs.md) | active | high       | Before editing art/sound, `*.generated.ts`, or asset manifests                                                       |
-| [Static Route Imports](./patterns/static-route-imports.md)           | active | high       | Before changing screen routes, lazy loading, or boot/loading gates                                                   |
-| [Gear HP-Sync Write Path](./patterns/gear-hp-sync.md)                | active | medium     | Before mutating gear (equip/salvage/craft) during or outside a run — single occurrence; promote after 2nd recurrence |
-
-## Enforced rationale
-
-Fully enforced by lint/tests/boundaries — retained as the reason the gate exists, not as working procedure. Owner doc plus gate is authoritative.
-
-| Pattern                                                                   | Status             | Confidence | When to read                                                                   |
-| ------------------------------------------------------------------------- | ------------------ | ---------- | ------------------------------------------------------------------------------ |
-| [Run-State Command Boundary](./patterns/run-state-command-boundary.md)    | enforced-rationale | high       | To understand why the aggregate lint rejects direct store access               |
-| [Battle Immutability & Seeded RNG](./patterns/battle-immutability-rng.md) | enforced-rationale | high       | To understand why battle lint bans `Math.floor` / direct RNG                   |
-| [Save Migration Contract](./patterns/save-migration-contract.md)          | enforced-rationale | high       | To understand why save-guard tests require fixtures on schema change           |
-| [Run-Earned Materials Ownership](./patterns/run-materials-ownership.md)   | enforced-rationale | high       | To understand why the material lint rejects direct `addMaterials` during a run |
+| Lesson                                                                    | When useful                                                              |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [Asset Barrels Are Outputs](./patterns/asset-barrels-are-outputs.md)      | Generated edits disappear or asset imports break Playwright collection   |
+| [Static Route Imports](./patterns/static-route-imports.md)                | Considering lazy routes or another loading gate                          |
+| [Gear HP-Sync Write Path](./patterns/gear-hp-sync.md)                     | Gear changes leave stale health or cause nested commands                 |
+| [Run-State Command Boundary](./patterns/run-state-command-boundary.md)    | Investigating direct store access, nested commands, or rollback failures |
+| [Battle Immutability & Seeded RNG](./patterns/battle-immutability-rng.md) | Investigating nondeterminism, mutation, or rounding rules                |
+| [Save Migration Contract](./patterns/save-migration-contract.md)          | Understanding compatibility gates and migration decisions                |
+| [Run-Earned Materials Ownership](./patterns/run-materials-ownership.md)   | Rewards disagree with the run ledger or material lint fails              |
 
 ## Maintenance
 
-```
-one-off failure → friction log Resolved with N/A (one-off) + reason
-second same-area recurrence → pattern candidate (this directory)
-clear reusable prevention → candidate skill update (evals only if routine coding behavior changes)
-candidate with evidence it improves outcomes → promote to active skill
-rule that can be enforced mechanically → encode in types/lint/tests/boundary, status → enforced-rationale
-```
+Fix reusable prevention in its canonical owner or an appropriate type, lint rule, or test. Record misleading documentation, surprising behavior, and repeated friction in the [friction log](../FRICTION_LOG.md). Add a knowledge note only when its explanation or rejected approach is useful beyond that fix; a repeated occurrence is evidence, not a requirement to create another file or skill.
 
-- Merge duplicates; mark superseded/obsolete with reason + successor link.
-- Preserve rejected approaches when likely to be re-proposed (see `skill-impact.md`).
-- Enforced patterns keep `enforced-rationale` status with reasoning intact; use `superseded` only for withdrawn guidance.
-- No automated pruning; keep this index browsable without loading every pattern.
-- History of instruction changes: [skill-impact.md](./skill-impact.md) (advisory, not a gate).
-- Evals for skill promotion: [../evals/README.md](../evals/README.md) (required only when routine coding behavior changes).
+Skills own specialized workflows, not copies of implementation rules. For a substantive instruction change, consult relevant entries in [skill change history](./skill-impact.md) to avoid repeating a failed approach, and use [representative evaluations](../evals/README.md) when coding behavior changes. Formatting, link repairs, and removal of duplicated prose do not need behavioral evaluations.
+
+Keep history advisory. Record consequential accepted or rejected strategies, rather than a ledger entry for every documentation edit. Merge duplicated lessons and preserve the reason for decisions that are likely to be challenged again.

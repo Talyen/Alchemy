@@ -22,6 +22,30 @@ afterEach(() => {
 });
 
 describe("bundle budget sync", () => {
+  it("rejects missing, empty, and non-JavaScript build outputs", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const empty = createAssetDirectory({});
+    expect(checkBundleBudget(join(empty, "missing"))).toBe(false);
+    expect(checkBundleBudget(empty)).toBe(false);
+    expect(checkBundleBudget(createAssetDirectory({ "styles.css": 100 }))).toBe(false);
+  });
+
+  it("excludes sourcemaps from the JavaScript budget", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const directory = createAssetDirectory({
+      "index-AbC_1.js": 100,
+      "index-AbC_1.js.map": BUDGETS.totalJsMaxBytes + 1,
+    });
+    expect(checkBundleBudget(directory)).toBe(true);
+  });
+
+  it("rejects a missing build even when another requested build passes", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const built = createAssetDirectory({ "index-AbC_1.js": 100 });
+    expect(checkBundleBudget([built, join(built, "missing")])).toBe(false);
+  });
+
   it("chunkSizeWarningLimit matches BUDGETS.indexMaxBytes", () => {
     expect(CHUNK_SIZE_WARNING_KB * 1024).toBe(BUDGETS.indexMaxBytes);
   });

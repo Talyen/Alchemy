@@ -43,6 +43,27 @@ describe("source-aware completion gate", () => {
     expect(calls).toContain("lockfile consistency");
   });
 
+  it.each([
+    "package.json",
+    "package-lock.json",
+    "vite.config.ts",
+    "scripts/build-verified.mjs",
+    "scripts/lib/vite-chunks.mjs",
+  ])("builds both targets for shared build input %s", async (filePath) => {
+    const calls: string[] = [];
+    const code = await runCheck([filePath], {
+      runner: vi.fn((label: string) => {
+        calls.push(label);
+        return 0;
+      }),
+      captureDigest: () => ({ head: "abc", hash: "same" }),
+    });
+    expect(code).toBe(0);
+    expect(calls).toContain("web build");
+    expect(calls).toContain("preview smoke");
+    expect(calls).toContain("desktop build");
+  });
+
   it("fails when source inputs drift", async () => {
     let reads = 0;
     const code = await runCheck(["docs/REFERENCE.md"], {
