@@ -132,7 +132,7 @@ test.describe("Armory equip", critical, () => {
     await page.getByLabel("Armor equipment slot").click();
     const bodyItem = gearItemLocator(page, "Leather Armor");
     await expect(bodyItem).toBeVisible();
-    await bodyItem.dblclick();
+    await bodyItem.getByRole("button", { name: "Leather Armor", exact: true }).dblclick();
     await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(2);
   });
 });

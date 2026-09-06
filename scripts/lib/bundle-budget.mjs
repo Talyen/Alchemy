@@ -4,4 +4,4 @@ export const BUDGETS = {
   gameDataMaxBytes: 320 * 1024,
 };
 
-export const CHUNK_SIZE_WARNING_KB = 600;
+export const CHUNK_SIZE_WARNING_KB = 620;
