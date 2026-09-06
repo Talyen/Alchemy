@@ -50,10 +50,19 @@ test.describe("Collection", critical, () => {
       await new MenuPage(page).gotoCollection({ discoveredUniqueIds: ["wardbreaker"] });
       await page.getByRole("button", { name: "Uniques" }).click();
       const inspectBtn = page.getByRole("button", { name: /Inspect Wardbreaker/ });
+      const nextPageButton = page.getByRole("button", { name: "Next page" });
+      for (let attempts = 0; attempts < 10; attempts += 1) {
+        await expect
+          .poll(async () => (await inspectBtn.isVisible()) || (await nextPageButton.isEnabled()), { timeout: 5000 })
+          .toBe(true);
+        if (await inspectBtn.isVisible()) break;
+        await expect(nextPageButton).toBeEnabled();
+        await nextPageButton.click();
+      }
       await expect(inspectBtn).toBeVisible({ timeout: 5000 });
       await expectHoverOnlyShine(inspectBtn);
       await inspectBtn.hover();
-      await expect(page.getByText(/Purge a beneficial effect/)).toBeVisible();
+      await expect(page.getByText(/Purge one enemy buff/)).toBeVisible();
     });
   });
 
