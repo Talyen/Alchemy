@@ -194,7 +194,7 @@ describe("RewardsScreen", () => {
     fireEvent.focus(astral);
     expect(astral.querySelector(".shine-border")).not.toBeNull();
     expect(astral.className).toMatch(/card-interactive-glow/);
-    expect(astral.className).toMatch(/has-shine-border/);
+    expect(astral.className).toMatch(/card-art-shine/);
   });
 
   it("offers neutral hover Shine for a card without keywords", () => {
@@ -270,6 +270,6 @@ describe("RewardsScreen", () => {
     expect(trinket.querySelector(".shine-border")).toBeNull();
     fireEvent.mouseEnter(trinket.parentElement!);
     expect(trinket.querySelector(".shine-border")).not.toBeNull();
-    expect(trinket.className).toMatch(/has-shine-border/);
+    expect(trinket.className).toMatch(/card-art-shine/);
   });
 });

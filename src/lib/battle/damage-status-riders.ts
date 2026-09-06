@@ -1,14 +1,19 @@
 import type { BattleCardEffect } from "@/lib/game-data";
 import {
   addEnemyStatus,
-  addPlayerStatus,
   reduceEnemyArmor,
   setEnemyStatus,
   setFlag,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { addGoldWithCombatText, applyHealingWithCombatText, mergeCombatText, payKillPayouts } from "./combat-text";
+import {
+  addGoldWithCombatText,
+  addPlayerStatusWithCombatText,
+  applyHealingWithCombatText,
+  mergeCombatText,
+  payKillPayouts,
+} from "./combat-text";
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
@@ -218,8 +223,9 @@ function applyFreezeStatusRider(
 ): BattleState {
   let nextState = addEnemyStatus(state, "freeze", actualDamage);
   if (nextState.gearEffects.freezeGrantsBlockAndMana > 0 && actualDamage > 0) {
-    nextState = addPlayerStatus(nextState, "block", actualDamage);
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: actualDamage });
+    nextState = addPlayerStatusWithCombatText(nextState, "block", actualDamage, combatTexts, {
+      skipFightPacing: true,
+    });
   }
   return tryTriggerEnemyFreeze(state, nextState, combatTexts, preHitHealth);
 }

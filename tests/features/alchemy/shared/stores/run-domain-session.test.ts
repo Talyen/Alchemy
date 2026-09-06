@@ -124,6 +124,13 @@ describe("run transitions", () => {
     expect(readActiveRun().runPlayerHealth).toBe(health);
   });
 
+  it("does not restore Health from Grove's Favor at battle start", () => {
+    setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, runBoons: ["groves-favor"] });
+
+    expect(syncRunToBattleStart()).toBe(18);
+    expect(readActiveRun().runPlayerHealth).toBe(18);
+  });
+
   it("syncBattleToRun copies battle HP to the run store", () => {
     syncBattleToRun({ playerHealth: 14 });
     expect(readActiveRun().runPlayerHealth).toBe(14);

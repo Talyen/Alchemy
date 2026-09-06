@@ -1,6 +1,6 @@
 # Local skill routing
 
-Use a skill when its workflow applies. Ordinary implementation needs no pre-edit skill; every edit uses `verifier` before handoff.
+Use `npm run context -- <paths>` for owner sections before implementation; then use a skill when its workflow applies. Ordinary implementation needs no pre-edit skill; every edit uses `verifier` before handoff.
 
 | When                                                              | Skill                                         |
 | ----------------------------------------------------------------- | --------------------------------------------- |

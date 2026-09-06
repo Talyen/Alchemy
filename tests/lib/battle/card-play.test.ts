@@ -10,6 +10,7 @@ import { cardHasDamageType } from "@/lib/battle/card-cost-rules";
 import { defaultBattleState } from "@/lib/battle";
 import { cardById, companionLibrary } from "@/lib/game-data";
 import { makeState as makeSharedState, makeTestCard, slashDeck } from "../../fixtures/battle";
+import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 function makeState(overrides: Parameters<typeof makeSharedState>[0] = {}) {
   return makeSharedState({ mana: 5, maxMana: 5, ...overrides });
@@ -152,6 +153,19 @@ describe("playBattleCardResolved", () => {
       "poison",
       "physical",
     ]);
+  });
+
+  it("grants Ironwood Buckler Thorns when a card gains Block", () => {
+    const card = makeTestCard({ effects: [{ kind: "player-status", status: "block", amount: 5 }] });
+    const state = makeState({
+      hand: [card],
+      trinketEffects: defaultTrinketManifest({ ironwoodBucklerThornsOnBlock: 1 }),
+    });
+
+    const result = playBattleCardResolved(state, card.id, 0);
+
+    expect(result.state.playerStatuses.block).toBe(5);
+    expect(result.state.playerStatuses.thorns).toBe(1);
   });
 
   it("keeps next-hit Poison armed when a chance card deals no damage", () => {

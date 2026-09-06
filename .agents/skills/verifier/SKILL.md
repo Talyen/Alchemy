@@ -8,7 +8,7 @@ description: Select and run Alchemy verification after edits and before handoff,
 [CONTRIBUTING.md](../../../CONTRIBUTING.md#what-to-run-when-you-change) owns verification tiers, dirty-checkout scope, and completion records.
 
 1. Inspect the final diff and select all task-owned paths, including deletions and incidental fixes. Use `--diff` when the whole diff belongs to the task; otherwise pass explicit paths.
-2. During iteration, run `npm run verify -- <paths>` as needed. Add `--plan` to inspect selection when uncertain.
+2. During iteration, run `npm run verify -- <paths>` as needed. Add `--plan` to inspect selection and owner pointers when uncertain. Matching expensive unit commands are reused automatically; set `ALCHEMY_VERIFY_FRESH=1` when investigating nondeterminism or requesting a fresh run.
 3. Before handoff, run `npm run check -- <paths>`. It includes applicable verification, so a separate identical `verify` run immediately beforehand is unnecessary. Documentation-only changes use documentation and format checks; executable changes receive the broader gates defined by CONTRIBUTING.
 4. Resolve failures or report the remaining limitation. If a relevant input changes after a passing run, rerun the affected gate. Follow [failure-first triage](../../../docs/REFERENCE.md#failure-first-triage) for bounded diagnostics.
 

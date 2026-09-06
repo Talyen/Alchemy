@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   addGoldWithCombatText,
+  addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
   emitOverhealBlockText,
   mergeCombatText,
@@ -87,6 +88,65 @@ describe("applyHealingWithCombatText", () => {
     applyHealingWithCombatText(state, 10, texts);
     const healText = texts.find((t) => t.kind === "heal");
     expect(healText).toEqual({ target: "player", kind: "heal", stat: "health", amount: 1 });
+  });
+
+  it("grants Grove's Favor Thorns when Health is actually restored", () => {
+    const state = makeTestBattleState({
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
+    });
+    const texts = makeTexts();
+
+    const result = applyHealingWithCombatText(state, 5, texts);
+
+    expect(result.playerHealth).toBe(15);
+    expect(result.playerStatuses.thorns).toBe(1);
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 5 });
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "thorns", amount: 1 });
+  });
+
+  it("does not grant Grove's Favor Thorns at full Health", () => {
+    const state = makeTestBattleState({
+      trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
+    });
+    const texts = makeTexts();
+
+    const result = applyHealingWithCombatText(state, 5, texts);
+
+    expect(result.playerHealth).toBe(result.playerMaxHealth);
+    expect(result.playerStatuses.thorns).toBe(0);
+    expect(texts).not.toContainEqual(expect.objectContaining({ stat: "thorns" }));
+  });
+
+  it("does not grant Grove's Favor Thorns for overheal converted to Block", () => {
+    const base = makeTestBattleState();
+    const state = makeTestBattleState({
+      trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
+      talentEffects: { ...base.talentEffects, overhealToBlockRatio: 1 },
+    });
+    const texts = makeTexts();
+
+    const result = applyHealingWithCombatText(state, 5, texts);
+
+    expect(result.playerHealth).toBe(result.playerMaxHealth);
+    expect(result.playerStatuses.block).toBe(5);
+    expect(result.playerStatuses.thorns).toBe(0);
+    expect(texts).not.toContainEqual(expect.objectContaining({ stat: "thorns" }));
+  });
+
+  it("grants Ironwood Buckler Thorns once for each positive Block gain", () => {
+    const state = makeTestBattleState({
+      trinketEffects: defaultTrinketManifest({ ironwoodBucklerThornsOnBlock: 1 }),
+    });
+    const texts = makeTexts();
+
+    const afterFirst = addPlayerStatusWithCombatText(state, "block", 2, texts);
+    const result = addPlayerStatusWithCombatText(afterFirst, "block", 4, texts);
+
+    expect(result.playerStatuses.block).toBe(6);
+    expect(result.playerStatuses.thorns).toBe(2);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "thorns", amount: 2 });
   });
 });
 

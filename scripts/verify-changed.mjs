@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** Select dependency-related tests plus a small set of risk-based escalations. */
 import path from "node:path";
+import fs from "node:fs";
 
 import { commandExposure, tailOutput, writeFailureDigest } from "./lib/compact-output.mjs";
 import { resolveRoutePlan } from "./lib/change-routes.mjs";
@@ -8,6 +9,9 @@ import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths
 import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
+import { recordAgentEvent } from "./lib/agent-events.mjs";
+import { createVerificationCache } from "./lib/verification-cache.mjs";
+import { selectContext } from "./lib/agent-context.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -30,6 +34,12 @@ export function formatPlan(plan, { verbosePlan = false } = {}) {
   lines.push(`Categories: ${plan.routes.map((route) => route.id).join(", ") || "none"}`);
   if (plan.routes.some((route) => route.unknown)) {
     lines.push("Note: uncategorized paths receive dependency-related test selection when applicable.");
+  }
+  const owners = selectContext(plan.paths).docs;
+  if (owners.length) {
+    lines.push("Owners (npm run context -- <paths> prints the sections):");
+    for (const owner of owners.slice(0, 6)) lines.push(`  ${owner.path}${owner.heading ? ` § ${owner.heading}` : ""}`);
+    if (owners.length > 6) lines.push(`  … ${owners.length - 6} more owners; use context for the complete selection`);
   }
   lines.push("Commands:");
   if (plan.commands.length === 0) lines.push("  none");
@@ -82,11 +92,26 @@ export function main(argv = process.argv.slice(2)) {
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
     if (flags.has("plan")) return 0;
 
+    const cache = createVerificationCache(ROOT, plan.commands);
     const outcomes = [];
     for (const [index, command] of plan.commands.entries()) {
-      const outcome = runVerificationCommand(command, index, flags.has("verbose"), runId);
+      const receipt = cache.read(command);
+      const outcome = receipt
+        ? { passed: true, command, reused: receipt.runId }
+        : runVerificationCommand(command, index, flags.has("verbose"), runId);
+      if (receipt) console.log(`✓ ${command.label} (reused passing run ${receipt.runId}; inputs unchanged)`);
+      recordAgentEvent(ROOT, {
+        kind: "verification",
+        command: JSON.stringify([command.command, command.args]),
+        status: receipt ? "reused" : outcome.passed ? "passed" : "failed",
+      });
       outcomes.push(outcome);
       if (!outcome.passed && !flags.has("keep-going")) break;
+    }
+    const stable = cache.finish(outcomes, runId);
+    if (!stable) {
+      console.error("Verification inputs changed during the run; rerun for current inputs.");
+      outcomes.push({ passed: false, command: { label: "verification input staleness" } });
     }
     const failed = outcomes.filter((outcome) => !outcome.passed);
     const artifacts = failed.flatMap((outcome) =>
@@ -97,6 +122,22 @@ export function main(argv = process.argv.slice(2)) {
           ]
         : [],
     );
+    const summaryPath = path.join(ROOT, "reports/runs", runId, "verify/summary.json");
+    fs.mkdirSync(path.dirname(summaryPath), { recursive: true });
+    fs.writeFileSync(
+      summaryPath,
+      JSON.stringify(
+        outcomes.map((outcome) => ({
+          command: outcome.command.key ?? outcome.command.label,
+          status: outcome.passed ? "passed" : "failed",
+          reusedFromRun: outcome.reused ?? null,
+          durationMs: outcome.result?.elapsedMs ?? 0,
+        })),
+        null,
+        2,
+      ) + "\n",
+    );
+    artifacts.push({ path: summaryPath, role: "secondary" });
     writeCurrentRun({
       rootDir: ROOT,
       runId,
@@ -104,7 +145,13 @@ export function main(argv = process.argv.slice(2)) {
       command: "npm run verify",
       artifacts,
       counts: { passed: outcomes.length - failed.length, failed: failed.length },
-      commandExposures: outcomes.map((outcome) => outcome.exposure),
+      commandExposures: outcomes.flatMap((outcome) => (outcome.exposure ? [outcome.exposure] : [])),
+      steps: outcomes.map((outcome) => ({
+        label: outcome.command.label,
+        status: outcome.passed ? "passed" : "failed",
+        durationMs: outcome.result?.elapsedMs ?? 0,
+        ...(outcome.reused ? { reason: `Reused passing run ${outcome.reused}; inputs unchanged` } : {}),
+      })),
       summary:
         failed.length > 0
           ? `${failed[0].command.label} failed; inspect its bounded digest first.`

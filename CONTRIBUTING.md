@@ -1,6 +1,6 @@
 # Contributing
 
-Install dependencies with `npm ci`, find the canonical owner in the [documentation map](./README.md#documentation), and begin the change with that owner. Clear bugs, failing checks, broken docs or invariants, and well-supported maintenance, accessibility, or UX issues encountered elsewhere may be fixed; follow their cause without starting a broad cleanup or uncited audit. Preserve existing edits with surgical changes, and ask when a safe merge or remedy is ambiguous.
+Install dependencies with `npm ci`, run `npm run context -- <relevant paths>` to read the selected canonical owner sections, and begin the change there. Use `npm run context` to list task categories when paths are not known; the [documentation map](./README.md#documentation) remains the human index. Clear bugs, failing checks, broken docs or invariants, and well-supported maintenance, accessibility, or UX issues encountered elsewhere may be fixed; follow their cause without starting a broad cleanup or uncited audit. Preserve existing edits with surgical changes, and ask when a safe merge or remedy is ambiguous.
 
 During implementation run `npm run verify -- --diff`; before push and handoff run `npm run check -- --diff`. Use Conventional Commits and leave `CHANGELOG.md` to release automation.
 
@@ -25,6 +25,8 @@ The risk escalations are intentionally broad and few:
 - Tooling and configuration changes run the complete tooling and architecture unit suite because those tests inspect repository files directly.
 - Other implementation changes use Vitest dependency selection; changed test files execute directly.
 
+Successful expensive unit-test commands may be reused automatically by `verify`, including when invoked by `check` or pre-push. The first observation records duration without scanning dependencies; subsequent expensive runs establish reusable receipts. Reuse requires the exact command, unchanged source/dependency filesystem identities and environment, and a receipt less than one hour old. CI never reuses local receipts. Static checks, repository-reading tooling tests, artifact-producing checks, builds and browser checks always run; build outputs therefore need no cache-restoration contract. Set `ALCHEMY_VERIFY_FRESH=1` for a deliberate fresh test run, especially during flaky-test investigation. Missing or unreadable inputs disable reuse; changing inputs during verification rejects the result. Details live in [REFERENCE](./docs/REFERENCE.md#verification-reuse).
+
 The completion gate records every passed, failed, and skipped stage under one run ID, retains bounded failure evidence, and rejects results if tracked source inputs change during the run. Documentation-only changes run documentation and format checks without unit, build, or browser work. Executable changes run the same static aggregate as CI, but not full Vitest or browser journeys. Runtime inputs trigger a non-mutating build and preview smoke. Package manifests trigger `npm ci --dry-run --ignore-scripts`; other pushes do not.
 
 ## E2E policy
@@ -38,6 +40,8 @@ Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure e
 `lefthook` pre-push invokes only `npm run check -- --diff`. Pre-commit formats staged files selected by `scripts/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
 
 Execution plans under `docs/Plans/` are workflow artifacts, not product correctness gates. While a plan is active, run `npm run plans:check`. When this task owns a finished plan, mark it complete or cancelled, refresh its date, run `npm run archive:plans`, then `npm run docs:check:final`.
+
+For instruction changes that affect coding behavior, use the pinned [agent evaluations](./.agents/evals/README.md); compare correctness alongside observed reads, retries and available host usage.
 
 `npm run context:hotspots` and `npm run runs:show -- --last 10` are advisory process evidence. They never block push or handoff.
 

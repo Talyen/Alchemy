@@ -3,7 +3,6 @@ import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
 import {
   addEnemyStatus,
   addPlayerStatus,
-  playerStatusDelta,
   setFlag,
   type BattleState,
   type CombatTextEvent,
@@ -11,9 +10,9 @@ import {
 } from "./types";
 import {
   addGoldWithCombatText,
+  addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
   gainManaWithCombatText,
-  mergeCombatText,
 } from "./combat-text";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { rollTalentChance } from "./status-helpers";
@@ -63,6 +62,9 @@ function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
         ...state,
         enemyMitigation: { ...mit, [steal.key]: Math.max(0, mit[steal.key] - 1) },
       };
+      if (steal.status === "block") {
+        return addPlayerStatusWithCombatText(nextState, steal.status, 1, undefined, { skipFightPacing: true });
+      }
       return addPlayerStatus(nextState, steal.status, 1);
     }
   }
@@ -126,13 +128,7 @@ export function applyDamageBlock(state: BattleState, damage: number, combatTexts
   if (damage <= 0 || state.talentEffects.holyBlockPercentFromDamage <= 0) return state;
   const blockAmount = scalePercent(damage, state.talentEffects.holyBlockPercentFromDamage);
   if (blockAmount <= 0) return state;
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: "block",
-    amount: playerStatusDelta(state, "block", blockAmount),
-  });
-  return addPlayerStatus(state, "block", blockAmount);
+  return addPlayerStatusWithCombatText(state, "block", blockAmount, combatTexts, { skipFightPacing: true });
 }
 
 export function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {

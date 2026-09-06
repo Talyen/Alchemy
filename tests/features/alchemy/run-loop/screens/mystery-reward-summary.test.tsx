@@ -200,7 +200,7 @@ describe("MysteryRewardSummary", () => {
     fireEvent.mouseEnter(surface!.parentElement!);
     expect(surface?.querySelector(".shine-border")).not.toBeNull();
     expect(surface?.className).toMatch(/card-interactive-glow/);
-    expect(surface?.className).toMatch(/has-shine-border/);
+    expect(surface?.className).toMatch(/card-art-shine/);
     fireEvent.mouseLeave(surface!.parentElement!);
     expect(surface?.querySelector(".shine-border")).toBeNull();
     expect(surface?.className).toContain("border-border/80");

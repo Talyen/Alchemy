@@ -4,6 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROUTES, resolveRoutePlan } from "./lib/change-routes.mjs";
+import { readDocumentSection } from "./lib/document-sections.mjs";
+import { selectContext, contextSections } from "./lib/agent-context.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -66,28 +68,6 @@ function fileBytes(relativePath) {
   }
 }
 
-function sectionSource(relativePath, heading) {
-  const source = fs.readFileSync(absolutePath(relativePath), "utf8");
-  if (!heading) return source;
-  const lines = source.split(/\r?\n/u);
-  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-  const headingPattern = new RegExp(`^(#{1,6})\\s+${escaped}\\s*$`, "u");
-  let level = 0;
-  const start = lines.findIndex((line) => {
-    const match = headingPattern.exec(line.trim());
-    if (!match) return false;
-    level = match[1].length;
-    return true;
-  });
-  if (start < 0) throw new Error(`Context heading is missing: ${relativePath} -> ${heading}`);
-  const end = lines.findIndex((line, index) => {
-    if (index <= start) return false;
-    const match = /^(#{1,6})\s+/u.exec(line.trim());
-    return Boolean(match && match[1].length <= level);
-  });
-  return lines.slice(start, end < 0 ? lines.length : end).join("\n");
-}
-
 function measureDocument({ path: relativePath, heading = null, reason = "explicit document" }, kind) {
   if (!fs.existsSync(absolutePath(relativePath))) throw new Error(`Context file is missing: ${relativePath}`);
   return {
@@ -95,19 +75,8 @@ function measureDocument({ path: relativePath, heading = null, reason = "explici
     heading,
     reason,
     kind,
-    bytes: Buffer.byteLength(sectionSource(relativePath, heading), "utf8"),
+    bytes: Buffer.byteLength(readDocumentSection(ROOT, relativePath, heading).text, "utf8"),
   };
-}
-
-function uniqueDocuments(routes) {
-  const selected = new Map();
-  for (const route of routes) {
-    for (const entry of route.docs ?? []) {
-      const key = `${entry.path}#${entry.heading ?? ""}`;
-      if (!selected.has(key)) selected.set(key, entry);
-    }
-  }
-  return [...selected.values()];
 }
 
 function countTestFiles(plan) {
@@ -122,7 +91,8 @@ export function measureContext(options = {}) {
     measureDocument({ path: filePath, reason: "always-loaded repository instructions" }, "instruction"),
   );
   const explicitDocs = options.docs?.length ? options.docs.map((filePath) => ({ path: filePath })) : null;
-  const ownerDocs = (explicitDocs ?? uniqueDocuments(routes)).map((entry) => measureDocument(entry, "owner"));
+  const selectedDocs = contextSections(ROOT, selectContext(paths));
+  const ownerDocs = (explicitDocs ?? selectedDocs).map((entry) => measureDocument(entry, "owner"));
   const artifacts = (options.artifacts ?? []).map((filePath) => ({ path: filePath, bytes: fileBytes(filePath) }));
   const outputs = (options.outputFiles ?? []).map((filePath) => ({ path: filePath, bytes: fileBytes(filePath) }));
   const instructionBytes = instructions.reduce((total, entry) => total + entry.bytes, 0);

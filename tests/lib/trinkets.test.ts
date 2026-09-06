@@ -50,10 +50,9 @@ describe("computeTrinketManifest", () => {
     expect(manifest.frozenHeartDamage).toBe(6);
   });
 
-  it("Ironwood Buckler → blockToArmorThreshold: 6, blockToArmorAmount: 1", () => {
+  it("Ironwood Buckler → ironwoodBucklerThornsOnBlock: 1", () => {
     const manifest = computeTrinketManifest(["ironwood-buckler"]);
-    expect(manifest.blockToArmorThreshold).toBe(6);
-    expect(manifest.blockToArmorAmount).toBe(1);
+    expect(manifest.ironwoodBucklerThornsOnBlock).toBe(1);
   });
 
   it("Runic Quill → runicQuillDrawOnConsume: 1", () => {
@@ -96,9 +95,9 @@ describe("computeTrinketManifest", () => {
     expect(manifest.plagueDoctorPoisonCleanse).toBe(2);
   });
 
-  it("Mortar and Pestle → mortarPestleFreeFirstPotion: true", () => {
+  it("Mortar and Pestle → mortarPestlePoisonOnPotionUse: 1", () => {
     const manifest = computeTrinketManifest(["mortar-and-pestle"]);
-    expect(manifest.mortarPestleFreeFirstPotion).toBe(true);
+    expect(manifest.mortarPestlePoisonOnPotionUse).toBe(1);
   });
 
   it("Sundering Charm → sunderingArmorPiercing: 2", () => {
@@ -166,9 +165,17 @@ describe("computeTrinketManifest", () => {
     expect(manifest.smugglersMapGoldBonus).toBe(2);
   });
 
-  it("Grove's Favor → grovesFavorStartHeal: 2", () => {
+  it("Grove's Favor → grovesFavorThornsOnHealthRestore: 1", () => {
     const manifest = computeTrinketManifest(["groves-favor"]);
-    expect(manifest.grovesFavorStartHeal).toBe(2);
+    expect(manifest.grovesFavorThornsOnHealthRestore).toBe(1);
+  });
+
+  it.each([
+    ["ironwood-buckler", "Gain 1 Thorns when you gain Block"],
+    ["mortar-and-pestle", "Deal 1 Poison damage when you use a Potion"],
+    ["groves-favor", "Gain 1 Thorns when you restore Health"],
+  ] as const)("%s keeps its exact reactive description", (id, description) => {
+    expect(trinketLibrary.find((entry) => entry.id === id)?.descriptionLines).toEqual([description]);
   });
 
   it("every trinketLibrary id changes the manifest from defaults", () => {

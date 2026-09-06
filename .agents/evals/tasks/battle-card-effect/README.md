@@ -1,14 +1,18 @@
-# Task: Battle — add card effect kind
+# Task: Battle — missing-health Block effect
 
-Setup: Use an isolated eval worktree and pick an unused `BattleCardEffect` kind name.
+Use the pinned base and comparison procedure in [the evaluation guide](../../README.md). Do this only in the evaluation checkout.
 
-Goal: Add kind per `docs/WORKFLOWS.md#add-a-new-card-effect-kind` — schema in `src/lib/game-data/effects/`, handler in `src/lib/battle/effect-handlers/`, registry + metadata wiring, card using it (`descriptionLines` matches).
+## Exact request
 
-Pass when:
+Add a card effect kind named `gainMissingHealthBlock` with a nonnegative numeric `value` multiplier. It grants the acting hero `Math.round(max(0, maxHealth - health) * value)` Block through the existing Block gain path. Use current health at effect execution. Define a test-only card using the effect; do not add collectible content, artwork, balance changes, or migrations.
 
-- `npm run typecheck:all` passes
-- `npm run lint` + `npm run lint:boundaries` passes
-- `effects-registry.test.ts` + `effect-handlers-registry.test.ts` + `unit-battle` green
-- No `Math.floor`/`Math.random` lint regressions
+Wire the effect through its type, schema, registry, runtime handler and description owners. The description must communicate Block gained per missing Health. Preserve existing Block modifiers and seeded behavior.
 
-Run: `npm run verify -- src/lib/game-data/effects/damage-schemas.ts src/lib/battle/damage-calc.ts`
+## Acceptance
+
+- At 20 maximum Health and 15 current Health, multiplier 0.5 gives a base gain of 3 Block before existing Block modifiers.
+- Full Health and zero multiplier produce no gain; consecutive effects use the then-current health.
+- Schema rejects negative multipliers. Registry coverage and descriptions recognize the new kind.
+- Existing battle behavior passes its relevant tests; the full task-owned changed-path check passes.
+
+Verify the complete set of edited and added files, including the regression tests; do not substitute example paths for the actual change.

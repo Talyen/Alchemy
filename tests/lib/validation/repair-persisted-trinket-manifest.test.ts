@@ -21,6 +21,24 @@ describe("repairPersistedTrinketManifest", () => {
     expect(repaired.trinketEffects.boneCharmHealOnKill).toBe(9);
   });
 
+  it("preserves legacy active-battle trinket fields", () => {
+    const defaults = defaultBattleState();
+    const battleState = {
+      ...defaults,
+      trinketEffects: {
+        ...defaults.trinketEffects,
+        blockToArmorThreshold: 6,
+        blockToArmorAmount: 1,
+        mortarPestleFreeFirstPotion: true,
+        grovesFavorStartHeal: 2,
+      },
+    };
+
+    const repaired = repairPersistedTrinketManifest(battleState, ["ironwood-buckler", "mortar-and-pestle"]);
+
+    expect(repaired.trinketEffects).toEqual(battleState.trinketEffects);
+  });
+
   it("no-ops when runBoons is empty", () => {
     const battleState = defaultBattleState();
     const repaired = repairPersistedTrinketManifest(battleState, []);

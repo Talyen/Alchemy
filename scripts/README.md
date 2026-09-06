@@ -21,6 +21,12 @@ diffs output hashes, and restores the tree — use before ship, not per-push.
 Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (freshness),
 `lib/process-helpers.mjs` (generic `formatProcessError`), `lib/audio-optimizer.mjs` (audio discovery/runner).
 
+## Agent discovery and evaluation
+
+`npm run context -- <paths>` emits bounded canonical owner sections and entry points; `--task <category>` starts before paths are known, and `--outline <file> [--symbol <name>]` supports focused source reads. `lib/agent-context.mjs` owns discovery metadata and `lib/document-sections.mjs` owns section extraction. `measure:agent-context` uses the same selection; verification categories remain separate and broad.
+
+`npm run eval:agent -- --init <task> <session>` creates a local measurement record. Set `ALCHEMY_AGENT_SESSION` for automatic context/verification events, fill observed host usage and acceptance evidence, then pass one record to summarize or two to compare. [Evaluation procedure](../.agents/evals/README.md) owns pinned task setup and interpretation. Context bytes and observed events are partial evidence, not inferred host token counts.
+
 ## Checks / verification (nesting order)
 
 For executable changes, `check.mjs` ⊃ `verify-changed.mjs` + `lint:ci` + applicable
@@ -30,20 +36,20 @@ ESLint, boundaries, and architecture smoke. Documentation-only checks stay on
 the smaller documentation + format route.
 Pre-push runs `npm run check -- --diff` only (lefthook) — do not stack `verify` or
 `docs:check` on top; `check.mjs` composes the applicable verification and static
-contracts itself. Shared build inputs (package manifests, TypeScript/Vite configuration,
+contracts itself. `lib/verification-cache.mjs` automatically reuses only matching successful unit commands with unchanged local inputs; `ALCHEMY_VERIFY_FRESH=1` bypasses reuse, and CI never uses it. Other gates always run. Shared build inputs (package manifests, TypeScript/Vite configuration,
 and build helpers) trigger both web and desktop builds.
 
 | Task                  | Command                                                                                                          |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Local completion gate | `npm run check -- --diff` (`check.mjs`; classification via `lib/changed-paths.mjs` over `lib/change-routes.mjs`) |
 | Changed-path verifier | `npm run verify -- --diff` (`verify-changed.mjs`; same `changed-paths` parser)                                   |
-| Docs gate             | `npm run docs:check` (`check-docs.mjs` → 9 gating contracts + plans + 1 advisory ledger reminder)                |
+| Docs gate             | `npm run docs:check` (`check-docs.mjs` → 10 gating contracts + plans + 1 advisory ledger reminder)               |
 | Static set            | `npm run check:static` (generated + format + typecheck + eslint + boundaries + arch-smoke)                       |
 | Bundle budget         | `npm run check:bundle` (constants in `lib/bundle-budget.mjs`; requires `dist/assets/`)                           |
 
 Tooling and configuration paths run the complete `tests/scripts` +
 `tests/architecture` suite because those tests inspect repository files and are
-not reliably discoverable through the import graph. Full Vitest and browser
+not reliably discoverable through the import graph. Ambient script-test declarations belong in the existing `tests/scripts/global.d.ts` owner; standalone unreferenced declaration files fail dead-code checks. Full Vitest and browser
 execution remain CI-owned.
 
 `check:bundle` checks the current `dist/assets/` and fails when the build is missing

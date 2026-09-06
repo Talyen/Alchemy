@@ -14,7 +14,7 @@ Read on demand when a failure, surprising behavior, or proposed approach needs h
 
 ## Maintenance
 
-Fix reusable prevention in its canonical owner or an appropriate type, lint rule, or test. Record misleading documentation, surprising behavior, and repeated friction in the [friction log](../FRICTION_LOG.md). Add a knowledge note only when its explanation or rejected approach is useful beyond that fix; a repeated occurrence is evidence, not a requirement to create another file or skill.
+Fix reusable prevention in its canonical owner or an appropriate type, lint rule, or test. Record unresolved misleading documentation, surprising behavior, and repeated friction in the [friction log](../FRICTION_LOG.md); move resolved evidence to [history](../history/README.md) after updating its canonical prevention. Add a knowledge note only when its explanation or rejected approach is useful beyond that fix; a repeated occurrence is evidence, not a requirement to create another file or skill.
 
 Skills own specialized workflows, not copies of implementation rules. For a substantive instruction change, consult relevant entries in [skill change history](./skill-impact.md) to avoid repeating a failed approach, and use [representative evaluations](../evals/README.md) when coding behavior changes. Formatting, link repairs, and removal of duplicated prose do not need behavioral evaluations.
 

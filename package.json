@@ -41,6 +41,8 @@
     "verify": "node scripts/verify-changed.mjs",
     "check": "node scripts/check.mjs",
     "runs:show": "node scripts/show-runs.mjs",
+    "context": "node scripts/agent-context.mjs",
+    "eval:agent": "node scripts/agent-eval.mjs",
     "measure:agent-context": "node scripts/measure-agent-context.mjs",
     "context:hotspots": "node scripts/context-hotspots.mjs",
     "new:plan": "node scripts/new-plan.mjs",

@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
+import { validateContextCatalog } from "./lib/agent-context.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -138,7 +139,7 @@ export function checkLocalMarkdownLinks() {
 export function checkInlineRepositoryPaths() {
   const missing = [];
   for (const file of markdownFiles()) {
-    if (file.endsWith("CHANGELOG.md")) continue;
+    if (file.endsWith("CHANGELOG.md") || file.includes("/.agents/history/")) continue;
     const source = stripFencedBlocks(readMarkdownSource(file));
     for (const match of source.matchAll(/`([^`\n]+)`/gu)) {
       const candidate = match[1].trim();
@@ -156,6 +157,7 @@ export function checkBacktickedCurrentFileReferences() {
   const isHistorical = (relativePath) =>
     relativePath === "CHANGELOG.md" ||
     relativePath.startsWith("docs/Plans/") ||
+    relativePath.startsWith(".agents/history/") ||
     relativePath === "docs/Audits/decisions.md" ||
     relativePath === ".agents/knowledge/skill-impact.md";
   const repositoryPaths = repositoryFiles().map((file) => file.slice(ROOT.length + 1).replaceAll("\\", "/"));
@@ -192,6 +194,7 @@ export function checkDocumentedNpmScripts() {
   const packageJson = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
   const missing = [];
   for (const file of markdownFiles()) {
+    if (file.includes("/.agents/history/")) continue;
     const source = readMarkdownSource(file);
     for (const match of source.matchAll(/npm run ([a-zA-Z0-9:_-]+)/gu)) {
       const script = match[1];
@@ -214,7 +217,7 @@ export function checkMarkdownHeadingAnchors() {
   };
   const broken = [];
   for (const file of markdownFiles()) {
-    if (file.endsWith("CHANGELOG.md")) continue;
+    if (file.endsWith("CHANGELOG.md") || file.includes("/.agents/history/")) continue;
     const source = readMarkdownSource(file);
     for (const match of source.matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
       const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
@@ -348,6 +351,7 @@ export const DOCUMENTATION_CONTRACTS = [
   ["durable document reachability", checkDurableDocumentReachability],
   ["knowledge index completeness", checkKnowledgeIndexCompleteness],
   ["skill index completeness", checkSkillIndexCompleteness],
+  ["agent discovery catalog", () => validateContextCatalog(ROOT)],
 ];
 
 export const ADVISORY_DOCUMENTATION_CONTRACTS = [["skill-impact ledger", checkSkillImpactLedger]];

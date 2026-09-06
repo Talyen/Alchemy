@@ -143,15 +143,7 @@ function applyForgeBlockBurst(
       amount += newForge;
     }
     amount = paceCombatMagnitude(s, amount, "player");
-    if (combatTexts) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "status",
-        stat: "block",
-        amount,
-      });
-    }
-    return addPlayerStatus(s, "block", amount);
+    return addPlayerStatusWithCombatText(s, "block", amount, combatTexts, { skipFightPacing: true });
   });
 }
 
@@ -198,6 +190,9 @@ export function applyPlayerStatusEffect(
   }
   if (effect.status === "forge") {
     return addForgeToPlayer(state, amount, combatTexts);
+  }
+  if (effect.status === "block") {
+    return addPlayerStatusWithCombatText(state, "block", amount, combatTexts, { skipFightPacing: true });
   }
   const effectiveAmount = playerStatusDelta(state, effect.status, amount);
   mergeCombatText(combatTexts, {
@@ -280,6 +275,9 @@ function applyBeneficialStatusFromAttack(
   amount: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  if (status === "block") {
+    return addPlayerStatusWithCombatText(state, "block", amount, combatTexts, { skipFightPacing: true });
+  }
   mergeCombatText(combatTexts, {
     target: "player",
     kind: "status",

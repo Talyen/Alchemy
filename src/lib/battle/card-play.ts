@@ -7,7 +7,7 @@ import {
   gainManaWithCombatText,
   mergeCombatText,
 } from "./combat-text";
-import { type BattleCard, type EnemyAttackEffect } from "@/lib/game-data";
+import { isPotionCard, type BattleCard, type EnemyAttackEffect } from "@/lib/game-data";
 import {
   type BattleResolution,
   type BattleState,
@@ -19,6 +19,7 @@ import {
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { getBattleRng, rngInt, rollPercent } from "@/lib/rng";
+import { dealPlayerTypedHit } from "./player-typed-hit";
 
 import { cardHasDamageType, computeEffectiveCost, isNatureCard } from "./card-cost-rules";
 import { isPlayerCcControlled } from "./status-cc";
@@ -64,6 +65,11 @@ function canAffordCard(state: BattleState, index: number): boolean {
   return !!currentCard && state.mana >= computeEffectiveCost(state, currentCard).effectiveCost;
 }
 
+function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
+  if (!isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0) return state;
+  return dealPlayerTypedHit(state, "poison", state.trinketEffects.mortarPestlePoisonOnPotionUse, combatTexts);
+}
+
 export function canPlayCard(state: BattleState, card: BattleCard, index: number, options?: CardPlayOptions): boolean {
   if (state.enemyHealth <= 0 && !options?.allowAfterEnemyDefeat) return false;
   if (isPlayerDefeated(state)) return false;
@@ -97,8 +103,12 @@ function executeCardPlayState(
     enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
   };
   nextState = applyCardEffects(nextState, card, combatTexts, playContext);
+  nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
 
-  if (playTwice) nextState = applyCardEffects(nextState, card, combatTexts, playContext);
+  if (playTwice) {
+    nextState = applyCardEffects(nextState, card, combatTexts, playContext);
+    nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
+  }
 
   nextState = applyNatureCardPlayTalents(nextState, card, combatTexts);
 

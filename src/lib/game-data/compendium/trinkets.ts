@@ -2,15 +2,9 @@ import * as assetRefs from "../assets";
 import { trinket } from "../compendium-builders";
 
 export const trinketLibrary = [
-  trinket(
-    "brass-censer",
-    "Brass Censer",
-    "Holy damage has a 20% chance to either deal equal Burn damage or Leech",
-    assetRefs.brassCenser,
-    {
-      brassCenserProcChance: 20,
-    },
-  ),
+  trinket("brass-censer", "Brass Censer", "Holy damage has a 20% chance to also Burn or Leech", assetRefs.brassCenser, {
+    brassCenserProcChance: 20,
+  }),
   trinket("tattered-pages", "Tattered Pages", "Draw 1 at the start of combat", assetRefs.tatteredPages, {
     extraDrawPerBattle: 1,
   }),
@@ -30,13 +24,9 @@ export const trinketLibrary = [
   trinket("icy-heart", "Icy Heart", "When you Freeze an enemy, deal 6 Physical damage", assetRefs.icyHeart, {
     frozenHeartDamage: 6,
   }),
-  trinket(
-    "ironwood-buckler",
-    "Ironwood Buckler",
-    "At the end of your turn, if you have 6 or more Block, gain 1 Armor",
-    assetRefs.ironwoodBuckler,
-    { blockToArmorThreshold: 6, blockToArmorAmount: 1 },
-  ),
+  trinket("ironwood-buckler", "Ironwood Buckler", "Gain 1 Thorns when you gain Block", assetRefs.ironwoodBuckler, {
+    ironwoodBucklerThornsOnBlock: 1,
+  }),
   trinket("runic-quill", "Runic Quill", "Draw 1 when you Consume", assetRefs.runicQuill, {
     runicQuillDrawOnConsume: 1,
   }),
@@ -57,13 +47,9 @@ export const trinketLibrary = [
   trinket("parasitic-bloom", "Parasitic Bloom", "Poison has a 10% chance to Leech", assetRefs.parasiticBloom, {
     parasiticBloomLeechChance: 10,
   }),
-  trinket(
-    "cutpurse-knife",
-    "Cutpurse Knife",
-    "When you apply Bleed to an enemy, gain 1 Gold",
-    assetRefs.cutpurseKnife,
-    { cutpurseGoldOnBleed: 1 },
-  ),
+  trinket("cutpurse-knife", "Cutpurse Knife", "Gain 1 Gold when you deal Bleed damage", assetRefs.cutpurseKnife, {
+    cutpurseGoldOnBleed: 1,
+  }),
   trinket("wishing-well-coin", "Wishing Well Coin", "When you Wish, also gain 3 Gold", assetRefs.wishingWellCoin, {
     wishingWellGoldOnWish: 3,
   }),
@@ -84,9 +70,9 @@ export const trinketLibrary = [
   trinket(
     "mortar-and-pestle",
     "Mortar and Pestle",
-    "The first Potion you play each combat is free",
+    "Deal 1 Poison damage when you use a Potion",
     assetRefs.mortarAndPestle,
-    { mortarPestleFreeFirstPotion: true },
+    { mortarPestlePoisonOnPotionUse: 1 },
   ),
   trinket(
     "sundering-charm",
@@ -105,8 +91,8 @@ export const trinketLibrary = [
   trinket("smugglers-map", "Smuggler's Map", "Gold rewards from combat are increased by 2", assetRefs.smugglersMap, {
     smugglersMapGoldBonus: 2,
   }),
-  trinket("groves-favor", "Grove's Favor", "Restore 2 Health at the start of combat", assetRefs.grovesFavor, {
-    grovesFavorStartHeal: 2,
+  trinket("groves-favor", "Grove's Favor", "Gain 1 Thorns when you restore Health", assetRefs.grovesFavor, {
+    grovesFavorThornsOnHealthRestore: 1,
   }),
   trinket("companions-collar", "Companion's Collar", "Increases Companion damage by 1", assetRefs.companionsCollar, {
     companionDamageBonus: 1,

@@ -192,7 +192,7 @@ describe("ArmoryScreen core", () => {
     expect(inventoryTrinket.querySelector(".shine-border")).toBeNull();
     await user.hover(inventoryTrinket);
     expect(inventoryTrinket.querySelector(".shine-border")).not.toBeNull();
-    expect(inventoryTrinket.className).toMatch(/has-shine-border/);
+    expect(inventoryTrinket.className).toMatch(/card-art-shine/);
   });
 
   it("keeps a 2×3 inventory footprint when the selected slot has no items", async () => {

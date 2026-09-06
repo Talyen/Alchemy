@@ -1,4 +1,3 @@
-import { getBattleStartPlayerHealth } from "@/lib/battle";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
@@ -24,7 +23,6 @@ import { applyRestoreRunToDraft, clearModeSlotInDraft } from "./run-park-restore
 import { touchRunRecency, type ParkedRunsMap } from "./parked-runs";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { useUiStore } from "./ui-store";
 
 export function restoreRun(
@@ -54,16 +52,7 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
 }
 
 export function syncRunToBattleStart(draft: GameplayDraft, playerHealth?: number): number {
-  const startingHealth =
-    playerHealth ??
-    getBattleStartPlayerHealth(
-      draft.run.activeRun.runPlayerHealth,
-      draft.run.activeRun.runMaxHealth,
-      combineTrinketEffectIds(
-        draft.run.activeRun.runBoons,
-        draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
-      ),
-    );
+  const startingHealth = playerHealth ?? draft.run.activeRun.runPlayerHealth;
   setRunPlayerHealth(draft, startingHealth);
   return startingHealth;
 }

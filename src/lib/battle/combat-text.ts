@@ -69,6 +69,21 @@ export function emitOverhealBlockText(
   });
 }
 
+function emitReactiveThornsText(
+  stateBefore: Pick<BattleState, "playerStatuses">,
+  stateAfter: Pick<BattleState, "playerStatuses">,
+  combatTexts: CombatTextEvent[],
+) {
+  const thornsGained = stateAfter.playerStatuses.thorns - stateBefore.playerStatuses.thorns;
+  if (thornsGained <= 0) return;
+  mergeCombatText(combatTexts, {
+    target: "player",
+    kind: "status",
+    stat: "thorns",
+    amount: thornsGained,
+  });
+}
+
 function applyBloodCountessHealingReaction(
   state: BattleState,
   restoredHealth: number,
@@ -101,6 +116,7 @@ export function applyHealingWithCombatText(
       mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: actualHeal });
     }
     emitOverhealBlockText(prevState, nextState, combatTexts);
+    emitReactiveThornsText(prevState, nextState, combatTexts);
   }
   return applyBloodCountessHealingReaction(nextState, actualHeal, combatTexts);
 }
@@ -150,13 +166,22 @@ export function addPlayerStatusWithCombatText(
   stat: PlayerStatusId,
   amount: number,
   combatTexts?: CombatTextEvent[],
+  options?: { skipFightPacing?: boolean },
 ): BattleState {
   if (amount <= 0) return state;
   const before = state.playerStatuses[stat];
-  const nextState = addPlayerStatus(state, stat, paceCombatMagnitude(state, amount, "player"));
+  const previousState = state;
+  const nextState = addPlayerStatus(
+    state,
+    stat,
+    options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player"),
+  );
   const delta = nextState.playerStatuses[stat] - before;
   if (delta > 0 && combatTexts) {
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat, amount: delta });
+  }
+  if (stat === "block" && combatTexts) {
+    emitReactiveThornsText(previousState, nextState, combatTexts);
   }
   return nextState;
 }
@@ -190,6 +215,7 @@ function applyKillRewardHealing(state: BattleState, amount: number, combatTexts:
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: actualHeal });
   }
   emitOverhealBlockText(previousState, nextState, combatTexts);
+  emitReactiveThornsText(previousState, nextState, combatTexts);
   return nextState;
 }
 

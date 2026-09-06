@@ -88,9 +88,29 @@ Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI d
 - Local transient artifacts are pruned automatically before dev preparation and remain available for test/performance investigation until explicitly pruned. Copy a failure artifact elsewhere only when an investigation genuinely needs to outlive the grace period; use `npm run prune:transient -- --dry-run` to inspect candidates.
 - CI retains failure-only diagnostic artifacts for seven days and retains no successful-run report history.
 
+### Agent discovery
+
+After status inspection, run `npm run context -- <relevant paths>` once for the current scope. Use `--task battle`, `--task ui`, `--task gear`, `--task rewards`, `--task shop`, or another category listed by `npm run context` when paths are unknown. `--diff` is appropriate only when the entire diff belongs to the task. Explicit task selection augments path matches; it does not suppress save or other applicable owners.
+
+The command reads canonical Markdown sections, deduplicates overlapping sections, and prints implementation entry points and verification categories. Default output is bounded to 12 KB; deferred sections retain exact line locations. Read those only when the task needs them. `--json` deliberately returns the complete selection for tooling. This is discovery guidance, not a replacement for required skills or a test-coverage selector. `scripts/lib/agent-context.mjs` owns discovery categories; `scripts/lib/change-routes.mjs` continues to own the broad verification categories.
+
+Before reading a large unfamiliar source module, use `npm run context -- --outline <file>` for declaration locations, then `--outline <file> --symbol <name>` for one declaration. Oversized declarations return a location instead of dumping the file. Use scoped `rg` for content entries within a large catalog. Use the existing `npm run audit -- --amplification` report for co-edit evidence and correlate its paths with evaluation read events. Split a file only when observed repeated reads or co-changes expose separable responsibilities; size alone is not a refactoring target.
+
+Update the discovery catalog when ownership or entry points change. Documentation checks and tooling tests validate every referenced section and entry point, and `verify --plan` displays pointers from the same catalog. Do not copy owner prose into the catalog or reread sections already emitted by `context`.
+
+### Verification reuse
+
+`verify` keeps local passing receipts under `reports/verification-cache/`. After a command has been observed to take at least five seconds, it can reuse dependency-related and changed unit tests plus save, desktop and performance unit suites. It never reuses tooling suites, report generators, assets, static checks, builds, smoke tests or browser runs. The first run records duration without scanning dependencies; a subsequent slow run establishes its receipt. Reuse must also save more time than twice the measured input-scan cost. The exact executable and argument list identify coverage; a narrower prior command cannot satisfy a broader command.
+
+Input identity covers tracked and untracked nonignored files, root environment files and npm configuration, installed dependency file identities, Node executable/version/platform, checkout location and environment. File identities include mode, size, nanosecond modification/change times and inode; this is local filesystem reuse, not a portable content-addressed build cache. Dependency caches are excluded. Linked source or external dependency symlinks, unreadable inputs, a missing npm install receipt or changed inputs disable reuse. Fresh successes replace receipts atomically; failures invalidate them. Reused results retain the original run ID and expiry rather than renewing their age. Each verifier writes a run-specific `verify/summary.json`; the outer completion report links it so reuse provenance survives the final report.
+
+CI always executes tests. Set `ALCHEMY_VERIFY_FRESH=1` to bypass reads locally; actual outcomes still replace or invalidate local receipts. Use it for nondeterminism investigation and benchmark comparisons. Receipts are disposable and age out after one hour; normal report cleanup removes them. Build and browser artifact validity is handled by always executing those stages.
+
 ### Context-efficiency measurements
 
-`npm run measure:agent-context -- --path <changed-path>` reports a stable preread byte proxy: always-loaded instructions, route-selected owner sections, changed-file bytes, verification/test-path counts, and explicitly named artifact bytes. `--all-routes` compares one canonical fixture per route.
+`npm run measure:agent-context -- --path <changed-path>` reports a stable preread byte proxy: always-loaded instructions, owner sections selected by the same discovery catalog as `context`, changed-file bytes, verification/test-path counts, and explicitly named artifact bytes. `--all-routes` compares one canonical fixture per verification route. These byte proxies do not measure reasoning, repeated reads or actual token usage.
+
+Use the pinned [agent evaluations](../.agents/evals/README.md) for completed-task comparisons. With `ALCHEMY_AGENT_SESSION` set to an evaluation session ID, context reads and verification attempts/reuse append local events automatically. Host usage is optional and must come from a real usage report; unavailable values remain null. No prompts, credentials or source text are written to event records. Ordinary tasks do not require telemetry or new bookkeeping.
 
 `npm run context:hotspots -- --last 20` ranks broad category prereads and aggregates captured output from recent runs. It is advisory process evidence, not a correctness gate. Use `--min-bytes 0` for the complete inventory, `--json` for machine-readable output, or `--run-id <id>` for one recorded run. `--verbose` remains an explicit opt-in for complete child output.
 

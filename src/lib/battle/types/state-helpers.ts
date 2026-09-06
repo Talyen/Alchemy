@@ -32,12 +32,17 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
   if ((status === "stun" || status === "freeze") && isStunFreezeBuildupBlocked(state.playerCC)) {
     return state;
   }
+  const effectiveDelta = playerStatusDelta(state, status, delta);
+  const playerStatuses = {
+    ...state.playerStatuses,
+    [status]: state.playerStatuses[status] + effectiveDelta,
+  };
+  if (status === "block" && effectiveDelta > 0 && state.trinketEffects.ironwoodBucklerThornsOnBlock > 0) {
+    playerStatuses.thorns += state.trinketEffects.ironwoodBucklerThornsOnBlock;
+  }
   return {
     ...state,
-    playerStatuses: {
-      ...state.playerStatuses,
-      [status]: state.playerStatuses[status] + playerStatusDelta(state, status, delta),
-    },
+    playerStatuses,
   };
 }
 
@@ -240,11 +245,21 @@ export function applyPlayerCombatDamage(
 export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
   if (isPlayerDefeated(state)) return state;
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
+  const actualHeal = playerHealth - state.playerHealth;
   const overheal = state.playerHealth + amount - playerHealth;
   let nextState = {
     ...state,
     playerHealth,
   };
+  if (actualHeal > 0 && nextState.trinketEffects.grovesFavorThornsOnHealthRestore > 0) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        thorns: nextState.playerStatuses.thorns + nextState.trinketEffects.grovesFavorThornsOnHealthRestore,
+      },
+    };
+  }
   if (overheal > 0 && nextState.talentEffects.overhealToBlockRatio > 0) {
     const blockGain = Math.round(overheal * nextState.talentEffects.overhealToBlockRatio);
     nextState = addPlayerStatus(nextState, "block", blockGain);

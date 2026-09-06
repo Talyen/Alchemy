@@ -148,6 +148,10 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     console.log(`\n== ${definition.label} ==`);
     const started = Date.now();
     const runnerResult = await runner(definition.label, definition.command, definition.args, env);
+    if (definition.key === "verification" && !options.runner) {
+      const verificationSummary = path.join(ROOT, "reports/runs", runId, "verify/summary.json");
+      if (fs.existsSync(verificationSummary)) artifacts.push({ path: verificationSummary, role: "secondary" });
+    }
     const durationMs = Date.now() - started;
     const result =
       typeof runnerResult === "number"

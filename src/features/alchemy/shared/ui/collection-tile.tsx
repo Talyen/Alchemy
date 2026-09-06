@@ -12,7 +12,6 @@ import {
   cardArtImageClass,
   cardInteractiveGlowClass,
   cardHoverScaleClass,
-  cardShineFrameClass,
   cardSurfaceClass,
   getTileWidthClass,
   getInspectionKeywordShineColors,
@@ -69,10 +68,10 @@ export const CollectionTile = memo(function CollectionTile({ item }: CollectionT
         onBlur={handleBlur}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
+        overlay={showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
         className={cn(
-          "group shadow-md",
-          showShine && cardShineFrameClass,
-          !showShine && "border border-border/80",
+          "group card-art-frame border border-border/80 shadow-md",
+          showShine && "card-art-shine",
           cardSurfaceClass,
           item.discovered ? cardInteractiveGlowClass : cardHoverScaleClass,
           getTileWidthClass(item.frameType === "bestiary" ? "bestiary" : "collectionCard"),
@@ -87,7 +86,6 @@ export const CollectionTile = memo(function CollectionTile({ item }: CollectionT
         }}
       >
         <CollectionTileMedia item={item} flipped={flipped} />
-        {showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
       </Surface>
     </div>
   );

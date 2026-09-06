@@ -53,7 +53,7 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`.
 | Tabs           | `TabBar`                                                                                |
 | Hover / press  | Shared CSS hover scale and `active:` feedback; do not add parallel Motion hover scaling |
 
-Card artwork keeps the same border space when hover shine appears, so hovering or focusing a card cannot resize its row or recenter the screen.
+Card and collection artwork, including gear and trinket tiles, keeps the same border space when hover shine appears, so hovering or focusing an item cannot resize its artwork or row or recenter the screen. Hover-only shine uses `card-art-shine`; `has-shine-border` replaces the frame only for persistent shine. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 

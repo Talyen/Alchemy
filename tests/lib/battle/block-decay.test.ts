@@ -4,6 +4,7 @@ import type { BattleState } from "@/lib/battle/types";
 import { defaultTalentEffects } from "@/lib/battle";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { makeTestBattleState } from "../../fixtures/battle";
+import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 function makeState(overrides: Partial<BattleState> = {}): BattleState {
   return makeTestBattleState({
@@ -56,6 +57,27 @@ describe("block decay timing", () => {
 
     expect(result.state.playerHealth).toBe(30);
     expect(result.state.playerStatuses.block).toBe(3);
+  });
+
+  it("does not trigger Ironwood Buckler when Block is decayed or preserved", () => {
+    const trinketEffects = defaultTrinketManifest({ ironwoodBucklerThornsOnBlock: 1 });
+    const decayed = endPlayerTurn(
+      makeState({
+        enemyAttackEffects: [],
+        trinketEffects,
+      }),
+    );
+    const preserved = endPlayerTurn(
+      makeState({
+        enemyAttackEffects: [],
+        playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, haste: 1 },
+        trinketEffects,
+      }),
+    );
+
+    expect(decayed.state.playerStatuses.thorns).toBe(0);
+    expect(preserved.state.playerStatuses.block).toBe(10);
+    expect(preserved.state.playerStatuses.thorns).toBe(0);
   });
 
   it("enemy block decays at the start of the enemy phase after the player had an attack window", () => {

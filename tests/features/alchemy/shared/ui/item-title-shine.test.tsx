@@ -54,7 +54,7 @@ describe("item portrait shine", () => {
     expect(container.querySelector(".shine-border")).toBeNull();
     fireEvent.mouseEnter(screen.getByAltText(trinket.title).parentElement!.parentElement!);
     expect(container.querySelector(".shine-border")).not.toBeNull();
-    expect(container.querySelector(".has-shine-border")).not.toBeNull();
+    expect(container.querySelector(".card-art-shine")).not.toBeNull();
 
     rerender(<TrinketTile trinket={trinket} interactionKey="test" shine={false} />);
     expect(container.querySelector(".shine-border")).toBeNull();

@@ -1,0 +1,11 @@
+{
+  "baseRevision": "fb7e5ade5f76c6e2a7e2555c75ff1041f20cc43c",
+  "tasks": {
+    "battle-card-effect": ".agents/evals/tasks/battle-card-effect/README.md",
+    "save-additive-field": ".agents/evals/tasks/save-additive-field/README.md",
+    "shop-price-refresh": ".agents/evals/tasks/shop-price-refresh/README.md",
+    "ui-button-default": ".agents/evals/tasks/ui-button-default/README.md",
+    "dirty-checkout": ".agents/evals/tasks/dirty-checkout/README.md"
+  },
+  "taskVersion": 1
+}

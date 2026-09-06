@@ -651,3 +651,107 @@ declare module "*/prepare-assets.mjs" {
 declare module "*/check-prepared-assets.mjs" {
   export function checkPreparedAssets(): Promise<void>;
 }
+
+declare module "*/lib/agent-context.mjs" {
+  interface Section {
+    path: string;
+    heading?: string | null;
+    start: number;
+    end: number;
+    text: string;
+  }
+  interface Selection {
+    tasks: string[];
+    docs: Array<{ path: string; heading: string | null }>;
+    entrypoints: string[];
+    plan: { commands: Array<{ key: string }> };
+  }
+  export const CONTEXT_TASKS: Record<string, unknown>;
+  export function selectContext(paths: string[], task?: string): Selection;
+  export function contextSections(root: string, selection: Selection): Section[];
+  export function sourceOutline(root: string, filename: string): Array<Section & { name: string }>;
+  export function validateContextCatalog(root: string): string[];
+}
+
+declare module "*/agent-context.mjs" {
+  export const CONTEXT_OUTPUT_BYTES: number;
+  export function renderSourceOutline(
+    declarations: ReturnType<typeof import("*/lib/agent-context.mjs").sourceOutline>,
+    symbol?: string | null,
+    budget?: number,
+  ): { text: string };
+  export function parseContextArgs(args: string[]): {
+    paths: string[];
+    task: string | null;
+    diff: boolean;
+    outline: string | null;
+    symbol: string | null;
+    json: boolean;
+  };
+  export function renderContext(
+    selection: ReturnType<typeof import("*/lib/agent-context.mjs").selectContext>,
+    sections: ReturnType<typeof import("*/lib/agent-context.mjs").contextSections>,
+    budget?: number,
+  ): { text: string; included: ReturnType<typeof import("*/lib/agent-context.mjs").contextSections> };
+}
+
+declare module "*/lib/verification-cache.mjs" {
+  interface Command {
+    key: string;
+    command: string;
+    args: string[];
+  }
+  export function captureVerificationInputs(root: string, env?: Record<string, string>): string | null;
+  export function createVerificationCache(
+    root: string,
+    commands: Command[],
+    options?: {
+      env?: Record<string, string>;
+      minimumDurationMs?: number;
+      capture?: () => string | null;
+      now?: () => number;
+    },
+  ): {
+    read(command: Command): { runId: string } | null;
+    finish(
+      outcomes: Array<{ command: Command; passed: boolean; reused?: string; result?: { elapsedMs: number } }>,
+      runId: string,
+    ): boolean;
+  };
+}
+
+declare module "*/agent-eval.mjs" {
+  interface Evaluation extends Record<string, unknown> {
+    task: string;
+    baseRevision: string;
+    variant: string;
+    model: unknown;
+    settings: unknown;
+  }
+  export function summarizeEvaluation(
+    record: Record<string, unknown>,
+    events: Array<Record<string, unknown>>,
+  ): Evaluation;
+  export function compareEvaluations(
+    before: Evaluation,
+    after: Evaluation,
+  ): { comparableCorrectness: boolean; deltaAfterMinusBefore: Record<string, number | null> };
+}
+
+declare module "*/lib/agent-events.mjs" {
+  export function readExposure(section: {
+    path: string;
+    start: number;
+    end: number;
+    text: string;
+  }): Record<string, unknown>;
+  export function recordAgentEvent(root: string, event: Record<string, unknown>, env?: Record<string, string>): void;
+}
+
+declare module "*/lib/document-sections.mjs" {
+  export function readDocumentSection(
+    root: string,
+    filename: string,
+    heading?: string,
+  ): { start: number; end: number; text: string };
+}

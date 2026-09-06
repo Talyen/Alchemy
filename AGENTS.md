@@ -18,7 +18,7 @@ Write for a product manager, designer, player, or user who knows Alchemy as a ga
 
 ## Documentation owners
 
-Start with the relevant section of one owner document; expand when a dependency or unresolved question crosses its boundary. When docs, tests, and implementation disagree, investigate intent rather than treating any one as automatically correct. Update the canonical owner in the same change as its invariant.
+After inspecting status, run `npm run context -- <relevant paths>` (or `--task <category>` before paths are known); it prints the relevant owner sections and entry points. Read emitted sections once; expand when a dependency or unresolved question crosses their boundary. When docs, tests, and implementation disagree, investigate intent rather than treating any one as automatically correct. Update the canonical owner in the same change as its invariant.
 
 | Need                                                | Read                                                                                                                                                                                                                                               |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,7 +30,7 @@ Start with the relevant section of one owner document; expand when a dependency 
 | Save compatibility                                  | [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)                                                                                                                                                                                  |
 | Armory / gear, card handlers, UI/audio/perf/release | [ARMORY](./docs/ARMORY.md), [BATTLE_HANDLERS](./src/lib/game-data/effects/BATTLE_HANDLERS.md), [UI](./docs/UI.md), [AUDIO](./docs/AUDIO.md), [PERFORMANCE](./docs/PERFORMANCE.md), [RELEASE](./docs/RELEASE.md) ([setup](./docs/RELEASE_SETUP.md)) |
 
-Discovery: headings and touched paths/symbols first. Exclude `Raw Assets/`, `reports/`, `dist/`, `CHANGELOG.md`, and lockfiles from broad searches; inspect them when the task or diagnostics specifically require them.
+Discovery: use `npm run context -- --outline <file>` before reading a large unfamiliar module; add `--symbol <name>` for a declaration. Headings and touched paths/symbols first. Exclude `Raw Assets/`, `reports/`, `dist/`, `CHANGELOG.md`, and lockfiles from broad searches; inspect them when the task or diagnostics specifically require them.
 
 ## Skills & knowledge
 

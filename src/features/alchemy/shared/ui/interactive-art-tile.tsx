@@ -99,12 +99,13 @@ export function InteractiveArtTile({
         className={cn(
           className,
           "group shadow-md",
-          showShine && cardShineFrameClass,
-          !showShine && interactiveChrome && "border border-border/80",
+          showShine && (shineOnHover ? "card-art-shine" : cardShineFrameClass),
+          interactiveChrome && "card-art-frame border border-border/80",
           showGlow && cardInteractiveGlowClass,
         )}
         shimmerActive={interactive && !disabled ? shimmerActive : false}
         shimmerToken={interactive && !disabled ? shimmerToken : undefined}
+        overlay={showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
         selected={interactiveChrome && selected}
         disabled={disabled}
         onClick={interactive && !disabled ? onClick : undefined}
@@ -113,7 +114,6 @@ export function InteractiveArtTile({
         {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}
       >
         <img src={art ?? undefined} alt={title} className={imageClassName} />
-        {showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
         {children}
       </Surface>
     </div>
