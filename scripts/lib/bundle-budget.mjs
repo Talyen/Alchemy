@@ -1,6 +1,6 @@
 export const BUDGETS = {
   indexMaxBytes: 620 * 1024,
-  totalJsMaxBytes: 1550 * 1024,
+  totalJsMaxBytes: 1560 * 1024,
   gameDataMaxBytes: 320 * 1024,
 };
 

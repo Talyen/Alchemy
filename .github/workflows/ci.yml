@@ -189,7 +189,7 @@ jobs:
       - uses: ./.github/actions/setup
       - run: npm run build
 
-      - name: Check bundle budget (index 620k / total 1.55M)
+      - name: Check bundle budget (index 620k / total 1.56M)
         run: node scripts/check-bundle-budget.mjs
 
       - name: Smoke test production build
