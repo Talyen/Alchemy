@@ -1,5 +1,6 @@
 import type { BattleCard } from "@/lib/game-data";
-import { getBattleRng } from "@/lib/rng";
+import { cardHasKeyword } from "./card-cost-rules";
+import { getBattleRng, rngInt } from "@/lib/rng";
 import type { BattleState } from "./types";
 import { shuffle, takeRandomItem } from "@/lib/utils";
 import { MAX_HAND_SIZE } from "../game-constants";
@@ -72,5 +73,22 @@ export function applyDrawResult(state: BattleState, draw: ReturnType<typeof draw
     discard: draw.discard,
     hand: draw.hand,
     nextCardUid: draw.nextCardUid,
+  };
+}
+
+export function drawKeywordCard(state: BattleState, keyword: string): BattleState {
+  if (state.hand.length >= MAX_HAND_SIZE) return state;
+  const refilled = refillDeck(state.deck, state.discard, getBattleRng(state));
+  if (!refilled) return state;
+  const indices = refilled.deck.flatMap((card, index) => (cardHasKeyword(card, keyword) ? [index] : []));
+  if (indices.length === 0) return state;
+  const index = indices[rngInt(getBattleRng(state), indices.length)]!;
+  const card = { ...refilled.deck[index]!, uid: state.nextCardUid };
+  return {
+    ...state,
+    deck: refilled.deck.filter((_, i) => i !== index),
+    discard: refilled.discard,
+    hand: [...state.hand, card],
+    nextCardUid: state.nextCardUid + 1,
   };
 }

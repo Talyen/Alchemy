@@ -3,4 +3,12 @@ export const SALVAGE_BASIC_SPRIG_CHANCE = 0.5;
 export const SALVAGE_BASIC_VOIDSTONE_CHANCE = 0.25;
 export const SALVAGE_ADVANCED_SEAL_CHANCE = 0.35;
 export const SALVAGE_ADVANCED_MAW_CHANCE = 0.35;
+export const UNIQUE_GEAR_COMBAT = {
+  echoDamageMultiplier: 0.5,
+  viperDamageMultiplier: 0.5,
+  retainedStunMultiplier: 0.25,
+  wrenflightDodgeChance: 10,
+  winterBlockPerMana: 3,
+  returnedCardDiscount: 1,
+} as const;
 export const SALVAGE_ADVANCED_WHETSTONE_CHANCE = 0.35;

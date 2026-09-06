@@ -17,6 +17,7 @@ export type { TrinketManifest };
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { CombatFlags } from "../combat-flags";
+import type { UniqueGearBattleState } from "../unique-gear-state";
 
 interface PendingTurnStartPulse {
   remainingTurns: number;
@@ -93,6 +94,7 @@ export interface BattleState {
   trinketEffects: TrinketManifest;
   gearEffects: GearEffectManifest;
   flags: CombatFlags;
+  uniqueGear: UniqueGearBattleState;
   pendingTurnStartEffects: PendingTurnStartPulse[];
   discoveredCardIds: string[];
   cardsPlayedThisTurn: number;

@@ -18,3 +18,5 @@ export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds 
 export { regrowEnemyThorns } from "./encounter-trait-events";
 export { getActiveCcKeyword, isPlayerCcControlled, type ActiveCcKeyword } from "./status-cc";
 export { getBattleCardPlayTarget } from "./card-play-target";
+
+export { createUniqueGearBattleState } from "./unique-gear-state";

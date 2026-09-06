@@ -1,3 +1,4 @@
+import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { drawFromState, applyDrawResult } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import {
@@ -21,7 +22,8 @@ import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { getBattleRng, rngInt, rollPercent } from "@/lib/rng";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 
-import { cardHasDamageType, computeEffectiveCost, isNatureCard } from "./card-cost-rules";
+import { prepareUniqueCardPlay, finishUniqueCardDamage, returnHarvestCard } from "./unique-card-effects";
+import { cardHasDamageType, computeCardPayment, computeEffectiveCost, isNatureCard } from "./card-cost-rules";
 import { isPlayerCcControlled } from "./status-cc";
 import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
@@ -62,7 +64,7 @@ function isCardInHand(state: BattleState, card: BattleCard, index: number): bool
 
 function canAffordCard(state: BattleState, index: number): boolean {
   const currentCard = state.hand[index];
-  return !!currentCard && state.mana >= computeEffectiveCost(state, currentCard).effectiveCost;
+  return !!currentCard && computeCardPayment(state, currentCard).affordable;
 }
 
 function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
@@ -89,6 +91,8 @@ function executeCardPlayState(
   effectiveCost: number,
   combatTexts: CombatTextEvent[],
   playTwice: boolean,
+  guaranteedCrit: boolean,
+  damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]>,
 ): BattleState {
   let nextState: BattleState = {
     ...state,
@@ -99,6 +103,9 @@ function executeCardPlayState(
   };
 
   const playContext = {
+    playedCard: true,
+    damageEffects,
+    guaranteedCrit,
     manaAtStart: state.mana,
     enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
   };
@@ -106,7 +113,7 @@ function executeCardPlayState(
   nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
 
   if (playTwice) {
-    nextState = applyCardEffects(nextState, card, combatTexts, playContext);
+    nextState = applyCardEffects(nextState, card, combatTexts, { ...playContext, damageEffects: [] });
     nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
   }
 
@@ -282,7 +289,25 @@ export function playBattleCardResolved(
   const { state: costState, effectiveCost } = resolveCardPlayCost(state, card);
 
   const playTwice = costState.flags.playNextCardTwice;
-  let nextState = executeCardPlayState(costState, card, index, effectiveCost, combatTexts, playTwice);
+  const prepared = prepareUniqueCardPlay(costState, card, effectiveCost);
+  const { blockCost } = computeCardPayment(state, card);
+  const paymentState = {
+    ...prepared.state,
+    playerStatuses: { ...prepared.state.playerStatuses, block: prepared.state.playerStatuses.block - blockCost },
+  };
+  if (blockCost > 0)
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost });
+  let nextState = executeCardPlayState(
+    paymentState,
+    card,
+    index,
+    effectiveCost,
+    combatTexts,
+    playTwice,
+    prepared.critical,
+    prepared.damageEffects,
+  );
+  nextState = finishUniqueCardDamage(nextState, card, prepared, combatTexts);
   nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
   if (playTwice) nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
 
@@ -291,6 +316,7 @@ export function playBattleCardResolved(
     nextState = applyResonantChimeTrinket(nextState, combatTexts);
   }
   nextState = handlePostPlayCardDestination(nextState, card, playerAlive, combatTexts);
+  if (prepared.harvest) nextState = returnHarvestCard(nextState, card);
 
   return { state: nextState, combatTexts };
 }

@@ -7,11 +7,13 @@ import {
   getCharacterShineColors,
   getShineColorsForKeywords,
   getTrinketShineColors,
+  getTrinketTextShineColors,
   getTrinketShineGradient,
   SHINE_PALETTES,
   WILDCARD_KEYWORD_SHINE_COLORS,
 } from "@/features/alchemy/shared/config";
 import { cardLibrary, characters, keywordDefinitions } from "@/lib/game-data";
+import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
 import { makeTestCard } from "../../../../fixtures/cards";
 
 describe("getShineColorsForKeywords", () => {
@@ -74,6 +76,29 @@ describe("getTrinketShineColors", () => {
   it("falls back to the boon palette when no keywords resolve", () => {
     expect(getTrinketShineColors("tattered-pages")).toEqual([...SHINE_PALETTES.boon]);
     expect(getTrinketShineColors("missing-trinket")).toEqual([...SHINE_PALETTES.boon]);
+  });
+});
+
+describe("Trinket text shine", () => {
+  it("caps distinct keywords in description order and uses bright/dim pairs", () => {
+    expect(getKeywordTextShineColors(["freeze", "burn", "freeze", "poison", "physical"])).toEqual([
+      "#67e8f9",
+      "color-mix(in srgb, #67e8f9 55%, transparent)",
+      "#fb923c",
+      "color-mix(in srgb, #fb923c 55%, transparent)",
+      "#15803d",
+      "color-mix(in srgb, #15803d 55%, transparent)",
+    ]);
+  });
+
+  it("uses paired title colors without changing the artwork palette", () => {
+    expect(getTrinketTextShineColors("meteorite")).toEqual(["#fb923c", "color-mix(in srgb, #fb923c 55%, transparent)"]);
+    expect(getTrinketShineColors("meteorite")).toEqual([...new Set(keywordDefinitions.burn.shineColors)]);
+  });
+
+  it("preserves the Boon fallback for titles without keywords", () => {
+    expect(getTrinketTextShineColors("tattered-pages")).toEqual([...SHINE_PALETTES.boon]);
+    expect(getTrinketTextShineColors("missing-trinket")).toEqual([...SHINE_PALETTES.boon]);
   });
 });
 

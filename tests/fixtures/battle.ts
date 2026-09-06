@@ -70,6 +70,7 @@ export type BattleStatePatch = Omit<
   | "talentEffects"
   | "gearEffects"
   | "flags"
+  | "uniqueGear"
   | "enemyMitigation"
   | "playerCC"
   | "enemyCC"
@@ -81,6 +82,7 @@ export type BattleStatePatch = Omit<
   talentEffects?: Partial<BattleState["talentEffects"]>;
   gearEffects?: Partial<BattleState["gearEffects"]>;
   flags?: Partial<BattleState["flags"]>;
+  uniqueGear?: Partial<BattleState["uniqueGear"]>;
   enemyMitigation?: Partial<BattleState["enemyMitigation"]>;
   playerCC?: Partial<BattleState["playerCC"]>;
   enemyCC?: Partial<BattleState["enemyCC"]>;
@@ -97,6 +99,7 @@ export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
     trinketEffects: patch.trinketEffects ? { ...base.trinketEffects, ...patch.trinketEffects } : base.trinketEffects,
     talentEffects: patch.talentEffects ? { ...base.talentEffects, ...patch.talentEffects } : base.talentEffects,
     gearEffects: patch.gearEffects ? { ...base.gearEffects, ...patch.gearEffects } : base.gearEffects,
+    uniqueGear: { ...base.uniqueGear, ...patch.uniqueGear },
     flags: patch.flags ? { ...base.flags, ...patch.flags } : base.flags,
     enemyMitigation: patch.enemyMitigation
       ? { ...base.enemyMitigation, ...patch.enemyMitigation }

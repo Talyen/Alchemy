@@ -106,7 +106,8 @@ function consumeForgeAfterDamage(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   damage: number,
 ) {
-  const forgeWasApplied = forgeAppliesToDamageType(effect.damageType, state.talentEffects);
+  if (effect.damageType === "holy" && state.gearEffects.holyPreservesForge > 0) return state;
+  const forgeWasApplied = forgeAppliesToDamageType(effect.damageType, state.talentEffects, state.gearEffects);
 
   if (!forgeWasApplied || damage <= 0 || state.playerStatuses.forge <= 0) return state;
 
@@ -116,6 +117,14 @@ function consumeForgeAfterDamage(
       ...state.playerStatuses,
       forge: Math.max(0, state.playerStatuses.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT),
     },
+    uniqueGear:
+      state.gearEffects.recoverSpentForge > 0
+        ? {
+            ...state.uniqueGear,
+            spentForge:
+              state.uniqueGear.spentForge + Math.min(state.playerStatuses.forge, BATTLE_CONFIG.FORGE_DECAY_AMOUNT),
+          }
+        : state.uniqueGear,
   };
 }
 

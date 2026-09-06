@@ -43,6 +43,13 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
   return {
     ...state,
     playerStatuses,
+    uniqueGear:
+      status === "forge" &&
+      effectiveDelta > 0 &&
+      state.gearEffects.forgeReadiesPhysicalRepeat > 0 &&
+      !state.flags.uniqueRepeatActive
+        ? { ...state.uniqueGear, everkeenReady: true }
+        : state.uniqueGear,
   };
 }
 

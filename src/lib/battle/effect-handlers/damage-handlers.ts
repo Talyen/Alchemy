@@ -6,7 +6,7 @@ import { dealSelfDamage } from "../status-helpers";
 import { addPlayerStatus, reduceEnemyArmor } from "../types";
 import { defineHandler } from "./handler-types";
 
-export const applyDamageEffect = defineHandler("damage", (state, card, effect, potionMult, combatTexts) => {
+export const applyDamageEffect = defineHandler("damage", (state, card, effect, potionMult, combatTexts, context) => {
   let damageType = effect.damageType;
   if (effect.damageTypePool && effect.damageTypePool.length > 0) {
     const rng = getBattleRng(state);
@@ -17,7 +17,7 @@ export const applyDamageEffect = defineHandler("damage", (state, card, effect, p
     damageType,
     amount: applyPotionMultiplier(effect.amount, potionMult),
   };
-  return dealDamageToEnemy(state, card, adjustedEffect, combatTexts);
+  return dealDamageToEnemy(state, card, adjustedEffect, combatTexts, context);
 });
 
 export const applySelfDamageEffect = defineHandler("self-damage", (state, _card, effect, _potionMult, combatTexts) => {
@@ -27,7 +27,7 @@ export const applySelfDamageEffect = defineHandler("self-damage", (state, _card,
 
 export const applyRandomDamageEffect = defineHandler(
   "random-damage",
-  (state, card, effect, potionMult, combatTexts) => {
+  (state, card, effect, potionMult, combatTexts, context) => {
     if (effect.maxAmount < effect.minAmount) {
       throw new Error(
         `[Battle] random-damage maxAmount ${effect.maxAmount} is less than minAmount ${effect.minAmount}`,
@@ -39,7 +39,7 @@ export const applyRandomDamageEffect = defineHandler(
     const span = effect.maxAmount - effect.minAmount + 1;
     const rolled = effect.minAmount + rngInt(rng, span);
     const amount = applyPotionMultiplier(rolled, potionMult);
-    return dealDamageToEnemy(state, card, { kind: "damage", damageType, amount }, combatTexts);
+    return dealDamageToEnemy(state, card, { kind: "damage", damageType, amount }, combatTexts, context);
   },
 );
 

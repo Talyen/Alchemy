@@ -1,4 +1,5 @@
 export const FLAG_DEFINITIONS = {
+  uniqueRepeatActive: { default: false as const, preserveAs: null },
   firstHolyCardFreeUsed: { default: false as const, preserveAs: true as const },
   firstBurnCardDoubledUsed: { default: false as const, preserveAs: true as const },
   firstArmorCardDoubledUsed: { default: false as const, preserveAs: true as const },

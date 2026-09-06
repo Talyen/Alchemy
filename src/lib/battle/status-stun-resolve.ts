@@ -1,12 +1,12 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { hasEnemyTrait, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import { hasEnemyTrait, setFlag, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 import { addGoldWithCombatText, payKillPayouts } from "./combat-text";
 import { applyLuckyCloverGold } from "./bonus-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
-import { BATTLE_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
+import { BATTLE_CONFIG, STUN_THRESHOLD_FRACTION, UNIQUE_GEAR_COMBAT } from "../game-constants";
 
 function applyStunTriggerBonuses(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   const talents = state.talentEffects;
@@ -83,6 +83,13 @@ export function resolveStunTrigger(
   if (triggered.kind === "immune") return triggered.state;
 
   let nextState = triggered.state;
+  if (state.gearEffects.retainStunBuildup > 0) {
+    nextState = setEnemyStatus(
+      nextState,
+      "stun",
+      Math.round(state.enemyStatuses.stun * UNIQUE_GEAR_COMBAT.retainedStunMultiplier),
+    );
+  }
   if (hasEnemyTrait(nextState, "brawler")) {
     nextState = setFlag(recordEnemyAbilityActivation(nextState, "brawler"), "enemyBrawlerDamagePenalty", true);
   }

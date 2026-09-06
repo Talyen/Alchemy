@@ -203,7 +203,9 @@ export function addGoldWithCombatText(
       amount: scaledGold,
     });
   }
-  return nextState;
+  return state.gearEffects.goldGrantsForgeAndHoly > 0
+    ? addPlayerStatusWithCombatText(nextState, "forge", scaledGold, combatTexts, { skipFightPacing: true })
+    : nextState;
 }
 
 function applyKillRewardHealing(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -220,12 +222,7 @@ function applyKillRewardHealing(state: BattleState, amount: number, combatTexts:
 }
 
 function applyKillRewardGold(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (amount <= 0) return state;
-  const scaledGold = scaleGoldReward(amount, state.gearEffects);
-  if (scaledGold > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: scaledGold });
-  }
-  return { ...state, gold: state.gold + scaledGold };
+  return addGoldWithCombatText(state, amount, combatTexts);
 }
 
 export function applyGearKillRewards(

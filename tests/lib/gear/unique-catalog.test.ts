@@ -4,17 +4,26 @@ import {
   generateEquipmentShopOfferings,
   generateUniqueGearInstance,
   gearAffixCatalog,
+  gearBaseItemList,
+  normalizeGearInstance,
+  effectsForInstance,
+  getGearInstanceTooltipEntries,
   gearDefinitions,
   getGearInstanceTitle,
   rollSalvageYield,
   uniqueItemList,
+  type GearInstance,
 } from "@/lib/gear";
 import { EQUIPMENT_SHOP_UNIQUE_PRICE } from "@/lib/game-constants";
 import { getEquipmentShopPrice } from "@/features/alchemy/run-loop/shop/shop-pricing";
 
 describe("unique item catalog", () => {
-  it("contains 8 unique items with valid base items and exactly 4 affixes", () => {
-    expect(uniqueItemList).toHaveLength(8);
+  it("covers every base item exactly once with four fixed maximum affixes", () => {
+    expect(uniqueItemList).toHaveLength(29);
+    expect(uniqueItemList.map((item) => item.baseItemId).sort()).toEqual(
+      gearBaseItemList.map((base) => base.id).sort(),
+    );
+    expect(new Set(uniqueItemList.map((item) => item.signatureAffix.id)).size).toBe(29);
     for (const unique of uniqueItemList) {
       expect(unique.signatureAffix).toBeDefined();
       expect(unique.supportingAffixes).toHaveLength(3);
@@ -27,6 +36,7 @@ describe("unique item catalog", () => {
       expect(gearAffixCatalog[unique.signatureAffix.id]?.uniqueOnly).toBe(true);
       for (const supporting of unique.supportingAffixes) {
         expect(gearAffixCatalog[supporting.id]?.uniqueOnly).toBeFalsy();
+        expect(supporting.value).toBe(gearAffixCatalog[supporting.id].roll.unique.max);
       }
 
       const instance = generateUniqueGearInstance(unique);
@@ -69,5 +79,38 @@ describe("unique item catalog", () => {
     for (const offering of offerings) {
       expect(gearDefinitions[offering.definitionId]?.rarity).toBe("astral");
     }
+  });
+});
+
+describe("fixed Unique compatibility", () => {
+  it.each(uniqueItemList)("repairs saved $displayName without changing ownership or protection", (unique) => {
+    const original: GearInstance = {
+      instanceId: "owned-id",
+      definitionId: unique.id,
+      protected: true,
+      affixes: [{ id: "flat-physical", value: 99 }],
+    };
+    const expected = [unique.signatureAffix, ...unique.supportingAffixes];
+    const normalized = normalizeGearInstance(original)!;
+    expect(normalized).toEqual({ ...original, affixes: expected });
+    expect(normalizeGearInstance(normalized)).toEqual(normalized);
+    expect(effectsForInstance(original)).toEqual(effectsForInstance(normalized));
+    expect(getGearInstanceTooltipEntries(original)).toEqual(getGearInstanceTooltipEntries(normalized));
+  });
+
+  it("keeps the 21 new signature descriptions short and free of technical wording", () => {
+    for (const unique of uniqueItemList.slice(8)) {
+      expect(unique.description.split(/\s+/).length, unique.displayName).toBeLessThanOrEqual(15);
+      expect(unique.description).not.toMatch(/\b(tick|manually|resolving|triggered|commands|stacking|readies)\b/i);
+    }
+  });
+
+  it("does not share mutable rolls between instances or the catalog", () => {
+    const unique = uniqueItemList[0];
+    const first = generateUniqueGearInstance(unique);
+    const second = generateUniqueGearInstance(unique);
+    first.affixes[1].value = 999;
+    expect(second.affixes[1]).toEqual(unique.supportingAffixes[0]);
+    expect(unique.supportingAffixes[0].value).not.toBe(999);
   });
 });

@@ -1,6 +1,7 @@
 import { normalizeAffixRolls, resolveAffixEffects } from "./affixes";
 import { computeSalvageYield, type SalvageYield } from "./crafting";
 import { gearDefinitions } from "./definitions";
+import { getUniqueAffixes } from "./unique-catalog";
 import { mergeGearEffectManifests } from "./gear-effect-manifest";
 import {
   GEAR_CHARACTER_IDS,
@@ -178,7 +179,7 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
   return {
     instanceId,
     definitionId,
-    affixes: normalizeAffixRolls(rawAffixes, gearDefinitions[definitionId].rarity),
+    affixes: getUniqueAffixes(definitionId) ?? normalizeAffixRolls(rawAffixes, gearDefinitions[definitionId].rarity),
     ...(raw.protected === true ? { protected: true } : {}),
   };
 }
@@ -186,7 +187,9 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
 export function effectsForInstance(instance: GearInstance): GearEffectManifest {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return { ...defaultGearEffects };
-  return resolveAffixEffects(normalizeAffixRolls(instance.affixes, definition.rarity));
+  return resolveAffixEffects(
+    getUniqueAffixes(instance.definitionId) ?? normalizeAffixRolls(instance.affixes, definition.rarity),
+  );
 }
 
 export function computeGearManifest(

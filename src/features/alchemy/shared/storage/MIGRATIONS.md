@@ -113,6 +113,7 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 
 ## Content changes without a save bump
 
+- Unique inventory affixes normalize by definition ID to one signature and three standard maximum rolls. Instance IDs, protection, ownership, and Collection discovery survive. Existing combat manifests keep their captured values until live gear rebinding or the next battle.
 - Balance-only changes to live definitions do not change the save schema. Lifegiving and Emberforged inventory rolls normalize to current rarity ranges; existing combat effect snapshots remain unchanged.
 - Additive fields that load safely through schema or manifest defaults do not require a migration step; keep their defaults while supported saves may omit them.
 - Removed catalog IDs are stripped against the live catalog at load; record deliberate removals in the tombstone set above. A meaning or ID remap requires a `contentVersion` handler.
@@ -128,6 +129,7 @@ Behavior lives with the owning module; version-specific transforms live in
 
 | Field                                                                             | Default                                                                                                                         | Owner                                                                                |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `activeCombat.uniqueGear`                                                         | Empty readiness, allowances, card references, Forge debt, and delayed arrows; validated for snapshots and pending results       | `UniqueGearBattleStateSchema` + `normalizePersistedBattleState`                      |
 | `activeCombat.flags.emberforgedUsedThisTurn`                                      | `false`; saved `true` prevents another Forge grant on the resumed turn                                                          | `normalizePersistedBattleState` + `combat-flags.ts`                                  |
 | `restore-mana.allowOverflow`                                                      | omitted behaves as `false`; saved companion effects retain their authored value                                                 | `mana-health-schemas.ts` + mana handler                                              |
 | `activeRun.rng`                                                                   | fixed fallback seed, zero counters                                                                                              | `save-schemas/active-run.ts`                                                         |

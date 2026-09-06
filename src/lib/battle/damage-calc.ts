@@ -1,3 +1,4 @@
+import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
@@ -17,8 +18,21 @@ import {
   PERCENT_DENOMINATOR,
 } from "../game-constants";
 
-export function forgeAppliesToDamageType(damageType: DamageType, talentEffects: TalentEffectManifest): boolean {
+export function forgeAppliesToDamageType(
+  damageType: DamageType,
+  talentEffects: TalentEffectManifest,
+  gearEffects?: BattleState["gearEffects"],
+): boolean {
+  const holyForge =
+    damageType === "holy" &&
+    ((gearEffects?.holyPreservesForge ?? 0) > 0 || (gearEffects?.goldGrantsForgeAndHoly ?? 0) > 0);
+  const sharedForge =
+    (gearEffects?.sharedBurnBleedBonuses ?? 0) > 0 &&
+    (damageType === "burn" || damageType === "bleed") &&
+    (talentEffects.forgeToBurn || talentEffects.forgeToBleed);
   return (
+    holyForge ||
+    sharedForge ||
     damageType === "physical" ||
     damageType === "stun" ||
     (damageType === "burn" && talentEffects.forgeToBurn) ||
@@ -28,7 +42,7 @@ export function forgeAppliesToDamageType(damageType: DamageType, talentEffects: 
 }
 
 function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {
-  if (!forgeAppliesToDamageType(damageType, state.talentEffects)) return 0;
+  if (!forgeAppliesToDamageType(damageType, state.talentEffects, state.gearEffects)) return 0;
   const forge = state.playerStatuses.forge;
   if (damageType === "physical" && state.talentEffects.forgeToPhysicalDamageMultiplier > 0) {
     return forge * state.talentEffects.forgeToPhysicalDamageMultiplier;
@@ -181,7 +195,12 @@ function computeBaseDamage(
   if (isEqualTo) return Math.max(0, rawAmount);
   const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType];
   if (!modifier) throw new Error(`Missing DamageType handler: ${effect.damageType}`);
-  return Math.max(0, modifier(state, rawAmount));
+  let amount = modifier(state, rawAmount);
+  if (state.gearEffects.sharedBurnBleedBonuses > 0) {
+    if (effect.damageType === "burn") amount += applyBleedDamageModifiers(state, 0);
+    if (effect.damageType === "bleed") amount += applyBurnDamageModifiers(state, 0);
+  }
+  return Math.max(0, amount);
 }
 
 function computeAdditiveDamageBonus(
@@ -205,7 +224,7 @@ function computeAdditiveDamageBonus(
     bonus += state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR;
   }
 
-  if (effect.damageType === "bleed") {
+  if (effect.damageType === "bleed" || (effect.damageType === "burn" && state.gearEffects.sharedBurnBleedBonuses > 0)) {
     if (isBelowHalfHealth(state) && state.talentEffects.bleedDesperateMultiplier > 1) {
       bonus += state.talentEffects.bleedDesperateMultiplier - 1;
     }
@@ -220,7 +239,11 @@ function computeAdditiveDamageBonus(
   if (card?.consume && state.talentEffects.consumeDamageBonusPercent > 0) {
     bonus += state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR;
   }
-  if (effect.damageType === "burn" && card?.consume && state.talentEffects.consumeBurnDamageBonusPercent > 0) {
+  if (
+    (effect.damageType === "burn" || (effect.damageType === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)) &&
+    card?.consume &&
+    state.talentEffects.consumeBurnDamageBonusPercent > 0
+  ) {
     bonus += state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR;
   }
 
@@ -267,7 +290,7 @@ function applyFirstDamageBonus(
   let nextState: BattleState = state;
   let firstBonus = 0;
 
-  if (effect.damageType === "burn") {
+  if (effect.damageType === "burn" || (effect.damageType === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)) {
     if (nextState.talentEffects.firstBurnCardBonusMultiplier > 1 && !nextState.flags.firstBurnCardDoubledUsed) {
       firstBonus += nextState.talentEffects.firstBurnCardBonusMultiplier - 1;
       nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
@@ -309,7 +332,8 @@ function applyBlockAbsorption(state: BattleState, damage: number): { state: Batt
 }
 
 function computeBurnMultiplier(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleState): number {
-  if (effect.damageType !== "burn") return 1;
+  if (effect.damageType !== "burn" && !(effect.damageType === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0))
+    return 1;
   return getBurnBonusToBleedingMultiplier(state);
 }
 
@@ -317,6 +341,7 @@ export function computeCardDamageToEnemy(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
+  context?: CardEffectResolutionContext,
 ) {
   const baseDamage = computeBaseDamage(state, effect, card);
   const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
@@ -324,7 +349,12 @@ export function computeCardDamageToEnemy(
   const totalMultiplier = Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);
   const scaledDamage = Math.round(baseDamage * totalMultiplier);
   const pacedDamage = paceCombatMagnitude(stateAfterFirst, scaledDamage, "player");
-  const finalDamage = applyCrit(pacedDamage, stateAfterFirst);
+  const repeatedDamage = Math.round(pacedDamage * (context?.damageMultiplier ?? 1));
+  const criticalDamage = context?.guaranteedCrit
+    ? repeatedDamage * CRIT_MULTIPLIER
+    : applyCrit(repeatedDamage, stateAfterFirst);
+  const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
+  const finalDamage = criticalDamage + (kingbreaker ? state.enemyMitigation.armor : 0);
 
   const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(
     stateAfterFirst,
@@ -334,8 +364,13 @@ export function computeCardDamageToEnemy(
     ? setFlag(stateAfterBlock, "nextHitCrit", false)
     : stateAfterBlock;
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
-  const nextState = applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun, card);
-  const effectiveArmor = isPhysicalOrStun ? nextState.enemyMitigation.armor : 0;
+  const serpent =
+    state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && !!card?.effects.length;
+  const nextState =
+    serpent || kingbreaker
+      ? stateWithCritCleared
+      : applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun, card);
+  const effectiveArmor = isPhysicalOrStun && !serpent && !kingbreaker ? nextState.enemyMitigation.armor : 0;
   const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
   return { nextState, modifiedDamage: damageAfterArmor };
 }

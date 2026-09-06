@@ -44,6 +44,7 @@ describe("item name shine", () => {
     expect(title.classList.contains("boss-title-shine")).toBe(true);
     expect(title.style.backgroundImage).toContain("linear-gradient");
     expect(title.style.backgroundImage).toContain("rgb(255, 255, 255)");
+    expect(title.style.backgroundImage).toContain("color-mix(in srgb, rgb(251, 146, 60) 55%, transparent)");
   });
 });
 

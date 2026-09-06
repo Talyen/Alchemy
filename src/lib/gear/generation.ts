@@ -61,7 +61,7 @@ export function generateUniqueGearInstance(uniqueDef: UniqueItemDefinition): Gea
   return {
     instanceId: createInstanceId(),
     definitionId: uniqueDef.id,
-    affixes: [uniqueDef.signatureAffix, ...uniqueDef.supportingAffixes],
+    affixes: [uniqueDef.signatureAffix, ...uniqueDef.supportingAffixes].map((affix) => ({ ...affix })),
   };
 }
 

@@ -4,6 +4,10 @@ import type { BattleState, CombatTextEvent } from "../types";
 export interface CardEffectResolutionContext {
   manaAtStart: number;
   enemyFreezeSkipTurnsAtStart: number;
+  playedCard?: boolean;
+  damageEffects?: Array<Extract<BattleCardEffect, { kind: "damage" }>>;
+  damageMultiplier?: number;
+  guaranteedCrit?: boolean;
 }
 
 export type EffectHandler = (

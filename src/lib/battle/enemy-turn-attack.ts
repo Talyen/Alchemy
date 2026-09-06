@@ -1,9 +1,15 @@
 import { recordEnemyAbilityActivation, recordEnemyAttackAction } from "./battle-metrics";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { logError } from "../error-logger";
-import { addGoldWithCombatText, addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
+import {
+  mergeCombatText,
+  addGoldWithCombatText,
+  addPlayerStatusWithCombatText,
+  applyHealingWithCombatText,
+} from "./combat-text";
 import { processCompanionTurnStart } from "./companion";
-import { takeRandomCardFromDeck } from "./draw";
+import { halveRounded } from "./amount-helpers";
+import { takeRandomCardFromDeck, drawKeywordCard } from "./draw";
 import { tryDodgeEnemyAttackPacket } from "./dodge";
 import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
 import { applyCardEffects } from "./effect-handlers";
@@ -119,7 +125,21 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
 }
 
 function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], dodgedAmount: number): BattleState {
-  let nextState = state;
+  let nextState = {
+    ...state,
+    uniqueGear: {
+      ...state.uniqueGear,
+      viperReady: state.uniqueGear.viperReady || state.gearEffects.dodgeReadiesVenomousHit > 0,
+      wildheartReady: state.uniqueGear.wildheartReady || state.gearEffects.dodgeReadiesNatureCrit > 0,
+    },
+  };
+  if (state.gearEffects.dodgeSpendsPreservedBlock > 0 && state.playerStatuses.block > 0) {
+    const spent = halveRounded(state.playerStatuses.block);
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: spent });
+    nextState = setPlayerStatus(nextState, "block", state.playerStatuses.block - spent);
+    nextState = dealPlayerTypedHit(nextState, "physical", spent, combatTexts);
+  }
+  if (state.gearEffects.archeryDodgeAndDraw > 0) nextState = drawKeywordCard(nextState, "archery");
   if (nextState.gearEffects.blockOnDodge > 0) {
     nextState = addPlayerStatusWithCombatText(nextState, "block", nextState.gearEffects.blockOnDodge, combatTexts);
   }

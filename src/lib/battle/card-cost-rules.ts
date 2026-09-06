@@ -1,3 +1,4 @@
+import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { type BattleCard } from "@/lib/game-data";
 import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { type BattleState, type CombatFlags } from "./types";
@@ -30,7 +31,7 @@ export function isNatureCard(card: BattleCard): boolean {
   return cardHasDamageType(card, "nature") || card.tags?.includes("nature") === true;
 }
 
-type CardCostState = Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">;
+type CardCostState = Pick<BattleState, "flags" | "talentEffects" | "trinketEffects" | "gearEffects" | "uniqueGear">;
 
 const FIRST_CARD_FREE_RULES: Array<{
   flag: BooleanCombatFlag;
@@ -71,7 +72,7 @@ function checkTrinketFreePotion(state: CardCostState, card: BattleCard): boolean
   return !state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && isPotionCard(card);
 }
 
-export function computeEffectiveCost(
+function computeStandardCost(
   state: CardCostState,
   card: BattleCard,
 ): { effectiveCost: number; consumedFlags: Set<BooleanCombatFlag>; disarmedFlags: Set<BooleanCombatFlag> } {
@@ -105,4 +106,45 @@ export function computeEffectiveCost(
   }
 
   return { effectiveCost, consumedFlags, disarmedFlags };
+}
+
+export function cardHasKeyword(card: BattleCard, keyword: string): boolean {
+  return card.tags?.includes(keyword as never) === true || cardHasDamageType(card, keyword);
+}
+
+export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
+  const result = computeStandardCost(state, card);
+  const gear = state.gearEffects;
+  const unique = state.uniqueGear;
+  const elementalFree =
+    gear.firstElementalCardsFree > 0 &&
+    ((cardHasKeyword(card, "burn") && !unique.freeBurnUsed) ||
+      (cardHasKeyword(card, "freeze") && !unique.freeFreezeUsed) ||
+      (cardHasKeyword(card, "holy") && !unique.freeHolyUsed));
+  const natureFree = gear.dodgeReadiesNatureCrit > 0 && unique.wildheartReady && isNatureCard(card);
+  const physicalFree =
+    gear.blockReadiesFreePhysical > 0 && unique.knightsAnswerReady && cardHasDamageType(card, "physical");
+  const returned =
+    card.uid !== undefined &&
+    ((gear.returnFirstPhysicalCard > 0 && card.uid === unique.redHarvestUid) ||
+      (gear.recoverLastArcheryCard > 0 && card.uid === unique.returningFlightUid));
+  return {
+    ...result,
+    effectiveCost:
+      elementalFree || natureFree || physicalFree
+        ? 0
+        : Math.max(0, result.effectiveCost - (returned ? UNIQUE_GEAR_COMBAT.returnedCardDiscount : 0)),
+  };
+}
+
+export function computeCardPayment(state: BattleState, card: BattleCard) {
+  const { effectiveCost } = computeEffectiveCost(state, card);
+  const missingMana = Math.max(0, effectiveCost - state.mana);
+  const usesBlock = missingMana > 0 && state.gearEffects.blockPaysFreezeMana > 0 && cardHasKeyword(card, "freeze");
+  const blockCost = usesBlock ? missingMana * UNIQUE_GEAR_COMBAT.winterBlockPerMana : 0;
+  return {
+    effectiveCost,
+    blockCost,
+    affordable: missingMana === 0 || (usesBlock && state.playerStatuses.block >= blockCost),
+  };
 }

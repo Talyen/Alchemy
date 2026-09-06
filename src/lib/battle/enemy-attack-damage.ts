@@ -16,7 +16,7 @@ import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-tra
 import { decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealPlayerTypedHit } from "./player-typed-hit";
-import { addEnemyMitigation, getEnemyTraitSet, hasEnemyTrait, setFlag } from "./types/state-helpers";
+import { addEnemyMitigation, addPlayerStatus, getEnemyTraitSet, hasEnemyTrait, setFlag } from "./types/state-helpers";
 
 function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   if (effect.damageType !== "physical") return effect.amount;
@@ -132,13 +132,7 @@ function applyVanguardCrestAfterBlock(
     stat: "forge",
     amount: state.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
   });
-  return {
-    ...state,
-    playerStatuses: {
-      ...state.playerStatuses,
-      forge: state.playerStatuses.forge + state.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
-    },
-  };
+  return addPlayerStatus(state, "forge", state.trinketEffects.vanguardCrestForgeOnBlockAbsorb);
 }
 
 function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, damageType: string): BattleState {
@@ -333,6 +327,9 @@ export function processEnemyDamageEffect(
     },
   };
 
+  if (blockAbsorb > 0 && state.gearEffects.blockReadiesFreePhysical > 0) {
+    nextState = { ...nextState, uniqueGear: { ...nextState.uniqueGear, knightsAnswerReady: true } };
+  }
   recordPlayerHealthLost(prevHealth, nextState, effect.damageType, combatTexts);
   nextState = applyBlockDepletedHeal(state, nextState, combatTexts);
 

@@ -4,6 +4,7 @@ import {
   PLAYER_DODGE_CHANCE,
   MAX_PLAYER_DODGE_CHANCE,
   STATUS_CONFIG,
+  UNIQUE_GEAR_COMBAT,
 } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
 import { getBattleRng, rollPercent } from "@/lib/rng";
@@ -12,11 +13,19 @@ import type { BattleState, CombatTextEvent } from "./types";
 function getPlayerDodgeChance(
   state: Pick<
     BattleState,
-    "gearEffects" | "talentEffects" | "playerHealth" | "playerMaxHealth" | "playerStatuses" | "dodgeChanceFromDamage"
+    | "gearEffects"
+    | "talentEffects"
+    | "playerHealth"
+    | "playerMaxHealth"
+    | "playerStatuses"
+    | "dodgeChanceFromDamage"
+    | "uniqueGear"
   >,
 ): number {
   let chance =
     PLAYER_DODGE_CHANCE + state.gearEffects.dodgeChance + state.talentEffects.dodgeChance + state.dodgeChanceFromDamage;
+  if (state.gearEffects.archeryDodgeAndDraw > 0 && state.uniqueGear.wrenflightActive)
+    chance += UNIQUE_GEAR_COMBAT.wrenflightDodgeChance;
   if (state.playerStatuses.block === 0) chance += state.talentEffects.dodgeChanceWithoutBlock;
   if (state.talentEffects.dodgeChanceBelowHalfHealth > 0 && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
     chance += state.talentEffects.dodgeChanceBelowHalfHealth;
@@ -55,6 +64,7 @@ export function tryDodgeEnemyAttackPacket(
 }
 
 function enemyCanDodge(state: BattleState): boolean {
+  if (state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0) return false;
   if (state.talentEffects.poisonPreventsEnemyDodge && state.enemyStatuses.poison > 0) return false;
   if (state.talentEffects.freezePreventsEnemyDodge && state.enemyCC.freezeSkipTurns > 0) return false;
   return true;

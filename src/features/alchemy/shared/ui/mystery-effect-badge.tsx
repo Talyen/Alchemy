@@ -2,7 +2,7 @@ import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
   getKeywordListShineColors,
-  getTrinketShineColors,
+  getTrinketTextShineColors,
   SHINE_PALETTES,
 } from "@/features/alchemy/shared/config/shine-palettes";
 import { tooltipChipClass } from "@/features/alchemy/shared/config";
@@ -113,7 +113,7 @@ const renderChooseCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "choos
 
 const renderTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainTrinket" }>> = (effect, ctx) => {
   const title = ctx.findTrinket?.(effect.trinketId)?.title ?? "a boon";
-  const colors = getTrinketShineColors(effect.trinketId);
+  const colors = getTrinketTextShineColors(effect.trinketId);
 
   return ctx.tooltip ? (
     <span className="text-sm text-muted-foreground">
@@ -133,7 +133,7 @@ const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
   ctx,
 ) => {
   const colors =
-    effect.fromIds && effect.fromIds.length === 1 ? getTrinketShineColors(effect.fromIds[0]!) : SHINE_PALETTES.boon;
+    effect.fromIds && effect.fromIds.length === 1 ? getTrinketTextShineColors(effect.fromIds[0]!) : SHINE_PALETTES.boon;
 
   return ctx.tooltip ? (
     <span className="text-sm text-muted-foreground">

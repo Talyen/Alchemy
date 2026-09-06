@@ -90,7 +90,9 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     return { ...state, pendingBleedLeechHealing: 0 };
   }
 
-  const multiplier = getEnemyDamageMultiplier(state, "bleed");
+  const multiplier =
+    getEnemyDamageMultiplier(state, "bleed") *
+    (state.gearEffects.sharedBurnBleedBonuses > 0 ? getBurnBonusToBleedingMultiplier(state) : 1);
   const finalDamage = Math.round(damage * multiplier);
 
   mergeCombatText(combatTexts, {
@@ -100,7 +102,8 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     amount: finalDamage,
   });
   const healthBeforeBleed = state.enemyHealth;
-  return dealEnemyDotTick(state, "bleed", finalDamage, 0, combatTexts, (nextState) => {
+  const nextBleed = state.gearEffects.bleedDecaysByHalf > 0 ? decayHalvedStatus(damage) : 0;
+  return dealEnemyDotTick(state, "bleed", finalDamage, nextBleed, combatTexts, (nextState) => {
     return payPendingBleedLeech(healthBeforeBleed, nextState, combatTexts);
   });
 }

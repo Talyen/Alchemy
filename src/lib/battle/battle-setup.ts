@@ -153,6 +153,11 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     trinketEffects,
     gearEffects: battleGearEffects,
     flags: baseState.flags,
+    uniqueGear: {
+      ...baseState.uniqueGear,
+      everkeenReady:
+        battleGearEffects.forgeReadiesPhysicalRepeat > 0 && battleTalents.startForge + battleGearEffects.startForge > 0,
+    },
     discoveredCardIds: battleDiscovered,
     nextCardUid: 0,
     difficultyModifiers: battleDiffs,

@@ -119,7 +119,7 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
       if (hasEmDash(line)) {
         collector.error("gear", definition.id, `Gear description contains em dash — rewrite without —: "${line}"`);
       }
-      checkNoPeriod(collector, "gear", definition.id, "Gear description", line);
+      if (definition.rarity !== "unique") checkNoPeriod(collector, "gear", definition.id, "Gear description", line);
     }
     if (hasEmDash(definition.id)) {
       collector.error("gear", definition.id, `Gear id contains em dash — rewrite without —: "${definition.id}"`);
@@ -201,6 +201,7 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
   }
 
   for (const affix of gearAffixList) {
-    checkNoPeriod(collector, "gear", affix.id, "Gear affix description", affix.descriptionTemplate);
+    if (!affix.uniqueOnly)
+      checkNoPeriod(collector, "gear", affix.id, "Gear affix description", affix.descriptionTemplate);
   }
 }

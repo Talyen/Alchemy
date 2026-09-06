@@ -1,5 +1,6 @@
 import type { GearBaseItemId } from "./base-items";
-import type { GearAffixRoll } from "./definitions";
+import { gearAffixCatalog, type GearAffixId } from "./affix-catalog";
+import type { GearAffixRoll } from "./types";
 
 export interface UniqueItemDefinition {
   id: string;
@@ -10,124 +11,157 @@ export interface UniqueItemDefinition {
   supportingAffixes: [GearAffixRoll, GearAffixRoll, GearAffixRoll];
 }
 
-const wardbreaker: UniqueItemDefinition = {
-  id: "wardbreaker",
-  displayName: "Wardbreaker",
-  baseItemId: "flail",
-  description: "Your attacks Purge a beneficial effect and deal 1 Holy damage for each effect removed",
-  signatureAffix: { id: "wardbreaker-purge", value: 1 },
-  supportingAffixes: [
-    { id: "flat-stun", value: 4 },
-    { id: "damage-on-stun", value: 6 },
-    { id: "block-on-stun", value: 6 },
-  ],
-};
+function maxAffix(id: GearAffixId): GearAffixRoll {
+  return { id, value: gearAffixCatalog[id].roll.unique.max };
+}
 
-const danceOfBlades: UniqueItemDefinition = {
-  id: "dance-of-blades",
-  displayName: "Dance of Blades",
-  baseItemId: "leather-armor",
-  description: "When you Dodge an attack, draw and play a random card",
-  signatureAffix: { id: "dance-of-blades", value: 1 },
-  supportingAffixes: [
-    { id: "flat-physical", value: 4 },
-    { id: "armor-on-cc", value: 4 },
-    { id: "start-armor", value: 6 },
-  ],
-};
+function uniqueItem(
+  id: string,
+  displayName: string,
+  baseItemId: GearBaseItemId,
+  signatureId: GearAffixId,
+  supports: [GearAffixId, GearAffixId, GearAffixId],
+): UniqueItemDefinition {
+  const signatureAffix = maxAffix(signatureId);
+  return {
+    id,
+    displayName,
+    baseItemId,
+    description: gearAffixCatalog[signatureId].descriptionTemplate.replace("{value}", String(signatureAffix.value)),
+    signatureAffix,
+    supportingAffixes: [maxAffix(supports[0]), maxAffix(supports[1]), maxAffix(supports[2])],
+  };
+}
 
-const bloodfireSignet: UniqueItemDefinition = {
-  id: "bloodfire-signet",
-  displayName: "Bloodfire Signet",
-  baseItemId: "ruby-ring",
-  description:
-    "Burn damage has a 20% chance to cause Bleed, Bleed damage has a 20% chance to cause Burn, and both gain Leech",
-  signatureAffix: { id: "bloodfire", value: 1 },
-  supportingAffixes: [
-    { id: "flat-burn", value: 4 },
-    { id: "flat-bleed", value: 4 },
-    { id: "burn-on-bleed", value: 20 },
-  ],
-};
+export const uniqueItemList: UniqueItemDefinition[] = [
+  uniqueItem("wardbreaker", "Wardbreaker", "flail", "wardbreaker-purge", [
+    "flat-stun",
+    "damage-on-stun",
+    "block-on-stun",
+  ]),
+  uniqueItem("dance-of-blades", "Dance of Blades", "leather-armor", "dance-of-blades", [
+    "flat-physical",
+    "armor-on-cc",
+    "start-armor",
+  ]),
+  uniqueItem("bloodfire-signet", "Bloodfire Signet", "ruby-ring", "bloodfire", [
+    "flat-burn",
+    "flat-bleed",
+    "burn-on-bleed",
+  ]),
+  uniqueItem("rimeheart-locket", "Rimeheart Locket", "sapphire-amulet", "rimeheart", [
+    "flat-freeze",
+    "start-block",
+    "damage-on-freeze",
+  ]),
+  uniqueItem("blackfletch", "Blackfletch", "crossbow", "blackfletch", ["archery-damage", "flat-bleed", "flat-poison"]),
+  uniqueItem("twin-casting", "Twin Casting", "staff", "twin-casting", ["flat-burn", "flat-freeze", "burn-per-mana"]),
+  uniqueItem("saintfall-plate", "Saintfall Plate", "plate-armor", "saintfall", [
+    "stun-on-block-hit",
+    "heal-on-block-depleted",
+    "max-health",
+  ]),
+  uniqueItem("golden-verdict", "Golden Verdict", "topaz-ring", "golden-verdict", [
+    "flat-holy",
+    "flat-stun",
+    "gold-on-kill",
+  ]),
+  uniqueItem("the-unclosing-wound", "The Unclosing Wound", "double-axe", "the-unclosing-wound", [
+    "flat-physical",
+    "flat-bleed",
+    "flat-stun",
+  ]),
+  uniqueItem("kingbreaker", "Kingbreaker", "maul", "kingbreaker", ["flat-physical", "flat-stun", "block-on-stun"]),
+  uniqueItem("everkeen", "Everkeen", "greatsword", "everkeen", ["flat-physical", "start-forge", "forge-on-stun"]),
+  uniqueItem("red-harvest", "Red Harvest", "hatchet", "red-harvest", ["flat-physical", "flat-bleed", "armor-pierce"]),
+  uniqueItem("oathkeeper", "Oathkeeper", "longsword", "oathkeeper", ["flat-physical", "flat-holy", "start-forge"]),
+  uniqueItem("the-patient-edge", "The Patient Edge", "shortsword", "the-patient-edge", [
+    "flat-physical",
+    "flat-bleed",
+    "start-forge",
+  ]),
+  uniqueItem("vipers-courtesy", "Viper’s Courtesy", "dagger", "vipers-courtesy", [
+    "dodge-chance",
+    "flat-poison",
+    "flat-bleed",
+  ]),
+  uniqueItem("the-lingering-bell", "The Lingering Bell", "mace", "the-lingering-bell", [
+    "flat-stun",
+    "flat-holy",
+    "damage-on-stun",
+  ]),
+  uniqueItem("huntsmasters-call", "Huntsmaster’s Call", "longbow", "huntsmasters-call", [
+    "archery-damage",
+    "companion-damage",
+    "flat-nature",
+  ]),
+  uniqueItem("wrenflight", "Wrenflight", "shortbow", "wrenflight", ["archery-damage", "dodge-chance", "dodge-heal"]),
+  uniqueItem("the-returning-gale", "The Returning Gale", "recurve-bow", "the-returning-gale", [
+    "archery-damage",
+    "flat-nature",
+    "flat-physical",
+  ]),
+  uniqueItem("the-final-spark", "The Final Spark", "wand", "the-final-spark", [
+    "flat-burn",
+    "flat-freeze",
+    "burn-per-mana",
+  ]),
+  uniqueItem("laughing-guard", "Laughing Guard", "leather-buckler", "laughing-guard", [
+    "dodge-chance",
+    "dodge-block",
+    "block-gain",
+  ]),
+  uniqueItem("the-knights-answer", "The Knight’s Answer", "kite-shield", "the-knights-answer", [
+    "start-block",
+    "start-armor",
+    "flat-physical",
+  ]),
+  uniqueItem("the-returning-flight", "The Returning Flight", "quiver", "the-returning-flight", [
+    "archery-damage",
+    "archery-ignore-armor",
+    "dodge-chance",
+  ]),
+  uniqueItem("threefold-grace", "Threefold Grace", "spellbook", "threefold-grace", [
+    "flat-burn",
+    "flat-freeze",
+    "flat-holy",
+  ]),
+  uniqueItem("bloodember-pendant", "Bloodember Pendant", "ruby-amulet", "bloodember-pendant", [
+    "flat-burn",
+    "flat-bleed",
+    "leech-potency",
+  ]),
+  uniqueItem("winters-credit", "Winter’s Credit", "sapphire-ring", "winters-credit", [
+    "flat-freeze",
+    "start-block",
+    "block-gain",
+  ]),
+  uniqueItem("serpents-eye", "Serpent’s Eye", "emerald-ring", "serpents-eye", [
+    "flat-poison",
+    "flat-nature",
+    "archery-damage",
+  ]),
+  uniqueItem("wildhearts-favor", "Wildheart’s Favor", "emerald-amulet", "wildhearts-favor", [
+    "flat-nature",
+    "dodge-chance",
+    "dodge-heal",
+  ]),
+  uniqueItem("the-golden-crucible", "The Golden Crucible", "topaz-amulet", "the-golden-crucible", [
+    "start-forge",
+    "flat-holy",
+    "gold-gain",
+  ]),
+];
 
-const rimeheartLocket: UniqueItemDefinition = {
-  id: "rimeheart-locket",
-  displayName: "Rimeheart Locket",
-  baseItemId: "sapphire-amulet",
-  description: "Dealing Freeze damage grants Block and Freezing an enemy restores Mana equal to half your Block",
-  signatureAffix: { id: "rimeheart", value: 1 },
-  supportingAffixes: [
-    { id: "flat-freeze", value: 4 },
-    { id: "start-block", value: 8 },
-    { id: "damage-on-freeze", value: 6 },
-  ],
-};
-
-const blackfletch: UniqueItemDefinition = {
-  id: "blackfletch",
-  displayName: "Blackfletch",
-  baseItemId: "crossbow",
-  description: "Archery attacks detonate and consume all remaining Bleed and Poison damage on the target",
-  signatureAffix: { id: "blackfletch", value: 1 },
-  supportingAffixes: [
-    { id: "archery-damage", value: 4 },
-    { id: "flat-bleed", value: 4 },
-    { id: "flat-poison", value: 4 },
-  ],
-};
-
-const twinCasting: UniqueItemDefinition = {
-  id: "twin-casting",
-  displayName: "Twin Casting",
-  baseItemId: "staff",
-  description: "Playing a Burn card draws a Freeze card, and playing a Freeze card draws a Burn card",
-  signatureAffix: { id: "twin-casting", value: 1 },
-  supportingAffixes: [
-    { id: "flat-burn", value: 4 },
-    { id: "flat-freeze", value: 4 },
-    { id: "burn-per-mana", value: 10 },
-  ],
-};
-
-const saintfallPlate: UniqueItemDefinition = {
-  id: "saintfall-plate",
-  displayName: "Saintfall Plate",
-  baseItemId: "plate-armor",
-  description: "When your Block is depleted, deal 4 Holy damage and gain 4 Health",
-  signatureAffix: { id: "saintfall", value: 4 },
-  supportingAffixes: [
-    { id: "stun-on-block-hit", value: 5 },
-    { id: "heal-on-block-depleted", value: 6 },
-    { id: "max-health", value: 10 },
-  ],
-};
-
-const goldenVerdict: UniqueItemDefinition = {
-  id: "golden-verdict",
-  displayName: "Golden Verdict",
-  baseItemId: "topaz-ring",
-  description: "Holy damage causes Stun build-up and you gain 1 Gold when you Stun an enemy",
-  signatureAffix: { id: "golden-verdict", value: 1 },
-  supportingAffixes: [
-    { id: "flat-holy", value: 4 },
-    { id: "flat-stun", value: 4 },
-    { id: "gold-on-kill", value: 3 },
-  ],
-};
-
-const uniqueItemDefinitions: Record<string, UniqueItemDefinition> = {
-  wardbreaker,
-  "dance-of-blades": danceOfBlades,
-  "bloodfire-signet": bloodfireSignet,
-  "rimeheart-locket": rimeheartLocket,
-  blackfletch,
-  "twin-casting": twinCasting,
-  "saintfall-plate": saintfallPlate,
-  "golden-verdict": goldenVerdict,
-};
-
-export const uniqueItemList = Object.values(uniqueItemDefinitions);
+const uniqueItemDefinitions = new Map(uniqueItemList.map((item) => [item.id, item]));
 
 export function getUniqueItemDefinition(id: string): UniqueItemDefinition | undefined {
-  return uniqueItemDefinitions[id];
+  return uniqueItemDefinitions.get(id);
+}
+
+export function getUniqueAffixes(id: string): GearAffixRoll[] | undefined {
+  const definition = getUniqueItemDefinition(id);
+  return definition
+    ? [definition.signatureAffix, ...definition.supportingAffixes].map((affix) => ({ ...affix }))
+    : undefined;
 }

@@ -1,6 +1,7 @@
 import type { BattleCard } from "@/lib/game-data";
-import { CARDS_PER_TURN } from "../game-constants";
-import { applyHealingWithCombatText } from "./combat-text";
+import { processArcheryEchoes } from "./unique-card-effects";
+import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { halveRounded } from "./amount-helpers";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { applyCleanseHeals } from "./status-player";
@@ -69,9 +70,26 @@ function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: bo
     enemyCC: { ...state.enemyCC, cooldown: Math.max(0, state.enemyCC.cooldown - 1) },
     playerStatuses: {
       ...state.playerStatuses,
-      block: options?.preserveBlock ? state.playerStatuses.block : decayHalvedStatus(state.playerStatuses.block),
+      block:
+        options?.preserveBlock || state.gearEffects.dodgeSpendsPreservedBlock > 0
+          ? state.playerStatuses.block
+          : decayHalvedStatus(state.playerStatuses.block),
     },
     cardsPlayedThisTurn: 0,
+    uniqueGear: {
+      ...state.uniqueGear,
+      redHarvestUsed: false,
+      redHarvestUid: null,
+      huntsmasterUsed: false,
+      wrenflightActive: false,
+      finalSparkUsed: false,
+      freeBurnUsed: false,
+      freeFreezeUsed: false,
+      freeHolyUsed: false,
+      lastArcheryUid: null,
+      returningFlightUid: null,
+      spentForge: 0,
+    },
     flags: {
       ...state.flags,
       resonantChimeUsedThisTurn: false,
@@ -112,13 +130,24 @@ function performDrawAndResetPhase(
   deathsDoorNeedsRecoveryTurn: boolean,
   options?: { preserveBlock?: boolean },
 ): BattleState {
-  const nextDraw = drawCards(state.deck, state.discard, [], CARDS_PER_TURN, state.nextCardUid, getBattleRng(state));
+  const returningIndex =
+    state.gearEffects.recoverLastArcheryCard > 0 && state.uniqueGear.lastArcheryUid !== null
+      ? state.discard.findIndex((card) => card.uid === state.uniqueGear.lastArcheryUid)
+      : -1;
+  const recovered = returningIndex >= 0 ? state.discard[returningIndex] : undefined;
+  const discard = recovered ? state.discard.filter((_, i) => i !== returningIndex) : state.discard;
+  const nextDraw = drawCards(state.deck, discard, [], CARDS_PER_TURN, state.nextCardUid, getBattleRng(state));
+  if (recovered && nextDraw.hand.length < MAX_HAND_SIZE) {
+    nextDraw.hand.push({ ...recovered, uid: nextDraw.nextCardUid });
+    nextDraw.nextCardUid += 1;
+  }
   const nextState = resetPlayerTurnState(state, options);
   const hadUnspentMana = state.mana > 0;
   const wellspringBonus =
     hadUnspentMana && state.talentEffects.wellspringKeepMana > 0 ? state.talentEffects.wellspringKeepMana : 0;
   return {
     ...applyDrawResult(nextState, nextDraw),
+    uniqueGear: { ...nextState.uniqueGear, returningFlightUid: recovered ? nextDraw.nextCardUid - 1 : null },
     turnPhase: "player",
     mana: nextState.maxMana + wellspringBonus,
     playerCC: {
@@ -145,8 +174,16 @@ export function advanceToPlayerTurn(
     };
   }
 
-  const drawnState = processPendingTurnStartEffects(
-    applyPlagueDoctorMask(performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options), combatTexts),
+  if (state.gearEffects.recoverSpentForge > 0 && state.uniqueGear.spentForge > 0) {
+    nextState = addPlayerStatusWithCombatText(nextState, "forge", state.uniqueGear.spentForge, combatTexts, {
+      skipFightPacing: true,
+    });
+  }
+  const drawnState = processArcheryEchoes(
+    processPendingTurnStartEffects(
+      applyPlagueDoctorMask(performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options), combatTexts),
+      combatTexts,
+    ),
     combatTexts,
   );
   if (drawnState.gearEffects.healthPerTurn <= 0) return drawnState;

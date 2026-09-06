@@ -16,6 +16,17 @@ const emptyDiscoveries = {
   discoveredUniqueIds: [] as string[],
 };
 
+function allUniqueItems(discoveredUniqueIds: string[] = []) {
+  return Array.from({ length: getCollectionTotalPages("uniques") }, (_, page) =>
+    getCollectionPageItems({
+      collectionTab: "uniques",
+      ...emptyDiscoveries,
+      discoveredUniqueIds,
+      page,
+    }),
+  ).flat();
+}
+
 describe("collection item helpers", () => {
   it("calculates total pages from the active tab library", () => {
     expect(getCollectionTotalPages("heroes")).toBe(
@@ -116,11 +127,8 @@ describe("collection item helpers", () => {
   });
 
   it("returns hidden unique copy until the unique is discovered", () => {
-    const items = getCollectionPageItems({
-      collectionTab: "uniques",
-      ...emptyDiscoveries,
-      page: 0,
-    });
+    const items = allUniqueItems();
+    expect(items.map((item) => item.id).sort()).toEqual(uniqueItemList.map((item) => item.id).sort());
     const wardbreaker = items.find((item) => item.id === "wardbreaker");
     expect(wardbreaker).toMatchObject({
       title: "Undiscovered",
@@ -133,12 +141,7 @@ describe("collection item helpers", () => {
   it("reveals unique name and signature when discovered", () => {
     const unique = uniqueItemList.find((entry) => entry.id === "wardbreaker");
     if (!unique) throw new Error("missing wardbreaker unique");
-    const item = getCollectionPageItems({
-      collectionTab: "uniques",
-      ...emptyDiscoveries,
-      discoveredUniqueIds: ["wardbreaker"],
-      page: 0,
-    }).find((entry) => entry.id === "wardbreaker");
+    const item = allUniqueItems(["wardbreaker"]).find((entry) => entry.id === "wardbreaker");
 
     expect(item).toMatchObject({
       title: unique.displayName,

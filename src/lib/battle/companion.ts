@@ -1,3 +1,4 @@
+import { damageOnlyEffects } from "./damage-effect-selection";
 import { applyCardEffects } from "./effect-handlers";
 import { getCompanionBondEffects, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import { isPlayerDefeated, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
@@ -59,7 +60,11 @@ function scaleCompanionTurnEffect(
   return effect;
 }
 
-export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
+export function processCompanionTurnStart(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  options?: { damageOnly?: boolean },
+) {
   if (!state.activeCompanion || state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
 
   const lowHealthThreshold = scalePercent(state.enemyMaxHealth, LOW_HEALTH_THRESHOLD_PERCENT);
@@ -86,6 +91,8 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
       scaleCompanionTurnEffect(effect, ctx),
     ),
   };
+
+  if (options?.damageOnly) companionCard.effects = damageOnlyEffects(companionCard.effects);
 
   return withPreservedFlags(state, (s) => {
     let afterEffects = processEncounterTraitCardAction(

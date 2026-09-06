@@ -3,6 +3,7 @@ import { gearAffixCatalog, type GearAffixDefinition } from "./affix-catalog";
 import type { GearEffectManifest } from "./gear-effect-manifest";
 import { defaultGearEffects } from "./gear-effect-manifest";
 import { gearDefinitions } from "./definitions";
+import { getUniqueAffixes } from "./unique-catalog";
 import type { GearAffixRoll, GearInstance, GearRarity } from "./types";
 
 function isGearAffixId(value: string): value is GearAffixId {
@@ -84,7 +85,10 @@ export function getGearInstanceTooltipEntries(
   instance: GearInstance,
 ): Array<{ key: string; name?: string; text: string }> {
   const definition = gearDefinitions[instance.definitionId];
-  const affixEntries = getGearAffixTooltipEntries(instance.affixes, definition?.rarity);
+  const affixEntries = getGearAffixTooltipEntries(
+    getUniqueAffixes(instance.definitionId) ?? instance.affixes,
+    definition?.rarity,
+  );
   if (affixEntries.length > 0) return affixEntries.map(({ key, name, text }) => ({ key, name, text }));
   return (definition?.descriptionLines ?? []).map((text, index) => ({ key: `definition-${index}`, text }));
 }

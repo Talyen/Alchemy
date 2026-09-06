@@ -4,6 +4,7 @@ import {
   decayPoisonStacks,
   decayArmorAfterDamage,
   getEnemyDamageMultiplier,
+  getBurnBonusToBleedingMultiplier,
 } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { mergeCombatText, payKillPayouts } from "./combat-text";
@@ -60,11 +61,20 @@ export function detonateEnemyStatuses(
     if (amount <= 0) continue;
     let finalDamage = 0;
     let stacks = amount;
-    const multiplier = getEnemyDamageMultiplier(state, status);
+    const multiplier =
+      getEnemyDamageMultiplier(state, status) *
+      (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0
+        ? getBurnBonusToBleedingMultiplier(state)
+        : 1);
     while (stacks > 0) {
       finalDamage += Math.round(stacks * multiplier);
       if (mode === "next-tick") break;
-      stacks = status === "poison" ? decayPoisonStacks(stacks) : status === "burn" ? decayHalvedStatus(stacks) : 0;
+      stacks =
+        status === "poison"
+          ? decayPoisonStacks(stacks)
+          : status === "burn" || (status === "bleed" && state.gearEffects.bleedDecaysByHalf > 0)
+            ? decayHalvedStatus(stacks)
+            : 0;
     }
     pulses.push({
       status,

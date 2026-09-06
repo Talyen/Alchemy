@@ -6,6 +6,7 @@ import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
 import { placeholderRng } from "@/lib/rng";
 import { createInitialFlags } from "./combat-flags";
+import { createUniqueGearBattleState } from "./unique-gear-state";
 
 export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentEffectManifest();
 
@@ -91,6 +92,7 @@ export function defaultBattleState(): BattleState {
     trinketEffects: { ...defaultTrinketEffects },
     gearEffects: { ...defaultGearEffects },
     flags: createInitialFlags(),
+    uniqueGear: createUniqueGearBattleState(),
     pendingTurnStartEffects: [],
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,

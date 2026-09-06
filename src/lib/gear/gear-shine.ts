@@ -1,6 +1,7 @@
 import { buildSmoothShineBorderGradient } from "@/lib/animation/shine-gradient";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { extractKeywordIds } from "@/lib/keyword-text";
+import { getKeywordTextShineColors, MAX_TEXT_SHINE_KEYWORDS } from "@/lib/keyword-text-shine";
 import { gearAffixCatalog } from "./affix-catalog";
 import { gearDefinitions, type GearDefinition } from "./definitions";
 import type { GearInstance } from "./types";
@@ -8,7 +9,6 @@ import type { GearInstance } from "./types";
 const ASTRAL_SHINE_FALLBACK = ["#cbd5e1", "#64748b", "#cbd5e1"] as const;
 const UNIQUE_SHINE_COLORS = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"] as const;
 const UNIQUE_TEXT_SHINE_COLORS = ["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"] as const;
-const MAX_TEXT_SHINE_KEYWORDS = 3;
 
 export function selectTextShineKeywordIds(
   instanceKeywordIds: readonly KeywordId[],
@@ -41,16 +41,10 @@ export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
 }
 
 function collectShineColors(keywordIds: readonly KeywordId[], mode: "border" | "text"): readonly string[] {
-  const colors: string[] = [];
-  for (const keywordId of keywordIds) {
-    const shineColors = keywordDefinitions[keywordId].shineColors;
-    if (mode === "border") {
-      colors.push(...shineColors);
-    } else {
-      const [primary] = shineColors;
-      if (primary) colors.push(primary, `color-mix(in srgb, ${primary} 55%, transparent)`);
-    }
-  }
+  const colors =
+    mode === "text"
+      ? getKeywordTextShineColors(keywordIds)
+      : keywordIds.flatMap((keywordId) => keywordDefinitions[keywordId].shineColors);
   if (colors.length > 0) return colors;
   return mode === "border" ? [...ASTRAL_SHINE_FALLBACK] : ASTRAL_SHINE_FALLBACK.slice(0, 2);
 }
@@ -84,11 +78,7 @@ export function getGearInstanceShineColors(instance: GearInstance): readonly str
 }
 
 export function getGearDefinitionTextShineColors(definition: GearDefinition): readonly string[] {
-  return getShineColorsForRarity(
-    definition.rarity,
-    definition.affinityKeywords.slice(0, MAX_TEXT_SHINE_KEYWORDS),
-    "text",
-  );
+  return getShineColorsForRarity(definition.rarity, definition.affinityKeywords, "text");
 }
 
 export function getGearInstanceTextShineColors(instance: GearInstance): readonly string[] {
@@ -118,5 +108,5 @@ export function getGearDefinitionShineGradient(definition: GearDefinition): stri
 }
 
 export function getGearAffixTextShineColors(affix: { descriptionTemplate: string }): readonly string[] {
-  return collectShineColors(extractKeywordIds(affix.descriptionTemplate).slice(0, MAX_TEXT_SHINE_KEYWORDS), "text");
+  return collectShineColors(extractKeywordIds(affix.descriptionTemplate), "text");
 }

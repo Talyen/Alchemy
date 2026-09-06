@@ -68,6 +68,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
     gearEffects: mergeRecord(defaults.gearEffects, saved.gearEffects),
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
     flags: mergeRecord(defaults.flags, saved.flags),
+    uniqueGear: mergeRecord(defaults.uniqueGear, saved.uniqueGear),
     playerStatuses: mergeRecord(defaults.playerStatuses, saved.playerStatuses),
     enemyStatuses: mergeRecord(defaults.enemyStatuses, saved.enemyStatuses),
     playerCC: mergeRecord(defaults.playerCC, saved.playerCC),

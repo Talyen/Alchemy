@@ -90,13 +90,19 @@ export const applyMultiplyEnemyStatusEffect = defineHandler(
 
 export const applyCleansePlayerStatusToDamageEffect = defineHandler(
   "cleanse-player-status-to-damage",
-  (state, card, effect, potionMult, combatTexts) => {
+  (state, card, effect, potionMult, combatTexts, context) => {
     const stacks = state.playerStatuses[effect.status];
     if (stacks <= 0) return state;
 
     const cleansed = applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
     const amount = applyPotionMultiplier(stacks, potionMult);
 
-    return dealDamageToEnemy(cleansed, card, { kind: "damage", damageType: effect.damageType, amount }, combatTexts);
+    return dealDamageToEnemy(
+      cleansed,
+      card,
+      { kind: "damage", damageType: effect.damageType, amount },
+      combatTexts,
+      context,
+    );
   },
 );

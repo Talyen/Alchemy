@@ -9,6 +9,7 @@ import {
   type CompanionDefinition,
   type KeywordId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
+import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
 import { buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
 
 export { buildSmoothShineBorderGradient, buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
@@ -72,6 +73,11 @@ export function getCompanionShineColors(companion: CompanionDefinition): readonl
 
 export function getTrinketShineColors(trinketId: string): readonly string[] {
   const colors = getKeywordListShineColors(getTrinketKeywords(trinketId));
+  return colors.length > 0 ? colors : [...SHINE_PALETTES.boon];
+}
+
+export function getTrinketTextShineColors(trinketId: string): readonly string[] {
+  const colors = getKeywordTextShineColors(getTrinketKeywords(trinketId));
   return colors.length > 0 ? colors : [...SHINE_PALETTES.boon];
 }
 

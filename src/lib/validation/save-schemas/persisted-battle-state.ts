@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { type BattleState } from "@/lib/battle";
 import { normalizePersistedBattleState } from "../normalize-persisted-battle-state";
+import { UniqueGearBattleStateSchema } from "./unique-gear-state";
 
 const PersistedBattleStateWireSchema = z.looseObject({
   deck: z.array(z.unknown()),
@@ -23,6 +24,7 @@ const PersistedBattleStateWireSchema = z.looseObject({
   playerStatuses: z.record(z.string(), z.unknown()),
   enemyStatuses: z.record(z.string(), z.unknown()),
   flags: z.record(z.string(), z.unknown()),
+  uniqueGear: UniqueGearBattleStateSchema,
   discoveredCardIds: z.array(z.unknown()),
   difficultyModifiers: z.array(z.unknown()),
 });

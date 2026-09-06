@@ -125,7 +125,7 @@ export function applyCardEffects(
     enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
   },
 ): BattleState {
-  const potionMult = isPotionCard(card) ? state.talentEffects.potionPotency : 1;
+  const potionMult = isPotionCard(card) && !state.flags.uniqueRepeatActive ? state.talentEffects.potionPotency : 1;
   return card.effects.reduce(
     (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, combatTexts, context),
     state,

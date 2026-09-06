@@ -54,7 +54,7 @@ function bleedCard(): BattleCard {
 }
 
 function effectiveCost(
-  state: Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">,
+  state: Pick<BattleState, "flags" | "talentEffects" | "trinketEffects" | "gearEffects" | "uniqueGear">,
   card: BattleCard,
 ): number {
   return computeEffectiveCost(state, card).effectiveCost;

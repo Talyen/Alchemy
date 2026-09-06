@@ -7,7 +7,7 @@ import {
   type GearInstance,
 } from "@/lib/gear";
 import type { TrinketEntry } from "@/lib/game-data";
-import { getTrinketShineColors } from "@/features/alchemy/shared/config";
+import { getTrinketTextShineColors } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
 import { ShineText } from "./shine-text";
@@ -40,7 +40,7 @@ interface TrinketProps {
 
 export function TrinketItemTitle({ trinket, className }: TrinketProps) {
   return (
-    <ShineText colors={getTrinketShineColors(trinket.id)} className={className}>
+    <ShineText colors={getTrinketTextShineColors(trinket.id)} className={className}>
       {trinket.title}
     </ShineText>
   );
