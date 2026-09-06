@@ -344,6 +344,10 @@
   width: auto;
 }
 
+.card-art-frame {
+  --surface-frame-border-width: 1px;
+}
+
 .card-interactive-glow,
 .card-interactive-selected,
 .card-interactive-selected-danger {
@@ -437,6 +441,15 @@
   --surface-frame-border-width: 0px;
 }
 
+.card-art-shine,
+.card-art-shine:hover:not(:disabled),
+.group:hover .card-art-shine:not(:disabled),
+.card-art-shine.card-interactive-selected {
+  overflow: visible;
+  border-color: transparent;
+}
+
+.card-art-shine .shine-border,
 .has-shine-border .shine-border {
   transition: padding 200ms ease-out;
 }
@@ -449,6 +462,9 @@
   --surface-frame-border-width: 0px;
 }
 
+.card-art-shine:hover:not(:disabled) .shine-border,
+.group:hover .card-art-shine:not(:disabled) .shine-border,
+.card-art-shine.card-interactive-selected .shine-border,
 .has-shine-border:hover:not(:disabled) .shine-border,
 .group:hover .has-shine-border:not(:disabled) .shine-border,
 .has-shine-border.card-interactive-selected .shine-border {

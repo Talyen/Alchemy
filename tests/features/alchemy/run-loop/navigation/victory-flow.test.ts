@@ -71,7 +71,7 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
 const testRng = () => 0.25;
 
 describe("computeVictoryRewardState", () => {
-  it("rolls a permanent trinket instead of gear one third of the time", () => {
+  it("offers the boss Trinket category when its roll lands in range", () => {
     const result = computeVictoryRewardState(
       {
         characterId: "knight",
@@ -90,7 +90,7 @@ describe("computeVictoryRewardState", () => {
         materials: emptyInventory(),
         destinations: [],
       },
-      () => 0.25,
+      () => 0.8,
     );
     expect(result.rewardType).toBe("trinket");
     expect(result.gold).toBe(25);
@@ -122,7 +122,7 @@ describe("computeVictoryRewardState", () => {
     expect(result.gold).toBe(15);
   });
 
-  it("always awards card rewards for normal enemies", () => {
+  it("offers card rewards for normal enemies at the card threshold", () => {
     const result = computeVictoryRewardState(
       {
         characterId: "knight",
@@ -146,7 +146,7 @@ describe("computeVictoryRewardState", () => {
     expect(result.rewardType).toBe("card");
   });
 
-  it("always awards boon rewards for elite enemies", () => {
+  it("offers boon rewards for elite enemies at the boon threshold", () => {
     const result = computeVictoryRewardState(
       {
         characterId: "knight",
@@ -165,12 +165,12 @@ describe("computeVictoryRewardState", () => {
         materials: emptyInventory(),
         destinations: ["Normal Combat"],
       },
-      () => 0.01,
+      () => 0.8,
     );
     expect(result.rewardType).toBe("boon");
   });
 
-  it("awards gear for a boss when the permanent trinket roll misses", () => {
+  it("offers gear for a boss when its roll lands in the Gear group", () => {
     const input = {
       characterId: "knight" as const,
       selectedDifficulty: null,
@@ -188,7 +188,7 @@ describe("computeVictoryRewardState", () => {
       materials: emptyInventory(),
       destinations: [],
     };
-    const gearReward = computeVictoryRewardState(input, () => 0.5);
+    const gearReward = computeVictoryRewardState(input, () => 0.6);
     expect(gearReward.rewardType).toBe("gear");
     expect(gearReward.choices.every((choice) => "instanceId" in choice)).toBe(true);
     expect(gearReward.choices.every((choice) => "affixes" in choice)).toBe(true);
@@ -215,7 +215,7 @@ describe("computeVictoryRewardState", () => {
         materials: emptyInventory(),
         destinations: [],
       },
-      () => 0,
+      () => 0.8,
     );
 
     expect(result.rewardType).toBe("trinket");
@@ -243,7 +243,7 @@ describe("computeVictoryRewardState", () => {
         materials: emptyInventory(),
         destinations: [],
       },
-      () => 0,
+      () => 0.5,
     );
 
     expect(result.rewardType).toBe("gear");
@@ -271,7 +271,7 @@ describe("computeVictoryRewardState", () => {
         materials: emptyInventory(),
         destinations: [],
       },
-      () => 0,
+      () => 0.9,
     );
 
     expect(result.rewardType).toBe("gear");
@@ -293,7 +293,7 @@ describe("computeVictoryRewards", () => {
         ownedUniqueIds,
         battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
       }),
-      () => 0,
+      () => 0.9,
     );
 
     expect(result.rewardState.rewardType).toBe("gear");
@@ -392,11 +392,15 @@ describe("computeVictoryRewards", () => {
   });
 
   it("applies boss gold bonus and a boss reward for boss enemies", () => {
+    let call = 0;
     const result = computeVictoryRewards(
       baseInput({
         battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
       }),
-      testRng,
+      () => {
+        call += 1;
+        return call === 1 ? 0.25 : 0.8;
+      },
     );
 
     expect(result.goldEarned).toBe(23);
@@ -495,7 +499,7 @@ describe("computeVictoryRewards", () => {
         contentSystemType: "labyrinth",
         battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
       }),
-      () => 0.25,
+      () => 0.8,
     );
     expect(result.rewardState.rewardType).toBe("boon");
   });

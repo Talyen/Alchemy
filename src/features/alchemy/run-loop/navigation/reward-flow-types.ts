@@ -6,6 +6,8 @@ import type { Destination, RewardRoute } from "@/lib/routing";
 
 export type FinalizeRewardRoute = RewardRoute;
 
+export type CombatRewardCategory = "card" | "gear" | "boon" | "trinket";
+
 export interface FinalizeRewardInput {
   rewardState: RewardState;
   companionRewardCards: BattleCard[] | null;
@@ -48,4 +50,7 @@ export interface CombatRewardInput {
   goldMultiplier?: number;
   rng: () => number;
   excludedBoonIds?: string[];
+  ownedTrinketIds?: string[];
+  ownedUniqueIds?: ReadonlySet<string>;
+  gearAstralChanceBonus?: number;
 }

@@ -82,7 +82,7 @@ export function TrinketTile({
       art={trinket.art}
       className={cn(trinketArtTileClass, className)}
       imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
-      shineOnHover={hoverKeywordShine}
+      shineOnHover
       shineColor={
         shine
           ? hoverKeywordShine
@@ -155,7 +155,7 @@ export function GearTile({
       art={definition?.art ?? ""}
       className={cn(cardSurfaceClass, getTileWidthClass("collection"), gearArtAspectClass)}
       imageClassName={gearArtFillClass}
-      shineOnHover={hoverKeywordShine}
+      shineOnHover
       shineColor={
         shine
           ? hoverKeywordShine

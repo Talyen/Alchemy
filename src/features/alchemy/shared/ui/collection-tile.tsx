@@ -94,7 +94,7 @@ export const CollectionTile = memo(function CollectionTile({ item }: CollectionT
 });
 
 function collectionTileShineColors(item: CollectionTileItem): readonly string[] {
-  if (!item.discovered) return [];
+  if (!item.discovered) return getInspectionKeywordShineColors([]);
   if (item.card) return getInspectionKeywordShineColors(getCardKeywords(item.card));
   if (item.character) return getCharacterShineColors(item.character.id);
   if (item.enemyEntry) return getInspectionKeywordShineColors(getPlasmaKeywordsForEnemy(item.enemyEntry));

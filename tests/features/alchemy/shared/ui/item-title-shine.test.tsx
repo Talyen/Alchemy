@@ -51,6 +51,8 @@ describe("item portrait shine", () => {
   it("puts a keyword shine border on trinket tiles and not on basic gear", () => {
     const trinket = trinketById.meteorite!;
     const { container, rerender } = render(<TrinketTile trinket={trinket} interactionKey="test" />);
+    expect(container.querySelector(".shine-border")).toBeNull();
+    fireEvent.mouseEnter(screen.getByAltText(trinket.title).parentElement!.parentElement!);
     expect(container.querySelector(".shine-border")).not.toBeNull();
     expect(container.querySelector(".has-shine-border")).not.toBeNull();
 
@@ -66,7 +68,7 @@ describe("item portrait shine", () => {
     expect(container.querySelector(".shine-border")).toBeNull();
   });
 
-  it("shines discovered collection trinkets and leaves undiscovered plain", () => {
+  it("shines discovered and undiscovered collection trinkets on hover", () => {
     const trinket = trinketById.meteorite!;
     const { container, rerender } = render(
       <CollectionTile
@@ -100,7 +102,7 @@ describe("item portrait shine", () => {
         }}
       />,
     );
-    expect(container.querySelector(".shine-border")).toBeNull();
+    expect(container.querySelector(".shine-border")).not.toBeNull();
   });
 
   it("reveals undiscovered art in full color on hover while keeping the dim", () => {

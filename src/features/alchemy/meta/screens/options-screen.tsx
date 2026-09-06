@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 import { ErrorLogViewer } from "./error-log-viewer";
 
@@ -53,7 +54,7 @@ export function OptionsScreen({
   const [showErrorLog, setShowErrorLog] = useState(false);
 
   return (
-    <PageLayout align="start">
+    <PageLayout>
       <FadeSlot swapKey={showErrorLog ? "error-log" : "options"} className="min-h-[57.78cqh] w-full">
         {showErrorLog ? (
           <ErrorLogViewer onClose={() => setShowErrorLog(false)} />
@@ -65,14 +66,31 @@ export function OptionsScreen({
               <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} className="flex-nowrap" />
             </div>
 
-            <FadeSlot swapKey={tab} className="min-h-[42cqh] pt-6 text-left">
-              {tab === "display" ? <DisplayOptionsPanel display={display} /> : null}
-              {tab === "interface" ? <InterfaceOptionsPanel interfaceOptions={interfaceOptions} /> : null}
-              {tab === "sound" ? <AudioOptionsPanel audio={audio} /> : null}
-              {tab === "gameplay" ? <GameplayOptionsPanel gameplay={gameplay} /> : null}
-              {tab === "other" ? (
-                <OtherOptionsPanel saveData={saveData} dev={{ ...dev, onOpenErrorLog: () => setShowErrorLog(true) }} />
-              ) : null}
+            <FadeSlot swapKey={tab} className="grid min-h-[42cqh] pt-6 text-left">
+              {[
+                { id: "display", panel: <DisplayOptionsPanel display={display} /> },
+                { id: "interface", panel: <InterfaceOptionsPanel interfaceOptions={interfaceOptions} /> },
+                { id: "sound", panel: <AudioOptionsPanel audio={audio} /> },
+                { id: "gameplay", panel: <GameplayOptionsPanel gameplay={gameplay} /> },
+                {
+                  id: "other",
+                  panel: (
+                    <OtherOptionsPanel
+                      saveData={saveData}
+                      dev={{ ...dev, onOpenErrorLog: () => setShowErrorLog(true) }}
+                    />
+                  ),
+                },
+              ].map(({ id, panel }) => (
+                <div
+                  key={id}
+                  className={cn("col-start-1 row-start-1", tab !== id && "invisible")}
+                  inert={tab !== id}
+                  aria-hidden={tab !== id}
+                >
+                  {panel}
+                </div>
+              ))}
             </FadeSlot>
           </ScreenShell>
         )}

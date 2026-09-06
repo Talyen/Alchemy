@@ -36,13 +36,18 @@ for (const tab of ["heroes", "cards", "bestiary", "trinkets", "uniques"] satisfi
       expect(button.querySelector(".shine-border")).toBeNull();
     });
 
-    it("keeps locked or undiscovered entries neutral", () => {
+    it("shows neutral Shine on locked or undiscovered entries only during hover or focus", () => {
       render(<CollectionTile item={{ ...item, discovered: false }} />);
       const button = screen.getByRole("button", { name: /^Inspect / });
-      fireEvent.mouseEnter(button.parentElement!);
       expect(button.querySelector(".shine-border")).toBeNull();
+      fireEvent.mouseEnter(button.parentElement!);
+      expect(button.querySelector<HTMLElement>(".shine-border")?.style.backgroundColor).toBe("rgb(203, 213, 225)");
       expect(button.className).not.toContain("card-interactive-glow");
+      fireEvent.mouseLeave(button.parentElement!);
+      expect(button.querySelector(".shine-border")).toBeNull();
       fireEvent.focus(button);
+      expect(button.querySelector<HTMLElement>(".shine-border")?.style.backgroundColor).toBe("rgb(203, 213, 225)");
+      fireEvent.blur(button);
       expect(button.querySelector(".shine-border")).toBeNull();
     });
   });

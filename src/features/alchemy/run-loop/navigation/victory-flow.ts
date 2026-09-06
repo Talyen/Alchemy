@@ -143,6 +143,9 @@ export function computeVictoryRewardState(
       goldMultiplier,
       rng,
       excludedBoonIds: activeTrinketEffectIds,
+      ownedTrinketIds: input.ownedTrinketIds ?? [],
+      ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
+      gearAstralChanceBonus,
     }),
     input.bossEnemyId,
   );

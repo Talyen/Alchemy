@@ -149,6 +149,10 @@ function rollItemDropTier(options: RollItemDropTierOptions, rng: () => number): 
   return rollTierFromChances(base.unique, base.astral + astralBonus, rng, allowsUnique, base.unique);
 }
 
+export function rollGearRewardDropTier(rng: () => number, isBoss = false, astralChanceBonus = 0): GearRarity {
+  return rollItemDropTier({ isBoss, astralChanceBonus }, rng);
+}
+
 function rollEquipmentShopDropTier(astralChanceBonus = 0, rng: () => number, allowsUnique = true): GearRarity {
   const astralBonus = Math.max(0, astralChanceBonus);
   return rollTierFromChances(
@@ -166,6 +170,7 @@ interface GenerateGearOfferingsOptions {
   rollTier: () => "unique" | "astral" | "basic";
   ownedUniqueIds?: ReadonlySet<string>;
   fillFallback?: boolean;
+  fallbackUniqueToAstral?: boolean;
 }
 
 function rollOfferingInstance(
@@ -176,10 +181,12 @@ function rollOfferingInstance(
   remainingBases: Array<(typeof gearBaseItemList)[number]>,
   rng: () => number,
   baseItemSupplier: () => (typeof gearBaseItemList)[number] | undefined,
+  fallbackUniqueToAstral: boolean,
 ): GearInstance | null {
   if (tier === "unique") {
     const uniqueInstance = tryOfferUnique(ownedUniqueIds, offeredUniqueIds, usedBaseIds, remainingBases, rng);
     if (uniqueInstance) return uniqueInstance;
+    if (!fallbackUniqueToAstral) return null;
     tier = "astral";
   }
 
@@ -196,6 +203,7 @@ function generateGearOfferings({
   rollTier,
   ownedUniqueIds = new Set(),
   fillFallback = false,
+  fallbackUniqueToAstral = true,
 }: GenerateGearOfferingsOptions): GearInstance[] {
   const offeredUniqueIds = new Set<string>();
   const usedBaseIds = new Set<string>();
@@ -211,6 +219,7 @@ function generateGearOfferings({
       remainingBases,
       rng,
       () => takeUnusedBaseItem(remainingBases, usedBaseIds, rng),
+      fallbackUniqueToAstral,
     );
     if (!instance) break;
     choices.push(instance);
@@ -234,6 +243,7 @@ function generateGearOfferings({
           usedBaseIds.add(baseItem.id);
           return baseItem;
         },
+        fallbackUniqueToAstral,
       );
       if (instance) choices.push(instance);
     }
@@ -254,6 +264,35 @@ export function generateEquipmentShopOfferings(
     rollTier: () => rollEquipmentShopDropTier(astralChanceBonus, rng, true),
     ownedUniqueIds,
     fillFallback: true,
+  });
+}
+
+export function generateGearRewardChoicesForRarity(
+  count: number,
+  rarity: GearRarity,
+  rng: () => number,
+  ownedUniqueIds: ReadonlySet<string> = new Set(),
+): GearInstance[] {
+  return generateGearOfferings({
+    count,
+    rng,
+    rollTier: () => rarity,
+    ownedUniqueIds,
+    fallbackUniqueToAstral: false,
+  });
+}
+
+export function generateGearRewardChoicesForRarities(
+  rarities: readonly GearRarity[],
+  rng: () => number,
+  ownedUniqueIds: ReadonlySet<string> = new Set(),
+): GearInstance[] {
+  let index = 0;
+  return generateGearOfferings({
+    count: rarities.length,
+    rng,
+    rollTier: () => rarities[index++]!,
+    ownedUniqueIds,
   });
 }
 

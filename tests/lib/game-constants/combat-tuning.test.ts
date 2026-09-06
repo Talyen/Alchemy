@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  BOSS_REWARD_RATES,
   CAMPFIRE_HEAL_FRACTION,
   DROP_RATES_BOSS,
   DROP_RATES_NORMAL,
+  ENCOUNTER_REWARD_RATES,
   EQUIPMENT_SHOP_DROP_RATES,
   FIGHT_PACING,
   FREEZE_THRESHOLD_FRACTION,
@@ -39,6 +41,7 @@ describe("game-constants contracts", () => {
     const shopSum =
       EQUIPMENT_SHOP_DROP_RATES.unique + EQUIPMENT_SHOP_DROP_RATES.astral + EQUIPMENT_SHOP_DROP_RATES.basic;
     expect(shopSum).toBeCloseTo(1);
+    expect(Object.values(EQUIPMENT_SHOP_DROP_RATES)).toEqual([0.05, 0.25, 0.7]);
 
     expect(DROP_RATES_NORMAL.unique).toBeGreaterThan(0);
     expect(DROP_RATES_NORMAL.astral).toBeGreaterThan(0);
@@ -51,6 +54,24 @@ describe("game-constants contracts", () => {
       expect(chance).toBeGreaterThan(0);
       expect(chance).toBeLessThanOrEqual(1);
     }
+  });
+
+  it("keeps encounter and boss reward categories in the approved order and proportions", () => {
+    expect(Object.keys(ENCOUNTER_REWARD_RATES.normal)).toEqual([
+      "card",
+      "basic",
+      "boon",
+      "astral",
+      "trinket",
+      "unique",
+    ]);
+    expect(Object.values(ENCOUNTER_REWARD_RATES.normal)).toEqual([0.55, 0.17, 0.1, 0.07, 0.06, 0.05]);
+    expect(Object.values(ENCOUNTER_REWARD_RATES.elite)).toEqual([0.3, 0.25, 0.18, 0.1, 0.09, 0.08]);
+    expect(Object.values(ENCOUNTER_REWARD_RATES.normal).reduce((sum, chance) => sum + chance, 0)).toBeCloseTo(1);
+    expect(Object.values(ENCOUNTER_REWARD_RATES.elite).reduce((sum, chance) => sum + chance, 0)).toBeCloseTo(1);
+    expect(Object.keys(BOSS_REWARD_RATES)).toEqual(["astral", "trinket", "unique"]);
+    expect(Object.values(BOSS_REWARD_RATES)).toEqual([0.49, 0.3, 0.21]);
+    expect(Object.values(BOSS_REWARD_RATES).reduce((sum, chance) => sum + chance, 0)).toBeCloseTo(1);
   });
 
   it("keeps fight-pacing enemy clocks ordered by difficulty", () => {

@@ -14,13 +14,7 @@ import { ShineBorder } from "@/components/ui/shine-border";
 import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import {
-  cardArtImageClass,
-  cardHoverScaleClass,
-  cardShineFrameClass,
-  cardSurfaceClass,
-  getPlasmaColorPairForCard,
-} from "../config";
+import { cardArtImageClass, cardHoverScaleClass, cardSurfaceClass, getPlasmaColorPairForCard } from "../config";
 import { useCardDescriptionContext } from "@/features/alchemy/shared/context/card-description-context";
 import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "@/lib/game-data";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
@@ -176,10 +170,9 @@ function CardButtonSurface({
       as="button"
       className={cn(
         cardSurfaceClass,
-        "group",
+        "group card-art-frame border border-border/80",
         scaleOnHover && cardHoverScaleClass,
-        showShine && cardShineFrameClass,
-        !showShine && "border border-border/80",
+        showShine && "card-art-shine",
         className,
       )}
       shimmerActive={shimmerActive}

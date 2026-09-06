@@ -180,7 +180,7 @@ describe("MysteryRewardSummary", () => {
     expect(basicSurface?.className).toMatch(/card-interactive-glow/);
   });
 
-  it("shows a shine border on astral granted gear without hover chrome", () => {
+  it("shows a shine border on astral granted gear only during hover", () => {
     const instance = { instanceId: "mystery-gear-astral", definitionId: "emerald-ring-astral", affixes: [] };
     render(
       <MysteryRewardSummary
@@ -195,9 +195,15 @@ describe("MysteryRewardSummary", () => {
     );
 
     const surface = screen.getByRole("img", { name: getGearInstanceTitle(instance) }).closest(".surface");
+    expect(surface?.querySelector(".shine-border")).toBeNull();
+    expect(surface?.className).toContain("border-border/80");
+    fireEvent.mouseEnter(surface!.parentElement!);
     expect(surface?.querySelector(".shine-border")).not.toBeNull();
     expect(surface?.className).toMatch(/card-interactive-glow/);
     expect(surface?.className).toMatch(/has-shine-border/);
+    fireEvent.mouseLeave(surface!.parentElement!);
+    expect(surface?.querySelector(".shine-border")).toBeNull();
+    expect(surface?.className).toContain("border-border/80");
   });
 
   it("shows the granted gear tile for gainRandomGear", () => {

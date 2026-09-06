@@ -24,9 +24,37 @@ export const EQUIPMENT_SHOP_OFFERED = 3;
 export const EQUIPMENT_SHOP_REFRESHES = 1;
 export const EQUIPMENT_SHOP_DROP_RATES = {
   unique: 0.05,
-  astral: 0.35,
-  basic: 0.6,
+  astral: 0.25,
+  basic: 0.7,
 } as const;
+
+export const ENCOUNTER_REWARD_RATES = {
+  normal: {
+    card: 0.55,
+    basic: 0.17,
+    boon: 0.1,
+    astral: 0.07,
+    trinket: 0.06,
+    unique: 0.05,
+  },
+  elite: {
+    card: 0.3,
+    basic: 0.25,
+    boon: 0.18,
+    astral: 0.1,
+    trinket: 0.09,
+    unique: 0.08,
+  },
+} as const satisfies Record<
+  "normal" | "elite",
+  Record<"card" | "basic" | "boon" | "astral" | "trinket" | "unique", number>
+>;
+
+export const BOSS_REWARD_RATES = {
+  astral: 0.49,
+  trinket: 0.3,
+  unique: 0.21,
+} as const satisfies Record<"astral" | "trinket" | "unique", number>;
 
 export const DROP_RATES_BOSS = {
   unique: 0.3,

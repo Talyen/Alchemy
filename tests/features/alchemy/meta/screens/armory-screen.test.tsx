@@ -189,6 +189,8 @@ describe("ArmoryScreen core", () => {
 
     await user.click(trinketSlot);
     const inventoryTrinket = screen.getByRole("button", { name: "Equip Brass Censer" });
+    expect(inventoryTrinket.querySelector(".shine-border")).toBeNull();
+    await user.hover(inventoryTrinket);
     expect(inventoryTrinket.querySelector(".shine-border")).not.toBeNull();
     expect(inventoryTrinket.className).toMatch(/has-shine-border/);
   });

@@ -53,6 +53,8 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`.
 | Tabs           | `TabBar`                                                                                |
 | Hover / press  | Shared CSS hover scale and `active:` feedback; do not add parallel Motion hover scaling |
 
+Card artwork keeps the same border space when hover shine appears, so hovering or focusing a card cannot resize its row or recenter the screen.
+
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
 ## Display sizing
@@ -95,10 +97,13 @@ retain Skip; there are no reward confirmation buttons. Claim-in-flight disables
 choices and Skip until the next reward surface or destination is committed.
 
 Collection entries rest with dim grey borders. Discovered entries show their keyword
-Shine Border on hover or keyboard focus; locked and undiscovered entries stay neutral.
+Shine Border on hover or keyboard focus; locked and undiscovered entries show a neutral
+Shine Border on hover or keyboard focus across all tabs.
 Wish and reward choices use the same hover treatment. Trinkets and gear, including
 uniques, use their effect keywords on these surfaces, with neutral shine when none
-exist. Other surfaces retain their existing rarity borders and item-title colors.
+exist. Shared trinket and gear art tiles, including Mystery rewards, shops, and
+run-end items, also rest with the default border and show Shine only on hover or
+keyboard focus. Their existing Shine palettes and item-title colors are preserved.
 
 Shop card removal reserves a fixed available-height card area between its header
 and pagination/actions. It shows two rows when they fit and one otherwise, keeping
@@ -109,6 +114,11 @@ header, gold counter, and instruction text; the Remove action retains its gold c
 Game Size and Tooltip Size are device-local preferences, separate from game
 saves and cloud mirroring. Reset Sizes and Reset Options reset both. Clearing
 progress or importing a save does not change them.
+
+Options centers a shared tab area sized by its tallest panel. Inactive panels
+remain in the same grid cell, invisible and inert, so switching tabs preserves
+the header and control positions. The page scrolls when the content exceeds the
+available height.
 
 ## Labyrinth map
 

@@ -92,6 +92,20 @@ test.describe("Options Screen", critical, () => {
     await menu.openOptions();
 
     await expect(page.getByLabel("Aspect Ratio")).toBeVisible();
+    const heading = page.getByRole("heading", { name: "Options", exact: true });
+    const headingBounds = await heading.boundingBox();
+    expect(headingBounds).not.toBeNull();
+    for (const [tab, label] of [
+      ["Interface", "Game Size"],
+      ["Sound", "Music Volume"],
+      ["Gameplay", "Auto-End Turn"],
+      ["Other", "Save Data"],
+      ["Display", "Aspect Ratio"],
+    ]) {
+      await page.getByRole("button", { name: tab, exact: true }).click();
+      await expect(page.getByText(label, { exact: true })).toBeVisible();
+      expect(await heading.boundingBox()).toEqual(headingBounds);
+    }
     await page.getByRole("button", { name: "Sound" }).click();
     await expect(page.getByText("Music Volume")).toBeVisible();
     await expect(page.getByText("Sound Effects Volume")).toBeVisible();

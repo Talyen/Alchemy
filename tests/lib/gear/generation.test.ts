@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
+import { GEAR_AFFIX_COUNT, GEAR_AFFIX_COUNT_MIN_WEIGHT } from "@/lib/game-constants";
 import {
   generateDevRandomGearInstance,
   generateGearInstanceForBaseItem,
   generateGearRewardChoices,
+  generateGearRewardChoicesForRarity,
+  generateGearRewardChoicesForRarities,
+  uniqueItemList,
   gearDefinitions,
+  rollAffixCount,
+  rollGearRewardDropTier,
   rollGearRewardRarity,
 } from "@/lib/gear";
 import { affixMatchesAffinity } from "@/lib/gear/affixes";
@@ -64,6 +69,12 @@ describe("gear generation", () => {
     expect(new Set(instance.affixes.map((roll) => roll.id)).size).toBe(instance.affixes.length);
   });
 
+  it("weights Astral affix counts 80% toward three affixes", () => {
+    expect(GEAR_AFFIX_COUNT_MIN_WEIGHT).toBe(0.8);
+    expect(rollAffixCount("astral", () => 0.799999)).toBe(3);
+    expect(rollAffixCount("astral", () => 0.8)).toBe(4);
+  });
+
   it("rolls reward gear rarity with optional astral chance bonus", () => {
     expect(
       Array.from({ length: 20 }, () => rollGearRewardRarity(() => 0.1)).every((rarity) => rarity === "basic"),
@@ -75,6 +86,49 @@ describe("gear generation", () => {
     expect(rollGearRewardRarity(() => 0.47, 0.03)).toBe("astral");
     expect(rollGearRewardRarity(() => 0.39, 0.1)).toBe("basic");
     expect(rollGearRewardRarity(() => 0.4, 0.1)).toBe("astral");
+  });
+
+  it("rolls normal and boss reward gear tiers at their configured boundaries", () => {
+    expect(rollGearRewardDropTier(() => 0.04)).toBe("unique");
+    expect(rollGearRewardDropTier(() => 0.05)).toBe("astral");
+    expect(rollGearRewardDropTier(() => 0.13)).toBe("basic");
+    expect(rollGearRewardDropTier(() => 0.29, true)).toBe("unique");
+    expect(rollGearRewardDropTier(() => 0.3, true)).toBe("astral");
+    expect(rollGearRewardDropTier(() => 0.99, true)).toBe("astral");
+  });
+
+  it("generates three choices at a forced reward rarity", () => {
+    for (const rarity of ["basic", "astral", "unique"] as const) {
+      const choices = generateGearRewardChoicesForRarity(3, rarity, () => 0.1);
+      expect(choices).toHaveLength(3);
+      expect(choices.every((choice) => gearDefinitions[choice.definitionId]?.rarity === rarity)).toBe(true);
+    }
+  });
+
+  it.each([
+    ["basic", "basic", "astral"],
+    ["basic", "astral", "unique"],
+    ["astral", "astral", "unique"],
+    ["unique", "unique", "unique"],
+  ] as const)("generates ordered %s/%s/%s choices with shared exclusions", (...rarities) => {
+    for (let seed = 1; seed <= 50; seed += 1) {
+      const choices = generateGearRewardChoicesForRarities(rarities, createSeededRng(seed));
+      const definitions = choices.map((choice) => gearDefinitions[choice.definitionId]);
+      expect(definitions.map((definition) => definition.rarity)).toEqual(rarities);
+      expect(new Set(definitions.map((definition) => definition.baseItemId)).size).toBe(3);
+      expect(new Set(choices.map((choice) => choice.definitionId)).size).toBe(3);
+    }
+  });
+
+  it.each([0, 1])("fills Unique slots with Astral when only %s Uniques remain", (remaining) => {
+    const owned = new Set(uniqueItemList.slice(remaining).map((unique) => unique.id));
+    const choices = generateGearRewardChoicesForRarities(["unique", "unique", "unique"], () => 0, owned);
+    expect(choices).toHaveLength(3);
+    expect(choices.every((choice) => !owned.has(choice.definitionId))).toBe(true);
+    expect(choices.map((choice) => gearDefinitions[choice.definitionId].rarity)).toEqual(
+      remaining === 1 ? ["unique", "astral", "astral"] : ["astral", "astral", "astral"],
+    );
+    expect(new Set(choices.map((choice) => gearDefinitions[choice.definitionId].baseItemId)).size).toBe(3);
   });
 
   it("rolls affixes only from eligible affinity and aspect pools", () => {
