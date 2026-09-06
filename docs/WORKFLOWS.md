@@ -203,17 +203,19 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 
 ## Add a new companion
 
-| Step                                                                                                              | File(s)                                                                                                   |
-| ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| 1. Add companion ID to `CompanionId` union                                                                        | `src/lib/game-data/types.ts`                                                                              |
-| 2. Add art via the [asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)      | `src/lib/game-data/assets.ts`                                                                             |
-| 3. Define companion in `companionLibrary` record                                                                  | `src/lib/game-data/companions.ts`                                                                         |
-| 4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`) | `src/lib/game-data/cards/card-builders.ts` — companion must have **exactly one** `turnStartEffects` entry |
-| 5. Add summon card ID to `CardId` union                                                                           | `src/lib/game-data/types.ts`                                                                              |
-| 6. (Optional) Register card sound                                                                                 | `src/lib/sound-registry.ts`                                                                               |
-| 7. Add bond level to talent defaults (`companionBondLevels`)                                                      | `src/lib/game-data/talents/manifest-defaults.ts`                                                          |
-| 8. Add bond level to homestead defaults                                                                           | `src/lib/homestead/defaults.ts`                                                                           |
-| 9. Update description lines                                                                                       | `tests/lib/game-data/companions.test.ts` guards companion copy                                            |
+Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/game-data/companions.ts`. Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 per Bond level; Wolf Block stays 1. Mana Moth and Library Owl retain their guaranteed baseline and gain a 25%/50%/75% chance of one extra Mana/card at Bond I/II/III. Will-o’-Wisp keeps cleansing one status and additionally heals 1/2/3 Health. Both Fox outcomes scale. Summon cards and active Companion tooltips display all resolved effects. Bond levels and costs retain their existing save representation.
+
+| Step                                                                                                              | File(s)                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 1. Add companion ID to `CompanionId` union                                                                        | `src/lib/game-data/types.ts`                                                                               |
+| 2. Add art via the [asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)      | `src/lib/game-data/assets.ts`                                                                              |
+| 3. Define companion in `companionLibrary` record                                                                  | `src/lib/game-data/companions.ts`                                                                          |
+| 4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`) | `src/lib/game-data/cards/card-builders.ts` — companion must have **at least one** `turnStartEffects` entry |
+| 5. Add summon card ID to `CardId` union                                                                           | `src/lib/game-data/types.ts`                                                                               |
+| 6. (Optional) Register card sound                                                                                 | `src/lib/sound-registry.ts`                                                                                |
+| 7. Add bond level to talent defaults (`companionBondLevels`)                                                      | `src/lib/game-data/talents/manifest-defaults.ts`                                                           |
+| 8. Add bond level to homestead defaults                                                                           | `src/lib/homestead/defaults.ts`                                                                            |
+| 9. Update description lines                                                                                       | `tests/lib/game-data/companions.test.ts` guards companion copy                                             |
 
 ---
 
@@ -223,7 +225,7 @@ Use `addEffect` for stackable numeric bonuses, including the same bonus written 
 
 Homestead battle keys in `HOMESTEAD_BATTLE_*_KEYS` are **added** onto talent values at battle start (`mergeIntoManifest`). Keep identity defaults (`potionPotency: 1`, `healMultiplier: 1`) off those key lists; homestead defaults are zero-based bonuses. Shop, campfire, victory, and collection UI do **not** receive the battle merge — if they need homestead, pass both ports or merge at that consumer. Do not assume `useTalentEffects()` includes homestead.
 
-Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so descriptions and combat stay in lockstep.
+Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so descriptions and combat stay in lockstep. Talent and keyword descriptions omit periods, as enforced by content typography validation.
 
 Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/lib/battle/types/state-helpers.ts`. Enemy attacks scale once in `computeMitigatedDamage`; player DoTs scale once in `status-ticks.ts`. Do not also scale in `applyPlayerCombatDamage`.
 
@@ -236,7 +238,9 @@ Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/l
 
 `talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays. Talent descriptions are free text with no parity lint — keep them in lockstep with effects by hand.
 
-Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator.
+Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Never count combat text or award XP again while resuming a pending transition.
+
+Talent keywords without portrait art remain selectable with a blank panel and their keyword icon; add a `talentArt` entry when art is ready. All implemented talent nodes support Enter and Space when eligible for purchase.
 
 New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
 
@@ -303,8 +307,9 @@ is recorded in [MIGRATION_HISTORY.md](../src/features/alchemy/shared/storage/MIG
 Layout and ownership: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-path).
 
 - Keep playback ticks on the battle route and session autoplay preferences in the controller so route remounts do not lose the setting.
-- Reuse the presentation gate and idle-input predicate for autoplay, auto-end-turn, manual card play, and End Turn. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks.
+- Manual card plays commit immediately and remain available during other card draws and hand reflow; only the incoming hidden cards and actual turn transitions are unavailable. Resolve clicked cards by hand identity so reflow cannot invalidate their old slot. Autoplay, auto-end-turn, and End Turn retain the presentation gate. Floating combat text is spaced per target across successive plays without delaying state changes or card flights. Concurrent draws preserve each other’s hidden cards and transfers; settlement checks the current battle state. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks.
 - Player and enemy deaths share the slice effect and battle-end delay; defer defeat teardown until the delayed screen transition commits. Death’s Door is not defeat, and voluntary run exits remain immediate.
+- Wish choices open after active card transfers finish. Cards with both Draw and Wish show their draws first; queued Wishes also wait for the previous chosen card to reach the hand. Use the existing transfer-in-progress presentation signal without delaying gameplay commits.
 - Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
 - Attacker lunge is presentation-only: nest it outside shake so hit VFX still compose; do not retime playback delays for it. Player lunge fires only for cards with a damage effect and moves the portrait, not the HP/status column.
 - Run the focused battle playback tests and the selection from `verify`; use the raw Playwright path for animation coverage.

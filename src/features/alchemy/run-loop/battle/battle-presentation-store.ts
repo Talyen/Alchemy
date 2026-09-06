@@ -94,8 +94,13 @@ function shouldShowFloatingCombatText(sequence: number): boolean {
   return battle.hasActiveBattle && readRunPhase() === "battle";
 }
 
+const nextCombatTextAt = { player: 0, enemy: 0 };
+let combatTextId = 0;
+
 function invalidateCombatTextSequence() {
   combatTextSequence += 1;
+  nextCombatTextAt.player = 0;
+  nextCombatTextAt.enemy = 0;
 }
 
 let ghostIdCounter = 0;
@@ -162,20 +167,22 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
       const sequence = combatTextSequence;
       const laneCounts: Record<"player" | "enemy", number> = { player: 0, enemy: 0 };
       const createdAt = performance.now();
-      const nextEntries = events.map((event, index) => {
+      const nextEntries = events.map((event) => {
         const lane = laneCounts[event.target];
         laneCounts[event.target] += 1;
         return {
           ...event,
           lane,
-          id: `${createdAt}-${event.target}-${event.stat}-${index}`,
+          id: `combat-text-${++combatTextId}`,
           displayText: getCombatTextDisplayText(event),
         } satisfies FloatingCombatText;
       });
 
       const entriesByDelay = new Map<number, FloatingCombatText[]>();
       for (const entry of nextEntries) {
-        const entryDelay = resolveGameDelay(entry.lane * combatTextLaneDelayMs);
+        const showAt = Math.max(createdAt, nextCombatTextAt[entry.target]);
+        nextCombatTextAt[entry.target] = showAt + resolveGameDelay(combatTextLaneDelayMs);
+        const entryDelay = showAt - createdAt;
         const bucket = entriesByDelay.get(entryDelay);
         if (bucket) bucket.push(entry);
         else entriesByDelay.set(entryDelay, [entry]);

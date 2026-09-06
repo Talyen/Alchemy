@@ -2,6 +2,7 @@ export {
   addGold,
   addRunMaterialsEarned,
   awardCardXP,
+  awardBattleDodgeXP,
   awardMysteryXP,
   clearRunMaterialsEarned,
   recordRunObtainedItem,

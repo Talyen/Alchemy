@@ -4,7 +4,7 @@ import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { getHandCardKey } from "./playable-hand";
 import { logBattleError } from "./controller-utils";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
-import { EMPTY_HIDDEN_HAND_KEYS, type HiddenHandCardKeys } from "./playable-hand";
+import { type HiddenHandCardKeys } from "./playable-hand";
 
 export interface HandDrawSequenceDeps {
   isSessionActive: (session: number) => boolean;
@@ -12,6 +12,8 @@ export interface HandDrawSequenceDeps {
   setTransferInProgress: (active: boolean) => void;
   setHiddenHandCardKeys: (update: (current: HiddenHandCardKeys) => Iterable<string>) => void;
 }
+
+const activeDraws = new WeakMap<HandDrawSequenceDeps, Map<number, number>>();
 
 function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {
   const oldUidSet = new Set(oldHand.map((c) => c.uid).filter((uid): uid is number => uid !== undefined));
@@ -50,33 +52,33 @@ export async function runHandDrawSequence(
   if (drawnCards.length === 0) {
     if (deps.isSessionActive(session)) {
       applyState();
-      deps.setTransferInProgress(false);
-      deps.setHiddenHandCardKeys(() => EMPTY_HIDDEN_HAND_KEYS);
     }
     return false;
   }
   const hiddenDrawKeys = getDrawnKeys(newState.hand, drawnCards);
+  const sessions = activeDraws.get(deps) ?? new Map<number, number>();
+  activeDraws.set(deps, sessions);
+  sessions.set(session, (sessions.get(session) ?? 0) + 1);
   deps.setTransferInProgress(true);
   markBattleStage("draw-start");
-  if (deps.isSessionActive(session)) {
-    deps.setHiddenHandCardKeys(() => hiddenDrawKeys);
-    applyState();
-  }
-  await new Promise((resolve) => {
-    requestAnimationFrame(resolve);
-  });
   try {
+    deps.setHiddenHandCardKeys((current) => new Set([...current, ...hiddenDrawKeys]));
+    applyState();
+    await new Promise((resolve) => {
+      requestAnimationFrame(resolve);
+    });
     if (!isAnimationDisabled()) {
       await deps.animateDrawnHand(drawnCards, newState.hand, session);
     }
   } finally {
     markBattleStage("draw-end");
-    const clearHidden = () => {
-      deps.setTransferInProgress(false);
+    const remaining = (sessions.get(session) ?? 1) - 1;
+    if (remaining > 0) sessions.set(session, remaining);
+    else sessions.delete(session);
+    if (deps.isSessionActive(session)) {
+      deps.setTransferInProgress(remaining > 0);
       deps.setHiddenHandCardKeys((current) => current.filter((key) => !hiddenDrawKeys.has(key)));
-    };
-
-    clearHidden();
+    }
   }
   return deps.isSessionActive(session);
 }

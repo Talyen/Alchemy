@@ -72,10 +72,8 @@ export function getPlayableHandCardKeys(battleState: BattleState): Set<string> {
 export function getPlayableHandCardKeysExcludingHidden(
   battleState: BattleState,
   hiddenHandCardKeys: HiddenHandCardKeys,
-  cardTransferInProgress = false,
   playableKeys?: Set<string>,
 ): Set<string> {
-  if (cardTransferInProgress) return new Set();
   const next = new Set(playableKeys ?? getPlayableHandCardKeys(battleState));
   for (const hiddenKey of hiddenHandCardKeys) {
     next.delete(hiddenKey);

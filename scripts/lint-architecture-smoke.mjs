@@ -219,8 +219,15 @@ export async function main() {
     componentsCss.includes("var(--motion-fade-duration)"),
     "components.css hover-popup-panel must use var(--motion-fade-duration)",
   );
-  const tooltipFadeMatch = uiMotion.match(/TOOLTIP_FADE_MS[^=]*=\s*MOTION_FADE_MS\b[^\n;]*/);
-  assert.ok(tooltipFadeMatch, "TOOLTIP_FADE_MS must alias MOTION_FADE_MS");
+  const tooltipFadeMatch = uiMotion.match(/TOOLTIP_FADE_MS[^=]*=\s*(\d+)/);
+  const cssTooltipExitMatch = themeCss.match(/--tooltip-exit-duration:\s*(\d+)ms/);
+  assert.ok(tooltipFadeMatch, "ui-motion.ts must define TOOLTIP_FADE_MS");
+  assert.ok(cssTooltipExitMatch, "theme.css must define --tooltip-exit-duration");
+  assert.equal(
+    Number(tooltipFadeMatch[1]),
+    Number(cssTooltipExitMatch[1]),
+    "TOOLTIP_FADE_MS must equal --tooltip-exit-duration",
+  );
   assert.ok(
     !uiMotion.includes("TOOLTIP_FADE_OUT_MS"),
     "TOOLTIP_FADE_OUT_MS alias must stay removed; use TOOLTIP_FADE_MS directly",

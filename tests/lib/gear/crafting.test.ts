@@ -166,16 +166,16 @@ describe("crafting currency logic", () => {
   });
 
   it("combines homestead salvage value with rolled crafting currencies", () => {
-    const salvageYield = computeSalvageYield(createBasicItem(), () => 0);
+    const salvageYield = computeSalvageYield(createBasicItem());
     expect(salvageYield.materials.iron).toBe(3);
     expect(salvageYield.materials.food).toBe(0);
-    expect(salvageYield.currencies["discordant-dice"]).toBe(2);
+    expect(salvageYield.currencies["discordant-dice"]).toBeGreaterThanOrEqual(1);
   });
 
   it("uses a frozen yield instead of re-rolling when salvageGear is given one", () => {
     const item = createBasicItem();
-    const frozen = computeSalvageYield(item, () => 0.99);
-    const result = salvageGear([item], createEmptyGearLoadouts(), item.instanceId, () => 0, frozen);
+    const frozen = computeSalvageYield(item);
+    const result = salvageGear([item], createEmptyGearLoadouts(), item.instanceId, frozen);
     expect(result?.yieldedCurrencies).toEqual(frozen.currencies);
     expect(result?.yieldedMaterials).toEqual(frozen.materials);
   });

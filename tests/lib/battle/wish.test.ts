@@ -249,17 +249,6 @@ describe("chooseWishCard", () => {
     expect(result.nextCardUid).toBe(101);
   });
 
-  it("passes through to next wish when cardId is null", () => {
-    const state = makeTestBattleState({
-      wishOptions: [makeTestCard({ id: "card-a", title: "A" })],
-      wishQueue: [[makeTestCard({ id: "card-b", title: "B" })]],
-    });
-    const result = chooseWishCard(state, null);
-    expect(result.wishOptions).toHaveLength(1);
-    expect(result.wishOptions![0].id).toBe("card-b");
-    expect(result.wishQueue).toEqual([]);
-  });
-
   it("returns state unchanged when chosen card is not in wishOptions", () => {
     const state = makeTestBattleState({
       wishOptions: [makeTestCard({ id: "card-a", title: "A" })],

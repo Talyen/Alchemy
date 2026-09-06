@@ -53,19 +53,29 @@ test.describe("Shop fade-out", critical, () => {
 });
 
 test.describe("Reward Flow", critical, () => {
-  test(
-    "card reward: requires confirmation and selecting and adding a card works",
-    critical,
-    async ({ page, fastBattle, runtimeErrors }) => {
-      void fastBattle;
-      void runtimeErrors;
-      await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
+  test("card reward: clicking a card claims it immediately", critical, async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
 
-      const reward = new RewardPage(page);
-      await reward.claimWithConfirmationGate();
-      await new DestinationPage(page).expectVisible();
-    },
-  );
+    const reward = new RewardPage(page);
+    await reward.claimFirstReward();
+    await new DestinationPage(page).expectVisible();
+  });
+
+  test("Skip ignores a resumed card reward selection", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"], selectedId: "bash" });
+    await page.getByRole("button", { name: "Skip", exact: true }).click();
+    await new DestinationPage(page).expectVisible();
+    const deck = await page.evaluate(
+      (saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun?.runDeck as Array<{ id: string }>,
+      SAVE_KEY,
+    );
+    expect(deck).toHaveLength(6);
+    expect(deck.some((card) => card.id === "bash")).toBe(false);
+  });
 
   test("boon, trinket, and gear rewards persist correctly", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
@@ -75,7 +85,7 @@ test.describe("Reward Flow", critical, () => {
       rewardType: "boon",
       choiceIds: ["tattered-pages", "companions-collar"],
     });
-    await new RewardPage(page).claimWithConfirmationGate();
+    await new RewardPage(page).claimFirstReward();
     await new DestinationPage(page).expectVisible();
     const boons = await page.evaluate((saveKey) => {
       const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
@@ -87,7 +97,7 @@ test.describe("Reward Flow", critical, () => {
       rewardType: "trinket",
       choiceIds: ["tattered-pages", "companions-collar"],
     });
-    await new RewardPage(page).claimWithConfirmationGate();
+    await new RewardPage(page).claimFirstReward();
     await new DestinationPage(page).expectVisible();
     const saved = await page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}"), SAVE_KEY);
     expect(saved.ownedTrinketIds).toContain("tattered-pages");
@@ -97,7 +107,7 @@ test.describe("Reward Flow", critical, () => {
       rewardType: "gear",
       gearChoices: [{ instanceId: "reward-gear", definitionId: "leather-armor-basic", affixes: [] }],
     });
-    await new RewardPage(page).claimWithConfirmationGate();
+    await new RewardPage(page).claimFirstReward();
     await new DestinationPage(page).expectVisible();
     const gearInventory = await page.evaluate((saveKey) => {
       const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
@@ -107,28 +117,29 @@ test.describe("Reward Flow", critical, () => {
     expect(gearInventory.some((g) => g.instanceId === "reward-gear")).toBe(true);
   });
 
-  test("reward selection persists across page reload", async ({ page, fastBattle, runtimeErrors }) => {
+  test("unclaimed rewards survive reload and can be claimed immediately", async ({
+    page,
+    fastBattle,
+    runtimeErrors,
+  }) => {
     void fastBattle;
     void runtimeErrors;
     await enterPrimaryRewardScreen(page, {
       rewardType: "trinket",
       choiceIds: ["tattered-pages", "companions-collar"],
     });
-
-    const reward = new RewardPage(page);
-    await reward.selectFirstReward();
-    await expect(reward.addRewardBtn).toBeEnabled();
-
     await expect
-      .poll(async () => {
-        const save = await page.evaluate((saveKey) => {
-          return JSON.parse(localStorage.getItem(saveKey) || "{}");
-        }, SAVE_KEY);
-        const flow = save.activeRun?.interruptedFlow;
-        return flow?.kind === "primary-reward" ? flow.pending?.selectedId : null;
-      })
-      .not.toBeNull();
-
-    await expect(reward.addRewardBtn).toBeEnabled();
+      .poll(async () =>
+        page.evaluate(
+          (saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun?.interruptedFlow?.kind,
+          SAVE_KEY,
+        ),
+      )
+      .toBe("primary-reward");
+    await page.reload();
+    await new RewardPage(page).claimFirstReward();
+    await new DestinationPage(page).expectVisible();
+    const saved = await page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}"), SAVE_KEY);
+    expect(saved.ownedTrinketIds).toContain("tattered-pages");
   });
 });

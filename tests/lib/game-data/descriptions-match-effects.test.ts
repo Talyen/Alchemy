@@ -3,7 +3,7 @@ import {
   cardLibrary,
   companionLibrary,
   enemyBestiary,
-  expectedCompanionTurnLine,
+  getCompanionDescriptionLines,
   trinketLibrary,
   type BattleCardEffect,
 } from "@/lib/game-data";
@@ -62,6 +62,7 @@ describe("card descriptions vs effects", () => {
         (l) =>
           /^Deals \d+/.test(l) ||
           /^Restores \d+/.test(l) ||
+          /^Grants \d+ extra Mana/.test(l) ||
           /^Cleanses \d+/.test(l) ||
           /^Steals \d+/.test(l) ||
           /^Gains? \d+ Block/.test(l) ||
@@ -69,7 +70,7 @@ describe("card descriptions vs effects", () => {
           / or /.test(l),
       );
       expect(companionLine, `${card.id} missing companion turn line`).toBeDefined();
-      expect(companionLine).toBe(expectedCompanionTurnLine(turnEffect));
+      expect(companionLine).toBe(getCompanionDescriptionLines(companion)[0]);
       expect(card.descriptionLines.some((l) => l === "Companion")).toBe(true);
     }
   });

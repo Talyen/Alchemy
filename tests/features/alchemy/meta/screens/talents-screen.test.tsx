@@ -23,6 +23,21 @@ describe("TalentsScreen", () => {
     onResetTalents: vi.fn(),
   };
 
+  it("shows the blank-art Dodge tree and all ten real talents", async () => {
+    render(<TalentsScreen {...defaultProps} talentXP={{ dodge: 550 }} />);
+    const portrait = screen.getByRole("button", { name: "Select Dodge Talents" });
+    expect(portrait.querySelector("img")).toBeNull();
+    expect(portrait.querySelector("svg")).toBeTruthy();
+    fireEvent.click(portrait);
+    await waitFor(() => expect(screen.getByText("Lightfoot")).toBeTruthy());
+    expect(screen.getByText("Perfect Timing")).toBeTruthy();
+    expect(screen.queryByText("Coming Soon")).toBeNull();
+    const lightfoot = screen.getByRole("button", { name: /Lightfoot/ });
+    expect(lightfoot.tagName).toBe("BUTTON");
+    fireEvent.click(lightfoot);
+    await waitFor(() => expect(defaultProps.onUnlockTalent).toHaveBeenCalledWith("dodge", "dodge-lightfoot"));
+  });
+
   it("renders the talent overview grid with keywords", () => {
     render(<TalentsScreen {...defaultProps} />);
 

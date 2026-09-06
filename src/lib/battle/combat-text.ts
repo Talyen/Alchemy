@@ -1,3 +1,4 @@
+import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { PlayerStatusId } from "@/lib/game-data";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import {
@@ -81,7 +82,7 @@ function applyBloodCountessHealingReaction(
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -holyDamage, state.enemyMaxHealth),
   };
-  return payKillPayouts(damagedState, enemyWasAlive, combatTexts ?? []);
+  return payKillPayouts(recordEnemyAbilityActivation(damagedState, "blood-countess"), enemyWasAlive, combatTexts ?? []);
 }
 
 export function applyHealingWithCombatText(
@@ -132,11 +133,11 @@ export function gainManaWithCombatText(
   state: BattleState,
   amount: number,
   combatTexts?: CombatTextEvent[],
-  options?: { skipFightPacing?: boolean },
+  options?: { skipFightPacing?: boolean; allowOverflow?: boolean },
 ): BattleState {
   if (amount <= 0) return state;
   const granted = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
-  const nextState = gainMana(state, granted);
+  const nextState = gainMana(state, granted, options?.allowOverflow);
   const gained = nextState.mana - state.mana;
   if (gained > 0 && combatTexts) {
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
@@ -230,5 +231,8 @@ export function payKillPayouts(
     state.enemyHealth <= 0 && enemyWasAlive
       ? applyKillRewardHealing(state, state.trinketEffects.boneCharmHealOnKill, combatTexts)
       : state;
-  return applyGearKillRewards(afterBoneCharm, enemyWasAlive, combatTexts);
+  const rewarded = applyGearKillRewards(afterBoneCharm, enemyWasAlive, combatTexts);
+  return rewarded.enemyHealth <= 0 && rewarded.dodgeChanceFromDamage > 0
+    ? { ...rewarded, dodgeChanceFromDamage: 0 }
+    : rewarded;
 }

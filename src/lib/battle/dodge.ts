@@ -1,19 +1,27 @@
-import { ENEMY_DODGE_CHANCE, HALF_DIVISOR, PLAYER_DODGE_CHANCE, STATUS_CONFIG } from "../game-constants";
+import {
+  ENEMY_DODGE_CHANCE,
+  HALF_DIVISOR,
+  PLAYER_DODGE_CHANCE,
+  MAX_PLAYER_DODGE_CHANCE,
+  STATUS_CONFIG,
+} from "../game-constants";
 import { mergeCombatText } from "./combat-text";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import type { BattleState, CombatTextEvent } from "./types";
 
 function getPlayerDodgeChance(
-  state: Pick<BattleState, "gearEffects" | "talentEffects" | "playerHealth" | "playerMaxHealth">,
+  state: Pick<
+    BattleState,
+    "gearEffects" | "talentEffects" | "playerHealth" | "playerMaxHealth" | "playerStatuses" | "dodgeChanceFromDamage"
+  >,
 ): number {
-  let chance = PLAYER_DODGE_CHANCE + state.gearEffects.dodgeChance;
-  if (
-    state.talentEffects.dodgeChanceBelowHalfHealth > 0 &&
-    state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR
-  ) {
+  let chance =
+    PLAYER_DODGE_CHANCE + state.gearEffects.dodgeChance + state.talentEffects.dodgeChance + state.dodgeChanceFromDamage;
+  if (state.playerStatuses.block === 0) chance += state.talentEffects.dodgeChanceWithoutBlock;
+  if (state.talentEffects.dodgeChanceBelowHalfHealth > 0 && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
     chance += state.talentEffects.dodgeChanceBelowHalfHealth;
   }
-  return chance;
+  return Math.min(MAX_PLAYER_DODGE_CHANCE, Math.max(0, chance));
 }
 
 function tryDodgePacket(
@@ -29,7 +37,9 @@ function tryDodgePacket(
     stat: "dodge",
     text: STATUS_CONFIG.DODGE_NOTICE,
   });
-  return state;
+  return options.target === "player"
+    ? { ...state, playerDodgeCount: state.playerDodgeCount + 1, dodgeChanceFromDamage: 0 }
+    : state;
 }
 
 export function tryDodgeEnemyAttackPacket(

@@ -1,3 +1,4 @@
+import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { applyPlayerDamageStatuses, applyPlayerStatusEffect, shouldBlockPreventStunBuildup } from "./status-player";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
@@ -214,14 +215,19 @@ function applyEnemyDamageTraitReactions(
   if (actualDamage <= 0) return state;
   let nextState = state;
   if (effect.damageType === "holy") {
-    if (hasEnemyTrait(nextState, "cleric", traitSet)) nextState = healEnemyWithCombatText(nextState, 1, combatTexts);
+    if (hasEnemyTrait(nextState, "cleric", traitSet))
+      nextState = healEnemyWithCombatText(recordEnemyAbilityActivation(nextState, "cleric"), 1, combatTexts);
     if (hasEnemyTrait(nextState, "zealot-enemy", traitSet) || hasEnemyTrait(nextState, "inquisitor", traitSet)) {
+      nextState = recordEnemyAbilityActivation(
+        nextState,
+        hasEnemyTrait(nextState, "inquisitor", traitSet) ? "inquisitor" : "zealot-enemy",
+      );
       nextState = setFlag(nextState, "enemyNextAttackHolyBonus", nextState.flags.enemyNextAttackHolyBonus + 1);
     }
   }
   if ((effect.damageType === "stun" || effect.damageType === "holy") && hasEnemyTrait(nextState, "paladin", traitSet)) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
-    nextState = addEnemyMitigation(nextState, "block", 1);
+    nextState = addEnemyMitigation(recordEnemyAbilityActivation(nextState, "paladin"), "block", 1);
   }
   return nextState;
 }
@@ -300,10 +306,18 @@ export function processEnemyDamageEffect(
     options,
   );
 
+  let attackState = state;
+  if (totalExtraBlock > 0) {
+    if (effect.damageType === "physical" && hasEnemyTrait(state, "ogre"))
+      attackState = recordEnemyAbilityActivation(attackState, "ogre");
+    if (effect.damageType === "poison" && hasEnemyTrait(state, "giant-snake"))
+      attackState = recordEnemyAbilityActivation(attackState, "giant-snake");
+  }
   const prevHealth = state.playerHealth;
   const damagedState = applyPlayerCombatDamage(
-    state,
+    attackState,
     actualDamage,
+    "hostile",
     effect.damageType,
     { ignoreMitigation: options.ignorePlayerMitigation === true },
     combatTexts,

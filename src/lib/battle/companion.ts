@@ -1,6 +1,6 @@
 import { applyCardEffects } from "./effect-handlers";
-import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
-import { type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
+import { getCompanionBondEffects, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
+import { isPlayerDefeated, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import { LOW_HEALTH_THRESHOLD_PERCENT } from "../game-constants";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
@@ -28,7 +28,6 @@ function companionDamageBonusForEffect(
 ): number {
   const { talentEffects, trinketEffects, gearEffects } = ctx;
   return (
-    ctx.bondLevel +
     talentEffects.companionDamage +
     gearEffects.companionDamageBonus +
     (effect.damageType === "bleed" ? talentEffects.companionBleedDamageBonus : 0) +
@@ -61,7 +60,7 @@ function scaleCompanionTurnEffect(
 }
 
 export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
-  if (!state.activeCompanion || state.enemyHealth <= 0) return state;
+  if (!state.activeCompanion || state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
 
   const lowHealthThreshold = scalePercent(state.enemyMaxHealth, LOW_HEALTH_THRESHOLD_PERCENT);
   const ctx: CompanionScaleContext = {
@@ -83,7 +82,9 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     descriptionLines: [],
     art: state.activeCompanion.art,
     cost: 0,
-    effects: state.activeCompanion.turnStartEffects.map((effect) => scaleCompanionTurnEffect(effect, ctx)),
+    effects: getCompanionBondEffects(state.activeCompanion, ctx.bondLevel).map((effect) =>
+      scaleCompanionTurnEffect(effect, ctx),
+    ),
   };
 
   return withPreservedFlags(state, (s) => {

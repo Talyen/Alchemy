@@ -6,6 +6,17 @@ interface HealthThresholdBonus {
 }
 
 export interface TalentEffectManifest {
+  dodgeChance: number;
+  healOnDodge: number;
+  forgeOnDodge: number;
+  thornsOnDodge: number;
+  cleanseStacksOnDodge: number;
+  nextAttackPhysicalOnDodge: number;
+  dodgeChanceWithoutBlock: number;
+  stunBuildupReductionPercent: number;
+  dodgeChanceOnHostileDamage: number;
+  armorOnDodge: number;
+
   flatPhysicalDamage: number;
   armorToPhysicalDamage: boolean;
   physicalStunChance: number;

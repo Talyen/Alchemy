@@ -32,9 +32,9 @@ describe("companionLibrary data integrity", () => {
     }
   });
 
-  it("each companion has exactly one turnStartEffect (summon cards assume a single line)", () => {
+  it("each companion has at least one turn-start effect", () => {
     for (const companion of Object.values(companionLibrary)) {
-      expect(companion.turnStartEffects).toHaveLength(1);
+      expect(companion.turnStartEffects.length).toBeGreaterThan(0);
     }
   });
 
@@ -70,13 +70,18 @@ describe("companionLibrary data integrity", () => {
     }
   });
 
+  it("all companion baseline effects are distinct", () => {
+    const signatures = Object.values(companionLibrary).map((companion) => JSON.stringify(companion.turnStartEffects));
+    expect(new Set(signatures).size).toBe(signatures.length);
+  });
+
   it("all companion IDs are unique", () => {
     const ids = Object.keys(companionLibrary);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("Phoenix ties for highest damage among damage-dealing companions", () => {
-    const phoenix = companionLibrary.phoenix;
+  it("Panther has the highest baseline damage among damage-dealing companions", () => {
+    const phoenix = companionLibrary.panther;
     const damageTotals = Object.values(companionLibrary)
       .filter((c) => c.turnStartEffects[0]?.kind === "damage")
       .map((c) => c.turnStartEffects.reduce((sum, e) => sum + (e.kind === "damage" ? e.amount : 0), 0));
@@ -86,9 +91,9 @@ describe("companionLibrary data integrity", () => {
 
   describe("companion keywords and shine colors", () => {
     it("derives bleed keyword for wolf and panther", () => {
-      expect(getCompanionKeywords(companionLibrary.wolf)).toEqual(["bleed"]);
+      expect(getCompanionKeywords(companionLibrary.wolf)).toEqual(["bleed", "block"]);
       expect(getCompanionKeywords(companionLibrary.panther)).toEqual(["bleed"]);
-      expect(getCompanionShineColors(companionLibrary.wolf)).toEqual(getKeywordListShineColors(["bleed"]));
+      expect(getCompanionShineColors(companionLibrary.wolf)).toEqual(getKeywordListShineColors(["bleed", "block"]));
     });
 
     it("derives poison keyword for lizard-scout", () => {

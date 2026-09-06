@@ -6,6 +6,9 @@ function rate(winRate: number, n: number): RateCell {
   return {
     winRate,
     timeoutRate: winRate / 10,
+    averageEnemyAttacks: 0,
+    averageEnemyAbilityActivations: 0,
+    winsBeforeEnemyAttackRate: 0,
     averageTurns: winRate * 10,
     averageHealthRemaining: winRate * 20,
     n,

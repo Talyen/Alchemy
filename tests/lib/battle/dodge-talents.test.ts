@@ -37,7 +37,7 @@ describe("Dodge talent rewrites", () => {
     expect(result.playerStatuses.block).toBe(8);
   });
 
-  it("Last Gasp adds Dodge chance while at or below half Health", () => {
+  it("Last Gasp adds Dodge chance while below half Health", () => {
     const wounded = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 30,

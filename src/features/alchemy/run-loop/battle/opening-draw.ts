@@ -23,8 +23,9 @@ export function createBattleOpeningDraw(
       deps: transferDeps.getDrawSequenceDeps(),
       errorContext: "draw opening hand",
     });
-    if (!completed) ctx.getPresentation().resetHandTransferUi();
-    else ctx.scheduleAutoEndTurnRef.current?.(pending.resultState);
+    if (sessionNum === ctx.battleSessionRef.current) {
+      ctx.scheduleAutoEndTurnRef.current?.(readBattle().battleState);
+    }
     return completed;
   }
 

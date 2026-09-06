@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { installArmoryScreenTestHooks, renderArmoryScreen } from "./armory/armory-screen-test-helpers";
@@ -6,14 +6,14 @@ import { installArmoryScreenTestHooks, renderArmoryScreen } from "./armory/armor
 describe("ArmoryScreen salvage flow", () => {
   installArmoryScreenTestHooks();
 
-  it("salvages an item and remains ready to salvage another", async () => {
+  it("salvages an item and returns to browsing", async () => {
     const user = userEvent.setup();
     const onSalvage = vi.fn(() => true);
     renderArmoryScreen({ onSalvage });
 
     await user.click(screen.getByLabelText("Salvage"));
     await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
-    await user.click(screen.getByRole("button", { name: /^Salvage$/ }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Salvage$/ }));
 
     expect(onSalvage).toHaveBeenCalledWith(
       "gear-sword",
@@ -21,7 +21,7 @@ describe("ArmoryScreen salvage flow", () => {
         materials: expect.objectContaining({ iron: 6 }),
       }),
     );
-    expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
+    expect(screen.getByTestId("armory-salvage-toggle").getAttribute("aria-pressed")).toBe("false");
   });
 
   it("exits targeting on Escape", async () => {
@@ -47,12 +47,12 @@ describe("ArmoryScreen salvage flow", () => {
     await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
     await user.click(document.querySelector(".motion-overlay")!);
 
-    expect(screen.getByText("You will receive:")).toBeTruthy();
+    expect(screen.getByText(/will yield:/)).toBeTruthy();
     expect(screen.getByTestId("armory-salvage-yield")).toBeTruthy();
     expect(screen.getByText("Iron")).toBeTruthy();
   });
 
-  it("dismisses the confirmation on Escape without leaving salvage mode", async () => {
+  it("dismisses the confirmation on Escape and returns to browsing", async () => {
     const user = userEvent.setup();
     renderArmoryScreen();
 
@@ -61,8 +61,8 @@ describe("ArmoryScreen salvage flow", () => {
     await user.keyboard("{Escape}");
 
     await waitFor(() => {
-      expect(screen.queryByText("You will receive:")).toBeNull();
+      expect(screen.queryByText(/will yield:/)).toBeNull();
     });
-    expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
+    expect(screen.getByTestId("armory-salvage-toggle").getAttribute("aria-pressed")).toBe("false");
   });
 });

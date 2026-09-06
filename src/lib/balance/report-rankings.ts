@@ -6,12 +6,24 @@ export interface RateCell {
   winRate: number;
   timeoutRate: number;
   averageTurns: number;
+  averageEnemyAttacks: number;
+  averageEnemyAbilityActivations: number;
+  winsBeforeEnemyAttackRate: number;
   averageHealthRemaining: number;
   n: number;
 }
 
 export function emptyRateCell(): RateCell {
-  return { winRate: 0, timeoutRate: 0, averageTurns: 0, averageHealthRemaining: 0, n: 0 };
+  return {
+    winRate: 0,
+    timeoutRate: 0,
+    averageTurns: 0,
+    averageHealthRemaining: 0,
+    averageEnemyAttacks: 0,
+    averageEnemyAbilityActivations: 0,
+    winsBeforeEnemyAttackRate: 0,
+    n: 0,
+  };
 }
 
 export function combineRateCells(cells: readonly RateCell[]): RateCell {
@@ -33,6 +45,10 @@ export function combineRateCells(cells: readonly RateCell[]): RateCell {
     winRate: wins / n,
     timeoutRate: timeouts / n,
     averageTurns: turns / n,
+    averageEnemyAttacks: cells.reduce((sum, cell) => sum + cell.averageEnemyAttacks * cell.n, 0) / n,
+    averageEnemyAbilityActivations:
+      cells.reduce((sum, cell) => sum + cell.averageEnemyAbilityActivations * cell.n, 0) / n,
+    winsBeforeEnemyAttackRate: cells.reduce((sum, cell) => sum + cell.winsBeforeEnemyAttackRate * cell.n, 0) / n,
     averageHealthRemaining: health / n,
     n,
   };
@@ -82,6 +98,13 @@ export function pairedWinStats(
 ): PairedWinStats {
   if (baseline.length !== treatment.length) {
     throw new Error(`paired win series must have equal lengths; received ${baseline.length} and ${treatment.length}`);
+  }
+  if (
+    (baselineTurns === undefined) !== (treatmentTurns === undefined) ||
+    (baselineTurns && baselineTurns.length !== baseline.length) ||
+    (treatmentTurns && treatmentTurns.length !== treatment.length)
+  ) {
+    throw new Error("paired turn series must both be present and match outcome lengths");
   }
   const stats = emptyPairedWinStats();
   stats.n = baseline.length;

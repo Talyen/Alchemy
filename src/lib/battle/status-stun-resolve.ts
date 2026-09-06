@@ -1,3 +1,4 @@
+import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { hasEnemyTrait, setFlag, type BattleState, type CombatTextEvent } from "./types";
 import { addGoldWithCombatText, payKillPayouts } from "./combat-text";
 import { applyLuckyCloverGold } from "./bonus-effects";
@@ -83,7 +84,7 @@ export function resolveStunTrigger(
 
   let nextState = triggered.state;
   if (hasEnemyTrait(nextState, "brawler")) {
-    nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", true);
+    nextState = setFlag(recordEnemyAbilityActivation(nextState, "brawler"), "enemyBrawlerDamagePenalty", true);
   }
   nextState = applyStunTriggerBonuses(nextState, combatTexts);
   nextState = applyStunGearDamage(nextState, combatTexts);

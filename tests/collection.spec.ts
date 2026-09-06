@@ -4,6 +4,20 @@ import { assertNoOverflow, assertHorizontalNeighborGap } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 
+async function expectHoverOnlyShine(entry: Locator) {
+  await expect(entry.locator(".shine-border")).toHaveCount(0);
+  const idleColor = await entry.evaluate((element) => getComputedStyle(element).borderTopColor);
+  await entry.hover();
+  await expect(entry.locator(".shine-border")).toHaveCount(1);
+  await entry.page().getByRole("heading", { name: "Collection", exact: true }).hover();
+  await expect(entry.locator(".shine-border")).toHaveCount(0);
+  await expect(entry).toHaveCSS("border-top-color", idleColor);
+  await entry.focus();
+  await expect(entry.locator(".shine-border")).toHaveCount(1);
+  await entry.blur();
+  await expect(entry.locator(".shine-border")).toHaveCount(0);
+}
+
 test.describe("Collection", critical, () => {
   test.beforeEach(async ({ runtimeErrors }) => {
     void runtimeErrors;
@@ -23,6 +37,7 @@ test.describe("Collection", critical, () => {
       await page.getByRole("button", { name: "Cards" }).click();
       const inspectBtn = page.getByRole("button", { name: /Inspect Anvil/ });
       await expect(inspectBtn).toBeVisible({ timeout: 5000 });
+      await expectHoverOnlyShine(inspectBtn);
       await inspectBtn.hover();
       await expect(page.getByText(/^Gain \d+ Forge/)).toBeVisible();
 
@@ -36,6 +51,7 @@ test.describe("Collection", critical, () => {
       await page.getByRole("button", { name: "Uniques" }).click();
       const inspectBtn = page.getByRole("button", { name: /Inspect Wardbreaker/ });
       await expect(inspectBtn).toBeVisible({ timeout: 5000 });
+      await expectHoverOnlyShine(inspectBtn);
       await inspectBtn.hover();
       await expect(page.getByText(/Purge a beneficial effect/)).toBeVisible();
     });
@@ -46,6 +62,7 @@ test.describe("Collection", critical, () => {
       await new MenuPage(page).gotoCollection();
       await expect(page.getByRole("button", { name: "Inspect Knight" })).toBeVisible();
 
+      await expectHoverOnlyShine(page.getByRole("button", { name: "Inspect Knight" }));
       await page.getByRole("button", { name: "Inspect Knight" }).hover();
       await expect(page.getByText("Starting Deck").first()).toBeVisible();
       await expect(page.getByText(/Anvil/).first()).toBeVisible();

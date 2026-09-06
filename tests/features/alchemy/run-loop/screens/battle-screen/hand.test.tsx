@@ -83,7 +83,7 @@ describe("BattleHand", () => {
     useBattlePresentationStore.getState().resetPresentation();
   });
 
-  it("keeps genuinely playable cards colored while a transfer blocks interaction", () => {
+  it("keeps playable cards colored and interactive during transfers", () => {
     useBattlePresentationStore.setState({ cardTransferInProgress: true });
     renderHand();
 
@@ -91,7 +91,7 @@ describe("BattleHand", () => {
     const expensive = screen.getByRole("button", { name: "Play Meteor" });
 
     expect(affordable.classList.contains("grayscale")).toBe(false);
-    expect(affordable.classList.contains("cursor-default")).toBe(true);
+    expect(affordable.classList.contains("cursor-default")).toBe(false);
     expect(expensive.classList.contains("grayscale")).toBe(true);
   });
 

@@ -170,7 +170,7 @@ function CardButtonSurface({
   scaleOnHover = true,
   shineColor,
 }: BattleCardButtonProps) {
-  const showShine = Boolean(hovered && !dragging && shineColor && shineColor.length > 0);
+  const showShine = Boolean(hovered && !dragging && !disabled && shineColor && shineColor.length > 0);
   return (
     <Surface
       as="button"

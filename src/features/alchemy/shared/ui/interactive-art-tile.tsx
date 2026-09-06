@@ -26,6 +26,7 @@ interface InteractiveArtTileProps {
   selected?: boolean | undefined;
 
   interactiveChrome?: boolean | undefined;
+  shineOnHover?: boolean | undefined;
   shineColor?: string | readonly string[] | undefined;
   disabled?: boolean | undefined;
   showGlow?: boolean | undefined;
@@ -50,6 +51,7 @@ export function InteractiveArtTile({
   selected = false,
   interactiveChrome = true,
   shineColor,
+  shineOnHover = false,
   disabled = false,
   showGlow: showGlowOverride,
   ariaDisabled,
@@ -79,7 +81,7 @@ export function InteractiveArtTile({
   });
   const shineColors = shineColor == null ? [] : Array.isArray(shineColor) ? shineColor : [shineColor];
 
-  const showShine = shineColors.length > 0 && !disabled;
+  const showShine = shineColors.length > 0 && !disabled && (!shineOnHover || (interactive && isHovered));
   const showGlow = showGlowOverride ?? (interactiveChrome && interactive && !disabled);
 
   return (

@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../fixtures/battle";
 import { describe, expect, it } from "vitest";
 import { createRunStreamRng } from "@/lib/rng";
 import { simulateBatch, simulateBattle } from "@/lib/balance";
@@ -48,7 +49,7 @@ describe("balance simulator", () => {
       policy: "random-playable",
     });
     expect(result.outcome).toBe("timeout");
-    expect(result.turns).toBeLessThanOrEqual(2);
+    expect(result.turns).toBe(1);
   });
 
   it("produces different outcomes for different policies", () => {
@@ -100,5 +101,41 @@ describe("balance simulator", () => {
       policy: "random-playable",
     });
     expect(resultA).toEqual(resultB);
+  });
+});
+
+describe("enemy interaction measurements", () => {
+  it("records a first-turn kill without an enemy attack", () => {
+    const card = makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "holy", amount: 10000 }] });
+    const result = simulateBattle({
+      characterId: "knight",
+      enemyId: "skeleton",
+      deck: [card],
+      loadoutMode: "bare",
+      seed: 1,
+    });
+    expect(result.outcome).toBe("win");
+    expect(result.enemyAttackActions).toBe(0);
+    expect(result.wonBeforeEnemyAttack).toBe(true);
+    expect(result.enemyAbilityActivations).toEqual({});
+  });
+
+  it("aggregates actual attacks and distinguishes timeouts from early wins", () => {
+    const batch = simulateBatch({
+      characterId: "knight",
+      enemyId: "stone-titan",
+      deck: [],
+      loadoutMode: "bare",
+      maxTurns: 1,
+      iterations: 3,
+      seed: 1,
+    });
+    expect(batch.averageEnemyAttacks).toBe(1);
+    expect(batch.averageEnemyAbilityActivations).toBe(1);
+    expect(batch.winsBeforeEnemyAttackRate).toBe(0);
+    for (const result of batch.results) {
+      expect(result.enemyAbilityActivations).toEqual({ "stone-titan": 1 });
+      expect(result.wonBeforeEnemyAttack).toBe(false);
+    }
   });
 });

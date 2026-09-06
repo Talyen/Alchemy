@@ -114,7 +114,7 @@ export function unequipGear(loadouts: GearLoadouts, characterId: GearCharacterId
 }
 
 export function canSalvageGear(inventory: GearInstance[], instanceId: string): boolean {
-  return inventory.some((item) => item.instanceId === instanceId);
+  return inventory.some((item) => item.instanceId === instanceId && !item.protected);
 }
 
 function removeGearFromLoadouts(loadouts: GearLoadouts, instanceId: string): GearLoadouts {
@@ -136,13 +136,12 @@ export function salvageGear(
   inventory: GearInstance[],
   loadouts: GearLoadouts,
   instanceId: string,
-  rng: () => number,
   frozenYield?: SalvageYield,
 ) {
   if (!canSalvageGear(inventory, instanceId)) return null;
   const instance = inventory.find((item) => item.instanceId === instanceId);
   if (!instance) return null;
-  const salvageYield = frozenYield ?? computeSalvageYield(instance, rng);
+  const salvageYield = frozenYield ?? computeSalvageYield(instance);
   return {
     inventory: inventory.filter((item) => item.instanceId !== instanceId),
     loadouts: removeGearFromLoadouts(loadouts, instanceId),
@@ -179,13 +178,15 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
   return {
     instanceId,
     definitionId,
-    affixes: normalizeAffixRolls(rawAffixes),
+    affixes: normalizeAffixRolls(rawAffixes, gearDefinitions[definitionId].rarity),
+    ...(raw.protected === true ? { protected: true } : {}),
   };
 }
 
 export function effectsForInstance(instance: GearInstance): GearEffectManifest {
-  if (!gearDefinitions[instance.definitionId]) return { ...defaultGearEffects };
-  return resolveAffixEffects(instance.affixes);
+  const definition = gearDefinitions[instance.definitionId];
+  if (!definition) return { ...defaultGearEffects };
+  return resolveAffixEffects(normalizeAffixRolls(instance.affixes, definition.rarity));
 }
 
 export function computeGearManifest(

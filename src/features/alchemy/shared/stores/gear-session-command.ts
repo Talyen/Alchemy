@@ -10,6 +10,7 @@ import {
   initializeGear,
   resetGear,
   salvageGearInstance,
+  setGearProtected,
   unequipGearInstance,
   unequipPermanentTrinket,
 } from "./gear-actions";
@@ -49,6 +50,7 @@ function gearCommandView(state: GameplayDraft): GearStore {
     addTrinket: (trinketId) => addPermanentTrinket(gear, trinketId),
     equipTrinket: (characterId, trinketId) => equipPermanentTrinket(gear, characterId, trinketId),
     unequipTrinket: (characterId) => unequipPermanentTrinket(gear, characterId),
+    setProtected: (instanceId, protectedItem) => setGearProtected(gear, instanceId, protectedItem),
     salvage: (instanceId, options) => salvageGearInstance(gear, instanceId, options),
     applyCurrency: (currencyId, instanceId, options) => applyGearCurrency(gear, currencyId, instanceId, options),
     addCurrencies: (currencies) => addGearCurrencies(gear, currencies),

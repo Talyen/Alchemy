@@ -511,3 +511,21 @@ describe("endPlayerTurn — pending turn-start pulses", () => {
     expect(result.state.flags.nextHitCrit).toBe(true);
   });
 });
+
+describe("terminal battle turns", () => {
+  it.each([false, true])("Lifegiving cannot revive lethal damage (Poison: %s)", (poison) => {
+    const state = battleState({
+      playerHealth: 1,
+      deathsDoorUsed: true,
+      deathsDoorActive: false,
+      gearEffects: { ...makeTestBattleState().gearEffects, healthPerTurn: 1 },
+      playerStatuses: { ...emptyPlayerStatuses, poison: poison ? 2 : 0 },
+      enemyAttackEffects: poison ? [] : [{ kind: "damage", damageType: "physical", amount: 10 }],
+      rng: () => 0.99,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.turn).toBe(state.turn);
+    expect(result.state.hand).toEqual(state.hand);
+  });
+});

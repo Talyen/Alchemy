@@ -71,11 +71,11 @@ export function BattleActors({
                     ccKeyword={playerCcKeyword}
                     turnActive={isPlayerTurn}
                     turnShineColors={getCompanionShineColors(battleState.activeCompanion)}
+                    bondLevel={battleState.talentEffects.companionBondLevels[battleState.activeCompanion.id] ?? 0}
                     damageBonus={
                       battleState.companionDamageBuff +
                       battleState.talentEffects.companionDamage +
-                      battleState.trinketEffects.companionDamageBonus +
-                      (battleState.talentEffects.companionBondLevels[battleState.activeCompanion.id] ?? 0)
+                      battleState.trinketEffects.companionDamageBonus
                     }
                   />
                 </div>

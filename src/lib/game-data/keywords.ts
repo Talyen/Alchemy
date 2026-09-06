@@ -197,7 +197,8 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   dodge: {
     id: "dodge",
     label: "Dodge",
-    description: "Either side has a 5% chance to Dodge an attack entirely, before Block and Armor",
+    description:
+      "Both sides have a base 5% chance to avoid each attack damage packet before Block and Armor, preventing its damage and status effects; hero Dodge is capped at 75%; damage over time, status-only effects, and triggered damage cannot be Dodged",
     colorClass: "text-lime-300",
     borderClass: "border-lime-300",
     shineColors: ["#bef264", "#65a30d", "#bef264"],

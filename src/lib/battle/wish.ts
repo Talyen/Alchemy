@@ -189,12 +189,8 @@ function applyWishManaTrigger(state: BattleState, combatTexts: CombatTextEvent[]
   return gainManaWithCombatText(state, manaGain, combatTexts, { skipFightPacing: true });
 }
 
-export function chooseWishCard(state: BattleState, cardId: string | null) {
+export function chooseWishCard(state: BattleState, cardId: string) {
   const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
-
-  if (cardId === null) {
-    return { ...state, wishOptions: nextWishOptions, wishQueue };
-  }
 
   const chosenCard = state.wishOptions?.find((card) => card.id === cardId);
   if (!chosenCard) {

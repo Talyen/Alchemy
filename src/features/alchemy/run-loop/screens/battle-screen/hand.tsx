@@ -5,7 +5,6 @@ import {
   HAND_CARD_HOVER_Z_INDEX,
   HAND_FAN_ROTATION_DEGREES,
   HAND_FAN_VERTICAL_STEP_PX,
-  HAND_HOVER_HANDOFF_MS,
   HAND_HOVER_LIFT_PX,
   HAND_HOVER_ROTATION_DEGREES,
   HAND_HOVER_TOOLTIP_PADDING_PX,
@@ -24,6 +23,7 @@ import {
   handCardWidthClass,
 } from "@/features/alchemy/shared/config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
+import { useHandPointer } from "./use-hand-pointer";
 import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { getHandCardKey, getPlayableHandCardKeys } from "../../battle/playable-hand";
@@ -60,7 +60,7 @@ const HandCardItem = memo(function HandCardItem({
   descriptionContext: CardDescriptionContext;
 }) {
   const cardKey = getHandCardKey(card, index);
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("hand", cardKey);
+  const { isHovered, shimmerActive, shimmerToken } = useInteractiveCard("hand", cardKey);
   const offset = index - (handLength - 1) / 2;
 
   const elementRef = useRef<HTMLButtonElement | null>(null);
@@ -84,49 +84,57 @@ const HandCardItem = memo(function HandCardItem({
     const previousCenterX = prevCenterXRef.current;
     prevCenterXRef.current = centerX;
     if (previousCenterX === null) return;
-    return playHandSlotReflow(slot, previousCenterX - centerX, HAND_REFLOW_MOTION_MS);
+    const artwork = slot.firstElementChild;
+    if (!(artwork instanceof HTMLElement)) return;
+    return playHandSlotReflow(artwork, previousCenterX - centerX, HAND_REFLOW_MOTION_MS);
   }, [cardKey, index, handLength]);
   /* eslint-enable react-hooks/immutability -- re-enable immutability checks after ref registry effects */
 
   return (
     <div
       ref={slotRef}
+      data-hand-slot={cardKey}
+      data-hovered={isHovered || undefined}
+      data-hand-hidden={isHidden || undefined}
       className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-3*var(--content-rem,1rem))] justify-center"
       style={{
         zIndex: isHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,
       }}
     >
-      <CombatantStatusEffectPresentation keyword={ccKeyword}>
-        <BattleCardButton
-          card={card}
-          hovered={isHovered}
-          onHoverStart={onHoverStart}
-          onHoverEnd={onHoverEnd}
-          onClick={(event) => onCardClick(card, index, event)}
-          buttonRef={elementRef}
-          ariaLabel={`Play ${getCardDisplayTitle(card)}`}
-          descriptionContext={descriptionContext}
-          shimmerActive={shimmerActive}
-          shimmerToken={shimmerToken}
-          baseTransform={
-            isHovered
-              ? getHoverHandTransform(offset, stagePixelRatio)
-              : getRestingHandTransform(offset, stagePixelRatio)
-          }
-          className={cn(
-            handWidthClass,
-            "hand-card-motion",
-            !isInteractionEnabled && "cursor-default",
-            !isVisuallyPlayable && "grayscale",
-          )}
-          tooltipPadding={HAND_HOVER_TOOLTIP_PADDING_PX}
-          hoverLeaveDelayMs={HAND_HOVER_HANDOFF_MS}
-          dragging={isHidden}
-          shineColor={getCardKeywordShineColors(card)}
-          wrapperClassName="flex shrink-0 justify-center"
-          wrapperDataCardKey={cardKey}
-        />
-      </CombatantStatusEffectPresentation>
+      <div className="flex shrink-0 justify-center">
+        <CombatantStatusEffectPresentation keyword={ccKeyword}>
+          <BattleCardButton
+            card={card}
+            hovered={isHovered}
+            onHoverStart={ignoreArtworkHover}
+            onHoverEnd={ignoreArtworkHover}
+            onClick={(event) => onCardClick(card, index, event)}
+            buttonRef={elementRef}
+            ariaLabel={`Play ${getCardDisplayTitle(card)}`}
+            descriptionContext={descriptionContext}
+            shimmerActive={shimmerActive}
+            shimmerToken={shimmerToken}
+            baseTransform={
+              isHovered
+                ? getHoverHandTransform(offset, stagePixelRatio)
+                : getRestingHandTransform(offset, stagePixelRatio)
+            }
+            className={cn(
+              handWidthClass,
+              "hand-card-motion",
+              isHovered ? "scale-[1.035]" : "scale-100",
+              !isInteractionEnabled && "cursor-default",
+              !isVisuallyPlayable && "grayscale",
+            )}
+            tooltipPadding={HAND_HOVER_TOOLTIP_PADDING_PX}
+            scaleOnHover={false}
+            dragging={isHidden}
+            shineColor={getCardKeywordShineColors(card)}
+            wrapperClassName="flex shrink-0 justify-center"
+            wrapperDataCardKey={cardKey}
+          />
+        </CombatantStatusEffectPresentation>
+      </div>
     </div>
   );
 });
@@ -148,12 +156,15 @@ export function BattleHand({
   const hiddenHandCardKeys = useHiddenHandCardKeys();
   const visuallyPlayableHandCardKeys = useMemo(() => getPlayableHandCardKeys(playabilityState), [playabilityState]);
   const interactiveHandCardKeys = useInteractiveHandCardKeys(playabilityState, visuallyPlayableHandCardKeys);
+  const pointer = useHandPointer(battleState.hand, hiddenHandCardKeys, handCardRefs);
   const handWidthClass = handCardWidthClass;
   const descriptionContext = useBattleDescriptionContext(battleState);
   const ccKeyword = getActiveCcKeyword(battleState.playerCC);
 
   return (
     <div
+      {...pointer}
+      data-testid="battle-hand"
       className={battleHandContainerClass}
       style={{
         paddingBottom: `calc(${12 + Math.max(0, battleState.hand.length - 4) * 12}px * var(--content-scale, 1))`,
@@ -192,3 +203,5 @@ function getHoverHandTransform(offset: number, stagePixelRatio: number) {
   const y = (HAND_REST_DROP_PX - HAND_HOVER_LIFT_PX) * stagePixelRatio;
   return `translateY(calc(${y}px * var(--content-scale, 1))) rotate(${offset * HAND_HOVER_ROTATION_DEGREES}deg)`;
 }
+
+function ignoreArtworkHover() {}

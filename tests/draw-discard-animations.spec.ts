@@ -73,10 +73,48 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     expect(errors).toEqual([]);
   });
 
-  test("end turn shows ghost overlays during transition", async ({ page }) => {
+  test("accepts consecutive plays while draws and hand reflow are running", async ({ page }) => {
     test.setTimeout(60_000);
     const errors = failOnRuntimeErrors(page);
-    const ghostOverlays = page.locator(".card-ghost-overlay");
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 12 }, () =>
+        makeCard({
+          cost: 0,
+          effects: [
+            { kind: "draw-cards", amount: 1 },
+            { kind: "player-status", status: "block", amount: 1 },
+          ],
+        }),
+      ),
+    );
+    await waitForOpeningDeal(page);
+    const visibleCards = page.locator('[aria-label^="Play "]:not(.opacity-0)');
+    const drawStarts = () =>
+      page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-start", "mark").length);
+    const before = await drawStarts();
+    await visibleCards.first().click({ force: true });
+    await expect.poll(drawStarts).toBe(before + 1);
+    expect(
+      await page.evaluate(
+        () =>
+          performance.getEntriesByName("alchemy:battle:draw-start", "mark").length >
+          performance.getEntriesByName("alchemy:battle:draw-end", "mark").length,
+      ),
+    ).toBe(true);
+    await visibleCards.first().click({ force: true });
+    await expect.poll(drawStarts).toBe(before + 2);
+    await expect
+      .poll(() => page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-end", "mark").length))
+      .toBe(before + 2);
+    await expect(visibleCards).toHaveCount(4);
+    expect(errors).toEqual([]);
+  });
+
+  test("end turn shows card transfers during transition", async ({ page }) => {
+    test.setTimeout(60_000);
+    const errors = failOnRuntimeErrors(page);
+    const flyingCards = page.locator("[data-flying-card]");
 
     await startBattleWithDeck(
       page,
@@ -89,17 +127,17 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await battle.playFirstCard();
 
     const endTurnDone = battle.endTurn();
-    const ghostsDuringTurn = expect
-      .poll(async () => ghostOverlays.count(), {
+    const transfersDuringTurn = expect
+      .poll(async () => flyingCards.count(), {
         timeout: 20_000,
-        message: "draw/discard ghosts should appear during the turn transition",
+        message: "draw/discard transfers should appear during the turn transition",
       })
       .toBeGreaterThan(0);
-    await Promise.all([ghostsDuringTurn, endTurnDone]);
+    await Promise.all([transfersDuringTurn, endTurnDone]);
     expect(errors).toEqual([]);
   });
 
-  test("playable hand cards stay colored while discard and draw transfers block input", async ({ page }) => {
+  test("playable hand cards stay colored during discard and draw transfers", async ({ page }) => {
     test.setTimeout(60_000);
     const errors = failOnRuntimeErrors(page);
     const flyingCards = page.locator("[data-flying-card]");

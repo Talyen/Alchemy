@@ -21,7 +21,7 @@ export function runStartupValidation() {
   );
 
   for (const [companionId, companion] of Object.entries(companionLibrary)) {
-    check(`companion ${companionId} has exactly one turn-start effect`, companion.turnStartEffects.length === 1);
+    check(`companion ${companionId} has at least one turn-start effect`, companion.turnStartEffects.length >= 1);
   }
 
   const bestiaryTraitIds = enemyBestiary.flatMap((enemy) => enemy.traits.map((trait) => trait.id));

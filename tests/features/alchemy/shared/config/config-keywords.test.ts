@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { keywordAliases, keywordPattern } from "@/features/alchemy/shared/config/keywords";
+import { keywordDefinitions } from "@/lib/game-data";
+import { extractKeywordIds, keywordAliases, keywordPattern } from "@/features/alchemy/shared/config/keywords";
 
 describe("keywordAliases", () => {
+  it("recognizes every keyword label, including Dodge and Phoenix Feather", () => {
+    for (const definition of Object.values(keywordDefinitions)) {
+      expect(extractKeywordIds(definition.label)).toEqual([definition.id]);
+    }
+  });
+
   it("every alias has a match string and keywordId", () => {
     for (const alias of keywordAliases) {
       expect(alias.match).toBeTruthy();
@@ -11,6 +18,15 @@ describe("keywordAliases", () => {
 });
 
 describe("keywordPattern", () => {
+  it("recognizes Dodge inflections without matching unrelated words", () => {
+    expect("Dodge Dodges Dodged Dodging dodgeball dodger".match(keywordPattern)).toEqual([
+      "Dodge",
+      "Dodges",
+      "Dodged",
+      "Dodging",
+    ]);
+    expect(extractKeywordIds("Dodged and Dodging")).toEqual(["dodge"]);
+  });
   it("matches 'Physical' in a sentence", () => {
     const text = "Deal 5 Physical damage";
     const matches = text.match(keywordPattern);
@@ -46,4 +62,8 @@ describe("keywordPattern", () => {
     expect(matches!.some((m) => m.toLowerCase() === "burn")).toBe(true);
     expect(matches!.some((m) => m.toLowerCase() === "poison")).toBe(true);
   });
+});
+
+it("recognizes Consumed without matching parts of unrelated words", () => {
+  expect(extractKeywordIds("Consumed cards Consume, Consumed again; unconsumed")).toEqual(["consume"]);
 });

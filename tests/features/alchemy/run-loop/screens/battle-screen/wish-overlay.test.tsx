@@ -50,7 +50,7 @@ describe("WishOverlay", () => {
     resetEscapeStackForTests();
   });
 
-  it("skips on Escape and stops GameMenu from receiving the key", async () => {
+  it("ignores Escape and stops GameMenu from receiving the key", async () => {
     const user = userEvent.setup();
     const onWishChoice = vi.fn();
     const gameMenuHandler = vi.fn();
@@ -60,23 +60,46 @@ describe("WishOverlay", () => {
 
     await user.keyboard("{Escape}");
 
-    expect(onWishChoice).toHaveBeenCalledWith(null);
+    expect(onWishChoice).not.toHaveBeenCalled();
     expect(gameMenuHandler).not.toHaveBeenCalled();
 
     window.removeEventListener("keydown", gameMenuHandler);
   });
 
-  it("ignores rapid Skip taps after the first resolve", async () => {
+  it("ignores rapid card taps after the first resolve", async () => {
     const user = userEvent.setup();
     const onWishChoice = vi.fn();
     renderWish(onWishChoice);
 
-    const skip = screen.getByRole("button", { name: "Skip" });
-    await user.click(skip);
-    await user.click(skip);
+    const choice = screen.getByRole("button", { name: "Choose Wish Card" });
+    await user.click(choice);
+    await user.click(choice);
 
     expect(onWishChoice).toHaveBeenCalledTimes(1);
-    expect(onWishChoice).toHaveBeenCalledWith(null);
+    expect(onWishChoice).toHaveBeenCalledWith(wishCard);
+  });
+
+  it("resets the activation guard and accepts a queued Wish with the same card options", async () => {
+    const user = userEvent.setup();
+    const onWishChoice = vi.fn();
+    const battleState = {
+      wishOptions: [wishCard],
+      talentEffects: {},
+      trinketEffects: { companionDamageBonus: 0 },
+      companionDamageBuff: 0,
+    } as unknown as BattleScreenState;
+    const actions = { onWishChoice } as unknown as BattleActionsProps;
+    const { rerender } = render(<WishOverlay open battleState={battleState} actions={actions} />);
+
+    await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
+    expect(onWishChoice).toHaveBeenCalledExactlyOnceWith(wishCard);
+
+    rerender(<WishOverlay open battleState={{ ...battleState, wishOptions: [wishCard] }} actions={actions} />);
+    expect(screen.queryByRole("button", { name: "Confirm" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
+    expect(onWishChoice).toHaveBeenCalledTimes(2);
+    expect(onWishChoice).toHaveBeenLastCalledWith(wishCard);
   });
 
   it("accepts a new choice after the overlay reopens", async () => {
@@ -91,13 +114,13 @@ describe("WishOverlay", () => {
     const actions = { onWishChoice } as unknown as BattleActionsProps;
     const { rerender } = render(<WishOverlay open battleState={battleState} actions={actions} />);
 
-    await user.click(screen.getByRole("button", { name: "Skip" }));
+    await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
     expect(onWishChoice).toHaveBeenCalledTimes(1);
 
     rerender(<WishOverlay open={false} battleState={battleState} actions={actions} />);
     rerender(<WishOverlay open battleState={battleState} actions={actions} />);
 
-    await user.click(screen.getByRole("button", { name: "Skip" }));
+    await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
     expect(onWishChoice).toHaveBeenCalledTimes(2);
   });
 });

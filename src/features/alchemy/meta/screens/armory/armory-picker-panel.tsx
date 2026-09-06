@@ -1,3 +1,4 @@
+import type { CraftingResult } from "./crafting-result";
 import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { sectionTitleClass } from "@/features/alchemy/shared/config";
@@ -30,6 +31,8 @@ interface ArmoryPickerPanelProps {
   onSpawnDevGear: ((characterId: CharacterId) => void) | undefined;
   onEquipGear: (instance: GearInstance) => void;
   onEquipTrinket: (trinketId: string) => void;
+  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
+  craftingResult: CraftingResult | null;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
 }
@@ -49,6 +52,8 @@ export function ArmoryPickerPanel({
   onSpawnDevGear,
   onEquipGear,
   onEquipTrinket,
+  onSetProtected,
+  craftingResult,
   onSalvage,
   onApplyCurrency,
 }: ArmoryPickerPanelProps) {
@@ -93,6 +98,8 @@ export function ArmoryPickerPanel({
           salvageMode={salvageMode}
           activeCurrencyId={activeCurrencyId}
           onEquip={onEquipGear}
+          onSetProtected={onSetProtected}
+          craftingResult={craftingResult}
           onSalvage={onSalvage}
           onApplyCurrency={onApplyCurrency}
         />

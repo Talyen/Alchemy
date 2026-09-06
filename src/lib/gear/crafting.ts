@@ -7,6 +7,7 @@ import {
   SALVAGE_BASIC_VOIDSTONE_CHANCE,
   SALVAGE_DICE_HIGH_CHANCE,
 } from "@/lib/game-constants";
+import { createSeededRng, hashStringToUint32 } from "@/lib/rng";
 import { craftingArt } from "@/lib/game-data";
 import { buildEligibleAffixPool, rollAffixes } from "./generation";
 import { rollAffixValue } from "./affixes";
@@ -197,9 +198,27 @@ const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBe
   },
 };
 
+export function craftingCurrencyBlockedReason(currencyId: CraftingCurrencyId, item: GearInstance): string | null {
+  if (item.protected) return "Unlock this item before crafting.";
+  if (gearInstanceRarity(item) === "unique") return "Unique items cannot be crafted.";
+  if (CRAFTING_CURRENCY_BEHAVIORS[currencyId].canApply(item)) return null;
+  switch (currencyId) {
+    case "sprig-of-growth":
+      return "No affix slots or eligible affixes available.";
+    case "ascension-seal":
+      return "Only Basic items can be upgraded to Astral.";
+    case "smiths-whetstone":
+      return item.affixes.length ? "All affixes are already at maximum." : "This item has no affixes to upgrade.";
+    case "discordant-dice":
+      return "This item has no affixes to reroll.";
+    case "voidstone":
+    case "severance-maw":
+      return "This item has no affixes to remove.";
+  }
+}
+
 export function canApplyCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInstance): boolean {
-  if (gearInstanceRarity(item) === "unique") return false;
-  return CRAFTING_CURRENCY_BEHAVIORS[currencyId].canApply(item);
+  return craftingCurrencyBlockedReason(currencyId, item) === null;
 }
 
 export function applyCraftingCurrency(
@@ -207,9 +226,8 @@ export function applyCraftingCurrency(
   item: GearInstance,
   rng: () => number,
 ): GearInstance {
-  if (gearInstanceRarity(item) === "unique") return item;
+  if (!canApplyCraftingCurrency(currencyId, item)) return item;
   const behavior = CRAFTING_CURRENCY_BEHAVIORS[currencyId];
-  if (!behavior.canApply(item)) return item;
   return behavior.apply(item, rng);
 }
 
@@ -247,7 +265,8 @@ function homesteadSalvageYield(instance: GearInstance): MaterialInventory {
   return salvageValue ? { ...salvageValue } : emptyInventory();
 }
 
-export function computeSalvageYield(instance: GearInstance, rng: () => number): SalvageYield {
+export function computeSalvageYield(instance: GearInstance): SalvageYield {
+  const rng = createSeededRng(hashStringToUint32(`salvage:${instance.instanceId}`));
   return {
     currencies: rollSalvageYield(gearInstanceRarity(instance) ?? "basic", rng),
     materials: homesteadSalvageYield(instance),

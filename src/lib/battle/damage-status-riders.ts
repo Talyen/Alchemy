@@ -237,7 +237,7 @@ function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextE
 
 function applyPhysicalShieldSlamArmorStrip(state: BattleState): BattleState {
   if (!state.talentEffects.physicalStripArmorWhileBlocked || state.playerStatuses.block <= 0) return state;
-  return reduceEnemyArmor(state, 1);
+  return reduceEnemyArmor(state, 2);
 }
 
 function applyPhysicalStatusRider(

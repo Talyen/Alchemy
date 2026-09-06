@@ -232,7 +232,7 @@ export function applyPlayerDamageStatuses(
       ...state,
       playerStatuses: {
         ...state.playerStatuses,
-        [statusType]: state.playerStatuses[statusType] + adjustedDamage,
+        [statusType]: state.playerStatuses[statusType] + playerStatusDelta(state, statusType, adjustedDamage),
       },
     };
   }

@@ -2,7 +2,7 @@ import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
 import type { BattleCard, BattleCardEffect, DamageType, EnemyStatusDamageId, KeywordId } from "../types";
 import { companionLibrary } from "../companions";
-import { expectedCompanionTurnLine } from "./companion-turn-description";
+import { getCompanionDescriptionLines } from "./companion-turn-description";
 
 interface CardBaseInput {
   id: BattleCard["id"];
@@ -383,7 +383,7 @@ export function summonCompanionCard({ id, title, art, companionId, cost = 1 }: S
   const turnEffects = companionLibrary[companionId].turnStartEffects;
   if (turnEffects.length === 0)
     throw new Error(`Companion ${companionId} must have at least one turn-start effect for summon card ${id}`);
-  const descriptionLines = turnEffects.map((effect) => expectedCompanionTurnLine(effect));
+  const descriptionLines = getCompanionDescriptionLines(companionLibrary[companionId]);
   descriptionLines.push("Companion");
   return {
     id,

@@ -70,8 +70,8 @@ function ArmoryScreenRoute({
       onUnequip={controller.onUnequip}
       onEquipTrinket={controller.onEquipTrinket}
       onUnequipTrinket={controller.onUnequipTrinket}
+      onSetProtected={controller.onSetProtected}
       onSalvage={controller.onSalvage}
-      rng={controller.rng}
       onBack={onBack}
       onMenu={onOpenGameMenu}
       {...(controller.onSpawnDevGear ? { onSpawnDevGear: controller.onSpawnDevGear } : {})}

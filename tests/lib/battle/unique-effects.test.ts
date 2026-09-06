@@ -231,28 +231,28 @@ describe("unique item battle effects", () => {
     expect(afterHit.enemyHealth).toBe(80);
   });
 
-  it("Blackfletch detonates bleed and poison on archery attacks", () => {
+  it.each([
+    [100, 95, 15, 10],
+    [35, 30, 15, 10],
+    [34, 0, 0, 0],
+  ])("Blackfletch checks Health after the arrow at %i Health", (health, expectedHealth, bleed, poison) => {
     const archeryCard = makeTestCard({
       id: "quick-shot",
-      title: "Quick Shot",
       effects: [{ kind: "damage", amount: 5, damageType: "physical" }],
       tags: ["archery"],
     });
-
-    const baseState = patchBattleState({
+    const state = patchBattleState({
       mana: 2,
       hand: [archeryCard],
-      enemyHealth: 100,
+      enemyHealth: health,
       enemyMaxHealth: 100,
       enemyStatuses: { bleed: 15, poison: 10 },
       gearEffects: { ...defaultGearEffects, archeryDetonateBleedPoison: 1 },
     });
-
-    const resolution = playBattleCardResolved(baseState, "quick-shot", 0);
-
-    expect(resolution.state.enemyHealth).toBe(70);
-    expect(resolution.state.enemyStatuses.bleed).toBe(0);
-    expect(resolution.state.enemyStatuses.poison).toBe(0);
+    const result = playBattleCardResolved(state, "quick-shot", 0).state;
+    expect(result.enemyHealth).toBe(expectedHealth);
+    expect(result.enemyStatuses.bleed).toBe(bleed);
+    expect(result.enemyStatuses.poison).toBe(poison);
   });
 
   it("Twin Casting draws freeze cards when burn is played, assigns unique UID, and respects hand limit", () => {

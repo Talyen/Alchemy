@@ -53,6 +53,7 @@ export function isStunFreezeBuildupBlocked(cc: CcState): boolean {
 export type { CombatFlags } from "../combat-flags";
 
 export interface BattleState {
+  battleMetrics?: { enemyAttackActions: number; enemyAbilityActivations: Record<string, number> };
   deck: BattleCard[];
   hand: BattleCard[];
   discard: BattleCard[];
@@ -64,6 +65,8 @@ export interface BattleState {
   turnPhase: TurnPhase;
   playerHealth: number;
   playerMaxHealth: number;
+  playerDodgeCount: number;
+  dodgeChanceFromDamage: number;
   deathsDoorUsed: boolean;
   deathsDoorActive: boolean;
   deathsDoorTriggeredTurn: number | null;

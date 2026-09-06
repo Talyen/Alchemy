@@ -82,6 +82,8 @@ describe("item portrait shine", () => {
         }}
       />,
     );
+    expect(container.querySelector(".shine-border")).toBeNull();
+    fireEvent.mouseEnter(container.firstElementChild!);
     expect(container.querySelector(".shine-border")).not.toBeNull();
 
     rerender(

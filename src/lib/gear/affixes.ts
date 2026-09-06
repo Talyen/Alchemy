@@ -24,11 +24,23 @@ export function resolveAffixEffects(affixes: readonly GearAffixRoll[]): GearEffe
   return effects;
 }
 
-export function normalizeAffixRolls(rawAffixes?: Array<{ id: string; value: number }> | null): GearAffixRoll[] {
+export function normalizeAffixRolls(
+  rawAffixes?: Array<{ id: string; value: number }> | null,
+  rarity?: GearRarity | null,
+): GearAffixRoll[] {
   if (!rawAffixes || !Array.isArray(rawAffixes)) return [];
   return rawAffixes.flatMap((entry) => {
     if (!entry || !isGearAffixId(entry.id) || !Number.isFinite(entry.value) || entry.value <= 0) return [];
-    return [{ id: entry.id, value: Math.round(entry.value) }];
+    const range =
+      rarity && (entry.id === "health-per-turn" || entry.id === "forge-on-burn")
+        ? gearAffixCatalog[entry.id].roll[rarity]
+        : undefined;
+    return [
+      {
+        id: entry.id,
+        value: range ? Math.min(range.max, Math.max(range.min, Math.round(entry.value))) : Math.round(entry.value),
+      },
+    ];
   });
 }
 
@@ -44,13 +56,16 @@ export function getGearAffixDisplayName(affixId: GearAffixId): string {
 
 export function getGearAffixTooltipEntries(
   affixes: readonly GearAffixRoll[],
-): Array<{ key: string; name: string; text: string }> {
-  return affixes.flatMap((roll, index) => {
+  rarity?: GearRarity | null,
+): Array<{ key: string; name: string; text: string; affixId: GearAffixId; value: number }> {
+  return normalizeAffixRolls([...affixes], rarity).flatMap((roll, index) => {
     const def = gearAffixCatalog[roll.id];
     if (!def) return [];
     return [
       {
         key: `${roll.id}-${index}`,
+        affixId: roll.id,
+        value: roll.value,
         name: getGearAffixDisplayName(roll.id),
         text: formatAffixDescription(def, roll),
       },
@@ -69,8 +84,8 @@ export function getGearInstanceTooltipEntries(
   instance: GearInstance,
 ): Array<{ key: string; name?: string; text: string }> {
   const definition = gearDefinitions[instance.definitionId];
-  const affixEntries = getGearAffixTooltipEntries(instance.affixes);
-  if (affixEntries.length > 0) return affixEntries;
+  const affixEntries = getGearAffixTooltipEntries(instance.affixes, definition?.rarity);
+  if (affixEntries.length > 0) return affixEntries.map(({ key, name, text }) => ({ key, name, text }));
   return (definition?.descriptionLines ?? []).map((text, index) => ({ key: `definition-${index}`, text }));
 }
 

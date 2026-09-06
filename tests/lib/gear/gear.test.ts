@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  computeSalvageYield,
   canSalvageGear,
   computeGearManifest,
   createEmptyGearLoadouts,
@@ -192,17 +193,10 @@ describe("gear domain", () => {
 
   it("salvages equipped gear for crafting currencies and clears loadouts", () => {
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
-    const result = salvageGear([ring], loadouts, ring.instanceId, () => 0);
+    const result = salvageGear([ring], loadouts, ring.instanceId);
     expect(result?.inventory).toEqual([]);
     expect(result?.loadouts.knight["left-accessory"]).toBeNull();
-    expect(result?.yieldedCurrencies).toEqual({
-      "discordant-dice": 2,
-      "sprig-of-growth": 1,
-      voidstone: 1,
-      "ascension-seal": 0,
-      "severance-maw": 0,
-      "smiths-whetstone": 0,
-    });
+    expect(result?.yieldedCurrencies).toEqual(computeSalvageYield(ring).currencies);
     expect(result?.yieldedMaterials).toEqual({
       wood: 0,
       iron: 0,
@@ -220,7 +214,7 @@ describe("gear domain", () => {
 
   it("does not report nonexistent gear as salvage eligible", () => {
     expect(canSalvageGear([ring], "missing-ring")).toBe(false);
-    expect(salvageGear([ring], createEmptyGearLoadouts(), "missing-ring", () => 0.5)).toBeNull();
+    expect(salvageGear([ring], createEmptyGearLoadouts(), "missing-ring")).toBeNull();
   });
 
   it("normalizes partial loadouts and exclusive references", () => {

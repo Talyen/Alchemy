@@ -104,7 +104,7 @@ export type BattleCardEffect =
     }
   | { kind: "enemy-status"; status: EnemyStatusId; amount: number }
   | { kind: "heal"; amount: number }
-  | { kind: "restore-mana"; amount: number; ifEnemyFrozen?: boolean }
+  | { kind: "restore-mana"; amount: number; ifEnemyFrozen?: boolean; allowOverflow?: boolean }
   | { kind: "lose-mana"; amount: number }
   | { kind: "lose-max-mana"; amount: number }
   | { kind: "gain-max-mana"; amount: number }

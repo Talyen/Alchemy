@@ -66,6 +66,8 @@ describe("gear display", () => {
         key: "flat-physical-0",
         name: "Ironbound",
         text: "Increases Physical damage by 2",
+        affixId: "flat-physical",
+        value: 2,
       },
     ]);
   });

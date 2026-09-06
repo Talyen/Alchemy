@@ -28,7 +28,7 @@ describe("getEffectiveCardDescriptionLines", () => {
     expect(getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 3 })).toEqual(["Deal 5 Physical damage"]);
   });
 
-  it("shows authored companion lines instead of bond-adjusted lines", () => {
+  it("shows Bond and damage bonuses with all companion effects", () => {
     const card = makeTestCard({
       descriptionLines: ["Deals 1 Bleed damage each turn", "Companion"],
       effects: [{ kind: "summon-companion", companionId: "wolf" }],
@@ -40,7 +40,7 @@ describe("getEffectiveCardDescriptionLines", () => {
         companionDamageBonus: 1,
         companionDamageBuff: 1,
       }),
-    ).toEqual(["Deals 1 Bleed damage each turn", "Companion"]);
+    ).toEqual(["Deals 7 Bleed damage and gains 1 Block each turn", "Companion"]);
   });
 
   it("leaves scaled and conditional lines exactly as authored", () => {

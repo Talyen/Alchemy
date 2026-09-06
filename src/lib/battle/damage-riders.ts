@@ -14,8 +14,15 @@ import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollTalentChance } fro
 import { applyBrassCenser, dealPlayerTypedHit, tryPoisonStunProc } from "./player-typed-hit";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import { addEnemyStatus, addPlayerStatus, damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
-import { BATTLE_CONFIG } from "../game-constants";
+import {
+  setFlag,
+  addEnemyStatus,
+  addPlayerStatus,
+  damageEnemyHealth,
+  type BattleState,
+  type CombatTextEvent,
+} from "./types";
+import { BATTLE_CONFIG, BLACKFLETCH_EXECUTE_HEALTH_PERCENT } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
@@ -28,8 +35,12 @@ function applyBurnDamageRiders(
   if (state.talentEffects.forgeOnBurnDealt > 0) {
     nextState = addPlayerStatus(nextState, "forge", state.talentEffects.forgeOnBurnDealt);
   }
-  if (state.gearEffects.forgeOnBurnDealt > 0) {
-    nextState = addPlayerStatus(nextState, "forge", state.gearEffects.forgeOnBurnDealt);
+  if (state.gearEffects.forgeOnBurnDealt > 0 && !state.flags.emberforgedUsedThisTurn) {
+    nextState = setFlag(
+      addPlayerStatus(nextState, "forge", state.gearEffects.forgeOnBurnDealt),
+      "emberforgedUsedThisTurn",
+      true,
+    );
   }
   if (rollTalentChance(state.talentEffects.burnStunChance, state)) {
     nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
@@ -110,7 +121,8 @@ function consumeForgeAfterDamage(
 
 function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.gearEffects.archeryDetonateBleedPoison <= 0 || state.enemyHealth <= 0) return state;
-  return detonateEnemyStatuses(state, ["bleed", "poison"], combatTexts);
+  if (state.enemyHealth * 100 >= state.enemyMaxHealth * BLACKFLETCH_EXECUTE_HEALTH_PERCENT) return state;
+  return detonateEnemyStatuses(state, ["bleed", "poison"], combatTexts, "remaining-ticks");
 }
 
 export function applyAttackPurgeRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

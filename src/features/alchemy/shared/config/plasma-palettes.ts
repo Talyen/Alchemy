@@ -12,12 +12,7 @@ import {
   type TalentDefinition,
   type TrinketEntry,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-import {
-  gearDefinitions,
-  getGearInstanceKeywordIds,
-  getUniqueGearTextShineColors,
-  type GearInstance,
-} from "@/lib/gear";
+import { gearDefinitions, getGearInstanceKeywordIds, getUniqueGearShineColors, type GearInstance } from "@/lib/gear";
 import { keywordAliasMap, keywordAliases, keywordPattern } from "./keywords";
 import {
   getCompanionShineColors,
@@ -58,14 +53,7 @@ export function getPlasmaKeywordsForCharacter(id?: CharacterId | null): KeywordI
 }
 
 export function getPlasmaKeywordsForGear(gear: GearInstance): KeywordId[] {
-  const definition = gearDefinitions[gear.definitionId];
-  const keywords = new Set<KeywordId>(getGearInstanceKeywordIds(gear));
-  if (definition?.affinityKeywords) {
-    for (const kw of definition.affinityKeywords) {
-      keywords.add(kw);
-    }
-  }
-  return [...keywords];
+  return getGearInstanceKeywordIds(gear);
 }
 
 export function getPlasmaKeywordsForTalent(talent: Pick<TalentDefinition, "keywordId">): KeywordId[] {
@@ -113,11 +101,13 @@ export function getPlasmaColorPairForTrinket(trinket: TrinketEntry | string): Pl
 }
 
 export function getPlasmaColorPairForGear(gear: GearInstance): PlasmaColorPair | null {
-  return getPlasmaColorPair(getPlasmaKeywordsForGear(gear));
+  if (gearDefinitions[gear.definitionId]?.rarity === "unique") return getPlasmaColorPairForUnique();
+  const keywords = getPlasmaKeywordsForGear(gear);
+  return getPlasmaColorPair(keywords.length > 0 ? keywords : ["physical"]);
 }
 
 export function getPlasmaColorPairForUnique(): PlasmaColorPair | null {
-  return getPlasmaColorPairFromColors(getUniqueGearTextShineColors());
+  return getPlasmaColorPairFromColors(getUniqueGearShineColors());
 }
 
 export function getPlasmaColorPairForTalent(talent: Pick<TalentDefinition, "keywordId">): PlasmaColorPair | null {

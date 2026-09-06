@@ -129,14 +129,14 @@ describe("getPlayableHandCardKeysExcludingHidden", () => {
       hand: [affordableCard, drawingCard],
     };
     const shared = getPlayableHandCardKeys(state);
-    const playable = getPlayableHandCardKeysExcludingHidden(state, ["draw-3"], false, shared);
+    const playable = getPlayableHandCardKeysExcludingHidden(state, ["draw-3"], shared);
 
     expect(shared.has("draw-3")).toBe(true);
     expect(playable.has("draw-3")).toBe(false);
     expect(playable).not.toBe(shared);
   });
 
-  it("returns empty while a card transfer is in progress", () => {
+  it("keeps visible cards available independently of transfers", () => {
     const state = {
       ...defaultBattleState(),
       turnPhase: "player" as const,
@@ -145,7 +145,7 @@ describe("getPlayableHandCardKeysExcludingHidden", () => {
       hand: [affordableCard],
     };
 
-    expect(getPlayableHandCardKeysExcludingHidden(state, [], true).size).toBe(0);
+    expect(getPlayableHandCardKeysExcludingHidden(state, []).size).toBe(1);
   });
 });
 

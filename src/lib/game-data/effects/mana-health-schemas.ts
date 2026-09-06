@@ -8,6 +8,7 @@ export const restoreManaEffectDefinition = {
     kind: z.literal("restore-mana"),
     amount: PositiveAmountSchema,
     ifEnemyFrozen: z.boolean().optional(),
+    allowOverflow: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"restore-mana">;
 

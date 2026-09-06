@@ -15,6 +15,9 @@ function cell(partial: Partial<RateCell>): RateCell {
   return {
     winRate: 0.95,
     timeoutRate: 0,
+    averageEnemyAttacks: 0,
+    averageEnemyAbilityActivations: 0,
+    winsBeforeEnemyAttackRate: 0,
     averageTurns: 4,
     averageHealthRemaining: 10,
     n: 100,
@@ -51,6 +54,7 @@ function emptyModel(): { -readonly [Key in keyof BalanceReportModel]: BalanceRep
     talents: [],
     companions: [],
     gear: [],
+    affixes: [],
     anomalies: [],
     anomalyMetrics: [],
   };
@@ -155,6 +159,37 @@ describe("evaluateBalanceFindings", () => {
     const result = evaluateBalanceFindings(model);
     expect(result.findings.some((finding) => finding.id.includes("cleanse"))).toBe(false);
     expect(result.findings.some((finding) => finding.scope === "card" && finding.id.includes("fangs"))).toBe(true);
+  });
+
+  it("uses duration confidence independently of win confidence", () => {
+    const model = emptyModel();
+    const base = makePairedDelta("base", { ...emptyPairedWinStats(), n: 100 });
+    model.affixes = [
+      paired("flat-physical", base),
+      paired("flat-stun", base),
+      paired("flat-holy", { ...base, noisy: true, turnDelta: 4, turnSe: 0.1 }),
+      paired("flat-poison", { ...base, turnDelta: 8, turnSe: 10 }),
+    ];
+    const findings = evaluateBalanceFindings(model).findings;
+    expect(findings.some((finding) => finding.id === "flat-holy:turns")).toBe(true);
+    expect(findings.some((finding) => finding.id === "flat-poison:turns")).toBe(false);
+  });
+
+  it("checks enemy equity in early and mid game", () => {
+    const model = emptyModel();
+    model.enemies = ["skeleton", "goblin", "slime"].map((id, index) => ({
+      id,
+      rates: rates(
+        emptyRateCell(),
+        cell({ winRate: index === 0 ? 0.5 : 0.95 }),
+        cell({ winRate: index === 0 ? 0.5 : 0.95 }),
+      ),
+    }));
+    const findings = evaluateBalanceFindings(model).findings;
+    expect(
+      findings.some((finding) => finding.id === "skeleton" && finding.tier === "early" && finding.bucket === "equity"),
+    ).toBe(true);
+    expect(findings.some((finding) => finding.id === "skeleton" && finding.tier === "mid")).toBe(true);
   });
 
   it("flags anomaly spikes over threshold and ignores values under it", () => {

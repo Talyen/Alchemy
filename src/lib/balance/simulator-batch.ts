@@ -37,6 +37,13 @@ function runBatchInternal(config: BalanceBatchConfig): BalanceBatchResult {
     lossRate: losses / iterations,
     timeoutRate: timeouts / iterations,
     averageTurns: turnTotal / iterations,
+    averageEnemyAttacks: results.reduce((sum, result) => sum + result.enemyAttackActions, 0) / iterations,
+    averageEnemyAbilityActivations:
+      results.reduce(
+        (sum, result) => sum + Object.values(result.enemyAbilityActivations).reduce((a, b) => a + b, 0),
+        0,
+      ) / iterations,
+    winsBeforeEnemyAttackRate: results.filter((result) => result.wonBeforeEnemyAttack).length / iterations,
     averageHealthRemaining: healthTotal / iterations,
     averageCardsPlayed: cardsPlayedTotal / iterations,
     cardPlayCounts,

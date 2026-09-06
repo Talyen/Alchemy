@@ -1,6 +1,7 @@
 export const GLOBAL_CRIT_CHANCE = 5;
 
 export const PLAYER_DODGE_CHANCE = 5;
+export const MAX_PLAYER_DODGE_CHANCE = 75;
 
 export const ENEMY_DODGE_CHANCE = 5;
 export const CRIT_MULTIPLIER = 2;
@@ -30,7 +31,8 @@ export const LEECH_HEAL_FRACTION = 0.5;
 
 export const FIRST_EFFECT_MULTIPLIER = 2;
 
-export const MANABURN_DAMAGE_PERCENT = 35;
+export const MANABURN_DAMAGE_PERCENT = 20;
+export const BLACKFLETCH_EXECUTE_HEALTH_PERCENT = 30;
 
 export const LEGACY_MANABURN_PER_CRYSTAL_ENABLED = 1;
 export const LEGACY_FIRST_BURN_BONUS_MULTIPLIER = 1.5;

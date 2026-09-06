@@ -3,6 +3,7 @@ import type { BattleCard } from "@/lib/game-data";
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { CardGhostLayer } from "../../battle/presentation/card-ghost-layer";
 import { CardTransferLayer } from "../../battle/presentation/card-transfer-layer";
+import { useCardTransferInProgress } from "../../battle/presentation/use-hand-presentation";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
 import { PageLayout } from "../../../shared/ui/shared-ui";
@@ -24,7 +25,7 @@ interface BattleScreenProps {
   stagePixelRatio: number;
   refs: BattleRefsProps;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
-  onWishChoice: (card: BattleCard | null) => void;
+  onWishChoice: (card: BattleCard) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
   boonInspectOpen: boolean;
@@ -49,6 +50,7 @@ export function BattleScreen(props: BattleScreenProps) {
   } = props;
 
   const { battleState, displayOverrides, activeLabyrinthModifiers, runBoons } = battleScreenData;
+  const cardTransferInProgress = useCardTransferInProgress();
 
   const displayState = useMemo(() => ({ ...battleState, ...displayOverrides }), [battleState, displayOverrides]);
 
@@ -123,7 +125,11 @@ export function BattleScreen(props: BattleScreenProps) {
 
               <BattleBottomBar view={view} refs={refs} actions={actions} playabilityState={battleState} />
 
-              <WishOverlay open={Boolean(battleState.wishOptions)} battleState={displayState} actions={actions} />
+              <WishOverlay
+                open={Boolean(battleState.wishOptions) && !cardTransferInProgress}
+                battleState={displayState}
+                actions={actions}
+              />
 
               <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={onCloseBoonInspect} />
 

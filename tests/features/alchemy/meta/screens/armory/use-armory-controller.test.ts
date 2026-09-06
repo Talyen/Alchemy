@@ -36,13 +36,13 @@ describe("useArmoryController", () => {
   });
 
   it("flushes saves after salvaging gear outside an active run", () => {
-    const armor: GearInstance = { instanceId: "armor-a", definitionId: "leather-armor-basic", affixes: [] };
+    const armor: GearInstance = { instanceId: "armor-a", definitionId: "plate-armor-basic", affixes: [] };
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
     const { result } = renderHook(() => useArmoryController());
-    const salvageYield = computeSalvageYield(armor, () => 0);
+    const salvageYield = computeSalvageYield(armor);
 
     act(() => {
       dispatchRunSessionCommand((draft) => setMaterials(draft, emptyInventory()));
@@ -50,8 +50,8 @@ describe("useArmoryController", () => {
     });
 
     expect(flushSaveAfterGearMutation).toHaveBeenCalledWith(null);
-    expect(readRunProfile().materialInventory.herbs).toBe(6);
-    expect(readActiveRun().runMaterialsEarned.herbs).toBe(0);
+    expect(readRunProfile().materialInventory.iron).toBe(9);
+    expect(readActiveRun().runMaterialsEarned.iron).toBe(0);
   });
 
   it("syncs health for the active-run character when editing another loadout", () => {
@@ -83,7 +83,7 @@ describe("useArmoryController", () => {
   });
 
   it("counts homestead salvage toward run-earned materials during an active run", () => {
-    const armor: GearInstance = { instanceId: "armor-run", definitionId: "leather-armor-basic", affixes: [] };
+    const armor: GearInstance = { instanceId: "armor-run", definitionId: "plate-armor-basic", affixes: [] };
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
@@ -94,14 +94,14 @@ describe("useArmoryController", () => {
     });
 
     const { result } = renderHook(() => useArmoryController());
-    const salvageYield = computeSalvageYield(armor, () => 0);
+    const salvageYield = computeSalvageYield(armor);
 
     act(() => {
       expect(result.current.onSalvage(armor.instanceId, salvageYield)).toBe(true);
     });
 
-    expect(readRunProfile().materialInventory.herbs).toBe(6);
-    expect(readActiveRun().runMaterialsEarned.herbs).toBe(6);
+    expect(readRunProfile().materialInventory.iron).toBe(9);
+    expect(readActiveRun().runMaterialsEarned.iron).toBe(9);
 
     dispatchRunSessionCommand((draft) => setHasActiveRun(draft, false));
   });
@@ -122,7 +122,7 @@ describe("useArmoryController", () => {
   });
 
   it("keeps Armory editable during an active battle", () => {
-    const armor: GearInstance = { instanceId: "armor-locked", definitionId: "leather-armor-basic", affixes: [] };
+    const armor: GearInstance = { instanceId: "armor-locked", definitionId: "plate-armor-basic", affixes: [] };
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));

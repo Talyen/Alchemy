@@ -29,10 +29,8 @@ describe("runHandDrawSequence", () => {
 
     expect(result).toBe(false);
     expect(applyState).toHaveBeenCalledOnce();
-    expect(deps.setTransferInProgress).toHaveBeenCalledWith(false);
-    expect(deps.setHiddenHandCardKeys).toHaveBeenCalledOnce();
-    const clearHidden = vi.mocked(deps.setHiddenHandCardKeys).mock.calls[0]![0];
-    expect([...clearHidden([])]).toEqual([]);
+    expect(deps.setTransferInProgress).not.toHaveBeenCalled();
+    expect(deps.setHiddenHandCardKeys).not.toHaveBeenCalled();
     expect(deps.animateDrawnHand).not.toHaveBeenCalled();
   });
 
@@ -57,7 +55,37 @@ describe("runHandDrawSequence", () => {
     expect(hiddenKeys.length).toBeGreaterThan(0);
   });
 
-  it("clears hidden keys even when the battle session ends mid-draw", async () => {
+  it("preserves overlapping draws when a no-draw play and an earlier draw finish", async () => {
+    let hidden: string[] = [];
+    const finish: Array<() => void> = [];
+    const deps = makeDrawSequenceDeps({
+      setHiddenHandCardKeys: (update) => {
+        hidden = [...update(hidden)];
+      },
+      animateDrawnHand: () =>
+        new Promise<void>((resolve) => {
+          finish.push(resolve);
+        }),
+    });
+    const first = makeTestCardWithId("slash", { uid: 1 });
+    const second = makeTestCardWithId("block", { uid: 2 });
+    const state = { ...defaultBattleState(), hand: [first] };
+    const firstDraw = runHandDrawSequence([], state, () => {}, 1, deps);
+    const secondDraw = runHandDrawSequence([first], { ...state, hand: [first, second] }, () => {}, 1, deps);
+    await vi.waitFor(() => expect(finish).toHaveLength(2));
+    await runHandDrawSequence([first], state, () => {}, 1, deps);
+    expect(hidden).toEqual(["slash-1", "block-2"]);
+    finish[0]!();
+    await firstDraw;
+    expect(hidden).toEqual(["block-2"]);
+    expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(true);
+    finish[1]!();
+    await secondDraw;
+    expect(hidden).toEqual([]);
+    expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(false);
+  });
+
+  it("does not mutate presentation when the battle session ends mid-draw", async () => {
     const oldHand = [makeTestCardWithId("slash", { uid: 1 })];
     const newHand = [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })];
     const applyState = vi.fn();
@@ -76,8 +104,9 @@ describe("runHandDrawSequence", () => {
     const result = await runHandDrawSequence(oldHand, { ...defaultBattleState(), hand: newHand }, applyState, 3, deps);
 
     expect(result).toBe(false);
-    expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(false);
+    expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(true);
+    expect(hiddenKeys).toHaveLength(1);
     const lastHidden = hiddenKeys[hiddenKeys.length - 1] as string[];
-    expect(lastHidden.includes("block-2")).toBe(false);
+    expect(lastHidden.includes("block-2")).toBe(true);
   });
 });

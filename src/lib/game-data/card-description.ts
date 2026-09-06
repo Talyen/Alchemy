@@ -1,3 +1,5 @@
+import { companionLibrary } from "./companions";
+import { getCompanionDescriptionLines } from "./cards/companion-turn-description";
 import type { BattleCard } from "./types";
 
 export interface CardDescriptionContext {
@@ -11,7 +13,18 @@ export interface CardDescriptionContext {
 
 export function getEffectiveCardDescriptionLines(
   card: Pick<BattleCard, "id" | "effects" | "descriptionLines">,
-  _context: CardDescriptionContext = {},
+  context: CardDescriptionContext = {},
 ): string[] {
+  const summon = card.effects.find((effect) => effect.kind === "summon-companion");
+  if (summon) {
+    return [
+      ...getCompanionDescriptionLines(
+        companionLibrary[summon.companionId],
+        context.companionBondLevels?.[summon.companionId] ?? 0,
+        (context.companionDamage ?? 0) + (context.companionDamageBonus ?? 0) + (context.companionDamageBuff ?? 0),
+      ),
+      ...card.descriptionLines.slice(1),
+    ];
+  }
   return [...card.descriptionLines];
 }

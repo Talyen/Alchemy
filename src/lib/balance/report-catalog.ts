@@ -9,6 +9,7 @@ import {
   type CharacterId,
   type DifficultyModifier,
 } from "@/lib/game-data";
+import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { gearBaseItemList } from "@/lib/gear";
 import type { TalentPreset } from "./types";
 
@@ -109,5 +110,6 @@ export const TITLE_LOOKUPS = {
   boon: Object.fromEntries(trinketLibrary.map((entry) => [entry.id, entry.title])),
   card: Object.fromEntries(cardLibrary.map((entry) => [entry.id, entry.title])),
   companion: Object.fromEntries(Object.values(companionLibrary).map((entry) => [entry.id, entry.title])),
+  affix: Object.fromEntries(gearAffixList.map((entry) => [entry.id, entry.name])),
   gear: Object.fromEntries(gearBaseItemList.map((entry) => [entry.id, entry.displayName])),
 };

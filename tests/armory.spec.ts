@@ -169,7 +169,7 @@ test.describe("Armory crafting", critical, () => {
       .toBeGreaterThan(0);
   });
 
-  test("stays in salvage mode after confirming a salvage", async ({ page }) => {
+  test("returns to browsing after confirming a salvage", async ({ page }) => {
     await seedRandom(page, 0);
     const ringA = { instanceId: "ring-a", definitionId: "ruby-ring-basic" as const, affixes: [] };
     const ringB = { instanceId: "ring-b", definitionId: "ruby-ring-basic" as const, affixes: [] };
@@ -185,7 +185,7 @@ test.describe("Armory crafting", critical, () => {
     await expectSalvageDialog(page);
     await confirmSalvage(page);
 
-    await expect(page.getByRole("button", { name: "Cancel salvage" })).toBeVisible();
+    await expect(page.getByTestId("armory-salvage-toggle")).toHaveAttribute("aria-pressed", "false");
     await expect(gearItemLocator(page, "Ruby Ring")).toHaveCount(1);
   });
 
@@ -205,6 +205,8 @@ test.describe("Armory crafting", critical, () => {
     await applyCurrencyToGear(page, "Longsword", "Voidstone");
     await expect(page.getByTestId("armory-crafting-cursor")).toHaveCount(0);
     await expect(currencyLocator(page, "voidstone")).toContainText("0");
+    await expect(page.getByTestId("armory-crafting-result")).toContainText("Removed");
+    await page.getByRole("button", { name: "Dismiss result" }).click();
     await gearItemLocator(page, "Longsword").hover();
     await expect(page.getByText("Ironbound")).toHaveCount(0);
   });

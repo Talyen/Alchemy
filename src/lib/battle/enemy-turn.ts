@@ -1,6 +1,6 @@
 import { applyIronwoodBuckler } from "./bonus-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
-import type { BattleState, CombatTextEvent } from "./types";
+import { isPlayerDefeated, type BattleState, type CombatTextEvent } from "./types";
 import { processEnemyAttack, processEnemyTraitActionStart } from "./enemy-turn-attack";
 import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
@@ -27,6 +27,9 @@ export type EndPlayerTurnResolution =
   | (EndPlayerTurnResolutionBase & { kind: "skipped" | "standard"; enemyTurnStartState: BattleState });
 
 function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[], options?: { preserveBlock?: boolean }) {
+  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) {
+    return { state, combatTexts, playerTurnSkipped: false };
+  }
   const nextState = applyIronwoodBuckler(state, combatTexts);
   const finalState = advanceToPlayerTurn(nextState, combatTexts, options);
   return { state: finalState, combatTexts, playerTurnSkipped: finalState.turnPhase === "enemy" };
@@ -80,12 +83,13 @@ function resolveEnemyPostTickResolution(
   if (mode === "attack") {
     nextState = processEnemyAttack(nextState, texts);
     afterAttackState = nextState;
-    if (nextState.enemyHealth <= 0) return { state: nextState, afterAttackState };
+    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return { state: nextState, afterAttackState };
   } else {
     nextState = reduceSkipTurns(nextState);
   }
   nextState = tickPlayerStatuses(nextState, texts);
   if (mode === "attack") nextState = processEncounterTraitActionDamage(nextState, texts);
+  if (isPlayerDefeated(nextState)) return { state: nextState, ...(afterAttackState ? { afterAttackState } : {}) };
   nextState = resolveDeathsDoorGraceExpiry(nextState);
   nextState = processEnemyRegeneration(nextState, texts);
   if (afterAttackState === undefined) return { state: nextState };

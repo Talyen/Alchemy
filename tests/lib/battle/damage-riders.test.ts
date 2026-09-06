@@ -1,3 +1,4 @@
+import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
@@ -214,5 +215,27 @@ describe("damage riders via applyCardEffects", () => {
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(41);
+  });
+});
+
+describe("Emberforged turn limit", () => {
+  it("grants Forge once across multiple Burn hits and refreshes next turn", () => {
+    const state = makeTestBattleState({
+      enemyHealth: 1000,
+      enemyMaxHealth: 1000,
+      playerStatuses: defaultPlayerStatusValues(),
+      gearEffects: { ...makeTestBattleState().gearEffects, forgeOnBurnDealt: 2 },
+      talentEffects: { ...defaultTalentEffects, forgeOnBurnDealt: 3 },
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 1 }] });
+    const first = applyCardEffects(state, card, []);
+    const second = applyCardEffects(first, card, []);
+    expect(first.playerStatuses.forge).toBe(5);
+    expect(second.playerStatuses.forge).toBe(8);
+    expect(second.flags.emberforgedUsedThisTurn).toBe(true);
+    const refreshed = advanceToPlayerTurn(second, []);
+    expect(refreshed.flags.emberforgedUsedThisTurn).toBe(false);
+    const third = applyCardEffects(refreshed, card, []);
+    expect(third.playerStatuses.forge).toBe(refreshed.playerStatuses.forge + 5);
   });
 });

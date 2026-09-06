@@ -116,6 +116,12 @@ export function awardCardXP(draft: GameplayDraft, card: BattleCard): void {
   draft.run.activeRun.runTalentXP = addTalentXP(draft.run.activeRun.runTalentXP, keywords);
 }
 
+export function awardBattleDodgeXP(draft: GameplayDraft, previousState: BattleState, resultState: BattleState): void {
+  const amount = resultState.playerDodgeCount - previousState.playerDodgeCount;
+  if (amount <= 0) return;
+  draft.run.activeRun.runTalentXP = addTalentXP(draft.run.activeRun.runTalentXP, ["dodge"], amount);
+}
+
 export function awardMysteryXP(draft: GameplayDraft, keywordId: KeywordId, amount: number): void {
   const keywords = filterKeywordsForTalentXP([keywordId]);
   if (keywords.length === 0) return;

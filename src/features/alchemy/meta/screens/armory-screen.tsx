@@ -1,14 +1,20 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useRef } from "react";
 import { Lock } from "lucide-react";
 import {
   EMPTY_CRAFTING_CURRENCIES,
   computeSalvageYield,
+  craftingCurrencyBlockedReason,
+  findGearEquippedCharacter,
+  getGearInstanceTitle,
   flattenGearInventories,
   type CraftingCurrencyId,
   type GearInstance,
   type GearSlot,
   type ArmorySlot,
 } from "@/lib/gear";
+import { playUISound } from "@/lib/audio";
+import type { CraftingResult } from "./armory/crafting-result";
+import { ArmoryFeedback } from "./armory/armory-feedback";
 import { cn } from "@/lib/utils";
 import { collectionGridGapXClass, screenShellPaddingClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import {
@@ -52,14 +58,17 @@ export function ArmoryScreen({
   onEquipTrinket,
   onUnequipTrinket,
   onSalvage,
+  onSetProtected,
   onApplyCurrency = () => false,
   onSpawnDevGear,
-  rng,
   onBack,
   onMenu,
 }: ArmoryScreenProps) {
+  const salvageButtonRef = useRef<HTMLButtonElement>(null);
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const [selectedSlot, setSelectedSlot] = useState<ArmorySlot>("main-hand");
+  const [craftingResult, setCraftingResult] = useState<CraftingResult | null>(null);
+  const [notice, setNotice] = useState("");
   const [salvageMode, setSalvageMode] = useState(false);
   const [salvagePending, setSalvagePending] = useState<ArmorySalvagePending | null>(null);
   const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
@@ -88,6 +97,8 @@ export function ArmoryScreen({
   const handleSelectCharacter = useCallback(
     (id: CharacterId) => {
       setCharacterId(id);
+      setCraftingResult(null);
+      setNotice("");
       resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setSalvagePending });
     },
     [setActiveCurrencyId, setSalvageMode, setSalvagePending],
@@ -116,27 +127,49 @@ export function ArmoryScreen({
     if (!editable || craftingCurrencies[currencyId] <= 0) return;
     setActiveCurrencyId((current) => (current === currencyId ? null : currencyId));
     setSalvageMode(false);
+    setCraftingResult(null);
+    setNotice("");
   }
 
   const beginSalvage = useCallback(
     (instance: GearInstance) => {
-      setSalvagePending({ instance, yield: computeSalvageYield(instance, rng) });
+      if (!editable) return;
+      if (instance.protected) {
+        setNotice("Unlock this item before salvaging.");
+        playUISound("error");
+        return;
+      }
+      setSalvageMode(false);
+      setActiveCurrencyId(null);
+      setNotice("");
+      setCraftingResult(null);
+      setSalvagePending({ instance, yield: computeSalvageYield(instance) });
     },
-    [rng],
+    [editable],
   );
 
   const handleApplyCurrency = useCallback(
     (instance: GearInstance) => {
-      applyCurrencyToGear({
+      if (!editable || !activeCurrencyId) return;
+      const reason = craftingCurrencyBlockedReason(activeCurrencyId, instance);
+      if (reason) {
+        setNotice(reason);
+        playUISound("error");
+        return;
+      }
+      const applied = applyCurrencyToGear({
         editable,
         activeCurrencyId,
         instance,
-        craftingCurrencies,
         onApplyCurrency,
         clearCurrency: () => setActiveCurrencyId(null),
       });
+      if (applied) {
+        setNotice("");
+        setCraftingResult({ before: instance, currencyId: activeCurrencyId });
+      } else setNotice("Crafting could not be completed. No currency was spent.");
     },
-    [editable, activeCurrencyId, craftingCurrencies, onApplyCurrency],
+    [editable, activeCurrencyId, onApplyCurrency],
   );
 
   const handleSlotSelect = useCallback((slot: ArmorySlot) => {
@@ -144,6 +177,23 @@ export function ArmoryScreen({
     if (slot === "trinket") resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setSalvagePending });
   }, []);
   const handleSlotUnequip = useCallback((slot: GearSlot) => onUnequip(characterId, slot), [onUnequip, characterId]);
+
+  const equippedSalvageCharacter = salvagePending
+    ? findGearEquippedCharacter(loadouts, salvagePending.instance.instanceId)
+    : null;
+  const craftedItem = craftingResult ? inventoryById.get(craftingResult.before.instanceId) : undefined;
+  const handleSetProtected = (instanceId: string, protectedItem: boolean) => {
+    if (!editable) return false;
+    const success = onSetProtected(instanceId, protectedItem);
+    setNotice(
+      success
+        ? protectedItem
+          ? "Item protected from salvage and crafting."
+          : "Item unlocked."
+        : "Item protection could not be changed.",
+    );
+    return success;
+  };
 
   return (
     <PageLayout>
@@ -166,7 +216,11 @@ export function ArmoryScreen({
           finishedRunCharacters={finishedRunCharacters}
           onSelectTab={handleSelectCharacter}
         />
-        <div className="armory-workspace mt-2 min-h-0 min-w-0 flex-1" data-testid="armory-workspace">
+        <div
+          className="armory-workspace mt-2 min-h-0 min-w-0 flex-1"
+          data-testid="armory-workspace"
+          inert={salvagePending !== null}
+        >
           <FadeSlot swapKey={characterId} className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div className="armory-workspace-grid">
               <section
@@ -206,6 +260,8 @@ export function ArmoryScreen({
                         activeCurrencyId={activeCurrencyId}
                         onSelect={handleSlotSelect}
                         onUnequip={handleSlotUnequip}
+                        onSetProtected={handleSetProtected}
+                        craftingResult={craftingResult}
                         onSalvage={beginSalvage}
                         onApplyCurrency={handleApplyCurrency}
                       />
@@ -213,13 +269,17 @@ export function ArmoryScreen({
                   })}
                 </div>
                 <CraftingStrip
+                  salvageButtonRef={salvageButtonRef}
                   craftingCurrencies={craftingCurrencies}
                   activeCurrencyId={activeCurrencyId}
                   salvageMode={salvageMode}
                   editable={editable}
-                  hasSalvageableGear={sharedInventory.length > 0}
+                  hasSalvageableGear={sharedInventory.some((item) => !item.protected)}
+                  onCancel={() => resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setSalvagePending })}
                   onSelectCurrency={handleSelectCurrency}
                   onToggleSalvageMode={() => {
+                    setNotice("");
+                    setCraftingResult(null);
                     setSalvageMode((current) => !current);
                     setActiveCurrencyId(null);
                   }}
@@ -252,17 +312,37 @@ export function ArmoryScreen({
                   if (selectedSlot !== "trinket") onEquip(characterId, selectedSlot, instance);
                 }}
                 onEquipTrinket={(trinketId) => onEquipTrinket(characterId, trinketId)}
+                onSetProtected={handleSetProtected}
+                craftingResult={craftingResult}
                 onSalvage={beginSalvage}
                 onApplyCurrency={handleApplyCurrency}
               />
             </div>
           </FadeSlot>
         </div>
+        <ArmoryFeedback
+          notice={notice}
+          result={craftingResult}
+          after={craftedItem}
+          onDismiss={() => {
+            setNotice("");
+            setCraftingResult(null);
+          }}
+        />
         <ArmoryOverlays
+          returnFocusRef={salvageButtonRef}
           salvagePending={salvagePending}
           activeCurrencyId={activeCurrencyId}
           editable={editable}
-          onSalvage={onSalvage}
+          equippedCharacterName={equippedSalvageCharacter ? characters[equippedSalvageCharacter].name : null}
+          onSalvage={(instanceId, salvageYield) => {
+            const success = onSalvage(instanceId, salvageYield);
+            if (success)
+              setNotice(
+                `${salvagePending ? getGearInstanceTitle(salvagePending.instance) : "Item"} salvaged. Rewards added.`,
+              );
+            return success;
+          }}
           onClearSalvageTarget={() => setSalvagePending(null)}
         />
       </div>

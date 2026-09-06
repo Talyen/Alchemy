@@ -1,23 +1,28 @@
+import type { RefObject } from "react";
 import { Trash2 } from "lucide-react";
-import { CRAFTING_CURRENCY_LIST, type CraftingCurrencyId } from "@/lib/gear";
+import { getCraftingCurrencyDefinition, CRAFTING_CURRENCY_LIST, type CraftingCurrencyId } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { sectionTitleClass, surfaceSelectedRingClass } from "../../../../shared/config";
 import { CurrencyChip } from "./currency-chip";
 
 export function CraftingStrip({
   craftingCurrencies,
+  salvageButtonRef,
   activeCurrencyId,
   salvageMode,
   editable,
   hasSalvageableGear,
+  onCancel,
   onSelectCurrency,
   onToggleSalvageMode,
 }: {
+  salvageButtonRef: RefObject<HTMLButtonElement | null>;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   activeCurrencyId: CraftingCurrencyId | null;
   salvageMode: boolean;
   editable: boolean;
   hasSalvageableGear: boolean;
+  onCancel: () => void;
   onSelectCurrency: (currencyId: CraftingCurrencyId) => void;
   onToggleSalvageMode: () => void;
 }) {
@@ -38,12 +43,13 @@ export function CraftingStrip({
         ))}
         <button
           type="button"
+          ref={salvageButtonRef}
           data-testid="armory-salvage-toggle"
           aria-label={salvageMode ? "Cancel salvage" : "Salvage"}
           aria-pressed={salvageMode}
           disabled={!editable || (!hasSalvageableGear && !salvageMode)}
           className={cn(
-            "relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border/80 bg-black text-red-300",
+            "relative flex h-20 w-20 flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border border-border/80 bg-black text-red-300",
             salvageMode && surfaceSelectedRingClass,
             (!editable || (!hasSalvageableGear && !salvageMode)) && "cursor-default opacity-50",
           )}
@@ -53,8 +59,29 @@ export function CraftingStrip({
             onToggleSalvageMode();
           }}
         >
-          <Trash2 className="h-10 w-10" />
+          <Trash2 className="h-8 w-8" />
+          <span className="text-xs">Salvage</span>
         </button>
+      </div>
+      <div className="mt-3 min-h-12 text-center text-sm text-muted-foreground" aria-live="polite">
+        {activeCurrencyId || salvageMode ? (
+          <>
+            <p>
+              {activeCurrencyId
+                ? `${getCraftingCurrencyDefinition(activeCurrencyId).displayName}: ${getCraftingCurrencyDefinition(activeCurrencyId).tooltipEffect}. Select an item. Uses one currency.`
+                : "Salvage: select an unlocked item to preview its rewards."}
+            </p>
+            <button
+              type="button"
+              className="mt-1 rounded px-2 py-1 text-foreground underline underline-offset-4"
+              onClick={onCancel}
+            >
+              Cancel <span className="text-muted-foreground">(Esc)</span>
+            </button>
+          </>
+        ) : (
+          <p>Choose a currency to craft once, or Salvage to recover materials.</p>
+        )}
       </div>
     </div>
   );

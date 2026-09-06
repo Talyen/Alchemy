@@ -45,16 +45,16 @@ export const coreCards: BattleCard[] = [
   {
     id: "fangs",
     title: "Fangs",
-    descriptionLines: ["Deal 1 Bleed damage", "Deal 1 Physical damage", "Leech"],
+    descriptionLines: ["Deal 2 Bleed damage", "Deal 1 Physical damage", "Leech"],
     art: assetRefs.fangs,
     cost: 1,
     effects: [
-      { kind: "damage", damageType: "bleed", amount: 1, lifesteal: true },
+      { kind: "damage", damageType: "bleed", amount: 2, lifesteal: true },
       { kind: "damage", damageType: "physical", amount: 1, lifesteal: true },
     ],
   },
   cardBuilders.damageCard({ id: "frostbolt", art: assetRefs.frostbolt, damageType: "freeze", amount: 3 }),
-  cardBuilders.playerStatusCard({ id: "anvil", art: assetRefs.anvil, status: "forge", amount: 1 }),
+  cardBuilders.playerStatusCard({ id: "anvil", art: assetRefs.anvil, status: "forge", amount: 2 }),
   cardBuilders.damageCard({ id: "bash", art: assetRefs.bash, damageType: "stun", amount: 3 }),
   cardBuilders.playerStatusCard({ id: "block", art: assetRefs.block, status: "block", amount: 5 }),
   cardBuilders.playerStatThenScaledDamageCard({

@@ -33,6 +33,9 @@ export interface BattleSimulationResult {
   enemyId: string;
   enemyType: BestiaryEntry["enemyType"];
   outcome: BattleSimulationOutcome;
+  enemyAttackActions: number;
+  enemyAbilityActivations: Record<string, number>;
+  wonBeforeEnemyAttack: boolean;
   turns: number;
   playerHealth: number;
   playerMaxHealth: number;
@@ -61,6 +64,9 @@ export interface BalanceBatchResult {
   lossRate: number;
   timeoutRate: number;
   averageTurns: number;
+  averageEnemyAttacks: number;
+  averageEnemyAbilityActivations: number;
+  winsBeforeEnemyAttackRate: number;
   averageHealthRemaining: number;
   averageCardsPlayed: number;
   cardPlayCounts: Record<string, number>;

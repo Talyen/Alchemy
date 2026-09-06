@@ -14,14 +14,17 @@ import {
   frostWhelpCompanion,
   foxCompanion,
 } from "./assets";
-import type { CompanionDefinition, CompanionId } from "./types";
+import type { BattleCardEffect, CompanionDefinition, CompanionId } from "./types";
 
 export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefinition> = {
   wolf: {
     id: "wolf",
     title: "Wolf Companion",
     art: wolfCompanion,
-    turnStartEffects: [{ kind: "damage", damageType: "bleed", amount: 1 }],
+    turnStartEffects: [
+      { kind: "damage", damageType: "bleed", amount: 1 },
+      { kind: "player-status", status: "block", amount: 1 },
+    ],
   },
   "lizard-scout": {
     id: "lizard-scout",
@@ -45,7 +48,7 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     id: "panther",
     title: "Panther Companion",
     art: pantherCompanion,
-    turnStartEffects: [{ kind: "damage", damageType: "bleed", amount: 1 }],
+    turnStartEffects: [{ kind: "damage", damageType: "bleed", amount: 2 }],
   },
   phoenix: {
     id: "phoenix",
@@ -69,7 +72,7 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     id: "mana-moth",
     title: "Mana Moth Companion",
     art: manaMothCompanion,
-    turnStartEffects: [{ kind: "restore-mana", amount: 1 }],
+    turnStartEffects: [{ kind: "restore-mana", amount: 1, allowOverflow: true }],
   },
   "will-o-wisp": {
     id: "will-o-wisp",
@@ -113,3 +116,40 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
 export const defaultCompanionBondLevels: Record<CompanionId, number> = Object.fromEntries(
   Object.keys(companionLibrary).map((id) => [id, 0]),
 ) as Record<CompanionId, number>;
+
+export function getCompanionBondEffects(companion: CompanionDefinition, bondLevel = 0): BattleCardEffect[] {
+  if (bondLevel === 0) return companion.turnStartEffects;
+  if (companion.id === "mana-moth" || companion.id === "library-owl") {
+    return [
+      ...companion.turnStartEffects,
+      {
+        kind: "chance",
+        probability: bondLevel / 4,
+        successEffects: companion.turnStartEffects,
+        failureEffects: [],
+      },
+    ];
+  }
+  if (companion.id === "will-o-wisp") {
+    return [...companion.turnStartEffects, { kind: "heal", amount: bondLevel }];
+  }
+  function scaleEffect(effect: BattleCardEffect): BattleCardEffect {
+    if (effect.kind === "chance") {
+      return {
+        ...effect,
+        successEffects: effect.successEffects.map(scaleEffect),
+        failureEffects: effect.failureEffects.map(scaleEffect),
+      };
+    }
+    if (
+      effect.kind === "damage" ||
+      effect.kind === "heal" ||
+      effect.kind === "gain-gold" ||
+      (effect.kind === "player-status" && companion.id !== "wolf")
+    ) {
+      return { ...effect, amount: effect.amount + bondLevel };
+    }
+    return effect;
+  }
+  return companion.turnStartEffects.map(scaleEffect);
+}

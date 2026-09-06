@@ -122,3 +122,37 @@ describe("detonateEnemyStatuses", () => {
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
   });
 });
+
+describe("remaining-tick detonation", () => {
+  it.each([
+    [5, 15],
+    [10, 39],
+  ])("sums the full decay of %i Poison", (poison, total) => {
+    const state = patchBattleState({ enemyHealth: 100, enemyMaxHealth: 100, enemyStatuses: { poison, bleed: 6 } });
+    const texts = makeTexts();
+    const next = detonateEnemyStatuses(state, ["bleed", "poison"], texts, "remaining-ticks");
+    expect(next.enemyHealth).toBe(100 - total - 6);
+    expect(next.enemyStatuses.poison).toBe(0);
+    expect(next.enemyStatuses.bleed).toBe(0);
+    expect(detonateEnemyStatuses(next, ["bleed", "poison"], texts, "remaining-ticks")).toBe(next);
+    expect(state.enemyStatuses.poison).toBe(poison);
+  });
+
+  it("rounds each projected tick and excludes random Poison growth", () => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { poison: 5 },
+      currentEnemy: {
+        ...makeTestBattleState().currentEnemy,
+        traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "" }],
+      },
+      rng: () => {
+        throw new Error("Detonation must not roll future procs");
+      },
+    });
+    const multiplier = 0.75;
+    const next = detonateEnemyStatuses(state, ["poison"], makeTexts(), "remaining-ticks");
+    expect(next.enemyHealth).toBe(100 - [5, 4, 3, 2, 1].reduce((sum, tick) => sum + Math.round(tick * multiplier), 0));
+  });
+});

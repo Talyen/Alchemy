@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { keywordDefinitions } from "@/lib/game-data";
+import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import { gearDefinitions } from "@/lib/gear/definitions";
 import {
   getAstralShineColors,
@@ -37,6 +38,65 @@ describe("gear shine", () => {
     );
 
     expect(keywordIds).toEqual(["burn", "leech", "poison"]);
+  });
+
+  it("includes all Stalwart keywords and keeps Stun yellow", () => {
+    expect(getGearAffixTextShineColors(gearAffixCatalog["armor-on-cc"])).toEqual([
+      "#9ca3af",
+      "color-mix(in srgb, #9ca3af 55%, transparent)",
+      "#fcd34d",
+      "color-mix(in srgb, #fcd34d 55%, transparent)",
+      "#67e8f9",
+      "color-mix(in srgb, #67e8f9 55%, transparent)",
+    ]);
+  });
+
+  it("uses described keywords instead of hidden affix tags", () => {
+    expect(getGearAffixTextShineColors(gearAffixCatalog["dance-of-blades"])).toEqual([
+      "#bef264",
+      "color-mix(in srgb, #bef264 55%, transparent)",
+    ]);
+  });
+
+  it("does not add green from Leather Armor affinity without a green affix keyword", () => {
+    const gear = instance({
+      instanceId: "leather-no-green",
+      definitionId: "leather-armor-astral",
+      affixes: [
+        { id: "armor-on-cc", value: 4 },
+        { id: "flat-physical", value: 4 },
+        { id: "flat-burn", value: 4 },
+        { id: "flat-bleed", value: 4 },
+      ],
+    });
+    expect(getGearInstanceKeywordIds(gear)).toEqual(["armor", "bleed", "burn", "freeze", "physical", "stun"]);
+    for (const keywordId of ["dodge", "poison", "nature", "archery"] as const) {
+      expect(getGearInstanceTextShineColors(gear)).not.toContain(keywordDefinitions[keywordId].shineColors[0]);
+      expect(getGearInstanceShineColors(gear)).not.toContain(keywordDefinitions[keywordId].shineColors[0]);
+    }
+  });
+
+  it("recognizes Nourishing and excludes the Consume card keyword from Blackfletch", () => {
+    expect(getGearAffixTextShineColors(gearAffixCatalog["consume-heal-bonus"])).toEqual([
+      "#f87171",
+      "color-mix(in srgb, #f87171 55%, transparent)",
+      "#a78bfa",
+      "color-mix(in srgb, #a78bfa 55%, transparent)",
+    ]);
+    const gear = instance({
+      instanceId: "blackfletch",
+      definitionId: "blackfletch",
+      affixes: [{ id: "blackfletch", value: 1 }],
+    });
+    expect(getGearInstanceKeywordIds(gear)).not.toContain("consume");
+    expect(getGearAffixTextShineColors({ descriptionTemplate: "Physical Physical Stunned Frozen Poison" })).toEqual([
+      "#cbd5e1",
+      "color-mix(in srgb, #cbd5e1 55%, transparent)",
+      "#fcd34d",
+      "color-mix(in srgb, #fcd34d 55%, transparent)",
+      "#67e8f9",
+      "color-mix(in srgb, #67e8f9 55%, transparent)",
+    ]);
   });
 
   it("returns no shine colors for basic gear", () => {
@@ -118,7 +178,10 @@ describe("gear shine", () => {
   });
 
   it("uses two text stops per keyword while leaving border palettes unchanged", () => {
-    expect(getGearAffixTextShineColors({ keywordId: "burn" })).toEqual(keywordDefinitions.burn.shineColors.slice(0, 2));
+    expect(getGearAffixTextShineColors(gearAffixCatalog["flat-burn"])).toEqual([
+      "#fb923c",
+      "color-mix(in srgb, #fb923c 55%, transparent)",
+    ]);
   });
 
   it("shines definition-only astral titles from affinity keywords and leaves basic plain", () => {
@@ -148,9 +211,10 @@ describe("gear shine", () => {
       ],
     });
 
-    const expected = ["physical", "bleed", "burn"].flatMap((keywordId) =>
-      keywordDefinitions[keywordId as keyof typeof keywordDefinitions].shineColors.slice(0, 2),
-    );
+    const expected = ["physical", "bleed", "burn"].flatMap((keywordId) => [
+      keywordDefinitions[keywordId as keyof typeof keywordDefinitions].shineColors[0],
+      `color-mix(in srgb, ${keywordDefinitions[keywordId as keyof typeof keywordDefinitions].shineColors[0]} 55%, transparent)`,
+    ]);
     expect(getGearInstanceTextShineColors(gear)).toEqual(expected);
     expect(getGearInstanceTextShineColors(gear)).not.toContain(keywordDefinitions.freeze.shineColors[0]!);
     expect(getGearInstanceTextShineColors(gear)).not.toContain(keywordDefinitions.poison.shineColors[0]!);
@@ -162,9 +226,10 @@ describe("gear shine", () => {
       affinityKeywords: ["physical", "bleed", "poison", "dodge"],
     } as (typeof gearDefinitions)["longsword-astral"];
 
-    const expected = ["physical", "bleed", "poison"].flatMap((keywordId) =>
-      keywordDefinitions[keywordId as keyof typeof keywordDefinitions].shineColors.slice(0, 2),
-    );
+    const expected = ["physical", "bleed", "poison"].flatMap((keywordId) => [
+      keywordDefinitions[keywordId as keyof typeof keywordDefinitions].shineColors[0],
+      `color-mix(in srgb, ${keywordDefinitions[keywordId as keyof typeof keywordDefinitions].shineColors[0]} 55%, transparent)`,
+    ]);
     expect(getGearDefinitionTextShineColors(definition)).toEqual(expected);
     expect(getGearDefinitionTextShineColors(definition)).not.toContain(keywordDefinitions.dodge.shineColors[0]!);
   });

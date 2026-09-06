@@ -32,7 +32,7 @@ const ironHeavy = salvageBy({ iron: 9 }, { iron: 12 });
 const woodLight = salvageBy({ wood: 3 }, { wood: 6 });
 const woodMedium = salvageBy({ wood: 6 }, { wood: 9 });
 const gemLight = salvageBy({ gems: 3 }, { gems: 6 });
-const natureGem = salvageBy({ gems: 3 }, { gems: 3, herbs: 3 });
+const currencyOnly = salvageBy({}, {});
 
 const JEWELRY_KINDS = ["ring", "amulet"] as const;
 
@@ -48,7 +48,7 @@ const JEWELRY_GEMS: Array<{
 }> = [
   { slug: "ruby", label: "Ruby", keywords: ["burn", "bleed", "leech"], salvage: gemLight },
   { slug: "sapphire", label: "Sapphire", keywords: ["freeze", "mana", "block"], salvage: gemLight },
-  { slug: "emerald", label: "Emerald", keywords: ["nature", "poison", "archery", "dodge"], salvage: natureGem },
+  { slug: "emerald", label: "Emerald", keywords: ["nature", "poison", "archery", "dodge"], salvage: gemLight },
   { slug: "topaz", label: "Topaz", keywords: ["holy", "gold", "forge", "stun"], salvage: gemLight },
 ];
 
@@ -117,7 +117,7 @@ const gearBaseItemCatalog = {
     compatibleSlots: ["main-hand", "off-hand"],
     slotRule: "standard",
     affinityKeywords: ["physical", "bleed", "poison", "dodge"],
-    salvageByRarity: salvageBy({ iron: 3 }, { iron: 3, herbs: 3 }),
+    salvageByRarity: ironLight,
   },
   mace: {
     displayName: "Mace",
@@ -152,7 +152,7 @@ const gearBaseItemCatalog = {
     compatibleSlots: ["main-hand"],
     slotRule: "ranged",
     affinityKeywords: ["archery", "nature", "physical", "companion"],
-    salvageByRarity: salvageBy({ wood: 6 }, { wood: 6, herbs: 3 }),
+    salvageByRarity: woodMedium,
   },
   crossbow: {
     displayName: "Crossbow",
@@ -194,21 +194,21 @@ const gearBaseItemCatalog = {
     compatibleSlots: ["off-hand"],
     slotRule: "quiver",
     affinityKeywords: ["archery", "physical", "dodge"],
-    salvageByRarity: woodLight,
+    salvageByRarity: currencyOnly,
   },
   spellbook: {
     displayName: "Spellbook",
     compatibleSlots: ["off-hand"],
     slotRule: "standard",
     affinityKeywords: ["burn", "freeze", "holy"],
-    salvageByRarity: salvageBy({ herbs: 3, gems: 3 }, { herbs: 6, gems: 3 }),
+    salvageByRarity: salvageBy({ gems: 6 }, { gems: 9 }),
   },
   "leather-armor": {
     displayName: "Leather Armor",
     compatibleSlots: ["body"],
     slotRule: "standard",
     affinityKeywords: ["physical", "health", "armor", "dodge"],
-    salvageByRarity: salvageBy({ herbs: 6 }, { herbs: 9 }),
+    salvageByRarity: currencyOnly,
   },
   "plate-armor": {
     displayName: "Plate Armor",

@@ -104,10 +104,19 @@ export function unequipPermanentTrinket(gear: Draft<GearStateFields>, characterI
   return true;
 }
 
+export function setGearProtected(gear: Draft<GearStateFields>, instanceId: string, protectedItem: boolean): boolean {
+  const owner = findGearInventoryOwner(gear.inventories, instanceId);
+  const instance = owner ? gear.inventories[owner].find((item) => item.instanceId === instanceId) : undefined;
+  if (!instance || Boolean(instance.protected) === protectedItem) return false;
+  if (protectedItem) instance.protected = true;
+  else delete instance.protected;
+  return true;
+}
+
 export function salvageGearInstance(
   gear: Draft<GearStateFields>,
   instanceId: string,
-  options?: { rng?: () => number; yield?: SalvageYield },
+  options?: { yield?: SalvageYield },
 ): {
   inventories: GearInventories;
   yieldedCurrencies: Record<CraftingCurrencyId, number>;
@@ -115,14 +124,7 @@ export function salvageGearInstance(
 } | null {
   const owner = findGearInventoryOwner(gear.inventories, instanceId);
   if (!owner) return null;
-  if (!options?.yield && !options?.rng) throw new Error("salvage requires an explicit rng or yield");
-  const result = salvageGear(
-    flattenGearInventories(gear.inventories),
-    gear.loadouts,
-    instanceId,
-    options.rng ?? (() => 0),
-    options.yield,
-  );
+  const result = salvageGear(flattenGearInventories(gear.inventories), gear.loadouts, instanceId, options?.yield);
   if (!result) return null;
   gear.inventories = {
     ...gear.inventories,

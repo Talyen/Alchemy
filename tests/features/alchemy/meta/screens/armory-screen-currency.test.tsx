@@ -27,7 +27,7 @@ describe("ArmoryScreen crafting currencies", () => {
       onApplyCurrency,
     });
 
-    await user.click(screen.getByLabelText("Use Voidstone"));
+    await user.click(screen.getByLabelText(/^Use Voidstone,/));
     await user.click(screen.getByRole("button", { name: /Apply Voidstone/ }));
 
     expect(onApplyCurrency).toHaveBeenCalledWith("voidstone", "gear-sword");
@@ -41,7 +41,7 @@ describe("ArmoryScreen crafting currencies", () => {
       onApplyCurrency: vi.fn(() => true),
     });
     const { rerender } = render(<ArmoryScreen {...props} />);
-    await user.click(screen.getByLabelText("Use Voidstone"));
+    await user.click(screen.getByLabelText(/^Use Voidstone,/));
 
     rerender(<ArmoryScreen {...props} craftingCurrencies={{ ...EMPTY_CRAFTING_CURRENCIES, voidstone: 0 }} />);
 
@@ -55,7 +55,7 @@ describe("ArmoryScreen crafting currencies", () => {
       craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 },
     });
     const { rerender } = render(<ArmoryScreen {...props} />);
-    await user.click(screen.getByLabelText("Use Voidstone"));
+    await user.click(screen.getByLabelText(/^Use Voidstone,/));
 
     rerender(<ArmoryScreen {...props} browseOnly />);
 
@@ -69,8 +69,8 @@ describe("ArmoryScreen crafting currencies", () => {
       craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, [id]: 1 },
     });
 
-    await user.click(screen.getByLabelText(`Use ${displayName}`));
+    await user.click(screen.getByLabelText(`Use ${displayName}, 1 available`));
 
-    expect(screen.getByLabelText(`Use ${displayName}`).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByLabelText(`Use ${displayName}, 1 available`).getAttribute("aria-pressed")).toBe("true");
   });
 });

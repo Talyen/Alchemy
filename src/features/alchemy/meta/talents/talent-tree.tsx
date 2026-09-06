@@ -50,13 +50,14 @@ function TalentCard({
   const isPlaceholder = isTalentPlaceholder(talent);
   const interactive = isAllocatable && canAfford && !isUnlocking;
   const showShine = interactive;
+  const Element = interactive ? "button" : "div";
   const isLockedLook = !isUnlocked && !interactive && !isUnlocking;
 
   const style = accentColor ? ({ "--talent-accent": accentColor } as CSSProperties) : undefined;
 
   return (
-    <div
-      role={interactive ? "button" : undefined}
+    <Element
+      type={interactive ? "button" : undefined}
       aria-disabled={!isPlaceholder && !isUnlocked && !interactive ? true : undefined}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
       onMouseEnter={() => onHoverTalent?.(talent)}
@@ -112,7 +113,7 @@ function TalentCard({
       {showShine ? (
         <ShineBorder shineColor={shineColors} borderWidth={2} duration={8} className="z-10 rounded-lg" />
       ) : null}
-    </div>
+    </Element>
   );
 }
 

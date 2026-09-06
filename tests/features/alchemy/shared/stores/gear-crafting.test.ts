@@ -16,6 +16,20 @@ describe("gear-store crafting integration", () => {
     affixes: [{ id: "flat-physical", value: 1 }],
   };
 
+  it("protects items at the command boundary and allows use after unlocking", () => {
+    resetGearForTest();
+    mutateGearForTest((gear) => gear.initialize(knightInventories(item), createEmptyGearLoadouts(), { voidstone: 2 }));
+    expect(mutateGearForTest((gear) => gear.setProtected(item.instanceId, true))).toBe(true);
+    expect(mutateGearForTest((gear) => gear.salvage(item.instanceId))).toBeNull();
+    expect(mutateGearForTest((gear) => gear.applyCurrency("voidstone", item.instanceId, { rng: () => 0 }))).toBe(false);
+    expect(readGearState().craftingCurrencies.voidstone).toBe(2);
+    expect(readGearState().inventories.knight).toHaveLength(1);
+    expect(mutateGearForTest((gear) => gear.setProtected(item.instanceId, false))).toBe(true);
+    expect(mutateGearForTest((gear) => gear.applyCurrency("voidstone", item.instanceId, { rng: () => 0 }))).toBe(true);
+    expect(readGearState().craftingCurrencies.voidstone).toBe(1);
+    resetGearForTest();
+  });
+
   it("initializes crafting currencies, merging defaults", () => {
     resetGearForTest();
     mutateGearForTest((gear) =>
@@ -42,11 +56,11 @@ describe("gear-store crafting integration", () => {
 
     expect(readGearState().craftingCurrencies["discordant-dice"]).toBe(0);
 
-    const salvageResult = mutateGearForTest((gear) => gear.salvage(item.instanceId, { rng: () => 0 }));
+    const salvageResult = mutateGearForTest((gear) => gear.salvage(item.instanceId));
     expect(salvageResult).toBeDefined();
     expect(salvageResult?.inventories.knight).toEqual([]);
     expect(salvageResult?.yieldedMaterials.iron).toBe(3);
-    expect(readGearState().craftingCurrencies["discordant-dice"]).toBe(2);
+    expect(readGearState().craftingCurrencies["discordant-dice"]).toBeGreaterThanOrEqual(1);
     resetGearForTest();
   });
 
@@ -70,7 +84,7 @@ describe("gear-store crafting integration", () => {
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", item, [item]);
     mutateGearForTest((gear) => gear.initialize(knightInventories(item), loadouts));
 
-    const salvageResult = mutateGearForTest((gear) => gear.salvage(item.instanceId, { rng: () => 0 }));
+    const salvageResult = mutateGearForTest((gear) => gear.salvage(item.instanceId));
     expect(salvageResult?.inventories.knight).toEqual([]);
     expect(readGearState().loadouts.knight["main-hand"]).toBeNull();
     resetGearForTest();

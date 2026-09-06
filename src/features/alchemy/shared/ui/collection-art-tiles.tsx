@@ -1,7 +1,15 @@
 import type { ReactNode } from "react";
 
 import type { TrinketEntry } from "@/lib/game-data";
-import { gearDefinitions, getAstralShineColors, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
+import {
+  gearDefinitions,
+  getAstralShineColors,
+  getGearInstanceTitle,
+  getGearInstanceKeywordIds,
+  type GearInstance,
+} from "@/lib/gear";
+import { extractKeywordIds } from "@/lib/keyword-text";
+import { getTrinketKeywords } from "../config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
 import {
@@ -10,6 +18,7 @@ import {
   gearArtFillClass,
   getTileWidthClass,
   getTrinketShineColors,
+  getInspectionKeywordShineColors,
   getPlasmaColorPairForTrinket,
   trinketArtFillClass,
   trinketArtImageClass,
@@ -38,6 +47,7 @@ export interface TrinketTileProps {
   className?: string | undefined;
 
   shine?: boolean | undefined;
+  hoverKeywordShine?: boolean | undefined;
   temporary?: boolean | undefined;
   children?: ReactNode | undefined;
 
@@ -58,6 +68,7 @@ export function TrinketTile({
   footerChip,
   className,
   shine = true,
+  hoverKeywordShine = false,
   temporary = false,
   children,
   onHoverChange,
@@ -71,7 +82,14 @@ export function TrinketTile({
       art={trinket.art}
       className={cn(trinketArtTileClass, className)}
       imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
-      shineColor={shine ? getTrinketShineColors(trinket.id) : undefined}
+      shineOnHover={hoverKeywordShine}
+      shineColor={
+        shine
+          ? hoverKeywordShine
+            ? getInspectionKeywordShineColors(getTrinketKeywords(trinket.id))
+            : getTrinketShineColors(trinket.id)
+          : undefined
+      }
       as={as}
       selected={selected}
       disabled={disabled}
@@ -105,6 +123,7 @@ export interface GearTileProps {
   interactiveChrome?: boolean | undefined;
 
   shine?: boolean | undefined;
+  hoverKeywordShine?: boolean | undefined;
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
   children?: ReactNode | undefined;
@@ -120,6 +139,7 @@ export function GearTile({
   disabled,
   interactiveChrome,
   shine = true,
+  hoverKeywordShine = false,
   onClick,
   ariaLabel,
   children,
@@ -135,7 +155,17 @@ export function GearTile({
       art={definition?.art ?? ""}
       className={cn(cardSurfaceClass, getTileWidthClass("collection"), gearArtAspectClass)}
       imageClassName={gearArtFillClass}
-      shineColor={shine ? getAstralShineColors(instance) : undefined}
+      shineOnHover={hoverKeywordShine}
+      shineColor={
+        shine
+          ? hoverKeywordShine
+            ? getInspectionKeywordShineColors([
+                ...getGearInstanceKeywordIds(instance),
+                ...extractKeywordIds(definition?.descriptionLines.join(" ") ?? ""),
+              ])
+            : getAstralShineColors(instance)
+          : undefined
+      }
       as={as}
       selected={selected}
       disabled={disabled}

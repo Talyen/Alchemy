@@ -1,9 +1,11 @@
+import { recordEnemyAbilityActivation, recordEnemyAttackAction } from "./battle-metrics";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { logError } from "../error-logger";
 import { addGoldWithCombatText, addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { processCompanionTurnStart } from "./companion";
 import { takeRandomCardFromDeck } from "./draw";
 import { tryDodgeEnemyAttackPacket } from "./dodge";
+import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
 import { applyCardEffects } from "./effect-handlers";
 import {
   applyEnemyLeechHealing,
@@ -17,7 +19,14 @@ import { dealPlayerTypedHit } from "./player-typed-hit";
 import { applyPlayerStatusFromAttack, type DirectPlayerStatusAttackEffect } from "./status-player";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { type BattleState, type CombatTextEvent } from "./types";
-import { getEnemyTraitSet, hasEnemyTrait, setEnemyStatus, setFlag, setPlayerStatus } from "./types/state-helpers";
+import {
+  isPlayerDefeated,
+  getEnemyTraitSet,
+  hasEnemyTrait,
+  setEnemyStatus,
+  setFlag,
+  setPlayerStatus,
+} from "./types/state-helpers";
 import {
   BANDIT_FIRST_HIT_MULTIPLIER,
   BRAWLER_PENALTY_MULTIPLIER,
@@ -37,6 +46,7 @@ function isDirectPlayerStatusAttack(
 }
 
 interface ResolvedDamageModifiers {
+  abilityIds: string[];
   amountMultiplier: number;
   flatBonus: number;
 }
@@ -50,17 +60,26 @@ function resolveEnemyDamageModifiers(
 ): ResolvedDamageModifiers {
   let amountMultiplier = 1;
   let flatBonus = 0;
-  if (hasEnemyTrait(state, "hellhound", traitSet) && state.playerStatuses.burn > 0)
+  const abilityIds: string[] = [];
+  if (hasEnemyTrait(state, "hellhound", traitSet) && state.playerStatuses.burn > 0) {
+    abilityIds.push("hellhound");
     amountMultiplier *= HELLHOUND_BURN_MULTIPLIER;
-  if (hasEnemyTrait(state, "dire-wolf", traitSet) && state.playerStatuses.bleed > 0)
+  }
+  if (hasEnemyTrait(state, "dire-wolf", traitSet) && state.playerStatuses.bleed > 0) {
+    abilityIds.push("dire-wolf");
     flatBonus += CONDITIONAL_FLAT_BONUS;
-  if (hasEnemyTrait(state, "stone-golem", traitSet) && state.enemyMitigation.block > 0)
+  }
+  if (hasEnemyTrait(state, "stone-golem", traitSet) && state.enemyMitigation.block > 0) {
+    abilityIds.push("stone-golem");
     flatBonus += CONDITIONAL_FLAT_BONUS;
-  if (hasEnemyTrait(state, "ice-wraith", traitSet) && state.enemyStatuses.freeze > 0)
+  }
+  if (hasEnemyTrait(state, "ice-wraith", traitSet) && state.enemyStatuses.freeze > 0) {
+    abilityIds.push("ice-wraith");
     flatBonus -= ICE_WRAITH_FROZEN_PENALTY;
+  }
   if (isFirstDamage && nextAttackCrit) amountMultiplier *= NEXT_ATTACK_CRIT_MULTIPLIER;
   if (isFirstDamage && nextAttackBonus > 0) flatBonus += nextAttackBonus;
-  return { amountMultiplier, flatBonus };
+  return { amountMultiplier, flatBonus, abilityIds };
 }
 
 function playerPacketLanded(before: BattleState, after: BattleState): boolean {
@@ -107,12 +126,11 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
   if (nextState.talentEffects.blockOnDodgeEqualToAttack && dodgedAmount > 0) {
     nextState = addPlayerStatusWithCombatText(nextState, "block", dodgedAmount, combatTexts);
   }
-  if (nextState.gearEffects.armorOnDodge > 0) {
-    nextState = addPlayerStatusWithCombatText(nextState, "armor", nextState.gearEffects.armorOnDodge, combatTexts);
-  }
-  if (nextState.gearEffects.healOnDodge > 0) {
-    nextState = applyHealingWithCombatText(nextState, nextState.gearEffects.healOnDodge, combatTexts);
-  }
+  const armor = nextState.gearEffects.armorOnDodge + nextState.talentEffects.armorOnDodge;
+  if (armor > 0) nextState = addPlayerStatusWithCombatText(nextState, "armor", armor, combatTexts);
+  const healing = nextState.gearEffects.healOnDodge + nextState.talentEffects.healOnDodge;
+  if (healing > 0) nextState = applyHealingWithCombatText(nextState, healing, combatTexts);
+  nextState = applyDodgeTalentStatuses(nextState, combatTexts);
   if (nextState.gearEffects.physicalOnDodge > 0 && nextState.enemyHealth > 0) {
     nextState = dealPlayerTypedHit(nextState, "physical", nextState.gearEffects.physicalOnDodge, combatTexts);
   }
@@ -125,12 +143,14 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
   if (nextState.talentEffects.goldOnDodge > 0) {
     nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnDodge, combatTexts);
   }
-  if (nextState.gearEffects.nextAttackPhysicalOnDodge > 0) {
+  const nextAttackBonus =
+    nextState.gearEffects.nextAttackPhysicalOnDodge + nextState.talentEffects.nextAttackPhysicalOnDodge;
+  if (nextAttackBonus > 0) {
     nextState = {
       ...nextState,
       flags: {
         ...nextState.flags,
-        nextHitPhysicalBonus: nextState.flags.nextHitPhysicalBonus + nextState.gearEffects.nextAttackPhysicalOnDodge,
+        nextHitPhysicalBonus: nextState.flags.nextHitPhysicalBonus + nextAttackBonus,
       },
     };
   }
@@ -184,7 +204,8 @@ function processAttackDamageEffect(
 }
 
 export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) {
-  let nextState = state;
+  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
+  let nextState = recordEnemyAttackAction(state);
   let damageDealtToHealth = 0;
   let attackPacketLanded = false;
   let firstDamageEffect = true;
@@ -218,6 +239,7 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
         );
         let amountMultiplier = resolved.amountMultiplier * (brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1);
         const flatBonus = resolved.flatBonus;
+        for (const traitId of resolved.abilityIds) nextState = recordEnemyAbilityActivation(nextState, traitId);
 
         const banditFirstHit = hasEnemyTrait(nextState, "bandit", traitSet) && !nextState.flags.enemyFirstHitDoubleUsed;
         if (banditFirstHit) {
@@ -235,9 +257,6 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
           flatBonus,
           skipTraitReactions: isBonusHolyEffect,
           traitSet,
-          ...(hasEnemyTrait(nextState, "pyromancer", traitSet) && effect.damageType === "burn"
-            ? { ignorePlayerMitigation: true }
-            : {}),
           ...(hasEnemyTrait(nextState, "ogre", traitSet) && effect.damageType === "physical"
             ? { physicalBlockBreakMultiplier: OGRE_BLOCK_BREAK_MULTIPLIER }
             : {}),
@@ -249,7 +268,8 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
         if (playerPacketLanded(previousState, nextState)) {
           attackPacketLanded = true;
           damageDealtToHealth += previousState.playerHealth - nextState.playerHealth;
-          if (banditFirstHit) nextState = setFlag(nextState, "enemyFirstHitDoubleUsed", true);
+          if (banditFirstHit)
+            nextState = recordEnemyAbilityActivation(setFlag(nextState, "enemyFirstHitDoubleUsed", true), "bandit");
         }
         firstDamageEffect = false;
       } else if (effect.status === "stun" || effect.status === "freeze") {
@@ -264,6 +284,7 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
         );
         const amountMultiplier = resolved.amountMultiplier * (brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1);
         const flatBonus = resolved.flatBonus;
+        for (const traitId of resolved.abilityIds) nextState = recordEnemyAbilityActivation(nextState, traitId);
         if (isFirstDamage && (nextAttackCrit || nextAttackBonus > 0)) {
           nextState = setFlag(nextState, "enemyNextAttackCrit", false);
           nextState = setFlag(nextState, "enemyNextAttackBonus", 0);
@@ -292,6 +313,7 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
   const hasSuccessfulHealthDamage = damageDealtToHealth > 0 && nextState.playerHealth > 0;
   if (hasSuccessfulHealthDamage) {
     if (hasEnemyTrait(nextState, "fire-imp", traitSet)) {
+      nextState = recordEnemyAbilityActivation(nextState, "fire-imp");
       nextState = applyPlayerStatusFromAttack(
         nextState,
         { kind: "player-status", status: "burn", amount: 1 },
@@ -299,6 +321,7 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
       );
     }
     if (hasEnemyTrait(nextState, "giant-spider", traitSet)) {
+      nextState = recordEnemyAbilityActivation(nextState, "giant-spider");
       nextState = applyPlayerStatusFromAttack(
         nextState,
         { kind: "player-status", status: "poison", amount: 1 },
@@ -306,6 +329,7 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
       );
     }
     if (hasEnemyTrait(nextState, "winter-wolf", traitSet)) {
+      nextState = recordEnemyAbilityActivation(nextState, "winter-wolf");
       nextState = processAttackDamageEffect(
         nextState,
         { kind: "damage", damageType: "freeze", amount: 1 },
@@ -314,7 +338,11 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
       );
     }
     if (hasEnemyTrait(nextState, "vampire", traitSet) && rollPercent(VAMPIRE_LEECH_CHANCE, getBattleRng(nextState))) {
-      nextState = applyEnemyLeechHealing(nextState, damageDealtToHealth, combatTexts);
+      nextState = applyEnemyLeechHealing(
+        recordEnemyAbilityActivation(nextState, "vampire"),
+        damageDealtToHealth,
+        combatTexts,
+      );
     }
   }
 
@@ -322,6 +350,7 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
     const statuses: Array<keyof BattleState["playerStatuses"]> = ["block", "armor", "forge", "haste"];
     const purgeTarget = statuses.find((stat) => nextState.playerStatuses[stat] > 0);
     if (purgeTarget) {
+      nextState = recordEnemyAbilityActivation(nextState, "banshee");
       nextState = {
         ...nextState,
         playerStatuses: { ...nextState.playerStatuses, [purgeTarget]: 0 },
@@ -350,6 +379,7 @@ export function processEnemyTraitActionStart(state: BattleState, combatTexts: Co
   const traitSet = getEnemyTraitSet(state);
   const traitDamage = (traitId: string, damageType: "holy" | "bleed" | "stun") => {
     if (!hasEnemyTrait(nextState, traitId, traitSet) || nextState.playerHealth <= 0) return;
+    nextState = recordEnemyAbilityActivation(nextState, traitId);
     nextState = processAttackDamageEffect(
       nextState,
       { kind: "damage", damageType, amount: scaleByRoomMultiplier(nextState, 1) },

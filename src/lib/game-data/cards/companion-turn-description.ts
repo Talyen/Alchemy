@@ -1,5 +1,6 @@
 import { capitalizeWord } from "@/lib/utils";
-import type { BattleCardEffect } from "../types";
+import { getCompanionBondEffects } from "../companions";
+import type { CompanionDefinition, BattleCardEffect } from "../types";
 
 function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): string | null {
   switch (effect.kind) {
@@ -10,7 +11,9 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
     case "heal":
       return `Restores ${effect.amount} Health each turn`;
     case "restore-mana":
-      return `Restores ${effect.amount} Mana each turn`;
+      return effect.allowOverflow
+        ? `Grants ${effect.amount} extra Mana each turn`
+        : `Restores ${effect.amount} Mana each turn`;
     case "remove-harmful-status": {
       const pluralSuffix = effect.amount === 1 ? "" : "es";
       return `Cleanses ${effect.amount} harmful status${pluralSuffix} each turn`;
@@ -87,4 +90,19 @@ export function expectedCompanionTurnLine(effect: BattleCardEffect): string {
   const line = companionTurnLine(effect);
   if (!line) throw new Error(`Unhandled companion turn-start effect: ${effect.kind}`);
   return line;
+}
+
+export function getCompanionDescriptionLines(companion: CompanionDefinition, bondLevel = 0, damageBonus = 0): string[] {
+  const effects = getCompanionBondEffects(companion, bondLevel);
+  const lines = effects.map((effect) => formatCompanionTurnStartLine(effect, { damageBonus }));
+  const bonus = effects[1];
+  if (bonus?.kind === "chance" && bonus.failureEffects.length === 0 && lines[0]) {
+    const action = companion.id === "mana-moth" ? "grant" : "draw";
+    return [`${lines[0]}, with a ${Math.round(bonus.probability * 100)}% chance to ${action} 1 more`];
+  }
+  const actions = lines.filter((line): line is string => line !== null).map((line) => line.replace(/ each turn$/, ""));
+  if (actions.length === 0) return ["Acts at the start of each turn"];
+  return [
+    `${actions.map((action, index) => (index === 0 ? action : action.charAt(0).toLowerCase() + action.slice(1))).join(" and ")} each turn`,
+  ];
 }

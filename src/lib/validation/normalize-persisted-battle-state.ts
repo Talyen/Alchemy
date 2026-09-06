@@ -80,12 +80,15 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
       traits: sanitizePersistedEnemyTraits(Array.isArray(saved.currentEnemy?.traits) ? saved.currentEnemy.traits : []),
     },
   };
+  delete merged.battleMetrics;
 
   merged.rng =
     (saved as { rng?: unknown }).rng != null && typeof (saved as { rng?: unknown }).rng === "function"
       ? (saved as unknown as { rng: () => number }).rng
       : restingWorldRng();
 
+  merged.playerDodgeCount = clampNonNegative(merged.playerDodgeCount, 0);
+  merged.dodgeChanceFromDamage = clampNonNegative(merged.dodgeChanceFromDamage, 0);
   merged.playerHealth = clampNonNegative(merged.playerHealth, defaults.playerHealth);
   merged.enemyHealth = clampNonNegative(merged.enemyHealth, defaults.enemyHealth);
   merged.playerMaxHealth = clampNonNegative(merged.playerMaxHealth, defaults.playerMaxHealth);

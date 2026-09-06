@@ -25,11 +25,11 @@ export interface ArmoryScreenProps {
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
   onUnequipTrinket: (characterId: CharacterId) => void;
+  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
   onSalvage: (instanceId: string, salvageYield: SalvageYield) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
   craftingCurrencies?: Record<CraftingCurrencyId, number>;
   onApplyCurrency?: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
-  rng: () => number;
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }

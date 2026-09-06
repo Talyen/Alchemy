@@ -30,6 +30,20 @@ Add a row to `Open` when docs mislead, behavior surprises, or repeated friction 
 
 ## Resolved
 
+2026-09-05 — The hand-hover size matrix exceeded the default 20-second Playwright budget during real pointer sweeps at two 1920px settings. The [focused spec](../tests/hand-hover.spec.ts) now uses the existing animation suites’ 60-second budget; all 11 cases passed without changing animation speed. N/A (one-off test-budget correction).
+
+2026-09-05 — Wish reused a card-width variable scoped only to the battle hand, so artwork rendered at intrinsic size and pushed confirmation out of view. Wish now uses the shared view-card size and fits every option on one row; queued selections reset independently. Prevention lives in [UI sizing](../docs/UI.md#display-sizing) and Wish browser regressions. N/A (one-off sizing and selection lifecycle mismatch).
+
+2026-09-05 — Affix tags omitted Frozen while tooltip recognition omitted Dodge, making shine disagree with descriptions. Shared recognition in `src/lib/keyword-text.ts` and keyword-coverage regressions now enforce [ARMORY](../docs/ARMORY.md) presentation rules. Follow-up: Unique tooltips overrode corrected affix palettes with gold; Nourishing lacked recognized aliases, and hover backgrounds mixed affinity colors and CSS fades into hex-only rendering. Renderer-level catalog tests and a Dance of Blades browser regression now cover these integration paths.
+
+2026-09-05 — The draw/discard animation test watched the card-play ghost layer, so it could pass only by catching a leftover play animation. Updated [the test](../tests/draw-discard-animations.spec.ts) to watch the transfer layer. N/A (one-off stale selector).
+
+2026-09-05 — Companion Bond tooltips ignored their supplied context, and combat only scaled damage; the one-effect validation also contradicted the array-based combat model. Shared Bond resolution now feeds combat and descriptions, with multi-effect validation and progression documented in [WORKFLOWS](../docs/WORKFLOWS.md#add-a-new-companion). N/A (one-off contract reconciliation).
+
+2026-09-05 — Lifegiving revived defeated heroes and Mana Moth restored against full Mana or erased Wellspring overflow. Fixed [terminal turn processing](../src/lib/battle/enemy-turn.ts), [healing and Mana restoration](../src/lib/battle/types/state-helpers.ts), and Mana Moth’s extra Mana effect; covered by battle regression tests. N/A (one-off combat-rule correction).
+
+2026-09-05 — Balance matchup rows used only the first depth despite simulating three, timeout durations included an unplayed next round, and duration findings were gated on win-rate noise. Fixed aggregation, round counting, and independent metric filtering; prevention and interpretation live in [balance simulation](../docs/REFERENCE.md#balance-simulation). N/A (one-off tooling reconciliation).
+
 2026-09-05 — Canvas animation loops did redundant sizing work: status effects polled layout every frame despite observing size, and background particles reset unchanged backing dimensions on the observer’s initial notification. Fixed in the [status loop](../src/lib/animation/combatant-status-effect-loop.ts) and [particle renderer](../src/lib/animation/background-particles.ts). N/A (one-off); old/new browser output matched at 18 sampled frames, including resize and DPR changes.
 
 2026-09-05 — The full performance run failed Armory and startup navigation because scenarios used screen-specific menu labels while the shared header exposes “Open game menu.” Updated the three affected scenarios. Trace source locations also added one to Chrome’s already one-based line numbers; corrected against the built script. N/A (one-off profiling reconciliation).
@@ -68,10 +82,27 @@ Labyrinth fresh-start regression (2026-09-04): resume-only browser coverage miss
 | 2026-09-02 | Script budgets | `ROUTE_CONTEXT_BUDGETS` assets total went stale (test red on main); budgets now enforced by `context-hotspots --check`.                                                                                                                                  |
 | 2026-09-03 | Lint guards    | Dead ban entries (`battle-store`, `run-domain-store`) could not be removed from `eslint/fragments.js` because `lint-architecture-smoke` asserted their presence; smoke assertion now targets live `run-session-write-port` (this commit), N/A (one-off). |
 |            |                |                                                                                                                                                                                                                                                          |
+| 2026-09-05 | Armory salvage | Preview RNG rerolled on reopen; stable per-item rewards and single-action targeting now documented in [ARMORY](../docs/ARMORY.md). N/A (one-off).                                                                                                        |
+| 2026-09-05 | Save E2E       | Page-level injection reapplies fixtures on reload; [E2E guidance](../tests/e2e/README.md#navigation-and-bootstrap) now documents fresh-page persistence checks. N/A (one-off).                                                                           |
+| 2026-09-05 | Feedback fade  | Fresh object inputs to `useHeldWhile` looped in Vitest without React Compiler; memoized snapshots and a focused regression test now enforce [UI guidance](../docs/UI.md#screen-fade-motion). N/A (one-off).                                              |
 
 ## Details
 
 _Add expanded entries here when the table row is not enough. Keep the table as the index._
+
+### 2026-09-05 — salvage previews rerolled on reopen
+
+- **Context:** Armory crafting and salvage polish.
+- **Expected:** A confirmed preview is reliable without rewarding repeated cancellation.
+- **Actual / confusion:** `beginSalvage` drew fresh currency rewards each time; the frozen yield protected only the currently open dialog. Existing UI tests also deliberately retained salvage targeting after confirmation and Escape.
+- **Impact:** Players could improve payouts by reopening previews, and cancelling did not return to browsing.
+- **Prevention:** `computeSalvageYield` now derives its draw from the stable item ID, with reopen/reload coverage. The Armory owner and focused interaction tests record the new single-action targeting contract.
+
+### 2026-09-05 — injected saves reset browser reload assertions
+
+- **Context:** Checking that Armory protection and currency spending survived a reload.
+- **Actual / confusion:** `injectHomestead` installs a page-level init script that reapplies the original fixture on every reload, making correct persistence look broken.
+- **Prevention:** The E2E owner now calls out using a fresh page in the same browser context for persistence assertions after injection. The Armory test uses that path and checks both protection and spent currency.
 
 ### Expanded entry template
 
@@ -86,3 +117,7 @@ Copy and fill when needed:
 - **Impact:** how it slowed you down or affected the task
 - **Suggestion (optional):** what would have helped
 ```
+
+2026-09-05 — Adding the Dodge tree exposed that missing `talentArt` silently hid an implemented tree, and eligible talent nodes had a button role without keyboard activation. The overview now renders a blank/icon fallback and nodes accept Enter/Space; the Dodge browser journey covers both. Canonical behavior: [UI](../docs/UI.md) and [talent workflow](../docs/WORKFLOWS.md#add-a-new-talent).
+
+2026-09-05 — The Dodge content check rejected sentence periods in keyword and talent descriptions, a constraint absent from the talent workflow. Added the authoring convention to [WORKFLOWS](../docs/WORKFLOWS.md#add-a-new-talent); `validators-typography.ts` remains the enforcement owner.

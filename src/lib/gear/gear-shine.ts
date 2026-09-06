@@ -1,5 +1,6 @@
 import { buildSmoothShineBorderGradient } from "@/lib/animation/shine-gradient";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { extractKeywordIds } from "@/lib/keyword-text";
 import { gearAffixCatalog } from "./affix-catalog";
 import { gearDefinitions, type GearDefinition } from "./definitions";
 import type { GearInstance } from "./types";
@@ -32,8 +33,7 @@ export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
   for (const roll of instance.affixes) {
     const affix = gearAffixCatalog[roll.id];
     if (affix) {
-      keywordIds.add(affix.keywordId);
-      if (affix.secondaryKeywordId) keywordIds.add(affix.secondaryKeywordId);
+      for (const keywordId of extractKeywordIds(affix.descriptionTemplate)) keywordIds.add(keywordId);
     }
   }
 
@@ -47,9 +47,8 @@ function collectShineColors(keywordIds: readonly KeywordId[], mode: "border" | "
     if (mode === "border") {
       colors.push(...shineColors);
     } else {
-      const [primary, secondary = primary] = shineColors;
-      if (primary) colors.push(primary);
-      if (secondary && secondary !== primary) colors.push(secondary);
+      const [primary] = shineColors;
+      if (primary) colors.push(primary, `color-mix(in srgb, ${primary} 55%, transparent)`);
     }
   }
   if (colors.length > 0) return colors;
@@ -64,6 +63,10 @@ function getShineColorsForRarity(
   if (rarity === "unique") return mode === "border" ? [...UNIQUE_SHINE_COLORS] : [...UNIQUE_TEXT_SHINE_COLORS];
   if (rarity !== "astral") return [];
   return collectShineColors(keywordIds, mode);
+}
+
+export function getUniqueGearShineColors(): readonly string[] {
+  return UNIQUE_SHINE_COLORS;
 }
 
 export function getUniqueGearTextShineColors(): readonly string[] {
@@ -114,13 +117,6 @@ export function getGearDefinitionShineGradient(definition: GearDefinition): stri
   return buildSmoothShineBorderGradient(getGearDefinitionShineColors(definition));
 }
 
-export function getGearAffixTextShineColors(affix: {
-  keywordId: KeywordId;
-  secondaryKeywordId?: KeywordId;
-}): readonly string[] {
-  const keywordIds = (affix.secondaryKeywordId ? [affix.keywordId, affix.secondaryKeywordId] : [affix.keywordId]).slice(
-    0,
-    MAX_TEXT_SHINE_KEYWORDS,
-  );
-  return collectShineColors(keywordIds, "text");
+export function getGearAffixTextShineColors(affix: { descriptionTemplate: string }): readonly string[] {
+  return collectShineColors(extractKeywordIds(affix.descriptionTemplate).slice(0, MAX_TEXT_SHINE_KEYWORDS), "text");
 }

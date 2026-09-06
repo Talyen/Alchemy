@@ -120,3 +120,17 @@ describe("applyEffectByKind (mana effects)", () => {
     expect(result.gold).toBe(4);
   });
 });
+
+describe("temporary Mana overflow", () => {
+  it.each([4, 5])("adds extra Mana above %i without increasing Mana Crystals", (mana) => {
+    const state = makeTestBattleState({ mana, maxMana: 4 });
+    const next = applyManaEffect(state, { kind: "restore-mana", amount: 1, allowOverflow: true }, 1, []);
+    expect(next.mana).toBe(mana + 1);
+    expect(next.maxMana).toBe(4);
+  });
+  it("ordinary restoration preserves existing overflow without adding more", () => {
+    const state = makeTestBattleState({ mana: 5, maxMana: 4 });
+    const next = applyManaEffect(state, { kind: "restore-mana", amount: 1 }, 1, []);
+    expect(next.mana).toBe(5);
+  });
+});

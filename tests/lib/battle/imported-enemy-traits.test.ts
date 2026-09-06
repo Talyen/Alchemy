@@ -106,14 +106,21 @@ describe("imported enemy attack reactions", () => {
     expect(snake.playerHealth).toBe(100);
   });
 
-  it("lets Pyromancer Burn bypass Block and player damage reduction", () => {
+  it("applies player mitigation to Pyromancer Burn", () => {
     const state = stateForEnemy("pyromancer", {
       playerStatuses: defaultPlayerStatusValues({ block: 5 }),
       talentEffects: { ...stateForEnemy("pyromancer").talentEffects, damageReduction: 2, burnDamageReduction: 2 },
     });
     const result = processEnemyAttack(state, []);
-    expect(result.playerHealth).toBe(97);
-    expect(result.playerStatuses.block).toBe(5);
+    expect(result.playerHealth).toBe(100);
+    expect(result.playerStatuses.block).toBe(2);
+  });
+
+  it("applies Burn resistance to unblocked Pyromancer attacks", () => {
+    const state = stateForEnemy("pyromancer", {
+      talentEffects: { ...stateForEnemy("pyromancer").talentEffects, burnDamageReduction: 2 },
+    });
+    expect(processEnemyAttack(state, []).playerHealth).toBe(99);
   });
 
   it.each([

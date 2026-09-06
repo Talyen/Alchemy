@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { createEmptyEquippedTrinkets, createEmptyGearLoadouts } from "@/lib/gear";
@@ -67,6 +67,18 @@ describe("ArmoryScreen core", () => {
     await user.click(screen.getByRole("button", { name: "Rogue" }));
 
     expect(screen.getByRole("button", { name: "Rogue" }).className).toMatch(/ring-/);
+  });
+
+  it("renders character tabs in roster order", () => {
+    renderArmoryScreen({
+      finishedRunCharacters: ["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"],
+    });
+
+    expect(
+      within(screen.getByTestId("armory-character-selector"))
+        .getAllByRole("button")
+        .map((button) => button.textContent?.trim()),
+    ).toEqual(["Knight", "Rogue", "Ranger", "Wizard", "Alchemist", "Warlock", "Druid", "Wildcard"]);
   });
 
   it("disables characters whose prerequisite has not finished", () => {

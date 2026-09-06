@@ -11,12 +11,14 @@ export function GearDetailPopup({
   triggerRef,
   visible,
   padding,
+  notice,
 }: {
   definition: GearDefinition | undefined;
   instance: GearInstance;
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
   padding?: number | undefined;
+  notice?: string | undefined;
 }) {
   if (!definition) return null;
   return (
@@ -28,6 +30,7 @@ export function GearDetailPopup({
       {...(padding !== undefined ? { padding } : {})}
     >
       <GearTooltipContent definition={definition} instance={instance} />
+      {notice ? <p className="mt-3 text-sm text-amber-200">{notice}</p> : null}
     </PortaledTooltip>
   );
 }

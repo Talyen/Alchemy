@@ -12,17 +12,17 @@ function talents(partial: Partial<BattleState["talentEffects"]>): BattleState["t
 describe("applyPlayerCombatDamage", () => {
   it("returns state unchanged when damage is zero", () => {
     const state = patchBattleState({ playerHealth: 30 });
-    expect(applyPlayerCombatDamage(state, 0)).toBe(state);
+    expect(applyPlayerCombatDamage(state, 0, "hostile")).toBe(state);
   });
 
   it("returns state unchanged when damage is negative", () => {
     const state = patchBattleState({ playerHealth: 30 });
-    expect(applyPlayerCombatDamage(state, -5)).toBe(state);
+    expect(applyPlayerCombatDamage(state, -5, "hostile")).toBe(state);
   });
 
   it("reduces health by damage amount", () => {
     const state = patchBattleState({ playerHealth: 30 });
-    const result = applyPlayerCombatDamage(state, 10);
+    const result = applyPlayerCombatDamage(state, 10, "hostile");
     expect(result.playerHealth).toBe(20);
   });
 
@@ -31,7 +31,7 @@ describe("applyPlayerCombatDamage", () => {
       playerHealth: 30,
       talentEffects: talents({ damageReduction: 3 }),
     });
-    const result = applyPlayerCombatDamage(state, 10);
+    const result = applyPlayerCombatDamage(state, 10, "hostile");
     expect(result.playerHealth).toBe(23);
   });
 
@@ -40,7 +40,7 @@ describe("applyPlayerCombatDamage", () => {
       playerHealth: 30,
       talentEffects: talents({ burnDamageReduction: 5 }),
     });
-    const result = applyPlayerCombatDamage(state, 15, "burn");
+    const result = applyPlayerCombatDamage(state, 15, "hostile", "burn");
     expect(result.playerHealth).toBe(20);
   });
 
@@ -49,7 +49,7 @@ describe("applyPlayerCombatDamage", () => {
       playerHealth: 30,
       talentEffects: talents({ freezeDamageReduction: 4 }),
     });
-    const result = applyPlayerCombatDamage(state, 10, "freeze");
+    const result = applyPlayerCombatDamage(state, 10, "hostile", "freeze");
     expect(result.playerHealth).toBe(24);
   });
 
@@ -58,7 +58,7 @@ describe("applyPlayerCombatDamage", () => {
       playerHealth: 30,
       talentEffects: talents({ receiveHalfNatureDamage: true }),
     });
-    const result = applyPlayerCombatDamage(state, 10, "nature");
+    const result = applyPlayerCombatDamage(state, 10, "hostile", "nature");
     expect(result.playerHealth).toBe(20);
   });
 
@@ -67,7 +67,7 @@ describe("applyPlayerCombatDamage", () => {
       playerHealth: 30,
       talentEffects: talents({ natureDamageReduction: 3 }),
     });
-    const result = applyPlayerCombatDamage(state, 10, "nature");
+    const result = applyPlayerCombatDamage(state, 10, "hostile", "nature");
     expect(result.playerHealth).toBe(23);
   });
 
@@ -76,7 +76,7 @@ describe("applyPlayerCombatDamage", () => {
       playerHealth: 30,
       talentEffects: talents({ poisonDamageReduction: 3 }),
     });
-    const result = applyPlayerCombatDamage(state, 8, "poison");
+    const result = applyPlayerCombatDamage(state, 8, "hostile", "poison");
     expect(result.playerHealth).toBe(25);
   });
 
@@ -85,19 +85,19 @@ describe("applyPlayerCombatDamage", () => {
       playerHealth: 30,
       talentEffects: talents({ damageReduction: 3, burnDamageReduction: 5 }),
     });
-    const result = applyPlayerCombatDamage(state, 10, "burn", { ignoreMitigation: true });
+    const result = applyPlayerCombatDamage(state, 10, "hostile", "burn", { ignoreMitigation: true });
     expect(result.playerHealth).toBe(20);
   });
 
   it("health does not go below zero", () => {
     const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: true });
-    const result = applyPlayerCombatDamage(state, 20);
+    const result = applyPlayerCombatDamage(state, 20, "hostile");
     expect(result.playerHealth).toBe(0);
   });
 
   it("activates deaths door on lethal hit if not used", () => {
     const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: false, turn: 3 });
-    const result = applyPlayerCombatDamage(state, 20);
+    const result = applyPlayerCombatDamage(state, 20, "hostile");
     expect(result.playerHealth).toBe(1);
     expect(result.deathsDoorUsed).toBe(true);
     expect(result.deathsDoorActive).toBe(true);
@@ -107,7 +107,7 @@ describe("applyPlayerCombatDamage", () => {
 
   it("does not reactivate deaths door if already used", () => {
     const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: true, deathsDoorActive: true });
-    const result = applyPlayerCombatDamage(state, 20);
+    const result = applyPlayerCombatDamage(state, 20, "hostile");
     expect(result.playerHealth).toBe(1);
     expect(result.deathsDoorActive).toBe(true);
     expect(result.deathsDoorUsed).toBe(true);
@@ -115,7 +115,7 @@ describe("applyPlayerCombatDamage", () => {
 
   it("lethal hit after grace expires kills the player", () => {
     const state = patchBattleState({ playerHealth: 1, deathsDoorUsed: true, deathsDoorActive: false });
-    const result = applyPlayerCombatDamage(state, 20);
+    const result = applyPlayerCombatDamage(state, 20, "hostile");
     expect(result.playerHealth).toBe(0);
     expect(result.deathsDoorActive).toBe(false);
   });
@@ -127,7 +127,7 @@ describe("applyPlayerCombatDamage", () => {
       deathsDoorActive: false,
       deathsDoorTriggeredTurn: 3,
     });
-    const result = applyPlayerCombatDamage(state, 5);
+    const result = applyPlayerCombatDamage(state, 5, "hostile");
     expect(result.playerHealth).toBe(0);
     expect(result.deathsDoorActive).toBe(false);
   });
@@ -138,7 +138,7 @@ describe("applyPlayerCombatDamage", () => {
       playerMaxHealth: 30,
       playerStatuses: defaultPlayerStatusValues({ phoenixFeather: 1 }),
     });
-    const result = applyPlayerCombatDamage(state, 20);
+    const result = applyPlayerCombatDamage(state, 20, "hostile");
     expect(result.playerHealth).toBe(9);
     expect(result.playerStatuses.phoenixFeather).toBe(0);
     expect(result.deathsDoorUsed).toBe(false);

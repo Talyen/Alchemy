@@ -83,7 +83,10 @@ beforeEach(() => {
   presentation.telegraphAttack.mockClear();
   presentation.telegraphCast.mockClear();
   beginBattleTransition.mockClear();
-  commitBattleTransition.mockClear();
+  commitBattleTransition.mockReset();
+  commitBattleTransition.mockImplementation((state, pending) => {
+    domain = { battleState: state, pendingBattleTransition: pending };
+  });
   clearBattleTransition.mockClear();
   setBattleState.mockClear();
   vi.mocked(runHandDrawSequence).mockClear();
@@ -164,12 +167,23 @@ describe("resolveHasteSkipTurn", () => {
     const result = endPlayerTurn({ ...state, playerStatuses: { ...state.playerStatuses, haste: 1 } });
     const orch = makeOrch();
 
+    let finishDraw: (() => void) | undefined;
+    vi.mocked(runBattleDraw).mockImplementationOnce(async (request) => {
+      request.applyState();
+      finishDraw = request.onSettled;
+      return true;
+    });
+    domain.battleState = result.state;
     resolveHasteSkipTurn(result, state, 1, makeBattleTurnSession(), orch, resolveEndTurn);
+
+    expect(orch.resetHandTransferUi).toHaveBeenCalledOnce();
+    domain.battleState = { ...result.state, mana: 1 };
+    finishDraw?.();
 
     await vi.waitFor(() => {
       expect(orch.scheduleCompanionFollowUp).toHaveBeenCalled();
-      expect(orch.scheduleAutoEndTurn).toHaveBeenCalledWith(result.state);
-      expect(orch.resetHandTransferUi).toHaveBeenCalled();
+      expect(orch.scheduleAutoEndTurn).toHaveBeenCalledWith(domain.battleState);
+      expect(orch.resetHandTransferUi).toHaveBeenCalledOnce();
     });
     if (result.combatTexts.length > 0) {
       expect(presentation.showCombatTexts).toHaveBeenCalledWith(result.combatTexts);

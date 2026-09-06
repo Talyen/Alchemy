@@ -11,6 +11,7 @@ const WRITE_PORT_EXPORTS = [
   "addRunMaterialsEarned",
   "applyRunStartSnapshot",
   "applyTalentState",
+  "awardBattleDodgeXP",
   "awardCardXP",
   "awardMaterialsDuringRun",
   "awardMysteryXP",

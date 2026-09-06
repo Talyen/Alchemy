@@ -12,6 +12,7 @@ export const GearInstanceSchema = z.object({
   instanceId: z.string().min(1),
   definitionId: z.enum(GEAR_DEFINITION_IDS),
   affixes: z.array(GearAffixRollSchema),
+  protected: z.boolean().optional().catch(false),
 });
 
 export function normalizeGearInstanceArray(raw: unknown): Array<z.infer<typeof GearInstanceSchema>> {

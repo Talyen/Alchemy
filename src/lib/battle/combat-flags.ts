@@ -17,6 +17,7 @@ export const FLAG_DEFINITIONS = {
 
   resonantChimeUsedThisTurn: { default: false as const, preserveAs: true as const },
   runicQuillUsedThisTurn: { default: false as const, preserveAs: true as const },
+  emberforgedUsedThisTurn: { default: false as const, preserveAs: true as const },
   consumeDrawUsedThisTurn: { default: false as const, preserveAs: true as const },
 
   divineAegisTriggered: { default: false as const, preserveAs: null },

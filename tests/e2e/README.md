@@ -28,6 +28,7 @@ Decision order:
 
 ## Navigation and bootstrap
 
+- Save injectors install page-level initialization scripts that run again on navigation and reload. To verify changes persisted after injection, open a fresh page in the same browser context (shared storage, no page-level seeding script), collect its runtime errors, and close it after assertions.
 - `openGameModeSelect` retries Play if bootstrap unmounts the menu.
 - `selectGameMode(page, mode, action?)` clicks the mode card with `Play` (default) or `Resume ${title}`.
 - `selectCharacterAndContinue` clicks a hero portrait; character select has no Back/Continue footer.

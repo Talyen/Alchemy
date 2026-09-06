@@ -3,8 +3,8 @@ import { characters, type CharacterId } from "./characters";
 const UNLOCK_CHAIN: CharacterId[] = [
   "knight",
   "rogue",
-  "wizard",
   "ranger",
+  "wizard",
   "alchemist",
   "warlock",
   "druid",

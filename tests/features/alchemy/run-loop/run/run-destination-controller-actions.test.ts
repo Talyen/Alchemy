@@ -32,12 +32,13 @@ beforeEach(() => {
 });
 
 describe("run destination controller actions", () => {
-  it("selectRewardChoice updates reward selection through the handler", () => {
+  it("claimRewardChoice rejects a choice that is not offered", () => {
     dispatchRunSessionCommand((draft) => setRewardState(draft, createEmptyRewardState()));
 
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps());
-    handlers.selectRewardChoice("slash");
-    expect(readRunSession().rewardState.selectedId).toBe("slash");
+    handlers.claimRewardChoice("slash");
+    expect(readRunSession().rewardState.selectedId).toBeNull();
+    expect(readRunSession().rewardClaimInFlight).toBe(false);
   });
 
   it("prepareDestinationScreen sets boss id for boss-only destinations", () => {

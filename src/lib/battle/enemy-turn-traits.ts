@@ -1,3 +1,4 @@
+import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { getBattleRng, rngInt } from "@/lib/rng";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
@@ -52,6 +53,8 @@ export function processEnemyRegeneration(state: BattleState, combatTexts: Combat
   }
   if (healAmount <= 0) return state;
   let nextState = applyEnemyHealingWithCombatText(state, healAmount, combatTexts);
+  if (nextState.enemyHealth > state.enemyHealth && hasEnemyTrait(state, "regeneration"))
+    nextState = recordEnemyAbilityActivation(nextState, "regeneration");
   if (
     hasEnemyTrait(state, "vampire") &&
     state.enemyHealth < state.enemyMaxHealth &&
@@ -234,7 +237,7 @@ function processTraitHandler(
   const handler = enemyTraitTurnStartHandlers[trait.id];
   if (handler) {
     if (EVERY_OTHER_TURN_TRAITS.has(trait.id) && !isEveryOtherTurnScalingTurn(state)) return state;
-    return handler(state, combatTexts, { traitRoll });
+    return handler(recordEnemyAbilityActivation(state, trait.id), combatTexts, { traitRoll });
   }
   if (!PASSIVE_ONLY_TRAITS.has(trait.id) && !REACTION_ONLY_TRAITS.has(trait.id)) {
     console.warn(`[Battle] No turn-start handler for trait: ${trait.id}`);

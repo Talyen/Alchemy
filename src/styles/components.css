@@ -94,43 +94,47 @@
   }
 
   .hover-popup-panel {
+    --tooltip-offset-x: 0px;
+    --tooltip-offset-y: 2px;
     box-shadow: 0 8px 24px color-mix(in srgb, var(--color-background) 75%, transparent);
     opacity: 0;
+    transform: translate(var(--tooltip-offset-x), var(--tooltip-offset-y));
     transition:
-      transform var(--motion-fade-duration) var(--ease-out-expo),
-      opacity var(--motion-fade-duration) var(--ease-out-expo);
+      transform var(--tooltip-exit-duration) ease-out,
+      opacity var(--tooltip-exit-duration) ease-out;
     will-change: transform, opacity;
   }
 
-  .hover-popup-panel[data-placement="above"],
-  .hover-popup-panel:not([data-placement]) {
-    transform-origin: bottom center;
-    transform: translateY(6px);
-  }
-
   .hover-popup-panel[data-placement="below"] {
-    transform-origin: top center;
-    transform: translateY(-6px);
+    --tooltip-offset-y: -2px;
   }
 
   .hover-popup-panel[data-placement="side-end"] {
-    transform-origin: left center;
-    transform: translateX(-6px);
+    --tooltip-offset-x: -2px;
+    --tooltip-offset-y: 0px;
   }
 
   .hover-popup-panel[data-placement="side-start"] {
-    transform-origin: right center;
-    transform: translateX(6px);
+    --tooltip-offset-x: 2px;
+    --tooltip-offset-y: 0px;
   }
 
   .hover-popup-panel[data-visible] {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate(0, 0);
+    transition-duration: var(--motion-fade-duration);
+    transition-timing-function: ease-out;
   }
 
-  .hover-popup-panel[data-placement^="side-"][data-visible] {
-    opacity: 1;
-    transform: none;
+  .hover-popup-panel.invisible {
+    transform: translate(calc(var(--tooltip-offset-x) * 2), calc(var(--tooltip-offset-y) * 2));
+  }
+
+  @starting-style {
+    .hover-popup-panel[data-visible] {
+      opacity: 0;
+      transform: translate(calc(var(--tooltip-offset-x) * 2), calc(var(--tooltip-offset-y) * 2));
+    }
   }
 
   .tooltips-disabled .hover-popup-panel {
@@ -363,7 +367,7 @@
   scale: 1.035;
 }
 
-.surface.hand-card-motion.card-hover-scale {
+.surface.hand-card-motion {
   transition:
     transform 220ms ease-out,
     scale 200ms ease-out;

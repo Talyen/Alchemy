@@ -61,7 +61,7 @@ export const CompanionContentSchema = z.object({
   id: NonEmptyStringSchema,
   title: NonEmptyStringSchema,
   art: NonEmptyStringSchema,
-  turnStartEffects: z.array(BattleCardEffectSchema).length(1),
+  turnStartEffects: z.array(BattleCardEffectSchema).min(1),
 });
 
 const trinketEffectKeys = Object.keys(defaultTrinketEffects) as [string, ...string[]];

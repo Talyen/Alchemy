@@ -43,7 +43,7 @@ export function createBattleTransferDeps(
         resolve();
       };
       unregisterCancel = ctx.transferCancelRegistryRef.current.register(() => finish(false));
-      getPresentation().setCardTransfers([{ ...transfer, id }]);
+      getPresentation().setCardTransfers((current) => [...current, { ...transfer, id }]);
       void delay(Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs).then(() =>
         finish(true),
       );

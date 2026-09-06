@@ -38,7 +38,7 @@ describe("ArmoryScreen tooltip integration", () => {
   it("portals crafting currency tooltips to document.body", async () => {
     renderArmoryScreen({ craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 } });
 
-    fireEvent.mouseEnter(screen.getByLabelText("Use Voidstone"));
+    fireEvent.mouseEnter(screen.getByLabelText(/^Use Voidstone,/));
 
     const tooltipText = screen.getByText("Remove All Affixes");
     expect(tooltipText.closest(".armory-inventory-tooltip")).toBeTruthy();

@@ -40,7 +40,10 @@ describe("createBattleOpeningDraw", () => {
       battleState: defaultBattleState(),
       pendingBattleTransition: { kind: "opening-draw", resultState },
     };
-    commitBattleTransition.mockClear();
+    commitBattleTransition.mockReset();
+    commitBattleTransition.mockImplementation(() => {
+      domain = { battleState: resultState, pendingBattleTransition: null };
+    });
     scheduleAutoEndTurn.mockClear();
   });
 
@@ -75,7 +78,7 @@ describe("createBattleOpeningDraw", () => {
       ),
     });
     commitBattleTransition.mockImplementationOnce(() => {
-      domain = { ...domain, pendingBattleTransition: null };
+      domain = { battleState: resultState, pendingBattleTransition: null };
     });
     const openingDraw = createBattleOpeningDraw(
       {
@@ -92,9 +95,10 @@ describe("createBattleOpeningDraw", () => {
     expect(domain.pendingBattleTransition).toBeNull();
     expect(scheduleAutoEndTurn).not.toHaveBeenCalled();
 
+    domain = { ...domain, battleState: { ...resultState, hand: resultState.hand.slice(1), mana: 2 } };
     finishAnimation?.();
     await playback;
 
-    expect(scheduleAutoEndTurn).toHaveBeenCalledWith(resultState);
+    expect(scheduleAutoEndTurn).toHaveBeenCalledWith(domain.battleState);
   });
 });

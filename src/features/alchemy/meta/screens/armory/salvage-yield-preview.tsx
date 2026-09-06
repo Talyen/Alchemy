@@ -13,12 +13,7 @@ export function SalvageYieldPreview({ salvageYield }: { salvageYield: SalvageYie
       {materials.length > 0 ? (
         <div className="flex flex-wrap items-center justify-center gap-2">
           {materials.map((material) => (
-            <MaterialPill
-              key={material}
-              material={material}
-              amount={salvageYield.materials[material]}
-              showsIncreasePrefix
-            />
+            <MaterialPill key={material} material={material} amount={salvageYield.materials[material]} />
           ))}
         </div>
       ) : null}
@@ -29,9 +24,7 @@ export function SalvageYieldPreview({ salvageYield }: { salvageYield: SalvageYie
               key={currency.id}
               currency={currency}
               count={salvageYield.currencies[currency.id] ?? 0}
-              size="sm"
               showDescription
-              countPrefix="+"
               testId="armory-salvage-currency-preview"
             />
           ))}

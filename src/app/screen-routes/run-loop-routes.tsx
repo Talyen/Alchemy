@@ -98,9 +98,8 @@ function RewardsScreenRoute({ commands }: { commands: RunLoopCommands["rewards"]
     <RewardsScreen
       rewardState={r.rewardState}
       claimInFlight={r.rewardClaimInFlight}
-      onAddReward={commands.finish}
-      onSkip={commands.finish}
-      onSelectReward={commands.selectChoice}
+      onSkip={commands.skip}
+      onClaimReward={commands.claimChoice}
     />
   );
 }

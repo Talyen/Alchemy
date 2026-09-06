@@ -22,3 +22,50 @@
       12 12,
     auto !important;
 }
+
+.armory-currency-art {
+  width: 5rem;
+  height: 5rem;
+}
+
+@keyframes armory-item-feedback {
+  from {
+    box-shadow:
+      inset 0 0 0 3px rgb(167 243 208 / 0.9),
+      0 0 24px rgb(110 231 183 / 0.5);
+  }
+  to {
+    box-shadow:
+      inset 0 0 0 0 transparent,
+      0 0 0 transparent;
+  }
+}
+
+@keyframes armory-count-feedback {
+  from {
+    color: #a7f3d0;
+    transform: scale(1.2);
+  }
+  to {
+    color: inherit;
+    transform: scale(1);
+  }
+}
+
+.armory-item-feedback {
+  animation: armory-item-feedback 500ms ease-out both;
+}
+.armory-count-feedback {
+  animation: armory-count-feedback 300ms ease-out both;
+}
+.armory-affix-feedback {
+  animation: armory-item-feedback 500ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .armory-item-feedback,
+  .armory-count-feedback,
+  .armory-affix-feedback {
+    animation: none;
+  }
+}

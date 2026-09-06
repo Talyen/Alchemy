@@ -3,7 +3,7 @@ import {
   formatCompanionTurnLineBase,
   formatCompanionTurnStartLine,
 } from "@/lib/game-data/cards/companion-turn-description";
-import type { BattleCardEffect } from "@/lib/game-data";
+import { companionLibrary, getCompanionDescriptionLines, type BattleCardEffect } from "@/lib/game-data";
 
 describe("formatCompanionTurnLineBase", () => {
   it("formats damage with amount override", () => {
@@ -58,5 +58,32 @@ describe("formatCompanionTurnStartLine", () => {
     expect(formatCompanionTurnStartLine(effect, { bondLevel: 2, damageBonus: 1 })).toBe(
       "Deals 4 Bleed damage or Steals 1 Gold each turn",
     );
+  });
+});
+
+describe("Bond descriptions", () => {
+  it.each([0, 1, 2, 3])("describes every effect at Bond %i", (level) => {
+    expect(getCompanionDescriptionLines(companionLibrary.wolf, level)).toEqual([
+      `Deals ${1 + level} Bleed damage and gains 1 Block each turn`,
+    ]);
+    expect(getCompanionDescriptionLines(companionLibrary.panther, level)).toEqual([
+      `Deals ${2 + level} Bleed damage each turn`,
+    ]);
+    expect(getCompanionDescriptionLines(companionLibrary["will-o-wisp"], level)).toEqual([
+      level === 0
+        ? "Cleanses 1 harmful status each turn"
+        : `Cleanses 1 harmful status and restores ${level} Health each turn`,
+    ]);
+    expect(getCompanionDescriptionLines(companionLibrary.fox, level)).toEqual([
+      `Deals ${1 + level} Bleed damage or Steals ${1 + level} Gold each turn`,
+    ]);
+    for (const [id, baseline, action] of [
+      ["mana-moth", "Grants 1 extra Mana each turn", "grant"],
+      ["library-owl", "Draws 1 Card each turn", "draw"],
+    ] as const) {
+      expect(getCompanionDescriptionLines(companionLibrary[id], level)).toEqual([
+        baseline + (level === 0 ? "" : `, with a ${level * 25}% chance to ${action} 1 more`),
+      ]);
+    }
   });
 });

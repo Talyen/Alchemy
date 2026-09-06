@@ -96,7 +96,7 @@ Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI d
 
 ## Balance simulation
 
-Headless battle simulator for overpowered or underpowered cards, classes, enemies, talents, companions, and trinkets. It runs isolated fights through the real battle engine (no browser, no React) using simple play policies. It is a **skill-floor** tool (dump-hand, random wishes, no holds), not a full run/map/shop simulator. Skipped during normal `npm test` runs.
+Headless battle simulator for overpowered or underpowered cards, classes, enemies, talents, companions, trinkets, gear, and individual item affixes. It runs isolated fights through the real battle engine (no browser, no React) using simple play policies. It is a **skill-floor** tool (dump-hand, random wishes, no holds), not a full run/map/shop simulator. Skipped during normal `npm test` runs.
 
 ```sh
 npm run balance:sim
@@ -125,10 +125,14 @@ combat-eligible talents and seeded loadouts. Exact presets, finding bands, and
 report grouping are owned by `src/lib/balance/` and the generated report; use
 findings as review input rather than applying tunings automatically. The
 summary opens `reports/balance-findings.html` and writes a JSON companion.
+The enemy, hero, and matchup tables also show average enemy attack actions, average triggered ability activations, and the fraction of all battles won before the first enemy attack. Blocked and dodged attacks count; multi-hit attacks count once. Haste and crowd-control skips do not count. Individual `simulateBattle` results retain activation counts by trait ID. Passive resistances, starting stats, and difficulty modifiers are excluded from ability counts. These measurements are descriptive evidence, not additional automatic balance thresholds.
+
 Numeric environment values must be positive integers. Policy and loadout values
 must exactly match the choices above; pacing accepts `on`/`1`/`true` or
 `off`/`0`/`false` (anything else fails fast). Invalid configuration fails before report files are written.
 Scenario seeds derive from tier, class, enemy, depth, replicate, and sweep identity instead of loop position, so adding or reordering unrelated content does not re-key existing comparisons. Core matchups reuse each tier/class deck sample across enemies while retaining distinct fight randomness; isolation sweeps keep baseline and treatment paired.
+Hero-versus-enemy rows aggregate every tested depth and deck sample. Durations count rounds actually played (a capped fight reports 30, not 31), including losses and timeouts; a shorter fight can mean an earlier defeat, so read duration alongside win rate. Hero and enemy spread checks cover all three tiers. Paired win and duration findings use their own standard errors, with category medians calculated before filtering noisy results.
+Individual affix probes compare one affix against no gear across every hero, tier, gauntlet enemy, and configured deck seed. Basic midpoint rolls are used early/mid, Astral midpoint rolls late, and unique affixes use their fixed rolls. These probes measure sensitivity, including hypothetical early access to unique effects; they do not model acquisition or stacked affixes. The existing rolled-item sweep remains separate.
 `balance:sim` generates reports; `test:balance` verifies finite full-report
 construction and render purity without touching `reports/`. Changed balance
 implementation runs both the focused unit suite and this report check.

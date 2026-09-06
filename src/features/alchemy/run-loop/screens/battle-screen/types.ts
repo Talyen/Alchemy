@@ -53,7 +53,7 @@ export type BattleRefsProps = BattleRefs;
 
 export interface BattleActionsProps {
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
-  onWishChoice: (card: BattleCard | null) => void;
+  onWishChoice: (card: BattleCard) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
   isDevMode: boolean;

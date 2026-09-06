@@ -35,3 +35,17 @@ describe("gear affixes", () => {
     });
   });
 });
+
+describe("rebalanced saved affixes", () => {
+  it.each(["basic", "astral", "unique"] as const)("normalizes Lifegiving to 1 for %s gear", (rarity) => {
+    const normalized = normalizeAffixRolls([{ id: "health-per-turn", value: 4 }], rarity);
+    expect(normalized).toEqual([{ id: "health-per-turn", value: 1 }]);
+    expect(normalizeAffixRolls(normalized, rarity)).toEqual(normalized);
+  });
+  it.each([
+    ["basic", 1],
+    ["astral", 2],
+  ] as const)("normalizes Emberforged for %s gear", (rarity, value) => {
+    expect(normalizeAffixRolls([{ id: "forge-on-burn", value: 4 }], rarity)).toEqual([{ id: "forge-on-burn", value }]);
+  });
+});

@@ -2,6 +2,17 @@ import { defaultCompanionBondLevels } from "../companions";
 import type { TalentEffectManifest } from "../talent-effect-manifest";
 
 export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
+  dodgeChance: 0,
+  healOnDodge: 0,
+  forgeOnDodge: 0,
+  thornsOnDodge: 0,
+  cleanseStacksOnDodge: 0,
+  nextAttackPhysicalOnDodge: 0,
+  dodgeChanceWithoutBlock: 0,
+  stunBuildupReductionPercent: 0,
+  dodgeChanceOnHostileDamage: 0,
+  armorOnDodge: 0,
+
   flatPhysicalDamage: 0,
   armorToPhysicalDamage: false,
   physicalStunChance: 0,

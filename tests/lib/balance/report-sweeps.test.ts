@@ -7,7 +7,8 @@ const { simulateWinSeries } = vi.hoisted(() => ({
 
 vi.mock("@/lib/balance/simulator-batch", () => ({ simulateWinSeries }));
 
-import { IN_CLASS_CARD_GAUNTLET, runCardSweepInClass } from "@/lib/balance/report-sweeps";
+import { gearAffixList } from "@/lib/gear/affix-catalog";
+import { IN_CLASS_CARD_GAUNTLET, runCardSweepInClass, runAffixSweep } from "@/lib/balance/report-sweeps";
 
 describe("runCardSweepInClass", () => {
   beforeEach(() => {
@@ -18,6 +19,37 @@ describe("runCardSweepInClass", () => {
       iterations: config.iterations,
       winRate: 0,
     }));
+  });
+
+  it("isolates every affix with matched battles across all tiers", () => {
+    const rows = runAffixSweep({
+      iterations: 1,
+      trinketIterations: 2,
+      cardIterations: 1,
+      deckSeeds: 2,
+      policy: "random-playable",
+      loadoutMode: "bare",
+    });
+    expect(rows.map((row) => row.id).sort()).toEqual(gearAffixList.map((affix) => affix.id).sort());
+    const groups = new Map<number, BalanceBatchConfig[]>();
+    for (const [config] of simulateWinSeries.mock.calls) {
+      const group = groups.get(config.seed!) ?? [];
+      group.push(config);
+      groups.set(config.seed!, group);
+    }
+    expect(groups.size).toBe(3 * 8 * 2 * 4);
+    for (const configs of groups.values()) {
+      expect(configs).toHaveLength(gearAffixList.length + 1);
+      expect(configs.every((config) => config.deck === configs[0]?.deck)).toBe(true);
+      for (const config of configs.slice(1)) {
+        expect(Object.values(config.gearEffects!).filter((value) => value !== 0)).toHaveLength(1);
+      }
+    }
+    for (const row of rows) {
+      expect(row.deltas.early.n).toBe(8 * 2 * 4 * 2);
+      expect(row.deltas.mid.n).toBe(row.deltas.early.n);
+      expect(row.deltas.late.n).toBe(row.deltas.early.n);
+    }
   });
 
   it("runs each full base deck once per tier and character", () => {

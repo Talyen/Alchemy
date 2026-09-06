@@ -222,7 +222,7 @@ describe("createRunFlowHandlers victory paths", () => {
     const navigateTo = vi.fn();
     const onWildwoodRewardComplete = vi.fn();
 
-    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete })).finishRewards();
+    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete })).skipRewards();
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
     expect(onWildwoodRewardComplete).not.toHaveBeenCalled();
@@ -289,7 +289,52 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(playGoldGain).toHaveBeenCalledOnce();
   });
 
-  it("finishRewards ignores a second call while claim is in flight", () => {
+  it("skips a resumed card reward without claiming its saved selection", () => {
+    const card = { id: "slash", title: "Slash", art: "", descriptionLines: [], cost: 1, effects: [] };
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, runDeck: [] });
+    setRunSession({
+      rewardState: {
+        choices: [card],
+        gold: 0,
+        materials: emptyInventory(),
+        selectedId: card.id,
+        destinations: [],
+        rewardType: "card",
+        selectedBossId: null,
+        lastVictoryEnemyType: "normal",
+        lastVictoryContentSystem: "campaign",
+      },
+      companionRewardCards: null,
+    });
+    const navigateTo = vi.fn();
+    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).skipRewards();
+    expect(readActiveRun().runDeck).toEqual([]);
+    expect(navigateTo).toHaveBeenCalledTimes(1);
+  });
+
+  it("claims the clicked card instead of a different saved selection", () => {
+    const first = { id: "slash", title: "Slash", art: "", descriptionLines: [], cost: 1, effects: [] };
+    const second = { ...first, id: "bash", title: "Bash" };
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, runDeck: [] });
+    setRunSession({
+      rewardState: {
+        choices: [first, second],
+        gold: 0,
+        materials: emptyInventory(),
+        selectedId: first.id,
+        destinations: [],
+        rewardType: "card",
+        selectedBossId: null,
+        lastVictoryEnemyType: "normal",
+        lastVictoryContentSystem: "campaign",
+      },
+      companionRewardCards: null,
+    });
+    createRunFlowHandlers(makeFlowHandlerDeps()).claimRewardChoice(second.id);
+    expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([second.id]);
+  });
+
+  it("claimRewardChoice ignores a second call while claim is in flight", () => {
     const card = {
       id: "reward-card",
       uid: 1,
@@ -320,8 +365,8 @@ describe("createRunFlowHandlers victory paths", () => {
     const navigateTo = vi.fn();
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
 
-    handlers.finishRewards();
-    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).finishRewards();
+    handlers.claimRewardChoice("reward-card");
+    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).claimRewardChoice("reward-card");
 
     expect(readActiveRun().runDeck).toHaveLength(1);
     expect(navigateTo).toHaveBeenCalledTimes(1);
@@ -336,7 +381,7 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(readRunSession().rewardState.choices).toEqual([]);
   });
 
-  it("finishRewards defers companion handoff until navigation commit", () => {
+  it("claimRewardChoice defers companion handoff until navigation commit", () => {
     const primary = {
       id: "reward-card",
       uid: 1,
@@ -376,7 +421,7 @@ describe("createRunFlowHandlers victory paths", () => {
     const navigateTo = vi.fn();
     const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
 
-    handlers.finishRewards();
+    handlers.claimRewardChoice("reward-card");
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
     expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([primary.id]);

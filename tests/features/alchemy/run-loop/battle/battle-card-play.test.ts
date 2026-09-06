@@ -192,7 +192,7 @@ describe("createBattleCardPlay", () => {
     expect(playUISound).toHaveBeenCalledWith("error");
   });
 
-  it("rejects plays while a card transfer is in progress", () => {
+  it("plays visible cards while a card transfer is in progress", () => {
     const slash = makeTestCard({
       id: "slash",
       cost: 1,
@@ -210,9 +210,62 @@ describe("createBattleCardPlay", () => {
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
 
-    expect(readBattle().battleState).toEqual(state);
-    expect(awardCardXP).not.toHaveBeenCalled();
-    expect(playUISound).toHaveBeenCalledWith("error");
+    expect(readBattle().battleState.hand).toHaveLength(0);
+    expect(readBattle().battleState.mana).toBe(2);
+    expectAwardedCard(awardCardXP, "slash");
+    expect(playUISound).not.toHaveBeenCalled();
+  });
+
+  it("accepts rapid plays by identity and waits for all draws before settling the latest state", async () => {
+    const { runBattleDraw } = await import("@/features/alchemy/run-loop/battle/draw-sequence");
+    const settled: Array<() => void> = [];
+    vi.mocked(runBattleDraw)
+      .mockImplementationOnce(async (request) => {
+        request.applyState();
+        settled.push(request.onSettled!);
+        return true;
+      })
+      .mockImplementationOnce(async (request) => {
+        request.applyState();
+        settled.push(request.onSettled!);
+        return true;
+      });
+    const first = makeTestCard({ id: "slash", uid: 11, cost: 1 });
+    const second = makeTestCard({ id: "slash", uid: 12, cost: 1 });
+    dispatchRunSessionCommand((draft) =>
+      setSyncedBattleState(
+        draft,
+        makeTestBattleState({
+          hand: [first, second],
+          mana: 3,
+          enemyHealth: 100,
+        }),
+      ),
+    );
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
+    expect(handleAutoplayCard(first, 0)).toBe(true);
+    expect(handleAutoplayCard(second, 1)).toBe(true);
+    expect(readBattle().battleState.mana).toBe(1);
+    expect(readBattle().battleState.hand).toHaveLength(0);
+    expect(handleAutoplayCard(first, 0)).toBe(false);
+    settled[1]!();
+    expect(ctx.cardPlayInProgressRef.current).toBe(true);
+    expect(session.checkBattleEnd).not.toHaveBeenCalled();
+    settled[0]!();
+    expect(ctx.cardPlayInProgressRef.current).toBe(false);
+    expect(session.checkBattleEnd).toHaveBeenCalledWith(readBattle().battleState, 1);
+    expect(ctx.scheduleAutoEndTurnRef.current).toHaveBeenCalledWith(readBattle().battleState);
+    expect(playUISound).not.toHaveBeenCalled();
+  });
+
+  it("keeps the hand closed once End Turn has started", () => {
+    const card = makeTestCard({ id: "slash", uid: 1, cost: 0 });
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, makeTestBattleState({ hand: [card] })));
+    const { ctx, session, transferDeps } = makeDeps({ cardPlayInProgressRef: { current: true } });
+    const actions = createBattleCardPlay(ctx, session, transferDeps);
+    expect(actions.handleAutoplayCard(card, 0)).toBe(false);
+    expect(readBattle().battleState.hand).toHaveLength(1);
   });
 
   it("rejects plays for cards still animating into the hand", () => {

@@ -1,3 +1,4 @@
+import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
 import {
@@ -85,7 +86,7 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
 
   if (stat === "freeze" && hasEnemyTrait(state, "yeti")) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
-    nextState = addEnemyMitigation(nextState, "block", 1);
+    nextState = addEnemyMitigation(recordEnemyAbilityActivation(nextState, "yeti"), "block", 1);
   }
 
   return nextState;

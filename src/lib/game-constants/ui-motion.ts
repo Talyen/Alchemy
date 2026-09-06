@@ -3,7 +3,7 @@ export const IMAGE_PRELOAD_TIMEOUT_MS = 15_000;
 
 export const MOTION_FADE_MS = 180;
 export const PAGE_EXIT_MS = MOTION_FADE_MS;
-export const TOOLTIP_FADE_MS = MOTION_FADE_MS;
+export const TOOLTIP_FADE_MS = 120;
 
 export const INITIAL_LOAD_MIN_DURATION_MS = 3000;
 export const FONT_PRELOAD_TIMEOUT_MS = 10_000;
@@ -78,8 +78,6 @@ export const HAND_HOVER_LIFT_PX = 26;
 export const HAND_HOVER_ROTATION_DEGREES = 2.6;
 
 export const HAND_HOVER_TOOLTIP_PADDING_PX = 16;
-
-export const HAND_HOVER_HANDOFF_MS = 50;
 
 export const HAND_REFLOW_MOTION_MS = 320;
 export const HAND_CARD_BASE_Z_INDEX = 10;

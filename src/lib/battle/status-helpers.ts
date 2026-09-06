@@ -50,7 +50,7 @@ export function dealSelfDamage(
   statLabel: CombatTextStat,
   combatTexts: CombatTextEvent[],
 ): { state: BattleState; healthLost: number } {
-  const postDamage = applyPlayerCombatDamage(state, amount, undefined, undefined, combatTexts);
+  const postDamage = applyPlayerCombatDamage(state, amount, "self", undefined, undefined, combatTexts);
   const healthLost = Math.max(0, state.playerHealth - postDamage.playerHealth);
   if (healthLost > 0) {
     mergeCombatText(combatTexts, {

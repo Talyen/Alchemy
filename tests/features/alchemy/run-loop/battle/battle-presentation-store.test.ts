@@ -249,6 +249,33 @@ describe("battle-presentation-store", () => {
     vi.useRealTimers();
   });
 
+  it("spaces rapid plays on the same rail and clears queued feedback between battles", async () => {
+    vi.useFakeTimers();
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, true);
+      setScreen(draft, ROUTE_SCREENS.BATTLE);
+    });
+    const show = useBattlePresentationStore.getState().showCombatTexts;
+    show([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
+    show([{ target: "enemy", kind: "damage", stat: "health", amount: 8 }]);
+    show([{ target: "player", kind: "heal", stat: "health", amount: 2 }]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useBattlePresentationStore.getState().floatingCombatTexts).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LANE_DELAY_MS);
+    const texts = useBattlePresentationStore.getState().floatingCombatTexts;
+    expect(texts.filter((text) => text.target === "enemy").map((text) => "amount" in text && text.amount)).toEqual([
+      5, 8,
+    ]);
+    expect(new Set(texts.map((text) => text.id)).size).toBe(3);
+    show([{ target: "enemy", kind: "damage", stat: "health", amount: 9 }]);
+    useBattlePresentationStore.getState().clearFloatingCombatTexts();
+    show([{ target: "enemy", kind: "damage", stat: "health", amount: 1 }]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useBattlePresentationStore.getState().floatingCombatTexts).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LANE_DELAY_MS * 2);
+    expect(useBattlePresentationStore.getState().floatingCombatTexts).toHaveLength(1);
+  });
+
   it("caps visible combat texts per rail", async () => {
     vi.useFakeTimers();
     dispatchRunSessionCommand((draft) => {

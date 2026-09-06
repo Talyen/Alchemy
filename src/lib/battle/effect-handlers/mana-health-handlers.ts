@@ -18,9 +18,12 @@ function restoreMana(
   amount: number,
   potionMult: number,
   combatTexts: CombatTextEvent[],
+  allowOverflow = false,
 ): BattleState {
   const manaBefore = state.mana;
-  const nextState = gainManaWithCombatText(state, applyPotionMultiplier(amount, potionMult), combatTexts);
+  const nextState = gainManaWithCombatText(state, applyPotionMultiplier(amount, potionMult), combatTexts, {
+    allowOverflow,
+  });
   return applyHealOnManaGain(nextState, nextState.mana - manaBefore, combatTexts);
 }
 
@@ -83,7 +86,7 @@ export const applyRestoreManaEffect = defineHandler(
     ) {
       return state;
     }
-    return restoreMana(state, effect.amount, potionMult, combatTexts);
+    return restoreMana(state, effect.amount, potionMult, combatTexts, effect.allowOverflow);
   },
 );
 

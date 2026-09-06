@@ -1,3 +1,4 @@
+import { recordEnemyAbilityActivation } from "./battle-metrics";
 import {
   applyPlayerCombatDamage,
   scaleReceivedPlayerDamage,
@@ -125,7 +126,7 @@ function dealPlayerDotTick(
   applyRiders?: (state: BattleState) => BattleState,
 ): BattleState {
   let nextState = setPlayerStatus(
-    applyPlayerCombatDamage(state, reducedDamage, damageType, undefined, combatTexts),
+    applyPlayerCombatDamage(state, reducedDamage, "hostile", damageType, undefined, combatTexts),
     status,
     nextStacks,
   );
@@ -190,7 +191,7 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     }
     next = { ...next, pendingEnemyBleedLeechHealing: 0 };
     if (hasEnemyTrait(state, "blood-cultist") && healthBeforeBleed > next.playerHealth) {
-      next = setFlag(next, "enemyNextAttackCrit", true);
+      next = setFlag(recordEnemyAbilityActivation(next, "blood-cultist"), "enemyNextAttackCrit", true);
     }
     return next;
   });

@@ -1,3 +1,4 @@
+import { combineRateCells, emptyRateCell } from "@/lib/balance/report-rankings";
 import { describe, expect, it } from "vitest";
 import {
   combinePairedWinStats,
@@ -44,6 +45,12 @@ describe("paired delta noise", () => {
     expect(isDeltaNoisy(0.3, 0.05)).toBe(false);
   });
 
+  it("rejects missing or truncated duration samples", () => {
+    const wins = Uint8Array.from([1, 0]);
+    expect(() => pairedWinStats(wins, wins, Uint16Array.from([3, 4]))).toThrow("turn series");
+    expect(() => pairedWinStats(wins, wins, Uint16Array.from([3]), Uint16Array.from([3, 4]))).toThrow("turn series");
+  });
+
   it("rejects mismatched series", () => {
     expect(() => pairedWinStats(Uint8Array.from([0]), Uint8Array.from([0, 1]))).toThrow("equal lengths");
   });
@@ -58,4 +65,26 @@ describe("paired deck helpers", () => {
     expect(insertCardIntoDeck(withCard, card)).toHaveLength(2);
     expect(removeCardIdFromDeck(withCard, card.id).map((entry) => entry.id)).toEqual([other.id]);
   });
+});
+
+it("weights enemy interaction measurements by battle count", () => {
+  const result = combineRateCells([
+    {
+      ...emptyRateCell(),
+      n: 1,
+      averageEnemyAttacks: 0,
+      averageEnemyAbilityActivations: 2,
+      winsBeforeEnemyAttackRate: 1,
+    },
+    {
+      ...emptyRateCell(),
+      n: 3,
+      averageEnemyAttacks: 4,
+      averageEnemyAbilityActivations: 6,
+      winsBeforeEnemyAttackRate: 0,
+    },
+  ]);
+  expect(result.averageEnemyAttacks).toBe(3);
+  expect(result.averageEnemyAbilityActivations).toBe(5);
+  expect(result.winsBeforeEnemyAttackRate).toBe(0.25);
 });

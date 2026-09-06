@@ -15,7 +15,6 @@ import { getCardRect, getHoverId } from "../../shared/utils";
 import { applyCombatTextShakeFeedback, shouldPlayCardGoldGain } from "./battle-status";
 import { playCombatTextSounds } from "./controller-utils";
 import { PLAYABLE_HAND_OPTIONS, getHandCardKey } from "./playable-hand";
-import { isBattlePlayInputBusy } from "./autoplay-driver";
 import { runBattleDraw } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
@@ -38,10 +37,18 @@ export function createBattleCardPlay(
   const getBattle = () => readBattle();
   const getPresentation = () => ctx.getPresentation();
 
-  function finishDrawSequence(sessionNum: number, state: BattleState) {
-    ctx.cardPlayInProgressRef.current = false;
+  const pendingDraws = new Map<number, number>();
+
+  function finishDrawSequence(sessionNum: number) {
+    const remaining = (pendingDraws.get(sessionNum) ?? 1) - 1;
+    if (remaining > 0) {
+      pendingDraws.set(sessionNum, remaining);
+      return;
+    }
+    pendingDraws.delete(sessionNum);
     session.runIfSessionActive(sessionNum, () => {
-      getPresentation().resetHandTransferUi();
+      ctx.cardPlayInProgressRef.current = false;
+      const state = getBattle().battleState;
       session.checkBattleEnd(state, sessionNum);
       ctx.scheduleAutoEndTurnRef.current?.(state);
     });
@@ -54,6 +61,8 @@ export function createBattleCardPlay(
     sessionNum: number,
     errorContext: string,
   ) {
+    pendingDraws.set(sessionNum, (pendingDraws.get(sessionNum) ?? 0) + 1);
+    ctx.cardPlayInProgressRef.current = true;
     void runBattleDraw({
       oldHand,
       newState,
@@ -61,7 +70,7 @@ export function createBattleCardPlay(
       session: sessionNum,
       deps: transferDeps.getDrawSequenceDeps(),
       errorContext: `handle ${errorContext} draw sequence`,
-      onSettled: () => finishDrawSequence(sessionNum, newState),
+      onSettled: () => finishDrawSequence(sessionNum),
     });
   }
 
@@ -69,10 +78,7 @@ export function createBattleCardPlay(
     const presentation = getPresentation();
     return (
       ctx.screen === "battle" &&
-      !isBattlePlayInputBusy({
-        cardPlayInProgress: ctx.cardPlayInProgressRef.current,
-        cardTransferInProgress: presentation.cardTransferInProgress,
-      }) &&
+      (!ctx.cardPlayInProgressRef.current || (pendingDraws.get(ctx.battleSessionRef.current) ?? 0) > 0) &&
       canPlayCardInBattle(state, card, index, PLAYABLE_HAND_OPTIONS) &&
       !presentation.hiddenHandCardKeys.includes(getHandCardKey(card, index))
     );
@@ -114,6 +120,9 @@ export function createBattleCardPlay(
     options?: { silentReject?: boolean },
   ): boolean {
     const currentState = getBattle().battleState;
+    if (card.uid !== undefined) {
+      index = currentState.hand.findIndex((candidate) => candidate.uid === card.uid && candidate.id === card.id);
+    }
     if (!canPlayCard(card, index, currentState)) {
       if (!options?.silentReject) playUISound("error");
       return false;
@@ -166,15 +175,15 @@ export function createBattleCardPlay(
     return handlePlayCard(card, index, sourceRect, { silentReject: true });
   }
 
-  function handleWishChoice(cardOrNull: BattleCard | null) {
+  function handleWishChoice(card: BattleCard) {
     const currentState = getBattle().battleState;
     if (!currentState.wishOptions) return;
     const newState = dispatchRunSessionCommand((draft) => {
       const bound = withDraftWorldBattleRng(draft, currentState);
-      if (!bound.wishOptions) return null;
-      const next = chooseWishCard(bound, cardOrNull?.id ?? null);
+      if (!bound.wishOptions?.some((option) => option.id === card.id)) return null;
+      const next = chooseWishCard(bound, card.id);
       setBattleState(draft, next);
-      if (cardOrNull) discoverCardIds(draft, [cardOrNull.id]);
+      discoverCardIds(draft, [card.id]);
       return withRestingWorldBattleRng(next);
     });
     if (!newState) return;

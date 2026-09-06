@@ -63,6 +63,8 @@ export function defaultBattleState(): BattleState {
     turnPhase: "player",
     playerHealth: MAX_PLAYER_HEALTH,
     playerMaxHealth: MAX_PLAYER_HEALTH,
+    playerDodgeCount: 0,
+    dodgeChanceFromDamage: 0,
     deathsDoorUsed: false,
     deathsDoorActive: false,
     deathsDoorTriggeredTurn: null,

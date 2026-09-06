@@ -18,7 +18,7 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 
 - Use plain prop functions rather than `React.FC`; React 19 components receive `ref` directly as a prop.
 - Use `cn()` for conditional classes and existing CVA variants for semantic states.
-- Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states.
+- Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states. Eligible talent nodes use native buttons for Enter and Space; keyword trees without portrait art remain selectable using a blank portrait and the keyword icon.
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography.
 - Modals and panels use `useModalEscapeDismiss` or `useCaptureEscapeCancel` so the global Escape stack remains ordered.
 
@@ -34,7 +34,9 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 
 Screen and `FadeSlot` reveals wait for the mounted images to load and decode through `useArtworkReady`, then allow a layout frame before starting the fade. Startup preloading is a warm-up, not proof that a later mounted image is paint-ready. Failed or timed-out images stay hidden for that mount so they cannot pop in after the screen is revealed. Reserve intrinsic artwork dimensions when image height determines layout, including the menu logo.
 
-Motion tokens live in `src/lib/game-constants/ui-motion.ts` (`MOTION_FADE_MS`, `TOOLTIP_FADE_MS`) and are mirrored to CSS as `var(--motion-fade-duration)` in `src/styles/theme.css` / `src/styles/components.css`. Keep JS `MOTION_FADE_MS` and CSS `var(--motion-fade-duration)` in sync; `npm run lint:architecture-smoke` asserts this.
+`useHeldWhile` snapshots its input in an effect. Memoize composite inputs before passing them to the hook; fresh objects can trigger repeated rendering in environments without React Compiler.
+
+Motion tokens live in `src/lib/game-constants/ui-motion.ts` (`MOTION_FADE_MS`, `TOOLTIP_FADE_MS`) and are mirrored to CSS as `var(--motion-fade-duration)` and `var(--tooltip-exit-duration)` in `src/styles/theme.css` / `src/styles/components.css`. Keep each JS duration and its CSS counterpart in sync; `npm run lint:architecture-smoke` asserts this.
 
 ## Buttons and interactive surfaces
 
@@ -46,7 +48,7 @@ Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`.
 | Primary        | `Button variant="primary"` for Play, Continue, and Confirm                              |
 | Secondary      | `Button variant="outline"` for Back, Cancel, Skip, and alternate navigation             |
 | Accent         | `ShineAccentButton` only for accent-intent forward actions                              |
-| Paired actions | `ActionButtonRow`, secondary left and primary right                                     |
+| Paired actions | Secondary left and primary right; shared button width tokens                            |
 | Equal choices  | `DestinationChoices` and `Surface`, with an accessible tile name                        |
 | Tabs           | `TabBar`                                                                                |
 | Hover / press  | Shared CSS hover scale and `active:` feedback; do not add parallel Motion hover scaling |
@@ -68,6 +70,12 @@ stage. Authored arbitrary content dimensions must use the content unit; do not
 use raw container-height units as the primary card size. Available-space caps
 are allowed: the battle hand caps card height, compresses its fan into the
 reserved center region, and reserves extra bottom space for larger hands.
+The battle bottom bar reserves content-sized side controls and gives the hand
+the remaining width. Side controls stay stationary as the hand grows to seven
+cards; smaller hands remain centered with capped spacing. Hand hover and pointer
+activation use the nearest stable slot center, with boundaries halfway between
+centers, independent of raised artwork and reflow motion. Hidden transfer cards
+cannot receive pointer selection. Keyboard focus uses the native card buttons.
 Enlarged actors shift upward to keep health and battle controls clear. Backgrounds
 fill the frame.
 
@@ -75,6 +83,22 @@ Collection and Armory browsing measure their available grid width and scaled
 tile size. Page size is two rows times the resolved column count, capped at eight
 portrait or six landscape columns. Resize retains the selected or first visible
 item. Offered choices remain content-owned, independent of browsing capacity.
+
+Wish uses the shared collection-choice card size, independent of battle-hand sizing.
+All choices stay on one row and shrink evenly to fit, including four-card Wishes;
+the card area scrolls when needed. Activating a card immediately resolves the Wish.
+There is no selection, confirmation, or skip action; Escape and backdrop clicks do
+not dismiss it. Each queued Wish accepts a fresh activation even when options repeat.
+
+Reward cards and items are claimed immediately on activation. Only card rewards
+retain Skip; there are no reward confirmation buttons. Claim-in-flight disables
+choices and Skip until the next reward surface or destination is committed.
+
+Collection entries rest with dim grey borders. Discovered entries show their keyword
+Shine Border on hover or keyboard focus; locked and undiscovered entries stay neutral.
+Wish and reward choices use the same hover treatment. Trinkets and gear, including
+uniques, use their effect keywords on these surfaces, with neutral shine when none
+exist. Other surfaces retain their existing rarity borders and item-title colors.
 
 Shop card removal reserves a fixed available-height card area between its header
 and pagination/actions. It shows two rows when they fit and one otherwise, keeping
@@ -119,6 +143,7 @@ descriptions can use available width to fit; tooltips never scroll or truncate.
 - Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use `useTileHoverPopup` (a `useHoverVisible` preset with the shared `TOOLTIP_FADE_MS` hold) — see those hooks for the exact call shape.
 - Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.
 - Use `maxWidthFraction` for small-window bounds.
+- Tooltip entrance uses a 180 ms ease-out fade with 4 px of movement away from the trigger; exit uses a 120 ms fade with 2 px of return movement. CSS `@starting-style` supplies the first-render entrance, and transitions reverse smoothly on re-hover. Hover remains immediate for rapid inspection. Keep `--tooltip-exit-duration` in sync with `TOOLTIP_FADE_MS`.
 - Tooltip panels are `pointer-events-none`; nested interactive tooltips are unsupported.
 - `PortaledTooltip` retains the complete last visible content through fade-out, including descriptions computed only while hovered. Header and body enter and exit as one panel.
 - State-driven triggers mount the portal only while hovered; exit fades complete via the shared `TOOLTIP_FADE_MS` hold — do not add a second hold alongside `PortaledTooltip`.
@@ -146,3 +171,11 @@ shared widget/motion primitives above.
 
 Use the changed-path route in [CONTRIBUTING.md](../CONTRIBUTING.md). Interaction
 or browser-journey work also follows [tests/e2e/README.md](../tests/e2e/README.md).
+
+## Armory crafting and salvage
+
+Currency artwork shares one 5rem size between the crafting strip, pointer attachment, and salvage preview. The pointer attachment is offset from the hit point, hides for touch and outside the workspace, and never intercepts input. Reward quantities are plain numbers; preview currencies are focusable information groups rather than action buttons.
+
+Selecting an item for salvage immediately ends targeting and clears its cursor and highlights. Confirm, Cancel, and Escape return to browsing. The dialog uses the heading “Salvage,” a wrapping shining item name in “Salvaging [item] will yield:”, a portrait, full-size currency rewards, and an equipped-character warning where applicable. Confirmations focus Cancel, contain keyboard focus, and disable actions during exit.
+
+Crafting consumes one currency per activation. Active instructions include a visible Cancel action and Escape hint; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change. Inventory movement uses a short position transition; reduced-motion preferences disable these animations. Protection buttons remain available on both inventory and equipped gear; locked items remain equippable.

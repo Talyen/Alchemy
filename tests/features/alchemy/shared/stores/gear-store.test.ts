@@ -51,7 +51,7 @@ describe("gear-store", () => {
     mutateGearForTest((gear) => gear.equip("knight", "left-accessory", ring));
     expect(readGearState().loadouts.knight["left-accessory"]).toBe("ring-1");
 
-    const salvaged = mutateGearForTest((gear) => gear.salvage(ring.instanceId, { rng: () => 0 }));
+    const salvaged = mutateGearForTest((gear) => gear.salvage(ring.instanceId));
     expect(salvaged?.inventories.knight).toEqual([]);
     expect(readGearState().loadouts.knight["left-accessory"]).toBeNull();
     expect(flattenGearInventories(readGearState().inventories)).toEqual([]);
@@ -107,7 +107,7 @@ describe("gear-store", () => {
     });
     expect(readProfileStore().discoveredUniqueIds).toEqual(["wardbreaker"]);
 
-    dispatchGearSalvageWithMaterialGrant((gear) => gear.salvage(unique.instanceId, { rng: () => 0 }));
+    dispatchGearSalvageWithMaterialGrant((gear) => gear.salvage(unique.instanceId));
     expect(flattenGearInventories(readGearState().inventories)).toEqual([]);
     expect(readProfileStore().discoveredUniqueIds).toEqual(["wardbreaker"]);
     resetGearForTest();

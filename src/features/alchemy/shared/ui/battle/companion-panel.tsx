@@ -1,4 +1,4 @@
-import { formatCompanionTurnStartLine, type CompanionDefinition } from "@/lib/game-data";
+import { getCompanionDescriptionLines, type CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -16,19 +16,12 @@ import { ArtTurnActiveBorder } from "./actor-panel-helpers";
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
 import type { ActiveCcKeyword } from "../../utils/cc-presentation";
 
-function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonus: number): string[] {
-  const turnEffect = companion.turnStartEffects[0];
-  if (!turnEffect) return ["Acts at the start of each turn"];
-
-  const line = formatCompanionTurnStartLine(turnEffect, { damageBonus });
-  return line ? [line] : ["Acts at the start of each turn"];
-}
-
 export function CompanionPanel({
   companion,
   compact = false,
   shaking = false,
   damageBonus = 0,
+  bondLevel = 0,
   ccKeyword = null,
   turnActive = false,
   turnShineColors,
@@ -37,6 +30,7 @@ export function CompanionPanel({
   compact?: boolean;
   shaking?: boolean;
   damageBonus?: number;
+  bondLevel?: number;
   ccKeyword?: ActiveCcKeyword | null;
   turnActive?: boolean;
   turnShineColors?: readonly string[];
@@ -85,7 +79,7 @@ export function CompanionPanel({
       >
         <TooltipHeader>{companion.title}</TooltipHeader>
         <DescriptionLines
-          lines={getCompanionDescriptionLines(companion, damageBonus)}
+          lines={getCompanionDescriptionLines(companion, bondLevel, damageBonus)}
           idPrefix={`companion-${companion.id}`}
         />
       </PortaledTooltip>

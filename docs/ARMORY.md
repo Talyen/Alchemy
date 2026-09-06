@@ -22,7 +22,7 @@ contract and controller seams.
 
 `src/lib/gear/types.ts`, `crafting.ts`, and `crafting-ids.ts` are authoritative. Durable invariants:
 
-- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
+- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, rolled `affixes`, and an optional `protected` flag (omitted means unlocked); it never embeds definition objects or art URLs. Protected items can be equipped but cannot be crafted or salvaged. Protection changes use the Gear command boundary and flush the save.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
 - Permanent Trinkets are unique definition IDs in `ownedTrinketIds`, not generated `GearInstance` values; they have no rarity, affixes, crafting, or salvage.
 - `equippedTrinkets` maps each character to one owned Trinket at most. Equipping a shared Trinket moves it from any other character.
@@ -31,6 +31,8 @@ contract and controller seams.
 - **Unique** is a third Gear rarity (alongside basic and astral). Each unique is a named definition with a fixed signature affix plus supporting affixes. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
 - Uniqueness is inventory-scoped: a unique definition is excluded from shops and rewards while any character still holds an instance. Salvaging it returns that definition to the drop pool. Reward and shop screens never offer the same unique twice, and never pair a unique with another item of the same base item.
 - Drop, shop, rarity, and permanent-Trinket replacement tuning lives in `src/lib/game-constants/run-rewards.ts`. Unique rolls degrade to the owning surface's fallback when no eligible unique remains; permanent-Trinket replacement falls back to Gear when no unowned Trinket remains. Keep changing percentages in the tuning owner rather than copying them into this contract.
+
+Astral instance titles and borders derive their shine keywords from the rolled affix descriptions, using the same keyword recognition as tooltip text (`src/lib/keyword-text.ts`). Base affinity only prioritizes present keywords for the three-keyword title limit; it never adds absent keywords. Max-roll Astral and Unique affix names use the first three distinct keywords from their own description, including aliases such as Stunned, Frozen, and Consumed. Tooltip entries carry affix identity and normalized value together so description text and max-roll shine cannot diverge. Text uses each keyword’s primary color with a faded stop; borders retain full palettes. Definition-only previews use base affinities, and Unique item titles and borders retain their gold palette. Gear hover backgrounds use only actual affix keywords, with neutral gray for no recognized keywords; Unique gear uses the same gold hex pair in inventory, equipped slots, and collection. CSS text fades must not feed the hex-only background renderer.
 
 ## State flow
 
@@ -62,10 +64,14 @@ There is no external `useGearStore` hook. Gear mutations run against a `GearStor
 HP sync runs through `rebindLiveRunMeta` when `syncRunHealth ?? draft.session.hasActiveRun`. `mutate` receives a `GearStore` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
 1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
-2. **Salvage** — freeze first: preview with `computeSalvageYield` (definition `salvageValue` homestead materials + `rollSalvageYield` crafting currencies), then confirm by passing that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta). The preview is authoritative: confirm always pays exactly the frozen yield.
+2. **Salvage** — preview with `computeSalvageYield` (definition `salvageValue` homestead materials + crafting currencies drawn from the existing rarity table using a seed derived from the stable instance ID). Reopening, reloading, changing affixes, and toggling protection do not reroll rewards; upgrading rarity uses the new rarity table. Confirm passes that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta). Confirm always pays exactly the preview. Both salvage and crafting reject protected items at the command boundary.
 3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`.
 4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addInstance(instance, characterId) })`.
 5. **Permanent Trinkets** — use `addTrinket`, `equipTrinket`, and `unequipTrinket` on the Gear aggregate. Rewards and the Trinket Shop add ownership inside their existing run-session command; acquisition never auto-equips or creates a Boon.
+
+### Salvage materials
+
+Base item construction owns homestead salvage materials; rarity increases quantities rather than introducing affinity-based Herbs. Metal equipment yields Iron, wooden equipment yields Wood, magical staves and wands combine Wood and Gems, and jewelry and spellbooks yield Gems. Leather Armor and Quivers yield crafting currencies only because the material inventory has no leather equivalent. The Leather Buckler retains Wood for its backing. Herbs remain available from enemy loot, Herb Garden progression, and run-end Homestead bonuses; removing gear Herbs reduces an optional supply, not access to progression. Currency rarity distributions remain unchanged.
 
 ### `useArmoryController` facade
 
@@ -81,6 +87,8 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear
 ## Battle integration
 
 Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Battle code never reads the Gear aggregate during a fight.
+
+Lifegiving grants 1 Health per turn at every rarity and remains eligible for ordinary gear. Fixed roll values do not imply unique-only eligibility; `uniqueOnly` owns that restriction. Emberforged grants Forge only on the first Burn attack each turn (Basic: 1; Astral: 2); multiple equipped copies add their amounts but share the turn limit. Companion and delayed effects do not spend this card-attack trigger. Saved inventory rolls for these two affixes are bounded to their current rarity ranges during normalization, tooltip generation, and battle-manifest construction. Existing combat snapshots retain their captured magnitudes until the next battle.
 
 Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guards `tests/architecture/affix-catalog-guard.test.ts` and `src/lib/content-validation/validators-gear.ts` assert:
 

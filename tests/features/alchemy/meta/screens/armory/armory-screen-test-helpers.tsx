@@ -40,7 +40,7 @@ export function createArmoryScreenProps(overrides: Partial<ArmoryScreenProps> = 
     onEquipTrinket: vi.fn(),
     onUnequipTrinket: vi.fn(),
     onSalvage: vi.fn(() => true),
-    rng: vi.fn(() => 0.5),
+    onSetProtected: vi.fn(() => true),
     ...overrides,
   };
 }

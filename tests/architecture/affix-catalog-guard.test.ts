@@ -53,22 +53,11 @@ describe("affix catalog guard", () => {
     }
   });
 
-  it("requires fixed-value affixes to be uniqueOnly", () => {
+  it("requires unique-only affixes to have fixed rolls at every rarity", () => {
     for (const definition of Object.values(gearAffixCatalog)) {
-      const isFixedSingle =
-        definition.roll.basic.min === 1 &&
-        definition.roll.basic.max === 1 &&
-        definition.roll.astral.min === 1 &&
-        definition.roll.astral.max === 1 &&
-        definition.roll.unique.min === 1 &&
-        definition.roll.unique.max === 1;
-      if (isFixedSingle) {
-        expect(definition.uniqueOnly, `${definition.id} has fixed 1 roll but missing uniqueOnly`).toBe(true);
-      }
-      if (definition.uniqueOnly) {
-        expect(definition.roll.basic.min, `${definition.id} uniqueOnly should have fixed roll`).toBe(
-          definition.roll.basic.max,
-        );
+      if (!definition.uniqueOnly) continue;
+      for (const range of Object.values(definition.roll)) {
+        expect(range.min, `${definition.id} uniqueOnly should have fixed roll`).toBe(range.max);
       }
     }
   });

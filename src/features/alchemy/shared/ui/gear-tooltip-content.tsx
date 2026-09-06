@@ -6,7 +6,6 @@ import {
   type GearInstance,
   gearAffixCatalog,
   getGearAffixTextShineColors,
-  getGearDefinitionTextShineColors,
 } from "@/lib/gear";
 import { GearItemTitle } from "./gear-item-title";
 import { ShineText } from "./shine-text";
@@ -25,7 +24,8 @@ export function GearTooltipContent({
   const rarity = instance
     ? (gearInstanceRarity(instance) ?? definition.rarity ?? "basic")
     : (definition.rarity ?? "basic");
-  const affixEntries = instance && instance.affixes.length > 0 ? getGearAffixTooltipEntries(instance.affixes) : [];
+  const affixEntries =
+    instance && instance.affixes.length > 0 ? getGearAffixTooltipEntries(instance.affixes, rarity) : [];
   const bodyLines = instance
     ? getGearInstanceTooltipLines(instance)
     : definition.descriptionLines.map((text, index) => ({ key: `definition-${index}`, text }));
@@ -37,16 +37,10 @@ export function GearTooltipContent({
       </TooltipHeader>
       {affixEntries.length > 0 ? (
         <div className="mt-1 space-y-2">
-          {affixEntries.map((entry, index) => {
-            const roll = instance?.affixes[index];
-            const def = roll ? gearAffixCatalog[roll.id] : undefined;
-            const isMaxAstral =
-              (rarity === "astral" || rarity === "unique") && def && roll && roll.value === def.roll[rarity].max;
-            const colors = isMaxAstral
-              ? rarity === "unique"
-                ? getGearDefinitionTextShineColors(definition)
-                : getGearAffixTextShineColors(def)
-              : [];
+          {affixEntries.map((entry) => {
+            const def = gearAffixCatalog[entry.affixId];
+            const isMaxRoll = (rarity === "astral" || rarity === "unique") && entry.value === def.roll[rarity].max;
+            const colors = isMaxRoll ? getGearAffixTextShineColors(def) : [];
 
             return (
               <div key={entry.key}>

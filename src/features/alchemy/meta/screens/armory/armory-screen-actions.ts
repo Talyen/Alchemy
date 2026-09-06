@@ -28,29 +28,26 @@ export function applyCurrencyToGear({
   editable,
   activeCurrencyId,
   instance,
-  craftingCurrencies,
   onApplyCurrency,
   clearCurrency,
 }: {
   editable: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
   instance: GearInstance;
-  craftingCurrencies: Record<CraftingCurrencyId, number>;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   clearCurrency: () => void;
-}) {
-  if (!editable || !activeCurrencyId) return;
+}): boolean {
+  if (!editable || !activeCurrencyId) return false;
   if (!canApplyCraftingCurrency(activeCurrencyId, instance)) {
     playUISound("error");
-    return;
+    return false;
   }
   const ok = onApplyCurrency(activeCurrencyId, instance.instanceId);
   if (!ok) {
     playUISound("error");
-    return;
+    return false;
   }
   playUISound("talentUnlock");
-  if (craftingCurrencies[activeCurrencyId] <= 1) {
-    clearCurrency();
-  }
+  clearCurrency();
+  return true;
 }

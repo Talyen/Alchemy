@@ -23,6 +23,7 @@ describe("normalizePersistedBattleState", () => {
       expect(normalized.gearEffects[key]).toBe(0);
     }
     expect(normalized.flags.firstHolyCardFreeUsed).toBe(false);
+    expect(normalized.flags.emberforgedUsedThisTurn).toBe(false);
   });
 
   it("defaults additive enemy trait flags for older battle snapshots", () => {
@@ -151,4 +152,10 @@ describe("normalizePersistedBattleState", () => {
 
     expect(normalized.talentEffects.receiveHalfFreezeDamage).toBe(true);
   });
+});
+
+it("preserves the spent Emberforged trigger when resuming a turn", () => {
+  const state = defaultBattleState();
+  state.flags.emberforgedUsedThisTurn = true;
+  expect(normalizePersistedBattleState(state).flags.emberforgedUsedThisTurn).toBe(true);
 });

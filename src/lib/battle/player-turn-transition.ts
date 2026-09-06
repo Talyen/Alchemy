@@ -9,7 +9,13 @@ import { applyCardEffects } from "./effect-handlers";
 import { finalizeCcSkipTurnDecrement, isPlayerCcControlled } from "./status-cc";
 import { decayHalvedStatus } from "./status-helpers";
 import { getBattleRng } from "@/lib/rng";
-import { deathsDoorGraceTurns, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
+import {
+  isPlayerDefeated,
+  deathsDoorGraceTurns,
+  type BattleState,
+  type CombatTextEvent,
+  withPreservedFlags,
+} from "./types";
 
 function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.playerHealth <= 0 || state.enemyHealth <= 0) return state;
@@ -71,6 +77,7 @@ function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: bo
       resonantChimeUsedThisTurn: false,
       runicQuillUsedThisTurn: false,
       consumeDrawUsedThisTurn: false,
+      emberforgedUsedThisTurn: false,
       nextCardCostReduction: 0,
     },
   };
@@ -127,6 +134,7 @@ export function advanceToPlayerTurn(
   combatTexts: CombatTextEvent[] = [],
   options?: { preserveBlock?: boolean },
 ) {
+  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
   const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive;
 
   let nextState = state;

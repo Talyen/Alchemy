@@ -1,6 +1,11 @@
+import { GearProtectionButton } from "./gear-protection-button";
+import type { CraftingResult } from "../crafting-result";
 import { memo } from "react";
 import {
   canApplyCraftingCurrency,
+  craftingCurrencyBlockedReason,
+  getCraftingCurrencyDefinition,
+  getGearInstanceTitle,
   gearDefinitions,
   getAstralShineColors,
   GEAR_ASTRAL_SHINE_BORDER_WIDTH,
@@ -10,6 +15,7 @@ import {
 } from "@/lib/gear";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
+import { getPlasmaColorPairForGear } from "../../../../shared/config";
 import { Surface } from "../../../../shared/ui/surface";
 import { PortaledTooltip } from "../../../../shared/ui/portaled-tooltip";
 import { GearTooltipContent } from "../../../../shared/ui/gear-tooltip-content";
@@ -27,6 +33,8 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   activeCurrencyId,
   onSelect,
   onUnequip,
+  onSetProtected,
+  craftingResult,
   onSalvage,
   onApplyCurrency,
 }: {
@@ -38,6 +46,8 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   activeCurrencyId: CraftingCurrencyId | null;
   onSelect: (slot: GearSlot) => void;
   onUnequip: (slot: GearSlot) => void;
+  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
+  craftingResult: CraftingResult | null;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
 }) {
@@ -45,9 +55,20 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   const shineColors = instance ? getAstralShineColors(instance) : undefined;
   const showShine = Boolean(shineColors);
   const canCraft = Boolean(activeCurrencyId && instance && canApplyCraftingCurrency(activeCurrencyId, instance));
-  const salvageable = salvageMode && Boolean(instance);
+  const salvageable = salvageMode && Boolean(instance) && !instance?.protected;
+  const blockedReason =
+    instance && activeCurrencyId
+      ? craftingCurrencyBlockedReason(activeCurrencyId, instance)
+      : salvageMode && instance?.protected
+        ? "Unlock this item before salvaging."
+        : null;
   const currencyTarget = Boolean(activeCurrencyId) && canCraft;
-  const ariaLabel = SLOT_ARIA_LABELS[slot];
+  const ariaLabel =
+    instance && salvageMode
+      ? `Salvage ${getGearInstanceTitle(instance)}`
+      : instance && activeCurrencyId
+        ? `Apply ${getCraftingCurrencyDefinition(activeCurrencyId).displayName} to ${getGearInstanceTitle(instance)}`
+        : SLOT_ARIA_LABELS[slot];
   const {
     isHovered,
     shimmerActive,
@@ -74,8 +95,14 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
       onMouseLeave={handleMouseLeave}
     >
       {instance && definition && showPopup ? (
-        <PortaledTooltip triggerRef={wrapperRef} visible={isHovered} className="armory-inventory-tooltip !shadow-none">
+        <PortaledTooltip
+          triggerRef={wrapperRef}
+          visible={isHovered}
+          className="armory-inventory-tooltip !shadow-none"
+          plasmaColorPair={getPlasmaColorPairForGear(instance)}
+        >
           <GearTooltipContent definition={definition} instance={instance} />
+          {blockedReason ? <p className="mt-3 text-sm text-amber-200">{blockedReason}</p> : null}
         </PortaledTooltip>
       ) : null}
       <Surface
@@ -93,7 +120,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
             onSelect(slot);
             return;
           }
-          if (salvageable) {
+          if (salvageMode) {
             if (instance) onSalvage(instance);
             return;
           }
@@ -113,6 +140,16 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
           <ShineBorder shineColor={shineColors} borderWidth={GEAR_ASTRAL_SHINE_BORDER_WIDTH} className="z-20" />
         ) : null}
       </Surface>
+      {instance && craftingResult?.before.instanceId === instance.instanceId ? (
+        <span
+          key={JSON.stringify(craftingResult)}
+          aria-hidden="true"
+          className="armory-item-feedback pointer-events-none absolute inset-0 z-20 rounded-shell-hero"
+        />
+      ) : null}
+      {instance ? (
+        <GearProtectionButton instance={instance} editable={editable} onSetProtected={onSetProtected} />
+      ) : null}
     </div>
   );
 });

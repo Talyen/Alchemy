@@ -24,6 +24,7 @@ export interface GearDefinition {
 }
 
 export interface GearInstance {
+  protected?: boolean | undefined;
   instanceId: string;
   definitionId: string;
   affixes: GearAffixRoll[];

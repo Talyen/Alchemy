@@ -8,10 +8,17 @@ import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { GearTile, TrinketTile } from "../../shared/ui/collection-art-tiles";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
 import { SelectableCard } from "../../shared/ui/selectable-card";
-import { ActionButtonRow, TitledScreenShell } from "../../shared/ui/shared-ui";
-import { usePlasmaBaseline, usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
+import { Button } from "@/components/ui/button";
+import { TitledScreenShell } from "../../shared/ui/shared-ui";
+import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { FadeSlot } from "../../shared/ui/use-fade";
-import { getPlasmaKeywordsForGear, getPlasmaColorPair, sectionTitleClass } from "@/features/alchemy/shared/config";
+import {
+  getPlasmaKeywordsForGear,
+  getPlasmaColorPair,
+  getInspectionKeywordShineColors,
+  BUTTON_WIDTH_ACTION,
+  sectionTitleClass,
+} from "@/features/alchemy/shared/config";
 import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
   getRewardChoiceId,
@@ -22,12 +29,12 @@ import {
 
 function RewardChoiceItems({
   rewardState,
-  selectedRewardId,
-  onSelectReward,
+  disabled,
+  onClaimReward,
 }: {
   rewardState: RewardState;
-  selectedRewardId: string | null;
-  onSelectReward: (id: string) => void;
+  disabled: boolean;
+  onClaimReward: (id: string) => void;
 }) {
   switch (rewardState.rewardType) {
     case "gear":
@@ -39,8 +46,9 @@ function RewardChoiceItems({
               instance={instance}
               interactionKey="reward"
               as="button"
-              selected={selectedRewardId === choiceId}
-              onClick={() => onSelectReward(choiceId)}
+              disabled={disabled}
+              hoverKeywordShine
+              onClick={() => onClaimReward(choiceId)}
               ariaLabel={`Select ${getGearInstanceTitle(instance)}`}
             />
           </div>
@@ -56,9 +64,10 @@ function RewardChoiceItems({
               trinket={trinket}
               interactionKey="reward"
               as="button"
-              selected={selectedRewardId === choiceId}
+              disabled={disabled}
+              hoverKeywordShine
               temporary={rewardState.rewardType === "boon"}
-              onClick={() => onSelectReward(choiceId)}
+              onClick={() => onClaimReward(choiceId)}
               ariaLabel={`Select ${trinket.title}`}
             />
           </div>
@@ -71,8 +80,10 @@ function RewardChoiceItems({
           <div key={choiceId}>
             <SelectableCard
               card={card}
-              isSelected={selectedRewardId === choiceId}
-              onSelect={() => onSelectReward(choiceId)}
+              isSelected={false}
+              disabled={disabled}
+              shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
+              onSelect={() => onClaimReward(choiceId)}
               interactionKey="reward"
             />
           </div>
@@ -121,49 +132,29 @@ function getRewardPrompt(rewardType: RewardState["rewardType"]): string {
   }
 }
 
-function getRewardPrimaryLabel(rewardType: RewardState["rewardType"]): string {
-  switch (rewardType) {
-    case "gear":
-      return "Take Gear";
-    case "trinket":
-      return "Take Trinket";
-    case "boon":
-      return "Take Boon";
-    case "card":
-      return "Add Card";
-  }
-}
-
 export function RewardsScreen({
   rewardState,
-  onAddReward,
   onSkip,
-  onSelectReward,
+  onClaimReward,
   claimInFlight = false,
 }: {
   rewardState: RewardState;
-  onAddReward: () => void;
   onSkip: () => void;
-  onSelectReward: (id: string) => void;
+  onClaimReward: (id: string) => void;
   claimInFlight?: boolean;
 }) {
   const rewardChoices = rewardState.choices;
   const rewardGold = rewardState.gold;
   const rewardMaterials = rewardState.materials;
-  const selectedRewardId = rewardState.selectedId;
   const choicePrompt = getRewardPrompt(rewardState.rewardType);
 
   const hoveredCardId = useUiStore((s) => s.hoveredCardId);
-  const { hoveredReward, selectedReward } = useMemo(() => {
+  const hoveredReward = useMemo(() => {
     const hoveredId = hoveredCardId?.startsWith("reward-") ? hoveredCardId.slice("reward-".length) : null;
-    return {
-      hoveredReward: resolveRewardChoice(rewardState, hoveredId),
-      selectedReward: resolveRewardChoice(rewardState),
-    };
+    return hoveredId === null ? null : resolveRewardChoice(rewardState, hoveredId);
   }, [hoveredCardId, rewardState]);
 
   const claimLocked = claimInFlight || rewardChoices.length === 0;
-  usePlasmaBaseline(getRewardColorPair(selectedReward));
   usePlasmaInteraction(getRewardColorPair(hoveredReward), hoveredReward !== null);
 
   return (
@@ -175,35 +166,19 @@ export function RewardsScreen({
         className="mt-8 flex flex-col items-center gap-8"
       >
         <div className="flex flex-wrap items-start justify-center gap-6">
-          <RewardChoiceItems
-            rewardState={rewardState}
-            selectedRewardId={selectedRewardId}
-            onSelectReward={onSelectReward}
-          />
+          <RewardChoiceItems rewardState={rewardState} disabled={claimLocked} onClaimReward={onClaimReward} />
         </div>
 
         <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} />
       </FadeSlot>
 
-      <ActionButtonRow
-        className="mt-5"
-        width="action"
-        {...(rewardState.rewardType === "card"
-          ? {
-              secondary: {
-                label: "Skip",
-                onClick: onSkip,
-
-                disabled: claimLocked,
-              },
-            }
-          : {})}
-        primary={{
-          label: getRewardPrimaryLabel(rewardState.rewardType),
-          disabled: !selectedReward || claimLocked,
-          onClick: onAddReward,
-        }}
-      />
+      {rewardState.rewardType === "card" ? (
+        <div className="mt-5 flex justify-center">
+          <Button variant="outline" size="lg" className={BUTTON_WIDTH_ACTION} disabled={claimLocked} onClick={onSkip}>
+            Skip
+          </Button>
+        </div>
+      ) : null}
     </TitledScreenShell>
   );
 }

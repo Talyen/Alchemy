@@ -38,9 +38,7 @@ function renderRewards(choices: BattleCard[] = [slashCard]) {
     gold: 0,
     materials: emptyInventory(),
   };
-  return render(
-    <RewardsScreen rewardState={state} onAddReward={() => {}} onSkip={() => {}} onSelectReward={() => {}} />,
-  );
+  return render(<RewardsScreen rewardState={state} onSkip={() => {}} onClaimReward={() => {}} />);
 }
 
 function rewardChoiceWrapper(title: string) {

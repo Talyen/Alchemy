@@ -1,5 +1,6 @@
+import type { RefObject } from "react";
 import { Sparkles } from "lucide-react";
-import { type CraftingCurrencyId } from "@/lib/gear";
+import { gearDefinitions, type CraftingCurrencyId } from "@/lib/gear";
 import { useHeldWhile } from "../../../shared/ui/use-fade";
 import { ConfirmationDialog } from "../../../shared/ui/shared-ui";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
@@ -10,33 +11,57 @@ import { playUISound } from "@/lib/audio";
 
 interface Props {
   salvagePending: ArmorySalvagePending | null;
+  returnFocusRef: RefObject<HTMLButtonElement | null>;
   activeCurrencyId: CraftingCurrencyId | null;
+  equippedCharacterName: string | null;
   editable: boolean;
   onSalvage: (instanceId: string, salvageYield: ArmorySalvagePending["yield"]) => boolean;
   onClearSalvageTarget: () => void;
 }
 
-export function ArmoryOverlays({ salvagePending, activeCurrencyId, editable, onSalvage, onClearSalvageTarget }: Props) {
+export function ArmoryOverlays({
+  salvagePending,
+  returnFocusRef,
+  activeCurrencyId,
+  equippedCharacterName,
+  editable,
+  onSalvage,
+  onClearSalvageTarget,
+}: Props) {
+  const heldCharacterName = useHeldWhile(salvagePending !== null, equippedCharacterName);
   const heldPending = useHeldWhile(salvagePending !== null, salvagePending);
   return (
     <>
       <ConfirmationDialog
         open={salvagePending !== null}
-        title={
+        title="Salvage"
+        returnFocusRef={returnFocusRef}
+        description={
           heldPending ? (
             <>
-              <span>Salvage </span>
-              <GearItemTitle instance={heldPending.instance} />?
+              Salvaging <GearItemTitle instance={heldPending.instance} className="whitespace-normal" /> will yield:
             </>
-          ) : (
-            "Salvage?"
-          )
+          ) : undefined
         }
-        description="You will receive:"
-        body={heldPending ? <SalvageYieldPreview salvageYield={heldPending.yield} /> : null}
+        body={
+          heldPending ? (
+            <div className="space-y-4">
+              <img
+                src={gearDefinitions[heldPending.instance.definitionId]?.art}
+                alt=""
+                className="mx-auto h-24 w-24 rounded-xl object-contain"
+              />
+              {heldCharacterName ? (
+                <p className="text-sm text-amber-200">
+                  Equipped by {heldCharacterName}. Salvaging will unequip this item.
+                </p>
+              ) : null}
+              <SalvageYieldPreview salvageYield={heldPending.yield} />
+            </div>
+          ) : null
+        }
         confirmLabel="Salvage"
         icon={Sparkles}
-        dimBackground={false}
         dismissOnBackdrop={false}
         onCancel={onClearSalvageTarget}
         onConfirm={() => {

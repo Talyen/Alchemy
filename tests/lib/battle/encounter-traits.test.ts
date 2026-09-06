@@ -358,7 +358,7 @@ describe("encounter trait card events", () => {
     expect(result.enemyMitigation.block).toBe(4);
   });
 
-  it("activates Divine Aegis when archery bleed/poison detonation crosses half health", () => {
+  it("preserves Bleed above Blackfletch range without activating Divine Aegis", () => {
     const currentEnemy = enemyWith("divine-aegis");
     const base = makeTestBattleState();
     const played = card({
@@ -379,8 +379,10 @@ describe("encounter trait card events", () => {
       played.id,
       0,
     ).state;
-    expect(result.flags.divineAegisTriggered).toBe(true);
-    expect(result.enemyMitigation.armor).toBe(2);
-    expect(result.enemyMitigation.block).toBe(4);
+    expect(result.flags.divineAegisTriggered).toBe(false);
+    expect(result.enemyHealth).toBe(9);
+    expect(result.enemyStatuses.bleed).toBe(6);
+    expect(result.enemyMitigation.armor).toBe(0);
+    expect(result.enemyMitigation.block).toBe(0);
   });
 });

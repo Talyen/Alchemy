@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getCraftingCurrencyDefinition, type CraftingCurrencyId } from "@/lib/gear";
 import { cn } from "@/lib/utils";
@@ -13,30 +13,38 @@ const CURRENCY_CURSOR_STYLES: Record<CraftingCurrencyId, { className: string }> 
 };
 
 export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: CraftingCurrencyId | null }) {
+  const lastPoint = useRef<{ x: number; y: number } | null>(null);
   const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    if (!activeCurrencyId) return;
     let raf = 0;
-    let pending: { x: number; y: number } | null = null;
+    let pending = lastPoint.current;
     function flush() {
       raf = 0;
       setPoint(pending);
     }
     function handlePointerMove(event: PointerEvent) {
       const target = event.target instanceof Element ? event.target : null;
-      pending = target?.closest('[data-testid="armory-workspace"]') ? { x: event.clientX, y: event.clientY } : null;
-      if (!raf) raf = requestAnimationFrame(flush);
+      pending =
+        event.pointerType !== "touch" && target?.closest('[data-testid="armory-workspace"]')
+          ? { x: event.clientX, y: event.clientY }
+          : null;
+      lastPoint.current = pending;
+      if (activeCurrencyId && !raf) raf = requestAnimationFrame(flush);
     }
     function handlePointerLeave() {
       pending = null;
-      if (!raf) raf = requestAnimationFrame(flush);
+      lastPoint.current = pending;
+      if (activeCurrencyId && !raf) raf = requestAnimationFrame(flush);
       else setPoint(null);
     }
+    if (activeCurrencyId) raf = requestAnimationFrame(flush);
+    document.addEventListener("pointerdown", handlePointerMove, { passive: true });
     document.addEventListener("pointermove", handlePointerMove, { passive: true });
     document.documentElement.addEventListener("pointerleave", handlePointerLeave);
     return () => {
       if (raf) cancelAnimationFrame(raf);
+      document.removeEventListener("pointerdown", handlePointerMove);
       document.removeEventListener("pointermove", handlePointerMove);
       document.documentElement.removeEventListener("pointerleave", handlePointerLeave);
       setPoint(null);
@@ -49,10 +57,10 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
     <div
       data-testid="armory-crafting-cursor"
       className={cn(
-        "pointer-events-none fixed z-[130] h-8 w-8 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl",
+        "armory-currency-art pointer-events-none fixed z-[130] translate-x-4 translate-y-4 overflow-hidden rounded-xl",
         CURRENCY_CURSOR_STYLES[activeCurrencyId].className,
       )}
-      style={{ left: point.x, top: point.y }}
+      style={{ left: Math.min(point.x, window.innerWidth - 112), top: Math.min(point.y, window.innerHeight - 112) }}
     >
       <img src={activeCurrency.art} alt="" className="h-full w-full object-cover" />
     </div>,

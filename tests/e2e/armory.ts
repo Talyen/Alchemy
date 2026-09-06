@@ -82,10 +82,10 @@ export async function salvageInventoryItem(page: Page, gearTitle: string, index 
 }
 
 export async function confirmSalvage(page: Page) {
-  await page.getByRole("button", { name: "Salvage", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Salvage", exact: true }).click();
 }
 
 export async function expectSalvageDialog(page: Page) {
-  await expect(page.getByText("You will receive:")).toBeVisible();
+  await expect(page.getByRole("dialog").getByText(/will yield:/)).toBeVisible();
   await expect(page.getByTestId("armory-salvage-yield")).toBeVisible();
 }

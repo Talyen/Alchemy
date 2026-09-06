@@ -42,9 +42,26 @@ describe("balance report", () => {
     expect(model.classes).toHaveLength(8);
     expect(model.cardsIsolatedSkeleton.length).toBeGreaterThan(0);
     expect(model.cardsInClass.length).toBeGreaterThan(0);
+    for (const enemy of model.enemies) {
+      for (const tier of ["early", "mid", "late"] as const) {
+        const matchups = model.classMatchups.filter((row) => row.enemyId === enemy.id);
+        const n = matchups.reduce((sum, row) => sum + row.rates[tier].n, 0);
+        expect(n).toBe(enemy.rates[tier].n);
+        const wins = matchups.reduce((sum, row) => sum + row.rates[tier].winRate * row.rates[tier].n, 0);
+        expect(wins / n).toBeCloseTo(enemy.rates[tier].winRate);
+      }
+    }
+    expect(model.affixes.length).toBeGreaterThan(0);
     expect(model.gear.length).toBeGreaterThan(0);
     const json = renderBalanceReportJson(model, options);
-    expect(renderBalanceReportHtml(model, options)).toContain("<h1>Balance Report</h1>");
+    const html = renderBalanceReportHtml(model, options);
+    expect(html).toContain("<h1>Balance Report</h1>");
+    expect(html).toContain("Enemy attacks Early");
+    expect(html).toContain("Ability activations Late");
+    expect(html).toContain("Wins before attack Mid");
+    expect(json).toContain("averageEnemyAttacks");
+    expect(json).toContain("averageEnemyAbilityActivations");
+    expect(json).toContain("winsBeforeEnemyAttackRate");
     expect(renderBalanceReportJson(model, options)).toBe(json);
     const findings = evaluateBalanceFindings(model);
     expect(findings.findings.every((finding) => finding.recommendation.length > 0)).toBe(true);

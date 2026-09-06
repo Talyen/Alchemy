@@ -22,7 +22,7 @@ function titleFor(kind: keyof typeof TITLE_LOOKUPS | "talent", id: string): stri
 }
 
 function rateCells(cell: RateCell): string {
-  return `<td>${percent(cell.winRate)}</td><td>${percent(cell.timeoutRate)}</td><td>${cell.averageTurns.toFixed(1)}</td><td>${cell.averageHealthRemaining.toFixed(0)}</td>`;
+  return `<td>${percent(cell.winRate)}</td><td>${percent(cell.timeoutRate)}</td><td>${cell.averageTurns.toFixed(1)}</td><td>${cell.averageHealthRemaining.toFixed(0)}</td><td>${cell.averageEnemyAttacks.toFixed(1)}</td><td>${cell.averageEnemyAbilityActivations.toFixed(1)}</td><td>${percent(cell.winsBeforeEnemyAttackRate)}</td>`;
 }
 
 function deltaCell(delta: PairedDelta): string {
@@ -95,7 +95,7 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
 
   const { meta } = model;
   const rateHeaderTier = (label: string) =>
-    `<th>Win ${label}</th><th>Timeout ${label}</th><th>Turns ${label}</th><th>HP ${label}</th>`;
+    `<th>Win ${label}</th><th>Timeout ${label}</th><th>Turns ${label}</th><th>HP ${label}</th><th>Enemy attacks ${label}</th><th>Ability activations ${label}</th><th>Wins before attack ${label}</th>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -184,6 +184,11 @@ ${pairedRows(model.talents, "talent")}
 ${pairedRows(model.companions, "companion")}
 </tbody></table></div>
 
+<h2>Item affix isolation</h2>
+<p class="meta">One affix vs no gear, all heroes and deck seeds. Rounded midpoint roll: Basic early/mid, Astral late; unique affixes use their fixed value. These are sensitivity probes, including early access to unique effects.</p>
+<table><thead><tr><th>Affix</th><th>Early Δ</th><th>Mid Δ</th><th>Late Δ</th></tr></thead><tbody>
+${pairedRows(model.affixes, "affix")}
+</tbody></table>
 <h2>Gear ablation</h2>
 <p class="meta">Target base gear item equipped vs default gear baseline on the gauntlet.</p>
 <div class="scroll"><table><thead><tr><th>Item</th><th>Delta Early</th><th>Delta Mid</th><th>Delta Late</th></tr></thead><tbody>

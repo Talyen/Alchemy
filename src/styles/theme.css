@@ -22,6 +22,7 @@
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --motion-fade-duration: 180ms;
+  --tooltip-exit-duration: 120ms;
   --motion-fade-ease: ease-out;
 
   --font-sans: "Inter", sans-serif;

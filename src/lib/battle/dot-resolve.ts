@@ -1,5 +1,10 @@
 import { damageEnemyHealth, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
-import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
+import {
+  decayHalvedStatus,
+  decayPoisonStacks,
+  decayArmorAfterDamage,
+  getEnemyDamageMultiplier,
+} from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { mergeCombatText, payKillPayouts } from "./combat-text";
 import { payPendingBleedLeech } from "./damage-rider-leech";
@@ -47,14 +52,23 @@ export function detonateEnemyStatuses(
   state: BattleState,
   statuses: ReadonlyArray<"bleed" | "poison" | "burn">,
   combatTexts: CombatTextEvent[],
+  mode: "next-tick" | "remaining-ticks" = "next-tick",
 ): BattleState {
   const pulses: EnemyDotPulse[] = [];
   for (const status of statuses) {
     const amount = state.enemyStatuses[status];
     if (amount <= 0) continue;
+    let finalDamage = 0;
+    let stacks = amount;
+    const multiplier = getEnemyDamageMultiplier(state, status);
+    while (stacks > 0) {
+      finalDamage += Math.round(stacks * multiplier);
+      if (mode === "next-tick") break;
+      stacks = status === "poison" ? decayPoisonStacks(stacks) : status === "burn" ? decayHalvedStatus(stacks) : 0;
+    }
     pulses.push({
       status,
-      finalDamage: Math.round(amount * getEnemyDamageMultiplier(state, status)),
+      finalDamage,
       nextStacks: 0,
     });
   }

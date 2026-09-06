@@ -22,6 +22,9 @@ export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) 
 }
 
 export function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
+  if (status === "stun" && delta > 0) {
+    return Math.max(0, Math.round(delta * (1 - state.talentEffects.stunBuildupReductionPercent / PERCENT_DENOMINATOR)));
+  }
   return status === "block" && delta > 0 ? delta + state.gearEffects.flatBlockGained : delta;
 }
 
@@ -137,9 +140,12 @@ export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitH
   };
 }
 
-export function gainMana(state: BattleState, amount: number): BattleState {
+export function gainMana(state: BattleState, amount: number, allowOverflow = false): BattleState {
   if (amount <= 0) return state;
-  return { ...state, mana: Math.min(state.maxMana, state.mana + amount) };
+  return {
+    ...state,
+    mana: allowOverflow ? state.mana + amount : Math.max(state.mana, Math.min(state.maxMana, state.mana + amount)),
+  };
 }
 
 function computeDamageReduction(damage: number, damageType: string | undefined, state: BattleState): number {
@@ -177,6 +183,7 @@ export interface EnemyTraitIgnoreMitigationOptions {
 export function applyPlayerCombatDamage(
   state: BattleState,
   damage: number,
+  source: "hostile" | "self",
   damageType?: string,
   options?: EnemyTraitIgnoreMitigationOptions,
   combatTexts?: CombatTextEvent[],
@@ -193,6 +200,12 @@ export function applyPlayerCombatDamage(
     reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);
   }
   const nextHealth = clampHealth(state.playerHealth, -reducedDamage, state.playerMaxHealth);
+  if (source === "hostile" && nextHealth < state.playerHealth && state.talentEffects.dodgeChanceOnHostileDamage > 0) {
+    state = {
+      ...state,
+      dodgeChanceFromDamage: state.dodgeChanceFromDamage + state.talentEffects.dodgeChanceOnHostileDamage,
+    };
+  }
   if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
   if (state.playerStatuses.phoenixFeather > 0) {
     const healAmount = Math.round(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
@@ -221,10 +234,11 @@ export function applyPlayerCombatDamage(
     }
     return { ...state, playerHealth: 1 };
   }
-  return { ...state, playerHealth: 0, deathsDoorActive: false };
+  return { ...state, playerHealth: 0, deathsDoorActive: false, dodgeChanceFromDamage: 0 };
 }
 
 export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
+  if (isPlayerDefeated(state)) return state;
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
   const overheal = state.playerHealth + amount - playerHealth;
   let nextState = {

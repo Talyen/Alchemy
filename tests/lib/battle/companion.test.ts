@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
-import { companionLibrary } from "@/lib/game-data";
-import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
+import { companionLibrary, type CompanionId } from "@/lib/game-data";
+import { makeCombatTexts as makeTexts, makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 
 describe("processCompanionTurnStart", () => {
   it("returns state unchanged when no active companion", () => {
@@ -64,15 +64,15 @@ describe("processCompanionTurnStart", () => {
     expect(result.enemyStatuses.stun).toBe(1);
   });
 
-  it("Panther companion deals bleed damage like Wolf", () => {
+  it("Panther companion deals stronger Bleed than Wolf", () => {
     const state = makeTestBattleState({
       activeCompanion: companionLibrary.panther,
     });
     const texts = makeTexts();
     const result = processCompanionTurnStart(state, texts);
 
-    expect(result.enemyHealth).toBe(29);
-    expect(result.enemyStatuses.bleed).toBe(1);
+    expect(result.enemyHealth).toBe(28);
+    expect(result.enemyStatuses.bleed).toBe(2);
   });
 
   it("Phoenix companion deals burn damage", () => {
@@ -207,7 +207,7 @@ describe("processCompanionTurnStart", () => {
     });
     const result = processCompanionTurnStart(state, makeTexts());
 
-    expect(result.enemyStatuses.bleed).toBe(4);
+    expect(result.enemyStatuses.bleed).toBe(5);
   });
 
   it("companionVsFrozenBonus adds when enemy has freeze skip turns", () => {
@@ -441,7 +441,7 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    expect(result.playerStatuses.block).toBe(2);
+    expect(result.playerStatuses.block).toBe(3);
   });
 
   it("Watchdog no-ops when the companion deals no damage", () => {
@@ -494,5 +494,73 @@ describe("processCompanionTurnStart", () => {
     const result = processCompanionTurnStart(state, makeTexts());
     expect(Number.isNaN(result.enemyHealth)).toBe(false);
     expect(result.enemyHealth).toBe(29);
+  });
+});
+
+describe("Mana Moth extra Mana", () => {
+  it.each([4, 5])("grants extra Mana after refill or Wellspring at %i Mana", (mana) => {
+    const state = makeTestBattleState({ mana, maxMana: 4, activeCompanion: companionLibrary["mana-moth"] });
+    const result = processCompanionTurnStart(state, []);
+    expect(result.mana).toBe(mana + 1);
+    expect(result.maxMana).toBe(4);
+  });
+});
+
+describe("Companion Bond progression", () => {
+  function bondedState(id: CompanionId, level: number) {
+    const base = makeTestBattleState({ activeCompanion: companionLibrary[id] });
+    return {
+      ...base,
+      talentEffects: {
+        ...base.talentEffects,
+        companionBondLevels: { ...base.talentEffects.companionBondLevels, [id]: level },
+      },
+    };
+  }
+
+  it.each([0, 1, 2, 3])("applies all guaranteed effects at Bond %i", (level) => {
+    for (const [id, baseline, status] of [
+      ["wolf", 1, "bleed"],
+      ["panther", 2, "bleed"],
+      ["lizard-scout", 1, "poison"],
+      ["frost-whelp", 1, "freeze"],
+      ["bear", 1, "stun"],
+      ["phoenix", 1, "burn"],
+    ] as const) {
+      const state = bondedState(id, level);
+      const result = processCompanionTurnStart(state, []);
+      expect(result.enemyHealth).toBe(state.enemyHealth - baseline - level);
+      expect(result.enemyStatuses[status]).toBe(baseline + level);
+      expect(result.playerStatuses.block).toBe(id === "wolf" ? 1 : 0);
+      expect(state.enemyStatuses[status]).toBe(0);
+    }
+    const skeleton = bondedState("skeleton", level);
+    expect(processCompanionTurnStart(skeleton, []).enemyHealth).toBe(skeleton.enemyHealth - 1 - level);
+    expect(processCompanionTurnStart(bondedState("shield-scarab", level), []).playerStatuses.block).toBe(2 + level);
+    expect(processCompanionTurnStart(bondedState("golden-retriever", level), []).gold).toBe(1 + level);
+    const pixie = { ...bondedState("pixie", level), playerHealth: 10 };
+    expect(processCompanionTurnStart(pixie, []).playerHealth).toBe(11 + level);
+    const wisp = { ...bondedState("will-o-wisp", level), playerHealth: 10 };
+    wisp.playerStatuses = { ...wisp.playerStatuses, poison: 3 };
+    const healed = processCompanionTurnStart(wisp, []);
+    expect(healed.playerStatuses.poison).toBe(0);
+    expect(healed.playerHealth).toBe(10 + level);
+    const fox = bondedState("fox", level);
+    expect(processCompanionTurnStart({ ...fox, rng: () => 0.25 }, []).enemyStatuses.bleed).toBe(1 + level);
+    expect(processCompanionTurnStart({ ...fox, rng: () => 0.99 }, []).gold).toBe(1 + level);
+  });
+
+  it.each([0, 1, 2, 3])("keeps utility baselines and rolls the correct bonus at Bond %i", (level) => {
+    for (const id of ["mana-moth", "library-owl"] as const) {
+      for (const roll of [Math.max(0, level / 4 - 0.001), level / 4]) {
+        const rng = vi.fn(() => roll);
+        const state = { ...bondedState(id, level), mana: 4, maxMana: 4, rng, deck: [makeTestCard(), makeTestCard()] };
+        const result = processCompanionTurnStart(state, []);
+        const amount = 1 + (level > 0 && roll < level / 4 ? 1 : 0);
+        expect(id === "mana-moth" ? result.mana - 4 : result.hand.length).toBe(amount);
+        expect(result.maxMana).toBe(4);
+        expect(rng).toHaveBeenCalledTimes(level === 0 ? 0 : 1);
+      }
+    }
   });
 });

@@ -1,5 +1,9 @@
+import { motion, useReducedMotion } from "motion/react";
+import type { CraftingResult } from "./crafting-result";
+import { GearProtectionButton } from "./parts/gear-protection-button";
 import {
   canApplyCraftingCurrency,
+  craftingCurrencyBlockedReason,
   findGearEquippedCharacter,
   gearDefinitions,
   getAstralShineColors,
@@ -38,6 +42,8 @@ export function ItemPickerGrid({
   salvageMode,
   activeCurrencyId,
   onEquip,
+  onSetProtected,
+  craftingResult,
   onSalvage,
   onApplyCurrency,
 }: {
@@ -51,9 +57,12 @@ export function ItemPickerGrid({
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
   onEquip: (instance: GearInstance) => void;
+  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
+  craftingResult: CraftingResult | null;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
 }) {
+  const reducedMotion = useReducedMotion();
   const pageContext = `${characterId}:${slot}`;
   const { grid, pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(
     pageContext,
@@ -84,7 +93,12 @@ export function ItemPickerGrid({
         const loadoutLegal = definition ? isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventory) : false;
         const shineColor = getAstralShineColors(item);
         const canCraft = Boolean(activeCurrencyId && canApplyCraftingCurrency(activeCurrencyId, item));
-        const salvageable = salvageMode;
+        const salvageable = salvageMode && !item.protected;
+        const blockedReason = activeCurrencyId
+          ? craftingCurrencyBlockedReason(activeCurrencyId, item)
+          : salvageMode && item.protected
+            ? "Unlock this item before salvaging."
+            : null;
         const disabled = editable && !salvageMode && !activeCurrencyId && !loadoutLegal;
         let ariaLabel = title;
         if (activeCurrencyId && canCraft) {
@@ -94,7 +108,12 @@ export function ItemPickerGrid({
         }
 
         return (
-          <div key={item.instanceId} className="relative">
+          <motion.div
+            key={item.instanceId}
+            layout={reducedMotion ? false : "position"}
+            transition={{ duration: 0.2 }}
+            className="relative"
+          >
             <div
               data-testid="armory-inventory-item"
               data-gear-title={title}
@@ -120,7 +139,7 @@ export function ItemPickerGrid({
                 shineColor={shineColor}
                 onClick={() => {
                   if (!editable) return;
-                  if (salvageable) {
+                  if (salvageMode) {
                     onSalvage(item);
                     return;
                   }
@@ -135,7 +154,13 @@ export function ItemPickerGrid({
                   onEquip(item);
                 }}
                 popup={({ visible, triggerRef }) => (
-                  <GearDetailPopup definition={definition} instance={item} visible={visible} triggerRef={triggerRef} />
+                  <GearDetailPopup
+                    definition={definition}
+                    instance={item}
+                    visible={visible}
+                    triggerRef={triggerRef}
+                    notice={blockedReason ?? undefined}
+                  />
                 )}
               >
                 {EquippedIcon ? (
@@ -150,7 +175,15 @@ export function ItemPickerGrid({
                 ) : null}
               </InteractiveArtTile>
             </div>
-          </div>
+            {craftingResult?.before.instanceId === item.instanceId ? (
+              <span
+                key={JSON.stringify(craftingResult)}
+                aria-hidden="true"
+                className="armory-item-feedback pointer-events-none absolute inset-0 z-20 rounded-shell-hero"
+              />
+            ) : null}
+            <GearProtectionButton instance={item} editable={editable} onSetProtected={onSetProtected} />
+          </motion.div>
         );
       })}
     </PagedPickerGrid>

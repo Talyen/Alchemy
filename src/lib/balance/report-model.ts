@@ -59,6 +59,7 @@ export interface BalanceReportModel {
   readonly talents: readonly PairedTierRow[];
   readonly companions: readonly PairedTierRow[];
   readonly gear: readonly PairedTierRow[];
+  readonly affixes: readonly PairedTierRow[];
   readonly anomalies: readonly AnomalyReportRow[];
   readonly anomalyMetrics: readonly AnomalyMetricRow[];
 }

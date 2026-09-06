@@ -1,7 +1,7 @@
 import "../../../../../helpers/mock-audio";
 import { describe, expect, it, vi } from "vitest";
 import { playUISound } from "@/lib/audio";
-import { EMPTY_CRAFTING_CURRENCIES, type GearInstance } from "@/lib/gear";
+import { type GearInstance } from "@/lib/gear";
 import {
   applyCurrencyToGear,
   itemsMatchingSlot,
@@ -54,12 +54,10 @@ describe("applyCurrencyToGear", () => {
   it("does nothing when the board is not editable or no currency is armed", () => {
     const onApplyCurrency = vi.fn();
     const clearCurrency = vi.fn();
-    const currencies = { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 };
     applyCurrencyToGear({
       editable: false,
       activeCurrencyId: "voidstone",
       instance: basicSword(),
-      craftingCurrencies: currencies,
       onApplyCurrency,
       clearCurrency,
     });
@@ -67,7 +65,6 @@ describe("applyCurrencyToGear", () => {
       editable: true,
       activeCurrencyId: null,
       instance: basicSword(),
-      craftingCurrencies: currencies,
       onApplyCurrency,
       clearCurrency,
     });
@@ -82,7 +79,6 @@ describe("applyCurrencyToGear", () => {
       editable: true,
       activeCurrencyId: "voidstone",
       instance: { ...basicSword(), affixes: [] },
-      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 },
       onApplyCurrency,
       clearCurrency,
     });
@@ -97,7 +93,6 @@ describe("applyCurrencyToGear", () => {
       editable: true,
       activeCurrencyId: "voidstone",
       instance: basicSword(),
-      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 2 },
       onApplyCurrency,
       clearCurrency,
     });
@@ -113,7 +108,6 @@ describe("applyCurrencyToGear", () => {
       editable: true,
       activeCurrencyId: "voidstone",
       instance: basicSword(),
-      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 },
       onApplyCurrency,
       clearCurrency,
     });
@@ -121,17 +115,16 @@ describe("applyCurrencyToGear", () => {
     expect(clearCurrency).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps the currency armed when more remain", () => {
+  it("clears targeting after one successful application", () => {
     const onApplyCurrency = vi.fn().mockReturnValue(true);
     const clearCurrency = vi.fn();
     applyCurrencyToGear({
       editable: true,
       activeCurrencyId: "voidstone",
       instance: basicSword(),
-      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 3 },
       onApplyCurrency,
       clearCurrency,
     });
-    expect(clearCurrency).not.toHaveBeenCalled();
+    expect(clearCurrency).toHaveBeenCalledTimes(1);
   });
 });

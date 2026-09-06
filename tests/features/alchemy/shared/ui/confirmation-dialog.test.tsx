@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
@@ -7,6 +8,27 @@ describe("ConfirmationDialog", () => {
   afterEach(() => {
     cleanup();
     resetEscapeStackForTests();
+  });
+
+  it("starts on Cancel and keeps keyboard navigation within the dialog", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <button type="button">Outside</button>
+        <ConfirmationDialog title="Salvage" confirmLabel="Salvage" onConfirm={vi.fn()} onCancel={vi.fn()} />
+      </>,
+    );
+    const cancel = screen.getByRole("button", { name: "Cancel" });
+    const confirm = screen.getByRole("button", { name: "Salvage" });
+    expect(document.activeElement).toBe(cancel);
+    await user.tab();
+    expect(document.activeElement).toBe(confirm);
+    await user.tab();
+    expect(document.activeElement).toBe(cancel);
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(confirm);
+    screen.getByRole("button", { name: "Outside" }).focus();
+    expect(document.activeElement).toBe(cancel);
   });
 
   it("calls onCancel when Escape is pressed", () => {

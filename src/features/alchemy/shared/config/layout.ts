@@ -114,9 +114,9 @@ export const battleActorHeroCellClass =
 export const battleActorEnemyCellClass = "relative flex items-start justify-start";
 
 export const battleBottomBarClass =
-  "absolute inset-x-0 grid items-end gap-[clamp(1.25cqw,3cqw,2.19cqw)] px-2 bottom-2 grid-cols-[minmax(10.19cqh,0.24fr)_1fr_minmax(10.19cqh,0.24fr)] pb-1";
+  "absolute inset-x-0 grid items-end gap-[clamp(1.25cqw,3cqw,2.19cqw)] px-2 bottom-2 grid-cols-[max-content_minmax(0,1fr)_max-content] pb-1";
 
 export const battleBottomColumnClass = "flex flex-col items-center justify-end gap-4 pb-4";
 
 export const battleHandContainerClass =
-  "flex min-w-0 items-end justify-center min-h-[33.37cqh] [--hand-card-width:min(calc(16.5038*var(--content-rem,1rem)),24.45cqh)] px-[calc(var(--hand-card-width)/2)] pt-10";
+  "flex min-w-0 items-end justify-center min-h-[33.37cqh] [--hand-card-width:min(calc(16.5038*var(--content-rem,1rem)),24.45cqh)] px-[calc(var(--hand-card-width)*0.32)] pt-10";

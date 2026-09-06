@@ -48,10 +48,10 @@ export interface ArmoryController {
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
   onUnequipTrinket: (characterId: CharacterId) => void;
+  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
   onSalvage: (instanceId: string, salvageYield: SalvageYield) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
-  rng: () => number;
 }
 
 export function useArmoryController(options?: { rng?: () => number }): ArmoryController {
@@ -94,6 +94,14 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
     (characterId) => {
       mutateGearWithFlush(flush, (state) => state.unequipTrinket(characterId), { flushOnSuccessOnly: true });
     },
+    [flush],
+  );
+
+  const onSetProtected = useCallback<ArmoryController["onSetProtected"]>(
+    (instanceId, protectedItem) =>
+      mutateGearWithFlush(flush, (state) => state.setProtected(instanceId, protectedItem), {
+        flushOnSuccessOnly: true,
+      }),
     [flush],
   );
 
@@ -141,8 +149,8 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
       onEquipTrinket,
       onUnequipTrinket,
       onSalvage,
+      onSetProtected,
       onApplyCurrency,
-      rng,
     };
     if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
     return controller;
@@ -159,8 +167,8 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
     onEquipTrinket,
     onUnequipTrinket,
     onSalvage,
+    onSetProtected,
     onApplyCurrency,
     onSpawnDevGear,
-    rng,
   ]);
 }

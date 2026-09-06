@@ -1,4 +1,5 @@
 import { current } from "immer";
+import { resolveRewardChoice } from "@/lib/active-run-session";
 import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   beginRewardClaim,
@@ -61,17 +62,17 @@ export function createRewardHandlers(
   deps: RunFlowHandlerDeps,
   { completeRunVictory, handleActComplete }: RewardCallbacks,
 ) {
-  function selectRewardChoice(id: string) {
-    dispatchRunSessionCommand((draft) => {
-      setRewardState(draft, (prev) => ({ ...prev, selectedId: id }));
-    });
-  }
-
-  function finishRewards() {
+  function finishRewards(choiceId: string | null) {
     dispatchRunSessionCommand(
       (draft) => {
-        if (!beginRewardClaim(draft)) return null;
         const session = draft.session;
+        if (
+          choiceId === null
+            ? session.rewardState.rewardType !== "card"
+            : !resolveRewardChoice(session.rewardState, choiceId)
+        )
+          return null;
+        if (!beginRewardClaim(draft)) return null;
         const contentSystemType = draft.run.activeRun.contentSystemType;
 
         const grantAlchemistReward = shouldGrantAlchemistReward(
@@ -83,7 +84,7 @@ export function createRewardHandlers(
           ),
         );
         const result = finalizeRewardState({
-          rewardState: current(session.rewardState),
+          rewardState: { ...current(session.rewardState), selectedId: choiceId },
           companionRewardCards: session.companionRewardCards ? current(session.companionRewardCards) : null,
         });
 
@@ -143,7 +144,7 @@ export function createRewardHandlers(
   }
 
   return {
-    selectRewardChoice,
-    finishRewards,
+    claimRewardChoice: (id: string) => finishRewards(id),
+    skipRewards: () => finishRewards(null),
   };
 }

@@ -28,6 +28,26 @@ describe("CharacterSelectScreen", () => {
     expect(screen.getByRole("button", { name: /Rogue/i }).getAttribute("aria-disabled")).toBe("false");
   });
 
+  it("renders heroes in roster order", () => {
+    render(
+      <CharacterSelectScreen
+        onSelect={vi.fn()}
+        finishedRunCharacters={["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"]}
+      />,
+    );
+
+    expect(screen.getAllByRole("button").map((button) => button.getAttribute("aria-label"))).toEqual([
+      "Select Knight",
+      "Select Rogue",
+      "Select Ranger",
+      "Select Wizard",
+      "Select Alchemist",
+      "Select Warlock",
+      "Select Druid",
+      "Select Wildcard",
+    ]);
+  });
+
   it("triggers onSelect when clicking an unlocked hero", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();

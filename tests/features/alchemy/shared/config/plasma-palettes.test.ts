@@ -8,6 +8,7 @@ import {
   getPlasmaColorPairForCharacter,
   getPlasmaColorPairForEnemy,
   getPlasmaColorPairForGear,
+  getPlasmaColorPairForUnique,
   getPlasmaColorPairForTalent,
   getPlasmaColorPairForTrinket,
   getEnemyKeywordShineColors,
@@ -104,6 +105,34 @@ describe("getPlasmaColorPairForTrinket", () => {
 });
 
 describe("getPlasmaKeywordsForGear", () => {
+  it("excludes absent base affinities and uses neutral gray for gear without keywords", () => {
+    const gear = {
+      instanceId: "leather",
+      definitionId: "leather-armor-astral",
+      affixes: [{ id: "flat-physical" as const, value: 4 }],
+    };
+    expect(getPlasmaKeywordsForGear(gear)).toEqual(["physical"]);
+    expect(getPlasmaColorPairForGear(gear)).toEqual({ primary: "#cbd5e1", secondary: "#64748b" });
+    expect(getPlasmaColorPairForGear({ ...gear, affixes: [] })).toEqual({ primary: "#cbd5e1", secondary: "#64748b" });
+  });
+
+  it("shares a valid gold hex pair between owned Unique gear and the collection", () => {
+    const pair = getPlasmaColorPairForUnique();
+    expect(pair).toEqual({ primary: "#fbbf24", secondary: "#f59e0b" });
+    expect(
+      getPlasmaColorPairForGear({
+        instanceId: "dance",
+        definitionId: "dance-of-blades",
+        affixes: [{ id: "dance-of-blades", value: 1 }],
+      }),
+    ).toEqual(pair);
+    for (const color of Object.values(pair!)) {
+      expect(color).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(parsePlasmaHexColor(color)).not.toEqual([0.8, 0.8, 0.8]);
+      expect(parsePlasmaHexColor(color).every(Number.isFinite)).toBe(true);
+    }
+  });
+
   it("extracts keywords from gear affixes and definition", () => {
     const gear = {
       instanceId: "test-gear",

@@ -56,6 +56,11 @@ export function getKeywordListShineColors(keywordIds: readonly KeywordId[]): rea
   return colors;
 }
 
+export function getInspectionKeywordShineColors(keywordIds: readonly KeywordId[]): readonly string[] {
+  const colors = getKeywordListShineColors(keywordIds);
+  return colors.length > 0 ? colors : SHINE_PALETTES.bossVictoryFallback;
+}
+
 export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
   return getKeywordListShineColors(getCardKeywords(card));
 }

@@ -164,8 +164,8 @@ export function useAlchemyRunController() {
           handleNodeEnter: nodeRouting.handleLabyrinthNodeEnter,
         },
         rewards: {
-          finish: nav.finishRewards,
-          selectChoice: nav.selectRewardChoice,
+          skip: nav.skipRewards,
+          claimChoice: nav.claimRewardChoice,
         },
         destinations: {
           prepare: nav.prepareDestinationScreen,
@@ -253,8 +253,8 @@ export function useAlchemyRunController() {
       nav.handleStarterDraftPick,
       nav.handleDifficultySelect,
       nav.handleBackFromDifficultySelect,
-      nav.finishRewards,
-      nav.selectRewardChoice,
+      nav.skipRewards,
+      nav.claimRewardChoice,
       nav.prepareDestinationScreen,
       nav.handleDestinationChoice,
       nav.handleCampfireContinue,

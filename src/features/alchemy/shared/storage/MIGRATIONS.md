@@ -73,6 +73,7 @@ Migration tests must verify gameplay progress, not just field presence:
 - Homestead materials and upgrade tiers remain intact.
 - Active campaign, labyrinth, and wildwood runs resume when structurally valid (**`activeRun` must not be silently dropped**).
 - Mid-combat snapshots preserve trinket effects, gear effects, and combat flags.
+- Dodge counters (`playerDodgeCount`, `dodgeChanceFromDamage`) default to zero in old battle snapshots and pending result states. New snapshots retain both values. Dodge XP is already present in run progress when an enemy-turn continuation is saved; restoring that continuation must not award it again. These additive defaults do not require a version bump or talent ID remapping.
 - Version-specific fixtures continue to assert the outcomes recorded in [MIGRATION_HISTORY.md](./MIGRATION_HISTORY.md).
 - Every fixture is **idempotent** after `normalizeSaveData` (`tests/helpers/parse-save-for-tests.ts`).
 
@@ -112,10 +113,10 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 
 ## Content changes without a save bump
 
-- Balance-only changes to live definitions do not change the save schema.
+- Balance-only changes to live definitions do not change the save schema. Lifegiving and Emberforged inventory rolls normalize to current rarity ranges; existing combat effect snapshots remain unchanged.
 - Additive fields that load safely through schema or manifest defaults do not require a migration step; keep their defaults while supported saves may omit them.
 - Removed catalog IDs are stripped against the live catalog at load; record deliberate removals in the tombstone set above. A meaning or ID remap requires a `contentVersion` handler.
-- Battle-only fields that are rebuilt rather than persisted do not affect the save contract.
+- Battle-only fields that are rebuilt rather than persisted do not affect the save contract. `battleMetrics` is simulation-only, omitted in normal battles, and stripped by `normalizePersistedBattleState`; it requires no save bump.
 
 > Four layers, in load order: **migrate** (versioned shape and content-ID steps) → **normalize** (`normalizeActiveRunData` strips retired cards against the live catalog and soft-fixes valid shapes, e.g. re-offering emptied choice lists) → **hydrate** (`hydrateCard`, shop and Gear catalog filters) → **restore** (ownership filtering in `restoreRunSession`). Never put rename logic in Zod transforms.
 
@@ -127,6 +128,8 @@ Behavior lives with the owning module; version-specific transforms live in
 
 | Field                                                                             | Default                                                                                                                         | Owner                                                                                |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `activeCombat.flags.emberforgedUsedThisTurn`                                      | `false`; saved `true` prevents another Forge grant on the resumed turn                                                          | `normalizePersistedBattleState` + `combat-flags.ts`                                  |
+| `restore-mana.allowOverflow`                                                      | omitted behaves as `false`; saved companion effects retain their authored value                                                 | `mana-health-schemas.ts` + mana handler                                              |
 | `activeRun.rng`                                                                   | fixed fallback seed, zero counters                                                                                              | `save-schemas/active-run.ts`                                                         |
 | `activeRun` shop fields                                                           | empty unless `currentScreen` is that shop                                                                                       | `encodePersistedShops`; repair across normalize → shop hydrate → `restoreRunSession` |
 | `activeRun.starterDraftChoices`                                                   | `null` on wildwood; the gauntlet re-drafts on entry                                                                             | `encodeActiveRunFromSession`                                                         |
@@ -139,4 +142,5 @@ Behavior lives with the owning module; version-specific transforms live in
 | `backgroundParticlesIntensity` / `backgroundGlowIntensity`                        | `100` (full); clamped to `0–100`; `0` hides the layer                                                                           | settings store (`settings-store.ts`) + `save-schemas/save-data.ts`                   |
 | `gearInventories` / `gearLoadouts`                                                | empty inventories and loadouts; loadouts pruned of orphan references                                                            | `gear-store.ts` (`gearPersistenceCodec`)                                             |
 | `ownedTrinketIds` / `equippedTrinkets`                                            | empty ownership; equipment normalized for exclusivity against owned IDs                                                         | `gear-actions.ts` (`initializeGear`)                                                 |
+| `gearInventories.*[].protected`                                                   | omitted means unlocked; only boolean `true` survives normalization                                                              | `GearInstanceSchema` + `normalizeGearInstance`; codec clones the flag with the item  |
 | `craftingCurrencies`                                                              | zeroed currency record                                                                                                          | `crafting-ids.ts` (`normalizeCraftingCurrencies`)                                    |

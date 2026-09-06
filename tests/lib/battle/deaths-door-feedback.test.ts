@@ -39,7 +39,7 @@ describe("Death's Door feedback", () => {
 
   it.each([0, -1, Number.NaN])("does not show a skull for invalid or zero damage %s", (damage) => {
     const texts: CombatTextEvent[] = [];
-    applyPlayerCombatDamage(protectedState(), damage, undefined, undefined, texts);
+    applyPlayerCombatDamage(protectedState(), damage, "hostile", undefined, undefined, texts);
     expect(texts).toEqual([]);
   });
 

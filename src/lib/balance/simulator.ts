@@ -83,7 +83,7 @@ function playAutomatedTurn(
   let nextState = choosePendingWishCards(state);
   const allCombatTexts: CombatTextEvent[] = [];
 
-  while (nextState.enemyHealth > 0) {
+  while (nextState.enemyHealth > 0 && !isPlayerDefeated(nextState)) {
     const selection = chooseCardToPlay(nextState, policy);
     if (!selection) break;
 
@@ -194,9 +194,11 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   const cardsPlayed: Record<string, number> = {};
   const anomalies = createEmptyAnomalies();
 
-  let state = initialState;
+  let state: BattleState = { ...initialState, battleMetrics: { enemyAttackActions: 0, enemyAbilityActivations: {} } };
+  let turns = 0;
 
-  while (state.enemyHealth > 0 && !isPlayerDefeated(state) && state.turn <= maxTurns) {
+  while (state.enemyHealth > 0 && !isPlayerDefeated(state) && turns < maxTurns) {
+    turns += 1;
     state = runSimTurn(state, orFallback(config.policy, DEFAULT_POLICY), cardsPlayed, anomalies);
   }
 
@@ -208,11 +210,14 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     enemyId: enemy.id,
     enemyType: enemy.enemyType,
     outcome,
-    turns: state.turn,
+    turns,
     playerHealth: state.playerHealth,
     playerMaxHealth,
     enemyHealth: state.enemyHealth,
     enemyMaxHealth: state.enemyMaxHealth,
+    enemyAttackActions: state.battleMetrics!.enemyAttackActions,
+    enemyAbilityActivations: state.battleMetrics!.enemyAbilityActivations,
+    wonBeforeEnemyAttack: outcome === "win" && state.battleMetrics!.enemyAttackActions === 0,
     cardsPlayed,
     totalCardsPlayed: Object.values(cardsPlayed).reduce((total, count) => total + count, 0),
     trinketIds,

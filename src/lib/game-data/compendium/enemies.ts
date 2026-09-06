@@ -176,13 +176,7 @@ export const enemyBestiary = [
     title: "Pyromancer",
     art: assetRefs.pyromancer,
     enemyType: "elite",
-    traits: [
-      trait(
-        "pyromancer",
-        "Pyromancer",
-        "Burn damage ignores Block and damage reduction\nReceives 30% more Freeze damage",
-      ),
-    ],
+    traits: [trait("pyromancer", "Pyromancer", "Receives 30% more Freeze damage")],
     attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
   }),
   defineEnemy({

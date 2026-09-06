@@ -13,9 +13,8 @@ export function useCardTransferInProgress() {
 
 export function useInteractiveHandCardKeys(battleState: BattleState, playableKeys?: Set<string>) {
   const hiddenHandCardKeys = useHiddenHandCardKeys();
-  const cardTransferInProgress = useCardTransferInProgress();
   return useMemo(
-    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys, cardTransferInProgress, playableKeys),
-    [battleState, hiddenHandCardKeys, cardTransferInProgress, playableKeys],
+    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys, playableKeys),
+    [battleState, hiddenHandCardKeys, playableKeys],
   );
 }

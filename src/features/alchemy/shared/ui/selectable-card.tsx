@@ -24,6 +24,8 @@ interface SelectableCardBaseProps {
   widthClass?: string;
 
   interactionKey?: string;
+  shineColor?: readonly string[] | undefined;
+  disabled?: boolean | undefined;
 
   onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
@@ -101,6 +103,8 @@ function SelectableCardSurface({
   hover,
   shimmerActive,
   shimmerToken,
+  shineColor,
+  disabled,
 }: Omit<SelectableCardBaseProps, "interactionKey"> & {
   hover: HoverBinding | undefined;
   shimmerActive: boolean;
@@ -108,6 +112,8 @@ function SelectableCardSurface({
 }) {
   const buttonProps = {
     card,
+    shineColor,
+    disabled,
     onClick: onSelect,
     ariaLabel: `Select ${getCardDisplayTitle(card)}`,
     selected: chrome === "corruption" ? false : isSelected,

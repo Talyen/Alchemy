@@ -21,6 +21,7 @@ import {
   runCardSweepIsolated,
   runCompanionSweep,
   runGearSweep,
+  runAffixSweep,
   runTalentSweep,
   runTrinketSweep,
 } from "./report-sweeps";
@@ -41,6 +42,9 @@ function cellFromBatch(batch: BalanceBatchResult): RateCell {
     winRate: batch.winRate,
     timeoutRate: batch.timeoutRate,
     averageTurns: batch.averageTurns,
+    averageEnemyAttacks: batch.averageEnemyAttacks,
+    averageEnemyAbilityActivations: batch.averageEnemyAbilityActivations,
+    winsBeforeEnemyAttackRate: batch.winsBeforeEnemyAttackRate,
     averageHealthRemaining: batch.averageHealthRemaining,
     n: batch.iterations,
   };
@@ -172,13 +176,20 @@ function buildClassMatchups(rows: CoreRow[]): ClassMatchupRow[] {
       const matching = rows.filter(
         (row) => row.characterId === characterId && row.enemyId === enemyId && row.enemyType === enemyType,
       );
-      const late = matching.find((row) => row.tier === "late");
+      const lateCardCounts: Record<string, number> = {};
+      for (const row of matching.filter((entry) => entry.tier === "late")) {
+        for (const [id, count] of Object.entries(row.cardPlayCounts)) {
+          lateCardCounts[id] = (lateCardCounts[id] ?? 0) + count;
+        }
+      }
       return {
         characterId,
         enemyId,
         enemyType,
-        rates: reportTierRecord((tier) => matching.find((row) => row.tier === tier)?.cell ?? emptyRateCell()),
-        topCardsLate: late ? topPlayedCards(late.cardPlayCounts) : [],
+        rates: reportTierRecord((tier) =>
+          combineRateCells(matching.filter((row) => row.tier === tier).map((row) => row.cell)),
+        ),
+        topCardsLate: topPlayedCards(lateCardCounts),
       };
     })
     .sort(
@@ -259,6 +270,7 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
     gear: withPhaseTiming("gear sweep", () =>
       runGearSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
     ),
+    affixes: withPhaseTiming("affix sweep", () => runAffixSweep(options)),
     anomalies,
     anomalyMetrics: metrics,
   };
@@ -273,6 +285,9 @@ export function reportMethodologyLines(options: ReportRunOptions): string[] {
     `Loadout mode=${options.loadoutMode}. typical adds +1 max HP per combat talent (Wildcard uses the full budget equivalent), Mid 1★ / Late 2★ homestead via computeHomesteadEffects, seeded affinity gear (Mid weapon+body, Late full set), and Mid/Late core trinkets (Grove's Favor / Tattered Pages). bare keeps talent-point HP and tier gold but omits homestead, gear, and core trinkets. Gear uses a salted RNG stream from the fight seed so paired isolation sweeps stay matched. Boon/card isolation sweeps force trinketIds to the isolated set.`,
     `Difficulty: Normal (Novice, canonical modifiers). Room scaling uses scenario depth.`,
     `Class rankings weight Normal/Elite/Boss equally while retaining the underlying battle count. Isolation sweeps pair baseline and treatment by deck, matchup, and semantic seed. Delta SE uses the sample variance of per-seed win differences; deltas below 2 SE are marked noisy.`,
+    `Durations count rounds actually played, including defeats and capped fights. A shorter fight can indicate an earlier defeat. Win and turn deltas use separate standard errors; category medians include noisy rows. These are screening heuristics, not multiple-comparison-adjusted significance tests.`,
+    `Enemy attacks count attack actions, including blocked or dodged actions; multi-hit packets count once. Haste, crowd-control skips, and enemies defeated before attacking do not count. Ability activations count triggered trait effects (including reactions and conditional attack bonuses), not passive resistances, starting stats, or difficulty modifiers. Individual simulation results retain counts by trait ID. Wins before attack is the fraction of all battles won with zero enemy attack actions; averages include losses and timeouts.`,
+    `Affix isolation: every affix × hero × tier × gauntlet × configured deck seed, one affix vs no gear. Rounded midpoint Basic rolls early/mid and Astral late; unique effects use fixed rolls, including hypothetical early access. Item ablation remains a separate rolled-item comparison.`,
     `Play policy=${options.policy} is a skill floor: dump-hand, random wishes, no holds. greedy-damage is face damage only; greedy-effective-damage also scores DoT/status/block.`,
     `Fight pacing ${options.appliesFightPacing === false ? "off" : "on"} (hidden comeback × clock scaler; ALCHEMY_BALANCE_PACING=off measures raw kit).`,
     `Not simulated: map/shop/rewards, HP carryover, Labyrinth/Wildwood traits, multi-trinket synergies beyond the typical core pair.`,

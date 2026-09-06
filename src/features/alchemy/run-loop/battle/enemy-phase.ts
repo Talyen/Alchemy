@@ -10,7 +10,12 @@ import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-const
 import { delay } from "@/lib/animation/game-timer";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { beginBattleTransition, commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  awardBattleDodgeXP,
+  beginBattleTransition,
+  commitBattleTransition,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { applyCombatTextShakeFeedback } from "./battle-status";
 import { logBattleError, playCombatTextSounds } from "./controller-utils";
 import { runHandDrawSequence } from "./draw-sequence";
@@ -27,6 +32,7 @@ export function persistEnemyTurnTransition(
   result: Extract<EndPlayerTurnResolution, { kind: "skipped" | "standard" }>,
   currentState: BattleState,
 ): void {
+  awardBattleDodgeXP(draft, currentState, result.state);
   if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
     commitBattleTransition(draft, { ...result.state, turnPhase: "enemy", hand: [] }, null);
     return;
@@ -157,6 +163,13 @@ async function continueAfterEnemyDraw(
     if (!committedDuringDraw) {
       dispatchRunSessionCommand((draft) => commitBattleTransition(draft, resultState, continuation));
     }
-    finalizePlayerTurnResume(resultState, playerTurnSkipped, sessionNum, battleSession, orch, resolveEndTurn);
+    finalizePlayerTurnResume(
+      readBattle().battleState,
+      playerTurnSkipped,
+      sessionNum,
+      battleSession,
+      orch,
+      resolveEndTurn,
+    );
   });
 }

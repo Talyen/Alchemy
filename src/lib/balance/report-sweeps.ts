@@ -12,6 +12,7 @@ import {
 } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { generateGearInstanceForBaseItem, gearBaseItemList, type GearEffectManifest } from "@/lib/gear";
+import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { resolveAffixEffects } from "@/lib/gear/affixes";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 import { createRunStreamRng } from "@/lib/rng";
@@ -348,6 +349,46 @@ export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
             baseline,
             runSeries(options, { ...shared, gearEffects: treatmentGear }),
           );
+        }
+      }
+    }
+  }
+  return mergeComparisons(collected);
+}
+
+export function runAffixSweep(options: ReportRunOptions): PairedTierRow[] {
+  const collected: PairedStatsById = new Map();
+  for (const tier of REPORT_TIERS) {
+    for (const characterId of reportCharacterIds()) {
+      for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
+        const deck = buildClassSimDeck(
+          characterId,
+          tier.preset,
+          balanceScenarioSeed("affix-deck", tier.preset, characterId, deckIndex),
+        );
+        for (const scenario of BOON_GAUNTLET) {
+          const depth = tier.depthOffset + scenario.depthDelta;
+          const shared = {
+            characterId,
+            enemyId: scenario.enemyId,
+            depth,
+            preset: tier.preset,
+            deck,
+            seed: balanceScenarioSeed("affix-fight", tier.preset, characterId, scenario.enemyId, depth, deckIndex),
+            iterations: options.trinketIterations,
+          };
+          const baseline = runSeries(options, { ...shared, gearEffects: defaultGearEffects });
+          for (const affix of gearAffixList) {
+            const range = affix.roll[affix.uniqueOnly ? "unique" : tier.preset === "late" ? "astral" : "basic"];
+            const value = Math.round((range.min + range.max) / 2);
+            pushComparison(
+              collected,
+              tier.preset,
+              affix.id,
+              baseline,
+              runSeries(options, { ...shared, gearEffects: resolveAffixEffects([{ id: affix.id, value }]) }),
+            );
+          }
         }
       }
     }

@@ -14,6 +14,8 @@ const PersistedBattleStateWireSchema = z.looseObject({
   turnPhase: z.enum(["player", "enemy"]),
   playerHealth: z.number(),
   playerMaxHealth: z.number(),
+  playerDodgeCount: z.number().int().nonnegative().catch(0),
+  dodgeChanceFromDamage: z.number().nonnegative().catch(0),
   enemyHealth: z.number(),
   enemyMaxHealth: z.number(),
   currentEnemy: z.record(z.string(), z.unknown()),

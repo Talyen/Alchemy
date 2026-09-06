@@ -231,8 +231,7 @@ test.describe("Autosave Cadence", () => {
 
     const savedAtBeforeReward = await getSavedLastSavedAt(page);
     const reward = new RewardPage(page);
-    await reward.selectFirstReward();
-    await reward.addRewardBtn.click();
+    await reward.claimFirstReward();
     await new DestinationPage(page).expectVisible();
 
     await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBeforeReward);

@@ -1,3 +1,4 @@
+import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { mergeCombatText } from "./combat-text";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { paceCombatMagnitude } from "./fight-pacing";
@@ -26,7 +27,10 @@ export function processEncounterTraitHealthThreshold(
     state.enemyHealth > state.enemyMaxHealth / 2
   )
     return state;
-  let nextState = { ...state, flags: { ...state.flags, divineAegisTriggered: true } };
+  let nextState = recordEnemyAbilityActivation(
+    { ...state, flags: { ...state.flags, divineAegisTriggered: true } },
+    "divine-aegis",
+  );
   nextState = addEnemyMitigationWithCombatText(nextState, "armor", scaleByRoomMultiplier(nextState, 2), combatTexts);
   return addEnemyMitigationWithCombatText(nextState, "block", scaleByRoomMultiplier(nextState, 4), combatTexts);
 }

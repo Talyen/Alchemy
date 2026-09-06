@@ -1,18 +1,23 @@
 import { memo, useState, type RefObject } from "react";
 
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
-import { cardBack, getEffectiveCardDescriptionLines } from "@/lib/game-data";
-import { gearDefinitions, getGearDefinitionShineColors } from "@/lib/gear";
+import { cardBack, getEffectiveCardDescriptionLines, getCardKeywords } from "@/lib/game-data";
+import { gearDefinitions } from "@/lib/gear";
+import { getTrinketKeywords } from "../config/game-data-catalog";
 import { cn } from "@/lib/utils";
+import { extractKeywordIds } from "@/lib/keyword-text";
 import { ShineBorder } from "@/components/ui/shine-border";
 
 import {
   cardArtImageClass,
   cardInteractiveGlowClass,
+  cardHoverScaleClass,
   cardShineFrameClass,
   cardSurfaceClass,
   getTileWidthClass,
-  getTrinketShineColors,
+  getInspectionKeywordShineColors,
+  getCharacterShineColors,
+  getPlasmaKeywordsForEnemy,
   getPlasmaColorPairForCard,
   getPlasmaColorPairForTrinket,
   getPlasmaColorPairForUnique,
@@ -47,7 +52,7 @@ export const CollectionTile = memo(function CollectionTile({ item }: CollectionT
   });
 
   const shineColors = collectionTileShineColors(item);
-  const showShine = shineColors.length > 0;
+  const showShine = isHovered && shineColors.length > 0;
 
   return (
     <div
@@ -69,7 +74,7 @@ export const CollectionTile = memo(function CollectionTile({ item }: CollectionT
           showShine && cardShineFrameClass,
           !showShine && "border border-border/80",
           cardSurfaceClass,
-          cardInteractiveGlowClass,
+          item.discovered ? cardInteractiveGlowClass : cardHoverScaleClass,
           getTileWidthClass(item.frameType === "bestiary" ? "bestiary" : "collectionCard"),
         )}
         onClick={() => {
@@ -90,10 +95,13 @@ export const CollectionTile = memo(function CollectionTile({ item }: CollectionT
 
 function collectionTileShineColors(item: CollectionTileItem): readonly string[] {
   if (!item.discovered) return [];
-  if (item.frameType === "trinket") return getTrinketShineColors(item.id);
+  if (item.card) return getInspectionKeywordShineColors(getCardKeywords(item.card));
+  if (item.character) return getCharacterShineColors(item.character.id);
+  if (item.enemyEntry) return getInspectionKeywordShineColors(getPlasmaKeywordsForEnemy(item.enemyEntry));
+  if (item.frameType === "trinket") return getInspectionKeywordShineColors(getTrinketKeywords(item.id));
   if (item.frameType === "unique") {
     const definition = gearDefinitions[item.id];
-    return definition ? getGearDefinitionShineColors(definition) : [];
+    return definition ? getInspectionKeywordShineColors(extractKeywordIds(definition.descriptionLines.join(" "))) : [];
   }
   return [];
 }

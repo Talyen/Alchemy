@@ -2,7 +2,7 @@ import { memo, useMemo } from "react";
 
 import { chunkIntoRows, keywordDefinitions, talentArt, type KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { cardInteractiveGlowClass, cardSurfaceClass } from "../../shared/config";
+import { cardInteractiveGlowClass, cardSurfaceClass, keywordIcons } from "../../shared/config";
 
 import { Surface } from "../../shared/ui/surface";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
@@ -27,7 +27,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
 
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("talent-overview", keywordId);
 
-  if (!definition || !art) return null;
+  const Icon = keywordIcons[keywordId];
 
   return (
     <div className="relative flex flex-col items-center">
@@ -66,12 +66,18 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
             cardInteractiveGlowClass,
           )}
         >
-          <img
-            src={art}
-            alt={definition.label}
-            className="pointer-events-none h-full w-full rounded-shell-hero object-cover select-none"
-            draggable={false}
-          />
+          {art ? (
+            <img
+              src={art}
+              alt={definition.label}
+              className="pointer-events-none h-full w-full rounded-shell-hero object-cover select-none"
+              draggable={false}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center rounded-shell-hero bg-background/40">
+              <Icon aria-hidden="true" className={cn("size-12", definition.colorClass)} />
+            </div>
+          )}
         </Surface>
 
         <div className="mt-1.5 flex max-w-full items-center justify-center gap-2.5">

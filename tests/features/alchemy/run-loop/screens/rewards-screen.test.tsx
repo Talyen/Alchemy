@@ -1,9 +1,9 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-screen";
 import { createEmptyRewardState } from "@/lib/active-run-session";
-import type { BattleCard } from "@/lib/game-data";
+import { keywordDefinitions, type BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -37,20 +37,13 @@ afterEach(() => {
 describe("RewardsScreen", () => {
   it("routes reward selection through controller action instead of mutating the store directly", async () => {
     const user = userEvent.setup();
-    const onSelectReward = vi.fn();
+    const onClaimReward = vi.fn();
 
-    render(
-      <RewardsScreen
-        rewardState={readRunSession().rewardState}
-        onAddReward={vi.fn()}
-        onSkip={vi.fn()}
-        onSelectReward={onSelectReward}
-      />,
-    );
+    render(<RewardsScreen rewardState={readRunSession().rewardState} onSkip={vi.fn()} onClaimReward={onClaimReward} />);
 
     await user.click(screen.getByRole("button", { name: /select slash/i }));
 
-    expect(onSelectReward).toHaveBeenCalledWith("slash");
+    expect(onClaimReward).toHaveBeenCalledWith("slash");
     expect(readRunSession().rewardState.selectedId).toBeNull();
   });
 
@@ -62,13 +55,12 @@ describe("RewardsScreen", () => {
           selectedId: "slash",
         }}
         claimInFlight
-        onAddReward={vi.fn()}
         onSkip={vi.fn()}
-        onSelectReward={vi.fn()}
+        onClaimReward={vi.fn()}
       />,
     );
 
-    const addButtons = screen.getAllByRole("button", { name: /add card/i });
+    const addButtons = screen.getAllByRole("button", { name: /select slash/i });
     expect(addButtons.length).toBeGreaterThan(0);
     for (const button of addButtons) {
       expect(button).toHaveProperty("disabled", true);
@@ -90,9 +82,8 @@ describe("RewardsScreen", () => {
           gold: 13,
           materials: { ...emptyInventory(), herbs: 1 },
         }}
-        onAddReward={vi.fn()}
         onSkip={vi.fn()}
-        onSelectReward={vi.fn()}
+        onClaimReward={vi.fn()}
       />,
     );
 
@@ -100,26 +91,14 @@ describe("RewardsScreen", () => {
   });
 
   it("does not render a hamburger menu trigger inside the screen header", () => {
-    render(
-      <RewardsScreen
-        rewardState={readRunSession().rewardState}
-        onAddReward={vi.fn()}
-        onSkip={vi.fn()}
-        onSelectReward={vi.fn()}
-      />,
-    );
+    render(<RewardsScreen rewardState={readRunSession().rewardState} onSkip={vi.fn()} onClaimReward={vi.fn()} />);
 
     expect(screen.queryByRole("button", { name: /menu/i })).toBeNull();
   });
 
   it("prompts with the reward kind instead of a generic choose label", () => {
     const { rerender } = render(
-      <RewardsScreen
-        rewardState={readRunSession().rewardState}
-        onAddReward={vi.fn()}
-        onSkip={vi.fn()}
-        onSelectReward={vi.fn()}
-      />,
+      <RewardsScreen rewardState={readRunSession().rewardState} onSkip={vi.fn()} onClaimReward={vi.fn()} />,
     );
 
     expect(screen.getByRole("heading", { name: "Add a Card to your Deck" })).toBeTruthy();
@@ -139,9 +118,8 @@ describe("RewardsScreen", () => {
             },
           ],
         }}
-        onAddReward={vi.fn()}
         onSkip={vi.fn()}
-        onSelectReward={vi.fn()}
+        onClaimReward={vi.fn()}
       />,
     );
     expect(screen.getByRole("heading", { name: "Choose a Trinket to add to your Armory" })).toBeTruthy();
@@ -161,9 +139,8 @@ describe("RewardsScreen", () => {
             },
           ],
         }}
-        onAddReward={vi.fn()}
         onSkip={vi.fn()}
-        onSelectReward={vi.fn()}
+        onClaimReward={vi.fn()}
       />,
     );
     expect(screen.getByRole("heading", { name: "Choose a Boon for this Run" })).toBeTruthy();
@@ -175,25 +152,18 @@ describe("RewardsScreen", () => {
           rewardType: "gear",
           choices: [{ instanceId: "basic-sword", definitionId: "longsword-basic", affixes: [] }],
         }}
-        onAddReward={vi.fn()}
         onSkip={vi.fn()}
-        onSelectReward={vi.fn()}
+        onClaimReward={vi.fn()}
       />,
     );
     expect(screen.getByRole("heading", { name: "Add Gear to your Armory" })).toBeTruthy();
   });
 
-  it("keeps Add Card disabled until a reward is selected", () => {
-    render(
-      <RewardsScreen
-        rewardState={readRunSession().rewardState}
-        onAddReward={vi.fn()}
-        onSkip={vi.fn()}
-        onSelectReward={vi.fn()}
-      />,
-    );
+  it("offers an immediate card choice without a confirmation button", () => {
+    render(<RewardsScreen rewardState={readRunSession().rewardState} onSkip={vi.fn()} onClaimReward={vi.fn()} />);
 
-    expect(screen.getByRole("button", { name: /add card/i })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("button", { name: /select slash/i })).toHaveProperty("disabled", false);
+    expect(screen.queryByRole("button", { name: /add card/i })).toBeNull();
   });
 
   it("shows shine on astral gear rewards and hover chrome on basic gear", () => {
@@ -207,9 +177,8 @@ describe("RewardsScreen", () => {
             { instanceId: "astral-sword", definitionId: "longsword-astral", affixes: [] },
           ],
         }}
-        onAddReward={vi.fn()}
         onSkip={vi.fn()}
-        onSelectReward={vi.fn()}
+        onClaimReward={vi.fn()}
       />,
     );
 
@@ -217,9 +186,63 @@ describe("RewardsScreen", () => {
     const astral = screen.getByRole("button", { name: "Select Astral Longsword" });
     expect(basic.querySelector(".shine-border")).toBeNull();
     expect(basic.className).toMatch(/card-interactive-glow/);
+    expect(astral.querySelector(".shine-border")).toBeNull();
+    fireEvent.mouseEnter(basic.parentElement!);
+    expect(basic.querySelector(".shine-border")).not.toBeNull();
+    fireEvent.mouseLeave(basic.parentElement!);
+    expect(basic.querySelector(".shine-border")).toBeNull();
+    fireEvent.focus(astral);
     expect(astral.querySelector(".shine-border")).not.toBeNull();
     expect(astral.className).toMatch(/card-interactive-glow/);
     expect(astral.className).toMatch(/has-shine-border/);
+  });
+
+  it("offers neutral hover Shine for a card without keywords", () => {
+    render(
+      <RewardsScreen
+        rewardState={{
+          ...createEmptyRewardState(),
+          rewardType: "card",
+          choices: [{ ...testCard, effects: [], descriptionLines: [] }],
+        }}
+        onSkip={vi.fn()}
+        onClaimReward={vi.fn()}
+      />,
+    );
+    const card = screen.getByRole("button", { name: "Select Slash" });
+    expect(card.querySelector(".shine-border")).toBeNull();
+    fireEvent.focus(card);
+    expect(card.querySelector(".shine-border")).not.toBeNull();
+    fireEvent.blur(card);
+    expect(card.querySelector(".shine-border")).toBeNull();
+  });
+
+  it("uses unique effect and rolled affix keywords instead of a rarity border", () => {
+    render(
+      <RewardsScreen
+        rewardState={{
+          ...createEmptyRewardState(),
+          rewardType: "gear",
+          choices: [
+            { instanceId: "wardbreaker-reward", definitionId: "wardbreaker", affixes: [{ id: "flat-stun", value: 4 }] },
+          ],
+        }}
+        onSkip={vi.fn()}
+        onClaimReward={vi.fn()}
+      />,
+    );
+    const unique = screen.getByRole("button", { name: "Select Wardbreaker" });
+    expect(unique.querySelector(".shine-border")).toBeNull();
+    fireEvent.focus(unique);
+    const shine = unique.querySelector<HTMLElement>(".shine-border")!;
+    const color = document.createElement("span");
+    for (const keyword of ["holy", "stun"] as const) {
+      color.style.color = keywordDefinitions[keyword].shineColors[0];
+      expect(shine.style.backgroundImage).toContain(color.style.color);
+    }
+    fireEvent.blur(unique);
+    expect(unique.querySelector(".shine-border")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
   });
 
   it("shows shine on trinket rewards", () => {
@@ -238,13 +261,14 @@ describe("RewardsScreen", () => {
             },
           ],
         }}
-        onAddReward={vi.fn()}
         onSkip={vi.fn()}
-        onSelectReward={vi.fn()}
+        onClaimReward={vi.fn()}
       />,
     );
 
     const trinket = screen.getByRole("button", { name: "Select Meteorite" });
+    expect(trinket.querySelector(".shine-border")).toBeNull();
+    fireEvent.mouseEnter(trinket.parentElement!);
     expect(trinket.querySelector(".shine-border")).not.toBeNull();
     expect(trinket.className).toMatch(/has-shine-border/);
   });

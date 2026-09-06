@@ -14,7 +14,7 @@ describe("Wildwood reward selection", () => {
     resetRunDomainStore();
   });
 
-  it("writes reward selection only on the generic reward state", () => {
+  it("rejects an invalid reward without changing the Wildwood draft", () => {
     const wildwoodDraft = {
       ...createInitialWildwoodDraftState("knight", () => 0.5),
       phase: "reward" as const,
@@ -25,9 +25,9 @@ describe("Wildwood reward selection", () => {
       rewardState: createEmptyRewardState(),
     });
 
-    createRunFlowHandlers(makeFlowHandlerDeps()).selectRewardChoice("slash");
+    createRunFlowHandlers(makeFlowHandlerDeps()).claimRewardChoice("slash");
 
-    expect(readRunSession().rewardState.selectedId).toBe("slash");
+    expect(readRunSession().rewardState.selectedId).toBeNull();
     expect(readRunSession().wildwoodDraft).toEqual(wildwoodDraft);
   });
 });
