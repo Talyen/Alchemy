@@ -4,7 +4,7 @@ Automation enforces release readiness — agents do not rely on manual checklist
 
 ## Commands
 
-Ship, desktop, and installer scripts (`check:ship`, `check:ship:full`, `build:desktop`, `package:win`, `dist:desktop`, `sync:version`): [REFERENCE.md § Script Command Reference](./REFERENCE.md#script-command-reference). `check:ship:full` adds save E2E on top of `check:ship`; the Electron desktop suite is CI-only (path-filtered `electron-e2e` job plus an unconditional nightly run), so releases rely on CI coverage rather than a local pre-tag desktop run. Gate composition and tiers are owned by [CONTRIBUTING.md](../CONTRIBUTING.md#static-build-and-ci-policy) — used nightly and before tagging.
+Build and installer selection: [REFERENCE.md § Build commands decision tree](./REFERENCE.md#build-commands-decision-tree). `package.json` owns the complete script list. `check:ship:full` adds save E2E on top of `check:ship`. Electron coverage runs in the path-filtered `electron-e2e` CI job and unconditionally each night; `npm run test:ship:desktop` is also available locally but is not part of the pre-tag gate. Gate composition and tiers are owned by [CONTRIBUTING.md](../CONTRIBUTING.md#static-build-and-ci-policy).
 
 | Command                          | When it runs                                                                                                 |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |

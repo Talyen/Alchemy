@@ -79,3 +79,37 @@ describe("completed-task efficiency evidence", () => {
     }
   });
 });
+
+it("measures overlapping unchanged lines separately from exact repeated excerpts and discovery failures", () => {
+  const result = summarizeEvaluation(record, [
+    readExposure({ path: "owner.ts", start: 1, end: 2, text: "one\ntwo" }),
+    readExposure({ path: "owner.ts", start: 2, end: 3, text: "two\nthree" }),
+    readExposure({ path: "owner.ts", start: 2, end: 2, text: "changed" }),
+    { kind: "discovery", operation: "search", status: "not-found", truncated: false },
+    { kind: "discovery", operation: "outline", status: "failed", truncated: false },
+    { kind: "discovery", operation: "context", status: "found", truncated: true },
+    { kind: "diagnostic", command: "test", inputHash: "same", status: "failed" },
+    { kind: "diagnostic", command: "test", inputHash: "same", status: "failed" },
+    { kind: "diagnostic", command: "test", inputHash: "changed", status: "passed" },
+  ]);
+  expect(result).toMatchObject({
+    repeatedReadBytes: 0,
+    overlappingReadBytes: 3,
+    observedLineBytes: 21,
+    discoveryAttempts: 3,
+    failedLookups: 1,
+    discoveryErrors: 1,
+    truncatedDiscoveries: 1,
+    diagnosticReruns: 1,
+    inputTokens: null,
+  });
+});
+
+it("invalidates overlap on legacy reads without iterating unobserved line ranges", () => {
+  const first = readExposure({ path: "owner.ts", start: 2, end: 2, text: "two" });
+  const legacy = { kind: "read", path: "owner.ts", start: 1, end: 1_000_000_000, contentHash: "legacy", bytes: 4 };
+  expect(summarizeEvaluation(record, [first, legacy, first])).toMatchObject({
+    overlappingReadBytes: 0,
+    observedLineBytes: 6,
+  });
+});

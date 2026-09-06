@@ -119,7 +119,7 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 - Removed catalog IDs are stripped against the live catalog at load; record deliberate removals in the tombstone set above. A meaning or ID remap requires a `contentVersion` handler.
 - Battle-only fields that are rebuilt rather than persisted do not affect the save contract. `battleMetrics` is simulation-only, omitted in normal battles, and stripped by `normalizePersistedBattleState`; it requires no save bump.
 
-> Four layers, in load order: **migrate** (versioned shape and content-ID steps) → **normalize** (`normalizeActiveRunData` strips retired cards against the live catalog and soft-fixes valid shapes, e.g. re-offering emptied choice lists) → **hydrate** (`hydrateCard`, shop and Gear catalog filters) → **restore** (ownership filtering in `restoreRunSession`). Never put rename logic in Zod transforms.
+> Five stages, in load order: **migrate** (versioned shape and content-ID steps) → **validate** (Zod object schemas) → **normalize** (`normalizeActiveRunData` strips retired cards against the live catalog and soft-fixes valid shapes, e.g. re-offering emptied choice lists) → **hydrate** (`hydrateCard`, shop and Gear catalog filters) → **restore** (ownership filtering in `restoreRunSession`). Never put rename logic in Zod transforms.
 
 ## Additive-field appendix
 

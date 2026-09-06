@@ -141,7 +141,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   leech: {
     id: "leech",
     label: "Leech",
-    description: "Leech heals you for half the damage dealt",
+    description: "Leech restores half the damage dealt as Health",
     colorClass: "text-rose-800",
     borderClass: "border-rose-800",
     shineColors: ["#9f1239", "#4c0519", "#9f1239"],

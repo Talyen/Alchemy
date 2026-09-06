@@ -20,9 +20,9 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
     const previewPort = previewPortFromEnv("PLAYWRIGHT_ELECTRON_PREVIEW_PORT", ELECTRON_PREVIEW_PORT);
     const isCi = !!process.env.CI;
     return defineConfig({
-      testDir: "./tests",
-      testMatch: "**/electron-*.spec.ts",
-      globalSetup: "./tests/electron-global-setup.ts",
+      testDir: "./tests/electron",
+      testMatch: "**/*.spec.ts",
+      globalSetup: "./tests/electron/electron-global-setup.ts",
       fullyParallel: false,
       workers: 1,
       timeout: TIMEOUTS.electron.timeout,
@@ -102,9 +102,8 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
   const maxFailures = isFullE2eSuite ? 5 : isCi ? 3 : 0;
   const defaultWorkers = Math.min(6, Math.max(3, os.cpus().length > 1 ? os.cpus().length - 1 : 3));
   return defineConfig({
-    testDir: "./tests",
+    testDir: "./tests/e2e/specs",
     testMatch: "**/*.spec.ts",
-    testIgnore: ["**/electron-smoke.spec.ts", "**/electron-security.spec.ts"],
     fullyParallel: true,
     maxFailures: isPrepush ? 5 : maxFailures,
     workers: isPrepush ? 2 : isNightly || isCi ? Math.min(6, Math.max(4, os.cpus().length)) : defaultWorkers,

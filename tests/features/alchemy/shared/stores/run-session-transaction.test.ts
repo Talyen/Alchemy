@@ -246,6 +246,27 @@ describe("run-session transaction coordinator", () => {
     expect(effect).toHaveBeenCalledOnce();
   });
 
+  it("runs completion effects for unchanged commands without publishing a revision", () => {
+    const before = readGameplayState();
+    const onCommit = vi.fn();
+    const unsubscribe = subscribeRunSessionCommits(onCommit);
+    const effect = vi.fn();
+
+    const result = dispatchRunSessionCommand(
+      (draft) => {
+        setGold(draft, before.runProfile.gold);
+        return "navigate";
+      },
+      { afterCommit: effect },
+    );
+    unsubscribe();
+
+    expect(result).toBe("navigate");
+    expect(readGameplayState()).toBe(before);
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(effect).toHaveBeenCalledExactlyOnceWith("navigate");
+  });
+
   it("discards post-commit effects when the transaction rolls back", () => {
     const effect = vi.fn();
 

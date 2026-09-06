@@ -1,9 +1,11 @@
-# E2E helpers
+# E2E tests and helpers
 
 Canonical E2E helper, fixture, tag, and diagnostic contract. Changed-path and
 CI tier policy lives in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 When a command or E2E test fails, follow [failure-first triage](../../docs/REFERENCE.md#failure-first-triage) before opening a raw trace or report directory.
+
+Browser specs live in [`specs/`](./specs/). Electron specs and their launch/setup helpers live in [`tests/electron/`](../electron/). Shared fixtures and page objects also serve performance checks.
 
 Helpers live in this directory and are re-exported from [`tests/helpers.ts`](../helpers.ts) (all modules, including `mid-combat-save` and `gear-combat`). Layout assertions are in [`layout-assertions.ts`](./layout-assertions.ts), page objects in [`tests/pages/`](../pages/), and fixtures in [`tests/fixtures/e2e.ts`](../fixtures/e2e.ts). Run-phase assertions use `expectRunPhase(page, phase)` from [`tests/pages/game-stage.ts`](../pages/game-stage.ts).
 
@@ -15,10 +17,10 @@ Run browser batches serially or combine specs in one invocation. Local runs can 
 
 ## Test import
 
-| Import                                    | Use                                                                                                                                                                       |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `import { test } from "./fixtures/e2e"`   | Most battle/flow specs; opt in to `fastBattle` and `runtimeErrors`                                                                                                        |
-| `import { test } from "@playwright/test"` | Animation specs, boot-only smoke, and Electron specs; never enable fast mode for animation coverage. `audio-sfx` uses `baseTest.describe` to opt out of `autoDiagnostic`. |
+| Import                                      | Use                                                                                                                                                                       |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `import { test } from "../../fixtures/e2e"` | Most battle/flow specs; opt in to `fastBattle` and `runtimeErrors`                                                                                                        |
+| `import { test } from "@playwright/test"`   | Animation specs, boot-only smoke, and Electron specs; never enable fast mode for animation coverage. `audio-sfx` uses `baseTest.describe` to opt out of `autoDiagnostic`. |
 
 Decision order:
 
@@ -29,6 +31,7 @@ Decision order:
 ## Navigation and bootstrap
 
 - Save injectors install page-level initialization scripts that run again on navigation and reload. To verify changes persisted after injection, open a fresh page in the same browser context (shared storage, no page-level seeding script), collect its runtime errors, and close it after assertions.
+- The fresh-storage cold-start test keeps real loading enabled, with a 30-second menu wait inside a 60-second test budget for parallel suite load. Ordinary menu checks retain their shorter budgets.
 - `openGameModeSelect` retries Play if bootstrap unmounts the menu.
 - `selectGameMode(page, mode, action?)` clicks the mode card with `Play` (default) or `Resume ${title}`.
 - `selectCharacterAndContinue` clicks a hero portrait; character select has no Back/Continue footer.

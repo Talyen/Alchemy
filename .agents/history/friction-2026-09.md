@@ -6,13 +6,13 @@ Historical evidence; current instructions live in the linked canonical owners.
 
 2026-09-05 — Collection and shared item hover Shine passed visibility/layout checks while the artwork clip hid the colored border. Moved frame Shine to `Surface.overlay`; the hover browser check now rejects clipping ancestors. Prevention lives in [UI](../../docs/UI.md). N/A (one-off clipped-frame regression).
 
-2026-09-05 — The hand-hover size matrix exceeded the default 20-second Playwright budget during real pointer sweeps at two 1920px settings. The [focused spec](../../tests/hand-hover.spec.ts) now uses the existing animation suites’ 60-second budget; all 11 cases passed without changing animation speed. N/A (one-off test-budget correction).
+2026-09-05 — The hand-hover size matrix exceeded the default 20-second Playwright budget during real pointer sweeps at two 1920px settings. The [focused spec](../../tests/e2e/specs/hand-hover.spec.ts) now uses the existing animation suites’ 60-second budget; all 11 cases passed without changing animation speed. N/A (one-off test-budget correction).
 
 2026-09-05 — Wish reused a card-width variable scoped only to the battle hand, so artwork rendered at intrinsic size and pushed confirmation out of view. Wish now uses the shared view-card size and fits every option on one row; queued selections reset independently. Prevention lives in [UI sizing](../../docs/UI.md#display-sizing) and Wish browser regressions. N/A (one-off sizing and selection lifecycle mismatch).
 
 2026-09-05 — Affix tags omitted Frozen while tooltip recognition omitted Dodge, making shine disagree with descriptions. Shared recognition in `src/lib/keyword-text.ts` and keyword-coverage regressions now enforce [ARMORY](../../docs/ARMORY.md) presentation rules. Follow-up: Unique tooltips overrode corrected affix palettes with gold; Nourishing lacked recognized aliases, and hover backgrounds mixed affinity colors and CSS fades into hex-only rendering. Renderer-level catalog tests and a Dance of Blades browser regression now cover these integration paths.
 
-2026-09-05 — The draw/discard animation test watched the card-play ghost layer, so it could pass only by catching a leftover play animation. Updated [the test](../../tests/draw-discard-animations.spec.ts) to watch the transfer layer. N/A (one-off stale selector).
+2026-09-05 — The draw/discard animation test watched the card-play ghost layer, so it could pass only by catching a leftover play animation. Updated [the test](../../tests/e2e/specs/draw-discard-animations.spec.ts) to watch the transfer layer. N/A (one-off stale selector).
 
 2026-09-05 — Companion Bond tooltips ignored their supplied context, and combat only scaled damage; the one-effect validation also contradicted the array-based combat model. Shared Bond resolution now feeds combat and descriptions, with multi-effect validation and progression documented in [WORKFLOWS](../../docs/WORKFLOWS.md#add-a-new-companion). N/A (one-off contract reconciliation).
 
@@ -34,9 +34,9 @@ Historical evidence; current instructions live in the linked canonical owners.
 
 2026-09-05 — Focused browser layout checks used an old preview build by default. Use `PLAYWRIGHT_VITE_MODE=dev` when verifying current source edits; see [Playwright configuration](../../tests/playwright-shared.ts). N/A (one-off).
 
-2026-09-04 — Labyrinth input: removing a decorative dimming layer during hover could lose mouse clicks; the artwork now ignores pointer events so the hex button remains the target. Browser coverage in [Labyrinth tests](../../tests/labyrinth.spec.ts). N/A (one-off).
+2026-09-04 — Labyrinth input: removing a decorative dimming layer during hover could lose mouse clicks; the artwork now ignores pointer events so the hex button remains the target. Browser coverage in [Labyrinth tests](../../tests/e2e/specs/labyrinth.spec.ts). N/A (one-off).
 
-2026-09-04 — Labyrinth history: the viewed-floor synchronization effect snapped manual history selection back to the current floor; advance only when the current floor actually changes. Covered by [Labyrinth tests](../../tests/labyrinth.spec.ts). N/A (one-off).
+2026-09-04 — Labyrinth history: the viewed-floor synchronization effect snapped manual history selection back to the current floor; advance only when the current floor actually changes. Covered by [Labyrinth tests](../../tests/e2e/specs/labyrinth.spec.ts). N/A (one-off).
 
 2026-09-04 — Focused E2E invocation: appending a spec after the npm script's spaced project flag treated the spec as another project. Use an explicit Playwright invocation with `--project=chromium` for focused files. N/A (one-off).
 
@@ -65,3 +65,20 @@ Labyrinth fresh-start regression (2026-09-04): resume-only browser coverage miss
 2026-09-06 — Unique catalog: six supporting rolls differed from standard maxima, and definition overviews duplicated signature text (Blackfletch omitted its execution threshold). Fixed by deriving rolls and overview text from the affix catalog; coverage and compatibility tests enforce [the Unique contract](../../docs/ARMORY.md).
 
 2026-09-06 — Unique expansion: content typography rejected the approved short sentences and Collection tests assumed all Uniques fit on page one. Unique-only punctuation is now allowed, and discovery tests traverse all pages; [Unique descriptions](../../docs/UNIQUE_ITEMS.md#approved-descriptions) retain the approved wording.
+
+2026-09-06 — Creating the prescribed evaluation worktrees made the main documentation gate report their copied Markdown as unreachable repository documents (check run `check-20260906t185044z-54265-dbf01b`). The following static run also linted those checkouts against the main tree’s rules (`check-20260906t185512z-56427-a6f052`). Documentation and ESLint inventories now exclude isolated worktrees; regressions still detect a real documentation orphan and still lint the active checkout. Prevention lives in the [script catalog](../../scripts/README.md#checks--verification-nesting-order).
+
+## Open-item review — September 6
+
+- 2026-09-02 — Tests: `rerender(newCallback)` did not replace the hook callback. Existing tests use props correctly; [CONTRIBUTING](../../CONTRIBUTING.md#e2e-policy) now explains `initialProps` and `rerender(nextProps)`. No runtime change needed.
+- 2026-09-03 — Reads/tests: shared checkout changes made earlier reads stale and caused a transient parity failure. [Agent rules](../../AGENTS.md#working-style) already require fresh shared-file reads and bounded failure diagnostics. N/A (resolved transient observation); no automatic retry or parity relaxation added.
+- 2026-09-03 — Parallel edits: concurrent catalog edits duplicated Stargaze and overwrote documentation. Stargaze now has one definition and the catalog retains its duplicate-ID guard. [Agent rules](../../AGENTS.md#working-style) require isolated worktrees for parallel implementation and integration review. N/A (prior conflict already resolved).
+- 2026-09-03 — Save docs: confirmed live-catalog cleanup and corrected the remaining omission of validation in the [save loading order](../../src/features/alchemy/shared/storage/MIGRATIONS.md#content-changes-without-a-save-bump). Existing normalization coverage owns retired-card behavior.
+- 2026-09-03 — E2E: the fresh-storage test retained its 15-second menu wait despite the recorded timeout under full-suite load. It now allows 30 seconds for the menu within a 60-second test budget, retaining real loading and runtime-error assertions. Other callers retain their budgets; rationale lives in the [E2E guide](../../tests/e2e/README.md#navigation-and-bootstrap).
+- 2026-09-03 — Commands: preserved completion callbacks for successful unchanged commands. Added a regression asserting callback result, unchanged root, and no commit notification; clarified the [command contract](../../docs/ARCHITECTURE.md#run-state). Changing this behavior would break idempotent navigation.
+- 2026-09-04 — UI docs: confirmed the title owner and removal of the old fade shims in [UI](../../docs/UI.md). N/A (earlier implementation and documentation fix already complete).
+- 2026-09-04 — UI verification: historical deleted filenames were interpreted as current references. Retained prose for obsolete modules and links only to current owners. N/A (one-off log correction); the documentation checker should continue detecting stale current references.
+- 2026-09-04 — React compiler: callbacks bundled with layout values confused ref-access inference. [Component conventions](../../docs/UI.md#component-conventions) now document destructuring before JSX. N/A (existing implementation fix retained).
+- 2026-09-04 — Browser checks: overlapping invocations tore down a shared server. The [focused-check guide](../../tests/e2e/README.md#running-focused-checks) already requires serial batches or one combined invocation. No additional server lifecycle mechanism needed.
+
+2026-09-06 — Documentation review: passing link/path contracts did not detect an obsolete card-ID union, character authoring routed to the wrong type owner, conflicting startup/Gear snapshot lifetimes, or inaccurate cleanup and browser-build instructions. Corrected the [content workflows](../../docs/WORKFLOWS.md), [architecture](../../docs/ARCHITECTURE.md), [Armory contract](../../docs/ARMORY.md), and [command reference](../../docs/REFERENCE.md) against their current implementations. The card-effect checklist now links to its handler owner instead of duplicating it. N/A (documentation drift; runtime behavior preserved).

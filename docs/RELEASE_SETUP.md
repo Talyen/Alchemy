@@ -2,7 +2,7 @@
 
 One-time shipping setup for Alchemy: crash reporting, provenance, signing, secrets, and listing baseline. Active release flow stays in [RELEASE.md](./RELEASE.md). Coding rules: [AGENTS.md](../AGENTS.md).
 
-Revalidate these sections only when rotating credentials, changing the listing, or preparing the first public release. They go stale once configured.
+Revalidate these sections only when rotating credentials, changing the listing, or preparing the first public release. Keep the documented configuration aligned with the release workflow when it changes.
 
 ## Desktop crash reporting (one-time setup)
 

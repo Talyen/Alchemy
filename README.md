@@ -46,7 +46,7 @@ Desktop local development is `npm run dev:desktop`.
 | `npm run dev`              | Start Vite dev server                                    |
 | `npm run dev:desktop`      | Start the Electron shell                                 |
 | `npm test`                 | Run Vitest unit tests                                    |
-| `npm run test:e2e`         | Run Playwright end-to-end tests                          |
+| `npm run test:e2e`         | Run Playwright against the existing production build     |
 | `npm run lint`             | Lint all source files                                    |
 | `npm run verify -- --diff` | Run related tests and risk escalations for changed paths |
 | `npm run check -- --diff`  | Run the source-aware push and handoff gate               |
@@ -56,6 +56,10 @@ Install Playwright's browser once before the first local E2E run:
 ```sh
 npx playwright install chromium
 ```
+
+Run `npm run build` before `npm run test:e2e` to test current source. For
+checks against the development server, use `npm run test:e2e:dev`. Focused
+commands and fixture guidance live in the [E2E guide](./tests/e2e/README.md).
 
 Full command catalog (build, desktop, gates, balance sim, perf, clean):
 [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Path-specific
@@ -77,7 +81,18 @@ Feature layout and run-state ownership:
 - `src/app/` — boot, screen routes, save-state
 - `src/lib/` — React-free game logic (battle, game-data, gear, content-systems, homestead, … — see `docs/REFERENCE.md#navigation-hints`)
 - `src/features/alchemy/` — React UI (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
-- `tests/` — Vitest unit tests and Playwright specs
+- `tests/` — unit tests grouped by source owner; browser specs in `tests/e2e/specs/`, Electron checks in `tests/electron/`, and desktop unit tests in `tests/desktop/`; shared fixtures, page objects, and helpers support multiple suites
+- `performance/` — browser and desktop measurement scenarios and reporting tools; runtime instrumentation lives in `src/lib/performance/`
+- `Raw Assets/`, `src/assets/`, `public/` — authored inputs, bundled assets, and public assets; [asset workflows](./docs/WORKFLOWS-ASSETS.md) identify generated outputs
+- `scripts/` — command entry points and shared tooling in `scripts/lib/`; see the [script catalog](./scripts/README.md)
+- `eslint/` — custom lint rules and import-boundary definitions composed by `eslint.config.js`
+- `docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons
+- `steam/` — Steam packaging and upload configuration
+
+Root configuration files remain beside `package.json` for tool discovery. Local
+outputs such as `dist/`, `release-desktop/`, `reports/`, `playwright-report/`, and
+`test-results/` are ignored artifacts. Existing `npm run clean` and
+`npm run prune:transient` commands manage disposable reports and caches.
 
 `npm run dev` prepares authored assets before starting Vite. Production builds
 only validate committed generated outputs and never rewrite tracked sources.
@@ -88,7 +103,20 @@ Do not hand-edit generated outputs.
 
 ## Documentation
 
-The full owner map lives in [AGENTS.md](./AGENTS.md#documentation-owners) — start with one owner there and expand only across a demonstrated boundary. Human entry points: [Architecture](./docs/ARCHITECTURE.md) for layout and state, [Workflows](./docs/WORKFLOWS.md) for content checklists, [Developer reference](./docs/REFERENCE.md) for commands, [Contributing](./CONTRIBUTING.md) for verification.
+Start with the document for your question:
+
+| Question                                | Document                                                                                      |
+| --------------------------------------- | --------------------------------------------------------------------------------------------- |
+| How do combat and progression work?     | [Battle rules and glossary](./docs/GAME_RULES.md), [Armory](./docs/ARMORY.md)                 |
+| Where does game state live?             | [Architecture](./docs/ARCHITECTURE.md)                                                        |
+| How do I add content or change a flow?  | [Implementation workflows](./docs/WORKFLOWS.md), [Asset workflow](./docs/WORKFLOWS-ASSETS.md) |
+| Which UI and audio conventions apply?   | [UI system](./docs/UI.md), [Audio workflow](./docs/AUDIO.md)                                  |
+| Which commands and checks should I run? | [Developer reference](./docs/REFERENCE.md), [Contributing](./CONTRIBUTING.md)                 |
+| How do I profile or ship the game?      | [Performance profiling](./docs/PERFORMANCE.md), [Release](./docs/RELEASE.md)                  |
+
+[AGENTS.md](./AGENTS.md#documentation-owners) provides the full ownership map
+and agent working rules. Active plans and historical records are separate from
+these current behavior and workflow owners.
 
 ## License
 

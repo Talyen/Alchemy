@@ -23,5 +23,13 @@ export function readExposure(section) {
     end: section.end,
     contentHash: crypto.createHash("sha256").update(section.text).digest("hex"),
     bytes: Buffer.byteLength(section.text, "utf8"),
+    lines: section.text
+      .split(/\r?\n/u)
+      .map((text, index) => ({
+        line: section.start + index,
+        hash: crypto.createHash("sha256").update(text).digest("hex"),
+        bytes: Buffer.byteLength(text, "utf8"),
+      }))
+      .filter((line) => line.line <= section.end),
   };
 }

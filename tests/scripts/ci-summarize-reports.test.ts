@@ -151,7 +151,7 @@ describe("ci-summarize-playwright", () => {
           specs: [
             {
               title: "boots to menu",
-              file: "tests/alchemy.spec.ts",
+              file: "tests/e2e/specs/alchemy.spec.ts",
               tests: [
                 {
                   status: "unexpected",
@@ -161,7 +161,7 @@ describe("ci-summarize-playwright", () => {
             },
             {
               title: "flaky save",
-              file: "tests/save-persistence.spec.ts",
+              file: "tests/e2e/specs/save-persistence.spec.ts",
               tests: [{ status: "flaky", results: [{ errors: [] }] }],
             },
           ],
@@ -225,7 +225,7 @@ describe("ci-summarize-playwright", () => {
               specs: [
                 {
                   title: "raw animation canary",
-                  file: "tests/draw-discard-animations.spec.ts",
+                  file: "tests/e2e/specs/draw-discard-animations.spec.ts",
                   line: 10,
                   tests: [{ status: "unexpected", projectName: "chromium", results: [{ errors: [] }] }],
                 },

@@ -4,47 +4,63 @@ import { spawnSync } from "node:child_process";
 export const E2E_ROUTES = Object.freeze({
   audio: Object.freeze({
     label: "audio Playwright flow",
-    args: ["playwright", "test", "tests/audio-sfx.spec.ts", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/audio-sfx.spec.ts", "--project", "chromium"],
   }),
   gear: Object.freeze({
     label: "gear Playwright flows",
-    args: ["playwright", "test", "tests/armory.spec.ts", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/armory.spec.ts", "--project", "chromium"],
   }),
   mystery: Object.freeze({
     label: "mystery Playwright flow",
-    args: ["playwright", "test", "tests/destination-progression.spec.ts", "-g", "Mystery", "--project", "chromium"],
+    args: [
+      "playwright",
+      "test",
+      "tests/e2e/specs/destination-progression.spec.ts",
+      "-g",
+      "Mystery",
+      "--project",
+      "chromium",
+    ],
   }),
   homestead: Object.freeze({
     label: "homestead Playwright flow",
-    args: ["playwright", "test", "tests/homestead-flow.spec.ts", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/homestead-flow.spec.ts", "--project", "chromium"],
   }),
   collection: Object.freeze({
     label: "collection Playwright flow",
-    args: ["playwright", "test", "tests/collection.spec.ts", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/collection.spec.ts", "--project", "chromium"],
   }),
   talents: Object.freeze({
     label: "talents Playwright flow",
-    args: ["playwright", "test", "tests/menu-navigation.spec.ts", "-g", "Talents", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/menu-navigation.spec.ts", "-g", "Talents", "--project", "chromium"],
   }),
   options: Object.freeze({
     label: "options Playwright flow",
-    args: ["playwright", "test", "tests/menu-navigation.spec.ts", "-g", "Options|Auto-End", "--project", "chromium"],
+    args: [
+      "playwright",
+      "test",
+      "tests/e2e/specs/menu-navigation.spec.ts",
+      "-g",
+      "Options|Auto-End",
+      "--project",
+      "chromium",
+    ],
   }),
   locks: Object.freeze({
     label: "progression locks Playwright flow",
-    args: ["playwright", "test", "tests/progression-locks.spec.ts", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/progression-locks.spec.ts", "--project", "chromium"],
   }),
   "shop-screen": Object.freeze({
     label: "shop Playwright flow",
-    args: ["playwright", "test", "tests/shop-and-rewards.spec.ts", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/shop-and-rewards.spec.ts", "--project", "chromium"],
   }),
   battle: Object.freeze({
     label: "battle Playwright flows",
     args: [
       "playwright",
       "test",
-      "tests/core-gameplay.spec.ts",
-      "tests/combat-mechanics.spec.ts",
+      "tests/e2e/specs/core-gameplay.spec.ts",
+      "tests/e2e/specs/combat-mechanics.spec.ts",
       "--project",
       "chromium",
     ],
@@ -54,23 +70,23 @@ export const E2E_ROUTES = Object.freeze({
     args: [
       "playwright",
       "test",
-      "tests/save-persistence.spec.ts",
-      "tests/save-error-paths.spec.ts",
+      "tests/e2e/specs/save-persistence.spec.ts",
+      "tests/e2e/specs/save-error-paths.spec.ts",
       "--project",
       "chromium",
     ],
   }),
   labyrinth: Object.freeze({
     label: "labyrinth Playwright flow",
-    args: ["playwright", "test", "tests/labyrinth.spec.ts", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/labyrinth.spec.ts", "--project", "chromium"],
   }),
   wildwood: Object.freeze({
     label: "wildwood Playwright flow",
-    args: ["playwright", "test", "tests/wildwood.spec.ts", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/wildwood.spec.ts", "--project", "chromium"],
   }),
   outcomes: Object.freeze({
     label: "run-outcome Playwright flows",
-    args: ["playwright", "test", "tests/run-outcomes.spec.ts", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/run-outcomes.spec.ts", "--project", "chromium"],
   }),
 });
 

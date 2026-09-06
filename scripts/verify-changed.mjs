@@ -3,14 +3,14 @@
 import path from "node:path";
 import fs from "node:fs";
 
-import { commandExposure, tailOutput, writeFailureDigest } from "./lib/compact-output.mjs";
+import { commandExposure, failureSummary, writeFailureDigest } from "./lib/compact-output.mjs";
 import { resolveRoutePlan } from "./lib/change-routes.mjs";
 import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 import { recordAgentEvent } from "./lib/agent-events.mjs";
-import { createVerificationCache } from "./lib/verification-cache.mjs";
+import { captureVerificationInputs, createVerificationCache } from "./lib/verification-cache.mjs";
 import { selectContext } from "./lib/agent-context.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -51,20 +51,29 @@ export function formatPlan(plan, { verbosePlan = false } = {}) {
 }
 
 function runVerificationCommand(command, index, verbose, runId) {
+  const diagnosticInputs = process.env.ALCHEMY_AGENT_SESSION ? captureVerificationInputs(ROOT) : null;
   const result = runCommand(command.command, command.args, {
     cwd: ROOT,
     env: { ...process.env, ALCHEMY_RUN_ID: runId },
     shell: process.platform === "win32",
     stdio: ["inherit", "pipe", "pipe"],
   });
+  if (diagnosticInputs && diagnosticInputs === captureVerificationInputs(ROOT))
+    recordAgentEvent(ROOT, {
+      kind: "diagnostic",
+      command: JSON.stringify([command.command, command.args]),
+      inputHash: diagnosticInputs,
+      status: result.status === 0 ? "passed" : "failed",
+    });
   const verboseOutput = verbose && result.output ? result.output : "";
   if (verboseOutput) process.stdout.write(result.output.endsWith("\n") ? result.output : `${result.output}\n`);
+  const failureOutput = result.status === 0 ? "" : failureSummary(result.output);
   const exposure = commandExposure({
     key: command.key,
     label: command.label,
     command: `${command.command} ${command.args.join(" ")}`,
     result,
-    exposedOutput: verboseOutput,
+    exposedOutput: verboseOutput + failureOutput,
     budgetBytes: verbose ? null : undefined,
   });
   if (result.status === 0 && !exposure.overBudget) {
@@ -78,8 +87,9 @@ function runVerificationCommand(command, index, verbose, runId) {
   const reportsDir = path.join(ROOT, "reports", "runs", runId, "verify");
   const { digestPath, logPath } = writeFailureDigest(reportsDir, command, result, runId, index);
   console.error(`✗ ${command.label} (${(result.elapsedMs / 1000).toFixed(1)}s, exit ${result.status ?? "unknown"})`);
-  console.error(`  ${tailOutput(result.output)}`);
+  console.error(`  ${failureOutput}`);
   console.error(`  Failure digest: ${path.relative(ROOT, digestPath)}`);
+  console.error(`  Full log: ${path.relative(ROOT, logPath)}`);
   return { passed: false, command, result, exposure, digestPath, logPath };
 }
 

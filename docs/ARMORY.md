@@ -87,9 +87,9 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear
 
 ## Battle integration
 
-Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Battle code never reads the Gear aggregate during a fight.
+Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Live Gear, talent, and Homestead mutations refresh that manifest through `rebindLiveRunMeta` in the same session command. Battle calculations read the battle manifest, never the Gear aggregate directly.
 
-Lifegiving grants 1 Health per turn at every rarity and remains eligible for ordinary gear. Fixed roll values do not imply unique-only eligibility; `uniqueOnly` owns that restriction. Emberforged grants Forge only on the first Burn attack each turn (Basic: 1; Astral: 2); multiple equipped copies add their amounts but share the turn limit. Companion and delayed effects do not spend this card-attack trigger. Saved inventory rolls for these two affixes are bounded to their current rarity ranges during normalization, tooltip generation, and battle-manifest construction. Existing combat snapshots retain their captured magnitudes until the next battle.
+Lifegiving grants 1 Health per turn at every rarity and remains eligible for ordinary gear. Fixed roll values do not imply unique-only eligibility; `uniqueOnly` owns that restriction. Emberforged grants Forge only on the first Burn attack each turn (Basic: 1; Astral: 2); multiple equipped copies add their amounts but share the turn limit. Companion and delayed effects do not spend this card-attack trigger. Saved inventory rolls for these two affixes are bounded to their current rarity ranges during normalization, tooltip generation, and battle-manifest construction. Existing combat snapshots retain their captured magnitudes until normal live meta rebinding or the next battle.
 
 Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guards `tests/architecture/affix-catalog-guard.test.ts` and `src/lib/content-validation/validators-gear.ts` assert:
 

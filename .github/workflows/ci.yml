@@ -49,7 +49,7 @@ jobs:
               - "src/features/alchemy/shell/use-alchemy-run-controller*"
               - "tests/fixtures/legacy-saves*"
               - "tests/e2e/mid-combat-save*"
-              - "tests/save-*"
+              - "tests/e2e/specs/save-*"
             desktop:
               - "scripts/build-verified.mjs"
               - "scripts/lib/vite-*.mjs"
@@ -94,7 +94,7 @@ jobs:
               - "src/features/alchemy/meta/screens/**"
               - "src/features/alchemy/run-setup/screens/**"
               - "src/features/alchemy/run-loop/screens/**"
-              - "tests/electron-*"
+              - "tests/electron/**"
               - "playwright.electron*"
               - "vite.config.ts"
               - "scripts/prepare-assets.mjs"

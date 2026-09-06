@@ -51,6 +51,7 @@ export default tseslint.config(
       "dist",
       "node_modules",
       ".vite",
+      ".worktrees",
       "Raw Assets",
       "scratch",
       "playwright-report",
@@ -321,6 +322,7 @@ export default tseslint.config(
   // Intentionally conditional diagnostic suite — exempt from disabled-test enforcement
   {
     files: ["tests/e2e/**/*.ts", "tests/helpers/diagnostics/**/*.{ts,tsx}"],
+    ignores: ["tests/**/*.spec.ts"],
     rules: {
       "vitest/no-disabled-tests": "off",
     },
@@ -416,8 +418,9 @@ export default tseslint.config(
       "tests/fixtures/**/*.ts",
       "tests/pages/**/*.ts",
       "tests/helpers/**/*.ts",
-      "tests/electron-helpers.ts",
+      "tests/electron/electron-helpers.ts",
     ],
+    ignores: ["tests/**/*.spec.ts"],
     rules: {
       "no-restricted-syntax": restrictedSyntax(...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS),
     },
@@ -426,15 +429,15 @@ export default tseslint.config(
   // Animation specs must not disable animations via fastBattle or enableFastMode.
   {
     files: [
-      "tests/draw-discard-animations.spec.ts",
-      "tests/battle-end-turn-canary.spec.ts",
+      "tests/e2e/specs/draw-discard-animations.spec.ts",
+      "tests/e2e/specs/battle-end-turn-canary.spec.ts",
       "performance/scenarios/**/*.perf.ts",
     ],
     rules: {
       "no-restricted-imports": restrictedImports({
         paths: [
           {
-            name: "./fixtures/e2e",
+            name: "../../fixtures/e2e",
             message:
               "Animation specs must use @playwright/test directly — fixtures/e2e enables fastBattle/enableFastMode.",
           },

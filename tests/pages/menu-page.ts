@@ -38,8 +38,8 @@ export class MenuPage {
     await expect(this.playBtn).toBeVisible({ timeout });
   }
 
-  async expectMainMenuAfterColdStart() {
-    await this.expectMainMenu(15_000);
+  async expectMainMenuAfterColdStart(timeout = 15_000) {
+    await this.expectMainMenu(timeout);
   }
 
   async openCollection() {

@@ -5,8 +5,8 @@ const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
 export const TEST_SUITES = Object.freeze({
   save: Object.freeze([
     "tests/features/alchemy/shared/storage",
-    "tests/features/alchemy/app/autosave-hook.test.ts",
-    "tests/features/alchemy/app/autosave-active-run.test.ts",
+    "tests/app/autosave-hook.test.ts",
+    "tests/app/autosave-active-run.test.ts",
     "tests/lib/validation",
     "tests/lib/active-run-session",
     "tests/architecture/save-migration-guard.test.ts",
@@ -15,8 +15,8 @@ export const TEST_SUITES = Object.freeze({
   tooling: Object.freeze(["tests/scripts", "tests/architecture"]),
   shipUnit: Object.freeze([
     "tests/features/alchemy/shared/storage",
-    "tests/features/alchemy/app/autosave-hook.test.ts",
-    "tests/features/alchemy/app/autosave-active-run.test.ts",
+    "tests/app/autosave-hook.test.ts",
+    "tests/app/autosave-active-run.test.ts",
     "tests/lib/validation",
     "tests/lib/active-run-session",
     "tests/scripts",
@@ -60,9 +60,9 @@ export const COMMANDS = Object.freeze({
     args: [
       "test",
       "--",
-      "tests/desktop-security.test.ts",
-      "tests/desktop-sentry.test.ts",
-      "tests/desktop-package-layout.test.ts",
+      "tests/desktop/desktop-security.test.ts",
+      "tests/desktop/desktop-sentry.test.ts",
+      "tests/desktop/desktop-package-layout.test.ts",
     ],
   },
   "unit-tooling": {

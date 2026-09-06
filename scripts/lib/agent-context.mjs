@@ -72,7 +72,7 @@ export const CONTEXT_TASKS = {
     entrypoints: ["scripts/assets.mjs", "scripts/assets/asset-manifest.mjs"],
   },
   browser: {
-    matches: /(?:\.spec\.ts$|^tests\/(?:e2e|pages|fixtures)\/)/u,
+    matches: /(?:\.spec\.ts$|^tests\/(?:e2e|electron|pages|fixtures)\/)/u,
     docs: [
       owner("tests/e2e/README.md", "Running focused checks"),
       owner("tests/e2e/README.md", "Navigation and bootstrap"),
@@ -131,10 +131,38 @@ export function contextSections(rootDir, selection) {
   );
 }
 
-export function sourceOutline(rootDir, relativePath) {
+export function sourceOutline(rootDir, relativePath, { entries = false } = {}) {
   const ts = require("typescript");
   const source = fs.readFileSync(path.join(rootDir, relativePath), "utf8");
   const file = ts.createSourceFile(relativePath, source, ts.ScriptTarget.Latest, true);
+  const location = (node, name) => ({
+    name,
+    path: relativePath,
+    start: file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1,
+    end: file.getLineAndCharacterOfPosition(node.end).line + 1,
+    text: node.getText(file),
+  });
+  if (entries) {
+    const found = [];
+    const literalName = (node) =>
+      node && (ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isIdentifier(node)) ? node.text : null;
+    const visit = (node) => {
+      if (ts.isObjectLiteralExpression(node)) {
+        const id = node.properties.find(
+          (property) => ts.isPropertyAssignment(property) && literalName(property.name) === "id",
+        );
+        if (id && (ts.isStringLiteral(id.initializer) || ts.isNumericLiteral(id.initializer)))
+          found.push(location(node, id.initializer.text));
+        else if (ts.isPropertyAssignment(node.parent)) {
+          const name = literalName(node.parent.name);
+          if (name) found.push(location(node.parent, name));
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(file);
+    return found;
+  }
   return file.statements.flatMap((statement) => {
     const names = ts.isVariableStatement(statement)
       ? statement.declarationList.declarations.map((declaration) => declaration.name.getText(file))

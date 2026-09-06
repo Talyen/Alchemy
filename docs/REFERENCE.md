@@ -47,15 +47,15 @@ This is the curated agent subset. The full catalog is `package.json` (exhaustive
 
 ### Build commands decision tree
 
-| Intent                                              | Command                                                         |
-| --------------------------------------------------- | --------------------------------------------------------------- |
-| Local web/dev                                       | `npm run dev` / `npm run build`                                 |
-| Vercel web                                          | `vercel.json` buildCommand: typecheck + `build`                 |
-| Desktop renderer                                    | `npm run build:desktop`                                         |
-| Verified web (push/handoff/CI)                      | `npm run build` (validates generated outputs including version) |
-| Verified desktop (ship/CI)                          | `npm run build:desktop` (plus `assets:check` at release)        |
-| Unpacked Windows app (local iterate)                | `npm run package:win`                                           |
-| Windows/mac/linux installers (CI desktop + release) | `npm run dist:desktop`                                          |
+| Intent                                                | Command                                                         |
+| ----------------------------------------------------- | --------------------------------------------------------------- |
+| Local web/dev                                         | `npm run dev` / `npm run build`                                 |
+| Vercel web                                            | `vercel.json` buildCommand: typecheck + `build`                 |
+| Desktop renderer                                      | `npm run build:desktop`                                         |
+| Verified web (push/handoff/CI)                        | `npm run build` (validates generated outputs including version) |
+| Verified desktop (ship/CI)                            | `npm run build:desktop` (plus `assets:check` at release)        |
+| Unpacked Windows app (local iterate)                  | `npm run package:win`                                           |
+| Installers for configured targets (currently Windows) | `npm run dist:desktop`                                          |
 
 **Skip flags:**
 
@@ -67,9 +67,13 @@ This is the curated agent subset. The full catalog is `package.json` (exhaustive
 - `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; `npm run clean` removes existing maps.
 - `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds and preview smoke in `npm run check` for fast local iteration; CI and ship gates still build.
 
-`npm run clean` removes local diagnostics and build artifacts (explicit reset). `npm run prune:transient` removes only stale files by age. Its exact
-options are owned by `scripts/clean-dev-artifacts.mjs`; do not use it to prune
-shared Playwright caches.
+`npm run clean` removes local diagnostics and the Vite cache (explicit reset);
+add `-- --builds` to remove build outputs. `npm run clean:all` also stops
+Alchemy-owned test-server processes. `npm run prune:transient` removes only stale
+files by age. Its exact
+options are owned by `scripts/prune-transient-artifacts.mjs`; reset options
+belong to `scripts/clean-dev-artifacts.mjs`. Neither command manages shared
+Playwright caches.
 
 ## Failure-first triage
 
@@ -77,9 +81,9 @@ Verification and audit commands keep full artifacts on disk but print a bounded 
 
 Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI derives the same identity from its run, attempt, job, and optional matrix variant. Do not change it within one invocation.
 
-- Unit failures: rerun the exact path from the report, then inspect the first assertion and its nearest fixture. `reports/vitest-timings.json` is timing data, not default context.
+- Unit failures: inspect the first assertion and its nearest fixture; rerun the exact failing path after a fix or when a fresh observation is needed. `reports/vitest-timings.json` is timing data, not default context.
 - Playwright failures: read the compact failure summary and `test-results/failures/<run-id>/<name>.md` first. Its bounded accessibility snapshot shows the roles, names, and hierarchy present at failure; open a trace ZIP only when that and the console evidence cannot explain the failure. CI summaries add the changed-path route and any path-filtered focused E2E gate for the failing file.
-- Changed-path failures: open the run-specific Markdown digest named by `reports/current-run.md`; the sibling `.log` is secondary evidence when its bounded failure tail is insufficient.
+- Changed-path failures: open the run-specific Markdown digest named by `reports/current-run.md`; the sibling `.log` is secondary evidence when the diagnostic excerpt is insufficient. Check output extracts test names, assertions, compiler locations and lint diagnostics from throughout the stream, with `L` references into the full log; unfamiliar output falls back to a bounded tail.
 - E2E audit: `npm run test:e2e:audit` writes `reports/e2e-audit-report.md` and keeps the full JSON report. Use `--verbose` only when the child runner's complete stream is needed.
 - Measurable audits: `npm run audit:all` reports one line per passing probe and a bounded failure tail. Full step output is under `reports/audit-all/` after a failure; pass `--verbose` to stream it deliberately.
 - Balance: read `reports/balance-findings.html` or its JSON summary first. The full matrix under `reports/balance-full/` is drill-down evidence only.
@@ -94,9 +98,15 @@ After status inspection, run `npm run context -- <relevant paths>` once for the 
 
 The command reads canonical Markdown sections, deduplicates overlapping sections, and prints implementation entry points and verification categories. Default output is bounded to 12 KB; deferred sections retain exact line locations. Read those only when the task needs them. `--json` deliberately returns the complete selection for tooling. This is discovery guidance, not a replacement for required skills or a test-coverage selector. `scripts/lib/agent-context.mjs` owns discovery categories; `scripts/lib/change-routes.mjs` continues to own the broad verification categories.
 
-Before reading a large unfamiliar source module, use `npm run context -- --outline <file>` for declaration locations, then `--outline <file> --symbol <name>` for one declaration. Oversized declarations return a location instead of dumping the file. Use scoped `rg` for content entries within a large catalog. Use the existing `npm run audit -- --amplification` report for co-edit evidence and correlate its paths with evaluation read events. Split a file only when observed repeated reads or co-changes expose separable responsibilities; size alone is not a refactoring target.
+Before reading a large unfamiliar source module, use `npm run context -- --outline <file>` for declaration locations, then `--outline <file> --symbol <name>` for one declaration. Oversized declarations return a location instead of dumping the file. Use `--outline <file> --entries` to list nested content IDs and object keys, or `--outline <file> --entry <id>` to read matching entries (including duplicate IDs). The parser never executes content; computed IDs and dynamically constructed entries still need a scoped search. Use the existing `npm run audit -- --amplification` report for co-edit evidence and correlate its paths with evaluation read events. Split a file only when observed repeated reads or co-changes expose separable responsibilities; size alone is not a refactoring target.
 
-Update the discovery catalog when ownership or entry points change. Documentation checks and tooling tests validate every referenced section and entry point, and `verify --plan` displays pointers from the same catalog. Do not copy owner prose into the catalog or reread sections already emitted by `context`.
+Optional discovery modes:
+
+- Add `--related` to a path or task request for ranked consumer, test and imported-fixture locations from current static imports, aliases and reexports. Results cover at most two consumer hops and six locations per kind; they are hints, not exhaustive coverage or verification selection. No graph cache or second ownership catalog is maintained.
+- Add `--session <unique-id>` to suppress documentation sections actually emitted unchanged earlier in that session. Use a separate ID for each agent. After context loss use `--refresh` with that ID, or start a fresh ID; a remembered read does not prove retained understanding. Changed sections and sections deferred by the output budget remain eligible. Without `--session`, output remains complete within the normal budget. Session state is disposable under `reports/agent-context/`.
+- `npm run search -- <literal> [paths...]` wraps `rg` and returns up to 40 matching filenames within 8 KB. Add `--excerpts` for matching source lines, `--regex` for deliberate regular expressions, or `--include-excluded` with an explicit path to inspect normally excluded artifacts. Default searches respect ignore files and exclude raw assets, reports, build output, changelog, dependency lockfiles, dependencies, Git data and worktrees. Truncation is explicit; narrow the path or pattern, or use direct scoped `rg` when more control is needed. Use `--` before positional arguments beginning with `--`.
+
+These options are available on demand, not additional mandatory prereads. Update the discovery catalog when ownership or entry points change. Documentation checks and tooling tests validate every referenced section and entry point, and `verify --plan` displays pointers from the same catalog. Do not copy owner prose into the catalog or reread sections already emitted by `context`.
 
 ### Verification reuse
 

@@ -394,7 +394,7 @@ declare module "*/check-documentation-contract.mjs" {
   export function checkDocumentedNpmScripts(): string[];
   export function checkMarkdownHeadingAnchors(): string[];
   export function checkContributingE2ePaths(): string[];
-  export function checkDurableDocumentReachability(): string[];
+  export function checkDurableDocumentReachability(rootDir?: string): string[];
   export function checkKnowledgeIndexCompleteness(): string[];
   export function checkSkillIndexCompleteness(): string[];
   export function checkDocumentationContracts(): string[];
@@ -471,6 +471,7 @@ declare module "*/compact-output.mjs" {
   };
   export function firstOutputLine(output: string): string;
   export function tailOutput(output: string, maxBytes?: number): string;
+  export function failureSummary(output: string, maxBytes?: number): string;
   export function writeFailureDigest(
     directory: string,
     command: VerificationCommand,
@@ -669,7 +670,11 @@ declare module "*/lib/agent-context.mjs" {
   export const CONTEXT_TASKS: Record<string, unknown>;
   export function selectContext(paths: string[], task?: string): Selection;
   export function contextSections(root: string, selection: Selection): Section[];
-  export function sourceOutline(root: string, filename: string): Array<Section & { name: string }>;
+  export function sourceOutline(
+    root: string,
+    filename: string,
+    options?: { entries?: boolean },
+  ): Array<Section & { name: string }>;
   export function validateContextCatalog(root: string): string[];
 }
 
@@ -754,4 +759,33 @@ declare module "*/lib/document-sections.mjs" {
     filename: string,
     heading?: string,
   ): { start: number; end: number; text: string };
+}
+
+declare module "*/lib/agent-discovery.mjs" {
+  interface Section {
+    path: string;
+    start: number;
+    end: number;
+    text: string;
+    heading?: string;
+  }
+  export function repositorySearch(
+    root: string,
+    options?: { pattern?: string; paths?: string[]; excerpts?: boolean; includeExcluded?: boolean; regex?: boolean },
+  ): Array<string | Section>;
+  export function incrementalContext(
+    root: string,
+    session: string,
+    sections: Section[],
+    options?: { refresh?: boolean },
+  ): { sections: Section[]; omitted: number; remember(included: Section[]): void };
+  export function relatedLocations(
+    root: string,
+    paths: string[],
+    limit?: number,
+  ): { consumers: string[]; tests: string[]; fixtures: string[] };
+}
+
+declare module "*/agent-search.mjs" {
+  export function searchMain(args: string[], root?: string): number;
 }

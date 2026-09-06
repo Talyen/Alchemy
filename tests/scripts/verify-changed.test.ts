@@ -79,7 +79,16 @@ describe("verification selection", () => {
   });
 
   it("treats browser specs as explicit local debugging flows", () => {
-    expect(resolveRoutePlan(["tests/shop-and-rewards.spec.ts"]).commands).toEqual([]);
+    expect(resolveRoutePlan(["tests/e2e/specs/shop-and-rewards.spec.ts"]).commands).toEqual([]);
+  });
+
+  it("retains desktop and browser selection after folder moves", () => {
+    expect(resolveRoutePlan(["tests/desktop/desktop-security.test.ts"]).commands.map((command) => command.key)).toEqual(
+      ["unit-desktop", "unit-changed"],
+    );
+    for (const file of ["tests/electron/electron-helpers.ts", "tests/electron/electron-global-setup.ts"]) {
+      expect(resolveRoutes([file]).map((route) => route.id)).toEqual(["browser-test"]);
+    }
   });
 
   it("keeps uncategorized executable selection honest", () => {

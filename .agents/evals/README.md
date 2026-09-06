@@ -10,7 +10,7 @@ Use different variant names, but identical comparison settings. Put the per-vari
 
 ## Record and compare
 
-Run `npm run eval:agent -- --init <task> <session>` in the instrumented checkout. It creates a local record and empty event stream under `reports/agent-evals/`. Set `ALCHEMY_AGENT_SESSION` to that session ID on subsequent `context`, `verify` and `check` invocations. Context sections and verification attempts/reuse are then recorded automatically, including when `check` invokes `verify`. Keep separate session IDs for concurrent tasks. This environment variable must be set in each shell invocation unless the shell session persists.
+Run `npm run eval:agent -- --init <task> <session>` in the instrumented checkout. It creates a local record and empty event stream under `reports/agent-evals/`. Set `ALCHEMY_AGENT_SESSION` to that session ID on subsequent `context`, `verify` and `check` invocations. Context sections, repository-search excerpts, discovery outcomes and verification attempts/reuse are then recorded automatically, including when `check` invokes `verify`. Keep separate session IDs for concurrent tasks. This environment variable must be set in each shell invocation unless the shell session persists.
 
 The checked-in tools can also summarize records collected from the baseline checkout; use the same event capture method in both variants. Host transcript adapters may append the normalized events below. No agent transcript reader or host-specific storage location is assumed.
 
@@ -29,9 +29,15 @@ Pass one record path to `npm run eval:agent -- <record.json>` to summarize, or t
 
 ## Events and interpretation
 
-Events are JSON Lines. A read event has `kind: "read"`, repository-relative `path`, one-based inclusive `start`/`end`, SHA-256 `contentHash` of the emitted excerpt, and UTF-8 `bytes`. A verification event has `kind: "verification"`, the exact `command`, and `status: "passed"`, `"failed"`, or `"reused"`. Automatic event records also carry timestamps.
+Events are JSON Lines. A read event has `kind: "read"`, repository-relative `path`, one-based inclusive `start`/`end`, SHA-256 `contentHash` of the emitted excerpt, and UTF-8 `bytes`. Read events may also contain `lines`, an array of `{ line, hash, bytes }` for the emitted lines only. Hashes use SHA-256; line bytes exclude newline delimiters. Never include source text. A verification event has `kind: "verification"`, the exact `command`, and `status: "passed"`, `"failed"`, or `"reused"`. Automatic event records also carry timestamps.
 
-Repeated-read bytes count identical path/range/content reads after the first. Changed content is not waste. Verification retries count executions after a failed identical command until it passes; cache hits are separate. These are observed events only: arbitrary shell searches, overlapping partial reads, reasoning and host tools remain unmeasured unless the capture adapter supplies them. Use host usage for total task cost. Require correct game behavior, preserved existing work and complete verification in addition to cheaper execution.
+Repeated-read bytes count identical path/range/content reads after the first. `overlappingReadBytes` counts unchanged line content at the same path and line number, compared with the last observed version, even across differently sized excerpts. `observedLineBytes` provides its capture denominator. These two repetition metrics overlap and must not be added together. Partial-line source declarations can undercount overlap; moved lines are not inferred matches. Legacy reads without line hashes invalidate overlapping line observations in their range. Changed content is not waste.
+
+Discovery events have `kind: "discovery"`, an `operation` name, `status: "found" | "not-found" | "failed"`, and boolean `truncated`. They count attempts, empty lookups, command errors and bounded-output truncation separately; they contain no search strings. The context and search commands record these automatically when a measurement session is set.
+
+Diagnostic events have `kind: "diagnostic"`, exact `command`, `inputHash`, and `status: "passed" | "failed"`. `diagnosticReruns` counts a subsequent execution after a failure with the same command and input identity; a pass ends that sequence. Opt-in verifier measurement captures stable identities with the existing verification-input scanner before and after execution; unavailable or changing inputs produce no diagnostic event. This instrumentation adds filesystem work, so compare variants with identical capture settings. Host adapters can supply the same normalized events for other diagnostic tools.
+
+Verification retries count executions after a failed identical command until it passes; cache hits are separate. These are observed events only: direct shell searches outside the wrapper, reasoning and host tools remain unmeasured unless a capture adapter supplies events. Use host usage for total task cost. Require correct game behavior, preserved existing work and complete verification in addition to cheaper execution.
 
 Before splitting a large catalog, correlate repeated-read events with the existing `npm run audit -- --amplification` co-edit report; use source outlines first. Do not impose line-count limits or fragment a coherent owner simply to lower a byte proxy.
 

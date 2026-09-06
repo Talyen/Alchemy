@@ -68,7 +68,7 @@ export default {
     // Documented forward pattern: new specs may call useFastBattle(page) instead of the void fixture.
     "tests/fixtures/e2e.ts": ["exports"],
   },
-  ignore: ["tests/environment.d.ts", "tests/scripts/global.d.ts", "tests/electron-environment.d.ts"],
+  ignore: ["tests/environment.d.ts", "tests/scripts/global.d.ts", "tests/electron/electron-environment.d.ts"],
   ignoreDependencies: [
     // Loaded via node_modules path string in scripts/dist-desktop.mjs; knip cannot trace it.
     "electron-builder",

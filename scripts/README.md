@@ -16,14 +16,18 @@ Canonical entries first.
 
 Fast vs heavy check: `check:generated` verifies barrels are current without running
 transforms (cheap, static-gate safe). `assets:check` runs full `prepareAssets`,
-diffs output hashes, and restores the tree — use before ship, not per-push.
+diffs output hashes, and restores the tree. It runs for asset-touching changes
+and before shipping; [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change)
+owns gate selection.
 
 Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (freshness),
 `lib/process-helpers.mjs` (generic `formatProcessError`), `lib/audio-optimizer.mjs` (audio discovery/runner).
 
 ## Agent discovery and evaluation
 
-`npm run context -- <paths>` emits bounded canonical owner sections and entry points; `--task <category>` starts before paths are known, and `--outline <file> [--symbol <name>]` supports focused source reads. `lib/agent-context.mjs` owns discovery metadata and `lib/document-sections.mjs` owns section extraction. `measure:agent-context` uses the same selection; verification categories remain separate and broad.
+`npm run context -- <paths>` emits bounded canonical owner sections and entry points; `--task <category>` starts before paths are known, and `--outline <file> [--symbol <name>]` supports focused source reads. `--entries` / `--entry <id>` inspect nested content; `--related` adds static consumer/test/fixture hints; `--session <id>` and `--refresh` control optional incremental documentation reads. `lib/agent-context.mjs` owns discovery metadata and `lib/document-sections.mjs` owns section extraction. `measure:agent-context` uses the same selection; verification categories remain separate and broad.
+
+`npm run search -- <literal> [paths...]` returns bounded matching filenames; `--excerpts` returns matching lines. `lib/agent-discovery.mjs` shares the `rg` inventory with related-file discovery and owns disposable context-session state. [Agent discovery](../docs/REFERENCE.md#agent-discovery) documents options and limitations.
 
 `npm run eval:agent -- --init <task> <session>` creates a local measurement record. Set `ALCHEMY_AGENT_SESSION` for automatic context/verification events, fill observed host usage and acceptance evidence, then pass one record to summarize or two to compare. [Evaluation procedure](../.agents/evals/README.md) owns pinned task setup and interpretation. Context bytes and observed events are partial evidence, not inferred host token counts.
 
@@ -33,7 +37,8 @@ For executable changes, `check.mjs` ⊃ `verify-changed.mjs` + `lint:ci` + appli
 build/smoke steps. `lint:ci` = `check:static` + `docs:check` + `deadcode` +
 `playwright --list`; `check:static` owns generated outputs, formatting, types,
 ESLint, boundaries, and architecture smoke. Documentation-only checks stay on
-the smaller documentation + format route.
+the smaller documentation + format route. Documentation and ESLint inventories exclude isolated
+`.worktrees/` checkouts, just as they exclude reports and installed dependencies.
 Pre-push runs `npm run check -- --diff` only (lefthook) — do not stack `verify` or
 `docs:check` on top; `check.mjs` composes the applicable verification and static
 contracts itself. `lib/verification-cache.mjs` automatically reuses only matching successful unit commands with unchanged local inputs; `ALCHEMY_VERIFY_FRESH=1` bypasses reuse, and CI never uses it. Other gates always run. Shared build inputs (package manifests, TypeScript/Vite configuration,
@@ -95,7 +100,11 @@ Steam App ID synchronization.
 
 ## Cleanup (`clean` = explicit reset, `prune:transient` = age-based GC)
 
-`npm run clean[--:all]` resets gitignored dirs (+ processes); `npm run prune:transient` deletes stale files only.
+`npm run clean` removes local reports and the Vite cache. `npm run clean:all`
+also removes build outputs and stops Alchemy-owned test-server processes; add
+`--include-dev-port` to include the development server. `npm run prune:transient`
+deletes stale local artifacts by age. Neither command removes shared Playwright
+browser caches.
 Both share `lib/clean-dev-artifacts.mjs` transient roots. `platforms.json` owns the desktop target list;
 `package.json` build blocks own per-platform packaging config. Sentry release and desktop sourcemap mode are
 owned by `lib/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`.

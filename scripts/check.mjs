@@ -6,7 +6,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
-import { commandExposure, tailOutput, writeFailureDigest } from "./lib/compact-output.mjs";
+import { commandExposure, failureSummary, writeFailureDigest } from "./lib/compact-output.mjs";
 import { classifyCheckPaths, parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
@@ -165,7 +165,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     const code = result.status ?? 1;
     const status = code === 0 ? "passed" : "failed";
     steps.push({ label: definition.label, status, durationMs });
-    const exposedOutput = code === 0 ? "" : tailOutput(result.output);
+    const exposedOutput = code === 0 ? "" : failureSummary(result.output);
     exposures.push(
       commandExposure({
         key: definition.key,
@@ -182,6 +182,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       failed = { label: definition.label, code, ...evidence };
       console.error(`  ${exposedOutput}`);
       console.error(`  Failure digest: ${path.relative(ROOT, evidence.digestPath)}`);
+      console.error(`  Full log: ${path.relative(ROOT, evidence.logPath)}`);
       break;
     }
     console.log(`✓ ${definition.label} (${(durationMs / 1000).toFixed(1)}s)`);

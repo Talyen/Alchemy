@@ -45,13 +45,13 @@ The static barrel provides explicit export names (`kebabToCamel`) and the Vite a
 1. Put the raw file under the matching `Raw Assets/` directory.
 2. Register source, target, width, and quality in the topical manifest under
    `scripts/assets/` (`core`, `content`, `card`, or `talent`) using presets from `scripts/lib/asset-constants.mjs` (`WIDTH`/`QUALITY`). Talent portraits belong in `talent-assets.mjs`.
-3. Run `npm run assets:optimize` for art-only iteration (`assets:optimize:sounds` /
-   `assets:optimize:music` for the audio pipelines) or
-   `node scripts/assets.mjs --prepare` for the complete pipeline.
+3. Run `npm run assets:optimize` followed by `npm run sync:art-barrels` for
+   art-only iteration, or `node scripts/assets.mjs --prepare` for optimization
+   and generated-output synchronization together.
 4. Import through the curated map in `src/lib/game-data/assets.ts` (e.g. `craftingArt`, `difficultyArt`, `talentArt`) — do not import `@/assets/optimized` directly.
 5. Run `npm run check:generated` (fast barrel-only); review the generated diff.
 
-`npm run sync:generated` (or `--art-only` / `--gear-only` for one barrel) regenerates `src/lib/game-data/assets.generated.ts` from
+`npm run sync:generated` (add `-- --art-only` / `-- --gear-only` for one barrel) regenerates `src/lib/game-data/assets.generated.ts` from
 the manifest targets. Do not add exports to that generated file by hand. Hashes use `ASSET_SCHEMA_VERSION=4` (128-bit truncation) — bump the version to invalidate all caches.
 
 ## Add or replace Gear art
@@ -89,11 +89,10 @@ preparation command before handoff.
 
 Place supported audio files under `Raw Assets/Music/` and run
 `npm run assets:optimize:music`. Music is copied without transcoding into
-`public/Music/`. Unlike sound effects, this output directory is fully managed;
-files without a corresponding source are removed by the optimizer. Every track
-listed in-game (`allRegisteredMusicFiles()` in `src/lib/audio-music.ts`) is
-cross-checked against `public/Music/` by `tests/lib/music-assets.test.ts` —
-register new tracks there first.
+`public/Music/`. The optimizer removes files without a corresponding source;
+there is no curated-source exception for music. Register playable tracks in
+`src/lib/audio-music.ts`. Its `allRegisteredMusicFiles()` list is cross-checked
+against `public/Music/` by `tests/lib/music-assets.test.ts`.
 
 ## Skip mode and verification
 

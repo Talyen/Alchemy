@@ -130,11 +130,15 @@ If an async battle flow persists an intermediate state, commit `activeCombat.pen
 
 | Step                                                              | File(s)                                                                                                                                                                                                   |
 | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Define card in the card library                                | `src/lib/game-data/cards/library/cards.ts`                                                                                                                                                                |
+| 1. Define card in the matching topical library                    | `src/lib/game-data/cards/library/` (`core.ts`, `archery.ts`, `consumables.ts`, `companions.ts`, or `defense.ts`); `cards.ts` assembles these groups                                                       |
 | 2. Add effects (discriminated union on `kind`)                    | same card entry, `effects: [...]`                                                                                                                                                                         |
 | 3. Add art reference                                              | `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)                                                                                                                                            |
 | 4. (Optional) Register card sound                                 | `src/lib/sound-registry.ts` (`cardSounds` record)                                                                                                                                                         |
 | 5. Update `descriptionLines` to match effects; context-aware text | same entry; pure text `src/lib/game-data/card-description.ts`, UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`) |
+
+Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
+`cardLibrary` rejects duplicate IDs; preserve save compatibility when removing
+or renaming one through the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
 Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
 
@@ -142,17 +146,10 @@ Cards in `cardLibrary` are automatically included in card shop, combat rewards, 
 
 ## Add a new card effect `kind`
 
-| Step                                                                         | File(s)                                                                                |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| 1. Add to `BattleCardEffect` union                                           | `src/lib/game-data/types.ts`                                                           |
-| 2. Add an `EffectKindDefinition` to the matching grouped `*-schemas.ts` file | `src/lib/game-data/effects/`                                                           |
-| 3. Register non-recursive kinds in `TEMPLATE_EFFECT_DEFINITIONS`             | `src/lib/game-data/effects/registry.ts`                                                |
-| 4. `BATTLE_CARD_EFFECT_KINDS` derives from the registry                      | `src/lib/game-data/effects/registry.ts`                                                |
-| 5. Register the runtime handler in `EFFECT_APPLY_BY_KIND`                    | `src/lib/battle/effect-handlers/` — see `src/lib/game-data/effects/BATTLE_HANDLERS.md` |
-| 6. Update effect metadata used for descriptions/keywords                     | `src/lib/game-data/effect-metadata.ts`                                                 |
-| 7. Schema-registry guard                                                     | `tests/lib/game-data/effects-registry.test.ts`                                         |
-
-`chance` and `repeat-over-turns` are the recursive exceptions: their schema factories live in `registry.ts` and dispatch handles them before the non-recursive registry.
+Follow [Battle handlers § Adding a kind](../src/lib/game-data/effects/BATTLE_HANDLERS.md#adding-a-kind)
+for the union, grouped schema, registry, runtime handler, description metadata,
+and numeric-parity updates. That owner also documents recursive kinds,
+effect ordering, and the focused schema/handler/description tests.
 
 ---
 
@@ -160,7 +157,7 @@ Cards in `cardLibrary` are automatically included in card shop, combat rewards, 
 
 | Step                                                            | File(s)                           |
 | --------------------------------------------------------------- | --------------------------------- |
-| 1. Add character ID to `CharacterId` union                      | `src/lib/game-data/types.ts`      |
+| 1. Add character ID to `CharacterId` union                      | `src/lib/game-data/characters.ts` |
 | 2. Define character in `characters` record                      | `src/lib/game-data/characters.ts` |
 | 3. List card IDs in `startingDeck` (resolved via `resolveDeck`) | same file                         |
 
@@ -211,7 +208,7 @@ Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/
 | 2. Add art via the [asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)      | `src/lib/game-data/assets.ts`                                                                              |
 | 3. Define companion in `companionLibrary` record                                                                  | `src/lib/game-data/companions.ts`                                                                          |
 | 4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`) | `src/lib/game-data/cards/card-builders.ts` — companion must have **at least one** `turnStartEffects` entry |
-| 5. Add summon card ID to `CardId` union                                                                           | `src/lib/game-data/types.ts`                                                                               |
+| 5. Give the summon card a stable, unique string ID                                                                | `src/lib/game-data/cards/library/companions.ts`; the assembled `cardLibrary` checks uniqueness             |
 | 6. (Optional) Register card sound                                                                                 | `src/lib/sound-registry.ts`                                                                                |
 | 7. Add bond level to talent defaults (`companionBondLevels`)                                                      | `src/lib/game-data/talents/manifest-defaults.ts`                                                           |
 | 8. Add bond level to homestead defaults                                                                           | `src/lib/homestead/defaults.ts`                                                                            |
@@ -256,7 +253,7 @@ New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
 | 6. Pagination / constants                                                  | `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)                                                                                                   |
 | 7. Tests                                                                   | Changed-path route ([CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change)); homestead lib + screen suites plus the homestead E2E flow                             |
 
-Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:e2e:homestead` for the focused Playwright flow and `npm run test -- tests/lib/homestead` for the lib contract.
+Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:e2e:homestead` for the focused Playwright flow and `npm run test -- tests/lib/homestead` for the lib contract.
 
 ## Add a new keyword
 

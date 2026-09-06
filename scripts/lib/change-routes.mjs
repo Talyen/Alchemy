@@ -65,7 +65,7 @@ export const ROUTES = Object.freeze([
   ),
   route(
     "desktop",
-    ["desktop/**", "src/lib/desktop-api.ts", "src/lib/platform.ts", "scripts/*desktop*.mjs", "tests/desktop-*.test.ts"],
+    ["desktop/**", "src/lib/desktop-api.ts", "src/lib/platform.ts", "scripts/*desktop*.mjs", "tests/desktop/**"],
     ["related", "unit-desktop"],
     [doc("docs/RELEASE.md", "Commands", "desktop packaging")],
     "desktop/package-layout.cjs",
@@ -133,9 +133,9 @@ export const ROUTES = Object.freeze([
   route(
     "browser-test",
     [
-      "tests/*.spec.ts",
       "tests/**/*.spec.ts",
       "tests/e2e/**",
+      "tests/electron/**",
       "tests/fixtures/**",
       "tests/pages/**",
       "tests/playwright-*.ts",
@@ -143,7 +143,7 @@ export const ROUTES = Object.freeze([
     ],
     [],
     [doc("tests/e2e/README.md", null, "browser test contract")],
-    "tests/core-gameplay.spec.ts",
+    "tests/e2e/specs/core-gameplay.spec.ts",
   ),
 ]);
 

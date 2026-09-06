@@ -10,6 +10,7 @@ import { isMainModule } from "./lib/is-main-module.mjs";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const IGNORED_DIRECTORIES = new Set([
   ".git",
+  ".worktrees",
   "node_modules",
   "dist",
   "dist-desktop",
@@ -247,12 +248,12 @@ export function checkContributingE2ePaths() {
   return missing;
 }
 
-export function checkDurableDocumentReachability() {
+export function checkDurableDocumentReachability(rootDir = ROOT) {
   const isExempt = (relativePath) =>
     relativePath === "CHANGELOG.md" || relativePath.startsWith("docs/Plans/") || relativePath.startsWith(".agents/");
   const documents = new Map();
-  for (const file of markdownFiles()) {
-    const relativePath = file.slice(ROOT.length + 1);
+  for (const file of markdownFiles(rootDir)) {
+    const relativePath = file.slice(rootDir.length + 1);
     if (isExempt(relativePath)) continue;
     const targets = new Set();
     for (const match of readMarkdownSource(file).matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
@@ -260,7 +261,7 @@ export function checkDurableDocumentReachability() {
       if (!target || /^(?:https?:|mailto:|#)/u.test(target)) continue;
       const absolutePath = resolve(dirname(file), decodeURIComponent(target.split("#")[0]));
       if (!/\.(?:md|mdx)$/u.test(absolutePath)) continue;
-      const targetRelativePath = absolutePath.slice(ROOT.length + 1);
+      const targetRelativePath = absolutePath.slice(rootDir.length + 1);
       if (targetRelativePath !== relativePath && !isExempt(targetRelativePath)) targets.add(targetRelativePath);
     }
     documents.set(relativePath, targets);

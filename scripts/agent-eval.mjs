@@ -15,6 +15,13 @@ const METRICS = [
   "verificationAttempts",
   "verificationRetries",
   "verificationReuses",
+  "overlappingReadBytes",
+  "observedLineBytes",
+  "discoveryAttempts",
+  "failedLookups",
+  "discoveryErrors",
+  "truncatedDiscoveries",
+  "diagnosticReruns",
 ];
 
 export function summarizeEvaluation(record, events) {
@@ -35,6 +42,8 @@ export function summarizeEvaluation(record, events) {
     throw new Error("Correctness requires passed and an evidence array");
   const reads = new Set();
   const failed = new Set();
+  const lineReads = new Map();
+  const diagnostics = new Set();
   const result = {
     task: record.task,
     taskVersion: record.taskVersion,
@@ -53,6 +62,13 @@ export function summarizeEvaluation(record, events) {
     verificationAttempts: 0,
     verificationRetries: 0,
     verificationReuses: 0,
+    overlappingReadBytes: 0,
+    observedLineBytes: 0,
+    discoveryAttempts: 0,
+    failedLookups: 0,
+    discoveryErrors: 0,
+    truncatedDiscoveries: 0,
+    diagnosticReruns: 0,
   };
   for (const field of ["inputTokens", "cachedInputTokens", "outputTokens", "toolCalls"]) {
     const value = record.usage?.[field];
@@ -66,8 +82,8 @@ export function summarizeEvaluation(record, events) {
       if (
         !event.path ||
         !event.contentHash ||
-        !Number.isInteger(event.start) ||
-        !Number.isInteger(event.end) ||
+        !Number.isSafeInteger(event.start) ||
+        !Number.isSafeInteger(event.end) ||
         event.start < 1 ||
         event.end < event.start ||
         !Number.isSafeInteger(event.bytes) ||
@@ -79,6 +95,32 @@ export function summarizeEvaluation(record, events) {
       result.observedReadBytes += event.bytes;
       if (reads.has(key)) result.repeatedReadBytes += event.bytes;
       reads.add(key);
+      const observedLines = lineReads.get(event.path) ?? new Map();
+      lineReads.set(event.path, observedLines);
+      if (event.lines !== undefined) {
+        if (!Array.isArray(event.lines)) throw new Error("Invalid read lines");
+        const locations = new Set();
+        for (const line of event.lines) {
+          if (
+            !Number.isSafeInteger(line.line) ||
+            line.line < event.start ||
+            line.line > event.end ||
+            typeof line.hash !== "string" ||
+            !line.hash ||
+            !Number.isSafeInteger(line.bytes) ||
+            line.bytes < 0 ||
+            locations.has(line.line)
+          )
+            throw new Error("Invalid read line");
+          locations.add(line.line);
+          result.observedLineBytes += line.bytes;
+          if (observedLines.get(line.line) === line.hash) result.overlappingReadBytes += line.bytes;
+          observedLines.set(line.line, line.hash);
+        }
+      } else {
+        for (const line of observedLines.keys())
+          if (line >= event.start && line <= event.end) observedLines.delete(line);
+      }
     } else if (event.kind === "verification") {
       if (!event.command || !["passed", "failed", "reused"].includes(event.status))
         throw new Error("Invalid verification event");
@@ -90,6 +132,24 @@ export function summarizeEvaluation(record, events) {
       if (failed.has(event.command)) result.verificationRetries++;
       if (event.status === "failed") failed.add(event.command);
       else failed.delete(event.command);
+    } else if (event.kind === "discovery") {
+      if (
+        !event.operation ||
+        !["found", "not-found", "failed"].includes(event.status) ||
+        typeof event.truncated !== "boolean"
+      )
+        throw new Error("Invalid discovery event");
+      result.discoveryAttempts++;
+      if (event.status === "not-found") result.failedLookups++;
+      if (event.status === "failed") result.discoveryErrors++;
+      if (event.truncated) result.truncatedDiscoveries++;
+    } else if (event.kind === "diagnostic") {
+      if (!event.command || !event.inputHash || !["passed", "failed"].includes(event.status))
+        throw new Error("Invalid diagnostic event");
+      const key = JSON.stringify([event.command, event.inputHash]);
+      if (diagnostics.has(key)) result.diagnosticReruns++;
+      if (event.status === "failed") diagnostics.add(key);
+      else diagnostics.delete(key);
     } else throw new Error(`Unknown event kind: ${event.kind}`);
   }
   return result;

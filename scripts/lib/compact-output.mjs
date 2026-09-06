@@ -108,23 +108,57 @@ export function writeDiagnosticLog(reportsDir, name, output) {
   return filePath;
 }
 
+export function failureSummary(output, maxBytes = 4_000) {
+  const lines = sanitizeOutput(String(output ?? "")).split(/\r?\n/u);
+  const diagnostic =
+    /(?:\bFAIL\s|(?:Assertion|Type|Reference|Syntax)?Error:|error TS\d+|\berror\s{2,}|\d+:\d+\s+(?:error|warning)\b|^\s*(?:Expected|Received|Expected:|Received:)|^\s*[−+-]\s+(?:Expected|Received))/u;
+  const selected = new Set();
+  for (const [index, line] of lines.entries()) {
+    if (!diagnostic.test(line)) continue;
+    if (/\d+:\d+\s+(?:error|warning)\b/u.test(line)) {
+      for (let previous = index - 1; previous >= 0; previous--) {
+        if (
+          /^(?:\/|[A-Za-z]:[\\/]|(?:src|tests|scripts)\/).*\.[cm]?[jt]sx?$/u.test(
+            lines[previous].replace(/^(?:\[[^\]]+\]\s*)*/u, "").trim(),
+          )
+        ) {
+          selected.add(previous);
+          break;
+        }
+      }
+    }
+    for (let nearby = Math.max(0, index - 1); nearby <= Math.min(lines.length - 1, index + 10); nearby++)
+      selected.add(nearby);
+  }
+  if (!selected.size) return tailOutput(output, maxBytes);
+  const result = [];
+  let omitted = 0;
+  for (const index of [...selected].sort((a, b) => a - b)) {
+    let excerpt = lines[index];
+    if (Buffer.byteLength(excerpt) > 700) {
+      excerpt = Array.from(excerpt).slice(0, 150).join("") + " […line clipped; see full log]";
+    }
+    const line = `L${index + 1}: ${excerpt}`;
+    if (Buffer.byteLength([...result, line].join("\n")) <= maxBytes - 120) result.push(line);
+    else omitted++;
+  }
+  if (omitted) result.push(`${omitted} diagnostic lines omitted; inspect the full log at the numbered locations.`);
+  return result.join("\n");
+}
+
 export function writeFailureDigest(directory, command, result, runId, index) {
   fs.mkdirSync(directory, { recursive: true });
   const stem = `${String(index + 1).padStart(2, "0")}-${command.key}`;
   const logPath = writeDiagnosticLog(directory, stem, result.output);
   const digestPath = path.join(directory, `${stem}.md`);
-  const normalized = sanitizeOutput(result.output).trim();
-  const excerpt = (
-    normalized.length <= 4_000
-      ? normalized
-      : `${normalized.slice(0, 1_200)}\n[…${normalized.length - 4_000} chars omitted…]\n${normalized.slice(-2_800)}`
-  ).replaceAll("```", "``\u200b`");
+  const excerpt = failureSummary(result.output).replaceAll("```", "``\u200b`");
   fs.writeFileSync(
     digestPath,
     [
       `# Verification failure: ${command.label}`,
       "",
       `- Run: \`${runId}\``,
+      `- Full log: ${path.basename(logPath)} (L numbers refer to this log)`,
       `- Command key: \`${command.key}\``,
       `- Exit: \`${result.status ?? "unknown"}\``,
       `- Duration: \`${(result.elapsedMs / 1000).toFixed(1)}s\``,

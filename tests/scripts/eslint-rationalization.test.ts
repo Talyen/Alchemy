@@ -149,3 +149,32 @@ describe("eslint rationalization", () => {
     expect(unitConfig.rules?.["vitest/no-focused-tests"]).toBeDefined();
   });
 });
+
+it("ignores isolated worktrees without excluding the active checkout", async () => {
+  const eslint = new ESLint({ cwd: ROOT });
+  expect(await eslint.isPathIgnored(".worktrees/evaluation/src/example.ts")).toBe(true);
+  expect(await eslint.isPathIgnored("scripts/agent-context.mjs")).toBe(false);
+});
+
+it("keeps production-only UI restrictions on relocated browser specs", async () => {
+  const eslint = new ESLint({ cwd: ROOT });
+  const results = await eslint.lintText('page.getByRole("button", { name: "Skip Combat" });', {
+    filePath: path.join(ROOT, "tests/e2e/specs/core-gameplay.spec.ts"),
+  });
+  expect(results.flatMap((result) => result.messages).map((message) => message.ruleId)).toContain(
+    "no-restricted-syntax",
+  );
+});
+
+it.each(["tests/e2e/specs/draw-discard-animations.spec.ts", "tests/e2e/specs/battle-end-turn-canary.spec.ts"])(
+  "keeps real animation timing in %s",
+  async (filePath) => {
+    const eslint = new ESLint({ cwd: ROOT });
+    const results = await eslint.lintText('import { test } from "../../fixtures/e2e"; enableFastMode(page);', {
+      filePath: path.join(ROOT, filePath),
+    });
+    const rules = results.flatMap((result) => result.messages).map((message) => message.ruleId);
+    expect(rules).toContain("no-restricted-imports");
+    expect(rules).toContain("no-restricted-syntax");
+  },
+);

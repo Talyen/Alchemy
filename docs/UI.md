@@ -2,8 +2,9 @@
 
 Canonical owner for UI placement, primitives, interaction, motion, tooltips, and
 Alchemy's accessibility stance. Screen wiring checklists remain in
-[WORKFLOWS.md](./WORKFLOWS.md#adding-a-new-screen); Armory-specific interaction
-rules remain in [ARMORY.md](./ARMORY.md).
+[WORKFLOWS.md](./WORKFLOWS.md#adding-a-new-screen). Armory interaction lives
+[below](#armory-crafting-and-salvage); Gear data and mutation rules live in
+[ARMORY.md](./ARMORY.md).
 
 ## Placement and boundaries
 
@@ -17,6 +18,7 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 ## Component conventions
 
 - Use plain prop functions rather than `React.FC`; React 19 components receive `ref` directly as a prop.
+- When a hook returns callback refs alongside layout values, destructure them before JSX so React Compiler can distinguish callbacks from ref objects.
 - Use `cn()` for conditional classes and existing CVA variants for semantic states.
 - Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states. Eligible talent nodes use native buttons for Enter and Space; keyword trees without portrait art remain selectable using a blank portrait and the keyword icon.
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography.
@@ -167,9 +169,11 @@ feature set beyond semantic robustness. Preserve semantic buttons,
 programmatic names and states, keyboard behavior supplied by shared primitives,
 and `aria-hidden` on decorative art. Do not add focus traps/restoration,
 screen-reader announcement systems, contrast tooling, or per-component
-reduced-motion variants without a product decision. The global
-`prefers-reduced-motion` block in `src/styles/keyframes.css` is the sole motion
-accommodation.
+reduced-motion variants without a product decision. Preserve the existing
+Armory confirmation focus behavior and reduced-motion handling documented
+[below](#armory-crafting-and-salvage). Shared motion accommodations live in
+`src/styles/keyframes.css` and `src/styles/components.css`; Armory also disables
+inventory movement and crafting feedback motion locally.
 
 ## Battle motion
 

@@ -1023,7 +1023,7 @@ const affixRows = [
     aspect: "defensive",
     keywordId: "block",
     secondaryKeywordId: "holy",
-    descriptionTemplate: "When Block is depleted, deal {value} Holy to attacker and heal {value}",
+    descriptionTemplate: "When Block is depleted, deal {value} Holy to the attacker and restore {value} Health",
     effectKey: "saintfallRetribution",
     roll: uniqueRoll(4),
     uniqueOnly: true,
