@@ -3,6 +3,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { readExposure } from "./agent-events.mjs";
+import { globToRegExp } from "./glob-pattern.mjs";
 
 const require = createRequire(import.meta.url);
 const EXCLUSIONS = [
@@ -20,6 +21,87 @@ const EXCLUSIONS = [
   ".worktrees/**",
 ];
 
+function matchesSearchGlob(file, glob) {
+  return globToRegExp(glob).test(file) || (glob.startsWith("**/") && globToRegExp(glob.slice(3)).test(file));
+}
+
+function isExcluded(file) {
+  return EXCLUSIONS.some(
+    (glob) => matchesSearchGlob(file, glob) || (glob.endsWith("/**") && file === glob.slice(0, -3)),
+  );
+}
+
+function normalizeSearchPath(root, file) {
+  const absolute = path.resolve(root, file);
+  const relative = path.relative(root, absolute).replaceAll(path.sep, "/");
+  if (relative.startsWith("../") || path.isAbsolute(relative))
+    throw new Error(`Search path is outside repository: ${file}`);
+  return relative || ".";
+}
+
+function collectFilesFromFilesystem(root, paths, includeExcluded) {
+  const files = [];
+  const visit = (absolute) => {
+    const relative = path.relative(root, absolute).replaceAll(path.sep, "/") || ".";
+    if (!includeExcluded && relative !== "." && isExcluded(relative)) return;
+    const entry = fs.lstatSync(absolute);
+    if (entry.isDirectory()) {
+      for (const child of fs.readdirSync(absolute)) visit(path.join(absolute, child));
+    } else if (entry.isFile()) files.push(relative);
+  };
+  for (const file of paths) {
+    const relative = normalizeSearchPath(root, file);
+    const absolute = path.join(root, relative);
+    if (!fs.existsSync(absolute)) throw new Error(`Search path does not exist: ${file}`);
+    visit(absolute);
+  }
+  return files.sort();
+}
+
+function collectFilesFromGit(root, paths) {
+  const result = spawnSync(
+    "git",
+    [
+      "ls-files",
+      "--cached",
+      "--others",
+      "--exclude-standard",
+      "-z",
+      "--",
+      ...paths.map((file) => normalizeSearchPath(root, file)),
+    ],
+    { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+  );
+  if (result.error || result.status !== 0) return null;
+  return result.stdout
+    .split("\0")
+    .filter(Boolean)
+    .filter((file) => !isExcluded(file))
+    .sort();
+}
+
+function searchWithoutRipgrep(root, options) {
+  const normalizedPaths = options.paths.map((file) => normalizeSearchPath(root, file));
+  const files = options.includeExcluded
+    ? collectFilesFromFilesystem(root, normalizedPaths, true)
+    : (collectFilesFromGit(root, normalizedPaths) ?? collectFilesFromFilesystem(root, normalizedPaths, false));
+  if (options.pattern === undefined) return files;
+  const expression = options.regex ? new RegExp(options.pattern) : null;
+  const results = [];
+  for (const file of files) {
+    const source = fs.readFileSync(path.join(root, file));
+    if (source.includes(0)) continue;
+    const lines = source.toString("utf8").split(/\r?\n/u);
+    const matches = lines.flatMap((text, index) => {
+      const matched = expression ? expression.test(text) : text.includes(options.pattern);
+      return matched ? [{ path: file, start: index + 1, end: index + 1, text }] : [];
+    });
+    if (options.excerpts) results.push(...matches);
+    else if (matches.length) results.push(file);
+  }
+  return options.excerpts ? results : [...new Set(results)].sort();
+}
+
 export function repositorySearch(
   root,
   { pattern, paths = ["."], excerpts = false, includeExcluded = false, regex = false } = {},
@@ -35,6 +117,8 @@ export function repositorySearch(
   }
   args.push("--", ...paths);
   const result = spawnSync("rg", args, { cwd: root, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 });
+  if (result.error?.code === "ENOENT")
+    return searchWithoutRipgrep(root, { pattern, paths, excerpts, includeExcluded, regex });
   if (result.error || ![0, 1].includes(result.status))
     throw new Error(result.error?.message ?? result.stderr.trim() ?? "Repository search failed");
   if (!excerpts || pattern === undefined)
