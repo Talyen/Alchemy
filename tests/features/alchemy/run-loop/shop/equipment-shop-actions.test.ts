@@ -7,6 +7,20 @@ import { buildActions, createInitialEquipmentShopState, setEquipmentShopState } 
 import type { GearInstance } from "@/lib/gear";
 
 describe("equipment shop actions", () => {
+  it("purchases the live shelf item when the supplied copy has different contents", () => {
+    const onShelf: GearInstance = {
+      instanceId: "shop-armor",
+      definitionId: "leather-armor-basic",
+      affixes: [{ id: "max-health", value: 7 }],
+    };
+    setRunProgress({ gold: 999, characterId: "knight" });
+    setEquipmentShopState({ ...createInitialEquipmentShopState(), gear: [onShelf] });
+    const actions = buildActions();
+    expect(actions.equipment.buy({ ...onShelf, affixes: [{ id: "max-health", value: 999 }] })).toBe(true);
+    expect(readGearState().inventories.knight).toContainEqual(onShelf);
+    expect(readActiveRun().runObtainedItems).toEqual([{ kind: "gear", instance: onShelf }]);
+    expect(readRunProfile().gold).toBe(999 - actions.equipment.getBuyPrice(onShelf));
+  });
   describe("equipment shop", () => {
     it("persists gold, purchase slot, and gear inventory in one commit", () => {
       const instance: GearInstance = {

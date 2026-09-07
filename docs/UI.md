@@ -41,22 +41,29 @@ Screen and `FadeSlot` reveals wait for the mounted images to load and decode thr
 
 Motion tokens live in `src/lib/game-constants/ui-motion.ts` (`MOTION_FADE_MS`, `TOOLTIP_FADE_MS`) and are mirrored to CSS as `var(--motion-fade-duration)` and `var(--tooltip-exit-duration)` in `src/styles/theme.css` / `src/styles/components.css`. Keep each JS duration and its CSS counterpart in sync; `npm run lint:architecture-smoke` asserts this.
 
+Campfire snapshots the starting and restored Health when Rest is pressed. Its number
+and bar share a 1.2-second eased refill, then hold the exact result for 800 ms before
+continuing. Keep that snapshot through the outgoing screen fade so applying the heal
+cannot restart the visible refill. Timing lives in `src/lib/game-constants/battle-timing.ts`.
+
 ## Buttons and interactive surfaces
 
-Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`.
+Game-specific button shape and layout tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Primitive hover constants live in `src/lib/game-constants/ui-motion.ts` and are imported through the game-constants barrel.
 
-| Concern        | Standard                                                                                |
-| -------------- | --------------------------------------------------------------------------------------- |
-| Shape          | `rounded-xl` rectangles through `BUTTON_SHAPE`                                          |
-| Primary        | `Button variant="primary"` for Play, Continue, and Confirm                              |
-| Secondary      | `Button variant="outline"` for Back, Cancel, Skip, and alternate navigation             |
-| Accent         | `ShineAccentButton` only for accent-intent forward actions                              |
-| Paired actions | Secondary left and primary right; shared button width tokens                            |
-| Equal choices  | `DestinationChoices` and `Surface`, with an accessible tile name                        |
-| Tabs           | `TabBar`                                                                                |
-| Hover / press  | Shared CSS hover scale and `active:` feedback; do not add parallel Motion hover scaling |
+`Button` always renders a native button. `wrapperClassName` optionally adds a layout span; `className`, refs, event handlers, and native button attributes belong to the button itself. Omitted `type` retains native form behavior.
 
-Card and collection artwork, including gear and trinket tiles, keeps the same border space when hover shine appears, so hovering or focusing an item cannot resize its artwork or row or recenter the screen. Hover-only shine uses `card-art-shine`; `has-shine-border` replaces the frame only for persistent shine. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
+| Concern        | Standard                                                                                                                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shape          | `rounded-xl` rectangles through `BUTTON_SHAPE`                                                                                                                                                           |
+| Primary        | `Button variant="primary"` for Play, Continue, and Confirm                                                                                                                                               |
+| Secondary      | `Button variant="outline"` for Back, Cancel, Skip, and alternate navigation                                                                                                                              |
+| Accent         | `ShineAccentButton` only for accent-intent forward actions                                                                                                                                               |
+| Paired actions | Secondary left and primary right; shared button width tokens                                                                                                                                             |
+| Equal choices  | `DestinationChoices` and `Surface`, with an accessible tile name                                                                                                                                         |
+| Tabs           | `TabBar`                                                                                                                                                                                                 |
+| Hover / press  | Primary buttons use CSS bloom without scaling; secondary buttons use background feedback. Preserve surface-specific CSS scaling and shared `active:` feedback; do not add parallel Motion hover scaling. |
+
+Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 

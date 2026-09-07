@@ -47,7 +47,9 @@ export function createEquipmentShopCommands({
   function buy(instance: GearInstance): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.equipmentShopState;
-      const price = computeGearBuyPrice(instance, resolveDraftShopPricingContext(talentEffects, draft, state));
+      const offered = state.gear.find((item) => item.instanceId === instance.instanceId);
+      if (!offered) return { committed: false, price: 0, value: undefined };
+      const price = computeGearBuyPrice(offered, resolveDraftShopPricingContext(talentEffects, draft, state));
       return purchaseShopOffering({
         draft,
         price,
@@ -55,13 +57,13 @@ export function createEquipmentShopCommands({
         setState: setEquipmentShopState,
 
         slotKey: instance.instanceId,
-        offeringMatches: state.gear.some((offered) => offered.instanceId === instance.instanceId),
+        offeringMatches: true,
         acquire: () => {
           const characterId = draft.run.activeRun.characterId;
           mutateGearWithRunHealthSync(draft, {
-            mutate: (gear) => gear.addInstance(instance, characterId),
+            mutate: (gear) => gear.addInstance(offered, characterId),
           });
-          recordRunObtainedItem(draft, { kind: "gear", instance });
+          recordRunObtainedItem(draft, { kind: "gear", instance: offered });
         },
       });
     }).committed;

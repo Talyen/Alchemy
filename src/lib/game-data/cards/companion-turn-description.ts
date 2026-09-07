@@ -86,12 +86,6 @@ export function formatCompanionTurnStartLine(
   return formatCompanionTurnLineBase(turnEffect);
 }
 
-export function expectedCompanionTurnLine(effect: BattleCardEffect): string {
-  const line = companionTurnLine(effect);
-  if (!line) throw new Error(`Unhandled companion turn-start effect: ${effect.kind}`);
-  return line;
-}
-
 export function getCompanionDescriptionLines(companion: CompanionDefinition, bondLevel = 0, damageBonus = 0): string[] {
   const effects = getCompanionBondEffects(companion, bondLevel);
   const lines = effects.map((effect) => formatCompanionTurnStartLine(effect, { damageBonus }));

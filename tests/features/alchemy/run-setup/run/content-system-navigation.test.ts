@@ -9,12 +9,14 @@ import {
   dispatchRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { readActiveRun, readParkedRuns, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readBattle, readParkedRuns, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getStartingDeck } from "@/lib/game-data";
+import { parkAndDeactivateForegroundRunInDraft } from "@/features/alchemy/shared/stores/run-park-restore";
+import { makeTestBattleState } from "../../../../fixtures/battle";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 
 vi.mock("@/features/alchemy/run-setup/run/campaign-start", async (importOriginal) => {
@@ -95,6 +97,28 @@ describe("createContentSystemNavigation", () => {
     expect(deps.returnToBattle).toHaveBeenCalledOnce();
     expect(deps.navigateTo).not.toHaveBeenCalled();
   });
+
+  it.each([CONTENT_SYSTEMS.CAMPAIGN, CONTENT_SYSTEMS.LABYRINTH, CONTENT_SYSTEMS.WILDWOOD])(
+    "returns to a parked %s battle",
+    (mode) => {
+      setRunProgress({ contentSystemType: mode, characterId: "knight" });
+      setRunSession({ hasActiveRun: true });
+      dispatchRunSessionCommand((draft) => {
+        draft.battle.hasActiveBattle = true;
+        draft.battle.battleState = makeTestBattleState({ turn: 4 });
+        setScreen(draft, ROUTE_SCREENS.BATTLE);
+      });
+      dispatchRunSessionCommand(parkAndDeactivateForegroundRunInDraft);
+      const deps = makeDeps();
+      const nav = createContentSystemNavigation(deps);
+      const begin = { campaign: nav.beginCampaign, labyrinth: nav.beginLabyrinth, wildwood: nav.beginWildwood };
+      begin[mode]();
+      expect(deps.returnToBattle).toHaveBeenCalledOnce();
+      expect(deps.navigateTo).not.toHaveBeenCalled();
+      expect(deps.onResumeWildwood).not.toHaveBeenCalled();
+      expect(readBattle().battleState.turn).toBe(4);
+    },
+  );
 
   it("initializeRunForDifficulty discovers starter deck on a fresh save", () => {
     const deps = makeDeps();

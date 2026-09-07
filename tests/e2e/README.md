@@ -15,6 +15,8 @@ For current source edits, run `PLAYWRIGHT_VITE_MODE=dev npx playwright test <spe
 
 Run browser batches serially or combine specs in one invocation. Local runs can reuse a server, and teardown from an overlapping invocation can disconnect another run. Ensure any reused server belongs to the intended checkout; see [Playwright configuration](../playwright-shared.ts).
 
+Run the full Vitest suite separately from browser and performance batches. Concurrent full-unit and browser runs can exhaust local resources and cause unrelated interaction and teardown timeouts; reproduce the affected checks without that competing load before changing assertions or timeouts.
+
 ## Test import
 
 | Import                                      | Use                                                                                                                                                                       |

@@ -110,7 +110,9 @@ export function Surface(props: SurfaceProps) {
   const divClick = onDivClick ?? onClick;
   const handleDivClick =
     divClick !== undefined
-      ? (e?: MouseEvent<HTMLDivElement>) => (divClick as (e?: MouseEvent<HTMLDivElement>) => void)(e)
+      ? (e?: MouseEvent<HTMLDivElement>) => {
+          if (!disabled) (divClick as (e?: MouseEvent<HTMLDivElement>) => void)(e);
+        }
       : undefined;
   const body = (
     <>
@@ -156,8 +158,7 @@ export function Surface(props: SurfaceProps) {
       {...(disabled ? { "aria-disabled": "true" } : {})}
       onClick={handleDivClick}
       onKeyDown={handleDivKeyDown(handleDivClick)}
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Surface renders as interactive button when onDivClick is set, with role and keyboard handling
-      tabIndex={handleDivClick ? 0 : undefined}
+      tabIndex={handleDivClick && !disabled ? 0 : undefined}
       role={handleDivClick ? "button" : undefined}
       aria-label={handleDivClick ? ariaLabel : undefined}
       onMouseEnter={onMouseEnter}

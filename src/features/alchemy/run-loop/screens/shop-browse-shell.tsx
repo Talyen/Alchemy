@@ -22,14 +22,8 @@ export function ShopBrowseShell({
 }) {
   return (
     <TitledScreenShell title={title}>
-      <div className="mt-6 flex flex-col items-center gap-6 text-center">
-        {showGold ? (
-          <GoldDisplay gold={gold} />
-        ) : (
-          <div className="invisible">
-            <GoldDisplay gold={gold} />
-          </div>
-        )}
+      <div className={cn("flex flex-col items-center gap-6 text-center", showGold && "mt-6")}>
+        {showGold ? <GoldDisplay gold={gold} /> : null}
         {children}
       </div>
     </TitledScreenShell>

@@ -20,24 +20,25 @@ Product interaction defects → UIConsistency; structural test-support mass → 
 - No invented coverage-% or wall-clock budgets that conflict with configured gates and CONTRIBUTING tiers.
 - Preserve unique battle, persistence, migration, architecture-guard, and player-flow owners; never delete a failing journey merely to shrink the portfolio.
 - No dev-only QA shortcuts (Skip Combat / Unlock All selectors); use documented helpers and flows.
-- Animation canaries import raw `@playwright/test` (never `fastBattle`); combat/flow specs use `./fixtures/e2e` with `runtimeErrors`.
+- Follow [tests/e2e/README.md](../../tests/e2e/README.md) for current fixture and animation-canary requirements; preserve real timing where timing is the behavior under test.
 - Do not re-run full suites to hunt flakes; re-run only the suspect cluster. Do not treat deletion as inherently preferable to adding a missing semantic owner.
 
-## Priorities
+## Investigation and evidence
 
-| Sev | Criteria                                                                                                         |
-| --- | ---------------------------------------------------------------------------------------------------------------- |
-| P0  | Flaky CI failure; harness crash; double-owned assertion; silent save-path gap                                    |
-| P1  | Clear runtime/flake win; weaker feature-shell echo of a `src/lib` owner; missing shipping-critical journey owner |
-| P2  | Tier misplacement; duplicate coverage with real cost; false-positive assertions                                  |
-| P3  | Consistency (helpers, naming); trivial                                                                           |
+Map important failure modes to their current tests before adding or deleting coverage. A gap means a concrete risky behavior has no trustworthy assertion, not simply that a line is uncovered. For a suspicious test, identify a plausible broken implementation that would still pass. Use a focused temporary mutation or a known regression when useful, and restore it before handoff; do not require broad mutation testing for every finding.
+
+For flake, inspect failure artifacts and distinguish a product race from timing, isolation, fixture, or environment problems. Reproduce the suspect scenario and relevant ordering or concurrency conditions; an isolated pass does not prove a parallel failure fixed. Never weaken an assertion or add retries just to hide the failure.
+
+Before removing overlap, identify the surviving assertion and prove it covers the same failure mode at the required layer and CI tier. Unit rules and browser wiring can exercise similar behavior while protecting different risks. Prioritize false confidence in critical behavior and blocked verification over redundant assertions or naming.
+
+Verify changed tests detect the intended failure and pass on correct behavior. For runtime or flake claims, compare the same scenario and report repetitions and conditions; bounded success is evidence, not a guarantee of zero flakes.
 
 ## Domain rules
 
-- **Ownership:** battle/effects → `tests/lib/battle`, `tests/lib/game-data`; gear → `tests/lib/gear` + store tests; saves/migrations → storage + `tests/architecture/`; orchestration → stores/shell/navigation tests. Reuse page objects (`tests/pages/`) and helpers; no new page object for 1–2 call sites.
+- **Ownership:** battle/effects → `tests/lib/battle`, `tests/lib/game-data`; gear → `tests/lib/gear` + store tests; saves/migrations → storage + `tests/architecture/`; orchestration → stores/shell/navigation tests. Reuse page objects (`tests/pages/`) and helpers; introduce support abstractions only when they clarify a real interaction or invariant.
 - **Quality:** assert outcomes (HP deltas, events, reloaded save shape), not implementation details or log fingerprints; no "function exists" assertions; no soft-fails; seeded RNG for battle edges; reuse corrupt/partial save fixtures.
-- **Fixtures:** extract shared builders at three call sites, two with demonstrated drift, or one canonical invariant builder; track authored declarations separately from expanded executions.
-- **Allowed E2E fixes:** delete duplicate journeys; add missing critical journeys; shorten waits after deterministic bootstrap; keep multi-step assertions in `@critical` without retaining copies; stable roles/test ids over text/index hunts; repair isolation; improve diagnostics.
+- **Fixtures:** share builders when they preserve a common invariant or prevent demonstrated drift; keep scenario-specific setup legible. Judge parameterized cases by the distinct behaviors and failure modes they exercise, not their count.
+- **Allowed E2E fixes:** delete duplicate journeys; add missing critical journeys; shorten waits after deterministic bootstrap; place journeys in the configured tiers without copying them solely for scheduling; stable roles/test ids over text/index hunts; repair isolation; improve diagnostics.
 - Reduction applies to redundant coverage only; add tests anywhere a confirmed risk lacks a trustworthy owner — extend an existing suite before creating one.
 
 ## Known signals

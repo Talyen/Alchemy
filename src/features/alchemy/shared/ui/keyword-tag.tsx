@@ -3,6 +3,7 @@ import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-c
 import { cn } from "@/lib/utils";
 
 import { getPlasmaColorPair, keywordIcons, tooltipHeaderClass } from "../config";
+import { canonicalizeKeywordText } from "../utils/string";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { TooltipBody } from "./tooltip-panel";
 import { useHoverVisible } from "./use-hover-visible";
@@ -61,7 +62,7 @@ export function KeywordTag({
         <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
           <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" showIcon />
         </span>
-        <TooltipBody>{def.description}</TooltipBody>
+        <TooltipBody>{canonicalizeKeywordText(def.description)}</TooltipBody>
       </PortaledTooltip>
     </span>
   );

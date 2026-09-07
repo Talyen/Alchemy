@@ -27,6 +27,20 @@ describe("Dodge gear affixes", () => {
     expect(texts.some((event) => event.kind === "notice" && event.stat === "dodge")).toBe(true);
   });
 
+  it("keeps Dodge Armor rewards unscaled during fight pacing", () => {
+    const state = incomingPhysical({
+      appliesFightPacing: true,
+      turn: 100,
+      playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
+      gearEffects: { ...defaultGearEffects, armorOnDodge: 2 },
+      talentEffects: { ...patchBattleState().talentEffects, armorOnDodge: 3 },
+    });
+    const texts = makeCombatTexts();
+    const result = processEnemyAttack(state, texts);
+    expect(result.playerStatuses.armor).toBe(6);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "armor", amount: 5 });
+  });
+
   it("deals Physical and Bleed damage on Dodge", () => {
     const state = incomingPhysical({
       gearEffects: { ...defaultGearEffects, physicalOnDodge: 5, bleedOnDodge: 4 },

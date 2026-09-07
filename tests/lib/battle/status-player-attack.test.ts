@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { applyPlayerStatusFromAttack } from "@/lib/battle/status-player";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { makeTestBattleState } from "../../fixtures/battle";
@@ -105,5 +106,22 @@ describe("applyPlayerStatusFromAttack", () => {
     });
     const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "poison", amount: 3 }, []);
     expect(result.playerStatuses.poison).toBe(3);
+  });
+});
+
+describe("damage status riders during crowd-control immunity", () => {
+  it.each([
+    { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
+    { stunSkipTurns: 0, freezeSkipTurns: 1, cooldown: 0 },
+    { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 1 },
+  ])("blocks buildup while preserving damage with %j", (playerCC) => {
+    for (const damageType of ["stun", "freeze"] as const) {
+      const state = makeTestBattleState({ playerCC });
+      const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 2 }, []);
+      expect(result.playerHealth).toBe(state.playerHealth - 2);
+      expect(result.playerStatuses[damageType]).toBe(0);
+      expect(result.playerCC).toEqual(playerCC);
+      expect(state.playerStatuses[damageType]).toBe(0);
+    }
   });
 });

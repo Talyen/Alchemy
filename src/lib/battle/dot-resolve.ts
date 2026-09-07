@@ -63,7 +63,7 @@ export function detonateEnemyStatuses(
     let stacks = amount;
     const multiplier =
       getEnemyDamageMultiplier(state, status) *
-      (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0
+      (status === "burn" || (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)
         ? getBurnBonusToBleedingMultiplier(state)
         : 1);
     while (stacks > 0) {
@@ -96,6 +96,15 @@ export function detonateEnemyStatuses(
         });
       }
     }
-    return payPendingBleedLeech(previousHealth, nextState, combatTexts);
+    const bleedPulse = pulses.find((pulse) => pulse.status === "bleed");
+    if (!bleedPulse) return nextState;
+    return payPendingBleedLeech(
+      previousHealth,
+      {
+        ...nextState,
+        pendingBleedLeechHealing: Math.min(nextState.pendingBleedLeechHealing, bleedPulse.finalDamage),
+      },
+      combatTexts,
+    );
   });
 }

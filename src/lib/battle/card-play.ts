@@ -257,15 +257,17 @@ export function handlePostPlayCardDestination(
           flags: { ...nextState.flags, runicQuillUsedThisTurn: true },
         };
       }
-      if (state.gearEffects.burnOnConsume > 0 && combatTexts) {
+      if (state.gearEffects.burnOnConsume > 0) {
         const burnAmount = state.gearEffects.burnOnConsume;
         nextState = addEnemyStatus(nextState, "burn", burnAmount);
-        mergeCombatText(combatTexts, {
-          target: "enemy",
-          kind: "status",
-          stat: "burn",
-          amount: burnAmount,
-        });
+        if (combatTexts) {
+          mergeCombatText(combatTexts, {
+            target: "enemy",
+            kind: "status",
+            stat: "burn",
+            amount: burnAmount,
+          });
+        }
       }
       nextState = applyConsumeTalentRiders(nextState, card, combatTexts);
     }

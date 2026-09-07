@@ -172,6 +172,23 @@ describe("battle-presentation-store", () => {
     vi.useRealTimers();
   });
 
+  it.each(["player", "enemy", "companion"] as const)(
+    "%s attacks show feedback immediately without waiting for the wind-up",
+    async (side) => {
+      vi.useFakeTimers();
+      dispatchRunSessionCommand((draft) => {
+        setHasActiveBattle(draft, true);
+        setScreen(draft, ROUTE_SCREENS.BATTLE);
+      });
+      const presentation = useBattlePresentationStore.getState();
+      presentation.telegraphAttack(side);
+      const target = side === "enemy" ? "player" : "enemy";
+      presentation.showCombatTexts([{ target, kind: "damage", stat: "physical", amount: 5 }]);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(useBattlePresentationStore.getState().floatingCombatTexts).toMatchObject([{ target, amount: 5 }]);
+    },
+  );
+
   it("emits typed impact cues per target in combat-text lane order", async () => {
     vi.useFakeTimers();
     dispatchRunSessionCommand((draft) => {

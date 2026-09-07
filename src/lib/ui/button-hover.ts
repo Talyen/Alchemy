@@ -1,8 +1,0 @@
-export {
-  BUTTON_HOVER_DESTRUCTIVE,
-  BUTTON_HOVER_PRIMARY,
-  BUTTON_HOVER_SECONDARY,
-  BUTTON_HOVER_TRANSITION,
-} from "../game-constants";
-
-export const BUTTON_PRESS_OUTLINE = "active:bg-muted/90";

@@ -21,26 +21,23 @@ Sibling routing: audio playback handling → SideEffectSurface; typing escapes �
 - Do not relocate battle simulation into Workers unless architecture already requires it.
 - Do not run unrelated full-repo sweeps; do not rename/restyle or refactor unrelated code while hunting.
 - Do not expand into speculative backlog or touch manifests/assets/audio unless they directly cause the confirmed defect.
-- Run lifecycle mutations go through `run-session-lifecycle-port.ts`; no ad-hoc `localStorage` writes from screens.
+- Use the current command, write, and lifecycle owners in [ARCHITECTURE.md](../ARCHITECTURE.md#run-state); do not bypass them with ad-hoc storage or state writes.
 
-## Severity
+## Investigation and evidence
 
-| Sev | Criteria                                                                            | Default                       |
-| --- | ----------------------------------------------------------------------------------- | ----------------------------- |
-| P0  | Crash / data loss / double grant / save corruption / unsynchronized hot-path writes | Fix now                       |
-| P1  | Wrong battle/progress/UI state; store write after unmount; lost persistence error   | Fix when confirmed            |
-| P2  | Degraded UX; missing timer/listener cleanup; recovery hides meaningful failure      | Fix when confirmed and scoped |
-| P3  | Recoverable failure without diagnostics; redundant async wrappers; style-only churn | Fix only if trivial           |
-| P4+ | Maintainability or speculative restructuring                                        | Defer / propose only          |
+Follow important transitions from input through validation, mutation, persistence, feedback, and re-entry. Compare expected and actual outcomes at interruption points: rapid repetition, navigation away, failure, reload, and stale completion. Include ordinary synchronous rule defects; async syntax is not required for a finding.
 
-Balance retunes, player-facing copy/layout choices, and ambiguous product intent: skip and note — never block waiting for answers.
+Confirm a reachable failure or a violated invariant and the guard, transaction, or recovery owner responsible. Distinguish an operation allowed to outlive a screen from a stale operation that can corrupt a newer session. Prioritize irreversible loss and blocked or incorrect progress using the shared contract; a missing cleanup or empty catch has no fixed severity.
+
+Verification should fail for the original defect and exercise the repaired boundary, including failure/re-entry where relevant. For save or RNG defects, compare uninterrupted execution with save/resume, and check failed-command rollback. Ambiguous balance or recovery policy requires evidence and a decision, not an invented fallback.
 
 ## Domain rules
 
-- **Lifetime:** effects clear timers, abort fetches, remove listeners; Zustand subscriptions unsubscribe; primary actions disable during async work; Electron IPC ignores stale/out-of-order replies for closed windows; overlapping saves serialize or reject stale completion.
-- **Persistence:** critical fields validated via Zod under `src/lib/validation/save-schemas/`; silent save failure is data loss; import/export/backup/cloud paths enforce the same guarantees as the local path; multi-step mutations never expose partially completed durable state.
+- **Lifetime:** effects and subscriptions have an owner responsible for teardown. Confirm whether outstanding work must be cancelled or may complete safely; prevent stale replies from changing a newer session. Primary actions prevent unintended duplicate mutations through the existing command or interaction owner, not necessarily a new UI flag.
+- **Persistence:** validate critical fields under the documented save schemas and repair policy. Trace how write failures affect acknowledgement, retry, and recovery; inspect existing import/export/backup/cloud paths as applicable. Multi-step mutations preserve their documented atomicity and never acknowledge partial durable state as complete.
 - **Idempotency:** reward claim, shop buy, craft, stage completion tolerate double-click/re-entry before mutating.
-- **Swallowed errors:** empty `catch` on save/hydrate/resume/battle-outcome paths are findings. Allowlist: non-fatal audio (`src/lib/audio*.ts`).
+- **Failure handling:** trace caught, ignored, and rejected errors through callers. Confirm whether success is falsely acknowledged, player data is lost, or recovery becomes impossible; an empty catch alone is not a finding. Non-fatal audio may intentionally continue.
+- **Trust boundaries:** trace save imports and renderer/IPC inputs through validation and authorized operations. Check malformed payloads, stale sessions, and unintended file/URL access against desktop contracts; do not probe live services or real player data.
 - Presence of `async`/IPC is not a defect — confirm lifetime, cancellation, and single-flight assumptions first.
 
 ## Known signals

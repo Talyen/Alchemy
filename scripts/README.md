@@ -112,5 +112,11 @@ owned by `lib/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.
 ## Worktree / git safety
 
 `node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`);
-`--detached` for verification-only runs. `scripts/bin/git` shims destructive git through
+`--detached` for verification-only runs. Creation checks out tracked files only;
+run `npm ci` inside the new worktree before running its verification gates.
+Some tools can resolve dependencies from the parent checkout while Knip still
+reports missing binaries and unused dependencies without a local installation.
+Run worktree management commands from the original checkout.
+
+`scripts/bin/git` shims destructive git through
 `git-safety-guard.mjs` (auto-stash backup); `setup-git-safety.mjs` installs the PATH hook.

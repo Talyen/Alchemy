@@ -47,14 +47,12 @@ export function useBattleAutoEndTurn({
     autoEndTimerRef.current = null;
   }, []);
 
-  const scheduleAutoEndTurnRaw = useCallback(
-    (state?: BattleState) => {
-      const current = state ?? battleStateRef.current;
+  const canAutoEndTurn = useCallback(
+    (current: BattleState) => {
       const presentation = presentationGateRef.current;
-      clearAutoEndTurn();
-      if (
-        !autoEndTurnRef.current ||
-        isBattlePlaybackBlocked({
+      return (
+        autoEndTurnRef.current &&
+        !isBattlePlaybackBlocked({
           screen: screenRef.current,
           battleState: current,
           hasActiveBattle: hasActiveBattleRef.current,
@@ -62,23 +60,23 @@ export function useBattleAutoEndTurn({
           hiddenHandCardKeys: presentation.hiddenHandCardKeys,
           cardPlayInProgress: Boolean(isCardPlayInProgressRef.current?.()),
           gameMenuOpen: gameMenuOpenRef.current,
-        })
-      )
-        return;
-      if (handHasPlayableCard(current)) return;
-      autoEndTimerRef.current = setTimeout(() => onEndTurnRef.current(), resolveGameDelay(AUTO_END_TURN_DELAY));
+        }) &&
+        !handHasPlayableCard(current)
+      );
     },
-    [
-      autoEndTurnRef,
-      battleStateRef,
-      clearAutoEndTurn,
-      hasActiveBattleRef,
-      isCardPlayInProgressRef,
-      onEndTurnRef,
-      presentationGateRef,
-      screenRef,
-      gameMenuOpenRef,
-    ],
+    [autoEndTurnRef, screenRef, hasActiveBattleRef, presentationGateRef, isCardPlayInProgressRef, gameMenuOpenRef],
+  );
+
+  const scheduleAutoEndTurnRaw = useCallback(
+    (state?: BattleState) => {
+      clearAutoEndTurn();
+      if (!canAutoEndTurn(state ?? battleStateRef.current)) return;
+      autoEndTimerRef.current = setTimeout(() => {
+        autoEndTimerRef.current = null;
+        if (canAutoEndTurn(battleStateRef.current)) onEndTurnRef.current();
+      }, resolveGameDelay(AUTO_END_TURN_DELAY));
+    },
+    [battleStateRef, canAutoEndTurn, clearAutoEndTurn, onEndTurnRef],
   );
 
   // eslint-disable-next-line react-hooks/refs -- latest scheduler; not a render input
@@ -92,7 +90,7 @@ export function useBattleAutoEndTurn({
   useEffect(() => {
     scheduleAutoEndTurnRaw();
     return clearAutoEndTurn;
-  }, [scheduleAutoEndTurnRaw, clearAutoEndTurn, autoEndTurn]);
+  }, [scheduleAutoEndTurnRaw, clearAutoEndTurn, autoEndTurn, gameMenuOpen]);
 
   return { scheduleAutoEndTurn, clearAutoEndTurn };
 }

@@ -74,6 +74,7 @@ function resolveHandConflicts(
   definition: GearDefinition,
   inventory: GearInstance[],
 ): GearLoadouts[GearCharacterId] {
+  if (slot !== "main-hand" && slot !== "off-hand") return characterLoadout;
   if (slot === "main-hand" && isTwoHanded(definition)) {
     return { ...characterLoadout, "off-hand": null };
   }

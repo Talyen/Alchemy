@@ -18,33 +18,27 @@ export const OPTIMIZE_PIPELINES = {
 };
 
 export async function runAllOptimizePipelinesSettled() {
-  const results = await Promise.allSettled(
-    Object.entries(OPTIMIZE_PIPELINES).map(async ([key, pipeline]) => {
-      try {
-        return await pipeline.run();
-      } catch (error) {
-        error.message = `[optimize:${key}] ${error.message}`;
-        throw error;
-      }
-    }),
-  );
-  return results;
+  const pipelines = Object.entries(OPTIMIZE_PIPELINES);
+  const results = await Promise.allSettled(pipelines.map(async ([, pipeline]) => pipeline.run()));
+  return results.map((result, index) => ({ key: pipelines[index][0], ...result }));
+}
+
+export function optimizationFailures(results) {
+  return results.flatMap((result) => {
+    if (result.status === "fulfilled" && result.value?.ok) return [];
+    const reason = result.status === "rejected" ? result.reason : (result.value?.error ?? "failed");
+    return [new Error(`${result.key}: ${String(reason)}`, { cause: reason })];
+  });
 }
 
 export async function runAllOptimizePipelines() {
   const results = await runAllOptimizePipelinesSettled();
-  const failures = results
-    .map((result, index) => ({ result, key: Object.keys(OPTIMIZE_PIPELINES)[index] }))
-    .filter(({ result }) => result.status === "rejected" || !result.value?.ok);
+  const failures = optimizationFailures(results);
   if (failures.length > 0) {
-    const details = failures
-      .map(({ result, key }) =>
-        result.status === "rejected"
-          ? `${key}: ${String(result.reason)}`
-          : `${key}: ${String(result.value?.error ?? "failed")}`,
-      )
-      .join(" ");
-    throw new Error(`Asset optimization failed: ${details}`);
+    throw new AggregateError(
+      failures,
+      `Asset optimization failed: ${failures.map((error) => error.message).join(" ")}`,
+    );
   }
   return results.map((result) => (result.status === "fulfilled" ? result.value : undefined));
 }

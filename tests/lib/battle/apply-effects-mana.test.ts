@@ -56,7 +56,27 @@ describe("applyEffectByKind (mana effects)", () => {
     const effect = { kind: "lose-mana" as const, amount: 3 };
     const result = applyManaEffect(state, effect, 1, texts);
     expect(result.mana).toBe(0);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "mana", amount: 3 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "mana", amount: 1 });
+  });
+
+  it("does not report Mana loss when already empty", () => {
+    const texts = makeTexts();
+    applyManaEffect(makeTestBattleState({ mana: 0 }), { kind: "lose-mana", amount: 3 }, 1, texts);
+    expect(texts).toEqual([]);
+  });
+
+  it("reports only Mana Crystals actually lost at the minimum", () => {
+    const texts = makeTexts();
+    const state = makeTestBattleState({ mana: 2, maxMana: 2 });
+    applyManaEffect(state, { kind: "lose-max-mana", amount: 5 }, 1, texts);
+    expect(texts).toEqual([{ target: "player", kind: "damage", stat: "mana", amount: 2 - MIN_MAX_MANA_FLOOR }]);
+  });
+
+  it("does not report Mana Crystal loss at the minimum", () => {
+    const texts = makeTexts();
+    const state = makeTestBattleState({ mana: MIN_MAX_MANA_FLOOR, maxMana: MIN_MAX_MANA_FLOOR });
+    applyManaEffect(state, { kind: "lose-max-mana", amount: 1 }, 1, texts);
+    expect(texts).toEqual([]);
   });
 
   it("gains max mana and current mana together", () => {

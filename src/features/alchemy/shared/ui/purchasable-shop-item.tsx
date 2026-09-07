@@ -57,7 +57,6 @@ export function PurchasableGearItem({
       interactionKey="shop"
       as="button"
       shine={!purchased}
-      interactiveChrome={!purchased}
       disabled={!canPurchase}
       onClick={canPurchase ? onBuy : undefined}
       ariaLabel={getShopItemAriaLabel(getGearInstanceTitle(instance), purchased)}
@@ -83,7 +82,6 @@ export function PurchasableTrinketItem({
       interactionKey="shop"
       as="button"
       shine={!purchased}
-      interactiveChrome={!purchased}
       disabled={!canPurchase}
       onClick={canPurchase ? onBuy : undefined}
       ariaLabel={getShopItemAriaLabel(trinket.title, purchased)}

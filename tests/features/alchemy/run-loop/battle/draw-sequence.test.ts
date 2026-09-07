@@ -1,3 +1,4 @@
+import { clearBattleStageMarks, battleStageMarkName } from "@/lib/performance/battle-stage-marks";
 import { describe, expect, it, vi } from "vitest";
 import { runHandDrawSequence } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import { defaultBattleState } from "@/lib/battle";
@@ -95,6 +96,7 @@ describe("runHandDrawSequence", () => {
       isSessionActive: () => sessionActive,
       animateDrawnHand: vi.fn(async () => {
         sessionActive = false;
+        clearBattleStageMarks();
       }),
       setHiddenHandCardKeys: (update) => {
         hiddenKeys.push([...update(["slash-1", "block-2"])]);
@@ -104,6 +106,7 @@ describe("runHandDrawSequence", () => {
     const result = await runHandDrawSequence(oldHand, { ...defaultBattleState(), hand: newHand }, applyState, 3, deps);
 
     expect(result).toBe(false);
+    expect(performance.getEntriesByName(battleStageMarkName("draw-end"), "mark")).toHaveLength(0);
     expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(true);
     expect(hiddenKeys).toHaveLength(1);
     const lastHidden = hiddenKeys[hiddenKeys.length - 1] as string[];

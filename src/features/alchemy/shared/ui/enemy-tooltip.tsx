@@ -4,6 +4,7 @@ import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 
 import { formatEnemyAttackLines } from "../utils";
+import { canonicalizeKeywordText } from "../utils/string";
 import { getPlasmaColorPairForEnemy } from "../config";
 import { DescriptionLines } from "./card-description-ui";
 import { PortaledTooltip } from "./portaled-tooltip";
@@ -20,7 +21,8 @@ function EnemyTooltipModifiers({ modifiers }: { modifiers: EncounterCombatTraitI
             const def = ENCOUNTER_TRAITS[modifier];
             return def ? (
               <p key={modifier}>
-                <span className="font-semibold text-amber-100">{def.label}:</span> {def.description}
+                <span className="font-semibold text-amber-100">{def.label}:</span>{" "}
+                {canonicalizeKeywordText(def.description)}
               </p>
             ) : null;
           })}

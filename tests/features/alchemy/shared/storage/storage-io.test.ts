@@ -82,6 +82,25 @@ describe("storage io", () => {
     expect(data.activeRun).toBeNull();
   });
 
+  it.each(["reported", "thrown"])("returns corrupt for a %s backend read failure", async (failure) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Error("Storage unavailable");
+    configureSaveBackend({
+      readCandidates: async () => {
+        if (failure === "thrown") throw error;
+        return { ok: false, error };
+      },
+      write: async () => ({ ok: true }),
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    });
+
+    const loaded = await loadAlchemySaveState();
+
+    expect(loaded.status.kind).toBe("corrupt");
+    expect(loaded.data).toEqual(defaultSaveData);
+  });
+
   it("warns when a card effect is corrupt but the rest of the save loads", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const campaign = currentSchemaCampaignSave();

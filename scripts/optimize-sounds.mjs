@@ -99,6 +99,16 @@ export async function optimizeSounds() {
   });
 
   console.log(`Processed ${results.length} sounds.`);
+  if (failed) {
+    console.warn("Skipping sound fallbacks, manifest write, and orphan sweep because sound optimization failed.");
+    return {
+      ok: false,
+      error: results
+        .filter((result) => result.failed)
+        .map((result) => result.message)
+        .join(" "),
+    };
+  }
   // Owner tags the OGG source (generated transform vs curated commit). MP3s are
   // always generated artifacts; their owner mirrors their OGG source. MP3 hashes
   // derive from the committed OGG bytes (transitively the raw source).
@@ -109,15 +119,11 @@ export async function optimizeSounds() {
   const { mp3Entries, curatedOggEntries } = await ensureMp3Fallbacks(previousManifest, managedOggs);
   const completeManifest = { ...generatedEntries, ...curatedOggEntries, ...mp3Entries };
   await writeManifestIfChanged(manifestPath, completeManifest);
-  if (!failed) {
-    await removeOrphanOutputs(outputDir, new Set(Object.keys(completeManifest)), {
-      manifestBasename: MANIFEST_BASENAME,
-      label: "sound file",
-    });
-  } else {
-    console.warn("Skipping orphan sound-file sweep because sound optimization failed.");
-  }
-  return { ok: !failed, error: failed ? "One or more sounds failed" : undefined };
+  await removeOrphanOutputs(outputDir, new Set(Object.keys(completeManifest)), {
+    manifestBasename: MANIFEST_BASENAME,
+    label: "sound file",
+  });
+  return { ok: true };
 }
 
 async function ensureMp3Fallbacks(previousManifest, managedOggs) {
@@ -132,10 +138,10 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
     const mp3Name = ogg.replace(/\.ogg$/i, ".mp3");
     const mp3Path = path.join(outputDir, mp3Name);
     const stored = previousManifest[mp3Name];
+    if (!managedOggs.has(ogg) && !files.has(ogg)) throw new Error(`Missing curated sound: ${ogg}`);
     const sourceEntry = await resolveSourceHash(oggPath, MP3_FALLBACK_SETTINGS, SCHEMA_VERSION, stored);
     const owner = managedOggs.has(ogg) ? SOUND_ENTRY_OWNERS.generated : SOUND_ENTRY_OWNERS.curated;
     if (!managedOggs.has(ogg)) {
-      if (!files.has(ogg)) throw new Error(`Missing curated sound: ${ogg}`);
       const storedOgg = previousManifest[ogg];
       const oggEntry = await resolveSourceHash(oggPath, CURATED_SOUND_SETTINGS, SCHEMA_VERSION, storedOgg);
       const oggFresh = await isOutputFresh(oggPath, storedOgg, oggEntry.hash);

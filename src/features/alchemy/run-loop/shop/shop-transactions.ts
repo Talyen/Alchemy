@@ -117,7 +117,11 @@ export function refreshCardShopOfferings<T>(config: {
     refreshesLeft: config.refreshesLeft,
     setState: config.setState,
     mapState: config.mapState,
-    resample: () =>
-      selectRewardCards(config.draft.run.activeRun.runDeck, config.pool, config.count, config.currentItems, config.rng),
+    resample: () => {
+      const deck = config.draft.run.activeRun.runDeck;
+      const novel = selectRewardCards(deck, config.pool, config.count, config.currentItems, config.rng);
+      if (novel.length >= config.count) return novel;
+      return [...novel, ...selectRewardCards(deck, config.pool, config.count - novel.length, novel, config.rng)];
+    },
   });
 }

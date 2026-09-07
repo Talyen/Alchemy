@@ -159,7 +159,7 @@ describe("asset-manifest-cache", () => {
     expect(await isOutputFresh(outputPath, { hash: "source", mtimeMs: 1, size: 1 }, "source")).toBe(false);
   });
 
-  it("processes entries, preserves successful manifests, and normalizes failures", async () => {
+  it("processes entries without persisting and normalizes failures", async () => {
     const dir = await makeTempDir();
     const manifestPath = path.join(dir, ".asset-hashes.json");
 
@@ -179,10 +179,10 @@ describe("asset-manifest-cache", () => {
     expect(result.failed).toBe(true);
     expect(result.results).toHaveLength(2);
     expect(result.nextManifest).toEqual({ "ok.webp": { hash: "ok", mtimeMs: 1, size: 2 } });
-    expect(await loadManifest(manifestPath)).toEqual(result.nextManifest);
+    expect(await loadManifest(manifestPath)).toEqual({});
   });
 
-  it("keeps prior mtimeMs/size in the written manifest when the content hash is unchanged", async () => {
+  it("returns prior mtimeMs/size when the content hash is unchanged", async () => {
     const dir = await makeTempDir();
     const manifestPath = path.join(dir, ".asset-hashes.json");
     const prior = { hash: "same", mtimeMs: 111, size: 222 };
@@ -219,6 +219,32 @@ describe("asset-manifest-cache", () => {
 });
 
 describe("mapPool", () => {
+  it("waits for workers and retains every worker failure", async () => {
+    const first = new Error("first conversion failed");
+    const second = new Error("second conversion failed");
+    const gate = Promise.withResolvers<void>();
+    const started = Promise.withResolvers<void>();
+    let settled = false;
+    const result = mapPool([0, 1], 2, async (item) => {
+      if (item === 0) throw first;
+      started.resolve();
+      await gate.promise;
+      throw second;
+    }).catch((error: unknown) => {
+      settled = true;
+      return error;
+    });
+    await started.promise;
+    await new Promise<void>((resolve) => {
+      setImmediate(resolve);
+    });
+    expect(settled).toBe(false);
+    gate.resolve();
+    const failure = await result;
+    expect(failure).toBeInstanceOf(AggregateError);
+    expect((failure as AggregateError).errors).toEqual([first, second]);
+  });
+
   it("preserves order and bounds concurrency", async () => {
     let active = 0;
     let maxActive = 0;

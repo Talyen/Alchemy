@@ -345,19 +345,34 @@
 }
 
 .card-art-frame {
+  border-style: solid;
+  border-width: 1px;
   --surface-frame-border-width: 1px;
 }
 
 .card-interactive-glow,
 .card-interactive-selected,
 .card-interactive-selected-danger {
-  --surface-frame-border-width: 3px;
+  --surface-frame-border-width: 1px;
 }
 
 .card-interactive-glow,
 .card-interactive-selected {
   border-style: solid;
-  border-width: 3px;
+  border-width: 1px;
+}
+
+.card-interactive-glow::after,
+.card-interactive-selected::after,
+.card-interactive-selected-danger::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--surface-frame-border-width));
+  z-index: 20;
+  border: 3px solid var(--card-interaction-frame-color, transparent);
+  border-radius: inherit;
+  pointer-events: none;
+  transition: border-color 200ms ease-out;
 }
 
 .card-hover-scale {
@@ -390,6 +405,7 @@
 .group:hover .card-interactive-glow:not(:disabled),
 .card-interactive-selected {
   border-color: var(--color-primary);
+  --card-interaction-frame-color: var(--color-primary);
   /* Drop-shadow follows rounded alpha; a live box-shadow on a transformed layer is rectangular. */
   box-shadow: none;
   filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-primary) 45%, transparent));
@@ -403,6 +419,7 @@
 .card-interactive-glow.talent-hover-scale-only:hover,
 .group:hover .card-interactive-glow.talent-hover-scale-only {
   border-color: transparent;
+  --card-interaction-frame-color: transparent;
   box-shadow: none;
   filter: none;
 }
@@ -428,17 +445,18 @@
 
 .card-interactive-selected-danger {
   border-style: solid;
-  border-width: 3px;
+  border-width: 1px;
   border-color: rgb(239 68 68 / 0.8);
+  --card-interaction-frame-color: rgb(239 68 68 / 0.8);
   filter: drop-shadow(0 0 16px rgb(239 68 68 / 0.35));
 }
 
-/* Astral shine replaces the 3px frame. Keep scale + drop-shadow; thicken shine on hover/select. */
 .has-shine-border {
   overflow: visible;
-  border-width: 0;
+  border-width: 1px;
   border-color: transparent;
-  --surface-frame-border-width: 0px;
+  --card-interaction-frame-color: transparent;
+  --surface-frame-border-width: 1px;
 }
 
 .card-art-shine,
@@ -447,6 +465,7 @@
 .card-art-shine.card-interactive-selected {
   overflow: visible;
   border-color: transparent;
+  --card-interaction-frame-color: transparent;
 }
 
 .card-art-shine .shine-border,
@@ -457,9 +476,10 @@
 .has-shine-border:hover:not(:disabled),
 .group:hover .has-shine-border:not(:disabled),
 .has-shine-border.card-interactive-selected {
-  border-width: 0;
+  border-width: 1px;
   border-color: transparent;
-  --surface-frame-border-width: 0px;
+  --card-interaction-frame-color: transparent;
+  --surface-frame-border-width: 1px;
 }
 
 .card-art-shine:hover:not(:disabled) .shine-border,
@@ -474,6 +494,7 @@
 /* Hero select: keep the rest-state grey frame; keyword shine replaces the gold hover ring. */
 .hero-affinity-shine:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+  --card-interaction-frame-color: transparent;
   filter: none;
 }
 

@@ -1,9 +1,11 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { StatusIcon } from "@/features/alchemy/shared/ui/battle/status-icons";
 
 describe("StatusIcon", () => {
+  afterEach(cleanup);
+
   it("presents Control Immunity without a numeric badge", async () => {
     render(<StatusIcon chip={{ id: "ccImmunity", value: 2, hideValue: true }} />);
 
@@ -29,6 +31,18 @@ describe("StatusIcon", () => {
     expect(valueChip.className).toContain("text-sm");
     expect(valueChip.className).toContain("font-bold");
     expect(valueChip.className).toContain("text-orange-400");
+  });
+
+  it("capitalizes keywords in the Thorns status tooltip", async () => {
+    render(<StatusIcon chip={{ id: "thorns", value: 2 }} />);
+
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Thorns 2" }));
+
+    await waitFor(() => {
+      const tooltip = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
+      expect(tooltip?.textContent).toContain("When hit, Consume Thorns to deal Nature damage");
+      expect(tooltip?.textContent).not.toContain("consume");
+    });
   });
 
   it("keeps armed one-shot effects badge-less", () => {

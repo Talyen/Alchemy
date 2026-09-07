@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { endPlayerTurn, recoverLegacyEnemyPhase } from "@/lib/battle/enemy-turn";
 import type { BattleState, EnemyStatusValues } from "@/lib/battle/types";
 import { isPlayerDefeated } from "@/lib/battle/types";
@@ -528,4 +529,23 @@ describe("terminal battle turns", () => {
     expect(result.state.turn).toBe(state.turn);
     expect(result.state.hand).toEqual(state.hand);
   });
+});
+
+it("stops enemy trait pulses when Poison defeats the hero", () => {
+  const base = makeTestBattleState();
+  const state = battleState({
+    playerHealth: 1,
+    deathsDoorUsed: true,
+    deathsDoorActive: false,
+    enemyAttackEffects: [],
+    currentEnemy: { ...base.currentEnemy, traits: [ENCOUNTER_TRAITS.caustic.enemyTrait] },
+    playerStatuses: { ...base.playerStatuses, poison: 2, armor: 5 },
+    rng: () => 0.99,
+  });
+  const result = endPlayerTurn(state).state;
+  expect(result.playerHealth).toBe(0);
+  expect(result.playerStatuses.poison).toBe(1);
+  expect(result.playerStatuses.armor).toBe(4);
+  expect(result.battleMetrics?.enemyAbilityActivations.caustic ?? 0).toBe(0);
+  expect(result.turn).toBe(state.turn);
 });

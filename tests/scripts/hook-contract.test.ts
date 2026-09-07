@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { ROUTES } from "../../scripts/lib/change-routes.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
 
@@ -47,5 +48,30 @@ describe("canonical verification commands", () => {
     expect(workflow).toContain("run: npm run lint:ci");
     expect(workflow).not.toContain("check:test-owners");
     expect(workflow).not.toContain("ci:verify-plan");
+  });
+
+  it("keeps the complete save browser gate aligned with canonical save paths and explicit CI triggers", () => {
+    const workflow = readFileSync(join(ROOT, ".github/workflows/ci.yml"), "utf8");
+    const saveFilter = workflow.match(/^ {12}save:\n((?: {14}- .*\n)+)/mu)?.[1];
+    expect(saveFilter).toBeDefined();
+    const patterns = [...(saveFilter ?? "").matchAll(/- "([^"]+)"/gu)].map((match) => match[1]);
+    const saveRoute = ROUTES.find((route) => route.id === "save");
+    expect(saveRoute).toBeDefined();
+    expect(patterns.toSorted()).toEqual(
+      [
+        ...(saveRoute?.patterns ?? []),
+        ".github/**",
+        "package.json",
+        "package-lock.json",
+        "src/lib/platform.ts",
+        "src/features/alchemy/shell/use-alchemy-run-controller*",
+        "tests/fixtures/legacy-saves*",
+        "tests/e2e/mid-combat-save*",
+        "tests/e2e/specs/save-*",
+      ].toSorted(),
+    );
+    expect(workflow).toMatch(
+      /save-gate:\n {4}needs: \[changes, build\]\n {4}if: github\.event_name == 'workflow_dispatch' \|\| needs\.changes\.outputs\.save == 'true'/u,
+    );
   });
 });

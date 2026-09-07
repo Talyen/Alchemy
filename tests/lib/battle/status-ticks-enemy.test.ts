@@ -8,6 +8,21 @@ import {
 import { makeCombatTexts as makeTexts, makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 
 describe("tickEnemyStatuses", () => {
+  it.each([
+    { burn: 0, health: 3, healing: 2 },
+    { burn: 4, health: 3, healing: 0 },
+  ])("caps Parasitic Bloom healing at Poison Health loss with $burn Burn", ({ burn, health, healing }) => {
+    const state = patchBattleState({
+      enemyHealth: health,
+      playerHealth: 20,
+      enemyStatuses: { burn, poison: 8 },
+      trinketEffects: { parasiticBloomLeechChance: 100 },
+    });
+    const next = tickEnemyStatuses(state, makeTexts());
+    expect(next.enemyHealth).toBe(0);
+    expect(next.playerHealth).toBe(20 + healing);
+  });
+
   it("deals burn damage and halves burn stack", () => {
     const state = patchBattleState({
       enemyHealth: 30,

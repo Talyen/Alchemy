@@ -45,6 +45,10 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   });
 
   function resumeActiveContentSystem(systemId: ContentSystemId) {
+    if (readHasActiveBattle()) {
+      deps.returnToBattle();
+      return;
+    }
     const run = readActiveRun();
     const starterResume = wildcardStarterResumeTarget({
       characterId: run.characterId,
@@ -76,13 +80,8 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
 
   function beginContentSystem(systemId: ContentSystemId) {
     const hasActiveRun = readHasActiveRun();
-    const hasActiveBattle = readHasActiveBattle();
     const runType = hasActiveRun ? readActiveRun().contentSystemType : null;
     if (hasActiveRun && runType === systemId) {
-      if (hasActiveBattle) {
-        deps.returnToBattle();
-        return;
-      }
       resumeActiveContentSystem(systemId);
       return;
     }

@@ -315,11 +315,14 @@ export function createWildwoodRewardState(
     return createGearOrPermanentTrinketReward(ownedTrinketIds, rng, gearAstralChanceBonus, false, ownedUniqueIds);
   }
   if (rewardType === "boon") {
-    return {
-      ...createEmptyRewardState(),
-      rewardType: "boon",
-      choices: sampleTrinketRewardChoices(excludedBoonIds, rng),
-    };
+    const choices = sampleTrinketRewardChoices(excludedBoonIds, rng);
+    if (choices.length > 0) {
+      return {
+        ...createEmptyRewardState(),
+        rewardType: "boon",
+        choices,
+      };
+    }
   }
   return {
     ...createEmptyRewardState(),

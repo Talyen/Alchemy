@@ -1,5 +1,4 @@
 import { type ComponentProps } from "react";
-import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import {
@@ -7,8 +6,7 @@ import {
   BUTTON_HOVER_PRIMARY,
   BUTTON_HOVER_SECONDARY,
   BUTTON_HOVER_TRANSITION,
-  BUTTON_PRESS_OUTLINE,
-} from "@/lib/ui/button-hover";
+} from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -30,7 +28,6 @@ const buttonVariants = cva(
         outline: cn(
           "border border-border/80 bg-background text-foreground active:bg-muted/90 active:brightness-100",
           BUTTON_HOVER_SECONDARY,
-          BUTTON_PRESS_OUTLINE,
         ),
         ghost: cn(
           "border-0 bg-transparent text-foreground active:bg-muted/90 active:brightness-100",
@@ -52,27 +49,13 @@ const buttonVariants = cva(
 );
 
 interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
   wrapperClassName?: string;
 }
 
-function Button({ className, wrapperClassName, variant, size, asChild = false, ref, ...props }: ButtonProps) {
+function Button({ className, wrapperClassName, variant, size, ref, ...props }: ButtonProps) {
   const classes = cn(buttonVariants({ variant, size }), className);
-
-  if (asChild) {
-    const slot = <Slot className={classes} ref={ref} {...props} />;
-    return wrapperClassName ? <span className={cn("inline-flex", wrapperClassName)}>{slot}</span> : slot;
-  }
-
-  if (wrapperClassName) {
-    return (
-      <span className={cn("inline-flex", wrapperClassName)}>
-        <button className={classes} ref={ref} {...props} />
-      </span>
-    );
-  }
-
-  return <button className={classes} ref={ref} {...props} />;
+  const button = <button className={classes} ref={ref} {...props} />;
+  return wrapperClassName ? <span className={cn("inline-flex", wrapperClassName)}>{button}</span> : button;
 }
 
 export { Button };

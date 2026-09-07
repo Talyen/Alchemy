@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/features/alchemy/shared/ui/battle/hurt-spark-burst", () => ({
@@ -84,6 +84,24 @@ describe("ArtPanel hover motion", () => {
 
     fireEvent.mouseLeave(wrapper!);
     expect(queryByTestId("keyword-shine-enemy")).toBeNull();
+  });
+
+  it("capitalizes keywords in the enemy ability tooltip", async () => {
+    const entry = {
+      ...enemy,
+      traits: [{ id: "thorns", title: "Thorns", description: "When hit, consume Thorns" }],
+    } satisfies BestiaryEntry;
+    render(<ArtPanel {...baseProps} side="enemy" currentEnemy={entry} />);
+
+    const wrapper = screen.getByTestId("battle-enemy-art-panel").parentElement;
+    expect(wrapper).not.toBeNull();
+    fireEvent.mouseEnter(wrapper!);
+
+    await waitFor(() => {
+      const tooltip = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
+      expect(tooltip?.textContent).toContain("When hit, Consume Thorns");
+      expect(tooltip?.textContent).not.toContain("consume");
+    });
   });
 
   it("does not show the enemy keyword shine for dead enemies", () => {

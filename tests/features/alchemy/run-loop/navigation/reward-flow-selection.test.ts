@@ -136,6 +136,21 @@ describe("reward flow selection", () => {
   });
 
   describe("createWildwoodRewardState", () => {
+    it("falls back to cards when every Boon is excluded", () => {
+      const result = createWildwoodRewardState(
+        getStartingDeck("knight"),
+        () => 0.5,
+        0,
+        trinketLibrary.map((entry) => entry.id),
+      );
+
+      expect(result.rewardType).toBe("card");
+      expect(result.choices).toHaveLength(3);
+      if (result.rewardType === "card") {
+        expect(new Set(result.choices.map((entry) => entry.id)).size).toBe(3);
+      }
+    });
+
     it("rolls card rewards at the low third", () => {
       const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.1);
       expect(result.rewardType).toBe("card");

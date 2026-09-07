@@ -43,6 +43,11 @@ export function readDraftGold(draft: GameplayDraft): number {
 
 export function syncBattleGoldFromPurse(draft: GameplayDraft): void {
   if (!draft.battle.hasActiveBattle) return;
+  const pending = draft.battle.pendingBattleTransition;
+  if (pending && "resultState" in pending) {
+    const pendingGoldChange = pending.resultState.gold - draft.battle.battleState.gold;
+    pending.resultState.gold = draft.runProfile.gold + pendingGoldChange;
+  }
   draft.battle.battleState.gold = draft.runProfile.gold;
 }
 
@@ -290,8 +295,7 @@ export function initializeActiveBattle(
     Object.assign(draft.battle, createInitialBattleFields());
     return;
   }
-  const hydratedRaw = hydrateBattleState(battleState);
-  const hydrated = rebindBattleWorldRng({ ...hydratedRaw, gold: draft.runProfile.gold });
+  const hydrated = rebindBattleWorldRng(hydrateBattleState(battleState));
   const pending = rebindPendingTransitionWorldRng(hydrateBattleTransition(pendingBattleTransition ?? null));
   const battle: Draft<RunDomainBattleState> = draft.battle;
   battle.battleState = hydrated;
@@ -300,6 +304,7 @@ export function initializeActiveBattle(
   battle.displayOverrides = {};
   battle.battleStartState = hydrated;
   battle.hasActiveBattle = true;
+  syncBattleGoldFromPurse(draft);
 }
 
 export function commitBattleTransition(

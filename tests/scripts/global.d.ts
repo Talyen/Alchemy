@@ -789,3 +789,23 @@ declare module "*/lib/agent-discovery.mjs" {
 declare module "*/agent-search.mjs" {
   export function searchMain(args: string[], root?: string): number;
 }
+
+declare module "*/optimize-assets.mjs" {
+  export function optimizeAssets(): Promise<{ ok: boolean; error?: string }>;
+}
+
+declare module "*/optimize-sounds.mjs" {
+  export function optimizeSounds(): Promise<{ ok: boolean; error?: string }>;
+}
+
+declare module "*/optimize-music.mjs" {
+  export function optimizeMusic(): Promise<{ ok: boolean; error?: string }>;
+}
+
+declare module "*/sync-generated.mjs" {
+  export function syncGenerated(options?: { check?: boolean }): Promise<void>;
+}
+
+declare module "*/optimize-pipelines.mjs" {
+  export function runAllOptimizePipelines(): Promise<Array<{ ok: boolean; error?: string } | undefined>>;
+}

@@ -18,7 +18,7 @@ Add the union member in [`src/lib/game-data/types.ts`](../types.ts), a schema de
 - `restore-mana` may opt into `allowOverflow` for temporary extra Mana (Mana Moth). Omission preserves capped restoration; restoration never removes existing overflow. This does not add Mana Crystals.
 - `restore-mana` with `ifEnemyFrozen` compares live `enemyCC.freezeSkipTurns` against the frozen `enemyFreezeSkipTurnsAtStart` — so a `damage`→`freeze` earlier on the same card enables the restore, but only if the threshold was crossed by that card's own effects.
 - `damage` with `equalToBlock`/`equalToArmor`/`equalToGoldPercent` intentionally bypasses per-type flat/gear/talent modifiers — only `forgeBonus` and `applyConsumeBonus` apply; this matches card text for Tithe / Blessed Aegis.
-- `damage` with `random-damage` enforces `maxAmount >= minAmount` at schema level and throws loudly on inverted bounds at runtime.
+- `random-damage` enforces `maxAmount >= minAmount` at schema level and throws loudly on inverted bounds at runtime. Corruption clamps either bound at the other bound, keeping the description and effect valid even after repeated mutations. Direct random-damage cards trigger the same once-per-card enemy retaliation as direct damage cards.
 - `damage` cannot have both `doubleIfEnemyBurning` and `tripleIfEnemyNotBurning`.
 - `gain-gold` with `ifEnemyStunned` fizzles unless the enemy is stunned at all.
 

@@ -3,6 +3,7 @@ import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-s
 import { createTurnOrchestration } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { createTransferCancelRegistry } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
+import { battleStageMarkName, markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { defaultBattleState } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
 import { COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
@@ -100,6 +101,24 @@ describe("createBattleSession", () => {
     expect(battleSessionRef.current).toBe(2);
     expect(cancel).toHaveBeenCalled();
   });
+
+  it.each(["prepareBattleSessionForStart", "resetBattleSession"] as const)(
+    "%s releases marks from the previous battle session",
+    (reset) => {
+      const { session } = makeSession();
+      const name = battleStageMarkName("draw-end");
+      performance.clearMarks(name);
+      markBattleStage("draw-end");
+      markBattleStage("draw-end");
+      session.clearBattleTimeoutsKeepCompanion();
+      expect(performance.getEntriesByName(name, "mark")).toHaveLength(2);
+      session[reset]();
+      expect(performance.getEntriesByName(name, "mark")).toHaveLength(0);
+      markBattleStage("draw-end");
+      expect(performance.getEntriesByName(name, "mark")).toHaveLength(1);
+      performance.clearMarks(name);
+    },
+  );
 
   it("resetBattleSession clears portrait impact cues", () => {
     useBattlePresentationStore.setState({

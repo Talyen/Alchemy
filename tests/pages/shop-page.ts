@@ -80,7 +80,7 @@ export class ShopPage {
     await selectBtns.nth(1).click();
     await expect(this.combineBtn).toBeEnabled({ timeout: 3000 });
     await this.combineBtn.click();
-    await expect(this.page.getByText("Added to Deck: Mixed Potion")).toBeVisible({ timeout: 3000 });
+    await expect(this.page.getByRole("button", { name: "Mixed Potion", exact: true })).toBeVisible({ timeout: 3000 });
   }
 
   async navigateToDestination(name: string) {

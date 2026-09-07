@@ -7,6 +7,7 @@ import {
   removeOrphanOutputs,
   resolveSourceHash,
   withOutputHash,
+  writeManifestIfChanged,
 } from "./lib/asset-manifest-cache.mjs";
 import {
   ASSET_SCHEMA_VERSION,
@@ -36,7 +37,7 @@ export async function optimizeMusic() {
     return { ok: false, error: msg };
   }
 
-  const { results, failed } = await processManifestEntries({
+  const { results, nextManifest, failed } = await processManifestEntries({
     entries: files,
     manifestPath,
     concurrency: MUSIC_COPY_CONCURRENCY,
@@ -54,6 +55,8 @@ export async function optimizeMusic() {
     },
     handleError: formatProcessError,
   });
+
+  await writeManifestIfChanged(manifestPath, nextManifest);
 
   if (!failed) {
     const removed = await removeOrphanOutputs(outputDir, new Set(files), {

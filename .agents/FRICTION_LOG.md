@@ -6,7 +6,7 @@ Add one short row for unresolved friction with the observation and next useful a
 
 ## Open
 
-- 2026-09-06 — During folder-cleanup verification, [consecutive card plays](../tests/e2e/specs/draw-discard-animations.spec.ts) failed its active-draw assertion in a 30-test parallel browser batch (29 passed; run `playwright-20260906t192041z-89210-019991`). The same scenario passed three isolated repetitions (run `playwright-20260906t192135z-89581-8ce1d5`). The draw can finish between observing its start and checking its active state; investigate that observation window under parallel load before changing animation behavior or test timing. Assertions and timing were preserved during the relocation.
+- 2026-09-06 — Broad combat-feedback verification twice timed out the 5-second affix sweep in `tests/lib/balance/report-sweeps.test.ts`; the exact file passed in a focused run (alongside both combat-feedback unit files). Latest failed run: `check-20260906t230621z-43224-30899b`. Check suite contention before changing the test or its timeout.
 
 ## Resolved history
 

@@ -3,6 +3,7 @@ import {
   BATTLE_STAGE_MARK_PREFIX,
   battleStageMarkName,
   markBattleStage,
+  clearBattleStageMarks,
   type BattleStageMark,
 } from "@/lib/performance/battle-stage-marks";
 
@@ -37,6 +38,27 @@ describe("battle stage marks", () => {
     markBattleStage("resolve-end");
     expect(performance.getEntriesByName("alchemy:battle:resolve-start", "mark")).toHaveLength(1);
     expect(performance.getEntriesByName("alchemy:battle:resolve-end", "mark")).toHaveLength(1);
+  });
+
+  it("clears every battle stage while preserving unrelated marks", () => {
+    performance.mark("unrelated-test-mark");
+    for (const stage of ALL_STAGES) {
+      markBattleStage(stage);
+      markBattleStage(stage);
+    }
+    clearBattleStageMarks();
+    for (const stage of ALL_STAGES)
+      expect(performance.getEntriesByName(battleStageMarkName(stage), "mark")).toHaveLength(0);
+    expect(performance.getEntriesByName("unrelated-test-mark", "mark")).toHaveLength(1);
+    performance.clearMarks("unrelated-test-mark");
+  });
+
+  it("tolerates unavailable User Timing cleanup", () => {
+    vi.spyOn(performance, "clearMarks").mockImplementation(() => {
+      throw new Error("Unavailable");
+    });
+    expect(() => clearBattleStageMarks()).not.toThrow();
+    vi.restoreAllMocks();
   });
 
   it("swallows User Timing exceptions safely", () => {

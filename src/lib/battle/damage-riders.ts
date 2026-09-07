@@ -24,6 +24,7 @@ import {
 } from "./types";
 import { BATTLE_CONFIG, BLACKFLETCH_EXECUTE_HEALTH_PERCENT } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
+import { paceCombatMagnitude } from "./fight-pacing";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 function applyBurnDamageRiders(
@@ -144,13 +145,16 @@ export function applyAttackPurgeRider(state: BattleState, combatTexts: CombatTex
     ...state,
     enemyMitigation: { ...state.enemyMitigation, [category]: 0 },
   };
-  const holyDamage = Math.round(
-    nextState.gearEffects.attackPurgeDealHolyPerEffect * getEnemyDamageMultiplier(nextState, "holy"),
+  const holyDamage = paceCombatMagnitude(
+    nextState,
+    Math.round(nextState.gearEffects.attackPurgeDealHolyPerEffect * getEnemyDamageMultiplier(nextState, "holy")),
+    "player",
   );
   if (holyDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
     const hit = damageEnemyHealth(nextState, holyDamage);
-    nextState = payKillPayouts(hit.state, hit.enemyWasAlive, combatTexts);
+    nextState = processEncounterTraitHealthThreshold(hit.previousHealth, hit.state, combatTexts);
+    nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
     nextState = applyBrassCenser(nextState, holyDamage, combatTexts);
   }
   return nextState;
@@ -185,7 +189,7 @@ export function applyDamageRiders(
   if (effect.detonateIfEnemyBurning && enemyWasBurningBefore) {
     nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
   }
-  nextState = applyForgeStunRider(nextState, effect, combatTexts);
+  if (modifiedDamage > 0) nextState = applyForgeStunRider(nextState, effect, combatTexts);
   if (effect.damageType === "physical" && modifiedDamage > 0) {
     const stunChance = nextState.talentEffects.physicalStunChance + nextState.gearEffects.physicalStunChance;
     if (rollTalentChance(stunChance, nextState)) {

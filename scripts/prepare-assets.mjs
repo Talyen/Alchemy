@@ -1,4 +1,4 @@
-import { runAllOptimizePipelinesSettled } from "./optimize-pipelines.mjs";
+import { optimizationFailures, runAllOptimizePipelinesSettled } from "./optimize-pipelines.mjs";
 import { syncGenerated } from "./sync-generated.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
@@ -21,33 +21,21 @@ export async function prepareAssets() {
   }
 
   const results = await runAllOptimizePipelinesSettled();
-  const [artResult, soundsResult, musicResult] = results;
-  const failures = [];
-  const pipelineFailed = (result) => result.status === "rejected" || !result.value?.ok;
-  const pipelineReason = (result) =>
-    result.status === "rejected" ? String(result.reason) : result.value?.error ? String(result.value.error) : "";
+  const artResult = results.find((result) => result.key === "art");
+  const failures = optimizationFailures(results);
 
-  if (pipelineFailed(artResult)) {
-    const detail = pipelineReason(artResult);
-    failures.push(detail ? `Art optimization failed: ${detail}` : "Art optimization failed.");
-  }
-  if (pipelineFailed(soundsResult)) {
-    const detail = pipelineReason(soundsResult);
-    failures.push(detail ? `Sound optimization failed: ${detail}` : "Sound optimization failed.");
-  }
-  if (pipelineFailed(musicResult)) {
-    const detail = pipelineReason(musicResult);
-    failures.push(detail ? `Music optimization failed: ${detail}` : "Music optimization failed.");
-  }
-
-  if (artResult.status === "fulfilled" && artResult.value.ok) {
-    await syncGenerated();
+  if (artResult?.status === "fulfilled" && artResult.value.ok) {
+    try {
+      await syncGenerated();
+    } catch (error) {
+      failures.push(new Error(`Generated asset synchronization failed: ${String(error)}`, { cause: error }));
+    }
   } else {
     console.warn("Skipping generated art barrels because art optimization did not complete successfully.");
   }
 
   if (failures.length > 0) {
-    throw new Error(failures.join(" "));
+    throw new AggregateError(failures, failures.map((error) => error.message).join(" "));
   }
 }
 

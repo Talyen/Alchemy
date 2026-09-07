@@ -1,3 +1,4 @@
+import { clearBattleStageMarks } from "@/lib/performance/battle-stage-marks";
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
@@ -84,6 +85,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     ctx.battleSessionRef.current += 1;
     clearAllBattleTimeouts();
     clearTransferHandles();
+    clearBattleStageMarks();
     stopBattleFeedback();
     ctx.cardPlayInProgressRef.current = false;
     ctx.victoryDefeatHandledRef.current = false;

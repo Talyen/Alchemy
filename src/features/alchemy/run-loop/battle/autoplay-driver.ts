@@ -100,6 +100,6 @@ export async function driveAutoplay(deps: DriveAutoplayDeps): Promise<void> {
     }
 
     const remainingMs = resolveGameDelay(deps.postPlayDelayMs) - (performance.now() - playStartedAt);
-    await waitForAutoplayRetry(remainingMs, deps.signal, deps.wakeRef);
+    await waitForAutoplayRetry(remainingMs, deps.signal);
   }
 }

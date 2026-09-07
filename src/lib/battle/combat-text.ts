@@ -174,7 +174,7 @@ export function addPlayerStatusWithCombatText(
   const nextState = addPlayerStatus(
     state,
     stat,
-    options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player"),
+    options?.skipFightPacing || stat === "armor" ? amount : paceCombatMagnitude(state, amount, "player"),
   );
   const delta = nextState.playerStatuses[stat] - before;
   if (delta > 0 && combatTexts) {

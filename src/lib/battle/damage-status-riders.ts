@@ -11,7 +11,7 @@ import {
   addGoldWithCombatText,
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
-  mergeCombatText,
+  gainManaWithCombatText,
   payKillPayouts,
 } from "./combat-text";
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
@@ -207,10 +207,7 @@ export function tryTriggerEnemyFreeze(
   );
   if (result.gearEffects.freezeGrantsBlockAndMana > 0) {
     const manaGain = halveRounded(result.playerStatuses.block);
-    if (manaGain > 0) {
-      result = { ...result, mana: Math.min(result.maxMana, result.mana + manaGain) };
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: manaGain });
-    }
+    result = gainManaWithCombatText(result, manaGain, combatTexts, { skipFightPacing: true });
   }
   return result;
 }

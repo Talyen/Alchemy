@@ -20,7 +20,10 @@ Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run 
 optimization run concurrently and report every failure (settled, not fail-fast)
 because their outputs are disjoint; generated
 art and Gear barrels update whenever art succeeds, even if sound or music fail —
-the run still throws, so partial success is never silent.
+the run still throws, so partial success is never silent. Synchronization failures
+are reported together with optimization failures. Worker pools finish all started
+work before reporting failure, so the idempotence check can safely restore outputs
+without a late conversion overwriting the restoration.
 
 ## Authoring models
 
@@ -81,6 +84,12 @@ and then referenced by `src/lib/sound-registry.ts` or the owning audio module.
   files outside the declared OGG files, their MP3 fallbacks, and its hash manifest.
 - The generated hash manifest records generated versus curated ownership and
   verifies both source identity and committed output bytes.
+- Sound preparation publishes one complete manifest only after generated OGGs,
+  curated OGGs, and MP3 fallbacks succeed. An unchanged run does not rewrite it.
+  Failed OGG processing skips fallbacks; any processing failure preserves the
+  previous manifest and skips orphan deletion. Successful output files may still
+  advance during a failed optimization run; their hashes are checked on retry.
+  `assets:check` restores those files after all workers finish.
 
 Run `npm run assets:optimize:sounds` for sound-only iteration or the complete
 preparation command before handoff.

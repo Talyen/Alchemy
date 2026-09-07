@@ -51,6 +51,8 @@ performance CLI; use `npm run perf -- --help` instead of copying that list here.
 All scenarios keep real animations, exclude setup/navigation from the measured
 window, and use production card-library art rather than E2E placeholders.
 
+Battle stage User Timing marks (`alchemy:battle:*`) accumulate within the current battle session for animation diagnostics. The battle session owner clears these marks when preparing or resetting a session, after cancelling old transfers; stale draw and discard completions must not add terminal marks. Startup and performance sampler marks have separate lifetimes.
+
 ## Metrics
 
 Collected via `requestAnimationFrame` timestamps and `PerformanceObserver` long tasks:

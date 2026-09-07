@@ -71,11 +71,11 @@ export async function runHandDrawSequence(
       await deps.animateDrawnHand(drawnCards, newState.hand, session);
     }
   } finally {
-    markBattleStage("draw-end");
     const remaining = (sessions.get(session) ?? 1) - 1;
     if (remaining > 0) sessions.set(session, remaining);
     else sessions.delete(session);
     if (deps.isSessionActive(session)) {
+      markBattleStage("draw-end");
       deps.setTransferInProgress(remaining > 0);
       deps.setHiddenHandCardKeys((current) => current.filter((key) => !hiddenDrawKeys.has(key)));
     }

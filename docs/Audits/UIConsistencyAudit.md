@@ -20,23 +20,21 @@ Structural screen twins → Simplification; Playwright rewrites → TestQuality;
 - Do not rewrite battle battlefield/hand layout unsupervised in one pass; scope it as a migration phase.
 - Do not replace intentional game juice: combat float text, card fan, Armory drag ghosts, Motion stagger recipes. The Armory drag FSM is intentional complexity — fix bugs, don't simplify the product model unsupervised.
 - Do not hand-roll buttons/inputs that exist in `src/components/ui`; do not restyle unrelated chrome or turn `data-testid` churn into an a11y project.
-- Each pass selects one related flow family (e.g. Armory drag/equip/craft, battle targeting/end-state, shop/reward claim, run navigation/resume) and verifies 2–3 representative journeys live when available; rotate families across passes. Full user-requested audits sample every major family at least once.
+- Match coverage to the requested scope. A full pass inspects each major flow family (Armory, battle, shops/rewards, navigation/resume, and meta/setup) rather than silently limiting itself to one; a focused pass can stay within its requested family.
 
-## Triage
+## Investigation and evidence
 
-| Priority | Cluster                                                                                                                                                                                       | Remedy                                                         |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| 1        | Raw spacing literals beside tokens; duplicated chrome in 3+ files                                                                                                                             | Theme spacing / shared component                               |
-| 2        | One-off colors bypassing CSS variables; unused typography roles; state-role drift (focus/disabled/error/selected/loading); responsive/motion inconsistency; rapid-tap gaps on primary actions | Adopt the existing semantic variant or primitive; add guards   |
-| 3        | Justified custom layout (battle hand fan, Armory packing); competing undocumented size rules                                                                                                  | Extract constants / one documented rule; keep product behavior |
+Trace player tasks through entry, action, feedback, cancellation, and completion. Start with blocked actions, wrong targeting, stuck modes, or misleading state before cosmetic drift. Inspect representative supported viewports and input methods, and compare sibling surfaces against [UI.md](../UI.md), not personal visual preference.
 
-**Leave alone (justified custom):** fanned battle hand + drag-to-play; combat float motion; health-bar geometry fills; intentional Motion recipes.
+A token or markup difference is a candidate only: establish an unintended visible inconsistency, broken semantic behavior, or independently maintained rule that should use an existing owner. Preserve justified geometry and motion, including the battle hand, health bars, and Armory packing.
+
+Verify interaction fixes in the affected flow, including interruption or repeat input when relevant. Verify visual changes in context rather than from class names alone. Cover affected states and representative journeys according to risk; report unavailable live checks and do not claim visual confirmation from static inspection.
 
 ## Domain rules
 
-- **Interaction:** every modal has a dismiss path; destructive actions confirm; Escape cancels overlays where expected. Every `setPointerCapture` releases on up/cancel/unmount; cursor/body styles restore; no ghost clicks; one interaction mode at a time.
+- **Interaction:** dialogs and modes retain their documented completion/cancellation paths and destructive-action protections. Check capture ownership, pointer cancellation, cursor/body restoration, ghost clicks, and conflicting modes. Browser implicit capture release can satisfy cleanup; verify behavior rather than requiring a matching API call.
 - **Feedback:** visible click response; progress/disabled during async work; victory/defeat and claim flows remain completable/dismissible.
-- **Keyboard/focus:** programmatic names and states on interactive controls where tests locate them; no dedicated focus-management features (traps, restore, order) — Alchemy intentionally ships none.
+- **Keyboard/focus:** preserve semantic controls, programmatic names/states, and shared keyboard behavior whether or not tests query them. Follow [UI.md accessibility stance](../UI.md#accessibility-stance), including existing Armory confirmation focus behavior; do not infer new product requirements from audit heuristics.
 - **Responsive/motion:** controls reachable at supported viewports; scroll lock/restore correct; Electron blur/deactivate must not leave drag/targeting armed.
 - **Tokens:** prefer existing shadcn/Radix wrappers, CVA variants, Tailwind theme variables used by neighbors; no double padding on already-padded surfaces; drag motion tracks 1:1 and settles with interruptible springs.
 

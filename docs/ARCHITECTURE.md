@@ -80,6 +80,10 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 `shared/storage/io.ts` owns save parsing, validation, future-version protection, and write serialization. It delegates raw persistence to one `SaveBackend` configured during bootstrap. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. Candidate order, Steam Cloud as a one-way mirror, and wipe/protect behavior: [MIGRATIONS.md § Public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract).
 
+Parked-run reads return detached snapshots, including any pending battle result, while retaining the resting RNG callbacks on in-memory battle states. Resuming a parked run with active combat returns to battle before considering the mode's map or destination route.
+
+Purse-to-battle synchronization updates both the current battle and any pending opening-draw or enemy-turn result. The pending result retains its unapplied Gold change relative to the current battle, so restoring a run preserves Gold earned or spent elsewhere. Hydration retains both saved Gold values until this synchronization runs; completing the transition applies the remaining change once through the battle-to-purse commit.
+
 ### Session capability ports
 
 | Kind                         | Module                                                                         | Role                                                                                                                                                                                                                   |

@@ -88,7 +88,9 @@ function resolveEnemyPostTickResolution(
     nextState = reduceSkipTurns(nextState);
   }
   nextState = tickPlayerStatuses(nextState, texts);
-  if (mode === "attack") nextState = processEncounterTraitActionDamage(nextState, texts);
+  if (mode === "attack" && !isPlayerDefeated(nextState)) {
+    nextState = processEncounterTraitActionDamage(nextState, texts);
+  }
   if (isPlayerDefeated(nextState)) return { state: nextState, ...(afterAttackState ? { afterAttackState } : {}) };
   nextState = resolveDeathsDoorGraceExpiry(nextState);
   nextState = processEnemyRegeneration(nextState, texts);

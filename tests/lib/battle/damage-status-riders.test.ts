@@ -13,6 +13,22 @@ import {
 } from "../../fixtures/default-battle-state";
 
 describe("applyDamageStatuses", () => {
+  it.each([3, 4, 6])("freeze restores only missing mana when starting with %i mana", (mana) => {
+    const state = makeTestBattleState({
+      mana,
+      maxMana: 4,
+      enemyHealth: 30,
+      gearEffects: { ...makeTestBattleState().gearEffects, freezeGrantsBlockAndMana: 1 },
+    });
+    const texts = makeTexts();
+    const result = applyDamageStatuses(state, { kind: "damage", damageType: "freeze", amount: 20 }, 20, texts);
+    expect(result.enemyCC.freezeSkipTurns).toBeGreaterThan(0);
+    expect(result.mana).toBe(Math.max(mana, 4));
+    expect(texts.filter((text) => text.stat === "mana")).toEqual(
+      mana < 4 ? [{ target: "player", kind: "status", stat: "mana", amount: 4 - mana }] : [],
+    );
+  });
+
   it("burn adds to enemy burn stack", () => {
     const state = makeTestBattleState();
     const effect = { kind: "damage" as const, damageType: "burn" as const, amount: 5 };

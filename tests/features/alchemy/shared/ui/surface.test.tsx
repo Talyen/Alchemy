@@ -78,13 +78,20 @@ describe("Surface", () => {
     expect(screen.getByRole("button", { name: "Disabled" }).hasAttribute("disabled")).toBe(true);
   });
 
-  it("sets aria-disabled on div when disabled", () => {
+  it("prevents pointer and keyboard activation on a disabled div", async () => {
+    const onDivClick = vi.fn();
     const { container } = render(
-      <Surface disabled onDivClick={vi.fn()} ariaLabel="Div disabled">
+      <Surface disabled onDivClick={onDivClick} ariaLabel="Div disabled">
         x
       </Surface>,
     );
     const el = container.firstChild as HTMLElement;
     expect(el.getAttribute("aria-disabled")).toBe("true");
+    expect(el.tabIndex).toBe(-1);
+    await userEvent.click(el);
+    el.tabIndex = 0;
+    el.focus();
+    await userEvent.keyboard("{Enter} ");
+    expect(onDivClick).not.toHaveBeenCalled();
   });
 });

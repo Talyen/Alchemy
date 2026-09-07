@@ -27,6 +27,21 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
 }
 
 describe("card corruption", () => {
+  it.each([
+    [0, 0.9],
+    [0.9, 0.1],
+  ])("keeps equal random damage bounds valid with rolls %j", (targetRoll, deltaRoll) => {
+    const selected = makeCard({
+      descriptionLines: ["Deal 3–3 Random damage"],
+      effects: [{ kind: "random-damage", minAmount: 3, maxAmount: 3 }],
+    });
+    const result = corruptCard(selected, [selected], makeRng([targetRoll, deltaRoll]));
+    expect(result).not.toBeNull();
+    expect(result!.corruptedCard.effects[0]).toEqual({ kind: "random-damage", minAmount: 3, maxAmount: 3 });
+    expect(result!.corruptedCard.descriptionLines).toEqual(["Deal 3–3 Random damage"]);
+    expect(selected.corrupted).toBeUndefined();
+  });
+
   it("finds editable numeric description targets with matching effects", () => {
     const targets = getEditableCorruptionTargets(makeCard());
 

@@ -2,7 +2,7 @@
 
 Merges the former Change Locality & Context Efficiency (04), Dead Code (05), Dual-Path Retention (08), Duplicate Feature Surface (09), Inelegant Slop (11), and State Gravity & Ownership (14) audits.
 
-**Goal:** Reduce authored surface, duplication, misownership, and agent-context cost — delete the obsolete, collapse the duplicated, rehome the misplaced — without inventing new seams or frameworks.
+**Goal:** Make the code easier to understand and change safely by removing obsolete work, duplicated policy, and misplaced responsibilities. Reduced surface is useful when it reduces maintenance cost; concise code is not an end in itself.
 
 ## Scope map
 
@@ -23,8 +23,8 @@ Sibling routing: async/lifetime → RuntimeCorrectness; type escapes → TypeSaf
 - Prove dead candidates are not entry points, dynamic-import keys, barrel registrations, or externally consumed exports; read `knip.config.js` allowlists first and update them deliberately.
 - Do not delete a migration path while save/resume/fixture consumers still need the old shape (check `MIGRATIONS.md`, `tests/fixtures/legacy-saves.ts`, guard tests). Deprecation comments alone do not close a window.
 - Do not collapse [intentional dual seams](README.md#intentional-seams-do-not-collapse); Vite web vs Electron entries are this audit's extra seam to leave alone.
-- No generic UI builders/form engines/registries to collapse two or three screens; no `shared/ui` move unless ≥2 feature domains need it; keep intentional product variants distinct.
-- Do not split clean ≤10-complexity functions; skip load-bearing density (battle pipeline math, save wire format, controller composition, large catalogs where the job is the catalog).
+- A shared abstraction needs concrete consumers and a coherent responsibility. Do not force distinct product variants into configuration flags to satisfy a duplication count; follow existing UI ownership rules.
+- Complexity scores and file length are discovery aids. Preserve cohesive rule code, wire formats, composition roots, and catalogs unless there is a demonstrated comprehension or change problem.
 - Do not create new stores/managers beside existing owners for one flow; no React context for run/battle data; nothing React lands in `src/lib`.
 - A broad change or large file is not itself a finding; confirm recurrence, drift, or an avoidable cause. Treat composition roots as expected fan-out.
 
@@ -32,14 +32,16 @@ Sibling routing: async/lifetime → RuntimeCorrectness; type escapes → TypeSaf
 
 - **Dead code:** zero live consumers after reference/registration/generated/E2E/barrel checks; knip is discovery, call-site evidence confirms.
 - **Dual path:** two reachable paths for one behavior, or a reachable forwarding shim whose callers can retarget — plus a delete-one-path remedy that preserves behavior.
-- **Duplicate surface:** two substantial twins an existing owner absorbs cleanly (else three, or two with demonstrated drift); parameterization stays under 2–3 simple props.
-- **Slop/mass:** hotspot relative to peers + avoidable cause + existing home + measurable direction (LOC/declarations/indirection/review surface down, behavior intact).
+- **Duplicate surface:** show the same responsibility maintained independently and why sharing it prevents drift or repeated edits. Compare the resulting API and caller clarity with keeping the copies; call-site and prop counts do not decide the remedy.
+- **Slop/mass:** identify a concrete cost such as needless indirection, mixed responsibilities, or repeated edits, and show how the remedy reduces it while preserving behavior. A name or single implementer alone is insufficient.
 - **Ownership:** business rules in screens/controllers/fat stores instead of `src/lib`; persistence policy in UI; presentation inside engine rules; hub containment violations of capability ports.
 - **Locality:** comparable changes repeatedly co-touching unrelated owners, or one policy/command maintained in several sources — with a stable before/after proxy.
 
-## Remedies
+## Remedies and verification
 
-Prefer in order: delete → retarget callers → inline → parameterize proven duplication under an existing owner → move to the documented architecture owner. When neither dual-path survivor is marked, prefer architecture/facade/`src/lib` owner over hub twin, unique behavior over forwarder; call-site count is a last tie-break. Move rather than mirror: migrate callers and tests, then delete forwarding APIs. Every shipped locality finding reports its before/after proxy and unchanged correctness signal.
+Choose deletion, retargeting, inlining, sharing, or moving responsibility according to the confirmed cause. Prefer the documented owner when paths compete, but inspect unique behavior and compatibility before selecting a survivor. A forwarding API may be an intentional boundary; remove it only when consumers can safely use the surviving owner.
+
+Review the resulting caller path, not just the extracted helper. Check that the old responsibility is actually removed, callers remain understandable, intentional differences survive, and the remedy does not merely relocate complexity. Use existing behavior tests and required gates; add coverage when a meaningful preserved invariant lacks an owner. For locality findings, show the representative change that now needs fewer independent edits.
 
 ## Known signals
 

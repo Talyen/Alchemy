@@ -9,9 +9,22 @@ import {
   setAlchemistState,
 } from "./shop-actions-harness";
 import { ALCHEMIST_MIX_PRICE, ALCHEMIST_POTION_PRICE, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
+import { ALCHEMIST_POTIONS_OFFERED } from "@/lib/game-constants";
 import { makeEffect } from "../../../../fixtures/battle";
 
 describe("alchemist shop actions", () => {
+  it("fills refresh slots from previous offerings when only one novel potion remains", () => {
+    const pool = getStandardPotionPool();
+    const novel = pool[0];
+    setRunProgress({ gold: 999 });
+    setAlchemistState({ ...createInitialAlchemistState(), potions: pool.slice(1), refreshesLeft: 1 });
+    expect(buildActions().alchemist.refresh()).toBe(true);
+    const potions = readRunSession().alchemistState.potions;
+    expect(potions).toHaveLength(ALCHEMIST_POTIONS_OFFERED);
+    expect(potions).toContainEqual(novel);
+    expect(new Set(potions.map((card) => card.id)).size).toBe(potions.length);
+  });
   describe("alchemist mix potions", () => {
     it("returns null when mixing two non-potions", () => {
       setRunProgress({

@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { mapPool } from "../../scripts/lib/map-pool.mjs";
+
 const fixture = vi.hoisted(() => ({ root: "" }));
 vi.mock("../../scripts/prepare-assets.mjs", () => ({ prepareAssets: vi.fn() }));
 vi.mock("../../scripts/lib/sync-generated-helpers.mjs", () => ({ resolveRootDir: () => fixture.root }));
@@ -50,6 +52,33 @@ describe("checkPreparedAssets", () => {
     vi.mocked(prepareAssets).mockImplementation(async () => write(metadata, "new version"));
     await expect(checkPreparedAssets()).rejects.toThrow("metadata.generated.ts");
     expect(readFileSync(join(fixture.root, metadata), "utf8")).toBe("old version");
+  });
+
+  it("restores only after delayed conversion writes finish", async () => {
+    write(art, "original art");
+    const gate = Promise.withResolvers<void>();
+    const started = Promise.withResolvers<void>();
+    vi.mocked(prepareAssets).mockImplementation(async () => {
+      await mapPool([0, 1], 2, async (item) => {
+        if (item === 0) throw new Error("conversion failed");
+        started.resolve();
+        await gate.promise;
+        write(art, "late conversion");
+      });
+    });
+    let settled = false;
+    const result = checkPreparedAssets().catch((error: unknown) => {
+      settled = true;
+      return error;
+    });
+    await started.promise;
+    await new Promise<void>((resolve) => {
+      setImmediate(resolve);
+    });
+    expect(settled).toBe(false);
+    gate.resolve();
+    expect(await result).toBeInstanceOf(AggregateError);
+    expect(readFileSync(join(fixture.root, art), "utf8")).toBe("original art");
   });
 
   it("restores changed and deleted outputs and removes new files after preparation fails", async () => {

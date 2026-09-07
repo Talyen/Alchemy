@@ -85,6 +85,44 @@ describe("dealEnemyDotTick", () => {
 });
 
 describe("detonateEnemyStatuses", () => {
+  it("applies the Burn bonus against a bleeding enemy to Burn detonation", () => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      enemyStatuses: { burn: 8, bleed: 2 },
+      gearEffects: { burnDamageBonusToBleedingPercent: 50 },
+    });
+    const texts = makeTexts();
+    const next = detonateEnemyStatuses(state, ["burn"], texts);
+    expect(next.enemyHealth).toBe(18);
+    expect(next.enemyStatuses.burn).toBe(0);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 12 });
+  });
+
+  it.each(["burn", "poison"] as const)("keeps queued Bleed leech when detonating only %s", (status) => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      playerHealth: 20,
+      enemyStatuses: { [status]: 8, bleed: 6 },
+      pendingBleedLeechHealing: 6,
+    });
+    const next = detonateEnemyStatuses(state, [status], makeTexts());
+    expect(next.playerHealth).toBe(20);
+    expect(next.pendingBleedLeechHealing).toBe(6);
+    expect(next.enemyStatuses.bleed).toBe(6);
+  });
+
+  it("does not count Poison damage toward Bleed leech in a combined detonation", () => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      playerHealth: 20,
+      enemyStatuses: { poison: 8, bleed: 2 },
+      pendingBleedLeechHealing: 6,
+    });
+    const next = detonateEnemyStatuses(state, ["bleed", "poison"], makeTexts());
+    expect(next.playerHealth).toBe(21);
+    expect(next.pendingBleedLeechHealing).toBe(0);
+  });
+
   it("is a no-op when none of the requested statuses have stacks", () => {
     const state = patchBattleState({
       enemyHealth: 20,

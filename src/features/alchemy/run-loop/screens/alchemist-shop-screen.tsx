@@ -101,9 +101,6 @@ export function AlchemistShopScreen({
       <FadeSlot swapKey={modeKey} className="min-h-[56cqh] w-full">
         {mixedCard ? (
           <div className="flex flex-col items-center gap-6">
-            <div>
-              <p className="text-lg font-semibold text-balance text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
-            </div>
             <div className="flex flex-col items-center gap-3">
               <BattleCardButton
                 card={mixedCard}

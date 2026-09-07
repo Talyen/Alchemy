@@ -10,15 +10,24 @@ export function markStartupReady(): void {
 
 export const BATTLE_STAGE_MARK_PREFIX = "alchemy:battle:";
 
-export type BattleStageMark =
-  | "discard-start"
-  | "discard-end"
-  | "resolve-start"
-  | "resolve-end"
-  | "enemy-start"
-  | "enemy-end"
-  | "draw-start"
-  | "draw-end";
+const BATTLE_STAGES = [
+  "discard-start",
+  "discard-end",
+  "resolve-start",
+  "resolve-end",
+  "enemy-start",
+  "enemy-end",
+  "draw-start",
+  "draw-end",
+] as const;
+
+export type BattleStageMark = (typeof BATTLE_STAGES)[number];
+
+export function clearBattleStageMarks(): void {
+  try {
+    for (const stage of BATTLE_STAGES) performance.clearMarks(battleStageMarkName(stage));
+  } catch {}
+}
 
 export function battleStageMarkName(stage: BattleStageMark): string {
   return `${BATTLE_STAGE_MARK_PREFIX}${stage}`;

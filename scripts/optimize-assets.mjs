@@ -10,6 +10,7 @@ import {
   removeOrphanOutputs,
   resolveSourceHash,
   withOutputHash,
+  writeManifestIfChanged,
 } from "./lib/asset-manifest-cache.mjs";
 import {
   ART_TRANSFORM_CONCURRENCY,
@@ -175,6 +176,8 @@ export async function optimizeAssets() {
     processEntry: optimizeAsset,
     handleError: (asset, error) => formatProcessError(asset.target, error),
   });
+
+  await writeManifestIfChanged(manifestPath, nextManifest);
 
   if (!failed) {
     const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {

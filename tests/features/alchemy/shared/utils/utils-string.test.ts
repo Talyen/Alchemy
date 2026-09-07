@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { tokenizeDescription, extractKeywordIds, getHoverId } from "@/features/alchemy/shared/utils/string";
+import {
+  canonicalizeKeywordText,
+  tokenizeDescription,
+  extractKeywordIds,
+  getHoverId,
+} from "@/features/alchemy/shared/utils/string";
 
 describe("tokenizeDescription", () => {
   it("returns a plain text part for a sentence with no keywords", () => {
@@ -19,6 +24,21 @@ describe("tokenizeDescription", () => {
     const keywordIds = result.filter((p) => p.keywordId).map((p) => p.keywordId);
     expect(keywordIds).toContain("block");
     expect(keywordIds).toContain("armor");
+  });
+
+  it("uses canonical casing for lowercase, inflected, and multi-word aliases", () => {
+    const result = tokenizeDescription("physical consume consumed frozen mana crystal");
+
+    expect(result.filter((part) => part.keywordId).map((part) => part.text)).toEqual([
+      "Physical",
+      "Consume",
+      "Consumed",
+      "Frozen",
+      "Mana Crystal",
+    ]);
+    expect(canonicalizeKeywordText("physical consume consumed frozen mana crystal")).toBe(
+      "Physical Consume Consumed Frozen Mana Crystal",
+    );
   });
 
   it("handles an empty string", () => {

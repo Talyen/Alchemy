@@ -49,6 +49,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
+  if (damage <= 0) return state;
   if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, getBattleRng(state))) return state;
   return applyHealingWithCombatText(state, computeLeechHeal(damage), combatTexts, { skipFightPacing: true });
 }
@@ -75,7 +76,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   }
   return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState) => {
     const afterRiders = applyPoisonTalentRiders(
-      applyParasiticBloomLeech(nextState, finalDamage, combatTexts),
+      applyParasiticBloomLeech(nextState, Math.max(0, state.enemyHealth - nextState.enemyHealth), combatTexts),
       finalDamage,
       combatTexts,
     );

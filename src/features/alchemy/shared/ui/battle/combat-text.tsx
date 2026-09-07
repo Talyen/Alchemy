@@ -113,6 +113,7 @@ function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
   return (
     <div className="absolute left-1/2" style={{ top: `${entry.lane * 56}px`, transform: "translate3d(-50%, 0, 0)" }}>
       <motion.div
+        data-testid="combat-text"
         className={cn(
           "inline-flex items-center gap-1.5 font-bold tracking-wide whitespace-nowrap",
           "transform-gpu will-change-transform [backface-visibility:hidden]",

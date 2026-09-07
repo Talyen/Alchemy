@@ -235,3 +235,27 @@ describe("fight pacing in combat pipelines", () => {
     });
   });
 });
+
+describe("Forge gain pacing", () => {
+  it("scales Forge before evaluating threshold rewards", () => {
+    const base = makeTestBattleState();
+    const state = pacedState({
+      playerHealth: 8,
+      playerMaxHealth: 30,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      turn: 1,
+      talentEffects: { ...base.talentEffects, forgeBurnThreshold: 11, forgeBurnDamage: 3 },
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(
+      state,
+      makeTestCard({ effects: [{ kind: "player-status", status: "forge", amount: 10 }] }),
+      texts,
+    );
+    expect(result.playerStatuses.forge).toBe(12);
+    expect(result.enemyStatuses.burn).toBe(3);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 12 });
+    expect(state.playerStatuses.forge).toBe(0);
+  });
+});

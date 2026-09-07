@@ -1,3 +1,4 @@
+import { clearBattleStageMarks, battleStageMarkName } from "@/lib/performance/battle-stage-marks";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
@@ -56,7 +57,9 @@ describe("createBattleEndTurnUi handleEndTurn", () => {
 
     const session = {
       clearBattleTimeoutsKeepCompanion: vi.fn(),
-      runIfSessionActive: vi.fn((_session: number, action: () => void) => action()),
+      runIfSessionActive: vi.fn((session: number, action: () => void) => {
+        if (session === battleSessionRef.current) action();
+      }),
     } as unknown as ReturnType<typeof createBattleSession>;
 
     let releaseDiscard: (() => void) | undefined;
@@ -71,7 +74,7 @@ describe("createBattleEndTurnUi handleEndTurn", () => {
     } as unknown as ReturnType<typeof createBattleTransferDeps>;
 
     const ui = createBattleEndTurnUi(ctx, session, transferDeps);
-    return { ui, cardPlayInProgressRef, clearAutoEndTurn, releaseDiscard: releaseDiscard! };
+    return { ui, battleSessionRef, cardPlayInProgressRef, clearAutoEndTurn, releaseDiscard: releaseDiscard! };
   }
 
   it("sets in-flight flag and clears auto-end on entry, blocking re-entry until resolve finishes", async () => {
@@ -89,6 +92,17 @@ describe("createBattleEndTurnUi handleEndTurn", () => {
       expect(resolveEndTurnMock).toHaveBeenCalledOnce();
     });
     expect(cardPlayInProgressRef.current).toBe(false);
+  });
+
+  it("does not recreate cleared marks when an old discard finishes", async () => {
+    const { ui, battleSessionRef, releaseDiscard } = makeUi();
+    ui.handleEndTurn();
+    battleSessionRef.current += 1;
+    clearBattleStageMarks();
+    releaseDiscard();
+    await Promise.resolve();
+    expect(performance.getEntriesByName(battleStageMarkName("discard-end"), "mark")).toHaveLength(0);
+    expect(resolveEndTurnMock).not.toHaveBeenCalled();
   });
 
   it("does not start end turn while a card transfer is in progress", () => {

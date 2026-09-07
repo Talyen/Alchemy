@@ -216,12 +216,12 @@
     transform: translate3d(0, 0, 0) scale3d(1, 1, 1) rotate(0deg);
     animation-timing-function: cubic-bezier(0.25, 0, 0.15, 1);
   }
-  20% {
-    transform: translate3d(calc(var(--attack-aim, 1) * -12px), 0, 0) scale3d(0.97, 1.03, 1)
-      rotate(calc(var(--attack-aim, 1) * -3deg));
+  12% {
+    transform: translate3d(calc(var(--attack-aim, 1) * -8px), 0, 0) scale3d(0.97, 1.03, 1)
+      rotate(calc(var(--attack-aim, 1) * -2deg));
     animation-timing-function: cubic-bezier(0.08, 0.92, 0.18, 1);
   }
-  36% {
+  24% {
     transform: translate3d(calc(var(--attack-aim, 1) * 30px), 0, 0) scale3d(1.06, 0.94, 1)
       rotate(calc(var(--attack-aim, 1) * 3deg));
     animation-timing-function: cubic-bezier(0.2, 1, 0.36, 1);

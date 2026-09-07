@@ -93,20 +93,37 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     const drawStarts = () =>
       page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-start", "mark").length);
     const before = await drawStarts();
+    await page.evaluate((openingDrawCount) => {
+      const testWindow = window as Window & { consecutivePlayAttempt?: { drawStarts: number; drawEnds: number } };
+      const observer = new MutationObserver(() => {
+        const drawStarts = performance.getEntriesByName("alchemy:battle:draw-start", "mark").length;
+        const drawEnds = performance.getEntriesByName("alchemy:battle:draw-end", "mark").length;
+        if (drawStarts !== openingDrawCount + 1 || drawEnds !== openingDrawCount) return;
+        const card = document.querySelector<HTMLButtonElement>('[aria-label^="Play "]:not(.opacity-0)');
+        if (!card) return;
+        observer.disconnect();
+        testWindow.consecutivePlayAttempt = { drawStarts, drawEnds };
+        card.click();
+      });
+      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+    }, before);
     await visibleCards.first().click({ force: true });
-    await expect.poll(drawStarts).toBe(before + 1);
-    expect(
-      await page.evaluate(
-        () =>
-          performance.getEntriesByName("alchemy:battle:draw-start", "mark").length >
-          performance.getEntriesByName("alchemy:battle:draw-end", "mark").length,
-      ),
-    ).toBe(true);
-    await visibleCards.first().click({ force: true });
+    await expect
+      .poll(() => page.evaluate(() => (window as Window & { consecutivePlayAttempt?: unknown }).consecutivePlayAttempt))
+      .toEqual({ drawStarts: before + 1, drawEnds: before });
     await expect.poll(drawStarts).toBe(before + 2);
     await expect
       .poll(() => page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-end", "mark").length))
       .toBe(before + 2);
+    const overlap = await page.evaluate(
+      (openingDrawCount) => ({
+        secondDrawStart: performance.getEntriesByName("alchemy:battle:draw-start", "mark")[openingDrawCount + 1]
+          ?.startTime,
+        firstDrawEnd: performance.getEntriesByName("alchemy:battle:draw-end", "mark")[openingDrawCount]?.startTime,
+      }),
+      before,
+    );
+    expect(overlap.secondDrawStart).toBeLessThan(overlap.firstDrawEnd!);
     await expect(visibleCards).toHaveCount(4);
     expect(errors).toEqual([]);
   });

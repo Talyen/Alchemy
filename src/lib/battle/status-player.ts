@@ -152,6 +152,7 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
   if (state.talentEffects.forgeDoubledBelowHalfHealth && state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
     amount *= 2;
   }
+  amount = paceCombatMagnitude(state, amount, "player");
   if (amount <= 0) return state;
   const oldForge = state.playerStatuses.forge;
   const newForge = oldForge + amount;
@@ -223,13 +224,7 @@ export function applyPlayerDamageStatuses(
     statusType === "stun"
   ) {
     const adjustedDamage = statusType === "bleed" ? actualDamage * BLEED_STATUS_MULTIPLIER : actualDamage;
-    return {
-      ...state,
-      playerStatuses: {
-        ...state.playerStatuses,
-        [statusType]: state.playerStatuses[statusType] + playerStatusDelta(state, statusType, adjustedDamage),
-      },
-    };
+    return addPlayerStatus(state, statusType, adjustedDamage);
   }
   return state;
 }

@@ -10,6 +10,31 @@ import { isValidDeckIndex } from "@/lib/utils";
 
 const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
+function scalePotionEffect(
+  effect: BattleCardEffect,
+  multiplier: number,
+  potencyBonus: number,
+  scaleMap: Map<number, number>,
+): BattleCardEffect {
+  if (effect.kind === "chance") {
+    return {
+      ...effect,
+      successEffects: effect.successEffects.map((child) =>
+        scalePotionEffect(child, multiplier, potencyBonus, scaleMap),
+      ),
+      failureEffects: effect.failureEffects.map((child) =>
+        scalePotionEffect(child, multiplier, potencyBonus, scaleMap),
+      ),
+    };
+  }
+  if ("amount" in effect) {
+    const amount = effect.amount * multiplier + potencyBonus;
+    scaleMap.set(effect.amount, amount);
+    return { ...effect, amount };
+  }
+  return { ...effect };
+}
+
 function scaleCardDescriptionLines(card: BattleCard, multiplier: number, potencyBonus: number): string[] {
   const linesWithoutConsume = card.descriptionLines.filter((line) => line !== CONSUME_DESCRIPTION_LINE);
   if (multiplier === 1 && potencyBonus === 0) {
@@ -17,27 +42,28 @@ function scaleCardDescriptionLines(card: BattleCard, multiplier: number, potency
   }
 
   const scaleMap = new Map<number, number>();
-  for (const effect of card.effects) {
-    if ("amount" in effect && typeof effect.amount === "number") {
-      scaleMap.set(effect.amount, effect.amount * multiplier + potencyBonus);
-    }
-  }
+  for (const effect of card.effects) scalePotionEffect(effect, multiplier, potencyBonus, scaleMap);
 
   if (scaleMap.size === 0) {
     return linesWithoutConsume;
   }
 
   return linesWithoutConsume.map((line) => {
-    let replaced = false;
-    return line.replace(/\b\d+\b/g, (match) => {
-      if (replaced) return match;
-      const scaled = scaleMap.get(Number(match));
-      if (scaled !== undefined) {
-        replaced = true;
-        return String(scaled);
-      }
-      return match;
-    });
+    return line
+      .split(" or ")
+      .map((alternative) => {
+        let replaced = false;
+        return alternative.replace(/\b\d+\b/g, (match) => {
+          if (replaced) return match;
+          const scaled = scaleMap.get(Number(match));
+          if (scaled !== undefined) {
+            replaced = true;
+            return String(scaled);
+          }
+          return match;
+        });
+      })
+      .join(" or ");
   });
 }
 
@@ -48,15 +74,9 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
 
   const sameCard = cardA.id === cardB.id;
 
-  const effects: BattleCardEffect[] = sameCard
-    ? cardA.effects.map((e) => {
-        if ("amount" in e && typeof e.amount === "number") return { ...e, amount: e.amount * 2 + potencyBonus };
-        return { ...e };
-      })
-    : [...cardA.effects, ...cardB.effects].map((e) => {
-        if ("amount" in e && typeof e.amount === "number") return { ...e, amount: e.amount + potencyBonus };
-        return { ...e };
-      });
+  const effects = (sameCard ? cardA.effects : [...cardA.effects, ...cardB.effects]).map((effect) =>
+    scalePotionEffect(effect, sameCard ? 2 : 1, potencyBonus, new Map()),
+  );
 
   const descriptionLines: string[] = sameCard
     ? scaleCardDescriptionLines(cardA, 2, potencyBonus)

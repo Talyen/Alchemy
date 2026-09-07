@@ -79,7 +79,7 @@ export function ChooserArtTile({
         shimmerRounded="rounded-shell-card"
         overlay={overlay}
         className={cn(
-          "group relative mx-auto block aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-shell-card border border-border/80 bg-black shadow-md focus:outline-none",
+          "group card-art-frame relative mx-auto block aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-shell-card border border-border/80 bg-black shadow-md focus:outline-none",
           widthClass,
           !disabled && cardInteractiveGlowClass,
           surfaceClassName,

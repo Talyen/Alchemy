@@ -224,10 +224,10 @@ export function computeVictoryRewards(
   const eligibleDestinations = skipDestinationSampling
     ? []
     : input.getAvailableDestinations({
-        currentHealth: input.battleState.playerHealth,
+        currentHealth: playerHealth,
         currentGold: goldResult.persistedGold,
         destinationIndexInAct: input.destinationIndexInAct,
-        maxHealth: input.runMaxHealth,
+        maxHealth: effectiveMaxHealth,
       });
   const sampled = skipDestinationSampling
     ? { choices: [] as Destination[], offerState: input.destinationOfferState }

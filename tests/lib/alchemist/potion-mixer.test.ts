@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck } from "@/lib/alchemist";
 import { ALCHEMIST_MIX_PRICE } from "@/lib/game-constants";
-import type { BattleCard } from "@/lib/game-data";
+import { cardLibrary, type BattleCard } from "@/lib/game-data";
 
 function makePotion(overrides: Partial<BattleCard> = {}): BattleCard {
   return {
@@ -25,6 +25,27 @@ const firePotion = makePotion({
 });
 
 describe("createMixedPotion", () => {
+  it("scales every Luck Potion outcome and its description when mixing", () => {
+    const luck = cardLibrary.find((card) => card.id === "luck-potion")!;
+    const mixed = createMixedPotion(luck, luck, 2);
+    expect(mixed.effects).toEqual([
+      {
+        kind: "chance",
+        probability: 0.5,
+        successEffects: [{ kind: "restore-mana", amount: 10 }],
+        failureEffects: [
+          {
+            kind: "chance",
+            probability: 0.5,
+            successEffects: [{ kind: "gain-gold", amount: 10 }],
+            failureEffects: [{ kind: "player-status", status: "block", amount: 10 }],
+          },
+        ],
+      },
+    ]);
+    expect(mixed.descriptionLines).toEqual(["Restore 10 Mana or Steal 10 Gold or Gain 10 Block", "Consume"]);
+    expect(luck.descriptionLines[0]).toBe("Restore 4 Mana or Steal 4 Gold or Gain 4 Block");
+  });
   it("combines two different potions by concatenating their effects", () => {
     const mixed = createMixedPotion(healPotion, firePotion);
 

@@ -35,7 +35,7 @@ export function createBattleEndTurnUi(
       } catch (err) {
         logBattleError("discard hand animation", err);
       } finally {
-        markBattleStage("discard-end");
+        session.runIfSessionActive(sessionNum, () => markBattleStage("discard-end"));
       }
       session.runIfSessionActive(sessionNum, () => {
         if (resolveEndTurn(currentState, sessionNum, session, orch)) {

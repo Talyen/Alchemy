@@ -251,9 +251,9 @@ export async function removeOrphanOutputs(outputDir, keepNames, options = {}) {
 }
 
 /**
- * Process a set of manifest-backed files and write one normalized manifest.
+ * Process manifest-backed files and return the next manifest for the caller to persist.
  * The callback owns discovery and transformation behavior; this helper owns
- * freshness state, bounded concurrency, error normalization, and persistence.
+ * freshness state, bounded concurrency, and error normalization.
  *
  * @template T
  * @template R
@@ -309,7 +309,6 @@ export async function processManifestEntries({
       nextManifest[result.key] = result.entry;
     }
   }
-  await writeManifestIfChanged(manifestPath, nextManifest);
 
   return {
     previousManifest,

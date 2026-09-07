@@ -4,7 +4,7 @@
 
 ## Intent
 
-Find contradictions, harmful omissions in complete-looking workflows, and duplicated policy that has drifted. Discover markdown mechanically, then inspect candidate files and their nearby source of truth; follow confirmed concepts across docs, scripts, help text, and local READMEs.
+Find contradictions, harmful omissions in complete-looking workflows, and duplicated policy that has drifted. Use discovery tools and task entry points to locate candidate files, then inspect their nearby source of truth; follow confirmed concepts across docs, scripts, help text, and local READMEs.
 
 ## Hard stops
 
@@ -13,15 +13,13 @@ Find contradictions, harmful omissions in complete-looking workflows, and duplic
 - Do not rewrite design prose for style-only preferences or turn this into a repo-wide docs rewrite. Restructure a focused section when scattered line edits would preserve ambiguity or hide the current owner.
 - Historical mentions of deleted docs, such as the old PROMPTS.md in `CHANGELOG.md`, are fine — fix live links only.
 
-## Severity
+## Investigation and evidence
 
-| Level    | Criteria                                                                                    |
-| -------- | ------------------------------------------------------------------------------------------- |
-| Critical | Wrong API/path, broken link, stale architecture assumption, wrong version/engine constraint |
-| Moderate | Wrong count, “in progress” for finished work, inconsistent terminology                      |
-| Minor    | Typo, formatting, missing code-fence language                                               |
+Follow the entry point a reader would use for a real task, then compare its instructions and claims with current owners and executable behavior. Check omissions as well as false statements: missing recovery steps, hidden prerequisites, or an unreachable canonical owner can mislead without a broken link.
 
-A missing step or invariant is Critical/Moderate only when the document claims to define the complete workflow or contract and a user following it would fail, corrupt state, bypass a required gate, or make a materially wrong change.
+Explain what a reader would do incorrectly and the consequence. Prioritize instructions that risk data, bypass required gates, or block work over stale incidental counts and formatting. Historical statements can remain accurate for their time; distinguish them from current instructions. When implementation and docs conflict, investigate intent before deciding which side needs correction.
+
+Verify edited claims, examples, links, and commands against their owners. Walk the affected workflow where safe; do not run destructive or publishing commands just to validate documentation. Prefer a link to a canonical rule over another copied rule, and preserve enough context for the reader to know when to follow it.
 
 ## Domain rules
 

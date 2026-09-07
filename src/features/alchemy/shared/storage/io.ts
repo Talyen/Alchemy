@@ -23,8 +23,7 @@ function logStorageFailure(message: string, error?: unknown) {
 async function collectSaveCandidates(): Promise<string[]> {
   const result = await saveBackend.readCandidates(SAVE_KEY);
   if (result.ok) return result.candidates;
-  logStorageFailure("Save candidates could not be read", result.error);
-  return [];
+  throw result.error;
 }
 
 function applySaveWritePolicy(result: SaveLoadState): SaveLoadState {

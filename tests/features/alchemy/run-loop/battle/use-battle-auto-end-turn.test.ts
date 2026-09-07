@@ -233,4 +233,91 @@ describe("useBattleAutoEndTurn", () => {
     });
     expect(onEndTurn).toHaveBeenCalledOnce();
   });
+
+  it.each([false, true])("restarts a full countdown after closing the menu (initially open: %s)", (initiallyOpen) => {
+    const onEndTurn = vi.fn();
+    const battleState = makeEmptyHandBattle().battleState;
+    const { rerender } = renderHook(
+      ({ gameMenuOpen }) => useAutoEndTurnUnderTest({ ...baseOptions, battleState, gameMenuOpen, onEndTurn }),
+      { initialProps: { gameMenuOpen: initiallyOpen } },
+    );
+    if (!initiallyOpen) {
+      act(() => {
+        vi.advanceTimersByTime(AUTO_END_TURN_DELAY / 2);
+      });
+      rerender({ gameMenuOpen: true });
+    }
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY * 2);
+    });
+    expect(onEndTurn).not.toHaveBeenCalled();
+
+    rerender({ gameMenuOpen: false });
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY / 2);
+    });
+    rerender({ gameMenuOpen: true });
+    rerender({ gameMenuOpen: false });
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY - 1);
+    });
+    expect(onEndTurn).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(onEndTurn).toHaveBeenCalledOnce();
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY * 2);
+    });
+    expect(onEndTurn).toHaveBeenCalledOnce();
+  });
+
+  it.each(["playable hand", "inactive battle", "card play in progress"] as const)(
+    "rechecks %s when the countdown expires",
+    (change) => {
+      const onEndTurn = vi.fn();
+      const initialState = makeEmptyHandBattle().battleState;
+      const { rerender } = renderHook(
+        ({ battleState, hasActiveBattle, busy }) =>
+          useAutoEndTurnUnderTest({
+            ...baseOptions,
+            battleState,
+            hasActiveBattle,
+            isCardPlayInProgress: () => busy,
+            onEndTurn,
+          }),
+        { initialProps: { battleState: initialState, hasActiveBattle: true, busy: false } },
+      );
+      act(() => {
+        vi.advanceTimersByTime(AUTO_END_TURN_DELAY / 2);
+      });
+      rerender({
+        battleState: change === "playable hand" ? makeOpenBattle().battleState : initialState,
+        hasActiveBattle: change !== "inactive battle",
+        busy: change === "card play in progress",
+      });
+      act(() => {
+        vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      });
+      expect(onEndTurn).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["disable", "unmount"] as const)("cancels a pending countdown on %s", (change) => {
+    const onEndTurn = vi.fn();
+    const battleState = makeEmptyHandBattle().battleState;
+    const { rerender, unmount } = renderHook(
+      ({ autoEndTurn }) => useAutoEndTurnUnderTest({ ...baseOptions, battleState, autoEndTurn, onEndTurn }),
+      { initialProps: { autoEndTurn: true } },
+    );
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY / 2);
+    });
+    if (change === "disable") rerender({ autoEndTurn: false });
+    else unmount();
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+    });
+    expect(onEndTurn).not.toHaveBeenCalled();
+  });
 });

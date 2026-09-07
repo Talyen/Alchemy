@@ -136,7 +136,7 @@ export function processEncounterTraitCardAction(
     nextState = recordEnemyAbilityActivation(nextState, "rooted");
     nextState = addEnemyStatusText(nextState, "block", scale(1), combatTexts);
   }
-  if (card.effects.some((effect) => effect.kind === "damage")) {
+  if (card.effects.some((effect) => effect.kind === "damage" || effect.kind === "random-damage")) {
     if (hasEnemyTrait(nextState, "thorns") && nextState.enemyStatuses.thorns > 0) {
       nextState = recordEnemyAbilityActivation(nextState, "thorns");
       nextState = setEnemyStatus(nextState, "thorns", 0);

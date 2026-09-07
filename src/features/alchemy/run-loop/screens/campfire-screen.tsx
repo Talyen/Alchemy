@@ -20,14 +20,13 @@ export function CampfireScreen({
   healFraction: number;
   onContinue: () => void;
 }) {
-  const [resting, setResting] = useState(false);
+  const [rest, setRest] = useState<{ from: number; to: number; maxHealth: number } | null>(null);
   const [done, setDone] = useState(false);
-  const targetHealth = resting ? getCampfireRestHealth(playerHealth, maxHealth, healFraction) : playerHealth;
+  const resting = rest !== null;
   const { displayHealth, progressHealth } = useEasedHealth({
-    from: playerHealth,
-    to: targetHealth,
+    from: rest?.from ?? playerHealth,
+    to: rest?.to ?? playerHealth,
     active: resting,
-    easing: "linear",
     onFinished: () => setDone(true),
   });
 
@@ -38,7 +37,7 @@ export function CampfireScreen({
   }, [done, onContinue]);
 
   function handleRest() {
-    setResting(true);
+    setRest({ from: playerHealth, to: getCampfireRestHealth(playerHealth, maxHealth, healFraction), maxHealth });
   }
 
   return (
@@ -53,7 +52,11 @@ export function CampfireScreen({
                 Rest
               </Button>
             ) : (
-              <HealthRestoreMeter displayHealth={displayHealth} maxHealth={maxHealth} progressHealth={progressHealth} />
+              <HealthRestoreMeter
+                displayHealth={displayHealth}
+                maxHealth={rest.maxHealth}
+                progressHealth={progressHealth}
+              />
             )}
           </div>
         </div>

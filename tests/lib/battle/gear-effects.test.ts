@@ -5,7 +5,7 @@ import { applyGearDamageResistance, scaleGoldReward, type CombatTextEvent } from
 import { defaultGearEffects } from "@/lib/gear";
 import { makeStateWithFailedRolls as makeState, makeTestCard, patchBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
-import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { handlePostPlayCardDestination, playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
@@ -80,6 +80,18 @@ describe("gear-effects", () => {
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.enemyStatuses.burn).toBe(5);
+  });
+
+  it("applies consume rewards identically without collecting combat text", () => {
+    const card = makeTestCard({ consume: true });
+    const state = makeState({
+      gearEffects: { ...defaultGearEffects, burnOnConsume: 5 },
+    });
+    const withText = handlePostPlayCardDestination(state, card, true, []);
+    const withoutText = handlePostPlayCardDestination(state, card);
+    expect(withoutText.enemyStatuses.burn).toBe(5);
+    expect(withoutText).toEqual(withText);
+    expect(state.enemyStatuses.burn).toBe(0);
   });
 
   it("archery-ignore-armor: ignores enemy Armor on archery attacks", () => {

@@ -76,6 +76,8 @@ Permanent Gear and Armory Trinkets use `recordRunObtainedItem()` at each grant s
 
 ## Add or change post-victory routing (`REWARD_ROUTES`)
 
+Destination eligibility uses health and maximum health after victory bonuses. When the Boon pool is exhausted, combat and Wildwood rewards fall back to card choices.
+
 | Step                           | File(s)                                                                                                                                                  |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1. Add route constant          | `src/lib/routing/reward-routes.ts` → `REWARD_ROUTES`, re-exported from `@/lib/routing`                                                                   |
@@ -272,9 +274,10 @@ Ownership: [ARCHITECTURE.md § Shop commands](./ARCHITECTURE.md#shop-commands).
 Kind `"merchant"` maps to the player-facing **Card Shop**. Persist only the active shop screen through `encodePersistedShops`.
 
 1. Keep `create-shop-actions.ts` as composition; put shop behavior in the matching `*-shop-commands.ts` module and draft recipes in `shop-transactions.ts`.
-2. Dispatch purchases/refreshes through the existing shop command seam so paid effects and SFX run after a successful commit. Keep slot identity helpers separate from command/audio modules.
+2. Dispatch purchases/refreshes through the existing shop command seam so paid effects and SFX run after a successful commit. Keep slot identity helpers separate from command/audio modules. Equipment purchases resolve price and acquired contents from the live shelf item by instance ID.
 3. Preserve the per-visit `firstPurchaseUsed` reset and use `mutateGearWithRunHealthSync` inside an open command draft; use the dispatching gear wrapper only at the outer boundary ([ARMORY.md § Write paths](./ARMORY.md#write-paths)).
 4. Refreshes avoid the current offering set when enough eligible alternatives exist. When a pool is nearly exhausted, keep the shelf full while maximizing novel offerings.
+5. Potion mixing scales amounts inside every chance branch while preserving probabilities; descriptions must reflect every alternative outcome.
 
 ## Content system behavior
 
@@ -304,11 +307,12 @@ is recorded in [MIGRATION_HISTORY.md](../src/features/alchemy/shared/storage/MIG
 Layout and ownership: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-path).
 
 - Keep playback ticks on the battle route and session autoplay preferences in the controller so route remounts do not lose the setting.
-- Manual card plays commit immediately and remain available during other card draws and hand reflow; only the incoming hidden cards and actual turn transitions are unavailable. Resolve clicked cards by hand identity so reflow cannot invalidate their old slot. Autoplay, auto-end-turn, and End Turn retain the presentation gate. Floating combat text is spaced per target across successive plays without delaying state changes or card flights. Concurrent draws preserve each other’s hidden cards and transfers; settlement checks the current battle state. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks.
+- Presentation updates may wake autoplay readiness/retry waits, but cannot shorten the post-play pause. Measure that pause from the start of the successful play, counting transfer time toward it; longer transfers add no extra pause. Teardown cancels either wait, and autoplay rechecks current playback gates before the next play.
+- Manual card plays commit immediately and remain available during other card draws and hand reflow; only the incoming hidden cards and actual turn transitions are unavailable. Resolve clicked cards by hand identity so reflow cannot invalidate their old slot. Autoplay, auto-end-turn, and End Turn retain the presentation gate. Floating combat text is spaced per target across successive plays without delaying state changes or card flights. Concurrent draws preserve each other’s hidden cards and transfers; settlement checks the current battle state. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks. Opening the game menu cancels the auto-end countdown; closing it starts a fresh normal countdown only when eligible. Recheck the latest playback gates and hand playability when the countdown expires.
 - Player and enemy deaths share the slice effect and battle-end delay; defer defeat teardown until the delayed screen transition commits. Death’s Door is not defeat, and voluntary run exits remain immediate.
 - Wish choices open after active card transfers finish. Cards with both Draw and Wish show their draws first; queued Wishes also wait for the previous chosen card to reach the hand. Use the existing transfer-in-progress presentation signal without delaying gameplay commits.
 - Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
-- Attacker lunge is presentation-only: nest it outside shake so hit VFX still compose; do not retime playback delays for it. Player lunge fires only for cards with a damage effect and moves the portrait, not the HP/status column.
+- Attacker lunge is presentation-only: nest it outside shake so hit VFX still compose; do not retime playback delays for it. Player lunge fires only for cards with a damage effect and moves the portrait, not the HP/status column. Floating text and its impact flash appear as soon as resolution feedback is available, independently of the attack animation; only subsequent entries retain per-target spacing. The 8 px wind-up ends at 12% / 114 ms and the swing reaches full extension at 24% / 228 ms of the 950 ms lunge. Keep `ATTACK_SWING_APEX_MS` aligned with `combatant-attack-lunge` in `keyframes.css` and the shake delay in `theme.css`.
 - Run the focused battle playback tests and the selection from `verify`; use the raw Playwright path for animation coverage.
 
 ## Adding a new screen

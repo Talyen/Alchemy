@@ -106,7 +106,12 @@ function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delt
   const currentLine = card.descriptionLines[target.lineIndex];
   if (currentLine === undefined) return card;
 
-  const nextValue = Math.max(CORRUPTION_MIN_VALUE, target.value + delta * CORRUPTION_MUTATION_DELTA);
+  let nextValue = Math.max(CORRUPTION_MIN_VALUE, target.value + delta * CORRUPTION_MUTATION_DELTA);
+  const sourceEffect = card.effects[target.effectIndex];
+  if (sourceEffect?.kind === "random-damage") {
+    if (target.field === "minAmount") nextValue = Math.min(nextValue, sourceEffect.maxAmount);
+    if (target.field === "maxAmount") nextValue = Math.max(nextValue, sourceEffect.minAmount);
+  }
   const nextLine = replaceNumberAt(currentLine, target.matchIndex, nextValue);
   if (nextLine === currentLine && target.value !== nextValue) return card;
 

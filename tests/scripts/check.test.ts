@@ -1,10 +1,23 @@
-import { readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { captureSourceDigest, parseCheckArgs, runCheck } from "../../scripts/check.mjs";
 
 describe("source-aware completion gate", () => {
+  let runId: string;
+
+  beforeEach(() => {
+    runId = `check-test-${randomUUID()}`;
+    vi.stubEnv("ALCHEMY_RUN_ID", runId);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    rmSync(join(process.cwd(), "reports/runs", runId), { recursive: true, force: true });
+  });
+
   it("runs documentation checks without unit, build, or browser work", async () => {
     const calls: string[] = [];
     const code = await runCheck(["docs/REFERENCE.md"], {

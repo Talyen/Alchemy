@@ -76,15 +76,25 @@ export function readHasActiveRun(): boolean {
 export function readHasActiveBattle(): boolean {
   return readGameplayState().battle.hasActiveBattle;
 }
+function cloneParkedBattleState(state: BattleState): BattleState {
+  const { rng, ...snapshot } = state;
+  return { ...structuredClone(snapshot), rng };
+}
 function cloneParkedRun(run: ActiveRunData): ActiveRunData {
-  const combat = (run as unknown as { activeCombat?: { battleState?: Record<string, unknown> } }).activeCombat;
-  if (typeof combat?.battleState?.rng !== "function") return structuredClone(run);
-  const { rng: _ignored, ...battleStateRest } = combat.battleState;
-  void _ignored;
-  return structuredClone({
-    ...(run as unknown as Record<string, unknown>),
-    activeCombat: { ...combat, battleState: battleStateRest },
-  } as unknown as ActiveRunData);
+  const { activeCombat, ...snapshot } = run;
+  if (!activeCombat) return structuredClone(run);
+  const { battleState, pendingBattleTransition, ...combat } = activeCombat;
+  return {
+    ...structuredClone(snapshot),
+    activeCombat: {
+      ...structuredClone(combat),
+      battleState: cloneParkedBattleState(battleState),
+      pendingBattleTransition:
+        pendingBattleTransition && "resultState" in pendingBattleTransition
+          ? { ...pendingBattleTransition, resultState: cloneParkedBattleState(pendingBattleTransition.resultState) }
+          : structuredClone(pendingBattleTransition),
+    },
+  };
 }
 export function readParkedRuns(): ParkedRunsMap {
   const parkedRuns = readGameplayState().run.parkedRuns;

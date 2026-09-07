@@ -250,6 +250,29 @@ describe("gear domain", () => {
   });
 
   describe("ranged weapons and quivers", () => {
+    it.each(["body", "left-accessory", "right-accessory"] as const)(
+      "preserves a bow and quiver when equipping the %s slot",
+      (slot) => {
+        const bow: GearInstance = { instanceId: "bow", definitionId: "shortbow-basic", affixes: [] };
+        const arrows: GearInstance = { instanceId: "arrows", definitionId: "quiver-basic", affixes: [] };
+        const item: GearInstance = {
+          instanceId: "other",
+          definitionId: slot === "body" ? "leather-armor-basic" : "ruby-ring-basic",
+          affixes: [],
+        };
+        const inventory = [bow, arrows, item];
+        const armed = equipGear(createEmptyGearLoadouts(), "rogue", "main-hand", bow, inventory);
+        const ready = equipGear(armed, "rogue", "off-hand", arrows, inventory);
+
+        const result = equipGear(ready, "rogue", slot, item, inventory);
+
+        expect(result.rogue[slot]).toBe(item.instanceId);
+        expect(result.rogue["main-hand"]).toBe(bow.instanceId);
+        expect(result.rogue["off-hand"]).toBe(arrows.instanceId);
+        expect(ready.rogue["off-hand"]).toBe(arrows.instanceId);
+      },
+    );
+
     const longbow: GearInstance = { instanceId: "longbow-1", definitionId: "longbow-basic", affixes: [] };
     const crossbow: GearInstance = { instanceId: "crossbow-1", definitionId: "crossbow-basic", affixes: [] };
     const longsword: GearInstance = { instanceId: "longsword-1", definitionId: "longsword-basic", affixes: [] };

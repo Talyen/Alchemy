@@ -100,7 +100,7 @@ describe("refreshCardShopOfferings", () => {
     vi.mocked(selectRewardCards).mockImplementation((actualDeck, actualPool, count, excluded, actualRng) => {
       expect(actualDeck).toEqual(deck);
       expect(actualPool).toBe(pool);
-      expect(count).toBe(2);
+      expect(count).toBe(1);
       expect(excluded).toEqual(currentItems);
       expect(actualRng).toBe(rng);
       return newItems;
@@ -113,7 +113,7 @@ describe("refreshCardShopOfferings", () => {
         refreshesLeft: draft.session.shopState.refreshesLeft,
         pool,
         currentItems: draft.session.shopState.cards,
-        count: 2,
+        count: 1,
         setState: mutateShopState,
         rng,
         mapState: (previous, cards) => ({ ...previous, cards }),

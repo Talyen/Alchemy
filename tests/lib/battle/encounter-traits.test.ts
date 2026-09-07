@@ -162,6 +162,21 @@ describe("encounter trait enemy actions", () => {
 });
 
 describe("encounter trait card events", () => {
+  it.each(["thorns", "holy-retribution"] as const)("retaliates against random damage with %s", (trait) => {
+    const played = card({ effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 6 }] });
+    const state = patchBattleState({
+      currentEnemy: enemyWith(trait),
+      enemyStatuses: { thorns: 1 },
+      playerHealth: 10,
+      hand: [played],
+      mana: 1,
+      turnPhase: "player",
+      rng: () => 0.5,
+    });
+    const result = playBattleCardResolved(state, played.id, 0);
+    expect(result.state.playerHealth).toBe(9);
+  });
+
   it("retaliates once per multi-hit card and still retaliates after lethal damage", () => {
     const currentEnemy = enemyWith("thorns", "holy-retribution");
     const played = card({

@@ -14,6 +14,7 @@ import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearDefinitions, uniqueItemList } from "@/lib/gear";
 import type { Destination } from "@/lib/routing";
+import { getAvailableDestinations } from "@/lib/routing/destination-availability";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
@@ -543,6 +544,28 @@ describe("computeVictoryRewards", () => {
       () => 0.01,
     );
     expect(withTalent.goldEarned).toBeGreaterThan(withoutTalent.goldEarned);
+  });
+
+  it("offers a Campfire using the maximum health gained from victory", () => {
+    const input = baseInput({
+      unlockedTalents: { health: ["health-max-per-combat"] },
+      runMaxHealth: 30,
+      battleState: baseBattleState({ playerHealth: 24 }),
+      getAvailableDestinations: ({
+        currentHealth,
+        currentGold,
+        maxHealth,
+      }: {
+        currentHealth: number;
+        currentGold: number;
+        maxHealth: number;
+      }) => getAvailableDestinations(currentHealth, currentGold, maxHealth).filter((entry) => entry === "Campfire"),
+    });
+
+    const result = computeVictoryRewards(input, testRng);
+
+    expect(result.maxHealthDelta).toBe(1);
+    expect(result.rewardState.destinations).toContain("Campfire");
   });
 
   it("applies max health talent", () => {

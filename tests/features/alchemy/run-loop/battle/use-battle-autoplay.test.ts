@@ -5,7 +5,7 @@ import { isAutoplayBlocked, useBattleAutoplay } from "@/features/alchemy/run-loo
 import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/use-battle-presentation-gate";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
-import { AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
+import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
 import { makeOpenBattle } from "./open-battle-fixture";
 
 const openBattle = makeOpenBattle({ gameMenuOpen: false });
@@ -106,5 +106,37 @@ describe("useBattleAutoplay", () => {
     });
 
     expect(playCard).toHaveBeenCalled();
+  });
+
+  it("preserves post-play pacing across presentation-store updates", async () => {
+    const playCard = vi.fn(() => true);
+    const { unmount } = renderHook(() =>
+      useAutoplayUnderTest({
+        enabled: true,
+        screen: "battle",
+        battleState: openBattle.battleState,
+        hasActiveBattle: true,
+        isCardPlayInProgress: () => false,
+        gameMenuOpen: false,
+        playCard,
+      }),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+      useBattlePresentationStore.getState().setHiddenHandCardKeys(() => ["orphaned-card"]);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(playCard).toHaveBeenCalledOnce();
+    await act(async () => {
+      useBattlePresentationStore.getState().setHiddenHandCardKeys(() => []);
+      await vi.advanceTimersByTimeAsync(AUTOPLAY_POST_PLAY_DELAY_MS - 101);
+    });
+    expect(playCard).toHaveBeenCalledOnce();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(playCard).toHaveBeenCalledTimes(2);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

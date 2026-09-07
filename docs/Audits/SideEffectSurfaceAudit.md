@@ -13,35 +13,30 @@ Fix confirmed ownership or quality defects across the complete rule → controll
 - Do not move battle simulation onto wall-clock randomness “for convenience.”
 - Persistence timestamps and Zod hydrate under `src/lib/validation` / `shared/storage` may legitimately use `Date.now` — do not false-positive those seams.
 
-## Allowlisted seams
+## Investigation and evidence
 
-| Effect                                                      | Allowed locations                                                                                        |
-| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `localStorage` / save I/O / Zod parse                       | `shared/storage/`, `src/lib/validation/save-schemas/`, `src/lib/active-run-session/`, hydrate/boot paths |
-| Zustand store mutation                                      | `shared/stores/` (+ facade writes from controllers)                                                      |
-| Audio                                                       | `src/lib/audio*.ts`, app audio-effect hooks                                                              |
-| Electron / Steam IPC                                        | `desktop/`, preload bridges, Steam helpers — not `src/lib/battle`                                        |
-| Unseeded / wall-clock randomness                            | Outside battle rule code; battle uses injected RNG                                                       |
-| Seeded RNG                                                  | `state.rng` / `getBattleRng(state)` in battle + tests                                                    |
-| Session / presentation identity (`crypto.randomUUID`, etc.) | Ephemeral UI/session tokens outside battle entropy                                                       |
-| Persistence timestamps (`Date.now`)                         | Save metadata / storage / validation seams only                                                          |
-| Browser / DOM environment APIs                              | UI effects, shell/controller lifecycle owners, or a named adapter — not pure rules                       |
-| Timers / observers / clipboard / visibility                 | The UI or shell lifetime that creates them, with teardown and injected/testable boundaries as applicable |
+Trace who creates an effect, owns its state and lifetime, handles failure, and can repeat or cancel it. This audit owns misplaced or hidden effects and inconsistent orchestration; RuntimeCorrectness owns the resulting behavioral failures. Keep a connected repair together under one primary finding.
+
+Use [ARCHITECTURE.md](../ARCHITECTURE.md#run-state), [GAME_RULES.md](../GAME_RULES.md), [AUDIO.md](../AUDIO.md), and the relevant storage/desktop owners to establish permitted seams. A folder name is neither proof of safety nor permission to perform every effect. Existing lint rules identify mechanical boundary violations; investigate the semantic assumptions they cannot enforce.
+
+Confirm hidden dependencies, conflicting owners, an uncontrolled effect that prevents meaningful testing, or a violated lifetime/failure contract before proposing an adapter. Injection is useful when it gives a concrete consumer control; do not create a universal effect framework.
+
+Verify the original ownership or behavior problem is resolved through actual consumers. Depending on the effect, exercise teardown/re-entry, rollback, deterministic replay, error propagation, or rejected external input. Tests should control the seam without replacing the behavior they are meant to verify.
 
 ## Domain rules
 
-- **Battle:** no `Math.random` / unseeded entropy / `Date.now` / `crypto.randomUUID` / `performance.now` in rule code under `src/lib/battle`; handlers consume injected RNG.
+- **Entropy:** battle rules consume the command-bound `world` stream; other run outcomes use their documented persisted streams. Follow current RNG owners for seed creation and presentation randomness. Being outside battle code does not make unseeded gameplay entropy safe.
 - **Persistence:** disk/localStorage writes route through storage owners; domain stores mutate memory then delegate; screens do not write saves directly.
 - **Pure lib:** `src/lib/**` stays free of React and of ad-hoc I/O; push effects to seams. Prefer injected state over `useXStore.getState()` inside pure rule handlers.
 - **UI:** decorative randomness must not re-roll every render — initialize lazily (`useState(() => …)`).
-- **Fetch / network:** not expected in core game loop; treat unexpected `fetch` in `src/lib` as a finding unless an existing allowlisted owner.
-- **Allowed-seam quality:** an allowed owner still must surface meaningful failures, avoid duplicate work, clean up its lifetime, and preserve atomic or ordered behavior where required.
+- **Trust boundaries:** renderer/preload/IPC bridges and file, URL, clipboard, or environment adapters expose only intended capabilities and validate external inputs before effects. Check source/operation restrictions and error handling against current desktop contracts; use local fixtures, not live-service probing.
+- **Seam quality:** a documented owner still must surface meaningful failures, avoid duplicate work, clean up its lifetime, and preserve atomic or ordered behavior where required.
 - **Module initialization:** effectful work at import time must be required by the entrypoint contract; otherwise move it to an explicit owning lifecycle.
 
 ## Known signals
 
-- **Unseeded entropy outside seams:** `Date.now` / `new Date(` / non-UI `Math.random` outside allowlisted owners. `fetch(` under `src/lib` is `alchemy/no-lib-fetch`; `localStorage` / `sessionStorage` in `src` are `alchemy/no-unowned-web-storage`.
-- **Battle entropy leaks:** unseeded entropy under `src/lib/battle` — target 0 (ESLint `Math.random` / `Math.floor` bans).
+- **Unseeded entropy outside seams:** `Date.now` / `new Date(` / non-UI `Math.random` outside documented owners. `fetch(` under `src/lib` is `alchemy/no-lib-fetch`; `localStorage` / `sessionStorage` in `src` are `alchemy/no-unowned-web-storage`.
+- **Run entropy leaks:** draws outside the owning persisted stream, counters that advance without their outcome committing, or randomness that diverges after resume; use lint diagnostics for directly banned calls.
 - **Direct storage from screens:** remaining persist-call leaks that are not `localStorage` / `sessionStorage` identifiers (those are lint).
 - **Global mutable access in pure logic:** `getState()` inside `src/lib` rule handlers — prefer injected state.
 - **Desktop IPC in pure lib:** Electron/Steam APIs imported from `src/lib` battle/game-data paths.
@@ -49,4 +44,4 @@ Fix confirmed ownership or quality defects across the complete rule → controll
 - **Browser/global access:** `window`, `document`, clipboard, observers, visibility/focus, environment, or location APIs inside pure rules or unowned module initialization.
 - **Unowned lifetime:** timers, observers, object URLs, subscriptions, or global style/body mutations without a creator responsible for teardown.
 - **Duplicate effect orchestration:** multiple callers independently persist, emit, play, synchronize, or retry the same semantic event.
-- **Weak allowed seam:** effect is in an allowlisted folder but silently loses errors, repeats work, exposes partial mutation, or cannot be controlled in tests.
+- **Weak seam:** effect is in a documented owner but silently loses errors, repeats work, exposes partial mutation, or cannot be controlled in tests.
