@@ -396,6 +396,18 @@ describe("new wish talents", () => {
     expect(result.mana).toBe(4);
   });
 
+  it("Mana from Wishes triggers Arcane Mending only while Mana can be gained", () => {
+    const state = makeTestBattleState({
+      mana: 2,
+      maxMana: 4,
+      playerHealth: 10,
+      talentEffects: { ...makeTestBattleState().talentEffects, manaOnWish: 2, healOnManaGain: 2 },
+    });
+    const next = applyWishEffect(state, makeTestCard(), 2, []);
+    expect(next.mana).toBe(4);
+    expect(next.playerHealth).toBe(12);
+  });
+
   it("wishManaTrigger caps mana at maxMana", () => {
     const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = makeTestBattleState({

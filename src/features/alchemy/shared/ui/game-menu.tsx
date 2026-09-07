@@ -244,7 +244,7 @@ export function GameMenu({
       dismissOnBackdrop
       dim={false}
       zIndex={120}
-      className={cn(!isOpen && "pointer-events-none", !layoutAnchorRect && "flex items-center justify-center px-6")}
+      className={cn(!layoutAnchorRect && "flex items-center justify-center px-6")}
     >
       {layoutAnchorRect ? (
         <div className="fixed z-[121]" style={anchoredMenuStyle(layoutAnchorRect)}>

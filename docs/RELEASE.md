@@ -1,6 +1,6 @@
 # Release and Steam shipping
 
-Automation enforces release readiness — agents do not rely on manual checklists.
+Automated gates validate builds and release artifacts. Public release readiness also requires the [provenance and notice review](./RELEASE_SETUP.md#player-notices-and-asset-provenance) and manual Steamworks promotion described below.
 
 ## Commands
 
@@ -19,11 +19,24 @@ Build and installer selection: [REFERENCE.md § Build commands decision tree](./
 
 ## Changelog (release-time only)
 
-1. Day to day: commit to `main` with [Conventional Commits](https://www.conventionalcommits.org/). **Do not edit `CHANGELOG.md`.** Player-facing types are `feat`, `fix`, `balance`, and `perf`. Optional body trailer `User-Facing: yes` or `User-Facing: no` overrides type and path inference. Infra-only commits (`scripts/`, `docs/`, `.github/`, `tests/`, generated barrels) stay out of patch notes even when typed `feat`.
-2. `npm run release` / `release:hotfix` → `commit-and-tag-version` runs `.versionrc.json` hooks:
-   - **prerelease:** `sync-changelog.mjs` fills ## [Unreleased] from recognized Conventional Commits since the latest `v*` tag; it omits merge/non-conventional noise and caps verbose bodies
-   - **postbump:** `release-changelog.mjs` promotes that section to `## [x.y.z] (date)`
-3. Player patch notes are generated from git (not from `CHANGELOG.md`): types, changed paths, and `User-Facing` trailers. Anytime: `npm run generate:patch-notes` writes `release-notes/UNRELEASED.md`. Tag CI writes `release-notes/vX.Y.Z.md` from the previous tag to the current tag. `npm run release -- --dry-run` (and the real release, after gates) prints that draft before tagging.
+Commit with [Conventional Commits](https://www.conventionalcommits.org/).
+Player-facing types are `feat`, `fix`, `balance`, and `perf`; optional
+`User-Facing: yes` or `User-Facing: no` trailers override type and path inference.
+Infra-only commits stay out of player notes even when typed `feat`.
+
+`CHANGELOG.md` is generated developer history. The release command's
+`.versionrc.json` hooks populate Unreleased from recognized commits since the
+latest `v*` tag (`sync-changelog.mjs`, prerelease), then promote it to a dated
+version section (`release-changelog.mjs`, postbump). Never edit, trim, or
+reorganize it by hand. If it becomes hard to consume, improve the generator's
+filtering/grouping with tests or cut a release.
+
+Player notes come directly from git through `generate-patch-notes.mjs`, using
+types, changed paths, and trailers. `npm run generate:patch-notes` writes
+`release-notes/UNRELEASED.md`; tag CI writes `release-notes/vX.Y.Z.md` from the
+previous tag to the current tag. `npm run release -- --dry-run` prints the draft
+without gates, a bump, a tag, or a push. A real release prints it after gates
+and before tagging.
 
 ## Agent release flow
 
@@ -79,12 +92,3 @@ are defined in [`.github/workflows/release.yml`](../.github/workflows/release.ym
 and [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Keep this page
 focused on release decisions; update the workflow files when CI topology
 changes.
-
-## Changelog output policy
-
-`CHANGELOG.md` is a generated developer history and may be verbose between
-releases. Never trim or reorganize it by hand. If an unreleased section becomes
-hard to consume, change `sync-changelog.mjs` filtering/grouping with tests or
-cut a release. Player-facing communication is generated from git by
-`generate-patch-notes.mjs` (conventional type, changed paths, and optional
-`User-Facing:` trailers), not by copying changelog entries.

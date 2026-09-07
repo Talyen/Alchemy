@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createGearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear/definitions";
-import { cardLibrary, trinketLibrary } from "@/lib/game-data";
+import { cardLibrary, getCardKeywords, trinketLibrary } from "@/lib/game-data";
 import type { Destination } from "@/lib/routing";
 import {
   restorePendingReward,
@@ -92,27 +92,58 @@ describe("pending reward persistence", () => {
     expect(restored?.destinations).toEqual(["Campfire", "Mystery"]);
   });
 
-  it("round-trips companion choices alongside the primary reward", () => {
-    const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"));
-    const primary = cardLibrary.find((card) => card.id === "slash");
-    expect(companion).toBeDefined();
-    expect(primary).toBeDefined();
+  it.each(["companion", "archery", "wish", "nature"] as const)(
+    "round-trips %s bonus choices alongside the primary reward",
+    (theme) => {
+      const bonuses = cardLibrary
+        .filter((card) =>
+          theme === "companion"
+            ? card.effects.some((effect) => effect.kind === "summon-companion")
+            : getCardKeywords(card).includes(theme) &&
+              !card.effects.some((effect) => effect.kind === "summon-companion"),
+        )
+        .slice(0, 3);
+      expect(bonuses.length).toBeGreaterThan(0);
+      const primary = cardLibrary.find((card) => card.id === "slash")!;
+      const rewardState = {
+        ...createEmptyRewardState(),
+        choices: [primary],
+        gold: 8,
+      };
+      const persisted = serializePendingReward(rewardState, bonuses)!;
 
+      expect(persisted.companionChoiceIds).toEqual(bonuses.map((card) => card.id));
+      const restored = restorePendingRewardBundle(persisted);
+      expect(restored.rewardState).toEqual(rewardState);
+      expect(restored.companionRewardCards).toEqual(bonuses);
+    },
+  );
+
+  it("preserves mixed bonus choices in order while dropping unknown IDs", () => {
+    const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
+    const plain = cardLibrary.find((card) => card.id === "slash")!;
+    const excluded = cardLibrary.find((card) => card.excludeFromOfferPool)!;
+    const bonuses = [plain, companion, excluded];
+    const rewardState = { ...createEmptyRewardState(), choices: [plain] };
+    const persisted = serializePendingReward(rewardState, bonuses)!;
+    persisted.companionChoiceIds.splice(1, 0, "no-such-bonus-card");
+
+    const restored = restorePendingRewardBundle(persisted);
+    expect(restored.rewardState).toEqual(rewardState);
+    expect(restored.companionRewardCards).toEqual(bonuses);
+  });
+
+  it.each([{ ids: [] }, { ids: ["no-such-bonus-card"] }])("restores no bonus for IDs $ids", ({ ids }) => {
     const rewardState = {
       ...createEmptyRewardState(),
-      rewardType: "card" as const,
-      choices: [primary!],
-      gold: 8,
+      choices: [cardLibrary.find((card) => card.id === "slash")!],
     };
-    const persisted = serializePendingReward(rewardState, [companion!]);
-
-    expect(persisted?.companionChoiceIds).toEqual([companion!.id]);
-    const restored = restorePendingRewardBundle(persisted!);
-    expect(restored.rewardState?.rewardType).toBe("card");
-    if (restored.rewardState?.rewardType === "card") {
-      expect(restored.rewardState.choices.map((choice) => choice.id)).toEqual([primary!.id]);
-    }
-    expect(restored.companionRewardCards?.map((choice) => choice.id)).toEqual([companion!.id]);
+    const persisted = { ...serializePendingReward(rewardState)!, companionChoiceIds: ids };
+    expect(restorePendingRewardBundle(persisted)).toEqual({ rewardState, companionRewardCards: null });
+    expect(restorePendingRewardBundle({ ...persisted, rewardType: "card", choiceIds: [] })).toEqual({
+      rewardState: null,
+      companionRewardCards: null,
+    });
   });
 
   it("restores cards excluded from the general offer pool", () => {

@@ -20,11 +20,9 @@ function restoreMana(
   combatTexts: CombatTextEvent[],
   allowOverflow = false,
 ): BattleState {
-  const manaBefore = state.mana;
-  const nextState = gainManaWithCombatText(state, applyPotionMultiplier(amount, potionMult), combatTexts, {
+  return gainManaWithCombatText(state, applyPotionMultiplier(amount, potionMult), combatTexts, {
     allowOverflow,
   });
-  return applyHealOnManaGain(nextState, nextState.mana - manaBefore, combatTexts);
 }
 
 function loseMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {

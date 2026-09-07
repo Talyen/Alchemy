@@ -6,6 +6,7 @@ import {
   getGearFiles,
   getOptimizedManifestPath,
   resolveRootDir,
+  readArtManifest,
   runSyncGenerated,
 } from "./lib/sync-generated-helpers.mjs";
 
@@ -65,32 +66,22 @@ export const ART_BARRELS = {
   },
 };
 
-export async function syncAssets({ check = false } = {}) {
-  const cfg = ART_BARRELS.assets;
-  await runSyncGenerated({
-    manifestPath,
-    outputFile: cfg.outputFile,
-    rootDir,
-    check,
-    build: cfg.build,
-    onCount: cfg.onCount,
-    label: cfg.label,
-  });
+async function syncBarrels(configs, { check = false } = {}) {
+  const manifest = await readArtManifest(manifestPath);
+  const prepared = configs.map((config) => ({ ...config, result: config.build(manifest) }));
+  for (const config of prepared) {
+    await runSyncGenerated({ ...config, rootDir, check });
+  }
 }
 
-export async function syncGearArt({ check = false } = {}) {
-  const cfg = ART_BARRELS.gearArt;
-  await runSyncGenerated({
-    manifestPath,
-    outputFile: cfg.outputFile,
-    rootDir,
-    check,
-    build: cfg.build,
-    onCount: cfg.onCount,
-    label: cfg.label,
-  });
+export async function syncAssets(options) {
+  await syncBarrels([ART_BARRELS.assets], options);
 }
 
-export async function syncArtBarrels({ check = false } = {}) {
-  await Promise.all([syncAssets({ check }), syncGearArt({ check })]);
+export async function syncGearArt(options) {
+  await syncBarrels([ART_BARRELS.gearArt], options);
+}
+
+export async function syncArtBarrels(options) {
+  await syncBarrels(Object.values(ART_BARRELS), options);
 }

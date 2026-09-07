@@ -53,7 +53,7 @@ function scaleArmorAmount(state: BattleState, amount: number): { state: BattleSt
   let nextState = state;
   if (
     nextState.talentEffects.armorDoubledBelowHalfHealth &&
-    nextState.playerHealth <= nextState.playerMaxHealth / HALF_DIVISOR
+    nextState.playerHealth < nextState.playerMaxHealth / HALF_DIVISOR
   ) {
     nextAmount *= FIRST_EFFECT_MULTIPLIER;
   }
@@ -149,7 +149,7 @@ function applyForgeBlockBurst(
 
 export function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: CombatTextEvent[]): BattleState {
   let amount = baseAmount + state.talentEffects.flatForgeGained;
-  if (state.talentEffects.forgeDoubledBelowHalfHealth && state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
+  if (state.talentEffects.forgeDoubledBelowHalfHealth && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
     amount *= 2;
   }
   amount = paceCombatMagnitude(state, amount, "player");

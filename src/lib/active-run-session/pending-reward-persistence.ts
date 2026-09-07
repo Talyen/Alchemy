@@ -25,15 +25,6 @@ function resolveCardChoices(choiceIds: string[]): BattleCard[] | null {
   return choices.length === 0 ? null : choices;
 }
 
-function resolveCompanionChoices(choiceIds: string[]): BattleCard[] | null {
-  const choices = choiceIds
-    .map((id) => cardById[id])
-    .filter((entry): entry is BattleCard =>
-      Boolean(entry && entry.effects.some((effect) => effect.kind === "summon-companion")),
-    );
-  return choices.length === 0 ? null : choices;
-}
-
 function resolveTrinketChoices(choiceIds: string[]): TrinketEntry[] | null {
   const choices = lookupTrinketEntries(choiceIds);
   return choices.length === 0 ? null : choices;
@@ -115,7 +106,7 @@ export interface RestoredPendingReward {
 }
 
 export function restorePendingRewardBundle(persisted: PersistedPendingReward): RestoredPendingReward {
-  const companionRewardCards = resolveCompanionChoices(persisted.companionChoiceIds);
+  const companionRewardCards = resolveCardChoices(persisted.companionChoiceIds);
   const rewardState = restorePendingReward(persisted);
 
   if (rewardState || !companionRewardCards) {

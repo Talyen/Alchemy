@@ -13,11 +13,25 @@ Plans require minimal front matter:
 Use `npm run new:plan -- <PlanName>` to scaffold valid metadata. Use
 `npm run plans:check` while working; it warns when a plan has not been updated
 recently. `npm run docs:check` adds repository-wide link, path, command, anchor,
-and document-reachability contracts. When the work ends, update its date and set
-`status: complete` (or `cancelled`), run `npm run archive:plans`, then run
-`npm run docs:check:final`. The final check is non-mutating and requires no
-active plans to remain.
+and document-reachability contracts.
+
+## Task handoff
+
+1. Mark only the task-owned plan complete or cancelled and refresh its date.
+2. Archive it explicitly. `npm run archive:plans` moves every terminal plan;
+   inspect the candidates first. If another task has a terminal plan, move only
+   your plan into `Archived/` instead. Update relative links after moving it.
+3. Confirm your plan is archived and run `npm run docs:check`, or the task-scoped
+   `npm run check -- <paths>` that includes it. Include the moved plan and
+   updated links in the task-owned paths.
+
+Other tasks' active or blocked plans may remain. Do not mark them finished,
+cancel them, or change their metadata to make this task's handoff pass.
+
+`npm run docs:check:final` is a non-mutating, repository-wide closure check that
+requires no active plans. Use it only when intentionally closing all plans;
+it neither archives plans nor replaces the ordinary task handoff gate.
 
 Archiving remains explicit because tooling cannot reliably infer that
 implementation work is finished; CI validates the contract but does not modify
-the working tree.
+the working tree. Retention rules live in [Archived](./Archived/README.md).

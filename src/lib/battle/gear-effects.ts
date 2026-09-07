@@ -4,6 +4,7 @@ import { mergeCombatText, payKillPayouts } from "./combat-text";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyLuckyCloverGold } from "./bonus-effects";
 import { damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { paceCombatMagnitude } from "./fight-pacing";
 
 export function gearFrozenDamageMultiplier(state: BattleState): number {
@@ -49,7 +50,10 @@ export function applyGearCcPhysicalDamage(
   return dealEnemyScaledDamage(state, gearDamage, "physical", combatTexts, {
     multiplier: getEnemyDamageMultiplier(state, "physical") * gearFrozenDamageMultiplier(state),
     riders: (nextState, finalDamage, texts) => {
-      const afterClover = options.grantLuckyClover ? applyLuckyCloverGold(nextState, finalDamage, texts) : nextState;
+      const afterThreshold = processEncounterTraitHealthThreshold(state.enemyHealth, nextState, texts);
+      const afterClover = options.grantLuckyClover
+        ? applyLuckyCloverGold(afterThreshold, finalDamage, texts)
+        : afterThreshold;
       return payKillPayouts(afterClover, enemyWasAlive, texts);
     },
   });

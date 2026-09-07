@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultBattleState } from "@/lib/battle";
-import { cardLibrary } from "@/lib/game-data";
+import { cardLibrary, getCardKeywords } from "@/lib/game-data";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import {
   emptyAlchemistState,
@@ -151,6 +152,72 @@ describe("interrupted mid-claim rewards", () => {
       expect(restored.choices.map((choice) => choice.id)).toEqual([primary.id]);
     }
     expect(readRunSession().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
+  });
+});
+
+describe.each(["companion", "archery", "wish", "nature"] as const)("%s bonus reward resume", (theme) => {
+  const bonuses = cardLibrary
+    .filter((card) =>
+      theme === "companion"
+        ? card.effects.some((effect) => effect.kind === "summon-companion")
+        : getCardKeywords(card).includes(theme) && !card.effects.some((effect) => effect.kind === "summon-companion"),
+    )
+    .slice(0, 3);
+
+  it.each([false, true])("preserves choices when the bonus is displayed: %s", (bonusDisplayed) => {
+    expect(bonuses.length).toBeGreaterThan(0);
+    startLabyrinthRun();
+    const primary = cardLibrary.find((card) => card.id === "slash")!;
+    const choices = bonusDisplayed ? bonuses : [primary];
+    setRunSession({
+      rewardState: { ...createEmptyRewardState(), choices },
+      companionRewardCards: bonusDisplayed ? null : bonuses,
+    });
+    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
+    resetRunDomainStore();
+    restoreRun(snap, {}, {});
+
+    expect(readGameplayState().run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
+    expect(readRunSession().hasActiveRun).toBe(true);
+    expect(readRunSession().rewardState.choices).toEqual(choices);
+    expect(readRunSession().companionRewardCards).toEqual(bonusDisplayed ? null : bonuses);
+    expect(readActiveRun().rng).toEqual(snap.rng);
+  });
+
+  it("restores an interrupted bonus handoff when primary choices are unavailable without awarding loot", () => {
+    expect(bonuses.length).toBeGreaterThan(0);
+    startLabyrinthRun();
+    setRunSession({
+      rewardClaimInFlight: true,
+      rewardState: {
+        ...createEmptyRewardState(),
+        choices: [{ ...bonuses[0]!, id: "no-such-primary-card" }],
+        selectedId: "no-such-primary-card",
+        gold: 7,
+        materials: { ...emptyInventory(), wood: 3 },
+        lastVictoryContentSystem: "labyrinth",
+        lastVictoryEnemyType: "elite",
+      },
+      companionRewardCards: bonuses,
+    });
+    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
+    expect(snap.interruptedFlow.kind).toBe("companion-reward");
+    resetRunDomainStore();
+    const profileBefore = readGameplayState().runProfile;
+    restoreRun(snap, {}, {});
+
+    expect(readGameplayState().run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
+    expect(readRunSession().rewardState).toEqual({
+      ...createEmptyRewardState(),
+      choices: bonuses,
+      lastVictoryContentSystem: "labyrinth",
+      lastVictoryEnemyType: "elite",
+    });
+    expect(readRunSession().companionRewardCards).toBeNull();
+    expect(readGameplayState().runProfile.gold).toBe(profileBefore.gold);
+    expect(readGameplayState().runProfile.materialInventory).toEqual(profileBefore.materialInventory);
+    expect(readActiveRun().runMaterialsEarned).toEqual(snap.runMaterialsEarned);
+    expect(readActiveRun().rng).toEqual(snap.rng);
   });
 });
 

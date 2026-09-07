@@ -1,6 +1,8 @@
-# Scripts catalog
+# Scripts implementation map
 
-Canonical entries first.
+Use [REFERENCE](../docs/REFERENCE.md#script-command-reference) to choose a command,
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) to select checks,
+and this map to locate their implementation owners.
 
 ## Assets (canonical: `assets.mjs --prepare/--optimize/--sync/--check`)
 
@@ -14,48 +16,48 @@ Canonical entries first.
 | Heavy idempotence check (rebuild + restore)         | `npm run assets:check`                                                        |
 | Aliases (`sync:art-barrels`, `sync:gear-art`)       | Forward to `sync-generated.mjs --art-only` / `--gear-only`                    |
 
-Fast vs heavy check: `check:generated` verifies barrels are current without running
-transforms (cheap, static-gate safe). `assets:check` runs full `prepareAssets`,
-diffs output hashes, and restores the tree. It runs for asset-touching changes
-and before shipping; [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change)
-owns gate selection.
+`prepare-assets.mjs` owns preparation, `sync-art-barrels.mjs` builds the two art
+barrels, and `check-prepared-assets.mjs` owns idempotence checking and restoration.
+Authoring order and fast-versus-prepared checks live in
+[WORKFLOWS-ASSETS](../docs/WORKFLOWS-ASSETS.md).
 
 Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (freshness),
 `lib/process-helpers.mjs` (generic `formatProcessError`), `lib/audio-optimizer.mjs` (audio discovery/runner).
 
 ## Agent discovery and evaluation
 
-`npm run context -- <paths>` emits bounded canonical owner sections and entry points; `--task <category>` starts before paths are known, and `--outline <file> [--symbol <name>]` supports focused source reads. `--entries` / `--entry <id>` inspect nested content; `--related` adds static consumer/test/fixture hints; `--session <id>` and `--refresh` control optional incremental documentation reads. `lib/agent-context.mjs` owns discovery metadata and `lib/document-sections.mjs` owns section extraction. `measure:agent-context` uses the same selection; verification categories remain separate and broad.
+| Concern                                                             | Implementation owner        |
+| ------------------------------------------------------------------- | --------------------------- |
+| Owner sections and source entry points                              | `lib/agent-context.mjs`     |
+| Markdown section extraction                                         | `lib/document-sections.mjs` |
+| Bounded search, related-file hints, and disposable context sessions | `lib/agent-discovery.mjs`   |
+| Preread measurement                                                 | `measure-agent-context.mjs` |
+| Evaluation records and comparison                                   | `agent-eval.mjs`            |
 
-`npm run search -- <literal> [paths...]` returns bounded matching filenames; `--excerpts` returns matching lines. `lib/agent-discovery.mjs` shares the `rg` inventory with related-file discovery and owns disposable context-session state. [Agent discovery](../docs/REFERENCE.md#agent-discovery) documents options and limitations.
-
-`npm run eval:agent -- --init <task> <session>` creates a local measurement record. Set `ALCHEMY_AGENT_SESSION` for automatic context/verification events, fill observed host usage and acceptance evidence, then pass one record to summarize or two to compare. [Evaluation procedure](../.agents/evals/README.md) owns pinned task setup and interpretation. Context bytes and observed events are partial evidence, not inferred host token counts.
+[Agent discovery](../docs/REFERENCE.md#agent-discovery) documents command options
+and limitations; [evaluations](../.agents/evals/README.md) owns pinned setup and
+interpretation. Discovery metadata must reference canonical prose rather than
+copying it, and it does not own verification selection.
 
 ## Checks / verification (nesting order)
 
-For executable changes, `check.mjs` ⊃ `verify-changed.mjs` + `lint:ci` + applicable
-build/smoke steps. `lint:ci` = `check:static` + `docs:check` + `deadcode` +
-`playwright --list`; `check:static` owns generated outputs, formatting, types,
-ESLint, boundaries, and architecture smoke. Documentation-only checks stay on
-the smaller documentation + format route. Documentation and ESLint inventories exclude isolated
-`.worktrees/` checkouts, just as they exclude reports and installed dependencies.
-Pre-push runs `npm run check -- --diff` only (lefthook) — do not stack `verify` or
-`docs:check` on top; `check.mjs` composes the applicable verification and static
-contracts itself. `lib/verification-cache.mjs` automatically reuses only matching successful unit commands with unchanged local inputs; `ALCHEMY_VERIFY_FRESH=1` bypasses reuse, and CI never uses it. Other gates always run. Shared build inputs (package manifests, TypeScript/Vite configuration,
-and build helpers) trigger both web and desktop builds.
+Gate composition, CI tiers, and reuse policy live in
+[CONTRIBUTING](../CONTRIBUTING.md#static-build-and-ci-policy).
 
-| Task                  | Command                                                                                                          |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Local completion gate | `npm run check -- --diff` (`check.mjs`; classification via `lib/changed-paths.mjs` over `lib/change-routes.mjs`) |
-| Changed-path verifier | `npm run verify -- --diff` (`verify-changed.mjs`; same `changed-paths` parser)                                   |
-| Docs gate             | `npm run docs:check` (`check-docs.mjs` → 10 gating contracts + plans + 1 advisory ledger reminder)               |
-| Static set            | `npm run check:static` (generated + format + typecheck + eslint + boundaries + arch-smoke)                       |
-| Bundle budget         | `npm run check:bundle` (constants in `lib/bundle-budget.mjs`; requires `dist/assets/`)                           |
+| Concern                                   | Implementation owner                                                    |
+| ----------------------------------------- | ----------------------------------------------------------------------- |
+| Completion orchestration                  | `check.mjs`                                                             |
+| Related tests and risk escalations        | `verify-changed.mjs`                                                    |
+| Path parsing and classification           | `lib/changed-paths.mjs` + `lib/change-routes.mjs`                       |
+| Documentation contracts and plan metadata | `check-docs.mjs`, `check-documentation-contract.mjs`, `check-plans.mjs` |
+| Passing unit receipts                     | `lib/verification-cache.mjs`                                            |
+| Bundle budgets                            | `lib/bundle-budget.mjs`                                                 |
 
-Tooling and configuration paths run the complete `tests/scripts` +
-`tests/architecture` suite because those tests inspect repository files and are
-not reliably discoverable through the import graph. Ambient script-test declarations belong in the existing `tests/scripts/global.d.ts` owner; standalone unreferenced declaration files fail dead-code checks. Full Vitest and browser
-execution remain CI-owned.
+Documentation and ESLint inventories exclude isolated `.worktrees/` checkouts,
+reports, and installed dependencies. Ambient script-test declarations belong in
+`tests/scripts/global.d.ts`; standalone unreferenced declarations fail dead-code
+checks. Shared build inputs select both renderer builds through the existing
+change routes.
 
 `check:bundle` checks the current `dist/assets/` and fails when the build is missing
 or empty. Web and desktop renderer builds both write `dist/`; check immediately
@@ -64,12 +66,15 @@ and release gates also check desktop bundles.
 
 ## Release / changelog (three stages, shared `lib/patch-notes-core.mjs` + `lib/git-release.mjs`)
 
-| Stage                                             | Command                                          |
-| ------------------------------------------------- | ------------------------------------------------ |
-| Dev `Unreleased` ← git                            | `npm run sync:changelog`                         |
-| `Unreleased` → versioned on bump (versionrc hook) | `npm run changelog:promote`                      |
-| Player `release-notes/` ← git + trailers          | `npm run generate:patch-notes`                   |
-| Release gate                                      | `npm run verify:release` (tag + desktop package) |
+| Output or operation                    | Implementation owner       |
+| -------------------------------------- | -------------------------- |
+| Developer Unreleased history           | `sync-changelog.mjs`       |
+| Versioned changelog section            | `release-changelog.mjs`    |
+| Player notes from commits and trailers | `generate-patch-notes.mjs` |
+| Release artifact validation            | `verify-release.mjs`       |
+
+[RELEASE](../docs/RELEASE.md#changelog-release-time-only) owns timing, note policy,
+and the release decision flow.
 
 Desktop: `ensure-electron.mjs` (orchestrator) → `electron-download.mjs` + `electron-path.mjs`
 (pure predicates); `dist-desktop.mjs` → `verify-desktop-package.mjs`.

@@ -1,6 +1,22 @@
 import type { SaveData } from "./types";
 
+export type SaveWriteOutcome = "saved" | "failed" | "skipped";
+
 let writesDisabledForSession = false;
+let writeGeneration = 0;
+const cancellationListeners = new Set<() => void>();
+
+export function subscribeSaveCancellation(listener: () => void): () => void {
+  cancellationListeners.add(listener);
+  return () => {
+    cancellationListeners.delete(listener);
+  };
+}
+
+function cancelSaveRequests(): void {
+  writeGeneration++;
+  for (const listener of cancellationListeners) listener();
+}
 
 export function areWritesDisabled(): boolean {
   return writesDisabledForSession;
@@ -8,101 +24,104 @@ export function areWritesDisabled(): boolean {
 
 export function setWritesDisabled(disabled: boolean): void {
   writesDisabledForSession = disabled;
+  if (disabled) cancelSaveRequests();
+}
+
+interface PendingSave {
+  data: SaveData;
+  generation: number;
+  completion: Promise<SaveWriteOutcome>;
+  resolve: (outcome: SaveWriteOutcome) => void;
 }
 
 export class SaveWriteQueue {
   private chain: Promise<void> = Promise.resolve();
-  private coalesced: SaveData | null = null;
-  private clearPending = false;
+  private coalesced: PendingSave | null = null;
+  private pendingClears = 0;
   private runnerActive = false;
-
-  get hasPendingTasks(): boolean {
-    return this.runnerActive || this.coalesced !== null;
-  }
 
   get isIdle(): boolean {
     return !this.runnerActive && this.coalesced === null;
   }
 
   get isClearPending(): boolean {
-    return this.clearPending;
+    return this.pendingClears > 0;
   }
 
-  async enqueue(data: SaveData, write: (d: SaveData) => Promise<void>): Promise<void> {
-    if (writesDisabledForSession || this.clearPending) {
-      this.coalesced = null;
-      return;
+  enqueue(data: SaveData, write: (data: SaveData) => Promise<SaveWriteOutcome>): Promise<SaveWriteOutcome> {
+    if (writesDisabledForSession || this.isClearPending) return Promise.resolve("skipped");
+    if (this.coalesced?.generation !== writeGeneration) this.discardPending();
+    if (this.coalesced) {
+      this.coalesced.data = data;
+      return this.coalesced.completion;
     }
-    this.coalesced = data;
-    if (this.runnerActive) {
-      await this.chain.catch(() => {});
-      if (this.coalesced === null || writesDisabledForSession || this.clearPending) return;
-      if (this.runnerActive) {
-        await this.chain.catch(() => {});
-        return;
-      }
-    }
-    this.runnerActive = true;
-    const run = this.chain.then(async () => {
-      try {
-        while (this.coalesced !== null && !this.clearPending) {
-          const snapshot = this.coalesced;
-          this.coalesced = null;
-          if (writesDisabledForSession) return;
-          await write(snapshot);
-        }
-      } finally {
-        this.runnerActive = false;
-      }
+    let resolve!: PendingSave["resolve"];
+    const completion = new Promise<SaveWriteOutcome>((settle) => {
+      resolve = settle;
     });
-    this.chain = run.catch(() => {});
-    await run;
+    this.coalesced = { data, generation: writeGeneration, completion, resolve };
+    if (!this.runnerActive) {
+      this.runnerActive = true;
+      this.chain = this.chain.then(async () => {
+        try {
+          while (this.coalesced) {
+            const pending = this.coalesced;
+            this.coalesced = null;
+            let outcome: SaveWriteOutcome = "skipped";
+            if (!writesDisabledForSession && !this.isClearPending && pending.generation === writeGeneration) {
+              try {
+                outcome = await write(pending.data);
+              } catch {
+                outcome = "failed";
+              }
+            }
+            pending.resolve(pending.generation === writeGeneration ? outcome : "skipped");
+          }
+        } finally {
+          this.runnerActive = false;
+        }
+      });
+    }
+    return completion;
   }
 
-  queueExitSnapshot(data: SaveData): void {
-    if (writesDisabledForSession || this.clearPending) return;
-    this.coalesced = data;
+  private discardPending(): void {
+    this.coalesced?.resolve("skipped");
+    this.coalesced = null;
   }
 
   async enqueueClear(
-    clear: () => Promise<{ ok: boolean }>,
+    clear: () => Promise<{ ok: boolean; error?: unknown }>,
     options?: { keepWritesDisabled?: boolean | undefined; onError?: (error: unknown) => void },
   ): Promise<boolean> {
-    this.clearPending = true;
-    this.coalesced = null;
-    let cleared = false;
+    this.pendingClears++;
+    cancelSaveRequests();
+    this.discardPending();
     const run = this.chain.then(async () => {
       try {
-        this.coalesced = null;
         const result = await clear();
-        if (result.ok) {
-          if (!options?.keepWritesDisabled) writesDisabledForSession = false;
-          cleared = true;
-          return;
+        if (!result.ok) {
+          options?.onError?.(result.error);
+          return false;
         }
-        options?.onError?.((result as { error?: unknown }).error);
+        if (!options?.keepWritesDisabled) writesDisabledForSession = false;
+        return true;
+      } catch (error) {
+        options?.onError?.(error);
+        return false;
       } finally {
-        this.coalesced = null;
-        this.clearPending = false;
+        this.pendingClears--;
       }
     });
-    this.chain = run.catch(() => {
-      this.coalesced = null;
-      this.clearPending = false;
-    });
-    try {
-      await run;
-    } catch {
-      return false;
-    }
-    return cleared;
+    this.chain = run.then(() => {});
+    return run;
   }
 
   async reset(): Promise<void> {
-    await this.chain.catch(() => {});
+    await this.chain;
     this.chain = Promise.resolve();
-    this.coalesced = null;
-    this.clearPending = false;
+    this.discardPending();
+    this.pendingClears = 0;
     this.runnerActive = false;
   }
 }

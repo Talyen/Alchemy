@@ -32,7 +32,7 @@ describe("DraftDeckScreen", () => {
     );
 
     expect(screen.getByText("Draft a Deck")).toBeDefined();
-    expect(screen.getByText(`Pick 1 of 3 cards - 2/${String(DRAFT_ROUNDS)} selected`)).toBeDefined();
+    expect(screen.getByText(`Pick 1 of 3 cards - 1/${String(DRAFT_ROUNDS)} selected`)).toBeDefined();
 
     const choices = screen.getAllByRole("button");
     expect(choices.length).toBeGreaterThanOrEqual(3);

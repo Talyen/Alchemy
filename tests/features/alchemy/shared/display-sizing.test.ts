@@ -1,7 +1,8 @@
+import { anchoredPage } from "@/features/alchemy/shared/ui/pagination";
 import { describe, expect, it } from "vitest";
 import { getVirtualResolutionLayout } from "@/features/alchemy/shared/hooks";
 import { normalizeDisplayPercent } from "@/lib/settings-values";
-import { anchoredPage, getGridCapacity } from "@/features/alchemy/shared/ui/adaptive-grid";
+import { getGridCapacity } from "@/features/alchemy/shared/ui/adaptive-grid";
 
 describe("display sizing", () => {
   it.each([

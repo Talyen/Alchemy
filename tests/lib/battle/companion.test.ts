@@ -224,7 +224,7 @@ describe("processCompanionTurnStart", () => {
     expect(result.enemyHealth).toBe(26);
   });
 
-  it("companionDoubledVsLowHealth doubles damage when enemy ≤ 30% HP", () => {
+  it("companionDoubledVsLowHealth doubles damage when enemy is below 30% HP", () => {
     const state = makeTestBattleState({
       activeCompanion: companionLibrary.phoenix,
       enemyHealth: 8,
@@ -562,5 +562,21 @@ describe("Companion Bond progression", () => {
         expect(rng).toHaveBeenCalledTimes(level === 0 ? 0 : 1);
       }
     }
+  });
+});
+
+describe("Predator's Instinct threshold", () => {
+  it.each([
+    [30, 100, 1],
+    [10, 32, 1],
+    [9, 32, 2],
+  ])("deals %i / %i Health enemies the correctly scaled damage", (enemyHealth, enemyMaxHealth, damage) => {
+    const state = makeTestBattleState({
+      activeCompanion: companionLibrary.phoenix,
+      enemyHealth,
+      enemyMaxHealth,
+      talentEffects: { ...makeTestBattleState().talentEffects, companionDoubledVsLowHealth: true },
+    });
+    expect(processCompanionTurnStart(state, []).enemyHealth).toBe(enemyHealth - damage);
   });
 });

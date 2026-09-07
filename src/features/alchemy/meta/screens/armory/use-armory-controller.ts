@@ -22,15 +22,16 @@ import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useGearArmorySlice } from "@/features/alchemy/shared/stores/gear-store";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
+import type { SynchronousResult } from "@/features/alchemy/shared/stores/run-session-command";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
 function mutateGearWithFlush<T>(
   flush: () => void,
-  mutate: (state: GearStore) => T,
+  mutate: (state: GearStore) => T & SynchronousResult<T>,
   options?: { flushOnSuccessOnly?: boolean },
 ): T {
-  const result = dispatchGearMutationWithRunHealthSync({ mutate });
+  const result = dispatchGearMutationWithRunHealthSync<T>({ mutate });
   if (options?.flushOnSuccessOnly ? result : true) flush();
   return result;
 }

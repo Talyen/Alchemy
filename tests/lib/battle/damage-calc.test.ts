@@ -104,3 +104,21 @@ describe("computeCardDamageToEnemy", () => {
     expect(modifiedDamage).toBe(12);
   });
 });
+
+describe("low-health damage bonuses", () => {
+  it.each([14, 15, 16])("requires strictly below half Health at %s/30", (playerHealth) => {
+    const base = makeTestBattleState();
+    const state = makeTestBattleState({
+      playerHealth,
+      playerMaxHealth: 30,
+      rng: () => 0.99,
+      talentEffects: { ...base.talentEffects, physicalDoubledBelowHalfHealth: true, bleedDesperateMultiplier: 1.5 },
+    });
+    expect(computeCardDamageToEnemy(state, { kind: "damage", damageType: "physical", amount: 10 }).modifiedDamage).toBe(
+      playerHealth < 15 ? 20 : 10,
+    );
+    expect(computeCardDamageToEnemy(state, { kind: "damage", damageType: "bleed", amount: 10 }).modifiedDamage).toBe(
+      playerHealth < 15 ? 15 : 10,
+    );
+  });
+});

@@ -15,6 +15,7 @@ import {
 import {
   ART_TRANSFORM_CONCURRENCY,
   ASSET_SCHEMA_VERSION,
+  GEAR_SLOT_IDS,
   MANIFEST_BASENAME,
   QUALITY,
   SHARP_DEFAULTS,
@@ -35,8 +36,6 @@ const TRANSFORM_CONCURRENCY = ART_TRANSFORM_CONCURRENCY;
 
 const gearAssetWidth = WIDTH.gear;
 const gearAssetQuality = QUALITY.gear;
-
-const GEAR_SLOT_IDS = ["body", "weapon", "accessory", "trinket"];
 
 function slugifyGearName(name) {
   return name
@@ -140,7 +139,6 @@ async function optimizeAsset(asset, storedEntry) {
     sourcePath,
     artTransformSettings({ width: asset.width, quality: asset.quality }),
     SCHEMA_VERSION,
-    storedEntry,
   );
 
   const isFresh = await isOutputFresh(outputPath, storedEntry, sourceEntry.hash);

@@ -1,3 +1,4 @@
+import { getPagination } from "./pagination";
 import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import {
   cardLibrary,
@@ -65,7 +66,7 @@ export function getCollectionLibraryLength(collectionTab: CollectionTab): number
 }
 
 export function getCollectionTotalPages(collectionTab: CollectionTab, pageSize = getCollectionPageSize(collectionTab)) {
-  return Math.max(1, Math.ceil(getCollectionLibraryLength(collectionTab) / pageSize));
+  return getPagination(getCollectionLibraryLength(collectionTab), 0, pageSize).totalPages;
 }
 
 export function getCollectionPageItems({
@@ -89,22 +90,21 @@ export function getCollectionPageItems({
   page: number;
   pageSize?: number;
 }) {
-  const totalPages = getCollectionTotalPages(collectionTab, pageSize);
-  const safePage = Math.min(Math.max(0, page), totalPages - 1);
-  const start = safePage * pageSize;
+  const { page: safePage, pageSize: size } = getPagination(getCollectionLibraryLength(collectionTab), page, pageSize);
+  const start = safePage * size;
   if (collectionTab === "heroes") {
-    return getHeroItems(finishedRunCharacters, start, pageSize);
+    return getHeroItems(finishedRunCharacters, start, size);
   }
   if (collectionTab === "cards") {
-    return getCardItems(discoveredCardIds, bondedCompanions, start, pageSize);
+    return getCardItems(discoveredCardIds, bondedCompanions, start, size);
   }
   if (collectionTab === "bestiary") {
-    return getBestiaryItems(encounteredEnemyIds, start, pageSize);
+    return getBestiaryItems(encounteredEnemyIds, start, size);
   }
   if (collectionTab === "uniques") {
-    return getUniqueItems(discoveredUniqueIds, start, pageSize);
+    return getUniqueItems(discoveredUniqueIds, start, size);
   }
-  return getTrinketItems(discoveredTrinketIds, start, pageSize);
+  return getTrinketItems(discoveredTrinketIds, start, size);
 }
 
 export function getCollectionFillerCount(itemCount: number, collectionTab: CollectionTab) {

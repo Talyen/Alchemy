@@ -12,16 +12,19 @@ const MESSAGE_CHARS = 240;
  * @typedef {{ total: number, expected: number, unexpected: number, flaky: number, skipped: number, failures: PlaywrightFailure[] }} PlaywrightSummary
  */
 
-function traverseSuite(suite, visit) {
-  if (!suite || typeof suite !== "object") return;
-  const node = /** @type {Record<string, unknown>} */ (suite);
-  if (Array.isArray(node.specs)) {
-    for (const spec of node.specs) {
-      if (spec && typeof spec === "object") visit(/** @type {Record<string, unknown>} */ (spec));
+function* testsInSuites(suites) {
+  if (!Array.isArray(suites)) return;
+  for (const suite of suites) {
+    if (!suite || typeof suite !== "object") continue;
+    if (Array.isArray(suite.specs)) {
+      for (const spec of suite.specs) {
+        if (!spec || typeof spec !== "object" || !Array.isArray(spec.tests)) continue;
+        for (const test of spec.tests) {
+          if (test && typeof test === "object") yield { spec, test };
+        }
+      }
     }
-  }
-  if (Array.isArray(node.suites)) {
-    for (const child of node.suites) traverseSuite(child, visit);
+    yield* testsInSuites(suite.suites);
   }
 }
 
@@ -42,21 +45,6 @@ function firstResultMessage(results) {
   return "";
 }
 
-function firstErrorMessage(spec) {
-  const tests = Array.isArray(spec.tests) ? spec.tests : [];
-  for (const test of tests) {
-    if (!test || typeof test !== "object") continue;
-    const testNode = /** @type {Record<string, unknown>} */ (test);
-    const message = firstResultMessage(testNode.results);
-    if (message) return message;
-  }
-  return "";
-}
-
-function firstErrorMessageForTest(test) {
-  return firstResultMessage(test?.results);
-}
-
 /**
  * Flatten Playwright's nested JSON report into the test-level model used by audits.
  * @param {unknown} report
@@ -71,38 +59,30 @@ export function collectPlaywrightTests(report) {
   let passedTests = 0;
   let skippedTests = 0;
 
-  if (Array.isArray(root.suites)) {
-    for (const suite of root.suites) {
-      traverseSuite(suite, (spec) => {
-        const tests = Array.isArray(spec.tests) ? spec.tests : [];
-        for (const test of tests) {
-          if (!test || typeof test !== "object") continue;
-          const status = typeof test.status === "string" ? test.status : "unknown";
-          const duration = Array.isArray(test.results)
-            ? test.results.reduce((sum, result) => sum + (Number(result?.duration) || 0), 0)
-            : 0;
-          const testInfo = {
-            title: typeof spec.title === "string" ? spec.title : "unknown test",
-            file: typeof spec.file === "string" ? spec.file : "unknown",
-            line: Number(spec.line) || 0,
-            duration,
-            status,
-            expectedStatus: test.expectedStatus,
-            errorMessage: firstErrorMessageForTest(test),
-            retries: Math.max(0, (Array.isArray(test.results) ? test.results.length : 0) - 1),
-            project: typeof test.projectName === "string" ? test.projectName : "chromium",
-          };
-          totalTests += 1;
-          allTests.push(testInfo);
-          if (status === "skipped") skippedTests += 1;
-          else if (status === "unexpected") failedTests.push(testInfo);
-          else if (status === "flaky") {
-            flakyTests.push(testInfo);
-            passedTests += 1;
-          } else passedTests += 1;
-        }
-      });
-    }
+  for (const { spec, test } of testsInSuites(root.suites)) {
+    const status = typeof test.status === "string" ? test.status : "unknown";
+    const duration = Array.isArray(test.results)
+      ? test.results.reduce((sum, result) => sum + (Number(result?.duration) || 0), 0)
+      : 0;
+    const testInfo = {
+      title: typeof spec.title === "string" ? spec.title : "unknown test",
+      file: typeof spec.file === "string" ? spec.file : "unknown",
+      line: Number(spec.line) || 0,
+      duration,
+      status,
+      expectedStatus: test.expectedStatus,
+      errorMessage: firstResultMessage(test.results),
+      retries: Math.max(0, (Array.isArray(test.results) ? test.results.length : 0) - 1),
+      project: typeof test.projectName === "string" ? test.projectName : "chromium",
+    };
+    totalTests += 1;
+    allTests.push(testInfo);
+    if (status === "skipped") skippedTests += 1;
+    else if (status === "unexpected") failedTests.push(testInfo);
+    else if (status === "flaky") {
+      flakyTests.push(testInfo);
+      passedTests += 1;
+    } else passedTests += 1;
   }
 
   return { allTests, totalTests, passedTests, skippedTests, failedTests, flakyTests };
@@ -121,41 +101,32 @@ export function summarizePlaywrightReport(report, options = {}) {
   let flaky = 0;
   let skipped = 0;
 
-  if (Array.isArray(root.suites)) {
-    for (const suite of root.suites) {
-      traverseSuite(suite, (spec) => {
-        const tests = Array.isArray(spec.tests) ? spec.tests : [];
-        for (const test of tests) {
-          if (!test || typeof test !== "object") continue;
-          const testNode = /** @type {Record<string, unknown>} */ (test);
-          total += 1;
-          const status = testNode.status;
-          if (status === "expected") expected += 1;
-          else if (status === "unexpected") unexpected += 1;
-          else if (status === "flaky") flaky += 1;
-          else if (status === "skipped") skipped += 1;
-          if (status === "unexpected" || status === "flaky") {
-            const file = typeof spec.file === "string" ? spec.file : "unknown";
-            const line = Number(spec.line) || 0;
-            const identity = diagnosticIdentity({
-              rootDir,
-              file,
-              line,
-              project: typeof testNode.projectName === "string" ? testNode.projectName : "chromium",
-              title: typeof spec.title === "string" ? spec.title : "failed test",
-            });
-            const digestPath = failureDigestRelativePath(runId, identity.id);
-            failures.push({
-              file,
-              line,
-              title: identity.title,
-              status: typeof status === "string" ? status : "unexpected",
-              message: firstErrorMessage(spec),
-              digestPath: fs.existsSync(path.resolve(rootDir, digestPath)) ? digestPath : null,
-              routeHint: formatRouteHintLine(routeHintForPath(file, rootDir)),
-            });
-          }
-        }
+  for (const { spec, test } of testsInSuites(root.suites)) {
+    total += 1;
+    const status = test.status;
+    if (status === "expected") expected += 1;
+    else if (status === "unexpected") unexpected += 1;
+    else if (status === "flaky") flaky += 1;
+    else if (status === "skipped") skipped += 1;
+    if (status === "unexpected" || status === "flaky") {
+      const file = typeof spec.file === "string" ? spec.file : "unknown";
+      const line = Number(spec.line) || 0;
+      const identity = diagnosticIdentity({
+        rootDir,
+        file,
+        line,
+        project: typeof test.projectName === "string" ? test.projectName : "chromium",
+        title: typeof spec.title === "string" ? spec.title : "failed test",
+      });
+      const digestPath = failureDigestRelativePath(runId, identity.id);
+      failures.push({
+        file,
+        line,
+        title: identity.title,
+        status: typeof status === "string" ? status : "unexpected",
+        message: firstResultMessage(test.results),
+        digestPath: fs.existsSync(path.resolve(rootDir, digestPath)) ? digestPath : null,
+        routeHint: formatRouteHintLine(routeHintForPath(file, rootDir)),
       });
     }
   }

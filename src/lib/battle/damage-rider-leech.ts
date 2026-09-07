@@ -102,11 +102,11 @@ export function applyLifestealAndPlayerHitTriggers(state: BattleState, damage: n
     state = setFlag(state, "firstLeechCardDoubledUsed", true);
   }
 
-  if (state.talentEffects.leechDesperateMultiplier > 0 && state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
+  if (state.talentEffects.leechDesperateMultiplier > 0 && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
     healAmount = Math.round(healAmount * (1 + state.talentEffects.leechDesperateMultiplier / PERCENT_DENOMINATOR));
   }
 
-  if (state.talentEffects.leechExecuteMultiplier > 0 && state.enemyHealth <= state.enemyMaxHealth / HALF_DIVISOR) {
+  if (state.talentEffects.leechExecuteMultiplier > 0 && state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR) {
     healAmount = Math.round(healAmount * (1 + state.talentEffects.leechExecuteMultiplier / PERCENT_DENOMINATOR));
   }
 

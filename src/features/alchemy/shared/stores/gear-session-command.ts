@@ -15,7 +15,7 @@ import {
   unequipPermanentTrinket,
 } from "./gear-actions";
 import { discoverUniqueIds } from "./profile-store";
-import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
+import { dispatchRunSessionCommand, type GameplayDraft, type SynchronousResult } from "./run-session-command";
 import { grantSalvageMaterials } from "./write-port-homestead";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
 
@@ -59,19 +59,19 @@ function gearCommandView(state: GameplayDraft): GearStore {
 }
 
 export function dispatchGearMutationWithRunHealthSync<T>(options: {
-  mutate: (gear: GearStore) => T;
+  mutate: (gear: GearStore) => T & SynchronousResult<T>;
   syncRunHealth?: boolean;
 }): T {
-  return dispatchRunSessionCommand((draft) => mutateGearWithRunHealthSync(draft, options));
+  return dispatchRunSessionCommand<T>((draft) => mutateGearWithRunHealthSync<T>(draft, options));
 }
 
 export function mutateGearWithRunHealthSync<T>(
   draft: GameplayDraft,
   options: {
-    mutate: (gear: GearStore) => T;
+    mutate: (gear: GearStore) => T & SynchronousResult<T>;
     syncRunHealth?: boolean | undefined;
   },
-): T {
+): T & SynchronousResult<T> {
   const result = options.mutate(gearCommandView(draft));
   if (options.syncRunHealth ?? draft.session.hasActiveRun) {
     rebindLiveRunMeta(draft);

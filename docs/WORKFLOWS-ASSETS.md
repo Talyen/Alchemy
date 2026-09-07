@@ -32,6 +32,24 @@ output hashes are checked on retry, and `assets:check` restores outputs after al
 workers finish. Source-directory read errors retain their filesystem error and
 path rather than being treated as empty asset collections.
 
+## Content freshness and filesystem failures
+
+Every freshness check hashes source bytes with canonical transform settings and
+schema salt, then verifies the output digest. Hashing streams file bytes in bounded
+chunks; size and modification time never substitute for content. Committed hash
+entries contain only `hash`, `outputHash`, and optional sound `owner`. Existing
+object manifests are normalized on the next successful preparation, removing
+filesystem metadata without changing digests or re-encoding unchanged media.
+Legacy string hashes or entries without an output digest require regeneration.
+
+During optimization, a missing or malformed JSON manifest is a cache miss. Missing outputs are stale,
+and an absent cleanup directory is an explicit no-op. Other filesystem errors
+retain their original code and path: unreadable manifests, invalid path types,
+and failed directory reads or deletions must fail preparation. Cleanup occurs
+after manifest publication; standalone optimizers do not roll back a published
+manifest if cleanup fails. `assets:check` restores the captured outputs after all
+workers have settled, as described below.
+
 ## Authoring models
 
 Three authoring shapes coexist by design:
@@ -50,6 +68,29 @@ Generated barrels are committed build products (`src/assets/optimized/` + `src/l
 
 The static barrel provides explicit export names (`kebabToCamel`) and the Vite asset graph; do not use `import.meta.glob` for art.
 
+### Strict generated-art inputs
+
+Barrel generation treats the committed art manifest as required input, not a
+recoverable cache. Missing or malformed manifests, empty or invalid entries,
+invalid filenames, and duplicate export names fail before either art barrel is
+written. Targets must be lowercase kebab-case WebP basenames beginning with a
+letter. Legacy string hashes and object entries containing a string `hash` are
+accepted; unrelated cache metadata does not affect generation.
+
+Combined art synchronization reads and validates one manifest snapshot, then
+builds both barrels before writing either. Individual art and Gear commands use
+the same validation while writing only their selected barrel. Input-validation
+failures preserve both barrels; filesystem write failures do not provide
+transactional rollback.
+
+The fast generated check requires every static target and all four Gear slot
+backgrounds, and checks that every referenced optimized asset is a regular file.
+It does not decode or hash media, run conversions, or require `Raw Assets/`.
+Full preparation and `assets:check` remain responsible for raw-source freshness
+and the complete discovered per-item Gear inventory. Filesystem failures retain
+their original errors; structural errors identify the manifest and offending
+entry or missing targets.
+
 ## Add or replace game art
 
 1. Put the raw file under the matching `Raw Assets/` directory.
@@ -61,18 +102,25 @@ The static barrel provides explicit export names (`kebabToCamel`) and the Vite a
 4. Import through the curated map in `src/lib/game-data/assets.ts` (e.g. `craftingArt`, `difficultyArt`, `talentArt`) — do not import `@/assets/optimized` directly.
 5. Run `npm run check:generated` (fast barrel-only); review the generated diff.
 
-`npm run sync:generated` (add `-- --art-only` / `-- --gear-only` for one barrel) regenerates `src/lib/game-data/assets.generated.ts` from
-the manifest targets. Do not add exports to that generated file by hand. Hashes use `ASSET_SCHEMA_VERSION=4` (128-bit truncation) — bump the version to invalidate all caches.
+`npm run sync:generated` updates both art barrels and version metadata.
+`npm run sync:art-barrels` updates only `src/lib/game-data/assets.generated.ts`;
+`npm run sync:gear-art` updates only `src/lib/game-data/gear-art.ts`.
+Do not add exports to generated files by hand. The hash schema salt lives in
+`scripts/lib/asset-constants.mjs`; bump it when all asset caches must be invalidated.
 
 ## Add or replace Gear art
 
 1. Name source files `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` (PNG and
    `.jpg` variants accepted by the optimizer).
 2. Run `npm run assets:optimize`.
-3. Run `node scripts/sync-generated.mjs --gear-only` (`npm run sync:gear-art` forwards to the same CLI) to regenerate
-   `src/lib/game-data/gear-art.ts`.
+3. Run `npm run sync:art-barrels`, then `npm run sync:gear-art`, to regenerate
+   the asset exports and the Gear map that consumes them.
 4. Run `npm run check:generated` and confirm every generated definition ID
    matches the intended Gear definition.
+
+Gear-only synchronization is insufficient when adding assets: `gear-art.ts`
+references exports from `assets.generated.ts`. Full preparation runs both
+synchronizations automatically.
 
 Gear slot backgrounds use `{Slot name} Slot.{jpeg|jpg|png}` under
 `Raw Assets/Gear/Gear Slot Backgrounds/`; the optimizer throws on unknown slot

@@ -1,5 +1,5 @@
 import { mkdtempSync, rmSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -61,6 +61,56 @@ describe("sound manifest publication", () => {
     fixture.convert.mockClear();
     await expect(optimizeSounds()).resolves.toEqual({ ok: true });
     expect(manifestWrites()).toHaveLength(0);
+    expect(fixture.convert).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      source: path.join(sourceDir, "raw.ogg"),
+      ogg: "generated.ogg",
+      mp3: "generated.mp3",
+      before: "raw audio",
+      after: "new audio",
+    },
+    {
+      source: path.join(outputDir, "curated.ogg"),
+      ogg: "curated.ogg",
+      mp3: "curated.mp3",
+      before: "curated audio",
+      after: "changed audio",
+    },
+  ])(
+    "refreshes $mp3 when source bytes change with preserved timestamps",
+    async ({ source, ogg, mp3, before, after }) => {
+      const fixed = new Date("2020-01-01T00:00:00Z");
+      expect(before.length).toBe(after.length);
+      await utimes(source, fixed, fixed);
+      await optimizeSounds();
+      await writeFile(source, after);
+      await utimes(source, fixed, fixed);
+      await expect(optimizeSounds()).resolves.toEqual({ ok: true });
+      expect(await readFile(path.join(outputDir, ogg), "utf8")).toBe(after);
+      expect(await readFile(path.join(outputDir, mp3), "utf8")).toBe(`mp3:${after}`);
+    },
+  );
+
+  it("removes old metadata without converting or changing sound ownership", async () => {
+    await optimizeSounds();
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    await writeFile(
+      manifestPath,
+      JSON.stringify(
+        Object.fromEntries(
+          Object.entries(manifest).map(([key, entry]) => [
+            key,
+            { ...(entry as object), mtimeMs: 1, size: 2, settingsSig: "old" },
+          ]),
+        ),
+      ),
+    );
+    fixture.convert.mockClear();
+    await expect(optimizeSounds()).resolves.toEqual({ ok: true });
+    expect(JSON.parse(await readFile(manifestPath, "utf8"))).toEqual(manifest);
     expect(fixture.convert).not.toHaveBeenCalled();
   });
 

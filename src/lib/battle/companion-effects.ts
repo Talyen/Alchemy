@@ -1,14 +1,14 @@
 import { damageOnlyEffects } from "./damage-effect-selection";
 import { getCompanionBondEffects, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import { isPlayerDefeated, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
-import { LOW_HEALTH_THRESHOLD_PERCENT } from "../game-constants";
+import { LOW_HEALTH_THRESHOLD_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollTalentChance } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { dealPlayerTypedHit } from "./player-typed-hit";
-import { scalePercent, scalePerMana } from "./amount-helpers";
+import { scalePerMana } from "./amount-helpers";
 
 interface CompanionScaleContext {
   talentEffects: TalentEffectManifest;
@@ -67,7 +67,7 @@ export function resolveCompanionTurnStart(
 ) {
   if (!state.activeCompanion || state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
 
-  const lowHealthThreshold = scalePercent(state.enemyMaxHealth, LOW_HEALTH_THRESHOLD_PERCENT);
+  const lowHealthThreshold = (state.enemyMaxHealth * LOW_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR;
   const ctx: CompanionScaleContext = {
     talentEffects: state.talentEffects,
     trinketEffects: state.trinketEffects,
@@ -78,7 +78,7 @@ export function resolveCompanionTurnStart(
     maxMana: state.maxMana,
     playerForge: state.playerStatuses.forge,
     lowHealthMultiplier:
-      state.talentEffects.companionDoubledVsLowHealth && state.enemyHealth <= lowHealthThreshold ? 2 : 1,
+      state.talentEffects.companionDoubledVsLowHealth && state.enemyHealth < lowHealthThreshold ? 2 : 1,
   };
 
   const companionCard: BattleCard = {

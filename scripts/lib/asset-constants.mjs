@@ -1,6 +1,7 @@
 import os from "node:os";
 
 export const ASSET_SCHEMA_VERSION = 4;
+export const GEAR_SLOT_IDS = ["body", "weapon", "accessory", "trinket"];
 
 export const SHARP_DEFAULTS = Object.freeze({
   alphaQuality: 90,

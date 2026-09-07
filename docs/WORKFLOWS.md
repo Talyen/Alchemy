@@ -61,12 +61,12 @@ Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`
 
 Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
 
-| Step                                                       | File(s)                                                                                                                                                                                                                                                  |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Call `awardMaterialsDuringRun(materials)`               | Mystery: `run-loop/navigation/mystery-flow.ts` (`gainMysteryMaterial` / `mysteryApplyHandlers`); combat gems: `run-loop/run/run-flow-victory.ts` (`commitVictoryRewards`); reward-screen materials: `run-loop/run/run-flow-rewards.ts` (`finishRewards`) |
-| 2. Apply homestead find bonus when appropriate             | `applyMaterialFindBonus()` from `@/lib/homestead/loot` before awarding (mystery/combat already do this)                                                                                                                                                  |
-| 3. Run-end display (no change needed if step 1 is correct) | `awardRunEndMaterials` in `run-loop/run/run-flow-session-helpers.ts` (used by `run-flow-defeat.ts`) merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`                                                         |
-| 4. Tests                                                   | `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                                                                                                     |
+| Step                                                                          | File(s)                                                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command | Mystery: `run-loop/navigation/mystery-flow.ts` (`gainMysteryMaterial` / `mysteryApplyHandlers`); combat gems: `run-loop/run/run-flow-victory.ts` (`commitVictoryRewards`); reward-screen materials: `run-loop/run/run-flow-rewards.ts` (`finishRewards`) |
+| 2. Apply homestead find bonus when appropriate                                | `applyMaterialFindBonus()` from `@/lib/homestead/loot` before awarding (mystery/combat already do this)                                                                                                                                                  |
+| 3. Run-end display (no change needed if step 1 is correct)                    | `awardRunEndMaterials` in `run-loop/run/run-flow-session-helpers.ts` (used by `run-flow-defeat.ts`) merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`                                                         |
+| 4. Tests                                                                      | `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                                                                                                     |
 
 **Do not** call `addMaterials()` on the run profile store directly from run-loop or mystery code for player loot.
 
@@ -75,6 +75,10 @@ Permanent Gear and Armory Trinkets use `recordRunObtainedItem()` at each grant s
 ---
 
 ## Add or change post-victory routing (`REWARD_ROUTES`)
+
+The Alchemist encounter bonus grants one Potion after the final reward choice or skip, including encounters with a follow-up bonus card choice.
+
+Follow-up choices include Companion cards, Archery cards from Fletched, Wish cards from Wishkeeper, and Nature cards from Kindred Spoils. The saved `companionChoiceIds` field carries all of these bonus choices. Primary and bonus choices restore against the full card catalog in their saved order, dropping only missing IDs; loading never rerolls choices or reapplies offer-pool or theme eligibility.
 
 Destination eligibility uses health and maximum health after victory bonuses. When the Boon pool is exhausted, combat and Wildwood rewards fall back to card choices.
 
@@ -102,17 +106,28 @@ Feature code uses [`run-session-lifecycle-port.ts`](../src/features/alchemy/shar
 
 ## Gameplay command boundary
 
-Ownership and anti-patterns: [ARCHITECTURE.md § Run state](./ARCHITECTURE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator. Use the two-argument form when a result is needed by the post-commit effect:
+Ownership and anti-patterns: [ARCHITECTURE.md § Run state](./ARCHITECTURE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
 
 ```ts
-dispatchRunSessionCommand(
-  (draft) => {
-    setRunGold(draft, (gold) => gold + price);
-    return price;
-  },
-  { afterCommit: (paid) => playPurchaseSound(paid) },
-);
+import type { MaterialInventory } from "@/lib/homestead/types";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+
+export function awardMaterialReward(
+  materials: MaterialInventory,
+  onAwarded: (awarded: MaterialInventory) => void,
+): void {
+  dispatchRunSessionCommand(
+    (draft) => {
+      awardMaterialsDuringRun(draft, materials);
+      return materials;
+    },
+    { afterCommit: onAwarded },
+  );
+}
 ```
+
+Inside an existing reward, shop, or mystery command, call the mutator with that command's draft instead of dispatching another command. Keep the existing claim guard and reward finalization in the owning flow.
 
 If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
 
@@ -385,6 +400,8 @@ Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect
 ---
 
 ## Adding / changing corruption flow
+
+Numeric corruption also updates matching delayed repeats of the changed effect, so the later turn agrees with the card description. Unrelated repeated effects retain their values.
 
 | Step                                               | File(s)                                                                                        |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------- |

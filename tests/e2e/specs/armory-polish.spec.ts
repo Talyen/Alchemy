@@ -52,6 +52,7 @@ test("matches currency artwork sizes and freezes the equipped salvage preview", 
   await page.screenshot({ path: testInfo.outputPath("salvage-confirmation.png") });
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
+  await expect(page.getByTestId("armory-salvage-toggle")).toBeFocused();
   await enterSalvageMode(page);
   await equipmentSlotLocator(page, "main-hand").getByRole("button", { name: "Salvage Longsword", exact: true }).click();
   await expect.poll(() => rewards.innerText()).toBe(firstPreview);

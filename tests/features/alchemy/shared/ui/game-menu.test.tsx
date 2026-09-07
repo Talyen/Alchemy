@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
 
 const noop = () => {};
@@ -53,7 +54,7 @@ describe("GameMenu", () => {
 
     expect(screen.getByTestId("game-menu")).toBeTruthy();
     expect(isAnchored()).toBe(true);
-    expect(screen.getByTestId("game-menu").parentElement?.parentElement?.className).toContain("pointer-events-none");
+    expect(screen.getByTestId("game-menu").closest("[inert]")).toBeTruthy();
   });
 
   it("centers the panel when opened without an anchor", () => {
@@ -61,6 +62,25 @@ describe("GameMenu", () => {
 
     expect(screen.getByTestId("game-menu")).toBeTruthy();
     expect(isAnchored()).toBe(false);
+  });
+
+  it("does not navigate from a focused action during exit", async () => {
+    const user = userEvent.setup();
+    const onMainMenu = vi.fn();
+    const props = {
+      onClose: noop,
+      onMainMenu,
+      onCollection: noop,
+      onTalents: noop,
+      onHomestead: noop,
+      onArmory: noop,
+      onOptions: noop,
+    };
+    const { rerender } = render(<GameMenu {...props} isOpen />);
+    screen.getByRole("button", { name: "Main Menu" }).focus();
+    rerender(<GameMenu {...props} isOpen={false} />);
+    await user.keyboard("{Enter} ");
+    expect(onMainMenu).not.toHaveBeenCalled();
   });
 
   it("renders menu items with designated icon color classes", () => {

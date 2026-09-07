@@ -1,93 +1,54 @@
 {
   "Battle 1.mp3": {
     "hash": "06df2c860984c0db7872fe2239af7cd8",
-    "mtimeMs": 1782421242075.4739,
-    "size": 5427237,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "d711edee632295069a00456d1d6587f3"
   },
   "Battle 2.mp3": {
     "hash": "31fb5010f722d59d8bcf92df50e862a4",
-    "mtimeMs": 1782421242086.1309,
-    "size": 3936041,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "7ce58a8b2183c0cf43f1327955f7b4cd"
   },
   "Battle 3.mp3": {
     "hash": "fa1b16361526e00e590001084d1ee589",
-    "mtimeMs": 1782421242107.1501,
-    "size": 5131218,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "154205a5367f0562d1c1e44cd650d204"
   },
   "Battle 4.mp3": {
     "hash": "8c158cdbc90d9ca77f327d815f635e50",
-    "mtimeMs": 1782421242118.9275,
-    "size": 4578233,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "c3d971c235141d7518d0529a6a6a4519"
   },
   "Battle 5.mp3": {
     "hash": "9136c9925e13f0599a599db65a233bd2",
-    "mtimeMs": 1782421242137.001,
-    "size": 4554176,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "5b3248b80702632882133f6cdc5606d7"
   },
   "Menu 1.mp3": {
     "hash": "f14dd3a8bb9a2cd4bf55ffc7018bd723",
-    "mtimeMs": 1782421242163.4368,
-    "size": 7867487,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "bbc16afff927bf8492d495f1b6de0a9f"
   },
   "Menu 2.mp3": {
     "hash": "4f123b27e46e67373aaa7a80ea5a7e99",
-    "mtimeMs": 1782421242182.4714,
-    "size": 4315535,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "2c6750f1608d5d55cd45b4a158c989f8"
   },
   "Menu 3.mp3": {
     "hash": "9e84b36ab25a69c8e5be36a490879e1c",
-    "mtimeMs": 1782421242196.686,
-    "size": 4024193,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "69e73ed823c7001c212eacca5da4763f"
   },
   "Menu 4.mp3": {
     "hash": "ac118144e51f2472b7522ba0c423ebd2",
-    "mtimeMs": 1782421242208.1755,
-    "size": 5160160,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "27a73b88523deff2ffb3e5649474bcd8"
   },
   "The Blight Treant.mp3": {
     "hash": "bcb6dda10014b71578957d040dbf06ef",
-    "mtimeMs": 1782421242237.4436,
-    "size": 8347166,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "56464355707bea1b6932b1fe107345a4"
   },
   "The Forge Golem.mp3": {
     "hash": "87ba00ec78e61bbe2d43723063d8249d",
-    "mtimeMs": 1782421242260.8853,
-    "size": 5068455,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "9e25e4c4cf704232857ad71d86355330"
   },
   "The Frostwarden.mp3": {
     "hash": "be8a4c2a9b69ee8faae1486b849b55f5",
-    "mtimeMs": 1782421242279.4465,
-    "size": 7995000,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "80011a5374d03a5879b5563f4e30e7de"
   },
   "The Iron Bear.mp3": {
     "hash": "569b984dbdba73354d149448078c9db8",
-    "mtimeMs": 1782421242304.6184,
-    "size": 7131446,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "f9b94ebc9aca6ee40e93a3d7935ef20d"
   }
 }

@@ -1,833 +1,521 @@
 {
   "bonus-regen-rate.mp3": {
     "hash": "8827eea7de6df688337b3a5e17c70842",
-    "mtimeMs": 1788315460897.384,
-    "size": 42243,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "7fe05c6a7d23f9d0170d647d8f8310fb",
     "owner": "generated"
   },
   "bonus-regen-rate.ogg": {
     "hash": "3091b3fcd8d1817949351f2a05a0c74c",
-    "mtimeMs": 1782421243068.2654,
-    "size": 2018120,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "6bb104fb33035fce2fc4bf6f1f131fc6",
     "owner": "generated"
   },
   "buff-pickup-1.mp3": {
     "hash": "3534913756c146113f521c7944ef46ea",
-    "mtimeMs": 1788315460813.3591,
-    "size": 32308,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "605537c9a826400a981350753550d252",
     "owner": "generated"
   },
   "buff-pickup-1.ogg": {
     "hash": "70b3cc8176443d9532c39f1478318b65",
-    "mtimeMs": 1782421243081.6057,
-    "size": 1850166,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "d09bdb7dbc4e4eb3d507333c961d4972",
     "owner": "generated"
   },
   "buff-pickup.mp3": {
     "hash": "a77e5c9254e41029b7a5cfe55c10755d",
-    "mtimeMs": 1788315460822.7747,
-    "size": 33560,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "03be0ec24e02ee2461a085ed8efff6b0",
     "owner": "generated"
   },
   "buff-pickup.ogg": {
     "hash": "dda6c27680d7de2e0968f6639a13dff3",
-    "mtimeMs": 1782421243083.5947,
-    "size": 1850174,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "914bee4bf2573506b047fd5de065c27b",
     "owner": "generated"
   },
   "card-draw-1.mp3": {
     "hash": "87dd568ec1dcc2a515ecc6d5163192f8",
-    "mtimeMs": 1788315460627.0857,
-    "size": 10088,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "e93132aac7cd55bbc24b29cb3dd0b830",
     "owner": "generated"
   },
   "card-draw-1.ogg": {
     "hash": "c735b5521b634aeaa5117f7b0e9b0b0d",
-    "mtimeMs": 1782421242527.6868,
-    "size": 61484,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "144bbf17ad678fbe79f9beec0dad2b39",
     "owner": "generated"
   },
   "card-draw-2.mp3": {
     "hash": "3e64c1e3aeaf9e839e4e21c463d595f2",
-    "mtimeMs": 1788315460623.9988,
-    "size": 8031,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "d34f6d591ceed383cbb5032e7027e3f2",
     "owner": "generated"
   },
   "card-draw-2.ogg": {
     "hash": "1d924b2510b0a7be138be67bfd401d84",
-    "mtimeMs": 1782421242527.9329,
-    "size": 41004,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "693c33d0168ac911e20914242ca6d45b",
     "owner": "generated"
   },
   "card-draw-3.mp3": {
     "hash": "5aca801f782d3c70618ca9c105eae9a8",
-    "mtimeMs": 1788315460654.3606,
-    "size": 9730,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "882d82a2630623aebe496969542c1890",
     "owner": "generated"
   },
   "card-draw-3.ogg": {
     "hash": "7194baf7f077bc8d9df8b7a942938e27",
-    "mtimeMs": 1782421242528.1973,
-    "size": 59436,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "38aa2a5fed3e9bbe42af8d72d9a66976",
     "owner": "generated"
   },
   "card-fan.mp3": {
     "hash": "c7bbbeb470a711fe83b7299f241adcd5",
-    "mtimeMs": 1788315460631.131,
-    "size": 13257,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "3cb6051177464212341e1fe8be14865b",
     "owner": "generated"
   },
   "card-fan.ogg": {
     "hash": "b754aaa5947fcd7b13a504571974ea3f",
-    "mtimeMs": 1782421242528.393,
-    "size": 69676,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "f7a6144179c1d0b8c7d1fcb9192e5b8d",
     "owner": "generated"
   },
   "coins-gather-quick.mp3": {
     "hash": "f46316c6ddefefc003f9d3f9bf9269d2",
-    "mtimeMs": 1782421243536.4563,
-    "size": 12851,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "5de620f45f9d8b7379288158987af90c",
     "owner": "curated"
   },
   "coins-gather-quick.ogg": {
     "hash": "e3a4c9ba3e94d642c27cd05ba25fbfaa",
-    "mtimeMs": 1782421243536.4563,
-    "size": 12851,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "44b3b4ebbd8e156d233c90808b00b312",
     "owner": "curated"
   },
   "denied-03.mp3": {
     "hash": "90a256fd4f4f7b8f993fb7836faf9d58",
-    "mtimeMs": 1788315460682.1118,
-    "size": 13645,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "fd332c456523479bf748be37d142e75e",
     "owner": "generated"
   },
   "denied-03.ogg": {
     "hash": "3a87af95c1a00b8b15d9b6fb480f6acd",
-    "mtimeMs": 1782421243138.1719,
-    "size": 353536,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "52c11b5dbcded726b439b0d0132b359e",
     "owner": "generated"
   },
   "energy-noise.mp3": {
     "hash": "6097884a3c691406a8558741c1209434",
-    "mtimeMs": 1788315460865.5076,
-    "size": 48234,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "b79983d3a40a8a56229a0278e6a84adf",
     "owner": "generated"
   },
   "energy-noise.ogg": {
     "hash": "e620a9ad83e121f05a62aa9e2167a4ee",
-    "mtimeMs": 1782421243097.3396,
-    "size": 1918864,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "7541af635cadb49030b0bde3e28c246b",
     "owner": "generated"
   },
   "fire-lighting.mp3": {
     "hash": "bc1d91d6145dc49256216ef1bd9ac1b0",
-    "mtimeMs": 1788315460681.2097,
-    "size": 14277,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "4631eb5c93c35a3c43c35e6e4964bf4d",
     "owner": "generated"
   },
   "fire-lighting.ogg": {
     "hash": "ffe07a072ef589471398694eb5b328a5",
-    "mtimeMs": 1782421242665,
-    "size": 114732,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "654cba003e8819ab0c63aef801904756",
     "owner": "generated"
   },
   "fireball-1.mp3": {
     "hash": "8aa50706704b1158f7d2ff37d6398ab4",
-    "mtimeMs": 1788315460015.0105,
-    "size": 82297,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "d5a4d8a080b60321e77b810be6798013",
     "owner": "generated"
   },
   "fireball-1.ogg": {
     "hash": "d3dc046f50bd79774056bfdd456cbc23",
-    "mtimeMs": 1782421243038.1968,
-    "size": 82297,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "7b515ce1c85396b7ebabb9dc9876e892",
     "owner": "generated"
   },
   "gurgling.mp3": {
     "hash": "7fbe88a3dddd5955b7cb0874c65cd87e",
-    "mtimeMs": 1782421243537.9255,
-    "size": 41301,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "a1057323cdf68261501f080f8811dd13",
     "owner": "curated"
   },
   "gurgling.ogg": {
     "hash": "9e1abf30a15832be9f86aadaea458755",
-    "mtimeMs": 1782421243537.9255,
-    "size": 41301,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "de7dc4810ff0e66e65e8f01448fba2f8",
     "owner": "curated"
   },
   "gut-kick.mp3": {
     "hash": "501d65302dacef7c3e1705908c8ee0fb",
-    "mtimeMs": 1788315460883.2244,
-    "size": 27003,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "b2b2e5c800cfa481e1f73650b344a6bc",
     "owner": "generated"
   },
   "gut-kick.ogg": {
     "hash": "1b56bebcf73523e0e79829af89c26224",
-    "mtimeMs": 1782421242459.1565,
-    "size": 1849984,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "21bd25af7f042c8506fbc8bdda781cd9",
     "owner": "generated"
   },
   "harpsichord-defeated.mp3": {
     "hash": "a6ffb4bf7276b43c7081bae31f96776c",
-    "mtimeMs": 1788315460769.3896,
-    "size": 69987,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "c324b6e0e4372ec07aeb95d0333e3b87",
     "owner": "generated"
   },
   "harpsichord-defeated.ogg": {
     "hash": "efe3a6863524f86969b161e5af7431e2",
-    "mtimeMs": 1782421242997.523,
-    "size": 528844,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "e1016e38d3b856ed5469a8e761b2e5a5",
     "owner": "generated"
   },
   "harpsichord-level-complete.mp3": {
     "hash": "f4551fa37e26b320c47104734c59d6b0",
-    "mtimeMs": 1788315460801.969,
-    "size": 97168,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "c549b67666ec4a60a725f4fe57c53d4e",
     "owner": "generated"
   },
   "harpsichord-level-complete.ogg": {
     "hash": "1acef842f8fd53f656fc2fecbd156408",
-    "mtimeMs": 1782421243000.709,
-    "size": 652212,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "df4c067a2c8b951c2d874d6f4cf8389c",
     "owner": "generated"
   },
   "harpsichord-mystery.mp3": {
     "hash": "dd9c558663a45bcd4838b82d2fdca2ac",
-    "mtimeMs": 1788315460662.9922,
-    "size": 34697,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "55d21ce576b70cb341c3fb7d8ef4f256",
     "owner": "generated"
   },
   "harpsichord-mystery.ogg": {
     "hash": "d58470fde8e2e016eac1b8e87a4ca093",
-    "mtimeMs": 1782421243002.598,
-    "size": 264088,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "16c6b2dab5c67831385335ae53b3142c",
     "owner": "generated"
   },
   "horror-sting.mp3": {
     "hash": "e5853c3fc5b745dee4f25cd8c25dbeec",
-    "mtimeMs": 1788315460732.465,
-    "size": 21633,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "9de630630554aeb4ffaf91ac2175c3c8",
     "owner": "generated"
   },
   "horror-sting.ogg": {
     "hash": "3c0387aae43acb564ff1a561d922907e",
-    "mtimeMs": 1782421243005.8362,
-    "size": 155244,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "dd1fc22d4e062eefc320d634c5029f5b",
     "owner": "generated"
   },
   "ice-freeze-1.mp3": {
     "hash": "eaafd065b551e27dff2638ddcdfb5010",
-    "mtimeMs": 1788315460021.1716,
-    "size": 66507,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "8f1f61ff1d05e60f9c279a06387adcee",
     "owner": "generated"
   },
   "ice-freeze-1.ogg": {
     "hash": "37851ebd071339d6a161898c15e9083f",
-    "mtimeMs": 1782421243044.2566,
-    "size": 66507,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "88ddc85013a00584c1e80aa4d036dc11",
     "owner": "generated"
   },
   "ice-in-water.mp3": {
     "hash": "6da825189ea0ac678a57ede91ecc1b8b",
-    "mtimeMs": 1788315460731.8506,
-    "size": 14137,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "16bde472911ba161c5319a0013fa735b",
     "owner": "generated"
   },
   "ice-in-water.ogg": {
     "hash": "a5bde9026399dd54ba169e5710e802b4",
-    "mtimeMs": 1782421242665.2488,
-    "size": 86060,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "e84d3ed926caad71c8c53388034d0134",
     "owner": "generated"
   },
   "ice-throw-1.mp3": {
     "hash": "922a3eab8c225be1c92a92c53520de83",
-    "mtimeMs": 1788315460017.9487,
-    "size": 74425,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "b93b8671e19f9ba5a6f474ac54d090e0",
     "owner": "generated"
   },
   "ice-throw-1.ogg": {
     "hash": "1512e949512fb67155634daa22768509",
-    "mtimeMs": 1782421243044.9807,
-    "size": 74425,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "cd5b436a0c0c7866f6073f289c733a22",
     "owner": "generated"
   },
   "keys-jingling.mp3": {
     "hash": "238411b5ee6bc6972cc0b8ed818e0f39",
-    "mtimeMs": 1782421243540.8572,
-    "size": 15240,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "7b058d7f24c90c359e63a3b9d6c43621",
     "owner": "curated"
   },
   "keys-jingling.ogg": {
     "hash": "b2daa7156b1bc808ecf1893b1b92cf7e",
-    "mtimeMs": 1782421243540.8572,
-    "size": 15240,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "eb52d3697823fd7513ede14e2509e988",
     "owner": "curated"
   },
   "kick.mp3": {
     "hash": "0610daef28f48e29c7cd10eb1466fc55",
-    "mtimeMs": 1782421243540.9211,
-    "size": 9343,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "ab36556c53c9645492dbb70fd68cd1f2",
     "owner": "curated"
   },
   "kick.ogg": {
     "hash": "0ac112d9f0f7609db836a0747985a1a1",
-    "mtimeMs": 1782421243540.9211,
-    "size": 9343,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "8767c8dff307cc658af68f0265ec7cae",
     "owner": "curated"
   },
   "metal-button-4.mp3": {
     "hash": "24bcf1cd22290f5c81be90fa9e5013c6",
-    "mtimeMs": 1788315460645.6697,
-    "size": 9577,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "303b19510a2bd669e30277f4105678cf",
     "owner": "generated"
   },
   "metal-button-4.ogg": {
     "hash": "a7222a622e27c79786beb49294dfed99",
-    "mtimeMs": 1782421243182.3157,
-    "size": 72024,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "a3ef361bc6744883aba6d51c7a927393",
     "owner": "generated"
   },
   "mine-2.mp3": {
     "hash": "a016deb2fb47511f4fe364fe26e18d75",
-    "mtimeMs": 1788315460828.0427,
-    "size": 30937,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "beded43767bacd305f2ac63a7a6f6f1a",
     "owner": "generated"
   },
   "mine-2.ogg": {
     "hash": "632ac21aa6f20ea6c7a8b3ce830582f2",
-    "mtimeMs": 1782421242543.8667,
-    "size": 30937,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "efb291c33b90172234cb2c96b9cb0733",
     "owner": "generated"
   },
   "music-box-chime-positive.mp3": {
     "hash": "8b4aa90caf9d4751aa255f502472265d",
-    "mtimeMs": 1788315460767.4504,
-    "size": 38215,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "3ee264767fe6940ff04c9e48a3530238",
     "owner": "generated"
   },
   "music-box-chime-positive.ogg": {
     "hash": "c07634613cd70bd9c7faf893145330cd",
-    "mtimeMs": 1782421243006.6082,
-    "size": 290384,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "9d90f2d4488139dc33b7e4c34989f9f0",
     "owner": "generated"
   },
   "music-box-mystery.mp3": {
     "hash": "5d21edfea83b1d764aae6bff46dbfd77",
-    "mtimeMs": 1788315460761.4138,
-    "size": 42066,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "b22d9a4c22c4d326103f2f6eb1efcbd2",
     "owner": "generated"
   },
   "music-box-mystery.ogg": {
     "hash": "fe7eba2b73adeba62d8301c1f44ee8da",
-    "mtimeMs": 1782421243014.6138,
-    "size": 352340,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "5f962342dd08d2eedec026744cb890a3",
     "owner": "generated"
   },
   "page-turn.mp3": {
     "hash": "368f784c1330d41fe81bcabdd7b55559",
-    "mtimeMs": 1788315460698.5825,
-    "size": 19143,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "cdd3c63df8a551b530f04258a5d33171",
     "owner": "generated"
   },
   "page-turn.ogg": {
     "hash": "e54902b5b6f82dbcfc8e529d61ef4772",
-    "mtimeMs": 1782421242931.6548,
-    "size": 159788,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "72c28cbd7d21bee444122ed0bde8d449",
     "owner": "generated"
   },
   "paper-move.mp3": {
     "hash": "02a4dffedd69fbddf92b344fe89f0912",
-    "mtimeMs": 1788315460702.3604,
-    "size": 14503,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "446af0803d4155cf9d201c1ad299b6f4",
     "owner": "generated"
   },
   "paper-move.ogg": {
     "hash": "1feba25ddb46c814bedf81be9847b8f2",
-    "mtimeMs": 1782421242951.6494,
-    "size": 114732,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "ea0c172c28444465ad41e65867f0ee36",
     "owner": "generated"
   },
   "power-down.mp3": {
     "hash": "4fb3f81505f87ef305f4de572e14835f",
-    "mtimeMs": 1782421243542.273,
-    "size": 7368,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "4a3bbf9e6e884f6a5f756545c9ab898d",
     "owner": "curated"
   },
   "power-down.ogg": {
     "hash": "b0897e4790ee264fa91fc386d0d7fd96",
-    "mtimeMs": 1782421243542.273,
-    "size": 7368,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "39bb69d934a9e16ec51e8a8d4bea7337",
     "owner": "curated"
   },
   "punch-3.mp3": {
     "hash": "a95aabd44a6b372d57ab3eee28dcbded",
-    "mtimeMs": 1782421243542.3228,
-    "size": 11310,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "b35e7fdb2bcb63c9cc53a62218a077ab",
     "owner": "curated"
   },
   "punch-3.ogg": {
     "hash": "99ba53550fceaf4fc4a6402409ae4375",
-    "mtimeMs": 1782421243542.3228,
-    "size": 11310,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "8eb2cd3c1e28a633ec913135bd1a965c",
     "owner": "curated"
   },
   "rock-meteor-swarm-1.mp3": {
     "hash": "d5ca6b784a5613e987ca3a8a315fef05",
-    "mtimeMs": 1788315460015.0117,
-    "size": 136683,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "5a5af4db6283d68de025907a6b8d07a6",
     "owner": "generated"
   },
   "rock-meteor-swarm-1.ogg": {
     "hash": "27838797ee301e594064888f611f5516",
-    "mtimeMs": 1782421243125.5452,
-    "size": 136683,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "03a28dd627c824a9f4baa913a7f42133",
     "owner": "generated"
   },
   "splat-quick.mp3": {
     "hash": "d0953cd3aa45307b22380e3f48f680ce",
-    "mtimeMs": 1782421243543.3394,
-    "size": 11305,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "2086d1b64011ddeebf274e7215fb8b59",
     "owner": "curated"
   },
   "splat-quick.ogg": {
     "hash": "4fed59ef9b3dd34b5bafdbf2bf124cb9",
-    "mtimeMs": 1782421243543.3394,
-    "size": 11305,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "6ee5264bbdc4814aa0cea125c1eea36b",
     "owner": "curated"
   },
   "squelching-4.mp3": {
     "hash": "665e2ee951b6981d1927cd8c3f14b27f",
-    "mtimeMs": 1782421243543.5022,
-    "size": 19020,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "5b98ce0d05cbc449f7dd1f1f93b4cc60",
     "owner": "curated"
   },
   "squelching-4.ogg": {
     "hash": "a554fa9d5fc0e3dbb16503a33b6eb3c1",
-    "mtimeMs": 1782421243543.5022,
-    "size": 19020,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "b074e6d704dd2953759e0e3f5723cace",
     "owner": "curated"
   },
   "strong-punch.mp3": {
     "hash": "72d42bb1331b73012bba7b900a7555bf",
-    "mtimeMs": 1788315460840.0164,
-    "size": 16605,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "73eba9860dce52373b497b2f3359b29f",
     "owner": "generated"
   },
   "strong-punch.ogg": {
     "hash": "a96842fe79f4106496486b6faf266185",
-    "mtimeMs": 1782421242437.786,
-    "size": 1850156,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "253201342cf7e85ff6aac13ac579e42e",
     "owner": "generated"
   },
   "swipe.mp3": {
     "hash": "468a37141573dfccba0755812de655f0",
-    "mtimeMs": 1782421243544.1377,
-    "size": 10356,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "71fa43144ab3cd4658f67fdeaed00fa4",
     "owner": "curated"
   },
   "swipe.ogg": {
     "hash": "e2f4c4aba94c9de7313e1ed8caccb5cf",
-    "mtimeMs": 1782421243544.1377,
-    "size": 10356,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "6ce622695c0840b4d2cc192494b6efee",
     "owner": "curated"
   },
   "swish-hit.mp3": {
     "hash": "95575081805ea0113c4095a0f4727adb",
-    "mtimeMs": 1788315460845.0447,
-    "size": 23783,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "07597f6ab948223978d07c50ba388553",
     "owner": "generated"
   },
   "swish-hit.ogg": {
     "hash": "62d280b67e9eeb961cb03c6b9c29533a",
-    "mtimeMs": 1782421242505.5686,
-    "size": 1849974,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "c2365590c0490e4477be078bb16fffb2",
     "owner": "generated"
   },
   "sword-attack-1.mp3": {
     "hash": "49591cca9b13d4cc386032043157aed9",
-    "mtimeMs": 1788315460014.72,
-    "size": 34423,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "4a4e3784ab07d6e8beda39f944915bb3",
     "owner": "generated"
   },
   "sword-attack-1.ogg": {
     "hash": "0216f507758729645d6d8c14a98755e2",
-    "mtimeMs": 1782421242522.6826,
-    "size": 34423,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "30f752c8bbaac9ee4f575a5e34612a8c",
     "owner": "generated"
   },
   "sword-attack-3.mp3": {
     "hash": "6ed9e66fa9d8a06b5005ea18787fe35f",
-    "mtimeMs": 1788315460014.83,
-    "size": 35348,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "ee3e0c0ff7ad042589d14b90e2d073ec",
     "owner": "generated"
   },
   "sword-attack-3.ogg": {
     "hash": "a5d96942cd0fc875abf0099f140e0d5d",
-    "mtimeMs": 1782421242523.692,
-    "size": 35348,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "e14f7e745e05d16a81949ef04b82074f",
     "owner": "generated"
   },
   "sword-blocked-1.mp3": {
     "hash": "db487b75d4ffe146c81619e98185aadd",
-    "mtimeMs": 1788315460014.8167,
-    "size": 34398,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "cb83edcadc96be0740f746011b151275",
     "owner": "generated"
   },
   "sword-blocked-1.ogg": {
     "hash": "84b405f49a129ba01cd21fd425b1cb0f",
-    "mtimeMs": 1782421242524.0598,
-    "size": 34398,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "6a4bbb4556c922dfd98d2356c924b863",
     "owner": "generated"
   },
   "sword-blocked-2.mp3": {
     "hash": "1dc195738b0480ebaf5343f53ffcc3cb",
-    "mtimeMs": 1788315460020.0408,
-    "size": 35911,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "927f60be49942d6a55780666646e807f",
     "owner": "generated"
   },
   "sword-blocked-2.ogg": {
     "hash": "460b4de0377fc06ee3ee17785f2bd5d2",
-    "mtimeMs": 1782421242524.2742,
-    "size": 35911,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "f762a9c8cdc0fc2d3e985f8408203069",
     "owner": "generated"
   },
   "sword-clash.mp3": {
     "hash": "468fa7032ff8527d22911b881e82e02e",
-    "mtimeMs": 1788315460630.901,
-    "size": 10941,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "2bbccdca45b9a5b6d07c5bdd7b650caa",
     "owner": "generated"
   },
   "sword-clash.ogg": {
     "hash": "be3c04f5ae908af2f04cd51755e9e1ae",
-    "mtimeMs": 1782421243197.6184,
-    "size": 61484,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "b6bc8f254832b73a5ae14fb3b760c631",
     "owner": "generated"
   },
   "sword-impact-hit-1.mp3": {
     "hash": "bb8f5f6961e562b106db9c5204e15766",
-    "mtimeMs": 1788315460020.207,
-    "size": 38714,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "3c0092dae851ea09a63a2ddc79254ebe",
     "owner": "generated"
   },
   "sword-impact-hit-1.ogg": {
     "hash": "940b9888dfc4cea39865a3d7600b4bd9",
-    "mtimeMs": 1782421242524.8223,
-    "size": 38714,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "3f3bdd7f3637e9bfe7d14a4cabed00f0",
     "owner": "generated"
   },
   "sword-impact-hit-2.mp3": {
     "hash": "46d32dce5e306742f1b948416c1d074c",
-    "mtimeMs": 1788315460827.1453,
-    "size": 37598,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "fac53c7b0e477eee5c2f6c5300275047",
     "owner": "generated"
   },
   "sword-impact-hit-2.ogg": {
     "hash": "fa1f4569e52a14b8ae839bf0501a25ad",
-    "mtimeMs": 1782421242525.107,
-    "size": 37598,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "ff6d72fa1a32ac5352ee65ff1945fa30",
     "owner": "generated"
   },
   "sword-slice.mp3": {
     "hash": "7315fd7af0ec5a5ae5971fbed8ba8f32",
-    "mtimeMs": 1788315460640.5493,
-    "size": 18874,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "176d6c1efeb2575306dc4b862b941d9f",
     "owner": "generated"
   },
   "sword-slice.ogg": {
     "hash": "d7215bef9425ed2d61383cb4d74c2b00",
-    "mtimeMs": 1782421243199.3523,
-    "size": 135212,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "6f3478206b150c59978b47e90988e6e4",
     "owner": "generated"
   },
   "toggle-off.mp3": {
     "hash": "f9504fc01716acc3dadf40d6bdb4c50f",
-    "mtimeMs": 1788315460650.71,
-    "size": 11593,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "3a9b49ca21c7ddea423a1341e34e936b",
     "owner": "generated"
   },
   "toggle-off.ogg": {
     "hash": "3fb2b6adc2d9f183316601812c6f1fa0",
-    "mtimeMs": 1782421243196.714,
-    "size": 75820,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "ae1ca49e0d92679f9676fe68c13f682b",
     "owner": "generated"
   },
   "toggle-on.mp3": {
     "hash": "860297b50c06a548e35a7b3b6292092d",
-    "mtimeMs": 1788315460663.7034,
-    "size": 12168,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "eef80002de56cac217ed0d4610822b86",
     "owner": "generated"
   },
   "toggle-on.ogg": {
     "hash": "64807512d085a06b3de96ec9e1ee198c",
-    "mtimeMs": 1782421243197.22,
-    "size": 84012,
-    "settingsSig": "ebc4c642239d87bf1bca3ebdf99e3050",
     "outputHash": "be97c9399b67bbec623450a217d1acdf",
     "owner": "generated"
   },
   "torch-attack-strike-1.mp3": {
     "hash": "d8ffb55307b5f607d7fa25dcfddf8382",
-    "mtimeMs": 1788315460017.8733,
-    "size": 55216,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "c50466a328202d01181238018837c1a6",
     "owner": "generated"
   },
   "torch-attack-strike-1.ogg": {
     "hash": "4876121e93f53949e170cb1052f33c6f",
-    "mtimeMs": 1782421243133.3013,
-    "size": 55216,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "786ce668276569fe29f0ce86a4f99b88",
     "owner": "generated"
   },
   "torch-impact-1.mp3": {
     "hash": "18bf6ad5a5913d9ff6fc82d72c168582",
-    "mtimeMs": 1788315460021.3774,
-    "size": 28713,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "ab0f91317fdb0a860741163478a9c3f3",
     "owner": "generated"
   },
   "torch-impact-1.ogg": {
     "hash": "c0217a209146fdf2ec239a4b6ca97617",
-    "mtimeMs": 1782421243133.5457,
-    "size": 28713,
-    "settingsSig": "d4924468f5b578ef090e330ddab1bb55",
     "outputHash": "aa35e887876a1ca9c6b129d7c05647af",
     "owner": "generated"
   },
   "vibraphone-chime-quick.mp3": {
     "hash": "aa9bcb20ab383bbe7d2ef98d47819807",
-    "mtimeMs": 1782421243545.9165,
-    "size": 29708,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "3838aafb1089276b8e34e72cd3f097ce",
     "owner": "curated"
   },
   "vibraphone-chime-quick.ogg": {
     "hash": "0309c17265b812182dba0fc625ac3d9c",
-    "mtimeMs": 1782421243545.9165,
-    "size": 29708,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "4fb1818822de5725c6cddbf2461b41e1",
     "owner": "curated"
   },
   "whoosh-1.mp3": {
     "hash": "2283efcb158109612cf6d630f68b43cb",
-    "mtimeMs": 1782421243545.9834,
-    "size": 9564,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "cbbca852cc1a38017d192ee96908f685",
     "owner": "curated"
   },
   "whoosh-1.ogg": {
     "hash": "95e94f17f733d6c0bea5b1784540e056",
-    "mtimeMs": 1782421243545.9834,
-    "size": 9564,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "37a862e69b693427736b7035ac799019",
     "owner": "curated"
   },
   "whoosh-2.mp3": {
     "hash": "e1f43f7ca7e47e637991903bccbf4d37",
-    "mtimeMs": 1782421243546.1855,
-    "size": 17377,
-    "settingsSig": "53b9d49d148838c68c2835a18a6bbf36",
     "outputHash": "b083e3f21b77292d17dacc6d74779dd3",
     "owner": "curated"
   },
   "whoosh-2.ogg": {
     "hash": "bec203e98f32d2d4e0857b55774d5fc3",
-    "mtimeMs": 1782421243546.1855,
-    "size": 17377,
-    "settingsSig": "7f81b87010c39dcf80177a26682398ee",
     "outputHash": "a5b41cdab4b3fc777e6695b0e3186462",
     "owner": "curated"
   }

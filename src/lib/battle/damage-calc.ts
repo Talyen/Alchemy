@@ -93,7 +93,7 @@ function doublingActive(flag: boolean, cc: number): boolean {
 }
 
 function isBelowHalfHealth(state: BattleState): boolean {
-  return state.playerHealth * HALF_DIVISOR <= state.playerMaxHealth;
+  return state.playerHealth * HALF_DIVISOR < state.playerMaxHealth;
 }
 
 function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): number {

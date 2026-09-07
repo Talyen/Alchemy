@@ -7,6 +7,6 @@ Prioritize:
 - Save, hydrate, and migration paths (`shared/storage`, `src/lib/validation`, active-run session).
 - Battle arithmetic and RNG injection (`src/lib/battle`).
 - Run-session write ports vs direct store mutation.
-- New `src/lib` file without a basename-mirrored unit test (`src/lib/battle/dot-resolve.ts` → `tests/lib/battle/dot-resolve.test.ts`).
+- Changed game behavior without a trustworthy regression assertion at its owning layer. Inspect existing consumer and integration tests before calling a gap; a matching test filename is neither required nor proof of coverage.
 
 Do not duplicate ESLint, import-boundary, or Prettier findings. Ignore generated asset barrels and committed optimized outputs.

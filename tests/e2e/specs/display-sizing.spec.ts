@@ -181,7 +181,11 @@ test.describe("Responsive display sizes", slow, () => {
     }
   });
 
-  test("collection capacity increases and keeps the first visible item on resize", async ({ page }) => {
+  test("collection retains its resized page across portrait and landscape tabs", async ({
+    page,
+    runtimeErrors,
+  }, testInfo) => {
+    void runtimeErrors;
     await page.setViewportSize({ width: 1920, height: 1080 });
     await new MenuPage(page).gotoCollection();
     await page.getByRole("button", { name: "Cards", exact: true }).click();
@@ -197,6 +201,17 @@ test.describe("Responsive display sizes", slow, () => {
     await expect
       .poll(() => cards.locator("img").evaluateAll((images) => images.map((img) => img.getAttribute("src"))))
       .toContain(first);
+    for (const tab of ["Trinkets", "Bestiary"]) {
+      const previousArt = await cards.first().locator("img").first().getAttribute("src");
+      await page.getByRole("button", { name: tab, exact: true }).click();
+      await expect.poll(() => cards.first().locator("img").first().getAttribute("src")).not.toBe(previousArt);
+      await page.getByRole("button", { name: "Cards", exact: true }).click();
+      await expect(cards).toHaveCount(10);
+      await expect
+        .poll(() => cards.locator("img").evaluateAll((images) => images.map((img) => img.getAttribute("src"))))
+        .toContain(first);
+    }
+    await testInfo.attach("collection-resized-page", { body: await page.screenshot(), contentType: "image/png" });
   });
 
   test("hero descriptions fit at maximum tooltip size on a small viewport", async ({

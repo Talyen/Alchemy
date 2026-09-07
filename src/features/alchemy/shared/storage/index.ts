@@ -4,6 +4,8 @@ export {
   saveAlchemySaveData,
   saveAlchemySaveDataForExit,
   type SaveLoadState,
+  type SaveWriteOutcome,
+  subscribeSaveCancellation,
 } from "./io";
 export type * from "./types";
 export * from "./defaults";

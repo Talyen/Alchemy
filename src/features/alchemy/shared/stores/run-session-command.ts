@@ -5,10 +5,12 @@ import { deepFreezeInDev } from "./store-utils";
 
 export type GameplayDraft = Draft<GameplayState>;
 
+export type SynchronousResult<T> = T extends PromiseLike<unknown> ? never : T;
+
 let inCommand = false;
 
 export function dispatchRunSessionCommand<T>(
-  execute: (draft: GameplayDraft) => T,
+  execute: (draft: GameplayDraft) => T & SynchronousResult<T>,
   options?: { afterCommit?: (result: T) => void },
 ): T {
   if (inCommand) {
@@ -16,12 +18,21 @@ export function dispatchRunSessionCommand<T>(
   }
   inCommand = true;
   let result!: T;
-  // eslint-disable-next-line no-useless-assignment -- committed tracks throw vs success for afterCommit
-  let committed = false;
   try {
     const base = useGameplayStateStore.getState();
     const next = produce(base, (draft: GameplayDraft) => {
       result = execute(draft);
+      if (
+        result !== null &&
+        (typeof result === "object" || typeof result === "function") &&
+        "then" in result &&
+        typeof result.then === "function"
+      ) {
+        void Promise.resolve(result).catch(() => undefined);
+        throw new Error(
+          "dispatchRunSessionCommand: commands must be synchronous; move asynchronous work outside the command",
+        );
+      }
     });
 
     if (next !== base) {
@@ -29,20 +40,17 @@ export function dispatchRunSessionCommand<T>(
       deepFreezeInDev(published);
       useGameplayStateStore.setState(published, true);
     }
-    committed = true;
   } finally {
     inCommand = false;
   }
-  if (committed) {
-    options?.afterCommit?.(result);
-  }
+  options?.afterCommit?.(result);
   return result;
 }
 
 export function createRunSessionCommand<Args extends unknown[], Ret>(
-  mutate: (draft: GameplayDraft, ...args: Args) => Ret,
+  mutate: (draft: GameplayDraft, ...args: Args) => Ret & SynchronousResult<Ret>,
 ): (...args: Args) => Ret {
-  return (...args) => dispatchRunSessionCommand((draft) => mutate(draft, ...args));
+  return (...args) => dispatchRunSessionCommand<Ret>((draft) => mutate(draft, ...args));
 }
 
 export function subscribeRunSessionCommits(listener: (revision: number) => void): () => void {

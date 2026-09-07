@@ -4,9 +4,11 @@ import { createPlatformSaveBackend, type SaveBackend } from "@/lib/platform-save
 import type { SaveData } from "./types";
 import { logError } from "@/lib/error-logger";
 import { evaluateSaveCandidates, fallbackSaveData, type SaveLoadState } from "./save-candidates";
-import { areWritesDisabled, SaveWriteQueue, setWritesDisabled } from "./save-write-queue";
+import { areWritesDisabled, SaveWriteQueue, setWritesDisabled, type SaveWriteOutcome } from "./save-write-queue";
 
 export { evaluateSaveCandidates, fallbackSaveData } from "./save-candidates";
+export { subscribeSaveCancellation } from "./save-write-queue";
+export type { SaveWriteOutcome } from "./save-write-queue";
 export type { SaveLoadState } from "./save-candidates";
 
 let saveBackend: SaveBackend = createPlatformSaveBackend();
@@ -61,14 +63,22 @@ export async function resetStorageIoForTests(): Promise<void> {
   saveBackend = createPlatformSaveBackend();
 }
 
-async function writeSaveSnapshot(data: SaveData): Promise<void> {
+async function writeSaveSnapshot(data: SaveData): Promise<SaveWriteOutcome> {
+  let serialized: string;
   try {
-    const result = await saveBackend.write(SAVE_KEY, serializeSaveSnapshot(data));
-    if (result.ok) return;
-    logStorageFailure("Save data could not be written", result.error);
+    serialized = serializeSaveSnapshot(data);
   } catch (error) {
     logStorageFailure("Save data could not be serialized", error);
+    return "failed";
   }
+  try {
+    const result = await saveBackend.write(SAVE_KEY, serialized);
+    if (result.ok) return "saved";
+    logStorageFailure("Save data could not be written", result.error);
+  } catch (error) {
+    logStorageFailure("Save data could not be written", error);
+  }
+  return "failed";
 }
 
 function serializeSaveSnapshot(data: SaveData, now: number = Date.now()): string {
@@ -76,30 +86,32 @@ function serializeSaveSnapshot(data: SaveData, now: number = Date.now()): string
   return JSON.stringify(payload);
 }
 
-export async function saveAlchemySaveData(data: SaveData) {
-  if (typeof window === "undefined") return;
-  await saveQueue.enqueue(data, writeSaveSnapshot);
+export async function saveAlchemySaveData(data: SaveData): Promise<SaveWriteOutcome> {
+  if (typeof window === "undefined") return "skipped";
+  return saveQueue.enqueue(data, writeSaveSnapshot);
 }
 
-export function saveAlchemySaveDataForExit(data: SaveData): void {
-  if (typeof window === "undefined" || areWritesDisabled() || saveQueue.isClearPending) return;
+export function saveAlchemySaveDataForExit(data: SaveData): SaveWriteOutcome | Promise<SaveWriteOutcome> {
+  if (typeof window === "undefined" || areWritesDisabled() || saveQueue.isClearPending) return "skipped";
 
+  let serialized: string;
   try {
-    const result = saveBackend.writeSync(SAVE_KEY, serializeSaveSnapshot(data));
-    if (result === null) {
-      saveQueue.queueExitSnapshot(data);
-      void saveAlchemySaveData(data);
-      return;
-    }
-    if (!result.ok) {
-      logStorageFailure("Save data could not be written during page exit", result.error);
-      void saveAlchemySaveData(data);
-      return;
-    }
-    if (!saveQueue.isIdle) saveQueue.queueExitSnapshot(data);
+    serialized = serializeSaveSnapshot(data);
   } catch (error) {
     logStorageFailure("Save data could not be serialized during page exit", error);
-    void saveAlchemySaveData(data);
+    return "failed";
+  }
+  try {
+    const result = saveBackend.writeSync(SAVE_KEY, serialized);
+    if (result === null) return saveAlchemySaveData(data);
+    if (!result.ok) {
+      logStorageFailure("Save data could not be written during page exit", result.error);
+      return "failed";
+    }
+    return saveQueue.isIdle ? "saved" : saveAlchemySaveData(data);
+  } catch (error) {
+    logStorageFailure("Save data could not be written during page exit", error);
+    return "failed";
   }
 }
 

@@ -34,11 +34,11 @@ Describe the user-visible outcome and the bounded implementation scope.
 - [ ] Implement the most pragmatic architectural solution — the best long-term shape (even when larger than the minimal workaround).
 - [ ] Add or extend only consequential coverage.
 - [ ] Run path-scoped verification.
-- [ ] Mark this plan complete, run the final docs check, and report verification.
+- [ ] Complete and archive this plan using the plan lifecycle, then report verification.
 
 ## Notes
 
-Keep durable policy in its canonical documentation owner. At handoff, set status to complete, refresh the updated date, and run \`npm run docs:check:final\` to archive this plan.
+Keep durable policy in its canonical documentation owner. Follow [the plan lifecycle](./README.md#task-handoff) to complete and archive only this task's plan, then run \`npm run docs:check\` or the task-scoped handoff gate. Other tasks' active plans may remain; validation does not archive files.
 `;
 }
 

@@ -34,6 +34,35 @@ beforeEach(() => {
 });
 
 describe("createRunFlowHandlers victory paths", () => {
+  it.each([false, true])("grants one Alchemist Potion across both reward screens (skip: %s)", (skip) => {
+    const card = { id: "slash", title: "Slash", art: "", descriptionLines: [], cost: 1, effects: [] };
+    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH, runDeck: [] });
+    setRunSession({
+      activeLabyrinthRewardModifiers: ["alchemist", "companion"],
+      rewardState: {
+        choices: [card],
+        gold: 0,
+        materials: emptyInventory(),
+        selectedId: null,
+        destinations: [],
+        rewardType: "card",
+        selectedBossId: null,
+        lastVictoryEnemyType: "normal",
+        lastVictoryContentSystem: "labyrinth",
+      },
+      companionRewardCards: [{ ...card, id: "wolf-companion" }],
+    });
+    const navigateTo = vi.fn();
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+    if (skip) handlers.skipRewards();
+    else handlers.claimRewardChoice(card.id);
+    const onCommit = navigateTo.mock.calls[0]![1] as () => void;
+    onCommit();
+    if (skip) handlers.skipRewards();
+    else handlers.claimRewardChoice("wolf-companion");
+    expect(readActiveRun().runDeck.filter((entry) => entry.id.endsWith("-potion"))).toHaveLength(1);
+  });
+
   it("awardRunEndMaterials applies homestead end-of-run per-room bonuses", () => {
     setRunProgress({ roomsEncountered: 4, currentAct: 1 });
     dispatchRunSessionCommand((draft) => {

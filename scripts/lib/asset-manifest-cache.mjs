@@ -1,17 +1,13 @@
-// Content-hash freshness for asset optimization pipelines.
-// An output is fresh iff its bytes match the committed output digest and its
-// manifest entry matches a hash of source bytes + transform settings + schema.
-// Manifest entries also store source mtimeMs + size so unchanged files can
-// skip re-reading/re-hashing when the filesystem fingerprint matches.
 import { createHash } from "node:crypto";
-import { access, readFile, readdir, stat, unlink } from "node:fs/promises";
+import { readFile, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
+import { createReadStream } from "node:fs";
 
 import { writeTextIfChanged } from "./write-text-if-changed.mjs";
 import { mapPool } from "./map-pool.mjs";
 
 /**
- * @typedef {{ hash: string, mtimeMs: number, size: number, settingsSig?: string, outputHash?: string, owner?: string }} ManifestEntry
+ * @typedef {{ hash: string, outputHash?: string, owner?: string }} ManifestEntry
  */
 
 /**
@@ -33,11 +29,8 @@ function canonicalize(value) {
   return value;
 }
 
-function settingsSignature(settings, schemaVersion) {
-  const hash = createHash("sha256");
-  hash.update(String(schemaVersion));
-  hash.update("\0");
-  hash.update(JSON.stringify(canonicalize(settings)));
+async function hashFile(filePath, hash = createHash("sha256")) {
+  for await (const chunk of createReadStream(filePath)) hash.update(chunk);
   return hash.digest("hex").slice(0, 32);
 }
 
@@ -48,14 +41,12 @@ function settingsSignature(settings, schemaVersion) {
  * @returns {Promise<string>}
  */
 export async function computeContentHash(sourcePath, settings, schemaVersion) {
-  const sourceBytes = await readFile(sourcePath);
   const hash = createHash("sha256");
   hash.update(String(schemaVersion));
   hash.update("\0");
   hash.update(JSON.stringify(canonicalize(settings)));
   hash.update("\0");
-  hash.update(sourceBytes);
-  return hash.digest("hex").slice(0, 32);
+  return hashFile(sourcePath, hash);
 }
 
 /**
@@ -64,8 +55,7 @@ export async function computeContentHash(sourcePath, settings, schemaVersion) {
  * @returns {Promise<string>}
  */
 export async function computeOutputHash(outputPath) {
-  const bytes = await readFile(outputPath);
-  return createHash("sha256").update(bytes).digest("hex").slice(0, 32);
+  return hashFile(outputPath);
 }
 
 /**
@@ -79,47 +69,13 @@ export async function withOutputHash(sourceEntry, outputPath) {
 }
 
 /**
- * Resolve a content hash for a source file, reusing a stored hash when the
- * source mtimeMs + size still match (avoids reading file bytes).
- *
  * @param {string} sourcePath
  * @param {Record<string, unknown>} settings
  * @param {string | number} schemaVersion
- * @param {ManifestEntry | undefined} storedEntry
  * @returns {Promise<ManifestEntry>}
  */
-export async function resolveSourceHash(sourcePath, settings, schemaVersion, storedEntry) {
-  const sourceStat = await stat(sourcePath);
-  const mtimeMs = sourceStat.mtimeMs;
-  const size = sourceStat.size;
-
-  const settingsSig = settingsSignature(settings, schemaVersion);
-
-  if (
-    storedEntry &&
-    typeof storedEntry.hash === "string" &&
-    storedEntry.mtimeMs === mtimeMs &&
-    storedEntry.size === size &&
-    storedEntry.settingsSig === settingsSig
-  ) {
-    return { hash: storedEntry.hash, mtimeMs, size, settingsSig };
-  }
-
-  const hash = await computeContentHash(sourcePath, settings, schemaVersion);
-  return { hash, mtimeMs, size, settingsSig };
-}
-
-/**
- * @param {string} filePath
- * @returns {Promise<boolean>}
- */
-async function pathExists(filePath) {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
+export async function resolveSourceHash(sourcePath, settings, schemaVersion) {
+  return { hash: await computeContentHash(sourcePath, settings, schemaVersion) };
 }
 
 /**
@@ -128,16 +84,12 @@ async function pathExists(filePath) {
  */
 function parseManifestEntry(value) {
   if (typeof value === "string") {
-    // Legacy string-only hashes — force a full re-hash next run.
-    return { hash: value, mtimeMs: Number.NaN, size: Number.NaN };
+    return { hash: value };
   }
   if (value && typeof value === "object" && typeof (/** @type {Record<string, unknown>} */ (value).hash) === "string") {
     const record = /** @type {Record<string, unknown>} */ (value);
     return {
       hash: /** @type {string} */ (record.hash),
-      mtimeMs: typeof record.mtimeMs === "number" ? record.mtimeMs : Number.NaN,
-      size: typeof record.size === "number" ? record.size : Number.NaN,
-      ...(typeof record.settingsSig === "string" ? { settingsSig: record.settingsSig } : {}),
       ...(typeof record.outputHash === "string" ? { outputHash: record.outputHash } : {}),
       ...(typeof record.owner === "string" ? { owner: record.owner } : {}),
     };
@@ -164,8 +116,8 @@ export async function loadManifest(manifestPath) {
       }
       return entries;
     }
-  } catch {
-    // Missing or invalid manifest — start fresh.
+  } catch (error) {
+    if (!(error instanceof SyntaxError) && error.code !== "ENOENT") throw error;
   }
   return {};
 }
@@ -182,8 +134,12 @@ export async function isOutputFresh(outputPath, storedEntry, expectedHash) {
   if (!storedHash || storedHash !== expectedHash || !outputHash) {
     return false;
   }
-  if (!(await pathExists(outputPath))) return false;
-  return (await computeOutputHash(outputPath)) === outputHash;
+  try {
+    return (await computeOutputHash(outputPath)) === outputHash;
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
 }
 
 /**
@@ -198,9 +154,6 @@ function sortManifest(entries) {
     const entry = entries[key];
     sorted[key] = {
       hash: entry.hash,
-      mtimeMs: entry.mtimeMs,
-      size: entry.size,
-      ...(typeof entry.settingsSig === "string" ? { settingsSig: entry.settingsSig } : {}),
       ...(typeof entry.outputHash === "string" ? { outputHash: entry.outputHash } : {}),
       ...(typeof entry.owner === "string" ? { owner: entry.owner } : {}),
     };
@@ -235,8 +188,9 @@ export async function removeOrphanOutputs(outputDir, keepNames, options = {}) {
   let entries;
   try {
     entries = await readdir(outputDir);
-  } catch {
-    return 0;
+  } catch (error) {
+    if (error.code === "ENOENT") return 0;
+    throw error;
   }
 
   let removed = 0;
@@ -291,23 +245,7 @@ export async function processManifestEntries({
   const nextManifest = {};
   for (const result of results) {
     if (!result.entry) continue;
-    const previous = previousManifest[result.key];
-    // Preserve filesystem fingerprint (mtimeMs/size) when content and output
-    // hashes are identical. Fresh CI checkouts rewrite mtimes which would
-    // otherwise dirty .asset-hashes.json on every run. A settingsSig bump
-    // changes hash/outputHash so preservation is skipped and new mtimes are
-    // committed.
-    if (
-      previous &&
-      previous.hash === result.entry.hash &&
-      previous.outputHash === result.entry.outputHash &&
-      Number.isFinite(previous.mtimeMs) &&
-      Number.isFinite(previous.size)
-    ) {
-      nextManifest[result.key] = previous;
-    } else {
-      nextManifest[result.key] = result.entry;
-    }
+    nextManifest[result.key] = result.entry;
   }
 
   return {

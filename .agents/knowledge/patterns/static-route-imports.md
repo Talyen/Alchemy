@@ -5,11 +5,11 @@ Confidence: high
 
 ## Observation
 
-Attempts to `React.lazy()` route screens or add per-route `"Loading …"` fallbacks conflict with the single cold-start loading gate (`StartupLoadingScreen` smoothed bar over art/fonts/save bootstrap). Lazy screens break E2E boot smoke and hide real startup cost.
+Attempts to `React.lazy()` route screens or add per-route `"Loading …"` fallbacks conflict with the single cold-start loading experience. Lazy screens introduce a second readiness boundary and can hide real startup cost.
 
 ## Why it matters
 
-One loading experience at cold start, then instant navigation. Screen JS in `src/app/screen-routes/` is statically imported so code-splitting does not introduce waterfall spinners. Art decode, font readiness, and save hydrate are metered before reveal; `pre-React` comet fills until React mounts.
+Static screen imports avoid navigation waterfalls. Startup readiness and mounted-artwork readiness have different lifetimes: a completed preload does not prove that a later image is ready to paint. [Boot and loading](../../../docs/ARCHITECTURE.md#boot-and-loading) owns the startup-critical art subset; [screen fades](../../../docs/UI.md#screen-fade-motion) own later reveals.
 
 ## Evidence
 

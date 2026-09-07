@@ -122,7 +122,7 @@ export function SettingsToggle({
     <div className={settingsPanelShellClass}>
       <div className="flex items-center justify-between gap-4">
         <p className={controlLabelClass}>{label}</p>
-        <Switch checked={checked} onCheckedChange={onChange} />
+        <Switch aria-label={label} checked={checked} onCheckedChange={onChange} />
       </div>
     </div>
   );

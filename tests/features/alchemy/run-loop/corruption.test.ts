@@ -8,7 +8,7 @@ import {
 } from "@/lib/corruption";
 import { makeTestCard } from "../../../fixtures/cards";
 import { makeEffect } from "../../../fixtures/battle";
-import type { BattleCard } from "@/lib/game-data";
+import { cardById, type BattleCard } from "@/lib/game-data";
 
 function makeRng(values: number[]): () => number {
   let index = 0;
@@ -27,6 +27,23 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
 }
 
 describe("card corruption", () => {
+  it.each(["ray-of-frost", "earthquake", "blizzard", "avatar"])(
+    "keeps %s repeated effects aligned with its corrupted description",
+    (id) => {
+      const card = cardById[id]!;
+      const originalEffects = structuredClone(card.effects);
+      const result = corruptCard(card, [card], makeRng([0, 0.9]));
+      expect(result).not.toBeNull();
+      const first = result!.corruptedCard.effects[0]!;
+      const repeat = result!.corruptedCard.effects.find((effect) => effect.kind === "repeat-over-turns");
+      expect(repeat?.kind).toBe("repeat-over-turns");
+      if (repeat?.kind !== "repeat-over-turns") return;
+      expect(repeat.effects[0]).toEqual(first);
+      expect(card.effects).toEqual(originalEffects);
+      if (id === "avatar") expect(repeat.effects[1]).toEqual(originalEffects[1]);
+    },
+  );
+
   it.each([
     [0, 0.9],
     [0.9, 0.1],

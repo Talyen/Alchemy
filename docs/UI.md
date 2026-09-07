@@ -15,6 +15,8 @@ Alchemy's accessibility stance. Screen wiring checklists remain in
 
 Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for page structure. Use shared chrome before recreating buttons, progress bars, switches, cards, or tooltips.
 
+For flow-specific rules, use [display sizing](#display-sizing), [Collection and Armory browsing](#collection-and-armory-browsing), [card removal](#card-removal-browsing), [rewards and Wishes](#rewards-and-wishes), or [Options](#options).
+
 ## Component conventions
 
 - Use plain prop functions rather than `React.FC`; React 19 components receive `ref` directly as a prop.
@@ -23,7 +25,20 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 - Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states. Eligible talent nodes use native buttons for Enter and Space; keyword trees without portrait art remain selectable using a blank portrait and the keyword icon.
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography.
 - Astral gear and Trinket title shine uses at most three described keywords, each with its primary color and a 55%-opacity stop. Gear prefers matching base affinities; Trinkets retain description order. Unique gear titles stay gold. Artwork and border palettes remain independent.
-- Modals and panels use `useModalEscapeDismiss` or `useCaptureEscapeCancel` so the global Escape stack remains ordered.
+- Modal interaction and dismissal follow [Overlay lifecycle](#overlay-lifecycle).
+
+## Overlay lifecycle
+
+Modals and panels use `useModalEscapeDismiss` or `useCaptureEscapeCancel` so the global Escape stack remains ordered.
+
+`ModalOverlayShell` owns overlay interaction eligibility: only open, rendered
+content accepts input or registers an Escape handler. Closing content remains
+visible for its existing fade but is inert and rejects activation events;
+`mount=false` removes it immediately without retaining an Escape handler.
+Reopening cancels pending removal. Consumers retain action-specific guards such
+as Wish's single-selection latch and confirmation buttons' disabled state.
+Confirmation focus containment pauses while the panel is inert; focus returns
+to its existing target when the panel unmounts.
 
 ## Screen fade motion
 
@@ -91,10 +106,41 @@ cannot receive pointer selection. Keyboard focus uses the native card buttons.
 Enlarged actors shift upward to keep health and battle controls clear. Backgrounds
 fill the frame.
 
+## Collection and Armory browsing
+
 Collection and Armory browsing measure their available grid width and scaled
 tile size. Page size is two rows times the resolved column count, capped at eight
 portrait or six landscape columns. Resize retains the selected or first visible
-item. Offered choices remain content-owned, independent of browsing capacity.
+item. Grid measurements retain available width and scale so switching between
+portrait and landscape tabs resolves capacity before page synchronization.
+Pagination shares its bounds and resize anchoring in `shared/ui/pagination.ts`;
+`use-pagination.ts` owns local and parent-synchronized page transitions. Clamping
+updates the retained page, so growing a list does not revive a removed page.
+Armory context changes reset to the first page; Collection keeps per-tab page
+memory. Parent page changes take precedence over resize anchoring. Collection
+and card pickers report automatic corrections through their existing callbacks
+after commit, once per correction, without notifying for acknowledged pages.
+Empty lists use page zero with one logical page and a minimum capacity of one.
+Offered choices remain content-owned, independent of browsing capacity.
+
+Collection entries rest with dim grey borders. Discovered entries show their keyword
+Shine Border on hover or keyboard focus; locked and undiscovered entries show a neutral
+Shine Border on hover or keyboard focus across all tabs.
+Wish and reward choices use the same hover treatment. Trinkets and gear, including
+uniques, use their effect keywords on these surfaces, with neutral shine when none
+exist. Shared trinket and gear art tiles, including Mystery rewards, shops, and
+run-end items, also rest with the default border and show Shine only on hover or
+keyboard focus. Their existing Shine palettes and item-title colors are preserved.
+
+## Card-removal browsing
+
+Shop card removal reserves a fixed available-height card area between its header
+and pagination/actions. It shows two rows when they fit and one otherwise, keeping
+card size readable and the header and actions stationary across pages. Only the
+card area scrolls if even one row cannot fit. The removal header replaces the shop
+header, gold counter, and instruction text; the Remove action retains its gold cost.
+
+## Rewards and Wishes
 
 Wish uses the shared collection-choice card size, independent of battle-hand sizing.
 All choices stay on one row and shrink evenly to fit, including four-card Wishes;
@@ -106,20 +152,7 @@ Reward cards and items are claimed immediately on activation. Only card rewards
 retain Skip; there are no reward confirmation buttons. Claim-in-flight disables
 choices and Skip until the next reward surface or destination is committed.
 
-Collection entries rest with dim grey borders. Discovered entries show their keyword
-Shine Border on hover or keyboard focus; locked and undiscovered entries show a neutral
-Shine Border on hover or keyboard focus across all tabs.
-Wish and reward choices use the same hover treatment. Trinkets and gear, including
-uniques, use their effect keywords on these surfaces, with neutral shine when none
-exist. Shared trinket and gear art tiles, including Mystery rewards, shops, and
-run-end items, also rest with the default border and show Shine only on hover or
-keyboard focus. Their existing Shine palettes and item-title colors are preserved.
-
-Shop card removal reserves a fixed available-height card area between its header
-and pagination/actions. It shows two rows when they fit and one otherwise, keeping
-card size readable and the header and actions stationary across pages. Only the
-card area scrolls if even one row cannot fit. The removal header replaces the shop
-header, gold counter, and instruction text; the Remove action retains its gold cost.
+## Options
 
 Game Size and Tooltip Size are device-local preferences, separate from game
 saves and cloud mirroring. Reset Sizes and Reset Options reset both. Clearing

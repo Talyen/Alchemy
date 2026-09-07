@@ -44,3 +44,11 @@ Evidence: 42 focused tooling tests passed. The pinned dirty-checkout Button scen
 Two deterministic discovery probes per variant against those pinned sources emitted the same UI section twice without session suppression (1,874 source bytes; 937 repeated), and once with suppression (937 source bytes; zero repeated). Entry lookup returned the requested talent in 256 output bytes; related-file discovery included the Button test. A synthetic middle-of-log assertion was absent from the old tail but present in the diagnostic excerpt. These are tool-level observations, not whole-task token savings: host token counts and tool-call counts remain unavailable. Logs, workflow hashes, task patches and probe results are under the transient token-efficiency-0906 evaluation report directory; this paragraph preserves the interpretation after pruning.
 
 Incidental prevention: documentation and ESLint inventories now exclude isolated worktrees, which otherwise created false failures against copied historical source. The [friction history](../history/friction-2026-09.md) records the failed runs and canonical prevention.
+
+## 2026-09-07 — Correct and consolidate documentation owners
+
+Decision: preserve the existing document and skill boundaries; correct command examples and Gear synchronization; keep verification policy in CONTRIBUTING and script implementation mapping in the scripts README. Ordinary plan handoff now follows the existing non-final documentation check, while repository-wide closure remains explicit. The scaffold links to that lifecycle instead of claiming validation archives files.
+
+Evidence: user-approved documentation plan, source-checked APIs and migration history, and 15 passing context/scaffold tooling tests. The material-award example typechecks against actual imports; every current Unique has an interaction entry. No independent coding-agent evaluation or token-savings claim is made: these changes reconcile documentation and generated guidance with existing behavior rather than introduce a new coding strategy.
+
+Reason: passing link/path checks did not detect semantic errors or an unsupported archived completion claim. Keep current policy in its owner, useful rationale in history, and uncommitted handoff evidence intact.

@@ -121,9 +121,6 @@ declare module "*/clean-dev-artifacts.mjs" {
 declare module "*/asset-manifest-cache.mjs" {
   export interface ManifestEntry {
     hash: string;
-    mtimeMs: number;
-    size: number;
-    settingsSig?: string;
     outputHash?: string;
     owner?: string;
   }
@@ -138,7 +135,6 @@ declare module "*/asset-manifest-cache.mjs" {
     sourcePath: string,
     settings: Record<string, unknown>,
     schemaVersion: string | number,
-    storedEntry: ManifestEntry | undefined,
   ): Promise<ManifestEntry>;
   export function loadManifest(manifestPath: string): Promise<Record<string, ManifestEntry>>;
   export function isOutputFresh(
@@ -150,6 +146,11 @@ declare module "*/asset-manifest-cache.mjs" {
     manifestPath: string,
     entries: Record<string, ManifestEntry>,
   ): Promise<boolean>;
+  export function removeOrphanOutputs(
+    outputDir: string,
+    keepNames: Set<string>,
+    options?: { manifestBasename?: string; label?: string },
+  ): Promise<number>;
   export function processManifestEntries<T, R extends { entry?: ManifestEntry | null }>(options: {
     entries: T[];
     manifestPath: string;
@@ -808,4 +809,10 @@ declare module "*/sync-generated.mjs" {
 
 declare module "*/optimize-pipelines.mjs" {
   export function runAllOptimizePipelines(): Promise<Array<{ ok: boolean; error?: string } | undefined>>;
+}
+
+declare module "*/sync-art-barrels.mjs" {
+  export function syncAssets(options?: { check?: boolean }): Promise<void>;
+  export function syncGearArt(options?: { check?: boolean }): Promise<void>;
+  export function syncArtBarrels(options?: { check?: boolean }): Promise<void>;
 }

@@ -15,8 +15,6 @@ import { TabBar } from "./tab-bar";
 import { CollectionTile } from "./collection-tile";
 import { getCollectionPageItems } from "./collection-items";
 
-export { getCollectionTotalPages } from "./collection-items";
-
 export function CollectionGrid({
   collectionTab,
   discoveredCardIds,

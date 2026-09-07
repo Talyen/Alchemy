@@ -1,70 +1,95 @@
-import { describe, expect, it } from "vitest";
-import { SaveWriteQueue } from "@/features/alchemy/shared/storage/save-write-queue";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  SaveWriteQueue,
+  setWritesDisabled,
+  type SaveWriteOutcome,
+} from "@/features/alchemy/shared/storage/save-write-queue";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
-import type { SaveData } from "@/features/alchemy/shared/storage/types";
 
-function saveWithTimestamp(lastSavedAt: number): SaveData {
-  return { ...createDefaultSaveData(), lastSavedAt };
+function snapshot(gold: number) {
+  return { ...createDefaultSaveData(), gold };
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((settle) => {
+    resolve = settle;
+  });
+  return { promise, resolve };
+}
+
+afterEach(() => setWritesDisabled(false));
+
 describe("SaveWriteQueue", () => {
-  it("coalesces rapid enqueues into a single runner", async () => {
+  it.each(["saved", "failed"] as const)("coalesced callers share the replacement's %s outcome", async (outcome) => {
     const queue = new SaveWriteQueue();
-    const written: number[] = [];
-    const slowWrite = async (data: SaveData) => {
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, 10);
-      });
-      written.push(data.lastSavedAt);
-    };
-
-    await Promise.all([
-      queue.enqueue(saveWithTimestamp(1), slowWrite),
-      queue.enqueue(saveWithTimestamp(2), slowWrite),
-      queue.enqueue(saveWithTimestamp(3), slowWrite),
-    ]);
-
-    expect(queue.isIdle).toBe(true);
-    expect(written.at(-1)).toBe(3);
-    expect(written.length).toBeLessThanOrEqual(2);
-  });
-
-  it("stores the exit snapshot even when idle", () => {
-    const queue = new SaveWriteQueue();
-    expect(queue.isIdle).toBe(true);
-    queue.queueExitSnapshot(saveWithTimestamp(9));
-    expect(queue.hasPendingTasks).toBe(true);
-    expect(queue.isIdle).toBe(false);
-  });
-
-  it("waits for a queued snapshot instead of resolving while a write is in flight", async () => {
-    const queue = new SaveWriteQueue();
-    const written: number[] = [];
-    let releaseFirstWrite: (() => void) | undefined;
-    const firstWriteGate = new Promise<void>((resolve) => {
-      releaseFirstWrite = resolve;
-    });
-    const gatedWrite = async (data: SaveData) => {
-      if (written.length === 0) await firstWriteGate;
-      written.push(data.lastSavedAt);
-    };
-
-    const first = queue.enqueue(saveWithTimestamp(1), gatedWrite);
+    const gate = deferred<SaveWriteOutcome>();
+    const write = vi.fn().mockReturnValueOnce(gate.promise).mockResolvedValue(outcome);
+    const first = queue.enqueue(snapshot(1), write);
     await Promise.resolve();
-    await Promise.resolve();
-    const second = queue.enqueue(saveWithTimestamp(2), gatedWrite);
-
-    let secondResolved = false;
+    const second = queue.enqueue(snapshot(2), write);
+    const third = queue.enqueue(snapshot(3), write);
+    expect(second).toBe(third);
+    let resolved = false;
     void second.then(() => {
-      secondResolved = true;
+      resolved = true;
     });
     await Promise.resolve();
-    expect(secondResolved).toBe(false);
-
-    releaseFirstWrite?.();
-    await Promise.all([first, second]);
-
-    expect(written.at(-1)).toBe(2);
+    expect(resolved).toBe(false);
+    gate.resolve("saved");
+    expect(await first).toBe("saved");
+    expect(await second).toBe(outcome);
+    expect(await third).toBe(outcome);
+    expect(write.mock.calls.map(([data]) => data.gold)).toEqual([1, 3]);
     expect(queue.isIdle).toBe(true);
+  });
+
+  it("coalesces requests before the runner starts", async () => {
+    const queue = new SaveWriteQueue();
+    const write = vi.fn().mockResolvedValue("saved");
+    const first = queue.enqueue(snapshot(1), write);
+    const second = queue.enqueue(snapshot(2), write);
+    expect(await first).toBe("saved");
+    expect(await second).toBe("saved");
+    expect(write).toHaveBeenCalledExactlyOnceWith(snapshot(2));
+  });
+
+  it.each(["clear", "protection"])("%s cancels in-flight acknowledgement and pending writes", async (action) => {
+    const queue = new SaveWriteQueue();
+    const gate = deferred<SaveWriteOutcome>();
+    const write = vi.fn().mockReturnValue(gate.promise);
+    const first = queue.enqueue(snapshot(1), write);
+    await Promise.resolve();
+    const second = queue.enqueue(snapshot(2), write);
+    const clear = action === "clear" ? queue.enqueueClear(async () => ({ ok: true })) : undefined;
+    if (action === "protection") setWritesDisabled(true);
+    gate.resolve("saved");
+    expect(await first).toBe("skipped");
+    expect(await second).toBe("skipped");
+    await clear;
+    expect(write).toHaveBeenCalledTimes(1);
+  });
+
+  it("recovers its runner after a thrown write", async () => {
+    const queue = new SaveWriteQueue();
+    expect(
+      await queue.enqueue(snapshot(1), async () => {
+        throw new Error("unavailable");
+      }),
+    ).toBe("failed");
+    expect(await queue.enqueue(snapshot(2), async () => "saved")).toBe("saved");
+  });
+
+  it("blocks writes until all overlapping clears finish", async () => {
+    const queue = new SaveWriteQueue();
+    const gate = deferred<{ ok: boolean }>();
+    const first = queue.enqueueClear(async () => ({ ok: true }));
+    const second = queue.enqueueClear(() => gate.promise);
+    await first;
+    const write = vi.fn().mockResolvedValue("saved");
+    expect(await queue.enqueue(snapshot(1), write)).toBe("skipped");
+    gate.resolve({ ok: true });
+    await second;
+    expect(await queue.enqueue(snapshot(2), write)).toBe("saved");
   });
 });

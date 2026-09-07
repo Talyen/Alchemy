@@ -20,6 +20,7 @@ vi.mock(
 );
 vi.mock("@/lib/game-data/cards/card-pools", () => ({
   isStandardPotionCard: () => true,
+  isMixedPotionCard: () => false,
 }));
 
 const potion = {
@@ -37,6 +38,44 @@ describe("AlchemistShopScreen mix Escape", () => {
   afterEach(() => {
     cleanup();
     resetEscapeStackForTests();
+  });
+
+  it("requires two distinct ingredients after deselecting the first potion", async () => {
+    const user = userEvent.setup();
+    const onMixPotions = vi.fn(() => null);
+
+    render(
+      <AlchemistShopScreen
+        gold={100}
+        runDeck={[potion, { ...potion, id: "potion-2", title: "Potion Two" }]}
+        potionCards={[potion]}
+        refreshesLeft={1}
+        mixUsed={false}
+        purchasedSlotKeys={[]}
+        getPotionPrice={() => 10}
+        mixPrice={25}
+        refreshPrice={15}
+        onBuyCard={() => true}
+        onRefresh={() => {}}
+        onMixPotions={onMixPotions}
+        onContinue={() => {}}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Mix Potions/i }));
+    const [first, second] = await screen.findAllByRole("button", { name: "Select shop card" });
+    const combine = screen.getByRole("button", { name: "Combine" });
+    await user.click(first!);
+    await user.click(second!);
+    await user.click(first!);
+    await user.click(second!);
+    expect((combine as HTMLButtonElement).disabled).toBe(true);
+    await user.click(combine);
+    expect(onMixPotions).not.toHaveBeenCalled();
+
+    await user.click(first!);
+    await user.click(combine);
+    expect(onMixPotions).toHaveBeenCalledExactlyOnceWith(1, 0);
   });
 
   it("cancels mix mode on Escape and stops GameMenu from receiving the key", async () => {

@@ -340,3 +340,17 @@ describe("addForgeToPlayer", () => {
     expect(result).toBe(state);
   });
 });
+
+describe("low-health resource bonuses", () => {
+  it.each([14, 15, 16])("requires strictly below half Health at %s/30", (playerHealth) => {
+    const state = patchBattleState({
+      playerHealth,
+      playerMaxHealth: 30,
+      talentEffects: { armorDoubledBelowHalfHealth: true, forgeDoubledBelowHalfHealth: true },
+    });
+    const armor = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 4 }, []);
+    const forge = addForgeToPlayer(state, 4);
+    expect(armor.playerStatuses.armor).toBe(playerHealth < 15 ? 8 : 4);
+    expect(forge.playerStatuses.forge).toBe(playerHealth < 15 ? 8 : 4);
+  });
+});

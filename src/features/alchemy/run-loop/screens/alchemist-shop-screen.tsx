@@ -72,7 +72,7 @@ export function AlchemistShopScreen({
       setMix((s) => ({ ...s, step: 2, a: index }));
     } else if (mix.step === 2) {
       if (index === mix.a) {
-        setMix((s) => ({ ...s, step: 1, a: null }));
+        setMix((s) => ({ ...s, step: 1, a: null, b: null }));
       } else if (index === mix.b) {
         setMix((s) => ({ ...s, b: null }));
       } else {

@@ -1,5 +1,5 @@
 import { mkdtempSync, rmSync } from "node:fs";
-import { copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rm, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -32,6 +32,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   return {
     ...original,
     readdir: vi.fn(original.readdir),
+    readFile: vi.fn(original.readFile),
     writeFile: vi.fn(original.writeFile),
     copyFile: vi.fn(async (source: string, target: string) => {
       if (source === fixture.failedSource) throw new Error("fixture processing failed");
@@ -98,6 +99,72 @@ describe.each([
     expect(manifestWrites()).toHaveLength(0);
     expect(copyFile).not.toHaveBeenCalled();
     expect(fixture.transform).not.toHaveBeenCalled();
+  });
+
+  it("detects same-size source replacements with restored timestamps", async () => {
+    const sourcePath = path.join(source, `a.${input}`);
+    const fixed = new Date("2020-01-01T00:00:00Z");
+    await utimes(sourcePath, fixed, fixed);
+    await optimize();
+    await writeFile(sourcePath, "z");
+    await utimes(sourcePath, fixed, fixed);
+    await expect(optimize()).resolves.toEqual({ ok: true });
+    expect(await readFile(path.join(output, `a.${extension}`), "utf8")).toContain("z");
+  });
+
+  it("migrates legacy metadata without reprocessing unchanged media", async () => {
+    await optimize();
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    await writeFile(
+      manifestPath,
+      JSON.stringify(
+        Object.fromEntries(
+          Object.entries(manifest).map(([key, entry]) => [
+            key,
+            { ...(entry as object), mtimeMs: 1, size: 2, settingsSig: "old" },
+          ]),
+        ),
+      ),
+    );
+    fixture.transform.mockClear();
+    vi.mocked(copyFile).mockClear();
+    await expect(optimize()).resolves.toEqual({ ok: true });
+    expect(JSON.parse(await readFile(manifestPath, "utf8"))).toEqual(manifest);
+    expect(fixture.transform).not.toHaveBeenCalled();
+    expect(copyFile).not.toHaveBeenCalled();
+  });
+
+  it("preserves outputs and skips processing when the manifest cannot be read", async () => {
+    await optimize();
+    const before = await readFile(manifestPath, "utf8");
+    const orphan = path.join(output, `orphan.${extension}`);
+    await writeFile(orphan, "keep");
+    const error = Object.assign(new Error(`EACCES: ${manifestPath}`), { code: "EACCES", path: manifestPath });
+    vi.mocked(readFile).mockRejectedValueOnce(error);
+    vi.mocked(writeFile).mockClear();
+    fixture.transform.mockClear();
+    vi.mocked(copyFile).mockClear();
+    await expect(optimize()).rejects.toBe(error);
+    expect(await readFile(manifestPath, "utf8")).toBe(before);
+    expect(await readFile(orphan, "utf8")).toBe("keep");
+    expect(manifestWrites()).toHaveLength(0);
+    expect(fixture.transform).not.toHaveBeenCalled();
+    expect(copyFile).not.toHaveBeenCalled();
+  });
+
+  it("skips publication and cleanup when an output cannot be read", async () => {
+    await optimize();
+    const before = await readFile(manifestPath, "utf8");
+    const orphan = path.join(output, `orphan.${extension}`);
+    await writeFile(orphan, "keep");
+    const outputPath = path.join(output, `a.${extension}`);
+    await rm(outputPath);
+    await mkdir(outputPath);
+    vi.mocked(writeFile).mockClear();
+    await expect(optimize()).resolves.toMatchObject({ ok: false, error: expect.stringContaining("EISDIR") });
+    expect(await readFile(manifestPath, "utf8")).toBe(before);
+    expect(manifestWrites()).toHaveLength(0);
+    expect(await readFile(orphan, "utf8")).toBe("keep");
   });
 
   it("preserves the manifest and orphans on failure, then repairs outputs and cleans up on retry", async () => {

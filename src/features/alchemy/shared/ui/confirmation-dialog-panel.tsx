@@ -22,6 +22,7 @@ export function ConfirmationDialogPanel({
     const cancel = panel?.querySelector<HTMLElement>("[data-dialog-cancel]");
     cancel?.focus();
     const keepFocus = (event: FocusEvent) => {
+      if (panel?.closest("[inert]")) return;
       if (event.target instanceof Node && !panel?.contains(event.target)) (cancel ?? panel)?.focus();
     };
     document.addEventListener("focusin", keepFocus);

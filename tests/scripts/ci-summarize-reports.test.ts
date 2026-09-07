@@ -143,6 +143,83 @@ describe("ci-summarize-playwright", () => {
     expect(model.allTests[0]).toMatchObject({ title: "slow save", duration: 42, status: "expected" });
   });
 
+  it("keeps each project's failure message attached to its own test", () => {
+    const report = {
+      suites: [
+        {
+          specs: [
+            {
+              title: "loads save",
+              tests: [
+                {
+                  status: "unexpected",
+                  projectName: "chromium",
+                  results: [{ errors: [{ message: "Chromium failure\nstack" }] }],
+                },
+                {
+                  status: "flaky",
+                  projectName: "firefox",
+                  results: [{ errors: [{ message: "Firefox retry\nstack" }] }, { errors: [] }],
+                },
+                { status: "unexpected", projectName: "webkit", results: [] },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const summary = summarizePlaywrightReport(report);
+    const model = collectPlaywrightTests(report);
+
+    expect(summary.failures.map((failure) => failure.message)).toEqual(["Chromium failure", "Firefox retry", ""]);
+    expect(model.allTests.map((test) => test.errorMessage)).toEqual(summary.failures.map((failure) => failure.message));
+    expect(model.flakyTests[0]).toMatchObject({ project: "firefox", retries: 1 });
+  });
+
+  it("walks nested suites in report order and ignores malformed entries", () => {
+    const report = {
+      suites: [
+        null,
+        42,
+        {
+          specs: [null, {}, { title: "parent", tests: [null, false, { status: "unexpected" }] }],
+          suites: [
+            {
+              specs: [
+                { title: "child", tests: [{ status: "flaky" }, { status: "expected" }, { status: "skipped" }, {}] },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(summarizePlaywrightReport(report)).toMatchObject({
+      total: 5,
+      expected: 1,
+      unexpected: 1,
+      flaky: 1,
+      skipped: 1,
+      failures: [
+        { title: "parent", message: "" },
+        { title: "child", message: "" },
+      ],
+    });
+    expect(collectPlaywrightTests(report)).toMatchObject({
+      totalTests: 5,
+      passedTests: 3,
+      skippedTests: 1,
+      allTests: [
+        { title: "parent" },
+        { title: "child" },
+        { title: "child" },
+        { title: "child" },
+        { title: "child", status: "unknown" },
+      ],
+    });
+  });
+
   it("extracts unexpected and flaky specs", () => {
     const summary = summarizePlaywrightReport({
       stats: { expected: 10, unexpected: 1, flaky: 1, skipped: 2 },

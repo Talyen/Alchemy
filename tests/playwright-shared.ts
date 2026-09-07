@@ -31,7 +31,6 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       preserveOutput: "failures-only",
       webServer: {
         ...previewWebServer(previewPort),
-        reuseExistingServer: !isCi,
         env: {
           ALCHEMY_DEV_PORT: String(previewPort),
           ...(process.env.ALCHEMY_RUN_ID ? { ALCHEMY_RUN_ID: process.env.ALCHEMY_RUN_ID } : {}),
@@ -63,7 +62,6 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
       },
       webServer: {
         ...previewWebServer(previewPort),
-        reuseExistingServer: false,
         env: {
           ALCHEMY_DEV_PORT: String(previewPort),
           ...(process.env.ALCHEMY_RUN_ID ? { ALCHEMY_RUN_ID: process.env.ALCHEMY_RUN_ID } : {}),
@@ -93,8 +91,7 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
   }
 
   const viteMode = process.env.PLAYWRIGHT_VITE_MODE === "dev" ? "dev" : "preview";
-  const port = BROWSER_PREVIEW_PORT;
-  const webServerCommand = previewWebServer(port, { mode: viteMode }).command;
+  const port = previewPortFromEnv("PLAYWRIGHT_BROWSER_PREVIEW_PORT", BROWSER_PREVIEW_PORT);
   const isPrepush = process.env.PLAYWRIGHT_PREPUSH === "1";
   const isNightly = process.env.PLAYWRIGHT_NIGHTLY === "1";
   const isCi = !!process.env.CI && !isPrepush;
@@ -131,9 +128,7 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
           }),
     },
     webServer: {
-      command: webServerCommand,
-      port,
-      reuseExistingServer: !isCi,
+      ...previewWebServer(port, { mode: viteMode }),
       env: {
         ALCHEMY_DEV_PORT: String(port),
         ALCHEMY_SKIP_CHECKER: "1",

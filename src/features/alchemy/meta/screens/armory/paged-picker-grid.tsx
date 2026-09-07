@@ -1,29 +1,11 @@
-import { anchoredPage, useAdaptiveGrid } from "../../../shared/ui/adaptive-grid";
+import { usePagination } from "../../../shared/ui/use-pagination";
+import { useAdaptiveGrid } from "../../../shared/ui/adaptive-grid";
 import { GridMeasurement } from "../../../shared/ui/grid-measurement";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { collectionGridGapXClass } from "../../../shared/config";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { PaginationControls } from "../../../shared/ui/shared-ui";
-
-export const PICKER_PAGE_SIZE = 6;
-
-function useContextPagedGrid(context: string, itemCount: number, pageSize = PICKER_PAGE_SIZE, selectedIndex = -1) {
-  const [paging, setPaging] = useState({ context, page: 0, pageSize });
-  let page = paging.context === context ? paging.page : 0;
-  if (paging.context !== context || paging.pageSize !== pageSize) {
-    page =
-      paging.context !== context ? 0 : anchoredPage(paging.page, paging.pageSize, pageSize, itemCount, selectedIndex);
-    setPaging({ context, page, pageSize });
-  }
-  const totalPages = Math.max(1, Math.ceil(itemCount / pageSize));
-  const safePage = Math.min(page, totalPages - 1);
-  return {
-    safePage,
-    totalPages,
-    onPageChange: (nextPage: number) => setPaging({ context, page: nextPage, pageSize }),
-  };
-}
 
 export function PagedPickerGrid({
   grid: { onContainer, onMeasure, referenceTileWidth, gridStyle },
@@ -82,23 +64,19 @@ export function PagedPickerGrid({
   );
 }
 
-export function pickerPageSlice<T>(items: T[], safePage: number, pageSize = PICKER_PAGE_SIZE): T[] {
-  return items.slice(safePage * pageSize, (safePage + 1) * pageSize);
-}
-
-export function pickerFillerCount(visibleCount: number, pageSize = PICKER_PAGE_SIZE): number {
-  return Math.max(0, pageSize - visibleCount);
-}
-
 export function useArmoryPickerPage<T>(context: string, items: T[], selectedIndex = -1) {
   const grid = useAdaptiveGrid(225, 3);
   const pageSize = grid.pageSize;
-  const { safePage, totalPages, onPageChange } = useContextPagedGrid(context, items.length, pageSize, selectedIndex);
-  const pageItems = pickerPageSlice(items, safePage, pageSize);
+  const {
+    page: safePage,
+    totalPages,
+    setPage: onPageChange,
+  } = usePagination(items.length, pageSize, context, selectedIndex);
+  const pageItems = items.slice(safePage * pageSize, (safePage + 1) * pageSize);
   return {
     grid,
     pageItems,
-    fillerCount: pickerFillerCount(pageItems.length, pageSize),
+    fillerCount: Math.max(0, pageSize - pageItems.length),
     safePage,
     totalPages,
     onPageChange,

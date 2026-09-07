@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, SyntheticEvent } from "react";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { cn } from "@/lib/utils";
 import { fadePhaseClass, useFadePresence } from "./use-fade";
@@ -23,6 +23,11 @@ interface ModalOverlayShellProps {
   children: ReactNode;
 }
 
+function blockInteraction(event: SyntheticEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 export function ModalOverlayShell({
   open,
   escapeId,
@@ -39,9 +44,10 @@ export function ModalOverlayShell({
   children,
 }: ModalOverlayShellProps) {
   const { mounted, phase } = useFadePresence(open);
+  const interactive = open && mount && mounted;
 
   useModalEscapeDismiss({
-    active: dismissOnEscape && mounted && phase !== "exit",
+    active: dismissOnEscape && interactive,
     id: escapeId,
     priority: escapePriority,
     onEscape: onClose,
@@ -51,10 +57,13 @@ export function ModalOverlayShell({
 
   return (
     <div
+      inert={!interactive}
       data-testid={testId}
       style={zIndex !== undefined ? { zIndex } : undefined}
       className={cn(position, "inset-0", dim && "bg-black/70", fadePhaseClass(phase), className)}
-      onClick={dismissOnBackdrop ? onClose : undefined}
+      onClick={dismissOnBackdrop && interactive ? onClose : undefined}
+      onClickCapture={!interactive ? blockInteraction : undefined}
+      onKeyDownCapture={!interactive ? blockInteraction : undefined}
     >
       {children}
     </div>

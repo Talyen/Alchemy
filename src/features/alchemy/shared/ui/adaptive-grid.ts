@@ -8,28 +8,28 @@ export function getGridCapacity(width: number, tileWidth: number, gap: number, m
   return { columns, pageSize: columns * 2 };
 }
 
-export function anchoredPage(
-  previousPage: number,
-  previousSize: number,
-  pageSize: number,
-  itemCount: number,
-  selectedIndex = -1,
-) {
-  const anchor = selectedIndex >= 0 ? selectedIndex : previousPage * previousSize;
-  return Math.max(0, Math.min(Math.floor(anchor / pageSize), Math.ceil(itemCount / pageSize) - 1));
-}
-
 export function useAdaptiveGrid(referenceTileWidth: number, initialColumns: number, maxColumns = 8, referenceGap = 20) {
   const [container, onContainer] = useState<HTMLDivElement | null>(null);
   const [measure, onMeasure] = useState<HTMLSpanElement | null>(null);
-  const [columns, setColumns] = useState(initialColumns);
+  const [measurement, setMeasurement] = useState<{ width: number; scale: number } | null>(null);
+  const columns = measurement
+    ? getGridCapacity(
+        measurement.width,
+        referenceTileWidth * measurement.scale,
+        referenceGap * measurement.scale,
+        maxColumns,
+      ).columns
+    : initialColumns;
   useLayoutEffect(() => {
     if (!container || !measure || typeof ResizeObserver === "undefined") return;
     const update = () => {
       const tileWidth = parseFloat(getComputedStyle(measure).width);
       if (!(tileWidth > 0) || container.clientWidth <= 0) return;
       const scale = tileWidth / referenceTileWidth;
-      setColumns(getGridCapacity(container.clientWidth, tileWidth, referenceGap * scale, maxColumns).columns);
+      const width = container.clientWidth;
+      setMeasurement((previous) =>
+        previous?.width === width && previous.scale === scale ? previous : { width, scale },
+      );
     };
     update();
     let frame: number | null = null;
@@ -46,7 +46,7 @@ export function useAdaptiveGrid(referenceTileWidth: number, initialColumns: numb
       observer.disconnect();
       if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [container, measure, referenceTileWidth, referenceGap, maxColumns]);
+  }, [container, measure, referenceTileWidth]);
   return {
     onContainer,
     onMeasure,

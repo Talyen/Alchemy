@@ -26,6 +26,7 @@ export const CONTEXT_TASKS = {
     docs: [
       owner("docs/UI.md", "Placement and boundaries"),
       owner("docs/UI.md", "Component conventions"),
+      owner("docs/UI.md", "Overlay lifecycle"),
       owner("docs/UI.md", "Verification"),
     ],
     entrypoints: ["src/features/alchemy/shared/ui", "src/styles/components.css"],

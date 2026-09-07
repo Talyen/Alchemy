@@ -5,7 +5,7 @@ Confidence: high
 
 ## Observation
 
-Save shape changes that edit Zod schemas/defaults without bumping `CURRENT_SAVE_SCHEMA_VERSION`, adding fixtures, and asserting gameplay outcomes break load for players on supported builds. Stamp-only vs transform decision is frequently misapplied.
+Save changes can break supported progress when schemas, defaults, migrations, and gameplay fixtures disagree. Confusing a compatible additive default with a required transformation causes either unnecessary migration work or missing compatibility handling; use the [version decision](../../../src/features/alchemy/shared/storage/MIGRATIONS.md#when-to-increment).
 
 ## Why it matters
 

@@ -1,4 +1,4 @@
-import { type BattleCard } from "@/lib/game-data";
+import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import {
   CORRUPTION_DELTA_CHANCE,
   CORRUPTION_MIN_VALUE,
@@ -102,6 +102,23 @@ export function replaceNumberAt(line: string, matchIndex: number, nextValue: num
   return `${line.slice(0, matchIndex)}${nextValue}${line.slice(matchIndex + match[0].length)}`;
 }
 
+function updateRepeatedCorruption(
+  effect: BattleCardEffect,
+  sourceEffect: BattleCardEffect,
+  field: CorruptibleNumericField,
+  nextValue: number,
+): BattleCardEffect {
+  if (effect.kind !== "repeat-over-turns") return effect;
+  return {
+    ...effect,
+    effects: effect.effects.map((child) =>
+      JSON.stringify(child) === JSON.stringify(sourceEffect)
+        ? { ...child, [field]: nextValue }
+        : updateRepeatedCorruption(child, sourceEffect, field, nextValue),
+    ),
+  };
+}
+
 function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delta: 1 | -1): BattleCard {
   const currentLine = card.descriptionLines[target.lineIndex];
   if (currentLine === undefined) return card;
@@ -121,6 +138,11 @@ function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delt
 
   nextCard.descriptionLines[target.lineIndex] = nextLine;
   effect[target.field] = nextValue;
+  if (sourceEffect) {
+    nextCard.effects = nextCard.effects.map((entry) =>
+      updateRepeatedCorruption(entry, sourceEffect, target.field, nextValue),
+    );
+  }
   nextCard.corrupted = true;
   const deltaLen = String(nextValue).length - String(target.value).length;
   const shiftedExisting =

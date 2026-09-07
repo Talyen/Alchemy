@@ -49,5 +49,5 @@ Review the resulting caller path, not just the extracted helper. Check that the 
 - `legacy`/`compat`/`shim`/`v1` names imported beside newer owners; side-by-side barrel exports; hub methods that only forward.
 - Parallel screen shells across `meta/`/`run-setup/`/`run-loop/`; repeated empty states, card grids, modal scaffolds, reward wrappers.
 - Interface+single implementer+factory; `*Manager/*Helper/*Coordinator` around one function; boolean parameter soup; defensive cast stacks; complexity > 10 without domain reason.
-- Battle math in `.tsx`; transient UI fields on save shapes; direct aggregate/port imports from feature code outside `**/stores/**`; invented parallel hubs.
+- Battle math in `.tsx`; transient UI fields on save shapes; private aggregate/store-internal imports from outside `shared/stores/`; invented parallel hubs. Direct imports of the documented capability ports are the required feature boundary, not a finding.
 - `node scripts/audit-change-amplification.mjs` clusters; duplicated policy across AGENTS/docs/scripts; madge cycles (`npm run audit:all`) remedied by inversion/extraction/facades — layer violations stay ESLint fixes.

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   addGoldWithCombatText,
+  gainManaWithCombatText,
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
   emitOverhealBlockText,
@@ -239,5 +240,32 @@ describe("lethality payouts — every kill path pays the same rewards", () => {
     const afterTypedHit = dealPlayerTypedHit(lethal, "physical", 10, texts);
     expect(afterTypedHit.gold).toBe(0);
     expect(afterTypedHit.playerHealth).toBe(20);
+  });
+});
+
+describe("Arcane Mending from bonus Mana", () => {
+  it.each([true, false])("heals once per gain with combat text enabled: %s", (collectText) => {
+    const state = makeTestBattleState({
+      mana: 0,
+      maxMana: 4,
+      playerHealth: 10,
+      talentEffects: { ...makeTestBattleState().talentEffects, healOnManaGain: 2 },
+    });
+    const texts = makeTexts();
+    const next = gainManaWithCombatText(state, 3, collectText ? texts : undefined);
+    expect(next.mana).toBe(3);
+    expect(next.playerHealth).toBe(12);
+    if (collectText) expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
+    expect(state.playerHealth).toBe(10);
+  });
+
+  it("does not heal when Mana is already full", () => {
+    const state = makeTestBattleState({
+      mana: 4,
+      maxMana: 4,
+      playerHealth: 10,
+      talentEffects: { ...makeTestBattleState().talentEffects, healOnManaGain: 2 },
+    });
+    expect(gainManaWithCombatText(state, 3, []).playerHealth).toBe(10);
   });
 });

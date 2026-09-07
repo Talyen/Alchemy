@@ -41,3 +41,22 @@ describe("applyLifestealAndPlayerHitTriggers — leechMissingHealthStep", () => 
     expect(result.playerHealth).toBe(24);
   });
 });
+
+describe("low-health Leech bonuses", () => {
+  it.each([14, 15, 16])("requires strictly below half Health at %s/30", (health) => {
+    const desperate = patchBattleState({
+      playerHealth: health,
+      playerMaxHealth: 30,
+      talentEffects: { leechDesperateMultiplier: 20 },
+    });
+    expect(applyLifestealAndPlayerHitTriggers(desperate, 10, []).playerHealth - health).toBe(health < 15 ? 6 : 5);
+    const execute = patchBattleState({
+      playerHealth: 1,
+      playerMaxHealth: 30,
+      enemyHealth: health,
+      enemyMaxHealth: 30,
+      talentEffects: { leechExecuteMultiplier: 20 },
+    });
+    expect(applyLifestealAndPlayerHitTriggers(execute, 10, []).playerHealth).toBe(health < 15 ? 7 : 6);
+  });
+});

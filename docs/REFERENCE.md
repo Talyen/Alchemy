@@ -16,8 +16,8 @@ Reference for commands, triage, balance, and file lookup. Strict coding rules: *
 `package.json` owns script entry points. `scripts/lib/change-routes.mjs` owns
 changed-path selection, and [CONTRIBUTING.md](../CONTRIBUTING.md) owns gate
 tiers. Use the catalog below for discovery rather than duplicating command
-lists in subsystem docs. The full script catalog lives in
-[scripts/README.md](../scripts/README.md).
+lists in subsystem docs. Script implementation owners are mapped in
+[scripts/README.md](../scripts/README.md); `package.json` is the exhaustive command list.
 
 ### Script Command Reference
 
@@ -34,9 +34,10 @@ npm run lint:ci             # Full static gate
 npm run check -- --diff     # Source-aware handoff gate with CI static checks and conditional pure builds
 npm run check:ship          # Ship gate before tagging/desktop packaging
 npm run docs:check          # Validate documentation contracts and plan metadata
-npm run docs:check:final    # Pure final validation (no archiving; use archive:plans explicitly)
+npm run docs:check:final    # Repository-wide closure: requires every plan to be finished and archived
 npm run plans:check         # Validate active plan metadata only
 npm run new:plan -- <Name>  # Scaffold an execution plan under docs/Plans/
+npm run archive:plans      # Move all complete/cancelled plans; inspect ownership first
 npm run balance:sim         # Headless balance findings (opens reports/balance-findings.html)
 npm run perf                # FPS / hitch profiling ([PERFORMANCE.md](./PERFORMANCE.md))
 npm run clean               # Remove local diagnostics/artifacts
@@ -110,11 +111,8 @@ These options are available on demand, not additional mandatory prereads. Update
 
 ### Verification reuse
 
-`verify` keeps local passing receipts under `reports/verification-cache/`. After a command has been observed to take at least five seconds, it can reuse dependency-related and changed unit tests plus save, desktop and performance unit suites. It never reuses tooling suites, report generators, assets, static checks, builds, smoke tests or browser runs. The first run records duration without scanning dependencies; a subsequent slow run establishes its receipt. Reuse must also save more time than twice the measured input-scan cost. The exact executable and argument list identify coverage; a narrower prior command cannot satisfy a broader command.
-
-Input identity covers tracked and untracked nonignored files, root environment files and npm configuration, installed dependency file identities, Node executable/version/platform, checkout location and environment. File identities include mode, size, nanosecond modification/change times and inode; this is local filesystem reuse, not a portable content-addressed build cache. Dependency caches are excluded. Linked source or external dependency symlinks, unreadable inputs, a missing npm install receipt or changed inputs disable reuse. Fresh successes replace receipts atomically; failures invalidate them. Reused results retain the original run ID and expiry rather than renewing their age. Each verifier writes a run-specific `verify/summary.json`; the outer completion report links it so reuse provenance survives the final report.
-
-CI always executes tests. Set `ALCHEMY_VERIFY_FRESH=1` to bypass reads locally; actual outcomes still replace or invalidate local receipts. Use it for nondeterminism investigation and benchmark comparisons. Receipts are disposable and age out after one hour; normal report cleanup removes them. Build and browser artifact validity is handled by always executing those stages.
+[CONTRIBUTING](../CONTRIBUTING.md#verification-reuse) owns eligible commands,
+input identity, receipt expiry, and the `ALCHEMY_VERIFY_FRESH=1` override.
 
 ### Context-efficiency measurements
 
@@ -157,6 +155,8 @@ findings as review input rather than applying tunings automatically. The
 summary opens `reports/balance-findings.html` and writes a JSON companion.
 The enemy, hero, and matchup tables also show average enemy attack actions, average triggered ability activations, and the fraction of all battles won before the first enemy attack. Blocked and dodged attacks count; multi-hit attacks count once. Haste and crowd-control skips do not count. Individual `simulateBattle` results retain activation counts by trait ID. Passive resistances, starting stats, and difficulty modifiers are excluded from ability counts. These measurements are descriptive evidence, not additional automatic balance thresholds.
 
+Simulation measurements opt into `BattleState.battleMetrics`. Enemy attack and triggered-trait owners update immutable counters without additional RNG draws or combat text. Normal battles omit the field; battle-save normalization strips it. Triggered effects can count even if their damage is blocked or their healing overflows; passive resistances and starting stats do not count.
+
 Numeric environment values must be positive integers. Policy and loadout values
 must exactly match the choices above; pacing accepts `on`/`1`/`true` or
 `off`/`0`/`false` (anything else fails fast). Invalid configuration fails before report files are written.
@@ -188,7 +188,7 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | Need                                   | Look in                                                                                                                                                                                                                                      |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | App boot / screen registry             | `src/app/screen-routes/`                                                                                                                                                                                                                     |
-| Audio (cache / music / SFX / volume)   | `src/lib/audio/`; setting values and bounds live in `src/lib/settings-values.ts`. Non-player hosts (foreign Electron, undisplayed windows) never emit audible output.                                                                        |
+| Audio (cache / music / SFX / volume)   | [Audio ownership and runtime contract](./AUDIO.md).                                                                                                                                                                                          |
 | Cold-start loading gate                | [ARCHITECTURE.md § Boot](./ARCHITECTURE.md#boot-and-loading)                                                                                                                                                                                 |
 | Balance simulation                     | `src/lib/balance/`                                                                                                                                                                                                                           |
 | Card corruption                        | `src/lib/corruption/`                                                                                                                                                                                                                        |

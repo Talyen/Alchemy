@@ -97,7 +97,7 @@ export function createRewardHandlers(
             draft,
           });
         }
-        if (grantAlchemistReward) {
+        if (grantAlchemistReward && result.route !== REWARD_ROUTES.COMPANION_REWARD) {
           applyAlchemistPotion({
             draft,
             rng: createDraftRunRandomSource(draft, "rewards"),

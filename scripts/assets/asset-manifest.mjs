@@ -8,7 +8,11 @@ export const staticAssets = [...coreAssets, ...cardAssets, ...contentAssets, ...
 
 export async function validateAssetRegistry(entries, { sourceDir } = {}) {
   try {
-    await validateRegistryEntries(entries, { sourceDir, checkExport: true });
+    await validateRegistryEntries(entries, {
+      sourceDir,
+      checkExport: true,
+      targetPattern: /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.webp$/,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(message.replace("Registry validation failed:", "Asset registry validation failed:"), {

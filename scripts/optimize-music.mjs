@@ -45,7 +45,7 @@ export async function optimizeMusic() {
       const sourcePath = path.join(sourceDir, file);
       const outputPath = path.join(outputDir, file);
 
-      const sourceEntry = await resolveSourceHash(sourcePath, MUSIC_SETTINGS, SCHEMA_VERSION, storedEntry);
+      const sourceEntry = await resolveSourceHash(sourcePath, MUSIC_SETTINGS, SCHEMA_VERSION);
       const isFresh = await isOutputFresh(outputPath, storedEntry, sourceEntry.hash);
       if (isFresh) {
         return { message: `${file} already up to date`, entry: storedEntry };

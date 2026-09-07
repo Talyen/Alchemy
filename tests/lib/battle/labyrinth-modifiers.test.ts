@@ -7,6 +7,7 @@ import {
   tickEnemyStatuses,
   tickPlayerStatuses,
 } from "@/lib/battle";
+import { applyGearCcPhysicalDamage } from "@/lib/battle/gear-effects";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { addEnemyStatus } from "@/lib/battle/types";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/damage-rider-leech";
@@ -319,5 +320,24 @@ describe("Labyrinth enemy modifiers", () => {
     const restored = normalizePersistedBattleState(saved);
     expect(restored.encounterBenefits).toEqual([]);
     expect(restored.flags.encounterPhysicalUsed).toBe(false);
+  });
+});
+
+describe("enemy reactions to crowd-control gear damage", () => {
+  it("triggers Second Wind once on a surviving half-Health crossing", () => {
+    const current = state({ currentEnemy: enemy("second-wind"), enemyHealth: 60 });
+    const next = applyGearCcPhysicalDamage(current, 15, []);
+    expect(next.enemyHealth).toBe(65);
+    expect(next.flags.secondWindTriggered).toBe(true);
+    expect(applyGearCcPhysicalDamage(next, 20, []).enemyHealth).toBe(45);
+    expect(applyGearCcPhysicalDamage(current, 70, []).enemyHealth).toBe(0);
+  });
+
+  it("triggers Divine Aegis on a half-Health crossing", () => {
+    const current = state({ currentEnemy: enemy("divine-aegis"), enemyHealth: 60 });
+    const next = applyGearCcPhysicalDamage(current, 15, []);
+    expect(next.flags.divineAegisTriggered).toBe(true);
+    expect(next.enemyMitigation.armor).toBeGreaterThan(current.enemyMitigation.armor);
+    expect(next.enemyMitigation.block).toBeGreaterThan(current.enemyMitigation.block);
   });
 });

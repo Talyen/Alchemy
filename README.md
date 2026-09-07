@@ -84,7 +84,7 @@ Feature layout and run-state ownership:
 - `tests/` — unit tests grouped by source owner; browser specs in `tests/e2e/specs/`, Electron checks in `tests/electron/`, and desktop unit tests in `tests/desktop/`; shared fixtures, page objects, and helpers support multiple suites
 - `performance/` — browser and desktop measurement scenarios and reporting tools; runtime instrumentation lives in `src/lib/performance/`
 - `Raw Assets/`, `src/assets/`, `public/` — authored inputs, bundled assets, and public assets; [asset workflows](./docs/WORKFLOWS-ASSETS.md) identify generated outputs
-- `scripts/` — command entry points and shared tooling in `scripts/lib/`; see the [script catalog](./scripts/README.md)
+- `scripts/` — command entry points and shared tooling in `scripts/lib/`; see the [script implementation map](./scripts/README.md)
 - `eslint/` — custom lint rules and import-boundary definitions composed by `eslint.config.js`
 - `docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons
 - `steam/` — Steam packaging and upload configuration

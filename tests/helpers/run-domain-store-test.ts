@@ -1,6 +1,9 @@
 import { vi } from "vitest";
 import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  dispatchRunSessionCommand,
+  type SynchronousResult,
+} from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createInitialBattleFields,
   createInitialRunDomainData,
@@ -67,8 +70,11 @@ export function resetProfileForTest(): void {
   dispatchRunSessionCommand((draft) => resetToDefaults(draft));
 }
 
-export function mutateGearForTest<T>(mutate: (gear: GearStore) => T, syncRunHealth?: boolean): T {
-  return dispatchGearMutationWithRunHealthSync(syncRunHealth === undefined ? { mutate } : { mutate, syncRunHealth });
+export function mutateGearForTest<T>(
+  mutate: (gear: GearStore) => T & SynchronousResult<T>,
+  syncRunHealth?: boolean,
+): T {
+  return dispatchGearMutationWithRunHealthSync<T>(syncRunHealth === undefined ? { mutate } : { mutate, syncRunHealth });
 }
 
 export function resetGearForTest(): void {

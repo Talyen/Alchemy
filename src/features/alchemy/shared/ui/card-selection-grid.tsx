@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-import { anchoredPage, useAdaptiveGrid } from "./adaptive-grid";
+import { useAdaptiveGrid } from "./adaptive-grid";
 import { GridMeasurement } from "./grid-measurement";
 import { useLayoutEffect, useState, type ReactNode } from "react";
 
@@ -8,7 +8,8 @@ import type { BattleCard } from "@/lib/game-data";
 
 import { FadeSlot } from "./use-fade";
 import { PaginationControls } from "./navigation";
-import { paginateRows } from "./use-paginated-rows";
+import { paginateRows } from "./pagination";
+import { useControlledPagination } from "./use-pagination";
 
 export interface CardSelectionGridItem {
   card: BattleCard;
@@ -63,19 +64,13 @@ export function CardSelectionGrid({
     return () => observer.disconnect();
   }, [fitHeight, cardArea, firstTile]);
   const pageSize = fixedPageSize ?? (fitHeight ? columns * rowCount : adaptivePageSize);
-  const [paging, setPaging] = useState({ externalPage: page, page, pageSize: pageSize });
-  let currentPage = paging.page;
-  if (paging.externalPage !== page || paging.pageSize !== pageSize) {
-    currentPage =
-      paging.externalPage !== page
-        ? page
-        : anchoredPage(paging.page, paging.pageSize, pageSize, items.length, selectedIndex);
-    setPaging({ externalPage: page, page: currentPage, pageSize: pageSize });
-  }
-  function changePage(nextPage: number) {
-    setPaging({ externalPage: nextPage, page: nextPage, pageSize: pageSize });
-    onPageChange(nextPage);
-  }
+  const { page: currentPage } = useControlledPagination({
+    page,
+    pageSize,
+    itemCount: items.length,
+    onPageChange,
+    selectedIndex,
+  });
   const { page: safePage, pageItems, rows, totalPages } = paginateRows(items, currentPage, pageSize, columns);
 
   return (
@@ -108,7 +103,7 @@ export function CardSelectionGrid({
         <PaginationControls
           page={safePage}
           totalPages={totalPages}
-          onPageChange={changePage}
+          onPageChange={onPageChange}
           size={paginationSize}
           reserveSpace={paginationReserveSpace}
         />

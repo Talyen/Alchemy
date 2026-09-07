@@ -76,6 +76,17 @@ describe("BattleBoonInspectOverlay", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("blocks close and pagination actions while fading out", () => {
+    const onClose = vi.fn();
+    const ids = trinketLibrary.slice(0, TRINKET_PAGE_SIZE + 1).map((entry) => entry.id);
+    const { rerender } = render(<BattleBoonInspectOverlay open trinketIds={ids} onClose={onClose} />);
+    rerender(<BattleBoonInspectOverlay open={false} trinketIds={ids} onClose={onClose} />);
+    fireEvent.click(screen.getByRole("button", { name: "Close boons" }));
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Previous page" }).hasAttribute("disabled")).toBe(true);
+  });
+
   it("pages when there are more trinkets than one inspect page", async () => {
     const user = userEvent.setup();
     const ids = trinketLibrary.slice(0, TRINKET_PAGE_SIZE + 1).map((entry) => entry.id);

@@ -42,19 +42,17 @@ function buildAffinityPool(
 }
 
 function pickOneCard(
-  pool: BattleCard[],
-  shuffledCandidates: BattleCard[],
+  affinityPool: BattleCard[],
+  randomPool: BattleCard[],
   selected: BattleCard[],
-  activeRng: () => number,
+  rng: () => number,
 ): BattleCard | undefined {
-  const rollRandom = activeRng() < REWARD_RANDOM_CHANCE;
-  const availableAffinity = pool.filter((c) => !selected.includes(c));
-  const availableRandom = shuffledCandidates.filter((c) => !selected.includes(c));
-  const primary = rollRandom ? availableRandom : availableAffinity;
-  const fallback = rollRandom ? availableAffinity : availableRandom;
-  if (primary.length > 0) return pickRandom(primary, activeRng);
-  if (fallback.length > 0) return pickRandom(fallback, activeRng);
-  return undefined;
+  if (rng() >= REWARD_RANDOM_CHANCE) {
+    const availableAffinity = affinityPool.filter((card) => !selected.includes(card));
+    if (availableAffinity.length > 0) return pickRandom(availableAffinity, rng);
+  }
+  const availableRandom = randomPool.filter((card) => !selected.includes(card));
+  return availableRandom.length > 0 ? pickRandom(availableRandom, rng) : undefined;
 }
 
 export function selectRewardCards(
@@ -65,13 +63,13 @@ export function selectRewardCards(
   rng: () => number,
   seedKeywords: KeywordId[] = [],
 ): BattleCard[] {
-  const activeRng = rng;
-  const candidates = allCards.filter((c) => !exclude.some((ex) => ex.id === c.id));
+  const excludedIds = new Set(exclude.map((card) => card.id));
+  const candidates = allCards.filter((card) => !excludedIds.has(card.id));
   const boostCompanions = !deckHasCompanionCard(deck);
   const companionCopies = boostCompanions ? REWARD_SELECTION_CONFIG.companionlessRandomWeight : 1;
-  const shuffledCandidates = shuffle(
+  const randomPool = shuffle(
     companionCopies > 1 ? [...candidates, ...candidates.filter(isCompanionCard)] : candidates,
-    activeRng,
+    rng,
   );
   const selected: BattleCard[] = [];
   const freq = buildKeywordFrequency(deck, seedKeywords);
@@ -80,12 +78,12 @@ export function selectRewardCards(
     deck,
     freq,
     count,
-    activeRng,
+    rng,
     boostCompanions ? REWARD_SELECTION_CONFIG.companionlessScoreBonus : 0,
   );
 
   for (let i = 0; i < count; i++) {
-    const chosenCard = pickOneCard(affinityPool, shuffledCandidates, selected, activeRng);
+    const chosenCard = pickOneCard(affinityPool, randomPool, selected, rng);
     if (chosenCard) selected.push(chosenCard);
   }
 

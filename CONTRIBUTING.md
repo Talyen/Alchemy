@@ -25,9 +25,17 @@ The risk escalations are intentionally broad and few:
 - Tooling and configuration changes run the complete tooling and architecture unit suite because those tests inspect repository files directly.
 - Other implementation changes use Vitest dependency selection; changed test files execute directly.
 
-Successful expensive unit-test commands may be reused automatically by `verify`, including when invoked by `check` or pre-push. The first observation records duration without scanning dependencies; subsequent expensive runs establish reusable receipts. Reuse requires the exact command, unchanged source/dependency filesystem identities and environment, and a receipt less than one hour old. CI never reuses local receipts. Static checks, repository-reading tooling tests, artifact-producing checks, builds and browser checks always run; build outputs therefore need no cache-restoration contract. Set `ALCHEMY_VERIFY_FRESH=1` for a deliberate fresh test run, especially during flaky-test investigation. Missing or unreadable inputs disable reuse; changing inputs during verification rejects the result. Details live in [REFERENCE](./docs/REFERENCE.md#verification-reuse).
+Eligible expensive unit commands can reuse a recent passing result under the [verification reuse policy](#verification-reuse). Use `ALCHEMY_VERIFY_FRESH=1` for fresh observations during nondeterminism investigation.
 
 The completion gate records every passed, failed, and skipped stage under one run ID, retains bounded failure evidence, and rejects results if tracked source inputs change during the run. Documentation-only changes run documentation and format checks without unit, build, or browser work. Executable changes run the same static aggregate as CI, but not full Vitest or browser journeys. Runtime inputs trigger a non-mutating build and preview smoke. Package manifests trigger `npm ci --dry-run --ignore-scripts`; other pushes do not.
+
+## Verification reuse
+
+`verify` keeps local passing receipts under `reports/verification-cache/`. After a command has been observed to take at least five seconds, it can reuse dependency-related and changed unit tests plus save, desktop and performance unit suites. It never reuses tooling suites, report generators, assets, static checks, builds, smoke tests or browser runs. The first run records duration without scanning dependencies; a subsequent slow run establishes its receipt. Reuse must also save more time than twice the measured input-scan cost. The exact executable and argument list identify coverage; a narrower prior command cannot satisfy a broader command.
+
+Input identity covers tracked and untracked nonignored files, root environment files and npm configuration, installed dependency file identities, Node executable/version/platform, checkout location and environment. File identities include mode, size, nanosecond modification/change times and inode; this is local filesystem reuse, not a portable content-addressed build cache. Dependency caches are excluded. Linked source or external dependency symlinks, unreadable inputs, a missing npm install receipt or changed inputs disable reuse. Fresh successes replace receipts atomically; failures invalidate them. Reused results retain the original run ID and expiry rather than renewing their age. Each verifier writes a run-specific `verify/summary.json`; the outer completion report links it so reuse provenance survives the final report.
+
+CI always executes tests. Set `ALCHEMY_VERIFY_FRESH=1` to bypass reads locally; actual outcomes still replace or invalidate local receipts. Use it for nondeterminism investigation and benchmark comparisons. Receipts are disposable and age out after one hour; normal report cleanup removes them. Build and browser artifact validity is handled by always executing those stages.
 
 ## E2E policy
 
@@ -41,7 +49,7 @@ Hook tests pass changing inputs through `renderHook(callback, { initialProps })`
 
 `lefthook` pre-push invokes only `npm run check -- --diff`. Pre-commit formats staged files selected by `scripts/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
 
-Execution plans under `docs/Plans/` are workflow artifacts, not product correctness gates. While a plan is active, run `npm run plans:check`. When this task owns a finished plan, mark it complete or cancelled, refresh its date, run `npm run archive:plans`, then `npm run docs:check:final`.
+Execution plans under `docs/Plans/` are workflow artifacts, not product correctness gates. Follow the [plan lifecycle](./docs/Plans/README.md) to finish and archive only task-owned plans, then validate with `npm run docs:check` (also included in the handoff gate). `npm run docs:check:final` is an explicit repository-wide closure check; another task's active plan does not require cancellation or block ordinary handoff.
 
 For instruction changes that affect coding behavior, use the pinned [agent evaluations](./.agents/evals/README.md); compare correctness alongside observed reads, retries and available host usage.
 

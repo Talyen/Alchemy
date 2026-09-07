@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect, test as animationTest } from "@playwright/test";
 import {
   injectLabyrinthRun,
   injectActiveBattle,
@@ -118,8 +118,14 @@ test.describe("Options Screen", critical, () => {
     await page.getByRole("button", { name: "Other" }).click();
     await page.getByRole("button", { name: "Clear Save Data" }).click();
     await expect(page.getByRole("heading", { name: "Clear Save Data" })).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("dialog").getByRole("button", { name: "Clear Save Data" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "Cancel" })).toBeFocused();
     await page.getByRole("button", { name: "Cancel" }).click();
-    await expect(page.getByRole("heading", { name: "Clear Save Data" })).toBeHidden();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Clear Save Data" })).toBeFocused();
 
     await page.getByRole("button", { name: "Sound" }).click();
     await expect(page.getByText("Music Volume")).toBeVisible();
@@ -135,6 +141,41 @@ test.describe("Options Screen", critical, () => {
       })
       .toBeLessThan(50);
   });
+});
+
+animationTest("closing the game menu prevents keyboard navigation during its fade", async ({ page }, testInfo) => {
+  const errors = failOnRuntimeErrors(page);
+  const menu = new MenuPage(page);
+  await menu.goto();
+  await menu.openOptions();
+  await page.getByRole("button", { name: "Open game menu" }).click();
+  const panel = page.getByTestId("game-menu");
+  await panel.getByRole("button", { name: "Collection", exact: true }).focus();
+  await page.screenshot({ path: testInfo.outputPath("open-menu.png") });
+  await page.evaluate(() => {
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key !== "Enter") return;
+        const menuPanel = document.querySelector('[data-testid="game-menu"]');
+        document.body.dataset.menuExitAtEnter = String(Boolean(menuPanel?.closest("[inert]")));
+      },
+      { capture: true },
+    );
+  });
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Space");
+  await expect(page.locator("body")).toHaveAttribute("data-menu-exit-at-enter", "true");
+  await page.keyboard.press("Tab");
+  expect(
+    await page.evaluate(() =>
+      Boolean(document.querySelector('[data-testid="game-menu"]')?.contains(document.activeElement)),
+    ),
+  ).toBe(false);
+  await expect(panel).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Options", exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
 });
 
 test.describe("Auto-End Turn", critical, () => {

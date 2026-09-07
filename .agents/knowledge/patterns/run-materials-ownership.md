@@ -9,7 +9,7 @@ Player loot earned during a run (mystery choices, combat crystals, reward screen
 
 ## Why it matters
 
-`awardMaterialsDuringRun(materials)` in `run-session-write-port.ts` keeps homestead inventory and `activeRun.runMaterialsEarned` aligned. `awardRunEndMaterials` merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials` for recap. Direct `addMaterials` is for meta/Options clear only.
+An inventory award without its run-ledger entry makes the recap disagree with the player's earnings. `awardMaterialsDuringRun(draft, materials)` keeps both writes in the same command. The [material workflow](../../../docs/WORKFLOWS.md#grant-materials-during-a-run) owns bonus application and recap assembly; [Armory write paths](../../../docs/ARMORY.md#write-paths) distinguish in-run salvage from meta grants.
 
 ## Evidence
 

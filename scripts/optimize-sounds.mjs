@@ -48,7 +48,7 @@ async function optimizeSound({ source, target }, storedEntry) {
   const outputPath = path.join(outputDir, target);
   const ext = path.extname(source).toLowerCase();
   const settings = soundTransformSettings(ext);
-  const sourceEntry = await resolveSourceHash(sourcePath, settings, SCHEMA_VERSION, storedEntry);
+  const sourceEntry = await resolveSourceHash(sourcePath, settings, SCHEMA_VERSION);
   const isFresh = await isOutputFresh(outputPath, storedEntry, sourceEntry.hash);
   if (isFresh) {
     return { message: `${target} already up to date`, entry: storedEntry };
@@ -139,11 +139,11 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
     const mp3Path = path.join(outputDir, mp3Name);
     const stored = previousManifest[mp3Name];
     if (!managedOggs.has(ogg) && !files.has(ogg)) throw new Error(`Missing curated sound: ${ogg}`);
-    const sourceEntry = await resolveSourceHash(oggPath, MP3_FALLBACK_SETTINGS, SCHEMA_VERSION, stored);
+    const sourceEntry = await resolveSourceHash(oggPath, MP3_FALLBACK_SETTINGS, SCHEMA_VERSION);
     const owner = managedOggs.has(ogg) ? SOUND_ENTRY_OWNERS.generated : SOUND_ENTRY_OWNERS.curated;
     if (!managedOggs.has(ogg)) {
       const storedOgg = previousManifest[ogg];
-      const oggEntry = await resolveSourceHash(oggPath, CURATED_SOUND_SETTINGS, SCHEMA_VERSION, storedOgg);
+      const oggEntry = await resolveSourceHash(oggPath, CURATED_SOUND_SETTINGS, SCHEMA_VERSION);
       const oggFresh = await isOutputFresh(oggPath, storedOgg, oggEntry.hash);
       curatedOggEntries[ogg] = {
         ...(oggFresh ? storedOgg : await withOutputHash(oggEntry, oggPath)),

@@ -9,7 +9,7 @@ Feature code occasionally bypasses the aggregate command boundary — calling st
 
 ## Why it matters
 
-`gameplay-state-store.ts` is the single Zustand aggregate (`run`, `session`, `battle`, `runProfile`, `profile`, `gear`). `dispatchRunSessionCommand` opens one Immer draft, increments revision on success, discards on failure. Bypasses cause split-brain reads, unpersisted writes, torn autosave, and non-rollbackable side effects. Nested dispatches and async spans break atomicity; `activeCombat.pendingBattleTransition` continuity depends on committing intermediate + continuation together.
+Bypassing the shared command boundary causes inconsistent reads, unpersisted writes, torn autosave, and non-rollbackable side effects. Nested dispatches and async spans break atomicity; battle continuity depends on committing the intermediate state and its continuation together. [Run-state ownership](../../../docs/ARCHITECTURE.md#run-state) defines publication, unchanged-command behavior, and post-commit effects.
 
 ## Evidence
 

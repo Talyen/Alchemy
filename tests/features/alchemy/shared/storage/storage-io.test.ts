@@ -229,10 +229,70 @@ describe("storage io", () => {
 
   it("saveAlchemySaveData writes to localStorage", async () => {
     const data: SaveData = { ...defaultSaveData, selectedAspectRatio: "16:9" };
-    await saveAlchemySaveData(data);
+    expect(await saveAlchemySaveData(data)).toBe("saved");
     const written = JSON.parse(mockStorage[SAVE_KEY]) as SaveData;
     expect(written.selectedAspectRatio).toBe("16:9");
     expect(written.lastSavedAt).toBeGreaterThan(0);
+  });
+
+  it.each(["reported", "thrown"])("returns failed for a %s backend write failure", async (failure) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Error("disk unavailable");
+    configureSaveBackend({
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: async () => {
+        if (failure === "thrown") throw error;
+        return { ok: false, error };
+      },
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    });
+    expect(await saveAlchemySaveData(defaultSaveData)).toBe("failed");
+    expect(vi.mocked(console.error).mock.calls[0]?.[0]).toContain("Save data could not be written");
+  });
+
+  it("reports serialization failure without invoking the backend", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const write = vi.fn();
+    configureSaveBackend({
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write,
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    });
+    const data = {
+      ...defaultSaveData,
+      toJSON: () => {
+        throw new Error("serialization");
+      },
+    };
+    expect(await saveAlchemySaveData(data)).toBe("failed");
+    expect(saveAlchemySaveDataForExit(data)).toBe("failed");
+    expect(write).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])("desktop exit completion reports local success=%s only after writing", async (ok) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    let release!: (result: { ok: true } | { ok: false; error: string }) => void;
+    const gate = new Promise<{ ok: true } | { ok: false; error: string }>((resolve) => {
+      release = resolve;
+    });
+    configureSaveBackend({
+      readCandidates: async () => ({ ok: true, candidates: [] }),
+      write: () => gate,
+      writeSync: () => null,
+      clear: async () => ({ ok: true }),
+    });
+    const completion = saveAlchemySaveDataForExit(defaultSaveData);
+    expect(completion).toBeInstanceOf(Promise);
+    let completed = false;
+    void Promise.resolve(completion).then(() => {
+      completed = true;
+    });
+    await Promise.resolve();
+    expect(completed).toBe(false);
+    release(ok ? { ok: true } : { ok: false, error: "disk" });
+    expect(await completion).toBe(ok ? "saved" : "failed");
   });
 
   it("terminal browser flush supersedes a queued stale snapshot", async () => {
@@ -268,9 +328,9 @@ describe("storage io", () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] });
+    const exit = saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] });
     releaseWrite?.();
-    await pending;
+    await Promise.all([pending, exit]);
 
     expect(JSON.parse(storage[SAVE_KEY]).discoveredCardIds).toEqual(["latest"]);
   });
@@ -322,7 +382,7 @@ describe("storage io", () => {
     };
 
     expect((await loadAlchemySaveState()).data).toEqual(defaultSaveData);
-    await expect(saveAlchemySaveData(defaultSaveData)).resolves.not.toThrow();
+    await expect(saveAlchemySaveData(defaultSaveData)).resolves.toBe("failed");
     await expect(clearAlchemySaveData()).resolves.not.toThrow();
   });
 

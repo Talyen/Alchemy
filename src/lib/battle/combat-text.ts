@@ -158,7 +158,7 @@ export function gainManaWithCombatText(
   if (gained > 0 && combatTexts) {
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
   }
-  return nextState;
+  return applyHealOnManaGain(nextState, gained, combatTexts ?? []);
 }
 
 export function addPlayerStatusWithCombatText(

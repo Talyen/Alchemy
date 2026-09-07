@@ -13,7 +13,9 @@ Helpers live in this directory and are re-exported from [`tests/helpers.ts`](../
 
 For current source edits, run `PLAYWRIGHT_VITE_MODE=dev npx playwright test <spec> --project=chromium`. Preview mode is the default and serves the existing build; rebuild before using it to verify source changes. Use `--project=chromium` with an equals sign so a following spec is not consumed as another project name.
 
-Run browser batches serially or combine specs in one invocation. Local runs can reuse a server, and teardown from an overlapping invocation can disconnect another run. Ensure any reused server belongs to the intended checkout; see [Playwright configuration](../playwright-shared.ts).
+Run browser batches serially or combine specs in one invocation. Browser, Electron, and performance tests start their own server and reject occupied ports, leaving existing processes running. This prevents a run from silently testing another checkout or reusing preview output when development mode was requested; see [Playwright configuration](../playwright-shared.ts).
+
+Browser tests default to port 4173. To use another port, run `PLAYWRIGHT_BROWSER_PREVIEW_PORT=4273 PLAYWRIGHT_VITE_MODE=dev npx playwright test tests/e2e/specs/app-boot.spec.ts --project=chromium`. The override also sets the browser URL and seeded storage origin. Electron uses `PLAYWRIGHT_ELECTRON_PREVIEW_PORT` (default 4175), and performance uses `PLAYWRIGHT_PERF_PORT` (default 4176). Preview mode still requires rebuilding after source changes.
 
 Run the full Vitest suite separately from browser and performance batches. Concurrent full-unit and browser runs can exhaust local resources and cause unrelated interaction and teardown timeouts; reproduce the affected checks without that competing load before changing assertions or timeouts.
 

@@ -29,7 +29,7 @@ Examples:
 - Replacing array-shaped progress with record-shaped progress.
 - Changing meanings or units of saved numeric values.
 
-Do **not** increment for purely additive fields that can safely use defaults in Zod / `defaults.ts` (for example optional shop refresh counters). Replacing the resume claim-surface triad with `activeRun.interruptedFlow` required a floor bump (see below).
+Do **not** increment for purely additive fields that can safely use defaults in Zod / `defaults.ts` (for example optional shop refresh counters). Historical transformations live in [MIGRATION_HISTORY](./MIGRATION_HISTORY.md).
 
 ## Single-responsibility rule
 
@@ -39,7 +39,7 @@ Do **not** increment for purely additive fields that can safely use defaults in 
 | Additive fields with defaults                           | Zod `.default()` / `.catch()` and `defaults.ts` — no schema bump                                                                 |
 | Deck / content-system soft fixes on already-valid shape | `normalize-active-run-data.ts` (does **not** downgrade labyrinth/wildwood; missing map/draft fails refine and drops `activeRun`) |
 
-**Do not** put rename logic in `save-schemas/active-run.ts` transforms. Zod must only validate the current shape after preprocess migration.
+**Do not** put rename logic in `save-schemas/active-run.ts` transforms. Zod must only validate the current shape after preprocess migration. The [unversioned battle-talent shims](./MIGRATION_HISTORY.md#unversioned-battle-talent-shims) are retained legacy exceptions, not a pattern for new renames.
 
 ## Required pattern (automated)
 
@@ -49,7 +49,7 @@ add step modules when a real post-floor transform is required.
 For a schema bump from `N` to `N + 1`:
 
 1. Increment `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
-2. Add `migrateVNToVNPlus1` to `src/lib/validation/migration/content-steps.ts` or a new topical `steps-*.ts` file (delegate nested work to `migration/` helpers when needed).
+2. Add `migrateVNToVNPlus1` in a `steps-*.ts` module under `src/lib/validation/migration/`. Keep content-ID remaps in the separate `content-steps.ts` owner.
 3. Chain it from `migrateSaveDataToCurrent` in `src/lib/validation/migration/index.ts`.
 4. Update Zod schemas in `src/lib/validation/save-schemas/` and `defaults.ts`.
 5. Add a fixture to `CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION` in `tests/fixtures/legacy-saves.ts` (CI fails if any source version `LAUNCH … N-1` is missing).
@@ -93,7 +93,15 @@ able to load and play the existing save.
 
 Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation in `desktop/main.cjs` — `save.json` + `bak.1-3` + `tmp`) and then mirror to Steam Cloud. On load, candidates are collected in preference order (local → bak.1 → bak.2 → bak.3 → cloud) by `src/lib/platform-save-backend.ts#createPlatformSaveBackend` (`uniqueCandidates` deduplicates identical Cloud mirrors), and the freshest playable candidate that Zod-validates (by `lastSavedAt`) is used. Corrupt candidates fall through to the next recovery source. A recognizable future-versioned candidate that is fresher (by `lastSavedAt`) than every playable candidate opens the Save Protected screen with writes disabled; a stale future-versioned mirror is skipped. Evaluation is pure in `src/features/alchemy/shared/storage/save-candidates.ts#evaluateSaveCandidates` for testability.
 
-Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest dirty snapshot to `localStorage` via `writeSync`. Desktop IPC remains on the serialized coalescing queue (`SaveWriteQueue`: rapid enqueues collapse into one runner; the exit path stores the final snapshot and triggers a best-effort async write), so the earlier visibility/pagehide signals give it time to finish before the window closes. A terminal flush (browser `writeSync` or desktop coalesced `queueExitSnapshot`) supersedes any queued snapshot that has not started writing.
+Normal saves and explicit flushes return `saved`, `failed`, or `skipped`. `saved` means local storage accepted that snapshot or a newer coalesced replacement; a cloud-mirror failure remains non-fatal. Serialization and backend failures are logged at the I/O seam and returned to the caller.
+
+Autosave retains unacknowledged changes until a covering write succeeds. In-memory revisions prevent an older completion from clearing newer progress. Failed writes retry through the existing single timer no sooner than 10 seconds after failure, including when animations are disabled or new changes arrive. Exit signals may bypass that cooldown. Clear requests and write protection invalidate pending acknowledgements and cancel scheduled autosaves; disabled persistence and hook cleanup also stop retries. A late completion cannot restart cancelled work. No scheduling metadata is persisted.
+
+Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable while mounted. Desktop shutdown remains best effort, so earlier visibility/pagehide signals give IPC time to finish before the window closes. Terminal saves supersede queued snapshots that have not started writing.
+
+### Load order
+
+Five stages, in load order: **migrate** (versioned shape and content-ID steps) → **validate** (Zod object schemas) → **normalize** (`normalizeActiveRunData` strips retired cards against the live catalog and soft-fixes valid shapes, e.g. re-offering emptied choice lists) → **hydrate** (`hydrateCard`, shop and Gear catalog filters) → **restore** (ownership filtering in `restoreRunSession`). Never put rename logic in Zod transforms.
 
 ### Implementation rules
 
@@ -115,19 +123,18 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 
 ## Content changes without a save bump
 
-- Unique inventory affixes normalize by definition ID to one signature and three standard maximum rolls. Instance IDs, protection, ownership, and Collection discovery survive. Existing combat manifests keep their captured values until live gear rebinding or the next battle.
-- Balance-only changes to live definitions do not change the save schema. Lifegiving and Emberforged inventory rolls normalize to current rarity ranges; existing combat effect snapshots remain unchanged.
+- Balance-only changes to live definitions do not change the save schema. Current Gear normalization and captured-manifest behavior live in [ARMORY](../../../../../docs/ARMORY.md#battle-integration) and [Unique items](../../../../../docs/UNIQUE_ITEMS.md#affix-contract); past corrections are recorded in [migration history](./MIGRATION_HISTORY.md#compatible-gear-corrections).
 - Additive fields that load safely through schema or manifest defaults do not require a migration step; keep their defaults while supported saves may omit them.
 - Removed catalog IDs are stripped against the live catalog at load; record deliberate removals in the tombstone set above. A meaning or ID remap requires a `contentVersion` handler.
 - Labyrinth support modifiers reuse node `rewardModifiers` and session/active-run `activeLabyrinthRewardModifiers`; no structural migration is required. Superseded encounter IDs remain loadable and executable, but new Labyrinth rolls exclude them. Battle `encounterBenefits` defaults to `[]`, validates reward IDs, and is cleared outside Labyrinth. Per-turn benefit flags and the once-per-battle Second Wind flag default to false and persist in snapshots and pending result states. Modified Potion effects/descriptions use the existing saved-card contract. Mystery offer hydration applies saved room modifiers to the canonical event, while the already chosen outcome is preserved verbatim to prevent repeat rewards.
 - Battle-only fields that are rebuilt rather than persisted do not affect the save contract. `battleMetrics` is simulation-only, omitted in normal battles, and stripped by `normalizePersistedBattleState`; it requires no save bump.
 
-> Five stages, in load order: **migrate** (versioned shape and content-ID steps) → **validate** (Zod object schemas) → **normalize** (`normalizeActiveRunData` strips retired cards against the live catalog and soft-fixes valid shapes, e.g. re-offering emptied choice lists) → **hydrate** (`hydrateCard`, shop and Gear catalog filters) → **restore** (ownership filtering in `restoreRunSession`). Never put rename logic in Zod transforms.
+## Defaults and resume normalization
 
-## Additive-field appendix
-
-Each row is one additive field that loads through defaults — no bump.
-Behavior lives with the owning module; version-specific transforms live in
+Selected additive defaults and screen-scoped normalization rules are listed
+below. These are current compatibility behaviors, not a complete field catalog
+or a substitute for the [version decision](#when-to-increment). Behavior lives
+with the owning module; version-specific transforms live in
 [MIGRATION_HISTORY.md](./MIGRATION_HISTORY.md).
 
 | Field                                                                             | Default                                                                                                                         | Owner                                                                                |

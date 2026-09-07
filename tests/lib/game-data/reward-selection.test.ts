@@ -123,6 +123,53 @@ describe("getCardKeywords", () => {
 });
 
 describe("selectRewardCards", () => {
+  it.each([
+    {
+      seed: 7,
+      count: 3,
+      hasCompanion: false,
+      ids: ["fox", "strike-0", "wolf"],
+      nextRandom: 0.2475335942581296,
+    },
+    {
+      seed: 42,
+      count: 3,
+      hasCompanion: true,
+      ids: ["wolf", "plain", "strike-2"],
+      nextRandom: 0.003842951962724328,
+    },
+    {
+      seed: 99,
+      count: 12,
+      hasCompanion: false,
+      ids: ["fox", "plain", "wolf", "strike-0", "strike-2", "strike-3", "heal"],
+      nextRandom: 0.24224883294664323,
+    },
+    {
+      seed: 123,
+      count: 0,
+      hasCompanion: true,
+      ids: [],
+      nextRandom: 0.18843599455431104,
+    },
+  ])("preserves rewards and subsequent randomness for seed $seed", ({ seed, count, hasCompanion, ids, nextRandom }) => {
+    const pool = [
+      companionCard("wolf"),
+      companionCard("fox"),
+      ...Array.from({ length: 4 }, (_, index) => physicalCard(`strike-${index}`)),
+      card({ id: "heal", effects: [{ kind: "heal", amount: 5 }] }),
+      card({ id: "plain" }),
+    ];
+    const deck = [physicalCard("strike-0"), ...(hasCompanion ? [companionCard("owned-wolf")] : [])];
+    const rng = mulberry32(seed);
+    const rewards = selectRewardCards(deck, pool, count, [card({ id: "strike-1" })], rng, ["health"]);
+
+    expect(rewards.map((entry) => entry.id)).toEqual(ids);
+    expect(rng()).toBe(nextRandom);
+    expect(rewards).not.toContainEqual(expect.objectContaining({ id: "strike-1" }));
+    expect(new Set(rewards).size).toBe(rewards.length);
+  });
+
   it("uses seed keywords before a draft has any cards", () => {
     const allCards: BattleCard[] = [
       card({ id: "block", effects: [{ kind: "player-status", status: "block", amount: 5 }] }),

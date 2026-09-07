@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   dispatchRunSessionCommand,
+  createRunSessionCommand,
+  type GameplayDraft,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
@@ -73,6 +75,125 @@ describe("run-session transaction coordinator", () => {
 
     expect(result).toBe(17);
     expect(effect).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    { name: "resolved Promise", result: () => Promise.resolve(1) },
+    { name: "rejected Promise", result: () => Promise.reject(new Error("async failure")) },
+    { name: "custom thenable", result: () => ({ then: (resolve: (value: number) => void) => resolve(1) }) },
+    {
+      name: "callable thenable",
+      result: () => Object.assign(() => 1, { then: (resolve: (value: number) => void) => resolve(1) }),
+    },
+    {
+      name: "async draft continuation",
+      result: async (draft: GameplayDraft) => {
+        await Promise.resolve();
+        setGold(draft, 100);
+      },
+    },
+  ])("rolls back a $name even when its return type is erased", async ({ result }) => {
+    const before = readGameplayState();
+    const onCommit = vi.fn();
+    const effect = vi.fn();
+    const unsubscribe = subscribeRunSessionCommits(onCommit);
+    try {
+      const execute = (draft: GameplayDraft): unknown => {
+        setGold(draft, 99);
+        createDraftRunRandomSource(draft, "world")();
+        return result(draft);
+      };
+
+      expect(() => dispatchRunSessionCommand(execute, { afterCommit: effect })).toThrow(/must be synchronous/);
+      expect(readGameplayState()).toBe(before);
+      expect(onCommit).not.toHaveBeenCalled();
+      expect(effect).not.toHaveBeenCalled();
+
+      dispatchRunSessionCommand((draft) => setGold(draft, 7));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+
+      expect(readGameplayState().runProfile.gold).toBe(7);
+      expect(readGameplayState().revision).toBe(before.revision + 1);
+      expect(readActiveRun().rng.counters.world).toBe(before.run.activeRun.rng.counters.world);
+      expect(onCommit).toHaveBeenCalledExactlyOnceWith(before.revision + 1);
+      expect(effect).not.toHaveBeenCalled();
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it("enforces synchronous results through command factories and gear wrappers", async () => {
+    const before = readGameplayState();
+    const command = createRunSessionCommand((draft, gold: number): unknown => {
+      setGold(draft, gold);
+      return Promise.resolve(gold);
+    });
+
+    expect(() => command(99)).toThrow(/must be synchronous/);
+    expect(() =>
+      dispatchGearMutationWithRunHealthSync({
+        mutate: (gear): unknown => {
+          gear.addCurrencies({ voidstone: 1 });
+          return Promise.resolve(1);
+        },
+      }),
+    ).toThrow(/must be synchronous/);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+    expect(readGameplayState()).toBe(before);
+  });
+
+  it("rolls back nested dispatch and releases the command guard", () => {
+    const before = readGameplayState();
+    const effect = vi.fn();
+    expect(() =>
+      dispatchRunSessionCommand(
+        (draft) => {
+          setGold(draft, 99);
+          dispatchRunSessionCommand((nested) => setHasActiveRun(nested, true));
+        },
+        { afterCommit: effect },
+      ),
+    ).toThrow(/nested command/);
+    expect(readGameplayState()).toBe(before);
+    expect(effect).not.toHaveBeenCalled();
+
+    dispatchRunSessionCommand((draft) => setGold(draft, 7));
+    expect(readGameplayState().revision).toBe(before.revision + 1);
+    expect(readRunProfile().gold).toBe(7);
+  });
+
+  it("allows a completion effect to dispatch a separate command", () => {
+    const before = readGameplayState();
+    const effect = vi.fn(() => {
+      expect(readRunProfile().gold).toBe(7);
+      dispatchRunSessionCommand((draft) => setGold(draft, 8));
+    });
+    dispatchRunSessionCommand((draft) => setGold(draft, 7), { afterCommit: effect });
+
+    expect(effect).toHaveBeenCalledOnce();
+    expect(readRunProfile().gold).toBe(8);
+    expect(readGameplayState().revision).toBe(before.revision + 2);
+  });
+
+  it("retains the commit and releases the guard when a completion effect throws", () => {
+    const before = readGameplayState();
+    const effect = vi.fn(() => {
+      throw new Error("effect failed");
+    });
+    expect(() => dispatchRunSessionCommand((draft) => setGold(draft, 7), { afterCommit: effect })).toThrow(
+      "effect failed",
+    );
+    expect(effect).toHaveBeenCalledOnce();
+    expect(readRunProfile().gold).toBe(7);
+    expect(readGameplayState().revision).toBe(before.revision + 1);
+
+    dispatchRunSessionCommand((draft) => setGold(draft, 8));
+    expect(readRunProfile().gold).toBe(8);
+    expect(readGameplayState().revision).toBe(before.revision + 2);
   });
 
   it("publishes one commit after multiple store mutations", () => {
@@ -227,23 +348,6 @@ describe("run-session transaction coordinator", () => {
     expect(after).not.toBe(before);
     expect(after.runProfile.gold).toBe(125);
     expect(after.session.hasActiveRun).toBe(true);
-  });
-
-  it("runs post-commit effects only after the committed snapshot is published", () => {
-    const effect = vi.fn((result: number) => {
-      expect(result).toBe(42);
-      expect(readGameplayState().runProfile.gold).toBe(42);
-    });
-
-    dispatchRunSessionCommand(
-      (draft) => {
-        setGold(draft, 42);
-        return 42;
-      },
-      { afterCommit: effect },
-    );
-
-    expect(effect).toHaveBeenCalledOnce();
   });
 
   it("runs completion effects for unchanged commands without publishing a revision", () => {
