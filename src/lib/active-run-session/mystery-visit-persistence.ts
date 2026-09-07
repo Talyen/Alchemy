@@ -1,3 +1,5 @@
+import { applyLabyrinthMysteryModifiers } from "@/lib/content-systems/labyrinth/room-rules";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
   applyResolvedMysteryTrinketIds,
   collectResolvedMysteryTrinketIds,
@@ -50,7 +52,12 @@ export function serializeMysteryVisit(visit: HydratedMysteryVisit): PersistedMys
 
 export function hydrateMysteryVisit(
   data: PersistedMysteryVisit | null,
-  options?: { ownedTrinketIds?: readonly string[]; rng?: () => number },
+  options?: {
+    ownedTrinketIds?: readonly string[];
+    rng?: () => number;
+    modifiers?: readonly EncounterRewardTraitId[];
+    maxHealth?: number;
+  },
 ): HydratedMysteryVisit {
   if (!data) return emptyHydratedMysteryVisit();
   const mysteryEvent = findMysteryEvent(data.eventId);
@@ -60,7 +67,7 @@ export function hydrateMysteryVisit(
     event = repairUnresolvedMysteryTrinkets(event, options.ownedTrinketIds ?? [], options.rng);
   }
   return {
-    mysteryEvent: event,
+    mysteryEvent: applyLabyrinthMysteryModifiers(event, options?.modifiers ?? [], options?.maxHealth ?? 0),
     mysteryChosenChoice: hydratePersistedMysteryChoice(data.chosenChoice),
     mysteryPendingRemoval: data.pendingRemoval === true,
     mysteryCardChoices: data.cardChoices,

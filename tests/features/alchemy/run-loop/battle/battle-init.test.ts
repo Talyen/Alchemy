@@ -100,7 +100,7 @@ describe("createBattleInit", () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: "tempered",
-          description: "Gains 1 Forge each turn",
+          description: "Enemy gains 1 Forge each turn",
         }),
       ]),
     );

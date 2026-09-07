@@ -1,3 +1,4 @@
+import { applyEncounterThorns } from "./encounter-trait-events";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
@@ -57,5 +58,5 @@ export function dealDamageToEnemy(
   if (applyPartingCut && modifiedDamage > 0 && result.enemyHealth > 0) {
     result = dealPlayerTypedHit(result, "bleed", modifiedDamage, combatTexts);
   }
-  return result;
+  return applyEncounterThorns(result, combatTexts);
 }

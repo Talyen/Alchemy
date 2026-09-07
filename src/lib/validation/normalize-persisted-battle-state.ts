@@ -1,7 +1,7 @@
 import { defaultBattleState, type BattleState } from "@/lib/battle";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import { computeTrinketManifest, isDefaultTrinketManifest } from "@/lib/trinkets";
-import { sanitizePersistedEnemyTraits } from "@/lib/content-systems/encounter-traits";
+import { sanitizeEncounterTraitIds, sanitizePersistedEnemyTraits } from "@/lib/content-systems/encounter-traits";
 import {
   LEGACY_BLEED_EXECUTE_MULTIPLIER,
   LEGACY_FIRST_BURN_BONUS_MULTIPLIER,
@@ -64,6 +64,10 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
   const merged: BattleState = {
     ...defaults,
     ...saved,
+    encounterBenefits:
+      saved.contentSystemType === "labyrinth" && Array.isArray(saved.encounterBenefits)
+        ? sanitizeEncounterTraitIds(saved.encounterBenefits, "reward")
+        : [],
     trinketEffects: mergeRecord(defaults.trinketEffects, saved.trinketEffects),
     gearEffects: mergeRecord(defaults.gearEffects, saved.gearEffects),
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),

@@ -1,3 +1,4 @@
+import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { useLayoutEffect, type ReactNode } from "react";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
@@ -117,7 +118,7 @@ function DestinationScreenRoute({ commands }: { commands: RunLoopCommands["desti
 function CampfireScreenRoute({ commands }: { commands: RunLoopCommands["destinations"] }) {
   const r = useCampfireScreenData();
   const talentEffects = useTalentEffects();
-  const healFraction = getCampfireHealFraction(talentEffects.campfireHealBonus);
+  const healFraction = labyrinthCampfireHealing(getCampfireHealFraction(talentEffects.campfireHealBonus), r.modifiers);
   return (
     <CampfireScreen
       playerHealth={r.runPlayerHealth}

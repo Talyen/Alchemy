@@ -72,7 +72,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
     throw new Error(MIXED_POTION_ERROR);
   }
 
-  const sameCard = cardA.id === cardB.id;
+  const sameCard = cardA.id === cardB.id && JSON.stringify(cardA.effects) === JSON.stringify(cardB.effects);
 
   const effects = (sameCard ? cardA.effects : [...cardA.effects, ...cardB.effects]).map((effect) =>
     scalePotionEffect(effect, sameCard ? 2 : 1, potencyBonus, new Map()),
@@ -117,4 +117,12 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
   const next = deck.filter((_, i) => i !== highIdx && i !== lowIdx);
   next.push(mixed);
   return next;
+}
+
+export function doublePotionPotency(card: BattleCard): BattleCard {
+  return {
+    ...card,
+    effects: card.effects.map((effect) => scalePotionEffect(effect, 2, 0, new Map())),
+    descriptionLines: [...scaleCardDescriptionLines(card, 2, 0), ...(card.consume ? [CONSUME_DESCRIPTION_LINE] : [])],
+  };
 }

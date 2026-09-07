@@ -1,4 +1,3 @@
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION, LABYRINTH_NODE_META, tooltipBodyClass } from "@/features/alchemy/shared/config";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -21,7 +20,6 @@ interface Props {
   node: LabyrinthNode;
   canEnter: boolean;
   onEnter: () => void;
-  onClose: () => void;
 }
 
 function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; variant: "enemy" | "reward" }) {
@@ -56,7 +54,7 @@ function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; varia
   );
 }
 
-export function LabyrinthNodeInspector({ node, canEnter, onEnter, onClose }: Props) {
+export function LabyrinthNodeInspector({ node, canEnter, onEnter }: Props) {
   const meta = LABYRINTH_NODE_META[node.type];
   const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : null;
   const destinationLabel = NODE_TYPE_LABELS[node.type];
@@ -70,12 +68,7 @@ export function LabyrinthNodeInspector({ node, canEnter, onEnter, onClose }: Pro
       aria-label="Chamber details"
       className="labyrinth-inspector-in flex max-h-full min-h-0 w-full flex-col overflow-hidden rounded-shell-hero border border-white/10 bg-black shadow-xl motion-reduce:animate-none"
     >
-      <div className="flex shrink-0 justify-end px-2 pt-2">
-        <Button variant="ghost" size="icon" aria-label="Close chamber details" onClick={onClose}>
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-      <div className="min-h-0 overflow-y-auto overscroll-contain px-4 pb-4">
+      <div className="min-h-0 overflow-y-auto overscroll-contain p-4">
         <Surface
           clipContents={false}
           className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-shell-card border border-border/80 bg-black shadow-md"

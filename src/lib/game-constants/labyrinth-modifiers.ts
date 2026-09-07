@@ -1,0 +1,17 @@
+export const LABYRINTH_MODIFIER_CONFIG = {
+  double: 2,
+  half: 0.5,
+  costReduction: 1,
+  manaBonus: 1,
+  playerDodgeBonus: 15,
+  enemyDodgeBonus: 10,
+  playerThornsMinimum: 3,
+  enemyThornsMinimum: 2,
+  bossThornsMinimum: 4,
+  healingPerTurn: 2,
+  secondWindHealing: 0.2,
+  fortressArmor: 12,
+  hiddenPurseGold: 15,
+  trinketPriceMultiplier: 0.75,
+  restfulDiscoveryHealing: 0.15,
+} as const;

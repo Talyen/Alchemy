@@ -1,3 +1,4 @@
+import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import { useShallow } from "zustand/react/shallow";
 import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 import type { RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
@@ -20,6 +21,10 @@ function createShopDataHook<S extends RunDataScreen>(
 export function useCampfireScreenData(): ScreenData<"campfire"> {
   return useGameplayStateStore(
     useShallow((state) => ({
+      modifiers: activeLabyrinthBenefits(
+        state.run.activeRun.contentSystemType,
+        state.session.activeLabyrinthRewardModifiers,
+      ),
       runPlayerHealth: state.run.activeRun.runPlayerHealth,
       runMaxHealth: state.run.activeRun.runMaxHealth,
     })),

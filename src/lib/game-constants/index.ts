@@ -8,3 +8,4 @@ export * from "./progression";
 export * from "./run-rewards";
 export * from "./storage";
 export * from "./ui-motion";
+export * from "./labyrinth-modifiers";

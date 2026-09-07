@@ -1,3 +1,5 @@
+import { LABYRINTH_MODIFIER_CONFIG } from "../../game-constants";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { clamp } from "@/lib/math";
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
 import { CAMPFIRE_HEAL_FRACTION, DEATHS_DOOR_GRACE_TURNS, PERCENT_DENOMINATOR } from "../../game-constants";
@@ -61,8 +63,21 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
   if ((status === "stun" || status === "freeze") && isStunFreezeBuildupBlocked(state.enemyCC)) {
     return state;
   }
+  const benefit =
+    status === "stun"
+      ? "thunderstruck"
+      : status === "freeze"
+        ? "bitter-cold"
+        : status === "bleed"
+          ? "deep-wounds"
+          : null;
+  if (delta > 0 && benefit && hasEncounterBenefit(state, benefit)) delta *= LABYRINTH_MODIFIER_CONFIG.double;
   const traitAdjustedDelta =
-    status === "stun" && state.currentEnemy.traits.some((trait) => trait.id === "braced") ? halveRounded(delta) : delta;
+    ((status === "stun" && hasEnemyTrait(state, "braced")) ||
+      (status === "freeze" && hasEnemyTrait(state, "winterborn"))) &&
+    delta > 0
+      ? halveRounded(delta)
+      : delta;
   let nextState = {
     ...state,
     enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + traitAdjustedDelta },
@@ -302,4 +317,11 @@ export function scaleGoldReward(baseGold: number, gear: GearEffectManifest): num
 
 export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deathsDoorActive">): boolean {
   return state.playerHealth <= 0 && !state.deathsDoorActive;
+}
+
+export function hasEncounterBenefit(
+  state: Pick<BattleState, "encounterBenefits">,
+  id: EncounterRewardTraitId,
+): boolean {
+  return state.encounterBenefits.includes(id);
 }

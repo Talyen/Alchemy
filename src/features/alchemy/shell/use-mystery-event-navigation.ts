@@ -1,3 +1,8 @@
+import {
+  activeLabyrinthBenefits,
+  applyLabyrinthMysteryModifiers,
+  isLabyrinthMysteryEligible,
+} from "@/lib/content-systems/labyrinth/room-rules";
 import { useCallback, useMemo } from "react";
 import { pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
@@ -30,14 +35,23 @@ export function useMysteryEventNavigation({
         (draft) => {
           clearMysteryVisitState(draft);
           const rng = createDraftRunRandomSource(draft, "events");
+          const modifiers = activeLabyrinthBenefits(
+            draft.run.activeRun.contentSystemType,
+            draft.session.activeLabyrinthRewardModifiers,
+          );
           setMysteryEvent(
             draft,
-            pickResolvedMysteryEvent(
-              rng,
-              combineTrinketEffectIds(
-                draft.run.activeRun.runBoons,
-                draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+            applyLabyrinthMysteryModifiers(
+              pickResolvedMysteryEvent(
+                rng,
+                combineTrinketEffectIds(
+                  draft.run.activeRun.runBoons,
+                  draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+                ),
+                (event) => isLabyrinthMysteryEligible(event, modifiers),
               ),
+              modifiers,
+              draft.run.activeRun.runMaxHealth,
             ),
           );
         },

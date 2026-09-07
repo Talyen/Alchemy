@@ -99,7 +99,7 @@ describe("Wildwood Draft gauntlet rules", () => {
     expect(result).not.toBe(boss);
     expect(result.traits).toEqual([
       boss.traits[0],
-      { id: "tempered", title: "Tempered", description: "Gains 1 Forge each turn" },
+      { id: "tempered", title: "Tempered", description: "Enemy gains 1 Forge each turn" },
     ]);
     expect(boss.traits).toHaveLength(1);
   });

@@ -1,3 +1,6 @@
+import { hasEncounterBenefit } from "./types";
+import { applyHealingWithCombatText } from "./combat-text";
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { applyIronwoodBuckler } from "./bonus-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { isPlayerDefeated, type BattleState, type CombatTextEvent } from "./types";
@@ -174,20 +177,36 @@ function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?
 }
 
 export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number }): EndPlayerTurnResolution {
-  const turnEndedState = reducePlayerSkipTurns(state);
+  const endingTexts: CombatTextEvent[] = [];
+  const healedState =
+    hasEncounterBenefit(state, "restorative") && state.enemyHealth > 0 && !isPlayerDefeated(state)
+      ? applyHealingWithCombatText(state, LABYRINTH_MODIFIER_CONFIG.healingPerTurn, endingTexts)
+      : state;
+  const turnEndedState = reducePlayerSkipTurns(healedState);
   const nextState = beginEnemyPhase(turnEndedState);
 
   if (turnEndedState.playerStatuses.haste > 0) {
-    return resolveHasteTurn(nextState);
+    const result = resolveHasteTurn(nextState);
+    return { ...result, combatTexts: [...endingTexts, ...result.combatTexts] };
   }
 
   const enemyPhaseState = resetEnemyTurnState(nextState);
 
   if (turnEndedState.enemyCC.stunSkipTurns + turnEndedState.enemyCC.freezeSkipTurns > 0) {
-    return resolveSkippedEnemyTurn(enemyPhaseState, options);
+    const result = resolveSkippedEnemyTurn(enemyPhaseState, options);
+    return {
+      ...result,
+      combatTexts: [...endingTexts, ...result.combatTexts],
+      enemyTurnStartCombatTexts: [...endingTexts, ...result.enemyTurnStartCombatTexts],
+    };
   }
 
-  return resolveStandardEnemyTurn(enemyPhaseState, options);
+  const result = resolveStandardEnemyTurn(enemyPhaseState, options);
+  return {
+    ...result,
+    combatTexts: [...endingTexts, ...result.combatTexts],
+    enemyTurnStartCombatTexts: [...endingTexts, ...result.enemyTurnStartCombatTexts],
+  };
 }
 
 export function recoverLegacyEnemyPhase(state: BattleState): BattleState {

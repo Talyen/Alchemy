@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { FadeSlot } from "../../../shared/ui/use-fade";
@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { floorNodes, labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
 
-import { LabyrinthNodeInspector } from "./labyrinth-node-inspector";
 import { LabyrinthMapViewport } from "./labyrinth-map-viewport";
 import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
 import { usePlasmaBaseline } from "@/features/alchemy/shared/ui/use-plasma-source";
@@ -43,45 +42,11 @@ export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect,
     if (!node || node.floor !== viewedFloor) onNodeDeselect();
   }, [selectedNodeId, viewedFloor, labyrinthMap, onNodeDeselect]);
 
-  const contentRef = useRef<HTMLDivElement>(null);
-  const inspectorRef = useRef<HTMLDivElement>(null);
-  const [wide, setWide] = useState(true);
-  useLayoutEffect(() => {
-    const element = contentRef.current;
-    if (!element) return;
-    const update = () => {
-      const contentScale = Number(getComputedStyle(element).getPropertyValue("--content-scale")) || 1;
-      setWide(element.clientWidth >= 760 * contentScale);
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    const stage = element.closest('[data-testid="vr-stage"]');
-    const styleObserver = new MutationObserver(update);
-    if (stage) styleObserver.observe(stage, { attributes: true, attributeFilter: ["style"] });
-    return () => {
-      observer.disconnect();
-      styleObserver.disconnect();
-    };
-  }, []);
-
   const nodes = labyrinthMap ? floorNodes(labyrinthMap, viewedFloor) : [];
   const selectedNode = nodes.find((node) => node.id === selectedNodeId && !node.cleared) ?? null;
   const selectedCanEnter =
     selectedNode && labyrinthMap ? labyrinthNodeVisualState(labyrinthMap, selectedNode.id) === "reachable" : false;
   const inspectorNodeId = selectedNode?.id ?? null;
-  const sheetOpen = !wide && selectedNode !== null;
-
-  useLayoutEffect(() => {
-    if (!sheetOpen) return;
-    const previousFocus = document.activeElement;
-    inspectorRef.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
-    return () => {
-      if (previousFocus instanceof HTMLElement && previousFocus.isConnected)
-        previousFocus.focus({ preventScroll: true });
-    };
-  }, [sheetOpen]);
-
   usePlasmaBaseline(selectedNode ? getLabyrinthNodePlasmaPair(selectedNode) : null);
 
   useEffect(() => {
@@ -92,6 +57,9 @@ export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect,
       onEscape: () => {
         const menu = document.querySelector("[data-testid=game-menu]");
         if (menu instanceof HTMLElement && !menu.closest(".pointer-events-none")) return false;
+        document
+          .querySelector<HTMLButtonElement>('[data-labyrinth-node][aria-pressed="true"]')
+          ?.focus({ preventScroll: true });
         onNodeDeselect();
         return true;
       },
@@ -128,55 +96,21 @@ export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect,
             ))}
           </div>
         ) : null}
-        <div ref={contentRef} className="relative flex min-h-0 flex-1 gap-5">
+        <div className="relative flex min-h-0 flex-1">
           <FadeSlot swapKey={viewedFloor} className="flex min-h-0 min-w-0 flex-1">
-            <div className="flex min-h-0 min-w-0 flex-1" inert={sheetOpen}>
-              {labyrinthMap ? (
-                <LabyrinthMapViewport
-                  key={viewedFloor}
-                  map={labyrinthMap}
-                  nodes={nodes}
-                  selectedNodeId={selectedNodeId}
-                  onSelect={onNodeSelect}
-                  onDeselect={onNodeDeselect}
-                />
-              ) : null}
-            </div>
+            {labyrinthMap ? (
+              <LabyrinthMapViewport
+                key={viewedFloor}
+                map={labyrinthMap}
+                nodes={nodes}
+                selectedNodeId={selectedNode?.id ?? null}
+                canEnter={selectedCanEnter}
+                onEnter={onNodeEnter}
+                onSelect={onNodeSelect}
+                onDeselect={onNodeDeselect}
+              />
+            ) : null}
           </FadeSlot>
-          {sheetOpen ? (
-            <button
-              type="button"
-              className="absolute inset-0 z-40 bg-black/40"
-              aria-label="Dismiss chamber details"
-              onClick={onNodeDeselect}
-              tabIndex={-1}
-            />
-          ) : null}
-          {wide || selectedNode ? (
-            <div
-              ref={inspectorRef}
-              className={cn(
-                "flex min-h-0 flex-col",
-                wide
-                  ? "w-[calc(21.25*var(--content-rem,1rem))] shrink-0"
-                  : "absolute inset-x-0 bottom-0 z-50 max-h-[90%]",
-              )}
-            >
-              {selectedNode ? (
-                <LabyrinthNodeInspector
-                  key={selectedNode.id}
-                  node={selectedNode}
-                  canEnter={selectedCanEnter}
-                  onEnter={onNodeEnter}
-                  onClose={onNodeDeselect}
-                />
-              ) : wide ? (
-                <div className="flex h-full items-center justify-center rounded-shell-hero border border-white/5 px-5 text-center text-sm text-amber-100/50">
-                  Select a chamber to inspect it
-                </div>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       </ScreenShell>
     </div>

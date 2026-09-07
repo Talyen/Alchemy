@@ -242,12 +242,19 @@ export function findMysteryEvent(eventId: string): MysteryEvent | null {
   return mysteryPool.find((event) => event.id === eventId) ?? null;
 }
 
-export function pickMysteryEvent(rng: () => number): MysteryEvent {
-  const event = pickRandom(mysteryPool, rng);
+export function pickMysteryEvent(
+  rng: () => number,
+  eligible: (event: MysteryEvent) => boolean = () => true,
+): MysteryEvent {
+  const event = pickRandom(mysteryPool.filter(eligible), rng);
   if (!event) throw new Error("mysteryPool is empty");
   return event;
 }
 
-export function pickResolvedMysteryEvent(rng: () => number, ownedTrinketIds: readonly string[]): MysteryEvent {
-  return resolveMysteryEventTrinkets(pickMysteryEvent(rng), ownedTrinketIds, rng);
+export function pickResolvedMysteryEvent(
+  rng: () => number,
+  ownedTrinketIds: readonly string[],
+  eligible?: (event: MysteryEvent) => boolean,
+): MysteryEvent {
+  return resolveMysteryEventTrinkets(pickMysteryEvent(rng, eligible), ownedTrinketIds, rng);
 }

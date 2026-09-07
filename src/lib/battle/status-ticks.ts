@@ -1,3 +1,5 @@
+import { hasEncounterBenefit } from "./types";
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import {
   applyPlayerCombatDamage,
@@ -17,7 +19,7 @@ import {
 } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
-import { computeLeechHeal } from "./damage-rider-leech";
+import { computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
@@ -42,7 +44,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const preventsDecay =
     state.talentEffects.burnPreventDecayChance > 0 &&
     rollPercent(state.talentEffects.burnPreventDecayChance, getBattleRng(state));
-  if (!preventsDecay) {
+  if (!preventsDecay && !hasEncounterBenefit(state, "eternal-flame")) {
     nextBurn = decayHalvedStatus(nextBurn);
   }
   return dealEnemyDotTick(state, "burn", finalDamage, nextBurn, combatTexts);
@@ -51,7 +53,9 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, getBattleRng(state))) return state;
-  return applyHealingWithCombatText(state, computeLeechHeal(damage), combatTexts, { skipFightPacing: true });
+  return applyHealingWithCombatText(state, scalePlayerLeechHeal(state, computeLeechHeal(damage)), combatTexts, {
+    skipFightPacing: true,
+  });
 }
 
 function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -71,7 +75,10 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     if (rollPercent(state.talentEffects.poisonGainChance, getBattleRng(state))) {
       nextPoison += POISON_GAIN_AMOUNT;
     } else {
-      nextPoison = decayPoisonStacks(nextPoison);
+      nextPoison = decayPoisonStacks(
+        nextPoison,
+        hasEncounterBenefit(state, "venomous") ? LABYRINTH_MODIFIER_CONFIG.half : 1,
+      );
     }
   }
   return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState) => {

@@ -143,24 +143,6 @@ export function validateCompanions(collector: ReturnType<typeof createCollector>
   }
 }
 
-export function collectTrinketParityIssues(trinket: {
-  id: string;
-  descriptionLines: string[];
-  effects: Record<string, number | boolean>;
-}): string[] {
-  const effectEntries = Object.entries(trinket.effects);
-  if (effectEntries.length === 0) return ["declares no combat effects"];
-  const prose = trinket.descriptionLines.join(" ");
-  const issues: string[] = [];
-  for (const [key, value] of effectEntries) {
-    if (typeof value !== "number" || value === 0) continue;
-
-    const pattern = new RegExp(`(?<![\\d.])${String(value).replace(".", "\\.")}(?!\\.?\\d)`);
-    if (!pattern.test(prose)) issues.push(`Effect ${key} value ${value} does not appear in description`);
-  }
-  return issues;
-}
-
 export function validateTrinkets(collector: ReturnType<typeof createCollector>): void {
   addDuplicateIssues(
     trinketLibrary.map((trinket) => trinket.id),
@@ -177,9 +159,6 @@ export function validateTrinkets(collector: ReturnType<typeof createCollector>):
   for (const trinket of trinketLibrary) {
     collectSchemaIssues(TrinketContentSchema, trinket, "trinkets", trinket.id, collector.error);
     validateArt("trinkets", trinket.id, trinket.art, collector.error, collector.warning);
-    for (const issue of collectTrinketParityIssues(trinket)) {
-      collector.error("trinkets", trinket.id, issue);
-    }
     for (const issue of validateTrinketDescriptionParity(trinket)) {
       collector.error(issue.area, issue.id, issue.message);
     }

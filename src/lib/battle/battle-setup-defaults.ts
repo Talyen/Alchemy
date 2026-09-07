@@ -102,5 +102,6 @@ export function defaultBattleState(): BattleState {
     rng: placeholderRng,
     pendingMaterials: emptyInventory(),
     contentSystemType: "campaign",
+    encounterBenefits: [],
   };
 }

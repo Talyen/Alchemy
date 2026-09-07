@@ -217,6 +217,7 @@ function processAttackDamageEffect(
   options: AttackDamageOptions,
 ): BattleState {
   const { canDodge, ...damageOptions } = options;
+  if (canDodge && hasEnemyTrait(state, "ravenous")) effect = { ...effect, lifesteal: true };
   const incomingDamage = computeIncomingEnemyAttackDamage(state, effect, damageOptions);
   const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, canDodge, incomingDamage);
   if (dodged) return dodged;

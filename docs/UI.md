@@ -132,20 +132,26 @@ available height.
 
 ## Labyrinth map
 
-The floor fits the available map width and height, with padding for hover
-expansion. Cleared chambers retain faint outlines and never change the floor's
-bounds. Wide layouts reserve a stable inspector column; narrow layouts open a
-dismissible sheet. Fit and zoom/pan are screen-local and reset on floor changes.
+The floor fits the full available map width and height without zoom controls or
+hover padding. Visible hex edges touch, and hover, focus, and presses never
+scale nodes. Clearing chambers preserves artwork at normal opacity with a faint
+red X; completed chambers cannot be clicked, hovered, or focused and keep the
+floor's bounds unchanged. Locked hexes can be inspected but never entered.
+Hexes have no tooltips.
 
-Hexes touch at rest. Hover and keyboard focus enlarge an opaque hex above its
-neighbors without moving them; hover takes precedence over focus and selection.
-Locked hexes can be inspected but never entered. Hexes have no tooltips.
+One inspector floats beside the selected node without reserving map space.
+It prefers right, then left, top, or bottom, with an 8px gap and boundary padding.
+Its preferred width is 440px at default Game Size, capped to the map area; it
+stays inside that area on narrow displays as well. Outside clicks dismiss it,
+other nodes switch selection directly, and Escape dismisses and restores node
+focus. Floor changes dismiss it. Destination labels use Combat while the
+persisted Normal Combat value remains compatible.
 
 The inspector uses standard 4:3 card artwork without text or scrims. Category
 and name appear below the artwork, with duplicate labels omitted and shops
 categorized as Merchant. Only mechanical modifier descriptions remain. The
 content scrolls without shrinking artwork, and the available action stays in a
-separate footer. Close and Escape dismiss details. Shared screen-header eyebrows
+separate footer. There is no close button. Shared screen-header eyebrows
 use the small text size, one step above extra-small.
 
 ## Hover tooltips

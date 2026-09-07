@@ -235,7 +235,7 @@ test.describe("Labyrinth map stage fitting", slow, () => {
     await expect(page.getByRole("heading", { name: /Labyrinth/i })).toBeVisible();
     const labyrinthMap = page.getByRole("region", { name: "Labyrinth map" });
     await expect(labyrinthMap).toBeVisible();
-    await page.getByRole("button", { name: /Normal Combat chamber, reachable/ }).click();
+    await page.getByRole("button", { name: /Combat chamber, reachable/ }).click();
     await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeVisible();
     await expect(page.getByTestId("vr-stage")).toBeVisible();
     await expect.poll(async () => labyrinthMap.boundingBox(), { timeout: 5000 }).not.toBeNull();

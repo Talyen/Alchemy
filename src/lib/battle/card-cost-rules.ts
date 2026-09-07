@@ -1,3 +1,5 @@
+import { hasEncounterBenefit } from "./types";
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { type BattleCard } from "@/lib/game-data";
 import { isPotionCard } from "@/lib/game-data/cards/card-pools";
@@ -31,7 +33,10 @@ export function isNatureCard(card: BattleCard): boolean {
   return cardHasDamageType(card, "nature") || card.tags?.includes("nature") === true;
 }
 
-type CardCostState = Pick<BattleState, "flags" | "talentEffects" | "trinketEffects" | "gearEffects" | "uniqueGear">;
+type CardCostState = Pick<
+  BattleState,
+  "flags" | "talentEffects" | "trinketEffects" | "gearEffects" | "uniqueGear" | "encounterBenefits"
+>;
 
 const FIRST_CARD_FREE_RULES: Array<{
   flag: BooleanCombatFlag;
@@ -114,6 +119,13 @@ export function cardHasKeyword(card: BattleCard, keyword: string): boolean {
 
 export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
   const result = computeStandardCost(state, card);
+  const fleeting = card.consume && hasEncounterBenefit(state, "fleeting");
+  const quickdraw =
+    card.tags?.includes("archery") && hasEncounterBenefit(state, "quickdraw") && !state.flags.encounterArcheryUsed;
+  const encounterDiscount =
+    (fleeting ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0) +
+    (quickdraw ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0);
+  if (quickdraw) result.consumedFlags.add("encounterArcheryUsed");
   const gear = state.gearEffects;
   const unique = state.uniqueGear;
   const elementalFree =
@@ -133,7 +145,10 @@ export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
     effectiveCost:
       elementalFree || natureFree || physicalFree
         ? 0
-        : Math.max(0, result.effectiveCost - (returned ? UNIQUE_GEAR_COMBAT.returnedCardDiscount : 0)),
+        : Math.max(
+            0,
+            result.effectiveCost - encounterDiscount - (returned ? UNIQUE_GEAR_COMBAT.returnedCardDiscount : 0),
+          ),
   };
 }
 

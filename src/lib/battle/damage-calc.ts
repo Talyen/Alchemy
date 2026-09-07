@@ -1,3 +1,5 @@
+import { hasEncounterBenefit } from "./types";
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
@@ -343,11 +345,29 @@ export function computeCardDamageToEnemy(
   card?: BattleCard,
   context?: CardEffectResolutionContext,
 ) {
+  let encounterMultiplier = 1;
+  const firstAttack =
+    effect.damageType === "physical"
+      ? { id: "heavy-hand" as const, flag: "encounterPhysicalUsed" as const }
+      : effect.damageType === "holy"
+        ? { id: "consecrated" as const, flag: "encounterHolyUsed" as const }
+        : effect.damageType === "nature"
+          ? { id: "wildheart" as const, flag: "encounterNatureUsed" as const }
+          : null;
+  if (
+    context?.playedCard &&
+    firstAttack &&
+    hasEncounterBenefit(state, firstAttack.id) &&
+    !state.flags[firstAttack.flag]
+  ) {
+    encounterMultiplier = LABYRINTH_MODIFIER_CONFIG.double;
+    state = setFlag(state, firstAttack.flag, true);
+  }
   const baseDamage = computeBaseDamage(state, effect, card);
   const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
   const totalBonus = computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus;
   const totalMultiplier = Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);
-  const scaledDamage = Math.round(baseDamage * totalMultiplier);
+  const scaledDamage = Math.round(baseDamage * totalMultiplier * encounterMultiplier);
   const pacedDamage = paceCombatMagnitude(stateAfterFirst, scaledDamage, "player");
   const repeatedDamage = Math.round(pacedDamage * (context?.damageMultiplier ?? 1));
   const criticalDamage = context?.guaranteedCrit

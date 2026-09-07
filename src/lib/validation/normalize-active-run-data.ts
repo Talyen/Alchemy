@@ -31,9 +31,7 @@ function filterLiveBattleState(state: BattleState): BattleState {
     discard: filterLiveCards(state.discard),
     exhausted: filterLiveCards(state.exhausted),
     wishOptions: Array.isArray(state.wishOptions) ? filterLiveCards(state.wishOptions) : state.wishOptions,
-    wishQueue: state.wishQueue
-      .filter((queue): queue is BattleCard[] => Array.isArray(queue))
-      .map((queue) => filterLiveCards(queue)),
+    wishQueue: state.wishQueue.map((queue) => filterLiveCards(queue)),
   };
 }
 

@@ -1,5 +1,6 @@
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { mergeCombatText } from "./combat-text";
+import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { addEnemyMitigation, hasEnemyTrait, type BattleState, type CombatTextEvent } from "./types";
@@ -20,6 +21,20 @@ export function processEncounterTraitHealthThreshold(
   state: BattleState,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  if (
+    hasEnemyTrait(state, "second-wind") &&
+    !state.flags.secondWindTriggered &&
+    state.enemyHealth > 0 &&
+    previousHealth > state.enemyMaxHealth / 2 &&
+    state.enemyHealth <= state.enemyMaxHealth / 2
+  ) {
+    state = applyEnemyHealingWithCombatText(
+      { ...state, flags: { ...state.flags, secondWindTriggered: true } },
+      Math.round(state.enemyMaxHealth * LABYRINTH_MODIFIER_CONFIG.secondWindHealing),
+      combatTexts,
+      { skipFightPacing: true },
+    );
+  }
   if (
     !hasEnemyTrait(state, "divine-aegis") ||
     state.flags.divineAegisTriggered ||

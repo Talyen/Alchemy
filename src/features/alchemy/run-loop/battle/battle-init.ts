@@ -56,6 +56,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       gearEffects: combatMeta.gearEffects,
       difficultyModifiers: activeModifiers,
       contentSystemType: run.contentSystemType,
+      encounterBenefits: draft.session.activeLabyrinthRewardModifiers,
       rng: battleRng,
     });
   }
@@ -89,6 +90,8 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
         const companionId = nextBattleState.activeCompanion?.id ?? null;
         if (companionId) {
           nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
+          if (nextBattleState.encounterBenefits.includes("eager-pack"))
+            nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
         }
         const openingDrawState = drawOpeningHand(nextBattleState);
         initializeActiveBattle(draft, nextBattleState, null);

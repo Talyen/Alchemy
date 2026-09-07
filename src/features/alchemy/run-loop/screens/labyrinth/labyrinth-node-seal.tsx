@@ -3,15 +3,14 @@ import { useState, type CSSProperties } from "react";
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
-import { cardHoverScaleClass, LABYRINTH_HEX_CLIP, LABYRINTH_NODE_META } from "@/features/alchemy/shared/config";
+import { LABYRINTH_HEX_CLIP, LABYRINTH_NODE_META } from "@/features/alchemy/shared/config";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
 import { usePlasmaInteraction } from "@/features/alchemy/shared/ui/use-plasma-source";
 import { cn } from "@/lib/utils";
 import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
 
-const HEX_POINTS_INSET_1 = "50,1.8 98.2,26 98.2,74 50,98.2 1.8,74 1.8,26";
-const LABYRINTH_HEX_CLIP_INSET_1 = "polygon(50% 1.8%, 98.2% 26%, 98.2% 74%, 50% 98.2%, 1.8% 74%, 1.8% 26%)";
+const HEX_POINTS = "50,0 100,25 100,75 50,100 0,75 0,25";
 
 interface Props {
   node: LabyrinthNode;
@@ -65,16 +64,29 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
 
   if (isCleared) {
     return (
-      <svg
-        aria-hidden
+      <div
         data-testid="cleared-chamber"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-amber-100/15"
-        style={{ left: x, top: y, width, height }}
+        role="img"
+        aria-label={`${typeLabel} chamber, completed`}
+        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 overflow-hidden"
+        style={{ left: x, top: y, width, height, clipPath: LABYRINTH_HEX_CLIP }}
       >
-        <polygon points={HEX_POINTS_INSET_1} fill="none" stroke="currentColor" strokeWidth={1} />
-      </svg>
+        <img src={art} alt="" className="absolute inset-0 h-full w-full scale-[1.14] object-cover object-top" />
+        <svg
+          aria-hidden
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-full w-full text-red-500/35"
+        >
+          <path
+            d="M 25 25 L 75 75 M 75 25 L 25 75"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={5}
+            strokeLinecap="round"
+          />
+        </svg>
+      </div>
     );
   }
 
@@ -85,6 +97,7 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
     >
       <button
         type="button"
+        data-labyrinth-node={node.id}
         aria-label={`${typeLabel} chamber, ${visual}${reachable ? ", enterable" : ""}`}
         onClick={(event) => {
           event.stopPropagation();
@@ -98,16 +111,12 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
         data-hovered={emphasized ? "true" : undefined}
         style={buttonStyle}
         className={cn(
-          cardHoverScaleClass,
-          "relative h-full w-full bg-black outline-none motion-reduce:transition-none",
-          "cursor-pointer active:scale-[0.97]",
+          "relative block h-full w-full bg-black outline-none motion-reduce:transition-none",
+          "cursor-pointer",
           isLocked && !emphasized && "opacity-[0.42]",
         )}
       >
-        <span
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-          style={{ clipPath: LABYRINTH_HEX_CLIP_INSET_1 }}
-        >
+        <span className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: LABYRINTH_HEX_CLIP }}>
           <img
             src={art}
             alt=""
@@ -128,7 +137,7 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
             aria-hidden
           >
             <polygon
-              points={HEX_POINTS_INSET_1}
+              points={HEX_POINTS}
               fill="none"
               stroke="currentColor"
               strokeWidth={2}
@@ -170,7 +179,7 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
               </linearGradient>
             </defs>
             <polygon
-              points={HEX_POINTS_INSET_1}
+              points={HEX_POINTS}
               fill="none"
               stroke={`url(#choice-shine-${node.id})`}
               strokeWidth={2}

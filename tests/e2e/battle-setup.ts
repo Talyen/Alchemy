@@ -1,3 +1,4 @@
+import { destinationLabel } from "@/lib/routing/destinations";
 import { expect, type Page } from "@playwright/test";
 import type { BattleCard } from "@/lib/game-data/types";
 import { BattlePage } from "../pages/battle-page";
@@ -32,7 +33,9 @@ export async function startAtDestination(
   await page.goto("/");
   if (options.forceDestination) {
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 8000 });
-    await expect(page.getByRole("button", { name: options.forceDestination })).toBeVisible({ timeout: 3000 });
+    await expect(
+      page.getByRole("button", { name: destinationLabel(options.forceDestination), exact: true }),
+    ).toBeVisible({ timeout: 3000 });
   } else {
     await resumeCampaignRun(page);
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
@@ -51,7 +54,7 @@ export async function startBattleWithDeck(page: Page, deck: BattleCard[], overri
   await page.goto("/");
   const destination = new DestinationPage(page);
   await destination.expectVisible();
-  await destination.enterCombat("Normal Combat");
+  await destination.enterCombat("Combat");
 }
 
 export async function assertDefeatFromEndRun(page: Page, options: { returnToMenu?: boolean } = {}) {

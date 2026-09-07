@@ -33,3 +33,7 @@ export function isCombatDestination(destination: Destination): boolean {
 export function isShopDestination(destination: Destination): boolean {
   return (SHOP_DESTINATIONS as readonly Destination[]).includes(destination);
 }
+
+export function destinationLabel(destination: Destination): string {
+  return destination === DESTINATIONS.NORMAL_COMBAT ? "Combat" : destination;
+}

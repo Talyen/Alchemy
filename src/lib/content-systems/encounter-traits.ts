@@ -1,3 +1,4 @@
+import { LABYRINTH_TRAITS } from "./labyrinth/trait-catalog";
 import type { EnemyTrait } from "@/lib/game-data";
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { sampleItems } from "@/lib/utils";
@@ -53,28 +54,29 @@ function reward(
 }
 
 export const ENCOUNTER_TRAITS = defineEncounterTraits({
-  tempered: combat("Tempered", "Gains 1 Forge each turn"),
-  plated: combat("Plated", "Gains 1 Armor each turn"),
-  reinforced: combat("Reinforced", "Gains 2 Block each turn"),
-  braced: combat("Braced", "Receives half Stun build-up"),
+  ...LABYRINTH_TRAITS,
+  tempered: combat("Tempered", "Enemy gains 1 Forge each turn"),
+  plated: combat("Plated", "Enemy gains 1 Armor each turn"),
+  reinforced: combat("Reinforced", "Enemy gains 2 Block each turn"),
+  braced: combat("Braced", "Enemy receives half Stun buildup"),
   septic: combat("Septic", "Deals 1 Poison or Bleed damage each turn"),
   caustic: combat("Caustic", "Deals 1 Poison damage and strips 1 Armor each turn"),
   flesheater: combat("Flesheater", "Deals 1 Bleed damage each turn\nLeech"),
-  combustible: combat("Combustible", "Deals 1 Burn damage each turn"),
-  chilling: combat("Chilling", "Deals 1 Freeze damage each turn"),
+  combustible: combat("Combustible", "Enemy deals 1 Burn damage each turn"),
+  chilling: combat("Chilling", "Enemy deals 1 Freeze damage each turn"),
   thorns: combat("Thorns", "Gains 1 Thorns each turn"),
-  zealot: combat("Zealot", "Deals 2 Holy damage each turn"),
+  zealot: combat("Zealot", "Enemy deals 2 Holy damage each turn"),
   insatiable: combat("Insatiable", "Gains 1 Physical damage each time you Consume a card"),
   jealous: combat("Jealous", "Gains 1 Physical damage each time you Wish"),
-  concussive: combat("Concussive", "Deals 1 Stun damage each turn"),
+  concussive: combat("Concussive", "Enemy deals 1 Stun damage each turn"),
   rooted: combat("Rooted", "Gains 1 Block when you play a Nature card"),
-  overgrowth: combat("Overgrowth", "Restores 1 Health each turn"),
-  "holy-retribution": combat("Holy Retribution", "Deals 1 Holy damage when attacked"),
+  overgrowth: combat("Overgrowth", "Enemy restores 1 Health each turn"),
+  "holy-retribution": combat("Holy Retribution", "Enemy deals 1 Holy damage whenever you attack"),
   "divine-aegis": combat("Divine Aegis", "Gains 2 Armor and 4 Block the first time reaching 50% Health"),
-  generous: reward("Generous", "Victory Gold is increased by 50%", ["labyrinth"]),
-  alchemist: reward("Alchemist", "Gain a random Potion alongside the normal reward", ["labyrinth", "wildwood"]),
-  scavenger: reward("Scavenger", "Material loot from this encounter is doubled", ["labyrinth"]),
-  companion: reward("Companion", "Choose a free Companion card after the battle", ["labyrinth", "wildwood"]),
+  generous: reward("Generous", "Gain 50% more Gold after victory", ["labyrinth"]),
+  alchemist: reward("Alchemist", "Gain an extra random Potion after victory", ["labyrinth", "wildwood"]),
+  scavenger: reward("Scavenger", "Gain twice the Materials after victory", ["labyrinth"]),
+  companion: reward("Companion", "Choose a free Companion card after victory", ["labyrinth", "wildwood"]),
   wealthy: reward("Wealthy", `Gain ${LABYRINTH_REWARD_CONFIG.wealthyGoldBonus} bonus Gold`, ["labyrinth"]),
   herbalist: reward("Herbalist", `Gain ${LABYRINTH_REWARD_CONFIG.herbalistHerbBonus} bonus Herbs`, ["labyrinth"]),
   wellProvisioned: reward(

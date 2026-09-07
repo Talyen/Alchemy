@@ -1,3 +1,4 @@
+import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import { isPlayerDefeated } from "@/lib/battle";
 import {
   emptyHydratedMysteryVisit,
@@ -253,7 +254,16 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
     screen = claim.screen;
   }
 
-  const mysteryVisit = screen === "mystery" ? hydrateMysteryVisit(activeRun.mysteryVisit) : emptyHydratedMysteryVisit();
+  const mysteryVisit =
+    screen === "mystery"
+      ? hydrateMysteryVisit(activeRun.mysteryVisit, {
+          modifiers: activeLabyrinthBenefits(
+            activeRun.contentSystemType,
+            activeRun.activeLabyrinthRewardModifiers ?? [],
+          ),
+          maxHealth: activeRun.runMaxHealth,
+        })
+      : emptyHydratedMysteryVisit();
 
   return {
     progress: createInitialActiveRunFields(activeRun),

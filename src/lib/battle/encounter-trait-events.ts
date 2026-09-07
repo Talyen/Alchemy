@@ -55,7 +55,7 @@ export function processEncounterTraitActionStart(state: BattleState, combatTexts
 
 function dealTraitDamage(
   state: BattleState,
-  damageType: "physical" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "stun",
+  damageType: "physical" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "stun" | "nature",
   baseAmount: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
@@ -103,6 +103,10 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
       };
     }
   }
+  if (hasEnemyTrait(nextState, "toxic"))
+    nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "toxic"), "poison", 1, combatTexts);
+  if (hasEnemyTrait(nextState, "bloodletter"))
+    nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "bloodletter"), "bleed", 1, combatTexts);
   if (hasEnemyTrait(nextState, "combustible"))
     nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "combustible"), "burn", 1, combatTexts);
   if (hasEnemyTrait(nextState, "chilling"))
@@ -148,4 +152,20 @@ export function processEncounterTraitCardAction(
       nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "cinder-skin"), "burn", 1, combatTexts);
   }
   return nextState;
+}
+
+export function applyEncounterThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (state.enemyHealth <= 0 || state.enemyStatuses.thorns <= 0) return state;
+  const id = hasEnemyTrait(state, "briar-crown")
+    ? "briar-crown"
+    : hasEnemyTrait(state, "thornhide")
+      ? "thornhide"
+      : null;
+  if (!id) return state;
+  const amount = state.enemyStatuses.thorns;
+  return processEnemyDamageEffect(
+    setEnemyStatus(recordEnemyAbilityActivation(state, id), "thorns", 0),
+    { kind: "damage", damageType: "nature", amount },
+    combatTexts,
+  );
 }

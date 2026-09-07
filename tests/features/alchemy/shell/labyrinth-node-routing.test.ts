@@ -58,3 +58,13 @@ describe("createLabyrinthNodeRouting", () => {
     expect(shopDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.SHOP);
   });
 });
+
+it("passes support modifiers before initializing their destination", () => {
+  const deps = makeRoutingDeps((handlers) => handlers.onStartAlchemist(["strong-spirits"]));
+  deps.shop.initialize.mockImplementation(() => {
+    expect(deps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith(["strong-spirits"]);
+  });
+  createLabyrinthNodeRouting(deps).handleLabyrinthNodeEnter();
+  expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
+  expect(deps.shop.initialize).toHaveBeenCalledWith("alchemist");
+});

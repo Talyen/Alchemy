@@ -1,3 +1,5 @@
+import { resolveCompanionTurnStart } from "../companion-effects";
+import { hasEncounterBenefit } from "../types";
 import type { BattleCard, BattleCardEffect, BattleCardEffectKind } from "@/lib/game-data";
 import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { isRecursiveBattleCardEffectKind } from "@/lib/game-data";
@@ -85,7 +87,12 @@ export function applyEffectByKind(
     console.warn(`[Battle] Missing handler for effect kind: ${kind}`);
     return state;
   }
-  return EFFECT_APPLY_BY_KIND[kind](state, card, effect, potionMult, combatTexts, context);
+  let nextState = EFFECT_APPLY_BY_KIND[kind](state, card, effect, potionMult, combatTexts, context);
+  if (kind === "summon-companion" && hasEncounterBenefit(state, "eager-pack")) {
+    nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
+    nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
+  }
+  return nextState;
 }
 
 function applySingleEffect(

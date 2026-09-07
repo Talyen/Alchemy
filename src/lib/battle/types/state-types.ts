@@ -15,6 +15,7 @@ import type { GearEffectManifest } from "@/lib/gear";
 
 export type { TrinketManifest };
 import type { MaterialInventory } from "@/lib/homestead/types";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { CombatFlags } from "../combat-flags";
 import type { UniqueGearBattleState } from "../unique-gear-state";
@@ -104,6 +105,7 @@ export interface BattleState {
   rng: () => number;
   pendingMaterials: MaterialInventory;
   contentSystemType: ContentSystemId;
+  encounterBenefits: EncounterRewardTraitId[];
 }
 
 type CombatTextTarget = "player" | "enemy";

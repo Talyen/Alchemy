@@ -132,7 +132,7 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(state.discard.map((card) => card.id)).toEqual(["slash"]);
     expect(state.exhausted).toEqual([]);
     expect(state.wishOptions).toEqual([]);
-    expect(state.wishQueue).toEqual([[live], [live]]);
+    expect(state.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([[live.id], [live.id]]);
 
     expect(result.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
     expect(result.alchemistState?.potions).toEqual([]);
@@ -165,7 +165,9 @@ describe("ActiveRunDataSchema normalize", () => {
         battleState: { ...defaultBattleState(), wishQueue: [[live], "junk", 7] },
       },
     });
-    expect(result.activeCombat?.battleState.wishQueue).toEqual([[live]]);
+    expect(result.activeCombat?.battleState.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([
+      [live.id],
+    ]);
   });
 
   it("nulls mysteryVisit when currentScreen is not mystery", () => {

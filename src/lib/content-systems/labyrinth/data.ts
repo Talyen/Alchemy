@@ -1,5 +1,5 @@
 import type { LabyrinthNodeType } from "../types";
-import { DESTINATIONS, type Destination } from "@/lib/routing/destinations";
+import { DESTINATIONS, destinationLabel, type Destination } from "@/lib/routing/destinations";
 
 export const LABYRINTH_TYPE_TO_DESTINATION: Record<LabyrinthNodeType, Destination> = {
   entrance: DESTINATIONS.NORMAL_COMBAT,
@@ -16,7 +16,7 @@ export const LABYRINTH_TYPE_TO_DESTINATION: Record<LabyrinthNodeType, Destinatio
 
 export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
   entrance: "Entrance",
-  combat: DESTINATIONS.NORMAL_COMBAT,
+  combat: destinationLabel(DESTINATIONS.NORMAL_COMBAT),
   elite: DESTINATIONS.ELITE_COMBAT,
   rest: DESTINATIONS.CAMPFIRE,
   mystery: DESTINATIONS.MYSTERY,

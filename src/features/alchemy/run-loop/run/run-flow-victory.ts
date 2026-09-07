@@ -55,7 +55,7 @@ export function commitVictoryRewards(
   });
   setDestinationOfferState(draft, result.destinationOfferState);
   if (shouldGrantCompanionReward(result.labyrinthRewardModifiers)) {
-    setCompanionRewardCards(draft, getCompanionCardChoices(rng));
+    setCompanionRewardCards(draft, getCompanionCardChoices(rng, result.labyrinthRewardModifiers));
   } else {
     setCompanionRewardCards(draft, null);
   }

@@ -47,12 +47,7 @@ function slugifyGearName(name) {
 }
 
 async function discoverFiles({ dir, pattern, validate }) {
-  let entries;
-  try {
-    entries = await readdir(dir, { withFileTypes: true });
-  } catch {
-    return [];
-  }
+  const entries = await readdir(dir, { withFileTypes: true });
 
   const discovered = [];
   for (const entry of entries) {
@@ -162,12 +157,12 @@ async function optimizeAsset(asset, storedEntry) {
 }
 
 export async function optimizeAssets() {
-  await mkdir(outputDir, { recursive: true });
-
   const gearAssets = await discoverGearAssets();
   const gearSlotBackgrounds = await discoverGearSlotBackgrounds();
   const allAssets = [...staticAssets, ...gearAssets, ...gearSlotBackgrounds];
   await validateAssetRegistry(allAssets, { sourceDir });
+
+  await mkdir(outputDir, { recursive: true });
 
   const { results, nextManifest, failed } = await processManifestEntries({
     entries: allAssets,
@@ -177,24 +172,30 @@ export async function optimizeAssets() {
     handleError: (asset, error) => formatProcessError(asset.target, error),
   });
 
-  await writeManifestIfChanged(manifestPath, nextManifest);
+  if (failed) {
+    console.warn("Skipping art manifest write and orphan sweep because art optimization failed.");
+    return {
+      ok: false,
+      error: results
+        .filter((result) => result.failed)
+        .map((result) => result.message)
+        .join(" "),
+    };
+  }
 
-  if (!failed) {
-    const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {
-      manifestBasename: MANIFEST_BASENAME,
-      label: "optimized asset",
-    });
-    if (removed > 0) {
-      console.log(`Removed ${removed} orphan optimized assets.`);
-    }
-  } else {
-    console.warn("Skipping orphan optimized-asset sweep because art optimization failed.");
+  await writeManifestIfChanged(manifestPath, nextManifest);
+  const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {
+    manifestBasename: MANIFEST_BASENAME,
+    label: "optimized asset",
+  });
+  if (removed > 0) {
+    console.log(`Removed ${removed} orphan optimized assets.`);
   }
 
   console.log(
     `Optimized ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
   );
-  return { ok: !failed, error: failed ? "One or more art assets failed" : undefined };
+  return { ok: true };
 }
 
 if (isMainModule(import.meta.url)) {

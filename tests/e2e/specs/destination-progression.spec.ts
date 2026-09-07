@@ -22,7 +22,7 @@ test.describe("Destination Progression", () => {
     const destination = new DestinationPage(page);
     await destination.expectVisible();
     const choices = [
-      destination.destinationButton("Normal Combat"),
+      destination.destinationButton("Combat"),
       destination.destinationButton("Campfire"),
       destination.destinationButton("Mystery"),
     ];
@@ -30,6 +30,10 @@ test.describe("Destination Progression", () => {
       await expect(choice).toBeVisible();
     }
     await assertRowAlignment(choices);
+    await expect(page.getByRole("button", { name: "Normal Combat", exact: true })).toHaveCount(0);
+    await destination.pick("Combat");
+    await expect(page.getByTestId("battle-scene")).toBeVisible();
+    await expect(page.getByRole("button", { name: "End Turn" })).toBeVisible();
   });
 
   test("completed destinations do not appear in subsequent choices", critical, async ({ page }) => {
@@ -44,7 +48,7 @@ test.describe("Destination Progression", () => {
     const destination = new DestinationPage(page);
     await destination.expectVisible();
     await expect(page.getByRole("button", { name: "Campfire" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Normal Combat" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Combat", exact: true })).toHaveCount(0);
   });
 
   test("boss destination appears at end of act when all choices are exhausted", critical, async ({ page }) => {

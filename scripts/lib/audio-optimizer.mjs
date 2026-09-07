@@ -4,12 +4,7 @@ import path from "node:path";
 const DEFAULT_AUDIO_EXTENSIONS = new Set([".mp3", ".ogg", ".wav"]);
 
 export async function discoverAudioFiles(dir, extensions = DEFAULT_AUDIO_EXTENSIONS) {
-  let entries;
-  try {
-    entries = await readdir(dir, { withFileTypes: true });
-  } catch {
-    return [];
-  }
+  const entries = await readdir(dir, { withFileTypes: true });
   return entries
     .filter((entry) => entry.isFile() && extensions.has(path.extname(entry.name).toLowerCase()))
     .map((entry) => entry.name)

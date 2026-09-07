@@ -1,3 +1,5 @@
+import { hasEncounterBenefit } from "./types";
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { damageEnemyHealth, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 import {
   decayHalvedStatus,
@@ -71,7 +73,7 @@ export function detonateEnemyStatuses(
       if (mode === "next-tick") break;
       stacks =
         status === "poison"
-          ? decayPoisonStacks(stacks)
+          ? decayPoisonStacks(stacks, hasEncounterBenefit(state, "venomous") ? LABYRINTH_MODIFIER_CONFIG.half : 1)
           : status === "burn" || (status === "bleed" && state.gearEffects.bleedDecaysByHalf > 0)
             ? decayHalvedStatus(stacks)
             : 0;

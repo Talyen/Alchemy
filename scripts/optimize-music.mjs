@@ -28,14 +28,14 @@ const manifestPath = path.join(outputDir, MANIFEST_BASENAME);
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 
 export async function optimizeMusic() {
-  await mkdir(outputDir, { recursive: true });
-
   const files = await discoverAudioFiles(sourceDir);
   if (files.length === 0) {
     const msg = `No music files found in ${sourceDir}.`;
     console.error(msg);
     return { ok: false, error: msg };
   }
+
+  await mkdir(outputDir, { recursive: true });
 
   const { results, nextManifest, failed } = await processManifestEntries({
     entries: files,
@@ -56,22 +56,28 @@ export async function optimizeMusic() {
     handleError: formatProcessError,
   });
 
-  await writeManifestIfChanged(manifestPath, nextManifest);
+  if (failed) {
+    console.warn("Skipping music manifest write and orphan sweep because music optimization failed.");
+    return {
+      ok: false,
+      error: results
+        .filter((result) => result.failed)
+        .map((result) => result.message)
+        .join(" "),
+    };
+  }
 
-  if (!failed) {
-    const removed = await removeOrphanOutputs(outputDir, new Set(files), {
-      manifestBasename: MANIFEST_BASENAME,
-      label: "music file",
-    });
-    if (removed > 0) {
-      console.log(`Removed ${removed} orphan music files.`);
-    }
-  } else {
-    console.warn("Skipping orphan music-file sweep because music optimization failed.");
+  await writeManifestIfChanged(manifestPath, nextManifest);
+  const removed = await removeOrphanOutputs(outputDir, new Set(files), {
+    manifestBasename: MANIFEST_BASENAME,
+    label: "music file",
+  });
+  if (removed > 0) {
+    console.log(`Removed ${removed} orphan music files.`);
   }
 
   console.log(`Processed ${results.length} music files.`);
-  return { ok: !failed, error: failed ? "One or more music files failed" : undefined };
+  return { ok: true };
 }
 
 if (isMainModule(import.meta.url)) {

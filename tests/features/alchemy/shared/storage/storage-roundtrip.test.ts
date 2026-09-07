@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { SaveDataSchema } from "@/lib/validation";
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
+import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
 
 function parseSave(value: unknown): SaveData {
-  const result = SaveDataSchema.parse(value) as SaveData;
-  if (result.activeRun) result.activeRun.runDeck = result.activeRun.runDeck.map(hydrateCard);
-  return result;
+  const result = evaluateSaveCandidates([JSON.stringify(value)]);
+  expect(result.status.kind).toBe("ok");
+  return result.data;
 }
 
 describe("save JSON round trips", () => {

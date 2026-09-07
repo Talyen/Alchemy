@@ -1,3 +1,4 @@
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { applyPlayerDamageStatuses, applyPlayerStatusEffect, shouldBlockPreventStunBuildup } from "./status-player";
@@ -78,6 +79,12 @@ export function computeIncomingEnemyAttackDamage(
   }
   remainingDamage = Math.max(0, remainingDamage + (options.flatBonus ?? 0));
   remainingDamage = remainingDamage * (options.amountMultiplier ?? 1);
+  if (
+    effect.damageType === "physical" &&
+    hasEnemyTrait(state, "executioner") &&
+    state.enemyHealth < state.enemyMaxHealth / 2
+  )
+    remainingDamage *= LABYRINTH_MODIFIER_CONFIG.double;
   const paced = paceCombatMagnitude(state, remainingDamage, "enemy");
   return Math.round(paced);
 }
@@ -136,6 +143,7 @@ function applyVanguardCrestAfterBlock(
 }
 
 function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, damageType: string): BattleState {
+  if (hasEnemyTrait(state, "whitehot")) return state;
   if (actualDamage <= 0 || damageType !== "physical" || state.enemyMitigation.forge <= 0) return state;
   return {
     ...state,
@@ -350,7 +358,18 @@ export function processEnemyDamageEffect(
   nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);
 
   if (effect.lifesteal && actualDamage > 0) {
-    nextState = applyEnemyLeechHealing(nextState, actualDamage, combatTexts);
+    const healthLost = hasEnemyTrait(state, "ravenous")
+      ? Math.max(0, prevHealth - damagedState.playerHealth)
+      : actualDamage;
+    nextState = applyEnemyLeechHealing(nextState, healthLost, combatTexts);
+    if (hasEnemyTrait(state, "ravenous") && effect.damageType === "bleed") {
+      nextState = {
+        ...nextState,
+        pendingEnemyBleedLeechHealing:
+          nextState.pendingEnemyBleedLeechHealing +
+          Math.max(0, nextState.playerStatuses.bleed - state.playerStatuses.bleed),
+      };
+    }
   }
 
   if (!options.skipTraitReactions) {

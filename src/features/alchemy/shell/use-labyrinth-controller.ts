@@ -39,12 +39,12 @@ export interface LabyrinthNodeHandlers {
     rewardModifiers: EncounterRewardTraitId[],
     enemyId?: string,
   ) => void;
-  onStartRest: () => void;
-  onStartMystery: () => void;
-  onStartShop: () => void;
-  onStartAlchemist: () => void;
-  onStartTrinketShop: () => void;
-  onStartEquipmentShop: () => void;
+  onStartRest: (modifiers?: EncounterRewardTraitId[]) => void;
+  onStartMystery: (modifiers?: EncounterRewardTraitId[]) => void;
+  onStartShop: (modifiers?: EncounterRewardTraitId[]) => void;
+  onStartAlchemist: (modifiers?: EncounterRewardTraitId[]) => void;
+  onStartTrinketShop: (modifiers?: EncounterRewardTraitId[]) => void;
+  onStartEquipmentShop: (modifiers?: EncounterRewardTraitId[]) => void;
 }
 
 type NodeAction = (node: LabyrinthNode, handlers: LabyrinthNodeHandlers) => void;
@@ -56,12 +56,12 @@ const NODE_ACTIONS: Record<LabyrinthNodeType, NodeAction> = {
     handlers.onStartBattleWithModifiers("elite", node.modifiers, node.rewardModifiers, node.enemyId),
   boss: (node, handlers) => handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers, node.enemyId),
   entrance: () => {},
-  rest: (_, handlers) => handlers.onStartRest(),
-  mystery: (_, handlers) => handlers.onStartMystery(),
-  shop: (_, handlers) => handlers.onStartShop(),
-  alchemist: (_, handlers) => handlers.onStartAlchemist(),
-  "trinket-shop": (_, handlers) => handlers.onStartTrinketShop(),
-  "equipment-shop": (_, handlers) => handlers.onStartEquipmentShop(),
+  rest: (node, handlers) => handlers.onStartRest(node.rewardModifiers),
+  mystery: (node, handlers) => handlers.onStartMystery(node.rewardModifiers),
+  shop: (node, handlers) => handlers.onStartShop(node.rewardModifiers),
+  alchemist: (node, handlers) => handlers.onStartAlchemist(node.rewardModifiers),
+  "trinket-shop": (node, handlers) => handlers.onStartTrinketShop(node.rewardModifiers),
+  "equipment-shop": (node, handlers) => handlers.onStartEquipmentShop(node.rewardModifiers),
 };
 
 function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandlers): void {

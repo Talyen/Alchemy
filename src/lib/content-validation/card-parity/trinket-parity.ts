@@ -1,59 +1,151 @@
-import { isTrinketId, type TrinketEntry, type TrinketId } from "@/lib/game-data";
+import { isTrinketId, type TrinketEntry, type TrinketId, type TrinketManifest } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
 
-export const TRINKET_REQUIRED_PATTERNS: Record<TrinketId, { pattern: RegExp; term: string }> = {
-  "brass-censer": { pattern: /holy.*20%.*burn.*leech/, term: "Holy, 20% chance, Burn, and Leech" },
-  "tattered-pages": { pattern: /draw|additional|card/, term: "draw/card" },
-  meteorite: { pattern: /burn/, term: "burn" },
-  "bone-charm": { pattern: /health|heal/, term: "health or heal" },
-  "obsidian-hammer": { pattern: /forge.*stun|stun.*forge/, term: "forge and stun" },
-  "icy-heart": { pattern: /freeze.*damage|damage.*freeze/, term: "freeze and damage" },
-  "ironwood-buckler": { pattern: /block.*thorns|thorns.*block/, term: "block and thorns" },
-  "runic-quill": { pattern: /consume|draw/, term: "consume or draw" },
-  "sin-eaters-lantern": { pattern: /health|heal/, term: "health or heal" },
-  "vanguards-crest": { pattern: /forge|block/, term: "forge or block" },
-  "parasitic-bloom": { pattern: /poison|leech/, term: "poison or leech" },
-  "cutpurse-knife": { pattern: /bleed.*gold|gold.*bleed/, term: "bleed and gold" },
-  "wishing-well-coin": { pattern: /wish.*gold|gold.*wish/, term: "wish and gold" },
-  "merchants-favor": { pattern: /purchase|shop|gold|less/, term: "shop discount" },
-  "plague-doctors-mask": {
-    pattern: /start.*turn.*cleanse.*2 poison.*half.*poison damage/,
-    term: "turn-start Poison cleansing and retaliation",
+type EffectKeyOfType<T> = {
+  [K in keyof TrinketManifest]: TrinketManifest[K] extends T ? K : never;
+}[keyof TrinketManifest];
+
+interface TrinketParityRule {
+  pattern: RegExp;
+  numericEffects: ReadonlyArray<EffectKeyOfType<number>>;
+  requiredBooleanEffects?: ReadonlyArray<EffectKeyOfType<boolean>>;
+}
+
+export const TRINKET_PARITY_RULES: Record<TrinketId, TrinketParityRule> = {
+  "brass-censer": {
+    pattern: /^holy damage has a ([+-]?\d+(?:\.\d+)?)% chance to also burn or leech$/,
+    numericEffects: ["brassCenserProcChance"],
   },
-  "mortar-and-pestle": { pattern: /potion.*poison|poison.*potion/, term: "potion and poison" },
-  "sundering-charm": { pattern: /armor/, term: "armor" },
-  "resonant-chimes": { pattern: /cards.*mana|mana.*cards/, term: "cards and mana" },
-  "smugglers-map": { pattern: /gold/, term: "gold" },
-  "groves-favor": { pattern: /restore.*health.*thorns|thorns.*restore.*health/, term: "health restoration and thorns" },
-  "companions-collar": { pattern: /companion.*damage|damage.*companion/, term: "companion damage" },
-  "frozen-pocketwatch": { pattern: /freeze/, term: "freeze" },
-  thunderstone: { pattern: /stun/, term: "stun" },
-  "lucky-clover": { pattern: /nature|gold|chance/, term: "nature, gold, or chance" },
+  "tattered-pages": {
+    pattern: /^draw ([+-]?\d+(?:\.\d+)?) at the start of combat$/,
+    numericEffects: ["extraDrawPerBattle"],
+  },
+  meteorite: {
+    pattern: /^your first burn damage each combat is doubled$/,
+    numericEffects: [],
+    requiredBooleanEffects: ["firstBurnDoubled"],
+  },
+  "bone-charm": {
+    pattern: /^restore ([+-]?\d+(?:\.\d+)?) health when you defeat an enemy$/,
+    numericEffects: ["boneCharmHealOnKill"],
+  },
+  "obsidian-hammer": {
+    pattern:
+      /^when you have ([+-]?\d+(?:\.\d+)?) or more forge, your physical damage also deals ([+-]?\d+(?:\.\d+)?) stun damage$/,
+    numericEffects: ["forgeStunThreshold", "forgeStunAmount"],
+  },
+  "icy-heart": {
+    pattern: /^when you freeze an enemy, deal ([+-]?\d+(?:\.\d+)?) physical damage$/,
+    numericEffects: ["frozenHeartDamage"],
+  },
+  "ironwood-buckler": {
+    pattern: /^gain ([+-]?\d+(?:\.\d+)?) thorns when you gain block$/,
+    numericEffects: ["ironwoodBucklerThornsOnBlock"],
+  },
+  "runic-quill": {
+    pattern: /^draw ([+-]?\d+(?:\.\d+)?) when you consume$/,
+    numericEffects: ["runicQuillDrawOnConsume"],
+  },
+  "sin-eaters-lantern": {
+    pattern: /^gain ([+-]?\d+(?:\.\d+)?) health when you remove a harmful status effect$/,
+    numericEffects: ["sinEaterHealOnHarmfulStatusRemove"],
+  },
+  "vanguards-crest": {
+    pattern: /^when your block fully absorbs an attack, gain ([+-]?\d+(?:\.\d+)?) forge$/,
+    numericEffects: ["vanguardCrestForgeOnBlockAbsorb"],
+  },
+  "parasitic-bloom": {
+    pattern: /^poison has a ([+-]?\d+(?:\.\d+)?)% chance to leech$/,
+    numericEffects: ["parasiticBloomLeechChance"],
+  },
+  "cutpurse-knife": {
+    pattern: /^gain ([+-]?\d+(?:\.\d+)?) gold when you deal bleed damage$/,
+    numericEffects: ["cutpurseGoldOnBleed"],
+  },
+  "wishing-well-coin": {
+    pattern: /^when you wish, also gain ([+-]?\d+(?:\.\d+)?) gold$/,
+    numericEffects: ["wishingWellGoldOnWish"],
+  },
+  "merchants-favor": {
+    pattern: /^your first purchase at each shop costs ([+-]?\d+(?:\.\d+)?) less gold$/,
+    numericEffects: ["merchantsFavorDiscount"],
+  },
+  "plague-doctors-mask": {
+    pattern:
+      /^at the start of your turn, cleanse up to ([+-]?\d+(?:\.\d+)?) poison and deal half the amount cleansed as poison damage$/,
+    numericEffects: ["plagueDoctorPoisonCleanse"],
+  },
+  "mortar-and-pestle": {
+    pattern: /^deal ([+-]?\d+(?:\.\d+)?) poison damage when you use a potion$/,
+    numericEffects: ["mortarPestlePoisonOnPotionUse"],
+  },
+  "sundering-charm": {
+    pattern: /^your physical and stun damage removes ([+-]?\d+(?:\.\d+)?) enemy armor$/,
+    numericEffects: ["sunderingArmorPiercing"],
+  },
+  "resonant-chimes": {
+    pattern: /^when you play ([+-]?\d+(?:\.\d+)?) or more cards in a single turn, gain ([+-]?\d+(?:\.\d+)?) mana$/,
+    numericEffects: ["resonantChimeCardsRequired", "resonantChimeMana"],
+  },
+  "smugglers-map": {
+    pattern: /^gold rewards from combat are increased by ([+-]?\d+(?:\.\d+)?)$/,
+    numericEffects: ["smugglersMapGoldBonus"],
+  },
+  "groves-favor": {
+    pattern: /^gain ([+-]?\d+(?:\.\d+)?) thorns when you restore health$/,
+    numericEffects: ["grovesFavorThornsOnHealthRestore"],
+  },
+  "companions-collar": {
+    pattern: /^increases companion damage by ([+-]?\d+(?:\.\d+)?)$/,
+    numericEffects: ["companionDamageBonus"],
+  },
+  "frozen-pocketwatch": {
+    pattern: /^freeze effects last ([+-]?\d+(?:\.\d+)?) turn longer$/,
+    numericEffects: ["freezeDurationExtension"],
+  },
+  thunderstone: {
+    pattern: /^when you stun an enemy, deal ([+-]?\d+(?:\.\d+)?) nature damage$/,
+    numericEffects: ["thunderstoneDamageOnStun"],
+  },
+  "lucky-clover": {
+    pattern: /^nature damage has a ([+-]?\d+(?:\.\d+)?)% chance to grant gold equal to the damage dealt$/,
+    numericEffects: ["luckyCloverGoldChance"],
+  },
 };
 
 export function validateTrinketDescriptionParity(trinket: TrinketEntry): ContentValidationIssue[] {
   const issues: ContentValidationIssue[] = [];
-  const config = isTrinketId(trinket.id) ? TRINKET_REQUIRED_PATTERNS[trinket.id] : undefined;
-  const prose = trinket.descriptionLines.join(" ").toLowerCase();
-
-  if (!config) {
-    issues.push({
-      severity: "error",
-      area: "trinkets",
-      id: trinket.id,
-      message: `Trinket "${trinket.id}" has no registered description parity pattern`,
-    });
+  const addIssue = (message: string) => {
+    issues.push({ severity: "error", area: "trinkets", id: trinket.id, message });
+  };
+  const rule = isTrinketId(trinket.id) ? TRINKET_PARITY_RULES[trinket.id] : undefined;
+  if (!rule) {
+    addIssue(`Trinket "${trinket.id}" has no registered description parity rule`);
     return issues;
   }
 
-  if (!config.pattern.test(prose)) {
-    issues.push({
-      severity: "error",
-      area: "trinkets",
-      id: trinket.id,
-      message: `Trinket "${trinket.id}" description does not mention ${config.term}`,
-    });
+  const expectedKeys = new Set<string>([...rule.numericEffects, ...(rule.requiredBooleanEffects ?? [])]);
+  for (const key of expectedKeys) {
+    if (!Object.hasOwn(trinket.effects, key)) addIssue(`Missing required effect: ${key}`);
+  }
+  for (const key of Object.keys(trinket.effects)) {
+    if (!expectedKeys.has(key)) addIssue(`Unexpected effect: ${key}`);
   }
 
+  const prose = trinket.descriptionLines.join(" ").toLowerCase().replace(/\s+/g, " ").trim();
+  const match = rule.pattern.exec(prose);
+  if (!match) {
+    addIssue(`Trinket "${trinket.id}" description does not match its required trigger and outcome`);
+  } else {
+    for (const [index, key] of rule.numericEffects.entries()) {
+      const described = Number(match[index + 1]);
+      if (trinket.effects[key] !== described) {
+        addIssue(`Effect ${key} value ${String(trinket.effects[key])} does not match described amount ${described}`);
+      }
+    }
+  }
+  for (const key of rule.requiredBooleanEffects ?? []) {
+    if (trinket.effects[key] !== true) addIssue(`Effect ${key} must be true`);
+  }
   return issues;
 }

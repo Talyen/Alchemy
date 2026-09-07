@@ -2,9 +2,71 @@ import { describe, expect, it } from "vitest";
 import { parseActiveRun, toActiveRunData } from "@/lib/active-run-session";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { makeActiveRunData } from "../../features/alchemy/shared/stores/active-run-data-fixture";
-import { cardLibrary } from "@/lib/game-data";
+import { cardById, cardLibrary } from "@/lib/game-data";
+import { makeMinimalActiveRunInput, makeWildwoodDraft } from "../../fixtures/active-run";
 
 describe("parseActiveRun", () => {
+  it.each(["campaign", "wildwood"])(
+    "recovers incomplete card content across %s save locations",
+    (contentSystemType) => {
+      const card = cardById["molten-bulwark"]!;
+      const damaged = {
+        ...card,
+        effects: [{ kind: "player-status", status: "block", amount: 9 }, { kind: "invalid" }],
+        descriptionLines: ["Gain 9 Block", "Restore 2 Health"],
+        corrupted: true,
+        corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }],
+      };
+      const raw = makeMinimalActiveRunInput({
+        contentSystemType,
+        currentScreen: "mystery",
+        runDeck: [damaged, { ...card, id: "retired-card" }],
+        starterDraftChoices: [damaged],
+        wildwoodDraft: contentSystemType === "wildwood" ? makeWildwoodDraft({ draftChoices: [damaged] }) : null,
+        shopState: {
+          cards: [damaged],
+          removeUsed: false,
+          refreshesLeft: 1,
+          firstPurchaseUsed: false,
+          purchasedSlotKeys: [],
+        },
+        alchemistState: {
+          potions: [damaged],
+          mixUsed: false,
+          refreshesLeft: 1,
+          firstPurchaseUsed: false,
+          purchasedSlotKeys: [],
+        },
+        mysteryVisit: {
+          eventId: "ancient-altar",
+          chosenChoice: null,
+          cardChoices: [damaged],
+          grantedTrinketIds: [],
+          grantedGear: [],
+          chosenCardId: null,
+        },
+        corruptionResult: { originalCard: damaged, corruptedCard: damaged, transformed: false, delta: 1 },
+      });
+      const validated = ActiveRunDataSchema.parse(raw);
+      const parsed = parseActiveRun(JSON.parse(JSON.stringify(validated)));
+      expect(parsed).not.toBeNull();
+      expect(parsed?.runDeck).toEqual([card]);
+      expect(
+        contentSystemType === "wildwood" ? parsed?.wildwoodDraft?.draftChoices : parsed?.starterDraftChoices,
+      ).toEqual([card]);
+      expect(parsed?.shopState?.cards).toEqual([card]);
+      expect(parsed?.alchemistState?.potions).toEqual([card]);
+      expect(parsed?.mysteryVisit?.cardChoices).toEqual([card]);
+      expect(parsed?.corruptionResult).toEqual({
+        originalCard: card,
+        corruptedCard: card,
+        transformed: false,
+        delta: 1,
+      });
+      expect(parseActiveRun(JSON.parse(JSON.stringify(parsed)))).toEqual(parsed);
+    },
+  );
+
   it("returns null for non-object inputs", () => {
     expect(parseActiveRun(null)).toBeNull();
     expect(parseActiveRun(undefined)).toBeNull();

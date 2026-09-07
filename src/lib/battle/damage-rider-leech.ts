@@ -1,3 +1,5 @@
+import { hasEncounterBenefit } from "./types";
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { pickRandom } from "@/lib/utils";
 import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
 import {
@@ -25,11 +27,20 @@ export function computeLeechHeal(damageDealt: number): number {
   return Math.round(damageDealt * LEECH_HEAL_FRACTION);
 }
 
+export function scalePlayerLeechHeal(state: BattleState, amount: number): number {
+  return amount * (hasEncounterBenefit(state, "blood-feast") ? LABYRINTH_MODIFIER_CONFIG.double : 1);
+}
+
 function executePlayerHealing(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (amount <= 0) return state;
-  return applyHealingWithCombatText(state, Math.round(amount * state.talentEffects.healMultiplier), combatTexts, {
-    skipFightPacing: true,
-  });
+  return applyHealingWithCombatText(
+    state,
+    Math.round(scalePlayerLeechHeal(state, amount) * state.talentEffects.healMultiplier),
+    combatTexts,
+    {
+      skipFightPacing: true,
+    },
+  );
 }
 
 function applyLeechStatusRider(state: BattleState, status: EnemyStatusId, chance: number, damage: number): BattleState {
@@ -156,7 +167,7 @@ export function payPendingBleedLeech(
   if (leechPaid > 0) {
     nextState = applyHealingWithCombatText(
       nextState,
-      scaledGearLeechHeal(computeLeechHeal(leechPaid), nextState.gearEffects),
+      scalePlayerLeechHeal(nextState, scaledGearLeechHeal(computeLeechHeal(leechPaid), nextState.gearEffects)),
       combatTexts,
       { skipFightPacing: true },
     );

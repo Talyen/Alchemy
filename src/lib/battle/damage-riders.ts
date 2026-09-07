@@ -1,3 +1,4 @@
+import { hasEncounterBenefit } from "./types";
 import { forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { mergeCombatText, addGoldWithCombatText, payKillPayouts } from "./combat-text";
@@ -107,6 +108,7 @@ function consumeForgeAfterDamage(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   damage: number,
 ) {
+  if (hasEncounterBenefit(state, "white-heat")) return state;
   if (effect.damageType === "holy" && state.gearEffects.holyPreservesForge > 0) return state;
   const forgeWasApplied = forgeAppliesToDamageType(effect.damageType, state.talentEffects, state.gearEffects);
 

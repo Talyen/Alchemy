@@ -7,6 +7,7 @@ export {
 } from "./screen-transition-policy";
 export {
   DESTINATIONS,
+  destinationLabel,
   type Destination,
   COMBAT_DESTINATIONS,
   SHOP_DESTINATIONS,

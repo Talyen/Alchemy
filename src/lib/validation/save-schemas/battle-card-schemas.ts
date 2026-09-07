@@ -3,13 +3,14 @@ import { BattleCardEffectSchema } from "@/lib/game-data";
 import { pushValidationError } from "./validation-utils";
 
 function parseSavedEffectList(values: unknown[]) {
-  return values.flatMap((value, i) => {
+  const parsed = values.flatMap((value, i) => {
     const result = BattleCardEffectSchema.safeParse(value);
     if (!result.success) {
       pushValidationError(`effects[${i}]`, result.error.message);
     }
     return result.success ? [{ ...result.data }] : [];
   });
+  return parsed.length === values.length ? parsed : [];
 }
 
 function cloneSavedDescriptionLines(values: unknown[]): string[] | null {
@@ -29,7 +30,7 @@ export const BattleCardSchema = z
     id: z.string(),
     uid: z.number().int().optional(),
     title: z.string().default(""),
-    descriptionLines: z.array(z.unknown()).optional(),
+    descriptionLines: z.array(z.unknown()).catch([]),
     art: z.string().default(""),
     cost: z.number().catch(-1),
     consume: z.boolean().optional(),
@@ -46,11 +47,11 @@ export const BattleCardSchema = z
       )
       .optional(),
     baseTitle: z.string().optional(),
-    effects: z.array(z.unknown()).optional(),
+    effects: z.array(z.unknown()).catch([]),
   })
   .transform((saved) => {
-    const savedDescriptionLines = saved.descriptionLines ? cloneSavedDescriptionLines(saved.descriptionLines) : null;
-    const savedEffects = saved.effects ? parseSavedEffectList(saved.effects) : [];
+    const savedDescriptionLines = cloneSavedDescriptionLines(saved.descriptionLines);
+    const savedEffects = parseSavedEffectList(saved.effects);
     const corruptedValuePositions = Array.isArray(saved.corruptedValuePositions)
       ? saved.corruptedValuePositions.filter(
           (p): p is { lineIndex: number; matchIndex: number } =>

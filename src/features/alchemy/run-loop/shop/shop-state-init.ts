@@ -1,3 +1,7 @@
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import { labyrinthCardShopPool } from "@/lib/content-systems/labyrinth/room-rules";
+import { doublePotionPotency } from "@/lib/alchemist";
+import { gearBaseItemList } from "@/lib/gear/base-items";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { selectRewardCards, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import {
@@ -50,21 +54,46 @@ export function resampleEquipmentShopOfferings(
   rng: () => number,
   gearAstralChanceBonus = 0,
   ownedUniqueIds?: ReadonlySet<string>,
+  modifiers: readonly EncounterRewardTraitId[] = [],
 ): GearInstance[] {
-  return generateEquipmentShopOfferings(EQUIPMENT_SHOP_OFFERED, rng, gearAstralChanceBonus, ownedUniqueIds);
+  const baseItems = modifiers.includes("bowyer")
+    ? ["shortbow", "longbow", "recurve-bow"]
+    : modifiers.includes("armorer")
+      ? gearBaseItemList.filter((item) => item.compatibleSlots.includes("body")).map((item) => item.id)
+      : undefined;
+  return generateEquipmentShopOfferings(EQUIPMENT_SHOP_OFFERED, rng, gearAstralChanceBonus, ownedUniqueIds, {
+    ...(baseItems ? { baseItemIds: baseItems } : {}),
+    ...(modifiers.includes("masterwork") ? { rarity: "astral" as const } : {}),
+  });
 }
 
-export function createInitialShopState(deck: BattleCard[], rng: () => number): ShopState {
+export function createInitialShopState(
+  deck: BattleCard[],
+  rng: () => number,
+  modifiers: readonly EncounterRewardTraitId[] = [],
+): ShopState {
   return {
     ...emptyShopState(),
-    cards: selectRewardCards(deck, getOfferableCardPool(), SHOP_CARDS_OFFERED, [], rng),
+    cards: selectRewardCards(
+      deck,
+      labyrinthCardShopPool(getOfferableCardPool(), modifiers),
+      SHOP_CARDS_OFFERED,
+      [],
+      rng,
+    ),
   };
 }
 
-export function createInitialAlchemistState(deck: BattleCard[], rng: () => number): AlchemistState {
+export function createInitialAlchemistState(
+  deck: BattleCard[],
+  rng: () => number,
+  modifiers: readonly EncounterRewardTraitId[] = [],
+): AlchemistState {
   return {
     ...emptyAlchemistState(),
-    potions: selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED, [], rng),
+    potions: selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED, [], rng).map((card) =>
+      modifiers.includes("strong-spirits") ? doublePotionPotency(card) : card,
+    ),
   };
 }
 
@@ -79,9 +108,10 @@ export function createInitialEquipmentShopState(
   rng: () => number,
   gearAstralChanceBonus = 0,
   ownedUniqueIds?: ReadonlySet<string>,
+  modifiers: readonly EncounterRewardTraitId[] = [],
 ): EquipmentShopState {
   return {
     ...emptyEquipmentShopState(),
-    gear: resampleEquipmentShopOfferings(rng, gearAstralChanceBonus, ownedUniqueIds),
+    gear: resampleEquipmentShopOfferings(rng, gearAstralChanceBonus, ownedUniqueIds, modifiers),
   };
 }

@@ -64,7 +64,22 @@ export const CompanionContentSchema = z.object({
   turnStartEffects: z.array(BattleCardEffectSchema).min(1),
 });
 
-const trinketEffectKeys = Object.keys(defaultTrinketEffects) as [string, ...string[]];
+const trinketEffectShape = Object.fromEntries(
+  Object.entries(defaultTrinketEffects).map(([key, value]) => [
+    key,
+    typeof value === "boolean" ? z.boolean() : z.number(),
+  ]),
+);
+const TrinketEffectsContentSchema = z
+  .strictObject(trinketEffectShape)
+  .partial()
+  .refine(
+    (effects) =>
+      Object.entries(defaultTrinketEffects).some(
+        ([key, value]) => effects[key] !== undefined && effects[key] !== value,
+      ),
+    "Trinket declares no active combat effects",
+  );
 
 export const TrinketContentSchema = z.object({
   id: NonEmptyStringSchema,
@@ -72,7 +87,7 @@ export const TrinketContentSchema = z.object({
   descriptionLines: z.array(NonEmptyStringSchema).min(1),
   art: NonEmptyStringSchema,
 
-  effects: z.partialRecord(z.enum(trinketEffectKeys), z.union([z.number(), z.boolean()])),
+  effects: TrinketEffectsContentSchema,
 });
 
 export const GearDefinitionContentSchema = z.object({

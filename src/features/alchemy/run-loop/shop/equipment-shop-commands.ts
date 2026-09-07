@@ -1,3 +1,4 @@
+import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
   createDraftRunRandomSource,
@@ -40,6 +41,7 @@ export function createEquipmentShopCommands({
         createDraftRunRandomSource(draft, "shops"),
         gearAstralChanceBonus,
         getOwnedUniqueDefinitionIds(draft.gear.inventories),
+        activeLabyrinthBenefits(draft.run.activeRun.contentSystemType, draft.session.activeLabyrinthRewardModifiers),
       ),
     );
   }
@@ -82,6 +84,10 @@ export function createEquipmentShopCommands({
             createDraftRunRandomSource(draft, "shops"),
             gearAstralChanceBonus,
             getOwnedUniqueDefinitionIds(draft.gear.inventories),
+            activeLabyrinthBenefits(
+              draft.run.activeRun.contentSystemType,
+              draft.session.activeLabyrinthRewardModifiers,
+            ),
           ),
         mapState: (previous, gear) => mapRefreshedShopOfferings(previous, "gear", gear),
       });

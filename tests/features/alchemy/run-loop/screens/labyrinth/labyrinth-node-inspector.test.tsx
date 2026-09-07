@@ -8,18 +8,17 @@ afterEach(cleanup);
 
 function renderInspector(overrides: Partial<LabyrinthNode> = {}, canEnter = true) {
   const onEnter = vi.fn();
-  const onClose = vi.fn();
   const node: LabyrinthNode = { ...hexLabyrinthMapFixture().nodes["labyrinth-floor-1-n0"], ...overrides };
   if (!["combat", "elite", "boss"].includes(node.type)) delete node.enemyId;
-  render(<LabyrinthNodeInspector node={node} canEnter={canEnter} onEnter={onEnter} onClose={onClose} />);
-  return { onEnter, onClose };
+  render(<LabyrinthNodeInspector node={node} canEnter={canEnter} onEnter={onEnter} />);
+  return { onEnter };
 }
 
 describe("Labyrinth inspector", () => {
   it("places combat category and enemy name outside the artwork without narrative", () => {
     renderInspector({ modifiers: ["jealous"], rewardModifiers: ["alchemist"] });
     expect(screen.getByRole("heading", { name: "Goblin" })).toBeTruthy();
-    expect(screen.getAllByText("Normal Combat")).toHaveLength(1);
+    expect(screen.getAllByText("Combat")).toHaveLength(1);
     expect(screen.getByTestId("chamber-art").textContent).toBe("");
     expect(screen.queryByText("Fight a standard enemy encounter")).toBeNull();
     expect(screen.getByText("Jealous")).toBeTruthy();
@@ -38,14 +37,13 @@ describe("Labyrinth inspector", () => {
     expect(screen.getAllByText("Campfire")).toHaveLength(1);
   });
 
-  it("only enters through the action and provides explicit dismissal", () => {
-    const { onEnter, onClose } = renderInspector();
+  it("only enters through the action and has no close button", () => {
+    const { onEnter } = renderInspector();
     fireEvent.click(screen.getByTestId("chamber-art"));
     expect(onEnter).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Fight" }));
     expect(onEnter).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole("button", { name: "Close chamber details" }));
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("button", { name: "Close chamber details" })).toBeNull();
   });
 
   it("keeps a locked boss inspectable without a Fight action", () => {

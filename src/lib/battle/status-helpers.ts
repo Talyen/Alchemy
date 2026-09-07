@@ -1,3 +1,4 @@
+import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import {
   BATTLE_CONFIG,
   MIN_ARMOR_AMOUNT,
@@ -17,9 +18,9 @@ export function decayHalvedStatus(value: number) {
   return halveRounded(value);
 }
 
-export function decayPoisonStacks(stacks: number): number {
+export function decayPoisonStacks(stacks: number, decayMultiplier = 1): number {
   if (stacks <= 0) return 0;
-  const decay = Math.max(1, Math.round((stacks * POISON_DECAY_PERCENT) / PERCENT_DENOMINATOR));
+  const decay = Math.max(1, Math.round((stacks * POISON_DECAY_PERCENT * decayMultiplier) / PERCENT_DENOMINATOR));
   return Math.max(0, stacks - decay);
 }
 
@@ -70,7 +71,7 @@ export function rollTalentChance(chance: number, state: { rng?: () => number }):
 export type ArmorDecayTarget = "player" | "enemy";
 
 function decayEnemyArmor(state: BattleState): BattleState {
-  if (state.enemyMitigation.armor <= MIN_ARMOR_AMOUNT) {
+  if (hasEnemyTrait(state, "unbreakable") || state.enemyMitigation.armor <= MIN_ARMOR_AMOUNT) {
     return state;
   }
   return {
@@ -83,7 +84,7 @@ function decayEnemyArmor(state: BattleState): BattleState {
 }
 
 function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
-  if (state.playerStatuses.armor <= MIN_ARMOR_AMOUNT) {
+  if (hasEncounterBenefit(state, "ironclad") || state.playerStatuses.armor <= MIN_ARMOR_AMOUNT) {
     return state;
   }
 

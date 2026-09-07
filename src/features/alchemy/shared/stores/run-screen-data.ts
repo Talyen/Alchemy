@@ -1,5 +1,5 @@
 import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
-import type { LabyrinthMap } from "@/lib/content-systems/types";
+import type { EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { GearInstance } from "@/lib/gear";
@@ -14,6 +14,7 @@ import type {
 } from "@/lib/active-run-session";
 
 interface CampfireScreenData {
+  modifiers: readonly EncounterRewardTraitId[];
   runPlayerHealth: number;
   runMaxHealth: number;
 }

@@ -1,4 +1,10 @@
+import { activeLabyrinthBenefits, labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
+import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";
+import { appendCardToRunWithDiscovery } from "./deck-mutations";
+import { getRandomPotionCard } from "../navigation/reward-flow";
 import {
+  addGold,
+  createDraftRunRandomSource,
   beginDestinationClaim,
   cancelDestinationClaim,
   commitDestinationClaim,
@@ -58,7 +64,17 @@ export function createDestinationScreenHandlers(
     dispatchRunSessionCommand(
       (draft) => {
         const talentEffects = computeTalentEffects(draft.runProfile.unlockedTalents);
-        const healFraction = getCampfireHealFraction(talentEffects.campfireHealBonus);
+        const modifiers = activeLabyrinthBenefits(
+          draft.run.activeRun.contentSystemType,
+          draft.session.activeLabyrinthRewardModifiers,
+        );
+        const healFraction = labyrinthCampfireHealing(
+          getCampfireHealFraction(talentEffects.campfireHealBonus),
+          modifiers,
+        );
+        if (modifiers.includes("hidden-purse")) addGold(draft, LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold);
+        if (modifiers.includes("herbal-hearth"))
+          appendCardToRunWithDiscovery(draft, getRandomPotionCard(createDraftRunRandomSource(draft, "rewards")));
         setRunPlayerHealth(draft, (prev) =>
           getCampfireRestHealth(prev, draft.run.activeRun.runMaxHealth, healFraction),
         );

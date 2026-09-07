@@ -27,7 +27,12 @@ export function createTrinketShopCommands({
   const getBuyPrice = (_trinket: TrinketEntry) => {
     return computeTrinketBuyPrice(resolveReadShopPricingContext(talentEffects, "trinketShopState"));
   };
-  const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
+  const getRefreshPrice = (refreshesLeft: number) =>
+    computeMerchantRefreshPrice(
+      talentEffects,
+      refreshesLeft,
+      resolveReadShopPricingContext(talentEffects, "trinketShopState").modifiers,
+    );
 
   function initialize(): void {
     commitShopInitialize(setTrinketShopState, (draft) =>
@@ -62,7 +67,11 @@ export function createTrinketShopCommands({
       const state = draft.session.trinketShopState;
       return refreshShopOfferings<TrinketShopState, TrinketEntry>({
         draft,
-        price: getRefreshPrice(state.refreshesLeft),
+        price: computeMerchantRefreshPrice(
+          talentEffects,
+          state.refreshesLeft,
+          resolveDraftShopPricingContext(talentEffects, draft, state).modifiers,
+        ),
         refreshesLeft: state.refreshesLeft,
         setState: setTrinketShopState,
         resample: () =>

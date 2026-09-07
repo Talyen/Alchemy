@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { BestiaryEntry } from "@/lib/game-data";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
-import { DESTINATIONS, type Destination } from "@/lib/routing";
+import { DESTINATIONS, destinationLabel, type Destination } from "@/lib/routing";
 import { cn } from "@/lib/utils";
 import {
   battleEnemyCardWidthClass,
@@ -87,7 +87,7 @@ function DestinationChoiceTile({
       interactionId={destination}
       art={art}
       icon={icon}
-      label={destination}
+      label={destinationLabel(destination)}
       accentClassName={accentClassName}
       plasmaColorPair={plasmaColorPair}
       widthClass={tooltipEntry ? battleEnemyCardWidthClass : chooserArtWidthClass}

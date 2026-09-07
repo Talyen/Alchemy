@@ -67,18 +67,19 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
           rewardModifiers,
         );
       },
-      onStartRest: () => enterLabyrinthNodeScreen(ROUTE_SCREENS.CAMPFIRE),
-      onStartMystery: () => {
-        applyNodeModifiers();
+      onStartRest: (modifiers = []) => enterLabyrinthNodeScreen(ROUTE_SCREENS.CAMPFIRE, undefined, [], modifiers),
+      onStartMystery: (modifiers = []) => {
+        applyNodeModifiers([], modifiers);
         deps.nav.beginMysteryEvent();
       },
-      onStartShop: () => enterLabyrinthNodeScreen(ROUTE_SCREENS.SHOP, () => deps.shop.initialize("merchant")),
-      onStartAlchemist: () =>
-        enterLabyrinthNodeScreen(ROUTE_SCREENS.ALCHEMIST, () => deps.shop.initialize("alchemist")),
-      onStartTrinketShop: () =>
-        enterLabyrinthNodeScreen(ROUTE_SCREENS.TRINKET_SHOP, () => deps.shop.initialize("trinket")),
-      onStartEquipmentShop: () =>
-        enterLabyrinthNodeScreen(ROUTE_SCREENS.EQUIPMENT_SHOP, () => deps.shop.initialize("equipment")),
+      onStartShop: (modifiers = []) =>
+        enterLabyrinthNodeScreen(ROUTE_SCREENS.SHOP, () => deps.shop.initialize("merchant"), [], modifiers),
+      onStartAlchemist: (modifiers = []) =>
+        enterLabyrinthNodeScreen(ROUTE_SCREENS.ALCHEMIST, () => deps.shop.initialize("alchemist"), [], modifiers),
+      onStartTrinketShop: (modifiers = []) =>
+        enterLabyrinthNodeScreen(ROUTE_SCREENS.TRINKET_SHOP, () => deps.shop.initialize("trinket"), [], modifiers),
+      onStartEquipmentShop: (modifiers = []) =>
+        enterLabyrinthNodeScreen(ROUTE_SCREENS.EQUIPMENT_SHOP, () => deps.shop.initialize("equipment"), [], modifiers),
     });
   }
 

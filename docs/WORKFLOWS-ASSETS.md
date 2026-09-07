@@ -25,6 +25,13 @@ are reported together with optimization failures. Worker pools finish all starte
 work before reporting failure, so the idempotence check can safely restore outputs
 without a late conversion overwriting the restoration.
 
+Each pipeline publishes its complete hash manifest only after all of its processing
+succeeds. Discovery or processing failures preserve the previous manifest and skip
+orphan deletion. Successful output files may still advance during a failed run;
+output hashes are checked on retry, and `assets:check` restores outputs after all
+workers finish. Source-directory read errors retain their filesystem error and
+path rather than being treated as empty asset collections.
+
 ## Authoring models
 
 Three authoring shapes coexist by design:
@@ -84,12 +91,10 @@ and then referenced by `src/lib/sound-registry.ts` or the owning audio module.
   files outside the declared OGG files, their MP3 fallbacks, and its hash manifest.
 - The generated hash manifest records generated versus curated ownership and
   verifies both source identity and committed output bytes.
-- Sound preparation publishes one complete manifest only after generated OGGs,
-  curated OGGs, and MP3 fallbacks succeed. An unchanged run does not rewrite it.
-  Failed OGG processing skips fallbacks; any processing failure preserves the
-  previous manifest and skips orphan deletion. Successful output files may still
-  advance during a failed optimization run; their hashes are checked on retry.
-  `assets:check` restores those files after all workers finish.
+- Sound preparation includes generated OGGs, curated OGGs, and MP3 fallbacks in
+  its complete manifest. An unchanged run does not rewrite it. Failed OGG
+  processing skips fallbacks; manifest publication and retry follow the shared
+  pipeline rules above.
 
 Run `npm run assets:optimize:sounds` for sound-only iteration or the complete
 preparation command before handoff.

@@ -1,3 +1,5 @@
+import { hasEncounterBenefit, hasEnemyTrait } from "./types";
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { processArcheryEchoes } from "./unique-card-effects";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
@@ -70,8 +72,13 @@ function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: bo
     enemyCC: { ...state.enemyCC, cooldown: Math.max(0, state.enemyCC.cooldown - 1) },
     playerStatuses: {
       ...state.playerStatuses,
+      thorns: hasEncounterBenefit(state, "bramblecoat")
+        ? Math.max(state.playerStatuses.thorns, LABYRINTH_MODIFIER_CONFIG.playerThornsMinimum)
+        : state.playerStatuses.thorns,
       block:
-        options?.preserveBlock || state.gearEffects.dodgeSpendsPreservedBlock > 0
+        options?.preserveBlock ||
+        hasEncounterBenefit(state, "unbroken") ||
+        state.gearEffects.dodgeSpendsPreservedBlock > 0
           ? state.playerStatuses.block
           : decayHalvedStatus(state.playerStatuses.block),
     },
@@ -92,6 +99,11 @@ function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: bo
     },
     flags: {
       ...state.flags,
+      encounterPhysicalUsed: false,
+      encounterHolyUsed: false,
+      encounterNatureUsed: false,
+      encounterWishUsed: false,
+      encounterArcheryUsed: false,
       resonantChimeUsedThisTurn: false,
       runicQuillUsedThisTurn: false,
       consumeDrawUsedThisTurn: false,
@@ -102,11 +114,19 @@ function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: bo
 }
 
 export function resetEnemyTurnState(state: BattleState): BattleState {
+  const thornsMinimum = hasEnemyTrait(state, "briar-crown")
+    ? LABYRINTH_MODIFIER_CONFIG.bossThornsMinimum
+    : hasEnemyTrait(state, "thornhide")
+      ? LABYRINTH_MODIFIER_CONFIG.enemyThornsMinimum
+      : 0;
   return {
     ...state,
+    enemyStatuses: { ...state.enemyStatuses, thorns: Math.max(state.enemyStatuses.thorns, thornsMinimum) },
     enemyMitigation: {
       ...state.enemyMitigation,
-      block: decayHalvedStatus(state.enemyMitigation.block),
+      block: hasEnemyTrait(state, "entrenched")
+        ? state.enemyMitigation.block
+        : decayHalvedStatus(state.enemyMitigation.block),
     },
   };
 }
@@ -149,7 +169,10 @@ function performDrawAndResetPhase(
     ...applyDrawResult(nextState, nextDraw),
     uniqueGear: { ...nextState.uniqueGear, returningFlightUid: recovered ? nextDraw.nextCardUid - 1 : null },
     turnPhase: "player",
-    mana: nextState.maxMana + wellspringBonus,
+    mana:
+      nextState.maxMana +
+      wellspringBonus +
+      (hasEncounterBenefit(state, "wellspring") ? LABYRINTH_MODIFIER_CONFIG.manaBonus : 0),
     playerCC: {
       ...nextState.playerCC,
       stunSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : nextState.playerCC.stunSkipTurns,

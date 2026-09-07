@@ -1,3 +1,4 @@
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import {
   ENEMY_DODGE_CHANCE,
   HALF_DIVISOR,
@@ -8,7 +9,7 @@ import {
 } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import type { BattleState, CombatTextEvent } from "./types";
+import { hasEncounterBenefit, hasEnemyTrait, type BattleState, type CombatTextEvent } from "./types";
 
 function getPlayerDodgeChance(
   state: Pick<
@@ -20,10 +21,12 @@ function getPlayerDodgeChance(
     | "playerStatuses"
     | "dodgeChanceFromDamage"
     | "uniqueGear"
+    | "encounterBenefits"
   >,
 ): number {
   let chance =
     PLAYER_DODGE_CHANCE + state.gearEffects.dodgeChance + state.talentEffects.dodgeChance + state.dodgeChanceFromDamage;
+  if (hasEncounterBenefit(state, "elusive")) chance += LABYRINTH_MODIFIER_CONFIG.playerDodgeBonus;
   if (state.gearEffects.archeryDodgeAndDraw > 0 && state.uniqueGear.wrenflightActive)
     chance += UNIQUE_GEAR_COMBAT.wrenflightDodgeChance;
   if (state.playerStatuses.block === 0) chance += state.talentEffects.dodgeChanceWithoutBlock;
@@ -73,7 +76,7 @@ function enemyCanDodge(state: BattleState): boolean {
 export function tryDodgePlayerAttackPacket(state: BattleState, combatTexts: CombatTextEvent[]): BattleState | null {
   return tryDodgePacket(state, combatTexts, {
     target: "enemy",
-    chance: ENEMY_DODGE_CHANCE,
+    chance: ENEMY_DODGE_CHANCE + (hasEnemyTrait(state, "elusive-foe") ? LABYRINTH_MODIFIER_CONFIG.enemyDodgeBonus : 0),
     canDodge: enemyCanDodge(state),
   });
 }

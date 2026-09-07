@@ -12,8 +12,6 @@ import {
 } from "./validators";
 import { validateTypography } from "./validators-typography";
 
-export type { ContentValidationArea } from "./types";
-
 const SEVERITY_RANK: Record<ContentValidationIssue["severity"], number> = {
   error: 0,
   warning: 1,

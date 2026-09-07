@@ -1,5 +1,5 @@
 import { pickRandom, shuffle } from "@/lib/utils";
-import { enemiesByType, type EnemyType } from "@/lib/game-data";
+import { enemiesByType, enemyById, type EnemyType } from "@/lib/game-data";
 
 import type { LabyrinthFloor, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import {
@@ -74,8 +74,14 @@ function makeNode(input: {
     type: input.type,
     floor: input.floor,
     gridPosition: input.gridPosition,
-    modifiers: combatType ? getEnemyModifiersForNodeType(combatType, input.rng) : [],
-    rewardModifiers: combatType ? getRewardModifiersForNodeType(input.rng) : [],
+    modifiers: combatType
+      ? getEnemyModifiersForNodeType(
+          combatType,
+          input.rng,
+          input.enemyId ? (enemyById[input.enemyId]?.traits.map((trait) => trait.id) ?? []) : [],
+        )
+      : [],
+    rewardModifiers: getRewardModifiersForNodeType(input.rng, input.type),
     outgoingIds: input.outgoingIds ?? [],
     cleared: input.cleared ?? false,
   };

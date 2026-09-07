@@ -38,7 +38,9 @@ function hasRewardModifier(modifiers: EncounterRewardTraitId[], kind: EncounterR
 }
 
 export const shouldGrantCompanionReward = (modifiers: EncounterRewardTraitId[]): boolean =>
-  hasRewardModifier(modifiers, "companion");
+  ["companion", "fletched", "wishkeeper", "kindred-spoils"].some((id) =>
+    modifiers.includes(id as EncounterRewardTraitId),
+  );
 
 export const shouldGrantAlchemistReward = (modifiers: EncounterRewardTraitId[]): boolean =>
   hasRewardModifier(modifiers, "alchemist");

@@ -1,12 +1,5 @@
 import type { BattleCardEffect } from "@/lib/game-data";
-import {
-  addEnemyStatus,
-  reduceEnemyArmor,
-  setEnemyStatus,
-  setFlag,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+import { addEnemyStatus, reduceEnemyArmor, setFlag, type BattleState, type CombatTextEvent } from "./types";
 import {
   addGoldWithCombatText,
   addPlayerStatusWithCombatText,
@@ -27,7 +20,7 @@ import {
   MIN_FREEZE_THRESHOLD_FRACTION,
 } from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
-import { computeLeechHeal } from "./damage-rider-leech";
+import { computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { halveRounded } from "./amount-helpers";
 
@@ -43,7 +36,9 @@ function applyGearBurnBleedMirrorLeech(
     nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
   }
   const healAmount = Math.max(1, halveRounded(actualDamage));
-  return applyHealingWithCombatText(nextState, healAmount, combatTexts, { skipFightPacing: true });
+  return applyHealingWithCombatText(nextState, scalePlayerLeechHeal(nextState, healAmount), combatTexts, {
+    skipFightPacing: true,
+  });
 }
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -82,7 +77,7 @@ export function applyPoisonTalentRiders(
     if (rollPercent(leechChance, getBattleRng(nextState))) {
       nextState = applyHealingWithCombatText(
         nextState,
-        scaledGearLeechHeal(computeLeechHeal(damage), nextState.gearEffects),
+        scalePlayerLeechHeal(nextState, scaledGearLeechHeal(computeLeechHeal(damage), nextState.gearEffects)),
         combatTexts,
         { skipFightPacing: true },
       );
@@ -93,7 +88,7 @@ export function applyPoisonTalentRiders(
 
 function stackBleed(state: BattleState, statusDamage: number): BattleState {
   const bleedAmount = statusDamage * BLEED_STATUS_MULTIPLIER;
-  return setEnemyStatus(state, "bleed", state.enemyStatuses.bleed + bleedAmount);
+  return addEnemyStatus(state, "bleed", bleedAmount);
 }
 
 function queueBleedLeech(
@@ -130,8 +125,8 @@ function applyBleedStatusRider(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const bleedAmount = actualDamage * BLEED_STATUS_MULTIPLIER;
   let nextState = stackBleed(state, actualDamage);
+  const bleedAmount = nextState.enemyStatuses.bleed - state.enemyStatuses.bleed;
   if (actualDamage > 0 && rollPercent(nextState.talentEffects.bleedHalveArmorChance, getBattleRng(nextState))) {
     const halved = halveRounded(nextState.enemyMitigation.armor);
     const removed = nextState.enemyMitigation.armor - halved;

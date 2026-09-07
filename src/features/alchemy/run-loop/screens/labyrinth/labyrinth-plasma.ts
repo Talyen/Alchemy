@@ -1,3 +1,4 @@
+import { LABYRINTH_TRAITS } from "@/lib/content-systems/labyrinth/trait-catalog";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthNode } from "@/lib/content-systems/types";
@@ -23,7 +24,15 @@ function isKeywordId(value: string): value is KeywordId {
   return value in keywordDefinitions;
 }
 
+const additionalTraitKeywords = (category: "combat" | "reward") =>
+  Object.fromEntries(
+    Object.entries(LABYRINTH_TRAITS)
+      .filter(([, trait]) => trait.category === category)
+      .map(([id, trait]) => [id, [trait.keyword]]),
+  );
+
 export const LABYRINTH_COMBAT_TRAIT_KEYWORDS: Partial<Record<EncounterCombatTraitId, KeywordId[]>> = {
+  ...additionalTraitKeywords("combat"),
   tempered: ["forge"],
   plated: ["armor"],
   reinforced: ["block"],
@@ -45,6 +54,7 @@ export const LABYRINTH_COMBAT_TRAIT_KEYWORDS: Partial<Record<EncounterCombatTrai
 };
 
 export const LABYRINTH_REWARD_TRAIT_KEYWORDS: Partial<Record<EncounterRewardTraitId, KeywordId[]>> = {
+  ...additionalTraitKeywords("reward"),
   generous: ["gold"],
   alchemist: ["poison"],
   scavenger: ["forge"],

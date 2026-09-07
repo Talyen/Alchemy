@@ -1,4 +1,10 @@
 export const FLAG_DEFINITIONS = {
+  encounterPhysicalUsed: { default: false as const, preserveAs: true as const },
+  encounterHolyUsed: { default: false as const, preserveAs: true as const },
+  encounterNatureUsed: { default: false as const, preserveAs: true as const },
+  encounterWishUsed: { default: false as const, preserveAs: null },
+  encounterArcheryUsed: { default: false as const, preserveAs: true as const },
+  secondWindTriggered: { default: false as const, preserveAs: null },
   uniqueRepeatActive: { default: false as const, preserveAs: null },
   firstHolyCardFreeUsed: { default: false as const, preserveAs: true as const },
   firstBurnCardDoubledUsed: { default: false as const, preserveAs: true as const },

@@ -33,7 +33,7 @@ export class DestinationPage {
   }
 
   async enterAnyCombat() {
-    const combat = this.page.getByRole("button", { name: /^(Normal|Elite) Combat$/ }).first();
+    const combat = this.page.getByRole("button", { name: /^(Combat|Elite Combat)$/ }).first();
     await expect(combat).toBeVisible({ timeout: 10_000 });
     await combat.click();
     await expect(this.page.getByTestId("battle-scene")).toBeVisible({ timeout: 10_000 });

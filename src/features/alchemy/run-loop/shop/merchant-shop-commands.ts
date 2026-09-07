@@ -1,3 +1,4 @@
+import { activeLabyrinthBenefits, labyrinthCardShopPool } from "@/lib/content-systems/labyrinth/room-rules";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
 import {
   createDraftRunRandomSource,
@@ -31,12 +32,17 @@ export function createMerchantShopCommands({
   const getCardBuyPrice = (card: BattleCard) => {
     return computeMerchantCardBuyPrice(card, resolveReadShopPricingContext(talentEffects, "shopState"));
   };
-  const getRemoveCardPrice = () => computeRemoveCardPrice(talentEffects);
+  const getRemoveCardPrice = () =>
+    computeRemoveCardPrice(talentEffects, resolveReadShopPricingContext(talentEffects, "shopState").modifiers);
   const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
 
   function initialize(): void {
     commitShopInitialize(setShopState, (draft) =>
-      createInitialShopState(draft.run.activeRun.runDeck, createDraftRunRandomSource(draft, "shops")),
+      createInitialShopState(
+        draft.run.activeRun.runDeck,
+        createDraftRunRandomSource(draft, "shops"),
+        activeLabyrinthBenefits(draft.run.activeRun.contentSystemType, draft.session.activeLabyrinthRewardModifiers),
+      ),
     );
   }
 
@@ -57,9 +63,12 @@ export function createMerchantShopCommands({
   }
 
   function removeCard(index: number): boolean {
-    const price = getRemoveCardPrice();
     return runShopTransaction((draft) => {
       const state = draft.session.shopState;
+      const price = computeRemoveCardPrice(
+        talentEffects,
+        resolveDraftShopPricingContext(talentEffects, draft, state).modifiers,
+      );
       const run = draft.run.activeRun;
       if (state.removeUsed || !isValidDeckIndex(index, run.runDeck.length) || readDraftGold(draft) < price) {
         return { committed: false, price, value: undefined };
@@ -78,7 +87,10 @@ export function createMerchantShopCommands({
         draft,
         price: getRefreshPrice(state.refreshesLeft),
         refreshesLeft: state.refreshesLeft,
-        pool: getOfferableCardPool(),
+        pool: labyrinthCardShopPool(
+          getOfferableCardPool(),
+          activeLabyrinthBenefits(draft.run.activeRun.contentSystemType, draft.session.activeLabyrinthRewardModifiers),
+        ),
         currentItems: state.cards,
         count: SHOP_CARDS_OFFERED,
         setState: setShopState,

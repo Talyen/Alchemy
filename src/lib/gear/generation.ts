@@ -69,6 +69,7 @@ function takeUnusedBaseItem(
   remaining: Array<(typeof gearBaseItemList)[number]>,
   usedIds: Set<string>,
   rng: () => number,
+  basePool = gearBaseItemList,
 ): (typeof gearBaseItemList)[number] | undefined {
   const sampledIndex = remaining.findIndex((item) => !usedIds.has(item.id));
   if (sampledIndex >= 0) {
@@ -77,7 +78,7 @@ function takeUnusedBaseItem(
     return item;
   }
   const picked = pickRandom(
-    gearBaseItemList.filter((item) => !usedIds.has(item.id)),
+    basePool.filter((item) => !usedIds.has(item.id)),
     rng,
   );
   if (picked) usedIds.add(picked.id);
@@ -90,10 +91,14 @@ function tryOfferUnique(
   usedBaseIds: Set<string>,
   remainingBases: Array<(typeof gearBaseItemList)[number]>,
   rng: () => number,
+  basePool = gearBaseItemList,
 ): GearInstance | null {
   const availableUniques = uniqueItemList.filter(
     (unique) =>
-      !ownedUniqueIds.has(unique.id) && !offeredUniqueIds.has(unique.id) && !usedBaseIds.has(unique.baseItemId),
+      !ownedUniqueIds.has(unique.id) &&
+      !offeredUniqueIds.has(unique.id) &&
+      !usedBaseIds.has(unique.baseItemId) &&
+      basePool.some((base) => base.id === unique.baseItemId),
   );
   const unique = pickRandom(availableUniques, rng);
   if (!unique) return null;
@@ -171,6 +176,7 @@ interface GenerateGearOfferingsOptions {
   ownedUniqueIds?: ReadonlySet<string>;
   fillFallback?: boolean;
   fallbackUniqueToAstral?: boolean;
+  basePool?: typeof gearBaseItemList;
 }
 
 function rollOfferingInstance(
@@ -182,9 +188,10 @@ function rollOfferingInstance(
   rng: () => number,
   baseItemSupplier: () => (typeof gearBaseItemList)[number] | undefined,
   fallbackUniqueToAstral: boolean,
+  basePool = gearBaseItemList,
 ): GearInstance | null {
   if (tier === "unique") {
-    const uniqueInstance = tryOfferUnique(ownedUniqueIds, offeredUniqueIds, usedBaseIds, remainingBases, rng);
+    const uniqueInstance = tryOfferUnique(ownedUniqueIds, offeredUniqueIds, usedBaseIds, remainingBases, rng, basePool);
     if (uniqueInstance) return uniqueInstance;
     if (!fallbackUniqueToAstral) return null;
     tier = "astral";
@@ -204,10 +211,11 @@ function generateGearOfferings({
   ownedUniqueIds = new Set(),
   fillFallback = false,
   fallbackUniqueToAstral = true,
+  basePool = gearBaseItemList,
 }: GenerateGearOfferingsOptions): GearInstance[] {
   const offeredUniqueIds = new Set<string>();
   const usedBaseIds = new Set<string>();
-  const remainingBases = sampleItems(gearBaseItemList, count, rng);
+  const remainingBases = sampleItems(basePool, count, rng);
   const choices: GearInstance[] = [];
 
   for (let index = 0; index < count; index += 1) {
@@ -218,8 +226,9 @@ function generateGearOfferings({
       usedBaseIds,
       remainingBases,
       rng,
-      () => takeUnusedBaseItem(remainingBases, usedBaseIds, rng),
+      () => takeUnusedBaseItem(remainingBases, usedBaseIds, rng, basePool),
       fallbackUniqueToAstral,
+      basePool,
     );
     if (!instance) break;
     choices.push(instance);
@@ -237,13 +246,14 @@ function generateGearOfferings({
         remainingBases,
         rng,
         () => {
-          const baseItem = pickRandom(gearBaseItemList, rng);
+          const baseItem = pickRandom(basePool, rng);
           if (!baseItem) return undefined;
-          if (usedBaseIds.has(baseItem.id) && usedBaseIds.size < gearBaseItemList.length) return undefined;
+          if (usedBaseIds.has(baseItem.id) && usedBaseIds.size < basePool.length) return undefined;
           usedBaseIds.add(baseItem.id);
           return baseItem;
         },
         fallbackUniqueToAstral,
+        basePool,
       );
       if (instance) choices.push(instance);
     }
@@ -252,18 +262,27 @@ function generateGearOfferings({
   return choices;
 }
 
+export interface EquipmentShopOfferingRules {
+  baseItemIds?: readonly string[];
+  rarity?: "astral";
+}
+
 export function generateEquipmentShopOfferings(
   count: number,
   rng: () => number,
   astralChanceBonus = 0,
   ownedUniqueIds: ReadonlySet<string> = new Set(),
+  rules: EquipmentShopOfferingRules = {},
 ): GearInstance[] {
   return generateGearOfferings({
     count,
     rng,
-    rollTier: () => rollEquipmentShopDropTier(astralChanceBonus, rng, true),
+    rollTier: () => rules.rarity ?? rollEquipmentShopDropTier(astralChanceBonus, rng, true),
     ownedUniqueIds,
     fillFallback: true,
+    basePool: rules.baseItemIds
+      ? gearBaseItemList.filter((base) => rules.baseItemIds?.includes(base.id))
+      : gearBaseItemList,
   });
 }
 

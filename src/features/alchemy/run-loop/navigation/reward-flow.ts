@@ -1,3 +1,5 @@
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import { getCardKeywords } from "@/lib/game-data";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import {
   BOSS_REWARD_RATES,
@@ -155,8 +157,21 @@ export function getRandomPotionCard(rng: () => number): BattleCard {
   return potion;
 }
 
-export function getCompanionCardChoices(rng: () => number): BattleCard[] {
-  const companions = cardLibrary.filter((c) => c.effects?.some((e) => e.kind === "summon-companion"));
+export function getCompanionCardChoices(
+  rng: () => number,
+  modifiers: readonly EncounterRewardTraitId[] = ["companion"],
+): BattleCard[] {
+  const theme = modifiers.includes("fletched")
+    ? "archery"
+    : modifiers.includes("wishkeeper")
+      ? "wish"
+      : modifiers.includes("kindred-spoils")
+        ? "nature"
+        : "companion";
+  const companions =
+    theme === "companion"
+      ? cardLibrary.filter((c) => c.effects?.some((e) => e.kind === "summon-companion"))
+      : getOfferableCardPool().filter((card) => getCardKeywords(card).includes(theme));
   return sampleItems(companions, LABYRINTH_REWARD_CONFIG.companionCardChoices, rng);
 }
 

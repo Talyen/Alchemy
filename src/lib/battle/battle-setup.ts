@@ -1,3 +1,5 @@
+import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
   companionLibrary,
   type BattleCard,
@@ -35,6 +37,7 @@ export interface CreateBattleStateOptions {
   rng?: () => number;
   contentSystemType?: ContentSystemId;
   appliesFightPacing?: boolean;
+  encounterBenefits?: EncounterRewardTraitId[];
 }
 
 function initializePlayerHealthAndBlock(
@@ -114,6 +117,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     startingArmor: playerStartingArmor,
   } = initializePlayerHealthAndBlock(options, battleTalents, startBlock, battleGearEffects);
 
+  const encounterBenefits = battleContentSystem === "labyrinth" ? (options.encounterBenefits ?? []) : [];
   const mana = BASE_PLAYER_MANA + manaBonus + battleTalents.startMana + battleTalents.runMaxManaBonus;
   const baseState = defaultBattleState();
   const state: BattleState = {
@@ -121,8 +125,9 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     deck,
     hand: [],
     discard: [],
-    mana,
+    mana: mana + (encounterBenefits.includes("wellspring") ? LABYRINTH_MODIFIER_CONFIG.manaBonus : 0),
     maxMana: mana,
+    encounterBenefits,
     gold: battleGold,
     turnPhase: "player",
     playerHealth: startingHealth,
@@ -134,18 +139,30 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     roomScalingMultiplier,
     enemyMitigation: {
       ...EMPTY_ENEMY_MITIGATION,
-      armor: startingArmor,
+      armor:
+        startingArmor +
+        (battleEnemy.traits.some((trait) => trait.id === "iron-fortress")
+          ? LABYRINTH_MODIFIER_CONFIG.fortressArmor
+          : 0),
       block: startingEnemyBlock,
     },
     playerStatuses: {
       ...baseState.playerStatuses,
+      phoenixFeather: encounterBenefits.includes("phoenix-nest") ? 1 : 0,
+      thorns: encounterBenefits.includes("bramblecoat") ? LABYRINTH_MODIFIER_CONFIG.playerThornsMinimum : 0,
       block: startingBlock + (battleTalents.manaBulwarkActive ? mana : 0),
       forge: battleTalents.startForge + battleGearEffects.startForge,
       armor: playerStartingArmor + (battleTalents.manaShellActive ? mana : 0),
     },
     enemyStatuses: {
       ...baseState.enemyStatuses,
-      thorns: battleEnemy.traits.some((trait) => trait.id === "thorns") ? 1 : 0,
+      thorns: battleEnemy.traits.some((trait) => trait.id === "briar-crown")
+        ? LABYRINTH_MODIFIER_CONFIG.bossThornsMinimum
+        : battleEnemy.traits.some((trait) => trait.id === "thornhide")
+          ? LABYRINTH_MODIFIER_CONFIG.enemyThornsMinimum
+          : battleEnemy.traits.some((trait) => trait.id === "thorns")
+            ? 1
+            : 0,
     },
     activeCompanion: startCompanion ? (companionLibrary[startCompanionId] ?? companionLibrary["wolf"]) : null,
     currentEnemy: battleEnemy,

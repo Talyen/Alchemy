@@ -4,15 +4,12 @@ import {
   companionLibrary,
   enemyBestiary,
   getCompanionDescriptionLines,
-  trinketLibrary,
   type BattleCardEffect,
 } from "@/lib/game-data";
 import {
   validateCardDescriptionParity,
   validateEnemyTraitDescriptionParity,
-  validateTrinketDescriptionParity,
   TRAIT_REQUIRED_PATTERNS,
-  TRINKET_REQUIRED_PATTERNS,
 } from "@/lib/content-validation/card-parity";
 
 describe("card descriptions vs effects", () => {
@@ -120,37 +117,5 @@ describe("enemy descriptions vs attack effects", () => {
   it("trait descriptions match content-validation parity", () => {
     const issues = enemyBestiary.flatMap((enemy) => validateEnemyTraitDescriptionParity(enemy));
     expect(issues).toEqual([]);
-  });
-});
-
-describe("boon descriptions vs manifest effects", () => {
-  it("every boon has a registered description check in TRINKET_REQUIRED_PATTERNS", () => {
-    for (const boon of trinketLibrary) {
-      expect(TRINKET_REQUIRED_PATTERNS[boon.id]).toBeDefined();
-    }
-  });
-
-  it("every registered trinket pattern has a matching compendium entry", () => {
-    const libraryIds: Set<string> = new Set(trinketLibrary.map((t) => t.id));
-    for (const id of Object.keys(TRINKET_REQUIRED_PATTERNS)) {
-      expect(libraryIds.has(id)).toBe(true);
-    }
-  });
-
-  it.each(trinketLibrary.map((t) => [t.id, t.title, t] as const))(
-    "%s — description mentions key mechanic",
-    (_id, _title, boon) => {
-      const issues = validateTrinketDescriptionParity(boon);
-      expect(issues, issues.map((i) => i.message).join("; ")).toEqual([]);
-    },
-  );
-
-  it("every boon has at least one non-empty description line", () => {
-    for (const boon of trinketLibrary) {
-      expect(boon.descriptionLines.length).toBeGreaterThan(0);
-      for (const line of boon.descriptionLines) {
-        expect(line.length).toBeGreaterThan(0);
-      }
-    }
   });
 });

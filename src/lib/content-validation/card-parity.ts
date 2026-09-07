@@ -162,7 +162,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
 ];
 
 export { validateEnemyTraitDescriptionParity, TRAIT_REQUIRED_PATTERNS } from "./card-parity/enemy-trait-parity";
-export { validateTrinketDescriptionParity, TRINKET_REQUIRED_PATTERNS } from "./card-parity/trinket-parity";
+export { validateTrinketDescriptionParity } from "./card-parity/trinket-parity";
 export { flattenEffects } from "./card-parity/helpers";
 
 function checkDamageParity(card: BattleCard): ContentValidationIssue | null {

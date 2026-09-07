@@ -18,7 +18,7 @@ function node(id: string, position: { row: number; col: number }, cleared = fals
 }
 
 describe("layoutFloorNodes", () => {
-  it("fits all floor variants with hover room in both dimensions", () => {
+  it("fits all floor variants without hover padding in both dimensions", () => {
     for (const count of [12, 13, 14]) {
       for (let variant = 0; variant < 6; variant += 1) {
         const nodes = generateFloorLayout(count, () => variant / 6).map((p, i) => node(String(i), p));
@@ -29,10 +29,10 @@ describe("layoutFloorNodes", () => {
         ]) {
           const layout = layoutFloorNodes(nodes, width!, height!);
           for (const point of layout.positions.values()) {
-            expect(point.x - (layout.metrics.width * 1.035) / 2).toBeGreaterThanOrEqual(0);
-            expect(point.x + (layout.metrics.width * 1.035) / 2).toBeLessThanOrEqual(width!);
-            expect(point.y - (layout.metrics.height * 1.035) / 2).toBeGreaterThanOrEqual(0);
-            expect(point.y + (layout.metrics.height * 1.035) / 2).toBeLessThanOrEqual(height!);
+            expect(point.x - layout.metrics.width / 2).toBeGreaterThanOrEqual(-1e-9);
+            expect(point.x + layout.metrics.width / 2).toBeLessThanOrEqual(width! + 1e-9);
+            expect(point.y - layout.metrics.height / 2).toBeGreaterThanOrEqual(-1e-9);
+            expect(point.y + layout.metrics.height / 2).toBeLessThanOrEqual(height! + 1e-9);
           }
         }
       }

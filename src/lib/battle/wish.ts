@@ -1,3 +1,4 @@
+import { hasEncounterBenefit } from "./types";
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
@@ -60,7 +61,9 @@ function upgradeWishCard(card: BattleCard): BattleCard {
 
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
   const baseCount =
-    WISH_CHOICE_COUNT + (rollPercent(state.talentEffects.wishExtraChoiceChance, getBattleRng(state)) ? 1 : 0);
+    WISH_CHOICE_COUNT +
+    (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
+    (rollPercent(state.talentEffects.wishExtraChoiceChance, getBattleRng(state)) ? 1 : 0);
 
   let candidates = getOfferableCardPool().filter((candidate) => candidate.id !== card.id);
 
@@ -130,7 +133,11 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
   const wishCount = Math.max(0, Math.round(amount));
   if (wishCount <= 0) return state;
 
-  const nextWishOptions = Array.from({ length: wishCount }, () => buildWishOptions(state, card));
+  const nextWishOptions: BattleCard[][] = [];
+  for (let index = 0; index < wishCount; index += 1) {
+    nextWishOptions.push(buildWishOptions(state, card));
+    if (hasEncounterBenefit(state, "wishful")) state = { ...state, flags: { ...state.flags, encounterWishUsed: true } };
+  }
   let nextState: BattleState = state.wishOptions
     ? { ...state, wishQueue: [...state.wishQueue, ...nextWishOptions] }
     : { ...state, wishOptions: nextWishOptions[0]!, wishQueue: [...state.wishQueue, ...nextWishOptions.slice(1)] };
