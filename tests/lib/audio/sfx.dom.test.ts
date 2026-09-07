@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { audioState } from "@/lib/audio-state";
-import { uiSounds } from "@/lib/sound-registry";
+import { audioState } from "@/lib/audio/state";
+import { uiSounds } from "@/lib/audio/sound-registry";
 import {
   stopAllSfx,
   playCardSound,
@@ -12,15 +12,15 @@ import {
   playVictory,
   playDefeat,
   playSliceDeath,
-} from "@/lib/audio-sfx";
-import { setMasterVolume, setMuted, setSfxVolume } from "@/lib/audio-volume";
+} from "@/lib/audio/sfx";
+import { setMasterVolume, setMuted, setSfxVolume } from "@/lib/audio/volume";
 import {
   createdFakeAudio,
   installFakeAudio,
   lastFakeAudio,
   resetSfxRuntime,
   soundedFakeAudio,
-} from "../helpers/fake-audio";
+} from "../../helpers/fake-audio";
 
 beforeEach(() => {
   audioState.sfxVolume = 0.35;

@@ -7,10 +7,10 @@ import {
   pauseAllMusic,
   playMusic,
   playMusicImmediate,
-} from "@/lib/audio-music";
-import { audioState } from "@/lib/audio-state";
+} from "@/lib/audio/music";
+import { audioState } from "@/lib/audio/state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
-import { installFakeAudio, resetMusicState, type FakeAudioElement } from "../helpers/fake-audio";
+import { installFakeAudio, resetMusicState, type FakeAudioElement } from "../../helpers/fake-audio";
 
 beforeEach(() => {
   audioState.musicVolume = 0.5;

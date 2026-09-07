@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { aspectRatioOptions, displayModeOptions } from "@/features/alchemy/shared/config/options";
 import { settingsPersistenceCodec } from "@/features/alchemy/shared/stores/settings-store";
-import { audioState } from "@/lib/audio-state";
+import { audioState } from "@/lib/audio/state";
 import { DEFAULT_MASTER_VOLUME_PCT, DEFAULT_MUSIC_VOLUME_PCT, DEFAULT_SFX_VOLUME_PCT } from "@/lib/game-constants";
 import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES } from "@/lib/settings-values";
 

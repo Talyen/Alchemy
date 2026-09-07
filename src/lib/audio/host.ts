@@ -1,4 +1,4 @@
-import { isDesktopApiAvailable } from "./desktop-api";
+import { isDesktopApiAvailable } from "../desktop-api";
 
 export function isNonPlayerAudioHost(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;

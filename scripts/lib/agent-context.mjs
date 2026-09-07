@@ -30,6 +30,11 @@ export const CONTEXT_TASKS = {
     ],
     entrypoints: ["src/features/alchemy/shared/ui", "src/styles/components.css"],
   },
+  audio: {
+    matches: /^(?:src|tests)\/lib\/audio\//u,
+    docs: [owner("docs/AUDIO.md", null)],
+    entrypoints: ["src/lib/audio/index.ts", "src/lib/audio/sound-registry.ts"],
+  },
   tooltip: {
     matches: /(?:tooltip|card-description|keyword-text)/u,
     docs: [owner("docs/UI.md", "Hover tooltips")],

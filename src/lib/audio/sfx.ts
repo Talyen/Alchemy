@@ -6,17 +6,17 @@ import {
   uiSounds,
   type UISound,
 } from "./sound-registry";
-import { audioState } from "./audio-state";
-import { getSoundUrl } from "./audio-preload";
-import { clamp } from "./math";
-import { pickRandomUnsafe } from "./utils";
+import { audioState } from "./state";
+import { getSoundUrl } from "./preload";
+import { clamp } from "../math";
+import { pickRandomUnsafe } from "../utils";
 import {
   SFX_COOLDOWN_MS,
   SFX_DEFEAT_VOLUME,
   SFX_SLICE_DEATH_VOLUME,
   SFX_UI_VOLUME,
   SFX_VICTORY_VOLUME,
-} from "./game-constants";
+} from "../game-constants";
 
 interface PlaySoundOptions {
   volume?: number;

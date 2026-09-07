@@ -7,16 +7,8 @@ import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scri
 
 const excludedTestPaths = ["tests/balance/**"];
 const domTestPrefixes = ["tests/app/", "tests/features/"];
-// Keep in sync with tests/architecture/vitest-projects.test.ts — this is the
-// allow-list for TypeScript tests that need jsdom (e.g. HTMLMediaElement,
-// canvas, platform DOM). Prefer colocation via *.dom.test.ts for new cases.
 const domLibPrefixes = [
   "tests/lib/animation/",
-  "tests/lib/audio-host",
-  "tests/lib/audio-music",
-  "tests/lib/audio-preload",
-  "tests/lib/audio-sfx",
-  "tests/lib/audio-volume",
   "tests/lib/battle/block-decay",
   "tests/lib/battle/enemy-turn",
   "tests/lib/crash-reporting",

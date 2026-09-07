@@ -8,7 +8,7 @@ Fix confirmed ownership or quality defects across the complete rule → controll
 
 ## Hard stops
 
-- Non-fatal audio failures that log and continue are acceptable; do not “fix” them into crashing paths (`src/lib/audio*.ts` and app audio-effect hooks).
+- Non-fatal audio failures that log and continue are acceptable; do not “fix” them into crashing paths (`src/lib/audio/` and app audio-effect hooks).
 - Steam upload / release checklist work belongs in [RELEASE.md](../RELEASE.md) — not this audit.
 - Do not move battle simulation onto wall-clock randomness “for convenience.”
 - Persistence timestamps and Zod hydrate under `src/lib/validation` / `shared/storage` may legitimately use `Date.now` — do not false-positive those seams.

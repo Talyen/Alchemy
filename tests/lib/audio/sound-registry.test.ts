@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardLibrary, enemyBestiary } from "@/lib/game-data";
-import { cardSounds, enemyAttackSounds, battleEventSounds, uiSounds, stingerSounds } from "@/lib/sound-registry";
+import { cardSounds, enemyAttackSounds, battleEventSounds, uiSounds, stingerSounds } from "@/lib/audio/sound-registry";
 
 describe("cardSounds", () => {
   it("every entry maps to a non-empty array of .ogg filenames", () => {

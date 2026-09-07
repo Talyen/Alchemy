@@ -1,5 +1,5 @@
-import { isNonPlayerAudioHost } from "./audio-host";
-import { audioUrl } from "./audio-url";
+import { isNonPlayerAudioHost } from "./host";
+import { audioUrl } from "./url";
 import {
   FADE_IN_DELAY,
   FADE_IN_DURATION,
@@ -9,10 +9,10 @@ import {
   MUSIC_FADE_TICK_MS,
   MUSIC_KEYS,
   MUSIC_MASTER_GAIN,
-} from "./game-constants";
-import { audioState } from "./audio-state";
-import { clamp } from "./math";
-import { pickRandomUnsafe } from "./utils";
+} from "../game-constants";
+import { audioState } from "./state";
+import { clamp } from "../math";
+import { pickRandomUnsafe } from "../utils";
 
 const musicBase = audioUrl(MUSIC_BASE_PATH);
 

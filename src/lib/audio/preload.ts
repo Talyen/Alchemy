@@ -1,7 +1,7 @@
 import { allRegisteredSoundFiles, battleEventSounds, cardSounds, enemyAttackSounds, uiSounds } from "./sound-registry";
-import { batchedPreload, scheduleIdle } from "./preload";
-import { audioUrl } from "./audio-url";
-import { SOUNDS_BASE_PATH } from "./game-constants";
+import { batchedPreload, scheduleIdle } from "../preload";
+import { audioUrl } from "./url";
+import { SOUNDS_BASE_PATH } from "../game-constants";
 
 const SOUND_PRELOAD_CONFIG = {
   IDLE_CALLBACK_TIMEOUT_MS: 5000,

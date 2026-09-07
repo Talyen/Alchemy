@@ -1,6 +1,6 @@
 import { vi, type Mock } from "vitest";
-import { audioState } from "@/lib/audio-state";
-import { resetHtmlSfxRuntime } from "@/lib/audio-sfx";
+import { audioState } from "@/lib/audio/state";
+import { resetHtmlSfxRuntime } from "@/lib/audio/sfx";
 
 export interface FakeAudioElement {
   src: string;

@@ -22,7 +22,7 @@ try {
     renderBalanceFindingsJson,
     renderBalanceReportHtml,
     renderBalanceReportJson,
-  } = await server.ssrLoadModule("/src/lib/balance.ts");
+  } = await server.ssrLoadModule("/src/lib/balance/index.ts");
   const options = parseBalanceReportOptions(process.env);
   const model = buildBalanceReport(options);
   const findings = evaluateBalanceFindings(model, options);

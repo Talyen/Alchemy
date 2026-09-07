@@ -1,9 +1,9 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
-import { initAudioHost, setMuted, setSfxVolume, setMasterVolume, setMusicVolume } from "@/lib/audio-volume";
-import { audioState } from "@/lib/audio-state";
+import { initAudioHost, setMuted, setSfxVolume, setMasterVolume, setMusicVolume } from "@/lib/audio/volume";
+import { audioState } from "@/lib/audio/state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
-import { invalidateCacheForKey, playMusic, playMusicImmediate } from "@/lib/audio-music";
-import { installFakeAudio, resetMusicState } from "../helpers/fake-audio";
+import { invalidateCacheForKey, playMusic, playMusicImmediate } from "@/lib/audio/music";
+import { installFakeAudio, resetMusicState } from "../../helpers/fake-audio";
 
 beforeEach(() => {
   audioState.muted = false;

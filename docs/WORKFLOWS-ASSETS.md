@@ -10,8 +10,8 @@ authoring source.
 | ------------- | -------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
 | Game art      | `Raw Assets/` + `scripts/assets/*.mjs`       | `src/assets/optimized/`                          | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
 | Gear art      | `Raw Assets/Gear/`                           | Optimized WebP + `src/lib/game-data/gear-art.ts` | Gear definitions by stable definition ID              |
-| Sound effects | `Raw Assets/Sound Effects/` + sound manifest | `public/sounds/` OGG and MP3 fallbacks           | `src/lib/sound-registry.ts`                           |
-| Music         | `Raw Assets/Music/`                          | `public/Music/`                                  | Audio owners under `src/lib/audio*.ts`                |
+| Sound effects | `Raw Assets/Sound Effects/` + sound manifest | `public/sounds/` OGG and MP3 fallbacks           | `src/lib/audio/sound-registry.ts`                     |
+| Music         | `Raw Assets/Music/`                          | `public/Music/`                                  | Audio owners under `src/lib/audio/`                   |
 
 Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) is owned by the release pipeline ([RELEASE_SETUP](./RELEASE_SETUP.md)); it is not an art authoring source.
 
@@ -82,7 +82,7 @@ mode — use `--check` or CI to enforce).
 ## Add or replace sound
 
 Sound effects are explicitly registered in `scripts/assets/sound-assets.mjs`
-and then referenced by `src/lib/sound-registry.ts` or the owning audio module.
+and then referenced by `src/lib/audio/sound-registry.ts` or the owning audio module.
 
 - WAV sources are loudness-normalized and converted to OGG with MP3 fallbacks.
 - OGG sources are copied without re-encoding and still receive an MP3 fallback.
@@ -105,8 +105,8 @@ Place supported audio files under `Raw Assets/Music/` and run
 `npm run assets:optimize:music`. Music is copied without transcoding into
 `public/Music/`. The optimizer removes files without a corresponding source;
 there is no curated-source exception for music. Register playable tracks in
-`src/lib/audio-music.ts`. Its `allRegisteredMusicFiles()` list is cross-checked
-against `public/Music/` by `tests/lib/music-assets.test.ts`.
+`src/lib/audio/music.ts`. Its `allRegisteredMusicFiles()` list is cross-checked
+against `public/Music/` by `tests/lib/audio/music-assets.test.ts`.
 
 ## Skip mode and verification
 

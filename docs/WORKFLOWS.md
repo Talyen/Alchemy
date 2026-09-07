@@ -135,7 +135,7 @@ If an async battle flow persists an intermediate state, commit `activeCombat.pen
 | 1. Define card in the matching topical library                    | `src/lib/game-data/cards/library/` (`core.ts`, `archery.ts`, `consumables.ts`, `companions.ts`, or `defense.ts`); `cards.ts` assembles these groups                                                       |
 | 2. Add effects (discriminated union on `kind`)                    | same card entry, `effects: [...]`                                                                                                                                                                         |
 | 3. Add art reference                                              | `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)                                                                                                                                            |
-| 4. (Optional) Register card sound                                 | `src/lib/sound-registry.ts` (`cardSounds` record)                                                                                                                                                         |
+| 4. (Optional) Register card sound                                 | `src/lib/audio/sound-registry.ts` (`cardSounds` record)                                                                                                                                                   |
 | 5. Update `descriptionLines` to match effects; context-aware text | same entry; pure text `src/lib/game-data/card-description.ts`, UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`) |
 
 Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
@@ -167,13 +167,13 @@ effect ordering, and the focused schema/handler/description tests.
 
 ## Add a new enemy
 
-| Step                                                                   | File(s)                                           |
-| ---------------------------------------------------------------------- | ------------------------------------------------- |
-| 1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)            | `src/lib/game-data/compendium/enemies.ts`         |
-| 2. Set `enemyType` (`normal`/`elite`/`boss`)                           | same file                                         |
-| 3. Add traits as `{ id, title, description }` objects                  | same file (logic lives in battle system)          |
-| 4. (Optional) Register attack sound                                    | `src/lib/sound-registry.ts` (`enemyAttackSounds`) |
-| 5. Wildwood gauntlet bosses must also be listed in `WILDWOOD_BOSS_IDS` | `src/lib/content-systems/wildwood/bosses.ts`      |
+| Step                                                                   | File(s)                                                 |
+| ---------------------------------------------------------------------- | ------------------------------------------------------- |
+| 1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)            | `src/lib/game-data/compendium/enemies.ts`               |
+| 2. Set `enemyType` (`normal`/`elite`/`boss`)                           | same file                                               |
+| 3. Add traits as `{ id, title, description }` objects                  | same file (logic lives in battle system)                |
+| 4. (Optional) Register attack sound                                    | `src/lib/audio/sound-registry.ts` (`enemyAttackSounds`) |
+| 5. Wildwood gauntlet bosses must also be listed in `WILDWOOD_BOSS_IDS` | `src/lib/content-systems/wildwood/bosses.ts`            |
 
 ---
 
@@ -212,7 +212,7 @@ Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/
 | 3. Define companion in `companionLibrary` record                                                                  | `src/lib/game-data/companions.ts`                                                                          |
 | 4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`) | `src/lib/game-data/cards/card-builders.ts` — companion must have **at least one** `turnStartEffects` entry |
 | 5. Give the summon card a stable, unique string ID                                                                | `src/lib/game-data/cards/library/companions.ts`; the assembled `cardLibrary` checks uniqueness             |
-| 6. (Optional) Register card sound                                                                                 | `src/lib/sound-registry.ts`                                                                                |
+| 6. (Optional) Register card sound                                                                                 | `src/lib/audio/sound-registry.ts`                                                                          |
 | 7. Add bond level to talent defaults (`companionBondLevels`)                                                      | `src/lib/game-data/talents/manifest-defaults.ts`                                                           |
 | 8. Add bond level to homestead defaults                                                                           | `src/lib/homestead/defaults.ts`                                                                            |
 | 9. Update description lines                                                                                       | `tests/lib/game-data/companions.test.ts` guards companion copy                                             |

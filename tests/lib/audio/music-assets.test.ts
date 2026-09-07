@@ -2,9 +2,9 @@ import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { allRegisteredMusicFiles } from "@/lib/audio-music";
+import { allRegisteredMusicFiles } from "@/lib/audio/music";
 
-const musicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../public/Music");
+const musicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../../public/Music");
 
 describe("registered music assets", () => {
   it("keeps every registered track on disk", () => {

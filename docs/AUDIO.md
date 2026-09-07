@@ -5,14 +5,16 @@ optimization remain in [WORKFLOWS-ASSETS.md](./WORKFLOWS-ASSETS.md).
 
 ## Ownership
 
-| Concern                              | Owner                                                                                                                                                    |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Playback host, cache, music, and SFX | `src/lib/audio.ts` (facade) + `audio-host.ts`, `audio-sfx.ts`, `audio-music.ts`, `audio-state.ts`, `audio-preload.ts`, `audio-volume.ts`, `audio-url.ts` |
-| Player volume values and bounds      | `src/lib/settings-values.ts`                                                                                                                             |
-| Sound-to-content registration        | `src/lib/sound-registry.ts`                                                                                                                              |
-| App lifecycle wiring                 | `src/app/use-app-effects.ts` (`useAppAudioEffects`)                                                                                                      |
-| Desktop capability                   | `src/lib/desktop-api.ts`, preload, and Electron host state                                                                                               |
-| Authored files and optimized outputs | [WORKFLOWS-ASSETS.md](./WORKFLOWS-ASSETS.md#add-or-replace-sound)                                                                                        |
+| Concern                              | Owner                                                                                                                |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Playback host, cache, music, and SFX | `src/lib/audio/index.ts` (facade) + `host.ts`, `sfx.ts`, `music.ts`, `state.ts`, `preload.ts`, `volume.ts`, `url.ts` |
+| Player volume values and bounds      | `src/lib/settings-values.ts`                                                                                         |
+| Sound-to-content registration        | `src/lib/audio/sound-registry.ts`                                                                                    |
+| App lifecycle wiring                 | `src/app/use-app-effects.ts` (`useAppAudioEffects`)                                                                  |
+| Desktop capability                   | `src/lib/desktop-api.ts`, preload, and Electron host state                                                           |
+| Authored files and optimized outputs | [WORKFLOWS-ASSETS.md](./WORKFLOWS-ASSETS.md#add-or-replace-sound)                                                    |
+
+Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, backed by `index.ts`. Tests mirror this folder in `tests/lib/audio/`, with `*.dom.test.ts` identifying tests that need browser APIs.
 
 ## Runtime contract
 

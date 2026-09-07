@@ -5,9 +5,9 @@ import {
   preloadAllSounds,
   preloadBattleSounds,
   resetSoundPreloadCache,
-} from "@/lib/audio-preload";
-import { audioState } from "@/lib/audio-state";
-import { createdFakeAudio, installFakeAudio, soundedFakeAudio } from "../helpers/fake-audio";
+} from "@/lib/audio/preload";
+import { audioState } from "@/lib/audio/state";
+import { createdFakeAudio, installFakeAudio, soundedFakeAudio } from "../../helpers/fake-audio";
 
 beforeEach(() => {
   audioState.muted = false;

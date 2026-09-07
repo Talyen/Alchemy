@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isNonPlayerAudioHost } from "@/lib/audio-host";
+import { isNonPlayerAudioHost } from "@/lib/audio/host";
 
 function stubWindowSize({
   innerWidth,
