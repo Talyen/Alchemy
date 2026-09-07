@@ -35,9 +35,10 @@ import { useTileHoverPopup } from "./use-tile-hover-popup";
 
 interface CollectionTileProps {
   item: CollectionTileItem;
+  onEnemyActivate?: ((enemyId: string) => void) | undefined;
 }
 
-export const CollectionTile = memo(function CollectionTile({ item }: CollectionTileProps) {
+export const CollectionTile = memo(function CollectionTile({ item, onEnemyActivate }: CollectionTileProps) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     item.hoverScope,
     item.id,
@@ -82,6 +83,7 @@ export const CollectionTile = memo(function CollectionTile({ item }: CollectionT
             setFlipped((f) => !f);
           } else if (item.hoverScope === "collection-bestiary") {
             playEnemyAttack(item.id);
+            onEnemyActivate?.(item.id);
           }
         }}
       >

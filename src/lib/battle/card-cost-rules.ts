@@ -1,3 +1,4 @@
+import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
@@ -8,30 +9,6 @@ import { type BattleState, type CombatFlags } from "./types";
 type BooleanCombatFlag = {
   [K in keyof CombatFlags]: CombatFlags[K] extends boolean ? K : never;
 }[keyof CombatFlags];
-
-function effectHasDamageType(effect: BattleCard["effects"][number], damageType: string): boolean {
-  if (effect.kind === "damage" || effect.kind === "cleanse-player-status-to-damage") {
-    return effect.damageType === damageType;
-  }
-  if (effect.kind === "random-damage") {
-    return damageType === "physical";
-  }
-  if (effect.kind === "chance") {
-    return [...effect.successEffects, ...effect.failureEffects].some((e) => effectHasDamageType(e, damageType));
-  }
-  if (effect.kind === "repeat-over-turns") {
-    return effect.effects.some((e) => effectHasDamageType(e, damageType));
-  }
-  return false;
-}
-
-export function cardHasDamageType(card: BattleCard, damageType: string): boolean {
-  return card.effects.some((e) => effectHasDamageType(e, damageType));
-}
-
-export function isNatureCard(card: BattleCard): boolean {
-  return cardHasDamageType(card, "nature") || card.tags?.includes("nature") === true;
-}
 
 type CardCostState = Pick<
   BattleState,
@@ -113,10 +90,6 @@ function computeStandardCost(
   return { effectiveCost, consumedFlags, disarmedFlags };
 }
 
-export function cardHasKeyword(card: BattleCard, keyword: string): boolean {
-  return card.tags?.includes(keyword as never) === true || cardHasDamageType(card, keyword);
-}
-
 export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
   const result = computeStandardCost(state, card);
   const fleeting = card.consume && hasEncounterBenefit(state, "fleeting");
@@ -153,12 +126,12 @@ export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
 }
 
 export function computeCardPayment(state: BattleState, card: BattleCard) {
-  const { effectiveCost } = computeEffectiveCost(state, card);
-  const missingMana = Math.max(0, effectiveCost - state.mana);
+  const cost = computeEffectiveCost(state, card);
+  const missingMana = Math.max(0, cost.effectiveCost - state.mana);
   const usesBlock = missingMana > 0 && state.gearEffects.blockPaysFreezeMana > 0 && cardHasKeyword(card, "freeze");
   const blockCost = usesBlock ? missingMana * UNIQUE_GEAR_COMBAT.winterBlockPerMana : 0;
   return {
-    effectiveCost,
+    ...cost,
     blockCost,
     affordable: missingMana === 0 || (usesBlock && state.playerStatuses.block >= blockCost),
   };

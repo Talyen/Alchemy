@@ -1,3 +1,6 @@
+import { useEffect, useRef } from "react";
+import { getBossMusicKey, playMusic } from "@/lib/audio";
+import { MUSIC_KEYS } from "@/lib/game-constants";
 import { useControlledPagination } from "../../shared/ui/use-pagination";
 import { useAdaptiveGrid } from "../../shared/ui/adaptive-grid";
 import { GridMeasurement } from "../../shared/ui/grid-measurement";
@@ -50,6 +53,21 @@ export function CollectionScreen({
     onPageChange: handlePageChange,
     context: collectionTab,
   });
+  const previewMusicKey = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!previewMusicKey.current) return;
+    previewMusicKey.current = undefined;
+    playMusic(MUSIC_KEYS.MENU);
+  }, [collectionTab, activePage]);
+
+  function handleEnemyActivate(enemyId: string) {
+    if (collectionTab !== "bestiary") return;
+    const musicKey = getBossMusicKey(enemyId);
+    if (!musicKey || musicKey === previewMusicKey.current) return;
+    previewMusicKey.current = musicKey;
+    playMusic(musicKey);
+  }
 
   return (
     <PageLayout>
@@ -71,6 +89,7 @@ export function CollectionScreen({
               pageSize={pageSize}
               columns={columns}
               bondedCompanions={bondedCompanions}
+              onEnemyActivate={handleEnemyActivate}
             />
           </div>
           <div className="flex flex-wrap items-center justify-center">

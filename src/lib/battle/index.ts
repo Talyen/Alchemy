@@ -1,15 +1,10 @@
+export { isAttackCard } from "./card-classification";
 export * from "./types";
 export * from "./draw";
 export * from "./battle-setup";
 export { applyCardEffects } from "./effect-handlers";
 export { mergeCombatText } from "./combat-text";
-export {
-  canPlayCard,
-  enemyAttackDealsDamage,
-  isAttackCard,
-  playBattleCardResolved,
-  type CardPlayOptions,
-} from "./card-play";
+export { canPlayCard, enemyAttackDealsDamage, playBattleCardResolved, type CardPlayOptions } from "./card-play";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";

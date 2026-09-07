@@ -10,53 +10,43 @@ interface UseArmoryTargetingEventsOptions {
   clearTargeting: () => void;
 }
 
-function isTargetingElement(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  return (
-    !!target.closest('[data-testid="armory-workspace"]') ||
-    !!target.closest('[data-testid="confirmation-dialog"]') ||
-    !!target.closest('[data-testid="armory-inventory-item"]') ||
-    !!target.closest('[data-testid="armory-equipment-slot"]') ||
-    !!target.closest('[data-testid="armory-trinket-slot"]') ||
-    !!target.closest('[data-testid="armory-trinket-item"]') ||
-    !!target.closest('[data-testid="armory-crafting-currency"]') ||
-    !!target.closest('[data-testid="armory-crafting-strip"]') ||
-    !!target.closest('[data-testid="armory-salvage-toggle"]')
-  );
-}
+const CURRENCY_CLICK_REGIONS = [
+  '[data-testid="armory-workspace"]',
+  '[data-testid="confirmation-dialog"]',
+  '[data-testid="armory-inventory-item"]',
+  '[data-testid="armory-equipment-slot"]',
+  '[data-testid="armory-trinket-slot"]',
+  '[data-testid="armory-trinket-item"]',
+  '[data-testid="armory-crafting-currency"]',
+  '[data-testid="armory-crafting-strip"]',
+  '[data-testid="armory-salvage-toggle"]',
+].join(",");
+
+const SALVAGE_CLICK_REGIONS = [
+  '[data-salvageable="true"]',
+  '[data-testid="armory-salvage-toggle"]',
+  '[data-testid="armory-crafting-strip"]',
+].join(",");
+
+const CONTEXT_MENU_REGIONS = [
+  '[data-testid="armory-crafting-currency"]',
+  '[data-testid="armory-inventory-item"]',
+  '[data-testid="armory-trinket-item"]',
+  '[data-testid="armory-equipment-slot"]',
+  '[data-testid="armory-trinket-slot"]',
+].join(",");
 
 function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () => void): () => void {
   function handleClick(event: MouseEvent) {
-    if (salvageMode) {
-      if (
-        event.target instanceof HTMLElement &&
-        (event.target.closest('[data-salvageable="true"]') ||
-          event.target.closest('[data-testid="armory-salvage-toggle"]') ||
-          event.target.closest('[data-testid="armory-crafting-strip"]'))
-      ) {
-        return;
-      }
-      clearTargeting();
-      return;
-    }
-    if (isTargetingElement(event.target)) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest(salvageMode ? SALVAGE_CLICK_REGIONS : CURRENCY_CLICK_REGIONS)) return;
     clearTargeting();
   }
 
   function handleContextMenu(event: MouseEvent) {
-    if (
-      event.target instanceof HTMLElement &&
-      (event.target.closest('[data-testid="armory-crafting-currency"]') ||
-        event.target.closest('[data-testid="armory-inventory-item"]') ||
-        event.target.closest('[data-testid="armory-trinket-item"]') ||
-        event.target.closest('[data-testid="armory-equipment-slot"]') ||
-        event.target.closest('[data-testid="armory-trinket-slot"]'))
-    ) {
-      return;
-    }
-    if (event.target instanceof HTMLElement && event.target.closest('[data-testid="armory-workspace"]')) {
-      event.preventDefault();
-    }
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest(CONTEXT_MENU_REGIONS)) return;
+    if (target?.closest('[data-testid="armory-workspace"]')) event.preventDefault();
     clearTargeting();
   }
 
@@ -73,14 +63,11 @@ function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () =
     priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT,
     onEscape: () => clearTargeting(),
   });
-  const clickTimer = window.setTimeout(() => {
-    document.addEventListener("click", handleClick);
-    document.addEventListener("contextmenu", handleContextMenu);
-  }, 0);
+  document.addEventListener("click", handleClick);
+  document.addEventListener("contextmenu", handleContextMenu);
   window.addEventListener("blur", handleBlur);
   document.addEventListener("visibilitychange", handleVisibilityChange);
   return () => {
-    window.clearTimeout(clickTimer);
     unsubscribeEscape();
     document.removeEventListener("click", handleClick);
     document.removeEventListener("contextmenu", handleContextMenu);

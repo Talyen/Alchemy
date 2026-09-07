@@ -1,4 +1,5 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
 
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
@@ -23,150 +24,107 @@ interface Props {
   onSelect: (nodeId: string) => void;
 }
 
-function typeStrokeClass(type: LabyrinthNode["type"]): string {
-  return LABYRINTH_NODE_META[type].className
-    .split(" ")
-    .filter((token) => token.startsWith("text-"))
-    .join(" ");
-}
-
 export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, onSelect }: Props) {
   const visual = labyrinthNodeVisualState(map, node.id);
-  const meta = LABYRINTH_NODE_META[node.type];
   const reachable = visual === "reachable";
+  const cleared = visual === "cleared";
+  const meta = LABYRINTH_NODE_META[node.type];
   const art = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId].art : meta.art;
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
-  const typeLabel = NODE_TYPE_LABELS[node.type];
-  const isLocked = visual === "locked";
-  const isCleared = visual === "cleared";
-  const emphasized = hovered || focused || selected;
-  const zIndex = hovered ? 30 : focused ? 20 : selected ? 10 : reachable ? 1 : 0;
-  const strokeClass = selected ? "text-amber-400" : reachable ? typeStrokeClass(node.type) : "text-white/15";
+  const reducedMotion = useReducedMotion();
+  const previousVisual = useRef(visual);
+  const pulseRef = useRef<SVGSVGElement>(null);
+  const colors = reachable && !selected ? SHINE_PALETTES.labyrinth[node.type] : null;
+  const zIndex = reachable ? (hovered ? 30 : focused ? 20 : selected ? 10 : 1) : 0;
 
-  const [reducedMotion] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  usePlasmaInteraction(
+    reachable && !selected ? getLabyrinthNodePlasmaPair(node) : null,
+    reachable && !selected && (hovered || focused),
   );
 
-  const reachableShineColors =
-    reachable && !selected
-      ? ([...(SHINE_PALETTES.labyrinth[node.type] ?? SHINE_PALETTES.talentDefault)] as readonly string[])
-      : null;
-
-  const hasShine = Boolean(reachableShineColors);
-  const buttonStyle = {
-    clipPath: LABYRINTH_HEX_CLIP,
-    WebkitTapHighlightColor: "transparent",
-  } satisfies CSSProperties;
-
-  const hoverPlasmaPair = reachable && !isLocked && !isCleared && !selected ? getLabyrinthNodePlasmaPair(node) : null;
-  usePlasmaInteraction(hoverPlasmaPair, (hovered || focused) && reachable && !selected);
-
-  if (isCleared) {
-    return (
-      <div
-        data-testid="cleared-chamber"
-        role="img"
-        aria-label={`${typeLabel} chamber, completed`}
-        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 overflow-hidden"
-        style={{ left: x, top: y, width, height, clipPath: LABYRINTH_HEX_CLIP }}
-      >
-        <img src={art} alt="" className="absolute inset-0 h-full w-full scale-[1.14] object-cover object-top" />
-        <svg
-          aria-hidden
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          className="absolute inset-0 h-full w-full text-red-500/35"
-        >
-          <path
-            d="M 25 25 L 75 75 M 75 25 L 25 75"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={5}
-            strokeLinecap="round"
-          />
-        </svg>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const newlyReachable = previousVisual.current !== "reachable" && reachable;
+    previousVisual.current = visual;
+    if (!newlyReachable || reducedMotion) return;
+    const animation = pulseRef.current?.animate([{ opacity: 0 }, { opacity: 0.72, offset: 0.35 }, { opacity: 0 }], {
+      duration: 350,
+      easing: "ease-out",
+    });
+    return () => animation?.cancel();
+  }, [visual, reachable, reducedMotion]);
 
   return (
     <div
       className="group absolute -translate-x-1/2 -translate-y-1/2"
       style={{ left: x, top: y, width, height, zIndex }}
     >
-      <button
-        type="button"
-        data-labyrinth-node={node.id}
-        aria-label={`${typeLabel} chamber, ${visual}${reachable ? ", enterable" : ""}`}
-        onClick={(event) => {
-          event.stopPropagation();
-          onSelect(node.id);
-        }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        aria-pressed={selected}
-        data-hovered={emphasized ? "true" : undefined}
-        style={buttonStyle}
+      {reachable ? (
+        <button
+          type="button"
+          data-labyrinth-node={node.id}
+          aria-label={`${NODE_TYPE_LABELS[node.type]} chamber, reachable, enterable`}
+          aria-pressed={selected}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect(node.id);
+          }}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          className="absolute inset-0 z-10 cursor-pointer outline-none"
+          style={{ clipPath: LABYRINTH_HEX_CLIP, WebkitTapHighlightColor: "transparent" }}
+        />
+      ) : null}
+      <div
+        data-testid={cleared ? "cleared-chamber" : !reachable ? "locked-chamber" : undefined}
+        role={reachable ? undefined : "img"}
+        aria-label={
+          reachable ? undefined : `${NODE_TYPE_LABELS[node.type]} chamber, ${cleared ? "completed" : "locked"}`
+        }
+        aria-hidden={reachable ? true : undefined}
         className={cn(
-          "relative block h-full w-full bg-black outline-none motion-reduce:transition-none",
-          "cursor-pointer",
-          isLocked && !emphasized && "opacity-[0.42]",
+          "pointer-events-none relative h-full w-full",
+          reachable &&
+            "labyrinth-node-art transition-[scale,translate,filter] duration-200 ease-out motion-reduce:transform-none motion-reduce:transition-none",
+          selected && !reducedMotion && "-translate-y-0.5 scale-[1.035] drop-shadow-lg",
+          reachable && !reducedMotion && "group-has-[:active]:translate-y-0 group-has-[:active]:scale-[0.97]",
+          cleared && "scale-[0.97]",
         )}
       >
-        <span className="pointer-events-none absolute inset-0 overflow-hidden" style={{ clipPath: LABYRINTH_HEX_CLIP }}>
+        <div
+          className={cn("absolute inset-0 overflow-hidden bg-black", !reachable && !cleared && "opacity-[0.42]")}
+          style={{ clipPath: LABYRINTH_HEX_CLIP }}
+        >
           <img
             src={art}
             alt=""
-            aria-hidden
-            className="absolute inset-0 h-full w-full scale-[1.14] object-cover object-top"
-          />
-          {!emphasized ? <span className="absolute inset-0 bg-black/25" /> : null}
-        </span>
-        {!hasShine ? (
-          <svg
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
+            draggable={false}
             className={cn(
-              "pointer-events-none absolute inset-0 h-full w-full overflow-visible",
-              strokeClass,
-              "transition-[stroke,stroke-width] duration-200 group-hover:[stroke-width:3] group-has-[:focus-visible]:[stroke-width:3] group-has-[:focus-visible]:text-amber-300",
+              "absolute inset-0 h-full w-full scale-[1.14] object-cover object-top",
+              cleared && "opacity-[0.72] grayscale",
             )}
-            aria-hidden
-          >
-            <polygon
-              points={HEX_POINTS}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              shapeRendering="geometricPrecision"
-            />
-          </svg>
-        ) : null}
-        {reachableShineColors ? (
-          <svg
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            className="pointer-events-none absolute inset-0 h-full w-full overflow-visible transition-[stroke-width] duration-200 group-hover:[&_polygon]:[stroke-width:3] group-has-[:focus-visible]:[&_polygon]:[stroke-width:3]"
-            aria-hidden
-          >
+          />
+          {cleared ? <span className="absolute inset-0 bg-black/[0.32]" /> : null}
+        </div>
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden
+          className={cn(
+            "absolute inset-0 h-full w-full",
+            selected ? "text-amber-400" : "text-white/15",
+            reachable && "group-has-[:focus-visible]:text-amber-300",
+          )}
+        >
+          {colors ? (
             <defs>
-              <linearGradient
-                id={`choice-shine-${node.id}`}
-                x1="0%"
-                y1="0%"
-                x2="100%"
-                y2="0%"
-                gradientUnits="objectBoundingBox"
-              >
-                {reachableShineColors.map((color, i) => (
+              <linearGradient id={`choice-shine-${node.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                {colors.map((color, index) => (
                   <stop
-                    key={`${color}-${i}`}
-                    offset={`${(i / Math.max(1, reachableShineColors.length - 1)) * 100}%`}
+                    key={`${color}-${index}`}
+                    offset={`${(index / Math.max(1, colors.length - 1)) * 100}%`}
                     stopColor={color}
                   />
                 ))}
@@ -178,18 +136,34 @@ export function LabyrinthNodeSeal({ node, map, selected, x, y, width, height, on
                 ) : null}
               </linearGradient>
             </defs>
+          ) : null}
+          <polygon
+            points={HEX_POINTS}
+            fill="none"
+            stroke={colors ? `url(#choice-shine-${node.id})` : "currentColor"}
+            strokeWidth={cleared ? 1.5 : reachable ? 3 : 2}
+            strokeLinejoin="round"
+          />
+          {reachable ? (
             <polygon
+              className="opacity-0 group-has-[:focus-visible]:opacity-100"
               points={HEX_POINTS}
               fill="none"
-              stroke={`url(#choice-shine-${node.id})`}
-              strokeWidth={2}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              shapeRendering="geometricPrecision"
+              stroke="currentColor"
+              strokeWidth={3}
             />
-          </svg>
-        ) : null}
-      </button>
+          ) : null}
+        </svg>
+        <svg
+          ref={pulseRef}
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden
+          className="absolute inset-0 h-full w-full text-amber-300 opacity-0"
+        >
+          <polygon points={HEX_POINTS} fill="none" stroke="currentColor" strokeWidth={3} />
+        </svg>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { BattleCard } from "@/lib/game-data";
-import { cardHasKeyword } from "./card-cost-rules";
+import { cardHasKeyword } from "./card-classification";
 import { getBattleRng, rngInt } from "@/lib/rng";
 import type { BattleState } from "./types";
 import { shuffle, takeRandomItem } from "@/lib/utils";

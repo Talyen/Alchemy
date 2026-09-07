@@ -123,6 +123,13 @@ after commit, once per correction, without notifying for acknowledged pages.
 Empty lists use page zero with one logical page and a minimum capacity of one.
 Offered choices remain content-owned, independent of browsing capacity.
 
+Activating a Bestiary portrait keeps its attack sound and plays its registered boss
+music when available, including for undiscovered entries. Music loops until the
+Bestiary page or Collection tab changes, restoring menu music; leaving Collection
+uses the destination screen's music. Another supported boss switches the track;
+repeating the same boss does not restart it. Entries without a track leave music
+unchanged. Playback uses the shared audio fades, volume, and background mute rules.
+
 Collection entries rest with dim grey borders. Discovered entries show their keyword
 Shine Border on hover or keyboard focus; locked and undiscovered entries show a neutral
 Shine Border on hover or keyboard focus across all tabs.
@@ -165,27 +172,39 @@ available height.
 
 ## Labyrinth map
 
-The floor fits the full available map width and height without zoom controls or
-hover padding. Visible hex edges touch, and hover, focus, and presses never
-scale nodes. Clearing chambers preserves artwork at normal opacity with a faint
-red X; completed chambers cannot be clicked, hovered, or focused and keep the
-floor's bounds unchanged. Locked hexes can be inspected but never entered.
-Hexes have no tooltips.
+The map scrolls vertically below a stationary header with a compact Floor select.
+Touching point-topped hexes keep saved coordinates and cap their width at 12.5
+content units (200px at default Game Size), shrinking to fit narrow map areas.
+Outer padding accommodates selected artwork lift without changing hit targets.
+Map entry, destination return, and automatic floor advancement reveal the first
+reachable chamber in row/column order; manual floor browsing remembers scroll
+positions for the mounted screen. Floors without reachable chambers start at top.
+
+Only reachable chambers accept selection and keyboard focus. Locked artwork
+stays dim; completed artwork is grayscale, darkened, slightly smaller, and has a
+faint outline instead of a red X. Clicking either dismisses details. Completion
+preserves floor bounds and positions. Reachable art stays bright with colored
+shine and hover/focus plasma feedback. Selected art lifts slightly; presses
+compress it. Observed transitions to reachable pulse once; entering the map does
+not replay state-change effects. Reduced motion disables movement and shine.
+Hexes have no tooltips or zoom controls.
 
 One inspector floats beside the selected node without reserving map space.
 It prefers right, then left, top, or bottom, with an 8px gap and boundary padding.
-Its preferred width is 440px at default Game Size, capped to the map area; it
-stays inside that area on narrow displays as well. Outside clicks dismiss it,
-other nodes switch selection directly, and Escape dismisses and restores node
-focus. Floor changes dismiss it. Destination labels use Combat while the
-persisted Normal Combat value remains compatible.
+Its preferred width is 340px at default Game Size, capped to the visible map area.
+It follows its chamber during map scrolling and resizing, and dismisses once the
+chamber completely leaves view. Outside clicks dismiss it, reachable nodes switch
+selection directly, and Escape dismisses and restores node focus. Floor changes
+and stale unavailable selections dismiss it. Destination labels use Combat while
+the persisted Normal Combat value remains compatible.
 
-The inspector uses standard 4:3 card artwork without text or scrims. Category
-and name appear below the artwork, with duplicate labels omitted and shops
-categorized as Merchant. Only mechanical modifier descriptions remain. The
-content scrolls without shrinking artwork, and the available action stays in a
-separate footer. There is no close button. Shared screen-header eyebrows
-use the small text size, one step above extra-small.
+The inspector uses edge-to-edge 4:3 artwork without text or scrims. Category and
+name appear below artwork, with duplicate labels omitted and shops categorized
+as Merchant. Combat and reward modifiers remain separate readable blocks with
+colored keywords. Content scrolls independently without shrinking artwork; the
+full-width action stays in a separate footer. There is no close button, party
+control, or enemy-detail action. Shared screen-header eyebrows use the small text
+size, one step above extra-small.
 
 ## Hover tooltips
 
@@ -234,6 +253,8 @@ Use the changed-path route in [CONTRIBUTING.md](../CONTRIBUTING.md). Interaction
 or browser-journey work also follows [tests/e2e/README.md](../tests/e2e/README.md).
 
 ## Armory crafting and salvage
+
+Targeting cancellation treats icon descendants, including SVG paths, like their containing controls. Currency targeting survives clicks within the workspace and its recognized controls; salvage targeting survives clicks on salvageable items, the salvage toggle, and the crafting strip. Other clicks cancel targeting. Right-clicks on gear, Trinkets, equipment slots, and crafting currencies leave targeting active; other right-clicks cancel, suppressing the browser context menu only within the workspace. Escape, window blur, and hiding the document also cancel targeting. Activation clicks do not cancel the mode they enable, and cancellation listeners are active without a timer delay. Salvage confirmation owns its own dismissal while targeting listeners are suspended.
 
 Currency artwork shares one 5rem size between the crafting strip, pointer attachment, and salvage preview. The pointer attachment is offset from the hit point, hides for touch and outside the workspace, and never intercepts input. Reward quantities are plain numbers; preview currencies are focusable information groups rather than action buttons.
 

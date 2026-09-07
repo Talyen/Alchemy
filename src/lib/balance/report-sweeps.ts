@@ -83,9 +83,14 @@ function buildRandomDeck(seed: number, size = 10): BattleCard[] {
   return sampleItems(getOfferableCardPool(), size, createRunStreamRng(seed, "world"));
 }
 
-function buildFixedCardDeck(target: BattleCard, seed: number, size = 10): BattleCard[] {
-  const others = buildRandomDeck(seed, size).filter((card) => card.id !== target.id);
-  return [target, ...others.slice(0, size - 1)];
+function buildCardIsolationDecks(
+  target: BattleCard,
+  seed: number,
+  size = 10,
+): { baseline: BattleCard[]; treatment: BattleCard[] } {
+  const candidates = getOfferableCardPool().filter((card) => card.id !== target.id);
+  const baseline = sampleItems(candidates, size, createRunStreamRng(seed, "world"));
+  return { baseline, treatment: [...baseline.slice(0, size - 1), target] };
 }
 
 type PairedStatsById = Map<string, Map<TalentPreset, PairedWinStats[]>>;
@@ -111,6 +116,28 @@ function mergeComparisons(collected: PairedStatsById): PairedTierRow[] {
   }));
 }
 
+function runComparison(
+  options: ReportRunOptions,
+  collected: PairedStatsById,
+  tier: TalentPreset,
+  id: string,
+  baseline: BalanceScenarioConfig,
+  treatment: BalanceScenarioConfig,
+): void {
+  pushComparison(collected, tier, id, runSeries(options, baseline), runSeries(options, treatment));
+}
+
+function recordComparison(
+  options: ReportRunOptions,
+  collected: PairedStatsById,
+  tier: TalentPreset,
+  id: string,
+  baseline: WinSeries,
+  treatment: BalanceScenarioConfig,
+): void {
+  pushComparison(collected, tier, id, baseline, runSeries(options, treatment));
+}
+
 export function runTrinketSweep(options: ReportRunOptions): PairedTierRow[] {
   const collected: PairedStatsById = new Map();
   for (const tier of REPORT_TIERS) {
@@ -127,17 +154,14 @@ export function runTrinketSweep(options: ReportRunOptions): PairedTierRow[] {
           preset: tier.preset,
           seed: fightSeed,
           deck,
-          iterations: options.trinketIterations,
+          iterations: options.pairedIterations,
         };
         const baseline = runSeries(options, { ...shared, trinketIds: [] });
         for (const trinket of trinketLibrary) {
-          pushComparison(
-            collected,
-            tier.preset,
-            trinket.id,
-            baseline,
-            runSeries(options, { ...shared, trinketIds: [trinket.id] }),
-          );
+          recordComparison(options, collected, tier.preset, trinket.id, baseline, {
+            ...shared,
+            trinketIds: [trinket.id],
+          });
         }
       }
     }
@@ -150,7 +174,7 @@ export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string)
   const ids = reportCharacterIds();
   const iterations = Math.max(10, Math.floor(options.iterations / 10));
   for (const tier of REPORT_TIERS) {
-    for (let index = 0; index < options.cardIterations; index += 1) {
+    for (let index = 0; index < options.cardDeckSamples; index += 1) {
       const characterId = ids[index % ids.length]!;
       const deckSeed = balanceScenarioSeed("card-isolated-deck", tier.preset, enemyId, index);
       const seed = balanceScenarioSeed("card-isolated-fight", tier.preset, characterId, enemyId, index);
@@ -163,14 +187,15 @@ export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string)
         trinketIds: [],
         iterations,
       };
-      const baseline = runSeries(options, { ...shared, deck: buildRandomDeck(deckSeed) });
       for (const card of cardLibrary) {
-        pushComparison(
+        const decks = buildCardIsolationDecks(card, deckSeed);
+        runComparison(
+          options,
           collected,
           tier.preset,
           card.id,
-          baseline,
-          runSeries(options, { ...shared, deck: buildFixedCardDeck(card, deckSeed) }),
+          { ...shared, deck: decks.baseline },
+          { ...shared, deck: decks.treatment },
         );
       }
     }
@@ -245,14 +270,15 @@ export function runTalentSweep(options: ReportRunOptions): PairedTierRow[] {
             preset: tier.preset,
             seed: balanceScenarioSeed("talent-fight", tier.preset, characterId, scenario.enemyId, depth),
             deck,
-            iterations: options.trinketIterations,
+            iterations: options.pairedIterations,
           };
-          pushComparison(
+          runComparison(
+            options,
             collected,
             tier.preset,
             talent.id,
-            runSeries(options, { ...shared, talentEffects: baselineEffects }),
-            runSeries(options, { ...shared, talentEffects: treatmentEffects }),
+            { ...shared, talentEffects: baselineEffects },
+            { ...shared, talentEffects: treatmentEffects },
           );
         }
       }
@@ -297,14 +323,15 @@ export function runCompanionSweep(options: ReportRunOptions): PairedTierRow[] {
             depth,
             preset: tier.preset,
             seed: balanceScenarioSeed("companion-fight", tier.preset, characterId, scenario.enemyId, depth),
-            iterations: options.trinketIterations,
+            iterations: options.pairedIterations,
           };
-          pushComparison(
+          runComparison(
+            options,
             collected,
             tier.preset,
             companionId,
-            runSeries(options, { ...shared, deck: baselineDeck }),
-            runSeries(options, { ...shared, deck: treatmentDeck }),
+            { ...shared, deck: baselineDeck },
+            { ...shared, deck: treatmentDeck },
           );
         }
       }
@@ -330,7 +357,7 @@ export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
           preset: tier.preset,
           seed,
           deck,
-          iterations: options.trinketIterations,
+          iterations: options.pairedIterations,
         };
         const baseline = runSeries(options, { ...shared, gearEffects: defaultGearEffects });
         for (const item of gearBaseItemList) {
@@ -342,13 +369,10 @@ export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
           const rng = createRunStreamRng(seed, "rewards");
           const instance = generateGearInstanceForBaseItem(item.id, rng);
           const treatmentGear = instance ? resolveAffixEffects(instance.affixes) : defaultGearEffects;
-          pushComparison(
-            collected,
-            tier.preset,
-            item.id,
-            baseline,
-            runSeries(options, { ...shared, gearEffects: treatmentGear }),
-          );
+          recordComparison(options, collected, tier.preset, item.id, baseline, {
+            ...shared,
+            gearEffects: treatmentGear,
+          });
         }
       }
     }
@@ -375,19 +399,16 @@ export function runAffixSweep(options: ReportRunOptions): PairedTierRow[] {
             preset: tier.preset,
             deck,
             seed: balanceScenarioSeed("affix-fight", tier.preset, characterId, scenario.enemyId, depth, deckIndex),
-            iterations: options.trinketIterations,
+            iterations: options.pairedIterations,
           };
           const baseline = runSeries(options, { ...shared, gearEffects: defaultGearEffects });
           for (const affix of gearAffixList) {
             const range = affix.roll[affix.uniqueOnly ? "unique" : tier.preset === "late" ? "astral" : "basic"];
             const value = Math.round((range.min + range.max) / 2);
-            pushComparison(
-              collected,
-              tier.preset,
-              affix.id,
-              baseline,
-              runSeries(options, { ...shared, gearEffects: resolveAffixEffects([{ id: affix.id, value }]) }),
-            );
+            recordComparison(options, collected, tier.preset, affix.id, baseline, {
+              ...shared,
+              gearEffects: resolveAffixEffects([{ id: affix.id, value }]),
+            });
           }
         }
       }

@@ -9,7 +9,6 @@ import {
 import {
   ANOMALY_FINDING_THRESHOLDS,
   EQUITY_SPREAD,
-  FINDINGS_CAP,
   LENGTH_BAND_BY_TYPE,
   MATERIAL_TIMEOUT_RATE,
   WIN_RATE_BAND_BY_TYPE,
@@ -114,8 +113,8 @@ export function renderBalanceFindingsHtml(
 </head>
 <body>
 <h1>Balance Findings</h1>
-<p class="meta">policy=${escapeHtml(meta.policy)} | loadout=${escapeHtml(meta.loadoutMode)} | iterations=${meta.iterations} | ${findings.findings.length} of ${findings.totalBeforeCap} after grouping (cap ${FINDINGS_CAP}, omitted ${findings.omitted})</p>
-<p class="meta">Matchups collapse to the worst class per enemy / tier / metric. The cap then round-robins issue types so stalls, 0/100, length, equity, and anomalies are not crowded out by one boss-WR cluster. Recommendations are discussion prompts — do not apply tunings until reviewed.</p>
+<p class="meta">policy=${escapeHtml(meta.policy)} | loadout=${escapeHtml(meta.loadoutMode)} | iterations=${meta.iterations} | ${findings.findings.length} of ${findings.totalBeforeCap} after grouping (cap ${findings.cap}, omitted ${findings.omitted})</p>
+<p class="meta">Matchups collapse to the worst class per enemy / tier / metric / bucket. The cap then round-robins issue types so stalls, 0/100, length, equity, and anomalies are not crowded out by one boss-WR cluster. Recommendations are discussion prompts — do not apply tunings until reviewed.</p>
 <p class="meta">${bucketSummary(findings)}</p>
 <p class="meta"><a href="${escapeHtml(fullMatrixHref)}">Open full matrix</a></p>
 

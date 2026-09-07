@@ -14,11 +14,11 @@ test.describe("labyrinth-interactions", () => {
       setup: async (page) => {
         await injectLabyrinthRun(page, { resume: true, labyrinthMap: productionHexLabyrinthMapFixture() });
         await expect(page.getByRole("region", { name: "Labyrinth map" })).toBeVisible();
-        await expect.poll(() => page.getByRole("button", { name: /^Floor \d+$/ }).count()).toBeGreaterThan(1);
+        await expect(page.getByRole("combobox", { name: "Floor", exact: true })).toBeVisible();
       },
       interact: async (page, phase) => {
         const nodes = page.getByRole("button", { name: /chamber/i, disabled: false });
-        const floors = page.getByRole("button", { name: /^Floor \d+$/ });
+        const floorPicker = page.getByRole("combobox", { name: "Floor", exact: true });
         const deadline = Date.now() + MEASURE_MS;
         let index = 0;
 
@@ -36,11 +36,9 @@ test.describe("labyrinth-interactions", () => {
           await phase("labyrinth-scroll");
           await page.mouse.wheel(0, index % 2 === 0 ? 420 : -420);
 
-          const floorCount = await floors.count();
-          if (floorCount > 1) {
-            await phase("labyrinth-floor-swap");
-            await floors.nth((index + 1) % floorCount).click();
-          }
+          await phase("labyrinth-floor-swap");
+          await floorPicker.click();
+          await page.getByRole("option", { name: `Floor ${(index % 2) + 1}`, exact: true }).click();
 
           index += 1;
           await delay(180);

@@ -18,6 +18,24 @@ const AFFIXED_INVENTORY = createArmoryInventories([
 describe("ArmoryScreen crafting currencies", () => {
   installArmoryScreenTestHooks();
 
+  it.each(["mouse", "Enter", "Space"])("keeps targeting armed after %s activation", async (input) => {
+    const user = userEvent.setup();
+    renderArmoryScreen({
+      inventories: AFFIXED_INVENTORY,
+      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 },
+    });
+    const button = screen.getByLabelText("Use Voidstone, 1 available");
+    if (input === "mouse") await user.click(button);
+    else {
+      button.focus();
+      await user.keyboard(input === "Enter" ? "{Enter}" : " ");
+    }
+    expect(button.getAttribute("aria-pressed")).toBe("true");
+
+    await user.click(document.body);
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+  });
+
   it("applies the selected currency to gear", async () => {
     const user = userEvent.setup();
     const onApplyCurrency = vi.fn(() => true);

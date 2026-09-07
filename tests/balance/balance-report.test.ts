@@ -12,8 +12,8 @@ import {
 
 const options: ReportRunOptions = {
   iterations: 1,
-  trinketIterations: 1,
-  cardIterations: 1,
+  pairedIterations: 1,
+  cardDeckSamples: 1,
   deckSeeds: 1,
   policy: "random-playable",
   loadoutMode: "bare",

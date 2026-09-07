@@ -77,6 +77,7 @@ export interface BalanceFinding {
 
 export interface BalanceFindingsReport {
   findings: BalanceFinding[];
+  cap: number;
   omitted: number;
   totalBeforeCap: number;
   shownByBucket: Record<FindingBucket, number>;
@@ -152,7 +153,7 @@ function median(values: readonly number[]): number {
 }
 
 function findingKey(finding: BalanceFinding): string {
-  return `${finding.scope}:${finding.id}:${finding.tier}:${finding.metric}`;
+  return `${finding.scope}:${finding.id}:${finding.tier}:${finding.metric}:${finding.bucket}`;
 }
 
 function keepBetter(existing: BalanceFinding | undefined, next: BalanceFinding): BalanceFinding {
@@ -271,6 +272,7 @@ export function evaluateBalanceFindings(
   }
   return {
     findings: orderFindingsForDisplay(selected),
+    cap,
     omitted: Math.max(0, collapsed.length - selected.length),
     totalBeforeCap: collapsed.length,
     shownByBucket,

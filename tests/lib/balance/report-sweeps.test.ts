@@ -8,7 +8,13 @@ const { simulateWinSeries } = vi.hoisted(() => ({
 vi.mock("@/lib/balance/simulator-batch", () => ({ simulateWinSeries }));
 
 import { gearAffixList } from "@/lib/gear/affix-catalog";
-import { IN_CLASS_CARD_GAUNTLET, runCardSweepInClass, runAffixSweep } from "@/lib/balance/report-sweeps";
+import { cardLibrary } from "@/lib/game-data";
+import {
+  IN_CLASS_CARD_GAUNTLET,
+  runCardSweepInClass,
+  runCardSweepIsolated,
+  runAffixSweep,
+} from "@/lib/balance/report-sweeps";
 
 describe("runCardSweepInClass", () => {
   beforeEach(() => {
@@ -24,8 +30,8 @@ describe("runCardSweepInClass", () => {
   it("isolates every affix with matched battles across all tiers", () => {
     const rows = runAffixSweep({
       iterations: 1,
-      trinketIterations: 2,
-      cardIterations: 1,
+      pairedIterations: 2,
+      cardDeckSamples: 1,
       deckSeeds: 2,
       policy: "random-playable",
       loadoutMode: "bare",
@@ -55,8 +61,8 @@ describe("runCardSweepInClass", () => {
   it("runs each full base deck once per tier and character", () => {
     runCardSweepInClass({
       iterations: 1,
-      trinketIterations: 1,
-      cardIterations: 1,
+      pairedIterations: 1,
+      cardDeckSamples: 1,
       deckSeeds: 1,
       policy: "random-playable",
       loadoutMode: "bare",
@@ -79,6 +85,39 @@ describe("runCardSweepInClass", () => {
       expect(
         calls.slice(1).every((config) => Math.abs((config.deck?.length ?? 0) - (baseDeck?.length ?? 0)) === 1),
       ).toBe(true);
+    }
+  });
+
+  it("keeps the target card out of every isolated baseline", () => {
+    runCardSweepIsolated(
+      {
+        iterations: 1,
+        pairedIterations: 1,
+        cardDeckSamples: 1,
+        deckSeeds: 1,
+        policy: "random-playable",
+        loadoutMode: "bare",
+      },
+      "skeleton",
+    );
+
+    const calls = simulateWinSeries.mock.calls.map(([config]) => config as BalanceBatchConfig);
+    expect(calls).toHaveLength(3 * cardLibrary.length * 2);
+    for (let index = 0; index < calls.length; index += 2) {
+      const baseline = calls[index]?.deck ?? [];
+      const treatment = calls[index + 1]?.deck ?? [];
+      const targetId = treatment.at(-1)?.id;
+      const baselineIds = new Set(baseline.map((card) => card.id));
+      const treatmentIds = new Set(treatment.map((card) => card.id));
+
+      expect(targetId).toBeDefined();
+      expect(baselineIds.has(targetId!)).toBe(false);
+      expect(baseline).toHaveLength(10);
+      expect(treatment).toHaveLength(10);
+      expect(treatmentIds.size).toBe(10);
+      expect(baseline.filter((card) => treatmentIds.has(card.id))).toHaveLength(9);
+      expect(treatment.slice(0, 9)).toEqual(baseline.slice(0, 9));
+      expect(calls[index + 1]?.seed).toBe(calls[index]?.seed);
     }
   });
 });

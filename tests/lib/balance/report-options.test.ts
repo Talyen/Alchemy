@@ -5,8 +5,8 @@ describe("parseBalanceReportOptions", () => {
   it("preserves the report defaults", () => {
     expect(parseBalanceReportOptions({})).toEqual({
       iterations: 100,
-      trinketIterations: 50,
-      cardIterations: 33,
+      pairedIterations: 50,
+      cardDeckSamples: 33,
       deckSeeds: 3,
       policy: "random-playable",
       loadoutMode: "typical",
@@ -26,8 +26,8 @@ describe("parseBalanceReportOptions", () => {
       }),
     ).toEqual({
       iterations: 12,
-      trinketIterations: 20,
-      cardIterations: 30,
+      pairedIterations: 20,
+      cardDeckSamples: 30,
       deckSeeds: 2,
       policy: "greedy-effective-damage",
       loadoutMode: "bare",
@@ -45,6 +45,7 @@ describe("parseBalanceReportOptions", () => {
     ["ALCHEMY_BALANCE_POLICY", "fast"],
     ["ALCHEMY_BALANCE_LOADOUT", "loaded"],
     ["ALCHEMY_BALANCE_PACING", "sometimes"],
+    ["ALCHEMY_BALANCE_FINDINGS_CAP", "0"],
   ])("rejects invalid %s=%s before report generation", (name, value) => {
     expect(() => parseBalanceReportOptions({ [name]: value })).toThrow(name);
   });

@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  canPlayCard,
-  enemyAttackDealsDamage,
-  hasDamageEffect,
-  isAttackCard,
-  playBattleCardResolved,
-} from "@/lib/battle/card-play";
-import { cardHasDamageType } from "@/lib/battle/card-cost-rules";
+import { canPlayCard, enemyAttackDealsDamage, playBattleCardResolved } from "@/lib/battle/card-play";
+import { cardHasDamageType, hasDamageEffect, isAttackCard } from "@/lib/battle/card-classification";
 import { defaultBattleState } from "@/lib/battle";
 import { cardById, companionLibrary } from "@/lib/game-data";
 import { makeState as makeSharedState, makeTestCard, slashDeck } from "../../fixtures/battle";

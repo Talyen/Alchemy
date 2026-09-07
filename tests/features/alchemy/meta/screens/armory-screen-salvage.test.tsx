@@ -6,6 +6,21 @@ import { installArmoryScreenTestHooks, renderArmoryScreen } from "./armory/armor
 describe("ArmoryScreen salvage flow", () => {
   installArmoryScreenTestHooks();
 
+  it.each(["mouse", "Enter", "Space"])("keeps targeting armed after %s activation", async (input) => {
+    const user = userEvent.setup();
+    renderArmoryScreen();
+    const button = screen.getByLabelText("Salvage");
+    if (input === "mouse") await user.click(button);
+    else {
+      button.focus();
+      await user.keyboard(input === "Enter" ? "{Enter}" : " ");
+    }
+    expect(button.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
+    await user.click(document.body);
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+  });
+
   it("salvages an item and returns to browsing", async () => {
     const user = userEvent.setup();
     const onSalvage = vi.fn(() => true);

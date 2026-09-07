@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { ScreenShell, ScreenHeaderRow } from "../../../shared/ui/shared-ui";
-import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { floorNodes, labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
 
@@ -21,31 +21,45 @@ interface Props {
 
 export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect, onNodeDeselect, onNodeEnter }: Props) {
   const playableFloors = useMemo(
-    () => (labyrinthMap ? labyrinthMap.floors.filter((floor) => floor.depth > 0) : []),
+    () =>
+      labyrinthMap ? labyrinthMap.floors.filter((floor) => floor.depth > 0).sort((a, b) => a.depth - b.depth) : [],
     [labyrinthMap],
   );
   const [viewedFloor, setViewedFloor] = useState(labyrinthMap?.currentFloor ?? 1);
   const currentFloor = labyrinthMap?.currentFloor ?? 1;
   const previousFloor = useRef(currentFloor);
+  const scrollPositions = useRef(new Map<number, number>());
+  const readScrollPosition = useCallback(() => scrollPositions.current.get(viewedFloor), [viewedFloor]);
+  const saveScrollPosition = useCallback(
+    (position: number) => {
+      scrollPositions.current.set(viewedFloor, position);
+    },
+    [viewedFloor],
+  );
   const playableDepths = useMemo(() => new Set(playableFloors.map((floor) => floor.depth)), [playableFloors]);
   useEffect(() => {
     const advanced = currentFloor > previousFloor.current;
     previousFloor.current = currentFloor;
     if (advanced || (labyrinthMap !== null && !playableDepths.has(viewedFloor))) {
+      scrollPositions.current.delete(currentFloor);
+      onNodeDeselect();
       setViewedFloor(currentFloor);
     }
-  }, [currentFloor, viewedFloor, labyrinthMap, playableDepths]);
+  }, [currentFloor, viewedFloor, labyrinthMap, playableDepths, onNodeDeselect]);
 
   useEffect(() => {
     if (!selectedNodeId || !labyrinthMap) return;
     const node = labyrinthMap.nodes[selectedNodeId];
-    if (!node || node.floor !== viewedFloor) onNodeDeselect();
+    if (!node || node.floor !== viewedFloor || labyrinthNodeVisualState(labyrinthMap, node.id) !== "reachable")
+      onNodeDeselect();
   }, [selectedNodeId, viewedFloor, labyrinthMap, onNodeDeselect]);
 
   const nodes = labyrinthMap ? floorNodes(labyrinthMap, viewedFloor) : [];
-  const selectedNode = nodes.find((node) => node.id === selectedNodeId && !node.cleared) ?? null;
-  const selectedCanEnter =
-    selectedNode && labyrinthMap ? labyrinthNodeVisualState(labyrinthMap, selectedNode.id) === "reachable" : false;
+  const selectedNode =
+    nodes.find(
+      (node) =>
+        node.id === selectedNodeId && labyrinthMap && labyrinthNodeVisualState(labyrinthMap, node.id) === "reachable",
+    ) ?? null;
   const inspectorNodeId = selectedNode?.id ?? null;
   usePlasmaBaseline(selectedNode ? getLabyrinthNodePlasmaPair(selectedNode) : null);
 
@@ -70,44 +84,45 @@ export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect,
     <div className="h-full min-h-0 overflow-hidden">
       <ScreenShell className="h-full min-h-0 gap-4" minHeightClass="min-h-0" maxWidthClass="max-w-7xl">
         <div className="shrink-0">
-          <ScreenHeaderRow title="Labyrinth" eyebrow={`Floor ${viewedFloor}`} />
+          <ScreenHeaderRow
+            title="Labyrinth"
+            trailing={
+              playableFloors.length > 0 ? (
+                <Select
+                  value={String(viewedFloor)}
+                  onValueChange={(value) => {
+                    onNodeDeselect();
+                    setViewedFloor(Number(value));
+                  }}
+                >
+                  <SelectTrigger aria-label="Floor" className="w-auto shrink-0 gap-2 px-3 py-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {playableFloors.map((floor) => (
+                      <SelectItem key={floor.id} value={String(floor.depth)}>
+                        Floor {floor.depth}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : null
+            }
+          />
         </div>
-        {playableFloors.length > 1 ? (
-          <div className="flex shrink-0 gap-2 overflow-x-auto" role="group" aria-label="Floors">
-            {playableFloors.map((floor) => (
-              <button
-                key={floor.id}
-                type="button"
-                aria-pressed={viewedFloor === floor.depth}
-                onClick={() => {
-                  if (floor.depth === viewedFloor) return;
-                  onNodeDeselect();
-                  setViewedFloor(floor.depth);
-                }}
-                className={cn(
-                  "shrink-0 rounded-md px-3 py-2 text-sm font-semibold",
-                  viewedFloor === floor.depth
-                    ? "bg-amber-400/20 text-amber-100"
-                    : "text-amber-100/60 hover:text-amber-100",
-                )}
-              >
-                Floor {floor.depth}
-              </button>
-            ))}
-          </div>
-        ) : null}
         <div className="relative flex min-h-0 flex-1">
-          <FadeSlot swapKey={viewedFloor} className="flex min-h-0 min-w-0 flex-1">
+          <FadeSlot swapKey={viewedFloor} className="labyrinth-floor-swap flex min-h-0 min-w-0 flex-1">
             {labyrinthMap ? (
               <LabyrinthMapViewport
                 key={viewedFloor}
                 map={labyrinthMap}
                 nodes={nodes}
                 selectedNodeId={selectedNode?.id ?? null}
-                canEnter={selectedCanEnter}
                 onEnter={onNodeEnter}
                 onSelect={onNodeSelect}
                 onDeselect={onNodeDeselect}
+                readScrollPosition={readScrollPosition}
+                saveScrollPosition={saveScrollPosition}
               />
             ) : null}
           </FadeSlot>

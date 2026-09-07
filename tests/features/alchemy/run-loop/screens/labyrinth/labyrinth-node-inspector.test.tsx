@@ -6,11 +6,11 @@ import type { LabyrinthNode } from "@/lib/content-systems/types";
 
 afterEach(cleanup);
 
-function renderInspector(overrides: Partial<LabyrinthNode> = {}, canEnter = true) {
+function renderInspector(overrides: Partial<LabyrinthNode> = {}) {
   const onEnter = vi.fn();
   const node: LabyrinthNode = { ...hexLabyrinthMapFixture().nodes["labyrinth-floor-1-n0"], ...overrides };
   if (!["combat", "elite", "boss"].includes(node.type)) delete node.enemyId;
-  render(<LabyrinthNodeInspector node={node} canEnter={canEnter} onEnter={onEnter} />);
+  render(<LabyrinthNodeInspector node={node} onEnter={onEnter} />);
   return { onEnter };
 }
 
@@ -46,10 +46,10 @@ describe("Labyrinth inspector", () => {
     expect(screen.queryByRole("button", { name: "Close chamber details" })).toBeNull();
   });
 
-  it("keeps a locked boss inspectable without a Fight action", () => {
-    renderInspector({ type: "boss", enemyId: "forge-golem" }, false);
+  it("shows the boss identity and Fight action", () => {
+    renderInspector({ type: "boss", enemyId: "forge-golem" });
     expect(screen.getByRole("heading", { name: "The Forge Golem" })).toBeTruthy();
     expect(screen.getByText("Boss Combat")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Fight" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Fight" })).toBeTruthy();
   });
 });

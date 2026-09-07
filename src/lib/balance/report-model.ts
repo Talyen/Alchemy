@@ -45,8 +45,8 @@ export interface BalanceReportModel {
     readonly policy: BalancePlayPolicy;
     readonly loadoutMode: BalanceLoadoutMode;
     readonly iterations: number;
-    readonly trinketIterations: number;
-    readonly cardIterations: number;
+    readonly pairedIterations: number;
+    readonly cardDeckSamples: number;
     readonly deckSeeds: number;
   };
   readonly enemies: readonly TierRateRow[];

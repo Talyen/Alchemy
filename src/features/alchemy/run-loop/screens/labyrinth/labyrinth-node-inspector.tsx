@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION, LABYRINTH_NODE_META, tooltipBodyClass } from "@/features/alchemy/shared/config";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getKeywordListShineColors, SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
-import { Surface } from "@/features/alchemy/shared/ui/surface";
 import { ShineText } from "@/features/alchemy/shared/ui/shine-text";
 import { renderColoredKeywords } from "@/features/alchemy/shared/ui/card-description-ui";
 import { cn } from "@/lib/utils";
@@ -18,7 +17,6 @@ import type {
 
 interface Props {
   node: LabyrinthNode;
-  canEnter: boolean;
   onEnter: () => void;
 }
 
@@ -54,7 +52,7 @@ function ModifierCard({ modifier, variant }: { modifier: EncounterTraitId; varia
   );
 }
 
-export function LabyrinthNodeInspector({ node, canEnter, onEnter }: Props) {
+export function LabyrinthNodeInspector({ node, onEnter }: Props) {
   const meta = LABYRINTH_NODE_META[node.type];
   const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : null;
   const destinationLabel = NODE_TYPE_LABELS[node.type];
@@ -68,38 +66,32 @@ export function LabyrinthNodeInspector({ node, canEnter, onEnter }: Props) {
       aria-label="Chamber details"
       className="labyrinth-inspector-in flex max-h-full min-h-0 w-full flex-col overflow-hidden rounded-shell-hero border border-white/10 bg-black shadow-xl motion-reduce:animate-none"
     >
-      <div className="min-h-0 overflow-y-auto overscroll-contain p-4">
-        <Surface
-          clipContents={false}
-          className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-shell-card border border-border/80 bg-black shadow-md"
-          testId="chamber-art"
-        >
+      <div className="min-h-0 overflow-y-auto overscroll-contain">
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-black" data-testid="chamber-art">
           <img src={art} alt="" className="block h-full w-full object-cover" draggable={false} />
-        </Surface>
-        <div className="mt-3">
+        </div>
+        <div className="p-3">
           {category !== title ? (
             <p className="text-sm font-bold tracking-wide text-amber-100/70 uppercase">{category}</p>
           ) : null}
           <h2 className="text-2xl font-semibold text-amber-50">{title}</h2>
+          {node.modifiers.length > 0 || node.rewardModifiers.length > 0 ? (
+            <div className="mt-3 grid gap-2">
+              {node.modifiers.map((modifier) => (
+                <ModifierCard key={modifier} modifier={modifier} variant="enemy" />
+              ))}
+              {node.rewardModifiers.map((modifier) => (
+                <ModifierCard key={modifier} modifier={modifier} variant="reward" />
+              ))}
+            </div>
+          ) : null}
         </div>
-        {node.modifiers.length > 0 || node.rewardModifiers.length > 0 ? (
-          <div className="mt-4 grid gap-2">
-            {node.modifiers.map((modifier) => (
-              <ModifierCard key={modifier} modifier={modifier} variant="enemy" />
-            ))}
-            {node.rewardModifiers.map((modifier) => (
-              <ModifierCard key={modifier} modifier={modifier} variant="reward" />
-            ))}
-          </div>
-        ) : null}
       </div>
-      {canEnter ? (
-        <div className="shrink-0 border-t border-white/10 p-4">
-          <Button size="lg" variant="primary" className={cn(BUTTON_WIDTH_ACTION, "w-full")} onClick={onEnter}>
-            {meta.actionLabel}
-          </Button>
-        </div>
-      ) : null}
+      <div className="shrink-0 border-t border-white/10 p-3">
+        <Button size="lg" variant="primary" className={cn(BUTTON_WIDTH_ACTION, "w-full")} onClick={onEnter}>
+          {meta.actionLabel}
+        </Button>
+      </div>
     </aside>
   );
 }

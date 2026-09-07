@@ -4,6 +4,8 @@ import {
   FINDINGS_CAP,
   emptyRateCell,
   makePairedDelta,
+  renderBalanceFindingsHtml,
+  renderBalanceFindingsJson,
   type BalanceReportModel,
   type ClassMatchupRow,
   type PairedTierRow,
@@ -40,8 +42,8 @@ function emptyModel(): { -readonly [Key in keyof BalanceReportModel]: BalanceRep
       policy: "greedy-effective-damage",
       loadoutMode: "typical",
       iterations: 10,
-      trinketIterations: 10,
-      cardIterations: 10,
+      pairedIterations: 10,
+      cardDeckSamples: 10,
       deckSeeds: 1,
     },
     enemies: [],
@@ -110,6 +112,31 @@ describe("evaluateBalanceFindings", () => {
     );
     expect(matchup?.severity).toBe("critical");
     expect(matchup?.observed).toBe(0.2);
+  });
+
+  it("retains separate type-band and equity findings for one matchup", () => {
+    const model = emptyModel();
+    model.classMatchups = [
+      {
+        characterId: "knight",
+        enemyId: "skeleton",
+        enemyType: "normal",
+        rates: rates(cell({ winRate: 0.6, averageTurns: 6 })),
+        topCardsLate: [],
+      },
+      {
+        characterId: "rogue",
+        enemyId: "skeleton",
+        enemyType: "normal",
+        rates: rates(cell({ winRate: 0.95, averageTurns: 6 })),
+        topCardsLate: [],
+      },
+    ];
+
+    const findings = evaluateBalanceFindings(model, { findingsCap: 100 }).findings.filter(
+      (finding) => finding.id === "knight:skeleton" && finding.tier === "late",
+    );
+    expect(findings.map((finding) => finding.bucket)).toEqual(expect.arrayContaining(["typeWinRate", "equity"]));
   });
 
   it("skips noisy paired deltas and flags a far non-noisy card", () => {
@@ -211,7 +238,7 @@ describe("evaluateBalanceFindings", () => {
 
   it("caps the summary", () => {
     const model = emptyModel();
-    model.anomalyMetrics = Array.from({ length: 40 }, (_, index) => ({
+    model.anomalyMetrics = Array.from({ length: 120 }, (_, index) => ({
       field: `metric-${index}`,
       values: { early: 0, mid: 0, late: 500 },
     }));
@@ -220,6 +247,28 @@ describe("evaluateBalanceFindings", () => {
     expect(result.omitted).toBeGreaterThan(0);
     expect(result.totalBeforeCap).toBeGreaterThan(FINDINGS_CAP);
     expect(result.shownByBucket.anomaly).toBe(FINDINGS_CAP);
+  });
+
+  it("renders the effective findings cap consistently", () => {
+    const model = emptyModel();
+    model.anomalyMetrics = Array.from({ length: 10 }, (_, index) => ({
+      field: `metric-${index}`,
+      values: { early: 0, mid: 0, late: 500 },
+    }));
+    const findings = evaluateBalanceFindings(model, { findingsCap: 3 });
+    const options = {
+      iterations: 10,
+      pairedIterations: 10,
+      cardDeckSamples: 10,
+      deckSeeds: 1,
+      policy: "random-playable" as const,
+      loadoutMode: "bare" as const,
+      findingsCap: 3,
+    };
+
+    expect(findings.cap).toBe(3);
+    expect(renderBalanceFindingsHtml(findings, model)).toContain("cap 3");
+    expect(JSON.parse(renderBalanceFindingsJson(findings, model, options)).bands.cap).toBe(3);
   });
 
   it("collapses class matchups and still surfaces other issue types under the cap", () => {
@@ -261,7 +310,7 @@ describe("evaluateBalanceFindings", () => {
     const matchupWinRates = result.findings.filter(
       (finding) => finding.scope === "matchup" && finding.metric === "winRate",
     );
-    expect(matchupWinRates.length).toBeLessThanOrEqual(bosses.length);
+    expect(matchupWinRates.length).toBeLessThanOrEqual(bosses.length * 2);
     expect(matchupWinRates.some((finding) => (finding.clusterSize ?? 1) > 1)).toBe(true);
     expect(result.findings.some((finding) => finding.id === "goblin" && finding.metric === "averageTurns")).toBe(true);
     expect(

@@ -83,7 +83,7 @@ describe("useLabyrinthController hook", () => {
     expect(onStartBattle).toHaveBeenCalledOnce();
   });
 
-  it("selects a locked chamber without allowing enter", () => {
+  it("deselects when a locked chamber is requested and never enters it", () => {
     const { result } = renderHook(() => useLabyrinthController());
     const map = readRunSession().labyrinthMap!;
     const locked = Object.values(map.nodes).find(
@@ -93,13 +93,23 @@ describe("useLabyrinthController hook", () => {
 
     let entered = true;
     act(() => {
+      result.current.selectNode(firstReachableId());
       result.current.selectNode(locked!.id);
       entered = result.current.enterSelectedNode(stubNodeHandlers());
     });
 
-    expect(readRunSession().selectedLabyrinthNodeId).toBe(locked!.id);
+    expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
     expect(entered).toBe(false);
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
+  });
+
+  it.each([LABYRINTH_ENTRANCE_NODE_ID, "missing-node"])("rejects completed or missing selection %s", (nodeId) => {
+    const { result } = renderHook(() => useLabyrinthController());
+    act(() => {
+      result.current.selectNode(firstReachableId());
+      result.current.selectNode(nodeId);
+    });
+    expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
   });
 
   it("resetMap clears pending selection and rebuilds the map", () => {

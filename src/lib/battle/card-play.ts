@@ -23,19 +23,20 @@ import { getBattleRng, rngInt, rollPercent } from "@/lib/rng";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 
 import { prepareUniqueCardPlay, finishUniqueCardDamage, returnHarvestCard } from "./unique-card-effects";
-import { cardHasDamageType, computeCardPayment, computeEffectiveCost, isNatureCard } from "./card-cost-rules";
+import { computeCardPayment } from "./card-cost-rules";
+import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
 import { isPlayerCcControlled } from "./status-cc";
 import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
-function resolveCardPlayCost(state: BattleState, card: BattleCard) {
-  const { effectiveCost, consumedFlags, disarmedFlags } = computeEffectiveCost(state, card);
+function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof computeCardPayment>): BattleState {
+  const { consumedFlags, disarmedFlags } = payment;
   if (consumedFlags.size === 0 && disarmedFlags.size === 0) {
-    return { state, effectiveCost };
+    return state;
   }
   const nextFlags: CombatFlags = { ...state.flags };
   for (const flag of consumedFlags) nextFlags[flag] = true;
   for (const flag of disarmedFlags) nextFlags[flag] = false;
-  return { state: { ...state, flags: nextFlags }, effectiveCost };
+  return { ...state, flags: nextFlags };
 }
 
 function getPlayableCard(state: BattleState, cardId: string, index: number): BattleCard | null {
@@ -62,26 +63,31 @@ function isCardInHand(state: BattleState, card: BattleCard, index: number): bool
   return !!currentCard && currentCard.id === card.id && currentCard.uid === card.uid;
 }
 
-function canAffordCard(state: BattleState, index: number): boolean {
-  const currentCard = state.hand[index];
-  return !!currentCard && computeCardPayment(state, currentCard).affordable;
-}
-
 function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
   if (!isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0) return state;
   return dealPlayerTypedHit(state, "poison", state.trinketEffects.mortarPestlePoisonOnPotionUse, combatTexts);
 }
 
+function validateCardPlay(
+  state: BattleState,
+  card: BattleCard,
+  index: number,
+  options?: CardPlayOptions,
+): ReturnType<typeof computeCardPayment> | null {
+  if (state.enemyHealth <= 0 && !options?.allowAfterEnemyDefeat) return null;
+  if (isPlayerDefeated(state)) return null;
+  if (state.wishOptions) return null;
+  if (state.turnPhase !== "player") return null;
+  if (isPlayerCcControlled(state.playerCC)) return null;
+  if (!isCardInHand(state, card, index)) return null;
+  const payment = computeCardPayment(state, state.hand[index]!);
+  if (!payment.affordable) return null;
+  if (cardHasOnlyCleanseEffect(card, state)) return null;
+  return payment;
+}
+
 export function canPlayCard(state: BattleState, card: BattleCard, index: number, options?: CardPlayOptions): boolean {
-  if (state.enemyHealth <= 0 && !options?.allowAfterEnemyDefeat) return false;
-  if (isPlayerDefeated(state)) return false;
-  if (state.wishOptions) return false;
-  if (state.turnPhase !== "player") return false;
-  if (isPlayerCcControlled(state.playerCC)) return false;
-  if (!isCardInHand(state, card, index)) return false;
-  if (!canAffordCard(state, index)) return false;
-  if (cardHasOnlyCleanseEffect(card, state)) return false;
-  return true;
+  return validateCardPlay(state, card, index, options) !== null;
 }
 
 function executeCardPlayState(
@@ -134,8 +140,8 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
   if (state.gearEffects.elementalTwinCasting <= 0) return state;
   if (state.hand.length >= MAX_HAND_SIZE) return state;
 
-  const hasBurn = cardHasDamageType(card, "burn") || card.tags?.includes("burn");
-  const hasFreeze = cardHasDamageType(card, "freeze") || card.tags?.includes("freeze");
+  const hasBurn = cardHasKeyword(card, "burn");
+  const hasFreeze = cardHasKeyword(card, "freeze");
 
   let targetType: "burn" | "freeze" | null = null;
   if (hasBurn && hasFreeze) {
@@ -150,7 +156,7 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
   const eligibleIndices: number[] = [];
   for (let i = 0; i < state.deck.length; i++) {
     const candidate = state.deck[i];
-    if (candidate && (cardHasDamageType(candidate, targetType) || candidate.tags?.includes(targetType))) {
+    if (candidate && cardHasKeyword(candidate, targetType)) {
       eligibleIndices.push(i);
     }
   }
@@ -286,13 +292,15 @@ export function playBattleCardResolved(
   const enemyWasAlive = state.enemyHealth > 0;
 
   const card = getPlayableCard(state, cardId, index);
-  if (!card || !canPlayCard(state, card, index, options)) return { state, combatTexts };
+  if (!card) return { state, combatTexts };
+  const payment = validateCardPlay(state, card, index, options);
+  if (!payment) return { state, combatTexts };
 
-  const { state: costState, effectiveCost } = resolveCardPlayCost(state, card);
+  const { effectiveCost, blockCost } = payment;
+  const costState = consumeCardDiscounts(state, payment);
 
   const playTwice = costState.flags.playNextCardTwice;
   const prepared = prepareUniqueCardPlay(costState, card, effectiveCost);
-  const { blockCost } = computeCardPayment(state, card);
   const paymentState = {
     ...prepared.state,
     playerStatuses: { ...prepared.state.playerStatuses, block: prepared.state.playerStatuses.block - blockCost },
@@ -321,32 +329,6 @@ export function playBattleCardResolved(
   if (prepared.harvest) nextState = returnHarvestCard(nextState, card);
 
   return { state: nextState, combatTexts };
-}
-
-export function hasDamageEffect(effects: ReadonlyArray<BattleCard["effects"][number]>): boolean {
-  for (const effect of effects) {
-    if (
-      effect.kind === "damage" ||
-      effect.kind === "random-damage" ||
-      effect.kind === "cleanse-player-status-to-damage"
-    ) {
-      return true;
-    }
-    if (
-      effect.kind === "chance" &&
-      (hasDamageEffect(effect.successEffects) || hasDamageEffect(effect.failureEffects))
-    ) {
-      return true;
-    }
-    if (effect.kind === "repeat-over-turns" && hasDamageEffect(effect.effects)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-export function isAttackCard(card: Pick<BattleCard, "effects">): boolean {
-  return hasDamageEffect(card.effects);
 }
 
 export function enemyAttackDealsDamage(effects: readonly EnemyAttackEffect[] | null | undefined): boolean {

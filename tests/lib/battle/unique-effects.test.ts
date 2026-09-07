@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { patchBattleState, makeTestCard } from "../../fixtures/battle";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
@@ -310,6 +310,53 @@ describe("unique item battle effects", () => {
       0,
     );
     expect(resolution.state.hand.some((c) => c.id === "fireball")).toBe(true);
+  });
+
+  it.each([
+    { roll: 0.1, expected: "freeze-second" },
+    { roll: 0.9, expected: "burn-second" },
+  ])("Twin Casting preserves mixed-card selection with roll $roll", ({ roll, expected }) => {
+    const rng = vi.fn().mockReturnValueOnce(roll).mockReturnValueOnce(0.9);
+    const card = makeTestCard({ id: "mixed", cost: 0, tags: ["burn", "freeze"], effects: [] });
+    const deck = [
+      makeTestCard({ id: "freeze-first", tags: ["freeze"], effects: [] }),
+      makeTestCard({ id: "burn-first", tags: ["burn"], effects: [] }),
+      makeTestCard({ id: "freeze-second", tags: ["freeze"], effects: [] }),
+      makeTestCard({ id: "burn-second", tags: ["burn"], effects: [] }),
+    ];
+    const state = patchBattleState({
+      hand: [card],
+      deck,
+      nextCardUid: 100,
+      gearEffects: { elementalTwinCasting: 1 },
+      rng,
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    expect(result.hand.map(({ id, uid }) => ({ id, uid }))).toEqual([{ id: expected, uid: 100 }]);
+    expect(result.deck.map(({ id }) => id)).toEqual(deck.filter(({ id }) => id !== expected).map(({ id }) => id));
+    expect(result.nextCardUid).toBe(101);
+    expect(rng).toHaveBeenCalledTimes(2);
+    expect(state.deck).toEqual(deck);
+  });
+
+  it("Twin Casting does not refill an empty deck from discard", () => {
+    const rng = vi.fn(() => 0.1);
+    const card = makeTestCard({ id: "mixed", cost: 0, tags: ["burn", "freeze"], effects: [] });
+    const discarded = makeTestCard({ id: "freeze", tags: ["freeze"], effects: [] });
+    const state = patchBattleState({
+      hand: [card],
+      deck: [],
+      discard: [discarded],
+      nextCardUid: 100,
+      gearEffects: { elementalTwinCasting: 1 },
+      rng,
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    expect(result.hand).toEqual([]);
+    expect(result.deck).toEqual([]);
+    expect(result.discard).toEqual([discarded, card]);
+    expect(result.nextCardUid).toBe(100);
+    expect(rng).toHaveBeenCalledTimes(1);
   });
 
   it("Saintfall Plate triggers holy retribution and heal on every block depletion", () => {

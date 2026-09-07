@@ -3,6 +3,17 @@ import { simulateBatch, simulateWinSeries } from "@/lib/balance/simulator-batch"
 import type { BalanceBatchConfig } from "@/lib/balance/simulator-types";
 
 describe("simulateWinSeries", () => {
+  it.each([0, -1, 1.5, Number.POSITIVE_INFINITY])("rejects invalid iteration counts: %s", (iterations) => {
+    const config: BalanceBatchConfig = {
+      characterId: "knight",
+      enemyId: "skeleton",
+      iterations,
+    };
+
+    expect(() => simulateBatch(config)).toThrow("iterations must be a positive integer");
+    expect(() => simulateWinSeries(config)).toThrow("iterations must be a positive integer");
+  });
+
   it("matches detailed win totals without retaining battle results", () => {
     const config: BalanceBatchConfig = {
       characterId: "knight",

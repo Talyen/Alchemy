@@ -10,10 +10,12 @@ const PLAY_POLICIES: readonly BalancePlayPolicy[] = [
 
 const LOADOUT_MODES: readonly BalanceLoadoutMode[] = ["bare", "typical"];
 
+export const DEFAULT_FINDINGS_CAP = 100;
+
 export interface ReportRunOptions {
   iterations: number;
-  trinketIterations: number;
-  cardIterations: number;
+  pairedIterations: number;
+  cardDeckSamples: number;
   policy: BalancePlayPolicy;
   loadoutMode: BalanceLoadoutMode;
   deckSeeds: number;
@@ -57,12 +59,16 @@ export function parseBalanceReportOptions(env: NodeJS.ProcessEnv = process.env):
   const iterations = parsePositiveInteger("ALCHEMY_BALANCE_ITERATIONS", env.ALCHEMY_BALANCE_ITERATIONS, 100);
   return {
     iterations,
-    trinketIterations: Math.max(20, Math.floor(iterations / 2)),
-    cardIterations: Math.max(30, Math.floor(iterations / 3)),
+    pairedIterations: Math.max(20, Math.floor(iterations / 2)),
+    cardDeckSamples: Math.max(30, Math.floor(iterations / 3)),
     deckSeeds: parsePositiveInteger("ALCHEMY_BALANCE_DECK_SEEDS", env.ALCHEMY_BALANCE_DECK_SEEDS, 3),
     policy: parseChoice("ALCHEMY_BALANCE_POLICY", env.ALCHEMY_BALANCE_POLICY, "random-playable", PLAY_POLICIES),
     loadoutMode: parseChoice("ALCHEMY_BALANCE_LOADOUT", env.ALCHEMY_BALANCE_LOADOUT, "typical", LOADOUT_MODES),
     appliesFightPacing: appliesFightPacingFromEnv(env.ALCHEMY_BALANCE_PACING),
-    findingsCap: parsePositiveInteger("ALCHEMY_BALANCE_FINDINGS_CAP", env.ALCHEMY_BALANCE_FINDINGS_CAP, 100),
+    findingsCap: parsePositiveInteger(
+      "ALCHEMY_BALANCE_FINDINGS_CAP",
+      env.ALCHEMY_BALANCE_FINDINGS_CAP,
+      DEFAULT_FINDINGS_CAP,
+    ),
   };
 }

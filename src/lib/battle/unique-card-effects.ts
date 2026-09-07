@@ -2,7 +2,7 @@ import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { MAX_HAND_SIZE, UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { damageOnlyEffects } from "./damage-effect-selection";
 import { applyCardEffects } from "./effect-handlers";
-import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-cost-rules";
+import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
 import { processCompanionTurnStart } from "./companion";
 import { type BattleState, type CombatTextEvent, isPlayerDefeated, withPreservedFlags } from "./types";
 

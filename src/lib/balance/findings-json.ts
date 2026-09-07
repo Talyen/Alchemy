@@ -2,7 +2,6 @@ import type { BalanceFindingsReport } from "./findings";
 import {
   ANOMALY_FINDING_THRESHOLDS,
   EQUITY_SPREAD,
-  FINDINGS_CAP,
   LENGTH_BAND_BY_TYPE,
   MATERIAL_TIMEOUT_RATE,
   WIN_RATE_BAND_BY_TYPE,
@@ -26,7 +25,7 @@ export function renderBalanceFindingsJson(
         equitySpread: EQUITY_SPREAD,
         materialTimeoutRate: MATERIAL_TIMEOUT_RATE,
         anomalyThresholds: ANOMALY_FINDING_THRESHOLDS,
-        cap: FINDINGS_CAP,
+        cap: findings.cap,
       },
       selection: {
         method: "collapse matchups to worst class per enemy/tier/metric/bucket, then round-robin buckets",

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 import { assertScreenTransitionAllowed, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
@@ -34,48 +34,45 @@ export function useScreenTransitions(
     pendingTransitionCommitRef.current = null;
   }, []);
 
-  const navigateTo = useCallback(
-    (nextScreen: Screen, onRenderedScreenCommit?: () => void) => {
-      assertScreenTransitionAllowed(currentScreenRef.current, nextScreen);
-      cancelPending();
-      pendingTransitionCommitRef.current = onRenderedScreenCommit ?? null;
-      timerRef.current.setTimeout(() => {
-        if (nextScreen === currentScreenRef.current) {
-          commitPendingTransition();
-          return;
-        }
-        setScreen(nextScreen);
-      }, NAVIGATION_DELAY_MS);
-    },
-    [cancelPending, commitPendingTransition, currentScreenRef, setScreen],
-  );
+  useEffect(() => cancelPending, [cancelPending]);
 
   const transition = useCallback(
     (nextScreen: Screen, options: ScreenTransitionOptions = {}) => {
       const { delayMs, immediate, onCommit, guard } = options;
       assertScreenTransitionAllowed(currentScreenRef.current, nextScreen);
+      cancelPending();
+      const deferCommit = !immediate && delayMs == null;
 
-      const applyImmediate = () => {
+      const apply = () => {
         if (guard && !guard()) return;
+        if (deferCommit) {
+          pendingTransitionCommitRef.current = onCommit ?? null;
+          if (nextScreen === currentScreenRef.current) {
+            commitPendingTransition();
+            return;
+          }
+          setScreen(nextScreen);
+          return;
+        }
         setScreen(nextScreen);
         onCommit?.();
       };
 
       if (immediate) {
-        cancelPending();
-        applyImmediate();
+        apply();
         return;
       }
 
-      if (delayMs != null) {
-        cancelPending();
-        timerRef.current.setTimeout(applyImmediate, delayMs);
-        return;
-      }
-
-      navigateTo(nextScreen, onCommit);
+      timerRef.current.setTimeout(apply, delayMs ?? NAVIGATION_DELAY_MS);
     },
-    [cancelPending, currentScreenRef, navigateTo, setScreen],
+    [cancelPending, commitPendingTransition, currentScreenRef, setScreen],
+  );
+
+  const navigateTo = useCallback(
+    (nextScreen: Screen, onRenderedScreenCommit?: () => void) => {
+      transition(nextScreen, onRenderedScreenCommit ? { onCommit: onRenderedScreenCommit } : {});
+    },
+    [transition],
   );
 
   return { navigateTo, transition, commitPendingTransition, cancelPending };
