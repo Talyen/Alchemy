@@ -64,7 +64,10 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
   );
 }
 
-function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: boolean }): BattleState {
+function resetPlayerTurnState(
+  state: BattleState,
+  options?: { preserveBlock?: boolean; manaAtTurnEnd?: number },
+): BattleState {
   return {
     ...state,
     turn: state.turn + 1,
@@ -102,6 +105,7 @@ function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: bo
       previousCardWasArchery: false,
       previousCardWasNature: false,
       darkRecoveryMana: 0,
+      pendingWishMana: 0,
       encounterPhysicalUsed: false,
       encounterHolyUsed: false,
       encounterNatureUsed: false,
@@ -151,7 +155,7 @@ export function reducePlayerSkipTurns(state: BattleState): BattleState {
 function performDrawAndResetPhase(
   state: BattleState,
   deathsDoorNeedsRecoveryTurn: boolean,
-  options?: { preserveBlock?: boolean },
+  options?: { preserveBlock?: boolean; manaAtTurnEnd?: number },
 ): BattleState {
   const returningIndex =
     state.gearEffects.recoverLastArcheryCard > 0 && state.uniqueGear.lastArcheryUid !== null
@@ -169,7 +173,7 @@ function performDrawAndResetPhase(
     nextDraw.discard.push(recovered);
   }
   const nextState = resetPlayerTurnState(state, options);
-  const hadUnspentMana = state.mana > 0;
+  const hadUnspentMana = (options?.manaAtTurnEnd ?? state.mana) > 0;
   const wellspringBonus =
     hadUnspentMana && state.talentEffects.wellspringKeepMana > 0 ? state.talentEffects.wellspringKeepMana : 0;
   return {
@@ -191,7 +195,7 @@ function performDrawAndResetPhase(
 export function advanceToPlayerTurn(
   state: BattleState,
   combatTexts: CombatTextEvent[] = [],
-  options?: { preserveBlock?: boolean },
+  options?: { preserveBlock?: boolean; manaAtTurnEnd?: number },
 ) {
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
   const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive;
@@ -210,13 +214,20 @@ export function advanceToPlayerTurn(
     });
   }
   const reset = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options);
-  const recovered =
-    state.flags.darkRecoveryMana > 0
-      ? gainManaWithCombatText(reset, state.flags.darkRecoveryMana, combatTexts, {
+  const wished =
+    state.flags.pendingWishMana > 0
+      ? gainManaWithCombatText(reset, state.flags.pendingWishMana, combatTexts, {
           allowOverflow: true,
           skipFightPacing: true,
         })
       : reset;
+  const recovered =
+    state.flags.darkRecoveryMana > 0
+      ? gainManaWithCombatText(wished, state.flags.darkRecoveryMana, combatTexts, {
+          allowOverflow: true,
+          skipFightPacing: true,
+        })
+      : wished;
   const drawnState = processArcheryEchoes(
     processPendingTurnStartEffects(applyPlagueDoctorMask(recovered, combatTexts), combatTexts),
     combatTexts,

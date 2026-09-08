@@ -65,7 +65,7 @@ function ArmoryScreenRoute({
       craftingCurrencies={controller.craftingCurrencies}
       onApplyCurrency={controller.onApplyCurrency}
       finishedRunCharacters={controller.finishedRunCharacters}
-      browseOnly={controller.browseOnly}
+      combatRestrictions={controller.combatRestrictions}
       onEquip={controller.onEquip}
       onUnequip={controller.onUnequip}
       onEquipTrinket={controller.onEquipTrinket}

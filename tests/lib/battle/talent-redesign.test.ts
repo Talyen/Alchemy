@@ -68,10 +68,10 @@ describe("repeatable talent replacements", () => {
   it("a lethal shield counter prevents Earth Elemental's Block-break damage", () => {
     const state = battle({
       enemyHealth: 1,
-      playerStatuses: { block: 1 },
+      playerStatuses: { block: 2 },
       talentEffects: talents("block", "block-reduce-burn"),
       currentEnemy: { traits: [{ id: "earth-elemental", title: "Earth Elemental", description: "" }] },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 1 }],
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
     });
     const after = processEnemyAttack(state, []);
     expect(after.enemyHealth).toBe(0);
@@ -364,10 +364,10 @@ describe("repeatable talent replacements", () => {
   it("a lethal Sun-Struck Shield counter stops the remaining enemy hits", () => {
     const state = battle({
       enemyHealth: 1,
-      playerStatuses: { block: 1 },
+      playerStatuses: { block: 2 },
       talentEffects: talents("block", "block-reduce-burn"),
       enemyAttackEffects: [
-        { kind: "damage", damageType: "physical", amount: 1 },
+        { kind: "damage", damageType: "physical", amount: 2 },
         { kind: "damage", damageType: "physical", amount: 100 },
       ],
     });
@@ -446,10 +446,10 @@ describe("repeatable talent replacements", () => {
     const state = battle({
       playerStatuses: { block: 20 },
       talentEffects: { ...talents("block", "block-reduce-burn"), holyBlockPercentFromDamage: 100 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 1 }],
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
     });
     const after = processEnemyAttack(state, []);
-    expect(after.playerStatuses.block).toBe(20);
+    expect(after.playerStatuses.block).toBe(19);
     expect(after.enemyHealth).toBe(99);
   });
 

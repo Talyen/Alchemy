@@ -1,3 +1,4 @@
+import { DeckInspectButton } from "./deck-inspect-button";
 import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -78,9 +79,10 @@ export function ScreenHeaderRow({
     />
   ) : null;
   const trailingContent =
-    trailing || menuButton ? (
+    trailing || menuButton || chrome?.deckInspection ? (
       <div className="flex items-center gap-2">
         {trailing}
+        {chrome?.deckInspection ? <DeckInspectButton {...chrome.deckInspection} compact /> : null}
         {menuButton}
       </div>
     ) : null;

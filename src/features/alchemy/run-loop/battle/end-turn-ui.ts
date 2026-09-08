@@ -1,3 +1,4 @@
+import { useUiStore } from "../../shared/stores/ui-store";
 import { type BattleState } from "@/lib/battle";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { type createBattleSession } from "./battle-session";
@@ -54,6 +55,7 @@ export function createBattleEndTurnUi(
     didHasteDraw = false;
     const currentState = readBattle().battleState;
     if (
+      useUiStore.getState().cardInspection !== null ||
       ctx.screen !== "battle" ||
       currentState.turnPhase !== "player" ||
       currentState.wishOptions ||

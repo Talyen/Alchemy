@@ -1,3 +1,4 @@
+import { useUiStore } from "../../shared/stores/ui-store";
 import type { MouseEvent } from "react";
 import {
   canPlayCard as canPlayCardInBattle,
@@ -77,6 +78,7 @@ export function createBattleCardPlay(
   function canPlayCard(card: BattleCard, index: number, state: BattleState) {
     const presentation = getPresentation();
     return (
+      useUiStore.getState().cardInspection === null &&
       ctx.screen === "battle" &&
       (!ctx.cardPlayInProgressRef.current || (pendingDraws.get(ctx.battleSessionRef.current) ?? 0) > 0) &&
       canPlayCardInBattle(state, card, index, PLAYABLE_HAND_OPTIONS) &&

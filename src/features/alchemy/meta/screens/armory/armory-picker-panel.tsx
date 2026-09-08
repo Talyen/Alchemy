@@ -16,7 +16,10 @@ import { ItemPickerGrid } from "./item-picker-grid";
 import { SLOT_LABELS } from "./parts/slot-labels";
 import { TrinketPickerGrid } from "./trinket-picker-grid";
 
+import type { GearCombatRestrictions } from "../../../shared/stores/gear-store";
+
 interface ArmoryPickerPanelProps {
+  combatRestrictions: GearCombatRestrictions;
   selectedSlot: ArmorySlot;
   characterId: CharacterId;
   pickerItems: GearInstance[];
@@ -38,6 +41,7 @@ interface ArmoryPickerPanelProps {
 }
 
 export function ArmoryPickerPanel({
+  combatRestrictions,
   selectedSlot,
   characterId,
   pickerItems,
@@ -80,6 +84,7 @@ export function ArmoryPickerPanel({
       </div>
       {selectedSlot === "trinket" ? (
         <TrinketPickerGrid
+          reservedTrinkets={combatRestrictions.trinkets}
           characterId={characterId}
           trinkets={ownedTrinkets}
           equippedTrinkets={equippedTrinkets}
@@ -88,6 +93,7 @@ export function ArmoryPickerPanel({
         />
       ) : (
         <ItemPickerGrid
+          reservedGear={combatRestrictions.gear}
           slot={selectedSlot}
           characterId={characterId}
           items={pickerItems}

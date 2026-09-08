@@ -47,7 +47,7 @@ export function hiddenHandKeysEqual(a: HiddenHandCardKeys, b: HiddenHandCardKeys
   return true;
 }
 
-export function handHasHiddenCard(state: BattleState, hiddenHandCardKeys: HiddenHandCardKeys): boolean {
+export function handHasHiddenCard(state: Pick<BattleState, "hand">, hiddenHandCardKeys: HiddenHandCardKeys): boolean {
   if (hiddenHandCardKeys.length === 0) return false;
   for (let index = 0; index < state.hand.length; index++) {
     const card = state.hand[index];

@@ -75,7 +75,9 @@ describe("ArmoryScreen crafting currencies", () => {
     const { rerender } = render(<ArmoryScreen {...props} />);
     await user.click(screen.getByLabelText(/^Use Voidstone,/));
 
-    rerender(<ArmoryScreen {...props} browseOnly />);
+    rerender(
+      <ArmoryScreen {...props} combatRestrictions={{ characters: { knight: ["campaign"] }, gear: {}, trinkets: {} }} />,
+    );
 
     await waitFor(() => expect(screen.queryByRole("button", { name: /Apply Voidstone/ })).toBeNull());
   });

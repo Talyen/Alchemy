@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
-import { mutateGearForTest, resetGearForTest } from "../../../../../helpers/gameplay-store-test";
+import { mutateGearForTest, resetAllTestStores } from "../../../../../helpers/gameplay-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setHasActiveBattle,
@@ -31,7 +31,7 @@ vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (im
 
 describe("useArmoryController", () => {
   beforeEach(() => {
-    resetGearForTest();
+    resetAllTestStores();
     vi.clearAllMocks();
   });
 
@@ -121,22 +121,25 @@ describe("useArmoryController", () => {
     expect(flushSaveAfterGearMutation).toHaveBeenCalled();
   });
 
-  it("keeps Armory editable during an active battle", () => {
+  it("rejects equipment changes without flushing during an active battle", () => {
     const armor: GearInstance = { instanceId: "armor-locked", definitionId: "plate-armor-basic", affixes: [] };
     const inventories = createEmptyGearInventories();
     inventories.knight = [armor];
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
-    dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, true));
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveRun(draft, true);
+      setHasActiveBattle(draft, true);
+    });
 
     const { result } = renderHook(() => useArmoryController());
-    expect(result.current.browseOnly).toBe(false);
+    expect(result.current.combatRestrictions.characters.knight).toEqual(["campaign"]);
 
     act(() => {
       result.current.onEquip("knight", "body", armor);
     });
 
-    expect(readGearState().loadouts.knight.body).toBe(armor.instanceId);
-    expect(flushSaveAfterGearMutation).toHaveBeenCalled();
+    expect(readGearState().loadouts.knight.body).toBeNull();
+    expect(flushSaveAfterGearMutation).not.toHaveBeenCalled();
 
     dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, false));
   });

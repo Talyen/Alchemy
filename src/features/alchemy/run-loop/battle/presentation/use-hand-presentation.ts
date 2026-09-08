@@ -18,3 +18,14 @@ export function useInteractiveHandCardKeys(battleState: BattleState, playableKey
     [battleState, hiddenHandCardKeys, playableKeys],
   );
 }
+
+export function useCardAnimationInProgress() {
+  return useBattlePresentationStore(
+    (state) => state.cardTransferInProgress || state.cardTransfers.length > 0 || state.cardGhosts.length > 0,
+  );
+}
+
+export function readCardAnimationInProgress() {
+  const state = useBattlePresentationStore.getState();
+  return state.cardTransferInProgress || state.cardTransfers.length > 0 || state.cardGhosts.length > 0;
+}

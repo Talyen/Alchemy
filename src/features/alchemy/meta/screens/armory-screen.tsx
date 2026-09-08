@@ -16,7 +16,12 @@ import { playUISound } from "@/lib/audio";
 import type { CraftingResult } from "./armory/crafting-result";
 import { ArmoryFeedback } from "./armory/armory-feedback";
 import { cn } from "@/lib/utils";
-import { collectionGridGapXClass, screenShellPaddingClass, sectionTitleClass } from "@/features/alchemy/shared/config";
+import {
+  collectionGridGapXClass,
+  screenShellPaddingClass,
+  sectionTitleClass,
+  gameModeMeta,
+} from "@/features/alchemy/shared/config";
 import {
   characters,
   getRequiredPreviousCharacter,
@@ -52,7 +57,7 @@ export function ArmoryScreen({
   equippedTrinkets,
   craftingCurrencies = EMPTY_CRAFTING_CURRENCIES,
   finishedRunCharacters,
-  browseOnly,
+  combatRestrictions,
   onEquip,
   onUnequip,
   onEquipTrinket,
@@ -80,6 +85,8 @@ export function ArmoryScreen({
   const loadout = loadouts[characterId];
   const requiredCharacterId = getRequiredPreviousCharacter(characterId);
   const locked = !isCharacterUnlocked(characterId, finishedRunCharacters);
+  const battleModes = combatRestrictions.characters[characterId];
+  const browseOnly = Boolean(battleModes?.length);
   const editable = !browseOnly && !locked;
   const pickerItems = useMemo(() => {
     if (selectedSlot === "trinket") return [];
@@ -133,7 +140,7 @@ export function ArmoryScreen({
 
   const beginSalvage = useCallback(
     (instance: GearInstance) => {
-      if (!editable) return;
+      if (!editable || combatRestrictions.gear[instance.instanceId]) return;
       if (instance.protected) {
         setNotice("Unlock this item before salvaging.");
         playUISound("error");
@@ -145,12 +152,12 @@ export function ArmoryScreen({
       setCraftingResult(null);
       setSalvagePending({ instance, yield: computeSalvageYield(instance) });
     },
-    [editable],
+    [editable, combatRestrictions.gear],
   );
 
   const handleApplyCurrency = useCallback(
     (instance: GearInstance) => {
-      if (!editable || !activeCurrencyId) return;
+      if (!editable || !activeCurrencyId || combatRestrictions.gear[instance.instanceId]) return;
       const reason = craftingCurrencyBlockedReason(activeCurrencyId, instance);
       if (reason) {
         setNotice(reason);
@@ -169,7 +176,7 @@ export function ArmoryScreen({
         setCraftingResult({ before: instance, currencyId: activeCurrencyId });
       } else setNotice("Crafting could not be completed. No currency was spent.");
     },
-    [editable, activeCurrencyId, onApplyCurrency],
+    [editable, activeCurrencyId, onApplyCurrency, combatRestrictions.gear],
   );
 
   const handleSlotSelect = useCallback((slot: ArmorySlot) => {
@@ -183,7 +190,7 @@ export function ArmoryScreen({
     : null;
   const craftedItem = craftingResult ? inventoryById.get(craftingResult.before.instanceId) : undefined;
   const handleSetProtected = (instanceId: string, protectedItem: boolean) => {
-    if (!editable) return false;
+    if (!editable || combatRestrictions.gear[instanceId]) return false;
     const success = onSetProtected(instanceId, protectedItem);
     setNotice(
       success
@@ -208,7 +215,10 @@ export function ArmoryScreen({
         <ArmoryScreenHeader onBack={onBack} onMenu={onMenu} />
         {browseOnly ? (
           <p className="mx-auto mt-3 rounded-lg border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-center text-sm text-amber-100">
-            Equipment can be changed after combat.
+            Equipment can be changed after this hero’s battle ends.
+            {battleModes?.length
+              ? ` Unfinished battle: ${battleModes.map((mode) => gameModeMeta[mode]?.title ?? mode).join(", ")}.`
+              : ""}
           </p>
         ) : null}
         <ArmoryCharacterTabs
@@ -274,7 +284,9 @@ export function ArmoryScreen({
                   activeCurrencyId={activeCurrencyId}
                   salvageMode={salvageMode}
                   editable={editable}
-                  hasSalvageableGear={sharedInventory.some((item) => !item.protected)}
+                  hasSalvageableGear={sharedInventory.some(
+                    (item) => !item.protected && !combatRestrictions.gear[item.instanceId],
+                  )}
                   onCancel={() => resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setSalvagePending })}
                   onSelectCurrency={handleSelectCurrency}
                   onToggleSalvageMode={() => {
@@ -296,6 +308,7 @@ export function ArmoryScreen({
                 ) : null}
               </section>
               <ArmoryPickerPanel
+                combatRestrictions={combatRestrictions}
                 selectedSlot={selectedSlot}
                 characterId={characterId}
                 pickerItems={pickerItems}

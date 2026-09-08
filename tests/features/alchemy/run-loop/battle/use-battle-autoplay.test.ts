@@ -1,3 +1,4 @@
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRef } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -31,10 +32,37 @@ describe("useBattleAutoplay", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     resetBattlePresentationAndRun();
+    useUiStore.getState().setCardInspection(null);
   });
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("pauses while inspecting and resumes without toggling the autoplay setting", async () => {
+    const playCard = vi.fn(() => true);
+    useUiStore.getState().setCardInspection("draw");
+    const { unmount } = renderHook(() =>
+      useAutoplayUnderTest({
+        enabled: true,
+        screen: "battle",
+        battleState: openBattle.battleState,
+        hasActiveBattle: true,
+        isCardPlayInProgress: () => false,
+        gameMenuOpen: false,
+        playCard,
+      }),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(AUTOPLAY_RETRY_DELAY_MS * 3);
+    });
+    expect(playCard).not.toHaveBeenCalled();
+    await act(async () => {
+      useUiStore.getState().setCardInspection(null);
+      await vi.advanceTimersByTimeAsync(AUTOPLAY_RETRY_DELAY_MS);
+    });
+    expect(playCard).toHaveBeenCalledOnce();
+    unmount();
   });
 
   it("plays the first playable card when enabled", () => {

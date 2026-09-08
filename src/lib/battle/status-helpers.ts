@@ -29,17 +29,19 @@ export function getBurnBonusToBleedingMultiplier(state: Pick<BattleState, "enemy
   return 1 + state.gearEffects.burnDamageBonusToBleedingPercent / PERCENT_DENOMINATOR;
 }
 
+export function getEnemyTraitDamageMultiplier(state: Pick<BattleState, "currentEnemy">, damageType: string): number {
+  const traits = state.currentEnemy.traits;
+  for (const rule of TRAIT_DAMAGE_RULES) {
+    if (damageType === rule.damageType && traits.some((t) => t.id === rule.traitId)) return rule.multiplier;
+  }
+  return 1;
+}
+
 export function getEnemyDamageMultiplier(
   state: Pick<BattleState, "currentEnemy" | "enemyCC" | "talentEffects">,
   damageType: string,
 ): number {
-  const traits = state.currentEnemy.traits;
-  for (const rule of TRAIT_DAMAGE_RULES) {
-    if (damageType === rule.damageType && traits.some((t) => t.id === rule.traitId)) {
-      return rule.multiplier;
-    }
-  }
-  let multiplier = 1;
+  let multiplier = getEnemyTraitDamageMultiplier(state, damageType);
   if (state.enemyCC.stunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
   if (state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
   return multiplier;

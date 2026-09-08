@@ -1,7 +1,9 @@
+import type { CardInspectionView } from "@/features/alchemy/shared/types";
 import type { AlchemyRouteCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import type { Screen } from "@/lib/routing";
 
 export interface RenderAlchemyScreenProps {
+  cardInspection?: { canOpen: boolean; onOpen: (view: CardInspectionView) => void } | undefined;
   screen: Screen;
   routeCommands: AlchemyRouteCommands;
   onClearSaveData: () => void;
@@ -30,6 +32,7 @@ export type RunLoopRouteCtx = PhaseRouteCtx<"runLoop">;
 export type RunEndRouteCtx = PhaseRouteCtx<"runEnd">;
 
 export interface BattleRouteCtx extends PhaseRouteCtx<"battle"> {
+  cardInspection?: RenderAlchemyScreenProps["cardInspection"];
   gameMenuOpen: RenderAlchemyScreenProps["gameMenuOpen"];
 }
 

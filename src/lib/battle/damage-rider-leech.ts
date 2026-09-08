@@ -121,6 +121,7 @@ export function applyLifestealAndPlayerHitTriggers(
   damage: number,
   combatTexts: CombatTextEvent[],
   cardHealing = false,
+  cardLeech = cardHealing,
 ) {
   if (damage <= 0) return state;
 
@@ -145,6 +146,9 @@ export function applyLifestealAndPlayerHitTriggers(
   }
 
   healAmount = scaledGearLeechHeal(healAmount, state.gearEffects);
+  if (cardLeech && state.talentEffects.cardLeechBonusPercent > 0) {
+    healAmount = Math.round(healAmount * (1 + state.talentEffects.cardLeechBonusPercent / PERCENT_DENOMINATOR));
+  }
 
   const nextState = executePlayerHealing(state, healAmount, combatTexts, cardHealing);
   return applyLeechHitRiders(nextState, damage, combatTexts);

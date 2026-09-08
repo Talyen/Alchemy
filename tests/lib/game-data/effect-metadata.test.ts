@@ -55,3 +55,23 @@ describe("collectKeywordsFromBattleEffect", () => {
     expect(collectKeywordsFromBattleEffect(effect)).toEqual(["health", "gold"]);
   });
 });
+
+describe("variable damage keywords", () => {
+  it("classifies random damage as Physical", () => {
+    expect(collectKeywordsFromBattleEffect({ kind: "random-damage", minAmount: 1, maxAmount: 6 })).toEqual([
+      "physical",
+    ]);
+  });
+
+  it("uses every possible damage type instead of the placeholder type", () => {
+    expect(
+      collectKeywordsFromBattleEffect({
+        kind: "damage",
+        damageType: "physical",
+        amount: 3,
+        damageTypePool: ["freeze", "burn", "holy"],
+        lifesteal: true,
+      }),
+    ).toEqual(["freeze", "burn", "holy", "leech"]);
+  });
+});

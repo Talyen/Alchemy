@@ -19,6 +19,10 @@ import {
 const ROOT = join(import.meta.dirname, "../../..");
 
 const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
+  "manaOnWish",
+  "holyOnAttackBlocked",
+  "forgeOnBurnDealt",
+  "firstLeechCardDoubled",
   "stunBuildupReductionPercent",
   "blockReduceBurnDamage",
   "campfireHealBonus",

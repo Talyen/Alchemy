@@ -1,3 +1,6 @@
+import { useCardInspection } from "@/app/use-card-inspection";
+import { DeckInspectButton } from "@/features/alchemy/shared/ui/deck-inspect-button";
+import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/card-inspection-overlay";
 import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
 import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
@@ -137,12 +140,44 @@ function AppMainContent({
   }, [deletingUnsupportedSave]);
 
   const showBattleCluster = renderedScreen === "battle" && !saveBlockedByNewerVersion;
-  const { isAutoplayEnabled, toggleAutoplayEnabled, boonInspectOpen, toggleBoonInspect } = run.routeCommands.battle;
+  const { isAutoplayEnabled, toggleAutoplayEnabled, boonInspectOpen, toggleBoonInspect, closeBoonInspect } =
+    run.routeCommands.battle;
   const runBoons = useActiveRunBoons();
   const hasInspectBoons = uniqueRunBoons(runBoons).length > 0;
   const { ref: artworkRef, pending: artworkPending } = useArtworkReady(renderedScreen);
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
   const screenInteractive = controllerScreen === renderedScreen && pagePhase !== "exit";
+  const { closeGameMenu } = gameMenu;
+  const closeInspectionPeers = useCallback(() => {
+    closeGameMenu();
+    closeBoonInspect();
+  }, [closeGameMenu, closeBoonInspect]);
+  const {
+    returnFocusRef: inspectionReturnFocusRef,
+    onOpen: openCardInspection,
+    ...inspection
+  } = useCardInspection({
+    screen: renderedScreen,
+    screenInteractive: screenInteractive && !saveBlockedByNewerVersion,
+    returnToRunScreen: nav.returnToRunScreen,
+    isCardPlayInProgress: run.routeCommands.battle.isCardPlayInProgress,
+    gameMenuOpen: gameMenu.gameMenuOpen,
+    boonInspectOpen,
+    closeOtherOverlays: closeInspectionPeers,
+  });
+  const onOpenDeck = useCallback(() => openCardInspection("deck"), [openCardInspection]);
+  const deckInspection = useMemo(
+    () =>
+      inspection.visible
+        ? {
+            count: inspection.count,
+            disabled: !inspection.canOpen,
+            onOpen: onOpenDeck,
+          }
+        : undefined,
+    [inspection.visible, inspection.count, inspection.canOpen, onOpenDeck],
+  );
+
   function blockOutgoingScreenInteraction(event: SyntheticEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -154,7 +189,7 @@ function AppMainContent({
       ref={artworkRef}
       data-artwork-pending={artworkPending}
       key={renderedScreen}
-      inert={!screenInteractive}
+      inert={!screenInteractive || inspection.open}
       onClickCapture={!screenInteractive ? blockOutgoingScreenInteraction : undefined}
       onKeyDownCapture={!screenInteractive ? blockOutgoingScreenInteraction : undefined}
       className={cn(pagePhaseClass, "h-full w-full overflow-hidden")}
@@ -167,9 +202,11 @@ function AppMainContent({
           openGameMenu={gameMenu.openGameMenu}
           isMenuOpen={gameMenu.gameMenuOpen}
           onBack={nav.screenBackHandler}
+          deckInspection={deckInspection}
         >
           {renderAlchemyScreenRoute({
             screen: renderedScreen,
+            cardInspection: { canOpen: inspection.canOpen, onOpen: openCardInspection },
             routeCommands: run.routeCommands,
             onClearSaveData: dev.clearSaveData,
             onUnlockAllDevMode: dev.unlockAllDevMode,
@@ -205,12 +242,25 @@ function AppMainContent({
         <KeywordPlasmaBackground colorPair={effectivePlasmaColorPair} intensity={backgroundGlowIntensity} />
         {content}
         {showBattleCluster ? (
-          <div className="absolute top-4 right-4 z-[80] flex items-center gap-2">
+          <div
+            inert={inspection.open || !screenInteractive}
+            className="absolute top-4 right-4 z-[80] flex items-center gap-2"
+          >
+            {deckInspection ? <DeckInspectButton {...deckInspection} /> : null}
             <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
             {hasInspectBoons ? <BattleBoonInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} /> : null}
             <HamburgerTrigger onClick={gameMenu.openGameMenu} label="Open game menu" active={gameMenu.gameMenuOpen} />
           </div>
         ) : null}
+        <CardInspectionOverlay
+          open={inspection.open}
+          selected={inspection.selected}
+          collections={inspection.collections}
+          descriptionContext={inspection.battleDescriptionContext ?? cardDescriptionContext}
+          onSelect={openCardInspection}
+          onClose={inspection.close}
+          returnFocusRef={inspectionReturnFocusRef}
+        />
         <div
           className="pointer-events-none absolute inset-0 z-[90] bg-black"
           style={{ opacity: Math.max(0, 1 - brightness / 100) }}

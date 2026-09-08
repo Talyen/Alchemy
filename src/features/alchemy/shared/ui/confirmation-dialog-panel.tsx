@@ -1,7 +1,5 @@
-import { useEffect, useRef, type ReactNode, type KeyboardEvent, type RefObject } from "react";
-
-const FOCUSABLE =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]';
+import { type ReactNode, type RefObject } from "react";
+import { useDialogFocus } from "./use-dialog-focus";
 
 export function ConfirmationDialogPanel({
   children,
@@ -14,38 +12,7 @@ export function ConfirmationDialogPanel({
   describedBy: string | undefined;
   returnFocusRef?: RefObject<HTMLElement | null> | undefined;
 }) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const panel = panelRef.current;
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const returnTarget = returnFocusRef?.current ?? previous;
-    const cancel = panel?.querySelector<HTMLElement>("[data-dialog-cancel]");
-    cancel?.focus();
-    const keepFocus = (event: FocusEvent) => {
-      if (panel?.closest("[inert]")) return;
-      if (event.target instanceof Node && !panel?.contains(event.target)) (cancel ?? panel)?.focus();
-    };
-    document.addEventListener("focusin", keepFocus);
-    return () => {
-      document.removeEventListener("focusin", keepFocus);
-      if (returnTarget?.isConnected) returnTarget.focus();
-    };
-  }, [returnFocusRef]);
-
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key !== "Tab") return;
-    const elements = [...event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)];
-    const first = elements[0];
-    const last = elements.at(-1);
-    if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) {
-      event.preventDefault();
-      last?.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first?.focus();
-    }
-  }
-
+  const { panelRef, handleKeyDown } = useDialogFocus(returnFocusRef);
   return (
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains keyboard focus and stops clicks from reaching its backdrop
     <div

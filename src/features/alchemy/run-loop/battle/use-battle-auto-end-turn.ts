@@ -1,3 +1,4 @@
+import { useUiStore } from "../../shared/stores/ui-store";
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 
 import { type BattleState } from "@/lib/battle";
@@ -33,6 +34,7 @@ export function useBattleAutoEndTurn({
   presentationGateRef,
   scheduleAutoEndTurnRef,
 }: AutoEndTurnOptions) {
+  const inspectionOpen = useUiStore((state) => state.cardInspection !== null);
   const onEndTurnRef = useLatestRef(onEndTurn);
   const isCardPlayInProgressRef = useLatestRef(isCardPlayInProgress);
   const battleStateRef = useLatestRef(battleState);
@@ -60,6 +62,7 @@ export function useBattleAutoEndTurn({
           hiddenHandCardKeys: presentation.hiddenHandCardKeys,
           cardPlayInProgress: Boolean(isCardPlayInProgressRef.current?.()),
           gameMenuOpen: gameMenuOpenRef.current,
+          inspectionOpen: useUiStore.getState().cardInspection !== null,
         }) &&
         !handHasPlayableCard(current)
       );
@@ -90,7 +93,7 @@ export function useBattleAutoEndTurn({
   useEffect(() => {
     scheduleAutoEndTurnRaw();
     return clearAutoEndTurn;
-  }, [scheduleAutoEndTurnRaw, clearAutoEndTurn, autoEndTurn, gameMenuOpen]);
+  }, [scheduleAutoEndTurnRaw, clearAutoEndTurn, autoEndTurn, gameMenuOpen, inspectionOpen]);
 
   return { scheduleAutoEndTurn, clearAutoEndTurn };
 }

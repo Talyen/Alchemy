@@ -239,7 +239,7 @@ describe("resolveStunTrigger", () => {
     expect(result.playerStatuses.forge).toBe(5);
     expect(result.enemyStatuses.burn).toBe(8);
 
-    expect(texts.some((t) => t.target === "enemy" && t.stat === "burn")).toBe(false);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 8 });
   });
 
   it("does not trigger forge burn burst when forge stays below threshold", () => {

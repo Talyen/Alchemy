@@ -9,6 +9,8 @@ import type {
   SalvageYield,
 } from "@/lib/gear";
 
+import type { GearCombatRestrictions } from "../../../shared/stores/gear-store";
+
 export interface ArmorySalvagePending {
   instance: GearInstance;
   yield: SalvageYield;
@@ -20,7 +22,7 @@ export interface ArmoryScreenProps {
   ownedTrinketIds: string[];
   equippedTrinkets: EquippedTrinkets;
   finishedRunCharacters: CharacterId[];
-  browseOnly: boolean;
+  combatRestrictions: GearCombatRestrictions;
   onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;

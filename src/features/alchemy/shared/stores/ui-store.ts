@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { SHIMMER_COOLDOWN_MS } from "@/lib/game-constants";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
+import type { CardInspectionView } from "../types";
+
 type ShimmerState = { cardId: string; token: number } | null;
 
 interface PlasmaRegistration {
@@ -10,6 +12,8 @@ interface PlasmaRegistration {
 }
 
 interface UiStore {
+  cardInspection: CardInspectionView | null;
+  setCardInspection: (view: CardInspectionView | null) => void;
   hoveredCardId: string | null;
   shimmerState: ShimmerState;
   plasmaBaseline: PlasmaRegistration | null;
@@ -24,6 +28,8 @@ interface UiStore {
 }
 
 export const useUiStore = create<UiStore>()((set, get) => ({
+  cardInspection: null,
+  setCardInspection: (cardInspection) => set({ cardInspection }),
   hoveredCardId: null,
   shimmerState: null,
   plasmaBaseline: null,

@@ -58,12 +58,24 @@ export function resolveMysteryEventTrinkets(
   const owned = new Set(ownedTrinketIds);
   return {
     ...event,
-    choices: event.choices.map((choice, choiceIndex) => ({
-      label: choice.label,
-      effects: choice.effects.map((effect, effectIndex) =>
-        resolveMysteryTrinketEffect(effect, owned, rng, `${event.id}:${choiceIndex}:${effectIndex}`),
-      ),
-    })),
+    choices: event.choices.map((choice, choiceIndex) => {
+      const choiceOwned = new Set(ownedTrinketIds);
+      return {
+        ...choice,
+        effects: choice.effects.map((effect, effectIndex) => {
+          const seed = `${event.id}:${choiceIndex}:${effectIndex}`;
+          let resolved = resolveMysteryTrinketEffect(effect, owned, rng, seed);
+          if (
+            resolved.kind === "gainGeneratedGear" &&
+            (effect.kind === "gainTrinket" || effect.kind === "gainRandomTrinket")
+          ) {
+            resolved = resolveMysteryTrinketEffect(effect, choiceOwned, rng, seed);
+          }
+          if (resolved.kind === "gainTrinket") choiceOwned.add(resolved.trinketId);
+          return resolved;
+        }),
+      };
+    }),
   };
 }
 

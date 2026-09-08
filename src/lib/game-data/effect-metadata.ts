@@ -5,9 +5,13 @@ type KeywordFormatter<K extends BattleCardEffect["kind"]> = (
 ) => KeywordId[];
 
 const FORMATTERS: { [K in BattleCardEffect["kind"]]: KeywordFormatter<K> } = {
-  damage: (effect) => (effect.lifesteal ? [effect.damageType, "leech"] : [effect.damageType]),
+  damage: (effect) =>
+    dedupeKeywords(
+      effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType],
+      effect.lifesteal ? ["leech"] : [],
+    ),
   "cleanse-player-status-to-damage": (effect) => ["health", effect.damageType],
-  "random-damage": () => [],
+  "random-damage": () => ["physical"],
   chance: (effect) => collectKeywordsFromChance(effect),
   "player-status": (effect) => (effect.status !== "haste" ? [effect.status] : []),
   "enemy-status": (effect) =>

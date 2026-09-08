@@ -8,6 +8,7 @@ import {
   applyHealingWithCombatText,
   gainManaWithCombatText,
   mergeCombatText,
+  payKillPayouts,
 } from "./combat-text";
 import { isPotionCard, type BattleCard, type EnemyAttackEffect } from "@/lib/game-data";
 import {
@@ -22,6 +23,9 @@ import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { getBattleRng, rngInt, rollPercent } from "@/lib/rng";
 import { dealPlayerTypedHit } from "./player-typed-hit";
+import { dealEnemyScaledDamage } from "./gear-effects";
+import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 import { prepareUniqueCardPlay, finishUniqueCardDamage, returnHarvestCard } from "./unique-card-effects";
 import { computeCardPayment } from "./card-cost-rules";
@@ -246,6 +250,18 @@ function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTe
   return nextState;
 }
 
+function applyConsumeBurn(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (state.enemyHealth <= 0 || state.gearEffects.burnOnConsume <= 0) return state;
+  return dealEnemyScaledDamage(state, state.gearEffects.burnOnConsume, "burn", combatTexts, {
+    multiplier: getEnemyDamageMultiplier(state, "burn"),
+    riders: (damaged, damage, texts) => {
+      const burning = addEnemyStatus(damaged, "burn", damage);
+      const decayed = decayArmorAfterDamage(burning, damage, "enemy", texts);
+      return payKillPayouts(processEncounterTraitHealthThreshold(state.enemyHealth, decayed, texts), true, texts);
+    },
+  });
+}
+
 export function handlePostPlayCardDestination(
   state: BattleState,
   card: BattleCard,
@@ -262,18 +278,7 @@ export function handlePostPlayCardDestination(
           flags: { ...nextState.flags, runicQuillUsedThisTurn: true },
         };
       }
-      if (state.gearEffects.burnOnConsume > 0) {
-        const burnAmount = state.gearEffects.burnOnConsume;
-        nextState = addEnemyStatus(nextState, "burn", burnAmount);
-        if (combatTexts) {
-          mergeCombatText(combatTexts, {
-            target: "enemy",
-            kind: "status",
-            stat: "burn",
-            amount: burnAmount,
-          });
-        }
-      }
+      nextState = applyConsumeBurn(nextState, combatTexts ?? []);
       nextState = applyConsumeTalentRiders(nextState, card, combatTexts);
     }
     return nextState;
@@ -318,7 +323,7 @@ export function playBattleCardResolved(
   );
   nextState = finishUniqueCardDamage(nextState, card, prepared, combatTexts);
   nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
-  if (playTwice) nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
+  if (playTwice) nextState = processEncounterTraitCardAction(nextState, { ...card, consume: false }, combatTexts);
 
   const playerAlive = !isPlayerDefeated(nextState);
   if (playerAlive && enemyWasAlive) {

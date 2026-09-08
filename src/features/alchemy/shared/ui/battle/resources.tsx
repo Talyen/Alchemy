@@ -13,12 +13,16 @@ export function PilePanel({
   count,
   type,
   compact = false,
+  onInspect,
+  inspectable = false,
   ref,
 }: {
   label: string;
   count: number;
   type: "draw" | "discard";
   compact?: boolean;
+  onInspect?: (() => void) | undefined;
+  inspectable?: boolean | undefined;
   ref?: React.Ref<HTMLDivElement>;
 }) {
   const art = type === "draw" ? pileDrawArt : pileDiscardArt;
@@ -36,14 +40,27 @@ export function PilePanel({
     );
   }
   return (
-    <Surface
-      surfaceRef={ref}
-      testId={`${type}-pile`}
-      dataCount={count}
-      className={cn(cardSurfaceClass, pileCardWidthClass, "bg-transparent")}
-    >
-      <img src={art} alt={`${label} pile`} className={cn("block w-full", cardArtImageClass)} />
-    </Surface>
+    <div ref={ref} data-testid={`${type}-pile`} data-count={count} className={cn("relative", pileCardWidthClass)}>
+      <Surface
+        as="button"
+        className={cn(cardSurfaceClass, "block w-full bg-transparent")}
+        ariaLabel={`Inspect ${label} · ${count} cards`}
+        ariaDisabled={!inspectable}
+        onClick={(event) => {
+          if (!inspectable) return;
+          event.currentTarget.focus();
+          onInspect?.();
+        }}
+      >
+        <img src={art} alt="" className={cn("block w-full", cardArtImageClass)} />
+        <span
+          aria-hidden="true"
+          className="absolute right-2 bottom-2 rounded-full border border-border bg-background/90 px-3 py-1 text-lg font-bold"
+        >
+          {count}
+        </span>
+      </Surface>
+    </div>
   );
 }
 

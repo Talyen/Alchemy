@@ -8,6 +8,8 @@ import type { GearSaveFields, GearStateFields } from "./gear-store-types";
 import { createInitialGearState } from "./gear-store-initial-state";
 import { initializeGear } from "./gear-actions";
 import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
+import { deriveGearCombatRestrictions } from "./gear-combat-restrictions";
+export type { GearCombatRestrictions } from "./gear-combat-restrictions";
 
 export type { GearSaveFields } from "./gear-store-types";
 
@@ -63,6 +65,13 @@ export const gearPersistenceCodec: GameplayPersistenceCodec<GearSaveFields> = {
 };
 
 export type GearArmorySlice = GearStateFields;
+
+export function useGearCombatRestrictions() {
+  const state = useGameplayStateStore(
+    useShallow((s) => ({ run: s.run, session: s.session, battle: s.battle, gear: s.gear })),
+  );
+  return useMemo(() => deriveGearCombatRestrictions(state), [state]);
+}
 
 export function useGearArmorySlice(): GearArmorySlice {
   return useGameplayStateStore(

@@ -4,6 +4,7 @@ import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import {
   applyPlayerCombatDamage,
+  mitigatePlayerCombatDamage,
   scaleReceivedPlayerDamage,
   setPlayerStatus,
   setFlag,
@@ -133,15 +134,15 @@ export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEve
 
 function dealPlayerDotTick(
   state: BattleState,
-  reducedDamage: number,
+  damage: number,
   status: "burn" | "poison" | "bleed",
   nextStacks: number,
   combatTexts: CombatTextEvent[],
-  damageType?: string,
   applyRiders?: (state: BattleState) => BattleState,
 ): BattleState {
+  const reducedDamage = mitigatePlayerCombatDamage(state, damage, status);
   let nextState = setPlayerStatus(
-    applyPlayerCombatDamage(state, reducedDamage, "hostile", damageType, undefined, combatTexts),
+    applyPlayerCombatDamage(state, reducedDamage, "hostile", status, { ignoreMitigation: true }, combatTexts),
     status,
     nextStacks,
   );
@@ -172,14 +173,7 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.burn;
   if (damage <= 0) return state;
   const reducedDamage = mitigatePlayerDot(state, damage, "burn");
-  return dealPlayerDotTick(
-    state,
-    reducedDamage,
-    "burn",
-    decayHalvedStatus(state.playerStatuses.burn),
-    combatTexts,
-    "burn",
-  );
+  return dealPlayerDotTick(state, reducedDamage, "burn", decayHalvedStatus(state.playerStatuses.burn), combatTexts);
 }
 
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -198,7 +192,7 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const finalDamage = mitigatePlayerDot(state, damage, "bleed");
   const healthBeforeBleed = state.playerHealth;
   const pendingLeech = state.pendingEnemyBleedLeechHealing;
-  return dealPlayerDotTick(state, finalDamage, "bleed", 0, combatTexts, undefined, (nextState) => {
+  return dealPlayerDotTick(state, finalDamage, "bleed", 0, combatTexts, (nextState) => {
     const enemyLeechDamage = Math.min(pendingLeech, healthBeforeBleed - nextState.playerHealth);
     let next = nextState;
     if (enemyLeechDamage > 0) {

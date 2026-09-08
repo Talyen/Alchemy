@@ -250,6 +250,31 @@ Battle VFX (lunge, shake, ghost layers, combat-text rails) is owned by
 [WORKFLOWS.md](./WORKFLOWS.md#change-battle-playback); this file owns only the
 shared widget/motion primitives above.
 
+## Deck and pile inspection
+
+The stacked-cards icon beside menu controls opens the run Deck during drafting,
+run screens, and meta detours from that run. Drafting exposes picks so far through
+the icon; it does not add a previous-picks strip. Draw and Discard piles have
+visible counts and keyboard-accessible inspection actions.
+
+`CardInspectionOverlay` is controlled by props and reuses the modal shell,
+`useDialogFocus`, card presentation, and adaptive pagination. Each copy remains
+visible individually, sorted by displayed title with an instance-content tie
+break independent of draw order. The grid uses `viewCardWidthClass`, matching
+`CardSelectionGrid`’s 230.472 px reference width; larger Collection tiles do not
+fit that measurement. Pagination resets on opening and switching collections.
+Full Deck is the run deck, including cards Consumed in the current battle;
+battle-only generated cards appear in their current piles instead.
+
+Inspection opens only between actions on a surviving player’s turn, with no
+Wish, pending transition, hidden hand card, card ghost, or card transfer. While
+open it contains focus and blocks underlying input, autoplay, and automatic End
+Turn without changing saved automation preferences. Navigation, run replacement,
+battle teardown, or opening a peer menu closes it. Escape, backdrop, and the close
+button dismiss it and return focus to the opener. Pile measurement wrappers must
+match the artwork bounds: their button is block-level so inline baseline spacing
+does not shift transfer anchors.
+
 ## Verification
 
 Use the changed-path route in [CONTRIBUTING.md](../CONTRIBUTING.md). Interaction

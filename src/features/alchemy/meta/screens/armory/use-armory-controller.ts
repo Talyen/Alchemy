@@ -20,7 +20,11 @@ import {
 } from "@/features/alchemy/shared/stores/gear-session-command";
 import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
-import { useGearArmorySlice } from "@/features/alchemy/shared/stores/gear-store";
+import {
+  useGearArmorySlice,
+  useGearCombatRestrictions,
+  type GearCombatRestrictions,
+} from "@/features/alchemy/shared/stores/gear-store";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import type { SynchronousResult } from "@/features/alchemy/shared/stores/run-session-command";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
@@ -43,7 +47,7 @@ export interface ArmoryController {
   equippedTrinkets: EquippedTrinkets;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   finishedRunCharacters: CharacterId[];
-  browseOnly: boolean;
+  combatRestrictions: GearCombatRestrictions;
   hasActiveRun: boolean;
   onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
@@ -58,6 +62,7 @@ export interface ArmoryController {
 export function useArmoryController(options?: { rng?: () => number }): ArmoryController {
   const { returnToRunScreen } = useAppScreenChrome();
   const gear = useGearArmorySlice();
+  const combatRestrictions = useGearCombatRestrictions();
   const finishedRunCharacters = useFinishedRunCharacters();
   const hasActiveRun = useHasActiveRun();
   const rng = options?.rng ?? Math.random;
@@ -143,7 +148,7 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
       equippedTrinkets: gear.equippedTrinkets,
       craftingCurrencies: gear.craftingCurrencies,
       finishedRunCharacters,
-      browseOnly: false,
+      combatRestrictions,
       hasActiveRun,
       onEquip,
       onUnequip,
@@ -156,6 +161,7 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
     if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
     return controller;
   }, [
+    combatRestrictions,
     gear.inventories,
     gear.loadouts,
     gear.ownedTrinketIds,

@@ -244,8 +244,12 @@ describe("applyPlayerStatusEffect � forge integration", () => {
     const result = applyPlayerStatusEffect(state, effect, texts);
     expect(result.playerStatuses.forge).toBe(6);
     expect(result.enemyStatuses.burn).toBe(4);
+    expect(result.enemyHealth).toBe(state.enemyHealth - 4);
 
-    expect(texts).toEqual([{ target: "player", kind: "status", stat: "forge", amount: 3 }]);
+    expect(texts).toEqual([
+      { target: "enemy", kind: "damage", stat: "burn", amount: 4 },
+      { target: "player", kind: "status", stat: "forge", amount: 3 },
+    ]);
   });
 
   it("flatForgeGained increases forge from card effects", () => {

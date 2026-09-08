@@ -2,6 +2,9 @@ import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 
 function effectsHaveDamage(effects: readonly BattleCardEffect[], damageType?: string): boolean {
   return effects.some((effect) => {
+    if (effect.kind === "damage" && effect.damageTypePool?.length) {
+      return damageType === undefined || effect.damageTypePool.some((type) => type === damageType);
+    }
     if (effect.kind === "damage" || effect.kind === "cleanse-player-status-to-damage") {
       return damageType === undefined || effect.damageType === damageType;
     }

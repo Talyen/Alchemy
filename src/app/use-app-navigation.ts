@@ -113,7 +113,7 @@ export function useReturnToRunNavigation({
   }, [renderedScreen]);
 
   function navigateToMeta(screen: Extract<Screen, "collection" | "talents" | "homestead" | "options" | "armory">) {
-    if (isRunLoopScreen(renderedScreen)) setReturnToRunScreen(renderedScreen);
+    if (isRunLoopScreen(renderedScreen) || renderedScreen === "draft-deck") setReturnToRunScreen(renderedScreen);
     run.goToScreen(screen);
   }
 
@@ -139,7 +139,7 @@ export function useReturnToRunNavigation({
   }
 
   function handleMainMenu() {
-    if (isRunLoopScreen(renderedScreen)) setReturnToRunScreen(renderedScreen);
+    if (isRunLoopScreen(renderedScreen) || renderedScreen === "draft-deck") setReturnToRunScreen(renderedScreen);
     run.goToScreen("menu");
   }
 

@@ -90,3 +90,5 @@ export type GhostStyle = CSSProperties & {
   "--ghost-travel-x"?: string;
   "--ghost-travel-y"?: string;
 };
+
+export type CardInspectionView = "deck" | "draw" | "discard";

@@ -207,15 +207,13 @@ export interface EnemyTraitIgnoreMitigationOptions {
   ignoreMitigation?: boolean;
 }
 
-export function applyPlayerCombatDamage(
+export function mitigatePlayerCombatDamage(
   state: BattleState,
   damage: number,
-  source: "hostile" | "self",
   damageType?: string,
   options?: EnemyTraitIgnoreMitigationOptions,
-  combatTexts?: CombatTextEvent[],
-): BattleState {
-  if (!Number.isFinite(damage) || damage <= 0) return state;
+): number {
+  if (!Number.isFinite(damage) || damage <= 0) return 0;
   let reducedDamage = damage;
   if (!options?.ignoreMitigation) {
     reducedDamage -= state.talentEffects.damageReduction;
@@ -226,6 +224,19 @@ export function applyPlayerCombatDamage(
     reducedDamage = Math.max(0, reducedDamage);
     reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);
   }
+  return reducedDamage;
+}
+
+export function applyPlayerCombatDamage(
+  state: BattleState,
+  damage: number,
+  source: "hostile" | "self",
+  damageType?: string,
+  options?: EnemyTraitIgnoreMitigationOptions,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
+  const reducedDamage = mitigatePlayerCombatDamage(state, damage, damageType, options);
+  if (reducedDamage <= 0) return state;
   const nextHealth = clampHealth(state.playerHealth, -reducedDamage, state.playerMaxHealth);
   if (source === "hostile" && nextHealth < state.playerHealth && state.talentEffects.dodgeChanceOnHostileDamage > 0) {
     state = {

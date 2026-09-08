@@ -253,7 +253,7 @@ Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/l
 
 `talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays. Talent descriptions are free text with no parity lint — keep them in lockstep with effects by hand.
 
-Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Never count combat text or award XP again while resuming a pending transition.
+Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Random damage grants the Physical keyword; a damage-type pool grants every possible type rather than its placeholder type. Never count combat text or award XP again while resuming a pending transition.
 
 Talent keywords without portrait art remain selectable with a blank panel and their keyword icon; add a `talentArt` entry when art is ready. All implemented talent nodes support Enter and Space when eligible for purchase.
 
@@ -383,6 +383,8 @@ Boot restore/hydration sets a validated saved screen directly and intentionally 
 ---
 
 ## Adding a new mystery effect kind
+
+Mystery Boon choices prefer distinct unowned Boons across alternatives, but an unchosen alternative cannot exhaust the pool: reuse an available Boon across mutually exclusive choices before falling back to Astral Gear. Multiple grants within one choice remain distinct.
 
 Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect` kinds stay on the union and handlers for authoring even when no live event uses them.
 

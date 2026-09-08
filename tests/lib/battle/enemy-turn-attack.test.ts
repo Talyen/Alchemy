@@ -156,7 +156,7 @@ describe("processEnemyAttack", () => {
     });
     const result = processEnemyAttack(state, makeTexts());
     expect(result.playerHealth).toBe(30);
-    expect(result.playerStatuses.block).toBe(0);
+    expect(result.playerStatuses.block).toBe(1);
   });
 
   it("decays player armor when health damage is taken", () => {

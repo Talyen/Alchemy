@@ -11,7 +11,7 @@ import type {
 import { computeTalentEffects } from "@/lib/game-data";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { getRunPhase, type RunPhase, type Screen, type Destination } from "@/lib/routing";
-import type { BattleState } from "@/lib/battle";
+import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import type { PermanentProgressFields } from "./run-state-init";
 import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
@@ -331,4 +331,38 @@ export function getRunSessionFromState(state: GameplayState, screen?: Screen): R
 }
 export function getRunSession(screen?: Screen): RunSession {
   return getRunSessionFromState(readGameplayState(), screen);
+}
+
+function selectCardInspectionData(state: GameplayState) {
+  const run = state.run.activeRun;
+  const battle = state.battle.battleState;
+  return {
+    runDeck: run.runDeck,
+    runSeed: run.rng.seed,
+    characterId: run.characterId,
+    mode: run.contentSystemType,
+    hasActiveRun: state.session.hasActiveRun,
+    hasActiveBattle: state.battle.hasActiveBattle,
+    battleReady:
+      state.battle.hasActiveBattle &&
+      !state.battle.pendingBattleTransition &&
+      battle.turnPhase === "player" &&
+      !battle.wishOptions &&
+      battle.enemyHealth > 0 &&
+      !isPlayerDefeated(battle),
+    hand: battle.hand,
+    drawPile: battle.deck,
+    discardPile: battle.discard,
+    talentEffects: battle.talentEffects,
+    companionDamageBonus: battle.trinketEffects.companionDamageBonus,
+    companionDamageBuff: battle.companionDamageBuff,
+  };
+}
+
+export function useCardInspectionData() {
+  return useShallowRunSelector(selectCardInspectionData);
+}
+
+export function readCardInspectionData() {
+  return selectCardInspectionData(readGameplayState());
 }

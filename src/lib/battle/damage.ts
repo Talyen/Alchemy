@@ -35,12 +35,11 @@ export function dealDamageToEnemy(
   }
 
   const convertToPoison = state.flags.nextHitPoison;
-  const activeEffect = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
+  const packet = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
   let damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;
 
-  let packet = activeEffect;
   if (packet.damageType === "physical" && damageState.flags.nextHitPhysicalBonus > 0) {
-    packet = { ...packet, amount: packet.amount + damageState.flags.nextHitPhysicalBonus };
+    bonuses.physical += damageState.flags.nextHitPhysicalBonus;
     damageState = {
       ...damageState,
       flags: { ...damageState.flags, nextHitPhysicalBonus: 0 },
@@ -68,7 +67,16 @@ export function dealDamageToEnemy(
     damageState.gearEffects.dodgeReadiesVenomousHit > 0 &&
     damageState.uniqueGear.viperReady;
   const afterViper = viper ? { ...nextState, uniqueGear: { ...nextState.uniqueGear, viperReady: false } } : nextState;
-  let result = applyDamageRiders(afterViper, card, packet, modifiedDamage, combatTexts, false, context?.cardHealing);
+  let result = applyDamageRiders(
+    afterViper,
+    card,
+    packet,
+    modifiedDamage,
+    combatTexts,
+    false,
+    context?.cardHealing,
+    context?.companionAttack,
+  );
   if (viper && result.enemyHealth > 0) {
     const venomDamage = Math.round(modifiedDamage * UNIQUE_GEAR_COMBAT.viperDamageMultiplier);
     result = dealPlayerTypedHit(result, "poison", venomDamage, combatTexts);

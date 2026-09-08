@@ -1,4 +1,5 @@
 export const FLAG_DEFINITIONS = {
+  pendingWishMana: { default: 0 as const, preserveAs: null },
   previousCardWasArchery: { default: false as const, preserveAs: null },
   previousCardWasNature: { default: false as const, preserveAs: null },
   companionNextAttackBonus: { default: 0 as const, preserveAs: null },

@@ -35,9 +35,11 @@ import { getCampfireHealFraction } from "@/lib/campfire-heal";
 import type { BattleCommands, BattleRouteCtx, RunLoopCommands, RunLoopRouteCtx } from "./route-ctx";
 
 function BattleScreenRoute({
+  cardInspection,
   commands,
   gameMenuOpen,
 }: {
+  cardInspection?: BattleRouteCtx["cardInspection"];
   commands: BattleCommands;
   gameMenuOpen: BattleRouteCtx["gameMenuOpen"];
 }) {
@@ -63,6 +65,8 @@ function BattleScreenRoute({
 
   return (
     <BattleScreen
+      onInspectPile={cardInspection?.onOpen}
+      inspectionAvailable={cardInspection?.canOpen}
       battleScreenData={battleScreenData}
       characterId={characterId}
       heroArt={heroArt}
@@ -254,8 +258,8 @@ export const runLoopScreenRoutes: {
   mystery: (ctx: RunLoopRouteCtx) => ReactNode;
   corruption: (ctx: RunLoopRouteCtx) => ReactNode;
 } = {
-  battle: ({ routeCommands, gameMenuOpen }) => (
-    <BattleScreenRoute commands={routeCommands.battle} gameMenuOpen={gameMenuOpen} />
+  battle: ({ routeCommands, gameMenuOpen, cardInspection }) => (
+    <BattleScreenRoute commands={routeCommands.battle} gameMenuOpen={gameMenuOpen} cardInspection={cardInspection} />
   ),
   "labyrinth-map": createRunLoopRoute(
     (commands) => commands.labyrinth,

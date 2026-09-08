@@ -34,7 +34,7 @@ export function createArmoryScreenProps(overrides: Partial<ArmoryScreenProps> = 
     ownedTrinketIds: [],
     equippedTrinkets: createEmptyEquippedTrinkets(),
     finishedRunCharacters: ["knight"],
-    browseOnly: false,
+    combatRestrictions: { characters: {}, gear: {}, trinkets: {} },
     onEquip: vi.fn(),
     onUnequip: vi.fn(),
     onEquipTrinket: vi.fn(),

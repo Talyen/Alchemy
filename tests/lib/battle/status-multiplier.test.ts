@@ -43,7 +43,7 @@ describe("getEnemyDamageMultiplier", () => {
     expect(result).toBe(4);
   });
 
-  it("trait weakness takes priority over stun/freeze multipliers", () => {
+  it("combines trait weakness with stun/freeze multipliers", () => {
     const state = makeTestBattleState({
       enemyCC: defaultCcState({ stunSkipTurns: 1, freezeSkipTurns: 1 }),
       talentEffects: {
@@ -64,7 +64,7 @@ describe("getEnemyDamageMultiplier", () => {
       },
     });
     const result = getEnemyDamageMultiplier(state, "holy");
-    expect(result).toBe(2);
+    expect(result).toBe(8);
   });
 
   it("applies every TRAIT_DAMAGE_RULES multiplier", () => {

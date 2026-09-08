@@ -1,3 +1,4 @@
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { clearBattleStageMarks, battleStageMarkName } from "@/lib/performance/battle-stage-marks";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
@@ -31,6 +32,7 @@ vi.mock("@/lib/animation/animation-prefs", () => ({
 describe("createBattleEndTurnUi handleEndTurn", () => {
   beforeEach(() => {
     resetBattlePresentationAndRun();
+    useUiStore.getState().setCardInspection(null);
     resolveEndTurnMock.mockClear();
     resolveEndTurnMock.mockReturnValue(false);
   });
@@ -76,6 +78,15 @@ describe("createBattleEndTurnUi handleEndTurn", () => {
     const ui = createBattleEndTurnUi(ctx, session, transferDeps);
     return { ui, battleSessionRef, cardPlayInProgressRef, clearAutoEndTurn, releaseDiscard: releaseDiscard! };
   }
+
+  it("rejects a stale End Turn callback while inspection is open", () => {
+    const { ui, cardPlayInProgressRef, clearAutoEndTurn } = makeUi();
+    useUiStore.getState().setCardInspection("discard");
+    ui.handleEndTurn();
+    expect(cardPlayInProgressRef.current).toBe(false);
+    expect(clearAutoEndTurn).not.toHaveBeenCalled();
+    expect(resolveEndTurnMock).not.toHaveBeenCalled();
+  });
 
   it("sets in-flight flag and clears auto-end on entry, blocking re-entry until resolve finishes", async () => {
     const { ui, cardPlayInProgressRef, clearAutoEndTurn, releaseDiscard } = makeUi();

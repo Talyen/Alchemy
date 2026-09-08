@@ -6,6 +6,11 @@ interface HealthThresholdBonus {
 }
 
 export interface TalentEffectManifest {
+  manaNextTurnOnWish: number;
+  holyReflectionBlockLostPercent: number;
+  blockOnHolyCard: number;
+  forgeOnBurnCard: number;
+  cardLeechBonusPercent: number;
   companionNextAttackOnPhysical: number;
   afflictionLeechBonusPercent: number;
   manaAfterEmptyTurn: number;

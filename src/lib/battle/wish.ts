@@ -1,7 +1,7 @@
 import { hasEncounterBenefit } from "./types";
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { applyDrawResult, drawFromState } from "./draw";
 import { type BattleState, type CombatTextEvent } from "./types";
 import {
@@ -25,6 +25,21 @@ import {
 import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-content";
 import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
+
+function upgradeRepeatedWishEffects(
+  effect: BattleCardEffect,
+  original: BattleCard,
+  upgraded: BattleCard,
+): BattleCardEffect {
+  if (effect.kind !== "repeat-over-turns") return effect;
+  return {
+    ...effect,
+    effects: effect.effects.map((child) => {
+      const index = original.effects.findIndex((source) => JSON.stringify(source) === JSON.stringify(child));
+      return index >= 0 ? upgraded.effects[index]! : upgradeRepeatedWishEffects(child, original, upgraded);
+    }),
+  };
+}
 
 function upgradeWishCard(card: BattleCard): BattleCard {
   const targets = getEditableCorruptionTargets(card);
@@ -56,6 +71,7 @@ function upgradeWishCard(card: BattleCard): BattleCard {
     );
   }
 
+  nextCard.effects = nextCard.effects.map((effect) => upgradeRepeatedWishEffects(effect, card, nextCard));
   return nextCard;
 }
 
@@ -192,6 +208,15 @@ function applyWishDesperateTrigger(state: BattleState, combatTexts: CombatTextEv
 }
 
 function applyWishManaTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (state.talentEffects.manaNextTurnOnWish > 0) {
+    state = {
+      ...state,
+      flags: {
+        ...state.flags,
+        pendingWishMana: state.flags.pendingWishMana + state.talentEffects.manaNextTurnOnWish,
+      },
+    };
+  }
   const manaGain = state.talentEffects.manaOnWish + state.gearEffects.manaOnWish;
   if (manaGain <= 0) return state;
   return gainManaWithCombatText(state, manaGain, combatTexts, { skipFightPacing: true });

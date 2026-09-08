@@ -2,6 +2,8 @@
 
 Historical evidence; current instructions live in the linked canonical owners.
 
+2026-09-07 — A legacy multiplier test required enemy traits to suppress Shatter and Exploit Weakness, contradicting both talent descriptions. Focused history showed the expectation predated the talent redesign without a documented exception. The [battle rules](../../docs/GAME_RULES.md#damage-statuses-and-survival) now state that resistance/weakness combines with these talents; regression tests cover resistant and vulnerable enemies.
+
 2026-09-07 — Asset-cache freshness trusted unchanged size/mtime even after source bytes changed, while manifest and cleanup reads suppressed operational failures. Content-only streamed hashes and explicit filesystem errors now cover art, music, generated/curated sounds, and fallbacks. Prevention lives in [asset freshness](../../docs/WORKFLOWS-ASSETS.md#content-freshness-and-filesystem-failures); regression fixtures preserve timestamps and exercise unreadable paths.
 
 2026-09-07 — Bonus reward generation expanded to Archery, Wish, and Nature cards, but pending-reward restoration still filtered for summon-Companion effects, losing saved choices. Primary and bonus choices now share card-ID restoration; themed round-trip and interrupted-handoff tests cover the mismatch. Prevention lives in [reward workflows](../../docs/WORKFLOWS.md#add-or-change-post-victory-routing-reward_routes).
@@ -144,3 +146,11 @@ Labyrinth fresh-start regression (2026-09-04): resume-only browser coverage miss
 - 2026-09-07 — Reviewing talent replacements exposed full-hand Returning Flight card loss, Block-break damage after a lethal counter, and Sanguine Overflow consumption by an unselected damage branch. Prevention lives in [talent regression tests](../../tests/lib/battle/talent-redesign.test.ts), [talent event rules](../../docs/GAME_RULES.md#talent-event-rules), and [unique item combat semantics](../../docs/UNIQUE_ITEMS.md#combat-semantics).
 
 - 2026-09-07 — The six-worker talent/audio browser batch stalled at menu clicks with GPU ReadPixels warnings and teardown timeouts (`playwright-20260907t235722z-16699-8386f6`). The unchanged fresh-preview batch passed all six tests with `--workers=1` (`playwright-20260907t235823z-16975-e4916d`). Treat this as local browser contention; reproduce serially before changing interaction assertions or timeouts.
+
+- 2026-09-07 — Overheat tests asserted Burn buildup without the immediate damage promised by its description; enemy attack tests also missed reduction/resistance before buildup and Leech. Regressions now cover those interactions, Reinforce Block spending, typed status ticks, and Meteor at the Mana Crystal floor. Prevention lives in [battle rules](../../docs/GAME_RULES.md#damage-statuses-and-survival) and [defense/resource regressions](../../tests/lib/battle/defense-and-resource-regressions.test.ts).
+
+- 2026-09-07 — Bug hunting found random damage and damage-type pools classified differently for combat and keyword rewards, and Mystery alternative reservations incorrectly exhausting available Boons. Regression coverage now pins the real cards and cross-choice fallback; canonical rules are in `docs/WORKFLOWS.md`.
+
+- 2026-09-07 — Deck inspection visual checks exposed a mismatch between Collection tile width and the adaptive picker’s 230.472 px reference, plus inline button baseline spacing that enlarged pile transfer anchors by 6 px. The viewer now uses matching view-card sizing and block-level pile buttons; prevention is documented in [deck and pile inspection](../../docs/UI.md#deck-and-pile-inspection) and pinned by the real-animation inspection journey.
+
+- 2026-09-07 — The Armory reload/reservation journey timed out in a six-worker batch (`playwright-20260908t022929z-9592-12b60b`) after its general combat helper waited five seconds for End Turn on the Victory screen; the isolated run passed. This one-hit fixture now plays its prepared winning card and waits directly for Victory, avoiding unnecessary turn cycling without extending the timeout.

@@ -104,6 +104,23 @@ Controllers own **commands**; `use-alchemy-run-controller.ts` assembles the phas
 
 Boot: [`use-alchemy-bootstrap.ts`](../src/app/use-alchemy-bootstrap.ts) applies persistence owners and calls the canonical `restoreRun` transition before publishing bootstrap readiness (guarded by `readRunInitialized`), so [`App.tsx`](../src/App.tsx) cannot render `AppInner` against an unhydrated run. [`bootstrap-save-state.ts`](../src/features/alchemy/shared/storage/bootstrap-save-state.ts) initializes Steam, configures the save backend from the returned capabilities, and only then loads candidates. `restoreRun` is the only runtime hydration path. `run-resume-codec.ts` is the single feature-owned translation boundary for save/resume state; `restore-active-run-session.ts` only applies its decoded session fields to the command draft.
 
+### Card inspection and combat equipment reservations
+
+Card inspection keeps only `null | "deck" | "draw" | "discard"` in `ui-store`.
+`useCardInspectionData` / `readCardInspectionData` expose the current run deck and
+resolved battle collections through capability reads. App orchestration owns
+visibility and transient focus, screen chrome carries the header action, and
+battle pile actions travel through route/screen props. The shared overlay is
+controlled and never reads gameplay stores. Manual battle input and automatic
+playback recheck the UI gate at execution time.
+
+Gear commands and Armory presentation share the derived combat reservation
+policy from `gear-combat-restrictions.ts`, exposed by the Gear read owner. The
+policy includes unfinished parked battles and ignores obsolete copies of the
+foreground mode. It protects reserved loadouts and item mutations before any
+resource or health changes. [ARMORY](./ARMORY.md#combat-equipment-restrictions)
+owns the player-facing restriction; existing Talent/Homestead rebinding remains.
+
 ### Run phase
 
 `getRunPhase(screen, hasActiveBattle)` in `@/lib/routing` → `meta` | `runLoop` | `battle` | `runEnd`.

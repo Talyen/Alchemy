@@ -1,7 +1,11 @@
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
-import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
+import {
+  getBurnBonusToBleedingMultiplier,
+  getEnemyDamageMultiplier,
+  getEnemyTraitDamageMultiplier,
+} from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { scalePercent, scalePerMana } from "./amount-helpers";
@@ -24,6 +28,7 @@ export function forgeAppliesToDamageType(
   damageType: DamageType,
   talentEffects: TalentEffectManifest,
   gearEffects?: BattleState["gearEffects"],
+  companionAttack = false,
 ): boolean {
   const holyForge =
     damageType === "holy" &&
@@ -33,6 +38,7 @@ export function forgeAppliesToDamageType(
     (damageType === "burn" || damageType === "bleed") &&
     (talentEffects.forgeToBurn || talentEffects.forgeToBleed);
   return (
+    (companionAttack && (gearEffects?.companionBenefitsFromForge ?? 0) > 0) ||
     holyForge ||
     sharedForge ||
     damageType === "physical" ||
@@ -43,8 +49,8 @@ export function forgeAppliesToDamageType(
   );
 }
 
-function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {
-  if (!forgeAppliesToDamageType(damageType, state.talentEffects, state.gearEffects)) return 0;
+function getForgeBonusForDamage(state: BattleState, damageType: DamageType, companionAttack = false): number {
+  if (!forgeAppliesToDamageType(damageType, state.talentEffects, state.gearEffects, companionAttack)) return 0;
   const forge = state.playerStatuses.forge;
   if (damageType === "physical" && state.talentEffects.forgeToPhysicalDamageMultiplier > 0) {
     return forge * state.talentEffects.forgeToPhysicalDamageMultiplier;
@@ -56,8 +62,9 @@ function computeBaseRawAmount(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
+  companionAttack = false,
 ): number {
-  const forgeBonus = getForgeBonusForDamage(state, effect.damageType);
+  const forgeBonus = getForgeBonusForDamage(state, effect.damageType, companionAttack);
 
   if (effect.equalToBlock) {
     return state.playerStatuses.block + forgeBonus;
@@ -189,8 +196,9 @@ function computeBaseDamage(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
   bonus = 0,
+  companionAttack = false,
 ) {
-  const rawAmount = computeBaseRawAmount(state, effect, card) + bonus;
+  const rawAmount = computeBaseRawAmount(state, effect, card, companionAttack) + bonus;
   const hasBlock = effect.equalToBlock === true;
   const hasArmor = effect.equalToArmor === true;
   const hasGold = effect.equalToGoldPercent !== undefined;
@@ -334,6 +342,14 @@ function applyBlockAbsorption(state: BattleState, damage: number): { state: Batt
   return { state: nextState, remainingDamage };
 }
 
+export function computeReflectedHolyDamageToEnemy(state: BattleState, blockLost: number) {
+  const damage = Math.round(
+    (blockLost * state.talentEffects.holyReflectionBlockLostPercent * getEnemyTraitDamageMultiplier(state, "holy")) /
+      PERCENT_DENOMINATOR,
+  );
+  return applyBlockAbsorption(state, damage);
+}
+
 function computeBurnMultiplier(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleState): number {
   if (effect.damageType !== "burn" && !(effect.damageType === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0))
     return 1;
@@ -364,7 +380,7 @@ export function computeCardDamageToEnemy(
     encounterMultiplier = LABYRINTH_MODIFIER_CONFIG.double;
     state = setFlag(state, firstAttack.flag, true);
   }
-  const baseDamage = computeBaseDamage(state, effect, card, context?.baseDamageBonus);
+  const baseDamage = computeBaseDamage(state, effect, card, context?.baseDamageBonus, context?.companionAttack);
   const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
   const totalBonus = computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus;
   const totalMultiplier = Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);

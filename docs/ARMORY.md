@@ -36,6 +36,28 @@ contract and controller seams.
 
 Astral instance titles and borders derive their shine keywords from the rolled affix descriptions, using the same keyword recognition as tooltip text (`src/lib/keyword-text.ts`). Base affinity only prioritizes present keywords for the three-keyword title limit; it never adds absent keywords. Max-roll Astral and Unique affix names use the first three distinct keywords from their own description, including aliases such as Stunned, Frozen, and Consumed. Tooltip entries carry affix identity and normalized value together so description text and max-roll shine cannot diverge. Text uses each keyword’s primary color with a faded stop; borders retain full palettes. Definition-only previews use base affinities, and Unique item titles and borders retain their gold palette. Gear hover backgrounds use only actual affix keywords, with neutral gray for no recognized keywords; Unique gear uses the same gold hex pair in inventory, equipped slots, and collection. CSS text fades must not feed the hex-only background renderer.
 
+## Combat equipment restrictions
+
+`gear-combat-restrictions.ts` derives reservations from the foreground battle and
+unfinished battles in parked mode snapshots. A live mode supersedes a stale
+parked copy of that mode. The foreground remains reserved through pending
+transitions until battle resolution clears its lifecycle; a hero with another
+unfinished parked battle remains reserved. These restrictions are derived after
+reload and require no new save fields.
+
+A reserved hero’s Armory tab remains browsable but cannot equip, unequip, craft,
+salvage, or toggle item protection. Other heroes remain editable. Inventory is
+browsed across characters: Gear and permanent Trinkets equipped by a reserved
+hero cannot be taken by another hero, and reserved Gear cannot be crafted,
+salvaged, or have protection toggled from another tab. Unused items remain
+editable through other heroes’ tabs. Acquisition adds inventory normally.
+
+`gearCommandView` enforces the same reservations before running the mutator;
+blocked actions spend no currencies, roll no RNG, award no salvage, and trigger
+neither combat rebinding nor an explicit save flush. The UI shows a lock and a
+reason naming the reserved hero while preserving inspection. Talent and
+Homestead mutation timing remains unchanged.
+
 ## State flow
 
 | Layer       | Owner                                                                                                                                  |
@@ -48,7 +70,7 @@ Astral instance titles and borders derive their shine keywords from the rolled a
 
 ### Read paths
 
-- **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat does not lock the Armory.
+- **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat preserves browsing but makes each battling hero’s Armory tab read-only; see [Combat equipment restrictions](#combat-equipment-restrictions).
 - **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`.
 - **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.
 - **Battle** — `computeGearManifest` is applied at battle start and rebound onto the live `BattleState` whenever gear, talents, or homestead change.
@@ -84,11 +106,11 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear
 - Routes `applyCurrency` through `dispatchGearMutationWithRunHealthSync` and flushes the save on success.
 - Routes `salvage` through `dispatchGearSalvageWithMaterialGrant` and flushes the save on success.
 - Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` through `dispatchGearMutationWithRunHealthSync` and flushes the save.
-- Reports `browseOnly: false` (combat does not lock the Armory) and `finishedRunCharacters` for the screen.
+- Reports derived `combatRestrictions` by character and reserved Gear/Trinket ID, plus `finishedRunCharacters`, for the screen.
 
 ## Battle integration
 
-Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Live Gear, talent, and Homestead mutations refresh that manifest through `rebindLiveRunMeta` in the same session command. Battle calculations read the battle manifest, never the Gear aggregate directly.
+Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Allowed Gear, talent, and Homestead mutations refresh that manifest through `rebindLiveRunMeta` in the same session command. Battle calculations read the battle manifest, never the Gear aggregate directly.
 
 Lifegiving grants 1 Health per turn at every rarity and remains eligible for ordinary gear. Fixed roll values do not imply unique-only eligibility; `uniqueOnly` owns that restriction. Emberforged grants Forge only on the first Burn attack each turn (Basic: 1; Astral: 2); multiple equipped copies add their amounts but share the turn limit. Companion and delayed effects do not spend this card-attack trigger. Saved inventory rolls for these two affixes are bounded to their current rarity ranges during normalization, tooltip generation, and battle-manifest construction. Existing combat snapshots retain their captured magnitudes until normal live meta rebinding or the next battle.
 

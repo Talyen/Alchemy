@@ -1,5 +1,5 @@
 import { computeCardDamageToEnemy } from "./damage-calc";
-import { applyDamageRiders } from "./damage-riders";
+import { applyDamageRiders, reflectBlockedAttackAsHoly } from "./damage-riders";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
@@ -8,6 +8,7 @@ import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import {
   applyPlayerCombatDamage,
+  mitigatePlayerCombatDamage,
   scaleReceivedPlayerDamage,
   type BattleState,
   type CombatTextEvent,
@@ -26,14 +27,11 @@ function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect &
   return effect.amount + state.enemyMitigation.forge + state.enemyPhysicalDamageBonus;
 }
 
-function computeEffectiveBlock(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
-  let effectiveBlock = state.playerStatuses.block;
+function blockAbsorptionMultiplier(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   if (effect.damageType === "physical" && state.talentEffects.blockAbsorbPhysicalBonus > 0) {
-    effectiveBlock = Math.round(
-      effectiveBlock * (1 + state.talentEffects.blockAbsorbPhysicalBonus / PERCENT_DENOMINATOR),
-    );
+    return 1 + state.talentEffects.blockAbsorbPhysicalBonus / PERCENT_DENOMINATOR;
   }
-  return effectiveBlock;
+  return 1;
 }
 
 export interface EnemyDamageOptions {
@@ -56,9 +54,12 @@ function computeMitigatedDamage(
 ) {
   const armorMitigatesDamage = effect.damageType === "physical" || effect.damageType === "stun";
   const rawDamage = armorMitigatesDamage ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
-  return ignorePlayerMitigation
+  const scaledDamage = ignorePlayerMitigation
     ? rawDamage
     : scaleReceivedPlayerDamage(rawDamage, state.talentEffects, effect.damageType);
+  return mitigatePlayerCombatDamage(state, scaledDamage, effect.damageType, {
+    ignoreMitigation: ignorePlayerMitigation,
+  });
 }
 
 export function computeIncomingEnemyAttackDamage(
@@ -100,22 +101,29 @@ function calculateBlockAndArmorMitigation(
   options: EnemyDamageOptions,
 ) {
   let remainingDamage = incomingDamage;
-  const effectiveBlock = options.ignorePlayerMitigation ? 0 : computeEffectiveBlock(state, effect);
+  const blockMultiplier = blockAbsorptionMultiplier(state, effect);
+  const effectiveBlock = options.ignorePlayerMitigation ? 0 : Math.round(state.playerStatuses.block * blockMultiplier);
   const blockAbsorb = Math.min(remainingDamage, effectiveBlock);
+  const blockSpent =
+    blockAbsorb <= 0
+      ? 0
+      : blockAbsorb === effectiveBlock
+        ? state.playerStatuses.block
+        : Math.min(state.playerStatuses.block, Math.round(blockAbsorb / blockMultiplier));
   remainingDamage -= blockAbsorb;
-  if (blockAbsorb > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockAbsorb });
+  if (blockSpent > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockSpent });
   }
   const extraPhysicalBlock =
     effect.damageType === "physical" && (options.physicalBlockBreakMultiplier ?? 1) > 1
       ? Math.min(
-          Math.max(0, effectiveBlock - blockAbsorb),
-          Math.round(blockAbsorb * ((options.physicalBlockBreakMultiplier ?? 1) - 1)),
+          Math.max(0, state.playerStatuses.block - blockSpent),
+          Math.round(blockSpent * ((options.physicalBlockBreakMultiplier ?? 1) - 1)),
         )
       : 0;
   const extraPoisonBlock =
     effect.damageType === "poison" && !options.ignorePlayerMitigation
-      ? Math.min(Math.max(0, effectiveBlock - blockAbsorb), options.extraPoisonBlockStrip ?? 0)
+      ? Math.min(Math.max(0, state.playerStatuses.block - blockSpent), options.extraPoisonBlockStrip ?? 0)
       : 0;
   const totalExtraBlock = Math.max(extraPhysicalBlock, extraPoisonBlock);
   if (totalExtraBlock > 0) {
@@ -124,7 +132,7 @@ function calculateBlockAndArmorMitigation(
   const armorMitigatesDamage = effect.damageType === "physical" || effect.damageType === "stun";
   const armorAbsorb = armorMitigatesDamage ? Math.min(remainingDamage, state.playerStatuses.armor) : 0;
   const actualDamage = computeMitigatedDamage(state, effect, remainingDamage, options.ignorePlayerMitigation === true);
-  return { remainingDamage, blockAbsorb, totalExtraBlock, armorAbsorb, actualDamage };
+  return { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, armorAbsorb, actualDamage };
 }
 
 function applyVanguardCrestAfterBlock(
@@ -295,7 +303,15 @@ function applyBlockDepletedHeal(
   return finalState;
 }
 
-function applyBlockedAttackRetaliation(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+function applyBlockedAttackRetaliation(
+  state: BattleState,
+  blockLost: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
+  if (state.talentEffects.holyReflectionBlockLostPercent > 0) {
+    return reflectBlockedAttackAsHoly(state, blockLost, combatTexts);
+  }
   const amount = state.talentEffects.holyOnAttackBlocked;
   if (amount <= 0 || state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
   const card = { id: "sun-struck-shield", title: "", descriptionLines: [], art: "", cost: 0, effects: [] };
@@ -312,7 +328,7 @@ export function processEnemyDamageEffect(
 ) {
   const incomingDamage = options.incomingDamage ?? computeIncomingEnemyAttackDamage(state, effect, options);
 
-  const { remainingDamage, blockAbsorb, totalExtraBlock, actualDamage } = calculateBlockAndArmorMitigation(
+  const { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage } = calculateBlockAndArmorMitigation(
     state,
     effect,
     incomingDamage,
@@ -333,17 +349,15 @@ export function processEnemyDamageEffect(
     actualDamage,
     "hostile",
     effect.damageType,
-    { ignoreMitigation: options.ignorePlayerMitigation === true },
+    { ignoreMitigation: true },
     combatTexts,
   );
+  const blockLost = Math.min(blockSpent + totalExtraBlock, damagedState.playerStatuses.block);
   let nextState: BattleState = {
     ...damagedState,
     playerStatuses: {
       ...damagedState.playerStatuses,
-      block: Math.max(
-        0,
-        damagedState.playerStatuses.block - Math.min(blockAbsorb + totalExtraBlock, damagedState.playerStatuses.block),
-      ),
+      block: Math.max(0, damagedState.playerStatuses.block - blockLost),
     },
   };
 
@@ -385,7 +399,7 @@ export function processEnemyDamageEffect(
   }
 
   if (blockAbsorb > 0 && options.triggerBlockRetaliation) {
-    nextState = applyBlockedAttackRetaliation(nextState, combatTexts);
+    nextState = applyBlockedAttackRetaliation(nextState, blockLost, combatTexts);
   }
 
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return nextState;

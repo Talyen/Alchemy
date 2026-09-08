@@ -92,15 +92,34 @@ describe("ArmoryScreen core", () => {
     const user = userEvent.setup();
     const onUnequip = vi.fn();
     renderArmoryScreen({
-      browseOnly: true,
+      combatRestrictions: { characters: { knight: ["campaign"] }, gear: {}, trinkets: {} },
       onUnequip,
       ownedTrinketIds: ["brass-censer"],
     });
 
-    expect(screen.getByText("Equipment can be changed after combat.")).toBeTruthy();
+    expect(screen.getByText(/Equipment can be changed after this hero’s battle ends/)).toBeTruthy();
 
     await user.click(screen.getByLabelText("Trinket equipment slot"));
-    expect(screen.getByRole("button", { name: "Equip Brass Censer" })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("button", { name: "Equip Brass Censer" }).getAttribute("aria-disabled")).toBe("true");
+  });
+
+  it("reserves another hero’s equipment while leaving unused gear editable", async () => {
+    const user = userEvent.setup();
+    const onEquip = vi.fn();
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.rogue["main-hand"] = "gear-sword";
+    renderArmoryScreen({
+      loadouts,
+      onEquip,
+      combatRestrictions: { characters: { rogue: ["labyrinth"] }, gear: { "gear-sword": "rogue" }, trinkets: {} },
+    });
+    const sword = screen.getByRole("button", { name: /Longsword. Reserved for Rogue/ });
+    expect(sword.getAttribute("aria-disabled")).toBe("true");
+    await user.click(sword);
+    expect(onEquip).not.toHaveBeenCalled();
+    await user.click(screen.getByLabelText("Armor equipment slot"));
+    await user.click(await screen.findByRole("button", { name: "Leather Armor" }));
+    expect(onEquip).toHaveBeenCalledWith("knight", "body", expect.objectContaining({ instanceId: "gear-body" }));
   });
 
   it("renders the development gear-spawn action when provided", async () => {

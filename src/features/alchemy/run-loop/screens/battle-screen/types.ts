@@ -52,6 +52,8 @@ export interface BattleFeedbackProps {
 export type BattleRefsProps = BattleRefs;
 
 export interface BattleActionsProps {
+  onInspectPile?: ((view: "draw" | "discard") => void) | undefined;
+  inspectionAvailable?: boolean | undefined;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onWishChoice: (card: BattleCard) => void;
   onSkipCombatDevMode: () => void;

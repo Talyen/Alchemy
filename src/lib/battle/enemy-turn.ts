@@ -29,7 +29,11 @@ export type EndPlayerTurnResolution =
   | (EndPlayerTurnResolutionBase & { kind: "haste" })
   | (EndPlayerTurnResolutionBase & { kind: "skipped" | "standard"; enemyTurnStartState: BattleState });
 
-function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[], options?: { preserveBlock?: boolean }) {
+function finalizePlayerTurn(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  options?: { preserveBlock?: boolean; manaAtTurnEnd?: number },
+) {
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) {
     return { state, combatTexts, playerTurnSkipped: false };
   }
@@ -124,7 +128,7 @@ function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: num
 
   return {
     kind: "skipped" as const,
-    ...finalizePlayerTurn(result.state, combatTexts),
+    ...finalizePlayerTurn(result.state, combatTexts, { manaAtTurnEnd: state.mana }),
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
     enemyResolutionCombatTexts,
@@ -168,7 +172,7 @@ function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?
 
   return {
     kind: "standard" as const,
-    ...finalizePlayerTurn(actionResult.state, combatTexts),
+    ...finalizePlayerTurn(actionResult.state, combatTexts, { manaAtTurnEnd: nextState.mana }),
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
     enemyResolutionCombatTexts: actionResult.texts,

@@ -1,3 +1,4 @@
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRef } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -33,10 +34,24 @@ describe("useBattleAutoEndTurn", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     resetBattlePresentationAndRun();
+    useUiStore.getState().setCardInspection(null);
   });
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("cancels an existing timer during inspection and resumes after closing", () => {
+    const onEndTurn = vi.fn();
+    renderHook(() =>
+      useAutoEndTurnUnderTest({ ...baseOptions, battleState: makeEmptyHandBattle().battleState, onEndTurn }),
+    );
+    act(() => useUiStore.getState().setCardInspection("deck"));
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY * 2));
+    expect(onEndTurn).not.toHaveBeenCalled();
+    act(() => useUiStore.getState().setCardInspection(null));
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY));
+    expect(onEndTurn).toHaveBeenCalledOnce();
   });
 
   it("schedules end turn when no card is playable", () => {

@@ -1,4 +1,6 @@
 export {
+  useCardInspectionData,
+  readCardInspectionData,
   getRunSession,
   getRunSessionFromState,
   readActiveRun,

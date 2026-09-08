@@ -1,3 +1,4 @@
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import "../../../../helpers/mock-audio";
 import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
 import type { MouseEvent } from "react";
@@ -115,6 +116,7 @@ function clickCard(
 beforeEach(() => {
   vi.clearAllMocks();
   resetBattlePresentationAndRun();
+  useUiStore.getState().setCardInspection(null);
 });
 
 describe("createBattleCardPlay", () => {
@@ -145,6 +147,19 @@ describe("createBattleCardPlay", () => {
     expect(playUISound).not.toHaveBeenCalled();
     expect(logError).not.toHaveBeenCalled();
     expect(useBattlePresentationStore.getState().playerAttackToken).toBe(1);
+  });
+
+  it("rejects stale manual and autoplay callbacks while inspecting", () => {
+    const slash = { ...makeTestCard({ id: "slash", cost: 1 }), uid: 1 };
+    const state = makeTestBattleState({ hand: [slash], mana: 3, enemyHealth: 30 });
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
+    const { ctx, session, transferDeps, awardCardXP } = makeDeps();
+    const { handleCardClick, handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
+    useUiStore.getState().setCardInspection("deck");
+    clickCard(handleCardClick, slash, 0);
+    expect(handleAutoplayCard(slash, 0)).toBe(false);
+    expect(readBattle().battleState).toEqual(state);
+    expect(awardCardXP).not.toHaveBeenCalled();
   });
 
   it("rejects plays when mana is insufficient", () => {

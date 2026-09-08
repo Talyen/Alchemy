@@ -17,6 +17,8 @@ import { getScreenParticleConfig } from "@/app/screen-particle-config";
 import { useSettingsStore } from "../../../shared/stores/settings-store";
 
 interface BattleScreenProps {
+  onInspectPile?: BattleActionsProps["onInspectPile"];
+  inspectionAvailable?: boolean | undefined;
   battleScreenData: BattleScreenData;
   characterId: CharacterId;
   heroArt: string;
@@ -34,6 +36,8 @@ interface BattleScreenProps {
 
 export function BattleScreen(props: BattleScreenProps) {
   const {
+    onInspectPile,
+    inspectionAvailable,
     battleScreenData,
     characterId,
     heroArt,
@@ -86,13 +90,15 @@ export function BattleScreen(props: BattleScreenProps) {
   const isDev = isAlchemyDevBuild();
   const actions: BattleActionsProps = useMemo(
     () => ({
+      onInspectPile,
+      inspectionAvailable,
       onCardClick,
       onWishChoice,
       onSkipCombatDevMode,
       onEndTurn,
       isDevMode: isDev,
     }),
-    [onCardClick, onWishChoice, onSkipCombatDevMode, onEndTurn, isDev],
+    [onInspectPile, inspectionAvailable, onCardClick, onWishChoice, onSkipCombatDevMode, onEndTurn, isDev],
   );
 
   const { battleSceneRef: sceneRef } = refs;

@@ -37,6 +37,7 @@ export interface TrinketTileProps {
   as?: "button" | "div" | undefined;
   selected?: boolean | undefined;
   disabled?: boolean | undefined;
+  ariaDisabled?: boolean | undefined;
   interactiveChrome?: boolean | undefined;
   onClick?: (() => void) | undefined;
   ariaLabel?: string | undefined;
@@ -61,6 +62,7 @@ export function TrinketTile({
   as,
   selected,
   disabled,
+  ariaDisabled,
   interactiveChrome,
   onClick,
   ariaLabel,
@@ -93,6 +95,7 @@ export function TrinketTile({
       as={as}
       selected={selected}
       disabled={disabled}
+      ariaDisabled={ariaDisabled}
       interactiveChrome={interactiveChrome}
       onClick={onClick}
       ariaLabel={ariaLabel}

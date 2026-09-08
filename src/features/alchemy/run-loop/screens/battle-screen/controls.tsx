@@ -30,7 +30,14 @@ export function BattleBottomBar({
       <div className={battleBottomColumnClass}>
         <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} gold={battleState.gold} />
         <div className="mt-[calc(1.0125*var(--content-rem,1rem))]">
-          <PilePanel ref={drawPileRef} label="Draw Pile" count={battleState.deck.length} type="draw" />
+          <PilePanel
+            ref={drawPileRef}
+            label="Draw Pile"
+            count={battleState.deck.length}
+            type="draw"
+            onInspect={() => actions.onInspectPile?.("draw")}
+            inspectable={actions.inspectionAvailable}
+          />
         </div>
       </div>
 
@@ -76,7 +83,14 @@ function BattleControls({
       </div>
 
       <div className="mt-[calc(1.0125*var(--content-rem,1rem))]">
-        <PilePanel ref={discardPileRef} label="Discard Pile" count={battleState.discard.length} type="discard" />
+        <PilePanel
+          ref={discardPileRef}
+          label="Discard Pile"
+          count={battleState.discard.length}
+          type="discard"
+          onInspect={() => actions.onInspectPile?.("discard")}
+          inspectable={actions.inspectionAvailable}
+        />
       </div>
     </div>
   );

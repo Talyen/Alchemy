@@ -19,7 +19,6 @@ interface CompanionScaleContext {
   bondLevel: number;
   enemyFreezeSkipTurns: number;
   maxMana: number;
-  playerForge: number;
   lowHealthMultiplier: number;
 }
 
@@ -35,10 +34,7 @@ function companionDamageBonusForEffect(
     trinketEffects.companionDamageBonus +
     ctx.damageBuff +
     (ctx.enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0) +
-    scalePerMana(ctx.maxMana, talentEffects.companionDamagePerManaCrystal, "half") +
-    (gearEffects.companionBenefitsFromForge > 0 && (effect.damageType === "physical" || effect.damageType === "stun")
-      ? ctx.playerForge
-      : 0)
+    scalePerMana(ctx.maxMana, talentEffects.companionDamagePerManaCrystal, "half")
   );
 }
 
@@ -82,7 +78,6 @@ export function resolveCompanionTurnStart(
     bondLevel: state.talentEffects.companionBondLevels?.[state.activeCompanion.id] ?? 0,
     enemyFreezeSkipTurns: state.enemyCC.freezeSkipTurns,
     maxMana: state.maxMana,
-    playerForge: state.playerStatuses.forge,
     lowHealthMultiplier:
       state.talentEffects.companionDoubledVsLowHealth && state.enemyHealth < lowHealthThreshold ? 2 : 1,
   };
@@ -107,6 +102,7 @@ export function resolveCompanionTurnStart(
         manaAtStart: s.mana,
         enemyFreezeSkipTurnsAtStart: s.enemyCC.freezeSkipTurns,
         attackBonuses,
+        companionAttack: true,
       }),
       companionCard,
       combatTexts,

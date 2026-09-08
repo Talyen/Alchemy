@@ -80,6 +80,23 @@ describe("gear-effects", () => {
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.enemyStatuses.burn).toBe(5);
+    expect(result.state.enemyHealth).toBe(state.enemyHealth - 5);
+  });
+
+  it("pays a Consuming kill once and preserves the next card's critical hit", () => {
+    const consumed = makeTestCard({ consume: true, effects: [] });
+    const state = patchBattleState({
+      enemyHealth: 3,
+      gold: 0,
+      gearEffects: { burnOnConsume: 3, goldOnKill: 4 },
+      flags: { nextHitCrit: true },
+    });
+    const result = handlePostPlayCardDestination(state, consumed);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.gold).toBe(4);
+    expect(result.enemyStatuses.burn).toBe(3);
+    expect(result.flags.nextHitCrit).toBe(true);
+    expect(handlePostPlayCardDestination(result, consumed).gold).toBe(4);
   });
 
   it("applies consume rewards identically without collecting combat text", () => {

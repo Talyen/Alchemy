@@ -1,5 +1,5 @@
 import { hasEncounterBenefit } from "./types";
-import { forgeAppliesToDamageType } from "./damage-calc";
+import { computeReflectedHolyDamageToEnemy, forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { mergeCombatText, addGoldWithCombatText, payKillPayouts } from "./combat-text";
 import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
@@ -105,14 +105,43 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
   return applyBrassCenser(nextState, damage, combatTexts);
 }
 
+export function reflectBlockedAttackAsHoly(
+  state: BattleState,
+  blockLost: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const { state: mitigated, remainingDamage } = computeReflectedHolyDamageToEnemy(state, blockLost);
+  if (remainingDamage <= 0) return mitigated;
+  const hit = damageEnemyHealth(mitigated, remainingDamage);
+  let nextState = decayArmorAfterDamage(hit.state, remainingDamage, "enemy", combatTexts);
+  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: remainingDamage });
+  const card = { id: "sun-struck-shield", title: "", descriptionLines: [], art: "", cost: 0, effects: [] };
+  nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
+  nextState = applyDamageStatuses(
+    nextState,
+    { kind: "damage", damageType: "holy", amount: remainingDamage },
+    remainingDamage,
+    combatTexts,
+    hit.previousHealth,
+  );
+  nextState = applyHolyDamageRiders(nextState, card, remainingDamage, combatTexts);
+  return processEncounterTraitHealthThreshold(hit.previousHealth, nextState, combatTexts);
+}
+
 function consumeForgeAfterDamage(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   damage: number,
+  companionAttack = false,
 ) {
   if (hasEncounterBenefit(state, "white-heat")) return state;
   if (effect.damageType === "holy" && state.gearEffects.holyPreservesForge > 0) return state;
-  const forgeWasApplied = forgeAppliesToDamageType(effect.damageType, state.talentEffects, state.gearEffects);
+  const forgeWasApplied = forgeAppliesToDamageType(
+    effect.damageType,
+    state.talentEffects,
+    state.gearEffects,
+    companionAttack,
+  );
 
   if (!forgeWasApplied || damage <= 0 || state.playerStatuses.forge <= 0) return state;
 
@@ -172,6 +201,7 @@ export function applyDamageRiders(
   combatTexts: CombatTextEvent[],
   isExtraHit = false,
   cardHealing = false,
+  companionAttack = false,
 ) {
   const enemyWasBurningBefore = state.enemyStatuses.burn > 0;
   const prePurgeState = isExtraHit ? state : applyAttackPurgeRider(state, combatTexts);
@@ -210,14 +240,29 @@ export function applyDamageRiders(
   }
 
   if (effect.lifesteal) {
-    nextState = applyLifestealAndPlayerHitTriggers(nextState, modifiedDamage, combatTexts, cardHealing);
+    nextState = applyLifestealAndPlayerHitTriggers(
+      nextState,
+      modifiedDamage,
+      combatTexts,
+      cardHealing,
+      !companionAttack,
+    );
   }
 
   if (card.tags?.includes("archery") && modifiedDamage > 0) {
     if (!isExtraHit && rollTalentChance(nextState.talentEffects.archeryPlayTwiceChance, nextState)) {
       const secondHit = halveRounded(modifiedDamage);
       if (secondHit > 0) {
-        nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true, cardHealing);
+        nextState = applyDamageRiders(
+          nextState,
+          card,
+          effect,
+          secondHit,
+          combatTexts,
+          true,
+          cardHealing,
+          companionAttack,
+        );
       }
     }
 
@@ -242,5 +287,5 @@ export function applyDamageRiders(
 
   nextState = processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
 
-  return consumeForgeAfterDamage(nextState, effect, modifiedDamage);
+  return consumeForgeAfterDamage(nextState, effect, modifiedDamage, companionAttack);
 }

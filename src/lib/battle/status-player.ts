@@ -9,9 +9,17 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { addPlayerStatusWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import {
+  addPlayerStatusWithCombatText,
+  applyHealingWithCombatText,
+  mergeCombatText,
+  payKillPayouts,
+} from "./combat-text";
 import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
+import { dealEnemyScaledDamage } from "./scaled-damage";
+import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 export function applyCardHealing(
   state: BattleState,
@@ -121,17 +129,15 @@ function onForgeFirstCrossThreshold(
 
 function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: number, combatTexts?: CombatTextEvent[]) {
   return onForgeFirstCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeBurnThreshold, (s) => {
-    const burnAmount = s.talentEffects.forgeBurnDamage;
-    const nextState = addEnemyStatus(s, "burn", burnAmount);
-    if (combatTexts) {
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "status",
-        stat: "burn",
-        amount: burnAmount,
-      });
-    }
-    return nextState;
+    if (s.enemyHealth <= 0) return s;
+    return dealEnemyScaledDamage(s, s.talentEffects.forgeBurnDamage, "burn", combatTexts ?? [], {
+      multiplier: getEnemyDamageMultiplier(s, "burn"),
+      riders: (damaged, damage, texts) => {
+        const burning = addEnemyStatus(damaged, "burn", damage);
+        const decayed = decayArmorAfterDamage(burning, damage, "enemy", texts);
+        return payKillPayouts(processEncounterTraitHealthThreshold(s.enemyHealth, decayed, texts), true, texts);
+      },
+    });
   });
 }
 

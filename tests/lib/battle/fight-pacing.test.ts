@@ -254,7 +254,8 @@ describe("Forge gain pacing", () => {
       texts,
     );
     expect(result.playerStatuses.forge).toBe(12);
-    expect(result.enemyStatuses.burn).toBe(3);
+    expect(result.enemyStatuses.burn).toBe(4);
+    expect(result.enemyHealth).toBe(state.enemyHealth - 4);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 12 });
     expect(state.playerStatuses.forge).toBe(0);
   });

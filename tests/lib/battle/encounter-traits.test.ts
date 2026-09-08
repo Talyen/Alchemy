@@ -273,6 +273,18 @@ describe("encounter trait card events", () => {
     expect(result.state.exhausted).toContainEqual(played);
   });
 
+  it("feeds Insatiable once when one Consume card resolves twice", () => {
+    const played = card({ consume: true, effects: [] });
+    const state = patchBattleState({
+      currentEnemy: enemyWith("insatiable"),
+      hand: [played],
+      flags: { playNextCardTwice: true },
+    });
+    const result = playBattleCardResolved(state, played.id, 0).state;
+    expect(result.exhausted).toHaveLength(1);
+    expect(result.enemyPhysicalDamageBonus).toBe(1);
+  });
+
   it("triggers Consume, Wish, and Nature reactions once per played card", () => {
     const currentEnemy = enemyWith("insatiable", "jealous", "rooted");
     const played = card({

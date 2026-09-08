@@ -180,3 +180,16 @@ describe("collect and apply resolved mystery trinket ids", () => {
     expect(["bone-charm", "sin-eaters-lantern"]).toContain(trinket.trinketId);
   });
 });
+
+it("keeps the last unowned Boon available in mutually exclusive choices", () => {
+  const event = {
+    ...eventWithTwoTrinkets,
+    choices: [
+      { label: "A", effects: [{ kind: "gainRandomTrinket" as const }] },
+      { label: "B", effects: [{ kind: "gainRandomTrinket" as const }] },
+    ],
+  };
+  const owned = trinketLibrary.filter((entry) => entry.id !== "bone-charm").map((entry) => entry.id);
+  const resolved = resolveMysteryEventTrinkets(event, owned, () => 0);
+  expect(trinketIdsOn(resolved)).toEqual(["bone-charm", "bone-charm"]);
+});

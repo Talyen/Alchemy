@@ -2,6 +2,11 @@ import { defaultCompanionBondLevels } from "../companions";
 import type { TalentEffectManifest } from "../talent-effect-manifest";
 
 export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
+  manaNextTurnOnWish: 0,
+  holyReflectionBlockLostPercent: 0,
+  blockOnHolyCard: 0,
+  forgeOnBurnCard: 0,
+  cardLeechBonusPercent: 0,
   companionNextAttackOnPhysical: 0,
   afflictionLeechBonusPercent: 0,
   manaAfterEmptyTurn: 0,

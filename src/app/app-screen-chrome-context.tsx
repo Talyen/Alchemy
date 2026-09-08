@@ -1,3 +1,4 @@
+import type { DeckInspectButtonProps } from "@/features/alchemy/shared/ui/deck-inspect-button";
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import {
   cardLibrary,
@@ -115,6 +116,7 @@ export interface AppScreenChrome {
   openGameMenu?: ((rect?: DOMRect) => void) | undefined;
   isMenuOpen?: boolean | undefined;
   onBack?: (() => void) | undefined;
+  deckInspection?: DeckInspectButtonProps | undefined;
 }
 
 const AppScreenChromeContext = createContext<AppScreenChrome | null>(null);
@@ -126,6 +128,7 @@ export function AppScreenChromeProvider({
   openGameMenu,
   isMenuOpen,
   onBack,
+  deckInspection,
   children,
 }: {
   aspectMode: "standard" | "narrow" | "ultrawide";
@@ -134,6 +137,7 @@ export function AppScreenChromeProvider({
   openGameMenu?: ((rect?: DOMRect) => void) | undefined;
   isMenuOpen?: boolean | undefined;
   onBack?: (() => void) | undefined;
+  deckInspection?: DeckInspectButtonProps | undefined;
   children: ReactNode;
 }) {
   const characterId = useActiveRunCharacterId();
@@ -174,6 +178,7 @@ export function AppScreenChromeProvider({
       openGameMenu,
       isMenuOpen,
       onBack,
+      deckInspection,
     }),
     [
       aspectMode,
@@ -183,6 +188,7 @@ export function AppScreenChromeProvider({
       heroArt,
       isMenuOpen,
       onBack,
+      deckInspection,
       openGameMenu,
       playerName,
       returnToRunScreen,
