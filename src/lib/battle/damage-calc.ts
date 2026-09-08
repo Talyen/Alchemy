@@ -188,8 +188,9 @@ function computeBaseDamage(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
+  bonus = 0,
 ) {
-  const rawAmount = computeBaseRawAmount(state, effect, card);
+  const rawAmount = computeBaseRawAmount(state, effect, card) + bonus;
   const hasBlock = effect.equalToBlock === true;
   const hasArmor = effect.equalToArmor === true;
   const hasGold = effect.equalToGoldPercent !== undefined;
@@ -262,7 +263,7 @@ function computeAdditiveDamageBonus(
     }
     if (
       talentEffects.archeryDoubledVsLowHealth &&
-      state.enemyHealth * PERCENT_DENOMINATOR <= state.enemyMaxHealth * ARCHERY_LOW_HEALTH_THRESHOLD_PERCENT
+      state.enemyHealth * PERCENT_DENOMINATOR < state.enemyMaxHealth * ARCHERY_LOW_HEALTH_THRESHOLD_PERCENT
     ) {
       bonus += 1;
     }
@@ -363,7 +364,7 @@ export function computeCardDamageToEnemy(
     encounterMultiplier = LABYRINTH_MODIFIER_CONFIG.double;
     state = setFlag(state, firstAttack.flag, true);
   }
-  const baseDamage = computeBaseDamage(state, effect, card);
+  const baseDamage = computeBaseDamage(state, effect, card, context?.baseDamageBonus);
   const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
   const totalBonus = computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus;
   const totalMultiplier = Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);

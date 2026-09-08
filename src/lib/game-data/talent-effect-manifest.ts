@@ -6,6 +6,25 @@ interface HealthThresholdBonus {
 }
 
 export interface TalentEffectManifest {
+  companionNextAttackOnPhysical: number;
+  afflictionLeechBonusPercent: number;
+  manaAfterEmptyTurn: number;
+  blockPerDeclinedWishCard: number;
+  nextAttackPhysicalOnLeechToFull: number;
+  drawPhysicalOnBleedTick: boolean;
+  drawOnDodge: number;
+  wishExtraChoices: number;
+  companionVictoryGold: number;
+  consecutiveArcheryPhysicalDamage: number;
+  armorStealOnLeechCard: number;
+  cleanseOnCardOverheal: boolean;
+  blockPerGold: number;
+  thornsOnNatureCard: number;
+  physicalAfterNatureBleedDamage: number;
+  dodgeChanceWhileEnemyBurning: number;
+  holyOnAttackBlocked: number;
+  drawOnThaw: number;
+
   dodgeChance: number;
   healOnDodge: number;
   forgeOnDodge: number;

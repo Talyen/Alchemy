@@ -289,6 +289,7 @@ export { default as talentBlock } from "@/assets/optimized/talent-block.webp";
 export { default as talentBurn } from "@/assets/optimized/talent-burn.webp";
 export { default as talentCompanion } from "@/assets/optimized/talent-companion.webp";
 export { default as talentConsume } from "@/assets/optimized/talent-consume.webp";
+export { default as talentDodge } from "@/assets/optimized/talent-dodge.webp";
 export { default as talentForge } from "@/assets/optimized/talent-forge.webp";
 export { default as talentFreeze } from "@/assets/optimized/talent-freeze.webp";
 export { default as talentGold } from "@/assets/optimized/talent-gold.webp";

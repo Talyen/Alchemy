@@ -62,20 +62,21 @@ function upgradeWishCard(card: BattleCard): BattleCard {
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
   const baseCount =
     WISH_CHOICE_COUNT +
+    state.talentEffects.wishExtraChoices +
     (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
     (rollPercent(state.talentEffects.wishExtraChoiceChance, getBattleRng(state)) ? 1 : 0);
 
-  let candidates = getOfferableCardPool().filter((candidate) => candidate.id !== card.id);
-
-  if (state.talentEffects.wishUndiscoveredCards && state.discoveredCardIds.length > 0) {
-    const undiscovered = candidates.filter((c) => !state.discoveredCardIds.includes(c.id));
-    if (undiscovered.length >= baseCount) {
-      candidates = undiscovered;
-    }
-  }
-
+  const candidates = getOfferableCardPool().filter((candidate) => candidate.id !== card.id);
   const fullDeck = [...state.deck, ...state.hand, ...state.discard, ...state.exhausted];
-  const selected = selectRewardCards(fullDeck, candidates, baseCount, [], getBattleRng(state));
+  const undiscovered = state.talentEffects.wishUndiscoveredCards
+    ? candidates.filter((candidate) => !state.discoveredCardIds.includes(candidate.id))
+    : [];
+  const guaranteed =
+    undiscovered.length > 0 ? selectRewardCards(fullDeck, undiscovered, 1, [], getBattleRng(state)) : [];
+  const selected = [
+    ...guaranteed,
+    ...selectRewardCards(fullDeck, candidates, baseCount - guaranteed.length, guaranteed, getBattleRng(state)),
+  ];
 
   if (state.talentEffects.wishCardsUpgraded) {
     return selected.map((c) => upgradeWishCard(c));
@@ -180,7 +181,7 @@ function applyWishDesperateTrigger(state: BattleState, combatTexts: CombatTextEv
   const blockAmount = state.talentEffects.wishBlockAmount;
   if (thresholdPct <= 0 || blockAmount <= 0) return state;
   const thresholdHp = (state.playerMaxHealth * thresholdPct) / PERCENT_DENOMINATOR;
-  if (state.playerHealth <= thresholdHp) {
+  if (state.playerHealth < thresholdHp) {
     return applyPlayerStatusEffect(
       state,
       { kind: "player-status", status: "block" as const, amount: blockAmount },
@@ -196,7 +197,7 @@ function applyWishManaTrigger(state: BattleState, combatTexts: CombatTextEvent[]
   return gainManaWithCombatText(state, manaGain, combatTexts, { skipFightPacing: true });
 }
 
-export function chooseWishCard(state: BattleState, cardId: string) {
+export function chooseWishCard(state: BattleState, cardId: string, combatTexts: CombatTextEvent[] = []) {
   const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
 
   const chosenCard = state.wishOptions?.find((card) => card.id === cardId);
@@ -204,12 +205,24 @@ export function chooseWishCard(state: BattleState, cardId: string) {
     return state;
   }
 
+  const declined = Math.max(0, (state.wishOptions?.length ?? 0) - 1);
+  const blockAmount = declined * state.talentEffects.blockPerDeclinedWishCard;
+  const rewarded =
+    blockAmount > 0
+      ? applyPlayerStatusEffect(state, { kind: "player-status", status: "block", amount: blockAmount }, combatTexts)
+      : state;
   const cardWithUid = { ...chosenCard, uid: state.nextCardUid };
   const nextCardUid = state.nextCardUid + 1;
 
   if (state.hand.length < MAX_HAND_SIZE) {
-    return { ...state, hand: [...state.hand, cardWithUid], nextCardUid, wishOptions: nextWishOptions, wishQueue };
+    return { ...rewarded, hand: [...state.hand, cardWithUid], nextCardUid, wishOptions: nextWishOptions, wishQueue };
   }
 
-  return { ...state, discard: [...state.discard, cardWithUid], nextCardUid, wishOptions: nextWishOptions, wishQueue };
+  return {
+    ...rewarded,
+    discard: [...state.discard, cardWithUid],
+    nextCardUid,
+    wishOptions: nextWishOptions,
+    wishQueue,
+  };
 }

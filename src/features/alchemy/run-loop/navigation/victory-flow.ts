@@ -116,7 +116,8 @@ export function computeVictoryRewardState(
       bossBonus: input.bossBonus,
       generousBonus: input.generousBonus,
       wealthyBonus: input.wealthyBonus,
-      talentGoldPerCombat: talentEffects.goldPerCombat,
+      talentGoldPerCombat:
+        talentEffects.goldPerCombat + (input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0),
       materials: input.materials,
       trinketIds: activeTrinketEffectIds,
       goldMultiplier,
@@ -136,7 +137,8 @@ export function computeVictoryRewardState(
       eliteBonus: input.eliteBonus,
       generousBonus: input.generousBonus,
       wealthyBonus: input.wealthyBonus,
-      talentGoldPerCombat: talentEffects.goldPerCombat,
+      talentGoldPerCombat:
+        talentEffects.goldPerCombat + (input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0),
       materials: input.materials,
       destinations: input.destinations,
       trinketIds: activeTrinketEffectIds,
@@ -164,7 +166,8 @@ export function computeVictoryRewards(
 
   const talentEffects = computeTalentEffects(input.unlockedTalents);
   if (input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
-    const goldEarned = Math.max(0, input.battleState.gold - input.purseGold);
+    const companionGold = input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0;
+    const goldEarned = Math.max(0, input.battleState.gold - input.purseGold) + companionGold;
     return {
       rewardState: createWildwoodRewardState(
         input.runDeck,
@@ -176,7 +179,7 @@ export function computeVictoryRewards(
       ),
       labyrinthRewardModifiers,
       goldEarned,
-      persistedGold: Math.max(input.purseGold, input.battleState.gold),
+      persistedGold: Math.max(input.purseGold, input.battleState.gold) + companionGold,
       playerHealth: input.battleState.playerHealth,
       maxHealthDelta: talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0,
       destinationOfferState: input.destinationOfferState,
@@ -198,7 +201,8 @@ export function computeVictoryRewards(
     generousBonus,
     wealthyBonus,
     bossBonus,
-    talentGoldPerCombat: talentEffects.goldPerCombat,
+    talentGoldPerCombat:
+      talentEffects.goldPerCombat + (input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0),
     goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
   });
 

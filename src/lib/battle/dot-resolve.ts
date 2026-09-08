@@ -107,6 +107,7 @@ export function detonateEnemyStatuses(
         pendingBleedLeechHealing: Math.min(nextState.pendingBleedLeechHealing, bleedPulse.finalDamage),
       },
       combatTexts,
+      state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0,
     );
   });
 }

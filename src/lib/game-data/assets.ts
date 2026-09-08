@@ -83,6 +83,7 @@ export const talentArt: Partial<Record<KeywordId, string>> = {
   burn: assetRefs.talentBurn,
   companion: assetRefs.talentCompanion,
   consume: assetRefs.talentConsume,
+  dodge: assetRefs.talentDodge,
   forge: assetRefs.talentForge,
   freeze: assetRefs.talentFreeze,
   gold: assetRefs.talentGold,

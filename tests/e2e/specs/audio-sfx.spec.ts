@@ -2,6 +2,7 @@ import { expect, test as baseTest } from "@playwright/test";
 import { failOnRuntimeErrors } from "../../helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
+import { FADE_OUT_DURATION, MUSIC_FADE_TICK_MS, NAVIGATION_DELAY_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
 
 baseTest.describe("SFX playback", critical, () => {
   baseTest("menu interaction starts at least one SFX", async ({ page }) => {
@@ -77,7 +78,7 @@ baseTest("Bestiary boss music follows portrait activation and browsing", critica
   const menu = new MenuPage(page);
   await menu.gotoCollection({ encounteredEnemyIds: ["forge-golem"] });
   await page.getByRole("button", { name: "Bestiary", exact: true }).click();
-  const boss = page.getByRole("button", { name: /Inspect .*Forge Golem/ });
+  const boss = page.getByRole("button", { name: /Inspect .*Forge Golem/, includeHidden: true });
   const firstPortrait = page
     .getByRole("button", { name: /^Inspect / })
     .first()
@@ -104,6 +105,22 @@ baseTest("Bestiary boss music follows portrait activation and browsing", critica
   await boss.click();
   await expect.poll(activeMusic).toEqual([expect.stringContaining("The Forge Golem.mp3")]);
   await page.keyboard.press("Escape");
+  await menu.expectMainMenu();
+  await expect.poll(activeMusic).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
+  await page.getByRole("button", { name: "Collection", exact: true }).click();
+  await expect(boss).toBeVisible();
+  await boss.focus();
+  const now = new Date();
+  await page.clock.install({ time: now });
+  await page.clock.pauseAt(new Date(now.getTime() + 1000));
+  await page.keyboard.press("Escape");
+  await page.clock.runFor(NAVIGATION_DELAY_MS);
+  const outgoingScreen = page.locator(".page-exit");
+  await expect(outgoingScreen).toHaveAttribute("inert", "");
+  await page.keyboard.press("Enter");
+  await boss.dispatchEvent("click");
+  await page.clock.runFor(PAGE_EXIT_MS + FADE_OUT_DURATION + MUSIC_FADE_TICK_MS);
+  await page.clock.resume();
   await menu.expectMainMenu();
   await expect.poll(activeMusic).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
   expect(errors).toEqual([]);

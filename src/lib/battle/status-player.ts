@@ -13,6 +13,20 @@ import { addPlayerStatusWithCombatText, applyHealingWithCombatText, mergeCombatT
 import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
 
+export function applyCardHealing(
+  state: BattleState,
+  amount: number,
+  combatTexts: CombatTextEvent[],
+  options?: { skipFightPacing?: boolean },
+): BattleState {
+  const paced = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
+  const overheals = paced > Math.max(0, state.playerMaxHealth - state.playerHealth);
+  const healed = applyHealingWithCombatText(state, paced, combatTexts, { skipFightPacing: true });
+  return overheals && state.talentEffects.cleanseOnCardOverheal
+    ? removeHarmfulPlayerStatuses(healed, 1, combatTexts)
+    : healed;
+}
+
 export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playerStatuses"]): number {
   return harmfulPlayerStatusIds.filter((statusId) => playerStatuses[statusId] > 0).length;
 }

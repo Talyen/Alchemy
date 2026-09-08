@@ -83,3 +83,10 @@ export function applyLuckyCloverGold(state: BattleState, damage: number, combatT
   }
   return state;
 }
+
+export function applyNatureManaRefund(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
+  if (damage <= 0 || state.gearEffects.manaOnNatureDamageChance <= 0) return state;
+  return rollPercent(state.gearEffects.manaOnNatureDamageChance, getBattleRng(state))
+    ? gainManaWithCombatText(state, 1, combatTexts)
+    : state;
+}

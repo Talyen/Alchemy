@@ -54,6 +54,7 @@ function beginEnemyPhase(state: BattleState): BattleState {
   return {
     ...state,
     turnPhase: "enemy",
+    flags: { ...state.flags, darkRecoveryMana: state.mana === 0 ? state.talentEffects.manaAfterEmptyTurn : 0 },
     hand: [],
     discard: [...state.discard, ...state.hand],
   };

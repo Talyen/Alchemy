@@ -92,6 +92,12 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
       ? (saved as unknown as { rng: () => number }).rng
       : restingWorldRng();
 
+  const savedFlags: Record<string, unknown> = saved.flags ?? {};
+  merged.flags.previousCardWasArchery = savedFlags.previousCardWasArchery === true;
+  merged.flags.previousCardWasNature = savedFlags.previousCardWasNature === true;
+  merged.flags.companionNextAttackBonus = clampNonNegative(merged.flags.companionNextAttackBonus, 0);
+  merged.flags.sanguinePhysicalBonus = clampNonNegative(merged.flags.sanguinePhysicalBonus, 0);
+  merged.flags.darkRecoveryMana = clampNonNegative(merged.flags.darkRecoveryMana, 0);
   merged.playerDodgeCount = clampNonNegative(merged.playerDodgeCount, 0);
   merged.dodgeChanceFromDamage = clampNonNegative(merged.dodgeChanceFromDamage, 0);
   merged.playerHealth = clampNonNegative(merged.playerHealth, defaults.playerHealth);

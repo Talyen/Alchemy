@@ -1,3 +1,4 @@
+import { applyCardHealing } from "../status-player";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import {
@@ -112,14 +113,16 @@ export const applyLoseMaxManaEffect = defineHandler(
   },
 );
 
-export const applyHealEffect = defineHandler("heal", (state, card, effect, potionMult, combatTexts) => {
+export const applyHealEffect = defineHandler("heal", (state, card, effect, potionMult, combatTexts, context) => {
   const adjustedHeal = applyPotionMultiplier(effect.amount, potionMult);
   const consumeBonus = card.consume
     ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
     : 0;
   const cardSpecificBonus = state.talentEffects.cardHealBonus[card.id] ?? 0;
   const healAmount = Math.round(adjustedHeal * (state.talentEffects.healMultiplier + consumeBonus)) + cardSpecificBonus;
-  return applyHealingWithCombatText(state, healAmount, combatTexts);
+  return context?.cardHealing
+    ? applyCardHealing(state, healAmount, combatTexts)
+    : applyHealingWithCombatText(state, healAmount, combatTexts);
 });
 
 export const applyLoseHealthEffect = defineHandler("lose-health", (state, _card, effect, _potionMult, combatTexts) => {

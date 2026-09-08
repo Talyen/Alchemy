@@ -25,6 +25,27 @@ describe("balance simulator", () => {
     expect(first.turns).toBeGreaterThan(0);
   });
 
+  it("reports combat Gold separately from the starting purse", () => {
+    const result = simulateBattle({
+      characterId: "knight",
+      enemyId: "skeleton",
+      seed: 11,
+      maxTurns: 1,
+      loadoutMode: "bare",
+      gold: 50,
+      appliesFightPacing: false,
+      deck: Array.from({ length: 8 }, (_, index) =>
+        makeTestCard({
+          id: `gold-${index}`,
+          cost: 1,
+          effects: [{ kind: "gain-gold", amount: 2 }],
+        }),
+      ),
+    });
+    expect(result.combatGoldEarned).toBe(result.totalCardsPlayed * 2);
+    expect(result.combatGoldEarned).toBeGreaterThan(0);
+  });
+
   it("aggregates repeated simulations", () => {
     const result = simulateBatch({
       characterId: "wizard",

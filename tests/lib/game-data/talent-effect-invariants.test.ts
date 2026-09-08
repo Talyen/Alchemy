@@ -18,13 +18,31 @@ import {
 
 const ROOT = join(import.meta.dirname, "../../..");
 
+const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
+  "stunBuildupReductionPercent",
+  "blockReduceBurnDamage",
+  "campfireHealBonus",
+  "blockToBurnDamage",
+  "eliteGoldDropBonus",
+  "wishExtraChoiceChance",
+  "companionGoldFindActive",
+  "freezeBlocksRegen",
+  "freezePreventsEnemyScaling",
+  "archeryPlayTwiceChance",
+  "natureBleedChance",
+  "receiveHalfNatureDamage",
+  "companionBleedDamageBonus",
+  "trinketSiphonChance",
+  "blockEnemyLeech",
+];
+
 const UNUSED_MANIFEST_ALLOWLIST: ReadonlySet<keyof TalentEffectManifest> = new Set([
+  ...LEGACY_SNAPSHOT_FIELDS,
   "startBlock",
   "damageReduction",
   "damageReductionWithCompanion",
   "poisonReducesEnemyDamage",
   "bleedPhysicalBonus",
-  "blockOnFreeze",
   "goldPerCombat",
   "blockOnNatureCard",
   "bleedExecuteThreshold",

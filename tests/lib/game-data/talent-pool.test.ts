@@ -198,7 +198,7 @@ describe("computeTalentEffects", () => {
     expect(effects.flatPhysicalDamage).toBe(0);
   });
 
-  it("stacks cross-keyword numeric clones and concatenates armor thresholds", () => {
+  it("keeps replacement effects distinct and concatenates armor thresholds", () => {
     const effects = computeTalentEffects({
       physical: ["physical-shield-bash"],
       block: ["block-to-physical"],
@@ -212,8 +212,10 @@ describe("computeTalentEffects", () => {
 
     expect(effects.blockToPhysicalDamageMultiplier).toBeCloseTo(0.3);
     expect(effects.physicalStripArmorWhileBlocked).toBe(true);
-    expect(effects.natureLeechChance).toBe(20);
-    expect(effects.goldOnWish).toBe(5);
+    expect(effects.natureLeechChance).toBe(10);
+    expect(effects.afflictionLeechBonusPercent).toBe(50);
+    expect(effects.goldOnWish).toBe(3);
+    expect(effects.blockPerDeclinedWishCard).toBe(1);
     expect(effects.healthThresholdArmor).toHaveLength(2);
     expect(effects.healthThresholdArmor).toEqual(
       expect.arrayContaining([

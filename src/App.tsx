@@ -1,6 +1,6 @@
 import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
 import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
 import { cn } from "@/lib/utils";
 import type { Screen } from "@/lib/routing";
 import {
@@ -142,6 +142,11 @@ function AppMainContent({
   const hasInspectBoons = uniqueRunBoons(runBoons).length > 0;
   const { ref: artworkRef, pending: artworkPending } = useArtworkReady(renderedScreen);
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
+  const screenInteractive = controllerScreen === renderedScreen && pagePhase !== "exit";
+  function blockOutgoingScreenInteraction(event: SyntheticEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
   const content = saveBlockedByNewerVersion ? (
     <UnsupportedSaveOverlay onDeleteSaveAndContinue={handleDeleteUnsupportedSave} deleting={deletingUnsupportedSave} />
   ) : (
@@ -149,6 +154,9 @@ function AppMainContent({
       ref={artworkRef}
       data-artwork-pending={artworkPending}
       key={renderedScreen}
+      inert={!screenInteractive}
+      onClickCapture={!screenInteractive ? blockOutgoingScreenInteraction : undefined}
+      onKeyDownCapture={!screenInteractive ? blockOutgoingScreenInteraction : undefined}
       className={cn(pagePhaseClass, "h-full w-full overflow-hidden")}
     >
       <CardDescriptionProvider cardDescriptionContext={cardDescriptionContext}>

@@ -2,7 +2,7 @@ import { hasEncounterBenefit } from "./types";
 import { forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { mergeCombatText, addGoldWithCombatText, payKillPayouts } from "./combat-text";
-import { applyLuckyCloverGold } from "./bonus-effects";
+import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
 import { applyWishEffect } from "./wish";
 import {
   applyDamageBlock,
@@ -56,7 +56,9 @@ function applyNatureDamageRiders(
   _card: BattleCard,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  if (modifiedDamage <= 0) return state;
   let nextState = applyLuckyCloverGold(state, modifiedDamage, combatTexts);
+  nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
   if (state.talentEffects.natureLeechChance > 0 || state.gearEffects.natureLeechChance > 0) {
     nextState = applyNatureLeech(nextState, modifiedDamage, combatTexts);
   }
@@ -169,6 +171,7 @@ export function applyDamageRiders(
   modifiedDamage: number,
   combatTexts: CombatTextEvent[],
   isExtraHit = false,
+  cardHealing = false,
 ) {
   const enemyWasBurningBefore = state.enemyStatuses.burn > 0;
   const prePurgeState = isExtraHit ? state : applyAttackPurgeRider(state, combatTexts);
@@ -207,14 +210,14 @@ export function applyDamageRiders(
   }
 
   if (effect.lifesteal) {
-    nextState = applyLifestealAndPlayerHitTriggers(nextState, modifiedDamage, combatTexts);
+    nextState = applyLifestealAndPlayerHitTriggers(nextState, modifiedDamage, combatTexts, cardHealing);
   }
 
   if (card.tags?.includes("archery") && modifiedDamage > 0) {
     if (!isExtraHit && rollTalentChance(nextState.talentEffects.archeryPlayTwiceChance, nextState)) {
       const secondHit = halveRounded(modifiedDamage);
       if (secondHit > 0) {
-        nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true);
+        nextState = applyDamageRiders(nextState, card, effect, secondHit, combatTexts, true, cardHealing);
       }
     }
 

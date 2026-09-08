@@ -18,6 +18,17 @@ export function dealDamageToEnemy(
   if (state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
   const { damageTypePool: _pool, ...resolvedEffect } = effect;
   context?.damageEffects?.push(resolvedEffect);
+  const bonuses = { flat: 0, physical: 0, bleed: 0, sanguine: 0, ...context?.attackBonuses };
+  bonuses.physical += bonuses.sanguine;
+  if (bonuses.sanguine > 0) {
+    state = { ...state, flags: { ...state.flags, sanguinePhysicalBonus: 0 } };
+  }
+  if (context?.attackBonuses) {
+    context.attackBonuses.flat = 0;
+    context.attackBonuses.physical = 0;
+    context.attackBonuses.bleed = 0;
+    context.attackBonuses.sanguine = 0;
+  }
   const dodged = tryDodgePlayerAttackPacket(state, combatTexts);
   if (dodged) {
     return dodged;
@@ -41,7 +52,15 @@ export function dealDamageToEnemy(
     damageState = { ...damageState, flags: { ...damageState.flags, nextPhysicalDealsBleed: false } };
   }
 
-  const { nextState, modifiedDamage } = computeCardDamageToEnemy(damageState, packet, card, context);
+  const { nextState, modifiedDamage } = computeCardDamageToEnemy(damageState, packet, card, {
+    manaAtStart: damageState.mana,
+    enemyFreezeSkipTurnsAtStart: damageState.enemyCC.freezeSkipTurns,
+    ...context,
+    baseDamageBonus:
+      bonuses.flat +
+      (packet.damageType === "physical" ? bonuses.physical : 0) +
+      (packet.damageType === "bleed" ? bonuses.bleed : 0),
+  });
   const viper =
     context?.playedCard &&
     packet.damageType === "physical" &&
@@ -49,7 +68,7 @@ export function dealDamageToEnemy(
     damageState.gearEffects.dodgeReadiesVenomousHit > 0 &&
     damageState.uniqueGear.viperReady;
   const afterViper = viper ? { ...nextState, uniqueGear: { ...nextState.uniqueGear, viperReady: false } } : nextState;
-  let result = applyDamageRiders(afterViper, card, packet, modifiedDamage, combatTexts);
+  let result = applyDamageRiders(afterViper, card, packet, modifiedDamage, combatTexts, false, context?.cardHealing);
   if (viper && result.enemyHealth > 0) {
     const venomDamage = Math.round(modifiedDamage * UNIQUE_GEAR_COMBAT.viperDamageMultiplier);
     result = dealPlayerTypedHit(result, "poison", venomDamage, combatTexts);
@@ -57,6 +76,14 @@ export function dealDamageToEnemy(
   }
   if (applyPartingCut && modifiedDamage > 0 && result.enemyHealth > 0) {
     result = dealPlayerTypedHit(result, "bleed", modifiedDamage, combatTexts);
+  }
+  if (modifiedDamage > 0 && result.enemyHealth > 0) {
+    if (packet.damageType !== "physical" && bonuses.physical > 0) {
+      result = dealPlayerTypedHit(result, "physical", bonuses.physical, combatTexts);
+    }
+    if (packet.damageType !== "bleed" && bonuses.bleed > 0) {
+      result = dealPlayerTypedHit(result, "bleed", bonuses.bleed, combatTexts);
+    }
   }
   return applyEncounterThorns(result, combatTexts);
 }

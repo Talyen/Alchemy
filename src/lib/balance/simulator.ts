@@ -220,6 +220,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     wonBeforeEnemyAttack: outcome === "win" && state.battleMetrics!.enemyAttackActions === 0,
     cardsPlayed,
     totalCardsPlayed: Object.values(cardsPlayed).reduce((total, count) => total + count, 0),
+    combatGoldEarned: state.gold - initialState.gold,
     trinketIds,
     policy: orFallback(config.policy, DEFAULT_POLICY),
     seed,

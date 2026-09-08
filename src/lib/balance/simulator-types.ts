@@ -43,6 +43,7 @@ export interface BattleSimulationResult {
   enemyMaxHealth: number;
   cardsPlayed: Record<string, number>;
   totalCardsPlayed: number;
+  combatGoldEarned: number;
   trinketIds: string[];
   policy: BalancePlayPolicy;
   seed: number;

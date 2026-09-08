@@ -31,7 +31,7 @@ test("Dodge color remains distinct from nearby keyword colors", async ({ page, r
   expect(new Set(colors).size).toBe(5);
 });
 
-test("Dodge has a blank portrait, colored descriptions, and keyboard-unlockable talents", async ({
+test("Dodge has a portrait, colored descriptions, and keyboard-unlockable talents", async ({
   page,
   runtimeErrors,
 }, testInfo) => {
@@ -41,8 +41,7 @@ test("Dodge has a blank portrait, colored descriptions, and keyboard-unlockable 
   await menu.openTalents();
   const portrait = page.getByRole("button", { name: "Select Dodge Talents" });
   await expect(portrait).toBeVisible();
-  await expect(portrait.locator("img")).toHaveCount(0);
-  await expect(portrait.locator("svg")).toBeVisible();
+  await expect(portrait.locator("img")).toBeVisible();
   await portrait.focus();
   await portrait.press("Enter");
   await expect(page.getByText("Lightfoot", { exact: true })).toBeVisible();
@@ -64,7 +63,7 @@ test("Dodge has a blank portrait, colored descriptions, and keyboard-unlockable 
     "Clean Getaway",
     "Open Flank",
     "Unburdened",
-    "Rolling Recovery",
+    "Tailwind",
     "Finding Rhythm",
     "Perfect Timing",
   ];

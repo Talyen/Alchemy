@@ -1,8 +1,9 @@
+import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { damageOnlyEffects } from "./damage-effect-selection";
 import { getCompanionBondEffects, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import { isPlayerDefeated, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import { LOW_HEALTH_THRESHOLD_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
-import { computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
+import { applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollTalentChance } from "./status-helpers";
@@ -62,7 +63,12 @@ function scaleCompanionTurnEffect(
 export function resolveCompanionTurnStart(
   state: BattleState,
   combatTexts: CombatTextEvent[],
-  applyEffects: (state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) => BattleState,
+  applyEffects: (
+    state: BattleState,
+    card: BattleCard,
+    combatTexts: CombatTextEvent[],
+    context?: CardEffectResolutionContext,
+  ) => BattleState,
   options?: { damageOnly?: boolean },
 ) {
   if (!state.activeCompanion || state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
@@ -95,12 +101,18 @@ export function resolveCompanionTurnStart(
   if (options?.damageOnly) companionCard.effects = damageOnlyEffects(companionCard.effects);
 
   return withPreservedFlags(state, (s) => {
+    const attackBonuses = { flat: s.flags.companionNextAttackBonus, physical: 0, bleed: 0 };
     let afterEffects = processEncounterTraitCardAction(
-      applyEffects(s, companionCard, combatTexts),
+      applyEffects(s, companionCard, combatTexts, {
+        manaAtStart: s.mana,
+        enemyFreezeSkipTurnsAtStart: s.enemyCC.freezeSkipTurns,
+        attackBonuses,
+      }),
       companionCard,
       combatTexts,
     );
 
+    afterEffects = { ...afterEffects, flags: { ...afterEffects.flags, companionNextAttackBonus: attackBonuses.flat } };
     const damageDealt = Math.max(0, s.enemyHealth - afterEffects.enemyHealth);
     if (damageDealt > 0 && state.gearEffects.healOnCompanionAttack > 0) {
       afterEffects = applyHealingWithCombatText(afterEffects, state.gearEffects.healOnCompanionAttack, combatTexts);
@@ -125,7 +137,7 @@ export function resolveCompanionTurnStart(
       if (rollPercent(state.talentEffects.companionLeechChance, getBattleRng(state))) {
         const leechHeal = scalePlayerLeechHeal(afterEffects, computeLeechHeal(damageDealt));
         if (leechHeal > 0) {
-          afterEffects = applyHealingWithCombatText(afterEffects, leechHeal, combatTexts, { skipFightPacing: true });
+          afterEffects = applyLeechHealing(afterEffects, leechHeal, combatTexts);
         }
       }
     }

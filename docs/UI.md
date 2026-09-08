@@ -129,6 +129,9 @@ Bestiary page or Collection tab changes, restoring menu music; leaving Collectio
 uses the destination screen's music. Another supported boss switches the track;
 repeating the same boss does not restart it. Entries without a track leave music
 unchanged. Playback uses the shared audio fades, volume, and background mute rules.
+Outgoing screen content becomes inert as soon as navigation changes the active
+screen and rejects activation events during its fade, so stale portrait activation
+cannot replace destination music.
 
 Collection entries rest with dim grey borders. Discovered entries show their keyword
 Shine Border on hover or keyboard focus; locked and undiscovered entries show a neutral

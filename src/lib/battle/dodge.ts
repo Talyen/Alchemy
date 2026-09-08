@@ -19,6 +19,7 @@ function getPlayerDodgeChance(
     | "playerHealth"
     | "playerMaxHealth"
     | "playerStatuses"
+    | "enemyStatuses"
     | "dodgeChanceFromDamage"
     | "uniqueGear"
     | "encounterBenefits"
@@ -26,6 +27,7 @@ function getPlayerDodgeChance(
 ): number {
   let chance =
     PLAYER_DODGE_CHANCE + state.gearEffects.dodgeChance + state.talentEffects.dodgeChance + state.dodgeChanceFromDamage;
+  if (state.enemyStatuses.burn > 0) chance += state.talentEffects.dodgeChanceWhileEnemyBurning;
   if (hasEncounterBenefit(state, "elusive")) chance += LABYRINTH_MODIFIER_CONFIG.playerDodgeBonus;
   if (state.gearEffects.archeryDodgeAndDraw > 0 && state.uniqueGear.wrenflightActive)
     chance += UNIQUE_GEAR_COMBAT.wrenflightDodgeChance;

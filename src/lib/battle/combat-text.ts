@@ -194,7 +194,16 @@ export function addGoldWithCombatText(
   if (amount <= 0) return state;
 
   const scaledGold = scaleGoldReward(amount, state.gearEffects);
-  const nextState = { ...state, gold: state.gold + scaledGold };
+  let nextState = { ...state, gold: state.gold + scaledGold };
+  if (state.talentEffects.blockPerGold > 0 && scaledGold > 0) {
+    nextState = addPlayerStatusWithCombatText(
+      nextState,
+      "block",
+      Math.round(scaledGold * state.talentEffects.blockPerGold),
+      combatTexts,
+      { skipFightPacing: true },
+    );
+  }
   if (combatTexts && scaledGold > 0) {
     mergeCombatText(combatTexts, {
       target: "player",

@@ -1,9 +1,13 @@
+import { applyDrawResult, drawFromState } from "./draw";
 import { addPlayerStatusWithCombatText } from "./combat-text";
 import { addForgeToPlayer, applyCleanseHeals } from "./status-player";
 import type { BattleState, CombatTextEvent } from "./types";
 
 export function applyDodgeTalentStatuses(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
+  if (state.talentEffects.drawOnDodge > 0) {
+    nextState = applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnDodge));
+  }
   if (state.talentEffects.forgeOnDodge > 0) {
     nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnDodge, combatTexts);
   }

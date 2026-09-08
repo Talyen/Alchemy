@@ -63,10 +63,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "dodge-rolling-recovery",
     keywordId: "dodge",
-    name: "Rolling Recovery",
-    description: "Receive 10% less Stun build-up",
+    name: "Tailwind",
+    description: "When you Dodge, draw a card",
     icon: "ShieldHalf",
-    effects: [addEffect("stunBuildupReductionPercent", 10)],
+    effects: [setEffect("drawOnDodge", 1)],
   },
   {
     id: "dodge-finding-rhythm",
@@ -96,10 +96,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "archery-hail",
     keywordId: "archery",
-    name: "Hail of Arrows",
-    description: "Archery cards have a 10% chance to deal 50% of their damage a second time",
+    name: "Follow-through",
+    description: "Archery cards deal 2 additional Physical damage if your previous card this turn was Archery",
     icon: "CloudRain",
-    effects: [setEffect("archeryPlayTwiceChance", 10)],
+    effects: [setEffect("consecutiveArcheryPhysicalDamage", 2)],
   },
   {
     id: "archery-eagle-eye",
@@ -322,10 +322,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "bleed-rip-and-tear",
     keywordId: "bleed",
-    name: "Rip and Tear",
-    description: "Companion Bleed damage is increased by 1",
+    name: "Bloodrush",
+    description: "When an enemy takes damage from a Bleed tick, draw a Physical card",
     icon: "Scissors",
-    effects: [addEffect("companionBleedDamageBonus", 1)],
+    effects: [setEffect("drawPhysicalOnBleedTick", true)],
   },
 
   {
@@ -379,10 +379,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "block-reduce-burn",
     keywordId: "block",
-    name: "Fireproof",
-    description: "Block reduces Burn damage by 1",
+    name: "Sun-Struck Shield",
+    description: "When your Block absorbs damage from an enemy attack, deal 1 Holy damage to the attacker",
     icon: "Flame",
-    effects: [setEffect("blockReduceBurnDamage", 1)],
+    effects: [setEffect("holyOnAttackBlocked", 1)],
   },
   {
     id: "block-start",
@@ -428,10 +428,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "burn-dmg-5",
     keywordId: "burn",
-    name: "Flaming Shield",
-    description: "Burn damage is increased by 10% of your Block",
+    name: "Smoke Screen",
+    description: "Gain 5% Dodge while the enemy is Burning",
     icon: "Shield",
-    effects: [setEffect("blockToBurnDamage", true)],
+    effects: [setEffect("dodgeChanceWhileEnemyBurning", 5)],
   },
   {
     id: "burn-dmg-4",
@@ -501,10 +501,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "companion-gold-find",
     keywordId: "companion",
-    name: "Scavenger",
-    description: "Companions sometimes find Gold after combat",
+    name: "Fetch",
+    description: "Win a combat with a Companion to gain 3 additional Gold",
     icon: "Trash",
-    effects: [setEffect("companionGoldFindActive", true)],
+    effects: [setEffect("companionVictoryGold", 3)],
   },
   {
     id: "companion-leech",
@@ -533,10 +533,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "companion-tame",
     keywordId: "companion",
-    name: "Tame",
-    description: "Companions deal 1 additional damage each turn",
+    name: "Coordinated Strike",
+    description: "Playing a Physical card adds 1 damage to your Companion’s next attack",
     icon: "Hand",
-    effects: [addEffect("companionDamage", 1)],
+    effects: [setEffect("companionNextAttackOnPhysical", 1)],
   },
   {
     id: "companion-loyal",
@@ -800,18 +800,18 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "freeze-prevent-scaling",
     keywordId: "freeze",
-    name: "Glacial Encasement",
-    description: "Frozen enemies cannot gain Forge or Armor",
+    name: "Thaw Dividend",
+    description: "When an enemy recovers from Freeze, draw a card",
     icon: "Hexagon",
-    effects: [setEffect("freezePreventsEnemyScaling", true)],
+    effects: [setEffect("drawOnThaw", 1)],
   },
   {
     id: "freeze-block-healing",
     keywordId: "freeze",
-    name: "Permafrost",
-    description: "Frozen enemies cannot restore Health",
+    name: "Glacial Barrier",
+    description: "When you Freeze an enemy, gain 3 Block",
     icon: "Lock",
-    effects: [setEffect("freezeBlocksRegen", true)],
+    effects: [setEffect("blockOnFreeze", 3)],
   },
 
   {
@@ -889,10 +889,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "gold-elite-drop",
     keywordId: "gold",
-    name: "Spoils of War",
-    description: "Elites drop 10% more Gold",
+    name: "Coinmail",
+    description: "Gold gained during combat also grants half as much Block",
     icon: "Trophy",
-    effects: [setEffect("eliteGoldDropBonus", 0.1)],
+    effects: [setEffect("blockPerGold", 0.5)],
   },
 
   {
@@ -970,10 +970,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "health-campfire",
     keywordId: "health",
-    name: "Warm Rest",
-    description: "Campfire restores 10% more Health",
+    name: "Clean Slate",
+    description: "When a card restores Health beyond your maximum, cleanse a harmful status effect",
     icon: "Flame",
-    effects: [setEffect("campfireHealBonus", 0.1)],
+    effects: [setEffect("cleanseOnCardOverheal", true)],
   },
 
   {
@@ -1108,10 +1108,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "leech-trinket-siphon",
     keywordId: "leech",
-    name: "Trinket Siphon",
-    description: "Leech has a 20% chance to steal 1 Forge, Armor, or Block",
+    name: "Armor Siphon",
+    description: "Your Leech cards steal 1 Armor before their effects resolve",
     icon: "Wrench",
-    effects: [setEffect("trinketSiphonChance", 20)],
+    effects: [setEffect("armorStealOnLeechCard", 1)],
   },
   {
     id: "leech-poison",
@@ -1124,18 +1124,18 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "leech-block-enemy",
     keywordId: "leech",
-    name: "Blood Type",
-    description: "Enemies cannot restore Health when they Leech",
+    name: "Sanguine Overflow",
+    description: "Leeching from below full Health to full Health adds 3 Physical damage to your next attack",
     icon: "Hash",
-    effects: [setEffect("blockEnemyLeech", true)],
+    effects: [setEffect("nextAttackPhysicalOnLeechToFull", 3)],
   },
   {
     id: "leech-nature-chance",
     keywordId: "leech",
-    name: "Carnivorous Nature",
-    description: "Nature damage has a 10% chance to Leech",
+    name: "Affliction Siphon",
+    description: "Leech restores 50% more Health against Poisoned or Bleeding enemies",
     icon: "Utensils",
-    effects: [addEffect("natureLeechChance", 10)],
+    effects: [setEffect("afflictionLeechBonusPercent", 50)],
   },
 
   {
@@ -1165,10 +1165,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "mana-arcane-wish",
     keywordId: "mana",
-    name: "Arcane Wish",
-    description: "Gain 1 Mana when you Wish",
+    name: "Dark Recovery",
+    description: "End your turn with no Mana to gain 1 extra Mana next turn",
     icon: "Sparkles",
-    effects: [addEffect("manaOnWish", 1)],
+    effects: [setEffect("manaAfterEmptyTurn", 1)],
   },
   {
     id: "mana-manaburn",
@@ -1239,9 +1239,9 @@ export const talentPool: TalentDefinition[] = [
     id: "nature-briar-patch",
     keywordId: "nature",
     name: "Briar Patch",
-    description: "Nature damage has a 10% chance to Bleed",
+    description: "Physical cards deal 2 additional Bleed damage if your previous card this turn was Nature",
     icon: "Triangle",
-    effects: [setEffect("natureBleedChance", 10)],
+    effects: [setEffect("physicalAfterNatureBleedDamage", 2)],
   },
   {
     id: "nature-verdant-cycle",
@@ -1262,10 +1262,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "nature-natural-armor",
     keywordId: "nature",
-    name: "Natural Armor",
-    description: "Nature damage taken is reduced by half",
+    name: "Bramblegrowth",
+    description: "Playing a Nature card grants 1 Thorns",
     icon: "Shield",
-    effects: [setEffect("receiveHalfNatureDamage", true)],
+    effects: [setEffect("thornsOnNatureCard", 1)],
   },
   {
     id: "nature-entangle",
@@ -1555,7 +1555,7 @@ export const talentPool: TalentDefinition[] = [
     id: "wish-undiscovered",
     keywordId: "wish",
     name: "Discovery",
-    description: "Wish can offer cards not yet in your collection",
+    description: "Wish always includes an undiscovered card when one is available",
     icon: "Compass",
     effects: [setEffect("wishUndiscoveredCards", true)],
   },
@@ -1579,9 +1579,9 @@ export const talentPool: TalentDefinition[] = [
     id: "wish-extra-choice",
     keywordId: "wish",
     name: "Generous Wish",
-    description: "Wish has a 20% chance to offer an extra card choice",
+    description: "Wish offers 1 additional card choice",
     icon: "Gift",
-    effects: [setEffect("wishExtraChoiceChance", 20)],
+    effects: [setEffect("wishExtraChoices", 1)],
   },
   {
     id: "wish-draw",
@@ -1610,10 +1610,10 @@ export const talentPool: TalentDefinition[] = [
   {
     id: "wish-gold",
     keywordId: "wish",
-    name: "Golden Opportunity",
-    description: "Gain 2 Gold when you Wish",
+    name: "Roads Not Taken",
+    description: "When you choose a Wish card, gain 1 Block for each other card offered",
     icon: "Coins",
-    effects: [addEffect("goldOnWish", 2)],
+    effects: [setEffect("blockPerDeclinedWishCard", 1)],
   },
   {
     id: "wish-desperate",

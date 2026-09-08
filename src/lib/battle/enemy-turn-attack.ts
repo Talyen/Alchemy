@@ -1,3 +1,4 @@
+import { prepareTalentCardPlay } from "./talent-card-play";
 import { recordEnemyAbilityActivation, recordEnemyAttackAction } from "./battle-metrics";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { logError } from "../error-logger";
@@ -114,7 +115,11 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
     nextCardUid: drawn.nextCardUid,
   };
 
+  const talentPlay = prepareTalentCardPlay(nextState, drawn.card, combatTexts);
+  nextState = talentPlay.state;
   const playContext = {
+    attackBonuses: talentPlay.attackBonuses,
+    cardHealing: true,
     manaAtStart: nextState.mana,
     enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
   };
@@ -221,7 +226,11 @@ function processAttackDamageEffect(
   const incomingDamage = computeIncomingEnemyAttackDamage(state, effect, damageOptions);
   const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, canDodge, incomingDamage);
   if (dodged) return dodged;
-  return processEnemyDamageEffect(state, effect, combatTexts, { ...damageOptions, incomingDamage });
+  return processEnemyDamageEffect(state, effect, combatTexts, {
+    ...damageOptions,
+    incomingDamage,
+    triggerBlockRetaliation: canDodge,
+  });
 }
 
 export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -246,6 +255,7 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
   if (brawlerPenalty) nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", false);
 
   for (let idx = 0; idx < attackEffects.length; idx++) {
+    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
     const effect = attackEffects[idx] as EnemyAttackEffect;
     try {
       if (effect.kind === "damage") {
@@ -330,6 +340,8 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
       if (import.meta.env.DEV) throw err;
     }
   }
+
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
 
   const hasSuccessfulHealthDamage = damageDealtToHealth > 0 && nextState.playerHealth > 0;
   if (hasSuccessfulHealthDamage) {

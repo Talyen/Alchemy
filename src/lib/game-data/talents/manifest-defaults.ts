@@ -2,6 +2,25 @@ import { defaultCompanionBondLevels } from "../companions";
 import type { TalentEffectManifest } from "../talent-effect-manifest";
 
 export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
+  companionNextAttackOnPhysical: 0,
+  afflictionLeechBonusPercent: 0,
+  manaAfterEmptyTurn: 0,
+  blockPerDeclinedWishCard: 0,
+  nextAttackPhysicalOnLeechToFull: 0,
+  drawPhysicalOnBleedTick: false,
+  drawOnDodge: 0,
+  wishExtraChoices: 0,
+  companionVictoryGold: 0,
+  consecutiveArcheryPhysicalDamage: 0,
+  armorStealOnLeechCard: 0,
+  cleanseOnCardOverheal: false,
+  blockPerGold: 0,
+  thornsOnNatureCard: 0,
+  physicalAfterNatureBleedDamage: 0,
+  dodgeChanceWhileEnemyBurning: 0,
+  holyOnAttackBlocked: 0,
+  drawOnThaw: 0,
+
   dodgeChance: 0,
   healOnDodge: 0,
   forgeOnDodge: 0,

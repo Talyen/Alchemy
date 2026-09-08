@@ -71,6 +71,24 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
 
 const testRng = () => 0.25;
 
+describe("Fetch victory rewards", () => {
+  it.each(["campaign", "labyrinth", "wildwood"])("grants three Gold with a Companion in %s", (contentSystemType) => {
+    const input = baseInput({ contentSystemType, battleState: baseBattleState({ activeCompanion: { id: "wolf" } }) });
+    const original = computeVictoryRewards(input, testRng);
+    const fetched = computeVictoryRewards(
+      { ...input, unlockedTalents: { companion: ["companion-gold-find"] } },
+      testRng,
+    );
+    expect(fetched.goldEarned - original.goldEarned).toBe(3);
+    expect(fetched.persistedGold - original.persistedGold).toBe(3);
+    const absent = computeVictoryRewards(
+      { ...input, battleState: baseBattleState(), unlockedTalents: { companion: ["companion-gold-find"] } },
+      testRng,
+    );
+    expect(absent.goldEarned).toBe(original.goldEarned);
+  });
+});
+
 describe("computeVictoryRewardState", () => {
   it("offers the boss Trinket category when its roll lands in range", () => {
     const result = computeVictoryRewardState(

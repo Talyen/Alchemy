@@ -1,3 +1,4 @@
+import { drawKeywordCard } from "./draw";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
@@ -19,9 +20,9 @@ import {
 } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
-import { computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
+import { applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
-import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyEnemyLeechHealing } from "./enemy-attack-damage";
 import { tryPoisonStunProc } from "./player-typed-hit";
@@ -53,8 +54,8 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, getBattleRng(state))) return state;
-  return applyHealingWithCombatText(state, scalePlayerLeechHeal(state, computeLeechHeal(damage)), combatTexts, {
-    skipFightPacing: true,
+  return applyLeechHealing(state, scalePlayerLeechHeal(state, computeLeechHeal(damage)), combatTexts, {
+    afflicted: true,
   });
 }
 
@@ -112,7 +113,10 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const healthBeforeBleed = state.enemyHealth;
   const nextBleed = state.gearEffects.bleedDecaysByHalf > 0 ? decayHalvedStatus(damage) : 0;
   return dealEnemyDotTick(state, "bleed", finalDamage, nextBleed, combatTexts, (nextState) => {
-    return payPendingBleedLeech(healthBeforeBleed, nextState, combatTexts);
+    const afterLeech = payPendingBleedLeech(healthBeforeBleed, nextState, combatTexts, true);
+    return nextState.enemyHealth < healthBeforeBleed && state.talentEffects.drawPhysicalOnBleedTick
+      ? drawKeywordCard(afterLeech, "physical")
+      : afterLeech;
   });
 }
 

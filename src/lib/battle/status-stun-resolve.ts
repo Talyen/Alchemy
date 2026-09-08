@@ -1,7 +1,8 @@
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { hasEnemyTrait, setFlag, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 import { addGoldWithCombatText, payKillPayouts } from "./combat-text";
-import { applyLuckyCloverGold } from "./bonus-effects";
+import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
@@ -34,7 +35,8 @@ function applyStunGearDamage(state: BattleState, combatTexts?: CombatTextEvent[]
 function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (nextState.trinketEffects.thunderstoneDamageOnStun > 0) {
-    const enemyWasAlive = nextState.enemyHealth > 0;
+    const previousHealth = nextState.enemyHealth;
+    const enemyWasAlive = previousHealth > 0;
     nextState = dealEnemyScaledDamage(
       nextState,
       nextState.trinketEffects.thunderstoneDamageOnStun,
@@ -44,7 +46,15 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
         multiplier: getEnemyDamageMultiplier(nextState, "nature"),
         riders: (damagedState, finalDamage) =>
           payKillPayouts(
-            applyLuckyCloverGold(damagedState, finalDamage, combatTexts ?? []),
+            applyLuckyCloverGold(
+              applyNatureManaRefund(
+                processEncounterTraitHealthThreshold(previousHealth, damagedState, combatTexts ?? []),
+                finalDamage,
+                combatTexts ?? [],
+              ),
+              finalDamage,
+              combatTexts ?? [],
+            ),
             enemyWasAlive,
             combatTexts ?? [],
           ),

@@ -1,3 +1,5 @@
+import { computeCardDamageToEnemy } from "./damage-calc";
+import { applyDamageRiders } from "./damage-riders";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
@@ -35,6 +37,7 @@ function computeEffectiveBlock(state: BattleState, effect: EnemyAttackEffect & {
 }
 
 export interface EnemyDamageOptions {
+  triggerBlockRetaliation?: boolean;
   amountMultiplier?: number;
   flatBonus?: number;
   ignorePlayerMitigation?: boolean;
@@ -171,7 +174,7 @@ export function checkHealthThresholds(
     let next = currentState;
     for (const config of bonuses) {
       const thresholdHp = (state.playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
-      if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
+      if (prevHealth >= thresholdHp && nextHealth < thresholdHp) {
         next = applyPlayerStatusEffect(
           next,
           { kind: "player-status", status: stat, amount: config.amount },
@@ -292,6 +295,15 @@ function applyBlockDepletedHeal(
   return finalState;
 }
 
+function applyBlockedAttackRetaliation(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  const amount = state.talentEffects.holyOnAttackBlocked;
+  if (amount <= 0 || state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
+  const card = { id: "sun-struck-shield", title: "", descriptionLines: [], art: "", cost: 0, effects: [] };
+  const effect = { kind: "damage" as const, damageType: "holy" as const, amount };
+  const { nextState, modifiedDamage } = computeCardDamageToEnemy(state, effect, card);
+  return applyDamageRiders(nextState, card, effect, modifiedDamage, combatTexts);
+}
+
 export function processEnemyDamageEffect(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
@@ -371,6 +383,12 @@ export function processEnemyDamageEffect(
       };
     }
   }
+
+  if (blockAbsorb > 0 && options.triggerBlockRetaliation) {
+    nextState = applyBlockedAttackRetaliation(nextState, combatTexts);
+  }
+
+  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return nextState;
 
   if (!options.skipTraitReactions) {
     const traitSet = options.traitSet ?? getEnemyTraitSet(nextState);

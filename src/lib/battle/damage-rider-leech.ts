@@ -1,3 +1,4 @@
+import { applyCardHealing } from "./status-player";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { pickRandom } from "@/lib/utils";
@@ -31,15 +32,38 @@ export function scalePlayerLeechHeal(state: BattleState, amount: number): number
   return amount * (hasEncounterBenefit(state, "blood-feast") ? LABYRINTH_MODIFIER_CONFIG.double : 1);
 }
 
-function executePlayerHealing(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
+export function applyLeechHealing(
+  state: BattleState,
+  amount: number,
+  combatTexts: CombatTextEvent[],
+  options: { cardHealing?: boolean; afflicted?: boolean } = {},
+): BattleState {
+  const afflicted = options.afflicted ?? (state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0);
+  const bonus = afflicted ? state.talentEffects.afflictionLeechBonusPercent : 0;
+  const healing = Math.round(amount * (1 + bonus / PERCENT_DENOMINATOR));
+  const restored = options.cardHealing
+    ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true })
+    : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
+  return healing > 0 &&
+    state.playerHealth < state.playerMaxHealth &&
+    restored.playerHealth >= restored.playerMaxHealth &&
+    state.talentEffects.nextAttackPhysicalOnLeechToFull > 0
+    ? setFlag(restored, "sanguinePhysicalBonus", state.talentEffects.nextAttackPhysicalOnLeechToFull)
+    : restored;
+}
+
+function executePlayerHealing(
+  state: BattleState,
+  amount: number,
+  combatTexts: CombatTextEvent[],
+  cardHealing = false,
+): BattleState {
   if (amount <= 0) return state;
-  return applyHealingWithCombatText(
+  return applyLeechHealing(
     state,
     Math.round(scalePlayerLeechHeal(state, amount) * state.talentEffects.healMultiplier),
     combatTexts,
-    {
-      skipFightPacing: true,
-    },
+    { cardHealing },
   );
 }
 
@@ -92,7 +116,12 @@ function applyLeechHitRiders(state: BattleState, damage: number, combatTexts: Co
   return nextState;
 }
 
-export function applyLifestealAndPlayerHitTriggers(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
+export function applyLifestealAndPlayerHitTriggers(
+  state: BattleState,
+  damage: number,
+  combatTexts: CombatTextEvent[],
+  cardHealing = false,
+) {
   if (damage <= 0) return state;
 
   let healAmount = computeLeechHeal(damage);
@@ -117,7 +146,7 @@ export function applyLifestealAndPlayerHitTriggers(state: BattleState, damage: n
 
   healAmount = scaledGearLeechHeal(healAmount, state.gearEffects);
 
-  const nextState = executePlayerHealing(state, healAmount, combatTexts);
+  const nextState = executePlayerHealing(state, healAmount, combatTexts, cardHealing);
   return applyLeechHitRiders(nextState, damage, combatTexts);
 }
 
@@ -154,6 +183,7 @@ export function payPendingBleedLeech(
   preHitHealth: number,
   state: BattleState,
   combatTexts: CombatTextEvent[],
+  afflicted = state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0,
 ): BattleState {
   const leechAmount = state.pendingBleedLeechHealing;
   if (leechAmount <= 0) return state;
@@ -165,11 +195,11 @@ export function payPendingBleedLeech(
   };
   const leechPaid = Math.min(leechAmount, healthLost);
   if (leechPaid > 0) {
-    nextState = applyHealingWithCombatText(
+    nextState = applyLeechHealing(
       nextState,
       scalePlayerLeechHeal(nextState, scaledGearLeechHeal(computeLeechHeal(leechPaid), nextState.gearEffects)),
       combatTexts,
-      { skipFightPacing: true },
+      { afflicted },
     );
   }
   return nextState;

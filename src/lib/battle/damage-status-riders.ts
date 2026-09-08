@@ -3,7 +3,6 @@ import { addEnemyStatus, reduceEnemyArmor, setFlag, type BattleState, type Comba
 import {
   addGoldWithCombatText,
   addPlayerStatusWithCombatText,
-  applyHealingWithCombatText,
   gainManaWithCombatText,
   payKillPayouts,
 } from "./combat-text";
@@ -20,7 +19,7 @@ import {
   MIN_FREEZE_THRESHOLD_FRACTION,
 } from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
-import { computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
+import { applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { halveRounded } from "./amount-helpers";
 
@@ -36,9 +35,7 @@ function applyGearBurnBleedMirrorLeech(
     nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
   }
   const healAmount = Math.max(1, halveRounded(actualDamage));
-  return applyHealingWithCombatText(nextState, scalePlayerLeechHeal(nextState, healAmount), combatTexts, {
-    skipFightPacing: true,
-  });
+  return applyLeechHealing(nextState, scalePlayerLeechHeal(nextState, healAmount), combatTexts);
 }
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -75,11 +72,11 @@ export function applyPoisonTalentRiders(
   if (damage > 0) {
     const leechChance = nextState.talentEffects.poisonLeechChance + nextState.gearEffects.poisonLeechChance;
     if (rollPercent(leechChance, getBattleRng(nextState))) {
-      nextState = applyHealingWithCombatText(
+      nextState = applyLeechHealing(
         nextState,
         scalePlayerLeechHeal(nextState, scaledGearLeechHeal(computeLeechHeal(damage), nextState.gearEffects)),
         combatTexts,
-        { skipFightPacing: true },
+        { afflicted: true },
       );
     }
   }

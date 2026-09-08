@@ -5,6 +5,7 @@ export const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = 
   "shopCardDiscount",
   "shopFreeRefresh",
   "goldPerCombat",
+  "companionVictoryGold",
   "potionDiscount",
   "removeCardDiscount",
   "enemyGoldDropBonus",

@@ -74,6 +74,7 @@ Migration tests must verify gameplay progress, not just field presence:
 - Active campaign, labyrinth, and wildwood runs resume when structurally valid (**`activeRun` must not be silently dropped**).
 - Mid-combat snapshots preserve trinket effects, gear effects, and combat flags.
 - Dodge counters (`playerDodgeCount`, `dodgeChanceFromDamage`) default to zero in old battle snapshots and pending result states. New snapshots retain both values. Dodge XP is already present in run progress when an enemy-turn continuation is saved; restoring that continuation must not award it again. These additive defaults do not require a version bump or talent ID remapping.
+- Talent replacement IDs and unlocked progress are unchanged. New sequence, Companion bonus, Sanguine Overflow, and Dark Recovery flags default to false/zero in old battle snapshots and pending results; current snapshots preserve them. The new effects are additive manifest fields and need no schema-version bump. Retired effect fields and their readers remain for already-saved combat manifests; recomputing talents from unlocks uses the replacement definitions. Existing queued choices and resolved enemy-turn results are not rerolled or rewarded again.
 - Version-specific fixtures continue to assert the outcomes recorded in [MIGRATION_HISTORY.md](./MIGRATION_HISTORY.md).
 - Every fixture is **idempotent** after `normalizeSaveData` (`tests/helpers/parse-save-for-tests.ts`).
 

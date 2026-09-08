@@ -1,4 +1,9 @@
 export const FLAG_DEFINITIONS = {
+  previousCardWasArchery: { default: false as const, preserveAs: null },
+  previousCardWasNature: { default: false as const, preserveAs: null },
+  companionNextAttackBonus: { default: 0 as const, preserveAs: null },
+  sanguinePhysicalBonus: { default: 0 as const, preserveAs: null },
+  darkRecoveryMana: { default: 0 as const, preserveAs: null },
   encounterPhysicalUsed: { default: false as const, preserveAs: true as const },
   encounterHolyUsed: { default: false as const, preserveAs: true as const },
   encounterNatureUsed: { default: false as const, preserveAs: true as const },

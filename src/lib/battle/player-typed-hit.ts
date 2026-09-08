@@ -1,3 +1,4 @@
+import { applyNatureManaRefund } from "./bonus-effects";
 import type { BattleCard, DamageType } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { applyLifestealAndPlayerHitTriggers } from "./damage-rider-leech";
@@ -37,6 +38,7 @@ export function dealPlayerTypedHit(
   }
   nextState = processEncounterTraitHealthThreshold(preHitHealth, nextState, combatTexts);
   nextState = payKillPayouts(nextState, enemyWasAlive, combatTexts);
+  if (damageType === "nature") nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
   return damageType === "holy" ? applyBrassCenser(nextState, modifiedDamage, combatTexts) : nextState;
 }
 

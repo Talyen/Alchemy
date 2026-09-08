@@ -23,11 +23,10 @@ describe("TalentsScreen", () => {
     onResetTalents: vi.fn(),
   };
 
-  it("shows the blank-art Dodge tree and all ten real talents", async () => {
+  it("shows the Dodge portrait and all ten real talents", async () => {
     render(<TalentsScreen {...defaultProps} talentXP={{ dodge: 550 }} />);
     const portrait = screen.getByRole("button", { name: "Select Dodge Talents" });
-    expect(portrait.querySelector("img")).toBeNull();
-    expect(portrait.querySelector("svg")).toBeTruthy();
+    expect(portrait.querySelector("img")?.getAttribute("alt")).toBe("Dodge");
     fireEvent.click(portrait);
     await waitFor(() => expect(screen.getByText("Lightfoot")).toBeTruthy());
     expect(screen.getByText("Perfect Timing")).toBeTruthy();

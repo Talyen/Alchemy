@@ -8,6 +8,7 @@ export const talentAssets = [
   { source: "Talents/Burn.jpeg", target: "talent-burn.webp", width: WIDTH.talent, quality: QUALITY.talent },
   { source: "Talents/Companion.jpeg", target: "talent-companion.webp", width: WIDTH.talent, quality: QUALITY.talent },
   { source: "Talents/Consume.jpeg", target: "talent-consume.webp", width: WIDTH.talent, quality: QUALITY.talent },
+  { source: "Talents/Dodge.jpeg", target: "talent-dodge.webp", width: WIDTH.talent, quality: QUALITY.talent },
   { source: "Talents/Forge.jpeg", target: "talent-forge.webp", width: WIDTH.talent, quality: QUALITY.talent },
   { source: "Talents/Freeze.jpeg", target: "talent-freeze.webp", width: WIDTH.talent, quality: QUALITY.talent },
   { source: "Talents/Gold.jpeg", target: "talent-gold.webp", width: WIDTH.talent, quality: QUALITY.talent },

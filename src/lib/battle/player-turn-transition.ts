@@ -3,11 +3,11 @@ import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { processArcheryEchoes } from "./unique-card-effects";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
-import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
 import { halveRounded } from "./amount-helpers";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { applyCleanseHeals } from "./status-player";
-import { drawCards, applyDrawResult } from "./draw";
+import { drawCards, applyDrawResult, drawFromState } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import { finalizeCcSkipTurnDecrement, isPlayerCcControlled } from "./status-cc";
 import { decayHalvedStatus } from "./status-helpers";
@@ -99,6 +99,9 @@ function resetPlayerTurnState(state: BattleState, options?: { preserveBlock?: bo
     },
     flags: {
       ...state.flags,
+      previousCardWasArchery: false,
+      previousCardWasNature: false,
+      darkRecoveryMana: 0,
       encounterPhysicalUsed: false,
       encounterHolyUsed: false,
       encounterNatureUsed: false,
@@ -156,10 +159,14 @@ function performDrawAndResetPhase(
       : -1;
   const recovered = returningIndex >= 0 ? state.discard[returningIndex] : undefined;
   const discard = recovered ? state.discard.filter((_, i) => i !== returningIndex) : state.discard;
-  const nextDraw = drawCards(state.deck, discard, [], CARDS_PER_TURN, state.nextCardUid, getBattleRng(state));
+  const nextDraw = drawCards(state.deck, discard, state.hand, CARDS_PER_TURN, state.nextCardUid, getBattleRng(state));
+  let returningFlightUid: number | null = null;
   if (recovered && nextDraw.hand.length < MAX_HAND_SIZE) {
-    nextDraw.hand.push({ ...recovered, uid: nextDraw.nextCardUid });
+    returningFlightUid = nextDraw.nextCardUid;
+    nextDraw.hand.push({ ...recovered, uid: returningFlightUid });
     nextDraw.nextCardUid += 1;
+  } else if (recovered) {
+    nextDraw.discard.push(recovered);
   }
   const nextState = resetPlayerTurnState(state, options);
   const hadUnspentMana = state.mana > 0;
@@ -167,7 +174,7 @@ function performDrawAndResetPhase(
     hadUnspentMana && state.talentEffects.wellspringKeepMana > 0 ? state.talentEffects.wellspringKeepMana : 0;
   return {
     ...applyDrawResult(nextState, nextDraw),
-    uniqueGear: { ...nextState.uniqueGear, returningFlightUid: recovered ? nextDraw.nextCardUid - 1 : null },
+    uniqueGear: { ...nextState.uniqueGear, returningFlightUid },
     turnPhase: "player",
     mana:
       nextState.maxMana +
@@ -202,11 +209,16 @@ export function advanceToPlayerTurn(
       skipFightPacing: true,
     });
   }
+  const reset = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options);
+  const recovered =
+    state.flags.darkRecoveryMana > 0
+      ? gainManaWithCombatText(reset, state.flags.darkRecoveryMana, combatTexts, {
+          allowOverflow: true,
+          skipFightPacing: true,
+        })
+      : reset;
   const drawnState = processArcheryEchoes(
-    processPendingTurnStartEffects(
-      applyPlagueDoctorMask(performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options), combatTexts),
-      combatTexts,
-    ),
+    processPendingTurnStartEffects(applyPlagueDoctorMask(recovered, combatTexts), combatTexts),
     combatTexts,
   );
   if (drawnState.gearEffects.healthPerTurn <= 0) return drawnState;
@@ -220,10 +232,17 @@ export function reduceSkipTurns(state: BattleState): BattleState {
     stunSkipTurns: Math.max(0, prevCc.stunSkipTurns - 1),
     freezeSkipTurns: Math.max(0, prevCc.freezeSkipTurns - 1),
   };
-  return {
+  const nextState = {
     ...state,
     enemyCC: finalizeCcSkipTurnDecrement(prevCc, decrementedCc),
   };
+  return prevCc.freezeSkipTurns > 0 &&
+    nextState.enemyCC.freezeSkipTurns === 0 &&
+    nextState.enemyHealth > 0 &&
+    !isPlayerDefeated(nextState) &&
+    state.talentEffects.drawOnThaw > 0
+    ? applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnThaw))
+    : nextState;
 }
 
 export function resolveDeathsDoorGraceExpiry(state: BattleState): BattleState {

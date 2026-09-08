@@ -53,14 +53,14 @@ describe("computeBaseDamage — archery tag", () => {
     expect(dealDamage(notFull, card).enemyHealth).toBe(89);
   });
 
-  it("Kill Shot doubles archery damage at or below 20% Health", () => {
+  it("Kill Shot doubles archery damage below 20% Health", () => {
     const card = makeTestCard({
       tags: ["archery"],
       effects: [makeEffect("physical", 10)],
     });
     const low = patchBattleState({
       rng: () => 0.99,
-      enemyHealth: 20,
+      enemyHealth: 19,
       enemyMaxHealth: 100,
       talentEffects: { ...defaultTalentEffects, archeryDoubledVsLowHealth: true },
     });

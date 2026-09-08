@@ -1,3 +1,4 @@
+import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { drawFromState, applyDrawResult } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
@@ -24,7 +25,7 @@ import { dealPlayerTypedHit } from "./player-typed-hit";
 
 import { prepareUniqueCardPlay, finishUniqueCardDamage, returnHarvestCard } from "./unique-card-effects";
 import { computeCardPayment } from "./card-cost-rules";
-import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
+import { cardHasKeyword, isNatureCard } from "./card-classification";
 import { isPlayerCcControlled } from "./status-cc";
 import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
@@ -108,7 +109,11 @@ function executeCardPlayState(
     mana: Math.max(0, state.mana - effectiveCost),
   };
 
+  const talentPlay = prepareTalentCardPlay(nextState, card, combatTexts);
+  nextState = talentPlay.state;
   const playContext = {
+    attackBonuses: talentPlay.attackBonuses,
+    cardHealing: true,
     playedCard: true,
     damageEffects,
     guaranteedCrit,
@@ -124,12 +129,6 @@ function executeCardPlayState(
   }
 
   nextState = applyNatureCardPlayTalents(nextState, card, combatTexts);
-
-  if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {
-    if (rollPercent(state.gearEffects.manaOnNatureDamageChance, getBattleRng(state))) {
-      nextState = gainManaWithCombatText(nextState, 1, combatTexts);
-    }
-  }
 
   nextState = applyTwinCasting(nextState, card);
 

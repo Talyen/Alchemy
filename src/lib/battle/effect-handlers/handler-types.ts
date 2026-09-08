@@ -5,8 +5,11 @@ export interface CardEffectResolutionContext {
   manaAtStart: number;
   enemyFreezeSkipTurnsAtStart: number;
   playedCard?: boolean;
+  cardHealing?: boolean;
+  attackBonuses?: { flat: number; physical: number; bleed: number; sanguine?: number };
   damageEffects?: Array<Extract<BattleCardEffect, { kind: "damage" }>>;
   damageMultiplier?: number;
+  baseDamageBonus?: number;
   guaranteedCrit?: boolean;
 }
 
