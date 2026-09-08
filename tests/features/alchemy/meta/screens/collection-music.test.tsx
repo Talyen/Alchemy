@@ -2,12 +2,11 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { CollectionScreen } from "@/features/alchemy/meta/screens/collection-screen";
 import { MUSIC_KEYS } from "@/lib/game-constants";
-import { playMusic, playMusicImmediate } from "@/lib/audio";
+import { playMusic } from "@/lib/audio";
 
 vi.mock("@/lib/audio", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/audio")>()),
   playMusic: vi.fn(),
-  playMusicImmediate: vi.fn(),
 }));
 vi.mock("@/features/alchemy/shared/ui/collection-ui", () => ({
   CollectionGrid: ({ onEnemyActivate }: { onEnemyActivate: (id: string) => void }) => (
@@ -19,12 +18,8 @@ vi.mock("@/features/alchemy/shared/ui/collection-ui", () => ({
       ))}
     </>
   ),
-  CollectionTabs: ({ onSelectTab }: { onSelectTab: (tab: string) => void }) => (
-    <button onClick={() => onSelectTab("cards")}>switch-tab</button>
-  ),
-  CollectionPagination: ({ onPageChange }: { onPageChange: (page: number) => void }) => (
-    <button onClick={() => onPageChange(1)}>next-page</button>
-  ),
+  CollectionTabs: () => null,
+  CollectionPagination: () => null,
 }));
 
 const props = {
@@ -73,18 +68,6 @@ it("restores menu music on page and tab changes without restarting on return", (
   expect(playMusic).toHaveBeenLastCalledWith(MUSIC_KEYS.MENU);
   rerender(<CollectionScreen {...props} />);
   expect(playMusic).toHaveBeenCalledTimes(4);
-});
-
-it("resumes menu music immediately for pagination and tab gestures", () => {
-  render(<CollectionScreen {...props} />);
-
-  fireEvent.click(screen.getByRole("button", { name: "forge-golem" }));
-  fireEvent.click(screen.getByRole("button", { name: "next-page" }));
-  expect(playMusicImmediate).toHaveBeenLastCalledWith(MUSIC_KEYS.MENU);
-
-  fireEvent.click(screen.getByRole("button", { name: "forge-golem" }));
-  fireEvent.click(screen.getByRole("button", { name: "switch-tab" }));
-  expect(playMusicImmediate).toHaveBeenLastCalledWith(MUSIC_KEYS.MENU);
 });
 
 it("leaves destination music selection to app navigation on unmount", () => {

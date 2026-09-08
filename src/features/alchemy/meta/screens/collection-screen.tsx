@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { getBossMusicKey, playMusic, playMusicImmediate } from "@/lib/audio";
+import { getBossMusicKey, playMusic } from "@/lib/audio";
 import { MUSIC_KEYS } from "@/lib/game-constants";
 import { useControlledPagination } from "../../shared/ui/use-pagination";
 import { useAdaptiveGrid } from "../../shared/ui/adaptive-grid";
@@ -45,23 +45,14 @@ export function CollectionScreen({
   );
   const previewMusicKey = useRef<string | undefined>(undefined);
 
-  function restoreMenuMusic(immediate = false) {
+  function restoreMenuMusic() {
     if (!previewMusicKey.current) return;
     previewMusicKey.current = undefined;
-    if (immediate) playMusicImmediate(MUSIC_KEYS.MENU);
-    else playMusic(MUSIC_KEYS.MENU);
+    playMusic(MUSIC_KEYS.MENU);
   }
 
   function handlePageChange(page: number) {
     onPageChange(collectionTab, page);
-  }
-  function handleInteractivePageChange(page: number) {
-    restoreMenuMusic(true);
-    handlePageChange(page);
-  }
-  function handleInteractiveTabChange(tab: CollectionTab) {
-    restoreMenuMusic(true);
-    onSelectTab(tab);
   }
   const { page: activePage, totalPages } = useControlledPagination({
     page: collectionPages[collectionTab] ?? 0,
@@ -87,7 +78,7 @@ export function CollectionScreen({
     <PageLayout>
       <ScreenShell maxWidthClass={collectionShellWidthClass}>
         <ScreenHeaderRow title="Collection" onBack={onBack} onMenu={onMenu} />
-        <CollectionTabs collectionTab={collectionTab} onSelectTab={handleInteractiveTabChange} />
+        <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
         <div className="mt-6 flex flex-col items-center gap-4 overflow-visible">
           <div ref={onContainer} className="relative w-full overflow-visible">
@@ -107,11 +98,7 @@ export function CollectionScreen({
             />
           </div>
           <div className="flex flex-wrap items-center justify-center">
-            <CollectionPagination
-              page={activePage}
-              totalPages={totalPages}
-              onPageChange={handleInteractivePageChange}
-            />
+            <CollectionPagination page={activePage} totalPages={totalPages} onPageChange={handlePageChange} />
           </div>
         </div>
       </ScreenShell>

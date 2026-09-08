@@ -4,6 +4,8 @@ import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
 import { FADE_OUT_DURATION, MUSIC_FADE_TICK_MS, NAVIGATION_DELAY_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
 
+baseTest.use({ launchOptions: { args: ["--mute-audio", "--autoplay-policy=no-user-gesture-required"] } });
+
 baseTest.describe("SFX playback", critical, () => {
   baseTest("menu interaction starts at least one SFX", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
