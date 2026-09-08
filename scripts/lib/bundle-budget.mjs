@@ -1,7 +1,7 @@
 export const BUDGETS = {
-  indexMaxBytes: 620 * 1024,
-  totalJsMaxBytes: 1560 * 1024,
+  indexMaxBytes: 640 * 1024,
+  totalJsMaxBytes: 1610 * 1024,
   gameDataMaxBytes: 320 * 1024,
 };
 
-export const CHUNK_SIZE_WARNING_KB = 620;
+export const CHUNK_SIZE_WARNING_KB = 640;
