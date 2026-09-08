@@ -36,12 +36,12 @@ describe("Dodge chance", () => {
     expect(tryDodgePlayerAttackPacket(patchBattleState({ rng: () => roll }), []) !== null).toBe(succeeds);
   });
 
-  it("adds Lightfoot, gear, and Unburdened before the roll", () => {
-    const state = patchBattleState({ talentEffects: fullTree, gearEffects: { dodgeChance: 3 }, rng: () => 0.179 });
+  it("adds Lightfoot and gear without making Unburdened a conditional chance bonus", () => {
+    const state = patchBattleState({ talentEffects: fullTree, gearEffects: { dodgeChance: 3 }, rng: () => 0.129 });
     expect(tryDodgeEnemyAttackPacket(state, [], true)?.playerDodgeCount).toBe(1);
     const blocked = { ...state, playerStatuses: { ...state.playerStatuses, block: 1 } };
-    expect(tryDodgeEnemyAttackPacket(blocked, [], true)).toBeNull();
-    expect(tryDodgeEnemyAttackPacket({ ...blocked, rng: () => 0.129 }, [], true)).not.toBeNull();
+    expect(tryDodgeEnemyAttackPacket(blocked, [], true)?.playerDodgeCount).toBe(1);
+    expect(tryDodgeEnemyAttackPacket({ ...state, rng: () => 0.13 }, [], true)).toBeNull();
   });
 
   it.each([49, 50, 51])("Last Gasp requires strictly less than half Health: %s", (health) => {

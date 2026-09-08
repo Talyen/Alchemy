@@ -31,7 +31,6 @@ const props = {
   selected: "deck" as const,
   collections: [{ id: "deck" as const, cards: [beta, alpha, { ...alpha, uid: 3 }] }],
   descriptionContext: {},
-  onSelect: vi.fn(),
   onClose: vi.fn(),
 };
 
@@ -64,11 +63,14 @@ describe("card inspection", () => {
         .getAllByRole("img")
         .map((img) => img.getAttribute("alt")),
     ).toEqual(["Alpha", "Alpha", "Beta"]);
+    expect(screen.getByRole("heading", { name: "Deck" })).toBeTruthy();
+    expect(grid.querySelector("p.mt-2")).toBeNull();
+    expect(screen.getByRole("dialog").hasAttribute("aria-describedby")).toBe(false);
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close card inspection" }));
     expect(screen.getByRole("dialog").getAttribute("aria-modal")).toBe("true");
   });
 
-  it("shows empty piles and their own counts", () => {
+  it("shows only the selected title and close button for empty piles", () => {
     render(
       <CardInspectionOverlay
         {...props}
@@ -76,10 +78,11 @@ describe("card inspection", () => {
         collections={[...props.collections, { id: "draw", cards: [beta] }, { id: "discard", cards: [] }]}
       />,
     );
-    expect(screen.getByRole("heading", { name: "Discard Pile · 0 cards" })).toBeTruthy();
-    expect(screen.getByText("No cards here.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Draw Pile · 1" }));
-    expect(props.onSelect).toHaveBeenCalledWith("draw");
+    expect(screen.getByRole("heading", { name: "Discard Pile" })).toBeTruthy();
+    expect(screen.queryByText("No cards here.")).toBeNull();
+    expect(screen.queryByRole("group", { name: "Card collections" })).toBeNull();
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(screen.getByRole("dialog").textContent).toBe("Discard Pile");
   });
 
   it("contains focus, supports every dismissal route, and restores the opener", async () => {

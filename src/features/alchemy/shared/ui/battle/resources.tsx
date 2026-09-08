@@ -35,7 +35,6 @@ export function PilePanel({
         data-count={count}
       >
         <span className="font-semibold tracking-wider uppercase">{label}</span>
-        <span className="font-medium text-foreground">{count}</span>
       </div>
     );
   }
@@ -53,12 +52,6 @@ export function PilePanel({
         }}
       >
         <img src={art} alt="" className={cn("block w-full", cardArtImageClass)} />
-        <span
-          aria-hidden="true"
-          className="absolute right-2 bottom-2 rounded-full border border-border bg-background/90 px-3 py-1 text-lg font-bold"
-        >
-          {count}
-        </span>
       </Surface>
     </div>
   );

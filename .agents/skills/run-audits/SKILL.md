@@ -25,7 +25,7 @@ Delegate only when confirmed independent slices justify it; a single finding usu
 
 ## Review and verify
 
-Inspect each worker diff against its brief and the audit evidence bar; reject speculative growth, forwarding wrappers, duplicate paths, weakened gates, or budget-violating tests. Resolve overlaps centrally, then verify per the README verification contract.
+Inspect each worker diff against its brief and the audit evidence bar; reject speculative growth, forwarding wrappers, duplicate paths, concealed defects, or tests whose cost is unjustified by their distinct protection. Apply the shared [test value policy](../../../CONTRIBUTING.md#test-value-and-coverage-strategy) to additions and retirements; a finding does not automatically require new coverage. Resolve overlaps centrally, then verify per the README verification contract.
 
 Do not edit guides to record results. Rejected/deferred proposals and intentionally kept borderline candidates get one row in `decisions.md`.
 

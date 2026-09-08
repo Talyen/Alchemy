@@ -10,7 +10,7 @@ import {
   mergeCombatText,
   payKillPayouts,
 } from "./combat-text";
-import { isPotionCard, type BattleCard, type EnemyAttackEffect } from "@/lib/game-data";
+import { getCardKeywords, isPotionCard, type BattleCard, type EnemyAttackEffect } from "@/lib/game-data";
 import {
   type BattleResolution,
   type BattleState,
@@ -19,10 +19,12 @@ import {
   isPlayerDefeated,
   addEnemyStatus,
 } from "./types";
-import { countRemovableHarmfulStatuses } from "./status-player";
+import { processCompanionTurnStart } from "./companion";
+import { detonateEnemyStatuses } from "./dot-resolve";
+import { addForgeToPlayer, countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { getBattleRng, rngInt, rollPercent } from "@/lib/rng";
-import { dealPlayerTypedHit } from "./player-typed-hit";
+import { dealTalentTypedHit, dealPlayerTypedHit } from "./player-typed-hit";
 import { dealEnemyScaledDamage } from "./gear-effects";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
@@ -133,6 +135,9 @@ function executeCardPlayState(
   }
 
   nextState = applyNatureCardPlayTalents(nextState, card, combatTexts);
+  if (state.talentEffects.companionActsOnCard && getCardKeywords(card).includes("companion")) {
+    nextState = processCompanionTurnStart(nextState, combatTexts);
+  }
 
   nextState = applyTwinCasting(nextState, card);
 
@@ -215,11 +220,17 @@ function cardIsSummonCompanion(card: BattleCard): boolean {
   return card.effects.some((effect) => effect.kind === "summon-companion");
 }
 
-function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTexts?: CombatTextEvent[]): BattleState {
+function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
   if (cardIsSummonCompanion(card)) return state;
   const talents = state.talentEffects;
   let nextState = state;
 
+  if (talents.uncappedDrawOnConsume > 0) {
+    nextState = applyDrawResult(nextState, drawFromState(nextState, talents.uncappedDrawOnConsume));
+  }
+  if (talents.forgeOnConsume > 0) nextState = addForgeToPlayer(nextState, talents.forgeOnConsume, combatTexts);
+  if (talents.consumeDetonatesBurn) nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
+  nextState = dealTalentTypedHit(nextState, "poison", talents.poisonDamageOnConsume, combatTexts);
   if (talents.healOnConsume > 0) {
     nextState = applyHealingWithCombatText(nextState, talents.healOnConsume, combatTexts);
   }
@@ -279,7 +290,7 @@ export function handlePostPlayCardDestination(
         };
       }
       nextState = applyConsumeBurn(nextState, combatTexts ?? []);
-      nextState = applyConsumeTalentRiders(nextState, card, combatTexts);
+      nextState = applyConsumeTalentRiders(nextState, card, combatTexts ?? []);
     }
     return nextState;
   }

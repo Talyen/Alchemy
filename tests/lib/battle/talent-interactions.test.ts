@@ -5,7 +5,7 @@ import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
-import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/damage-rider-leech";
+import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/player-typed-hit";
 import { dealPlayerTypedHit } from "@/lib/battle/player-typed-hit";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";

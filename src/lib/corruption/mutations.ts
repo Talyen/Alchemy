@@ -12,7 +12,12 @@ import {
   CORRUPTION_DAMAGE_BASELINES,
 } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
-import { applyNumericCorruption, getEditableCorruptionTargets, type CorruptionTarget } from "./numeric";
+import {
+  getCorruptionTargetEffect,
+  applyNumericCorruption,
+  getEditableCorruptionTargets,
+  type CorruptionTarget,
+} from "./numeric";
 
 interface Mutation {
   card: BattleCard;
@@ -67,7 +72,7 @@ function isPlainMagnitude(effect: BattleCardEffect): boolean {
 
 function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengthen: boolean): Mutation[] {
   return targets.flatMap((target) => {
-    const effect = card.effects[target.effectIndex]!;
+    const effect = getCorruptionTargetEffect(card, target)!;
     const harmful = ["lose-health", "self-damage", "lose-mana", "lose-max-mana"].includes(effect.kind);
     const direction = strengthen !== harmful ? 1 : -1;
     const scalable =
@@ -191,8 +196,10 @@ export function getCorruptionMutationGroups(card: BattleCard): CorruptionMutatio
         ),
       ]);
       const amount = CORRUPTION_JACKPOT_AMOUNT;
-      add("draw", [addLine(card, `Draw ${amount} Card`, { kind: "draw-cards", amount })]);
-      add("mana", [addLine(card, `Restore ${amount} Mana`, { kind: "restore-mana", amount })]);
+      add("draw", [
+        addLine(card, amount === 1 ? "Draw a card" : `Draw ${amount} cards`, { kind: "draw-cards", amount }),
+      ]);
+      add("mana", [addLine(card, `Gain ${amount} Mana`, { kind: "restore-mana", amount })]);
     }
     const effect = card.effects[0]!;
     if (effect.kind === "damage" && !effect.lifesteal && !card.descriptionLines.includes("Leech")) {

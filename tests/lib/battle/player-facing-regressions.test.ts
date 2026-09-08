@@ -66,13 +66,16 @@ describe("player-facing combat regressions", () => {
     const upgraded = buildWishOptions(state, makeTestCard({ id: "wish-source" })).find(
       (card) => card.id === original.id,
     );
-    expect(upgraded?.descriptionLines).toEqual(["Deal 2 Freeze damage this turn and next turn"]);
+    expect(upgraded?.descriptionLines).toEqual([
+      "Deal 2 Freeze damage",
+      "Deal 4 Freeze damage at the start of your next turn",
+    ]);
     expect(upgraded?.effects).toEqual([
       { kind: "damage", damageType: "freeze", amount: 2 },
-      { kind: "repeat-over-turns", remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] },
+      { kind: "repeat-over-turns", remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 4 }] },
     ]);
     expect(original.effects[0]).toMatchObject({ amount: 1 });
-    expect(original.effects[1]).toMatchObject({ effects: [{ amount: 1 }] });
+    expect(original.effects[1]).toMatchObject({ effects: [{ amount: 3 }] });
   });
 
   it("allows Astral Arrow to use Winter's Block payment for its Freeze damage pool", () => {

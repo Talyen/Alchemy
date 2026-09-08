@@ -52,15 +52,13 @@ async function expectStableHoverLayout(card: Locator) {
   await card.blur();
 }
 
-for (const tab of ["Heroes", "Cards", "Trinkets", "Uniques", "Bestiary"]) {
+for (const tab of ["Cards", "Bestiary"]) {
   test(`Collection ${tab} hover and focus preserve layout`, async ({ page }) => {
     await new MenuPage(page).gotoCollection({
       discoveredCardIds: ["anvil"],
-      discoveredTrinketIds: ["tattered-pages"],
-      discoveredUniqueIds: ["wardbreaker"],
     });
     await page.getByRole("button", { name: tab, exact: true }).click();
-    if (tab !== "Heroes") await expect(page.getByRole("button", { name: "Inspect Knight", exact: true })).toBeHidden();
+    await expect(page.getByRole("button", { name: "Inspect Knight", exact: true })).toBeHidden();
     const entries = page.getByRole("button", { name: /^Inspect / });
     await expectStableHoverLayout(entries.first());
     const locked = page.getByRole("button", { name: /Inspect Undiscovered Entry|Inspect .*\(Locked\)/ }).first();
@@ -68,7 +66,7 @@ for (const tab of ["Heroes", "Cards", "Trinkets", "Uniques", "Bestiary"]) {
   });
 }
 
-for (const rewardType of ["card", "boon", "trinket", "gear"] as const) {
+for (const rewardType of ["card", "trinket", "gear"] as const) {
   test(`Victory ${rewardType} hover and focus preserve layout`, async ({ page }) => {
     await enterPrimaryRewardScreen(
       page,

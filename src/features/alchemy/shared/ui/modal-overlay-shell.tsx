@@ -1,4 +1,6 @@
 import type { ReactNode, SyntheticEvent } from "react";
+import { createPortal } from "react-dom";
+import { useModalRoot } from "./modal-root";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { cn } from "@/lib/utils";
 import { fadePhaseClass, useFadePresence } from "./use-fade";
@@ -12,7 +14,6 @@ interface ModalOverlayShellProps {
   dismissOnEscape?: boolean;
   dismissOnBackdrop?: boolean;
   escapePriority?: number;
-  position?: "fixed" | "absolute";
   zIndex?: number;
   dim?: boolean;
 
@@ -35,7 +36,6 @@ export function ModalOverlayShell({
   dismissOnEscape = true,
   dismissOnBackdrop = false,
   escapePriority = ESCAPE_PRIORITY.MODAL,
-  position = "absolute",
   zIndex,
   dim = true,
   className,
@@ -43,6 +43,7 @@ export function ModalOverlayShell({
   mount = true,
   children,
 }: ModalOverlayShellProps) {
+  const root = useModalRoot();
   const { mounted, phase } = useFadePresence(open);
   const interactive = open && mount && mounted;
 
@@ -55,17 +56,21 @@ export function ModalOverlayShell({
 
   if (!mounted || !mount) return null;
 
-  return (
+  return createPortal(
     <div
       inert={!interactive}
       data-testid={testId}
       style={zIndex !== undefined ? { zIndex } : undefined}
-      className={cn(position, "inset-0", dim && "bg-black/70", fadePhaseClass(phase), className)}
-      onClick={dismissOnBackdrop && interactive ? onClose : undefined}
+      className={cn("fixed inset-0", dim && "bg-black/70", fadePhaseClass(phase), className)}
+      onClick={(event) => {
+        event.stopPropagation();
+        if (dismissOnBackdrop && interactive && event.target === event.currentTarget) onClose();
+      }}
       onClickCapture={!interactive ? blockInteraction : undefined}
       onKeyDownCapture={!interactive ? blockInteraction : undefined}
     >
       {children}
-    </div>
+    </div>,
+    root ?? document.body,
   );
 }

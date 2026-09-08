@@ -38,12 +38,12 @@ describe("formatCompanionTurnLineBase", () => {
 
   it("formats singular draw-cards", () => {
     const effect: BattleCardEffect = { kind: "draw-cards", amount: 1 };
-    expect(formatCompanionTurnLineBase(effect)).toBe("Draws 1 Card each turn");
+    expect(formatCompanionTurnLineBase(effect)).toBe("Draws a card each turn");
   });
 
   it("formats plural draw-cards", () => {
     const effect: BattleCardEffect = { kind: "draw-cards", amount: 2 };
-    expect(formatCompanionTurnLineBase(effect)).toBe("Draws 2 Cards each turn");
+    expect(formatCompanionTurnLineBase(effect)).toBe("Draws 2 cards each turn");
   });
 });
 
@@ -56,7 +56,7 @@ describe("formatCompanionTurnStartLine", () => {
       failureEffects: [{ kind: "gain-gold", amount: 1 }],
     };
     expect(formatCompanionTurnStartLine(effect, { bondLevel: 2, damageBonus: 1 })).toBe(
-      "Deals 4 Bleed damage or Steals 1 Gold each turn",
+      "Deals 4 Bleed damage or Grants 1 Gold each turn",
     );
   });
 });
@@ -71,15 +71,15 @@ describe("Bond descriptions", () => {
     ]);
     expect(getCompanionDescriptionLines(companionLibrary["will-o-wisp"], level)).toEqual([
       level === 0
-        ? "Cleanses 1 harmful status each turn"
-        : `Cleanses 1 harmful status and restores ${level} Health each turn`,
+        ? "Cleanses 1 harmful status effect each turn"
+        : `Cleanses 1 harmful status effect and restores ${level} Health each turn`,
     ]);
     expect(getCompanionDescriptionLines(companionLibrary.fox, level)).toEqual([
-      `Deals ${1 + level} Bleed damage or Steals ${1 + level} Gold each turn`,
+      `Deals ${1 + level} Bleed damage or Grants ${1 + level} Gold each turn`,
     ]);
     for (const [id, baseline, action] of [
       ["mana-moth", "Grants 1 extra Mana each turn", "grant"],
-      ["library-owl", "Draws 1 Card each turn", "draw"],
+      ["library-owl", "Draws a card each turn", "draw"],
     ] as const) {
       expect(getCompanionDescriptionLines(companionLibrary[id], level)).toEqual([
         baseline + (level === 0 ? "" : `, with a ${level * 25}% chance to ${action} 1 more`),

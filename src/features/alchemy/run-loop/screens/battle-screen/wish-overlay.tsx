@@ -80,7 +80,7 @@ function WishOverlayPanel({
       zIndex={WISH_OVERLAY_Z_INDEX}
       className="wish-overlay-backdrop flex items-center justify-center p-6"
     >
-      <div className="wish-overlay-panel alchemy-shell flex max-h-full w-full max-w-5xl flex-col rounded-shell-screen border border-border/80 px-6 py-6">
+      <div className="wish-overlay-panel alchemy-shell flex max-h-full w-fit max-w-5xl flex-col rounded-shell-screen border border-border/80 px-6 py-6">
         <ScreenHeader title="Wish" />
         <p className={cn("mt-2 text-center", bodyTextClass)}>Choose one card to add to your hand.</p>
 

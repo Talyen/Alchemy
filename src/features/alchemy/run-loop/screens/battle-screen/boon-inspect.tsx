@@ -59,7 +59,7 @@ export function BattleBoonInspectOverlay({
       className="flex items-center justify-center px-6 py-8"
     >
       <div
-        className="alchemy-shell relative w-fit max-w-full rounded-shell-screen border border-border/80 px-8 py-8"
+        className="alchemy-shell relative max-h-full w-fit max-w-full overflow-y-auto rounded-shell-screen border border-border/80 px-8 py-8"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="grid w-full grid-cols-[calc(2.5*var(--content-rem,1rem))_1fr_calc(2.5*var(--content-rem,1rem))] items-start">

@@ -49,9 +49,9 @@ describe("card corruption outcomes", () => {
 
   it("adds one effect before trailing keywords and marks its number", () => {
     const next = outcome("fire-arrow", "secondary");
-    expect(next.descriptionLines).toEqual(["Deal 2 Burn damage", "Gain 2 Block", "Archery"]);
-    expect(next.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 2 });
-    expect(next.corruptedValuePositions).toEqual([{ lineIndex: 1, matchIndex: 5 }]);
+    expect(next.descriptionLines).toEqual(["Deal 1 Burn damage", "Remove 2 enemy Armor", "Gain 2 Block", "Archery"]);
+    expect(next.effects[2]).toEqual({ kind: "player-status", status: "block", amount: 2 });
+    expect(next.corruptedValuePositions).toEqual([{ lineIndex: 2, matchIndex: 5 }]);
   });
 
   it("charges the Health price before granting the larger benefit", () => {
@@ -78,8 +78,8 @@ describe("card corruption outcomes", () => {
   });
 
   it.each([
-    ["draw", "Draw 1 Card", { kind: "draw-cards", amount: 1 }],
-    ["mana", "Restore 1 Mana", { kind: "restore-mana", amount: 1 }],
+    ["draw", "Draw a card", { kind: "draw-cards", amount: 1 }],
+    ["mana", "Gain 1 Mana", { kind: "restore-mana", amount: 1 }],
   ] as const)("adds the %s jackpot without changing Mana cost", (kind, line, effect) => {
     const next = outcome("slash", kind);
     expect(next.cost).toBe(cardById.slash!.cost);
@@ -135,7 +135,7 @@ describe("card corruption outcomes", () => {
     expect(getCorruptionMutationGroups(shortCard).map((group) => group.kind)).toEqual(["secondary"]);
   });
 
-  it.each(["ray-of-frost", "earthquake", "blizzard", "avatar"])("keeps %s repeated effects aligned", (id) => {
+  it.each(["earthquake", "blizzard", "avatar"])("keeps %s repeated effects aligned", (id) => {
     const card = cardById[id]!;
     const original = structuredClone(card);
     const next = outcome(id, "strengthen");

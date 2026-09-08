@@ -56,6 +56,7 @@ export const defenseCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "prayer",
     art: assetRefs.prayer,
+    consume: true,
     effects: [
       { kind: "wish", amount: 1 },
       { kind: "heal", amount: 3 },
@@ -65,7 +66,7 @@ export const defenseCards: BattleCard[] = [
     id: "smelling-salts",
     art: assetRefs.smellingSalts,
     effect: { kind: "remove-player-status", status: "stun" },
-    descriptionLine: "Cleanse Stun build-up",
+    descriptionLine: "Cleanse Stun buildup",
   }),
   cardBuilders.damageThenMultiplyEnemyStatusCard({
     id: "cold-snap",
@@ -74,7 +75,7 @@ export const defenseCards: BattleCard[] = [
     damageAmount: 1,
     status: "freeze",
     factor: 2,
-    multiplyLine: "Double enemy's Freeze build-up",
+    multiplyLine: "Double enemy's Freeze buildup",
   }),
   cardBuilders.effectsCard({
     id: "sunder",

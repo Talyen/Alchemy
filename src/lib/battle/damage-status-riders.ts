@@ -36,7 +36,11 @@ function applyGearBurnBleedMirrorLeech(
     nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
   }
   const healAmount = Math.max(1, halveRounded(actualDamage));
-  return applyLeechHealing(nextState, scalePlayerLeechHeal(nextState, healAmount), combatTexts);
+  return applyLeechHealing(
+    nextState,
+    scalePlayerLeechHeal(nextState, scaledGearLeechHeal(healAmount, nextState.gearEffects)),
+    combatTexts,
+  );
 }
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {

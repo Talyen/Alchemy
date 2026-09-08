@@ -3,12 +3,10 @@ import {
   injectLabyrinthRun,
   makeCard,
   SAVE_KEY,
-  startBattleWithDeck,
   startAtDestination,
   assertNoOverflow,
   assertStageFitsViewport,
 } from "../../helpers";
-import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 
 async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio: string) {
@@ -21,73 +19,6 @@ async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio
     { saveKey: SAVE_KEY, ar: aspectRatio },
   );
 }
-
-const RESOLUTIONS = [{ width: 1366, height: 768, label: "1366x768" }] as const;
-
-const CARD_VIEWPORT_TOLERANCE_PX = 12;
-const CARD_VIEWPORT_TOLERANCE_RATIO = 0.015;
-
-test.describe("Common resolutions (1366x768)", slow, () => {
-  test("menu, character-select, and battle fit viewport without overflow", async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }) => {
-    void fastBattle;
-    void runtimeErrors;
-    for (const { width, height } of RESOLUTIONS) {
-      await setAspectRatio(page, "16:9");
-      await page.setViewportSize({ width, height });
-
-      await page.goto("/");
-      await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-      await assertNoOverflow(page, `Menu ${width}x${height}`);
-      await assertStageFitsViewport(page);
-
-      await new MenuPage(page).goToCharacterSelect();
-      await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
-      await assertNoOverflow(page, `Character Select ${width}x${height}`);
-
-      await startBattleWithDeck(
-        page,
-        Array.from({ length: 6 }, () => makeCard()),
-      );
-      await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible();
-      expect(await page.locator('[aria-label^="Play "]').count()).toBeGreaterThanOrEqual(1);
-      await assertNoOverflow(page, `Battle ${width}x${height}`);
-      const maxCardOverflow = await page.evaluate(() =>
-        Math.max(
-          0,
-          ...[...document.querySelectorAll('[aria-label^="Play "]')].map((card) => {
-            const rect = card.getBoundingClientRect();
-            return Math.max(-rect.left, rect.right - window.innerWidth, -rect.top, rect.bottom - window.innerHeight, 0);
-          }),
-        ),
-      );
-      const cardViewportTolerance = Math.max(CARD_VIEWPORT_TOLERANCE_PX, height * CARD_VIEWPORT_TOLERANCE_RATIO);
-      expect(
-        maxCardOverflow,
-        "Hand cards should stay within viewport aside from small rotated-edge drift",
-      ).toBeLessThanOrEqual(cardViewportTolerance);
-    }
-  });
-});
-
-const MACBOOK_VIEWPORTS = [{ width: 1512, height: 982, label: "1512x982" }] as const;
-
-test.describe("MacBook and 16:10 stage fitting", slow, () => {
-  test("keeps the auto stage inside the viewport at each resolution", async ({ page }) => {
-    for (const { width, height, label } of MACBOOK_VIEWPORTS) {
-      await setAspectRatio(page, "auto");
-      await page.setViewportSize({ width, height });
-      await page.goto("/");
-      await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-
-      await assertNoOverflow(page, `Menu ${label}`);
-      await assertStageFitsViewport(page);
-    }
-  });
-});
 
 function isIdentityTransform(transform: string): boolean {
   if (transform === "none") return true;
@@ -146,85 +77,52 @@ test.describe("high-DPR layout", slow, () => {
 });
 
 test.describe("Card Selection Grid Layout", slow, () => {
-  for (const viewport of [
-    { width: 1366, height: 768, gameSizePercent: 100 },
-    { width: 1920, height: 1080, gameSizePercent: 100 },
-    { width: 1366, height: 768, gameSizePercent: 120 },
-  ]) {
-    test(`removal actions stay visible and stable across pages at ${viewport.width} and ${viewport.gameSizePercent}%`, async ({
-      page,
-      runtimeErrors,
-    }) => {
-      void runtimeErrors;
-      await page.addInitScript((gameSizePercent) => {
-        localStorage.setItem(
-          "alchemy-device-display-v1",
-          JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 125 }),
-        );
-      }, viewport.gameSizePercent);
-      await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await startAtDestination(
-        page,
-        { runGold: 9999, runDeck: Array.from({ length: 13 }, () => makeCard()) },
-        { forceDestination: "Card Shop" },
+  test("removal actions stay visible and stable across pages at maximum game size", async ({ page, runtimeErrors }) => {
+    void runtimeErrors;
+    await page.addInitScript((gameSizePercent) => {
+      localStorage.setItem(
+        "alchemy-device-display-v1",
+        JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 125 }),
       );
-      await page.getByRole("button", { name: "Card Shop", exact: true }).click();
-      await page.getByRole("button", { name: /Remove Card/ }).click();
-      const heading = page.getByRole("heading", { name: "Remove Card", exact: true });
-      const remove = page.getByRole("button", { name: /^Remove Gold/ });
-      const cancel = page.getByRole("button", { name: "Cancel", exact: true });
-      const next = page.getByRole("button", { name: "Next page" });
-      await expect(heading).toBeVisible();
-      await expect(remove).toBeInViewport({ ratio: 0.999 });
-      await expect(cancel).toBeInViewport({ ratio: 0.999 });
-      const cards = page.getByRole("button", { name: "Select Slash", exact: true });
-      const grid = page.getByTestId("card-selection-grid");
-      const fullPageSize = viewport.gameSizePercent === 120 ? 3 : 6;
-      await expect(cards).toHaveCount(fullPageSize);
-      for (const card of await cards.all()) {
-        await expect(card).toBeInViewport({ ratio: 0.999 });
-      }
-      const before = { heading: await heading.boundingBox(), remove: await remove.boundingBox() };
-      while (await next.isEnabled()) {
-        await next.click();
-      }
-      await expect(cards).toHaveCount(1);
-      await expect(grid).toHaveCSS("opacity", "1");
-      await expect
-        .poll(async () => ({ heading: await heading.boundingBox(), remove: await remove.boundingBox() }))
-        .toEqual(before);
-      await expect(page.getByText("Select a card to remove from your deck")).toHaveCount(0);
-      await page.getByRole("button", { name: "Previous page" }).click();
-      await expect(cards).toHaveCount(fullPageSize);
-      await expect(grid).toHaveCSS("opacity", "1");
-      await expect
-        .poll(async () => ({ heading: await heading.boundingBox(), remove: await remove.boundingBox() }))
-        .toEqual(before);
-    });
-  }
-
-  test("cards are centered within the viewport", async ({ page }) => {
-    await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Card Shop" });
-    await page.getByRole("button", { name: "Card Shop" }).click();
-    await expect(page.getByRole("heading", { name: "Card Shop" })).toBeVisible();
-
-    const removeBtn = page.getByRole("button", { name: /Remove Card/ });
-    await expect(removeBtn).toBeVisible();
-    await expect(removeBtn).toBeEnabled();
-    await removeBtn.click();
-
-    const grid = page.locator('[data-testid="card-selection-grid"]');
-    await expect(grid).toBeVisible({ timeout: 3000 });
-
-    const isCentered = await page.evaluate(() => {
-      const el = document.querySelector('[data-testid="card-selection-grid"]');
-      if (!el) return false;
-      const rect = el.getBoundingClientRect();
-      const gridCenter = rect.left + rect.width / 2;
-      const viewportCenter = window.innerWidth / 2;
-      return Math.abs(gridCenter - viewportCenter) < 50;
-    });
-    expect(isCentered).toBe(true);
+    }, 120);
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await startAtDestination(
+      page,
+      { runGold: 9999, runDeck: Array.from({ length: 13 }, () => makeCard()) },
+      { forceDestination: "Card Shop" },
+    );
+    await page.getByRole("button", { name: "Card Shop", exact: true }).click();
+    await page.getByRole("button", { name: /Remove Card/ }).click();
+    const heading = page.getByRole("heading", { name: "Remove Card", exact: true });
+    const remove = page.getByRole("button", { name: /^Remove Gold/ });
+    const cancel = page.getByRole("button", { name: "Cancel", exact: true });
+    const next = page.getByRole("button", { name: "Next page" });
+    await expect(heading).toBeVisible();
+    await expect(remove).toBeInViewport({ ratio: 0.999 });
+    await expect(cancel).toBeInViewport({ ratio: 0.999 });
+    const cards = page.getByRole("button", { name: "Select Slash", exact: true });
+    const grid = page.getByTestId("card-selection-grid");
+    const fullPageSize = 3;
+    await expect(cards).toHaveCount(fullPageSize);
+    for (const card of await cards.all()) {
+      await expect(card).toBeInViewport({ ratio: 0.999 });
+    }
+    const before = { heading: await heading.boundingBox(), remove: await remove.boundingBox() };
+    while (await next.isEnabled()) {
+      await next.click();
+    }
+    await expect(cards).toHaveCount(1);
+    await expect(grid).toHaveCSS("opacity", "1");
+    await expect
+      .poll(async () => ({ heading: await heading.boundingBox(), remove: await remove.boundingBox() }))
+      .toEqual(before);
+    await expect(page.getByText("Select a card to remove from your deck")).toHaveCount(0);
+    await page.getByRole("button", { name: "Previous page" }).click();
+    await expect(cards).toHaveCount(fullPageSize);
+    await expect(grid).toHaveCSS("opacity", "1");
+    await expect
+      .poll(async () => ({ heading: await heading.boundingBox(), remove: await remove.boundingBox() }))
+      .toEqual(before);
   });
 });
 

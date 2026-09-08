@@ -3,7 +3,13 @@ import { applyDamageRiders, reflectBlockedAttackAsHoly } from "./damage-riders";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { applyPlayerDamageStatuses, applyPlayerStatusEffect, shouldBlockPreventStunBuildup } from "./status-player";
+import {
+  addForgeToPlayer,
+  applyPlayerDamageStatuses,
+  applyPlayerStatusEffect,
+  shouldBlockPreventStatusBuildup,
+  applyHealthThresholdCleanse,
+} from "./status-player";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import {
@@ -20,7 +26,7 @@ import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-tra
 import { decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealPlayerTypedHit } from "./player-typed-hit";
-import { addEnemyMitigation, addPlayerStatus, getEnemyTraitSet, hasEnemyTrait, setFlag } from "./types/state-helpers";
+import { addEnemyMitigation, getEnemyTraitSet, hasEnemyTrait, setFlag } from "./types/state-helpers";
 
 function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   if (effect.damageType !== "physical") return effect.amount;
@@ -144,13 +150,7 @@ function applyVanguardCrestAfterBlock(
   if (state.trinketEffects.vanguardCrestForgeOnBlockAbsorb <= 0 || blockAbsorb <= 0 || remainingDamage !== 0) {
     return state;
   }
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: "forge",
-    amount: state.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
-  });
-  return addPlayerStatus(state, "forge", state.trinketEffects.vanguardCrestForgeOnBlockAbsorb);
+  return addForgeToPlayer(state, state.trinketEffects.vanguardCrestForgeOnBlockAbsorb, combatTexts);
 }
 
 function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, damageType: string): BattleState {
@@ -193,6 +193,7 @@ export function checkHealthThresholds(
     return next;
   }
 
+  nextState = applyHealthThresholdCleanse(prevHealth, nextState, combatTexts);
   nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdBlock, "block");
   nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdArmor, "armor");
   return nextState;
@@ -377,8 +378,8 @@ export function processEnemyDamageEffect(
     combatTexts,
   );
 
-  const preventStunBuildup = effect.damageType === "stun" && shouldBlockPreventStunBuildup(state);
-  if (!preventStunBuildup) {
+  const preventStatusBuildup = shouldBlockPreventStatusBuildup(state, effect.damageType);
+  if (!preventStatusBuildup) {
     nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
   }
   nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);

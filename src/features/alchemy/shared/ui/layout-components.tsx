@@ -79,10 +79,9 @@ export function ScreenHeaderRow({
     />
   ) : null;
   const trailingContent =
-    trailing || menuButton || chrome?.deckInspection ? (
+    trailing || menuButton ? (
       <div className="flex items-center gap-2">
         {trailing}
-        {chrome?.deckInspection ? <DeckInspectButton {...chrome.deckInspection} compact /> : null}
         {menuButton}
       </div>
     ) : null;
@@ -94,8 +93,11 @@ export function ScreenHeaderRow({
           <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-amber-100/60 uppercase">{eyebrow}</p>
         ) : null}
         <div className="relative flex w-full items-center justify-center">
-          {leadingContent ? (
-            <div className={cn("absolute top-1/2 left-0 -translate-y-1/2", leadingClassName)}>{leadingContent}</div>
+          {leadingContent || chrome?.deckInspection ? (
+            <div className={cn("absolute top-1/2 left-0 flex -translate-y-1/2 items-center gap-2", leadingClassName)}>
+              {leadingContent}
+              {chrome?.deckInspection ? <DeckInspectButton {...chrome.deckInspection} compact /> : null}
+            </div>
           ) : null}
           <h1 className={cn("text-center font-sans", screenTitleClass)}>{title}</h1>
           {trailingContent ? (

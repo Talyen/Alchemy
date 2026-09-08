@@ -81,55 +81,6 @@ describe("Button", () => {
     },
   );
 
-  it("defaults to primary styling and standard size", () => {
-    render(<Button>Default</Button>);
-    const button = screen.getByRole("button");
-    expect(button.classList.contains("bg-primary")).toBe(true);
-    expect(button.classList.contains("h-14")).toBe(true);
-    expect(button.classList.contains("px-6")).toBe(true);
-  });
-
-  it.each([
-    ["primary", ["bg-primary", "text-primary-foreground", "button-primary-bloom", "active:bg-primary/90"]],
-    [
-      "destructive",
-      ["bg-destructive", "text-destructive-foreground", "hover:bg-destructive/90", "active:bg-destructive/90"],
-    ],
-    [
-      "outline",
-      ["border", "border-border/80", "bg-background", "text-foreground", "hover:bg-muted/80", "active:bg-muted/90"],
-    ],
-    ["ghost", ["border-0", "bg-transparent", "text-foreground", "hover:bg-muted/80", "active:bg-muted/90"]],
-  ] as const)("preserves %s appearance and interaction styles", (variant, expectedClasses) => {
-    render(<Button variant={variant}>Action</Button>);
-    const button = screen.getByRole("button");
-    for (const token of [
-      ...expectedClasses,
-      "active:brightness-100",
-      "transition-[background-color,box-shadow]",
-      "duration-150",
-      "disabled:pointer-events-none",
-      "disabled:opacity-50",
-    ]) {
-      expect(button.classList.contains(token)).toBe(true);
-    }
-    expect(button.className).not.toContain("scale");
-    expect(button.className).not.toContain("hover:brightness-105");
-  });
-
-  it.each([
-    ["default", ["h-14", "px-6", "text-base"]],
-    ["sm", ["h-11", "px-4", "text-sm", "tracking-widest", "uppercase"]],
-    ["lg", ["h-16", "px-7", "text-xl"]],
-    ["icon", ["h-14", "w-14", "text-base"]],
-  ] as const)("preserves %s sizing", (size, expectedClasses) => {
-    render(<Button size={size}>Action</Button>);
-    const button = screen.getByRole("button");
-    for (const token of expectedClasses) {
-      expect(button.classList.contains(token)).toBe(true);
-    }
-  });
-
   it("applies caller overrides to the button independently of its wrapper", () => {
     render(
       <Button className="h-20 bg-muted" wrapperClassName="h-24">

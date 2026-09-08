@@ -47,9 +47,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   },
   {
     label: "gain-gold",
-    countLines: (lines) =>
-      lines.filter((line) => (line.startsWith("Gain ") || line.startsWith("Steal ")) && line.includes("Gold")).length +
-      lines.filter((line) => line.includes(" or Gain ") && line.includes("Gold")).length,
+    countLines: (lines) => lines.filter((line) => /\b(?:gain|steal) \d+ Gold\b/i.test(line)).length,
     countEffects: (effects) => countByKind(effects, "gain-gold"),
   },
   {
@@ -61,7 +59,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
     label: "remove-harmful-status",
     countLines: (lines) =>
       lines.filter(
-        (line) => line.startsWith("Remove ") || (line.startsWith("Cleanse ") && line.includes("harmful status")),
+        (line) => (line.startsWith("Remove ") || line.startsWith("Cleanse ")) && line.includes("harmful status"),
       ).length,
     countEffects: (effects) => countByKind(effects, "remove-harmful-status"),
   },
@@ -72,7 +70,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   },
   {
     label: "gain-max-mana",
-    countLines: (lines) => lines.filter((line) => line.includes("Maximum Mana")).length,
+    countLines: (lines) => lines.filter((line) => /^Gain \d+ (?:Maximum Mana|Mana Crystals?)(?:$| )/.test(line)).length,
     countEffects: (effects) => countByKind(effects, "gain-max-mana"),
   },
   {
@@ -87,7 +85,9 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   },
   {
     label: "remove-enemy-armor",
-    countLines: (lines) => countLinesStartingWith(lines, "Strip "),
+    countLines: (lines) =>
+      lines.filter((line) => line.startsWith("Strip ") || (line.startsWith("Remove ") && line.includes("enemy Armor")))
+        .length,
     countEffects: (effects) => countByKind(effects, "remove-enemy-armor"),
   },
   {
@@ -107,7 +107,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
     countLines: (lines) =>
       lines.filter(
         (line) =>
-          (line.startsWith("Gain ") || line.includes(" or Gain ")) &&
+          (line.startsWith("Gain ") || / or gain /i.test(line)) &&
           line.includes(" Block") &&
           !line.includes("per Mana Crystal") &&
           !line.endsWith("each turn"),
@@ -169,7 +169,7 @@ function checkDamageParity(card: BattleCard): ContentValidationIssue | null {
   const { effects, descriptionLines } = card;
   if (hasNonStandardDamageEffects(effects)) return null;
   if (hasKind(effects, "self-damage")) {
-    if (!descriptionLines.some((line) => /self|Receive/.test(line))) {
+    if (!descriptionLines.some((line) => /self|Receive|Take/.test(line))) {
       return {
         severity: "error",
         area: "cards",

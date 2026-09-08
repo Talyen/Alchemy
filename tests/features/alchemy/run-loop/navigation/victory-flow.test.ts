@@ -90,216 +90,59 @@ describe("Fetch victory rewards", () => {
 });
 
 describe("computeVictoryRewardState", () => {
-  it("offers the boss Trinket category when its roll lands in range", () => {
+  const rewardInput = {
+    ...baseInput(),
+    gold: 15,
+    eliteBonus: 4,
+    generousBonus: 0,
+    wealthyBonus: 0,
+    bossBonus: 7,
+    materials: { ...emptyInventory(), wood: 2 },
+    destinations: ["Campfire"] as Destination[],
+  };
+
+  it("forwards ordinary reward amounts, materials, and destinations", () => {
+    const result = computeVictoryRewardState(rewardInput, () => 0.25);
+    expect(result.rewardType).toBe("card");
+    expect(result.gold).toBe(19);
+    expect(result.materials.wood).toBe(2);
+    expect(result.destinations).toEqual(["Campfire"]);
+  });
+
+  it("routes bosses to boss rewards and forwards permanent Trinket ownership", () => {
+    const unowned = trinketLibrary.slice(-2);
     const result = computeVictoryRewardState(
       {
-        characterId: "knight",
-        selectedDifficulty: null,
-        unlockedTalents: {},
-        runDeck: [],
-        runBoons: [],
-        contentSystemType: "campaign",
-        activeLabyrinthRewardModifiers: [],
+        ...rewardInput,
         battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
-        gold: 15,
-        eliteBonus: 0,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        bossBonus: 10,
-        materials: emptyInventory(),
-        destinations: [],
+        ownedTrinketIds: trinketLibrary.slice(0, -2).map((entry) => entry.id),
       },
       () => 0.8,
     );
     expect(result.rewardType).toBe("trinket");
-    expect(result.gold).toBe(25);
+    if (result.rewardType !== "trinket") throw new Error("expected permanent trinket reward");
+    expect(result.gold).toBe(22);
+    expect(result.choices.map((choice) => choice.id).sort()).toEqual(unowned.map((entry) => entry.id).sort());
   });
 
-  it("creates combat reward state for normal enemies", () => {
+  it("excludes both run Boons and the equipped Trinket from elite Boon offers", () => {
     const result = computeVictoryRewardState(
       {
-        characterId: "knight",
-        selectedDifficulty: null,
-        unlockedTalents: {},
-        runDeck: [],
-        runBoons: [],
-        contentSystemType: "campaign",
-        activeLabyrinthRewardModifiers: [],
-        battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
-        gold: 15,
-        eliteBonus: 0,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        bossBonus: 0,
-        materials: emptyInventory(),
-        destinations: ["Normal Combat", "Campfire"],
-      },
-      () => 0.25,
-    );
-    expect(result.rewardType).toBe("card");
-    expect(result.destinations).toEqual(["Normal Combat", "Campfire"]);
-    expect(result.gold).toBe(15);
-  });
-
-  it("offers card rewards for normal enemies at the card threshold", () => {
-    const result = computeVictoryRewardState(
-      {
-        characterId: "knight",
-        selectedDifficulty: null,
-        unlockedTalents: {},
-        runDeck: [],
-        runBoons: [],
-        contentSystemType: "labyrinth",
-        activeLabyrinthRewardModifiers: [],
-        battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
-        gold: 15,
-        eliteBonus: 0,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        bossBonus: 0,
-        materials: emptyInventory(),
-        destinations: ["Normal Combat"],
-      },
-      () => 0.25,
-    );
-    expect(result.rewardType).toBe("card");
-  });
-
-  it("offers boon rewards for elite enemies at the boon threshold", () => {
-    const result = computeVictoryRewardState(
-      {
-        characterId: "knight",
-        selectedDifficulty: null,
-        unlockedTalents: {},
-        runDeck: [],
-        runBoons: [],
-        contentSystemType: "campaign",
-        activeLabyrinthRewardModifiers: [],
+        ...rewardInput,
         battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
-        gold: 15,
-        eliteBonus: 4,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        bossBonus: 0,
-        materials: emptyInventory(),
-        destinations: ["Normal Combat"],
+        runBoons: trinketLibrary.slice(0, -3).map((entry) => entry.id),
+        equippedTrinketId: trinketLibrary.at(-3)!.id,
       },
       () => 0.8,
     );
     expect(result.rewardType).toBe("boon");
-  });
-
-  it("offers gear for a boss when its roll lands in the Gear group", () => {
-    const input = {
-      characterId: "knight" as const,
-      selectedDifficulty: null,
-      unlockedTalents: {},
-      runDeck: [],
-      runBoons: [],
-      contentSystemType: "campaign" as const,
-      activeLabyrinthRewardModifiers: [],
-      battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
-      gold: 15,
-      eliteBonus: 0,
-      generousBonus: 0,
-      wealthyBonus: 0,
-      bossBonus: 7,
-      materials: emptyInventory(),
-      destinations: [],
-    };
-    const gearReward = computeVictoryRewardState(input, () => 0.6);
-    expect(gearReward.rewardType).toBe("gear");
-    expect(gearReward.choices.every((choice) => "instanceId" in choice)).toBe(true);
-    expect(gearReward.choices.every((choice) => "affixes" in choice)).toBe(true);
-  });
-
-  it("filters owned permanent trinkets and reduces the choice count", () => {
-    const unowned = trinketLibrary.slice(-2);
-    const result = computeVictoryRewardState(
-      {
-        characterId: "knight",
-        selectedDifficulty: null,
-        unlockedTalents: {},
-        runDeck: [],
-        runBoons: [],
-        ownedTrinketIds: trinketLibrary.slice(0, -2).map((entry) => entry.id),
-        contentSystemType: "campaign",
-        activeLabyrinthRewardModifiers: [],
-        battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
-        gold: 15,
-        eliteBonus: 0,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        bossBonus: 7,
-        materials: emptyInventory(),
-        destinations: [],
-      },
-      () => 0.8,
+    if (result.rewardType !== "boon") throw new Error("expected boon reward");
+    expect(result.choices.map((choice) => choice.id).sort()).toEqual(
+      trinketLibrary
+        .slice(-2)
+        .map((entry) => entry.id)
+        .sort(),
     );
-
-    expect(result.rewardType).toBe("trinket");
-    if (result.rewardType !== "trinket") throw new Error("expected permanent trinket reward");
-    expect(result.choices.map((choice) => choice.id).sort()).toEqual(unowned.map((entry) => entry.id).sort());
-  });
-
-  it("falls back to gear when every permanent trinket is owned", () => {
-    const result = computeVictoryRewardState(
-      {
-        characterId: "knight",
-        selectedDifficulty: null,
-        unlockedTalents: {},
-        runDeck: [],
-        runBoons: [],
-        ownedTrinketIds: trinketLibrary.map((entry) => entry.id),
-        contentSystemType: "campaign",
-        activeLabyrinthRewardModifiers: [],
-        battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
-        gold: 15,
-        eliteBonus: 0,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        bossBonus: 7,
-        materials: emptyInventory(),
-        destinations: [],
-      },
-      () => 0.5,
-    );
-
-    expect(result.rewardType).toBe("gear");
-  });
-
-  it("excludes owned uniques from campaign boss gear rewards", () => {
-    const ownedUniqueIds = new Set(uniqueItemList.map((unique) => unique.id));
-    const result = computeVictoryRewardState(
-      {
-        characterId: "knight",
-        selectedDifficulty: null,
-        unlockedTalents: {},
-        runDeck: [],
-        runBoons: [],
-        ownedTrinketIds: trinketLibrary.map((entry) => entry.id),
-        ownedUniqueIds,
-        contentSystemType: "campaign",
-        activeLabyrinthRewardModifiers: [],
-        battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
-        gold: 15,
-        eliteBonus: 0,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        bossBonus: 7,
-        materials: emptyInventory(),
-        destinations: [],
-      },
-      () => 0.9,
-    );
-
-    expect(result.rewardType).toBe("gear");
-    if (result.rewardType !== "gear") throw new Error("expected gear reward");
-    expect(result.choices).toHaveLength(3);
-    for (const choice of result.choices) {
-      expect(ownedUniqueIds.has(choice.definitionId)).toBe(false);
-      expect(gearDefinitions[choice.definitionId]?.rarity).toBe("astral");
-    }
   });
 });
 

@@ -9,6 +9,7 @@ import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./com
 import { rollTalentChance } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { dealPlayerTypedHit } from "./player-typed-hit";
+import { scaledGearLeechHeal } from "./gear-effects";
 import { scalePerMana } from "./amount-helpers";
 
 interface CompanionScaleContext {
@@ -131,7 +132,10 @@ export function resolveCompanionTurnStart(
 
     if (damageDealt > 0 && state.talentEffects.companionLeechChance > 0) {
       if (rollPercent(state.talentEffects.companionLeechChance, getBattleRng(state))) {
-        const leechHeal = scalePlayerLeechHeal(afterEffects, computeLeechHeal(damageDealt));
+        const leechHeal = scalePlayerLeechHeal(
+          afterEffects,
+          scaledGearLeechHeal(computeLeechHeal(damageDealt), afterEffects.gearEffects),
+        );
         if (leechHeal > 0) {
           afterEffects = applyLeechHealing(afterEffects, leechHeal, combatTexts);
         }

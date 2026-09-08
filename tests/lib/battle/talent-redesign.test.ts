@@ -325,20 +325,19 @@ describe("repeatable talent replacements", () => {
     expect(play(repeated, attack("physical3")).enemyStatuses.bleed).toBe(4);
   });
 
-  it("Smoke Screen is a fixed conditional Dodge bonus", () => {
+  it("Smoke Screen damages a Burning enemy on each Dodge", () => {
     const state = battle({
       talentEffects: talents("burn", "burn-dmg-5"),
       enemyStatuses: { burn: 1 },
-      rng: () => 0.075,
+      rng: () => 0.01,
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
     });
-    expect(processEnemyAttack(state, []).playerDodgeCount).toBe(1);
-    expect(
-      processEnemyAttack({ ...state, enemyStatuses: { ...state.enemyStatuses, burn: 100 } }, []).playerDodgeCount,
-    ).toBe(1);
-    expect(
-      processEnemyAttack({ ...state, enemyStatuses: { ...state.enemyStatuses, burn: 0 } }, []).playerDodgeCount,
-    ).toBe(0);
+    const first = processEnemyAttack(state, []);
+    expect(first.enemyHealth).toBe(98);
+    expect(processEnemyAttack(first, []).enemyHealth).toBe(96);
+    expect(processEnemyAttack({ ...state, enemyStatuses: { ...state.enemyStatuses, burn: 0 } }, []).enemyHealth).toBe(
+      100,
+    );
   });
 
   it("Sun-Struck Shield reacts to blocked attacks but not reflected damage", () => {

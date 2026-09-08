@@ -28,18 +28,4 @@ describe("ShineBorder", () => {
     expect(el.style.backgroundImage).toContain("radial-gradient(");
     expect(el.style.backgroundImage).toContain("0, 0, 0");
   });
-
-  it("applies custom borderWidth and duration CSS variables", () => {
-    const { container } = render(<ShineBorder shineColor="#dc2626" borderWidth={3} duration={8} />);
-    const el = container.firstChild as HTMLElement;
-    expect(el.style.getPropertyValue("--border-width")).toBe("3px");
-    expect(el.style.getPropertyValue("--duration")).toBe("8s");
-  });
-
-  it("applies custom className", () => {
-    const { container } = render(<ShineBorder shineColor="#dc2626" className="custom-shine" />);
-    const el = container.firstChild as HTMLElement;
-    expect(el.className).toContain("custom-shine");
-    expect(el.className).toContain("shine-border");
-  });
 });

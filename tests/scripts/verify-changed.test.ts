@@ -43,6 +43,21 @@ describe("verification selection", () => {
     expect(plan.commands[0]).toMatchObject({ key: "unit-changed", args: ["vitest", "run", filePath] });
   });
 
+  it("omits retired test files without losing surviving tests or risk escalations", () => {
+    const retired = "tests/lib/battle/retired-coverage.test.ts";
+    const surviving = "tests/lib/battle/damage-calc.test.ts";
+    expect(fs.existsSync(retired)).toBe(false);
+    const plan = resolveRoutePlan([retired, surviving]);
+    expect(plan.paths).toEqual([retired, surviving]);
+    expect(plan.commands).toEqual([
+      expect.objectContaining({ key: "unit-changed", args: ["vitest", "run", surviving] }),
+    ]);
+    expect(resolveRoutePlan([retired]).commands).toEqual([]);
+    expect(resolveRoutePlan(["tests/desktop/retired-coverage.test.ts"]).commands.map((command) => command.key)).toEqual(
+      ["unit-desktop"],
+    );
+  });
+
   it("runs repository-reading tooling tests exactly once", () => {
     expect(resolveRoutePlan(["scripts/check.mjs"]).commands.map((command) => command.key)).toEqual(["unit-tooling"]);
     expect(resolveRoutePlan(["tests/scripts/check.test.ts"]).commands.map((command) => command.key)).toEqual([

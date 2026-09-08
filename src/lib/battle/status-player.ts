@@ -58,7 +58,8 @@ export function applyCleanseHeals(state: BattleState, combatTexts?: CombatTextEv
     state.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
     combatTexts,
   );
-  return applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
+  const healed = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
+  return healed.talentEffects.nextHolyFreeOnCleanse ? setFlag(healed, "nextHolyCardFree", true) : healed;
 }
 
 export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {
@@ -68,6 +69,17 @@ export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, 
     nextState = applyCleanseHeals(nextState, combatTexts);
   }
   return nextState;
+}
+
+export function applyHealthThresholdCleanse(
+  previousHealth: number,
+  state: BattleState,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
+  const threshold = (state.playerMaxHealth * state.talentEffects.cleanseBelowHealthPercent) / 100;
+  return threshold > 0 && previousHealth >= threshold && state.playerHealth < threshold && state.playerHealth > 0
+    ? removeHarmfulPlayerStatuses(state, Infinity, combatTexts)
+    : state;
 }
 
 function scaleArmorAmount(state: BattleState, amount: number): { state: BattleState; amount: number } {
@@ -225,8 +237,12 @@ export function applyPlayerStatusEffect(
   return addPlayerStatus(state, effect.status, amount);
 }
 
-export function shouldBlockPreventStunBuildup(state: BattleState): boolean {
-  return state.talentEffects.blockPreventsStun && state.playerStatuses.block > 0;
+export function shouldBlockPreventStatusBuildup(state: BattleState, status: DamageType | PlayerStatusId): boolean {
+  if (state.playerStatuses.block <= 0) return false;
+  if (status === "stun") return state.talentEffects.blockPreventsStun;
+  if (status === "bleed") return state.talentEffects.blockPreventsBleed;
+  if (status === "poison") return state.talentEffects.blockPreventsPoison;
+  return false;
 }
 
 export function applyPlayerDamageStatuses(
@@ -253,13 +269,6 @@ type DirectPlayerStatusId = Exclude<PlayerStatusId, "stun" | "freeze">;
 export type DirectPlayerStatusAttackEffect = Extract<EnemyAttackEffect, { kind: "player-status" }> & {
   status: DirectPlayerStatusId;
 };
-
-function shouldBlockPreventStatus(state: BattleState, status: DirectPlayerStatusId) {
-  if (state.playerStatuses.block <= 0) return false;
-  if (status === "bleed" && state.talentEffects.blockPreventsBleed) return true;
-  if (status === "poison" && state.talentEffects.blockPreventsPoison) return true;
-  return false;
-}
 
 function applyHarmfulStatusFromAttack(
   state: BattleState,
@@ -309,7 +318,7 @@ export function applyPlayerStatusFromAttack(
 ): BattleState {
   const status = effect.status;
   const amount = effect.amount;
-  const blockPreventsStatus = shouldBlockPreventStatus(state, status);
+  const blockPreventsStatus = shouldBlockPreventStatusBuildup(state, status);
 
   if (harmfulPlayerStatusIds.includes(status)) {
     return applyHarmfulStatusFromAttack(state, status, amount, blockPreventsStatus, combatTexts);

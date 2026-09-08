@@ -342,6 +342,22 @@ function applyBlockAbsorption(state: BattleState, damage: number): { state: Batt
   return { state: nextState, remainingDamage };
 }
 
+export function computeTalentDamageToEnemy(
+  state: BattleState,
+  damageType: DamageType,
+  amount: number,
+  derived: boolean,
+) {
+  const base = derived ? Math.round(amount) : paceCombatMagnitude(state, amount, "player");
+  const multiplier = derived
+    ? getEnemyTraitDamageMultiplier(state, damageType)
+    : getEnemyDamageMultiplier(state, damageType);
+  const damage = Math.max(0, Math.round(base * multiplier));
+  const afterBlock = applyBlockAbsorption(state, damage);
+  const armor = damageType === "physical" || damageType === "stun" ? state.enemyMitigation.armor : 0;
+  return { state: afterBlock.state, remainingDamage: Math.max(0, afterBlock.remainingDamage - armor) };
+}
+
 export function computeReflectedHolyDamageToEnemy(state: BattleState, blockLost: number) {
   const damage = Math.round(
     (blockLost * state.talentEffects.holyReflectionBlockLostPercent * getEnemyTraitDamageMultiplier(state, "holy")) /
@@ -382,7 +398,11 @@ export function computeCardDamageToEnemy(
   }
   const baseDamage = computeBaseDamage(state, effect, card, context?.baseDamageBonus, context?.companionAttack);
   const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
-  const totalBonus = computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus;
+  const unwoundedBonus =
+    effect.damageType === "bleed" && state.enemyStatuses.bleed === 0
+      ? state.talentEffects.bleedUnwoundedBonusPercent / 100
+      : 0;
+  const totalBonus = computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus + unwoundedBonus;
   const totalMultiplier = Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);
   const scaledDamage = Math.round(baseDamage * totalMultiplier * encounterMultiplier);
   const pacedDamage = paceCombatMagnitude(stateAfterFirst, scaledDamage, "player");

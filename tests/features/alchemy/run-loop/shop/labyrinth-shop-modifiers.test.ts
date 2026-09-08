@@ -97,7 +97,7 @@ describe("Labyrinth shops", () => {
 
   it("Strong Spirits preserves probabilities in Luck Potion", () => {
     const doubled = doublePotionPotency(cardById["luck-potion"]!);
-    expect(doubled.descriptionLines[0]).toBe("Restore 8 Mana or Steal 8 Gold or Gain 8 Block");
+    expect(doubled.descriptionLines[0]).toBe("Gain 8 Mana or gain 8 Gold or gain 8 Block");
     expect(doubled.effects[0]).toMatchObject({
       probability: 0.5,
       successEffects: [{ amount: 8 }],

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects } from "../../fixtures/default-battle-state";
 import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
-import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/damage-rider-leech";
+import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/player-typed-hit";
 
 describe("dealDamageToEnemy — lifesteal", () => {
   it("heals player when effect has lifesteal", () => {

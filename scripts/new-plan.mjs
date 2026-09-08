@@ -32,7 +32,7 @@ Describe the user-visible outcome and the bounded implementation scope.
 
 - [ ] Record the baseline and relevant constraints.
 - [ ] Implement the most pragmatic architectural solution — the best long-term shape (even when larger than the minimal workaround).
-- [ ] Add or extend only consequential coverage.
+- [ ] Review coverage: retain, improve, consolidate, remove, or add tests according to [test value](../../CONTRIBUTING.md#test-value-and-coverage-strategy).
 - [ ] Run path-scoped verification.
 - [ ] Complete and archive this plan using the plan lifecycle, then report verification.
 

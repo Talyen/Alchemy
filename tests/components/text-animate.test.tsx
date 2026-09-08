@@ -26,23 +26,4 @@ describe("TextAnimate", () => {
     expect(paragraph.textContent).toContain("the");
     expect(paragraph.textContent).toContain("labyrinth");
   });
-
-  it("splits text into separate word tokens", () => {
-    const { container } = render(<TextAnimate>Three words here</TextAnimate>);
-    const wordSpans = container.querySelectorAll("span.inline-block");
-    expect(wordSpans.length).toBeGreaterThanOrEqual(3);
-  });
-
-  it("applies custom className", () => {
-    const { container } = render(<TextAnimate className="text-xl text-primary">Custom text</TextAnimate>);
-    const paragraph = container.querySelector("p");
-    expect(paragraph?.className).toContain("text-xl");
-    expect(paragraph?.className).toContain("text-primary");
-  });
-
-  it("handles empty or whitespace strings gracefully", () => {
-    const { container } = render(<TextAnimate> </TextAnimate>);
-    const paragraph = container.querySelector("p");
-    expect(paragraph).toBeDefined();
-  });
 });

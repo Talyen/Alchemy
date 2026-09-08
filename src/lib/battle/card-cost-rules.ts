@@ -79,6 +79,12 @@ function computeStandardCost(
   }
   if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
 
+  if (state.flags.nextHolyCardFree && cardHasDamageType(card, "holy")) {
+    effectiveCost = 0;
+    disarmedFlags.add("nextHolyCardFree");
+  }
+  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
+
   if (state.flags.nextArcheryCardFree && !!card.tags?.includes("archery")) {
     effectiveCost = 0;
     disarmedFlags.add("nextArcheryCardFree");

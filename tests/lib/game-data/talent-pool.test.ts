@@ -198,7 +198,7 @@ describe("computeTalentEffects", () => {
     expect(effects.flatPhysicalDamage).toBe(0);
   });
 
-  it("keeps replacement effects distinct and concatenates armor thresholds", () => {
+  it("keeps the low-Health cleanse distinct from Armor thresholds", () => {
     const effects = computeTalentEffects({
       physical: ["physical-shield-bash"],
       block: ["block-to-physical"],
@@ -216,12 +216,8 @@ describe("computeTalentEffects", () => {
     expect(effects.afflictionLeechBonusPercent).toBe(50);
     expect(effects.goldOnWish).toBe(3);
     expect(effects.blockPerDeclinedWishCard).toBe(1);
-    expect(effects.healthThresholdArmor).toHaveLength(2);
-    expect(effects.healthThresholdArmor).toEqual(
-      expect.arrayContaining([
-        { threshold: 50, amount: 5 },
-        { threshold: 25, amount: 3 },
-      ]),
-    );
+    expect(effects.cleanseBelowHealthPercent).toBe(25);
+    expect(effects.healthThresholdArmor).toHaveLength(1);
+    expect(effects.healthThresholdArmor).toEqual(expect.arrayContaining([{ threshold: 50, amount: 5 }]));
   });
 });

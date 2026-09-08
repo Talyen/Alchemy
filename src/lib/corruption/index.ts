@@ -3,7 +3,7 @@ import { CORRUPTION_TRANSFORM_CHANCE, MIXED_POTION_CARD_ID } from "@/lib/game-co
 import { pickRandom } from "@/lib/utils";
 import { getCorruptionMutationGroups, type CorruptionMutationGroup } from "./mutations";
 
-export { getEditableCorruptionTargets, replaceNumberAt } from "./numeric";
+export { getEditableCorruptionTargets, replaceNumberAt, updateCardNumericValue } from "./numeric";
 
 export interface CorruptionResult {
   originalCard: BattleCard;

@@ -11,9 +11,10 @@ it owns imports, fixtures, page objects, tags, helpers, and diagnostics.
 
 ## Workflow
 
-1. Classify the test as animation/boot or gameplay flow, then use the canonical import and fixture selected by the E2E README.
-2. Reach targeted state with the documented injector or page object. Preserve legitimate player actions for the behavior under test; do not add production-hidden QA controls.
-3. Use semantic locators and deterministic waits. Keep animation coverage on real timing and fast combat only in fixture-backed flow tests.
-4. Run the narrow spec while iterating, then the changed-path route. Read the bounded failure digest before opening a raw trace.
+1. Apply [coverage selection](../../../tests/e2e/README.md#choosing-browser-coverage): establish the distinct browser risk and inspect existing protection before adding a test. Consolidate or retire low-value coverage when justified.
+2. Classify the test as animation/boot or gameplay flow, then use the canonical import and fixture selected by the E2E README.
+3. Reach targeted state with the documented injector or page object. Preserve legitimate player actions for the behavior under test; do not add production-hidden QA controls.
+4. Use semantic locators and deterministic waits. Keep animation coverage on real timing and fast combat only in fixture-backed flow tests.
+5. Run the narrow spec while iterating, then the changed-path route. Read the bounded failure digest before opening a raw trace.
 
 Keep mechanics in the canonical README; update this skill only when the task-selection or execution strategy changes.

@@ -1,28 +1,24 @@
 import { hasEncounterBenefit } from "./types";
 import { computeReflectedHolyDamageToEnemy, forgeAppliesToDamageType } from "./damage-calc";
+import { addForgeToPlayer } from "./status-player";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { mergeCombatText, addGoldWithCombatText, payKillPayouts } from "./combat-text";
 import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
 import { applyWishEffect } from "./wish";
+import { applyDamageBlock, applyHolyLifesteal, applyHolyTithe } from "./damage-rider-leech";
+import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
 import {
-  applyDamageBlock,
-  applyHolyLifesteal,
-  applyHolyTithe,
+  applyBrassCenser,
   applyLifestealAndPlayerHitTriggers,
   applyNatureLeech,
-} from "./damage-rider-leech";
-import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
-import { applyBrassCenser, dealPlayerTypedHit, tryPoisonStunProc } from "./player-typed-hit";
+  dealTalentTypedHit,
+  tryTalentTypedHit,
+  dealPlayerTypedHit,
+  tryPoisonStunProc,
+} from "./player-typed-hit";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import {
-  setFlag,
-  addEnemyStatus,
-  addPlayerStatus,
-  damageEnemyHealth,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+import { setFlag, addEnemyStatus, damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
 import { BATTLE_CONFIG, BLACKFLETCH_EXECUTE_HEALTH_PERCENT } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
@@ -35,11 +31,11 @@ function applyBurnDamageRiders(
 ): BattleState {
   let nextState = state;
   if (state.talentEffects.forgeOnBurnDealt > 0) {
-    nextState = addPlayerStatus(nextState, "forge", state.talentEffects.forgeOnBurnDealt);
+    nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnBurnDealt, combatTexts);
   }
   if (state.gearEffects.forgeOnBurnDealt > 0 && !state.flags.emberforgedUsedThisTurn) {
     nextState = setFlag(
-      addPlayerStatus(nextState, "forge", state.gearEffects.forgeOnBurnDealt),
+      addForgeToPlayer(nextState, state.gearEffects.forgeOnBurnDealt, combatTexts),
       "emberforgedUsedThisTurn",
       true,
     );
@@ -55,13 +51,21 @@ function applyNatureDamageRiders(
   modifiedDamage: number,
   _card: BattleCard,
   combatTexts: CombatTextEvent[],
+  enemyHealthBeforeHit: number,
 ): BattleState {
   if (modifiedDamage <= 0) return state;
   let nextState = applyLuckyCloverGold(state, modifiedDamage, combatTexts);
   nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
   if (state.talentEffects.natureLeechChance > 0 || state.gearEffects.natureLeechChance > 0) {
-    nextState = applyNatureLeech(nextState, modifiedDamage, combatTexts);
+    nextState = applyNatureLeech(nextState, modifiedDamage, combatTexts, enemyHealthBeforeHit);
   }
+  nextState = tryTalentTypedHit(
+    nextState,
+    state.talentEffects.naturePoisonDamageChance,
+    "poison",
+    modifiedDamage,
+    combatTexts,
+  );
   if (rollTalentChance(state.talentEffects.naturePoisonChance, state)) {
     nextState = addEnemyStatus(nextState, "poison", modifiedDamage);
   }
@@ -89,11 +93,18 @@ function applyForgeStunRider(
   return dealPlayerTypedHit(state, "stun", state.trinketEffects.forgeStunAmount, combatTexts);
 }
 
-function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: number, combatTexts: CombatTextEvent[]) {
+function applyHolyDamageRiders(
+  state: BattleState,
+  card: BattleCard,
+  damage: number,
+  combatTexts: CombatTextEvent[],
+  enemyHealthBeforeHit: number,
+) {
   let nextState = applyHolyLifesteal(state, damage, combatTexts);
   nextState = applyDamageBlock(nextState, damage, combatTexts);
   nextState = applyHolyTithe(nextState, damage, combatTexts);
 
+  nextState = tryTalentTypedHit(nextState, state.talentEffects.holyBurnDamageChance, "burn", damage, combatTexts);
   if (rollTalentChance(nextState.talentEffects.holyBurnChance, nextState)) {
     nextState = addEnemyStatus(nextState, "burn", damage);
   }
@@ -102,7 +113,7 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
     nextState = applyWishEffect(nextState, card, 1, combatTexts);
   }
 
-  return applyBrassCenser(nextState, damage, combatTexts);
+  return applyBrassCenser(nextState, damage, combatTexts, enemyHealthBeforeHit);
 }
 
 export function reflectBlockedAttackAsHoly(
@@ -124,7 +135,7 @@ export function reflectBlockedAttackAsHoly(
     combatTexts,
     hit.previousHealth,
   );
-  nextState = applyHolyDamageRiders(nextState, card, remainingDamage, combatTexts);
+  nextState = applyHolyDamageRiders(nextState, card, remainingDamage, combatTexts, hit.previousHealth);
   return processEncounterTraitHealthThreshold(hit.previousHealth, nextState, combatTexts);
 }
 
@@ -188,7 +199,7 @@ export function applyAttackPurgeRider(state: BattleState, combatTexts: CombatTex
     const hit = damageEnemyHealth(nextState, holyDamage);
     nextState = processEncounterTraitHealthThreshold(hit.previousHealth, hit.state, combatTexts);
     nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
-    nextState = applyBrassCenser(nextState, holyDamage, combatTexts);
+    nextState = applyBrassCenser(nextState, holyDamage, combatTexts, hit.previousHealth);
   }
   return nextState;
 }
@@ -204,6 +215,8 @@ export function applyDamageRiders(
   companionAttack = false,
 ) {
   const enemyWasBurningBefore = state.enemyStatuses.burn > 0;
+  const enemyWasStunned = state.enemyCC.stunSkipTurns > 0;
+  const enemyWasFrozen = state.enemyCC.freezeSkipTurns > 0;
   const prePurgeState = isExtraHit ? state : applyAttackPurgeRider(state, combatTexts);
   const hit = damageEnemyHealth(prePurgeState, modifiedDamage);
   const previousHealth = hit.previousHealth;
@@ -211,7 +224,6 @@ export function applyDamageRiders(
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
 
-  nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
   if (
     card.tags?.includes("archery") &&
     nextState.talentEffects.goldOnArcheryKill > 0 &&
@@ -219,6 +231,24 @@ export function applyDamageRiders(
     nextState.enemyHealth <= 0
   ) {
     nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnArcheryKill, combatTexts);
+  }
+  if (effect.damageType === "physical") {
+    nextState = tryTalentTypedHit(
+      nextState,
+      state.talentEffects.physicalBleedDamageChance,
+      "bleed",
+      modifiedDamage,
+      combatTexts,
+    );
+  }
+  if (effect.damageType === "bleed") {
+    nextState = tryTalentTypedHit(
+      nextState,
+      state.talentEffects.bleedPoisonDamageChance,
+      "poison",
+      modifiedDamage,
+      combatTexts,
+    );
   }
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts, previousHealth);
   if (effect.detonateIfEnemyBurning && enemyWasBurningBefore) {
@@ -239,16 +269,31 @@ export function applyDamageRiders(
     nextState = applyBurnDamageRiders(nextState, modifiedDamage, combatTexts);
   }
 
-  if (effect.lifesteal) {
+  if (
+    effect.lifesteal ||
+    (effect.damageType === "physical" && enemyWasStunned && state.talentEffects.physicalLeechVsStunned)
+  ) {
     nextState = applyLifestealAndPlayerHitTriggers(
       nextState,
       modifiedDamage,
       combatTexts,
       cardHealing,
       !companionAttack,
+      previousHealth,
     );
   }
 
+  if (modifiedDamage > 0 && enemyWasFrozen) {
+    if (companionAttack)
+      nextState = dealTalentTypedHit(
+        nextState,
+        "freeze",
+        state.talentEffects.companionFreezeDamageVsFrozen,
+        combatTexts,
+      );
+    if (card.tags?.includes("archery"))
+      nextState = dealTalentTypedHit(nextState, "holy", state.talentEffects.archeryHolyDamageVsFrozen, combatTexts);
+  }
   if (card.tags?.includes("archery") && modifiedDamage > 0) {
     if (!isExtraHit && rollTalentChance(nextState.talentEffects.archeryPlayTwiceChance, nextState)) {
       const secondHit = halveRounded(modifiedDamage);
@@ -267,6 +312,13 @@ export function applyDamageRiders(
     }
 
     if (!isExtraHit) {
+      nextState = tryTalentTypedHit(
+        nextState,
+        state.talentEffects.archeryBleedDamageChance,
+        "bleed",
+        modifiedDamage,
+        combatTexts,
+      );
       if (rollTalentChance(state.talentEffects.archeryBleedChance, nextState)) {
         nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);
       }
@@ -274,11 +326,11 @@ export function applyDamageRiders(
     }
   }
   if (effect.damageType === "holy") {
-    nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts);
+    nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts, previousHealth);
   }
 
   if (effect.damageType === "nature") {
-    nextState = applyNatureDamageRiders(nextState, modifiedDamage, card, combatTexts);
+    nextState = applyNatureDamageRiders(nextState, modifiedDamage, card, combatTexts, previousHealth);
   }
 
   if (modifiedDamage > 0) {
@@ -287,5 +339,15 @@ export function applyDamageRiders(
 
   nextState = processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
 
-  return consumeForgeAfterDamage(nextState, effect, modifiedDamage, companionAttack);
+  nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
+  nextState = consumeForgeAfterDamage(nextState, effect, modifiedDamage, companionAttack);
+  if (
+    modifiedDamage > 0 &&
+    enemyWasFrozen &&
+    effect.damageType === "physical" &&
+    state.talentEffects.forgeOnPhysicalVsFrozen > 0
+  ) {
+    nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnPhysicalVsFrozen, combatTexts);
+  }
+  return nextState;
 }

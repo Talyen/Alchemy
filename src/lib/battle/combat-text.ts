@@ -12,6 +12,7 @@ import {
   type CombatTextEvent,
   type NumericCombatTextEvent,
 } from "./types";
+import { halveRounded } from "./amount-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
 
 function isNoticeCombatText(event: CombatTextEvent) {
@@ -128,6 +129,8 @@ export function applyEnemyHealingWithCombatText(
   options?: { skipFightPacing?: boolean },
 ): BattleState {
   if (amount <= 0 || state.enemyHealth <= 0) return state;
+  if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) amount = halveRounded(amount);
+  if (state.enemyStatuses.bleed > 0 && state.talentEffects.bleedHalvesEnemyHealing) amount = halveRounded(amount);
   const healAmount = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "enemy");
   const nextHealth = clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth);
   const actualHeal = nextHealth - state.enemyHealth;
@@ -259,6 +262,11 @@ export function payKillPayouts(
   enemyWasAlive: boolean,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  if (state.enemyHealth > 0 || !enemyWasAlive || state.flags.killRewardsPaid) return state;
+  state = { ...state, flags: { ...state.flags, killRewardsPaid: true } };
+  if (state.enemyStatuses.poison > 0 && state.talentEffects.goldOnPoisonedKill > 0) {
+    state = addGoldWithCombatText(state, state.talentEffects.goldOnPoisonedKill, combatTexts);
+  }
   const afterBoneCharm =
     state.enemyHealth <= 0 && enemyWasAlive
       ? applyKillRewardHealing(state, state.trinketEffects.boneCharmHealOnKill, combatTexts)

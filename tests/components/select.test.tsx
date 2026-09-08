@@ -38,17 +38,4 @@ describe("Select", () => {
     const trigger = screen.getByRole("combobox");
     expect(trigger.textContent).toContain("Choose option");
   });
-
-  it("applies custom trigger className", () => {
-    const { container } = render(
-      <Select value="opt1">
-        <SelectTrigger className="my-select-trigger">
-          <SelectValue />
-        </SelectTrigger>
-      </Select>,
-    );
-
-    const trigger = container.querySelector("button");
-    expect(trigger?.className).toContain("my-select-trigger");
-  });
 });

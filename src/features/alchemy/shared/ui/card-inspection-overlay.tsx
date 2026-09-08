@@ -34,11 +34,8 @@ function InspectionGrid({
   return (
     <CardSelectionGrid
       items={items}
-      fitHeight
       page={pagination.key === resetKey ? pagination.page : 0}
       onPageChange={(page) => setPagination({ key: resetKey, page })}
-      emptyMessage="No cards here."
-      paginationReserveSpace
       renderItem={({ card }) => (
         <div className={viewCardWidthClass}>
           <BattleCardButton
@@ -49,7 +46,6 @@ function InspectionGrid({
             className={viewCardWidthClass}
             descriptionContext={descriptionContext}
           />
-          <p className="mt-2 text-center text-sm font-semibold">{getCardDisplayTitle(card)}</p>
         </div>
       )}
     />
@@ -59,17 +55,14 @@ function InspectionGrid({
 function InspectionPanel({
   collections,
   selected,
-  onSelect,
   onClose,
   descriptionContext,
   returnFocusRef,
   open,
 }: CardInspectionOverlayProps & { selected: CardInspectionView }) {
   const titleId = useId();
-  const descriptionId = useId();
   const { panelRef, handleKeyDown } = useDialogFocus(returnFocusRef);
   const collection = collections.find((entry) => entry.id === selected) ?? collections[0];
-  const inCombat = collections.length > 1;
   return (
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains keyboard focus and stops backdrop clicks
     <div
@@ -77,20 +70,19 @@ function InspectionPanel({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      aria-describedby={descriptionId}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
       onClick={(event) => event.stopPropagation()}
-      className="alchemy-shell relative flex h-[92cqh] w-full max-w-6xl flex-col rounded-shell-screen border border-border/80 p-6"
+      className="alchemy-shell relative flex max-h-full w-fit max-w-[min(100%,72rem)] flex-col overflow-y-auto rounded-shell-screen border border-border/80 p-6"
     >
-      <div className="flex items-center justify-between gap-4">
-        <h2 id={titleId} className="font-sans text-3xl">
-          {LABELS[selected]} · {collection?.cards.length ?? 0} cards
+      <div className="relative mb-3 flex min-h-11 shrink-0 items-center justify-center px-14">
+        <h2 id={titleId} className="text-center font-sans text-3xl">
+          {LABELS[selected]}
         </h2>
         <Button
           variant="outline"
           size="icon"
-          className="h-11 w-11"
+          className="absolute top-0 right-0 h-11 w-11"
           aria-label="Close card inspection"
           data-dialog-initial-focus
           onClick={onClose}
@@ -98,28 +90,6 @@ function InspectionPanel({
           <X className="h-5 w-5" />
         </Button>
       </div>
-      {inCombat ? (
-        <div className="mt-4 flex justify-center gap-3" role="group" aria-label="Card collections">
-          {collections.map((entry) => (
-            <Button
-              key={entry.id}
-              size="sm"
-              variant={entry.id === selected ? "primary" : "outline"}
-              aria-pressed={entry.id === selected}
-              onClick={() => onSelect(entry.id)}
-            >
-              {LABELS[entry.id]} · {entry.cards.length}
-            </Button>
-          ))}
-        </div>
-      ) : null}
-      <p id={descriptionId} className="my-3 text-center text-sm text-muted-foreground">
-        {selected === "deck"
-          ? inCombat
-            ? "Your run’s deck, including cards Consumed this battle. Battle-only cards appear in their current piles."
-            : "Your run’s deck."
-          : "Shown alphabetically, not in draw order."}
-      </p>
       <InspectionGrid
         cards={collection?.cards ?? []}
         descriptionContext={descriptionContext}
@@ -134,7 +104,6 @@ interface CardInspectionOverlayProps {
   selected: CardInspectionView | null;
   collections: CardInspectionCollection[];
   descriptionContext: CardDescriptionContext;
-  onSelect: (view: CardInspectionView) => void;
   onClose: () => void;
   returnFocusRef?: RefObject<HTMLElement | null>;
 }

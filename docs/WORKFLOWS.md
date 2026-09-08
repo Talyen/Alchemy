@@ -11,7 +11,7 @@ only when a checklist crosses that boundary. Generated asset barrels are
 outputs; use the [asset workflow](./WORKFLOWS-ASSETS.md) for their sources and
 regeneration. Each checklist's tests are selected by the changed-path route
 ([CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change)); only
-catalog-external tests are named inline.
+catalog-external tests are named inline. Named suites identify existing protection and verification entry points, not a requirement to add a test for every feature variant. Apply [test value](../CONTRIBUTING.md#test-value-and-coverage-strategy) when choosing coverage; preserve explicit save-compatibility and browser-timing requirements.
 
 ## Task index
 

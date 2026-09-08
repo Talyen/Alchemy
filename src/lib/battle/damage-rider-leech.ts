@@ -41,9 +41,23 @@ export function applyLeechHealing(
   const afflicted = options.afflicted ?? (state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0);
   const bonus = afflicted ? state.talentEffects.afflictionLeechBonusPercent : 0;
   const healing = Math.round(amount * (1 + bonus / PERCENT_DENOMINATOR));
-  const restored = options.cardHealing
+  let restored = options.cardHealing
     ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true })
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
+  const actualHealing = Math.max(0, restored.playerHealth - state.playerHealth);
+  if (
+    state.playerHealth < state.playerMaxHealth / 2 &&
+    state.talentEffects.leechBlockBelowHalfPercent > 0 &&
+    actualHealing > 0
+  ) {
+    restored = addPlayerStatusWithCombatText(
+      restored,
+      "block",
+      Math.round((actualHealing * state.talentEffects.leechBlockBelowHalfPercent) / 100),
+      combatTexts,
+      { skipFightPacing: true },
+    );
+  }
   return healing > 0 &&
     state.playerHealth < state.playerMaxHealth &&
     restored.playerHealth >= restored.playerMaxHealth &&
@@ -106,17 +120,16 @@ function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
   return state;
 }
 
-function applyLeechHitRiders(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
+export function applyLeechHitRewards(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   let nextState = state;
   nextState = applyLeechStatusRider(nextState, "bleed", state.talentEffects.leechBleedChance, damage);
   nextState = applyLeechManaRider(nextState, combatTexts);
   nextState = applyLeechTrinketSiphonRider(nextState);
-  nextState = applyLeechStatusRider(nextState, "poison", state.talentEffects.leechPoisonChance, damage);
-  return nextState;
+  return applyLeechStatusRider(nextState, "poison", state.talentEffects.leechPoisonChance, damage);
 }
 
-export function applyLifestealAndPlayerHitTriggers(
+export function applyLeechHitHealing(
   state: BattleState,
   damage: number,
   combatTexts: CombatTextEvent[],
@@ -150,15 +163,7 @@ export function applyLifestealAndPlayerHitTriggers(
     healAmount = Math.round(healAmount * (1 + state.talentEffects.cardLeechBonusPercent / PERCENT_DENOMINATOR));
   }
 
-  const nextState = executePlayerHealing(state, healAmount, combatTexts, cardHealing);
-  return applyLeechHitRiders(nextState, damage, combatTexts);
-}
-
-export function applyNatureLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  if (damage <= 0) return state;
-  const leechChance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
-  if (leechChance <= 0 || !rollTalentChance(leechChance, state)) return state;
-  return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts);
+  return executePlayerHealing(state, healAmount, combatTexts, cardHealing);
 }
 
 export function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {

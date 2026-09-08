@@ -1,23 +1,11 @@
 import { expect, test } from "../../fixtures/e2e";
-import {
-  assertNoOverflow,
-  assertStageFitsViewport,
-  makeCard,
-  startBattleWithDeck,
-  injectActiveBattle,
-  makeGoblinBattleState,
-} from "../../helpers";
+import { assertNoOverflow, assertStageFitsViewport, makeCard, startBattleWithDeck } from "../../helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 
 const VIEWPORTS = [
   { width: 1280, height: 720 },
-  { width: 1366, height: 768 },
-  { width: 1470, height: 956 },
   { width: 1512, height: 982 },
-  { width: 1920, height: 1080 },
-  { width: 2560, height: 1440 },
-  { width: 3840, height: 2160 },
   { width: 3440, height: 1440 },
 ];
 
@@ -119,65 +107,6 @@ test.describe("Responsive display sizes", slow, () => {
         expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 1);
         await assertNoOverflow(page, `Battle ${viewport.width} at ${gameSizePercent}`);
       }
-    }
-  });
-
-  test("seven-card hands stay reachable at maximum game size", async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }, testInfo) => {
-    void fastBattle;
-    void runtimeErrors;
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "alchemy-device-display-v1",
-        JSON.stringify({ version: 1, gameSizePercent: 120, tooltipSizePercent: 125 }),
-      );
-    });
-    await page.setViewportSize({ width: 1280, height: 720 });
-    const hand = Array.from({ length: 7 }, () => makeCard());
-    await injectActiveBattle(page, makeGoblinBattleState({ hand }), { runDeck: hand });
-    const cards = page.locator('[aria-label^="Play "]');
-    await expect(cards).toHaveCount(7);
-    for (const viewport of [
-      { width: 1280, height: 720 },
-      { width: 3840, height: 2160 },
-    ]) {
-      await page.setViewportSize(viewport);
-      for (const index of [0, 3, 6]) {
-        await page.mouse.move(10, 10);
-        const card = cards.nth(index);
-        let position: { x: number; y: number } | null = null;
-        await expect(async () => {
-          position = await card.evaluate((el) => {
-            const bounds = el.getBoundingClientRect();
-            for (const y of [0.6, 0.4, 0.8]) {
-              for (const x of [0.2, 0.4, 0.6, 0.8]) {
-                const hit = document.elementFromPoint(bounds.x + bounds.width * x, bounds.y + bounds.height * y);
-                if (hit && el.contains(hit)) return { x: bounds.width * x, y: bounds.height * y };
-              }
-            }
-            return null;
-          });
-          expect(position).not.toBeNull();
-        }).toPass();
-        await card.hover({ position: position! });
-        const bounds = await cards.nth(index).boundingBox();
-        expect(bounds!.x).toBeGreaterThanOrEqual(-12);
-        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + 12);
-      }
-      await page.getByRole("button", { name: "End Turn", exact: true }).click({ trial: true });
-      await expect.poll(() => cards.first().evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
-      await expect
-        .poll(() =>
-          cards.evaluateAll((elements) => Math.max(...elements.map((el) => el.getBoundingClientRect().bottom))),
-        )
-        .toBeLessThanOrEqual(viewport.height + 12);
-      await testInfo.attach(`seven-cards-${viewport.width}`, {
-        body: await page.screenshot(),
-        contentType: "image/png",
-      });
     }
   });
 

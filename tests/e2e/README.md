@@ -9,6 +9,10 @@ Browser specs live in [`specs/`](./specs/). Electron specs and their launch/setu
 
 Helpers live in this directory and are re-exported from [`tests/helpers.ts`](../helpers.ts) (all modules, including `mid-combat-save` and `gear-combat`). Layout assertions are in [`layout-assertions.ts`](./layout-assertions.ts), page objects in [`tests/pages/`](../pages/), and fixtures in [`tests/fixtures/e2e.ts`](../fixtures/e2e.ts). Run-phase assertions use `expectRunPhase(page, phase)` from [`tests/pages/game-stage.ts`](../pages/game-stage.ts).
 
+## Choosing browser coverage
+
+Apply [test value and coverage strategy](../../CONTRIBUTING.md#test-value-and-coverage-strategy) before choosing fixtures. Identify the browser-specific failure a test would detect and inspect existing journeys first. Use representative journeys and shared UI behavior rather than one spec per mechanic or content variant. Extend a journey only when the assertion fits its purpose; keep unrelated scenarios independently diagnosable. Consolidate or retire low-value coverage under the shared policy, preserving real-timing canaries where timing is the behavior under test.
+
 ## Running focused checks
 
 For current source edits, run `PLAYWRIGHT_VITE_MODE=dev npx playwright test <spec> --project=chromium`. Preview mode is the default and serves the existing build; rebuild before using it to verify source changes. Use `--project=chromium` with an equals sign so a following spec is not consumed as another project name.
@@ -17,7 +21,7 @@ Run browser batches serially or combine specs in one invocation. Browser, Electr
 
 Browser tests default to port 4173. To use another port, run `PLAYWRIGHT_BROWSER_PREVIEW_PORT=4273 PLAYWRIGHT_VITE_MODE=dev npx playwright test tests/e2e/specs/app-boot.spec.ts --project=chromium`. The override also sets the browser URL and seeded storage origin. Electron uses `PLAYWRIGHT_ELECTRON_PREVIEW_PORT` (default 4175), and performance uses `PLAYWRIGHT_PERF_PORT` (default 4176). Preview mode still requires rebuilding after source changes.
 
-Run the full Vitest suite separately from browser and performance batches. Concurrent full-unit and browser runs can exhaust local resources and cause unrelated interaction and teardown timeouts; reproduce the affected checks without that competing load before changing assertions or timeouts.
+Run the full Vitest suite separately from browser and performance batches. Concurrent full-unit and browser runs can exhaust local resources and cause unrelated interaction and teardown timeouts; reproduce the affected checks without that competing load before changing assertions or timeouts. If multiple browser workers time out during startup or teardown with GPU-stall warnings, isolate an affected spec with `--workers=1` before changing its timeout or assertions.
 
 ## Test import
 

@@ -4,7 +4,6 @@ import { getBattleRng, rngInt } from "@/lib/rng";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
-import { halveRounded } from "./amount-helpers";
 import {
   type BattleState,
   type CombatTextEvent,
@@ -44,15 +43,7 @@ export function scaleByRoomMultiplier(state: BattleState, value: number): number
 export function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyRegeneration <= 0) return state;
   if (isFreezeActiveForAspect(state, "regen")) return state;
-  let healAmount = state.enemyRegeneration;
-  if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) {
-    healAmount = halveRounded(healAmount);
-  }
-  if (state.enemyStatuses.bleed > 0 && state.talentEffects.bleedHalvesEnemyHealing) {
-    healAmount = halveRounded(healAmount);
-  }
-  if (healAmount <= 0) return state;
-  let nextState = applyEnemyHealingWithCombatText(state, healAmount, combatTexts);
+  let nextState = applyEnemyHealingWithCombatText(state, state.enemyRegeneration, combatTexts);
   if (nextState.enemyHealth > state.enemyHealth && hasEnemyTrait(state, "regeneration"))
     nextState = recordEnemyAbilityActivation(nextState, "regeneration");
   if (

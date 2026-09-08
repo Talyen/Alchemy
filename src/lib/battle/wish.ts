@@ -1,7 +1,8 @@
+import { dealTalentTypedHit } from "./player-typed-hit";
 import { hasEncounterBenefit } from "./types";
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
 import { applyDrawResult, drawFromState } from "./draw";
 import { type BattleState, type CombatTextEvent } from "./types";
 import {
@@ -14,7 +15,7 @@ import {
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
+import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
 import {
   PERCENT_DENOMINATOR,
   WISH_CHOICE_COUNT,
@@ -26,53 +27,11 @@ import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-con
 import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
-function upgradeRepeatedWishEffects(
-  effect: BattleCardEffect,
-  original: BattleCard,
-  upgraded: BattleCard,
-): BattleCardEffect {
-  if (effect.kind !== "repeat-over-turns") return effect;
-  return {
-    ...effect,
-    effects: effect.effects.map((child) => {
-      const index = original.effects.findIndex((source) => JSON.stringify(source) === JSON.stringify(child));
-      return index >= 0 ? upgraded.effects[index]! : upgradeRepeatedWishEffects(child, original, upgraded);
-    }),
-  };
-}
-
 function upgradeWishCard(card: BattleCard): BattleCard {
-  const targets = getEditableCorruptionTargets(card);
-  if (targets.length === 0) return card;
-
-  const nextCard: BattleCard = {
-    ...card,
-    descriptionLines: [...card.descriptionLines],
-    effects: card.effects.map((effect) => ({ ...effect })),
-  };
-
-  const sortedTargets = [...targets].sort((a, b) => {
-    if (a.lineIndex !== b.lineIndex) {
-      return b.lineIndex - a.lineIndex;
-    }
-    return b.matchIndex - a.matchIndex;
-  });
-
-  for (const target of sortedTargets) {
-    const nextValue = target.value + 1;
-    const effect = nextCard.effects[target.effectIndex] as Record<string, unknown> | undefined;
-    if (effect && effect[target.field] === target.value) {
-      effect[target.field] = nextValue;
-    }
-    nextCard.descriptionLines[target.lineIndex] = replaceNumberAt(
-      nextCard.descriptionLines[target.lineIndex]!,
-      target.matchIndex,
-      nextValue,
-    );
-  }
-
-  nextCard.effects = nextCard.effects.map((effect) => upgradeRepeatedWishEffects(effect, card, nextCard));
-  return nextCard;
+  const targets = getEditableCorruptionTargets(card).sort(
+    (a, b) => b.lineIndex - a.lineIndex || b.matchIndex - a.matchIndex,
+  );
+  return targets.reduce((next, target) => updateCardNumericValue(next, target, target.value + 1), card);
 }
 
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
@@ -174,7 +133,8 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
 }
 
 function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  const burnAmount = state.talentEffects.burnOnWish + state.gearEffects.burnOnWish;
+  state = dealTalentTypedHit(state, "burn", state.talentEffects.burnOnWish, combatTexts);
+  const burnAmount = state.gearEffects.burnOnWish;
   if (burnAmount <= 0 || state.enemyHealth <= 0) return state;
   const enemyWasAlive = state.enemyHealth > 0;
   const multiplier = getEnemyDamageMultiplier(state, "burn") * gearFrozenDamageMultiplier(state);

@@ -49,7 +49,6 @@ export function ConfirmationDialog({
       onClose={onCancel}
       dismissOnEscape={dismissOnEscape}
       dismissOnBackdrop={dismissOnBackdrop}
-      position="fixed"
       zIndex={120}
       dim={dimBackground}
       className="motion-overlay flex items-center justify-center px-6"

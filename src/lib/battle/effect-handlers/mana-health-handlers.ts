@@ -1,4 +1,4 @@
-import { applyCardHealing } from "../status-player";
+import { applyCardHealing, applyHealthThresholdCleanse } from "../status-player";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import {
@@ -128,5 +128,6 @@ export const applyHealEffect = defineHandler("heal", (state, card, effect, potio
 });
 
 export const applyLoseHealthEffect = defineHandler("lose-health", (state, _card, effect, _potionMult, combatTexts) => {
-  return dealSelfDamage(state, effect.amount, "health", combatTexts).state;
+  const damaged = dealSelfDamage(state, effect.amount, "health", combatTexts).state;
+  return applyHealthThresholdCleanse(state.playerHealth, damaged, combatTexts);
 });

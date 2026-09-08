@@ -22,6 +22,8 @@ Add the union member in [`src/lib/game-data/types.ts`](../types.ts), a schema de
 - `damage` cannot have both `doubleIfEnemyBurning` and `tripleIfEnemyNotBurning`.
 - `gain-gold` with `ifEnemyStunned` fizzles unless the enemy is stunned at all.
 
+- Numeric upgrades and corruption share `updateCardNumericValue` in `src/lib/corruption/numeric.ts`. Targets can address nested scheduled effects when their amounts have separate description lines. A scheduled effect sharing one authored amount with an immediate effect changes with that amount; separately authored delayed amounts change independently. “Draw a card” represents one editable draw, while schedule durations are not editable magnitude targets. Keep original catalog effects immutable.
+
 ## Tests
 
 - [`tests/lib/battle/effect-handlers-registry.test.ts`](../../../../tests/lib/battle/effect-handlers-registry.test.ts) — every non-recursive kind has a handler.

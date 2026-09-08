@@ -108,70 +108,63 @@ test("hover reconciles through a play, draw, and reflow with the pointer in the 
   expect(errors).toEqual([]);
 });
 
-for (const viewport of [
-  { width: 1280, height: 720 },
-  { width: 1920, height: 1080 },
-  { width: 2560, height: 1080 },
+for (const { width, height, gameSizePercent } of [
+  { width: 1280, height: 720, gameSizePercent: 120 },
+  { width: 1920, height: 1080, gameSizePercent: 100 },
+  { width: 2560, height: 1080, gameSizePercent: 80 },
 ]) {
-  for (const gameSizePercent of [80, 100, 120]) {
-    test(
-      `hand fits and controls stay fixed at ${viewport.width} / ${gameSizePercent}%`,
-      slow,
-      async ({ page }, testInfo) => {
-        const errors = failOnRuntimeErrors(page);
-        await page.setViewportSize(viewport);
-        await page.addInitScript(
-          (size) =>
-            localStorage.setItem(
-              "alchemy-device-display-v1",
-              JSON.stringify({ version: 1, gameSizePercent: size, tooltipSizePercent: 100 }),
-            ),
-          gameSizePercent,
-        );
-        await openHand(page);
-        const positions = () =>
-          page
-            .locator('[data-testid="draw-pile"], [data-testid="discard-pile"], [data-testid="mana-panel"]')
-            .or(page.getByRole("button", { name: "End Turn", exact: true }))
-            .evaluateAll((elements) =>
-              elements.map((el) => {
-                const r = el.getBoundingClientRect();
-                return { x: r.x, y: r.y };
-              }),
-            );
-        const initial = await positions();
-        await testInfo.attach("seven-card-hand", { body: await page.screenshot(), contentType: "image/png" });
-        for (let count = 7; count >= 1; count--) {
-          await expect(page.locator("[data-hand-slot]")).toHaveCount(count);
-          await page.mouse.move(0, 0);
-          const bounds = await page.locator("[data-hand-slot] button").evaluateAll((elements) =>
-            elements.map((el) => {
-              const r = el.getBoundingClientRect();
-              return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
-            }),
-          );
-          const left = await page.getByTestId("mana-panel").locator("..").boundingBox();
-          const right = await page.getByTestId("discard-pile").locator("../..").boundingBox();
-          for (const rect of bounds) {
-            expect(rect.left).toBeGreaterThan(left!.x + left!.width);
-            expect(rect.right).toBeLessThan(right!.x);
-            expect(rect.bottom).toBeLessThanOrEqual(viewport.height + 1);
-            expect(rect.top).toBeGreaterThanOrEqual(0);
-          }
-          const current = await positions();
-          current.forEach((position, index) => {
-            expect(position.x).toBeCloseTo(initial[index]!.x, 0);
-            expect(position.y).toBeCloseTo(initial[index]!.y, 0);
-          });
-          if (count >= 6) await sweep(page);
-          if (count === 1) await inspectOuterEdges(page);
-          if (count > 1) {
-            const slot = (await geometry(page))[Math.floor(count / 2)]!;
-            await page.mouse.click(slot.x, slot.y + slot.height / 2);
-          }
-        }
-        expect(errors).toEqual([]);
-      },
+  test(`hand fits and controls stay fixed at ${width} / ${gameSizePercent}%`, slow, async ({ page }, testInfo) => {
+    const errors = failOnRuntimeErrors(page);
+    await page.setViewportSize({ width, height });
+    await page.addInitScript(
+      (size) =>
+        localStorage.setItem(
+          "alchemy-device-display-v1",
+          JSON.stringify({ version: 1, gameSizePercent: size, tooltipSizePercent: 100 }),
+        ),
+      gameSizePercent,
     );
-  }
+    await openHand(page);
+    const positions = () =>
+      page
+        .locator('[data-testid="draw-pile"], [data-testid="discard-pile"], [data-testid="mana-panel"]')
+        .or(page.getByRole("button", { name: "End Turn", exact: true }))
+        .evaluateAll((elements) =>
+          elements.map((el) => {
+            const r = el.getBoundingClientRect();
+            return { x: r.x, y: r.y };
+          }),
+        );
+    const initial = await positions();
+    await testInfo.attach("seven-card-hand", { body: await page.screenshot(), contentType: "image/png" });
+    for (let count = 7; count >= 1; count--) {
+      await expect(page.locator("[data-hand-slot]")).toHaveCount(count);
+      await page.mouse.move(0, 0);
+      const bounds = await page.locator("[data-hand-slot] button").evaluateAll((elements) =>
+        elements.map((el) => {
+          const r = el.getBoundingClientRect();
+          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+        }),
+      );
+      const left = await page.getByTestId("mana-panel").locator("..").boundingBox();
+      const right = await page.getByTestId("discard-pile").locator("../..").boundingBox();
+      for (const rect of bounds) {
+        expect(rect.left).toBeGreaterThan(left!.x + left!.width);
+        expect(rect.right).toBeLessThan(right!.x);
+        expect(rect.bottom).toBeLessThanOrEqual(height + 1);
+        expect(rect.top).toBeGreaterThanOrEqual(0);
+      }
+      const current = await positions();
+      current.forEach((position, index) => {
+        expect(position.x).toBeCloseTo(initial[index]!.x, 0);
+        expect(position.y).toBeCloseTo(initial[index]!.y, 0);
+      });
+      if (count === 7 || count === 1) await inspectOuterEdges(page);
+      if (count > 1) {
+        const slot = (await geometry(page))[Math.floor(count / 2)]!;
+        await page.mouse.click(slot.x, slot.y + slot.height / 2);
+      }
+    }
+    expect(errors).toEqual([]);
+  });
 }

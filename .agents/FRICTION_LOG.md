@@ -19,3 +19,9 @@ Add one short row for unresolved friction with the observation and next useful a
 [September 2026](./history/friction-2026-09.md). All previous resolved entries are preserved there.
 
 - Corruption expansion: `normalize-active-run-data.ts`’s offer-repair serializer used a truthy Consume check, unlike the explicit-override hydration contract. Preserve `false` as well as `true`; the canonical rule is in `shared/storage/MIGRATIONS.md`.
+
+- 2026-09-08: `cardHasKeyword` in battle classification checks damage types and explicit tags, so it cannot identify untagged summon/Companion-buff cards. Whistle must use the full `getCardKeywords` query, as documented in GAME_RULES’ Companion card perks. Separately authored delayed card amounts also exposed an assumption in numeric upgrades that every matching delayed effect shared the immediate description number; numeric targets now retain scheduled effect paths.
+
+- 2026-09-08: Changed-unit verification selected deleted test paths, causing Vitest to fail an otherwise valid retirement with no matching files. Selection now skips absent unit files while preserving changed paths and risk escalations; CONTRIBUTING documents selecting surviving coverage when consolidating.
+
+- 2026-09-08: A six-worker development-mode layout batch timed out across simple startup and layout checks with GPU-stall warnings (`playwright-20260908t164214z-12124-6dfda6`); the unchanged 4K check passed with one worker. The E2E focused-check guide now calls for serial isolation before changing assertions or timeouts under this symptom.

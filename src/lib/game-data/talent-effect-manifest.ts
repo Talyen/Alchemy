@@ -6,6 +6,38 @@ interface HealthThresholdBonus {
 }
 
 export interface TalentEffectManifest {
+  cleanseCcOnDodge: boolean;
+  burnOnDodgeBurning: number;
+  consumeDetonatesBurn: boolean;
+  poisonOnNatureCardVsPoisoned: number;
+  companionFreezeDamageVsFrozen: number;
+  drawOnArcheryVsStunned: number;
+  archeryHolyDamageVsFrozen: number;
+  physicalLeechVsStunned: boolean;
+  forgeOnPhysicalVsFrozen: number;
+  cleanseBelowHealthPercent: number;
+  leechBlockBelowHalfPercent: number;
+  leechHolyDamageVsLowHealth: number;
+  armorOnPotionCard: number;
+  archeryPhysicalWithoutBlock: number;
+  blockOnArmorCard: number;
+  bleedUnwoundedBonusPercent: number;
+  cleansePoisonOnBurnCard: number;
+  companionActsOnCard: boolean;
+  forgeOnConsume: number;
+  uncappedDrawOnConsume: number;
+  nextHolyFreeOnCleanse: boolean;
+  poisonCardPhysicalVsPoisoned: number;
+  goldOnPoisonedKill: number;
+  poisonDamageOnConsume: number;
+  bleedPoisonDamageChance: number;
+  naturePoisonDamageChance: number;
+  holyBurnDamageChance: number;
+  leechPoisonDamageChance: number;
+  archeryBleedDamageChance: number;
+  physicalBleedDamageChance: number;
+  leechBleedDamageChance: number;
+
   manaNextTurnOnWish: number;
   holyReflectionBlockLostPercent: number;
   blockOnHolyCard: number;

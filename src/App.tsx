@@ -27,6 +27,7 @@ import {
 import { renderAlchemyScreenRoute } from "@/app/screen-routes";
 import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
+import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
 import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltip-root";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
@@ -257,7 +258,6 @@ function AppMainContent({
           selected={inspection.selected}
           collections={inspection.collections}
           descriptionContext={inspection.battleDescriptionContext ?? cardDescriptionContext}
-          onSelect={openCardInspection}
           onClose={inspection.close}
           returnFocusRef={inspectionReturnFocusRef}
         />
@@ -324,6 +324,7 @@ function AppInner({
     <ErrorBoundary label={screen}>
       <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background">
         <div className="relative" style={frameStyle}>
+          <div ref={setModalRoot} className="contents" />
           <AppMainContent
             saveBlockedByNewerVersion={saveBlockedByNewerVersion}
             vrStageRef={vrStageRef}

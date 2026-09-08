@@ -1,6 +1,5 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { BattleCard } from "@/lib/game-data";
-import { halveRounded } from "./amount-helpers";
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { applyEnemyLeechHealing, processEnemyDamageEffect } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
@@ -41,14 +40,7 @@ export function processEncounterTraitActionStart(state: BattleState, combatTexts
   if (hasEnemyTrait(nextState, "overgrowth")) {
     if (isFreezeActiveForAspect(nextState, "regen")) return nextState;
     nextState = recordEnemyAbilityActivation(nextState, "overgrowth");
-    let amount = scaleByRoomMultiplier(nextState, 1);
-    if (nextState.enemyStatuses.poison > 0 && nextState.talentEffects.poisonHalvesHealing) {
-      amount = halveRounded(amount);
-    }
-    if (nextState.enemyStatuses.bleed > 0 && nextState.talentEffects.bleedHalvesEnemyHealing) {
-      amount = halveRounded(amount);
-    }
-    nextState = applyEnemyHealingWithCombatText(nextState, amount, combatTexts);
+    nextState = applyEnemyHealingWithCombatText(nextState, scaleByRoomMultiplier(nextState, 1), combatTexts);
   }
   return nextState;
 }

@@ -91,8 +91,6 @@ export default defineConfig({
         "tests/**",
         "**/*.md",
       ],
-      // Enforced by the nightly coverage job (nightly.yml) — keep thresholds
-      // at or below the measured baseline and ratchet them upward.
       thresholds: {
         lines: 85,
         functions: 85,

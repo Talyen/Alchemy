@@ -506,11 +506,14 @@ describe("reworked cards", () => {
     expect(result.state.exhausted).toContainEqual(expect.objectContaining({ id: "sniff-out" }));
   });
 
-  it("stargaze deals freeze damage and opens a wish", () => {
+  it("stargaze deals freeze damage and schedules its wish", () => {
     const card = { ...cardById["stargaze"] };
     const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
     expect(result.state.enemyStatuses.freeze).toBeGreaterThan(0);
-    expect(result.state.wishOptions).toHaveLength(3);
+    expect(result.state.wishOptions).toBeNull();
+    expect(result.state.pendingTurnStartEffects).toEqual([
+      { remainingTurns: 1, effects: [{ kind: "wish", amount: 1 }] },
+    ]);
   });
 
   it("ray-of-frost hits now and queues a freeze echo", () => {
@@ -519,7 +522,7 @@ describe("reworked cards", () => {
     expect(result.state.enemyStatuses.freeze).toBeGreaterThan(0);
     expect(result.state.pendingTurnStartEffects).toHaveLength(1);
     expect(result.state.pendingTurnStartEffects[0]?.effects).toEqual([
-      { kind: "damage", damageType: "freeze", amount: 1 },
+      { kind: "damage", damageType: "freeze", amount: 3 },
     ]);
   });
 
@@ -540,8 +543,8 @@ describe("reworked cards", () => {
   it("thorn-mail grants armor and thorns", () => {
     const card = { ...cardById["thorn-mail"] };
     const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
-    expect(result.state.playerStatuses.armor).toBe(2);
-    expect(result.state.playerStatuses.thorns).toBe(1);
+    expect(result.state.playerStatuses.armor).toBe(1);
+    expect(result.state.playerStatuses.thorns).toBe(2);
   });
 
   it("luck-potion restores mana on a successful flip", () => {

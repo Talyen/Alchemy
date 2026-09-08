@@ -13,6 +13,9 @@ import {
 } from "@/lib/content-validation/card-parity";
 
 describe("card descriptions vs effects", () => {
+  it("keeps every playable catalog card at one Mana", () => {
+    for (const card of cardLibrary) expect(card.cost, card.id).toBe(1);
+  });
   it("keeps Gambler's Shot range punctuation readable", () => {
     const card = cardLibrary.find((candidate) => candidate.id === "gamblers-shot");
     expect(card?.descriptionLines).toContain("Deal 1–6 Random damage");
@@ -59,11 +62,11 @@ describe("card descriptions vs effects", () => {
         (l) =>
           /^Deals \d+/.test(l) ||
           /^Restores \d+/.test(l) ||
-          /^Grants \d+ extra Mana/.test(l) ||
+          /^Grants \d+/.test(l) ||
           /^Cleanses \d+/.test(l) ||
           /^Steals \d+/.test(l) ||
           /^Gains? \d+ Block/.test(l) ||
-          /^Draws \d+/.test(l) ||
+          /^Draws (?:\d+|a) /.test(l) ||
           / or /.test(l),
       );
       expect(companionLine, `${card.id} missing companion turn line`).toBeDefined();
@@ -73,7 +76,7 @@ describe("card descriptions vs effects", () => {
   });
 
   it("every 'Gain' line references a known effect type", () => {
-    const knownGainTargets = ["Block", "Armor", "Thorns", "Forge", "Health", "Maximum Mana", "Gold"];
+    const knownGainTargets = ["Block", "Armor", "Thorns", "Forge", "Health", "Mana", "Gold"];
     for (const card of cardLibrary) {
       for (const line of card.descriptionLines) {
         if (line.startsWith("Gain ")) {

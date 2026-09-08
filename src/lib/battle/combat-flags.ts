@@ -1,4 +1,6 @@
 export const FLAG_DEFINITIONS = {
+  killRewardsPaid: { default: false as const, preserveAs: null },
+  nextHolyCardFree: { default: false as const, preserveAs: null },
   pendingWishMana: { default: 0 as const, preserveAs: null },
   previousCardWasArchery: { default: false as const, preserveAs: null },
   previousCardWasNature: { default: false as const, preserveAs: null },

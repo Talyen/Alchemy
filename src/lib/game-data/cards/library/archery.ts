@@ -3,42 +3,73 @@ import * as assetRefs from "../../assets";
 import * as cardBuilders from "../card-builders";
 
 export const archeryCards: BattleCard[] = [
-  cardBuilders.archeryDamageCard({
+  {
     id: "fire-arrow",
+    title: "Fire Arrow",
     art: assetRefs.fireArrow,
-    damageType: "burn",
-    amount: 2,
-  }),
-  cardBuilders.archeryDamageCard({
+    cost: 1,
+    descriptionLines: ["Deal 1 Burn damage", "Remove 2 enemy Armor", "Archery"],
+    tags: ["archery"],
+    effects: [
+      { kind: "damage", damageType: "burn", amount: 1 },
+      { kind: "remove-enemy-armor", amount: 2 },
+    ],
+  },
+  {
     id: "ice-shot",
+    title: "Ice Shot",
     art: assetRefs.iceShot,
-    damageType: "freeze",
-    amount: 2,
-  }),
-  cardBuilders.archeryDamageCard({
+    cost: 1,
+    descriptionLines: ["Deal 1 Freeze damage", "Your next Archery card is free", "Archery"],
+    tags: ["archery"],
+    effects: [{ kind: "damage", damageType: "freeze", amount: 1 }, { kind: "next-archery-free" }],
+  },
+  {
     id: "venom-arrow",
+    title: "Venom Arrow",
     art: assetRefs.venomArrow,
-    damageType: "poison",
-    amount: 2,
-  }),
+    cost: 1,
+    descriptionLines: ["Deal 1 Poison damage", "Deal 2 Physical damage", "Archery"],
+    tags: ["archery"],
+    effects: [
+      { kind: "damage", damageType: "poison", amount: 1 },
+      { kind: "damage", damageType: "physical", amount: 2 },
+    ],
+  },
   cardBuilders.archeryDamageCard({
     id: "serrated-arrowhead",
     art: assetRefs.serratedArrowhead,
     damageType: "bleed",
-    amount: 2,
-  }),
-  cardBuilders.archeryDamageCard({
-    id: "concussive-shot",
-    art: assetRefs.concussiveShot,
-    damageType: "stun",
     amount: 3,
   }),
-  cardBuilders.archeryDamageCard({
+  {
+    id: "concussive-shot",
+    title: "Concussive Shot",
+    art: assetRefs.concussiveShot,
+    cost: 1,
+    descriptionLines: ["Deal 2 Stun damage", "Deal 2 Physical damage at the start of your next turn", "Archery"],
+    tags: ["archery"],
+    effects: [
+      { kind: "damage", damageType: "stun", amount: 2 },
+      {
+        kind: "repeat-over-turns",
+        remainingTurns: 1,
+        effects: [{ kind: "damage", damageType: "physical", amount: 2 }],
+      },
+    ],
+  },
+  {
     id: "lightning-arrow",
+    title: "Lightning Arrow",
     art: assetRefs.lightningArrow,
-    damageType: "nature",
-    amount: 2,
-  }),
+    cost: 1,
+    descriptionLines: ["Deal 1 Nature damage", "Gain 1 Forge", "Archery"],
+    tags: ["archery"],
+    effects: [
+      { kind: "damage", damageType: "nature", amount: 1 },
+      { kind: "player-status", status: "forge", amount: 1 },
+    ],
+  },
   cardBuilders.effectsCard({
     id: "bounty-shot",
     art: assetRefs.bountyShot,

@@ -126,7 +126,7 @@ export const ROUTES = Object.freeze([
     "unit-test",
     ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     ["unit-changed"],
-    [doc("CONTRIBUTING.md", "E2E policy", "test policy")],
+    [doc("CONTRIBUTING.md", "Test value and coverage strategy", "test policy")],
     "tests/lib/utils.test.ts",
     ["tests/scripts/**", "tests/architecture/**"],
   ),
@@ -189,7 +189,9 @@ export function resolveRoutePlan(paths) {
   const routes = resolveRoutes(normalized);
   const keys = new Set(routes.flatMap((candidate) => candidate.commands));
   if (routes.some((candidate) => candidate.id === "tooling")) keys.delete("related");
-  const changedTests = normalized.filter(isUnitTest);
+  const changedTests = normalized.filter(
+    (filePath) => isUnitTest(filePath) && existsSync(path.join(ROOT_DIR, filePath)),
+  );
   const relatedInputs = normalized.filter((filePath) => !isUnitTest(filePath) && isRelatedInput(filePath));
   if (changedTests.length === 0) keys.delete("unit-changed");
   if (relatedInputs.length === 0) keys.delete("related");

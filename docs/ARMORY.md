@@ -147,4 +147,4 @@ Use the path-scoped Gear gate in
 maintaining a second exhaustive command here. Test ownership is split between
 pure Gear rules, aggregate/persistence contracts, Armory screen behavior,
 architecture guards, and player flows; the changed-path route selects the
-current files for each layer.
+current files for each layer. These are verification entry points, not a requirement for coverage of every item or affix at every layer. Apply [test value](../CONTRIBUTING.md#test-value-and-coverage-strategy) to select representative flows and distinct rule risks, and consolidate or retire low-value cases when justified.

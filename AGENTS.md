@@ -59,6 +59,8 @@ Plain function components with typed props (no `React.FC`), `cn()` for classes. 
 
 ## Verification & environment
 
+Prefer fewer, higher-value tests; use the [test value policy](./CONTRIBUTING.md#test-value-and-coverage-strategy) to choose meaningful risks and the cheapest effective layer. Per-mechanic UI/E2E coverage is not a goal. During related work, proactively consolidate, streamline, or delete tests when justified, including unique low-value cases; no replacement or separate approval is required. Preserve meaningful protection and briefly explain material retirements.
+
 After edits use `verifier` skill. Tiers in [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change), command catalog in [REFERENCE](./docs/REFERENCE.md#environment--commands); triage in [REFERENCE#failure-first-triage](./docs/REFERENCE.md#failure-first-triage). Node/npm versions in `package.json`.
 
 ## Branch and commits

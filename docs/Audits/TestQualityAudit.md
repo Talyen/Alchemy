@@ -18,7 +18,7 @@ Product interaction defects → UIConsistency; structural test-support mass → 
 ## Hard stops
 
 - No invented coverage-% or wall-clock budgets that conflict with configured gates and CONTRIBUTING tiers.
-- Preserve unique battle, persistence, migration, architecture-guard, and player-flow owners; never delete a failing journey merely to shrink the portfolio.
+- Preserve meaningful battle, persistence, migration, architecture-guard, and critical player-flow protection. Apply [test value](../../CONTRIBUTING.md#test-value-and-coverage-strategy) to retirement, including unique low-value tests; diagnose failing journeys before deciding whether their expectations remain valid.
 - No dev-only QA shortcuts (Skip Combat / Unlock All selectors); use documented helpers and flows.
 - Follow [tests/e2e/README.md](../../tests/e2e/README.md) for current fixture and animation-canary requirements; preserve real timing where timing is the behavior under test.
 - Do not re-run full suites to hunt flakes; re-run only the suspect cluster. Do not treat deletion as inherently preferable to adding a missing semantic owner.
@@ -29,7 +29,7 @@ Map important failure modes to their current tests before adding or deleting cov
 
 For flake, inspect failure artifacts and distinguish a product race from timing, isolation, fixture, or environment problems. Reproduce the suspect scenario and relevant ordering or concurrency conditions; an isolated pass does not prove a parallel failure fixed. Never weaken an assertion or add retries just to hide the failure.
 
-Before removing overlap, identify the surviving assertion and prove it covers the same failure mode at the required layer and CI tier. Unit rules and browser wiring can exercise similar behavior while protecting different risks. Prioritize false confidence in critical behavior and blocked verification over redundant assertions or naming.
+Before removing overlap, identify the surviving assertion and establish that it covers the same failure mode at the required layer and CI tier. For unique low-value coverage, explain the limited risk and why upkeep outweighs its protection; replacement is not mandatory. Unit rules and browser wiring can exercise similar behavior while protecting different risks. Prioritize false confidence in critical behavior and blocked verification over redundant assertions or naming.
 
 Verify changed tests detect the intended failure and pass on correct behavior. For runtime or flake claims, compare the same scenario and report repetitions and conditions; bounded success is evidence, not a guarantee of zero flakes.
 
@@ -38,8 +38,8 @@ Verify changed tests detect the intended failure and pass on correct behavior. F
 - **Ownership:** battle/effects → `tests/lib/battle`, `tests/lib/game-data`; gear → `tests/lib/gear` + store tests; saves/migrations → storage + `tests/architecture/`; orchestration → stores/shell/navigation tests. Reuse page objects (`tests/pages/`) and helpers; introduce support abstractions only when they clarify a real interaction or invariant.
 - **Quality:** assert outcomes (HP deltas, events, reloaded save shape), not implementation details or log fingerprints; no "function exists" assertions; no soft-fails; seeded RNG for battle edges; reuse corrupt/partial save fixtures.
 - **Fixtures:** share builders when they preserve a common invariant or prevent demonstrated drift; keep scenario-specific setup legible. Judge parameterized cases by the distinct behaviors and failure modes they exercise, not their count.
-- **Allowed E2E fixes:** delete duplicate journeys; add missing critical journeys; shorten waits after deterministic bootstrap; place journeys in the configured tiers without copying them solely for scheduling; stable roles/test ids over text/index hunts; repair isolation; improve diagnostics.
-- Reduction applies to redundant coverage only; add tests anywhere a confirmed risk lacks a trustworthy owner — extend an existing suite before creating one.
+- **Allowed E2E fixes:** consolidate or retire low-value journeys under the shared test value policy; add missing critical journeys; shorten waits after deterministic bootstrap; place journeys in the configured tiers without copying them solely for scheduling; stable roles/test ids over text/index hunts; repair isolation; improve diagnostics.
+- Prefer a smaller, stronger portfolio. Retain, improve, consolidate, move to a cheaper layer, retire, or add coverage according to distinct risk and cost. An uncovered line or untested content variant is not itself a finding; add coverage for consequential gaps, extending existing protection where practical.
 
 ## Known signals
 

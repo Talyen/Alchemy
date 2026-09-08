@@ -16,25 +16,32 @@ export interface CorruptionTarget {
   matchIndex: number;
   value: number;
   effectIndex: number;
+  effectPath?: number[];
   field: CorruptibleNumericField;
 }
 
 export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
   const targets: CorruptionTarget[] = [];
-  const valueQueue = new Map<number, Array<{ effectIndex: number; field: CorruptibleNumericField }>>();
-  for (let idx = 0; idx < card.effects.length; idx += 1) {
-    const effect = card.effects[idx] as Record<string, unknown>;
+  const valueQueue = new Map<number, Array<Pick<CorruptionTarget, "effectIndex" | "effectPath" | "field">>>();
+  function collect(effect: BattleCardEffect, effectIndex: number, effectPath: number[] = []) {
+    const record = effect as Record<string, unknown>;
     for (const field of CORRUPTIBLE_NUMERIC_FIELDS) {
-      const value = effect[field];
+      const value = record[field];
       if (typeof value !== "number" || !Number.isFinite(value)) continue;
       if (!valueQueue.has(value)) valueQueue.set(value, []);
-      valueQueue.get(value)!.push({ effectIndex: idx, field });
+      valueQueue.get(value)!.push({ effectIndex, ...(effectPath.length ? { effectPath } : {}), field });
+    }
+    if (effect.kind === "repeat-over-turns") {
+      effect.effects.forEach((child, index) => collect(child, effectIndex, [...effectPath, index]));
     }
   }
+  card.effects.forEach((effect, index) => collect(effect, index));
   const queueCursor = new Map<number, number>();
 
   card.descriptionLines.forEach((line, lineIndex) => {
-    for (const match of line.matchAll(CORRUPTION_TEXT_PATTERNS.authoredNumber)) {
+    const matches =
+      line === "Draw a card" ? [{ index: 5, 0: "1" }] : [...line.matchAll(CORRUPTION_TEXT_PATTERNS.authoredNumber)];
+    for (const match of matches) {
       const matchIndex = match.index;
       if (matchIndex === undefined) continue;
       const value = Number(match[0]);
@@ -45,42 +52,62 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
       const matched = queue[cursor];
       if (!matched) continue;
       queueCursor.set(value, cursor + 1);
-      targets.push({ lineIndex, matchIndex, value, effectIndex: matched.effectIndex, field: matched.field });
+      targets.push({ lineIndex, matchIndex, value, ...matched });
     }
   });
 
   return targets;
 }
 
-function cloneCard(card: BattleCard): BattleCard {
-  return {
-    ...card,
-    descriptionLines: [...card.descriptionLines],
-    effects: card.effects.map((effect) => ({ ...effect })),
-  };
-}
-
 export function replaceNumberAt(line: string, matchIndex: number, nextValue: number): string {
+  if (line === "Draw a card" && matchIndex === 5) return nextValue === 1 ? line : `Draw ${nextValue} cards`;
   if (matchIndex < 0 || matchIndex >= line.length) return line;
   const match = line.slice(matchIndex).match(CORRUPTION_TEXT_PATTERNS.leadingNumber);
   if (!match) return line;
-  return `${line.slice(0, matchIndex)}${nextValue}${line.slice(matchIndex + match[0].length)}`;
+  const replaced = `${line.slice(0, matchIndex)}${nextValue}${line.slice(matchIndex + match[0].length)}`;
+  if (/^Draw \d+ cards?$/i.test(replaced)) return nextValue === 1 ? "Draw a card" : `Draw ${nextValue} cards`;
+  if (/^Gain \d+ Mana Crystals?$/.test(replaced)) return `Gain ${nextValue} Mana Crystal${nextValue === 1 ? "" : "s"}`;
+  if (/^Cleanse \d+ harmful status effects?$/.test(replaced))
+    return `Cleanse ${nextValue} harmful status effect${nextValue === 1 ? "" : "s"}`;
+  return replaced;
 }
 
-function updateRepeatedCorruption(
-  effect: BattleCardEffect,
-  sourceEffect: BattleCardEffect,
-  field: CorruptibleNumericField,
-  nextValue: number,
-): BattleCardEffect {
-  if (effect.kind !== "repeat-over-turns") return effect;
+export function getCorruptionTargetEffect(card: BattleCard, target: CorruptionTarget): BattleCardEffect | undefined {
+  let effect = card.effects[target.effectIndex];
+  for (const index of target.effectPath ?? []) {
+    if (effect?.kind !== "repeat-over-turns") return undefined;
+    effect = effect.effects[index];
+  }
+  return effect;
+}
+
+export function updateCardNumericValue(card: BattleCard, target: CorruptionTarget, nextValue: number): BattleCard {
+  const source = getCorruptionTargetEffect(card, target);
+  const line = card.descriptionLines[target.lineIndex];
+  if (!source || (source as Record<string, unknown>)[target.field] !== target.value || line === undefined) return card;
+  const nextLine = replaceNumberAt(line, target.matchIndex, nextValue);
+  if (nextLine === line) return card;
+  const pathKey = (root: number, path: number[]) => [root, ...path].join("/");
+  const selected = pathKey(target.effectIndex, target.effectPath ?? []);
+  const authored = new Set(
+    getEditableCorruptionTargets(card).map((entry) => pathKey(entry.effectIndex, entry.effectPath ?? [])),
+  );
+  function update(effect: BattleCardEffect, root: number, path: number[] = []): BattleCardEffect {
+    const key = pathKey(root, path);
+    if (
+      key === selected ||
+      (path.length > 0 && !authored.has(key) && JSON.stringify(effect) === JSON.stringify(source))
+    ) {
+      return { ...effect, [target.field]: nextValue };
+    }
+    return effect.kind === "repeat-over-turns"
+      ? { ...effect, effects: effect.effects.map((child, index) => update(child, root, [...path, index])) }
+      : effect;
+  }
   return {
-    ...effect,
-    effects: effect.effects.map((child) =>
-      JSON.stringify(child) === JSON.stringify(sourceEffect)
-        ? { ...child, [field]: nextValue }
-        : updateRepeatedCorruption(child, sourceEffect, field, nextValue),
-    ),
+    ...card,
+    descriptionLines: card.descriptionLines.map((entry, index) => (index === target.lineIndex ? nextLine : entry)),
+    effects: card.effects.map((effect, index) => update(effect, index)),
   };
 }
 
@@ -89,7 +116,7 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
   if (currentLine === undefined) return card;
 
   let nextValue = Math.max(CORRUPTION_MIN_VALUE, target.value + delta);
-  const sourceEffect = card.effects[target.effectIndex];
+  const sourceEffect = getCorruptionTargetEffect(card, target);
   if (sourceEffect?.kind === "random-damage") {
     if (target.field === "minAmount") nextValue = Math.min(nextValue, sourceEffect.maxAmount);
     if (target.field === "maxAmount") nextValue = Math.max(nextValue, sourceEffect.minAmount);
@@ -98,19 +125,10 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
   const nextLine = replaceNumberAt(currentLine, target.matchIndex, nextValue);
   if (nextLine === currentLine && target.value !== nextValue) return card;
 
-  const nextCard = cloneCard(card);
-  const effect = nextCard.effects[target.effectIndex] as Record<string, unknown> | undefined;
-  if (!effect || effect[target.field] !== target.value) return card;
-
-  nextCard.descriptionLines[target.lineIndex] = nextLine;
-  effect[target.field] = nextValue;
-  if (sourceEffect) {
-    nextCard.effects = nextCard.effects.map((entry) =>
-      updateRepeatedCorruption(entry, sourceEffect, target.field, nextValue),
-    );
-  }
+  const nextCard = updateCardNumericValue(card, target, nextValue);
+  if (nextCard === card) return card;
   nextCard.corrupted = true;
-  const deltaLen = String(nextValue).length - String(target.value).length;
+  const deltaLen = nextLine.length - currentLine.length;
   const shiftedExisting =
     deltaLen !== 0
       ? (card.corruptedValuePositions ?? []).map((pos) =>
@@ -122,6 +140,6 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
   nextCard.corruptedValuePositions = [
     ...shiftedExisting,
     { lineIndex: target.lineIndex, matchIndex: target.matchIndex },
-  ];
+  ].filter((position) => /^\d/.test(nextCard.descriptionLines[position.lineIndex]?.slice(position.matchIndex) ?? ""));
   return nextCard;
 }

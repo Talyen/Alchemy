@@ -12,4 +12,6 @@ description: Select and run Alchemy verification after edits and before handoff,
 3. Before handoff, run `npm run check -- <paths>`. It includes applicable verification, so a separate identical `verify` run immediately beforehand is unnecessary. Documentation-only changes use documentation and format checks; executable changes receive the broader gates defined by CONTRIBUTING.
 4. Resolve failures or report the remaining limitation. If a relevant input changes after a passing run, rerun the affected gate. Follow [failure-first triage](../../../docs/REFERENCE.md#failure-first-triage) for bounded diagnostics.
 
+Review test changes against [test value](../../../CONTRIBUTING.md#test-value-and-coverage-strategy): prefer existing protection, remove unjustified overlap, and select surviving tests when consolidating. Report material retirements and accepted risks without requiring a new test for every change.
+
 Green checks do not establish that the requested behavior is complete. Review the result against the request and report what changed, checks actually run, and unresolved limitations. Finalize task-owned plans using [workflow hygiene](../../../CONTRIBUTING.md#hooks-and-workflow-hygiene). Close browser tabs created for the task; leave pre-existing user tabs intact.

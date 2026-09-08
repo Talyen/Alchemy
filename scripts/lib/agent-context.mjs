@@ -80,6 +80,8 @@ export const CONTEXT_TASKS = {
   browser: {
     matches: /(?:\.spec\.ts$|^tests\/(?:e2e|electron|pages|fixtures)\/)/u,
     docs: [
+      owner("CONTRIBUTING.md", "Test value and coverage strategy"),
+      owner("tests/e2e/README.md", "Choosing browser coverage"),
       owner("tests/e2e/README.md", "Running focused checks"),
       owner("tests/e2e/README.md", "Navigation and bootstrap"),
     ],

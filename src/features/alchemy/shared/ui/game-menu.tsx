@@ -168,8 +168,8 @@ function GameMenuPanel({
                 message={item.gate ? messages[item.gate] : ""}
                 locked={item.gate ? locks[item.gate] : false}
                 onSelect={item.handler}
-                icon={<item.Icon className={cn("h-5 w-5", item.iconClassName)} />}
-                className={cn(controlLabelClass, "h-11 justify-start", item.danger && "text-red-400")}
+                icon={<item.Icon className={cn("h-6 w-6 shrink-0", item.iconClassName)} />}
+                className={cn(controlLabelClass, "h-11 w-full justify-start gap-3", item.danger && "text-red-400")}
               >
                 {item.label}
               </LockedMenuItem>

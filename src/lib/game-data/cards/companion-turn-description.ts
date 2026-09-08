@@ -13,18 +13,16 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
     case "restore-mana":
       return effect.allowOverflow
         ? `Grants ${effect.amount} extra Mana each turn`
-        : `Restores ${effect.amount} Mana each turn`;
+        : `Grants ${effect.amount} Mana each turn`;
     case "remove-harmful-status": {
-      const pluralSuffix = effect.amount === 1 ? "" : "es";
-      return `Cleanses ${effect.amount} harmful status${pluralSuffix} each turn`;
+      return `Cleanses ${effect.amount} harmful status effect${effect.amount === 1 ? "" : "s"} each turn`;
     }
     case "gain-gold":
-      return `Steals ${effect.amount} Gold each turn`;
+      return `Grants ${effect.amount} Gold each turn`;
     case "player-status":
       return effect.status === "block" ? `Gains ${effect.amount} Block each turn` : null;
     case "draw-cards": {
-      const pluralSuffix = effect.amount === 1 ? "" : "s";
-      return `Draws ${effect.amount} Card${pluralSuffix} each turn`;
+      return effect.amount === 1 ? "Draws a card each turn" : `Draws ${effect.amount} cards each turn`;
     }
     case "chance": {
       const success = effect.successEffects[0] ? companionTurnLine(effect.successEffects[0]) : null;

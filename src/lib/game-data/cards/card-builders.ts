@@ -37,13 +37,13 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
     case "heal":
       return `Restore ${effect.amount} Health`;
     case "restore-mana":
-      return `Restore ${effect.amount} Mana`;
+      return `Gain ${effect.amount} Mana`;
     case "gain-max-mana":
-      return `Gain ${effect.amount} Maximum Mana`;
+      return `Gain ${effect.amount} Mana Crystal${effect.amount === 1 ? "" : "s"}`;
     case "remove-harmful-status":
       return effect.removeAll
-        ? "Remove all harmful status effects"
-        : `Remove ${effect.amount} harmful status effect${effect.amount === 1 ? "" : "s"}`;
+        ? "Cleanse all harmful status effects"
+        : `Cleanse ${effect.amount} harmful status effect${effect.amount === 1 ? "" : "s"}`;
     case "player-status":
       if (
         effect.status === "block" ||
@@ -65,7 +65,7 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
     case "wish":
       return `Wish ${effect.amount}`;
     case "remove-enemy-armor":
-      return `Strip ${effect.amount} enemy Armor`;
+      return `Remove ${effect.amount} enemy Armor`;
     case "next-hit-crit":
       return "Your next damaging card is a critical strike";
     case "play-next-card-twice":
@@ -217,7 +217,7 @@ export function loseHealthBenefitCard({
     effects.push({ kind: "wish", amount: wish });
   }
   if (draw !== undefined) {
-    descriptionLines.push(`Draw ${draw} Card${draw === 1 ? "" : "s"}`);
+    descriptionLines.push(draw === 1 ? "Draw a card" : `Draw ${draw} cards`);
     effects.push({ kind: "draw-cards", amount: draw });
   }
   if (consume) descriptionLines.push(CONSUME_DESCRIPTION_LINE);

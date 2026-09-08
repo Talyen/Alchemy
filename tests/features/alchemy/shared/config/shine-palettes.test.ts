@@ -61,7 +61,11 @@ describe("getCardKeywordShineColors", () => {
     const fireArrow = cardLibrary.find((card) => card.id === "fire-arrow");
     expect(fireArrow).toBeDefined();
     expect(getCardKeywordShineColors(fireArrow!)).toEqual([
-      ...new Set([...keywordDefinitions.burn.shineColors, ...keywordDefinitions.archery.shineColors]),
+      ...new Set([
+        ...keywordDefinitions.burn.shineColors,
+        ...keywordDefinitions.armor.shineColors,
+        ...keywordDefinitions.archery.shineColors,
+      ]),
     ]);
   });
 });

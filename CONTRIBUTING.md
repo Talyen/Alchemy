@@ -37,6 +37,22 @@ Input identity covers tracked and untracked nonignored files, root environment f
 
 CI always executes tests. Set `ALCHEMY_VERIFY_FRESH=1` to bypass reads locally; actual outcomes still replace or invalidate local receipts. Use it for nondeterminism investigation and benchmark comparisons. Receipts are disposable and age out after one hour; normal report cleanup removes them. Build and browser artifact validity is handled by always executing those stages.
 
+## Test value and coverage strategy
+
+Prefer fewer, higher-value tests that detect meaningful failures and remain affordable to maintain and run. Judge coverage by distinct failure risks, assertion strength, diagnostic usefulness, runtime, and upkeep. Test counts and coverage percentages are not improvement targets; existing configured gates still apply.
+
+Before adding coverage, inspect nearby tests and shared validation. Retain or improve an existing assertion when it already protects the behavior; adding no test is valid when the change has adequate protection or no consequential automated-test risk. A bug fix or audit finding does not automatically require a new test. Add coverage when a meaningful risk lacks trustworthy protection, at the cheapest layer that can actually detect it.
+
+- **Mechanics and content:** prefer fast engine tests for combat rules, effect ordering, and consequential interactions. Use shared invariant/content validation for common contracts, with representative cases and meaningful boundaries. Do not enumerate every card, talent, effect, numeric variant, or combination merely because it exists.
+- **Components and hooks:** test meaningful interaction and orchestration outcomes. Avoid duplicating engine arithmetic, incidental markup, styling tables, and private implementation details.
+- **Browser journeys:** protect representative core flows, integration wiring, real timing, layout, focus, and persistence across reloads when a browser is needed to establish correctness. Per-mechanic UI/E2E coverage is not a goal. Similar assertions at different layers can protect different risks.
+
+Consolidate, streamline, move to a cheaper layer, or delete tests encountered within the task's scope when justified; separate permission and one-for-one replacements are unnecessary. This includes redundant, obsolete, brittle implementation-detail, and unique low-value tests whose limited protection does not justify their cost. For overlap, identify the surviving protection; for unique coverage retired, briefly explain the risk accepted and maintenance tradeoff. Diagnose failures before retirement: never delete or weaken a test simply to hide a product defect or obtain a green gate. Preserve meaningful protection for known regressions, save compatibility, critical journeys, and architectural boundaries, while allowing better tests to replace their existing form.
+
+Keep scenarios focused and failures diagnosable. Combining unrelated checks into a giant journey or parameterized matrix does not improve value merely by reducing test declarations. Share fixtures where they preserve a common invariant or prevent drift; keep scenario-specific setup clear. Local cleanup is encouraged, not a requirement to audit the entire suite during every task.
+
+When removing or moving suites, update maintained references and explicit gate selections to match the surviving protection. Include deleted paths in verification scope; changed unit files that no longer exist are not executed, but their route escalations remain. For consolidation, also select the surviving test files; for retirement without replacement, run applicable gates and report material lost protection. Use timing and coverage reports as evidence when useful, without inventing quotas, mandatory measurements, or automatic threshold ratcheting.
+
 ## E2E policy
 
 Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every push runs the `@critical` suite once; save-touching pushes additionally run the complete save specs, intentionally repeating their overlapping critical tests. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.

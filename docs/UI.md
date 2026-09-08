@@ -31,6 +31,14 @@ For flow-specific rules, use [display sizing](#display-sizing), [Collection and 
 
 Modals and panels use `useModalEscapeDismiss` or `useCaptureEscapeCancel` so the global Escape stack remains ordered.
 
+`ModalOverlayShell` portals into the app's shared modal host, outside the scaled
+battle stage, inheriting the frame's content scale. Its fixed backdrop covers the
+viewport regardless of where the modal is opened. Backdrop dismissal only handles
+clicks on the backdrop itself; clicks inside content do not dismiss it or activate
+underlying screen handlers. Required choices such as Wish remain non-dismissible.
+Panels size to their contents with bounded width and height and scroll overflow;
+card inspection retains adaptive pagination without reserving an empty full-screen panel.
+
 `ModalOverlayShell` owns overlay interaction eligibility: only open, rendered
 content accepts input or registers an Escape handler. Closing content remains
 visible for its existing fade but is inert and rejects activation events;
@@ -256,17 +264,23 @@ shared widget/motion primitives above.
 
 ## Deck and pile inspection
 
-The stacked-cards icon beside menu controls opens the run Deck during drafting,
+The stacked-cards icon opens the run Deck during drafting,
 run screens, and meta detours from that run. Drafting exposes picks so far through
-the icon; it does not add a previous-picks strip. Draw and Discard piles have
-visible counts and keyboard-accessible inspection actions.
+the icon; it does not add a previous-picks strip. The icon has no tooltip. Draw
+and Discard piles have keyboard-accessible inspection actions without visible
+counters; counts remain in accessible action names.
+Titled screen headers place Deck on the left alongside any Back control and Menu
+on the right, with the title centered between them.
 
 `CardInspectionOverlay` is controlled by props and reuses the modal shell,
 `useDialogFocus`, card presentation, and adaptive pagination. Each copy remains
 visible individually, sorted by displayed title with an instance-content tie
 break independent of draw order. The grid uses `viewCardWidthClass`, matching
 `CardSelectionGrid`’s 230.472 px reference width; larger Collection tiles do not
-fit that measurement. Pagination resets on opening and switching collections.
+fit that measurement. The viewer shows only a centered collection title, cards,
+and an upper-right close button, plus pagination controls when needed. It has no
+collection tabs, counts, instructional or empty-state text, or labels below cards.
+Open each collection from its own opener. Pagination resets on reopening.
 Full Deck is the run deck, including cards Consumed in the current battle;
 battle-only generated cards appear in their current piles instead.
 
@@ -281,7 +295,7 @@ does not shift transfer anchors.
 
 ## Verification
 
-Use the changed-path route in [CONTRIBUTING.md](../CONTRIBUTING.md). Interaction
+Use the changed-path route and [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) in CONTRIBUTING. Cover shared interaction behavior and representative browser risks; do not multiply UI tests for every mechanic or cosmetic variant. Interaction
 or browser-journey work also follows [tests/e2e/README.md](../tests/e2e/README.md).
 
 ## Armory crafting and salvage

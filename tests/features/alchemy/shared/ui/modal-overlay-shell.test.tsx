@@ -2,15 +2,41 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { pushEscapeHandler, resetEscapeStackForTests } from "@/app/escape-stack";
 import { ModalOverlayShell } from "@/features/alchemy/shared/ui/modal-overlay-shell";
+import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 
 afterEach(() => {
   cleanup();
+  setModalRoot(null);
   resetEscapeStackForTests();
   vi.useRealTimers();
 });
 
 describe("ModalOverlayShell", () => {
+  it("escapes nested layout and dismisses only direct backdrop clicks", () => {
+    const onClose = vi.fn();
+    const onUnderlyingClick = vi.fn();
+    const root = document.createElement("div");
+    document.body.append(root);
+    setModalRoot(root);
+    const { unmount } = render(
+      <div onClick={onUnderlyingClick}>
+        <ModalOverlayShell open escapeId="portal" onClose={onClose} dismissOnBackdrop testId="overlay">
+          <button type="button">Content</button>
+        </ModalOverlayShell>
+      </div>,
+    );
+    const overlay = screen.getByTestId("overlay");
+    expect(overlay.parentElement).toBe(root);
+    fireEvent.click(screen.getByRole("button", { name: "Content" }));
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(overlay);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onUnderlyingClick).not.toHaveBeenCalled();
+    unmount();
+    root.remove();
+  });
+
   it("only handles Escape while open and rendered", () => {
     const onClose = vi.fn();
     const underlying = vi.fn();

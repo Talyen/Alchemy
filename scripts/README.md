@@ -57,7 +57,7 @@ Documentation and ESLint inventories exclude isolated `.worktrees/` checkouts,
 reports, and installed dependencies. Ambient script-test declarations belong in
 `tests/scripts/global.d.ts`; standalone unreferenced declarations fail dead-code
 checks. Shared build inputs select both renderer builds through the existing
-change routes.
+change routes. Test selection preserves deleted paths for classification and risk escalations, but executes only surviving changed unit files. When consolidating tests, include the surviving files in the task selection; update stale suite references rather than disabling their validation. [Test value](../CONTRIBUTING.md#test-value-and-coverage-strategy) owns coverage decisions.
 
 `check:bundle` checks the current `dist/assets/` and fails when the build is missing
 or empty. Web and desktop renderer builds both write `dist/`; check immediately

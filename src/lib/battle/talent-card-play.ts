@@ -1,9 +1,10 @@
-import { getCardKeywords, type BattleCard } from "@/lib/game-data";
+import { isPotionCard, getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { addPlayerStatusWithCombatText } from "./combat-text";
-import { addForgeToPlayer, applyPlayerStatusEffect } from "./status-player";
+import { addForgeToPlayer, applyCleanseHeals, applyPlayerStatusEffect } from "./status-player";
 import { isAttackCard } from "./card-classification";
 import { applyDrawResult, drawFromState } from "./draw";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
+import { dealTalentTypedHit } from "./player-typed-hit";
 import { reduceEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 
 export function prepareTalentCardPlay(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
@@ -15,11 +16,40 @@ export function prepareTalentCardPlay(state: BattleState, card: BattleCard, comb
   const talents = state.talentEffects;
   const attackBonuses: NonNullable<CardEffectResolutionContext["attackBonuses"]> = {
     flat: 0,
-    physical: archery && state.flags.previousCardWasArchery ? talents.consecutiveArcheryPhysicalDamage : 0,
+    physical:
+      (archery && state.flags.previousCardWasArchery ? talents.consecutiveArcheryPhysicalDamage : 0) +
+      (archery && state.playerStatuses.block === 0 ? talents.archeryPhysicalWithoutBlock : 0) +
+      (keywords.includes("poison") && state.enemyStatuses.poison > 0 ? talents.poisonCardPhysicalVsPoisoned : 0),
     bleed: physical && state.flags.previousCardWasNature ? talents.physicalAfterNatureBleedDamage : 0,
     sanguine: attack ? state.flags.sanguinePhysicalBonus : 0,
   };
   let nextState = state;
+  if (archery && state.enemyCC.stunSkipTurns > 0 && talents.drawOnArcheryVsStunned > 0) {
+    nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnArcheryVsStunned));
+  }
+  if (keywords.includes("armor") && talents.blockOnArmorCard > 0) {
+    nextState = applyPlayerStatusEffect(
+      nextState,
+      { kind: "player-status", status: "block", amount: talents.blockOnArmorCard },
+      combatTexts,
+    );
+  }
+  if (isPotionCard(card) && talents.armorOnPotionCard > 0) {
+    nextState = applyPlayerStatusEffect(
+      nextState,
+      { kind: "player-status", status: "armor", amount: talents.armorOnPotionCard },
+      combatTexts,
+    );
+  }
+  if (nature && state.enemyStatuses.poison > 0) {
+    nextState = dealTalentTypedHit(nextState, "poison", talents.poisonOnNatureCardVsPoisoned, combatTexts);
+  }
+  if (keywords.includes("burn") && talents.cleansePoisonOnBurnCard > 0 && nextState.playerStatuses.poison > 0) {
+    const poison = Math.max(0, nextState.playerStatuses.poison - talents.cleansePoisonOnBurnCard);
+    nextState = { ...nextState, playerStatuses: { ...nextState.playerStatuses, poison } };
+    if (poison === 0) nextState = applyCleanseHeals(nextState, combatTexts);
+    nextState = dealTalentTypedHit(nextState, "poison", talents.cleansePoisonOnBurnCard, combatTexts);
+  }
   if (keywords.includes("companion") && talents.drawOnCompanionCard > 0) {
     nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnCompanionCard));
   }

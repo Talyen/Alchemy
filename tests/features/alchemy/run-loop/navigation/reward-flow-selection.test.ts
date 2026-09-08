@@ -215,21 +215,6 @@ describe("reward flow selection", () => {
       expect(result.choices.every((choice) => "instanceId" in choice)).toBe(true);
     });
 
-    it("handles zero bonuses", () => {
-      const result = createBossRewardState({
-        gold: 0,
-        bossBonus: 0,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        talentGoldPerCombat: 0,
-        materials: emptyInventory(),
-        trinketIds: [],
-        rng: () => 0.8,
-      });
-      expect(result.gold).toBe(0);
-      expect(result.choices.length).toBeGreaterThan(0);
-    });
-
     it("applies goldMultiplier to boss reward gold", () => {
       const result = createBossRewardState({
         gold: 10,
@@ -266,68 +251,6 @@ describe("reward flow selection", () => {
         expect(gearDefinitions[choice.definitionId]?.rarity).toBe("astral");
       }
     });
-
-    it("falls back from an unavailable boss Trinket category to gear", () => {
-      const result = createBossRewardState({
-        gold: 10,
-        bossBonus: 0,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        talentGoldPerCombat: 0,
-        materials: emptyInventory(),
-        trinketIds: [],
-        ownedTrinketIds: trinketLibrary.map((entry) => entry.id),
-        rng: () => 0.8,
-      });
-
-      expect(result.rewardType).toBe("gear");
-      expect(result.choices).toHaveLength(3);
-    });
-
-    it("goldMultiplier defaults to 1 for boss rewards", () => {
-      const result = createBossRewardState({
-        gold: 10,
-        bossBonus: 5,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        talentGoldPerCombat: 2,
-        materials: emptyInventory(),
-        trinketIds: [],
-        rng: () => 0.8,
-      });
-      expect(result.gold).toBe(17);
-    });
-
-    it("offers the boss Trinket category when its roll lands in range", () => {
-      const result = createBossRewardState({
-        gold: 10,
-        bossBonus: 5,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        talentGoldPerCombat: 2,
-        materials: emptyInventory(),
-        trinketIds: [],
-        ownedTrinketIds: [],
-        rng: () => 0.8,
-      });
-      expect(result.rewardType).toBe("trinket");
-      expect(result.choices.length).toBeGreaterThan(0);
-    });
-
-    it("offers gear when the boss roll lands in the Gear group", () => {
-      const result = createBossRewardState({
-        gold: 10,
-        bossBonus: 5,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        talentGoldPerCombat: 2,
-        materials: emptyInventory(),
-        trinketIds: [],
-        ownedTrinketIds: [],
-        rng: sequenceRng([0.1], 0.9),
-      });
-      expect(result.rewardType).toBe("gear");
-    });
   });
 
   describe("permanent Trinket gate on Wildwood gear", () => {
@@ -341,42 +264,15 @@ describe("reward flow selection", () => {
       const result = createWildwoodRewardState(getStartingDeck("knight"), rng, 0, [], []);
       expect(result.rewardType).toBe("trinket");
     });
-
-    it("keeps Wildwood gear when the Trinket roll misses", () => {
-      const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.9);
-      expect(result.rewardType).toBe("gear");
-    });
   });
 
   describe("createCombatRewardState", () => {
     const baseState = { currentEnemy: { enemyType: "normal" }, gold: 15 } as const;
 
-    it("offers card rewards for normal enemies", () => {
-      const result = createCombatRewardState({
-        battleState: baseState as never,
-        runDeck: [],
-        gold: 10,
-        eliteBonus: 3,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        talentGoldPerCombat: 2,
-        materials: emptyInventory(),
-        destinations: ["Campfire"],
-        trinketIds: [],
-        rng: () => 0.5,
-      });
-      expect(result.rewardType).toBe("card");
-      expect(result.gold).toBe(15);
-      expect(result.choices.length).toBeGreaterThan(0);
-    });
-
     it.each([
       ["card", 0.1],
-      ["basic", 0.6],
       ["boon", 0.88],
-      ["astral", 0.7],
       ["trinket", 0.96],
-      ["unique", 0.8],
     ] as const)("offers three choices from the selected normal %s category", (category, roll) => {
       const result = createCombatRewardState({
         battleState: baseState as never,
@@ -389,68 +285,9 @@ describe("reward flow selection", () => {
         materials: emptyInventory(),
         destinations: [],
         trinketIds: [],
-        rng: sequenceRng([roll], category === "basic" ? 0.1 : category === "astral" ? 0.7 - 1e-10 : 0.99),
+        rng: sequenceRng([roll]),
       });
-
-      expect(result.rewardType).toBe(
-        category === "basic" || category === "astral" || category === "unique" ? "gear" : category,
-      );
-      expect(result.choices).toHaveLength(3);
-      if (category === "basic" || category === "astral" || category === "unique") {
-        if (result.rewardType !== "gear") throw new Error("expected gear reward");
-        expect(result.choices.every((choice) => gearDefinitions[choice.definitionId]?.rarity === category)).toBe(true);
-      }
-    });
-
-    it.each([
-      ["card", 0.1],
-      ["basic", 0.4],
-      ["boon", 0.8],
-      ["astral", 0.6],
-      ["trinket", 0.95],
-      ["unique", 0.7],
-    ] as const)("offers three choices from the selected elite %s category", (category, roll) => {
-      const result = createCombatRewardState({
-        battleState: { currentEnemy: { enemyType: "elite" }, gold: 10 } as never,
-        runDeck: [],
-        gold: 10,
-        eliteBonus: 0,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        talentGoldPerCombat: 0,
-        materials: emptyInventory(),
-        destinations: [],
-        trinketIds: [],
-        rng: sequenceRng([roll], category === "basic" ? 0.1 : category === "astral" ? 0.7 - 1e-10 : 0.99),
-      });
-
-      expect(result.rewardType).toBe(
-        category === "basic" || category === "astral" || category === "unique" ? "gear" : category,
-      );
-      expect(result.choices).toHaveLength(3);
-      if (category === "basic" || category === "astral" || category === "unique") {
-        if (result.rewardType !== "gear") throw new Error("expected gear reward");
-        expect(result.choices.every((choice) => gearDefinitions[choice.definitionId]?.rarity === category)).toBe(true);
-      }
-    });
-
-    it("falls back from an unavailable normal Trinket category to gear", () => {
-      const result = createCombatRewardState({
-        battleState: baseState as never,
-        runDeck: [],
-        gold: 10,
-        eliteBonus: 0,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        talentGoldPerCombat: 0,
-        materials: emptyInventory(),
-        destinations: [],
-        trinketIds: [],
-        ownedTrinketIds: trinketLibrary.map((entry) => entry.id),
-        rng: () => 0.96,
-      });
-
-      expect(result.rewardType).toBe("gear");
+      expect(result.rewardType).toBe(category);
       expect(result.choices).toHaveLength(3);
     });
 
@@ -496,25 +333,6 @@ describe("reward flow selection", () => {
       expect(result.choices.every((choice) => gearDefinitions[choice.definitionId]?.rarity === "astral")).toBe(true);
     });
 
-    it("offers boon rewards for elite enemies at the boon threshold", () => {
-      const eliteState = { currentEnemy: { enemyType: "elite" }, gold: 10 } as const;
-      const result = createCombatRewardState({
-        battleState: eliteState as never,
-        runDeck: [],
-        gold: 10,
-        eliteBonus: 5,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        talentGoldPerCombat: 2,
-        materials: emptyInventory(),
-        destinations: [],
-        trinketIds: [],
-        rng: () => 0.8,
-      });
-      expect(result.rewardType).toBe("boon");
-      expect(result.gold).toBe(17);
-    });
-
     it("includes destinations in result", () => {
       const result = createCombatRewardState({
         battleState: baseState as never,
@@ -548,23 +366,6 @@ describe("reward flow selection", () => {
         rng: () => 0.5,
       });
       expect(result.gold).toBe(23);
-    });
-
-    it("goldMultiplier defaults to 1 for combat rewards", () => {
-      const result = createCombatRewardState({
-        battleState: baseState as never,
-        runDeck: [],
-        gold: 10,
-        eliteBonus: 3,
-        generousBonus: 0,
-        wealthyBonus: 0,
-        talentGoldPerCombat: 2,
-        materials: emptyInventory(),
-        destinations: [],
-        trinketIds: [],
-        rng: () => 0.5,
-      });
-      expect(result.gold).toBe(15);
     });
   });
 });

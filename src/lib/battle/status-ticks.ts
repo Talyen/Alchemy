@@ -1,3 +1,5 @@
+import { applyHealthThresholdCleanse } from "./status-player";
+import { scaledGearLeechHeal } from "./gear-effects";
 import { drawKeywordCard } from "./draw";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -55,9 +57,14 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, getBattleRng(state))) return state;
-  return applyLeechHealing(state, scalePlayerLeechHeal(state, computeLeechHeal(damage)), combatTexts, {
-    afflicted: true,
-  });
+  return applyLeechHealing(
+    state,
+    scalePlayerLeechHeal(state, scaledGearLeechHeal(computeLeechHeal(damage), state.gearEffects)),
+    combatTexts,
+    {
+      afflicted: true,
+    },
+  );
 }
 
 function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -156,6 +163,7 @@ function dealPlayerDotTick(
       amount: healthLost,
     });
   }
+  nextState = applyHealthThresholdCleanse(state.playerHealth, nextState, combatTexts);
   return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 

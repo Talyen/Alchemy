@@ -23,7 +23,7 @@ function renderMenu(props: { isOpen: boolean; anchorRect: DOMRect | null }) {
 }
 
 function isAnchored(): boolean {
-  return screen.getByTestId("game-menu").parentElement?.className.includes("fixed") === true;
+  return Boolean(screen.getByTestId("game-menu").parentElement?.style.top);
 }
 
 describe("GameMenu", () => {

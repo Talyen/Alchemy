@@ -15,7 +15,7 @@ function checkSimpleValueLine(
     pushMissingEffect(issues, cardId, line);
     return true;
   }
-  const parsed = parseLeadingNumber(line, prefix);
+  const parsed = line === "Draw a card" ? 1 : parseLeadingNumber(line, prefix);
   if (parsed !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
   return true;
 }
@@ -27,13 +27,19 @@ function checkRestoreLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!line.startsWith("Restore ") || !line.includes(resource)) return false;
+  const prefix = line.startsWith("Restore ")
+    ? "Restore "
+    : resource === "Mana" && line.startsWith("Gain ")
+      ? "Gain "
+      : null;
+  if (!prefix || !line.includes(resource) || line.includes("Mana Crystal") || line.includes("Maximum Mana"))
+    return false;
   const effect = nextEffect();
   if (!effect) {
     pushMissingEffect(issues, cardId, line);
     return true;
   }
-  if (parseLeadingNumber(line, "Restore ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  if (parseLeadingNumber(line, prefix) !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
   return true;
 }
 
@@ -162,7 +168,7 @@ function checkGainMaxManaLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!line.startsWith("Gain ") || !line.includes("Maximum Mana")) return false;
+  if (!line.startsWith("Gain ") || !(line.includes("Maximum Mana") || line.includes("Mana Crystal"))) return false;
   const effect = nextGainMaxMana();
   if (!effect) {
     pushMissingEffect(issues, cardId, line);
@@ -225,6 +231,8 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
     if (checkLoseHealthLine(line, nextLoseHealth, issues, card.id)) continue;
     if (checkGainMaxManaLine(line, nextGainMaxMana, issues, card.id)) continue;
     if (checkSimpleValueLine(line, "Strip ", nextRemoveArmor, issues, card.id)) continue;
+    if (line.includes("enemy Armor") && checkSimpleValueLine(line, "Remove ", nextRemoveArmor, issues, card.id))
+      continue;
     checkRemoveHarmfulLine(line, nextRemoveHarmful, issues, card.id);
   }
 
