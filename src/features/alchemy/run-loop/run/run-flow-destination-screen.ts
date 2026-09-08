@@ -1,6 +1,6 @@
 import { activeLabyrinthBenefits, labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";
-import { appendCardToRunWithDiscovery } from "./deck-mutations";
+import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { getRandomPotionCard } from "../navigation/reward-flow";
 import {
   addGold,
@@ -14,17 +14,13 @@ import {
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/campfire-heal";
 import { routeDestinationChoice } from "./run-destination-handlers";
-import type { AdvanceToNextDestination, RunFlowHandlerDeps } from "./run-flow-handler-deps";
+import type { AdvanceToNextDestination, RunFlowHandlerDeps } from "./run-flow";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
 import { computeTalentEffects } from "@/lib/game-data";
 
-interface DestinationCallbacks {
-  advanceToNextDestination: AdvanceToNextDestination;
-}
-
 export function createDestinationScreenHandlers(
   deps: RunFlowHandlerDeps,
-  { advanceToNextDestination }: DestinationCallbacks,
+  advanceToNextDestination: AdvanceToNextDestination,
 ) {
   function handleDestinationChoice(destination: Destination) {
     try {
@@ -38,7 +34,8 @@ export function createDestinationScreenHandlers(
       deps.actions.clearCardHover();
       const commitDestinationProgress = () => {
         try {
-          dispatchRunSessionCommand((draft) => commitDestinationClaim(draft, destination));
+          const committed = dispatchRunSessionCommand((draft) => commitDestinationClaim(draft, destination));
+          if (!committed) throw new Error("commitDestinationProgress failed");
         } catch (error) {
           try {
             dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));

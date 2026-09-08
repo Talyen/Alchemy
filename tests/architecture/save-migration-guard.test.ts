@@ -232,7 +232,7 @@ describe("save migration guard", () => {
     }
   });
 
-  it("references only catalog or tombstoned card IDs in migrated fixtures", () => {
+  it("references only catalog or tombstoned card IDs in discovered lists", () => {
     const cardIds = new Set(cardLibrary.map((c) => c.id));
 
     const fixtures = [

@@ -27,7 +27,7 @@ import { useHandPointer } from "./use-hand-pointer";
 import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { getHandCardKey, getPlayableHandCardKeys } from "../../battle/playable-hand";
-import { getElementCenterX, playHandSlotReflow } from "../../battle/hand-slot-reflow";
+import { getElementCenterX, playHandSlotReflow } from "./hand-slot-reflow";
 import { useHiddenHandCardKeys, useInteractiveHandCardKeys } from "../../battle/presentation/use-hand-presentation";
 import type { BattleState } from "@/lib/battle";
 import { getActiveCcKeyword, type ActiveCcKeyword } from "../../../shared/utils/cc-presentation";

@@ -1,20 +1,15 @@
-import { grantTrinketToRunWithRecord } from "@/features/alchemy/run-loop/run/deck-mutations";
+import { grantTrinketToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import {
   createDraftRunRandomSource,
   setTrinketShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
-import { computeTrinketBuyPrice, computeTrinketRefreshPrice } from "./shop-pricing";
-import { resolveDraftShopPricingContext, resolveReadShopPricingContext } from "./shop-pricing-context";
-import {
-  commitShopInitialize,
-  mapRefreshedShopOfferings,
-  purchaseShopOffering,
-  refreshShopOfferings,
-  runShopTransaction,
-} from "./shop-transactions";
-import { shopArrayOfferingMatches } from "./shop-slot-keys";
+import { getShopBuyPrice, getShopRefreshPrice } from "./shop-pricing";
+import { resolveReadShopModifiers, resolveReadShopPricingContext } from "./shop-pricing-context";
+import { runShopTransaction } from "./shop-transactions";
+import { shopItemSlotKey } from "./shop-slot-keys";
 import type { TrinketShopCommands } from "./shop-action-types";
+import { initializeShop, purchaseSlotOffering, refreshCatalogOfferings } from "./shop-commands-core";
 import { createInitialTrinketShopState, resampleTrinketShopOfferings, type TrinketShopState } from "./shop-state-init";
 
 export function createTrinketShopCommands({
@@ -22,36 +17,32 @@ export function createTrinketShopCommands({
 }: {
   talentEffects: TalentEffectManifest;
 }): TrinketShopCommands {
-  const getBuyPrice = (_trinket: TrinketEntry) => {
-    return computeTrinketBuyPrice(resolveReadShopPricingContext(talentEffects, "trinketShopState"));
+  const getBuyPrice = () => {
+    return getShopBuyPrice("trinket", null, resolveReadShopPricingContext(talentEffects, "trinketShopState"));
   };
-  const getRefreshPrice = (refreshesLeft: number) =>
-    computeTrinketRefreshPrice(
-      talentEffects,
-      refreshesLeft,
-      resolveReadShopPricingContext(talentEffects, "trinketShopState").modifiers,
-    );
+  const getRefreshPrice = (refreshesLeft: number, modifiers = resolveReadShopModifiers()) =>
+    getShopRefreshPrice("trinket", talentEffects, refreshesLeft, modifiers);
 
-  function initialize(): void {
-    commitShopInitialize(setTrinketShopState, (draft) =>
-      createInitialTrinketShopState(createDraftRunRandomSource(draft, "shops"), draft.gear.ownedTrinketIds),
-    );
-  }
+  const initialize = initializeShop(setTrinketShopState, (draft) =>
+    createInitialTrinketShopState(createDraftRunRandomSource(draft, "shops"), draft.gear.ownedTrinketIds),
+  );
 
   function buy(trinket: TrinketEntry, slotKey: string): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.trinketShopState;
-      const price = computeTrinketBuyPrice(resolveDraftShopPricingContext(talentEffects, draft, state));
-      return purchaseShopOffering({
-        draft,
-        price,
+      return purchaseSlotOffering({
+        talentEffects,
         state,
         setState: setTrinketShopState,
+        draft,
+        items: state.trinkets,
+        requestedId: trinket.id,
         slotKey,
-        offeringMatches:
-          !draft.gear.ownedTrinketIds.includes(trinket.id) &&
-          shopArrayOfferingMatches(state.trinkets, slotKey, trinket.id, (offered) => offered.id),
-        acquire: () => grantTrinketToRunWithRecord(draft, trinket.id),
+        buyKind: "trinket",
+        slotKeyOf: (item, index) => shopItemSlotKey(item.id, index),
+        idOf: (item) => item.id,
+        isAvailable: (innerDraft, offered) => !innerDraft.gear.ownedTrinketIds.includes(offered.id),
+        acquire: (innerDraft, offered) => grantTrinketToRunWithRecord(innerDraft, offered.id),
       });
     }).committed;
   }
@@ -59,22 +50,19 @@ export function createTrinketShopCommands({
   function refresh(): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.trinketShopState;
-      return refreshShopOfferings<TrinketShopState, TrinketEntry>({
+      return refreshCatalogOfferings<TrinketShopState, TrinketEntry>({
+        talentEffects,
         draft,
-        price: computeTrinketRefreshPrice(
-          talentEffects,
-          state.refreshesLeft,
-          resolveDraftShopPricingContext(talentEffects, draft, state).modifiers,
-        ),
-        refreshesLeft: state.refreshesLeft,
+        state,
         setState: setTrinketShopState,
+        itemsKey: "trinkets",
+        refreshKind: "trinket",
         resample: () =>
           resampleTrinketShopOfferings(
             createDraftRunRandomSource(draft, "shops"),
             draft.gear.ownedTrinketIds,
             state.trinkets.map((trinket) => trinket.id),
           ),
-        mapState: (previous, trinkets) => mapRefreshedShopOfferings(previous, "trinkets", trinkets),
       });
     }).committed;
   }

@@ -5,8 +5,6 @@ import type { Screen } from "@/lib/routing";
 
 import { handHasHiddenCard, type HiddenHandCardKeys } from "./playable-hand";
 
-export { findFirstPlayableHandCard } from "./playable-hand";
-
 function isAutoplayBattleOver(state: BattleState): boolean {
   return state.enemyHealth <= 0 || isPlayerDefeated(state);
 }

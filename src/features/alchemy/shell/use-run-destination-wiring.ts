@@ -10,7 +10,7 @@ import {
   readRunRecency,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { hydrateModeRunInDraft } from "@/features/alchemy/shared/stores/run-park-restore";
+import { hydrateModeRunInDraft } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { mostRecentResumableMode } from "@/features/alchemy/shared/stores/parked-runs";
 import { resolveAvailableDestinations, type DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";

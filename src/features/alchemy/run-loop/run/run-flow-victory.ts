@@ -6,10 +6,17 @@ import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards } from "../navigation/victory-flow";
-import type { CommitVictoryRewardsDeps, VictoryRewardsResult } from "../navigation/victory-flow-types";
+import type { VictoryRewardsResult } from "../navigation/victory-flow";
+import type { BattleState } from "@/lib/battle";
+import type { ContentSystemId } from "@/lib/content-systems/types";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
-import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
-import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import type { RunFlowHandlerDeps } from "./run-flow";
+import {
+  clearBattleUi,
+  finalizeRunEndSession,
+  syncBattleToRun,
+} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
   awardMaterialsDuringRun,
   setCompanionRewardCards,
@@ -19,13 +26,22 @@ import {
   setRewardState,
   setRunMaxHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { getCompanionCardChoices, shouldGrantCompanionReward } from "../navigation/reward-flow";
+import { getCompanionCardChoices } from "../navigation/reward-flow";
+import { shouldGrantCompanionReward } from "../navigation/reward-math";
+import { finalizeRunXP } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { awardRunEndMaterials } from "./run-flow-defeat";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 
-export type { CommitVictoryRewardsDeps };
+export interface CommitVictoryRewardsDeps {
+  battleState: BattleState;
+  contentSystemType: ContentSystemId;
+}
+
+export function awardsRunMaterialsFor(contentSystemType: ContentSystemId): boolean {
+  return contentSystemType !== CONTENT_SYSTEMS.WILDWOOD;
+}
 
 function hasAnyPendingMaterial(materials: MaterialInventory): boolean {
   return Object.values(materials).some((value) => value > 0);
@@ -37,7 +53,7 @@ export function commitVictoryRewards(
   deps: CommitVictoryRewardsDeps,
   rng: () => number,
 ): boolean {
-  if (deps.contentSystemType !== CONTENT_SYSTEMS.WILDWOOD && hasAnyPendingMaterial(deps.battleState.pendingMaterials)) {
+  if (awardsRunMaterialsFor(deps.contentSystemType) && hasAnyPendingMaterial(deps.battleState.pendingMaterials)) {
     awardMaterialsDuringRun(draft, deps.battleState.pendingMaterials);
   }
   draft.battle.battleState.pendingMaterials = { ...emptyInventory() };
@@ -144,8 +160,18 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
     }
   }
 
+  function completeRunVictory(onRenderedScreenCommit?: () => void) {
+    clearBattleUi();
+    finalizeRunEndSession({
+      awardRunEndMaterials,
+      finalizeRunXP,
+    });
+    deps.actions.navigateTo(ROUTE_SCREENS.RUN_VICTORY, onRenderedScreenCommit);
+  }
+
   return {
     commitVictoryResult,
     handleBattleVictory,
+    completeRunVictory,
   };
 }

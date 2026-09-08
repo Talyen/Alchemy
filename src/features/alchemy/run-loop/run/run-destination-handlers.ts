@@ -1,13 +1,4 @@
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import type { ResolvedRewardChoice } from "@/lib/active-run-session";
-import { getRandomPotionCard } from "../navigation/reward-flow";
-import {
-  appendCardToRunWithDiscovery,
-  appendBoonToRunWithDiscovery,
-  grantGearToRunWithRecord,
-  grantTrinketToRunWithRecord,
-} from "./deck-mutations";
-import type { RunFlowShellActions } from "./run-flow-shell-actions";
+import type { RunFlowShellActions } from "./run-flow";
 import { DESTINATIONS, ROUTE_SCREENS, type Destination } from "@/lib/routing";
 import { ENEMY_TYPES } from "@/lib/game-data";
 
@@ -56,31 +47,4 @@ const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps) => 
 export function routeDestinationChoice(destination: Destination, deps: DestinationRouteDeps) {
   const handler = DESTINATION_HANDLERS[destination] ?? DESTINATION_HANDLERS[DESTINATIONS.NORMAL_COMBAT];
   handler(deps);
-}
-
-interface RewardSelectionInput {
-  reward: ResolvedRewardChoice;
-  draft: GameplayDraft;
-}
-
-export function applyRewardSelection({ reward, draft }: RewardSelectionInput) {
-  switch (reward.rewardType) {
-    case "card":
-      appendCardToRunWithDiscovery(draft, reward.choice);
-      return;
-    case "boon":
-      appendBoonToRunWithDiscovery(draft, reward.choice.id);
-      return;
-    case "trinket":
-      grantTrinketToRunWithRecord(draft, reward.choice.id);
-      return;
-    case "gear":
-      grantGearToRunWithRecord(draft, reward.choice);
-      return;
-  }
-}
-
-export function applyAlchemistPotion({ draft, rng }: { draft: GameplayDraft; rng: () => number }) {
-  const potion = getRandomPotionCard(rng);
-  appendCardToRunWithDiscovery(draft, potion);
 }

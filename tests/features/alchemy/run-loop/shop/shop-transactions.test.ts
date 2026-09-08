@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   mapRefreshedShopOfferings,
   purchaseShopOffering,
@@ -13,17 +13,12 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { setShopState as mutateShopState } from "@/features/alchemy/shared/stores/run-session-write-port";
 const setShopState = createRunSessionCommand(mutateShopState);
-import { selectRewardCards, type BattleCard } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
 import { emptyShopState, type ShopState } from "@/lib/active-run-session";
 import { makeEffect, makeTestCardWithId } from "../../../../fixtures/battle";
 import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-
-vi.mock("@/lib/game-data", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/game-data")>();
-  return { ...actual, selectRewardCards: vi.fn() };
-});
 
 const makeCard = (id: string): BattleCard => makeTestCardWithId(id, { effects: [makeEffect("physical", 1)] });
 
@@ -88,23 +83,13 @@ describe("refreshShopOfferings", () => {
 });
 
 describe("refreshCardShopOfferings", () => {
-  it("selects replacement cards from the draft deck and supplied pool", () => {
+  it("replaces the shelf from the draft deck and supplied pool", () => {
     const deck = [makeCard("d")];
-    const pool = [makeCard("x")];
-    const currentItems = [makeCard("a")];
-    const newItems = [makeCard("b")];
+    const pool = [makeCard("x"), makeCard("y"), makeCard("z")];
+    const currentItems = [makeCard("x")];
     const rng = () => 0.5;
     setRunProgress({ gold: 10, runDeck: deck });
     setShopState({ ...createInitialShopState([], rng), cards: currentItems, refreshesLeft: 1 });
-    vi.mocked(selectRewardCards).mockClear();
-    vi.mocked(selectRewardCards).mockImplementation((actualDeck, actualPool, count, excluded, actualRng) => {
-      expect(actualDeck).toEqual(deck);
-      expect(actualPool).toBe(pool);
-      expect(count).toBe(1);
-      expect(excluded).toEqual(currentItems);
-      expect(actualRng).toBe(rng);
-      return newItems;
-    });
 
     const refreshed = dispatchRunSessionCommand((draft) =>
       refreshCardShopOfferings<ShopState>({
@@ -120,9 +105,12 @@ describe("refreshCardShopOfferings", () => {
       }),
     );
 
-    expect(refreshed).toMatchObject({ committed: true, price: 5, value: newItems });
-    expect(selectRewardCards).toHaveBeenCalledOnce();
-    expect(readRunSession().shopState.cards).toEqual(newItems);
+    expect(refreshed.committed).toBe(true);
+    expect(refreshed.price).toBe(5);
+    expect(refreshed.value).toHaveLength(1);
+    expect(refreshed.value?.[0]?.id).not.toBe("x");
+    expect(readRunSession().shopState.cards).toEqual(refreshed.value);
+    expect(readRunProfile().gold).toBe(5);
   });
 });
 

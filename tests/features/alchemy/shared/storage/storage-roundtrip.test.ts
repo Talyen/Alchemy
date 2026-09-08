@@ -10,12 +10,15 @@ function parseSave(value: unknown): SaveData {
   return result.data;
 }
 
+function roundTrip(value: unknown): { original: SaveData; reParsed: SaveData } {
+  const original = parseSave(value);
+  const reParsed = parseSave(JSON.parse(JSON.stringify(original)));
+  return { original, reParsed };
+}
+
 describe("save JSON round trips", () => {
   it("minimal save round-trips through JSON serialize/deserialize", () => {
-    const original = parseSave({ musicVolume: 75, sfxVolume: 25 });
-    const serialized = JSON.stringify(original);
-    const deserialized = JSON.parse(serialized);
-    const reParsed = parseSave(deserialized);
+    const { original, reParsed } = roundTrip({ musicVolume: 75, sfxVolume: 25 });
     expect(reParsed).toEqual(original);
   });
 
@@ -54,9 +57,7 @@ describe("save JSON round trips", () => {
         runTalentXP: { burn: 12, poison: 8 },
       } as never,
     });
-    const serialized = JSON.stringify(original);
-    const deserialized = JSON.parse(serialized);
-    const reParsed = parseSave(deserialized);
+    const { reParsed } = roundTrip(original);
     expect(reParsed).toEqual(original);
     expect(reParsed.activeRun).not.toHaveProperty("runGold");
     expect(reParsed.gold).toBe(27);
@@ -93,7 +94,7 @@ describe("save JSON round trips", () => {
         runTalentXP: {},
       } as never,
     });
-    const reParsed = parseSave(JSON.parse(JSON.stringify(original)));
+    const { reParsed } = roundTrip(original);
     expect(reParsed.activeRun?.currentScreen).toBe("destination");
     expect(reParsed.activeRun?.interruptedFlow).toEqual({
       kind: "destination",
@@ -128,9 +129,7 @@ describe("save JSON round trips", () => {
         runTalentXP: {},
       } as never,
     });
-    const serialized = JSON.stringify(original);
-    const deserialized = JSON.parse(serialized);
-    const reParsed = parseSave(deserialized);
+    const { reParsed } = roundTrip(original);
     expect(reParsed).toEqual(original);
     expect(reParsed.activeRun?.labyrinthMap?.currentFloor).toBe(1);
     expect(reParsed.activeRun?.labyrinthMap?.nodes["labyrinth-entrance"]?.type).toBe("entrance");
@@ -159,9 +158,7 @@ describe("save JSON round trips", () => {
       completedDifficulties: { knight: ["difficulty-1"], wizard: ["difficulty-1", "difficulty-2"] },
       activeRun: null,
     });
-    const serialized = JSON.stringify(original);
-    const deserialized = JSON.parse(serialized);
-    const reParsed = parseSave(deserialized);
+    const { reParsed } = roundTrip(original);
     expect(reParsed).toEqual(original);
     expect(reParsed.materialInventory).toEqual({ wood: 12, iron: 5, herbs: 3, food: 0, gems: 1 });
 
@@ -169,12 +166,9 @@ describe("save JSON round trips", () => {
   });
 
   it("round-trip preserves NaN-free serialization", () => {
-    const original = parseSave({});
-    const serialized = JSON.stringify(original);
-    expect(serialized).not.toContain("NaN");
-    expect(serialized).not.toContain("undefined");
-    const deserialized = JSON.parse(serialized);
-    const reParsed = parseSave(deserialized);
+    const { original, reParsed } = roundTrip({});
+    expect(JSON.stringify(original)).not.toContain("NaN");
+    expect(JSON.stringify(original)).not.toContain("undefined");
     expect(reParsed).toEqual(original);
   });
 });

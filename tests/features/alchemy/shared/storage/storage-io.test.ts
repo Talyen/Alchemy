@@ -5,13 +5,13 @@ import { currentSchemaCampaignSave } from "../../../../fixtures/legacy-saves";
 import { SAVE_KEY } from "@/lib/game-constants";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import {
+  bootstrapAlchemySaveState,
   clearAlchemySaveData,
+  configureSaveBackend,
   loadAlchemySaveState,
   saveAlchemySaveData,
   saveAlchemySaveDataForExit,
-  configureSaveBackend,
-} from "@/features/alchemy/shared/storage/io";
-import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage/bootstrap-save-state";
+} from "@/features/alchemy/shared/storage";
 import {
   setupMockWindowBrowser,
   setupMockWindowDesktop,
@@ -267,7 +267,7 @@ describe("storage io", () => {
       },
     };
     expect(await saveAlchemySaveData(data)).toBe("failed");
-    expect(saveAlchemySaveDataForExit(data)).toBe("failed");
+    expect(await saveAlchemySaveDataForExit(data)).toBe("failed");
     expect(write).not.toHaveBeenCalled();
   });
 
@@ -298,7 +298,7 @@ describe("storage io", () => {
   it("terminal browser flush supersedes a queued stale snapshot", async () => {
     const pending = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
 
-    saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] });
+    await saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["latest"] });
     await pending;
 
     expect(JSON.parse(mockStorage[SAVE_KEY]).discoveredCardIds).toEqual(["latest"]);
@@ -353,7 +353,9 @@ describe("storage io", () => {
 
     const pendingClear = clearAlchemySaveData();
     await Promise.resolve();
-    saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["resurrect"] });
+    await expect(saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["resurrect"] })).resolves.toBe(
+      "skipped",
+    );
     expect(writeSync).not.toHaveBeenCalled();
     releaseClear?.();
     await pendingClear;
@@ -460,7 +462,6 @@ describe("storage io", () => {
 
   it("walks backup.1 when local is corrupt on desktop", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const validFromBackup = JSON.stringify({
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
@@ -475,6 +476,15 @@ describe("storage io", () => {
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
+  });
+
+  it("does not request a desktop backup on load (rotation owns backups at write time)", async () => {
+    const legacy = JSON.stringify(currentSchemaCampaignSave());
+    const desktop = setupMockWindowDesktop({ saveCandidates: [legacy] });
+
+    await loadAlchemySaveState();
+
+    expect(desktop.writeSave).not.toHaveBeenCalled();
   });
 
   it("returns corrupt when every candidate fails JSON parsing on desktop", async () => {
@@ -534,7 +544,12 @@ describe("storage io", () => {
     const writeGate = new Promise<void>((resolve) => {
       releaseWrite = resolve;
     });
+    let resolveStarted!: () => void;
+    const writeStarted = new Promise<void>((resolve) => {
+      resolveStarted = resolve;
+    });
     const writeSave = vi.fn().mockImplementation(async () => {
+      resolveStarted();
       await writeGate;
       return true;
     });
@@ -543,7 +558,8 @@ describe("storage io", () => {
     const clearSave = desktop.clearSave;
 
     const pendingSave = saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["stale"] });
-    await vi.waitFor(() => expect(writeSave).toHaveBeenCalledOnce());
+    await writeStarted;
+    expect(writeSave).toHaveBeenCalledOnce();
 
     const pendingClear = clearAlchemySaveData();
     await Promise.resolve();
@@ -569,7 +585,9 @@ describe("storage io", () => {
     await expect(clearAlchemySaveData({ keepWritesDisabled: true })).resolves.toBe(true);
     expect(mockStorage[SAVE_KEY]).toBeUndefined();
 
-    saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["should-not-write"] });
+    await expect(
+      saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["should-not-write"] }),
+    ).resolves.toBe("skipped");
     expect(mockStorage[SAVE_KEY]).toBeUndefined();
   });
 

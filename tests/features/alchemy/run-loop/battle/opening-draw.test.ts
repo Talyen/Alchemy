@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/opening-draw";
+import { playBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/battle-init";
 import { defaultBattleState } from "@/lib/battle";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { makeDrawSequenceDeps, makePresentationPort } from "./turn-orchestration-fixture";
@@ -32,7 +32,7 @@ vi.mock("@/features/alchemy/shared/stores/run-session-write-port", () => ({
   commitBattleTransition: (_draft: unknown, ...args: unknown[]) => commitBattleTransition(...args),
 }));
 
-describe("createBattleOpeningDraw", () => {
+describe("playBattleOpeningDraw", () => {
   installImmediateRafForTests();
 
   beforeEach(() => {
@@ -49,16 +49,14 @@ describe("createBattleOpeningDraw", () => {
 
   it("commits and animates the pending opening hand before enabling playback", async () => {
     const drawDeps = makeDrawSequenceDeps();
-    const openingDraw = createBattleOpeningDraw(
-      {
-        battleSessionRef: { current: 3 },
-        scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn },
-        getPresentation: () => presentation,
-      } as never,
-      { getDrawSequenceDeps: () => drawDeps } as never,
-    );
+    const ctx = {
+      battleSessionRef: { current: 3 },
+      scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn },
+      getPresentation: () => presentation,
+    } as never;
+    const transferDeps = { getDrawSequenceDeps: () => drawDeps } as never;
 
-    await openingDraw.playOpeningDraw();
+    await playBattleOpeningDraw(ctx, transferDeps);
 
     expect(commitBattleTransition).toHaveBeenCalledWith(resultState, null);
     expect(drawDeps.animateDrawnHand).toHaveBeenCalledWith(resultState.hand, resultState.hand, 3);
@@ -80,16 +78,14 @@ describe("createBattleOpeningDraw", () => {
     commitBattleTransition.mockImplementationOnce(() => {
       domain = { battleState: resultState, pendingBattleTransition: null };
     });
-    const openingDraw = createBattleOpeningDraw(
-      {
-        battleSessionRef: { current: 3 },
-        scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn },
-        getPresentation: () => presentation,
-      } as never,
-      { getDrawSequenceDeps: () => drawDeps } as never,
-    );
+    const ctx = {
+      battleSessionRef: { current: 3 },
+      scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn },
+      getPresentation: () => presentation,
+    } as never;
+    const transferDeps = { getDrawSequenceDeps: () => drawDeps } as never;
 
-    const playback = openingDraw.playOpeningDraw();
+    const playback = playBattleOpeningDraw(ctx, transferDeps);
 
     await vi.waitFor(() => expect(drawDeps.animateDrawnHand).toHaveBeenCalledOnce());
     expect(domain.pendingBattleTransition).toBeNull();

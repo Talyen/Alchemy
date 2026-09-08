@@ -11,14 +11,15 @@ import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   beginBattleTransition,
+  commitBattleTransition,
   createDraftRunRandomSource,
   initializeActiveBattle,
+  setEncounteredEnemyIds,
   setEncounteredRunEnemyIds,
   setRoomsEncountered,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { appendUnique } from "@/lib/utils";
-import { setEncounteredEnemyIds } from "../../shared/stores/profile-store";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { preloadBattleSounds } from "@/lib/audio";
@@ -26,7 +27,32 @@ import { applyCombatTextShakeFeedback } from "./battle-status";
 import { playCompanionSound, playCombatTextSounds } from "./controller-utils";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
+import type { createBattleTransferDeps } from "./battle-transfer-deps";
+import { runBattleDraw } from "./draw-sequence";
 import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
+
+export async function playBattleOpeningDraw(
+  ctx: Pick<BattleControllerContext, "battleSessionRef" | "scheduleAutoEndTurnRef">,
+  transferDeps: Pick<ReturnType<typeof createBattleTransferDeps>, "getDrawSequenceDeps">,
+): Promise<boolean> {
+  const current = readBattle();
+  const pending = current.pendingBattleTransition;
+  if (pending?.kind !== "opening-draw") return false;
+  const sessionNum = ctx.battleSessionRef.current;
+
+  const completed = await runBattleDraw({
+    oldHand: current.battleState.hand,
+    newState: pending.resultState,
+    applyState: () => dispatchRunSessionCommand((draft) => commitBattleTransition(draft, pending.resultState, null)),
+    session: sessionNum,
+    deps: transferDeps.getDrawSequenceDeps(),
+    errorContext: "draw opening hand",
+  });
+  if (sessionNum === ctx.battleSessionRef.current) {
+    ctx.scheduleAutoEndTurnRef.current?.(readBattle().battleState);
+  }
+  return completed;
+}
 
 export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function createBattleForEnemy(

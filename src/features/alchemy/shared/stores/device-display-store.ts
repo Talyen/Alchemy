@@ -1,4 +1,4 @@
-import { readDeviceDisplayPreferences, writeDeviceDisplayPreferences } from "../storage/device-display-preferences";
+import { readDeviceDisplayPreferences, writeDeviceDisplayPreferences } from "@/features/alchemy/shared/storage";
 import { create } from "zustand";
 import { DEFAULT_DEVICE_DISPLAY, normalizeDisplayPercent, type DeviceDisplayPreferences } from "@/lib/settings-values";
 

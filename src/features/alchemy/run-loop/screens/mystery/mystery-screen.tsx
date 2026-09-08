@@ -62,8 +62,8 @@ export function MysteryScreen({
     }
   }
 
-  function handleCardChoiceConfirm(cardId: string) {
-    onChooseCard(cardId);
+  function handlePickerConfirm(confirm: () => void) {
+    confirm();
     if (mysteryChosenChoice && choiceHasDisplayableSummary(mysteryChosenChoice)) {
       if (hasPositiveMysteryEffect(mysteryChosenChoice.effects)) playUISound("talentUnlock");
     } else {
@@ -71,13 +71,12 @@ export function MysteryScreen({
     }
   }
 
+  function handleCardChoiceConfirm(cardId: string) {
+    handlePickerConfirm(() => onChooseCard(cardId));
+  }
+
   function handleRemoveConfirm(index: number) {
-    onRemoveCard(index);
-    if (mysteryChosenChoice && choiceHasDisplayableSummary(mysteryChosenChoice)) {
-      if (hasPositiveMysteryEffect(mysteryChosenChoice.effects)) playUISound("talentUnlock");
-    } else {
-      onContinue();
-    }
+    handlePickerConfirm(() => onRemoveCard(index));
   }
 
   const phase = mysteryCardChoices

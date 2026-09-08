@@ -8,11 +8,7 @@ import { isBattlePlayInputBusy } from "./autoplay-driver";
 import { logBattleError } from "./controller-utils";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
-import {
-  createTurnOrchestration,
-  resolveEndTurn,
-  resumePendingBattleTransition as resumePendingBattleTransitionState,
-} from "./turn-orchestration";
+import { createTurnOrchestration, resolveEndTurn, resumePendingBattleTransition } from "./turn-orchestration";
 
 export function createBattleEndTurnUi(
   ctx: BattleControllerContext,
@@ -75,9 +71,13 @@ export function createBattleEndTurnUi(
     );
   }
 
-  function resumePendingBattleTransition() {
-    resumePendingBattleTransitionState(ctx.battleSessionRef.current, session, orch);
+  function resumePendingBattleTransitionUi() {
+    resumePendingBattleTransition(ctx.battleSessionRef.current, session, orch, resolveEndTurn);
   }
 
-  return { handleEndTurn, resolveEndTurn: resolveEndTurnHandler, resumePendingBattleTransition };
+  return {
+    handleEndTurn,
+    resolveEndTurn: resolveEndTurnHandler,
+    resumePendingBattleTransition: resumePendingBattleTransitionUi,
+  };
 }

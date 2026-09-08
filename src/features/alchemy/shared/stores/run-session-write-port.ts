@@ -9,7 +9,6 @@ export {
   createDraftRunRandomSource,
   withDraftWorldBattleRng,
   setCompletedDestinations,
-  setContentSystemType,
   setCurrentAct,
   setDestinationIndexInAct,
   setDestinationOfferState,
@@ -43,7 +42,6 @@ export {
   bondCompanion,
   completeResearch,
   constructBuilding,
-  grantSalvageMaterials,
   plantFarm,
   setMaterials,
 } from "./write-port-homestead";
@@ -57,8 +55,6 @@ export {
   setCollectionPage,
   setCompletedDifficulties,
   setDiscoveredCardIds,
-  setDiscoveredTrinketIds,
-  setDiscoveredUniqueIds,
   setEncounteredEnemyIds,
   setFinishedRunCharacters,
   unlockAllTalents,
@@ -66,7 +62,6 @@ export {
 } from "./write-port-meta";
 export {
   abandonCorruptionDestinationVisit,
-  abandonMysteryDestinationVisit,
   applyRunStartSnapshot,
   beginDestinationClaim,
   beginRewardClaim,

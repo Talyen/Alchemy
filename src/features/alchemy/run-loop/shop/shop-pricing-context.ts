@@ -1,4 +1,5 @@
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { readActiveRun, readRunSession, readShopFirstPurchaseUsed } from "@/features/alchemy/shared/stores/run-reads";
 import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
@@ -7,6 +8,17 @@ import type { TalentEffectManifest } from "@/lib/game-data";
 import type { ShopBuyPriceContext } from "./shop-pricing";
 
 export type ShopSessionStateKey = "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState";
+
+export function resolveReadShopModifiers(): readonly EncounterRewardTraitId[] {
+  const run = readActiveRun();
+  return activeLabyrinthBenefits(run.contentSystemType, readRunSession().activeLabyrinthRewardModifiers) ?? [];
+}
+
+export function resolveDraftShopModifiers(draft: GameplayDraft): readonly EncounterRewardTraitId[] {
+  return (
+    activeLabyrinthBenefits(draft.run.activeRun.contentSystemType, draft.session.activeLabyrinthRewardModifiers) ?? []
+  );
+}
 
 export function resolveReadShopPricingContext(
   talentEffects: TalentEffectManifest,
@@ -28,10 +40,7 @@ export function resolveDraftShopPricingContext(
 ): ShopBuyPriceContext {
   return {
     talentEffects,
-    modifiers: activeLabyrinthBenefits(
-      draft.run.activeRun.contentSystemType,
-      draft.session.activeLabyrinthRewardModifiers,
-    ),
+    modifiers: resolveDraftShopModifiers(draft),
     runBoons: combineTrinketEffectIds(
       draft.run.activeRun.runBoons,
       draft.gear.equippedTrinkets[draft.run.activeRun.characterId],

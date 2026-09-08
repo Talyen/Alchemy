@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import type { AspectRatioOption, DisplayMode } from "@/features/alchemy/shared/types";
 import {
   DEFAULT_BACKGROUND_GLOW_PCT,
@@ -106,7 +107,7 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
     set({ ...withDerivedAutoplay(createDefaultSettingsSaveFields()), showClearSaveConfirm: false }),
 }));
 
-export function selectSettingsSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
+function selectSettingsSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
   return {
     selectedAspectRatio: state.selectedAspectRatio,
     displayMode: state.displayMode,
@@ -130,3 +131,50 @@ export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFi
     useSettingsStore.setState(withDerivedAutoplay(selectSettingsSaveFields(fields)));
   },
 };
+
+export type SettingsActions = Pick<
+  SettingsStore,
+  | "setSelectedAspectRatio"
+  | "setDisplayMode"
+  | "setBrightness"
+  | "setBackgroundParticlesIntensity"
+  | "setBackgroundGlowIntensity"
+  | "setMasterVolume"
+  | "setMusicVolume"
+  | "setSfxVolume"
+  | "setMuteInBackground"
+  | "setAutoEndTurn"
+  | "setRememberAutoplayPreference"
+  | "setAutoplayEnabled"
+  | "setShowClearSaveConfirm"
+  | "resetToDefaults"
+>;
+
+function selectSettingsActions(state: SettingsStore): SettingsActions {
+  return {
+    setSelectedAspectRatio: state.setSelectedAspectRatio,
+    setDisplayMode: state.setDisplayMode,
+    setBrightness: state.setBrightness,
+    setBackgroundParticlesIntensity: state.setBackgroundParticlesIntensity,
+    setBackgroundGlowIntensity: state.setBackgroundGlowIntensity,
+    setMasterVolume: state.setMasterVolume,
+    setMusicVolume: state.setMusicVolume,
+    setSfxVolume: state.setSfxVolume,
+    setMuteInBackground: state.setMuteInBackground,
+    setAutoEndTurn: state.setAutoEndTurn,
+    setRememberAutoplayPreference: state.setRememberAutoplayPreference,
+    setAutoplayEnabled: state.setAutoplayEnabled,
+    setShowClearSaveConfirm: state.setShowClearSaveConfirm,
+    resetToDefaults: state.resetToDefaults,
+  };
+}
+
+export function useSettingsActions(): SettingsActions {
+  return useSettingsStore(useShallow(selectSettingsActions));
+}
+
+export type AppSettings = SettingsSaveFields;
+
+export function useAppSettings(): AppSettings {
+  return useSettingsStore(useShallow(selectSettingsSaveFields));
+}

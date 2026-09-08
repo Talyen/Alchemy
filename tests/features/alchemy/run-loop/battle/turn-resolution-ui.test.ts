@@ -1,6 +1,7 @@
 import "../../../../helpers/mock-audio";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
+  commitDrawAndResume,
   executeEnemyPhase,
   persistEnemyTurnTransition,
   resolveEndTurn,
@@ -314,7 +315,7 @@ describe("resumePendingBattleTransition", () => {
     const orch = makeOrch();
     const battleSession = makeBattleTurnSession();
 
-    resumePendingBattleTransition(1, battleSession, orch);
+    resumePendingBattleTransition(1, battleSession, orch, resolveEndTurn);
 
     expect(commitBattleTransition).toHaveBeenCalledWith(resultState, null);
     expect(orch.resetHandTransferUi).toHaveBeenCalledOnce();
@@ -331,7 +332,7 @@ describe("resumePendingBattleTransition", () => {
     };
     const orch = makeOrch();
 
-    resumePendingBattleTransition(1, makeBattleTurnSession(), orch);
+    resumePendingBattleTransition(1, makeBattleTurnSession(), orch, resolveEndTurn);
 
     expect(commitBattleTransition).toHaveBeenCalledWith(resultState, null);
     expect(orch.scheduleCompanionFollowUp).toHaveBeenCalledWith(resultState, 1);
@@ -341,11 +342,11 @@ describe("resumePendingBattleTransition", () => {
   it("no-ops when the session is stale or nothing is pending", () => {
     const stale = makeBattleTurnSession({ isCurrentBattleSession: () => false });
     domain.pendingBattleTransition = { kind: "continue-end-turn" };
-    resumePendingBattleTransition(1, stale, makeOrch());
+    resumePendingBattleTransition(1, stale, makeOrch(), resolveEndTurn);
     expect(clearBattleTransition).not.toHaveBeenCalled();
 
     domain.pendingBattleTransition = null;
-    resumePendingBattleTransition(1, makeBattleTurnSession(), makeOrch());
+    resumePendingBattleTransition(1, makeBattleTurnSession(), makeOrch(), resolveEndTurn);
     expect(clearBattleTransition).not.toHaveBeenCalled();
     expect(commitBattleTransition).not.toHaveBeenCalled();
   });
@@ -357,7 +358,7 @@ describe("resumePendingBattleTransition", () => {
     domain.battleState = state;
     domain.pendingBattleTransition = { kind: "continue-end-turn" };
 
-    resumePendingBattleTransition(1, battleSession, makeOrch());
+    resumePendingBattleTransition(1, battleSession, makeOrch(), resolveEndTurn);
 
     expect(clearBattleTransition).toHaveBeenCalledOnce();
     expect(battleSession.handleVictoryDefeat).toHaveBeenCalledWith("victory");
@@ -370,12 +371,66 @@ describe("resumePendingBattleTransition", () => {
     const orch = makeOrch();
     const battleSession = makeBattleTurnSession();
 
-    resumePendingBattleTransition(1, battleSession, orch);
+    resumePendingBattleTransition(1, battleSession, orch, resolveEndTurn);
 
     expect(commitBattleTransition).toHaveBeenCalledOnce();
     const [recovered, continuation] = vi.mocked(commitBattleTransition).mock.calls[0]!;
     expect(continuation).toBeNull();
     expect(recovered.turnPhase).toBe("player");
     expect(battleSession.checkBattleEnd).toHaveBeenCalledWith(recovered, 1);
+  });
+});
+
+describe("commitDrawAndResume", () => {
+  it("commits an uncommitted draw result before resuming playback", () => {
+    const resultState = { ...defaultBattleState(), hand: [] };
+    domain.battleState = resultState;
+    const orch = makeOrch();
+    const battleSession = makeBattleTurnSession();
+
+    commitDrawAndResume(resultState, false, 1, battleSession, orch, resolveEndTurn, resultState);
+
+    expect(commitBattleTransition).toHaveBeenCalledWith(resultState, null);
+    expect(clearBattleTransition).not.toHaveBeenCalled();
+    expect(orch.scheduleAutoEndTurn).toHaveBeenCalledWith(resultState);
+  });
+
+  it("leaves an already-committed draw result alone before resuming playback", () => {
+    const resultState = { ...defaultBattleState(), hand: [] };
+    domain.battleState = resultState;
+    const orch = makeOrch();
+
+    commitDrawAndResume(resultState, false, 1, makeBattleTurnSession(), orch, resolveEndTurn, null);
+
+    expect(commitBattleTransition).not.toHaveBeenCalled();
+    expect(clearBattleTransition).not.toHaveBeenCalled();
+    expect(orch.scheduleAutoEndTurn).toHaveBeenCalledWith(resultState);
+  });
+
+  it("clears an idle haste transition instead of recommitting it", () => {
+    const resultState = { ...defaultBattleState(), hand: [] };
+    domain.battleState = resultState;
+    const orch = makeOrch();
+
+    commitDrawAndResume(resultState, false, 1, makeBattleTurnSession(), orch, resolveEndTurn, "clear-when-idle");
+
+    expect(commitBattleTransition).not.toHaveBeenCalled();
+    expect(clearBattleTransition).toHaveBeenCalledOnce();
+    expect(orch.scheduleAutoEndTurn).toHaveBeenCalledWith(resultState);
+  });
+
+  it("re-enters end-turn resolution for a skipped haste continuation", () => {
+    const resultState = { ...defaultBattleState(), hand: [] };
+    domain.battleState = resultState;
+    const orch = makeOrch();
+    const battleSession = makeBattleTurnSession();
+    const nextEndTurn = vi.fn(() => false);
+
+    commitDrawAndResume(resultState, true, 1, battleSession, orch, nextEndTurn, "clear-when-idle");
+
+    expect(commitBattleTransition).not.toHaveBeenCalled();
+    expect(clearBattleTransition).toHaveBeenCalledOnce();
+    expect(nextEndTurn).toHaveBeenCalledWith(resultState, 1, battleSession, orch);
+    expect(orch.scheduleAutoEndTurn).not.toHaveBeenCalled();
   });
 });

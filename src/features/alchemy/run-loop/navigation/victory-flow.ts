@@ -9,8 +9,44 @@ import {
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
-import type { VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
-export type { VictoryRewardsInput, VictoryRewardsResult } from "./victory-flow-types";
+import type { HomesteadEffectManifest } from "@/lib/homestead/types";
+import type {
+  DestinationOfferState,
+  DestinationOptionsInput,
+} from "@/features/alchemy/shared/run-flow/destination-flow";
+
+export interface VictoryRewardsInput {
+  characterId: CharacterId;
+  selectedDifficulty: DifficultyId | null;
+  unlockedTalents: UnlockedTalents;
+  runDeck: BattleCard[];
+  runBoons: string[];
+  equippedTrinketId?: string | null;
+  ownedTrinketIds?: string[];
+  ownedUniqueIds?: ReadonlySet<string>;
+  contentSystemType: ContentSystemId;
+  activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
+  battleState: BattleState;
+  purseGold: number;
+  runMaxHealth: number;
+  destinationIndexInAct: number;
+  homesteadEffects: HomesteadEffectManifest;
+  getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
+  bossEnemyId?: string | null | undefined;
+  destinationOfferState: DestinationOfferState;
+}
+
+export interface VictoryRewardsResult {
+  rewardState: RewardState;
+  labyrinthRewardModifiers: EncounterRewardTraitId[];
+
+  goldEarned: number;
+
+  persistedGold: number;
+  playerHealth: number;
+  maxHealthDelta: number;
+  destinationOfferState: DestinationOfferState;
+}
 import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
 import {
   COMPANION_GOLD_FIND_CHANCE,
@@ -22,7 +58,7 @@ import {
   GOLD_REWARD_MAX,
   GOLD_TROVE_REWARD_MULTIPLIER,
 } from "@/lib/game-constants";
-import { getGenerousGoldBonus, getWealthyGoldBonus, getWellProvisionedHealing } from "./reward-flow";
+import { getGenerousGoldBonus, getWealthyGoldBonus, getWellProvisionedHealing } from "./reward-math";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RewardState } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
@@ -32,6 +68,8 @@ import {
   getActiveRewardModifiersForContentSystem,
   applyLabyrinthRewardMaterialModifiers,
   computeVictoryGold,
+} from "./reward-math";
+import {
   createCombatRewardState as createCombatRewardStateFromFlow,
   createBossRewardState as createBossRewardStateFromFlow,
   createWildwoodRewardState,
@@ -89,8 +127,6 @@ export function computeVictoryRewardState(
     equippedTrinketId?: string | null;
     ownedTrinketIds?: string[];
     ownedUniqueIds?: ReadonlySet<string>;
-    contentSystemType: ContentSystemId;
-    activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
     battleState: BattleState;
     gold: number;
     eliteBonus: number;
@@ -248,8 +284,6 @@ export function computeVictoryRewards(
       equippedTrinketId: input.equippedTrinketId ?? null,
       ownedTrinketIds: input.ownedTrinketIds ?? [],
       ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
-      contentSystemType: input.contentSystemType,
-      activeLabyrinthRewardModifiers: input.activeLabyrinthRewardModifiers,
       battleState: input.battleState,
       gold,
       eliteBonus,

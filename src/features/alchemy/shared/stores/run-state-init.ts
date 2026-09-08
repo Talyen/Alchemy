@@ -56,6 +56,28 @@ export interface PermanentProgressFields {
 
 export type ActiveRunReadView = ActiveRunProgressFields & { initialized: boolean };
 
+export const ACTIVE_RUN_PROGRESS_KEYS = [
+  "characterId",
+  "runDeck",
+  "runPlayerHealth",
+  "runMaxHealth",
+  "runMetaMaxHealth",
+  "roomsEncountered",
+  "currentAct",
+  "destinationIndexInAct",
+  "completedDestinations",
+  "lastOfferedDestinations",
+  "destinationRoundsSinceOffered",
+  "runBoons",
+  "encounteredRunEnemyIds",
+  "selectedDifficulty",
+  "contentSystemType",
+  "rng",
+  "runTalentXP",
+  "runMaterialsEarned",
+  "runObtainedItems",
+] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
+
 export function pickActiveRunView(run: {
   activeRun: ActiveRunProgressFields;
   initialized: boolean;

@@ -62,13 +62,13 @@ export function transferCardIntervalSeconds(
   speedMul: number,
   completionBufferMs: number,
 ): number {
-  return ((durationSeconds / speedMul) * 1000 + completionBufferMs) / 1000;
+  return durationSeconds / speedMul + completionBufferMs / 1000;
 }
 
 export function getCardTransferBatchSpeed(cardCount: number) {
   const { batchSpeedMultipliers } = CARD_TRANSFER_CONFIG;
   if (cardCount <= batchSpeedMultipliers.smallMaxCardCount) return batchSpeedMultipliers.small;
-  if (cardCount === batchSpeedMultipliers.mediumCardCount) return batchSpeedMultipliers.medium;
+  if (cardCount <= batchSpeedMultipliers.mediumCardCount) return batchSpeedMultipliers.medium;
   return batchSpeedMultipliers.large;
 }
 

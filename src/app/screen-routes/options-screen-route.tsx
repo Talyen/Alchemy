@@ -3,8 +3,7 @@ import type { ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { isDesktop } from "@/lib/platform";
 import { OptionsScreen } from "@/features/alchemy/meta/screens";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { useSettingsActions } from "@/features/alchemy/shared/stores/store-actions";
+import { useSettingsActions, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import type { OptionsRouteCtx } from "./route-ctx";
 
 type OptionsScreenRouteProps = OptionsRouteCtx;

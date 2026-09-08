@@ -4,7 +4,7 @@ Step-by-step checklists for adding or changing game content and wiring.
 
 For refactors and simplification passes on attached paths, use [docs/Audits](./Audits/README.md) when the user cites an audit.
 
-**Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** capability paths under `src/features/alchemy/` (for example `@/features/alchemy/shared/stores/run-session-read-port`) — not legacy alias paths that skip `shared/`.
+**Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** capability paths under `src/features/alchemy/` (for example `@/features/alchemy/shared/stores/run-reads`) — not legacy alias paths that skip `shared/`.
 
 **Read scope:** use the task index and open one workflow section at a time. Expand
 only when a checklist crosses that boundary. Generated asset barrels are
@@ -65,7 +65,7 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command | Mystery: `run-loop/navigation/mystery-flow.ts` (`gainMysteryMaterial` / `mysteryApplyHandlers`); combat gems: `run-loop/run/run-flow-victory.ts` (`commitVictoryRewards`); reward-screen materials: `run-loop/run/run-flow-rewards.ts` (`finishRewards`) |
 | 2. Apply homestead find bonus when appropriate                                | `applyMaterialFindBonus()` from `@/lib/homestead/loot` before awarding (mystery/combat already do this)                                                                                                                                                  |
-| 3. Run-end display (no change needed if step 1 is correct)                    | `awardRunEndMaterials` in `run-loop/run/run-flow-session-helpers.ts` (used by `run-flow-defeat.ts`) merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`                                                         |
+| 3. Run-end display (no change needed if step 1 is correct)                    | `awardRunEndMaterials` in `run-loop/run/run-flow-defeat.ts` (used by `run-flow-defeat.ts`/`run-flow-victory.ts`) merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`                                            |
 | 4. Tests                                                                      | `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                                                                                                     |
 
 **Do not** call `addMaterials()` on the run profile store directly from run-loop or mystery code for player loot.

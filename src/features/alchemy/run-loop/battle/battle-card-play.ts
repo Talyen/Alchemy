@@ -28,7 +28,7 @@ import {
   withRestingWorldBattleRng,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { discoverCardIds } from "../run/deck-mutations";
+import { discoverCardIds } from "../../shared/stores/profile-store";
 
 export function createBattleCardPlay(
   ctx: BattleControllerContext,

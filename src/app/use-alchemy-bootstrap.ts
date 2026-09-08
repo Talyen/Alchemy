@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
-import { applySaveDataToStores, bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage";
+import {
+  bootstrapAlchemySaveState,
+  createDefaultSaveData,
+  hydrateAlchemyPersistenceFields,
+} from "@/features/alchemy/shared/storage";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { logStorageFailure } from "@/lib/storage-logging";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { readRunInitialized } from "@/features/alchemy/shared/stores/run-reads";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
@@ -23,11 +28,18 @@ export function useAlchemyBootstrap(): SaveLoadState | null {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      await maybeWipeLocalSaveFromQuery();
+      let result: SaveLoadState;
+      try {
+        await maybeWipeLocalSaveFromQuery();
+        if (cancelled) return;
+        result = await bootstrapAlchemySaveState();
+      } catch (error) {
+        if (cancelled) return;
+        logStorageFailure("Save bootstrap failed, falling back to defaults", error);
+        result = { data: createDefaultSaveData(), status: { kind: "corrupt" } };
+      }
       if (cancelled) return;
-      const result = await bootstrapAlchemySaveState();
-      if (cancelled) return;
-      applySaveDataToStores(result.data);
+      hydrateAlchemyPersistenceFields(result.data);
       if (!readRunInitialized()) {
         restoreRun(
           result.data.activeRun,

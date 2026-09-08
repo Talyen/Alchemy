@@ -7,8 +7,9 @@ import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 
 import { useLatestRef } from "../../shared/hooks";
-import { driveAutoplay, findFirstPlayableHandCard, isBattlePlaybackBlocked } from "./autoplay-driver";
-import type { BattlePlaybackPresentationGate } from "./use-battle-presentation-gate";
+import { driveAutoplay, isBattlePlaybackBlocked } from "./autoplay-driver";
+import { findFirstPlayableHandCard } from "./playable-hand";
+import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-presentation";
 
 interface UseBattleAutoplayOptions {
   enabled: boolean;
@@ -21,8 +22,6 @@ interface UseBattleAutoplayOptions {
   presentationGateRef: RefObject<BattlePlaybackPresentationGate>;
   wakeRef?: RefObject<(() => void) | null>;
 }
-
-export const isAutoplayBlocked = isBattlePlaybackBlocked;
 
 export function useBattleAutoplay({
   enabled,
@@ -53,7 +52,7 @@ export function useBattleAutoplay({
       wakeRef,
       isEnabled: () => enabledRef.current && !controller.signal.aborted,
       isBlocked: () =>
-        isAutoplayBlocked({
+        isBattlePlaybackBlocked({
           screen: screenRef.current,
           battleState: battleStateRef.current,
           hasActiveBattle: hasActiveBattleRef.current,

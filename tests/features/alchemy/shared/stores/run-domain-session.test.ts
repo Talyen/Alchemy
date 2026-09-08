@@ -39,7 +39,7 @@ const setHasActiveBattle = createRunSessionCommand(mutateHasActiveBattle);
 const setHasActiveRun = createRunSessionCommand(mutateHasActiveRun);
 const setRewardState = createRunSessionCommand(mutateRewardState);
 
-import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
+import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import {
   resetRunBattleSlice,
@@ -151,7 +151,7 @@ describe("run transitions", () => {
     });
     expect(readRunSession().hasActiveRun).toBe(false);
     await vi.waitFor(() => {
-      expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
+      expect(saveAlchemySaveData).toHaveBeenCalledWith(expect.objectContaining({ activeRun: null }));
     });
   });
 
@@ -189,7 +189,7 @@ describe("run transitions", () => {
     expect(awardRunEndMaterials).toHaveBeenCalledOnce();
     expect(finalizeRunXP).toHaveBeenCalledOnce();
     await vi.waitFor(() => {
-      expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
+      expect(saveAlchemySaveData).toHaveBeenCalledWith(expect.objectContaining({ activeRun: null }));
     });
     expect(commits).toEqual([{ hasActiveRun: false, hasActiveBattle: false }]);
     expect(clearCombatPresentation).toHaveBeenCalledOnce();

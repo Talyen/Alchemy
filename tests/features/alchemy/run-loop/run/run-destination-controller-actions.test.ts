@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as config from "@/features/alchemy/shared/config";
-import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/destination-flow";
@@ -35,7 +35,7 @@ describe("run destination controller actions", () => {
   it("claimRewardChoice rejects a choice that is not offered", () => {
     dispatchRunSessionCommand((draft) => setRewardState(draft, createEmptyRewardState()));
 
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps());
+    const handlers = createRunFlow(makeFlowHandlerDeps());
     handlers.claimRewardChoice("slash");
     expect(readRunSession().rewardState.selectedId).toBeNull();
     expect(readRunSession().rewardClaimInFlight).toBe(false);
@@ -51,7 +51,7 @@ describe("run destination controller actions", () => {
       }),
     );
 
-    createRunFlowHandlers(makeFlowHandlerDeps()).prepareDestinationScreen();
+    createRunFlow(makeFlowHandlerDeps()).prepareDestinationScreen();
     expect(readRunSession().rewardState.selectedBossId).toBe("mimic");
   });
 
@@ -60,7 +60,7 @@ describe("run destination controller actions", () => {
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => {
       commit = onCommitted;
     });
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
 
     handlers.handleCampfireContinue();
 
@@ -81,7 +81,7 @@ describe("run destination controller actions", () => {
 
     const captured: Array<{ destinationIndexInAct?: number }> = [];
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    const handlers = createRunFlowHandlers(
+    const handlers = createRunFlow(
       makeFlowHandlerDeps({
         navigateTo,
         getAvailableDestinations: (opts) => {
@@ -104,7 +104,7 @@ describe("run destination controller actions", () => {
     });
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    const handlers = createRunFlowHandlers(
+    const handlers = createRunFlow(
       makeFlowHandlerDeps({
         navigateTo,
         getAvailableDestinations: (opts) =>
@@ -181,7 +181,7 @@ describe("run destination controller actions", () => {
         commit = onCommitted;
       });
       const roomsBeforeExit = readActiveRun().roomsEncountered;
-      createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, labyrinthClearNode })).advanceToNextDestination();
+      createRunFlow(makeFlowHandlerDeps({ navigateTo, labyrinthClearNode })).advanceToNextDestination();
 
       const outgoing = readRunSession();
       expect(outgoing.mysteryEvent?.id).toBe("stale-event");
@@ -225,7 +225,7 @@ describe("run destination controller actions", () => {
     dispatchRunSessionCommand((draft) => setRewardState(draft, createEmptyRewardState()));
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
 
     expect(readActiveRun().roomsEncountered).toBe(3);
     expect(readActiveRun().destinationIndexInAct).toBe(1);
@@ -249,7 +249,7 @@ describe("run destination controller actions", () => {
     expect(dispatchRunSessionCommand((draft) => beginDestinationClaim(draft, DESTINATIONS.CORRUPTION))).toBe(true);
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
 
     expect(readRunSession().pendingDestinationClaim).toBeNull();
     expect(readActiveRun().roomsEncountered).toBe(3);
@@ -269,12 +269,12 @@ describe("run destination controller actions", () => {
     dispatchRunSessionCommand((draft) => setRewardState(draft, { ...createEmptyRewardState(), destinations: offered }));
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).handleDestinationChoice(DESTINATIONS.CORRUPTION);
+    createRunFlow(makeFlowHandlerDeps({ navigateTo })).handleDestinationChoice(DESTINATIONS.CORRUPTION);
 
     expect(readActiveRun().lastOfferedDestinations).toEqual(offered);
     expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.CORRUPTION]);
 
-    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
 
     expect(readRunSession().rewardState.destinations).toEqual(offered);
     expect(readActiveRun().destinationIndexInAct).toBe(0);

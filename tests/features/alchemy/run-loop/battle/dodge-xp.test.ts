@@ -11,7 +11,7 @@ import { initializeActiveBattle, finalizeRunXP } from "@/features/alchemy/shared
 import { readActiveRun, readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { persistEnemyTurnTransition } from "@/features/alchemy/run-loop/battle/enemy-phase";
-import { resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/resume-transition";
+import { resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { incomingPhysical } from "../../../../fixtures/battle";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { makeBattleTurnSession, makeTurnOrchestration } from "./turn-orchestration-fixture";

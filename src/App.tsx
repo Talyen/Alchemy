@@ -32,12 +32,12 @@ import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltip-root";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
-import { BattleAutoplayToggle } from "@/features/alchemy/run-loop/screens/battle-screen/autoplay-toggle";
+import { BattleAutoplayToggle } from "@/app/battle-autoplay-toggle";
 import { BattleBoonInspectButton } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
 import { hasInspectableBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { clearAlchemySaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
-import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
+import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
 import {
   useActiveRunScreenValue,
   useActiveRunBoons,

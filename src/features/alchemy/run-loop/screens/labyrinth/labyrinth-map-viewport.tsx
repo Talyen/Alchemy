@@ -35,9 +35,8 @@ export function LabyrinthMapViewport({
   const initializedScroll = useRef(false);
   const inspectorRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0, nodeWidth: 0 });
-  const selectedNode = nodes.find(
-    (node) => node.id === selectedNodeId && labyrinthNodeVisualState(map, node.id) === "reachable",
-  );
+  const selectedNode =
+    nodes.find((node) => node.id === selectedNodeId && labyrinthNodeVisualState(map, node.id) === "reachable") ?? null;
 
   useLayoutEffect(() => {
     const element = scrollRef.current;

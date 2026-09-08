@@ -13,6 +13,8 @@ The subsystem was selected with a single JavaScript `Math.random()` draw over th
 
 ## Evidence and impact
 
+> Historical baseline: items below describe the pre-fix behavior found during investigation, not the current code. See Completion for what shipped.
+
 1. In [the autosave hook](../../../src/app/use-app-save-state.ts), `flush()` calls `dropPending()` before building and writing the snapshot. This clears `isDirty` and the timer before a storage result exists.
 2. In [storage I/O](../../../src/features/alchemy/shared/storage/io.ts), `writeSaveSnapshot()` logs both reported failures and thrown errors, then resolves normally. `saveAlchemySaveData()` returns no success information. The hook cannot distinguish durable progress from a failed attempt.
 3. The exit path only flushes when `isDirty` is true. After a failed ordinary autosave, a player who makes no further changes can close the game without another save attempt. A temporary storage failure can therefore lose progress even if storage becomes available before exit.
@@ -38,7 +40,7 @@ The intended player-visible impact is more reliable persistence after temporary 
 
 - [x] Re-read working-tree changes before implementation. The checkout contains extensive unrelated work, including save documentation and run-state owners; preserve that work and keep this implementation separable.
 - [x] Add deterministic regression coverage for a failed ordinary autosave followed by storage recovery and exit without another store change. Use the configurable save backend, fake timers, and deferred promises instead of real delays.
-- [x] Define a small typed write outcome in the existing storage owner: saved, failed, or skipped. Carry it through normal saves, exit saves, and [explicit flushes](../../../src/features/alchemy/shared/storage/flush-save.ts). For desktop exit, distinguish a queued attempt from synchronous success and allow its actual completion to be observed. Inspect every consumer before changing return types.
+- [x] Define a small typed write outcome in the existing storage owner: saved, failed, or skipped. Carry it through normal saves, exit saves, and [explicit flushes](../../../src/features/alchemy/shared/storage/io.ts). For desktop exit, distinguish a queued attempt from synchronous success and allow its actual completion to be observed. Inspect every consumer before changing return types.
 - [x] Give queue completion a precise contract: a caller succeeds only when its snapshot or a newer replacement reaches local storage. If the covering write fails, report failure; clearing or write protection cancels pending work. Keep one runner and one replaceable pending snapshot. Simplify the nested waiting logic only as needed to express this contract, with no generic task scheduler or parallel writer.
 - [x] Separate timer cancellation from acknowledgement in the autosave hook. Track change and acknowledged revisions, or an equivalently small monotonic token scheme, so an old completion cannot clear new progress. Derive dirty state from that relationship rather than maintaining contradictory flags.
 - [x] Reuse the hook's timer for debounce and failure cooldown. Retain the existing successful-path debounce and maximum-wait behavior. Keep failure cooldown independent of the original dirty timestamp so an expired maximum wait cannot cause a zero-delay retry loop. Stop scheduling on cleanup, disabled persistence, reset, or write protection; late completions must not resurrect cancelled work.

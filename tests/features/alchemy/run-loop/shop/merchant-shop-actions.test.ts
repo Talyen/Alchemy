@@ -82,6 +82,31 @@ describe("merchant shop actions", () => {
       expect(actions.merchant.getCardBuyPrice(card)).toBe(SHOP_CARD_PRICE - 5);
     });
   });
+  describe("buy card", () => {
+    it("purchases the live shelf card when the supplied copy is stale", () => {
+      setRunProgress({ gold: 999 });
+      setShopState(createInitialShopState());
+      const actions = buildActions();
+      const onShelf = requiredItem(readRunSession().shopState.cards[0], "merchant card");
+      const staleCopy = { ...onShelf, uid: (onShelf.uid ?? 0) + 1000 };
+
+      expect(actions.merchant.buyCard(staleCopy, shopItemSlotKey(onShelf.id, 0))).toBe(true);
+
+      const deck = readActiveRun().runDeck;
+      expect(deck).toContainEqual(onShelf);
+      expect(deck).not.toContainEqual(staleCopy);
+    });
+
+    it("rejects a buy for a card that is not on the shelf", () => {
+      setRunProgress({ gold: 999 });
+      setShopState(createInitialShopState());
+      const actions = buildActions();
+      const onShelf = requiredItem(readRunSession().shopState.cards[0], "merchant card");
+
+      expect(actions.merchant.buyCard({ ...onShelf }, shopItemSlotKey("missing-card", 0))).toBe(false);
+      expect(readRunProfile().gold).toBe(999);
+    });
+  });
   describe("init", () => {
     it("initializes the merchant shop from the current deck", () => {
       setRunProgress({ runDeck: [makeCard()] });

@@ -2,7 +2,7 @@ import { describe, expectTypeOf, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
 import type { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow-handler-deps";
+import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow";
 import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
 import {
   dispatchRunSessionCommand,

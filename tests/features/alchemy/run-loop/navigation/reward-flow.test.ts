@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
+  createNextRewardState,
+  getCompanionCardChoices,
+  getRandomPotionCard,
+  finalizeRewardState,
+} from "@/features/alchemy/run-loop/navigation/reward-flow";
+import {
   applyLabyrinthRewardMaterialModifiers,
   computeVictoryGold,
-  createNextRewardState,
   getActiveRewardModifiersForContentSystem,
-  getCompanionCardChoices,
   getGenerousGoldBonus,
   getWealthyGoldBonus,
   getWellProvisionedHealing,
-  getRandomPotionCard,
-  finalizeRewardState,
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
-} from "@/features/alchemy/run-loop/navigation/reward-flow";
+} from "@/features/alchemy/run-loop/navigation/reward-math";
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { executeRewardRouteTransition } from "@/features/alchemy/run-loop/run/run-flow-rewards";
 import { createEmptyRewardState, type BoonRewardState } from "@/lib/active-run-session";

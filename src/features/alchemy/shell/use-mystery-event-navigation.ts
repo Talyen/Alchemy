@@ -5,7 +5,7 @@ import {
 } from "@/lib/content-systems/labyrinth/room-rules";
 import { useCallback, useMemo } from "react";
 import { pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
-import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
+import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
 import {
   createDraftRunRandomSource,

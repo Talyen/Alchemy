@@ -6,7 +6,7 @@ import {
   type VictoryRewardsResult,
 } from "@/features/alchemy/run-loop/navigation/victory-flow";
 import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/run-flow-victory";
-import { computeVictoryGold } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { computeVictoryGold } from "@/features/alchemy/run-loop/navigation/reward-math";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";

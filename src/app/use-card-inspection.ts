@@ -2,13 +2,13 @@ import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import type { CardInspectionView } from "@/features/alchemy/shared/types";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { readCardInspectionData, useCardInspectionData } from "@/features/alchemy/shared/stores/run-session-read-port";
+import { readCardInspectionData, useCardInspectionData } from "@/features/alchemy/shared/stores/run-reads";
 import {
   useCardAnimationInProgress,
   readCardAnimationInProgress,
   useHiddenHandCardKeys,
 } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
-import { readPlaybackPresentationGate } from "@/features/alchemy/run-loop/battle/use-battle-presentation-gate";
+import { readPlaybackPresentationGate } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 import { handHasHiddenCard } from "@/features/alchemy/run-loop/battle/playable-hand";
 import type { CardInspectionCollection } from "@/features/alchemy/shared/ui/card-inspection-overlay";
 

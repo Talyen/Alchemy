@@ -111,8 +111,9 @@ function MysteryRewardEffectItem({
     },
     gainRandomTrinket: () => {
       const boon = grantedTrinketId ? findTrinket(grantedTrinketId) : undefined;
-      if (!boon) return <p className={cn(controlLabelClass, "text-balance")}>Gained a random Boon for this run</p>;
-      return <MysteryTrinketRewardItem boon={boon} />;
+      if (boon) return <MysteryTrinketRewardItem boon={boon} />;
+      if (grantedGear) return <MysteryGearRewardItem instance={grantedGear} />;
+      return <p className={cn(controlLabelClass, "text-balance")}>Gained a random Boon for this run</p>;
     },
     gainGeneratedGear: () => {
       if (!grantedGear) return <p className={cn(controlLabelClass, "text-balance")}>Added Gear to your Armory</p>;
@@ -190,14 +191,15 @@ export function MysteryRewardSummary({
           totalXP: (talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0),
         }))}
         size="lg"
-        columns={5}
       />
 
       {otherEffects.map((effect, i) => {
         const grantedTrinketId =
           effect.kind === "gainRandomTrinket" ? grantedTrinketIds[randomTrinketCursor++] : undefined;
         const grantedGear =
-          effect.kind === "gainGeneratedGear" || effect.kind === "gainRandomGear"
+          effect.kind === "gainGeneratedGear" ||
+          effect.kind === "gainRandomGear" ||
+          (effect.kind === "gainRandomTrinket" && grantedTrinketId === undefined)
             ? grantedGearInstances[generatedGearCursor++]
             : undefined;
         return (

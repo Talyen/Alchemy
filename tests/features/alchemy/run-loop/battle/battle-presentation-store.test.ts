@@ -4,7 +4,6 @@ import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } fr
 import { keywordDefinitions } from "@/lib/game-data";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { clearCombatPresentation } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
@@ -132,7 +131,7 @@ describe("battle-presentation-store", () => {
     expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
   });
 
-  it.each([clearBattlePresentationUi, clearCombatPresentation])("%s resets full presentation VFX", (clear) => {
+  it("clearBattlePresentationUi resets full presentation VFX", () => {
     useBattlePresentationStore.setState({
       playerImpactCue: { sequence: 1, colors: keywordDefinitions.freeze.shineColors, healthLost: true },
     });
@@ -145,7 +144,7 @@ describe("battle-presentation-store", () => {
       delay: 0,
       variant: "activate",
     });
-    clear();
+    clearBattlePresentationUi();
     const s = useBattlePresentationStore.getState();
     expect(s.cardGhosts).toEqual([]);
     expect(s.playerImpactCue).toBeNull();

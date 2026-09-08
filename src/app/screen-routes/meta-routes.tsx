@@ -15,7 +15,15 @@ import {
   useProfileCollectionSlice,
   useProfileDiscoverySlice,
 } from "@/features/alchemy/shared/stores/profile-store";
-import { useCollectionActions, useHomesteadActions } from "@/features/alchemy/shared/stores/store-actions";
+import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  bondCompanion,
+  completeResearch,
+  constructBuilding,
+  handleCollectionTabChange,
+  plantFarm,
+  setCollectionPage,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   useBondedCompanions,
   useHomesteadProgressSlice,
@@ -25,6 +33,13 @@ import {
 import type { MetaCommands, MetaRouteCtx } from "./route-ctx";
 import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
+
+const setCollectionPageCommand = createRunSessionCommand(setCollectionPage);
+const handleCollectionTabChangeCommand = createRunSessionCommand(handleCollectionTabChange);
+const constructBuildingCommand = createRunSessionCommand(constructBuilding);
+const plantFarmCommand = createRunSessionCommand(plantFarm);
+const completeResearchCommand = createRunSessionCommand(completeResearch);
+const bondCompanionCommand = createRunSessionCommand(bondCompanion);
 
 function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
@@ -111,15 +126,14 @@ function CollectionScreenRoute({
   onOpenGameMenu: (rect: DOMRect) => void;
 }) {
   const profile = useProfileCollectionSlice();
-  const collectionActions = useCollectionActions();
   const bondedCompanions = useBondedCompanions();
   const finishedRunCharacters = useFinishedRunCharacters();
 
   return (
     <CollectionScreen
       collectionTab={profile.collectionTab}
-      onSelectTab={collectionActions.handleCollectionTabChange}
-      onPageChange={collectionActions.setCollectionPage}
+      onSelectTab={handleCollectionTabChangeCommand}
+      onPageChange={setCollectionPageCommand}
       bondedCompanions={bondedCompanions}
       discoveredCardIds={profile.discoveredCardIds}
       encounteredEnemyIds={profile.encounteredEnemyIds}
@@ -142,7 +156,6 @@ function HomesteadScreenRoute({
 }) {
   const homesteadValues = useHomesteadProgressSlice();
   const { discoveredCardIds } = useProfileDiscoverySlice();
-  const homesteadActions = useHomesteadActions();
 
   return (
     <HomesteadScreen
@@ -153,10 +166,10 @@ function HomesteadScreenRoute({
       completedResearch={homesteadValues.completedResearch}
       bondedCompanions={homesteadValues.bondedCompanions}
       discoveredCardIds={discoveredCardIds}
-      onConstructBuilding={homesteadActions.constructBuilding}
-      onPlantFarm={homesteadActions.plantFarm}
-      onCompleteResearch={homesteadActions.completeResearch}
-      onBondCompanion={homesteadActions.bondCompanion}
+      onConstructBuilding={constructBuildingCommand}
+      onPlantFarm={plantFarmCommand}
+      onCompleteResearch={completeResearchCommand}
+      onBondCompanion={bondCompanionCommand}
       onBack={onBack}
       onMenu={onOpenGameMenu}
     />

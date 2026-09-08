@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
-import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/io";
+import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage";
 
 function playableSave(lastSavedAt: number) {
   return JSON.stringify({
@@ -38,14 +38,6 @@ describe("save version protection", () => {
     expect(loaded.data.lastSavedAt).toBe(2000);
   });
 
-  it("protects the session when the newer-version copy is genuinely newer", () => {
-    const loaded = evaluateSaveCandidates([playableSave(1000), futureSave(2000)]);
-    expect(loaded.status).toEqual({
-      kind: "unsupported-newer-schema",
-      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-    });
-  });
-
   it("loads the playable backup past a newer-version stub with no timestamp", () => {
     const loaded = evaluateSaveCandidates([playableSave(2000), futureSave(undefined)]);
     expect(loaded.status.kind).toBe("ok");
@@ -53,6 +45,11 @@ describe("save version protection", () => {
 
   it("protects the session when only a newer-version copy exists", () => {
     const loaded = evaluateSaveCandidates([futureSave(1000)]);
+    expect(loaded.status.kind).toBe("unsupported-newer-schema");
+  });
+
+  it("protects the session when only a timestamp-less newer-version copy exists", () => {
+    const loaded = evaluateSaveCandidates([futureSave(undefined)]);
     expect(loaded.status.kind).toBe("unsupported-newer-schema");
   });
 

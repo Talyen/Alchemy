@@ -3,7 +3,7 @@ import { defaultBattleState } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/resume-transition";
+import { resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { resetRunDomainStore } from "../../../../helpers/gameplay-store-test";

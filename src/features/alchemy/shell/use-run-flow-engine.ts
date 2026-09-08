@@ -1,16 +1,23 @@
 import { useMemo, useCallback } from "react";
-import { useSetHasActiveBattle } from "@/features/alchemy/shared/stores/store-actions";
+import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-reads";
-import { setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import {
+  setRunDeck,
+  cancelDestinationClaim,
+  releaseRewardClaim,
+  setHasActiveBattle as setDraftHasActiveBattle,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
-import { createRunTeardown } from "@/features/alchemy/run-loop/run/create-run-teardown";
 import { useRunDestinationWiring } from "./use-run-destination-wiring";
 import { useWildwoodGauntletFlow } from "./use-wildwood-gauntlet-flow";
 import { useContentSystemNavigation } from "./use-content-system-navigation";
 import { useMysteryEventNavigation } from "./use-mystery-event-navigation";
-import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow-shell-actions";
+import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow";
 import type { RunNavigationDeps } from "./shell-types";
 
 export function useRunFlowEngine({
@@ -22,7 +29,7 @@ export function useRunFlowEngine({
   initializeShop,
   labyrinthClearNode,
 }: RunNavigationDeps) {
-  const setHasActiveBattle = useSetHasActiveBattle();
+  const setHasActiveBattle = useMemo(() => createRunSessionCommand(setDraftHasActiveBattle), []);
   const nav = useRunSessionNavigationSlice(screen);
   const clearCardHover = useUiStore((s) => s.clearCardHover);
 
@@ -86,7 +93,7 @@ export function useRunFlowEngine({
 
   const flowHandlers = useMemo(
     () =>
-      createRunFlowHandlers({
+      createRunFlow({
         actions,
         getAvailableDestinations: destinations.getAvailableDestinations,
       }),
@@ -103,15 +110,33 @@ export function useRunFlowEngine({
     [flowHandlers.advanceToNextDestination, flowHandlers.returnToCurrentDestination],
   );
 
-  const teardown = useMemo(
-    () =>
-      createRunTeardown({
-        cancelPending,
-        clearCardHover,
-        navigateTo,
-      }),
-    [cancelPending, clearCardHover, navigateTo],
-  );
+  const teardown = useMemo(() => {
+    function resetRunState() {
+      dispatchRunSessionCommand(
+        (draft) => {
+          cancelDestinationClaim(draft);
+          releaseRewardClaim(draft);
+          setDraftHasActiveBattle(draft, false);
+        },
+        {
+          afterCommit: () => {
+            cancelPending();
+            clearBattlePresentationUi();
+            clearCardHover();
+            navigateTo(ROUTE_SCREENS.MENU, () => {
+              teardownRun();
+            });
+          },
+        },
+      );
+    }
+
+    function continueFromRunEnd() {
+      resetRunState();
+    }
+
+    return { resetRunState, continueFromRunEnd };
+  }, [cancelPending, clearCardHover, navigateTo]);
 
   const handleMysteryContinue = useCallback(() => {
     flowHandlers.advanceToNextDestination();

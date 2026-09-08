@@ -72,15 +72,19 @@ function normalizeLabyrinthModifiers(
 const keepLiveCard = (card: { id: string }) => isLiveCardId(card.id);
 const shopCardSlotKey = (card: { id: string }, index: number) => shopItemSlotKey(card.id, index);
 
+function repairLiveCardOfferings<T extends { id: string }>(items: T[], purchasedSlotKeys: string[]) {
+  return repairShopOfferings(items, purchasedSlotKeys, keepLiveCard, shopCardSlotKey);
+}
+
 function normalizeShopState(state: ShopState | null): ShopState | null {
   if (!state) return null;
-  const repaired = repairShopOfferings(state.cards, state.purchasedSlotKeys, keepLiveCard, shopCardSlotKey);
+  const repaired = repairLiveCardOfferings(state.cards, state.purchasedSlotKeys);
   return { ...state, cards: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys };
 }
 
 function normalizeAlchemistState(state: AlchemistState | null): AlchemistState | null {
   if (!state) return null;
-  const repaired = repairShopOfferings(state.potions, state.purchasedSlotKeys, keepLiveCard, shopCardSlotKey);
+  const repaired = repairLiveCardOfferings(state.potions, state.purchasedSlotKeys);
   return { ...state, potions: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys };
 }
 

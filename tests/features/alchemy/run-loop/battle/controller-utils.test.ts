@@ -2,7 +2,9 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { audioState } from "@/lib/audio/state";
 import {
   defaultMeasureVisualCardRect,
+  getCardTransferBatchSpeed,
   playCombatTextSounds,
+  transferCardIntervalSeconds,
 } from "@/features/alchemy/run-loop/battle/controller-utils";
 
 const playedSrcs: string[] = [];
@@ -82,6 +84,25 @@ describe("playCombatTextSounds", () => {
     ]);
     expect(playedSrcs.some((src) => src.includes("sword-impact-hit-1."))).toBe(true);
     expect(playedSrcs.some((src) => src.includes("vibraphone-chime-quick."))).toBe(true);
+  });
+});
+
+describe("getCardTransferBatchSpeed", () => {
+  it("uses small speed up to the small max and medium through the medium count", () => {
+    expect(getCardTransferBatchSpeed(0)).toBe(1);
+    expect(getCardTransferBatchSpeed(2)).toBe(1);
+    expect(getCardTransferBatchSpeed(3)).toBe(1.4);
+  });
+
+  it("uses large speed above the medium count", () => {
+    expect(getCardTransferBatchSpeed(4)).toBe(1.6);
+    expect(getCardTransferBatchSpeed(10)).toBe(1.6);
+  });
+});
+
+describe("transferCardIntervalSeconds", () => {
+  it("scales duration by speed and adds the completion buffer in seconds", () => {
+    expect(transferCardIntervalSeconds(0.3, 1.5, 50)).toBeCloseTo(0.25, 10);
   });
 });
 

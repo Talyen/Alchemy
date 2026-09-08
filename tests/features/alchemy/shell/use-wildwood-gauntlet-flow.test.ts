@@ -1,7 +1,7 @@
 import "../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -25,7 +25,7 @@ describe("Wildwood reward selection", () => {
       rewardState: createEmptyRewardState(),
     });
 
-    createRunFlowHandlers(makeFlowHandlerDeps()).claimRewardChoice("slash");
+    createRunFlow(makeFlowHandlerDeps()).claimRewardChoice("slash");
 
     expect(readRunSession().rewardState.selectedId).toBeNull();
     expect(readRunSession().wildwoodDraft).toEqual(wildwoodDraft);

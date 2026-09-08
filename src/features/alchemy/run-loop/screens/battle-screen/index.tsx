@@ -1,8 +1,7 @@
 import { useMemo, type MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
-import { CardGhostLayer } from "../../battle/presentation/card-ghost-layer";
-import { CardTransferLayer } from "../../battle/presentation/card-transfer-layer";
+import { CardGhostLayer, CardTransferLayer } from "../../battle/presentation/presentation-layers";
 import { useCardTransferInProgress } from "../../battle/presentation/use-hand-presentation";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";

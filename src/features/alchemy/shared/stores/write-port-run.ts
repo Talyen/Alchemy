@@ -94,7 +94,6 @@ export function setDestinationOfferState(
 }
 export const setRunBoons = createRunFieldSetter("runBoons");
 export const setEncounteredRunEnemyIds = createRunFieldSetter("encounteredRunEnemyIds");
-export const setContentSystemType = createRunFieldSetter("contentSystemType");
 
 export function resetProgress(draft: GameplayDraft): void {
   draft.run.activeRun = {

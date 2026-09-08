@@ -66,6 +66,11 @@ export function getPlasmaKeywordsForMysteryReward({
       const trinketId = grantedTrinketIds[randomTrinketCursor++];
       if (trinketId) {
         for (const kw of getTrinketKeywords(trinketId)) keywords.add(kw);
+      } else {
+        const gear = grantedGearInstances[generatedGearCursor++];
+        if (gear) {
+          for (const kw of getPlasmaKeywordsForGear(gear)) keywords.add(kw);
+        }
       }
     } else if (effect.kind === "gainRandomGear" || effect.kind === "gainGeneratedGear") {
       const gear = grantedGearInstances[generatedGearCursor++];

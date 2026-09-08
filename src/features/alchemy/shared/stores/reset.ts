@@ -3,10 +3,10 @@ import { useUiStore } from "./ui-store";
 import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { dispatchRunSessionCommand } from "./run-session-command";
 import { clearTransientSession } from "./write-port-session";
-import { initializeActiveBattle, resetNavigation, resetProgress } from "./write-port-run";
 import { clearPermanentData, resetToDefaults } from "./write-port-meta";
 import { resetGear } from "./gear-actions";
-import { logError } from "@/lib/error-logger";
+import { clearActiveRunInDraft } from "./run-lifecycle";
+import { logStorageFailure } from "@/lib/storage-logging";
 
 let persistentClearInFlight = false;
 
@@ -21,7 +21,7 @@ export async function clearAllPersistentGameData(): Promise<boolean> {
   try {
     const cleared = await clearAlchemySaveData({ forceLocalWipe: true });
     if (!cleared) {
-      logError("Save data could not be cleared; memory was left unchanged", "storage");
+      logStorageFailure("Save data could not be cleared; memory was left unchanged");
       return false;
     }
     useSettingsStore.getState().resetToDefaults();
@@ -29,10 +29,7 @@ export async function clearAllPersistentGameData(): Promise<boolean> {
       resetToDefaults(draft);
       clearPermanentData(draft);
       resetGear(draft.gear);
-      resetProgress(draft);
-      resetNavigation(draft);
-      clearTransientSession(draft);
-      initializeActiveBattle(draft, null);
+      clearActiveRunInDraft(draft);
     });
     return true;
   } finally {

@@ -6,7 +6,7 @@ const ALLOWED = new Set([
   "src/features/alchemy/shared/stores/write-port-session.ts",
   "src/features/alchemy/shared/stores/run-session-write-port.ts",
   "src/features/alchemy/shared/stores/gear-session-command.ts",
-  "src/features/alchemy/run-loop/run/run-flow-session-helpers.ts",
+  "src/features/alchemy/run-loop/run/run-flow-defeat.ts",
 ]);
 
 function importedName(specifier) {

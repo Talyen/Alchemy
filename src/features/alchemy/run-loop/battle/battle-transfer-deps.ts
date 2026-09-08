@@ -4,7 +4,7 @@ import { playBattleEvent } from "@/lib/audio";
 import type { CardRect, CardTransfer } from "../../shared/types";
 import { animateDiscardedHand, animateDrawnHand, type CardTransferAnimationDeps } from "./card-transfer-animations";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
-import type { StableHandCardRectDeps } from "./hand-card-layout";
+import type { StableHandCardRectDeps } from "./card-transfer-animations";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import type { BattleControllerContext } from "./battle-context";
 

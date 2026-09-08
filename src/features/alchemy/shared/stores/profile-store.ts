@@ -6,12 +6,9 @@ import { createDefaultProfileSaveFields, type ProfileSaveFields, type ProfileSta
 import type { GameplayDraft } from "./run-session-command";
 import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
 import {
-  setCompletedDifficulties as setCompletedDifficultiesInDraft,
   setDiscoveredCardIds as setDiscoveredCardIdsInDraft,
   setDiscoveredTrinketIds as setDiscoveredTrinketIdsInDraft,
   setDiscoveredUniqueIds as setDiscoveredUniqueIdsInDraft,
-  setEncounteredEnemyIds as setEncounteredEnemyIdsInDraft,
-  setFinishedRunCharacters as setFinishedRunCharactersInDraft,
 } from "./write-port-meta";
 
 export type { ProfileSaveFields } from "./profile-store-types";
@@ -114,7 +111,3 @@ export function discoverUniqueIds(draft: GameplayDraft, ids: readonly string[]):
   if (ids.length === 0) return;
   setDiscoveredUniqueIdsInDraft(draft, (current) => appendUniqueMany(current, ids));
 }
-
-export const setEncounteredEnemyIds = setEncounteredEnemyIdsInDraft;
-export const setCompletedDifficulties = setCompletedDifficultiesInDraft;
-export const setFinishedRunCharacters = setFinishedRunCharactersInDraft;

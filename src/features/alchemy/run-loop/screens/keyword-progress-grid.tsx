@@ -11,12 +11,10 @@ export interface KeywordProgressEntry {
 export function KeywordProgressGrid({
   entries,
   size = "md",
-  columns,
   className,
 }: {
   entries: KeywordProgressEntry[];
   size?: "md" | "lg";
-  columns?: 3 | 4 | 5;
   className?: string;
 }) {
   const [animate, setAnimate] = useState(false);
@@ -28,27 +26,15 @@ export function KeywordProgressGrid({
 
   if (entries.length === 0) return null;
 
-  if (columns) {
-    return (
-      <div
-        className={cn(
-          "mx-auto flex w-full max-w-[calc(73*var(--content-rem,1rem))] flex-wrap justify-center gap-3",
-          className,
-        )}
-      >
-        {entries.map(({ kw, totalXP }) => (
-          <div key={kw} className="w-56 flex-none">
-            <KeywordProgressCard kw={kw} totalXP={totalXP} animate={animate} size={size} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
   return (
-    <div className={cn("flex w-full max-w-2xl flex-wrap justify-center gap-2", className)}>
+    <div
+      className={cn(
+        "mx-auto flex w-full max-w-[calc(73*var(--content-rem,1rem))] flex-wrap justify-center gap-3",
+        className,
+      )}
+    >
       {entries.map(({ kw, totalXP }) => (
-        <div key={kw} className="w-[calc(15.7477*var(--content-rem,1rem))] flex-none">
+        <div key={kw} className="w-56 flex-none">
           <KeywordProgressCard kw={kw} totalXP={totalXP} animate={animate} size={size} />
         </div>
       ))}

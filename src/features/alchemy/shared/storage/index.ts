@@ -1,14 +1,23 @@
 export {
   clearAlchemySaveData,
+  configureSaveBackend,
   loadAlchemySaveState,
+  resetStorageIoForTests,
   saveAlchemySaveData,
   saveAlchemySaveDataForExit,
-  type SaveLoadState,
-  type SaveWriteOutcome,
-  subscribeSaveCancellation,
 } from "./io";
+export { evaluateSaveCandidates, type SaveLoadState } from "./save-candidates";
+export { setWritesDisabled, subscribeSaveCancellation, type SaveWriteOutcome } from "./save-write-queue";
 export type * from "./types";
 export * from "./defaults";
-export { subscribeAlchemyPersistence, buildAlchemySaveDataFromStores } from "./persistence";
-export { flushAlchemySaveNow } from "./flush-save";
-export { bootstrapAlchemySaveState, applySaveDataToStores } from "./bootstrap-save-state";
+export {
+  subscribeAlchemyPersistence,
+  buildAlchemySaveDataFromStores,
+  hydrateAlchemyPersistenceFields,
+} from "./persistence";
+export { bootstrapAlchemySaveState } from "./bootstrap-save-state";
+export {
+  DEVICE_DISPLAY_STORAGE_KEY,
+  readDeviceDisplayPreferences,
+  writeDeviceDisplayPreferences,
+} from "./device-display-preferences";

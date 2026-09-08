@@ -236,7 +236,6 @@ export const UI_NO_SESSION_STORES = [
     group: [
       "**/stores/run-session-*",
       "**/stores/run-reads",
-      "@/features/alchemy/shared/stores/run-session-read-port",
       "@/features/alchemy/shared/stores/run-session-write-port",
       "@/features/alchemy/shared/stores/run-reads",
       "@/features/alchemy/shared/stores/gameplay-state-store",
@@ -295,7 +294,7 @@ export const AGGREGATE_NO_DIRECT_MUTATION = [
   {
     selector: 'MemberExpression[object.name="useGameplayStateStore"][property.name="getState"]',
     message:
-      "Use capability ports (run-session-read-port / run-session-write-port) + dispatchRunSessionCommand instead of useGameplayStateStore.getState() — see .agents/knowledge/patterns/run-state-command-boundary.md.",
+      "Use capability ports (run-reads / run-session-write-port) + dispatchRunSessionCommand instead of useGameplayStateStore.getState() — see .agents/knowledge/patterns/run-state-command-boundary.md.",
   },
   {
     selector: 'MemberExpression[object.name="useGameplayStateStore"][property.name="setState"]',

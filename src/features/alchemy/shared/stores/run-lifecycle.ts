@@ -2,9 +2,9 @@ import { playDefeat, stopAllSfx } from "@/lib/audio";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
 import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
-import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
+import { buildAlchemySaveDataFromStores, saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { logError } from "@/lib/error-logger";
+import { logStorageFailure } from "@/lib/storage-logging";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { getRunSession } from "./run-reads";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
@@ -62,29 +62,33 @@ export function syncBattleToRun(draft: GameplayDraft, options?: { playerHealth?:
   setRunPlayerHealth(draft, health);
 }
 
+export function clearActiveRunInDraft(draft: GameplayDraft): void {
+  resetProgress(draft);
+  resetNavigation(draft);
+  clearTransientSession(draft);
+  initializeActiveBattle(draft, null);
+}
+
 export function teardownRun(): void {
   dispatchRunSessionCommand((draft) => {
     if (draft.session.hasActiveRun) {
       clearModeSlotInDraft(draft, draft.run.activeRun.contentSystemType);
     }
-    resetProgress(draft);
-    resetNavigation(draft);
-    clearTransientSession(draft);
-    initializeActiveBattle(draft, null);
+    clearActiveRunInDraft(draft);
   });
   clearTransientUiOnTeardown();
   notifyRunTeardown();
 }
 
 function flushSaveAfterRunEnd(): void {
-  void flushAlchemySaveNow(null).catch((error: unknown) => {
-    logError("Failed to flush save after run end", "storage", undefined, undefined, undefined, error);
+  void saveAlchemySaveData(buildAlchemySaveDataFromStores(null)).catch((error: unknown) => {
+    logStorageFailure("Failed to flush save after run end", error);
   });
 }
 
 export function flushSaveAfterGearMutation(activeRun: ActiveRunData | null): void {
-  void flushAlchemySaveNow(activeRun).catch((error: unknown) => {
-    logError("Failed to flush save after gear mutation", "storage", undefined, undefined, undefined, error);
+  void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun)).catch((error: unknown) => {
+    logStorageFailure("Failed to flush save after gear mutation", error);
   });
 }
 

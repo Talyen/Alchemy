@@ -5,7 +5,7 @@ import {
   appendCardToRunWithDiscovery,
   appendBoonToRunWithDiscovery,
   grantGearToRunWithRecord,
-} from "../run/deck-mutations";
+} from "../../shared/stores/deck-mutations";
 import type { MaterialId } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
@@ -39,7 +39,11 @@ export interface MysteryEffectContext {
 
 function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
   const card = cardById[cardId];
-  if (card) appendCardToRunWithDiscovery(context.draft, card);
+  if (!card) {
+    if (import.meta.env.DEV) console.warn(`[Mystery] addCard "${cardId}" matched no card; granting nothing`);
+    return { followUp: null };
+  }
+  appendCardToRunWithDiscovery(context.draft, card);
   return { followUp: null };
 }
 

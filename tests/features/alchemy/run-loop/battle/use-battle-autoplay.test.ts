@@ -2,8 +2,9 @@ import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRef } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isAutoplayBlocked, useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
-import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/use-battle-presentation-gate";
+import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
+import { isBattlePlaybackBlocked } from "@/features/alchemy/run-loop/battle/autoplay-driver";
+import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
@@ -11,9 +12,9 @@ import { makeOpenBattle } from "./open-battle-fixture";
 
 const openBattle = makeOpenBattle({ gameMenuOpen: false });
 
-describe("isAutoplayBlocked", () => {
+describe("isBattlePlaybackBlocked", () => {
   it("blocks when the game menu is open", () => {
-    expect(isAutoplayBlocked({ ...openBattle, gameMenuOpen: true })).toBe(true);
+    expect(isBattlePlaybackBlocked({ ...openBattle, gameMenuOpen: true })).toBe(true);
   });
 });
 

@@ -1,24 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  SaveWriteQueue,
-  setWritesDisabled,
-  type SaveWriteOutcome,
-} from "@/features/alchemy/shared/storage/save-write-queue";
+import { describe, expect, it, vi } from "vitest";
+import { SaveWriteQueue, type SaveWriteOutcome } from "@/features/alchemy/shared/storage/save-write-queue";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
+import { deferred } from "../../../../helpers/deferred";
 
 function snapshot(gold: number) {
   return { ...createDefaultSaveData(), gold };
 }
-
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  const promise = new Promise<T>((settle) => {
-    resolve = settle;
-  });
-  return { promise, resolve };
-}
-
-afterEach(() => setWritesDisabled(false));
 
 describe("SaveWriteQueue", () => {
   it.each(["saved", "failed"] as const)("coalesced callers share the replacement's %s outcome", async (outcome) => {
@@ -62,7 +49,7 @@ describe("SaveWriteQueue", () => {
     await Promise.resolve();
     const second = queue.enqueue(snapshot(2), write);
     const clear = action === "clear" ? queue.enqueueClear(async () => ({ ok: true })) : undefined;
-    if (action === "protection") setWritesDisabled(true);
+    if (action === "protection") queue.setWritesDisabled(true);
     gate.resolve("saved");
     expect(await first).toBe("skipped");
     expect(await second).toBe("skipped");
@@ -91,5 +78,26 @@ describe("SaveWriteQueue", () => {
     gate.resolve({ ok: true });
     await second;
     expect(await queue.enqueue(snapshot(2), write)).toBe("saved");
+  });
+
+  it("keeps write protection isolated per queue instance", async () => {
+    const protectedQueue = new SaveWriteQueue();
+    const openQueue = new SaveWriteQueue();
+    protectedQueue.setWritesDisabled(true);
+    expect(protectedQueue.areWritesDisabled()).toBe(true);
+    expect(openQueue.areWritesDisabled()).toBe(false);
+    expect(await openQueue.enqueue(snapshot(1), async () => "saved")).toBe("saved");
+    expect(await protectedQueue.enqueue(snapshot(2), async () => "saved")).toBe("skipped");
+  });
+
+  it("clears protection and listeners on reset", async () => {
+    const queue = new SaveWriteQueue();
+    const listener = vi.fn();
+    queue.subscribeCancellation(listener);
+    queue.setWritesDisabled(true);
+    await queue.reset();
+    expect(queue.areWritesDisabled()).toBe(false);
+    expect(await queue.enqueue(snapshot(1), async () => "saved")).toBe("saved");
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 });

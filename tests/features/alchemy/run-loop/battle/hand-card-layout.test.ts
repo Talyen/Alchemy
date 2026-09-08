@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { waitForStableHandCardRect } from "@/features/alchemy/run-loop/battle/hand-card-layout";
+import { waitForStableHandCardRect } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 import { installImmediateRafForTests } from "./battle-test-reset";
 
 const fallback = { x: 0, y: 0, width: 80, height: 120 };
@@ -21,7 +21,7 @@ describe("waitForStableHandCardRect", () => {
   it("uses the timeout fallback when layout never stabilizes", async () => {
     let timeoutCb: (() => void) | null = null;
 
-    const deps: import("@/features/alchemy/run-loop/battle/hand-card-layout").StableHandCardRectDeps = {
+    const deps: import("@/features/alchemy/run-loop/battle/card-transfer-animations").StableHandCardRectDeps = {
       measureHandCard: vi.fn(() => null),
       registerCancel: () => () => {},
       scheduleTimeout: (cb, _ms) => {

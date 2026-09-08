@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   readPlaybackPresentationGate,
   useBattlePresentationGateRef,
-} from "@/features/alchemy/run-loop/battle/use-battle-presentation-gate";
+} from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 

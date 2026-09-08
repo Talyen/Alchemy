@@ -1,22 +1,10 @@
-import {
-  settingsPersistenceCodec,
-  useSettingsStore,
-  type SettingsSaveFields,
-} from "@/features/alchemy/shared/stores/settings-store";
-import {
-  discoverUniqueIds,
-  profilePersistenceCodec,
-  type ProfileSaveFields,
-} from "@/features/alchemy/shared/stores/profile-store";
+import { settingsPersistenceCodec, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { discoverUniqueIds, profilePersistenceCodec } from "@/features/alchemy/shared/stores/profile-store";
 import { gearPersistenceCodec } from "@/features/alchemy/shared/stores/gear-store";
-import type { GearSaveFields } from "@/features/alchemy/shared/stores/gear-store-types";
-import {
-  runProfilePersistenceCodec,
-  type RunProfileSaveFields,
-} from "@/features/alchemy/shared/stores/run-profile-codec";
+import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import type { ActiveRunData } from "@/lib/active-run-session";
-import type { SaveData } from "./types";
+import type { AlchemyPersistenceFields, SaveData } from "./types";
 import { readParkedRuns, readRunRecency } from "@/features/alchemy/shared/stores/run-reads";
 import {
   subscribeRunSessionCommits,
@@ -25,15 +13,14 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 
-export type AlchemyPersistenceFields = SettingsSaveFields & ProfileSaveFields & GearSaveFields & RunProfileSaveFields;
+export type { AlchemyPersistenceFields } from "./types";
 
-const GAMEPLAY_PERSISTENCE_CODECS = [
+export const PERSISTENCE_CODECS = [
+  settingsPersistenceCodec,
   profilePersistenceCodec,
   gearPersistenceCodec,
   runProfilePersistenceCodec,
 ] as const;
-
-export const PERSISTENCE_CODECS = [settingsPersistenceCodec, ...GAMEPLAY_PERSISTENCE_CODECS] as const;
 
 export function createDefaultPersistenceFields(): AlchemyPersistenceFields {
   return {

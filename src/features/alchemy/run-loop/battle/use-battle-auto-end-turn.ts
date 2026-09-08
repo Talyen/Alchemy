@@ -9,7 +9,7 @@ import { useLatestRef } from "../../shared/hooks";
 import type { Screen } from "@/lib/routing";
 import { isBattlePlaybackBlocked } from "./autoplay-driver";
 import { handHasPlayableCard } from "./playable-hand";
-import type { BattlePlaybackPresentationGate } from "./use-battle-presentation-gate";
+import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-presentation";
 
 interface AutoEndTurnOptions {
   autoEndTurn: boolean;

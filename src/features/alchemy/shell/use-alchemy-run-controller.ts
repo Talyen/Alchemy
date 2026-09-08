@@ -57,7 +57,12 @@ export function useAlchemyRunController() {
     setHoveredCardId,
   });
 
-  const shop = useMemo(() => createShopActions({ talentEffects, homesteadEffects }), [talentEffects, homesteadEffects]);
+  const gearAstralChanceBonus = homesteadEffects.gearAstralChanceBonus;
+  const potionMixPotency = homesteadEffects.potionMixPotency;
+  const shop = useMemo(
+    () => createShopActions({ talentEffects, homesteadEffects: { gearAstralChanceBonus, potionMixPotency } }),
+    [talentEffects, gearAstralChanceBonus, potionMixPotency],
+  );
 
   const labyrinth = useLabyrinthController();
 

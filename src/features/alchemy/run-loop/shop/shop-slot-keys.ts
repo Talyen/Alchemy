@@ -6,11 +6,10 @@ export function shopOfferingsSwapKey(slotKeys: readonly string[], refreshesLeft:
   return `${refreshesLeft}:${slotKeys.join("|")}`;
 }
 
-export function shopArrayOfferingMatches<T>(
+export function findShopOffering<T>(
   items: readonly T[],
   slotKey: string,
-  itemId: string,
-  getId: (item: T) => string,
-): boolean {
-  return items.some((item, index) => shopItemSlotKey(getId(item), index) === slotKey && getId(item) === itemId);
+  getSlotKey: (item: T, index: number) => string,
+): T | undefined {
+  return items.find((item, index) => getSlotKey(item, index) === slotKey);
 }

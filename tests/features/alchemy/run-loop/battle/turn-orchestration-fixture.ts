@@ -1,6 +1,6 @@
 import { vi, type Mock } from "vitest";
 import type { HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
-import type { BattlePresentationPort } from "@/features/alchemy/run-loop/battle/battle-presentation-port";
+import type { BattlePresentationPort } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import type { BattleTurnSession, TurnOrchestration } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 
 type MockBattlePresentationPort = {

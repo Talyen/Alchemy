@@ -20,7 +20,7 @@ export function EquipmentShopScreen({
   purchasedSlotKeys: string[];
   getGearPrice: (instance: GearInstance) => number;
   refreshPrice: number;
-  onBuyGear: (instance: GearInstance) => boolean;
+  onBuyGear: (instance: GearInstance, slotKey: string) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
 }) {
@@ -34,7 +34,7 @@ export function EquipmentShopScreen({
       purchasedSlotKeys={purchasedSlotKeys}
       getSlotKey={(g) => g.instanceId}
       getPrice={getGearPrice}
-      onBuy={(instance) => onBuyGear(instance)}
+      onBuy={(instance, slotKey) => onBuyGear(instance, slotKey)}
       onRefresh={onRefresh}
       onContinue={onContinue}
       renderItem={(instance, price, purchased, onBuy) => (

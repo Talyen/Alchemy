@@ -35,7 +35,7 @@ import {
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
 
-import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
+import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-flow-defeat";
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 

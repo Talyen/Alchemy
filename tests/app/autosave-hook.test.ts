@@ -8,18 +8,11 @@ import {
   configureSaveBackend,
   clearAlchemySaveData,
   resetStorageIoForTests,
-} from "@/features/alchemy/shared/storage/io";
-import { setWritesDisabled } from "@/features/alchemy/shared/storage/save-write-queue";
+  setWritesDisabled,
+} from "@/features/alchemy/shared/storage";
 import { resetAllTestStores } from "../helpers/gameplay-store-test";
+import { deferred } from "../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";
-
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  const promise = new Promise<T>((settle) => {
-    resolve = settle;
-  });
-  return { promise, resolve };
-}
 
 function changeGold(gold: number) {
   act(() => {
@@ -151,7 +144,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     await advance(500);
     expect(write).toHaveBeenCalledTimes(1);
     act(() => {
-      window.dispatchEvent(new Event("pagehide"));
+      window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
     expect(JSON.parse(writeSync.mock.calls[0]![1]).gold).toBe(91);
     await advance(20_000);
@@ -185,7 +178,7 @@ describe("useAlchemyAutosaveFromStores", () => {
       gate.resolve({ ok: true });
     });
     act(() => {
-      window.dispatchEvent(new Event("pagehide"));
+      window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
     expect(JSON.parse(writeSync.mock.calls[0]![1]).gold).toBe(2);
   });
@@ -230,7 +223,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     if (action === "disabled") hook.rerender({ enabled: false });
     await advance(20_000);
     act(() => {
-      window.dispatchEvent(new Event("pagehide"));
+      window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
     expect(write).toHaveBeenCalledTimes(1);
     expect(writeSync).not.toHaveBeenCalled();
@@ -260,7 +253,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     renderHook(() => useAlchemyAutosaveFromStores());
     changeGold(7);
     act(() => {
-      window.dispatchEvent(new Event("pagehide"));
+      window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
     act(() => {
       window.dispatchEvent(new Event("beforeunload"));
@@ -297,7 +290,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     renderHook(() => useAlchemyAutosaveFromStores());
     changeGold(8);
     act(() => {
-      window.dispatchEvent(new Event("pagehide"));
+      window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
     await advance(0);
     await act(async () => {

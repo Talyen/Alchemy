@@ -60,7 +60,7 @@ const shops = [
     replayIds: () => readRunSession().shopState.cards.map((card) => card.id),
     restockDedup: true,
     initialize: (actions: Actions) => actions.merchant.initialize(),
-    replayRefresh: false,
+    replayRefresh: true,
   },
   {
     name: "alchemist",
@@ -86,7 +86,7 @@ const shops = [
     replayIds: () => readRunSession().alchemistState.potions.map((card) => card.id),
     restockDedup: true,
     initialize: (actions: Actions) => actions.alchemist.initialize(),
-    replayRefresh: false,
+    replayRefresh: true,
   },
   {
     name: "trinket",
@@ -132,7 +132,7 @@ const shops = [
     },
     buy: (actions: Actions) => {
       const instance = requiredItem(readRunSession().equipmentShopState.gear[0], "gear offering");
-      return actions.equipment.buy(instance);
+      return actions.equipment.buy(instance, instance.instanceId);
     },
     refresh: (actions: Actions) => actions.equipment.refresh(),
     read: () => readRunSession().equipmentShopState,
@@ -142,7 +142,7 @@ const shops = [
     replayIds: () => readRunSession().equipmentShopState.gear.map((item) => item.definitionId),
     restockDedup: false,
     initialize: (actions: Actions) => actions.equipment.initialize(),
-    replayRefresh: false,
+    replayRefresh: true,
   },
 ];
 
@@ -249,25 +249,22 @@ describe("shop action isolation", () => {
     });
   });
 
-  describe.each(shops.filter((shop) => shop.name === "trinket" || shop.name === "equipment"))(
-    "$name RNG replay",
-    (shop) => {
-      it("replays init from the same RNG state", () => {
-        const rng = () => 0.25;
-        const rngState = createRunRngState(rng);
-        setRunProgress({ gold: 999, rng: rngState });
-        shop.seed();
+  describe.each(shops)("$name RNG replay", (shop) => {
+    it("replays init from the same RNG state", () => {
+      const rng = () => 0.25;
+      const rngState = createRunRngState(rng);
+      setRunProgress({ gold: 999, rng: rngState });
+      shop.seed();
 
-        shop.initialize(buildActions());
-        const first = shop.replayIds();
+      shop.initialize(buildActions());
+      const first = shop.replayIds();
 
-        shop.seed();
-        setRunProgress({ rng: rngState });
-        shop.initialize(buildActions());
-        expect(shop.replayIds()).toEqual(first);
-      });
-    },
-  );
+      shop.seed();
+      setRunProgress({ rng: rngState });
+      shop.initialize(buildActions());
+      expect(shop.replayIds()).toEqual(first);
+    });
+  });
 
   describe.each(shops.filter((shop) => shop.replayRefresh))("$name RNG refresh replay", (shop) => {
     it("replays refresh from the same RNG state", () => {

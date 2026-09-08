@@ -6,10 +6,12 @@ export {
 } from "./metadata";
 export {
   getRawContentVersion,
+  getRawLastSavedAt,
   getRawSaveSchemaVersion,
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
   migrateSaveDataToCurrent,
+  SCHEMA_MIGRATIONS,
 } from "./migration/index";
 export {
   DamageTypeSchema,

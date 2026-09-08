@@ -4,8 +4,8 @@ import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { createTransferCancelRegistry, type TransferCancelRegistry } from "./card-transfer-animations";
-import type { BattlePresentationPort } from "./battle-presentation-port";
-import { resolveBattlePresentation } from "./battle-presentation-port";
+import type { BattlePresentationPort } from "./battle-presentation-store";
+import { useBattlePresentationStore } from "./battle-presentation-store";
 
 export interface BattlePlaybackBind {
   scheduleAutoEndTurn: (state?: BattleState) => void;
@@ -36,6 +36,10 @@ export interface BattleControllerContext extends Omit<BattleControllerContextPro
   transferCancelRegistryRef: RefObject<TransferCancelRegistry>;
   transferIdCounterRef: RefObject<number>;
   getPresentation: () => BattlePresentationPort;
+}
+
+function resolveBattlePresentation(ctx: { getPresentation?: () => BattlePresentationPort }): BattlePresentationPort {
+  return ctx.getPresentation?.() ?? useBattlePresentationStore.getState();
 }
 
 export function useBattleControllerContext(props: BattleControllerContextProps): BattleControllerContext {

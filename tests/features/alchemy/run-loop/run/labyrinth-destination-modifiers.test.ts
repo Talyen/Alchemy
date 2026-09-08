@@ -1,7 +1,7 @@
 import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
-import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { useMysteryEventNavigation } from "@/features/alchemy/shell/use-mystery-event-navigation";
 import { useCampfireScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -20,14 +20,14 @@ describe("Labyrinth destination modifiers", () => {
     setRunProgress({ contentSystemType: "labyrinth", runPlayerHealth: 5, runMaxHealth: 30 });
     setRunSession({ activeLabyrinthRewardModifiers: [id] });
     const navigateTo = vi.fn((_screen: string, commit?: () => void) => commit?.());
-    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).handleCampfireContinue();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo })).handleCampfireContinue();
     expect(readActiveRun().runPlayerHealth).toBe(health);
   });
 
   it("Hidden Purse adds Gold and Herbal Hearth adds a real Potion", () => {
     setRunProgress({ contentSystemType: "labyrinth", gold: 0, runDeck: [] });
     setRunSession({ activeLabyrinthRewardModifiers: ["hidden-purse"] });
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps());
+    const handlers = createRunFlow(makeFlowHandlerDeps());
     handlers.handleCampfireContinue();
     expect(readRunProfile().gold).toBe(15);
     setRunSession({ activeLabyrinthRewardModifiers: ["herbal-hearth"] });

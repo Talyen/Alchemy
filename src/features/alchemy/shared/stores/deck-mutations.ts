@@ -1,15 +1,9 @@
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
-import { discoverCardIds, discoverTrinketIds } from "../../shared/stores/profile-store";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  recordRunObtainedItem,
-  setRunDeck,
-  setRunBoons,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-
-export { discoverCardIds };
+import { mutateGearWithRunHealthSync } from "./gear-session-command";
+import { discoverCardIds, discoverTrinketIds } from "./profile-store";
+import type { GameplayDraft } from "./run-session-command";
+import { recordRunObtainedItem, setRunDeck, setRunBoons } from "./run-session-write-port";
 
 export function appendCardToRunWithDiscovery(draft: GameplayDraft, card: BattleCard): void {
   setRunDeck(draft, (previous) => [...previous, card]);

@@ -3,7 +3,7 @@ import { makeDiscoveryCard } from "../../../../helpers/discovery-store-mock";
 import {
   appendCardToRunWithDiscovery,
   appendBoonToRunWithDiscovery,
-} from "@/features/alchemy/run-loop/run/deck-mutations";
+} from "@/features/alchemy/shared/stores/deck-mutations";
 import type { BattleCard } from "@/lib/game-data";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 

@@ -25,6 +25,10 @@ export interface ShopBuyPriceInput {
   firstPurchaseUsed: boolean;
 }
 
+export type ShopBuyKind = "merchantCard" | "alchemistPotion" | "trinket" | "gear";
+
+export type ShopRefreshKind = "merchant" | "alchemist" | "trinket" | "equipment";
+
 export interface ShopBuyPriceContext {
   modifiers?: readonly EncounterRewardTraitId[];
   talentEffects: TalentEffectManifest;
@@ -85,86 +89,93 @@ function computeBuyPrice(
   });
 }
 
-const SHOP_KIND_BUY_CONFIG = {
-  merchantCard: { basePrice: SHOP_CARD_PRICE, useCardDiscounts: true },
-  alchemistPotion: { basePrice: ALCHEMIST_POTION_PRICE, useCardDiscounts: true },
-  trinket: { basePrice: TRINKET_SHOP_TRINKET_PRICE, useCardDiscounts: false },
+const SHOP_BUY_BASE_PRICE = {
+  merchantCard: SHOP_CARD_PRICE,
+  alchemistPotion: ALCHEMIST_POTION_PRICE,
+  trinket: TRINKET_SHOP_TRINKET_PRICE,
 } as const;
 
-type ShopBuyKind = keyof typeof SHOP_KIND_BUY_CONFIG | "gear";
+function getBuyMultiplier(
+  kind: ShopBuyKind,
+  item: BattleCard | GearInstance | null,
+  modifiers: readonly EncounterRewardTraitId[],
+): number {
+  if (kind === "merchantCard" && modifiers.includes("bargain-bin")) return LABYRINTH_MODIFIER_CONFIG.half;
+  if (kind === "alchemistPotion" && modifiers.includes("happy-hour")) return LABYRINTH_MODIFIER_CONFIG.half;
+  if (kind === "trinket" && modifiers.includes("collectors-favor"))
+    return LABYRINTH_MODIFIER_CONFIG.trinketPriceMultiplier;
+  if (
+    kind === "gear" &&
+    modifiers.includes("apprentice") &&
+    item !== null &&
+    gearDefinitions[(item as GearInstance).definitionId]?.rarity === "basic"
+  )
+    return LABYRINTH_MODIFIER_CONFIG.half;
+  return 1;
+}
 
-function getShopBuyPrice(
+function getBuyBasePrice(kind: ShopBuyKind, item: BattleCard | GearInstance | null): number {
+  if (kind === "gear") return getEquipmentShopPrice(item as GearInstance);
+  return SHOP_BUY_BASE_PRICE[kind];
+}
+
+function getBuyDiscounts(
+  kind: ShopBuyKind,
+  item: BattleCard | GearInstance | null,
+  talentEffects: TalentEffectManifest,
+): { haggleDiscount: number; apothecaryDiscount: number } {
+  if ((kind === "merchantCard" || kind === "alchemistPotion") && item !== null)
+    return getCardBuyTalentDiscounts(item as BattleCard, talentEffects);
+  return getGenericBuyTalentDiscounts(talentEffects);
+}
+
+export function getShopBuyPrice(
   kind: ShopBuyKind,
   item: BattleCard | GearInstance | null,
   context: ShopBuyPriceContext,
 ): number {
-  if (kind === "gear") return computeGearBuyPrice(item as GearInstance, context);
-  const config = SHOP_KIND_BUY_CONFIG[kind];
-  const discounts =
-    config.useCardDiscounts && item
-      ? getCardBuyTalentDiscounts(item as BattleCard, context.talentEffects)
-      : getGenericBuyTalentDiscounts(context.talentEffects);
-  const modifiers = context.modifiers ?? [];
-  const multiplier =
-    (kind === "merchantCard" && modifiers.includes("bargain-bin")) ||
-    (kind === "alchemistPotion" && modifiers.includes("happy-hour"))
-      ? LABYRINTH_MODIFIER_CONFIG.half
-      : kind === "trinket" && modifiers.includes("collectors-favor")
-        ? LABYRINTH_MODIFIER_CONFIG.trinketPriceMultiplier
-        : 1;
-  return computeBuyPrice(Math.round(config.basePrice * multiplier), discounts, context);
-}
-
-export function computeMerchantCardBuyPrice(card: BattleCard, context: ShopBuyPriceContext): number {
-  return getShopBuyPrice("merchantCard", card, context);
-}
-
-export function computeAlchemistPotionBuyPrice(card: BattleCard, context: ShopBuyPriceContext): number {
-  return getShopBuyPrice("alchemistPotion", card, context);
-}
-
-export function computeTrinketBuyPrice(context: ShopBuyPriceContext): number {
-  return getShopBuyPrice("trinket", null, context);
-}
-
-export function computeGearBuyPrice(instance: GearInstance, context: ShopBuyPriceContext): number {
-  const multiplier =
-    context.modifiers?.includes("apprentice") && gearDefinitions[instance.definitionId]?.rarity === "basic"
-      ? LABYRINTH_MODIFIER_CONFIG.half
-      : 1;
   return computeBuyPrice(
-    Math.round(getEquipmentShopPrice(instance) * multiplier),
-    getGenericBuyTalentDiscounts(context.talentEffects),
+    Math.round(getBuyBasePrice(kind, item) * getBuyMultiplier(kind, item, context.modifiers ?? [])),
+    getBuyDiscounts(kind, item, context.talentEffects),
     context,
   );
 }
 
-const SHOP_REFRESH_BASE: Record<string, number> = {
-  merchant: SHOP_REFRESH_PRICE,
-  alchemist: ALCHEMIST_REFRESH_PRICE,
-  trinket: SHOP_REFRESH_PRICE,
-  equipment: SHOP_REFRESH_PRICE,
-};
-
-function computeShopRefreshPriceForKind(
-  kind: string,
-  talentEffects: TalentEffectManifest,
-  refreshesLeft: number,
-): number {
-  return computeShopRefreshPrice(
-    SHOP_REFRESH_BASE[kind] ?? SHOP_REFRESH_PRICE,
-    talentEffects.shopFreeRefresh,
-    refreshesLeft,
-  );
+export function getShopBuyPrices(
+  kind: ShopBuyKind,
+  items: ReadonlyArray<BattleCard | GearInstance>,
+  context: ShopBuyPriceContext,
+): number[] {
+  return items.map((item) => getShopBuyPrice(kind, item, context));
 }
 
-export function computeMerchantRefreshPrice(
+const SHOP_REFRESH_BASE_PRICE: Record<ShopRefreshKind, number> = {
+  merchant: SHOP_REFRESH_PRICE,
+  trinket: SHOP_REFRESH_PRICE,
+  equipment: SHOP_REFRESH_PRICE,
+  alchemist: ALCHEMIST_REFRESH_PRICE,
+};
+
+const SHOP_REFRESH_FREE_TRAIT: Record<ShopRefreshKind, EncounterRewardTraitId | null> = {
+  merchant: null,
+  equipment: null,
+  trinket: "fresh-curios",
+  alchemist: "fresh-batch",
+};
+
+export function getShopRefreshPrice(
+  kind: ShopRefreshKind,
   talentEffects: TalentEffectManifest,
   refreshesLeft: number,
   modifiers: readonly EncounterRewardTraitId[] = [],
 ): number {
-  if (refreshesLeft > 0 && modifiers.includes("fresh-curios")) return 0;
-  return computeShopRefreshPriceForKind("merchant", talentEffects, refreshesLeft);
+  const freeTrait = SHOP_REFRESH_FREE_TRAIT[kind];
+  if (refreshesLeft > 0 && freeTrait !== null && modifiers.includes(freeTrait)) return 0;
+  return computeShopRefreshPrice(SHOP_REFRESH_BASE_PRICE[kind], talentEffects.shopFreeRefresh, refreshesLeft);
+}
+
+export function computeMerchantRefreshPrice(talentEffects: TalentEffectManifest, refreshesLeft: number): number {
+  return getShopRefreshPrice("merchant", talentEffects, refreshesLeft);
 }
 
 export function computeTrinketRefreshPrice(
@@ -172,12 +183,11 @@ export function computeTrinketRefreshPrice(
   refreshesLeft: number,
   modifiers: readonly EncounterRewardTraitId[] = [],
 ): number {
-  if (refreshesLeft > 0 && modifiers.includes("fresh-curios")) return 0;
-  return computeShopRefreshPriceForKind("trinket", talentEffects, refreshesLeft);
+  return getShopRefreshPrice("trinket", talentEffects, refreshesLeft, modifiers);
 }
 
 export function computeEquipmentRefreshPrice(talentEffects: TalentEffectManifest, refreshesLeft: number): number {
-  return computeShopRefreshPriceForKind("equipment", talentEffects, refreshesLeft);
+  return getShopRefreshPrice("equipment", talentEffects, refreshesLeft);
 }
 
 export function computeAlchemistRefreshPrice(
@@ -185,8 +195,7 @@ export function computeAlchemistRefreshPrice(
   refreshesLeft: number,
   modifiers: readonly EncounterRewardTraitId[] = [],
 ): number {
-  if (refreshesLeft > 0 && modifiers.includes("fresh-batch")) return 0;
-  return computeShopRefreshPriceForKind("alchemist", talentEffects, refreshesLeft);
+  return getShopRefreshPrice("alchemist", talentEffects, refreshesLeft, modifiers);
 }
 
 export function computeRemoveCardPrice(

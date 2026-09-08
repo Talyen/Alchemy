@@ -28,14 +28,14 @@ import {
   type TrinketShopState,
 } from "@/lib/active-run-session";
 import type { CorruptionResult } from "@/lib/corruption";
-import { logError } from "@/lib/error-logger";
+import { logStorageFailure } from "@/lib/storage-logging";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { type Screen } from "@/lib/routing";
-import { createInitialActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
+import { createInitialActiveRunFields, ACTIVE_RUN_PROGRESS_KEYS, type ActiveRunProgressFields } from "./run-state-init";
 import type { RunSession } from "./run-reads";
 import { decodeInterruptedFlow, encodeInterruptedFlow, resolveEncodeScreen } from "./encode-interrupted-flow";
 
@@ -124,34 +124,18 @@ export function encodePersistedShops(
       return EMPTY_PERSISTED_SHOPS;
     default: {
       const _exhaustiveCheck: never = currentScreen;
-      logError(`encodePersistedShops: unhandled screen ${String(_exhaustiveCheck)}`, "storage");
+      logStorageFailure(`encodePersistedShops: unhandled screen ${String(_exhaustiveCheck)}`);
       return EMPTY_PERSISTED_SHOPS;
     }
   }
 }
 
 function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields {
-  return {
-    characterId: run.characterId,
-    runDeck: run.runDeck,
-    runPlayerHealth: run.runPlayerHealth,
-    runMaxHealth: run.runMaxHealth,
-    runMetaMaxHealth: run.runMetaMaxHealth,
-    roomsEncountered: run.roomsEncountered,
-    currentAct: run.currentAct,
-    destinationIndexInAct: run.destinationIndexInAct,
-    completedDestinations: run.completedDestinations,
-    lastOfferedDestinations: run.lastOfferedDestinations,
-    destinationRoundsSinceOffered: run.destinationRoundsSinceOffered,
-    runBoons: run.runBoons,
-    encounteredRunEnemyIds: run.encounteredRunEnemyIds,
-    selectedDifficulty: run.selectedDifficulty,
-    contentSystemType: run.contentSystemType,
-    rng: run.rng,
-    runTalentXP: run.runTalentXP,
-    runMaterialsEarned: run.runMaterialsEarned,
-    runObtainedItems: run.runObtainedItems,
-  } satisfies Record<keyof ActiveRunProgressFields, unknown>;
+  const progress = {} as ActiveRunProgressFields;
+  for (const key of ACTIVE_RUN_PROGRESS_KEYS) {
+    progress[key] = run[key] as never;
+  }
+  return progress;
 }
 
 interface EncodeResumeFields {
@@ -242,6 +226,14 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
   });
 }
 
+function preferTopLevelModifiers<T>(
+  topLevel: readonly T[] | null | undefined,
+  combat: readonly T[] | null | undefined,
+): T[] {
+  if (topLevel && topLevel.length > 0) return [...topLevel];
+  return combat ? [...combat] : [];
+}
+
 export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunResumeSnapshot {
   let screen = activeRun.currentScreen;
   let rewardState: RewardState | null = null;
@@ -272,14 +264,14 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
     session: {
       labyrinthMap: activeRun.labyrinthMap,
       labyrinthPendingNode: activeRun.labyrinthPendingNode,
-      activeLabyrinthModifiers:
-        (activeRun.activeLabyrinthModifiers ?? []).length > 0
-          ? (activeRun.activeLabyrinthModifiers ?? [])
-          : (activeRun.activeCombat?.activeLabyrinthModifiers ?? []),
-      activeLabyrinthRewardModifiers:
-        (activeRun.activeLabyrinthRewardModifiers ?? []).length > 0
-          ? (activeRun.activeLabyrinthRewardModifiers ?? [])
-          : (activeRun.activeCombat?.activeLabyrinthRewardModifiers ?? []),
+      activeLabyrinthModifiers: preferTopLevelModifiers(
+        activeRun.activeLabyrinthModifiers,
+        activeRun.activeCombat?.activeLabyrinthModifiers,
+      ),
+      activeLabyrinthRewardModifiers: preferTopLevelModifiers(
+        activeRun.activeLabyrinthRewardModifiers,
+        activeRun.activeCombat?.activeLabyrinthRewardModifiers,
+      ),
       wildwoodDraft: activeRun.wildwoodDraft,
       starterDraftChoices: activeRun.starterDraftChoices,
       rewardState,

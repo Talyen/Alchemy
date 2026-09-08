@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 
 export const E2E_ROUTES = Object.freeze({
   audio: Object.freeze({
@@ -133,6 +134,13 @@ if (invokedAsCli) {
   }
 
   const extra = process.argv.slice(3);
+  const missingSpecs = resolved.args.filter((arg) => arg.endsWith(".spec.ts") && !existsSync(arg));
+  if (missingSpecs.length > 0) {
+    console.error(
+      `The ${route} E2E route matches no spec files for:\n${missingSpecs.map((m) => `  - ${m}`).join("\n")}`,
+    );
+    process.exit(1);
+  }
   const result = spawnSync("npx", [...resolved.args, ...extra], {
     stdio: "inherit",
     shell: process.platform === "win32",

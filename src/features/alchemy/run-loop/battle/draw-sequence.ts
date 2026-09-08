@@ -13,6 +13,10 @@ export interface HandDrawSequenceDeps {
   setHiddenHandCardKeys: (update: (current: HiddenHandCardKeys) => Iterable<string>) => void;
 }
 
+export type DrawStateCommit = () => void;
+
+export const noopDrawCommit: DrawStateCommit = () => {};
+
 const activeDraws = new WeakMap<HandDrawSequenceDeps, Map<number, number>>();
 
 function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {
@@ -43,7 +47,7 @@ function getDrawnKeys(newHand: BattleCard[], drawnCards: BattleCard[]): Set<stri
 export async function runHandDrawSequence(
   oldHand: BattleCard[],
   newState: BattleState,
-  applyState: () => void,
+  applyState: DrawStateCommit,
   session: number,
   deps: HandDrawSequenceDeps,
 ): Promise<boolean> {
@@ -86,7 +90,7 @@ export async function runHandDrawSequence(
 export interface BattleDrawRequest {
   oldHand: BattleCard[];
   newState: BattleState;
-  applyState: () => void;
+  applyState: DrawStateCommit;
   session: number;
   deps: HandDrawSequenceDeps;
   errorContext: string;

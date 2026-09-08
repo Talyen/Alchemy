@@ -1,28 +1,25 @@
-import { activeLabyrinthBenefits, labyrinthCardShopPool } from "@/lib/content-systems/labyrinth/room-rules";
-import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
+import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import {
   createDraftRunRandomSource,
-  deductGold,
-  readDraftGold,
   setRunDeck,
   setShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { SHOP_CARDS_OFFERED } from "@/lib/game-constants";
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
-import { computeMerchantCardBuyPrice, computeMerchantRefreshPrice, computeRemoveCardPrice } from "./shop-pricing";
-import { resolveDraftShopPricingContext, resolveReadShopPricingContext } from "./shop-pricing-context";
-import {
-  commitShopInitialize,
-  mapRefreshedShopOfferings,
-  runShopTransaction,
-  purchaseShopOffering,
-  refreshCardShopOfferings,
-} from "./shop-transactions";
+import { computeRemoveCardPrice } from "./shop-pricing";
+import { resolveDraftShopModifiers, resolveReadShopModifiers } from "./shop-pricing-context";
+import { commitShopService, runShopTransaction } from "./shop-transactions";
 import { isValidDeckIndex } from "@/lib/utils";
-import { shopArrayOfferingMatches } from "./shop-slot-keys";
 import type { MerchantShopCommands } from "./shop-action-types";
-import { createInitialShopState, type ShopState } from "./shop-state-init";
+import {
+  cardSlotKeyOf,
+  initializeShop,
+  purchaseSlotOffering,
+  readBuyPrices,
+  readRefreshPrice,
+  refreshCardOfferings,
+} from "./shop-commands-core";
+import { createInitialShopState, merchantShopPool, type ShopState } from "./shop-state-init";
 
 export function createMerchantShopCommands({
   talentEffects,
@@ -30,34 +27,34 @@ export function createMerchantShopCommands({
   talentEffects: TalentEffectManifest;
 }): MerchantShopCommands {
   const getCardBuyPrice = (card: BattleCard) => {
-    return computeMerchantCardBuyPrice(card, resolveReadShopPricingContext(talentEffects, "shopState"));
+    return readBuyPrices("merchantCard", [card], talentEffects, "shopState")[0] ?? 0;
   };
-  const getRemoveCardPrice = () =>
-    computeRemoveCardPrice(talentEffects, resolveReadShopPricingContext(talentEffects, "shopState").modifiers);
-  const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
+  const getRemoveCardPrice = () => computeRemoveCardPrice(talentEffects, resolveReadShopModifiers());
+  const getRefreshPrice = (refreshesLeft: number) => readRefreshPrice("merchant", talentEffects, refreshesLeft);
 
-  function initialize(): void {
-    commitShopInitialize(setShopState, (draft) =>
-      createInitialShopState(
-        draft.run.activeRun.runDeck,
-        createDraftRunRandomSource(draft, "shops"),
-        activeLabyrinthBenefits(draft.run.activeRun.contentSystemType, draft.session.activeLabyrinthRewardModifiers),
-      ),
-    );
-  }
+  const initialize = initializeShop(setShopState, (draft) =>
+    createInitialShopState(
+      draft.run.activeRun.runDeck,
+      createDraftRunRandomSource(draft, "shops"),
+      resolveDraftShopModifiers(draft),
+    ),
+  );
 
   function buyCard(card: BattleCard, slotKey: string): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.shopState;
-      const price = computeMerchantCardBuyPrice(card, resolveDraftShopPricingContext(talentEffects, draft, state));
-      return purchaseShopOffering({
-        draft,
-        price,
+      return purchaseSlotOffering({
+        talentEffects,
         state,
         setState: setShopState,
+        draft,
+        items: state.cards,
+        requestedId: card.id,
         slotKey,
-        offeringMatches: shopArrayOfferingMatches(state.cards, slotKey, card.id, (offered) => offered.id),
-        acquire: () => appendCardToRunWithDiscovery(draft, card),
+        buyKind: "merchantCard",
+        slotKeyOf: cardSlotKeyOf,
+        idOf: (item) => item.id,
+        acquire: (innerDraft, offered) => appendCardToRunWithDiscovery(innerDraft, offered),
       });
     }).committed;
   }
@@ -65,37 +62,36 @@ export function createMerchantShopCommands({
   function removeCard(index: number): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.shopState;
-      const price = computeRemoveCardPrice(
-        talentEffects,
-        resolveDraftShopPricingContext(talentEffects, draft, state).modifiers,
-      );
+      const price = computeRemoveCardPrice(talentEffects, resolveDraftShopModifiers(draft));
       const run = draft.run.activeRun;
-      if (state.removeUsed || !isValidDeckIndex(index, run.runDeck.length) || readDraftGold(draft) < price) {
-        return { committed: false, price, value: undefined };
-      }
-      deductGold(draft, price);
-      setRunDeck(draft, (previous) => previous.filter((_, cardIndex) => cardIndex !== index));
-      setShopState(draft, (previous) => ({ ...previous, removeUsed: true }));
-      return { committed: true, price, value: undefined };
+      return commitShopService({
+        draft,
+        price,
+        guard: !state.removeUsed && isValidDeckIndex(index, run.runDeck.length),
+        failureValue: undefined,
+        apply: () => {
+          setRunDeck(draft, (previous) => previous.filter((_, cardIndex) => cardIndex !== index));
+          setShopState(draft, (previous) => ({ ...previous, removeUsed: true }));
+          return undefined;
+        },
+      });
     }).committed;
   }
 
   function refresh(): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.shopState;
-      return refreshCardShopOfferings<ShopState>({
+      return refreshCardOfferings<ShopState>({
+        talentEffects,
         draft,
-        price: getRefreshPrice(state.refreshesLeft),
-        refreshesLeft: state.refreshesLeft,
-        pool: labyrinthCardShopPool(
-          getOfferableCardPool(),
-          activeLabyrinthBenefits(draft.run.activeRun.contentSystemType, draft.session.activeLabyrinthRewardModifiers),
-        ),
+        state,
+        setState: setShopState,
+        itemsKey: "cards",
+        pool: merchantShopPool(resolveDraftShopModifiers(draft)),
         currentItems: state.cards,
         count: SHOP_CARDS_OFFERED,
-        setState: setShopState,
         rng: createDraftRunRandomSource(draft, "shops"),
-        mapState: (previous, cards) => mapRefreshedShopOfferings(previous, "cards", cards),
+        refreshKind: "merchant",
       });
     }).committed;
   }

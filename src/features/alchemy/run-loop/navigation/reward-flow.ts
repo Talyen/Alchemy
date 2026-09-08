@@ -8,7 +8,7 @@ import {
   LABYRINTH_REWARD_CONFIG,
   REWARD_CARD_CHOICES,
 } from "@/lib/game-constants";
-import { pickRandom, sampleItems } from "@/lib/utils";
+import { pickRandom, sampleItems } from "@/lib/rng";
 import {
   generateGearRewardChoices,
   generateGearRewardChoicesForRarities,
@@ -21,31 +21,66 @@ import {
   type CardRewardState,
   type BoonRewardState,
   type GearRewardState,
+  type ResolvedRewardChoice,
   type RewardState,
   type TrinketRewardState,
 } from "@/lib/active-run-session";
-
-export {
-  shouldGrantCompanionReward,
-  shouldGrantAlchemistReward,
-  getActiveRewardModifiersForContentSystem,
-  getGenerousGoldBonus,
-  getWealthyGoldBonus,
-  getWellProvisionedHealing,
-  applyLabyrinthRewardMaterialModifiers,
-  computeVictoryGold,
-} from "./reward-math";
+import type { BattleState } from "@/lib/battle";
+import type { MaterialInventory } from "@/lib/homestead/types";
 
 import { computeRewardGold } from "./reward-math";
-import type {
-  BossRewardInput,
-  CombatRewardInput,
-  CombatRewardCategory,
-  FinalizeRewardInput,
-  FinalizeRewardResult,
-  FinalizeRewardRoute,
-} from "./reward-flow-types";
-import { REWARD_ROUTES } from "@/lib/routing";
+
+export type FinalizeRewardRoute = RewardRoute;
+
+export type CombatRewardCategory = "card" | "gear" | "boon" | "trinket";
+
+export interface FinalizeRewardInput {
+  rewardState: RewardState;
+  companionRewardCards: BattleCard[] | null;
+}
+
+export interface FinalizeRewardResult {
+  selectedReward: ResolvedRewardChoice | null;
+  materials: MaterialInventory;
+  nextRewardState: CardRewardState;
+  clearCompanionRewardCards: boolean;
+  route: FinalizeRewardRoute;
+}
+
+export interface BossRewardInput {
+  gold: number;
+  bossBonus: number;
+  generousBonus: number;
+  wealthyBonus: number;
+  talentGoldPerCombat: number;
+  materials: MaterialInventory;
+  trinketIds: string[];
+  goldMultiplier?: number;
+  rng: () => number;
+  gearAstralChanceBonus?: number;
+  ownedTrinketIds?: string[];
+  ownedUniqueIds?: ReadonlySet<string>;
+}
+
+export interface CombatRewardInput {
+  battleState: BattleState;
+  runDeck: BattleCard[];
+  gold: number;
+  eliteBonus: number;
+  generousBonus: number;
+  wealthyBonus: number;
+  talentGoldPerCombat: number;
+  materials: MaterialInventory;
+  destinations: Destination[];
+  trinketIds: string[];
+  goldMultiplier?: number;
+  rng: () => number;
+  excludedBoonIds?: string[];
+  ownedTrinketIds?: string[];
+  ownedUniqueIds?: ReadonlySet<string>;
+  gearAstralChanceBonus?: number;
+}
+import { REWARD_ROUTES, type Destination, type RewardRoute } from "@/lib/routing";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import {
   ENEMY_TYPES,

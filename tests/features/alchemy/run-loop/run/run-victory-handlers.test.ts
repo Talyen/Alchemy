@@ -2,9 +2,9 @@ import { act, renderHook } from "@testing-library/react";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import "../../../../helpers/mock-audio";
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
-import { awardRunEndMaterials, clearCombatState } from "@/features/alchemy/run-loop/run/run-flow-session-helpers";
+import { awardRunEndMaterials, clearCombatState } from "@/features/alchemy/run-loop/run/run-flow-defeat";
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { addRunMaterialsEarned, setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -33,7 +33,7 @@ beforeEach(() => {
   resetAllTestStores();
 });
 
-describe("createRunFlowHandlers victory paths", () => {
+describe("createRunFlow victory paths", () => {
   it.each([false, true])("grants one Alchemist Potion across both reward screens (skip: %s)", (skip) => {
     const card = { id: "slash", title: "Slash", art: "", descriptionLines: [], cost: 1, effects: [] };
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH, runDeck: [] });
@@ -53,7 +53,7 @@ describe("createRunFlowHandlers victory paths", () => {
       companionRewardCards: [{ ...card, id: "wolf-companion" }],
     });
     const navigateTo = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
     if (skip) handlers.skipRewards();
     else handlers.claimRewardChoice(card.id);
     const onCommit = navigateTo.mock.calls[0]![1] as () => void;
@@ -119,7 +119,7 @@ describe("createRunFlowHandlers victory paths", () => {
   it("handleBattleDefeat invokes applyRunDefeatTeardown for campaign", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const transition = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ transition }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ transition }));
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
     transition.mock.calls[0][1].onCommit();
@@ -135,7 +135,7 @@ describe("createRunFlowHandlers victory paths", () => {
   it("handleBattleDefeat ends a labyrinth run like campaign", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     const transition = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ transition }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ transition }));
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
     expect(transition).toHaveBeenCalledWith(
@@ -158,7 +158,7 @@ describe("createRunFlowHandlers victory paths", () => {
       setRunSession({ hasActiveRun: true });
       const setScreen = vi.fn();
       const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
-      const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ transition: result.current.transition }));
+      const handlers = createRunFlow(makeFlowHandlerDeps({ transition: result.current.transition }));
       act(() => handlers.handleBattleDefeat());
       act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY - 1));
       expect(setScreen).not.toHaveBeenCalled();
@@ -177,7 +177,7 @@ describe("createRunFlowHandlers victory paths", () => {
   it("handleAbandonRun invokes applyRunDefeatTeardown for campaign", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const transition = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ transition }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ transition }));
     handlers.handleAbandonRun();
     expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -193,7 +193,7 @@ describe("createRunFlowHandlers victory paths", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
     const navigateTo = vi.fn();
     const transition = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, transition }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo, transition }));
     handlers.handleAbandonRun();
     expect(navigateTo).not.toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
     expect(applyRunDefeatTeardown).toHaveBeenCalled();
@@ -203,7 +203,7 @@ describe("createRunFlowHandlers victory paths", () => {
   it("endLabyrinthRun uses live content system, not a stale handler port", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
     const transition = vi.fn();
-    const handlers = createRunFlowHandlers(
+    const handlers = createRunFlow(
       makeFlowHandlerDeps({
         transition,
       }),
@@ -251,7 +251,7 @@ describe("createRunFlowHandlers victory paths", () => {
     const navigateTo = vi.fn();
     const onWildwoodRewardComplete = vi.fn();
 
-    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete })).skipRewards();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete })).skipRewards();
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
     expect(onWildwoodRewardComplete).not.toHaveBeenCalled();
@@ -336,7 +336,7 @@ describe("createRunFlowHandlers victory paths", () => {
       companionRewardCards: null,
     });
     const navigateTo = vi.fn();
-    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).skipRewards();
+    createRunFlow(makeFlowHandlerDeps({ navigateTo })).skipRewards();
     expect(readActiveRun().runDeck).toEqual([]);
     expect(navigateTo).toHaveBeenCalledTimes(1);
   });
@@ -359,7 +359,7 @@ describe("createRunFlowHandlers victory paths", () => {
       },
       companionRewardCards: null,
     });
-    createRunFlowHandlers(makeFlowHandlerDeps()).claimRewardChoice(second.id);
+    createRunFlow(makeFlowHandlerDeps()).claimRewardChoice(second.id);
     expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([second.id]);
   });
 
@@ -392,10 +392,10 @@ describe("createRunFlowHandlers victory paths", () => {
       companionRewardCards: null,
     });
     const navigateTo = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
 
     handlers.claimRewardChoice("reward-card");
-    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo })).claimRewardChoice("reward-card");
+    createRunFlow(makeFlowHandlerDeps({ navigateTo })).claimRewardChoice("reward-card");
 
     expect(readActiveRun().runDeck).toHaveLength(1);
     expect(navigateTo).toHaveBeenCalledTimes(1);
@@ -448,7 +448,7 @@ describe("createRunFlowHandlers victory paths", () => {
       companionRewardCards: [companion],
     });
     const navigateTo = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
 
     handlers.claimRewardChoice("reward-card");
 
@@ -491,10 +491,10 @@ describe("createRunFlowHandlers victory paths", () => {
       },
     });
     const navigateTo = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
 
     handlers.handleDestinationChoice(DESTINATIONS.CAMPFIRE);
-    const remountedHandlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
+    const remountedHandlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }));
     remountedHandlers.handleDestinationChoice(DESTINATIONS.CAMPFIRE);
     remountedHandlers.handleDestinationChoice(DESTINATIONS.CARD_SHOP);
 
@@ -535,7 +535,7 @@ describe("createRunFlowHandlers victory paths", () => {
       },
     });
     const beginMysteryEvent = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ beginMysteryEvent }));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ beginMysteryEvent }));
 
     handlers.handleDestinationChoice(DESTINATIONS.MYSTERY);
 

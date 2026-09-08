@@ -6,7 +6,9 @@ import type { RunProfileSaveFields } from "../stores/run-profile-codec";
 import type { SettingsSaveFields } from "../stores/settings-store";
 import type { ParkedRunsMap } from "@/lib/active-run-session";
 
-export interface SaveData extends SettingsSaveFields, ProfileSaveFields, GearSaveFields, RunProfileSaveFields {
+export type AlchemyPersistenceFields = SettingsSaveFields & ProfileSaveFields & GearSaveFields & RunProfileSaveFields;
+
+export interface SaveData extends AlchemyPersistenceFields {
   saveSchemaVersion: number;
   gameBuildVersion: string;
   contentVersion: number;

@@ -2,17 +2,24 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultSaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
 import {
-  applySaveDataToStores,
   bootstrapAlchemySaveState,
-} from "@/features/alchemy/shared/storage/bootstrap-save-state";
+  clearAlchemySaveData,
+  hydrateAlchemyPersistenceFields,
+} from "@/features/alchemy/shared/storage";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { readRunInitialized } from "@/features/alchemy/shared/stores/run-reads";
+import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
 
-vi.mock("@/features/alchemy/shared/storage/bootstrap-save-state", () => ({
-  applySaveDataToStores: vi.fn(),
-  bootstrapAlchemySaveState: vi.fn(),
-}));
+vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    hydrateAlchemyPersistenceFields: vi.fn(),
+    bootstrapAlchemySaveState: vi.fn(),
+    clearAlchemySaveData: vi.fn().mockResolvedValue(true),
+  };
+});
 
 vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", () => ({
   restoreRun: vi.fn(),
@@ -38,6 +45,8 @@ describe("useAlchemyBootstrap", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(readRunInitialized).mockReturnValue(false);
+    vi.mocked(isAlchemyDevBuild).mockReturnValue(false);
+    window.history.replaceState({}, "", "/");
   });
 
   it("publishes readiness only after persistence owners and the active run are restored", async () => {
@@ -52,7 +61,7 @@ describe("useAlchemyBootstrap", () => {
     };
     vi.mocked(bootstrapAlchemySaveState).mockReturnValue(pending.promise);
     const calls: string[] = [];
-    vi.mocked(applySaveDataToStores).mockImplementation(() => {
+    vi.mocked(hydrateAlchemyPersistenceFields).mockImplementation(() => {
       calls.push("stores");
     });
     vi.mocked(restoreRun).mockImplementation(() => {
@@ -89,8 +98,42 @@ describe("useAlchemyBootstrap", () => {
       await Promise.resolve();
     });
 
-    expect(applySaveDataToStores).toHaveBeenCalledWith(defaultSaveData);
+    expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledWith(defaultSaveData);
     expect(restoreRun).not.toHaveBeenCalled();
+    expect(hook.current).toBe(result);
+  });
+
+  it("publishes corrupt defaults instead of hanging when bootstrap fails", async () => {
+    vi.mocked(bootstrapAlchemySaveState).mockRejectedValue(new Error("steam down"));
+
+    const { result: hook } = renderHook(() => useAlchemyBootstrap());
+    expect(hook.current).toBeNull();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledOnce();
+    expect(restoreRun).toHaveBeenCalled();
+    expect(hook.current?.status).toEqual({ kind: "corrupt" });
+    expect(hook.current?.data.activeRun).toBeNull();
+  });
+
+  it("clears the local save and drops the query param before bootstrap on dev wipes", async () => {
+    vi.mocked(isAlchemyDevBuild).mockReturnValue(true);
+    window.history.replaceState({}, "", "/?wipeLocalSave=1");
+    const result: SaveLoadState = { data: defaultSaveData, status: { kind: "ok" } };
+    vi.mocked(bootstrapAlchemySaveState).mockResolvedValue(result);
+
+    const { result: hook } = renderHook(() => useAlchemyBootstrap());
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(clearAlchemySaveData).toHaveBeenCalledOnce();
+    expect(new URL(window.location.href).searchParams.has("wipeLocalSave")).toBe(false);
     expect(hook.current).toBe(result);
   });
 });

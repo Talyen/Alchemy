@@ -14,14 +14,12 @@ import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 import { uniqueItemList } from "@/lib/gear";
+import { discoverCardIds, discoverTrinketIds, discoverUniqueIds } from "@/features/alchemy/shared/stores/profile-store";
 import {
-  discoverCardIds,
-  discoverTrinketIds,
-  discoverUniqueIds,
   setEncounteredEnemyIds,
   setFinishedRunCharacters,
-} from "@/features/alchemy/shared/stores/profile-store";
-import { setMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
+  setMaterials,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";

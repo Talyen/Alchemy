@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MysteryRewardSummary } from "@/features/alchemy/run-loop/screens/mystery/mystery-reward-summary";
 import { keywordDefinitions, type TrinketEntry } from "@/lib/game-data";
 import type { MysteryChoice } from "@/lib/mystery";
-import { getGearInstanceTitle } from "@/lib/gear";
+import { getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 
 const boneCharm: TrinketEntry = {
   id: "bone-charm",
@@ -17,6 +17,7 @@ const boneCharm: TrinketEntry = {
 function renderSummary(
   effects: MysteryChoice["effects"],
   grantedTrinketIds: string[],
+  grantedGearInstances: GearInstance[] = [],
   chosenCardId: string | null = null,
 ) {
   return render(
@@ -25,7 +26,7 @@ function renderSummary(
       findCard={() => undefined}
       findTrinket={(id) => (id === boneCharm.id ? boneCharm : undefined)}
       grantedTrinketIds={grantedTrinketIds}
-      grantedGearInstances={[]}
+      grantedGearInstances={grantedGearInstances}
       chosenCardId={chosenCardId}
       onContinue={vi.fn()}
     />,
@@ -61,6 +62,14 @@ describe("MysteryRewardSummary", () => {
 
     expect(screen.getByText("Gained a random Boon for this run")).toBeTruthy();
     expect(screen.queryByText("Bone Charm")).toBeNull();
+  });
+
+  it("shows fallback gear for gainRandomTrinket when the trinket pool was exhausted", () => {
+    const instance: GearInstance = { instanceId: "mystery-gear", definitionId: "leather-armor-basic", affixes: [] };
+    renderSummary([{ kind: "gainRandomTrinket" }], [], [instance]);
+
+    expect(screen.queryByText("Gained a random Boon for this run")).toBeNull();
+    expect(screen.getByText(getGearInstanceTitle(instance))).toBeTruthy();
   });
 
   it("shows the chosen card tile and hover popup for chooseCard", () => {

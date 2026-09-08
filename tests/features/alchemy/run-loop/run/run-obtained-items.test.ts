@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { applyRewardSelection } from "@/features/alchemy/run-loop/run/run-destination-handlers";
+import { applyRewardSelection } from "@/features/alchemy/run-loop/run/run-flow-rewards";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";

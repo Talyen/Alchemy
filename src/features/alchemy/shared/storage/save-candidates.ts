@@ -1,15 +1,16 @@
 import { toActiveRunData } from "@/lib/active-run-session";
-import { logError } from "@/lib/error-logger";
 import {
   SaveDataSchema,
   safeParseWithErrors,
   getRawContentVersion,
+  getRawLastSavedAt,
   getRawSaveSchemaVersion,
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
   type ParsedSaveData,
 } from "@/lib/validation";
 import { createDefaultSaveData } from "./defaults";
+import { logStorageFailure } from "./save-logging";
 import type { SaveData } from "./types";
 
 type SaveLoadStatus =
@@ -23,13 +24,9 @@ export interface SaveLoadState {
   status: SaveLoadStatus;
 }
 
-export function fallbackSaveData(): SaveData {
-  return createDefaultSaveData();
-}
-
-function logStorageFailure(message: string, error?: unknown) {
-  // eslint-disable-next-line @typescript-eslint/no-base-to-string -- preserve readable browser storage errors from unknown throws
-  logError(message, "storage", error ? { error: String(error) } : undefined);
+function countParkedRuns(value: unknown): number {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return 0;
+  return Object.keys(value).length;
 }
 
 function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSaveData): string[] {
@@ -37,17 +34,7 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
   if (raw.activeRun && !normalized.activeRun) {
     warnings.push("active run could not be restored");
   }
-  const rawParked =
-    raw &&
-    typeof raw === "object" &&
-    "parkedRuns" in raw &&
-    raw.parkedRuns &&
-    typeof raw.parkedRuns === "object" &&
-    !Array.isArray(raw.parkedRuns)
-      ? Object.keys(raw.parkedRuns).length
-      : 0;
-  const keptParked = Object.keys(normalized.parkedRuns ?? {}).length;
-  if (rawParked > keptParked) {
+  if (countParkedRuns(raw.parkedRuns) > countParkedRuns(normalized.parkedRuns)) {
     warnings.push("a parked run could not be restored");
   }
   const rawGold = (raw as { gold?: unknown }).gold;
@@ -82,16 +69,12 @@ function getFutureSaveStatus(parsed: unknown): SaveLoadStatus | null {
   return null;
 }
 
-function getRawLastSavedAt(parsed: unknown): number | null {
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
-  const value = (parsed as { lastSavedAt?: unknown }).lastSavedAt;
-  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null;
-}
-
 export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
-  let future: SaveLoadState | null = null;
+  let futureStatus: SaveLoadStatus | null = null;
   let newestFutureSavedAt = -1;
-  let playable: SaveLoadState | null = null;
+  let bestParsed: unknown = null;
+  let bestData: ParsedSaveData | null = null;
+  let bestErrors: Array<{ path: string; message: string }> = [];
   let playableSavedAt = 0;
   for (const candidate of candidates) {
     let parsed: unknown;
@@ -102,12 +85,12 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
       continue;
     }
 
-    const futureStatus = getFutureSaveStatus(parsed);
-    if (futureStatus) {
+    const candidateFutureStatus = getFutureSaveStatus(parsed);
+    if (candidateFutureStatus) {
       const savedAt = getRawLastSavedAt(parsed) ?? -1;
       if (savedAt >= newestFutureSavedAt) {
         newestFutureSavedAt = savedAt;
-        future = { data: fallbackSaveData(), status: futureStatus };
+        futureStatus = candidateFutureStatus;
       }
       continue;
     }
@@ -122,24 +105,31 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
       continue;
     }
     const data = result.data;
-    if (!playable || data.lastSavedAt > playableSavedAt) {
-      const warnings = collectSaveRepairWarnings(parsed, data);
-      for (const ve of result.errors) {
-        warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
-      }
-      const hydrated: SaveData = {
-        ...data,
-        activeRun: hydrateActiveRunDeck(data.activeRun),
-        parkedRuns: hydrateParkedRuns(data.parkedRuns),
-      };
-      if (warnings.length > 0) console.warn("Save data was normalized during load", warnings);
-      playable = { data: hydrated, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
+    if (!bestData || data.lastSavedAt > playableSavedAt) {
+      bestParsed = parsed;
+      bestData = data;
+      bestErrors = result.errors;
       playableSavedAt = data.lastSavedAt;
     }
   }
 
+  let playable: SaveLoadState | null = null;
+  if (bestData) {
+    const warnings = collectSaveRepairWarnings(bestParsed as Partial<SaveData>, bestData);
+    for (const ve of bestErrors) {
+      warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
+    }
+    const hydrated: SaveData = {
+      ...bestData,
+      activeRun: hydrateActiveRunDeck(bestData.activeRun),
+      parkedRuns: hydrateParkedRuns(bestData.parkedRuns),
+    };
+    playable = { data: hydrated, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
+  }
+  const future: SaveLoadState | null = futureStatus ? { data: createDefaultSaveData(), status: futureStatus } : null;
+
   if (future && (!playable || newestFutureSavedAt > playableSavedAt)) return future;
   if (playable) return playable;
   if (future) return future;
-  return { data: fallbackSaveData(), status: { kind: "corrupt" } };
+  return { data: createDefaultSaveData(), status: { kind: "corrupt" } };
 }

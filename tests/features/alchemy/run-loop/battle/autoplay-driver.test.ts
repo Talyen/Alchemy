@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   driveAutoplay,
-  findFirstPlayableHandCard,
   isBattlePlayInputBusy,
   isBattlePlaybackBlocked,
 } from "@/features/alchemy/run-loop/battle/autoplay-driver";
+import { findFirstPlayableHandCard } from "@/features/alchemy/run-loop/battle/playable-hand";
 import * as animationPrefs from "@/lib/animation/animation-prefs";
 import { makeTestBattleState, makeTestCard } from "../../../../fixtures/battle";
 import { makeEmptyHandBattle, makeOpenBattle, playableCard } from "./open-battle-fixture";

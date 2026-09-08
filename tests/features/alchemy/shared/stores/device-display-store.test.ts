@@ -4,7 +4,7 @@ import {
   DEVICE_DISPLAY_STORAGE_KEY,
   readDeviceDisplayPreferences,
   writeDeviceDisplayPreferences,
-} from "@/features/alchemy/shared/storage/device-display-preferences";
+} from "@/features/alchemy/shared/storage";
 import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
 
 describe("device display preferences", () => {

@@ -78,6 +78,23 @@ export function purchaseShopOffering<TState extends { firstPurchaseUsed: boolean
   return { committed: true, price: input.price, value: undefined };
 }
 
+interface CommitShopServiceInput<T> {
+  draft: GameplayDraft;
+  price: number;
+  guard: boolean;
+  failureValue: T;
+  apply: () => T;
+}
+
+export function commitShopService<T>(input: CommitShopServiceInput<T>): ShopTransactionResult<T> {
+  if (!input.guard || readDraftGold(input.draft) < input.price) {
+    return { committed: false, price: input.price, value: input.failureValue };
+  }
+  deductGold(input.draft, input.price);
+  const value = input.apply();
+  return { committed: true, price: input.price, value };
+}
+
 interface RefreshShopOfferingsInput<T, TItem> {
   draft: GameplayDraft;
   price: number;

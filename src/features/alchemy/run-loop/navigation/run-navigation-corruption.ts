@@ -7,7 +7,7 @@ import {
   createDraftRunRandomSource,
   setCorruptionResult,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { discoverCardIds } from "../run/deck-mutations";
+import { discoverCardIds } from "../../shared/stores/profile-store";
 
 function applyCorruptionToDeck(cardIndex: number, updateRunDeck: (draft: GameplayDraft, deck: BattleCard[]) => void) {
   dispatchRunSessionCommand(

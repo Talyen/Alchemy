@@ -15,17 +15,16 @@ import {
   beginBattleTransition,
   commitBattleTransition,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { applyCombatTextShakeFeedback } from "./battle-status";
 import { logBattleError, playCombatTextSounds } from "./controller-utils";
 import { runHandDrawSequence } from "./draw-sequence";
 import {
-  finalizePlayerTurnResume,
+  commitDrawAndResume,
   getBattleContinuation,
   type BattleTurnSession,
   type ResolveEndTurn,
   type TurnOrchestration,
-} from "./turn-orchestration-shared";
+} from "./turn-continuation";
 
 export function persistEnemyTurnTransition(
   draft: GameplayDraft,
@@ -160,16 +159,14 @@ async function continueAfterEnemyDraw(
   }
   if (!battleSession.isCurrentBattleSession(sessionNum)) return;
   battleSession.runIfSessionActive(sessionNum, () => {
-    if (!committedDuringDraw) {
-      dispatchRunSessionCommand((draft) => commitBattleTransition(draft, resultState, continuation));
-    }
-    finalizePlayerTurnResume(
-      readBattle().battleState,
+    commitDrawAndResume(
+      resultState,
       playerTurnSkipped,
       sessionNum,
       battleSession,
       orch,
       resolveEndTurn,
+      committedDuringDraw ? null : resultState,
     );
   });
 }

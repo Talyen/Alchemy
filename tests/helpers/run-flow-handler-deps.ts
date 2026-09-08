@@ -1,5 +1,5 @@
-import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow-handler-deps";
-import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow-shell-actions";
+import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow";
+import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow";
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 
 export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> &

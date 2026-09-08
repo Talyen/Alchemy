@@ -57,8 +57,6 @@ export default {
     "src/features/alchemy/shared/stores/profile-store.ts": ["exports"],
     "src/lib/game-data/talents/talent-pool-definitions.ts": ["exports"],
     "src/features/alchemy/shared/stores/persistence-codec.ts": ["types"],
-    // Documented imperative-read capability seam reserved for non-React consumers.
-    "src/features/alchemy/shared/stores/run-session-read-port.ts": ["exports", "files"],
     "src/features/alchemy/shared/stores/write-port-run.ts": ["exports"],
     "src/lib/content-systems/types.ts": ["exports", "types"],
     // Testable save-load seams: evaluated via storage-io tests; platform dedup is public API.

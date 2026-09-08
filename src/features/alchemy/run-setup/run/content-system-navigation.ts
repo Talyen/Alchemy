@@ -21,10 +21,8 @@ import {
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  hydrateModeRunInDraft,
-  parkAndDeactivateForegroundRunInDraft,
-} from "@/features/alchemy/shared/stores/run-park-restore";
+import { hydrateModeRunInDraft } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { parkAndDeactivateForegroundRunInDraft } from "@/features/alchemy/shared/stores/run-park-restore";
 import {
   createInitialDestinationResult,
   restoreOrCreateDestinationRewardState,

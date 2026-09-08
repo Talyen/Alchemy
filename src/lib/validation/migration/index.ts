@@ -14,11 +14,18 @@ export function getRawContentVersion(parsed: unknown): number {
   return getRawVersion(parsed, "contentVersion");
 }
 
-const SCHEMA_MIGRATIONS: Array<{ from: number; migrate: (data: RawSaveData) => RawSaveData }> = [
-  { from: 11, migrate: migrateV11ToV12 },
-  { from: 12, migrate: migrateV12ToV13 },
-  { from: 13, migrate: migrateV13ToV14 },
-  { from: 14, migrate: migrateV14ToV15 },
+export function getRawLastSavedAt(parsed: unknown): number | null {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+  const value = (parsed as Record<string, unknown>).lastSavedAt;
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return null;
+  return value;
+}
+
+export const SCHEMA_MIGRATIONS: Array<{ from: number; to: number; migrate: (data: RawSaveData) => RawSaveData }> = [
+  { from: 11, to: 12, migrate: migrateV11ToV12 },
+  { from: 12, to: 13, migrate: migrateV12ToV13 },
+  { from: 13, to: 14, migrate: migrateV13ToV14 },
+  { from: 14, to: 15, migrate: migrateV14ToV15 },
 ];
 
 function migrateContentToCurrent(next: RawSaveData): RawSaveData {
@@ -34,7 +41,7 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
     const migrated = SCHEMA_MIGRATIONS.find((m) => m.from === currentVersion);
     if (!migrated) break;
     next = migrated.migrate(next);
-    currentVersion += 1;
+    currentVersion = migrated.to;
   }
   next = migrateContentToCurrent(next);
   return {

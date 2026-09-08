@@ -80,7 +80,7 @@ describe("saved battle card recovery", () => {
   );
 });
 
-describe("restoreRunSession shop offering repair", () => {
+describe("run restore shop offering repair", () => {
   beforeEach(() => {
     resetAllTestStores();
     resetGearForTest();

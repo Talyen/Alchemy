@@ -93,6 +93,26 @@ describe("createBattleSession", () => {
     expect(onBattleVictory).not.toHaveBeenCalled();
   });
 
+  it("keeps the current session active during victory grace after the battle flag clears", () => {
+    const { session, victoryDefeatHandledRef } = makeSession();
+    victoryDefeatHandledRef.current = true;
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, false);
+      setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
+    });
+    expect(session.isCurrentBattleSession(1)).toBe(true);
+  });
+
+  it("rejects a stale session id even during victory grace", () => {
+    const { session, victoryDefeatHandledRef } = makeSession();
+    victoryDefeatHandledRef.current = true;
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveBattle(draft, false);
+      setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
+    });
+    expect(session.isCurrentBattleSession(2)).toBe(false);
+  });
+
   it("resetBattleSession bumps session id and cancels transfers", () => {
     const { session, battleSessionRef, transferCancelRegistryRef } = makeSession();
     const cancel = vi.fn();

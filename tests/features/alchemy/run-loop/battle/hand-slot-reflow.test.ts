@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getElementCenterX, playHandSlotReflow } from "@/features/alchemy/run-loop/battle/hand-slot-reflow";
+import {
+  getElementCenterX,
+  playHandSlotReflow,
+} from "@/features/alchemy/run-loop/screens/battle-screen/hand-slot-reflow";
 
 describe("playHandSlotReflow", () => {
   afterEach(() => {

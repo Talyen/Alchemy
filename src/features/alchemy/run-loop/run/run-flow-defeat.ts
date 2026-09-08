@@ -3,14 +3,46 @@ import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   applyRunDefeatTeardown,
-  clearBattleUi,
-  finalizeRunEndSession,
+  clearBattlePresentationUi,
 } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { finalizeRunXP } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { awardRunEndMaterials, clearCombatPresentation, clearCombatState } from "./run-flow-session-helpers";
-import type { RunFlowHandlerDeps } from "./run-flow-handler-deps";
+import {
+  addMaterials,
+  clearRunMaterialsEarned,
+  finalizeRunXP,
+  setHasActiveBattle,
+  setRunEndMaterials,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
+import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import type { RunFlowHandlerDeps } from "./run-flow";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+
+export function clearCombatState(draft: GameplayDraft) {
+  setHasActiveBattle(draft, false);
+}
+
+function clearCombatPresentation() {
+  clearBattlePresentationUi();
+}
+
+export function awardRunEndMaterials(draft: GameplayDraft): ReturnType<typeof emptyInventory> {
+  const runState = draft.run.activeRun;
+  const runProfile = draft.runProfile;
+  if (runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
+    clearRunMaterialsEarned(draft);
+    const none = emptyInventory();
+    setRunEndMaterials(draft, none);
+    return none;
+  }
+  const runCollected = runState.runMaterialsEarned;
+  const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), runProfile.effects, runState.roomsEncountered);
+  addMaterials(draft, homesteadBonus);
+  setRunEndMaterials(draft, addInventory(runCollected, homesteadBonus));
+  clearRunMaterialsEarned(draft);
+  return homesteadBonus;
+}
 
 export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
   function finalizeDefeat() {
@@ -49,20 +81,10 @@ export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
     endRunAndShowGameOver();
   }
 
-  function completeRunVictory(onRenderedScreenCommit?: () => void) {
-    clearBattleUi();
-    finalizeRunEndSession({
-      awardRunEndMaterials,
-      finalizeRunXP,
-    });
-    deps.actions.navigateTo(ROUTE_SCREENS.RUN_VICTORY, onRenderedScreenCommit);
-  }
-
   return {
     endRunAndShowGameOver,
     handleBattleDefeat,
     handleAbandonRun,
     endLabyrinthRun,
-    completeRunVictory,
   };
 }

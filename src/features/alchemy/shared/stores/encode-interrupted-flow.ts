@@ -11,12 +11,25 @@ import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { filterValidDestinations, type Screen } from "@/lib/routing";
 import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
+import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
+import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { RunSession } from "./run-reads";
 
 export interface DecodedClaimSurface {
   rewardState: RewardState | null;
   companionRewardCards: BattleCard[] | null;
   screen: Screen | null;
+}
+
+function resolveExplorationScreen(
+  labyrinthMap: LabyrinthMap | null | undefined,
+  wildwoodDraft: WildwoodDraftState | null | undefined,
+): Screen {
+  if (labyrinthMap) return "labyrinth-map";
+  if (wildwoodDraft) {
+    return wildwoodPhaseToScreen(wildwoodDraft.phase) ?? "destination";
+  }
+  return "destination";
 }
 
 function encodeMidClaimPendingReward(session: RunSession["session"]): PersistedPendingReward | null {
@@ -33,11 +46,7 @@ export function resolveEncodeScreen(
   if (session.rewardState.destinations.length > 0) return "destination";
 
   if (requested === "rewards" || requested == null) {
-    if (session.labyrinthMap) return "labyrinth-map";
-    if (session.wildwoodDraft) {
-      return wildwoodPhaseToScreen(session.wildwoodDraft.phase) ?? "destination";
-    }
-    return "destination";
+    return resolveExplorationScreen(session.labyrinthMap, session.wildwoodDraft);
   }
   return requested;
 }
@@ -86,18 +95,14 @@ export function encodeInterruptedFlow(
 }
 
 function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
-  if (activeRun.labyrinthMap) return "labyrinth-map";
-  if (activeRun.wildwoodDraft) {
-    return wildwoodPhaseToScreen(activeRun.wildwoodDraft.phase) ?? "destination";
-  }
-  return "destination";
+  return resolveExplorationScreen(activeRun.labyrinthMap, activeRun.wildwoodDraft);
 }
 
 export function inferActiveRunScreen(activeRun: ActiveRunData): Screen {
   if (activeRun.activeCombat && activeRun.activeCombat.battleState.enemyHealth > 0) return "battle";
   if (activeRun.contentSystemType === "labyrinth" && activeRun.labyrinthMap) return "labyrinth-map";
   if (activeRun.wildwoodDraft) {
-    return wildwoodPhaseToScreen(activeRun.wildwoodDraft.phase) ?? "destination";
+    return resolveExplorationScreen(activeRun.labyrinthMap, activeRun.wildwoodDraft);
   }
   if (activeRun.interruptedFlow.kind === "primary-reward" || activeRun.interruptedFlow.kind === "companion-reward") {
     return "rewards";

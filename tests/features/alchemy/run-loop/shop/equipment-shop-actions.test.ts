@@ -16,7 +16,9 @@ describe("equipment shop actions", () => {
     setRunProgress({ gold: 999, characterId: "knight" });
     setEquipmentShopState({ ...createInitialEquipmentShopState(), gear: [onShelf] });
     const actions = buildActions();
-    expect(actions.equipment.buy({ ...onShelf, affixes: [{ id: "max-health", value: 999 }] })).toBe(true);
+    expect(actions.equipment.buy({ ...onShelf, affixes: [{ id: "max-health", value: 999 }] }, onShelf.instanceId)).toBe(
+      true,
+    );
     expect(readGearState().inventories.knight).toContainEqual(onShelf);
     expect(readActiveRun().runObtainedItems).toEqual([{ kind: "gear", instance: onShelf }]);
     expect(readRunProfile().gold).toBe(999 - actions.equipment.getBuyPrice(onShelf));
@@ -38,7 +40,7 @@ describe("equipment shop actions", () => {
       const commits: number[] = [];
       const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
 
-      const result = actions.equipment.buy(instance);
+      const result = actions.equipment.buy(instance, instance.instanceId);
 
       unsubscribe();
 
@@ -71,7 +73,7 @@ describe("equipment shop actions", () => {
       });
       const actions = buildActions();
 
-      expect(actions.equipment.buy(offMenu)).toBe(false);
+      expect(actions.equipment.buy(offMenu, offMenu.instanceId)).toBe(false);
       expect(readRunProfile().gold).toBe(999);
       expect(readGearState().inventories.knight ?? []).not.toContainEqual(offMenu);
     });

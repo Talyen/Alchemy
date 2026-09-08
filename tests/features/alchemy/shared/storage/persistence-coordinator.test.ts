@@ -78,20 +78,6 @@ describe("persistence coordinator", () => {
     expect(listener).toHaveBeenCalledTimes(4);
   });
 
-  it("emits one active-run persistence signal for a multi-store transaction", () => {
-    const listener = vi.fn();
-    const unsubscribe = subscribeAlchemyPersistence(listener);
-
-    dispatchRunSessionCommand((draft) => {
-      setGold(draft, 42);
-      setHasActiveRun(draft, true);
-    });
-
-    expect(listener).toHaveBeenCalledOnce();
-    expect(readRunProfile().gold).toBe(42);
-    unsubscribe();
-  });
-
   it("coalesces every gameplay persistence owner into one session signal", () => {
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener);
@@ -105,6 +91,7 @@ describe("persistence coordinator", () => {
     });
 
     expect(listener).toHaveBeenCalledOnce();
+    expect(readRunProfile().gold).toBe(42);
     unsubscribe();
   });
 

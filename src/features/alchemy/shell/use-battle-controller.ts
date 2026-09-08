@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import {
-  createBattleSession,
   defaultMeasureElementRect,
   defaultMeasureVisualCardRect,
-  createBattleEndTurnUi,
-  createBattleTransferDeps,
-  createBattleInit,
-  createBattleCardPlay,
-  createBattleDevOutcomes,
-  createBattleOpeningDraw,
-  isVictoryGraceActive,
-  useBattleControllerContext,
-} from "@/features/alchemy/run-loop/battle";
+} from "@/features/alchemy/run-loop/battle/controller-utils";
+import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
+import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
+import { createBattleInit, playBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/battle-init";
+import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
+import { createBattleDevOutcomes, isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-status";
+import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
@@ -102,15 +100,14 @@ export function useBattleController({
     const endTurnUi = createBattleEndTurnUi(ctx, session, transferDeps);
     const cardPlay = createBattleCardPlay(ctx, session, transferDeps);
     const init = createBattleInit(ctx, session);
-    const openingDraw = createBattleOpeningDraw(ctx, transferDeps);
     const devOutcomes = createBattleDevOutcomes(ctx, session);
 
     return {
       session,
+      transferDeps,
       endTurnUi,
       cardPlay,
       init,
-      openingDraw,
       devOutcomes,
     };
   }, [ctx]);
@@ -147,10 +144,10 @@ export function useBattleController({
     ) {
       return undefined;
     }
-    void actions.openingDraw.playOpeningDraw().catch((error: unknown) => {
+    void playBattleOpeningDraw(ctx, actions.transferDeps).catch((error: unknown) => {
       if (import.meta.env.DEV) console.warn("[openingDraw] best-effort presentation failed", error);
     });
-  }, [actions.openingDraw, ctx]);
+  }, [actions.transferDeps, ctx]);
 
   useEffect(() => {
     if (

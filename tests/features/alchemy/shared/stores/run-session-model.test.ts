@@ -3,13 +3,13 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useRunSessionBattleContext, useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-reads";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 beforeEach(() => {
-  resetTransientRunUi();
+  resetAllTestStores();
   dispatchRunSessionCommand((draft) => {
     setSyncedBattleState(draft, defaultBattleState());
     setHasActiveBattle(draft, false);

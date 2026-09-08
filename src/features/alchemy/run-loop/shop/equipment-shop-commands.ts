@@ -1,21 +1,21 @@
-import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
-import { grantGearToRunWithRecord } from "@/features/alchemy/run-loop/run/deck-mutations";
+import { grantGearToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import {
   createDraftRunRandomSource,
   setEquipmentShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import { getOwnedUniqueDefinitionIds, type GearInstance } from "@/lib/gear";
-import { computeEquipmentRefreshPrice, computeGearBuyPrice } from "./shop-pricing";
-import { resolveDraftShopPricingContext, resolveReadShopPricingContext } from "./shop-pricing-context";
-import {
-  commitShopInitialize,
-  mapRefreshedShopOfferings,
-  purchaseShopOffering,
-  refreshShopOfferings,
-  runShopTransaction,
-} from "./shop-transactions";
+import { runShopTransaction } from "./shop-transactions";
 import type { EquipmentShopCommands } from "./shop-action-types";
+import {
+  gearSlotKeyOf,
+  initializeShop,
+  purchaseSlotOffering,
+  readRefreshPrice,
+  refreshCatalogOfferings,
+} from "./shop-commands-core";
+import { resolveDraftShopModifiers, resolveReadShopPricingContext } from "./shop-pricing-context";
+import { getShopBuyPrice } from "./shop-pricing";
 import {
   createInitialEquipmentShopState,
   resampleEquipmentShopOfferings,
@@ -30,36 +30,34 @@ export function createEquipmentShopCommands({
   gearAstralChanceBonus: number;
 }): EquipmentShopCommands {
   const getBuyPrice = (instance: GearInstance) => {
-    return computeGearBuyPrice(instance, resolveReadShopPricingContext(talentEffects, "equipmentShopState"));
+    return getShopBuyPrice("gear", instance, resolveReadShopPricingContext(talentEffects, "equipmentShopState"));
   };
-  const getRefreshPrice = (refreshesLeft: number) => computeEquipmentRefreshPrice(talentEffects, refreshesLeft);
+  const getRefreshPrice = (refreshesLeft: number) => readRefreshPrice("equipment", talentEffects, refreshesLeft);
 
-  function initialize(): void {
-    commitShopInitialize(setEquipmentShopState, (draft) =>
-      createInitialEquipmentShopState(
-        createDraftRunRandomSource(draft, "shops"),
-        gearAstralChanceBonus,
-        getOwnedUniqueDefinitionIds(draft.gear.inventories),
-        activeLabyrinthBenefits(draft.run.activeRun.contentSystemType, draft.session.activeLabyrinthRewardModifiers),
-      ),
-    );
-  }
+  const initialize = initializeShop(setEquipmentShopState, (draft) =>
+    createInitialEquipmentShopState(
+      createDraftRunRandomSource(draft, "shops"),
+      gearAstralChanceBonus,
+      getOwnedUniqueDefinitionIds(draft.gear.inventories),
+      resolveDraftShopModifiers(draft),
+    ),
+  );
 
-  function buy(instance: GearInstance): boolean {
+  function buy(instance: GearInstance, slotKey: string): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.equipmentShopState;
-      const offered = state.gear.find((item) => item.instanceId === instance.instanceId);
-      if (!offered) return { committed: false, price: 0, value: undefined };
-      const price = computeGearBuyPrice(offered, resolveDraftShopPricingContext(talentEffects, draft, state));
-      return purchaseShopOffering({
-        draft,
-        price,
+      return purchaseSlotOffering({
+        talentEffects,
         state,
         setState: setEquipmentShopState,
-
-        slotKey: instance.instanceId,
-        offeringMatches: true,
-        acquire: () => grantGearToRunWithRecord(draft, offered),
+        draft,
+        items: state.gear,
+        requestedId: instance.instanceId,
+        slotKey,
+        buyKind: "gear",
+        slotKeyOf: (item) => gearSlotKeyOf(item),
+        idOf: (item) => item.instanceId,
+        acquire: (innerDraft, offered) => grantGearToRunWithRecord(innerDraft, offered),
       });
     }).committed;
   }
@@ -67,22 +65,20 @@ export function createEquipmentShopCommands({
   function refresh(): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.equipmentShopState;
-      return refreshShopOfferings<EquipmentShopState, GearInstance>({
+      return refreshCatalogOfferings<EquipmentShopState, GearInstance>({
+        talentEffects,
         draft,
-        price: getRefreshPrice(state.refreshesLeft),
-        refreshesLeft: state.refreshesLeft,
+        state,
         setState: setEquipmentShopState,
+        itemsKey: "gear",
+        refreshKind: "equipment",
         resample: () =>
           resampleEquipmentShopOfferings(
             createDraftRunRandomSource(draft, "shops"),
             gearAstralChanceBonus,
             getOwnedUniqueDefinitionIds(draft.gear.inventories),
-            activeLabyrinthBenefits(
-              draft.run.activeRun.contentSystemType,
-              draft.session.activeLabyrinthRewardModifiers,
-            ),
+            resolveDraftShopModifiers(draft),
           ),
-        mapState: (previous, gear) => mapRefreshedShopOfferings(previous, "gear", gear),
       });
     }).committed;
   }

@@ -1,19 +1,15 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION, SaveDataSchema } from "@/lib/validation";
+import {
+  CURRENT_SAVE_SCHEMA_VERSION,
+  LAUNCH_SAVE_SCHEMA_VERSION,
+  SaveDataSchema,
+  SCHEMA_MIGRATIONS,
+} from "@/lib/validation";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 
 const ROOT = join(import.meta.dirname, "../..");
-
-function read(relPath: string): string {
-  return readFileSync(join(ROOT, relPath), "utf8");
-}
-
-function countMigrationSteps(source: string): number {
-  const matches = source.match(/export function migrateV\d+ToV\d+/g) ?? [];
-  return matches.length;
-}
 
 describe("save migration contract", () => {
   it("tracks launch baseline at or below current schema version", () => {
@@ -22,16 +18,16 @@ describe("save migration contract", () => {
   });
 
   it("keeps one migration step for every supported schema increment", () => {
-    const migrationDir = join(ROOT, "src/lib/validation/migration");
-    const migrationSources = readdirSync(migrationDir)
-      .filter((file) => file === "index.ts" || file.startsWith("steps-"))
-      .map((file) => read(join("src/lib/validation/migration", file)))
-      .join("\n");
-    expect(countMigrationSteps(migrationSources)).toBe(CURRENT_SAVE_SCHEMA_VERSION - LAUNCH_SAVE_SCHEMA_VERSION);
+    expect(SCHEMA_MIGRATIONS).toHaveLength(CURRENT_SAVE_SCHEMA_VERSION - LAUNCH_SAVE_SCHEMA_VERSION);
+    SCHEMA_MIGRATIONS.forEach((step, index) => {
+      expect(step.from).toBe(LAUNCH_SAVE_SCHEMA_VERSION + index);
+      expect(step.to).toBe(step.from + 1);
+      expect(step.migrate).toBeTypeOf("function");
+    });
   });
 
   it("keeps rename logic out of active-run schema transforms", () => {
-    const activeRunSource = read("src/lib/validation/save-schemas/active-run.ts");
+    const activeRunSource = readFileSync(join(ROOT, "src/lib/validation/save-schemas/active-run.ts"), "utf8");
     expect(activeRunSource).not.toContain("boonEffects");
     expect(activeRunSource).not.toContain("runTrinkets");
     expect(activeRunSource).not.toContain("firstBurnBoon");

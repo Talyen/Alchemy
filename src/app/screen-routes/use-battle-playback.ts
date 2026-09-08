@@ -4,9 +4,10 @@ import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { useBattleAutoEndTurn, useBattleAutoplay } from "@/features/alchemy/run-loop/battle";
+import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
+import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
 import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
-import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/use-battle-presentation-gate";
+import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 
 interface UseBattlePlaybackProps {
   screen: Screen;

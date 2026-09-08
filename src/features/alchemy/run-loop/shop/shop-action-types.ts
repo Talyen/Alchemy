@@ -1,12 +1,15 @@
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { BattleCard, TrinketEntry, TalentEffectManifest } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 
 export type ShopKind = "merchant" | "alchemist" | "trinket" | "equipment";
 
+type ShopRefreshModifiers = readonly EncounterRewardTraitId[];
+
 export interface CreateShopActionsDeps {
   talentEffects: TalentEffectManifest;
-  homesteadEffects: HomesteadEffectManifest;
+  homesteadEffects: Pick<HomesteadEffectManifest, "gearAstralChanceBonus" | "potionMixPotency">;
 }
 
 export interface MerchantShopCommands {
@@ -16,7 +19,7 @@ export interface MerchantShopCommands {
   refresh: () => boolean;
   getCardBuyPrice: (card: BattleCard) => number;
   getRemoveCardPrice: () => number;
-  getRefreshPrice: (refreshesLeft: number) => number;
+  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers) => number;
 }
 
 export interface AlchemistShopCommands {
@@ -26,23 +29,23 @@ export interface AlchemistShopCommands {
   refresh: () => boolean;
   getPotionBuyPrice: (card: BattleCard) => number;
   getMixPrice: () => number;
-  getRefreshPrice: (refreshesLeft: number) => number;
+  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers) => number;
 }
 
 export interface TrinketShopCommands {
   initialize: () => void;
   buy: (trinket: TrinketEntry, slotKey: string) => boolean;
   refresh: () => boolean;
-  getBuyPrice: (trinket: TrinketEntry) => number;
-  getRefreshPrice: (refreshesLeft: number) => number;
+  getBuyPrice: (_trinket: TrinketEntry) => number;
+  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers) => number;
 }
 
 export interface EquipmentShopCommands {
   initialize: () => void;
-  buy: (instance: GearInstance) => boolean;
+  buy: (instance: GearInstance, slotKey: string) => boolean;
   refresh: () => boolean;
   getBuyPrice: (instance: GearInstance) => number;
-  getRefreshPrice: (refreshesLeft: number) => number;
+  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers) => number;
 }
 
 export interface ShopActions {

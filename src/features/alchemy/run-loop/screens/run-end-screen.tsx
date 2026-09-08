@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   BUTTON_WIDTH_ACTION,
@@ -6,13 +7,15 @@ import {
   getPlasmaColorPair,
   getPlasmaKeywordsForCharacter,
 } from "@/features/alchemy/shared/config";
-import type { CharacterId, TalentXP } from "@/lib/game-data";
+import { getTalentTreeKeywordIds, type CharacterId, type KeywordId, type TalentXP } from "@/lib/game-data";
 import type { RunObtainedItem } from "@/lib/active-run-session";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { usePlasmaBaseline } from "../../shared/ui/use-plasma-source";
-import { RunEndProgressSection } from "./run-end-progress-section";
+import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
+import { KeywordProgressGrid } from "./keyword-progress-grid";
+import { RunEndObtainedItems } from "./run-end-obtained-items";
 
 export function RunEndScreen({
   title,
@@ -38,18 +41,23 @@ export function RunEndScreen({
   const plasmaColorPair =
     outcome === "defeat" ? DEATHS_DOOR_PLASMA_PAIR : getPlasmaColorPair(getPlasmaKeywordsForCharacter(characterId));
   usePlasmaBaseline(plasmaColorPair);
+  const visibleKeywords = useMemo(() => new Set(getTalentTreeKeywordIds()), []);
+  const entries = useMemo(
+    () =>
+      (Object.keys(runEndTalentXP) as KeywordId[])
+        .filter((kw) => visibleKeywords.has(kw) && (runEndTalentXP[kw] ?? 0) > 0)
+        .map((kw) => ({ kw, totalXP: talentXP[kw] ?? 0 })),
+    [runEndTalentXP, talentXP, visibleKeywords],
+  );
 
   return (
     <TitledScreenShell title={title} maxWidthClass="max-w-7xl">
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
         <p className={cn(bodyTextClass, "text-xl")}>{subtitle}</p>
 
-        <RunEndProgressSection
-          runEndTalentXP={runEndTalentXP}
-          talentXP={talentXP}
-          runEndMaterials={runEndMaterials}
-          runEndItems={runEndItems}
-        />
+        {entries.length > 0 ? <KeywordProgressGrid entries={entries} size="lg" /> : null}
+        <RunEndObtainedItems items={runEndItems} />
+        <FoundResourcesRow materials={runEndMaterials} size="lg" />
 
         <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
           Continue

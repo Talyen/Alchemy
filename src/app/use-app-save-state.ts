@@ -13,13 +13,14 @@ import {
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_MAX_WAIT_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";
 import type { Screen } from "@/lib/routing";
+import { applyAutosaveCompletion, computeAutosaveDelay, shouldAttemptFlush } from "./autosave-scheduler";
 
 export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: Screen | null = null) {
   const enabledRef = useLatestRef(enabled);
   const runScreenOverrideRef = useLatestRef(runScreenOverride);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     let revision = 0;
     let acknowledgedRevision = 0;
     let submittedRevision = 0;
@@ -52,8 +53,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
         : readRunPhase() === "battle"
           ? BATTLE_AUTOSAVE_DEBOUNCE_MS
           : AUTOSAVE_DEBOUNCE_MS;
-      const maxWaitDelay = Math.max(0, AUTOSAVE_MAX_WAIT_MS - (now - dirtySince));
-      const delay = Math.max(retryAt - now, Math.min(debounceMs, maxWaitDelay));
+      const delay = computeAutosaveDelay({ debounceMs, maxWaitMs: AUTOSAVE_MAX_WAIT_MS, now, dirtySince, retryAt });
       timer = setTimeout(() => {
         timer = null;
         flush();
@@ -65,7 +65,16 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
         cancelPending();
         return;
       }
-      if (revision <= acknowledgedRevision || (!terminal && revision <= submittedRevision)) return;
+      if (
+        !shouldAttemptFlush({
+          enabled: true,
+          revision,
+          acknowledgedRevision,
+          submittedRevision,
+          terminal,
+        })
+      )
+        return;
       cancelTimer();
       const savingRevision = revision;
       const savingGeneration = generation;
@@ -78,20 +87,24 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
           cancelPending();
           return;
         }
-        if (outcome === "saved") {
-          acknowledgedRevision = Math.max(acknowledgedRevision, savingRevision);
-          if (savingRevision === submittedRevision) retryAt = 0;
-          if (acknowledgedRevision === revision) cancelTimer();
-          else if (timer === null) schedule();
-        } else if (savingRevision > acknowledgedRevision && savingRevision === submittedRevision) {
-          submittedRevision = acknowledgedRevision;
-          retryAt = Date.now() + AUTOSAVE_MAX_WAIT_MS;
-          schedule();
-        }
+        const next = applyAutosaveCompletion({
+          revision,
+          acknowledgedRevision,
+          submittedRevision,
+          retryAt,
+          savingRevision,
+          outcome,
+          now: Date.now(),
+          maxWaitMs: AUTOSAVE_MAX_WAIT_MS,
+        });
+        acknowledgedRevision = next.acknowledgedRevision;
+        submittedRevision = next.submittedRevision;
+        retryAt = next.retryAt;
+        if (next.cancelTimer) cancelTimer();
+        else if (next.schedule && (outcome !== "saved" || timer === null)) schedule();
       };
       const outcome = terminal ? saveAlchemySaveDataForExit(save) : saveAlchemySaveData(save);
-      if (typeof outcome === "string") complete(outcome);
-      else void outcome.then(complete);
+      void outcome.then(complete);
     };
 
     const triggerSave = () => {

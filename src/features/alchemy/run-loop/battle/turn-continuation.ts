@@ -1,10 +1,11 @@
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { clearBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { clearBattleTransition, commitBattleTransition } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { createBattleSession } from "./battle-session";
+import type { BattlePresentationPort } from "./battle-presentation-store";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
-import type { BattlePresentationPort } from "./battle-presentation-port";
 
 export type BattleTurnSession = Pick<
   ReturnType<typeof createBattleSession>,
@@ -34,7 +35,7 @@ export function getBattleContinuation(
   return { kind: "continue-end-turn" };
 }
 
-export function finalizePlayerTurnResume(
+function finalizePlayerTurnResume(
   state: BattleState,
   playerTurnSkipped: boolean,
   sessionNum: number,
@@ -50,4 +51,30 @@ export function finalizePlayerTurnResume(
   }
   orch.scheduleCompanionFollowUp(state, sessionNum);
   orch.scheduleAutoEndTurn(state);
+}
+
+export function commitDrawAndResume(
+  state: BattleState,
+  playerTurnSkipped: boolean,
+  sessionNum: number,
+  battleSession: BattleTurnSession,
+  orch: TurnOrchestration,
+  resolveEndTurn: ResolveEndTurn,
+  commit: BattleState | "clear-when-idle" | null,
+): void {
+  if (commit !== null && commit !== "clear-when-idle") {
+    const commitState = commit;
+    const continuation = getBattleContinuation(state, playerTurnSkipped);
+    dispatchRunSessionCommand((draft) => commitBattleTransition(draft, commitState, continuation));
+  } else if (commit === "clear-when-idle" && !getBattleContinuation(state, playerTurnSkipped)) {
+    dispatchRunSessionCommand((draft) => clearBattleTransition(draft));
+  }
+  finalizePlayerTurnResume(
+    readBattle().battleState,
+    playerTurnSkipped,
+    sessionNum,
+    battleSession,
+    orch,
+    resolveEndTurn,
+  );
 }

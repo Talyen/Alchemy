@@ -16,7 +16,7 @@ Bypassing the shared command boundary causes inconsistent reads, unpersisted wri
 - `docs/ARCHITECTURE.md#run-state` — aggregate ownership, ports, anti-patterns.
 - `src/features/alchemy/shared/stores/run-session-command.ts` — `dispatchRunSessionCommand`, single draft, `afterCommit` seam.
 - `src/features/alchemy/shared/stores/run-session-write-port.ts` + `write-port-*.ts` — draft-first mutators.
-- `src/features/alchemy/shared/stores/run-session-read-port.ts` — committed reads only.
+- `src/features/alchemy/shared/stores/run-reads.ts` — committed reads only.
 - `src/features/alchemy/shared/stores/run-session-lifecycle-port.ts` — `teardownRun`, `finalizeRunEndSession`.
 - `eslint/boundaries.js` — `gameplay-state-store.ts` internal; feature code uses ports.
 - `docs/ARMORY.md#write-paths` — `dispatchGearMutationWithRunHealthSync` vs `mutateGearWithRunHealthSync`.
