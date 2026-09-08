@@ -4,8 +4,6 @@ import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
 import { FADE_OUT_DURATION, MUSIC_FADE_TICK_MS, NAVIGATION_DELAY_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
 
-baseTest.use({ launchOptions: { args: ["--mute-audio", "--autoplay-policy=no-user-gesture-required"] } });
-
 baseTest.describe("SFX playback", critical, () => {
   baseTest("menu interaction starts at least one SFX", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
@@ -60,22 +58,35 @@ baseTest("Bestiary boss music follows portrait activation and browsing", critica
       configurable: true,
       get: () => userAgent.replace("HeadlessChrome", "Chrome"),
     });
-    const runtime = window as Window & { __alchemyMusic?: HTMLAudioElement[] };
+    const runtime = window as Window & {
+      __alchemyActiveMusic?: Set<HTMLAudioElement>;
+      __alchemyMusic?: HTMLAudioElement[];
+    };
     runtime.__alchemyMusic = [];
+    runtime.__alchemyActiveMusic = new Set();
     const NativeAudio = window.Audio;
     window.Audio = class extends NativeAudio {
       constructor(src?: string) {
         super(src);
-        if (src?.includes("/Music/")) runtime.__alchemyMusic?.push(this);
+        if (!src?.includes("/Music/")) return;
+        runtime.__alchemyMusic?.push(this);
+        const nativePause = this.pause.bind(this);
+        this.play = () => {
+          runtime.__alchemyActiveMusic?.add(this);
+          return Promise.resolve();
+        };
+        this.pause = () => {
+          runtime.__alchemyActiveMusic?.delete(this);
+          nativePause();
+        };
       }
     };
   });
   const activeMusic = () =>
-    page.evaluate(
-      () =>
-        (window as Window & { __alchemyMusic?: HTMLAudioElement[] }).__alchemyMusic
-          ?.filter((audio) => !audio.paused)
-          .map((audio) => decodeURIComponent(audio.src)) ?? [],
+    page.evaluate(() =>
+      [...((window as Window & { __alchemyActiveMusic?: Set<HTMLAudioElement> }).__alchemyActiveMusic ?? [])].map(
+        (audio) => decodeURIComponent(audio.src),
+      ),
     );
   const menu = new MenuPage(page);
   await menu.gotoCollection({ encounteredEnemyIds: ["forge-golem"] });
